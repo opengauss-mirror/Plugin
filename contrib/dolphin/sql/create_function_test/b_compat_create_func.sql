@@ -1,5 +1,9 @@
 create schema b_compat_create_func;
 set current_schema to 'b_compat_create_func';
+DROP ROLE if EXISTS us1;
+CREATE ROLE us1 IDENTIFIED BY 'Aa@123456';
+GRANT ALL ON SCHEMA b_compat_create_func TO us1;
+SET ROLE us1 PASSWORD 'Aa@123456';
 
 create function func(n int) returns varchar(50) return (select n+1);
 select func(100);
@@ -75,6 +79,7 @@ begin
 end //
 delimiter ;
 select currval('a');
+show create function currval;
 
 drop function if exists currval(varchar(50));
 delimiter /
@@ -486,6 +491,7 @@ select :lable;
 select :loop;
 select :repeat;
 select :while;
-
 drop schema b_compat_create_func cascade;
 reset current_schema;
+reset role;
+drop role us1;

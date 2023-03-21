@@ -461,6 +461,8 @@ static SingleTableOption* CreateSingleTableOption(TableOptionType tableOptionTyp
 #define  INSTANTIATION_LEN     15
 #define  BEGIN_STR       "BEGIN\n"
 #define  BEGIN_LEN       6
+#define  BEGIN_P_STR      " BEGIN_B_PROC " /* used in dolphin type proc body*/
+#define  BEGIN_P_LEN      14
 #define  END_STR         "\nEND\n"
 #define  END_LEN         6
 /* if delimiter is multiple characters like '$$', token will be set as END_OF_PROC. */
@@ -19997,43 +19999,31 @@ ev_where_body:	{
 		;
 
 
-b_proc_body:
-			{
-				int     proc_b  = 0;
-				int     proc_e  = 0;
-				char    *proc_body_str  = NULL;
-				int     proc_body_len   = 0;
-				int     blocklevel              = 0;
-				bool    add_declare     = true;  /* Mark if need to add a DECLARE */
+b_proc_body:{
+				int		proc_b	= 0;
+				int		proc_e	= 0;
+				char	*proc_body_str	= NULL;
+				int		proc_body_len	= 0;
+				int		blocklevel		= 0;
 				FunctionSources *funSrc = NULL;
 				char *proc_header_str = NULL;
 				int rc = 0;
 				rc = CompileWhich();
-				int tok = YYEMPTY;
-				int pre_tok = 0;
-				bool end_parsed = false;
-				int max_block_level = 1;
-				List* infolist = NIL;
-				DolphinProcBodyInfo* bdinfo = InitDolphinProcBodyInfo();
+				int	tok = YYEMPTY;
+				int	pre_tok = 0;
 				base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
 
 				yyextra->core_yy_extra.in_slash_proc_body = true;
-				u_sess->parser_cxt.eaten_begin = true;
 				/* the token BEGIN_P have been parsed */
-				if (u_sess->parser_cxt.eaten_begin)
-						blocklevel = 1;
-				
-				bdinfo->m_block_level = blocklevel;
+				blocklevel = 1;
+
 				if (yychar == YYEOF || yychar == YYEMPTY)
-						tok = YYLEX;
+					tok = YYLEX;
 				else
 				{
-						tok = yychar;
-						yychar = YYEMPTY;
+					tok = yychar;
+					yychar = YYEMPTY;
 				}
-
-				if (u_sess->parser_cxt.eaten_declare || DECLARE == tok)
-						add_declare = false;
 
 				/* Save procedure header str,start with param exclude brackets */
 				proc_header_str = ParseFunctionArgSrc(yyscanner);
@@ -20041,165 +20031,97 @@ b_proc_body:
 				/* Save the beginning of procedure body. */
 				proc_b = yylloc;
 				if (rc != PLPGSQL_COMPILE_NULL && rc != PLPGSQL_COMPILE_PROC) {
-						u_sess->plsql_cxt.procedure_first_line = GetLineNumber(yyextra->core_yy_extra.scanbuf, yylloc);
+					u_sess->plsql_cxt.procedure_first_line = GetLineNumber(yyextra->core_yy_extra.scanbuf, yylloc);
 				}
 				/* start procedure body scan */
 				bool hasReturn = false;
 				while(true)
 				{
-						if (tok == YYEOF) {
-								proc_e = yylloc;
-								if (!end_parsed)
-										parser_yyerror("subprogram body is not ended correctly");
-								break;
-						}
+					if (tok == YYEOF) {
+						proc_e = yylloc;
+						parser_yyerror("subprogram body is not ended correctly");
+						break;
+					}
 
-						if (tok == BEGIN_P) {
-							if (infolist == NIL)
-								infolist = list_make1(bdinfo);
-							else
-								lappend (infolist,bdinfo);
-							blocklevel++;
-							bdinfo = InitDolphinProcBodyInfo();
-							bdinfo->m_begin_b = yylloc;	
-							bdinfo->m_block_level = blocklevel;
-						}
-						
-						/*
-						 * End of procedure rules:
-						 *      ;END [;]
-						 *      | BEGIN END[;]
-						 */
+					if (tok == BEGIN_P)
+						blocklevel++;
 
-						if (tok == DECLARE)
-						{	
-							if (bdinfo == NULL) {
-								parser_yyerror("subprogram body is not ended correctly");
-							}
-							if (blocklevel > max_block_level) {
-								max_block_level = blocklevel;
-								bdinfo->m_begin_e = yylloc;
-								bdinfo->m_begin_len = bdinfo->m_begin_e - bdinfo->m_begin_b +1;
-							}
-							if (!bdinfo->m_declare_b)
-								bdinfo->m_declare_b = yylloc;
-							add_declare = false;
-							bool next_cursor = true;
-							while (true)
-							{
-								tok = YYLEX;
-								if (next_cursor && tok != CURSOR)
-									next_cursor = false;
-								if (tok == HANDLER || tok == CONDITION || (!next_cursor && tok == CURSOR))
-								{
-									break;
-								}
-								if (tok == ';')
-								{
-									bdinfo->m_declare_e = yylloc;
-									bdinfo->m_declare_len =  bdinfo->m_declare_e - bdinfo->m_declare_b + 1;
-									break;
-								}
-								else if (tok == YYEOF) {
-                                	                                proc_e = yylloc;
-                        	                                        if (!end_parsed)
-                                                                                parser_yyerror("subprogram body is not ended correctly");
-                	                                                break;
-		                                                }
-							
-							}			
-						}
-						if (tok == END_P)
-						{
-								tok = YYLEX;
-								end_parsed = true;
-								/* adapt A db's label */
-								if (!(tok == ';' || tok == YYEOF || TOKEN_IS_DELIMITER)
-										&& tok != IF_P
-										&& tok != CASE
-										&& tok != LOOP
-										&& tok != WHILE_P
-										&& tok != REPEAT)
-								{
-										tok = END_P;
-										continue;
-								}
-								/*pre_tok = 0 for begin (nothing) end;*/
-								if (blocklevel == 1 && (pre_tok == ';' || pre_tok == BEGIN_P || pre_tok == 0)
-									&& (tok == ';' || tok == YYEOF || TOKEN_IS_DELIMITER))
-								{
-										/* Save the end of procedure body. */
-										proc_e = yylloc;
-
-										if (tok == ';' )
-										{
-												if (yyextra->lookahead_num != 0) {
-														parser_yyerror("subprogram body is not ended correctly");
-														break;
-												}
-												else
-												{
-														yyextra->lookahead_token[0] = tok;
-														yyextra->lookahead_num = 1;
-												}
-										}
-										break;
-								}
-
-								/* Cope with nested BEGIN/END pairs.
-								 * In fact the tok can not be 0
-								 */
-								if (blocklevel > 1
-									&& (pre_tok == ';' || pre_tok == BEGIN_P)
-									&& (tok == ';' || tok == 0))
-								{
-										blocklevel--;
-								}
-						}
-
-						if (tok == RETURN) {
-							hasReturn = true;
-						}
-						pre_tok = tok;
+					/*
+					 * End of procedure rules:
+					 *	;END [;]
+					 * 	| BEGIN END[;]
+					 */
+					if (tok == END_P)
+					{
 						tok = YYLEX;
-						/* in case of lacking DECLARE within nested begin-end statement */
-						if (tok != DECLARE && bdinfo->m_begin_b != 0 && bdinfo->m_begin_e == 0
-								&& bdinfo->m_declare_b == 0 && bdinfo->m_declare_e == 0) {
-							bdinfo->m_begin_e = yylloc;
-							bdinfo->m_begin_len = bdinfo->m_begin_e - bdinfo->m_begin_b + 1;
-							bdinfo->m_declare_b = yylloc;
-							bdinfo->m_declare_e = yylloc;
+
+						/* adapt A db's label */
+						if (!(tok == ';' || (tok == YYEOF || TOKEN_IS_DELIMITER))
+							&& tok != IF_P
+							&& tok != CASE
+							&& tok != LOOP
+							&& tok != WHILE_P
+							&& tok != REPEAT)
+						{
+							tok = END_P;
+							continue;
 						}
+
+						/*pre_tok = 0 for begin (nothing) end;*/
+					 	if (blocklevel == 1
+							&& (pre_tok == ';' || pre_tok == BEGIN_P || pre_tok == 0)
+							&& (tok == ';' || (tok == YYEOF || TOKEN_IS_DELIMITER)))
+						{
+							/* Save the end of procedure body. */
+							proc_e = yylloc;
+
+							if (tok == ';' )
+							{
+								if (yyextra->lookahead_num != 0) {
+									parser_yyerror("subprogram body is not ended correctly");
+									break;
+								}
+								else
+								{
+									yyextra->lookahead_token[0] = tok;
+									yyextra->lookahead_num = 1;
+								}
+							}
+							break;
+						}
+
+						/* Cope with nested BEGIN/END pairs.
+						 * In fact the tok can not be 0
+						 */
+					 	if (blocklevel > 1
+							 && (pre_tok == ';' || pre_tok == BEGIN_P)
+							 && (tok == ';' || tok == 0))
+						{
+							blocklevel--;
+						}
+					}
+					if (tok == RETURN) {
+						hasReturn = true;
+					}
+					pre_tok = tok;
+					tok = YYLEX;
 				}
-				
-				if (infolist == NIL)
-					infolist = list_make1(bdinfo);
-				else
-					lappend (infolist,bdinfo);
 
 				if (proc_e == 0) {
-						ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("subprogram body is not ended correctly")));
+					ereport(errstate, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("subprogram body is not ended correctly")));
 				}
-				proc_body_len = proc_e - proc_b  + 1  + 7;//- strlen(u_sess->attr.attr_common.delimiter_name);
 
-				/* Add a DECLARE in the start of the subprogram body
-				 *      to compatiable with the A db.
-				 *      XXX : It is best to change the gram.y in plpgsql.
-				 */
-				if (add_declare)
-				{
-						proc_body_str = (char *)palloc0(proc_body_len + DECLARE_LEN + 1);
-						strncpy(proc_body_str, DECLARE_STR, DECLARE_LEN + 1);
-						strncpy(proc_body_str + DECLARE_LEN, " begin " , 7);
-						strncpy(proc_body_str + 7 + DECLARE_LEN,
-										yyextra->core_yy_extra.scanbuf + proc_b - 1, proc_body_len - 7);
-						proc_body_len = DECLARE_LEN + proc_body_len;
-				}
-				else
-				{
-						proc_body_str = (char *)palloc0(proc_body_len + 1);
-						DolphinDealProcBodyStr(proc_body_str, yyextra->core_yy_extra.scanbuf, infolist, proc_b, proc_body_len + 1);
-				}
+				proc_body_len = proc_e - proc_b + 1 ;
+
+				proc_body_str = (char *)palloc0(proc_body_len + BEGIN_P_LEN + 1);
+
+				rc = strncpy_s(proc_body_str, proc_body_len + BEGIN_P_LEN + 1, BEGIN_P_STR, BEGIN_P_LEN + 1);
+				securec_check(rc, "", "");
+				rc = strncpy_s(proc_body_str + BEGIN_P_LEN, proc_body_len + 1,
+					yyextra->core_yy_extra.scanbuf + proc_b - 1, proc_body_len);
+				securec_check(rc, "", "");
+
+				proc_body_len = BEGIN_P_LEN + proc_body_len;
 
 				proc_body_str[proc_body_len] = '\0';
 
@@ -20208,11 +20130,11 @@ b_proc_body:
 				yyextra->core_yy_extra.dolqstart = NULL;
 
 				/*
-				 * Add the end location of slash proc to the locationlist for the multi-query
+				 * Add the end location of slash proc to the locationlist for the multi-query 
 				 * processed.
 				 */
-				yyextra->core_yy_extra.query_string_locationlist =
-						lappend_int(yyextra->core_yy_extra.query_string_locationlist, yylloc);
+				yyextra->core_yy_extra.query_string_locationlist = 
+					lappend_int(yyextra->core_yy_extra.query_string_locationlist, yylloc);
 
 				funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
 				funSrc->bodySrc   = proc_body_str;
@@ -20222,6 +20144,7 @@ b_proc_body:
 				$$ = funSrc;
 			}
 		;
+
 SingleLineProcPart:
 			{GetSessionContext()->single_line_proc_begin = yylloc;}
 				SelectStmt
@@ -21417,6 +21340,8 @@ subprogram_body: 	{
 				funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
 				funSrc->bodySrc   = proc_body_str;
 				funSrc->headerSrc = proc_header_str;
+
+				/* tail plpgsql shoule not use declare rules of dolphin */
 
 				$$ = funSrc;
 			}
