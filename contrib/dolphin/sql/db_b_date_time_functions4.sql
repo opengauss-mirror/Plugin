@@ -400,5 +400,15 @@ insert into test values('str_to_date(''200454 Monday'', ''%X%V %W'')', str_to_da
 -- 结果
 select * from test order by funcname;
 drop table test;
+-- fix bug
+CREATE TABLE memos (
+ID integer,
+CONTEXT text
+);
+insert into memos values(1,'2022/05/26 20:30');
+insert into memos values(2,'2022/05/27 20:30');
+select DATE_add(CONtext,INTERVAL 31 DAY) from memos;
+drop table if exists memos;
+
 drop schema b_datetime_func_test4 cascade;
 reset current_schema;

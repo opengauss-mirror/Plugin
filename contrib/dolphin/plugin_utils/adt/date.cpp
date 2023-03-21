@@ -4931,7 +4931,7 @@ Datum adddate_datetime_interval_t(PG_FUNCTION_ARGS)
 {
     int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     text* tmp = PG_GETARG_TEXT_PP(0);
-    Interval *span = PG_GETARG_INTERVAL_P(1);
+    Interval span = *PG_GETARG_INTERVAL_P(1);
     char *expr;
     struct pg_tm tt, *tm = &tt;
     fsec_t fsec;
@@ -4942,15 +4942,15 @@ Datum adddate_datetime_interval_t(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     }
 
-    if (tm_type == DTK_DATE && span->time == 0) {
+    if (tm_type == DTK_DATE && span.time == 0) {
         DateADT date, result;
         date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
-        if (date_add_interval(date, span, &result))
+        if (date_add_interval(date, &span, &result))
             return DirectFunctionCall1(date_text, result);
     } else {
         Timestamp datetime, result;
         tm2timestamp(tm, fsec, NULL, &datetime);
-        if (datetime_add_interval(datetime, span, &result))
+        if (datetime_add_interval(datetime, &span, &result))
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(datetime_text, result);
     }
@@ -4964,7 +4964,7 @@ Datum adddate_datetime_interval_n(PG_FUNCTION_ARGS)
 {
     int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
     Numeric num = PG_GETARG_NUMERIC(0);
-    Interval *span = PG_GETARG_INTERVAL_P(1);
+    Interval span = *PG_GETARG_INTERVAL_P(1);
     struct pg_tm tt, *tm = &tt;
     lldiv_t div;
     fsec_t fsec;
@@ -4975,15 +4975,15 @@ Datum adddate_datetime_interval_n(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     }
 
-    if (date_type == DTK_DATE && span->time == 0) {
+    if (date_type == DTK_DATE && span.time == 0) {
         DateADT date, result;
         date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
-        if (date_add_interval(date, span, &result))
+        if (date_add_interval(date, &span, &result))
             return DirectFunctionCall1(date_text, result);
     } else {
         Timestamp datetime, result;
         tm2timestamp(tm, fsec, NULL, &datetime);
-        if (datetime_add_interval(datetime, span, &result))
+        if (datetime_add_interval(datetime, &span, &result))
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(datetime_text, result);
     }
