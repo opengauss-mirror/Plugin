@@ -104,6 +104,12 @@ extern bool is_func_need_cache(Oid funcid, const char* func_name);
 extern bool plpgsql_check_insert_colocate(
     Query* query, List* qry_part_attr_num, List* trig_part_attr_num, PLpgSQL_function* func);
 
+#ifdef DOLPHIN
+static void ReplaceDolphinProBegin(char *proc_source);
+#define  BEGIN_P_STR      " BEGIN_B_PROC " /* used in dolphin type proc body*/
+#define  BEGIN_P_LEN      14
+#define  BEGIN_N_STR      "    BEGIN     " /* BEGIN_P_STR to same length*/
+#endif
 /* ----------
  * plpgsql_compile		Make an execution tree for a PL/pgSQL function.
  *
@@ -693,6 +699,10 @@ static PLpgSQL_function* do_compile(FunctionCallInfo fcinfo, HeapTuple proc_tup,
     }
     u_sess->plsql_cxt.curr_compile_context = curr_compile;
     pushCompileContext();
+#ifdef DOLPHIN
+    /* PreCheck And replace BEGIN_B_PROC INTO BEGIN if NEEDED*/
+    ReplaceDolphinProBegin(proc_source);
+#endif
     plpgsql_scanner_init(proc_source);
     curr_compile->plpgsql_curr_compile = func;
     curr_compile->plpgsql_error_funcname = pstrdup(NameStr(proc_struct->proname));
@@ -5033,3 +5043,17 @@ Node* plpgsql_check_match_var(Node* node, ParseState* pstate, ColumnRef* cref)
     }
     return ans;
 }
+
+#ifdef DOLPHIN
+void  ReplaceDolphinProBegin(char *proc_source)
+{
+    errno_t rc = EOK;
+    if (pg_strncasecmp(proc_source, BEGIN_P_STR, BEGIN_P_LEN) == 0) {
+        GetSessionContext()->is_b_declare = true;
+        rc = memcpy_s(proc_source, strlen(proc_source), BEGIN_N_STR, BEGIN_P_LEN);
+        securec_check(rc, "\0", "\0");
+    } else {
+        GetSessionContext()->is_b_declare = false;
+    }
+}
+#endif

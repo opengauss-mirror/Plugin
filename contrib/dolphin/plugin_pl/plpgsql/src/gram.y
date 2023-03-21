@@ -322,6 +322,13 @@ static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam)
             PLpgSQL_expr  *expr;
             int            endtoken;
         }                                               expr_until_while_loop;
+        struct
+        {
+            int                     n_initvars;
+            int                     *initvarnos;
+            bool                    isAutonomous;
+            PLpgSQL_exception_block *excp_block;
+        } declarehdr;
         List					*list;
         PLpgSQL_type			*dtype;
         PLpgSQL_datum			*datum;
@@ -343,6 +350,7 @@ static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam)
 
 %type <plnode> assign_el
 %type <declhdr> decl_sect
+%type <declarehdr> declare_sect_b
 %type <varname> decl_varname
 %type <list> decl_varname_list
 %type <boolean>	decl_const decl_notnull exit_type
@@ -381,7 +389,7 @@ static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam)
 %type <stmt>	stmt_case stmt_foreach_a
 
 %type <list>	proc_exceptions declare_stmts
-%type <exception_block> exception_sect declare_sect_b
+%type <exception_block> exception_sect
 %type <exception>	proc_exception declare_stmt 
 %type <condition>	proc_conditions proc_condition cond_list cond_element
 %type <declare_handler_type>    handler_type
@@ -450,6 +458,7 @@ static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam)
 %token				T_DECLARE_CURSOR
 %token				T_DECLARE_CONDITION
 %token				T_DECLARE_HANDLER
+%token				T_DECLARE
 
 /*
  * Keyword tokens.  Some of these are reserved and some are not;
@@ -649,6 +658,8 @@ pl_package_init : K_INSTANTIATION { SetErrorState(); } init_proc
 pl_function		: comp_options  { SetErrorState(); } pl_block opt_semi
                     {
                         u_sess->plsql_cxt.curr_compile_context->plpgsql_parse_result = (PLpgSQL_stmt_block *) $3;
+                        if (GetSessionContext()->is_b_declare == true)
+                            GetSessionContext()->is_b_declare = false;
                     }
                 ;
 
@@ -688,11 +699,17 @@ pl_block		: decl_sect K_BEGIN declare_sect_b proc_sect exception_sect K_END opt_
                         newp->lineno		= plpgsql_location_to_lineno(@2);
                         newp->sqlString = plpgsql_get_curline_query();
                         newp->label		= $1.label;
-                        newp->isAutonomous = $1.isAutonomous;
-                        newp->n_initvars = $1.n_initvars;
-                        newp->initvarnos = $1.initvarnos;
+                        if (GetSessionContext()->is_b_declare) {
+                            newp->isAutonomous = $3.isAutonomous;
+                            newp->n_initvars = $3.n_initvars;
+                            newp->initvarnos = $3.initvarnos;
+                        } else {
+                            newp->isAutonomous = $1.isAutonomous;
+                            newp->n_initvars = $1.n_initvars;
+                            newp->initvarnos = $1.initvarnos;
+                        }
                         newp->body		= $4;
-                        if ($3 != NULL) {
+                        if ($3.excp_block != NULL) {
                             if ($5 != NULL) {
                                 const char* message = "declare handler and exception cannot be used at the same time";
                                 InsertErrorMessage(message, plpgsql_yylloc);
@@ -700,7 +717,7 @@ pl_block		: decl_sect K_BEGIN declare_sect_b proc_sect exception_sect K_END opt_
                                         (errcode(ERRCODE_UNDEFINED_OBJECT),
                                         errmsg("declare handler and exception cannot be used at the same time")));
                             } else {
-                                newp->exceptions	= $3;
+                                newp->exceptions = $3.excp_block;
                                 newp->isDeclareHandlerStmt  = true;
                             }
                         } else {
@@ -722,19 +739,35 @@ declare_sect_b  :
                     {
                         /* done with decls, so resume identifier lookup */
                         u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
-                        $$ = NULL; 
+                        $$.n_initvars = 0;
+                        $$.initvarnos = NULL;
+                        $$.isAutonomous = false;
+                        $$.excp_block = NULL; 
                     }
-                | declare_stmts
+                | {
+                    if (GetSessionContext()->is_b_declare) {
+                        /* Forget any variables created before block */
+                        plpgsql_add_initdatums(NULL);
+                        u_sess->plsql_cxt.pragma_autonomous = false;
+                        /*
+                         * Disable scanner lookup of identifiers while
+                         * we process the decl_stmts
+                         */
+                    }
+                  } declare_stmts
                     {
                         /* done with decls, so resume identifier lookup */
                         u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
-                        if ($1 == NULL) {
-                            $$ = NULL;
+                        /* Remember variables declared in decl_stmts */
+                        $$.n_initvars = plpgsql_add_initdatums(&($$.initvarnos));
+                        $$.isAutonomous = u_sess->plsql_cxt.pragma_autonomous;
+                        u_sess->plsql_cxt.pragma_autonomous = false;
+                        if ($2 == NULL) {
+                            $$.excp_block = NULL;
                         } else {
                             PLpgSQL_exception_block *newp = (PLpgSQL_exception_block *)palloc(sizeof(PLpgSQL_exception_block));
-                            newp->exc_list = $1;
-
-                            $$ = newp;
+                            newp->exc_list = $2;
+                            $$.excp_block = newp;
                         }
                     }
                 ;
@@ -830,6 +863,15 @@ declare_stmt    : T_DECLARE_CURSOR decl_varname K_CURSOR opt_scrollable
 
                         $$ = newp;
                     }
+                | T_DECLARE decl_statement
+                   {
+                        int tok = -1;
+                        plpgsql_peek(&tok);
+                        if (tok != K_DECLARE) {
+                            u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_NORMAL;
+                        }
+                        $$ = NULL;
+                   }
                 ;
 
 handler_type	: K_EXIT
