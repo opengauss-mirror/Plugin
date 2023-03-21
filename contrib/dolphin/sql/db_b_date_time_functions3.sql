@@ -266,6 +266,12 @@ insert into test values('adddate(''0001-1-1'', INTERVAL -1 day)', adddate('0001-
 insert into test values('adddate(''0001-1-1'', -1)', adddate('0001-1-1', -1));
 insert into test values('adddate(''0001-1-1 00:00:00'', INTERVAL -1 second)', adddate('0001-1-1 00:00:00', INTERVAL -1 second));
 
+-- 结果超越边界，严格模式报错，非严格模式报warning，返回NULL。
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('adddate(''00010101'', -367)', adddate('00010101', -367));
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('adddate(''00010101'', -367)', adddate('00010101', -367));
+
 -- test date_add(date/datetime/time, INTERVAL)
 -- 严格模式或者非严格模式都有值
 -- 功能-unit
@@ -345,6 +351,11 @@ insert into test values('date_add(time''-838:59:59'', INTERVAL -1 second)', date
 insert into test values('date_add(''0001-1-1'', INTERVAL -1 day)', date_add('0001-1-1', INTERVAL -1 day));
 insert into test values('date_add(''0001-1-1 00:00:00'', INTERVAL -1 second)', date_add('0001-1-1 00:00:00', INTERVAL -1 second));
 
+-- 结果超越边界，严格模式报错，非严格模式报warning，返回NULL。
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('date_add(''00010101'', INTERVAL -367 day)', date_add('00010101', INTERVAL -367 day));
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('date_add(''00010101'', INTERVAL -367 day)', date_add('00010101', INTERVAL -367 day));
 
 -- test date_sub(date/datetime/time, INTERVAL)
 -- 严格模式或者非严格模式都有值
@@ -424,6 +435,12 @@ insert into test values('date_sub(time''-838:59:59'', INTERVAL 1 second)', date_
 -- 结果小于'0001-1-1 00:00:00'时，结果中日期部分置为'0000-00-00'，时间部分为相应值。
 insert into test values('date_sub(''0001-1-1'', INTERVAL 1 day)', date_sub('0001-1-1', INTERVAL 1 day));
 insert into test values('date_sub(''0001-1-1 00:00:00'', INTERVAL 1 second)', date_sub('0001-1-1 00:00:00', INTERVAL 1 second));
+
+-- 结果超越边界，严格模式报错，非严格模式报warning，返回NULL。
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('date_sub(''00010101'', INTERVAL -367 day)', date_sub('00010101', INTERVAL 367 day));
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('date_sub(''00010101'', INTERVAL -367 day)', date_sub('00010101', INTERVAL 367 day));
 
 -- test addtime(datetime/time, time)
 -- 严格模式或者非严格模式都有值

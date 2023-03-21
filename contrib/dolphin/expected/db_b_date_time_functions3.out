@@ -325,6 +325,15 @@ CONTEXT:  referenced column: result
 insert into test values('adddate(''0001-1-1'', INTERVAL -1 day)', adddate('0001-1-1', INTERVAL -1 day));
 insert into test values('adddate(''0001-1-1'', -1)', adddate('0001-1-1', -1));
 insert into test values('adddate(''0001-1-1 00:00:00'', INTERVAL -1 second)', adddate('0001-1-1 00:00:00', INTERVAL -1 second));
+-- 结果超越边界，严格模式报错，非严格模式报warning，返回NULL。
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('adddate(''00010101'', -367)', adddate('00010101', -367));
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: result
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('adddate(''00010101'', -367)', adddate('00010101', -367));
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: result
 -- test date_add(date/datetime/time, INTERVAL)
 -- 严格模式或者非严格模式都有值
 -- 功能-unit
@@ -440,6 +449,15 @@ CONTEXT:  referenced column: result
 -- 结果小于'0001-1-1 00:00:00'时，结果中日期部分置为'0000-00-00'，时间部分为相应值。
 insert into test values('date_add(''0001-1-1'', INTERVAL -1 day)', date_add('0001-1-1', INTERVAL -1 day));
 insert into test values('date_add(''0001-1-1 00:00:00'', INTERVAL -1 second)', date_add('0001-1-1 00:00:00', INTERVAL -1 second));
+-- 结果超越边界，严格模式报错，非严格模式报warning，返回NULL。
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('date_add(''00010101'', INTERVAL -367 day)', date_add('00010101', INTERVAL -367 day));
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: result
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('date_add(''00010101'', INTERVAL -367 day)', date_add('00010101', INTERVAL -367 day));
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: result
 -- test date_sub(date/datetime/time, INTERVAL)
 -- 严格模式或者非严格模式都有值
 -- 功能-unit
@@ -555,6 +573,15 @@ CONTEXT:  referenced column: result
 -- 结果小于'0001-1-1 00:00:00'时，结果中日期部分置为'0000-00-00'，时间部分为相应值。
 insert into test values('date_sub(''0001-1-1'', INTERVAL 1 day)', date_sub('0001-1-1', INTERVAL 1 day));
 insert into test values('date_sub(''0001-1-1 00:00:00'', INTERVAL 1 second)', date_sub('0001-1-1 00:00:00', INTERVAL 1 second));
+-- 结果超越边界，严格模式报错，非严格模式报warning，返回NULL。
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('date_sub(''00010101'', INTERVAL -367 day)', date_sub('00010101', INTERVAL 367 day));
+ERROR:  date/time field value out of range
+CONTEXT:  referenced column: result
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test values('date_sub(''00010101'', INTERVAL -367 day)', date_sub('00010101', INTERVAL 367 day));
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: result
 -- test addtime(datetime/time, time)
 -- 严格模式或者非严格模式都有值
 -- 功能
@@ -666,6 +693,7 @@ select * from test order by funcname;
  adddate('0001-1-1', INTERVAL -1 day)                                                             | 0000-00-00
  adddate('0001-12-31',INTERVAL 1 day)                                                             | 0002-01-01
  adddate('0001-12-31',INTERVAL 1 month)                                                           | 0002-01-31
+ adddate('00010101', -367)                                                                        | 
  adddate('10000-1-1', INTERVAL -1 day)                                                            | 
  adddate('11:11:11', 2)                                                                           | 2011-11-13
  adddate('11:11:11', INTERVAL 2 day)                                                              | 2011-11-13
@@ -797,6 +825,7 @@ select * from test order by funcname;
  date_add('0001-1-1', INTERVAL -1 day)                                                            | 0000-00-00
  date_add('0001-12-31',INTERVAL 1 day)                                                            | 0002-01-01
  date_add('0001-12-31',INTERVAL 1 month)                                                          | 0002-01-31
+ date_add('00010101', INTERVAL -367 day)                                                          | 
  date_add('10000-1-1', INTERVAL -1 day)                                                           | 
  date_add('1999-12-31 23:00:00',INTERVAL 1 hour)                                                  | 2000-01-01 00:00:00
  date_add('1999-12-31 23:59:00',INTERVAL 1 minute)                                                | 2000-01-01 00:00:00
@@ -850,6 +879,7 @@ select * from test order by funcname;
  date_sub('0001-1-1', INTERVAL 1 day)                                                             | 0000-00-00
  date_sub('0001-12-31',INTERVAL -1 day)                                                           | 0002-01-01
  date_sub('0001-12-31',INTERVAL -1 month)                                                         | 0002-01-31
+ date_sub('00010101', INTERVAL -367 day)                                                          | 
  date_sub('10000-1-1', INTERVAL 1 day)                                                            | 
  date_sub('1999-12-31 23:00:00',INTERVAL -1 hour)                                                 | 2000-01-01 00:00:00
  date_sub('1999-12-31 23:59:00',INTERVAL -1 minute)                                               | 2000-01-01 00:00:00
@@ -969,7 +999,7 @@ select * from test order by funcname;
  timestampdiff(year, '0000-1-1', '9999-12-31')                                                    | 9999
  timestampdiff(year, '9999-12-31', '0000-12-31')                                                  | -9998
  timestampdiff(year, time'-838:59:59', time'838:59:59')                                           | 0
-(317 rows)
+(320 rows)
 
 drop table test;
 \c contrib_regression
