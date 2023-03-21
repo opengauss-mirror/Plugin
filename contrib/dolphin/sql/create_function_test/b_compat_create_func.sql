@@ -476,6 +476,39 @@ SELECT ID into test_table_030a FROM test_table_030 WHERE NAME = canshu;
 return test_table_030a;
 END |
 DELIMITER ;
+--test trigger
+drop function if exists f_create_function_0033;
+delimiter |
+create function f_create_function_0033() returns trigger
+begin
+insert into t_create_function_0033 values(new.id1, new.id2, new.id3);
+return new;
+end|
+delimiter ;
+
+CREATE TABLE test_trigger_src_tbl(id1 INT, id2 INT, id3 INT);
+CREATE TABLE test_trigger_des_tbl(id1 INT, id2 INT, id3 INT);
+delimiter /
+CREATE OR REPLACE FUNCTION tri_insert_funcx() RETURNS TRIGGER 
+BEGIN
+INSERT INTO test_trigger_des_tbl VALUES(NEW.id1, NEW.id2, NEW.id3);
+RETURN NEW;
+END
+/
+delimiter ;
+
+
+CREATE TRIGGER insert_triggerx
+BEFORE INSERT ON test_trigger_src_tbl
+FOR EACH ROW
+EXECUTE PROCEDURE tri_insert_funcx();
+
+insert into test_trigger_src_tbl values(1,2,3);
+select * from test_trigger_src_tbl;
+select * from test_trigger_des_tbl;
+
+drop table test_trigger_src_tbl cascade;
+drop table test_trigger_des_tbl cascade;
 select test_function_030('aaa');
 select test_function_030('aaa') is null;
 drop table if exists test_table_030;
