@@ -135,6 +135,11 @@
 #define UNIQUE_OFFSET 7
 #define PRIMARY_KEY_OFFSET 11
 
+#ifdef DOLPHIN
+#define  BEGIN_P_STR      " BEGIN_B_PROC " /* used in dolphin type proc body*/
+#define  BEGIN_P_LEN      14
+#define  BEGIN_N_STR      "    BEGIN     " /* BEGIN_P_STR to same length*/
+#endif
 /* ----------
  * Local data types
  * ----------
@@ -3099,6 +3104,12 @@ static char* pg_get_triggerdef_worker(Oid trigid, bool pretty)
     value = fastgetattr(ht_trig, Anum_pg_trigger_tgfbody, tgrel->rd_att, &isnull);
     if (!isnull) {
         tgfbody = TextDatumGetCString(value);
+#ifdef DOLPHIN
+        if (strlen(tgfbody) > BEGIN_P_LEN && pg_strncasecmp(tgfbody, BEGIN_P_STR, BEGIN_P_LEN) == 0) {
+            errno_t rc = memcpy_s((char*)tgfbody, strlen(tgfbody), BEGIN_N_STR, BEGIN_P_LEN);
+            securec_check(rc, "\0", "\0")
+        }
+#endif
         value = fastgetattr(ht_trig, Anum_pg_trigger_tgowner, tgrel->rd_att, &isnull);
         if (DatumGetObjectId(value) != GetUserId()) {
             appendStringInfo(&buf, "CREATE DEFINER = %s TRIGGER %s ", GetUserNameFromId(DatumGetObjectId(value)),
@@ -4616,6 +4627,7 @@ char* pg_get_functiondef_worker(Oid funcid, int* headerlines)
     int oldlen;
     char* p = NULL;
     bool isOraFunc = false;
+    bool isDolphinStyle = false;
     NameData* pkgname = NULL;
     initStringInfo(&buf);
 
@@ -4630,6 +4642,18 @@ char* pg_get_functiondef_worker(Oid funcid, int* headerlines)
     if (proc->proisagg)
         ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("\"%s\" is an aggregate function", name)));
 
+#ifdef DOLPHIN
+    tmp = SysCacheGetAttr(PROCOID, proctup, Anum_pg_proc_prosrc, &isnull);
+    if (isnull)
+        ereport(ERROR, (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("null prosrc")));
+    prosrc = TextDatumGetCString(tmp);
+
+    if (pg_strncasecmp(prosrc, BEGIN_P_STR, BEGIN_P_LEN) == 0) {
+        isDolphinStyle = true;
+        errno_t rc = memcpy_s((char*)prosrc, strlen(prosrc), BEGIN_N_STR, BEGIN_P_LEN);
+        securec_check(rc, "\0", "\0")
+    }
+#endif
     /* Need its pg_language tuple for the language name */
     langtup = SearchSysCache1(LANGOID, ObjectIdGetDatum(proc->prolang));
     if (!HeapTupleIsValid(langtup))
@@ -4657,7 +4681,7 @@ char* pg_get_functiondef_worker(Oid funcid, int* headerlines)
         if (OidIsValid(packageoid)) {
             pkgname = GetPackageName(packageoid);
         }
-    } 
+    }
 
     if (proIsProcedure) {
         if (pkgname != NULL) {
@@ -4816,9 +4840,14 @@ char* pg_get_functiondef_worker(Oid funcid, int* headerlines)
             }
         }
     }
-
+#ifndef DOLPHIN
     /* And finally the function definition ... */
     appendStringInfoString(&buf, "AS ");
+#else
+    if (!isDolphinStyle) {
+        appendStringInfoString(&buf, "AS ");
+    }
+#endif
 
     tmp = SysCacheGetAttr(PROCOID, proctup, Anum_pg_proc_probin, &isnull);
     if (!isnull) {
@@ -4826,11 +4855,12 @@ char* pg_get_functiondef_worker(Oid funcid, int* headerlines)
         appendStringInfoString(&buf, ", "); /* assume prosrc isn't null */
     }
 
+#ifndef DOLPHIN
     tmp = SysCacheGetAttr(PROCOID, proctup, Anum_pg_proc_prosrc, &isnull);
     if (isnull)
         ereport(ERROR, (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("null prosrc")));
     prosrc = TextDatumGetCString(tmp);
-
+#endif
     /*
      * We always use dollar quoting.  Figure out a suitable delimiter.
      *
@@ -4845,8 +4875,13 @@ char* pg_get_functiondef_worker(Oid funcid, int* headerlines)
         while (strstr(prosrc, dq.data) != NULL)
             appendStringInfoChar(&dq, 'x');
         appendStringInfoChar(&dq, '$');
-    } 
-    appendStringInfoString(&buf, dq.data);
+    }
+#ifdef DOLPHIN
+    if (!isDolphinStyle)
+#endif
+    {
+        appendStringInfoString(&buf, dq.data);
+    }
     // Count the header line numbers.
     //
     for (p = buf.data; *p; p++)
@@ -4854,7 +4889,17 @@ char* pg_get_functiondef_worker(Oid funcid, int* headerlines)
             (*headerlines)++;
 
     appendStringInfoString(&buf, prosrc);
-    appendStringInfoString(&buf, dq.data);
+#ifdef DOLPHIN
+    if (!isDolphinStyle)
+#endif
+    {
+        appendStringInfoString(&buf, dq.data);
+    }
+#ifdef DOLPHIN
+    if (isDolphinStyle) {
+        appendStringInfoString(&buf, ";");
+    } else
+#endif
     if (proIsProcedure || isOraFunc) {
         appendStringInfoString(&buf, ";\n/");
     } else {

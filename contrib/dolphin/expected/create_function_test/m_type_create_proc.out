@@ -1,5 +1,11 @@
 create schema m_create_proc_type;
 set current_schema to 'm_create_proc_type';
+DROP ROLE if EXISTS us2;
+NOTICE:  role "us2" does not exist, skipping
+CREATE ROLE us2 IDENTIFIED BY 'Aa@123456';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+GRANT ALL ON SCHEMA m_create_proc_type TO us2;
+SET ROLE us2 PASSWORD 'Aa@123456';
 --test create procedure 
 delimiter //
 CREATE PROCEDURE p()
@@ -163,6 +169,21 @@ CREATE PROCEDURE testpro_m6(a int)
         end;
 end//
  delimiter ;
+show create procedure testpro_m6;
+ Procedure  |                          Create Procedure                           |                                               sql_mode                                               | character_set_client | collation_connection | Database Collation 
+------------+---------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+----------------------+----------------------+--------------------
+ testpro_m6 | CREATE DEFINER = us2 PROCEDURE m_create_proc_type.testpro_m6(a int)+| sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length | UTF8                 | en_US.UTF-8          | en_US.UTF-8
+            |     BEGIN      declare b int;                                      +|                                                                                                      |                      |                      | 
+            |         declare c int;                                             +|                                                                                                      |                      |                      | 
+            |         b:= 9;                                                     +|                                                                                                      |                      |                      | 
+            |         insert into test values (a + b);                           +|                                                                                                      |                      |                      | 
+            |         begin                                                      +|                                                                                                      |                      |                      | 
+            |             insert into test values (a + b);                       +|                                                                                                      |                      |                      | 
+            |         end;                                                       +|                                                                                                      |                      |                      | 
+            | end;                                                               +|                                                                                                      |                      |                      | 
+            |                                                                     |                                                                                                      |                      |                      | 
+(1 row)
+
  delimiter //
  CREATE PROCEDURE testpro_m7(a int)
  begin
@@ -301,7 +322,7 @@ BEGIN
 declare
 i int = p1;
 <<label>>
-case i
+case 
 when i > 10 then raise notice '%','big';
 when i < 1 then raise notice '%','small';
 else  raise notice '%','good';
@@ -318,7 +339,7 @@ CONTEXT:  referenced column: docase
 (1 row)
 
 select docase(0);
-NOTICE:  big
+NOTICE:  small
 CONTEXT:  referenced column: docase
  docase 
 --------
@@ -326,7 +347,7 @@ CONTEXT:  referenced column: docase
 (1 row)
 
 select docase(100);
-NOTICE:  good
+NOTICE:  big
 CONTEXT:  referenced column: docase
  docase 
 --------
@@ -537,3 +558,5 @@ drop cascades to function test_cursor_handler()
 drop cascades to table declare_handler_t_continue
 drop cascades to function proc_continue_sqlexception()
 reset current_schema;
+reset role;
+drop role us2;
