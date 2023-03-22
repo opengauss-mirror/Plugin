@@ -30,7 +30,7 @@ select usename from pg_catalog.pg_user
     where usename='user4' or usename='user5' or usename='user6';
 
 set enable_set_variable_b_format to off;
-set test_user_host to on;
+set b_compatibility_user_host_auth to on;
 create User 'ace'@'127.0.0.1' identified by 'Aa@123456';
 select usename from pg_catalog.pg_user 
     where usename='ace@127.0.0.1';
