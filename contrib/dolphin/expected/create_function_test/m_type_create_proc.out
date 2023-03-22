@@ -465,6 +465,9 @@ end;
 delimiter ;
 set @x=0;
 call test_cursor_handler();
+NOTICE:  backberry : canada : 3
+NOTICE:  macrosoft : usa : 1
+NOTICE:  oracle : usa : 2
  test_cursor_handler 
 ---------------------
  
