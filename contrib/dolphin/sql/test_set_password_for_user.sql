@@ -1,7 +1,7 @@
 drop schema if exists test_set_password_for_user;
 create schema test_set_password_for_user;
 set current_schema = test_set_password_for_user;
-set test_user_host to on;
+set b_compatibility_user_host_auth to on;
 drop user if exists 'test'@'127.0.0.1';
 create user 'test'@'127.0.0.1' identified by 'Aa@123456';
 set password for 'test'@'127.0.0.1' = 'Test@456';
