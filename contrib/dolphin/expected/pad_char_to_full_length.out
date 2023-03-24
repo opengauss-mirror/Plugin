@@ -148,6 +148,16 @@ select cast('a' as char(10)), 'a'::char(10);
 (1 row)
 
 set dolphin.b_compatibility_mode = false;
+set try_vector_engine_strategy='force';
+select char_length(name), length(name) from t;
+ char_length | length 
+-------------+--------
+         100 |    100
+         100 |    100
+         100 |    100
+(3 rows)
+
+set try_vector_engine_strategy='off';
 set dolphin.sql_mode = '';
 select * from t;
    name   
@@ -290,6 +300,326 @@ select cast('a    ' as char(10)), 'a    '::char(10);
  a       | a    
 (1 row)
 
+set try_vector_engine_strategy='force';
+select char_length(name), length(name) from t;
+ char_length | length 
+-------------+--------
+           4 |      4
+           4 |      4
+           8 |      8
+(3 rows)
+
+set try_vector_engine_strategy='off';
+reset dolphin.sql_mode;
+-- test cstore
+create table t_col (name char(100)) with (orientation = column);
+insert into t_col values('test');
+insert into t_col values('test    ');
+insert into t_col values('    test');
+select * from t_col;
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+     test                                                                                            
+(3 rows)
+
+select concat(name, 't') from t_col;
+                                                concat                                                 
+-------------------------------------------------------------------------------------------------------
+ test                                                                                                t
+ test                                                                                                t
+     test                                                                                            t
+(3 rows)
+
+select char_length(name), length(name) from t_col;
+ char_length | length 
+-------------+--------
+         100 |    100
+         100 |    100
+         100 |    100
+(3 rows)
+
+select name::text, name::varchar, name::nvarchar2 from t_col;
+                                                 name                                                 |                                                 name                                                 |                                                 name                                                 
+------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------
+ test                                                                                                 | test                                                                                                 | test                                                                                                
+ test                                                                                                 | test                                                                                                 | test                                                                                                
+     test                                                                                             |     test                                                                                             |     test                                                                                            
+(3 rows)
+
+select * from t_col where name = 'test        ';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+(2 rows)
+
+select * from t_col where name != 'test        ';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+     test                                                                                            
+(1 row)
+
+select * from t_col where name < 'test        ';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+     test                                                                                            
+(1 row)
+
+select * from t_col where name <= 'test        ';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+     test                                                                                            
+(3 rows)
+
+select * from t_col where name > 'test        ';
+ name 
+------
+(0 rows)
+
+select * from t_col where name >= 'test        ';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+(2 rows)
+
+select * from t_col where name regexp 'test        %';
+ name 
+------
+(0 rows)
+
+select * from t_col where name like 'test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+(2 rows)
+
+select * from t_col where name not like 'test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+     test                                                                                            
+(1 row)
+
+select * from t_col where name like 'Test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+(2 rows)
+
+select * from t_col where name not like 'Test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+     test                                                                                            
+(1 row)
+
+set dolphin.b_compatibility_mode = true;
+select * from t_col where name like 'test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+(2 rows)
+
+select * from t_col where name not like 'test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+     test                                                                                            
+(1 row)
+
+select * from t_col where name like 'Test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
+(2 rows)
+
+select * from t_col where name not like 'Test        %';
+                                                 name                                                 
+------------------------------------------------------------------------------------------------------
+     test                                                                                            
+(1 row)
+
+set dolphin.b_compatibility_mode = false;
+set try_vector_engine_strategy='force';
+select char_length(name), length(name) from t_col;
+ char_length | length 
+-------------+--------
+         100 |    100
+         100 |    100
+         100 |    100
+(3 rows)
+
+set try_vector_engine_strategy='off';
+set enable_codegen to true;
+set codegen_cost_threshold to 0;
+select char_length(name), length(name) from t_col;
+ char_length | length 
+-------------+--------
+         100 |    100
+         100 |    100
+         100 |    100
+(3 rows)
+
+reset enable_codegen;
+reset codegen_cost_threshold;
+set dolphin.sql_mode = '';
+select * from t_col;
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
+
+select concat(name, 't') from t_col;
+  concat   
+-----------
+ testt
+ testt
+     testt
+(3 rows)
+
+select char_length(name), length(name) from t_col;
+ char_length | length 
+-------------+--------
+           4 |      4
+           4 |      4
+           8 |      8
+(3 rows)
+
+select name::text, name::varchar, name::nvarchar2 from t_col;
+   name   |   name   |   name   
+----------+----------+----------
+ test     | test     | test
+ test     | test     | test
+     test |     test |     test
+(3 rows)
+
+select * from t_col where name = 'test        ';
+ name 
+------
+ test
+ test
+(2 rows)
+
+select * from t_col where name != 'test        ';
+   name   
+----------
+     test
+(1 row)
+
+select * from t_col where name < 'test        ';
+   name   
+----------
+     test
+(1 row)
+
+select * from t_col where name <= 'test        ';
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
+
+select * from t_col where name > 'test        ';
+ name 
+------
+(0 rows)
+
+select * from t_col where name >= 'test        ';
+ name 
+------
+ test
+ test
+(2 rows)
+
+select * from t_col where name regexp 'test        %';
+ name 
+------
+(0 rows)
+
+select * from t_col where name like 'test        %';
+ name 
+------
+(0 rows)
+
+select * from t_col where name not like 'test        %';
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
+
+select * from t_col where name like 'Test        %';
+ name 
+------
+(0 rows)
+
+select * from t_col where name not like 'Test        %';
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
+
+set dolphin.b_compatibility_mode = true;
+select * from t_col where name like 'test        %';
+ name 
+------
+(0 rows)
+
+select * from t_col where name not like 'test        %';
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
+
+select * from t_col where name like 'Test        %';
+ name 
+------
+(0 rows)
+
+select * from t_col where name not like 'Test        %';
+   name   
+----------
+ test
+ test
+     test
+(3 rows)
+
+set try_vector_engine_strategy='force';
+select char_length(name), length(name) from t_col;
+ char_length | length 
+-------------+--------
+           4 |      4
+           4 |      4
+           8 |      8
+(3 rows)
+
+set try_vector_engine_strategy='off';
+set enable_codegen to true;
+set codegen_cost_threshold to 0;
+select char_length(name), length(name) from t_col;
+ char_length | length 
+-------------+--------
+           4 |      4
+           4 |      4
+           8 |      8
+(3 rows)
+
 drop schema pad_char_to_full_length cascade;
-NOTICE:  drop cascades to table t
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table t
+drop cascades to table t_col
 reset current_schema;
