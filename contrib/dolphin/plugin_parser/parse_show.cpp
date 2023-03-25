@@ -682,7 +682,7 @@ SelectStmt* makeShowTablesDirectQuery(char *colTbl, char *schemaname, bool fullm
  *        AND c.relkind in ('r', 'v')
  *        AND n.nspname = `current_schema or input schemaname` // the input parameter, not valid sql
  *        AND a_expr // where clause or like 'pattern' converted
- * )
+ * ) order by "Table_in_dbname(like_pattern)";
  *
  * @param fullmode
  * @param optDbName
@@ -735,8 +735,9 @@ SelectStmt* makeShowTablesQuery(bool fullmode, char *optDbName, Node *likeWhereO
     if (fullmode) tl = lappend(tl, plpsMakeNormalColumn(NULL, SHOW_TBL_TYPE_COL_S, SHOW_TBL_TYPE_COL));
     List* fl = list_make1(makeRangeSubselect(
             makeShowTablesDirectQuery(colTbl, schemaname, fullmode, smallcase_beneath, likeWhereOpt)));
+    List* sl = plpsMakeSortList(plpsMakeColumnRef(NULL, retColTbl));
 
-    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, NULL, NULL);
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, NULL, sl);
     return stmt;
 }
 
