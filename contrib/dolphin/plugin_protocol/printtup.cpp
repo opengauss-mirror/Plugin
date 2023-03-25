@@ -118,25 +118,14 @@ static void SendRowDescriptionMessage(StringInfo buf, TupleDesc typeinfo, List *
 
     for (i = 0; i < natts; ++i) {
         // FIELD packet
-        dolphin_data_field *field = (dolphin_data_field *) palloc0(sizeof(dolphin_data_field));
-        // db, table, org_table (tle->resorigtbl), org_name, character_set, decimals will implement later
-        field->name = attrs[i].attname.data;
-        const TypeItem* item = GetItemByTypeOid(attrs[i].atttypid);
-        field->type = item->dolphin_type_id; // map to atttypid
-        field->flags = item->flags;
-        field->charsetnr = item->charset_flag;
-        if (attrs[i].atttypid != BLOBOID) {
-            field->length = attrs[i].attlen;
-        } else {
-            field->length = DOLPHIN_BLOB_LENGTH;
-        }
+        dolphin_column_definition *field = make_dolphin_column_definition(&attrs[i]);
 
         while (tlist_item && ((TargetEntry *)lfirst(tlist_item))->resjunk) {
             tlist_item = lnext(tlist_item);
         }
     
         if (tlist_item != NULL) {
-            // convert t_list_item to TargetEntry later (TargetEntry *tle = (TargetEntry *)lfirst(tlist_item))
+            TargetEntry *tle = (TargetEntry *)lfirst(tlist_item);
             tlist_item = lnext(tlist_item);
         } 
         
@@ -188,6 +177,7 @@ void printtup(TupleTableSlot *slot, DestReceiver *self)
         char *outputstr = NULL;
 
         if (slot->tts_isnull[i]) {
+            dq_append_string_lenenc(buf, "");
             continue;
         }
 

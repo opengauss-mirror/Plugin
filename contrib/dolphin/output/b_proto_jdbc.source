@@ -20,7 +20,7 @@ select set_native_password('proto_user', 'Gauss@123');
  676a8fd5633248f6f59e17d4939f7f6e7093c350
 (1 row)
 
-\! $THIRD_PARTY_LIBS/kernel/platform/openjdk8/jdk/bin/javac @abs_builddir@/proto_jdbc/class/MySQLJdbcTest.java
+\! $THIRD_PARTY_LIBS/kernel/platform/openjdk8/jdk/bin/javac @abs_builddir@/proto_jdbc/class/*.java
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user Gauss@123
 c1:INT
 c2:INT UNSIGNED
@@ -35,26 +35,26 @@ c10:DOUBLE
 c11:BIT
 c12:TINYINT
 c13:CHAR
-c15:BINARY
+c14:BINARY
+c15:VARCHAR
 c16:VARCHAR
-c17:VARCHAR
-c18:VARBINARY
-c19:YEAR
-c20:DATE
-c21:TIME
-c22:TIMESTAMP
-c23:DATETIME
-c24:TINYBLOB
-c25:BLOB
-c26:MEDIUMBLOB
-c27:LONGBLOB
+c17:VARBINARY
+c18:YEAR
+c19:DATE
+c20:TIME
+c21:TIMESTAMP
+c22:DATETIME
+c23:TINYBLOB
+c24:BLOB
+c25:MEDIUMBLOB
+c26:LONGBLOB
+c27:GEOMETRY
 c28:GEOMETRY
-c30:GEOMETRY
-c31:VARCHAR
-c32:DECIMAL
-c33:JSON
-c34:ENUM
-c35:SET
+c29:VARCHAR
+c30:DECIMAL
+c31:JSON
+c32:CHAR
+c33:CHAR
 res_getBoolean: true
 res_getInt: 1
 res_getString: 1
@@ -75,6 +75,46 @@ select * from t3 order by id;
   3 | postgres
 (3 rows)
 
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcPrepareTest localhost $dp db_jdbc proto_user Gauss@123
+c1:INT:1
+c2:INT UNSIGNED:2000
+c3:TINYINT:1
+c4:TINYINT UNSIGNED:4
+c5:SMALLINT:5
+c6:SMALLINT UNSIGNED:6
+c7:BIGINT:7
+c8:BIGINT UNSIGNED:8
+c9:FLOAT:9.9
+c10:DOUBLE:10.0
+c11:BIT:0001100011
+c12:TINYINT:1
+c13:CHAR:char      
+c14:BINARY:binary
+c15:VARCHAR:varchar
+c16:VARCHAR:nvarchar
+c17:VARBINARY:varbinary
+c18:YEAR:2023-01-01
+c19:DATE:2023-02-27
+c20:TIME:14:46:30
+c21:TIMESTAMP:2023-03-07 16:16:16.666
+c22:DATETIME:2023-03-07 16:16:16.666
+c23:TINYBLOB:blob
+c24:BLOB:blob
+c25:MEDIUMBLOB:blob
+c26:LONGBLOB:blob
+c27:GEOMETRY:(1000,0)
+c28:GEOMETRY:((1000,0),(200,3))
+c29:VARCHAR:text
+c30:DECIMAL:20.000
+c31:JSON:{"k": "v"}
+c32:CHAR:a
+c33:CHAR:a
+select * from t3;
+ c1 |  c2  | c3 | c4 | c5 | c6 | c7 | c8 | c9  | c10 |    c11     | c12 |    c13     |          c14           |   c15   |   c16    |         c17          | c18  |    c19     |   c20    |               c21                |             c22              |    c23     |   c24    |    c25     |    c26     |   c27    |        c28         | c29  |  c30   |    c31     | c32 | c33 
+----+------+----+----+----+----+----+----+-----+-----+------------+-----+------------+------------------------+---------+----------+----------------------+------+------------+----------+----------------------------------+------------------------------+------------+----------+------------+------------+----------+--------------------+------+--------+------------+-----+-----
+  1 | 2000 | 1  | 4  |  5 | 6  |  7 | 8  | 9.9 |  10 | 0001100011 | t   | char       | \x62696e61727900000000 | varchar | nvarchar | \x76617262696e617279 | 2023 | 02-27-2023 | 14:46:30 | Tue Mar 07 00:16:16.666 2023 PST | Tue Mar 07 16:16:16.666 2023 | \x626c6f62 | 626C6F62 | \x626c6f62 | \x626c6f62 | (1000,0) | ((1000,0),(200,3)) | text | 20.000 | {"k": "v"} | a   | a
+(1 row)
+
 RESET ROLE;
 DROP USER IF EXISTS proto_user CASCADE;
-\! rm @abs_builddir@/proto_jdbc/class/MySQLJdbcTest.class
+\! rm @abs_builddir@/proto_jdbc/class/*.class

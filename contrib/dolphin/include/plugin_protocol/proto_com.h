@@ -30,6 +30,7 @@ typedef struct dolphin_proto_ctx {
     char *server_name;
     NameData database_name;
     int32 connect_id;
+    int32 statement_id;
 } dolphin_proto_ctx; 
 
 extern dolphin_proto_ctx g_proto_ctx;
@@ -82,7 +83,7 @@ enum dolphin_server_capability {
    CLIENT_MULTI_STATEMENTS | CLIENT_MULTI_RESULTS | CLIENT_PS_MULTI_RESULTS |  \
    CLIENT_REMEMBER_OPTIONS | CLIENT_PLUGIN_AUTH | CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA |    \
    CLIENT_CAN_HANDLE_EXPIRED_PASSWORDS | CLIENT_SESSION_TRACK |             \
-   CLIENT_OPTIONAL_RESULTSET_METADATA | CLIENT_QUERY_ATTRIBUTES |           \
+   CLIENT_OPTIONAL_RESULTSET_METADATA | CLIENT_QUERY_ATTRIBUTES  |           \
    CLIENT_MULTI_FACTOR_AUTHENTICATION)
 
 #define AUTH_PLUGIN_DATA_LEN 20
@@ -218,7 +219,7 @@ enum dolphin_attr_type {
 /* charset number */
 #define COLLATE_BINARY 63
 
-typedef struct dolphin_data_field {
+typedef struct dolphin_column_definition {
   const char *name;
   char *org_name;
   char *table;
@@ -240,7 +241,8 @@ typedef struct dolphin_data_field {
   uint charsetnr;
   uint type; 
   void *extension;
-} dolphin_data_field;
+  char *default_value;
+} dolphin_column_definition;
 
 #define MAX_TYPE_NAME_LEN 64
 extern struct HTAB* b_typoid2DolphinMarcoHash;
@@ -257,7 +259,35 @@ typedef struct HashEntryTypoid2TypeItem {
     const TypeItem* item;
 } HashEntryTypoid2TypeItem;
 
+typedef struct InputStmtParam {
+    uint32* itypes;
+    uint32 count;
+} InputStmtParam;
+
+typedef struct HashEntryStmtParamType {
+    int32 stmt_id;
+    const InputStmtParam* value;
+} HashEntryStmtParamType;
+
+typedef struct BlobParams {
+    const char** data;
+    uint32 count;
+    uint32 cursor;
+} BlobParams;
+
+typedef struct HashEntryBlob {
+    uint32 stmt_id;
+    BlobParams* value;
+} HashEntryBlob;
+
 extern void InitTypoid2DolphinMacroHtab();
 extern const TypeItem* GetItemByTypeOid(Oid oid);
+
+
+extern const InputStmtParam* GetCachedInputStmtParamTypes(int32 stmt_id);
+extern void SaveCachedInputStmtParamTypes(int32 stmt_id, InputStmtParam* value);
+
+extern const char* GetCachedParamBlob(uint32 stmt_id);
+extern void SaveCachedParamBlob(uint32 stmt_id, char *data);
 
 #endif /* proto_com.h */

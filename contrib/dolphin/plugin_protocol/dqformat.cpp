@@ -20,6 +20,19 @@
  * -------------------------------------------------------------------------
  */
 #include "plugin_protocol/dqformat.h"
+#include "knl/knl_session.h"
+#include "libpq/libpq.h"
+#include "utils/builtins.h"
+#include "utils/date.h"
+#include "utils/geo_decls.h"
+#include "utils/varbit.h"
+#include "utils/bytea.h"
+
+#include "plugin_utils/year.h"
+#include "plugin_utils/date.h"
+
+#define PRINTABLE_CHARS_COUNT 62
+#define HANDSHAKE_RESPONSE_RESERVED_BYTES 23
 
 #define AUTH_PLUGIN_DATA_PART_1 8
 #define CAPABILITY_UPPER_BITS 16
@@ -27,13 +40,59 @@
 #define ERR_PACKET_SQLSTATE_LEN 5
 #define MAX_ERRMSG_LEN 512
 #define DEFAULLT_DATA_FIELD_LEN 100
+#define DOLPHIN_BLOB_LENGTH 65535
 
-void append_auth_challenge_packet(StringInfo buf, network_mysqld_auth_challenge *shake)
+#define PROTO_DATE_LEN 4
+#define PROTO_DATETIME_LEN 7
+#define PROTO_DATETIMESTAMP_LEN 11
+#define PROTO_TIME_LEN 8
+#define PROTE_TIMESTATMP_LEN 12
+
+static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStatement *pstmt,
+                                                   com_stmt_exec_request *req, StringInfo buf);
+static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *null_bitmap);
+static void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf);
+
+static char PRINTABLE_CHARS[PRINTABLE_CHARS_COUNT + 1] =
+                                "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+network_mysqld_auth_challenge* make_mysqld_handshakev10_packet(char *scramble)
+{
+    network_mysqld_auth_challenge *challenge =
+                                    (network_mysqld_auth_challenge*) palloc0(sizeof(network_mysqld_auth_challenge));
+    challenge->capabilities = DOPHIN_DEFAULT_FLAGS;
+    challenge->auth_plugin_name = pstrdup("mysql_native_password");
+    challenge->server_version_str = pstrdup("5.7.38-dophin-server");
+    challenge->charset = 0x21;  /* utf8_general_ci */
+    challenge->server_status = SERVER_STATUS_AUTOCOMMIT;
+    challenge->thread_id = gs_atomic_add_32(&g_proto_ctx.connect_id, 1);
+
+    // generate a random challenge
+    int retval = RAND_priv_bytes((unsigned char*)challenge->auth_plugin_data, AUTH_PLUGIN_DATA_LEN);
+    if (retval != 1) {
+        ereport(ERROR, (errmsg("Failed to Generate the random number,errcode:%d", retval)));
+    }
+
+    // translate random string to printable chars
+    int index;
+    for (int i = 0; i < AUTH_PLUGIN_DATA_LEN; i++) {
+        index = (unsigned char)challenge->auth_plugin_data[i] % PRINTABLE_CHARS_COUNT;
+        challenge->auth_plugin_data[i] = PRINTABLE_CHARS[index];
+    }
+    challenge->auth_plugin_data[AUTH_PLUGIN_DATA_LEN] = 0x00;
+
+    errno_t rc = memcpy_s(scramble, AUTH_PLUGIN_DATA_LEN + 1, challenge->auth_plugin_data, AUTH_PLUGIN_DATA_LEN);
+    securec_check(rc, "\0", "\0");
+
+    return challenge;
+}
+
+void send_auth_challenge_packet(StringInfo buf, network_mysqld_auth_challenge *shake)
 {
     uint i;
 
     dq_append_int1(buf, 0x0a);
-    dq_append_string_null(buf, shake->server_version_str); 
+    dq_append_string_null(buf, shake->server_version_str);
     dq_append_int4(buf, shake->thread_id);
     dq_append_string_len(buf, shake->auth_plugin_data, AUTH_PLUGIN_DATA_PART_1);
     dq_append_int1(buf, 0x00); /* filler */
@@ -61,6 +120,41 @@ void append_auth_challenge_packet(StringInfo buf, network_mysqld_auth_challenge 
     if (shake->capabilities & CLIENT_PLUGIN_AUTH) {
         dq_append_string_null(buf, shake->auth_plugin_name); 
     }
+
+    dq_putmessage(buf->data, buf->len);
+}
+
+network_mysqld_auth_request* read_login_request(StringInfo buf)
+{
+    network_mysqld_auth_request *auth = (network_mysqld_auth_request*) palloc0(sizeof(network_mysqld_auth_request));
+
+    dq_get_int4(buf, &auth->client_capabilities);
+    dq_get_int4(buf, &auth->max_packet_size);
+    dq_get_int1(buf, &auth->charset);
+
+    dq_skip_bytes(buf, HANDSHAKE_RESPONSE_RESERVED_BYTES);
+    auth->username = dq_get_string_null(buf);
+
+    if (auth->client_capabilities & CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA) {
+        auth->auth_response = dq_get_string_lenenc(buf);
+    } else if (auth->client_capabilities & CLIENT_SECURE_CONNECTION) {
+        uint8 len;
+        dq_get_int1(buf, &len);
+        auth->auth_response = dq_get_string_len(buf, len);
+    } else {
+        auth->auth_response = dq_get_string_null(buf);
+    }
+
+    if ((DOPHIN_DEFAULT_FLAGS & CLIENT_CONNECT_WITH_DB) &&
+        (auth->client_capabilities & CLIENT_CONNECT_WITH_DB)) {
+        auth->schema = dq_get_string_null(buf);
+    }
+
+    if ((DOPHIN_DEFAULT_FLAGS & CLIENT_PLUGIN_AUTH) && (auth->client_capabilities & CLIENT_PLUGIN_AUTH)) {
+        auth->auth_plugin_name = dq_get_string_null(buf);
+    }
+
+    return auth;
 }
 
 network_mysqld_ok_packet_t* make_ok_packet(uint64 affected_rows, uint64 insert_id, char *msg)
@@ -141,21 +235,53 @@ void send_field_count_packet(StringInfo buf, int count)
     dq_putmessage(buf->data, buf->len);
 }
 
-dolphin_data_field* make_dolphin_data_field(const char *name, char *tableName)
+dolphin_column_definition* make_dolphin_column_definition(const char *name, char *tableName)
 {
-    dolphin_data_field *field = (dolphin_data_field *) palloc0(sizeof(dolphin_data_field));
-    // db, table, org_table (tle->resorigtbl), org_name, character_set, decimals will implement later
+    dolphin_column_definition *field = (dolphin_column_definition *) palloc0(sizeof(dolphin_column_definition));
+    // table, org_table (tle->resorigtbl), org_name, character_set, decimals will implement later
     field->name = name; 
-    field->type = DOLPHIN_TYPE_STRING; // map to atttypid
+    field->type = DOLPHIN_TYPE_VAR_STRING; // map to atttypid
     field->length = DEFAULLT_DATA_FIELD_LEN; 
-    field->db = g_proto_ctx.database_name.data;
+    field->db = u_sess->proc_cxt.MyProcPort->database_name;
     field->table = tableName;
     field->org_table = tableName;
+    field->charsetnr = 0x2d;
 
     return field;
 } 
 
-void send_column_definition41_packet(StringInfo buf, dolphin_data_field *field)
+dolphin_column_definition* make_dolphin_column_definition(FormData_pg_attribute *attr, char *tableName)
+{
+    // FIELD packet
+    dolphin_column_definition *field = (dolphin_column_definition *) palloc0(sizeof(dolphin_column_definition));
+
+    // db, table, org_table (tle->resorigtbl), org_name, character_set, decimals will implement later
+    field->name = attr->attname.data;
+    const TypeItem* item = GetItemByTypeOid(attr->atttypid);
+    switch (item->dolphin_type_id) {
+        // since mysql-jdbc 5.1.47 don't support enum and set.
+        case DOLPHIN_TYPE_ENUM:
+        case DOLPHIN_TYPE_SET: {
+            field->type = DOLPHIN_TYPE_STRING;
+            break;
+        }
+        default: {
+            field->type = item->dolphin_type_id;
+            break;
+        }
+    }
+    field->flags = item->flags;
+    field->charsetnr = item->charset_flag;
+    if (attr->atttypid != BLOBOID) {
+        field->length = attr->attalign;
+    } else {
+        field->length = DOLPHIN_BLOB_LENGTH;
+    }
+
+    return field;
+}
+
+void send_column_definition41_packet(StringInfo buf, dolphin_column_definition *field)
 {
     resetStringInfo(buf);
 
@@ -168,12 +294,434 @@ void send_column_definition41_packet(StringInfo buf, dolphin_data_field *field)
 
     /* length of the following block, 12 byte */
     dq_append_int_lenenc(buf, 0x0c);        /* next_length (lenenc_int) */
-    dq_append_int2(buf, field->charsetnr);               /* character_set (2) */
+    dq_append_int2(buf, field->charsetnr);  /* character_set (2) */
     dq_append_int4(buf, field->length);       /* column_length (4) */
     dq_append_int1(buf, field->type);        /* column_type (1) */
     dq_append_int2(buf, field->flags);       /* flags (2) */ 
     dq_append_int1(buf, field->decimals);    /* decimals */
     dq_append_int2(buf, 0x00);               /* filler */
+
+    if (field->default_value) {
+        dq_append_string_lenenc(buf, field->default_value);
+    }
     
     dq_putmessage(buf->data, buf->len);
+}
+
+void send_com_stmt_prepare_ok_packet(StringInfo buf, int statementId, int columns, int params)
+{
+    resetStringInfo(buf);
+
+    dq_append_int1(buf, 0x00);
+    dq_append_int4(buf, statementId);
+    dq_append_int2(buf, columns);
+    dq_append_int2(buf, params);
+    dq_append_int1(buf, 0x00);
+    dq_append_int2(buf, 0x00);
+
+    dq_putmessage(buf->data, buf->len);
+}
+
+static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStatement *pstmt,
+                                                   com_stmt_exec_request *req, StringInfo buf)
+{
+    com_stmt_param *parameters = (com_stmt_param *)palloc0(sizeof(com_stmt_param) * param_count);
+    const InputStmtParam *stmt_param = GetCachedInputStmtParamTypes(req->statement_id);
+    for (int i = 0; i < param_count; i++) {
+        if (param_isnull(i, req->null_bitmap)) continue;
+        switch (stmt_param->itypes[i]) {
+            case DOLPHIN_TYPE_LONG:
+            case DOLPHIN_TYPE_INT24: {
+                parameters[i].type = TYPE_INT4;
+                dq_get_int4(buf, &parameters[i].value.i4);
+                break;
+            }
+            case DOLPHIN_TYPE_LONGLONG: {
+                parameters[i].type = TYPE_INT8;
+                dq_get_int8(buf, &parameters[i].value.i8);
+                break;
+            }
+            case DOLPHIN_TYPE_SHORT:
+            case DOLPHIN_TYPE_YEAR: {
+                parameters[i].type = TYPE_INT2;
+                dq_get_int2(buf, &parameters[i].value.i4);
+                break;
+            }
+            case DOLPHIN_TYPE_TINY: {
+                parameters[i].type = TYPE_INT1;
+                dq_get_int1(buf, &parameters[i].value.i1);
+                break;
+            }
+            case DOLPHIN_TYPE_DOUBLE: {
+                parameters[i].type = TYPE_DOUBLE;
+                dq_get_int8(buf, &parameters[i].value.d.i8);
+                break;
+            }
+            case DOLPHIN_TYPE_FLOAT: {
+                parameters[i].type = TYPE_FLOAT;
+                dq_get_int4(buf, &parameters[i].value.f.i4);
+                break;
+            }
+            case DOLPHIN_TYPE_LONG_BLOB:
+            case DOLPHIN_TYPE_MEDIUM_BLOB:
+            case DOLPHIN_TYPE_BLOB:
+            case DOLPHIN_TYPE_TINY_BLOB: {
+                parameters[i].value.text = GetCachedParamBlob(req->statement_id);
+                parameters[i].type = TYPE_STRING;
+                break;
+            }
+            case DOLPHIN_TYPE_STRING:
+            case DOLPHIN_TYPE_VARCHAR:
+            case DOLPHIN_TYPE_VAR_STRING:
+            case DOLPHIN_TYPE_ENUM:
+            case DOLPHIN_TYPE_SET:
+            case DOLPHIN_TYPE_GEOMETRY:
+            case DOLPHIN_TYPE_BIT:
+            case DOLPHIN_TYPE_DECIMAL:
+            case DOLPHIN_TYPE_NEWDECIMAL: {
+                const TypeItem* item = GetItemByTypeOid(pstmt->plansource->param_types[i]);
+                switch (item->dolphin_type_id) {
+                    case DOLPHIN_TYPE_BIT: {
+                        parameters[i].type = TYPE_HEX;
+                        break;
+                    }
+                    default: {
+                        parameters[i].type = TYPE_STRING;
+                        break;
+                    }
+                }
+                parameters[i].value.text = dq_get_string_lenenc(buf);
+                break;
+            }
+            case DOLPHIN_TYPE_DATE:
+            case DOLPHIN_TYPE_TIMESTAMP:
+            case DOLPHIN_TYPE_DATETIME: {
+                parameters[i].type = TYPE_STRING;
+                uint8 len;
+                proto_tm tm;
+                dq_get_int1(buf, &len);
+                StringInfo text = makeStringInfo();
+                if (len == PROTO_DATE_LEN) {
+                    dq_get_int2(buf, &tm.year);
+                    dq_get_int1(buf, &tm.month);
+                    dq_get_int1(buf, &tm.day);
+                    appendStringInfo(text, "%d-%d-%d", tm.year, tm.month, tm.day);
+                    parameters[i].value.text = text->data;
+                } else if (len == PROTO_DATETIME_LEN) {
+                    dq_get_int2(buf, &tm.year);
+                    dq_get_int1(buf, &tm.month);
+                    dq_get_int1(buf, &tm.day);
+                    dq_get_int1(buf, &tm.hour);
+                    dq_get_int1(buf, &tm.minute);
+                    dq_get_int1(buf, &tm.second);
+                    appendStringInfo(text, "%d-%d-%d %d:%d:%d",
+                                     tm.year, tm.month, tm.day, tm.hour, tm.minute, tm.second);
+                    parameters[i].value.text = text->data;
+                } else if (len == PROTO_DATETIMESTAMP_LEN) {
+                    dq_get_int2(buf, &tm.year);
+                    dq_get_int1(buf, &tm.month);
+                    dq_get_int1(buf, &tm.day);
+                    dq_get_int1(buf, &tm.hour);
+                    dq_get_int1(buf, &tm.minute);
+                    dq_get_int1(buf, &tm.second);
+                    dq_get_int4(buf, &tm.microsecond);
+                    appendStringInfo(text, "%d-%d-%d %d:%d:%d.%u",
+                                     tm.year, tm.month, tm.day, tm.hour, tm.minute, tm.second, tm.microsecond);
+                    parameters[i].value.text =  text->data;
+                }
+                break;
+            }
+            case DOLPHIN_TYPE_TIME: {
+                parameters[i].type = TYPE_STRING;
+                uint8 len;
+                proto_tm tm;
+                dq_get_int1(buf, &len);
+                StringInfo text = makeStringInfo();
+                if (len == PROTO_TIME_LEN) {
+                    dq_get_int1(buf, &tm.is_negative);
+                    dq_get_int4(buf, &tm.days);
+                    dq_get_int1(buf, &tm.hour);
+                    dq_get_int1(buf, &tm.minute);
+                    dq_get_int1(buf, &tm.second);
+                    const char* fmt = tm.is_negative ? "-%d:%d:%d" : "%d:%d:%d";
+                    appendStringInfo(text, fmt, tm.hour, tm.minute, tm.second);
+                    parameters[i].value.text = text->data;
+                } else if (len == PROTE_TIMESTATMP_LEN) {
+                    dq_get_int1(buf, &tm.is_negative);
+                    dq_get_int4(buf, &tm.days);
+                    dq_get_int1(buf, &tm.hour);
+                    dq_get_int1(buf, &tm.minute);
+                    dq_get_int1(buf, &tm.second);
+                    dq_get_int4(buf, &tm.microsecond);
+                    const char* fmt = tm.is_negative ? "-%d:%d:%d.%u" : "%d:%d:%d.%u";
+                    appendStringInfo(text, fmt, tm.hour, tm.minute, tm.second, tm.microsecond);
+                    parameters[i].value.text = text->data;
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+    return parameters;
+}
+
+com_stmt_exec_request* read_com_stmt_exec_request(StringInfo buf)
+{
+    char stmt_name[NAMEDATALEN];
+
+    com_stmt_exec_request *req = (com_stmt_exec_request *)palloc0(sizeof(com_stmt_exec_request));
+    dq_get_int4(buf, &req->statement_id);
+    dq_get_int1(buf, &req->flags);
+    dq_get_int4(buf, &req->iteration_count);
+
+    int rc = snprintf_s(stmt_name, NAMEDATALEN + 1, NAMEDATALEN, "p%d", req->statement_id);
+    securec_check_ss(rc, "\0", "\0");
+
+    PreparedStatement *pstmt = FetchPreparedStatement(stmt_name, true, true);
+    int param_count = pstmt->plansource->num_params;
+
+    if (param_count > 0) {
+        int len = (param_count + 7) / 8;
+        req->null_bitmap = dq_get_string_len(buf, len);
+        dq_get_int1(buf, &req->new_params_bind_flag);
+    }
+
+    if (param_count > 0) {
+        if (req->new_params_bind_flag) {
+            /* malloc private data using u_sess->cache_mem_cxt */
+            MemoryContext oldcontext = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
+            InputStmtParam *parameter_types = (InputStmtParam *)palloc0(sizeof(InputStmtParam));
+            parameter_types->count = param_count;
+            parameter_types->itypes = (uint32 *)palloc0(sizeof(uint32) * param_count);
+            for (int i = 0; i < param_count; i++) {
+                dq_get_int2(buf, &parameter_types->itypes[i]);
+            }
+            SaveCachedInputStmtParamTypes(req->statement_id, parameter_types);
+            (void)MemoryContextSwitchTo(oldcontext);
+        }
+
+        com_stmt_param *parameters = make_stmt_parameters_bytype(param_count, pstmt, req, buf);
+        req->parameter_values = parameters;
+        req->param_count = param_count;
+    }    
+
+    return req;
+}
+
+static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *null_bitmap)
+{
+    if (HeapTupleHasNulls(spi_tuple)) {
+        for (int j = 0; j < spi_tupdesc->natts; j++) {
+            if (att_isnull(j, spi_tuple->t_data->t_bits)) {
+                int byte_pos = (j + 2) / 8;
+                int bit_pos = (j + 2) % 8;
+                null_bitmap[byte_pos] |= 1 << bit_pos;
+            }
+        }
+    }    
+}
+
+static void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf)
+{
+    switch (item->dolphin_type_id) {
+        case DOLPHIN_TYPE_LONG:
+        case DOLPHIN_TYPE_INT24: {
+            int32 val = DatumGetInt32(binval);
+            dq_append_int4(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_LONGLONG: {
+            int64 val = DatumGetInt64(binval);
+            dq_append_int8(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_SHORT: {
+            int16 val = DatumGetInt16(binval);
+            dq_append_int2(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_YEAR: {
+            int16 year = DatumGetInt16(binval);
+            int16 val = year >= 0 ? YearADT_to_Year(year) : YearADT_to_Year(-year) % 100;
+            dq_append_int2(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_TINY: {
+            int8 val = DatumGetInt8(binval);
+            dq_append_int1(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_DOUBLE: {
+            int64 num = DatumGetInt64(binval);
+            dq_append_int8(buf, num);
+            break;
+        }
+        case DOLPHIN_TYPE_FLOAT: {
+            int32 num = DatumGetInt32(binval);
+            dq_append_int4(buf, num);
+            break;
+        }
+        case DOLPHIN_TYPE_STRING:
+        case DOLPHIN_TYPE_VARCHAR:
+        case DOLPHIN_TYPE_VAR_STRING:
+        case DOLPHIN_TYPE_JSON: {
+            char *val = TextDatumGetCString(binval);
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_LONG_BLOB:
+        case DOLPHIN_TYPE_MEDIUM_BLOB:
+        case DOLPHIN_TYPE_BLOB:
+        case DOLPHIN_TYPE_TINY_BLOB: {
+            u_sess->attr.attr_common.bytea_output = BYTEA_OUTPUT_ESCAPE;
+            char *val = DatumGetCString(DirectFunctionCall1(byteaout, binval));
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_BIT: {
+            char *val = DatumGetCString(DirectFunctionCall1(bit_out, binval));
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_GEOMETRY: {
+            char *val;
+            if (item->og_type_oid == POINTOID) {
+                val = DatumGetCString(DirectFunctionCall1(point_out, binval));
+            } else if (item->og_type_oid == LINEOID) {
+                val = DatumGetCString(DirectFunctionCall1(line_out, binval));
+            } else if (item->og_type_oid == POLYGONOID) {
+                val = DatumGetCString(DirectFunctionCall1(poly_out, binval));
+            }
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_DECIMAL:
+        case DOLPHIN_TYPE_NEWDECIMAL: {
+            char *val = DatumGetCString(DirectFunctionCall1(numeric_out, binval));
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_ENUM: {
+            char *val = DatumGetCString(DirectFunctionCall1(enum_out, binval));
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_SET: {
+            char *val = DatumGetCString(DirectFunctionCall1(set_out, binval));
+            dq_append_string_lenenc(buf, val);
+            break;
+        }
+        case DOLPHIN_TYPE_DATE: {
+            struct pg_tm tt, *tm = &tt;
+            DateADT date = DatumGetDateADT(binval);
+            j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+            dq_append_int1(buf, 0x04);
+            dq_append_int2(buf, tm->tm_year);
+            dq_append_int1(buf, tm->tm_mon);
+            dq_append_int1(buf, tm->tm_mday);
+            break;
+        }
+
+        case DOLPHIN_TYPE_TIMESTAMP: {
+            TimestampTz val = DatumGetTimestampTz(binval);
+            int tz;
+            struct pg_tm tt, *tm = &tt;
+            fsec_t fsec;
+            const char* tzn = NULL;
+            timestamp2tm(val, &tz, tm, &fsec, &tzn, NULL);
+
+            dq_append_int1(buf, 0x0b);
+            dq_append_int2(buf, tm->tm_year);
+            dq_append_int1(buf, tm->tm_mon);
+            dq_append_int1(buf, tm->tm_mday);
+            dq_append_int1(buf, tm->tm_hour);
+            dq_append_int1(buf, tm->tm_min);
+            dq_append_int1(buf, tm->tm_sec);
+            dq_append_int4(buf, fsec);
+            break;
+        }
+        case DOLPHIN_TYPE_DATETIME: {
+            Timestamp val = DatumGetTimestamp(binval);
+            struct pg_tm tt, *tm = &tt;
+            fsec_t fsec;
+            timestamp2tm(val, NULL, tm, &fsec, NULL, NULL);
+            dq_append_int1(buf, 0x0b);
+            dq_append_int2(buf, tm->tm_year);
+            dq_append_int1(buf, tm->tm_mon);
+            dq_append_int1(buf, tm->tm_mday);
+            dq_append_int1(buf, tm->tm_hour);
+            dq_append_int1(buf, tm->tm_min);
+            dq_append_int1(buf, tm->tm_sec);
+            dq_append_int4(buf, fsec);
+            break;
+        }
+        case DOLPHIN_TYPE_TIME: {
+            TimeADT val = DatumGetTimeADT(binval);
+            struct pg_tm tt, *tm = &tt;
+            fsec_t fsec;
+            time2tm(val, tm, &fsec);
+
+            dq_append_int1(buf, 0x0c);
+            val > 0 ? dq_append_int1(buf, 0x00) : dq_append_int1(buf, 0x01);
+            dq_append_int4(buf, 0x00);
+            dq_append_int1(buf, tm->tm_hour);
+            dq_append_int1(buf, tm->tm_min);
+            dq_append_int1(buf, tm->tm_sec);
+            dq_append_int4(buf, fsec);
+
+            break;
+        }
+        case DOLPHIN_TYPE_NULL: {
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void send_binary_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tuptable)
+{
+    TupleDesc spi_tupdesc = SPI_tuptable->tupdesc;
+    Form_pg_attribute attrs = spi_tupdesc->attrs;
+
+    for (uint32 i = 0; i < SPI_processed; i++) {
+        resetStringInfo(buf);
+
+        // [0x00] packet header
+        dq_append_int1(buf, 0x00);
+
+        HeapTuple spi_tuple = SPI_tuptable->vals[i];
+
+        // NULL bitmap, length= (column_count + 7 + 2) / 8
+        int len = (spi_tupdesc->natts + 7 + 2) / 8;
+        bits8 null_bitmap[len] = {0x00};
+        fill_null_bitmap(spi_tuple, spi_tupdesc, null_bitmap);
+        
+        for (int k = 0; k < len; k++) {
+            dq_append_int1(buf, null_bitmap[k]);
+        }
+
+        // values for non-null columns
+        for (int m = 0; m < spi_tupdesc->natts; m++) {
+            bool isnull = false;
+            Datum binval = SPI_getbinval(spi_tuple, spi_tupdesc, (int)m + 1, &isnull);
+            if (isnull) continue;
+            // it's better to reuse dolphin_column_definition here
+            const TypeItem *item = GetItemByTypeOid(attrs[m].atttypid);
+            append_data_by_dolphin_type(item, binval, buf);
+        }
+        dq_putmessage(buf->data, buf->len);
+    }
+}
+
+void read_send_long_data_request(StringInfo buf)
+{
+    uint32 statement_id;
+    uint32 param_id;
+
+    dq_get_int4(buf, &statement_id);
+    dq_get_int2(buf, &param_id);
+    char *payload = dq_get_string_eof(buf);
+    SaveCachedParamBlob(statement_id, payload);
 }

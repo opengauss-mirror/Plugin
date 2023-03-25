@@ -64,26 +64,26 @@ public class MySQLJdbcTest {
                     "c11 bit(5)," +
                     "c12 bool," +
                     "c13 char(5)," +
-                    "c15 binary(5)," +
-                    "c16 varchar(5)," +
-                    "c17 nvarchar(5)," +
-                    "c18 varbinary(5)," +
-                    "c19 year," +
-                    "c20 date ," +
-                    "c21 time, " +
-                    "c22 timestamp," +
-                    "c23 datetime," +
-                    "c24 tinyblob," +
-                    "c25 blob," +
-                    "c26 mediumblob," +
-                    "c27 longblob," +
-                    "c28 point," +
-                    "c30 polygon," +
-                    "c31 text," +
-                    "c32 decimal(5, 3)," +
-                    "c33 json," +
-                    "c34 enum('a', 'b')," +
-                    "c35 set('a', 'b')" +
+                    "c14 binary(5)," +
+                    "c15 varchar(5)," +
+                    "c16 nvarchar(5)," +
+                    "c17 varbinary(5)," +
+                    "c18 year," +
+                    "c19 date ," +
+                    "c20 time, " +
+                    "c21 timestamp," +
+                    "c22 datetime," +
+                    "c23 tinyblob," +
+                    "c24 blob," +
+                    "c25 mediumblob," +
+                    "c26 longblob," +
+                    "c27 point," +
+                    "c28 polygon," +
+                    "c29 text," +
+                    "c30 decimal(5, 3)," +
+                    "c31 json," +
+                    "c32 enum('a', 'b')," +
+                    "c33 set('a', 'b')" +
                     ")");
             resultSet = statement.executeQuery("select * from t3");
             resultSetMetaData = resultSet.getMetaData();

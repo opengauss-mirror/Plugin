@@ -51,10 +51,10 @@
  */
 
 static void EncodeSpecialDate(DateADT dt, char* str, int strlen);
-static int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec);
 static int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 #ifndef DOLPHIN
 static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
+static int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec);
 #endif
 static int tm2timetz(struct pg_tm* tm, fsec_t fsec, int tz, TimeTzADT* result);
 static void AdjustTimeForTypmod(TimeADT* time, int32 typmod);
@@ -1707,7 +1707,11 @@ static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result)
  * If out of this range, leave as UTC (in practice that could only happen
  * if pg_time_t is just 32 bits) - thomas 97/05/27
  */
+#ifdef DOLPHIN
+int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec)
+#else
 static int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec)
+#endif
 {
 #ifdef HAVE_INT64_TIMESTAMP
     tm->tm_hour = time / USECS_PER_HOUR;
