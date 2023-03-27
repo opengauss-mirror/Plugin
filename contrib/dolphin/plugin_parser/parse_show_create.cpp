@@ -17,8 +17,8 @@ static Node *makeTargetFuncAlias(char *funcName, List *fl, char *aliasName);
 static Node *makeWhereTargetForFunc(char *schemaName, char *name);
 static Node *makeWhereTargetForTrg(char *schemaName, char *name);
 static Node *makeCurrentSchemaFunc();
-static SelectStmt *makeShowCreateViewQuery(char *fullName, char *name);
-static SelectStmt *makeShowCreateTableQuery(char *fullName, char *tableName);
+static SelectStmt *makeShowCreateViewQuery(char *name, Oid viewOid);
+static SelectStmt *makeShowCreateTableQuery(char *tableName, Oid tableOid);
 static SelectStmt *makeShowCreateFuncQuery(char *schemaName, char *name, int model);
 static SelectStmt *makeShowCreateTriggerQuery(char *schemaName, char *name);
 
@@ -69,17 +69,13 @@ SelectStmt *makeShowCreateFuncQuery(char *schemaName, char *name, int model)
  *
  * select
  * 'tableName' as Table,
- * pg_get_tabledef('tableName'::regclass::oid) as "Create Table";
+ * pg_get_tabledef(tableOid) as "Create Table";
  *
  */
-static SelectStmt *makeShowCreateTableQuery(char *fullName, char *tableName)
+static SelectStmt *makeShowCreateTableQuery(char *tableName, Oid tableOid)
 {
     List *tl = (List *)list_make1(makeNameString(tableName, "Table"));
-    tl = lappend(tl,
-                 makeTargetFuncAlias("pg_get_tabledef",
-                                     list_make1(makeTypeCast(makeStringConstCast(fullName, SystemTypeName("regclass")),
-                                                             SystemTypeName("oid"))),
-                                     "Create Table"));
+    tl = lappend(tl, makeTargetFuncAlias("pg_get_tabledef", list_make1(plpsMakeIntConst(tableOid)), "Create Table"));
 
     SelectStmt *stmt = plpsMakeSelectStmt(tl, NIL, NULL, NIL);
     return stmt;
@@ -91,15 +87,15 @@ static SelectStmt *makeShowCreateTableQuery(char *fullName, char *tableName)
  *
  * select
  * 'name' as View,
- * pg_get_viewdef('name')  as "Create View",
+ * gs_get_viewdef_oid('viewOid')  as "Create View",
  * current_setting('client_encoding') as character_set_client,
  * current_setting('lc_collate') as collation_connection;
  *
  */
-static SelectStmt *makeShowCreateViewQuery(char *fullName, char *name)
+static SelectStmt *makeShowCreateViewQuery(char *name, Oid viewOid)
 {
     List *tl = (List *)list_make1(makeNameString(name, "View"));
-    tl = lappend(tl, makeTargetFuncAlias("gs_get_viewdef_name", (List *)list_make1(plpsMakeStringConst(fullName)),
+    tl = lappend(tl, makeTargetFuncAlias("gs_get_viewdef_oid", (List *)list_make1(plpsMakeIntConst(viewOid)),
                                          "Create View"));
     tl = lappend(tl, makeTargetFuncAlias("current_setting", (List *)list_make1(plpsMakeStringConst("client_encoding")),
                                          "character_set_client"));
@@ -297,12 +293,12 @@ SelectStmt *findCreateClass(RangeVar *classrel, int mode)
 
     classForm = (Form_pg_class)GETSTRUCT(tuple);
     if (classForm->relkind == RELKIND_VIEW || classForm->relkind == RELKIND_MATVIEW) {
-        n = makeShowCreateViewQuery(fullName, classrel->relname);
+        n = makeShowCreateViewQuery(classrel->relname, classoid);
     } else {
         if (mode == GS_SHOW_CREATE_VIEW)
             ereport(ERROR, (errcode(ERRCODE_UNDEFINED_TABLE),
                             errmsg("\'%s.%s\' is not VIEW", get_namespace_name(namespaceId), classrel->relname)));
-        n = makeShowCreateTableQuery(fullName, classrel->relname);
+        n = makeShowCreateTableQuery(classrel->relname, classoid);
     }
     ReleaseSysCache(tuple);
     return n;
