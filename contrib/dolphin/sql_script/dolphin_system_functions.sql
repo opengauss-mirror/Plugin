@@ -105,6 +105,12 @@ CREATE OR REPLACE FUNCTION pg_catalog.gs_get_viewdef_name (
 text
 ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'gs_get_viewdef_name';
 
+DROP FUNCTION IF EXISTS pg_catalog.gs_get_viewdef_oid(integer) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.gs_get_viewdef_oid (
+integer
+) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'gs_get_viewdef_oid';
+
 DROP FUNCTION IF EXISTS pg_catalog.gs_get_schemadef_name(text) CASCADE;
 
 CREATE OR REPLACE FUNCTION pg_catalog.gs_get_schemadef_name (
