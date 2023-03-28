@@ -217,10 +217,7 @@ static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation,bool 
         else
 #endif
             slen = (VARSIZE(str) - VARHDRSZ);
-        if (GetDatabaseEncoding() == PG_UTF8)
-            return UTF8_MatchText(s, slen, p, plen, 0, true);
-        else
-            return MB_MatchText(s, slen, p, plen, 0, true);
+        return generic_match_text_with_collation(s, slen, p, plen, collation);
     } else {
         /*
          * Here we need to prepare locale information for SB_lower_char. This
@@ -229,7 +226,7 @@ static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation,bool 
         pg_locale_t locale = 0;
         bool locale_is_c = false;
 
-        if (lc_ctype_is_c(collation))
+        if (lc_ctype_is_c(collation) || COLLATION_IN_B_FORMAT(collation))
             locale_is_c = true;
         else if (collation != DEFAULT_COLLATION_OID) {
             if (!OidIsValid(collation)) {
