@@ -20,7 +20,7 @@ WARNING:  tinyint out of range
 CONTEXT:  referenced column: a
 insert into test_tint(a) values('a888');
 insert into test_tint(a) values('888aa');
-ERROR:  value "888aa" is out of range for type tinyint
+WARNING:  value "888aa" is out of range for type tinyint. truncated automatically
 LINE 1: insert into test_tint(a) values('888aa');
                                         ^
 CONTEXT:  referenced column: a
@@ -47,6 +47,7 @@ select * from test_tint;
  127
  -128
  0
+ 127
  -88
  127
  13
@@ -54,7 +55,7 @@ select * from test_tint;
  -128
  127
  -128
-(12 rows)
+(13 rows)
 
 insert into test_sint(a) values(-55);
 insert into test_sint(a) values(55);
@@ -385,12 +386,20 @@ select * from test_tint1;
 
 delete from test_tint1;
 insert into test_tint1 select * from test_varchar7;
-ERROR:  value "-123499" is out of range for type tinyint
+WARNING:  value "-123499" is out of range for type tinyint. truncated automatically
+CONTEXT:  referenced column: a
+WARNING:  value "13434.7" is out of range for type tinyint. truncated automatically
+CONTEXT:  referenced column: a
+WARNING:  value "13434.8" is out of range for type tinyint. truncated automatically
 CONTEXT:  referenced column: a
 select * from test_tint1;
- a 
----
-(0 rows)
+  a   
+------
+ 0
+ -128
+ 127
+ 127
+(4 rows)
 
 delete from test_tint1;
 insert into test_tint1 select * from test_char;
@@ -412,6 +421,7 @@ select * from test_sint1;
   127
  -128
     0
+  127
   -88
   127
    13
@@ -419,7 +429,7 @@ select * from test_sint1;
  -128
   127
  -128
-(12 rows)
+(13 rows)
 
 delete from test_sint1;
 insert into test_sint1 select * from test_int;
@@ -548,6 +558,7 @@ select * from test_int1;
   127
  -128
     0
+  127
   -88
   127
    13
@@ -555,7 +566,7 @@ select * from test_int1;
  -128
   127
  -128
-(12 rows)
+(13 rows)
 
 delete from test_int1;
 insert into test_int1 select * from test_sint;
@@ -668,6 +679,7 @@ select * from test_bint1;
   127
  -128
     0
+  127
   -88
   127
    13
@@ -675,7 +687,7 @@ select * from test_bint1;
  -128
   127
  -128
-(12 rows)
+(13 rows)
 
 delete from test_bint1;
 insert into test_bint1 select * from test_sint;
@@ -780,6 +792,7 @@ select * from test_char1;
  1
  -
  0
+ 1
  -
  1
  1
@@ -787,7 +800,7 @@ select * from test_char1;
  -
  1
  -
-(12 rows)
+(13 rows)
 
 delete from test_char1;
 insert into test_char1 select * from test_sint;
@@ -869,6 +882,7 @@ select * from test_varchar7_1;
  127
  -128
  0
+ 127
  -88
  127
  13
@@ -876,7 +890,7 @@ select * from test_varchar7_1;
  -128
  127
  -128
-(12 rows)
+(13 rows)
 
 delete from test_varchar7_1;
 insert into test_varchar7_1 select * from test_sint;

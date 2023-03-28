@@ -22,12 +22,12 @@ WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into test_tint(a) values('a888');
 insert into test_tint(a) values('888aa');
-ERROR:  value "888aa" is out of range for type tinyint unsigned
+WARNING:  value "888aa" is out of range for type tinyint unsigned. truncated automatically
 LINE 1: insert into test_tint(a) values('888aa');
                                         ^
 CONTEXT:  referenced column: a
 insert into test_tint(a) values('-88aa');
-ERROR:  value "-88aa" is out of range for type tinyint unsigned
+WARNING:  value "-88aa" is out of range for type tinyint unsigned. truncated automatically
 LINE 1: insert into test_tint(a) values('-88aa');
                                         ^
 CONTEXT:  referenced column: a
@@ -56,12 +56,14 @@ select * from test_tint;
  0
  0
  255
+ 0
+ 255
  13
  0
  0
  255
  0
-(11 rows)
+(13 rows)
 
 insert into test_sint(a) values(-55);
 WARNING:  smallint unsigned out of range
@@ -418,12 +420,14 @@ select * from test_sint1;
  0
  0
  255
+ 0
+ 255
  13
  0
  0
  255
  0
-(11 rows)
+(13 rows)
 
 delete from test_sint1;
 insert into test_sint1 select * from test_int;
@@ -541,12 +545,14 @@ select * from test_int1;
  0
  0
  255
+ 0
+ 255
  13
  0
  0
  255
  0
-(11 rows)
+(13 rows)
 
 delete from test_int1;
 insert into test_int1 select * from test_sint;
@@ -656,12 +662,14 @@ select * from test_bint1;
  0
  0
  255
+ 0
+ 255
  13
  0
  0
  255
  0
-(11 rows)
+(13 rows)
 
 delete from test_bint1;
 insert into test_bint1 select * from test_sint;
@@ -763,12 +771,14 @@ select * from test_char1;
  0
  0
  2
+ 0
+ 2
  1
  0
  0
  2
  0
-(11 rows)
+(13 rows)
 
 delete from test_char1;
 insert into test_char1 select * from test_sint;
@@ -851,12 +861,14 @@ select * from test_varchar7_1;
  0
  0
  255
+ 0
+ 255
  13
  0
  0
  255
  0
-(11 rows)
+(13 rows)
 
 delete from test_varchar7_1;
 insert into test_varchar7_1 select * from test_sint;
