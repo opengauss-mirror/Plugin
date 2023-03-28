@@ -1936,7 +1936,11 @@ ScalarVector* vbpcharlen(PG_FUNCTION_ARGS)
     int len;
     int eml;
     eml = pg_database_encoding_max_length();
+#ifdef DOLPHIN
+    bool getTrueLen = !SQL_MODE_PAD_CHAR_TO_FULL_LENGTH();
+#else
     bool getTrueLen = DB_IS_CMPT(PG_FORMAT | B_FORMAT);
+#endif
 
     if (pselection != NULL) {
         for (k = 0; k < nvalues; k++) {
