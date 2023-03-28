@@ -179,7 +179,7 @@ int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool can_igno
         case sizeof(uint8):
             if (!isUnsigned) {
                 if (errno == ERANGE || l < CHAR_MIN || l > CHAR_MAX) {
-                    if (!can_ignore) {
+                    if (!can_ignore && sqlModeStrict) {
                         ereport(ERROR,
                             (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                                 errmsg("value \"%s\" is out of range for type tinyint", s)));
@@ -191,7 +191,7 @@ int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool can_igno
                 }
             } else {
                 if (errno == ERANGE || l < 0 || l > UCHAR_MAX) {
-                    if (!can_ignore) {
+                    if (!can_ignore && sqlModeStrict) {
                         ereport(ERROR,
                             (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                                 errmsg("value \"%s\" is out of range for type tinyint unsigned", s)));
