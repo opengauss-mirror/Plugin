@@ -55,6 +55,110 @@ show create schema if not exists test_database_blockchain;
 (1 row)
 
 drop schema test_database_blockchain cascade;
+-- tests for show quoted name of table|view|function|procedure|trigger
+CREATE SCHEMA "TESTSHOW";
+show create database "TESTSHOW";
+ Database |                        Create Database                         
+----------+----------------------------------------------------------------
+ TESTSHOW | CREATE SCHEMA TESTSHOW AUTHORIZATION test_showcreate_database 
+(1 row)
+
+show create schema "TESTSHOW";
+ Database |                        Create Database                         
+----------+----------------------------------------------------------------
+ TESTSHOW | CREATE SCHEMA TESTSHOW AUTHORIZATION test_showcreate_database 
+(1 row)
+
+-- table|view
+CREATE TABLE "TESTSHOW_TEST_TABLE"(a int);
+CREATE VIEW "TESTSHOW_TEST_VIEW"  AS SELECT * FROM "TESTSHOW_TEST_TABLE";
+SHOW CREATE TABLE "TESTSHOW_TEST_TABLE"; --success
+        Table        |              Create Table               
+---------------------+-----------------------------------------
+ TESTSHOW_TEST_TABLE | SET search_path = show_createdatabase; +
+                     | CREATE TABLE "TESTSHOW_TEST_TABLE" (   +
+                     |     a integer                          +
+                     | )                                      +
+                     | WITH (orientation=row, compression=no);
+(1 row)
+
+SHOW CREATE VIEW "TESTSHOW_TEST_VIEW";  --success
+        View        |                           Create View                            | character_set_client | collation_connection 
+--------------------+------------------------------------------------------------------+----------------------+----------------------
+ TESTSHOW_TEST_VIEW | CREATE OR REPLACE VIEW show_createdatabase.TESTSHOW_TEST_VIEW AS+| UTF8                 | en_US.UTF-8
+                    | SELECT  * FROM "TESTSHOW_TEST_TABLE";                            |                      | 
+(1 row)
+
+SHOW CREATE TABLE "TESTSHOW_TEST_VIEW"; --success
+        View        |                           Create View                            | character_set_client | collation_connection 
+--------------------+------------------------------------------------------------------+----------------------+----------------------
+ TESTSHOW_TEST_VIEW | CREATE OR REPLACE VIEW show_createdatabase.TESTSHOW_TEST_VIEW AS+| UTF8                 | en_US.UTF-8
+                    | SELECT  * FROM "TESTSHOW_TEST_TABLE";                            |                      | 
+(1 row)
+
+SHOW CREATE VIEW "TESTSHOW_TEST_TABLE"; --fail
+ERROR:  'show_createdatabase.TESTSHOW_TEST_TABLE' is not VIEW
+-- function
+create function "TESTSHOW_FUNCTEST_B"() returns trigger
+as 
+$$
+DECLARE
+BEGIN
+    INSERT INTO "TESTSHOW_TEST_TABLE" VALUES(NEW.a);
+    RETURN NEW;
+END
+$$LANGUAGE PLPGSQL;
+SHOW CREATE FUNCTION "TESTSHOW_FUNCTEST_B";
+      Function       |                                        Create Function                                         |                                               sql_mode                                               | character_set_client | collation_connection | Database Collation 
+---------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+----------------------+----------------------+--------------------
+ TESTSHOW_FUNCTEST_B | CREATE DEFINER = test_showcreate_database FUNCTION show_createdatabase."TESTSHOW_FUNCTEST_B"()+| sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length | UTF8                 | en_US.UTF-8          | en_US.UTF-8
+                     |  RETURNS trigger                                                                              +|                                                                                                      |                      |                      | 
+                     |  LANGUAGE plpgsql                                                                             +|                                                                                                      |                      |                      | 
+                     |  NOT FENCED NOT SHIPPABLE                                                                     +|                                                                                                      |                      |                      | 
+                     | AS $function$                                                                                 +|                                                                                                      |                      |                      | 
+                     | DECLARE                                                                                       +|                                                                                                      |                      |                      | 
+                     | BEGIN                                                                                         +|                                                                                                      |                      |                      | 
+                     |     INSERT INTO "TESTSHOW_TEST_TABLE" VALUES(NEW.a);                                          +|                                                                                                      |                      |                      | 
+                     |     RETURN NEW;                                                                               +|                                                                                                      |                      |                      | 
+                     | END                                                                                           +|                                                                                                      |                      |                      | 
+                     | $function$;                                                                                   +|                                                                                                      |                      |                      | 
+                     |                                                                                                |                                                                                                      |                      |                      | 
+(1 row)
+
+-- procedure
+CREATE OR REPLACE PROCEDURE "TESTSHOW_PROCEDURE_TEST"() 
+SELECT a FROM "TESTSHOW_TEST_TABLE";
+SHOW CREATE PROCEDURE "TESTSHOW_PROCEDURE_TEST";
+        Procedure        |                                          Create Procedure                                          |                                               sql_mode                                               | character_set_client | collation_connection | Database Collation 
+-------------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+----------------------+----------------------+--------------------
+ TESTSHOW_PROCEDURE_TEST | CREATE DEFINER = test_showcreate_database FUNCTION show_createdatabase."TESTSHOW_PROCEDURE_TEST"()+| sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length | UTF8                 | en_US.UTF-8          | en_US.UTF-8
+                         |  RETURNS SETOF record                                                                             +|                                                                                                      |                      |                      | 
+                         |  LANGUAGE sql                                                                                     +|                                                                                                      |                      |                      | 
+                         |  NOT FENCED NOT SHIPPABLE                                                                         +|                                                                                                      |                      |                      | 
+                         | AS $function$                                                                                     +|                                                                                                      |                      |                      | 
+                         |                                                                                                   +|                                                                                                      |                      |                      | 
+                         | SELECT a FROM "TESTSHOW_TEST_TABLE";                                                              +|                                                                                                      |                      |                      | 
+                         | $function$;                                                                                       +|                                                                                                      |                      |                      | 
+                         |                                                                                                    |                                                                                                      |                      |                      | 
+(1 row)
+
+-- trigger
+CREATE TRIGGER "TESTSHOW_CREATE_TRIGGER"
+BEFORE INSERT ON "TESTSHOW_TEST_TABLE"
+FOR EACH ROW
+EXECUTE PROCEDURE "TESTSHOW_FUNCTEST_B"();
+SHOW CREATE TRIGGER "TESTSHOW_CREATE_TRIGGER";
+         Trigger         |                                               sql_mode                                               |                                                         SQL Original Statement                                                         | character_set_client | collation_connection | Database Collation 
+-------------------------+------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------+--------------------
+ TESTSHOW_CREATE_TRIGGER | sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length | CREATE TRIGGER "TESTSHOW_CREATE_TRIGGER" BEFORE INSERT ON "TESTSHOW_TEST_TABLE" FOR EACH ROW EXECUTE PROCEDURE "TESTSHOW_FUNCTEST_B"() | UTF8                 | en_US.UTF-8          | en_US.UTF-8
+(1 row)
+
+DROP TRIGGER IF EXISTS "TESTSHOW_CREATE_TRIGGER";
+DROP PROCEDURE IF EXISTS "TESTSHOW_PROCEDURE_TEST";
+DROP FUNCTION IF EXISTS "TESTSHOW_FUNCTEST_B";
+DROP VIEW IF EXISTS "TESTSHOW_TEST_VIEW";
+DROP TABLE IF EXISTS "TESTSHOW_TEST_TABLE";
+DROP SCHEMA "TESTSHOW" cascade;
 -- Check no existence
 show create database aa;
 ERROR:  schema "aa" does not exist

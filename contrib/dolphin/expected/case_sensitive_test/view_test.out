@@ -45,14 +45,26 @@ Test_View_Schema_1.Test3 t3;
 (1 row)
 
 SHOW CREATE VIEW Test1;                                            -- expected: success
-ERROR:  relation "test1" does not exist
-CONTEXT:  referenced column: Create View
+ View  |              Create View               | character_set_client | collation_connection 
+-------+----------------------------------------+----------------------+----------------------
+ Test1 | CREATE OR REPLACE VIEW public.Test1 AS+| UTF8                 | en_US.UTF-8
+       | SELECT (1 + 1) AS a;                   |                      | 
+(1 row)
+
 SHOW CREATE VIEW test_view_schema_1.Test2;                         -- expected: success
-ERROR:  relation "test_view_schema_1.test2" does not exist
-CONTEXT:  referenced column: Create View
+ View  |                    Create View                     | character_set_client | collation_connection 
+-------+----------------------------------------------------+----------------------+----------------------
+ Test2 | CREATE OR REPLACE VIEW test_view_schema_1.Test2 AS+| UTF8                 | en_US.UTF-8
+       | SELECT (1 + 1) AS a;                               |                      | 
+(1 row)
+
 SHOW CREATE VIEW Test_View_Schema_1.Test3;                         -- expected: success
-ERROR:  relation "test_view_schema_1.test3" does not exist
-CONTEXT:  referenced column: Create View
+ View  |                    Create View                     | character_set_client | collation_connection 
+-------+----------------------------------------------------+----------------------+----------------------
+ Test3 | CREATE OR REPLACE VIEW Test_View_Schema_1.Test3 AS+| UTF8                 | en_US.UTF-8
+       | SELECT (1 + 1) AS a;                               |                      | 
+(1 row)
+
 SHOW CREATE VIEW test1;                                            -- expected: failed
 ERROR:  Table 'public.test1' doesn't exist
 SHOW CREATE VIEW Test_View_Schema_1.Test2;                         -- expected: failed
