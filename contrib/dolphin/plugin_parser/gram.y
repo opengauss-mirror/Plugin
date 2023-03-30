@@ -35765,7 +35765,9 @@ unreserved_keyword_without_key:
 			| AUDIT
 			| AUTOEXTEND
 			| AUTOMAPPED
+			| AUTOEXTEND_SIZE
 			| AUTO_INCREMENT
+			| AVG_ROW_LENGTH
 			| BACKWARD
 /* PGXC_BEGIN */
 			| BARRIER
@@ -35850,6 +35852,7 @@ unreserved_keyword_without_key:
 			| DEFAULTS
 			| DEFERRED
 			| DEFINER
+			| DELAY_KEY_WRITE
 			| DELETE_P
 			| DELIMITER
 			| DELIMITERS
@@ -35862,6 +35865,7 @@ unreserved_keyword_without_key:
 			| DISABLE_P
 			| DISCARD
 			| DISCONNECT
+			| DISK
 /* PGXC_BEGIN */
 			| DISTRIBUTE
 			| DISTRIBUTION
@@ -35882,6 +35886,7 @@ unreserved_keyword_without_key:
 			| ENCRYPTION
             | ENCRYPTION_TYPE
 			| ENDS
+			| ENGINE_ATTRIBUTE
 			| ENGINE_P
 			| ENFORCED
 			| EOL
@@ -35954,6 +35959,7 @@ unreserved_keyword_without_key:
 			| INPUT_P
 			| INSENSITIVE
 			| INSERT
+			| INSERT_METHOD
 			| INSTEAD
 			| INTERNAL
 			| INVISIBLE
@@ -35962,6 +35968,7 @@ unreserved_keyword_without_key:
 			| ISNULL
 			| ISOLATION
 			| KEYS
+			| KEY_BLOCK_SIZE
 			| KEY_PATH
 			| KEY_STORE
 			| KILL
@@ -35995,12 +36002,14 @@ unreserved_keyword_without_key:
 			| MATCH
 			| MATCHED
 			| MATERIALIZED
+			| MAX_ROWS
 			| MAXEXTENTS
 			| MAXSIZE
 			| MAXTRANS
 			| MEMORY
 			| MERGE
 			| MICROSECOND_P
+			| MIN_ROWS
 			| MINEXTENTS
 			| MINUTE_MICROSECOND_P
 			| MINUTE_P
@@ -36044,6 +36053,7 @@ unreserved_keyword_without_key:
 			| OUTFILE
 			| OWNED
 			| OWNER
+			| PACK_KEYS
 			| PACKAGE
 			| PACKAGES
 			| PARSER
@@ -36138,6 +36148,7 @@ unreserved_keyword_without_key:
 			| SEARCH
 			| SECOND_MICROSECOND_P
 			| SECOND_P
+			| SECONDARY_ENGINE_ATTRIBUTE
 			| SECURITY
 			| SEPARATOR_P
 			| SEQUENCE
@@ -36172,6 +36183,9 @@ unreserved_keyword_without_key:
 			| STATEMENT
 			| STATEMENT_ID
 			| STATISTICS
+			| STATS_AUTO_RECALC
+			| STATS_PERSISTENT
+			| STATS_SAMPLE_PAGES
 			| STATUS
 			| STDIN
 			| STDOUT
