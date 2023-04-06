@@ -145,3 +145,6 @@ test: test_show_status pad_char_to_full_length
 
 # lock tables
 test: lock_tables lock_tables_1
+
+# test user@host
+test: user_host_test
