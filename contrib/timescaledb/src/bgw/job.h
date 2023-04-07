@@ -7,7 +7,7 @@
 #define BGW_JOB_H
 
 #include <postgres.h>
-#include <storage/lock.h>
+#include <storage/lock/lock.h>
 #include <postmaster/bgworker.h>
 
 #include "export.h"
@@ -60,7 +60,7 @@ extern TSDLLEXPORT void ts_bgw_job_validate_job_owner(Oid owner, JobType type);
 extern bool ts_bgw_job_execute(BgwJob *job);
 
 extern Oid ts_bgw_job_owner(BgwJob *job);
-extern TSDLLEXPORT Datum ts_bgw_job_entrypoint(PG_FUNCTION_ARGS);
+extern "C"  TSDLLEXPORT Datum ts_bgw_job_entrypoint(PG_FUNCTION_ARGS);
 extern void ts_bgw_job_set_unknown_job_type_hook(unknown_job_type_hook_type hook);
 extern void ts_bgw_job_set_unknown_job_type_owner_hook(unknown_job_type_owner_hook_type hook);
 extern void ts_bgw_job_set_job_entrypoint_function_name(char *func_name);

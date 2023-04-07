@@ -154,7 +154,7 @@ extern TSDLLEXPORT Chunk *ts_chunk_find_or_create_without_cuts(Hypertable *ht, H
 extern TSDLLEXPORT Chunk *ts_chunk_get_compressed_chunk_parent(Chunk *chunk);
 extern TSDLLEXPORT bool ts_chunk_contains_compressed_data(Chunk *chunk);
 extern TSDLLEXPORT bool ts_chunk_can_be_compressed(int32 chunk_id);
-extern TSDLLEXPORT Datum ts_chunk_id_from_relid(PG_FUNCTION_ARGS);
+extern "C" TSDLLEXPORT Datum ts_chunk_id_from_relid(PG_FUNCTION_ARGS);
 
 #define chunk_get_by_name(schema_name, table_name, fail_if_not_found)                              \
 	ts_chunk_get_by_name_with_memory_context(schema_name,                                          \

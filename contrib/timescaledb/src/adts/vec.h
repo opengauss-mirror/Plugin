@@ -122,9 +122,9 @@ VEC_RESERVE(VEC_TYPE *vec, uint32 additional)
 
 	num_bytes = vec->max_elements * sizeof(VEC_ELEMENT_TYPE);
 	if (vec->data == NULL)
-		vec->data = MemoryContextAlloc(vec->ctx, num_bytes);
+		vec->data =(VEC_ELEMENT_TYPE *) MemoryContextAlloc((vec->ctx), num_bytes);
 	else
-		vec->data = repalloc(vec->data, num_bytes);
+		vec->data = (VEC_ELEMENT_TYPE *)repalloc(vec->data, num_bytes);
 }
 
 /*
@@ -135,6 +135,9 @@ VEC_SCOPE void
 VEC_INIT(VEC_TYPE *vec, MemoryContext ctx, uint32 nelements)
 {
 	*vec = (VEC_TYPE){
+		.max_elements = NULL,
+		.num_elements = NULL,
+		.data = {},
 		.ctx = ctx,
 	};
 	if (nelements > 0)
@@ -148,7 +151,7 @@ VEC_INIT(VEC_TYPE *vec, MemoryContext ctx, uint32 nelements)
 VEC_SCOPE VEC_TYPE *
 VEC_CREATE(MemoryContext ctx, uint32 nelements)
 {
-	VEC_TYPE *vec = MemoryContextAlloc(ctx, sizeof(*vec));
+	VEC_TYPE *vec =(VEC_TYPE *) MemoryContextAlloc(ctx, sizeof(*vec));
 	VEC_INIT(vec, ctx, nelements);
 	return vec;
 }
@@ -161,6 +164,9 @@ VEC_FREE_DATA(VEC_TYPE *vec)
 		pfree(vec->data);
 	/* zero out all the vec data except the memory context so it can be reused */
 	*vec = (VEC_TYPE){
+		.max_elements = NULL,
+		.num_elements = NULL,
+		.data = {},
 		.ctx = vec->ctx,
 	};
 }

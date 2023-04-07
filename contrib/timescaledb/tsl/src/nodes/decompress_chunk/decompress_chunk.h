@@ -8,7 +8,7 @@
 
 #include <postgres.h>
 #include <nodes/bitmapset.h>
-#include <nodes/extensible.h>
+//#include <nodes/extensible.h>
 
 #include "chunk.h"
 #include "hypertable.h"
@@ -38,7 +38,7 @@ typedef struct CompressionInfo
 
 typedef struct DecompressChunkPath
 {
-	CustomPath cpath;
+	ExtensiblePath cpath;
 	CompressionInfo *info;
 	/*
 	 * varattno_map maps targetlist entries of the compressed scan

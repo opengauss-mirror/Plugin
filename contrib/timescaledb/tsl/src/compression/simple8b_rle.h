@@ -218,7 +218,7 @@ simple8brle_serialized_recv(StringInfo buffer)
 				(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
 				 errmsg("compressed size exceeds the maximum allowed (%d)", (int) MaxAllocSize)));
 
-	data = palloc0(compressed_size);
+	data =(Simple8bRleSerialized *) palloc0(compressed_size);
 	data->num_elements = num_elements;
 	data->num_blocks = num_blocks;
 
@@ -285,6 +285,10 @@ static void
 simple8brle_compressor_init(Simple8bRleCompressor *compressor)
 {
 	*compressor = (Simple8bRleCompressor){
+		.selectors = {},
+		.last_block_set = false,
+		.last_block = {},
+		.compressed_data = {},
 		.num_elements = 0,
 		.num_uncompressed_elements = 0,
 	};
@@ -380,7 +384,7 @@ simple8brle_compressor_finish(Simple8bRleCompressor *compressor)
 	 * It would be more efficient to ensure there are no padding bits in the struct,
 	 * and initialize everything ourselves
 	 */
-	compressed = palloc0(compressed_size);
+	compressed =(Simple8bRleSerialized*) palloc0(compressed_size);
 	Assert(bit_array_num_buckets(&compressor->selectors) > 0);
 	Assert(compressor->compressed_data.num_elements > 0);
 	Assert(compressor->compressed_data.num_elements ==
@@ -414,6 +418,8 @@ simple8brle_compressor_flush(Simple8bRleCompressor *compressor)
 	 * left from having too few values, and will re-attempt RLE if it's more efficient
 	 */
 	Simple8bRleBlock last_block = {
+		.data = NULL,
+		.num_elements_compressed = NULL,
 		.selector = 0,
 	};
 	Simple8bRlePartiallyCompressedData new_data;
@@ -438,6 +444,7 @@ simple8brle_compressor_flush(Simple8bRleCompressor *compressor)
 		simple8brle_compressor_push_block(compressor, last_block);
 
 		new_data = (Simple8bRlePartiallyCompressedData){
+			.block = {},
 			.data = compressor->uncompressed_elements + appended_to_rle,
 			.data_size = compressor->num_uncompressed_elements - appended_to_rle,
 			/* block is zeroed out, including it's selector */
@@ -446,9 +453,10 @@ simple8brle_compressor_flush(Simple8bRleCompressor *compressor)
 	else
 	{
 		new_data = (Simple8bRlePartiallyCompressedData){
+			.block = last_block,
 			.data = compressor->uncompressed_elements,
 			.data_size = compressor->num_uncompressed_elements,
-			.block = last_block,
+			
 		};
 	}
 
@@ -467,6 +475,8 @@ simple8brle_compressor_append_pcd(Simple8bRleCompressor *compressor,
 	while (idx < new_data_len)
 	{
 		Simple8bRleBlock block = {
+			.data = {},
+			.num_elements_compressed = NULL,
 			.selector = SIMPLE8B_MINCODE,
 		};
 		uint8 num_packed = 0;
@@ -544,6 +554,9 @@ simple8brle_decompression_iterator_init_common(Simple8bRleDecompressionIterator 
 		simple8brle_num_selector_slots_for_num_blocks(compressed->num_blocks);
 
 	*iter = (Simple8bRleDecompressionIterator){
+		.selector_data = {},
+		.selectors = {},
+		.current_block = {},
 		.compressed_data = compressed->slots + num_selector_slots,
 		.current_compressed_pos = 0,
 		.current_in_compressed_pos = 0,
@@ -624,6 +637,7 @@ simple8brle_decompression_iterator_try_next_forward(Simple8bRleDecompressionIter
 	uint64 uncompressed;
 	if (iter->num_elements_returned >= iter->num_elements)
 		return (Simple8bRleDecompressResult){
+			.val = NULL,
 			.is_done = true,
 		};
 
@@ -653,6 +667,7 @@ simple8brle_decompression_iterator_try_next_reverse(Simple8bRleDecompressionIter
 	uint64 uncompressed;
 	if (iter->num_elements_returned >= iter->num_elements)
 		return (Simple8bRleDecompressResult){
+			.val = NULL,
 			.is_done = true,
 		};
 
@@ -710,9 +725,9 @@ simple8brle_block_create_rle(uint32 rle_count, uint64 rle_val)
 	data = ((uint64) rle_count << SIMPLE8B_RLE_MAX_VALUE_BITS) | rle_val;
 
 	return (Simple8bRleBlock){
-		.selector = SIMPLE8B_RLE_SELECTOR,
 		.data = data,
 		.num_elements_compressed = rle_count,
+		.selector = SIMPLE8B_RLE_SELECTOR,
 	};
 }
 
@@ -720,8 +735,10 @@ static inline Simple8bRleBlock
 simple8brle_block_create(uint8 selector, uint64 data)
 {
 	Simple8bRleBlock block = (Simple8bRleBlock){
-		.selector = selector,
 		.data = data,
+		.num_elements_compressed = NULL,
+		.selector = selector,
+		
 	};
 
 	Assert(block.selector != 0);

@@ -7,7 +7,7 @@
 #define TIMESCALEDB_BGW_MESSAGE_QUEUE_H
 
 #include <postgres.h>
-#include <storage/dsm.h>
+//#include <storage/dsm.h>
 
 typedef enum BgwMessageType
 {

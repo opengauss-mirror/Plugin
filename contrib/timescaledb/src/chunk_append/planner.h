@@ -7,9 +7,10 @@
 #define TIMESCALEDB_CHUNK_APPEND_PLANNER_H
 
 #include <postgres.h>
-#include <nodes/extensible.h>
+#include "compat.h"
+//#include <nodes/extensible.h>
 
-Plan *ts_chunk_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path, List *tlist,
+Plan *ts_chunk_append_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath *path, List *tlist,
 								  List *clauses, List *custom_plans);
 Scan *ts_chunk_append_get_scan_plan(Plan *plan);
 
