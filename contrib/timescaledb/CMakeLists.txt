@@ -48,7 +48,7 @@ else ()
 endif ()
 
 # Set project name, version, and language. Language needs to be set for compiler checks
-project(timescaledb VERSION ${VERSION} LANGUAGES C)
+project(timescaledb VERSION ${VERSION} LANGUAGES C CXX)
 
 if (NOT CMAKE_BUILD_TYPE)
   # Default to Release builds
@@ -159,9 +159,9 @@ if(WIN32)
     DOC "The path to a PostgreSQL installation")
 elseif(UNIX)
   find_path(PG_PATH
-    postgres
-    PATHS $ENV{HOME} /opt/local/pgsql /usr/local/pgsql /usr/lib/postgresql
-    PATH_SUFFIXES bin 12/bin 11/bin 10/bin 9.6/bin 96/bin pg96/bin
+    guassdb
+    PATHS /home/lhy/og/install
+    PATH_SUFFIXES bin 
     DOC "The path to a PostgreSQL installation")
 endif()
 
@@ -179,11 +179,11 @@ find_package(Git)
 message(STATUS "Using pg_config ${PG_CONFIG}")
 
 # Check PostgreSQL version
-execute_process(
-  COMMAND ${PG_CONFIG} --version
-  OUTPUT_VARIABLE PG_VERSION_STRING
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
-
+# execute_process(
+#   COMMAND ${PG_CONFIG} --version
+#   OUTPUT_VARIABLE PG_VERSION_STRING
+#   OUTPUT_STRIP_TRAILING_WHITESPACE)
+set(PG_VERSION_STRING "PostgreSQL 9.6.3" )
 if (NOT ${PG_VERSION_STRING} MATCHES "^PostgreSQL[ ]+([0-9]+)\\.([0-9]+)(\\.([0-9]+))*")
   message(FATAL_ERROR "Could not parse PostgreSQL version ${PG_VERSION_STRING}")
 endif ()

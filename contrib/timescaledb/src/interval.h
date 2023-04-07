@@ -24,4 +24,5 @@ TSDLLEXPORT int64 ts_get_now_internal(Dimension *open_dim);
 TSDLLEXPORT FormData_ts_interval *
 ts_interval_from_sql_input_internal(Dimension *open_dim, Datum interval, Oid interval_type,
 									const char *parameter_name, const char *caller_name);
+
 #endif /* TIMESCALEDB_INTERVAL */
