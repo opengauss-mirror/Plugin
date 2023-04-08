@@ -89,4 +89,19 @@ reset dolphin.sql_mode;
 select a, min(b), group_concat(distinct c order by d) as order_not_in_distinct from dob_func_t group by a order by a;
 reset group_concat_max_len;
 
-drop table dob_student, dob_func_t, dob_alias;
+-- 12. test alias default
+create table dob_alias_only(
+	c1 int,
+	c2 int
+);
+insert into dob_alias_only values(1, 2);
+insert into dob_alias_only values(2, 1);
+insert into dob_alias_only values(2, 1);
+
+reset dolphin.sql_mode;
+select distinct c1 as a1 from dob_alias_only order by c1;
+select distinct c1 as c2, c2 as c1 from dob_alias_only order by c1;
+select distinct c1 as c2, c2 as c1 from dob_alias_only order by c2;
+select distinct c1 + 1 as a1, c2 + 2 as a2 from dob_alias_only order by c1; -- should error
+
+drop table dob_student, dob_func_t, dob_alias, dob_alias_only;
