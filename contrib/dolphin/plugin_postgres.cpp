@@ -144,9 +144,29 @@ static void AssignSqlMode(const char* newval, void* extra);
 static bool check_b_db_timestamp(double* newval, void** extra, GucSource source);
 static void assign_b_db_timestamp(double newval, void* extra);
 #ifdef DOLPHIN
+static bool check_sql_mode(char** newval, void** extra, GucSource source);
+static bool check_lower_case_table_names(int* newval, void** extra, GucSource source);
 static bool check_default_week_format(int* newval, void** extra, GucSource source);
 static void assign_default_week_format(int newval, void* extra);
 static bool check_lc_time_names(char** newval, void** extra, GucSource source);
+static bool check_auto_increment_increment(int* newval, void** extra, GucSource source);
+static bool check_character_set_client(char** newval, void** extra, GucSource source);
+static bool check_character_set_connection(char** newval, void** extra, GucSource source);
+static bool check_character_set_results(char** newval, void** extra, GucSource source);
+static bool check_character_set_server(char** newval, void** extra, GucSource source);
+static bool check_collation_server(char** newval, void** extra, GucSource source);
+static bool check_collation_connection(char** newval, void** extra, GucSource source);
+static bool check_init_connect(char** newval, void** extra, GucSource source);
+static bool check_interactive_timeout(int* newval, void** extra, GucSource source);
+static bool check_license(char** newval, void** extra, GucSource source);
+static bool check_max_allowed_packet(int* newval, void** extra, GucSource source);
+static bool check_net_buffer_length(int* newval, void** extra, GucSource source);
+static bool check_net_write_timeout(int* newval, void** extra, GucSource source);
+static bool check_query_cache_size(long int* newval, void** extra, GucSource source);
+static bool check_query_cache_type(int* newval, void** extra, GucSource source);
+static bool check_system_time_zone(char** newval, void** extra, GucSource source);
+static bool check_time_zone(char** newval, void** extra, GucSource source);
+static bool check_wait_timeout(int* newval, void** extra, GucSource source);
 #endif
 static const int LOADER_COL_BUF_CNT = 5;
 static uint32 dolphin_index;
@@ -469,6 +489,25 @@ static void assign_b_db_timestamp(double newval, void* extra)
 }
 
 #ifdef DOLPHIN
+static bool check_sql_mode(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING,
+            (errmsg("Variable 'sql_mode' has no actual meaning, please use variable 'dolphin.sql_mode'.")));
+    }
+    return true;
+}
+
+static bool check_lower_case_table_names(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING,
+            (errmsg("Variable 'lower_case_table_names' has no actual meaning, "
+                "please use variable 'dolphin.lower_case_table_names'.")));
+    }
+    return true;
+}
+
 static bool check_default_week_format(int* newval, void** extra, GucSource source)
 {
     int newval_interval = *newval;
@@ -495,6 +534,152 @@ static bool check_lc_time_names(char** newval, void** extra, GucSource source)
     if (locale == NULL) {
         GUC_check_errmsg("Unknown locale:\'%s\'", *newval);
         return false;
+    }
+    return true;
+}
+
+static bool check_auto_increment_increment(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'auto_increment_increment' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_character_set_client(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'character_set_client' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_character_set_connection(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'character_set_connection' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_character_set_results(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'character_set_results' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_character_set_server(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'character_set_server' has no actual meaning.")));
+    }
+    return true;
+}
+static bool check_collation_server(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'collation_server' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_collation_connection(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'collation_connection' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_init_connect(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'init_connect' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_interactive_timeout(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'interactive_timeout' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_license(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_DEFAULT) {
+        return true;
+    }
+    ereport(ERROR,
+        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+            errmsg("Variable 'license' is a read only variable.")));
+    return false;
+}
+
+static bool check_max_allowed_packet(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'max_allowed_packet' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_net_buffer_length(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'net_buffer_length' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_net_write_timeout(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'net_write_timeout' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_query_cache_size(long int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'query_cache_size' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_query_cache_type(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'query_cache_type' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_system_time_zone(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'system_time_zone' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_time_zone(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'time_zone' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_wait_timeout(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'wait_timeout' has no actual meaning.")));
     }
     return true;
 }
@@ -711,6 +896,29 @@ void init_session_vars(void)
                             NULL,
                             NULL);
 #ifdef DOLPHIN
+    DefineCustomStringVariable("sql_mode",
+                               gettext_noop("CUSTOM_OPTIONS"),
+                               NULL,
+                               &GetSessionContext()->sqlModeString,
+                               "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,"
+                               "pad_char_to_full_length",
+                               PGC_USERSET,
+                               GUC_LIST_INPUT | GUC_REPORT,
+                               check_sql_mode,
+                               NULL,
+                               NULL);
+    DefineCustomIntVariable("lower_case_table_names",
+                            gettext_noop("used to set the sensitive of identifier"),
+                            NULL,
+                            &GetSessionContext()->lower_case_table_names,
+                            1,
+                            0,
+                            2,
+                            PGC_USERSET,
+                            0,
+                            check_lower_case_table_names,
+                            NULL,
+                            NULL);
     DefineCustomIntVariable("dolphin.default_week_format",
                             gettext_noop("Set the default week format for function week."),
                             gettext_noop("If the given value is less than 0, default_week_format will be set to 0. "
@@ -752,9 +960,9 @@ void init_session_vars(void)
                             DEFAULT_AUTO_INCREMENT,
                             MIN_AUTO_INCREMENT,
                             MAX_AUTO_INCREMENT,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_auto_increment_increment,
                             NULL,
                             NULL);
     DefineCustomStringVariable("character_set_client",
@@ -762,9 +970,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->character_set_client,
                                "utf8",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_character_set_client,
                                NULL,
                                NULL);
     DefineCustomStringVariable("character_set_connection",
@@ -772,9 +980,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->character_set_connection,
                                "utf8",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_character_set_connection,
                                NULL,
                                NULL);
     DefineCustomStringVariable("character_set_results",
@@ -783,9 +991,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->character_set_results,
                                "utf8",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_character_set_results,
                                NULL,
                                NULL);
     DefineCustomStringVariable("character_set_server",
@@ -793,9 +1001,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->character_set_server,
                                "latin1",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_character_set_server,
                                NULL,
                                NULL);
     DefineCustomStringVariable("collation_server",
@@ -803,9 +1011,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->collation_server,
                                "latin1_swedish_ci",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_collation_server,
                                NULL,
                                NULL);
     DefineCustomStringVariable("collation_connection",
@@ -813,9 +1021,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->collation_connection,
                                "",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_collation_connection,
                                NULL,
                                NULL);
     DefineCustomStringVariable("init_connect",
@@ -823,9 +1031,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->init_connect,
                                "",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_init_connect,
                                NULL,
                                NULL);
     DefineCustomIntVariable("interactive_timeout",
@@ -836,9 +1044,9 @@ void init_session_vars(void)
                             DEFAULT_INTERACTIVE_TIMEOUT,
                             MIN_INTERACTIVE_TIMEOUT,
                             MAX_INTERACTIVE_TIMEOUT,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_interactive_timeout,
                             NULL,
                             NULL);
     DefineCustomStringVariable("license",
@@ -846,9 +1054,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->license,
                                "MulanPSL-2.0",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_license,
                                NULL,
                                NULL);
     DefineCustomIntVariable("max_allowed_packet",
@@ -858,9 +1066,9 @@ void init_session_vars(void)
                             DEFAULT_MAX_ALLOWED_PACKET,
                             MIN_MAX_ALLOWED_PACKET,
                             MAX_MAX_ALLOWED_PACKET,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_max_allowed_packet,
                             NULL,
                             NULL);
     DefineCustomIntVariable("net_buffer_length",
@@ -870,9 +1078,9 @@ void init_session_vars(void)
                             DEFAULT_NET_BUFFER_LENGTH,
                             MIN_NET_BUFFER_LENGTH,
                             MAX_NET_BUFFER_LENGTH,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_net_buffer_length,
                             NULL,
                             NULL);
     DefineCustomIntVariable("net_write_timeout",
@@ -883,9 +1091,9 @@ void init_session_vars(void)
                             DEFAULT_NET_WRITE_TIMEOUT,
                             MIN_NET_WRITE_TIMEOUT,
                             MAX_NET_WRITE_TIMEOUT,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_net_write_timeout,
                             NULL,
                             NULL);
     DefineCustomInt64Variable("query_cache_size",
@@ -895,9 +1103,9 @@ void init_session_vars(void)
                             DEFAULT_QUREY_CACHE_SIZE,
                             MIN_QUREY_CACHE_SIZE,
                             MAX_QUREY_CACHE_SIZE,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_query_cache_size,
                             NULL,
                             NULL);
     DefineCustomIntVariable("query_cache_type",
@@ -907,9 +1115,9 @@ void init_session_vars(void)
                             QUERY_CACHE_OFF,
                             QUERY_CACHE_OFF,
                             QUERY_CACHE_DEMAND,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_query_cache_type,
                             NULL,
                             NULL);
     DefineCustomStringVariable("system_time_zone",
@@ -917,9 +1125,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->system_time_zone,
                                "",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_system_time_zone,
                                NULL,
                                NULL);
     DefineCustomStringVariable("time_zone",
@@ -927,9 +1135,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->time_zone,
                                "SYSTEM",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_time_zone,
                                NULL,
                                NULL);
     DefineCustomIntVariable("wait_timeout",
@@ -940,9 +1148,9 @@ void init_session_vars(void)
                             DEFAULT_WAIT_TIMEOUT,
                             MIN_WAIT_TIMEOUT,
                             MAX_WAIT_TIMEOUT,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_wait_timeout,
                             NULL,
                             NULL);
     DefineCustomStringVariable("dolphin.optimizer_switch",
