@@ -67,10 +67,36 @@ REVOKE ALL ON SCHEMA tst_schema1 FROM test_proxy_u1;
 REVOKE ALL ON SCHEMA tst_schema1 FROM test_proxy_u2;
 REVOKE ALL ON SCHEMA tst_schema1 FROM test_proxy_u3;
 
+--grant usage
+--error, warn syntax
+GRANT USAGE1 ON *.* to test_proxy_u1 IDENTIFIED BY 'test_proxy_u1@234';
+GRANT USAGE ON * to test_proxy_u1 IDENTIFIED BY 'test_proxy_u1@234';
+GRANT USAGE ON *.* to test_proxy_u1;
+GRANT ALL ON *.* to test_proxy_u1 IDENTIFIED BY 'test_proxy_u1@234';
+--success, change passwd
+GRANT USAGE ON *.* to test_proxy_u1 IDENTIFIED BY 'test_proxy_u1@234';
+SET ROLE test_proxy_u1 PASSWORD 'test_proxy_u1@234';
+RESET ROLE;
+--sucess, create role
+set b_compatibility_user_host_auth to on;
+GRANT USAGE ON *.* to does_not_exist@localhost IDENTIFIED BY 'does_not_exist1@localhost';
+--SET ROLE does_not_exist@localhost PASSWORD 'does_not_exist1@localhost';
+--RESET ROLE;
+--sucess, change passwd
+GRANT USAGE ON *.* to does_not_exist@localhost IDENTIFIED BY 'does_not_exist1@localhost2';
+--SET ROLE does_not_exist@localhost PASSWORD 'does_not_exist1@localhost2';
+--RESET ROLE;
+--error, can't use b_mode_create_user_if_not_exist in alter user, it's a internal option
+alter user does_not_exist@localhost b_mode_create_user_if_not_exist;
+drop user does_not_exist@localhost;
+reset b_compatibility_user_host_auth;
+
+
 drop role test_proxy_u1;
 drop role test_proxy_u2;
 drop role test_proxy_u3;
 
 drop schema db_proxy cascade;
+drop schema tst_schema1 cascade;
 reset current_schema;
 

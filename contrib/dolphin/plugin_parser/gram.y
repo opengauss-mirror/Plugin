@@ -16344,6 +16344,28 @@ GrantStmt:	GRANT privileges ON privilege_target TO grantee_list
 					n->grantee_roles = list_make1(makeString($9));
 					$$ = (Node*)n;
 				}
+			| GRANT privileges ON '*' '.' '*' TO UserId IDENTIFIED BY opt_passwords password_string
+				{
+					if (list_length($2) != 1) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("syntax error"),
+							parser_errposition(@2)));
+					}
+					AccessPriv *ap = (AccessPriv*)lfirst(list_head($2));
+					if (strcmp(ap->priv_name, "usage") != 0) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("syntax error"),
+							parser_errposition(@2)));
+					}
+					list_free_ext($2);
+					List *options = NIL;
+					AlterRoleStmt *n = makeNode(AlterRoleStmt);
+					n->role = $8;
+					n->action = +1;
+					options = lappend(options, makeDefElem("b_mode_create_user_if_not_exist", (Node *)makeInteger(TRUE)));
+					options = lappend(options, makeDefElem("password", (Node *)list_make1(makeStringConst($12, -1))));
+					n->options = options;
+					n->lockstatus = DO_NOTHING;
+					$$ = (Node*)n;
+				}
 			| GRANT ALL privilege_str TO UserId
 				{
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
@@ -16352,6 +16374,11 @@ GrantStmt:	GRANT privileges ON privilege_target TO grantee_list
 					n->options =  lappend(NULL,makeDefElem("issystemadmin", (Node *)makeInteger(TRUE)));
 					$$ = (Node *)n;
 				}
+		;
+
+opt_passwords:
+			PASSWORD
+			| /* EMPTY */
 		;
 
 RevokeStmt:
