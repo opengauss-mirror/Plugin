@@ -1,0 +1,157 @@
+drop schema if exists test_guc_select_and_set;
+NOTICE:  schema "test_guc_select_and_set" does not exist, skipping
+create schema test_guc_select_and_set;
+set enable_set_variable_b_format to on;
+select @@session.auto_increment_increment AS auto_increment_increment, 
+@@character_set_client AS character_set_client,
+@@character_set_connection AS character_set_connection, 
+@@character_set_results AS character_set_results, 
+@@character_set_server AS character_set_server, 
+@@collation_server AS collation_server, 
+@@collation_connection AS collation_connection, 
+@@init_connect AS init_connect, 
+@@interactive_timeout AS interactive_timeout,
+@@license AS license, 
+@@lower_case_table_names AS lower_case_table_names, 
+@@max_allowed_packet AS max_allowed_packet, 
+@@net_buffer_length AS net_buffer_length, 
+@@net_write_timeout AS net_write_timeout, 
+@@query_cache_size AS query_cache_size, 
+@@query_cache_type AS query_cache_type, 
+@@sql_mode AS sql_mode, 
+@@system_time_zone AS system_time_zone, 
+@@time_zone AS time_zone, 
+@@transaction_isolation AS transaction_isolation, 
+@@wait_timeout AS wait_timeout;
+ auto_increment_increment | character_set_client | character_set_connection | character_set_results | character_set_server | collation_server  | collation_connection | init_connect | interactive_timeout |   license    | lower_case_table_names | max_allowed_packet | net_buffer_length | net_write_timeout | query_cache_size | query_cache_type |                                               sql_mode                                               | system_time_zone | time_zone | transaction_isolation | wait_timeout 
+--------------------------+----------------------+--------------------------+-----------------------+----------------------+-------------------+----------------------+--------------+---------------------+--------------+------------------------+--------------------+-------------------+-------------------+------------------+------------------+------------------------------------------------------------------------------------------------------+------------------+-----------+-----------------------+--------------
+                        1 | utf8                 | UTF8                     | utf8                  | latin1               | latin1_swedish_ci |                      |              |               28800 | MulanPSL-2.0 |                      1 |            4194304 |             16384 |                60 |          1048576 |                0 | sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length |                  | SYSTEM    | default               |        28800
+(1 row)
+
+set auto_increment_increment = 1;
+WARNING:  Variable 'auto_increment_increment' has no actual meaning.
+set @@auto_increment_increment = 1;
+WARNING:  Variable 'auto_increment_increment' has no actual meaning.
+set @@session.auto_increment_increment = 1;
+WARNING:  Variable 'auto_increment_increment' has no actual meaning.
+set character_set_client = utf8;
+WARNING:  Variable 'character_set_client' has no actual meaning.
+set @@character_set_client = utf8;
+WARNING:  Variable 'character_set_client' has no actual meaning.
+set @@session.character_set_client = utf8;
+WARNING:  Variable 'character_set_client' has no actual meaning.
+set character_set_connection = utf8;
+ERROR:  character_set_connection can be changed when b_format_behavior_compat_options contains enable_multi_charset option
+set @@character_set_connection = utf8;
+ERROR:  character_set_connection can be changed when b_format_behavior_compat_options contains enable_multi_charset option
+set @@session.character_set_connection = utf8;
+ERROR:  character_set_connection can be changed when b_format_behavior_compat_options contains enable_multi_charset option
+set character_set_results = utf8;
+WARNING:  Variable 'character_set_results' has no actual meaning.
+set @@character_set_results = utf8;
+WARNING:  Variable 'character_set_results' has no actual meaning.
+set @@session.character_set_results = utf8;
+WARNING:  Variable 'character_set_results' has no actual meaning.
+set character_set_server = latin1;
+WARNING:  Variable 'character_set_server' has no actual meaning.
+set @@character_set_server = latin1;
+WARNING:  Variable 'character_set_server' has no actual meaning.
+set @@session.character_set_server = latin1;
+WARNING:  Variable 'character_set_server' has no actual meaning.
+set collation_server = latin1_swedish_ci;
+WARNING:  Variable 'collation_server' has no actual meaning.
+set @@collation_server = latin1_swedish_ci;
+WARNING:  Variable 'collation_server' has no actual meaning.
+set @@session.collation_server = latin1_swedish_ci;
+WARNING:  Variable 'collation_server' has no actual meaning.
+set collation_connection = "collation_connection";
+ERROR:  invalid value for parameter "collation_connection": "collation_connection"
+set @@collation_connection = "collation_connection";
+ERROR:  invalid value for parameter "collation_connection": "collation_connection"
+set @@session.collation_connection = "collation_connection";
+ERROR:  invalid value for parameter "collation_connection": "collation_connection"
+set init_connect = "init_connect";
+WARNING:  Variable 'init_connect' has no actual meaning.
+set @@init_connect = "init_connect";
+WARNING:  Variable 'init_connect' has no actual meaning.
+set @@session.init_connect = "init_connect";
+WARNING:  Variable 'init_connect' has no actual meaning.
+set interactive_timeout = 28800;
+WARNING:  Variable 'interactive_timeout' has no actual meaning.
+set @@interactive_timeout = 28800;
+WARNING:  Variable 'interactive_timeout' has no actual meaning.
+set @@session.interactive_timeout = 28800;
+WARNING:  Variable 'interactive_timeout' has no actual meaning.
+set max_allowed_packet = 4194304;
+WARNING:  Variable 'max_allowed_packet' has no actual meaning.
+set @@max_allowed_packet = 4194304;
+WARNING:  Variable 'max_allowed_packet' has no actual meaning.
+set @@session.max_allowed_packet = 4194304;
+WARNING:  Variable 'max_allowed_packet' has no actual meaning.
+set net_buffer_length = 16384;
+WARNING:  Variable 'net_buffer_length' has no actual meaning.
+set @@net_buffer_length = 16384;
+WARNING:  Variable 'net_buffer_length' has no actual meaning.
+set @@session.net_buffer_length = 16384;
+WARNING:  Variable 'net_buffer_length' has no actual meaning.
+set net_write_timeout = 60;
+WARNING:  Variable 'net_write_timeout' has no actual meaning.
+set @@net_write_timeout = 60;
+WARNING:  Variable 'net_write_timeout' has no actual meaning.
+set @@session.net_write_timeout = 60;
+WARNING:  Variable 'net_write_timeout' has no actual meaning.
+set query_cache_size = 1048576;
+WARNING:  Variable 'query_cache_size' has no actual meaning.
+set @@query_cache_size = 1048576;
+WARNING:  Variable 'query_cache_size' has no actual meaning.
+set @@session.query_cache_size = 1048576;
+WARNING:  Variable 'query_cache_size' has no actual meaning.
+set query_cache_type = 0;
+WARNING:  Variable 'query_cache_type' has no actual meaning.
+set @@query_cache_type = 0;
+WARNING:  Variable 'query_cache_type' has no actual meaning.
+set @@session.query_cache_type = 0;
+WARNING:  Variable 'query_cache_type' has no actual meaning.
+set system_time_zone = "system_time_zone";
+WARNING:  Variable 'system_time_zone' has no actual meaning.
+set @@system_time_zone = "system_time_zone";
+WARNING:  Variable 'system_time_zone' has no actual meaning.
+set @@session.system_time_zone = "system_time_zone";
+WARNING:  Variable 'system_time_zone' has no actual meaning.
+set time_zone = "time_zone";
+WARNING:  Variable 'time_zone' has no actual meaning.
+set @@time_zone = "time_zone";
+WARNING:  Variable 'time_zone' has no actual meaning.
+set @@session.time_zone = "time_zone";
+WARNING:  Variable 'time_zone' has no actual meaning.
+set transaction_isolation = "default";
+set @@transaction_isolation = "default";
+set @@session.transaction_isolation = "default";
+set wait_timeout = 28800;
+WARNING:  Variable 'wait_timeout' has no actual meaning.
+set @@wait_timeout = 28800;
+WARNING:  Variable 'wait_timeout' has no actual meaning.
+set @@session.wait_timeout = 28800;  
+WARNING:  Variable 'wait_timeout' has no actual meaning.
+set sql_mode = "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length";
+NOTICE:  identifier "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length" will be truncated to "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes"
+WARNING:  Variable 'sql_mode' has no actual meaning, please use variable 'dolphin.sql_mode'.
+set @@sql_mode = "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length";
+NOTICE:  identifier "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length" will be truncated to "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes"
+WARNING:  Variable 'sql_mode' has no actual meaning, please use variable 'dolphin.sql_mode'.
+set @@session.sql_mode = "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length";
+NOTICE:  identifier "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length" will be truncated to "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes"
+WARNING:  Variable 'sql_mode' has no actual meaning, please use variable 'dolphin.sql_mode'.
+set lower_case_table_names = 1;
+WARNING:  Variable 'lower_case_table_names' has no actual meaning, please use variable 'dolphin.lower_case_table_names'.
+set @@lower_case_table_names = 1;
+WARNING:  Variable 'lower_case_table_names' has no actual meaning, please use variable 'dolphin.lower_case_table_names'.
+set @@session.lower_case_table_names = 1;
+WARNING:  Variable 'lower_case_table_names' has no actual meaning, please use variable 'dolphin.lower_case_table_names'.
+set license = "MulanPSL-2.0";
+ERROR:  Variable 'license' is a read only variable.
+set @@license = "MulanPSL-2.0";
+ERROR:  Variable 'license' is a read only variable.
+set @@session.license = "MulanPSL-2.0";
+ERROR:  Variable 'license' is a read only variable.
+drop schema test_guc_select_and_set cascade;
