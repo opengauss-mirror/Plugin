@@ -12,9 +12,8 @@
 #include <utils/builtins.h>
 #include <utils/json.h>
 #include <utils/jsonb.h>
-
 #include "compat.h"
-
+// #include "build/src/config.h"
 #if !PG96
 #include <utils/fmgrprotos.h>
 #else
@@ -250,7 +249,7 @@ get_database_size()
 {
 	StringInfo buf = makeStringInfo();
 	int64 data_size =
-		DatumGetInt64(DirectFunctionCall1(pg_database_size_oid, ObjectIdGetDatum(MyDatabaseId)));
+		DatumGetInt64(DirectFunctionCall1(pg_database_size_oid, ObjectIdGetDatum(u_sess->proc_cxt.MyDatabaseId)));
 
 	appendStringInfo(buf, "" INT64_FORMAT "", data_size);
 	return buf->data;
@@ -298,7 +297,8 @@ get_pgversion_string()
 	 * the extension is compiled against instead of the version actually
 	 * running.
 	 */
-	char *server_version_num_guc = GetConfigOptionByName("server_version_num", NULL, false);
+	//tsdb 此函数多次说明过
+	char *server_version_num_guc = GetConfigOptionByName("server_version_num", NULL);
 	long server_version_num = strtol(server_version_num_guc, NULL, 10);
 
 	major = server_version_num / 10000;
@@ -395,15 +395,15 @@ build_version_body(void)
 
 	/* Add related extensions, which is a nested JSON */
 	ext_key.type = jbvString;
-	ext_key.val.string.val = REQ_RELATED_EXTENSIONS;
-	ext_key.val.string.len = strlen(REQ_RELATED_EXTENSIONS);
+	ext_key.string.val = REQ_RELATED_EXTENSIONS;
+	ext_key.string.len = strlen(REQ_RELATED_EXTENSIONS);
 	pushJsonbValue(&parseState, WJB_KEY, &ext_key);
 	add_related_extensions(parseState);
 
 	/* add license info, which is a nested JSON */
 	license_info_key.type = jbvString;
-	license_info_key.val.string.val = REQ_LICENSE_INFO;
-	license_info_key.val.string.len = strlen(REQ_LICENSE_INFO);
+	license_info_key.string.val = REQ_LICENSE_INFO;
+	license_info_key.string.len = strlen(REQ_LICENSE_INFO);
 	pushJsonbValue(&parseState, WJB_KEY, &license_info_key);
 	add_license_info(parseState);
 
@@ -418,8 +418,8 @@ build_version_body(void)
 	if (ts_telemetry_cloud != NULL)
 	{
 		ext_key.type = jbvString;
-		ext_key.val.string.val = REQ_INSTANCE_METADATA;
-		ext_key.val.string.len = strlen(REQ_INSTANCE_METADATA);
+		ext_key.string.val = REQ_INSTANCE_METADATA;
+		ext_key.string.len = strlen(REQ_INSTANCE_METADATA);
 		pushJsonbValue(&parseState, WJB_KEY, &ext_key);
 
 		pushJsonbValue(&parseState, WJB_BEGIN_OBJECT, NULL);
@@ -429,8 +429,8 @@ build_version_body(void)
 
 	/* Add additional content from metadata */
 	ext_key.type = jbvString;
-	ext_key.val.string.val = REQ_METADATA;
-	ext_key.val.string.len = strlen(REQ_METADATA);
+	ext_key.string.val = REQ_METADATA;
+	ext_key.string.len = strlen(REQ_METADATA);
 	pushJsonbValue(&parseState, WJB_KEY, &ext_key);
 	pushJsonbValue(&parseState, WJB_BEGIN_OBJECT, NULL);
 	ts_telemetry_metadata_add_values(parseState);
@@ -440,7 +440,7 @@ build_version_body(void)
 	result = pushJsonbValue(&parseState, WJB_END_OBJECT, NULL);
 	jb = JsonbValueToJsonb(result);
 	jtext = makeStringInfo();
-	JsonbToCString(jtext, &jb->root, VARSIZE(jb));
+	JsonbToCString(jtext,(JsonbSuperHeader) &jb->root, VARSIZE(jb));
 
 	return jtext;
 }

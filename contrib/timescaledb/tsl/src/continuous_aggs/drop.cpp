@@ -43,7 +43,7 @@ ts_continuous_agg_drop_chunks_by_chunk_id(int32 raw_hypertable_id, Chunk **chunk
 	{
 		int32 i;
 		SPIPlanPtr delete_plan;
-		ContinuousAgg *agg = lfirst(lc);
+		ContinuousAgg *agg =(ContinuousAgg *) lfirst(lc);
 		Hypertable *mat_table = ts_hypertable_get_by_id(agg->data.mat_hypertable_id);
 		ts_chunk_do_drop_chunks(mat_table->main_table_relid,
 								older_than_datum,

@@ -39,7 +39,7 @@ ts_http_version_from_string(const char *version)
 
 	for (i = 0; i < HTTP_VERSION_INVALID; i++)
 		if (pg_strcasecmp(http_version_strings[i], version) == 0)
-			return i;
+			return (HttpVersion)i;
 
 	return HTTP_VERSION_INVALID;
 }

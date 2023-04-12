@@ -20,9 +20,9 @@
 #include <nodes/print.h>
 #include <commands/dbcommands.h>
 #include <commands/defrem.h>
-#include <access/parallel.h>
+#include "parallel/parallel.h"
 
-#include "extension_utils.c"
+#include "extension_utils.cpp"
 #include "export.h"
 #include "compat.h"
 #include "extension_constants.h"
@@ -33,6 +33,8 @@
 #include "loader/bgw_launcher.h"
 #include "loader/bgw_message_queue.h"
 #include "loader/lwlocks.h"
+
+
 
 /*
  * Loading process:
@@ -91,7 +93,7 @@ PG_MODULE_MAGIC;
 #ifdef WIN32
 #define CalledInParallelWorker() false
 #else
-#define CalledInParallelWorker() IsParallelWorker()
+#define CalledInParallelWorker() false//IsParallelWorker()//tsdb
 #endif /* WIN32 */
 #else
 #define CalledInParallelWorker()                                                                   \
@@ -151,7 +153,7 @@ drop_statement_drops_extension(DropStmt *stmt)
 		{
 			char *ext_name;
 #if PG96
-			List *names = linitial(stmt->objects);
+			List *names =(List *) linitial(stmt->objects);
 
 			Assert(list_length(names) == 1);
 			ext_name = strVal(linitial(names));
@@ -368,7 +370,7 @@ post_analyze_hook(ParseState *pstate, Query *query)
 				AlterDatabaseStmt *stmt = (AlterDatabaseStmt *) query->utilityStmt;
 				if (list_length(stmt->options) == 1)
 				{
-					DefElem *option = linitial(stmt->options);
+					DefElem *option =(DefElem *) linitial(stmt->options);
 					if (option->defname && strcmp(option->defname, "tablespace") == 0)
 					{
 						Oid db_oid = get_database_oid(stmt->dbname, false);
@@ -396,7 +398,7 @@ post_analyze_hook(ParseState *pstate, Query *query)
 
 				foreach (lc, stmt->options)
 				{
-					DefElem *option = lfirst(lc);
+					DefElem *option =(DefElem *) lfirst(lc);
 					if (option->defname != NULL && option->arg != NULL &&
 						strcmp(option->defname, "template") == 0)
 					{
@@ -423,12 +425,12 @@ post_analyze_hook(ParseState *pstate, Query *query)
 				 * a rollback) the scheduler
 				 */
 				{
-					ts_bgw_message_send_and_wait(RESTART, MyDatabaseId);
+					ts_bgw_message_send_and_wait(RESTART, u_sess->proc_cxt.MyDatabaseId);
 				}
 				break;
 			case T_DropOwnedStmt:
 				if (drop_owned_statement_drops_extension((DropOwnedStmt *) query->utilityStmt))
-					ts_bgw_message_send_and_wait(RESTART, MyDatabaseId);
+					ts_bgw_message_send_and_wait(RESTART, u_sess->proc_cxt.MyDatabaseId);
 				break;
 			case T_RenameStmt:
 				if (((RenameStmt *) query->utilityStmt)->renameType == OBJECT_DATABASE)
@@ -491,7 +493,7 @@ extension_mark_loader_present()
 void
 _PG_init(void)
 {
-	if (!process_shared_preload_libraries_in_progress)
+	if (!u_sess->misc_cxt.process_shared_preload_libraries_in_progress)
 	{
 		extension_load_without_preload();
 	}
@@ -522,7 +524,7 @@ _PG_init(void)
 	 * cannot check for extension here since not inside a transaction yet. Nor
 	 * do we even have an assigned database yet
 	 */
-	CacheRegisterRelcacheCallback(inval_cache_callback, PointerGetDatum(NULL));
+	CacheRegisterThreadRelcacheCallback(inval_cache_callback, PointerGetDatum(NULL));
 
 	/*
 	 * using the post_parse_analyze_hook since it's the earliest available
@@ -530,17 +532,17 @@ _PG_init(void)
 	 */
 	prev_post_parse_analyze_hook = post_parse_analyze_hook;
 	/* register shmem startup hook for the background worker stuff */
-	prev_shmem_startup_hook = shmem_startup_hook;
+	prev_shmem_startup_hook = t_thrd.storage_cxt.shmem_startup_hook;
 
 	post_parse_analyze_hook = post_analyze_hook;
-	shmem_startup_hook = timescale_shmem_startup_hook;
+	t_thrd.storage_cxt.shmem_startup_hook = timescale_shmem_startup_hook;
 }
 
 void
 _PG_fini(void)
 {
 	post_parse_analyze_hook = prev_post_parse_analyze_hook;
-	shmem_startup_hook = prev_shmem_startup_hook;
+	t_thrd.storage_cxt.shmem_startup_hook = prev_shmem_startup_hook;
 	/* No way to unregister relcache callback */
 }
 

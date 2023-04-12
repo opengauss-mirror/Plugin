@@ -7,10 +7,10 @@
 #include <c.h>
 #include <postgres.h>
 #include <access/attnum.h>
-#include <access/htup_details.h>
+#include <access/htup.h>
 #include <catalog/pg_cast.h>
 #include <catalog/pg_type.h>
-#include <nodes/extensible.h>
+//#include <nodes/extensible.h>
 #include <nodes/makefuncs.h>
 #include <nodes/nodeFuncs.h>
 #include <nodes/primnodes.h>
@@ -56,10 +56,10 @@ typedef union GapFillColumnStateUnion
 		 (index) < (state)->ncolumns && ((column) = (state)->columns[index], true);                \
 		 (index)++)
 
-static void gapfill_begin(CustomScanState *node, EState *estate, int eflags);
-static void gapfill_end(CustomScanState *node);
-static void gapfill_rescan(CustomScanState *node);
-static TupleTableSlot *gapfill_exec(CustomScanState *node);
+static void gapfill_begin(ExtensiblePlanState *node, EState *estate, int eflags);
+static void gapfill_end(ExtensiblePlanState *node);
+static void gapfill_rescan(ExtensiblePlanState *node);
+static TupleTableSlot *gapfill_exec(ExtensiblePlanState *node);
 
 static void gapfill_state_reset_group(GapFillState *state, TupleTableSlot *slot);
 static TupleTableSlot *gapfill_state_gaptuple_create(GapFillState *state, int64 time);
@@ -67,17 +67,18 @@ static bool gapfill_state_is_new_group(GapFillState *state, TupleTableSlot *slot
 static void gapfill_state_set_next(GapFillState *state, TupleTableSlot *subslot);
 static TupleTableSlot *gapfill_state_return_subplan_slot(GapFillState *state);
 static TupleTableSlot *gapfill_fetch_next_tuple(GapFillState *state);
-static TupleTableSlot *fetch_subplan_tuple(CustomScanState *node);
+static TupleTableSlot *fetch_subplan_tuple(ExtensiblePlanState *node);
 static void gapfill_state_initialize_columns(GapFillState *state);
-static GapFillColumnState *gapfill_column_state_create(GapFillColumnType ctype, Oid typeid);
+static GapFillColumnState *gapfill_column_state_create(GapFillColumnType ctype, Oid typeidd);
 static bool gapfill_is_group_column(GapFillState *state, TargetEntry *tle);
 static Node *gapfill_aggref_mutator(Node *node, void *context);
 
-static CustomExecMethods gapfill_state_methods = {
-	.BeginCustomScan = gapfill_begin,
-	.ExecCustomScan = gapfill_exec,
-	.EndCustomScan = gapfill_end,
-	.ReScanCustomScan = gapfill_rescan,
+static ExtensibleExecMethods gapfill_state_methods = {
+	.ExtensibleName = {},
+	.BeginExtensiblePlan = gapfill_begin,
+	.ExecExtensiblePlan = gapfill_exec,
+	.EndExtensiblePlan = gapfill_end,
+	.ReScanExtensiblePlan = gapfill_rescan,
 };
 
 /*
@@ -197,12 +198,12 @@ gapfill_period_get_internal(Oid timetype, Oid argtype, Datum arg)
  * execution.
  */
 Node *
-gapfill_state_create(CustomScan *cscan)
+gapfill_state_create(ExtensiblePlan *cscan)
 {
-	GapFillState *state = (GapFillState *) newNode(sizeof(GapFillState), T_CustomScanState);
+	GapFillState *state = (GapFillState *) newNode(sizeof(GapFillState), T_ExtensiblePlanState);
 
 	state->csstate.methods = &gapfill_state_methods;
-	state->subplan = linitial(cscan->custom_plans);
+	state->subplan =(Plan*) linitial(cscan->extensible_plans);
 
 	return (Node *) state;
 }
@@ -288,7 +289,7 @@ is_simple_expr_walker(Node *node, void *context)
 		default:
 			return true;
 	}
-	return expression_tree_walker(node, is_simple_expr_walker, context);
+	return expression_tree_walker(node,(bool (*)()) is_simple_expr_walker, context);
 }
 
 /*
@@ -315,8 +316,8 @@ is_simple_expr(Expr *node)
 static int64
 align_with_time_bucket(GapFillState *state, Expr *expr)
 {
-	CustomScan *cscan = castNode(CustomScan, state->csstate.ss.ps.plan);
-	FuncExpr *time_bucket = copyObject(linitial(cscan->custom_private));
+	ExtensiblePlan *cscan = castNode(ExtensiblePlan, state->csstate.ss.ps.plan);
+	FuncExpr *time_bucket =(FuncExpr *) copyObject(linitial(cscan->extensible_private));
 	Datum value;
 	bool isnull;
 
@@ -358,7 +359,7 @@ get_boundary_expr_value(GapFillState *state, GapFillBoundary boundary, Expr *exp
 									 list_make1(expr),
 									 InvalidOid,
 									 InvalidOid,
-									 0);
+									 (CoercionForm)0);
 	}
 
 	arg_value = gapfill_exec_expr(state, expr, &isnull);
@@ -399,8 +400,8 @@ is_boundary_expr(Node *node, CollectBoundaryContext *context)
 	if (op->args->length != 2)
 		return false;
 
-	left = linitial(op->args);
-	right = llast(op->args);
+	left =(Node *) linitial(op->args);
+	right =(Node *) llast(op->args);
 
 	/* Var OP Var is not useful here because we are not yet at a point
 	 * where we could evaluate them */
@@ -445,12 +446,12 @@ collect_boundary_walker(Node *node, CollectBoundaryContext *context)
 
 		foreach (lc, castNode(List, quals))
 		{
-			if (is_boundary_expr(lfirst(lc), context))
+			if (is_boundary_expr((Node *)lfirst(lc), context))
 				context->quals = lappend(context->quals, lfirst(lc));
 		}
 	}
 
-	return expression_tree_walker(node, collect_boundary_walker, context);
+	return expression_tree_walker(node,(bool (*)()) collect_boundary_walker, context);
 }
 
 /*
@@ -470,9 +471,9 @@ collect_boundary_expressions(Node *node, Var *ts_var)
 static int64
 infer_gapfill_boundary(GapFillState *state, GapFillBoundary boundary)
 {
-	CustomScan *cscan = castNode(CustomScan, state->csstate.ss.ps.plan);
-	FuncExpr *func = linitial(cscan->custom_private);
-	FromExpr *jt = lthird(cscan->custom_private);
+	ExtensiblePlan *cscan = castNode(ExtensiblePlan, state->csstate.ss.ps.plan);
+	FuncExpr *func =(FuncExpr *) linitial(cscan->extensible_private);
+	FromExpr *jt =(FromExpr *) lthird(cscan->extensible_private);
 	ListCell *lc;
 	Var *ts_var;
 	TypeCacheEntry *tce = lookup_type_cache(state->gapfill_typid, TYPECACHE_BTREE_OPFAMILY);
@@ -509,14 +510,14 @@ infer_gapfill_boundary(GapFillState *state, GapFillBoundary boundary)
 
 		if (IsA(linitial(opexpr->args), Var))
 		{
-			var = linitial(opexpr->args);
-			expr = lsecond(opexpr->args);
+			var =(Var *) linitial(opexpr->args);
+			expr =(Expr *) lsecond(opexpr->args);
 			op = opexpr->opno;
 		}
 		else if (IsA(lsecond(opexpr->args), Var))
 		{
-			var = lsecond(opexpr->args);
-			expr = linitial(opexpr->args);
+			var =(Var*) lsecond(opexpr->args);
+			expr =(Expr*) linitial(opexpr->args);
 			op = get_commutator(opexpr->opno);
 		}
 		else
@@ -597,19 +598,19 @@ make_const_value_for_gapfill_internal(Oid typid, int64 value)
  * Initialize the scan state
  */
 static void
-gapfill_begin(CustomScanState *node, EState *estate, int eflags)
+gapfill_begin(ExtensiblePlanState *node, EState *estate, int eflags)
 {
 	GapFillState *state = (GapFillState *) node;
-	CustomScan *cscan = castNode(CustomScan, state->csstate.ss.ps.plan);
+	ExtensiblePlan *cscan = castNode(ExtensiblePlan, state->csstate.ss.ps.plan);
 
 	/*
 	 * this is the time_bucket_gapfill call from the plan which is used to
 	 * extract arguments and to align gapfill_start
 	 */
-	FuncExpr *func = linitial(cscan->custom_private);
-	List *args = lfourth(cscan->custom_private);
+	FuncExpr *func =(FuncExpr *) linitial(cscan->extensible_private);
+	List *args =(List *) lfourth(cscan->extensible_private);
 	TupleDesc tupledesc = state->csstate.ss.ps.ps_ResultTupleSlot->tts_tupleDescriptor;
-	List *targetlist = copyObject(state->csstate.ss.ps.plan->targetlist);
+	List *targetlist =(List *) copyObject(state->csstate.ss.ps.plan->targetlist);
 	Node *entry;
 	bool isnull;
 	Datum arg_value;
@@ -625,20 +626,20 @@ gapfill_begin(CustomScanState *node, EState *estate, int eflags)
 	state->scanslot = MakeSingleTupleTableSlotCompat(tupledesc, TTSOpsVirtualP);
 
 	/* bucket_width */
-	if (!is_simple_expr(linitial(args)))
+	if (!is_simple_expr((Expr*)linitial(args)))
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				 errmsg("invalid time_bucket_gapfill argument: bucket_width must be a simple "
 						"expression")));
 
-	arg_value = gapfill_exec_expr(state, linitial(args), &isnull);
+	arg_value = gapfill_exec_expr(state, (Expr*)linitial(args), &isnull);
 	if (isnull)
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				 errmsg("invalid time_bucket_gapfill argument: bucket_width cannot be NULL")));
 
 	state->gapfill_period =
-		gapfill_period_get_internal(func->funcresulttype, exprType(linitial(args)), arg_value);
+		gapfill_period_get_internal(func->funcresulttype, exprType((const Node *)linitial(args)), arg_value);
 
 	/*
 	 * this would error when trying to align start and stop to bucket_width as well below
@@ -654,7 +655,7 @@ gapfill_begin(CustomScanState *node, EState *estate, int eflags)
 	 * check if gapfill start was left out so we have to infer from WHERE
 	 * clause
 	 */
-	if (is_const_null(lthird(args)))
+	if (is_const_null((Expr*)lthird(args)))
 	{
 		int64 start = infer_gapfill_boundary(state, GAPFILL_START);
 		Const *expr = make_const_value_for_gapfill_internal(state->gapfill_typid, start);
@@ -667,21 +668,21 @@ gapfill_begin(CustomScanState *node, EState *estate, int eflags)
 		 * pass gapfill start through time_bucket so it is aligned with bucket
 		 * start
 		 */
-		state->gapfill_start = align_with_time_bucket(state, lthird(args));
+		state->gapfill_start = align_with_time_bucket(state,(Expr*) lthird(args));
 	}
 	state->next_timestamp = state->gapfill_start;
 
 	/* gap fill end */
-	if (is_const_null(lfourth(args)))
+	if (is_const_null((Expr*)lfourth(args)))
 		state->gapfill_end = infer_gapfill_boundary(state, GAPFILL_END);
 	else
 	{
-		if (!is_simple_expr(lfourth(args)))
+		if (!is_simple_expr((Expr*)lfourth(args)))
 			ereport(ERROR,
 					(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 					 errmsg("invalid time_bucket_gapfill argument: finish must be a simple "
 							"expression")));
-		arg_value = gapfill_exec_expr(state, lfourth(args), &isnull);
+		arg_value = gapfill_exec_expr(state,(Expr*) lfourth(args), &isnull);
 
 		/*
 		 * the default value for finish is NULL but this is checked above,
@@ -713,7 +714,7 @@ gapfill_begin(CustomScanState *node, EState *estate, int eflags)
 	{
 		if (state->columns[i]->ctype == NULL_COLUMN)
 		{
-			entry = copyObject(list_nth(cscan->custom_scan_tlist, i));
+			entry =(Node*) copyObject(list_nth(cscan->extensible_plan_tlist, i));
 			entry = gapfill_aggref_mutator(entry, NULL);
 			lfirst(list_nth_cell(targetlist, i)) = entry;
 		}
@@ -725,7 +726,7 @@ gapfill_begin(CustomScanState *node, EState *estate, int eflags)
 									  &state->csstate.ss.ps,
 									  NULL);
 
-	state->csstate.custom_ps = list_make1(ExecInitNode(state->subplan, estate, eflags));
+	state->csstate.extensible_ps = list_make1(ExecInitNode(state->subplan, estate, eflags));
 }
 
 /*
@@ -734,7 +735,7 @@ gapfill_begin(CustomScanState *node, EState *estate, int eflags)
  * are exhausted. All gapfill state transitions happen in this function.
  */
 static TupleTableSlot *
-gapfill_exec(CustomScanState *node)
+gapfill_exec(ExtensiblePlanState *node)
 {
 	GapFillState *state = (GapFillState *) node;
 	TupleTableSlot *slot = NULL;
@@ -815,23 +816,23 @@ gapfill_exec(CustomScanState *node)
 }
 
 static void
-gapfill_end(CustomScanState *node)
+gapfill_end(ExtensiblePlanState *node)
 {
-	if (node->custom_ps != NIL)
+	if (node->extensible_ps != NIL)
 	{
-		ExecEndNode(linitial(node->custom_ps));
+		ExecEndNode((PlanState *)linitial(node->extensible_ps));
 	}
 }
 
 static void
-gapfill_rescan(CustomScanState *node)
+gapfill_rescan(ExtensiblePlanState *node)
 {
 #if PG96
 	node->ss.ps.ps_TupFromTlist = false;
 #endif
-	if (node->custom_ps != NIL)
+	if (node->extensible_ps != NIL)
 	{
-		ExecReScan(linitial(node->custom_ps));
+		ExecReScan((PlanState *)linitial(node->extensible_ps));
 	}
 	((GapFillState *) node)->state = FETCHED_NONE;
 }
@@ -1036,7 +1037,7 @@ gapfill_state_return_subplan_slot(GapFillState *state)
 #if PG12_LT
 		if (state->subslot->tts_shouldFree)
 		{
-			heap_freetuple(state->subslot->tts_tuple);
+			heap_freetuple((HeapTuple)state->subslot->tts_tuple);
 			state->subslot->tts_shouldFree = false;
 		}
 		state->subslot->tts_tuple = NULL;
@@ -1089,7 +1090,7 @@ gapfill_fetch_next_tuple(GapFillState *state)
 {
 	Datum time_value;
 	bool isnull;
-	TupleTableSlot *subslot = fetch_subplan_tuple((CustomScanState *) state);
+	TupleTableSlot *subslot = fetch_subplan_tuple((ExtensiblePlanState *) state);
 
 	if (!subslot)
 		return NULL;
@@ -1118,7 +1119,7 @@ gapfill_fetch_next_tuple(GapFillState *state)
  * Fetch tuple from subplan
  */
 static TupleTableSlot *
-fetch_subplan_tuple(CustomScanState *node)
+fetch_subplan_tuple(ExtensiblePlanState *node)
 {
 	TupleTableSlot *subslot;
 	ExprContext *econtext = node->ss.ps.ps_ExprContext;
@@ -1143,7 +1144,7 @@ fetch_subplan_tuple(CustomScanState *node)
 
 	while (true)
 	{
-		subslot = ExecProcNode(linitial(node->custom_ps));
+		subslot = ExecProcNode((PlanState*)linitial(node->extensible_ps));
 
 		if (TupIsNull(subslot))
 			return NULL;
@@ -1174,17 +1175,17 @@ static void
 gapfill_state_initialize_columns(GapFillState *state)
 {
 	TupleDesc tupledesc = state->csstate.ss.ps.ps_ResultTupleSlot->tts_tupleDescriptor;
-	CustomScan *cscan = castNode(CustomScan, state->csstate.ss.ps.plan);
+	ExtensiblePlan *cscan = castNode(ExtensiblePlan, state->csstate.ss.ps.plan);
 	TargetEntry *tle;
 	Expr *expr;
 	int i;
 
 	state->ncolumns = tupledesc->natts;
-	state->columns = palloc(state->ncolumns * sizeof(GapFillColumnState *));
+	state->columns =(GapFillColumnState **) palloc(state->ncolumns * sizeof(GapFillColumnState *));
 
 	for (i = 0; i < state->ncolumns; i++)
 	{
-		tle = list_nth(cscan->custom_scan_tlist, i);
+		tle =(TargetEntry *) list_nth(cscan->extensible_plan_tlist, i);
 		expr = tle->expr;
 
 		if (tle->ressortgroupref && gapfill_is_group_column(state, tle))
@@ -1263,9 +1264,9 @@ gapfill_state_initialize_columns(GapFillState *state)
  * Create GapFillColumnState object, set proper type and fill in datatype information
  */
 static GapFillColumnState *
-gapfill_column_state_create(GapFillColumnType ctype, Oid typeid)
+gapfill_column_state_create(GapFillColumnType ctype, Oid typeidd)
 {
-	TypeCacheEntry *tce = lookup_type_cache(typeid, 0);
+	TypeCacheEntry *tce = lookup_type_cache(typeidd, 0);
 	GapFillColumnState *column;
 	size_t size;
 
@@ -1286,7 +1287,7 @@ gapfill_column_state_create(GapFillColumnType ctype, Oid typeid)
 			break;
 	}
 
-	column = palloc0(size);
+	column =(GapFillColumnState *) palloc0(size);
 	column->ctype = ctype;
 	column->typid = tce->type_id;
 	column->typbyval = tce->typbyval;
@@ -1305,8 +1306,8 @@ static bool
 gapfill_is_group_column(GapFillState *state, TargetEntry *tle)
 {
 	ListCell *lc;
-	CustomScan *cscan = castNode(CustomScan, state->csstate.ss.ps.plan);
-	List *groups = lsecond(cscan->custom_private);
+	ExtensiblePlan *cscan = castNode(ExtensiblePlan, state->csstate.ss.ps.plan);
+	List *groups =(List *) lsecond(cscan->extensible_private);
 
 	foreach (lc, groups)
 	{
@@ -1361,15 +1362,15 @@ gapfill_adjust_varnos(GapFillState *state, Expr *expr)
 {
 	ListCell *lc_var, *lc_tle;
 	List *vars = pull_var_clause((Node *) expr, 0);
-	List *tlist = castNode(CustomScan, state->csstate.ss.ps.plan)->custom_scan_tlist;
+	List *tlist = castNode(ExtensiblePlan, state->csstate.ss.ps.plan)->extensible_plan_tlist;
 
 	foreach (lc_var, vars)
 	{
-		Var *var = lfirst(lc_var);
+		Var *var =(Var *) lfirst(lc_var);
 
 		foreach (lc_tle, tlist)
 		{
-			TargetEntry *tle = lfirst(lc_tle);
+			TargetEntry *tle =(TargetEntry *) lfirst(lc_tle);
 
 			/*
 			 * subqueries in aggregate queries can only reference columns so

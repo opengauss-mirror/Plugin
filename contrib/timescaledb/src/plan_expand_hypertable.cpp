@@ -23,7 +23,7 @@
 
 #include "compat.h"
 #if PG11_LT /* PG11 consolidates pg_foo_fn.h -> pg_foo.h */
-#include <catalog/pg_constraint_fn.h>
+//#include <catalog/pg_constraint_fn.h>
 #include <catalog/pg_inherits_fn.h>
 #endif
 #if PG11_GE
@@ -158,13 +158,13 @@ const_datum_get_int(Const *cnst)
 static OpExpr *
 transform_time_bucket_comparison(PlannerInfo *root, OpExpr *op)
 {
-	Expr *left = linitial(op->args);
-	Expr *right = lsecond(op->args);
+	Expr *left =(Expr *) linitial(op->args);
+	Expr *right =(Expr *) lsecond(op->args);
 
 	FuncExpr *time_bucket = castNode(FuncExpr, (IsA(left, FuncExpr) ? left : right));
 	Expr *value = IsA(right, Const) ? right : left;
 
-	Const *width = linitial(time_bucket->args);
+	Const *width =(Const *) linitial(time_bucket->args);
 	Oid opno = op->opno;
 	TypeCacheEntry *tce;
 	int strategy;
@@ -189,7 +189,7 @@ transform_time_bucket_comparison(PlannerInfo *root, OpExpr *op)
 	if (strategy == BTGreaterStrategyNumber || strategy == BTGreaterEqualStrategyNumber)
 	{
 		/* column > value */
-		op = copyObject(op);
+		op =(OpExpr *) copyObject(op);
 		op->args = list_make2(lsecond(time_bucket->args), value);
 
 		/*
@@ -316,7 +316,7 @@ transform_time_bucket_comparison(PlannerInfo *root, OpExpr *op)
 				 */
 				if (interval->day != 0)
 				{
-					width = copyObject(width);
+					width =(Const *) copyObject(width);
 					interval = DatumGetIntervalP(width->constvalue);
 
 					/*
@@ -363,7 +363,7 @@ transform_time_bucket_comparison(PlannerInfo *root, OpExpr *op)
 				 */
 				if (interval->day != 0)
 				{
-					width = copyObject(width);
+					width =(Const *) copyObject(width);
 					interval = DatumGetIntervalP(width->constvalue);
 
 					/*
@@ -410,7 +410,7 @@ transform_time_bucket_comparison(PlannerInfo *root, OpExpr *op)
 				return op;
 		}
 
-		op = copyObject(op);
+		op =(OpExpr *) copyObject(op);
 
 		/*
 		 * if we changed operator we need to adjust OpExpr as well
@@ -450,7 +450,7 @@ process_quals(Node *quals, CollectQualCtx *ctx, bool is_outer_join)
 
 	for (lc = list_head((List *) quals); lc != NULL; prev = lc, lc = lnext(lc))
 	{
-		Expr *qual = lfirst(lc);
+		Expr *qual =(Expr *) lfirst(lc);
 		Relids relids = pull_varnos((Node *) qual);
 		int num_rels = bms_num_members(relids);
 
@@ -486,8 +486,8 @@ process_quals(Node *quals, CollectQualCtx *ctx, bool is_outer_join)
 		if (IsA(qual, OpExpr) && list_length(castNode(OpExpr, qual)->args) == 2)
 		{
 			OpExpr *op = castNode(OpExpr, qual);
-			Expr *left = linitial(op->args);
-			Expr *right = lsecond(op->args);
+			Expr *left =(Expr *) linitial(op->args);
+			Expr *right =(Expr *) lsecond(op->args);
 
 			/*
 			 * check for time_bucket comparisons
@@ -560,7 +560,7 @@ timebucket_annotate(Node *quals, CollectQualCtx *ctx)
 
 	foreach (lc, castNode(List, quals))
 	{
-		Expr *qual = lfirst(lc);
+		Expr *qual =(Expr *) lfirst(lc);
 		Relids relids = pull_varnos((Node *) qual);
 		int num_rels = bms_num_members(relids);
 
@@ -571,8 +571,8 @@ timebucket_annotate(Node *quals, CollectQualCtx *ctx)
 		if (IsA(qual, OpExpr) && list_length(castNode(OpExpr, qual)->args) == 2)
 		{
 			OpExpr *op = castNode(OpExpr, qual);
-			Expr *left = linitial(op->args);
-			Expr *right = lsecond(op->args);
+			Expr *left =(Expr *) linitial(op->args);
+			Expr *right =(Expr *) lsecond(op->args);
 
 			/*
 			 * check for time_bucket comparisons
@@ -624,7 +624,7 @@ collect_join_quals(Node *quals, CollectQualCtx *ctx, bool is_outer_join)
 
 	foreach (lc, (List *) quals)
 	{
-		Expr *qual = lfirst(lc);
+		Expr *qual =(Expr *) lfirst(lc);
 		Relids relids = pull_varnos((Node *) qual);
 		int num_rels = bms_num_members(relids);
 
@@ -642,8 +642,8 @@ collect_join_quals(Node *quals, CollectQualCtx *ctx, bool is_outer_join)
 		if (num_rels == 2 && IsA(qual, OpExpr) && list_length(castNode(OpExpr, qual)->args) == 2)
 		{
 			OpExpr *op = castNode(OpExpr, qual);
-			Expr *left = linitial(op->args);
-			Expr *right = lsecond(op->args);
+			Expr *left =(Expr *) linitial(op->args);
+			Expr *right =(Expr *) lsecond(op->args);
 
 			if (IsA(left, Var) && IsA(right, Var))
 			{
@@ -687,7 +687,7 @@ collect_quals_walker(Node *node, CollectQualCtx *ctx)
 	if (ctx->chunk_exclusion_func != NULL)
 		return true;
 
-	return expression_tree_walker(node, collect_quals_walker, ctx);
+	return expression_tree_walker(node,(bool (*)()) collect_quals_walker, ctx);
 }
 
 static List *
@@ -740,7 +740,7 @@ get_explicit_chunk_oids(CollectQualCtx *ctx, Hypertable *ht)
 	Expr *expr;
 
 	Assert(ctx->chunk_exclusion_func->args->length == 2);
-	expr = lsecond(ctx->chunk_exclusion_func->args);
+	expr =(Expr *) lsecond(ctx->chunk_exclusion_func->args);
 	if (!IsA(expr, Const))
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -974,7 +974,7 @@ timebucket_annotate_walker(Node *node, CollectQualCtx *ctx)
 	if (ctx->chunk_exclusion_func != NULL)
 		return true;
 
-	return expression_tree_walker(node, timebucket_annotate_walker, ctx);
+	return expression_tree_walker(node,(bool (*)()) timebucket_annotate_walker, ctx);
 }
 
 void
@@ -985,9 +985,10 @@ ts_plan_expand_timebucket_annotate(PlannerInfo *root, RelOptInfo *rel)
 		.rel = rel,
 		.restrictions = NIL,
 		.chunk_exclusion_func = NULL,
-		.all_quals = NIL,
 		.join_conditions = NIL,
 		.propagate_conditions = NIL,
+		.all_quals = NIL,
+		
 	};
 
 	init_chunk_exclusion_func();
@@ -1018,9 +1019,9 @@ ts_plan_expand_hypertable_chunks(Hypertable *ht, PlannerInfo *root, RelOptInfo *
 		.rel = rel,
 		.restrictions = NIL,
 		.chunk_exclusion_func = NULL,
-		.all_quals = NIL,
 		.join_conditions = NIL,
 		.propagate_conditions = NIL,
+		.all_quals = NIL,
 	};
 	Size old_rel_array_len;
 	Index first_chunk_index = 0;
@@ -1061,14 +1062,14 @@ ts_plan_expand_hypertable_chunks(Hypertable *ht, PlannerInfo *root, RelOptInfo *
 	 */
 	old_rel_array_len = root->simple_rel_array_size;
 	root->simple_rel_array_size += list_length(inh_oids);
-	root->simple_rel_array =
+	root->simple_rel_array =(RelOptInfo** )
 		repalloc(root->simple_rel_array, root->simple_rel_array_size * sizeof(RelOptInfo *));
 	/* postgres expects these arrays to be 0'ed until intialized */
 	memset(root->simple_rel_array + old_rel_array_len,
 		   0,
 		   list_length(inh_oids) * sizeof(*root->simple_rel_array));
 
-	root->simple_rte_array =
+	root->simple_rte_array =(RangeTblEntry** )
 		repalloc(root->simple_rte_array, root->simple_rel_array_size * sizeof(RangeTblEntry *));
 	/* postgres expects these arrays to be 0'ed until intialized */
 	memset(root->simple_rte_array + old_rel_array_len,
@@ -1118,7 +1119,7 @@ ts_plan_expand_hypertable_chunks(Hypertable *ht, PlannerInfo *root, RelOptInfo *
 		 * The parent securityQuals will be propagated to children along with
 		 * other base restriction clauses, so we don't need to do it here.
 		 */
-		childrte = copyObject(rte);
+		childrte =(RangeTblEntry*) copyObject(rte);
 		childrte->relid = child_oid;
 		childrte->relkind = newrelation->rd_rel->relkind;
 		childrte->inh = false;
@@ -1193,7 +1194,7 @@ propagate_join_quals(PlannerInfo *root, RelOptInfo *rel, CollectQualCtx *ctx)
 	foreach (lc, ctx->propagate_conditions)
 	{
 		ListCell *lc_qual;
-		OpExpr *op = lfirst(lc);
+		OpExpr *op =(OpExpr *) lfirst(lc);
 		Var *rel_var, *other_var;
 
 		/*
@@ -1222,9 +1223,9 @@ propagate_join_quals(PlannerInfo *root, RelOptInfo *rel, CollectQualCtx *ctx)
 
 		foreach (lc_qual, ctx->all_quals)
 		{
-			OpExpr *qual = lfirst(lc_qual);
-			Expr *left = linitial(qual->args);
-			Expr *right = lsecond(qual->args);
+			OpExpr *qual =(OpExpr *) lfirst(lc_qual);
+			Expr *left =(Expr *) linitial(qual->args);
+			Expr *right =(Expr *) lsecond(qual->args);
 			OpExpr *propagated;
 			ListCell *lc_ri;
 			bool new_qual = true;
@@ -1238,14 +1239,14 @@ propagate_join_quals(PlannerInfo *root, RelOptInfo *rel, CollectQualCtx *ctx)
 				castNode(Var, left)->varattno == other_var->varattno && !IsA(right, Var) &&
 				!contain_volatile_functions((Node *) right))
 			{
-				propagated = copyObject(qual);
+				propagated =(OpExpr *) copyObject(qual);
 				propagated->args = list_make2(rel_var, lsecond(propagated->args));
 			}
 			else if (IsA(right, Var) && castNode(Var, right)->varno == other_var->varno &&
 					 castNode(Var, right)->varattno == other_var->varattno && !IsA(left, Var) &&
 					 !contain_volatile_functions((Node *) left))
 			{
-				propagated = copyObject(qual);
+				propagated =(OpExpr *) copyObject(qual);
 				propagated->args = list_make2(linitial(propagated->args), rel_var);
 			}
 			else

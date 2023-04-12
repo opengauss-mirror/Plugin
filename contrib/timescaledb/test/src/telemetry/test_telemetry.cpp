@@ -4,7 +4,7 @@
  * LICENSE-APACHE for a copy of the license.
  */
 #include <postgres.h>
-#include <access/htup_details.h>
+#include <access/htup.h>
 #include <utils/builtins.h>
 #include <utils/jsonb.h>
 #include <funcapi.h>

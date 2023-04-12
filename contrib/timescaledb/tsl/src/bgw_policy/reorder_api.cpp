@@ -85,6 +85,7 @@ reorder_add_policy(PG_FUNCTION_ARGS)
 	Oid owner_id;
 
 	BgwPolicyReorder policy = { .fd = {
+									.job_id = NULL,
 									.hypertable_id = hypertable_id,
 									.hypertable_index_name = *index_name,
 								} };

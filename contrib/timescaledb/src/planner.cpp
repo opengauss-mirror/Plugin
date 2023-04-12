@@ -4,7 +4,7 @@
  * LICENSE-APACHE for a copy of the license.
  */
 #include <postgres.h>
-#include <access/tsmapi.h>
+//#include <access/tsmapi.h>
 #include <nodes/plannodes.h>
 #include <parser/parsetree.h>
 #include <optimizer/clauses.h>
@@ -19,7 +19,7 @@
 #include <nodes/makefuncs.h>
 #include <optimizer/restrictinfo.h>
 #include <utils/lsyscache.h>
-#include <executor/nodeAgg.h>
+#include <executor/node/nodeAgg.h>
 #include <utils/timestamp.h>
 #include <utils/selfuncs.h>
 #include <access/xact.h>
@@ -35,7 +35,7 @@
 #include <catalog/pg_constraint.h>
 #include "compat.h"
 #if PG11_LT /* PG11 consolidates pg_foo_fn.h -> pg_foo.h */
-#include <catalog/pg_constraint_fn.h>
+//#include <catalog/pg_constraint_fn.h>
 #endif
 #include "compat-msvc-exit.h"
 
@@ -75,6 +75,7 @@ void _planner_init(void);
 void _planner_fini(void);
 
 static planner_hook_type prev_planner_hook;
+static planner_hook_type_tsdb prev_planner_hook_tsdb;//tsdb
 static set_rel_pathlist_hook_type prev_set_rel_pathlist_hook;
 static get_relation_info_hook_type prev_get_relation_info_hook;
 static create_upper_paths_hook_type prev_create_upper_paths_hook;
@@ -145,7 +146,7 @@ planner_hcache_pop(bool release)
 
 	Assert(list_length(planner_hcaches) > 0);
 
-	hcache = linitial(planner_hcaches);
+	hcache =(Cache *) linitial(planner_hcaches);
 
 	if (release)
 		ts_cache_release(hcache);
@@ -269,10 +270,10 @@ preprocess_query(Node *node, Query *rootquery)
 			}
 			rti++;
 		}
-		return query_tree_walker(query, preprocess_query, rootquery, 0);
+		return query_tree_walker(query,(bool (*)()) preprocess_query, rootquery, 0);
 	}
 
-	return expression_tree_walker(node, preprocess_query, rootquery);
+	return expression_tree_walker(node,(bool (*)()) preprocess_query, rootquery);
 }
 
 static PlannedStmt *
@@ -290,7 +291,7 @@ timescaledb_planner(Query *parse, int cursor_opts, ParamListInfo bound_params)
 
 		if (prev_planner_hook != NULL)
 			/* Call any earlier hooks */
-			stmt = (prev_planner_hook)(parse, cursor_opts, bound_params);
+			stmt =(prev_planner_hook_tsdb)(parse, cursor_opts, bound_params);
 		else
 			/* Call the standard planner */
 			stmt = standard_planner(parse, cursor_opts, bound_params);
@@ -510,7 +511,7 @@ should_chunk_append(PlannerInfo *root, RelOptInfo *rel, Path *path, bool ordered
 				 */
 				foreach (lc, pk->pk_eclass->ec_members)
 				{
-					EquivalenceMember *em = lfirst(lc);
+					EquivalenceMember *em =(EquivalenceMember *) lfirst(lc);
 					if (!em->em_is_child)
 					{
 						if (IsA(em->em_expr, Var) &&
@@ -671,10 +672,10 @@ apply_optimizations(PlannerInfo *root, TsRelType reltype, RelOptInfo *rel, Range
 		/* Do not optimize result relations (INSERT, UPDATE, DELETE) */
 		0 == root->parse->resultRelation)
 	{
-		TimescaleDBPrivate *private = ts_get_private_reloptinfo(rel);
-		bool ordered = private->appends_ordered;
-		int order_attno = private->order_attno;
-		List *nested_oids = private->nested_oids;
+		TimescaleDBPrivate *privatee = ts_get_private_reloptinfo(rel);
+		bool ordered = privatee->appends_ordered;
+		int order_attno = privatee->order_attno;
+		List *nested_oids = privatee->nested_oids;
 		ListCell *lc;
 
 		Assert(ht != NULL);
@@ -970,7 +971,7 @@ replace_hypertable_insert_paths(PlannerInfo *root, List *pathlist)
 
 	foreach (lc, pathlist)
 	{
-		Path *path = lfirst(lc);
+		Path *path =(Path *) lfirst(lc);
 
 		if (IsA(path, ModifyTablePath) && ((ModifyTablePath *) path)->operation == CMD_INSERT)
 		{
@@ -1053,7 +1054,7 @@ contain_param_exec_walker(Node *node, void *context)
 	if (IsA(node, Param))
 		return true;
 
-	return expression_tree_walker(node, contain_param_exec_walker, context);
+	return expression_tree_walker(node,(bool (*)())contain_param_exec_walker, context);
 }
 
 static bool
@@ -1143,7 +1144,7 @@ cagg_reorder_groupby_clause(RangeTblEntry *subq_rte, int rtno, List *outer_sortc
 		List *new_groupclause = NIL;
 		/* we are going to modify this. so make a copy and use it
 		 if we replace */
-		List *subq_groupclause_copy = copyObject(subq->groupClause);
+		List *subq_groupclause_copy =(List *) copyObject(subq->groupClause);
 		foreach (lc, outer_sortcl)
 		{
 			SortGroupClause *outer_sc = (SortGroupClause *) lfirst(lc);
@@ -1152,7 +1153,7 @@ cagg_reorder_groupby_clause(RangeTblEntry *subq_rte, int rtno, List *outer_sortc
 			if (IsA(outer_tle->expr, Var) && (((Var *) outer_tle->expr)->varno == rtno))
 			{
 				int outer_attno = ((Var *) outer_tle->expr)->varattno;
-				TargetEntry *subq_tle = list_nth(subq->targetList, outer_attno - 1);
+				TargetEntry *subq_tle =(TargetEntry *) list_nth(subq->targetList, outer_attno - 1);
 				if (subq_tle->ressortgroupref > 0)
 				{
 					/* get group clause corresponding to this */
@@ -1176,11 +1177,12 @@ cagg_reorder_groupby_clause(RangeTblEntry *subq_rte, int rtno, List *outer_sortc
 		}
 	}
 }
-
+PGDLLIMPORT planner_hook_type_tsdb planner_hook;
+PGDLLIMPORT create_upper_paths_hook_type create_upper_paths_hook;  
 void
 _planner_init(void)
 {
-	prev_planner_hook = planner_hook;
+	prev_planner_hook_tsdb = planner_hook;
 	planner_hook = timescaledb_planner;
 	prev_set_rel_pathlist_hook = set_rel_pathlist_hook;
 	set_rel_pathlist_hook = timescaledb_set_rel_pathlist;
@@ -1195,7 +1197,7 @@ _planner_init(void)
 void
 _planner_fini(void)
 {
-	planner_hook = prev_planner_hook;
+	planner_hook = prev_planner_hook_tsdb;
 	set_rel_pathlist_hook = prev_set_rel_pathlist_hook;
 	get_relation_info_hook = prev_get_relation_info_hook;
 	create_upper_paths_hook = prev_create_upper_paths_hook;

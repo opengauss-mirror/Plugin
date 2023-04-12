@@ -6,7 +6,7 @@
 
 #include <postgres.h>
 #include <catalog/pg_namespace.h>
-#include <nodes/extensible.h>
+//#include <nodes/extensible.h>
 #include <nodes/makefuncs.h>
 #include <nodes/nodeFuncs.h>
 #include <optimizer/pathnode.h>
@@ -39,9 +39,9 @@ static Sort *make_sort(Plan *lefttree, int numCols, AttrNumber *sortColIdx, Oid 
 static Plan *adjust_childscan(PlannerInfo *root, Plan *plan, Path *path, List *pathkeys,
 							  List *tlist, AttrNumber *sortColIdx);
 
-static CustomScanMethods chunk_append_plan_methods = {
-	.CustomName = "ChunkAppend",
-	.CreateCustomScanState = ts_chunk_append_state_create,
+static ExtensiblePlanMethods chunk_append_plan_methods = {
+	.ExtensibleName = "ChunkAppend",
+	.CreateExtensiblePlanState = ts_chunk_append_state_create,
 };
 
 void
@@ -86,7 +86,7 @@ adjust_childscan(PlannerInfo *root, Plan *plan, Path *path, List *pathkeys, List
 }
 
 Plan *
-ts_chunk_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path, List *tlist,
+ts_chunk_append_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath *path, List *tlist,
 							List *clauses, List *custom_plans)
 {
 	ListCell *lc_child;
@@ -97,23 +97,23 @@ ts_chunk_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path
 	uint32 limit = 0;
 
 	ChunkAppendPath *capath = (ChunkAppendPath *) path;
-	CustomScan *cscan = makeNode(CustomScan);
+	ExtensiblePlan *cscan = makeNode(ExtensiblePlan);
 
 	cscan->flags = path->flags;
 	cscan->methods = &chunk_append_plan_methods;
 	cscan->scan.scanrelid = rel->relid;
 
 	tlist = ts_build_path_tlist(root, (Path *) path);
-	cscan->custom_scan_tlist = tlist;
+	cscan->extensible_plan_tlist = tlist;
 	cscan->scan.plan.targetlist = tlist;
 
 	if (path->path.pathkeys == NIL)
 	{
 		ListCell *lc_plan, *lc_path;
-		forboth (lc_path, path->custom_paths, lc_plan, custom_plans)
+		forboth (lc_path, path->extensible_paths, lc_plan, custom_plans)
 		{
-			Plan *child_plan = lfirst(lc_plan);
-			Path *child_path = lfirst(lc_path);
+			Plan *child_plan =(Plan *) lfirst(lc_plan);
+			Path *child_path =(Path *) lfirst(lc_path);
 
 			/* push down targetlist to children */
 			if (child_path->parent->reloptkind == RELOPT_OTHER_MEMBER_REL)
@@ -177,15 +177,15 @@ ts_chunk_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path
 
 		sort_options = list_make4(sort_indexes, sort_ops, sort_collations, sort_nulls);
 
-		forboth (lc_path, path->custom_paths, lc_plan, custom_plans)
+		forboth (lc_path, path->extensible_paths, lc_plan, custom_plans)
 		{
 			/*
 			 * If the planner injected a Result node to do projection
 			 * we can safely remove the Result node if it does not have
 			 * a one-time filter because ChunkAppend can do projection.
 			 */
-			if (IsA(lfirst(lc_plan), Result) &&
-				castNode(Result, lfirst(lc_plan))->resconstantqual == NULL)
+			if (IsA(lfirst(lc_plan), BaseResult) &&
+				castNode(BaseResult, lfirst(lc_plan))->resconstantqual == NULL)
 				lfirst(lc_plan) = ((Plan *) lfirst(lc_plan))->lefttree;
 
 			if (IsA(lfirst(lc_plan), MergeAppend))
@@ -208,8 +208,8 @@ ts_chunk_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path
 				forboth (lc_childpath, merge_path->subpaths, lc_childplan, merge_plan->mergeplans)
 				{
 					lfirst(lc_childplan) = adjust_childscan(root,
-															lfirst(lc_childplan),
-															lfirst(lc_childpath),
+															(Plan *)lfirst(lc_childplan),
+															(Path*)lfirst(lc_childpath),
 															pathkeys,
 															tlist,
 															sortColIdx);
@@ -218,8 +218,8 @@ ts_chunk_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path
 			else
 			{
 				lfirst(lc_plan) = adjust_childscan(root,
-												   lfirst(lc_plan),
-												   lfirst(lc_path),
+												   (Plan *)lfirst(lc_plan),
+												   (Path*)lfirst(lc_path),
 												   path->path.pathkeys,
 												   tlist,
 												   sortColIdx);
@@ -227,7 +227,7 @@ ts_chunk_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path
 		}
 	}
 
-	cscan->custom_plans = custom_plans;
+	cscan->extensible_plans = custom_plans;
 
 	/*
 	 * If we do either startup or runtime exclusion, we need to pass restrictinfo
@@ -235,9 +235,9 @@ ts_chunk_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path
 	 */
 	if (capath->startup_exclusion || capath->runtime_exclusion)
 	{
-		foreach (lc_child, cscan->custom_plans)
+		foreach (lc_child, cscan->extensible_plans)
 		{
-			Scan *scan = ts_chunk_append_get_scan_plan(lfirst(lc_child));
+			Scan *scan = ts_chunk_append_get_scan_plan((Plan *)lfirst(lc_child));
 
 			if (scan == NULL || scan->scanrelid == 0)
 			{
@@ -261,7 +261,7 @@ ts_chunk_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path
 				chunk_rt_indexes = lappend_oid(chunk_rt_indexes, scan->scanrelid);
 			}
 		}
-		Assert(list_length(cscan->custom_plans) == list_length(chunk_ri_clauses));
+		Assert(list_length(cscan->extensible_plans) == list_length(chunk_ri_clauses));
 		Assert(list_length(chunk_ri_clauses) == list_length(chunk_rt_indexes));
 	}
 
@@ -276,7 +276,7 @@ ts_chunk_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path
 	custom_private = lappend(custom_private, chunk_rt_indexes);
 	custom_private = lappend(custom_private, sort_options);
 
-	cscan->custom_private = custom_private;
+	cscan->extensible_private = custom_private;
 
 	return &cscan->scan.plan;
 }
@@ -310,7 +310,7 @@ make_sort(Plan *lefttree, int numCols, AttrNumber *sortColIdx, Oid *sortOperator
 Scan *
 ts_chunk_append_get_scan_plan(Plan *plan)
 {
-	if (plan != NULL && (IsA(plan, Sort) || IsA(plan, Result)))
+	if (plan != NULL && (IsA(plan, Sort) || IsA(plan, BaseResult)))
 		plan = plan->lefttree;
 
 	if (plan == NULL)
@@ -333,8 +333,8 @@ ts_chunk_append_get_scan_plan(Plan *plan)
 		case T_WorkTableScan:
 			return (Scan *) plan;
 			break;
-		case T_CustomScan:
-			if (castNode(CustomScan, plan)->scan.scanrelid > 0)
+		case T_ExtensiblePlan:
+			if (castNode(ExtensiblePlan, plan)->scan.scanrelid > 0)
 				return (Scan *) plan;
 			else
 				return NULL;

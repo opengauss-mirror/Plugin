@@ -42,9 +42,9 @@ dimension_vec_expand(DimensionVec *vec, int32 new_capacity)
 		return vec;
 
 	if (NULL == vec)
-		vec = palloc(DIMENSION_VEC_SIZE(new_capacity));
+		vec =(DimensionVec *) palloc(DIMENSION_VEC_SIZE(new_capacity));
 	else
-		vec = repalloc(vec, DIMENSION_VEC_SIZE(new_capacity));
+		vec =(DimensionVec *) repalloc(vec, DIMENSION_VEC_SIZE(new_capacity));
 
 	vec->capacity = new_capacity;
 
@@ -160,7 +160,7 @@ ts_dimension_vec_find_slice(DimensionVec *vec, int64 coordinate)
 
 	Assert(dimension_vec_is_sorted(vec));
 
-	res = bsearch(&coordinate,
+	res =(DimensionSlice **) bsearch(&coordinate,
 				  vec->slices,
 				  vec->num_slices,
 				  sizeof(DimensionSlice *),

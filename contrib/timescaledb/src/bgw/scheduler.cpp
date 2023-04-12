@@ -16,7 +16,7 @@
 #include <postmaster/bgworker.h>
 #include <storage/ipc.h>
 #include <storage/latch.h>
-#include <storage/lwlock.h>
+#include <storage/lock/lwlock.h>
 #include <storage/proc.h>
 #include <storage/shmem.h>
 #include <utils/inval.h>
@@ -29,6 +29,7 @@
 #include <tcop/tcopprot.h>
 #include <nodes/pg_list.h>
 
+#include "postmaster/bgworker.h"
 #include "extension.h"
 #include "guc.h"
 #include "scheduler.h"
@@ -115,11 +116,21 @@ BackgroundWorkerHandle *
 ts_bgw_start_worker(const char *function, const char *name, const char *extra)
 {
 	BackgroundWorker worker = {
+		.links = {},
+		.bgw_id = NULL,
+		.bgw_notify_pid = t_thrd.proc_cxt.MyProcPid,
+		.bgw_status = {},
+		.bgw_status_dur = NULL,
+		.bgw_edata = {},
+		.disable_count = NULL,
+		.rw_lnode = {},
+		.bgw_name = {},
+		.bgw_extra = {},
+		.bgw_main_arg = ObjectIdGetDatum(u_sess->proc_cxt.MyDatabaseId),
 		.bgw_flags = BGWORKER_SHMEM_ACCESS | BGWORKER_BACKEND_DATABASE_CONNECTION,
 		.bgw_start_time = BgWorkerStart_RecoveryFinished,
 		.bgw_restart_time = BGW_NEVER_RESTART,
-		.bgw_notify_pid = MyProcPid,
-		.bgw_main_arg = ObjectIdGetDatum(MyDatabaseId),
+		
 	};
 	BackgroundWorkerHandle *handle = NULL;
 
@@ -444,8 +455,8 @@ ts_update_scheduled_jobs_list(List *cur_jobs_list, MemoryContext mctx)
 
 	while (cur_ptr != NULL && new_ptr != NULL)
 	{
-		ScheduledBgwJob *new_sjob = lfirst(new_ptr);
-		ScheduledBgwJob *cur_sjob = lfirst(cur_ptr);
+		ScheduledBgwJob *new_sjob =(ScheduledBgwJob *) lfirst(new_ptr);
+		ScheduledBgwJob *cur_sjob =(ScheduledBgwJob *) lfirst(cur_ptr);
 
 		if (cur_sjob->job.fd.id < new_sjob->job.fd.id)
 		{
@@ -489,7 +500,7 @@ ts_update_scheduled_jobs_list(List *cur_jobs_list, MemoryContext mctx)
 		ListCell *ptr;
 
 		for_each_cell (ptr, cur_ptr)
-			terminate_and_cleanup_job(lfirst(ptr));
+			terminate_and_cleanup_job((ScheduledBgwJob *)lfirst(ptr));
 	}
 
 	if (new_ptr != NULL)
@@ -498,7 +509,7 @@ ts_update_scheduled_jobs_list(List *cur_jobs_list, MemoryContext mctx)
 		ListCell *ptr;
 
 		for_each_cell (ptr, new_ptr)
-			scheduled_bgw_job_transition_state_to(lfirst(ptr), JOB_STATE_SCHEDULED);
+			scheduled_bgw_job_transition_state_to((ScheduledBgwJob *)lfirst(ptr), JOB_STATE_SCHEDULED);
 	}
 
 	/* Free the old list */
@@ -534,8 +545,8 @@ cmp_next_start(const void *left, const void *right)
 {
 	const ListCell *left_cell = *((ListCell **) left);
 	const ListCell *right_cell = *((ListCell **) right);
-	ScheduledBgwJob *left_sjob = lfirst(left_cell);
-	ScheduledBgwJob *right_sjob = lfirst(right_cell);
+	ScheduledBgwJob *left_sjob =(ScheduledBgwJob *) lfirst(left_cell);
+	ScheduledBgwJob *right_sjob =(ScheduledBgwJob *) lfirst(right_cell);
 
 	if (left_sjob->next_start < right_sjob->next_start)
 		return -1;
@@ -556,7 +567,7 @@ start_scheduled_jobs(register_background_worker_callback_type bgw_register)
 
 	foreach (lc, ordered_scheduled_jobs)
 	{
-		ScheduledBgwJob *sjob = lfirst(lc);
+		ScheduledBgwJob *sjob =(ScheduledBgwJob *) lfirst(lc);
 
 		if (sjob->state == JOB_STATE_SCHEDULED &&
 			sjob->next_start <= ts_timer_get_current_timestamp())
@@ -574,7 +585,7 @@ earliest_wakeup_to_start_next_job()
 
 	foreach (lc, scheduled_jobs)
 	{
-		ScheduledBgwJob *sjob = lfirst(lc);
+		ScheduledBgwJob *sjob =(ScheduledBgwJob *) lfirst(lc);
 
 		if (sjob->state == JOB_STATE_SCHEDULED)
 		{
@@ -598,7 +609,7 @@ earliest_job_timeout()
 
 	foreach (lc, scheduled_jobs)
 	{
-		ScheduledBgwJob *sjob = lfirst(lc);
+		ScheduledBgwJob *sjob =(ScheduledBgwJob *) lfirst(lc);
 
 		if (sjob->state == JOB_STATE_STARTED)
 			earliest = least_timestamp(earliest, sjob->timeout_at);
@@ -619,7 +630,7 @@ terminate_all_jobs_and_release_workers()
 
 	foreach (lc, scheduled_jobs)
 	{
-		ScheduledBgwJob *sjob = lfirst(lc);
+		ScheduledBgwJob *sjob =(ScheduledBgwJob *) lfirst(lc);
 
 		/*
 		 * Clean up the background workers. Don't worry about state of the
@@ -644,7 +655,7 @@ wait_for_all_jobs_to_shutdown()
 
 	foreach (lc, scheduled_jobs)
 	{
-		ScheduledBgwJob *sjob = lfirst(lc);
+		ScheduledBgwJob *sjob =(ScheduledBgwJob *) lfirst(lc);
 
 		if (sjob->state == JOB_STATE_STARTED || sjob->state == JOB_STATE_TERMINATING)
 			WaitForBackgroundWorkerShutdown(sjob->handle);
@@ -660,7 +671,7 @@ check_for_stopped_and_timed_out_jobs()
 	{
 		BgwHandleStatus status;
 		pid_t pid;
-		ScheduledBgwJob *sjob = lfirst(lc);
+		ScheduledBgwJob *sjob =(ScheduledBgwJob *) lfirst(lc);
 		TimestampTz now = ts_timer_get_current_timestamp();
 
 		if (sjob->state != JOB_STATE_STARTED && sjob->state != JOB_STATE_TERMINATING)
@@ -732,7 +743,7 @@ ts_bgw_scheduler_process(int32 run_for_interval_ms,
 	if (run_for_interval_ms > 0)
 		quit_time = TimestampTzPlusMilliseconds(start, run_for_interval_ms);
 
-	ereport(DEBUG1, (errmsg("database scheduler starting for database %d", MyDatabaseId)));
+	ereport(DEBUG1, (errmsg("database scheduler starting for database %d", u_sess->proc_cxt.MyDatabaseId)));
 
 	/*
 	 * on SIGTERM the process will usually die from the CHECK_FOR_INTERRUPTS
@@ -740,7 +751,7 @@ ts_bgw_scheduler_process(int32 run_for_interval_ms,
 	 * handled in the before_shmem_exit,
 	 * bgw_scheduler_before_shmem_exit_callback.
 	 */
-	while (quit_time > ts_timer_get_current_timestamp() && !ProcDiePending && !ts_shutdown_bgw)
+	while (quit_time > ts_timer_get_current_timestamp() && !t_thrd.int_cxt.ProcDiePending && !ts_shutdown_bgw)
 	{
 		MemoryContextSwitchTo(scratch_mctx);
 		TimestampTz next_wakeup = quit_time;
@@ -769,7 +780,7 @@ ts_bgw_scheduler_process(int32 run_for_interval_ms,
 		if (jobs_list_needs_update)
 		{
 			StartTransactionCommand();
-			Assert(CurrentMemoryContext == CurTransactionContext);
+			Assert(CurrentMemoryContext == t_thrd.mem_cxt.cur_transaction_mem_cxt);
 			scheduled_jobs = ts_update_scheduled_jobs_list(scheduled_jobs, scheduler_mctx);
 			CommitTransactionCommand();
 			MemoryContextSwitchTo(scratch_mctx);
@@ -834,7 +845,7 @@ static void handle_sighup(SIGNAL_ARGS)
 	int save_errno = errno;
 
 	got_SIGHUP = true;
-	SetLatch(MyLatch);
+	SetLatch(&t_thrd.proc->procLatch);
 
 	errno = save_errno;
 }

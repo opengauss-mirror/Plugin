@@ -74,7 +74,7 @@ build_script:
 
     Add-Content "C:\Program Files\postgresql\10\data\postgresql.conf" "log_line_prefix = '%u [%p] %d '"
 
-    Add-Content "C:\Program Files\postgresql\10\data\postgresql.conf" "max_worker_processes=16"
+    Add-Content "C:\Program Files\postgresql\10\data\postgresql.conf" "g_max_worker_processes=16"
 
     Add-Content "C:\Program Files\postgresql\10\data\postgresql.conf" "autovacuum=false"
 

@@ -7,7 +7,7 @@
 #include <fmgr.h>
 
 #include <export.h>
-#include <cross_module_fn.h>
+#include "cross_module_fn.h"
 #include <license_guc.h>
 
 #include "planner.h"
@@ -91,6 +91,9 @@ CrossModuleFunctions tsl_cm_functions = {
 	.alter_job_schedule = bgw_policy_alter_job_schedule,
 	.reorder_chunk = tsl_reorder_chunk,
 	.move_chunk = tsl_move_chunk,
+	.ddl_command_start = NULL,
+	.ddl_command_end = NULL,
+	.sql_drop = NULL,
 	.partialize_agg = tsl_partialize_agg,
 	.finalize_agg_sfunc = tsl_finalize_agg_sfunc,
 	.finalize_agg_ffunc = tsl_finalize_agg_ffunc,
@@ -98,12 +101,15 @@ CrossModuleFunctions tsl_cm_functions = {
 	.continuous_agg_drop_chunks_by_chunk_id = ts_continuous_agg_drop_chunks_by_chunk_id,
 	.continuous_agg_trigfn = continuous_agg_trigfn,
 	.continuous_agg_update_options = continuous_agg_update_options,
-	.compressed_data_decompress_forward = tsl_compressed_data_decompress_forward,
-	.compressed_data_decompress_reverse = tsl_compressed_data_decompress_reverse,
 	.compressed_data_send = tsl_compressed_data_send,
 	.compressed_data_recv = tsl_compressed_data_recv,
 	.compressed_data_in = tsl_compressed_data_in,
 	.compressed_data_out = tsl_compressed_data_out,
+	.process_compress_table = tsl_process_compress_table,
+	.compress_chunk = tsl_compress_chunk,
+	.decompress_chunk = tsl_decompress_chunk,
+	.compressed_data_decompress_forward = tsl_compressed_data_decompress_forward,
+	.compressed_data_decompress_reverse = tsl_compressed_data_decompress_reverse,
 	.deltadelta_compressor_append = tsl_deltadelta_compressor_append,
 	.deltadelta_compressor_finish = tsl_deltadelta_compressor_finish,
 	.gorilla_compressor_append = tsl_gorilla_compressor_append,
@@ -112,9 +118,6 @@ CrossModuleFunctions tsl_cm_functions = {
 	.dictionary_compressor_finish = tsl_dictionary_compressor_finish,
 	.array_compressor_append = tsl_array_compressor_append,
 	.array_compressor_finish = tsl_array_compressor_finish,
-	.process_compress_table = tsl_process_compress_table,
-	.compress_chunk = tsl_compress_chunk,
-	.decompress_chunk = tsl_decompress_chunk,
 };
 
 TS_FUNCTION_INFO_V1(ts_module_init);
@@ -156,6 +159,7 @@ check_tsl_loaded(void)
 {
 	return true;
 }
+
 
 PGDLLEXPORT void
 _PG_init(void)

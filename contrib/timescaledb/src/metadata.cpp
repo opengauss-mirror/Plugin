@@ -8,7 +8,7 @@
 #include <postgres.h>
 #include <fmgr.h>
 #include <catalog/pg_type.h>
-#include <access/htup_details.h>
+#include <access/htup.h>
 #include <utils/builtins.h>
 #include <utils/fmgroids.h>
 #include <utils/lsyscache.h>
@@ -68,19 +68,19 @@ typedef struct DatumValue
 	 */
 	FormData_metadata *form;
 	Datum value;
-	Oid typeid;
+	Oid _typeid;
 	bool isnull;
 } DatumValue;
 
 static ScanTupleResult
 metadata_tuple_get_value(TupleInfo *ti, void *data)
 {
-	DatumValue *dv = data;
+	DatumValue *dv =(DatumValue *) data;
 
 	dv->value = heap_getattr(ti->tuple, Anum_metadata_value, ti->desc, &dv->isnull);
 
 	if (!dv->isnull)
-		dv->value = convert_text_to_type(dv->value, dv->typeid);
+		dv->value = convert_text_to_type(dv->value, dv->_typeid);
 
 	return SCAN_DONE;
 }
@@ -91,19 +91,29 @@ metadata_get_value_internal(Datum metadata_key, Oid key_type, Oid value_type, bo
 {
 	ScanKeyData scankey[1];
 	DatumValue dv = {
-		.typeid = value_type,
+		.form = {},
+		.value = NULL,
+		._typeid = value_type,
 		.isnull = true,
 	};
 	Catalog *catalog = ts_catalog_get();
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, METADATA),
 		.index = catalog_get_index(catalog, METADATA, METADATA_PKEY_IDX),
-		.nkeys = 1,
 		.scankey = scankey,
-		.tuple_found = metadata_tuple_get_value,
-		.data = &dv,
+		.nkeys = 1,
+		.norderbys = 0,
+		.limit = 0,
+		.want_itup = false,
 		.lockmode = lockmode,
+		.result_mctx = NULL,
+		.tuplock = NULL,
 		.scandirection = ForwardScanDirection,
+		.data = &dv,
+		.prescan = NULL,
+		.postscan = NULL,
+		.filter = NULL,
+		.tuple_found = metadata_tuple_get_value,
 	};
 
 	ScanKeyInit(&scankey[0],

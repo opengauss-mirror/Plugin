@@ -14,12 +14,12 @@
 
 typedef struct HypertableInsertPath
 {
-	CustomPath cpath;
+	ExtensiblePath cpath;
 } HypertableInsertPath;
 
 typedef struct HypertableInsertState
 {
-	CustomScanState cscan_state;
+	ExtensiblePlanState cscan_state;
 	ModifyTable *mt;
 } HypertableInsertState;
 

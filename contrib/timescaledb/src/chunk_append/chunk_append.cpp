@@ -29,9 +29,9 @@ static bool contain_param_exec_walker(Node *node, void *context);
 static Var *find_equality_join_var(Var *sort_var, Index ht_relid, Oid eq_opr,
 								   List *join_conditions);
 
-static CustomPathMethods chunk_append_path_methods = {
-	.CustomName = "ChunkAppend",
-	.PlanCustomPath = ts_chunk_append_plan_create,
+static ExtensiblePathMethods chunk_append_path_methods = {
+	.ExtensibleName = "ChunkAppend",
+	.PlanExtensiblePath = ts_chunk_append_plan_create,
 };
 
 static bool
@@ -50,9 +50,9 @@ ts_chunk_append_path_create(PlannerInfo *root, RelOptInfo *rel, Hypertable *ht, 
 	Cost total_cost = 0.0;
 	List *children = NIL;
 
-	path = (ChunkAppendPath *) newNode(sizeof(ChunkAppendPath), T_CustomPath);
+	path = (ChunkAppendPath *) newNode(sizeof(ChunkAppendPath), T_ExtensiblePath);
 
-	path->cpath.path.pathtype = T_CustomScan;
+	path->cpath.path.pathtype = T_ExtensiblePlan;
 	path->cpath.path.parent = rel;
 	path->cpath.path.pathtarget = rel->reltarget;
 	path->cpath.path.param_info = subpath->param_info;
@@ -109,9 +109,9 @@ ts_chunk_append_path_create(PlannerInfo *root, RelOptInfo *rel, Hypertable *ht, 
 			 * check the param references a partitioning column of the hypertable
 			 * otherwise we skip runtime exclusion
 			 */
-			foreach (lc_var, pull_var_clause((Node *) rinfo->clause, 0))
+			foreach (lc_var, pull_var_clause((Node *) rinfo->clause, {},{}))
 			{
-				Var *var = lfirst(lc_var);
+				Var *var =(Var *) lfirst(lc_var);
 				/*
 				 * varattno 0 is whole row and varattno less than zero are
 				 * system columns so we skip those even though
@@ -165,7 +165,7 @@ ts_chunk_append_path_create(PlannerInfo *root, RelOptInfo *rel, Hypertable *ht, 
 	}
 
 	if (!ordered || ht->space->num_dimensions == 1)
-		path->cpath.custom_paths = children;
+		path->cpath.extensible_paths = children;
 	else
 	{
 		/*
@@ -196,7 +196,7 @@ ts_chunk_append_path_create(PlannerInfo *root, RelOptInfo *rel, Hypertable *ht, 
 		foreach (lc, nested_oids)
 		{
 			ListCell *lc_oid;
-			List *current_oids = lfirst(lc);
+			List *current_oids =(List *) lfirst(lc);
 			List *merge_childs = NIL;
 			MergeAppendPath *append;
 
@@ -254,12 +254,12 @@ ts_chunk_append_path_create(PlannerInfo *root, RelOptInfo *rel, Hypertable *ht, 
 			path->runtime_exclusion = false;
 		}
 
-		path->cpath.custom_paths = nested_children;
+		path->cpath.extensible_paths = nested_children;
 	}
 
-	foreach (lc, path->cpath.custom_paths)
+	foreach (lc, path->cpath.extensible_paths)
 	{
-		Path *child = lfirst(lc);
+		Path *child =(Path *) lfirst(lc);
 
 		/*
 		 * If there is a LIMIT clause we only include as many chunks as
@@ -277,8 +277,8 @@ ts_chunk_append_path_create(PlannerInfo *root, RelOptInfo *rel, Hypertable *ht, 
 	path->cpath.path.rows = rows;
 	path->cpath.path.total_cost = total_cost;
 
-	if (path->cpath.custom_paths != NIL)
-		path->cpath.path.startup_cost = ((Path *) linitial(path->cpath.custom_paths))->startup_cost;
+	if (path->cpath.extensible_paths != NIL)
+		path->cpath.path.startup_cost = ((Path *) linitial(path->cpath.extensible_paths))->startup_cost;
 
 	return &path->cpath.path;
 }
@@ -290,7 +290,7 @@ bool
 ts_ordered_append_should_optimize(PlannerInfo *root, RelOptInfo *rel, Hypertable *ht,
 								  List *join_conditions, int *order_attno, bool *reverse)
 {
-	SortGroupClause *sort = linitial(root->parse->sortClause);
+	SortGroupClause *sort =(SortGroupClause *) linitial(root->parse->sortClause);
 	TargetEntry *tle = get_sortgroupref_tle(sort->tleSortGroupRef, root->parse->targetList);
 	RangeTblEntry *rte = root->simple_rte_array[rel->relid];
 	TypeCacheEntry *tce;
@@ -426,7 +426,7 @@ contain_param_exec_walker(Node *node, void *context)
 	if (IsA(node, Param))
 		return castNode(Param, node)->paramkind == PARAM_EXEC;
 
-	return expression_tree_walker(node, contain_param_exec_walker, context);
+	return expression_tree_walker(node,(bool (*)()) contain_param_exec_walker, context);
 }
 
 /*
@@ -441,12 +441,12 @@ find_equality_join_var(Var *sort_var, Index ht_relid, Oid eq_opr, List *join_con
 
 	foreach (lc, join_conditions)
 	{
-		OpExpr *op = lfirst(lc);
+		OpExpr *op =(OpExpr *) lfirst(lc);
 
 		if (op->opno == eq_opr)
 		{
-			Var *left = linitial(op->args);
-			Var *right = lsecond(op->args);
+			Var *left =(Var *) linitial(op->args);
+			Var *right =(Var *) lsecond(op->args);
 
 			Assert(IsA(left, Var) && IsA(right, Var));
 

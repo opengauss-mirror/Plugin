@@ -117,7 +117,7 @@ ts_hypertable_compression_get(int32 htid)
 			(FormData_hypertable_compression *) GETSTRUCT(ti->tuple);
 		if (data->hypertable_id != htid)
 			continue;
-		colfd = palloc0(sizeof(FormData_hypertable_compression));
+		colfd =(FormData_hypertable_compression *) palloc0(sizeof(FormData_hypertable_compression));
 		hypertable_compression_fill_from_tuple(colfd, ti);
 		fdlist = lappend(fdlist, colfd);
 	}

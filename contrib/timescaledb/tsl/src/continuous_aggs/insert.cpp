@@ -89,7 +89,7 @@ cache_inval_init()
 
 	Assert(continuous_aggs_trigger_mctx == NULL);
 
-	continuous_aggs_trigger_mctx = AllocSetContextCreate(TopTransactionContext,
+	continuous_aggs_trigger_mctx = AllocSetContextCreate(u_sess->top_transaction_mem_cxt,
 														 "ConinuousAggsTriggerCtx",
 														 ALLOCSET_DEFAULT_SIZES);
 
@@ -145,7 +145,7 @@ cache_inval_entry_init(ContinuousAggsCacheInvalEntry *cache_entry, int32 hyperta
 	cache_entry->hypertable_open_dimension = *hyperspace_get_open_dimension(ht->space, 0);
 	if (cache_entry->hypertable_open_dimension.partitioning != NULL)
 	{
-		PartitioningInfo *open_dim_part_info =
+		PartitioningInfo *open_dim_part_info =(PartitioningInfo *)
 			MemoryContextAllocZero(continuous_aggs_trigger_mctx, sizeof(*open_dim_part_info));
 		*open_dim_part_info = *cache_entry->hypertable_open_dimension.partitioning;
 		cache_entry->hypertable_open_dimension.partitioning = open_dim_part_info;
@@ -318,7 +318,7 @@ cache_inval_htab_write(void)
 					AccessShareLock);
 
 	hash_seq_init(&hash_seq, continuous_aggs_cache_inval_htab);
-	while ((current_entry = hash_seq_search(&hash_seq)) != NULL)
+	while ((current_entry =(ContinuousAggsCacheInvalEntry*) hash_seq_search(&hash_seq)) != NULL)
 		cache_inval_entry_write(current_entry);
 };
 static void
@@ -387,14 +387,20 @@ get_lowest_invalidated_time_for_hypertable(Oid hypertable_relid)
 		.index = catalog_get_index(catalog,
 								   CONTINUOUS_AGGS_INVALIDATION_THRESHOLD,
 								   CONTINUOUS_AGGS_INVALIDATION_THRESHOLD_PKEY),
-		.nkeys = 1,
 		.scankey = scankey,
-		.tuple_found = &invalidation_tuple_found,
-		.filter = NULL,
-		.data = &min_val,
+		.nkeys = 1,
+		.norderbys = 0,
+		.limit = 0,
+		.want_itup = false,
 		.lockmode = AccessShareLock,
-		.scandirection = ForwardScanDirection,
 		.result_mctx = NULL,
+		.tuplock = NULL,
+		.scandirection = ForwardScanDirection,
+		.data = &min_val,
+		.prescan = NULL,
+		.postscan = NULL,
+		.filter = NULL,
+		.tuple_found = &invalidation_tuple_found,
 	};
 
 	/* if we don't find any watermark, then we've never done any materialization

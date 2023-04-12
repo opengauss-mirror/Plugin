@@ -10,7 +10,7 @@
 #include <catalog/pg_operator.h>
 #include <commands/explain.h>
 #include <executor/executor.h>
-#include <nodes/extensible.h>
+//#include <nodes/extensible.h>
 #include <nodes/makefuncs.h>
 #include <nodes/nodeFuncs.h>
 #include <nodes/nodes.h>
@@ -33,7 +33,7 @@
 #include <optimizer/optimizer.h>
 #endif
 
-#include "constraint_aware_append.h"
+//#include "constraint_aware_append.h"
 #include "hypertable.h"
 #include "chunk_append/transform.h"
 #include "guc.h"
@@ -51,8 +51,49 @@ excluded_by_constraint(PlannerInfo *root, RangeTblEntry *rte, Index rt_index, Li
 {
 	RelOptInfo rel = {
 		.type = T_RelOptInfo,
-		.relid = rt_index,
 		.reloptkind = RELOPT_OTHER_MEMBER_REL,
+		.relids = 0,
+		.isPartitionedTable = false,
+		.partflag = {},
+		.rows = 0,
+		.width = 0,
+		.encodedwidth = 0,
+		.encodednum =0,
+		.reltargetlist = 0,   
+    	.distribute_keys = 0, 
+    	.pathlist = 0,        
+    	.ppilist = 0,         
+    	.cheapest_gather_path = {},
+   		.cheapest_startup_path = {},
+    	.cheapest_total_path = {},
+    	.cheapest_unique_path = {},
+    	.cheapest_parameterized_paths = 0,
+    	.relid = rt_index,
+    	.reltablespace = 0,   
+    	.rtekind = {},     
+    	.min_attr=0, 
+    	.max_attr=0, 
+    	.attr_needed=0, 
+    	.attr_widths=0,  
+    	.lateral_vars=0, 
+    	.lateral_relids=0,
+    	.indexlist=0,     
+    	.pages=0,  
+    	.tuples=0,       
+    	.multiple=0,    
+   	 	.allvisfrac=0,
+ 		.pruning_result=0,
+    	.partItrs=0,                        
+    	.pruning_result_for_index_usable=0,
+    	.partItrs_for_index_usable=0, 
+    	.pruning_result_for_index_unusable=0,
+    	.partItrs_for_index_unusable=0, 
+    	.bucketInfo=0,
+    	.subplan=0, 
+   		.subroot={},
+   	 	.subplan_params=0,
+    	.fdwroutine={}, 
+    	.fdw_private = 0 ,
 		.baserestrictinfo = restrictinfos,
 	};
 
@@ -63,12 +104,12 @@ static Plan *
 get_plans_for_exclusion(Plan *plan)
 {
 	/* Optimization: If we want to be able to prune */
-	/* when the node is a T_Result or T_Sort, then we need to peek */
+	/* when the node is a T_BaseResult or T_Sort, then we need to peek */
 	/* into the subplans of this Result node. */
 
 	switch (nodeTag(plan))
 	{
-		case T_Result:
+		case T_BaseResult:
 		case T_Sort:
 			Assert(plan->lefttree != NULL && plan->righttree == NULL);
 			return plan->lefttree;
@@ -105,7 +146,7 @@ constify_restrictinfos(PlannerInfo *root, List *restrictinfos)
 
 	foreach (lc, restrictinfos)
 	{
-		RestrictInfo *rinfo = lfirst(lc);
+		RestrictInfo *rinfo =(RestrictInfo *) lfirst(lc);
 
 		rinfo->clause = (Expr *) estimate_expression_value(root, (Node *) rinfo->clause);
 	}
@@ -119,13 +160,13 @@ constify_restrictinfos(PlannerInfo *root, List *restrictinfos)
  * constraints against a folded version of the restriction clauses in the query.
  */
 static void
-ca_append_begin(CustomScanState *node, EState *estate, int eflags)
+ca_append_begin(ExtensiblePlanState *node, EState *estate, int eflags)
 {
 	ConstraintAwareAppendState *state = (ConstraintAwareAppendState *) node;
-	CustomScan *cscan = (CustomScan *) node->ss.ps.plan;
-	Plan *subplan = copyObject(state->subplan);
-	List *chunk_ri_clauses = lsecond(cscan->custom_private);
-	List *chunk_relids = lthird(cscan->custom_private);
+	ExtensiblePlan *cscan = (ExtensiblePlan *) node->ss.ps.plan;
+	Plan *subplan = (Plan *)copyObject(state->subplan);
+	List *chunk_ri_clauses =(List *) lsecond(cscan->extensible_private);
+	List *chunk_relids =(List *) lthird(cscan->extensible_private);
 	List **appendplans, *old_appendplans;
 	ListCell *lc_plan;
 	ListCell *lc_clauses;
@@ -135,14 +176,22 @@ ca_append_begin(CustomScanState *node, EState *estate, int eflags)
 	 * create skeleton plannerinfo to reuse some PostgreSQL planner functions
 	 */
 	Query parse = {
+		.type = {},
+		.commandType = {},
+		.querySource = {},
+		.queryId = 0,
+		.canSetTag = false,
+		.utilityStmt = NULL,
 		.resultRelation = InvalidOid,
 	};
 	PlannerGlobal glob = {
+		.type = {},
 		.boundParams = NULL,
 	};
 	PlannerInfo root = {
-		.glob = &glob,
+		.type = {},
 		.parse = &parse,
+		.glob = &glob,
 	};
 
 #if PG12_GE
@@ -188,7 +237,7 @@ ca_append_begin(CustomScanState *node, EState *estate, int eflags)
 			appendplans = &append->mergeplans;
 			break;
 		}
-		case T_Result:
+		case T_BaseResult:
 
 			/*
 			 * Append plans are turned into a Result node if empty. This can
@@ -210,7 +259,7 @@ ca_append_begin(CustomScanState *node, EState *estate, int eflags)
 
 	forthree (lc_plan, old_appendplans, lc_clauses, chunk_ri_clauses, lc_relid, chunk_relids)
 	{
-		Plan *plan = get_plans_for_exclusion(lfirst(lc_plan));
+		Plan *plan = get_plans_for_exclusion((Plan *)lfirst(lc_plan));
 
 		switch (nodeTag(plan))
 		{
@@ -227,7 +276,7 @@ ca_append_begin(CustomScanState *node, EState *estate, int eflags)
 			case T_CteScan:
 			case T_WorkTableScan:
 			case T_ForeignScan:
-			case T_CustomScan:
+			case T_ExtensiblePlan:
 			{
 				/*
 				 * If this is a base rel (chunk), check if it can be
@@ -236,7 +285,7 @@ ca_append_begin(CustomScanState *node, EState *estate, int eflags)
 
 				Index scanrelid = ((Scan *) plan)->scanrelid;
 				List *restrictinfos = NIL;
-				List *ri_clauses = lfirst(lc_clauses);
+				List *ri_clauses =(List *) lfirst(lc_clauses);
 				ListCell *lc;
 
 				Assert(scanrelid);
@@ -244,7 +293,7 @@ ca_append_begin(CustomScanState *node, EState *estate, int eflags)
 				foreach (lc, ri_clauses)
 				{
 					RestrictInfo *ri = makeNode(RestrictInfo);
-					ri->clause = lfirst(lc);
+					ri->clause =(Expr *) lfirst(lc);
 
 					/*
 					 * The index of the RangeTblEntry might have changed between planning
@@ -272,11 +321,11 @@ ca_append_begin(CustomScanState *node, EState *estate, int eflags)
 
 	state->num_append_subplans = list_length(*appendplans);
 	if (state->num_append_subplans > 0)
-		node->custom_ps = list_make1(ExecInitNode(subplan, estate, eflags));
+		node->extensible_ps = list_make1(ExecInitNode(subplan, estate, eflags));
 }
 
 static TupleTableSlot *
-ca_append_exec(CustomScanState *node)
+ca_append_exec(ExtensiblePlanState *node)
 {
 	ConstraintAwareAppendState *state = (ConstraintAwareAppendState *) node;
 	TupleTableSlot *subslot;
@@ -309,7 +358,7 @@ ca_append_exec(CustomScanState *node)
 
 	while (true)
 	{
-		subslot = ExecProcNode(linitial(node->custom_ps));
+		subslot = ExecProcNode((PlanState *)linitial(node->extensible_ps));
 
 		if (TupIsNull(subslot))
 			return NULL;
@@ -334,32 +383,32 @@ ca_append_exec(CustomScanState *node)
 }
 
 static void
-ca_append_end(CustomScanState *node)
+ca_append_end(ExtensiblePlanState *node)
 {
-	if (node->custom_ps != NIL)
+	if (node->extensible_ps != NIL)
 	{
-		ExecEndNode(linitial(node->custom_ps));
+		ExecEndNode((PlanState *)linitial(node->extensible_ps));
 	}
 }
 
 static void
-ca_append_rescan(CustomScanState *node)
+ca_append_rescan(ExtensiblePlanState *node)
 {
 #if PG96
 	node->ss.ps.ps_TupFromTlist = false;
 #endif
-	if (node->custom_ps != NIL)
+	if (node->extensible_ps != NIL)
 	{
-		ExecReScan(linitial(node->custom_ps));
+		ExecReScan((PlanState *)linitial(node->extensible_ps));
 	}
 }
 
 static void
-ca_append_explain(CustomScanState *node, List *ancestors, ExplainState *es)
+ca_append_explain(ExtensiblePlanState *node, List *ancestors, ExplainState *es)
 {
-	CustomScan *cscan = (CustomScan *) node->ss.ps.plan;
+	ExtensiblePlan *cscan = (ExtensiblePlan *) node->ss.ps.plan;
 	ConstraintAwareAppendState *state = (ConstraintAwareAppendState *) node;
-	Oid relid = linitial_oid(linitial(cscan->custom_private));
+	Oid relid = linitial_oid((const List *)linitial(cscan->extensible_private));
 
 	ExplainPropertyText("Hypertable", get_rel_name(relid), es);
 	ExplainPropertyIntegerCompat("Chunks left after exclusion",
@@ -368,38 +417,44 @@ ca_append_explain(CustomScanState *node, List *ancestors, ExplainState *es)
 								 es);
 }
 
-static CustomExecMethods constraint_aware_append_state_methods = {
-	.BeginCustomScan = ca_append_begin,
-	.ExecCustomScan = ca_append_exec,
-	.EndCustomScan = ca_append_end,
-	.ReScanCustomScan = ca_append_rescan,
-	.ExplainCustomScan = ca_append_explain,
+static ExtensibleExecMethods constraint_aware_append_state_methods = {
+	.ExtensibleName = "",
+	.BeginExtensiblePlan = ca_append_begin,
+	.ExecExtensiblePlan = ca_append_exec,
+	.EndExtensiblePlan = ca_append_end,
+	.ReScanExtensiblePlan = ca_append_rescan,
+	// .MarkPosCustomScan = NULL,
+	// .RestrPosCustomScan = NULL,
+	// .EstimateDSMCustomScan = NULL,
+	// .InitializeDSMCustomScan = NULL,
+	// .InitializeWorkerCustomScan = NULL,
+	.ExplainExtensiblePlan = ca_append_explain,
 };
 
 static Node *
-constraint_aware_append_state_create(CustomScan *cscan)
+constraint_aware_append_state_create(ExtensiblePlan *cscan)
 {
 	ConstraintAwareAppendState *state;
-	Append *append = linitial(cscan->custom_plans);
+	Append *append =(Append *) linitial(cscan->extensible_plans);
 
 	state = (ConstraintAwareAppendState *) newNode(sizeof(ConstraintAwareAppendState),
-												   T_CustomScanState);
+												   T_ExtensiblePlanState);
 	state->csstate.methods = &constraint_aware_append_state_methods;
 	state->subplan = &append->plan;
 
 	return (Node *) state;
 }
 
-static CustomScanMethods constraint_aware_append_plan_methods = {
-	.CustomName = "ConstraintAwareAppend",
-	.CreateCustomScanState = constraint_aware_append_state_create,
+static ExtensiblePlanMethods constraint_aware_append_plan_methods = {
+	.ExtensibleName = "ConstraintAwareAppend",
+	.CreateExtensiblePlanState = constraint_aware_append_state_create,
 };
 
 static Plan *
-constraint_aware_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path,
+constraint_aware_append_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath *path,
 									List *tlist, List *clauses, List *custom_plans)
 {
-	CustomScan *cscan = makeNode(CustomScan);
+	ExtensiblePlan *cscan = makeNode(ExtensiblePlan);
 	Plan *subplan;
 	RangeTblEntry *rte = planner_rt_fetch(rel->relid, root);
 	List *chunk_ri_clauses = NIL;
@@ -413,7 +468,7 @@ constraint_aware_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPa
 	 * node can do this projection itself, however, so just throw away the result node
 	 * Removing the Result node is only safe if there is no one-time filter
 	 */
-	if (IsA(linitial(custom_plans), Result) &&
+	if (IsA(linitial(custom_plans), BaseResult) &&
 		castNode(Result, linitial(custom_plans))->resconstantqual == NULL)
 	{
 		Result *result = castNode(Result, linitial(custom_plans));
@@ -423,11 +478,11 @@ constraint_aware_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPa
 
 		custom_plans = list_make1(result->plan.lefttree);
 	}
-	subplan = linitial(custom_plans);
+	subplan =(Plan *) linitial(custom_plans);
 
 	cscan->scan.scanrelid = 0;			 /* Not a real relation we are scanning */
 	cscan->scan.plan.targetlist = tlist; /* Target list we expect as output */
-	cscan->custom_plans = custom_plans;
+	cscan->extensible_plans = custom_plans;
 
 	/*
 	 * create per chunk RestrictInfo
@@ -458,7 +513,7 @@ constraint_aware_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPa
 	 */
 	foreach (lc_child, children)
 	{
-		Plan *plan = get_plans_for_exclusion(lfirst(lc_child));
+		Plan *plan = get_plans_for_exclusion((Plan *)lfirst(lc_child));
 
 		switch (nodeTag(plan))
 		{
@@ -475,7 +530,7 @@ constraint_aware_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPa
 			case T_CteScan:
 			case T_WorkTableScan:
 			case T_ForeignScan:
-			case T_CustomScan:
+			case T_ExtensiblePlan:
 			{
 				List *chunk_clauses = NIL;
 				ListCell *lc;
@@ -499,8 +554,8 @@ constraint_aware_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPa
 		}
 	}
 
-	cscan->custom_private = list_make3(list_make1_oid(rte->relid), chunk_ri_clauses, chunk_relids);
-	cscan->custom_scan_tlist = subplan->targetlist; /* Target list of tuples
+	cscan->extensible_private = list_make3(list_make1_oid(rte->relid), chunk_ri_clauses, chunk_relids);
+	cscan->extensible_plan_tlist = subplan->targetlist; /* Target list of tuples
 													 * we expect as input */
 	cscan->flags = path->flags;
 	cscan->methods = &constraint_aware_append_plan_methods;
@@ -508,9 +563,9 @@ constraint_aware_append_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPa
 	return &cscan->scan.plan;
 }
 
-static CustomPathMethods constraint_aware_append_path_methods = {
-	.CustomName = "ConstraintAwareAppend",
-	.PlanCustomPath = constraint_aware_append_plan_create,
+static ExtensiblePathMethods constraint_aware_append_path_methods = {
+	.ExtensibleName = "ConstraintAwareAppend",
+	.PlanExtensiblePath = constraint_aware_append_plan_create,
 };
 
 Path *
@@ -518,15 +573,15 @@ ts_constraint_aware_append_path_create(PlannerInfo *root, Hypertable *ht, Path *
 {
 	ConstraintAwareAppendPath *path;
 
-	path = (ConstraintAwareAppendPath *) newNode(sizeof(ConstraintAwareAppendPath), T_CustomPath);
-	path->cpath.path.pathtype = T_CustomScan;
+	path = (ConstraintAwareAppendPath *) newNode(sizeof(ConstraintAwareAppendPath), T_ExtensiblePath);
+	path->cpath.path.pathtype = T_ExtensiblePlan;
 	path->cpath.path.rows = subpath->rows;
 	path->cpath.path.startup_cost = subpath->startup_cost;
 	path->cpath.path.total_cost = subpath->total_cost;
 	path->cpath.path.parent = subpath->parent;
 	path->cpath.path.pathkeys = subpath->pathkeys;
 	path->cpath.path.param_info = subpath->param_info;
-	path->cpath.path.pathtarget = subpath->pathtarget;
+	path->cpath.path.pathtarget =(PathTarget *)subpath->pathtarget;
 
 	path->cpath.path.parallel_aware = false;
 	path->cpath.path.parallel_safe = subpath->parallel_safe;
@@ -541,7 +596,7 @@ ts_constraint_aware_append_path_create(PlannerInfo *root, Hypertable *ht, Path *
 	 * this node they will be in a given order already.
 	 */
 	path->cpath.flags = 0;
-	path->cpath.custom_paths = list_make1(subpath);
+	path->cpath.extensible_paths = list_make1(subpath);
 	path->cpath.methods = &constraint_aware_append_path_methods;
 
 	/*
@@ -568,7 +623,7 @@ ts_constraint_aware_append_possible(Path *path)
 	int num_children;
 
 	if (ts_guc_disable_optimizations || !ts_guc_constraint_aware_append ||
-		constraint_exclusion == CONSTRAINT_EXCLUSION_OFF)
+		u_sess->attr.attr_sql.constraint_exclusion == CONSTRAINT_EXCLUSION_OFF)
 		return false;
 
 	switch (nodeTag(path))

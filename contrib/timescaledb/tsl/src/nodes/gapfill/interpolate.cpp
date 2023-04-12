@@ -5,7 +5,7 @@
  */
 
 #include <postgres.h>
-#include <access/htup_details.h>
+#include <access/htup.h>
 #include <catalog/pg_type.h>
 #include <utils/builtins.h>
 #include <utils/datum.h>
@@ -29,10 +29,10 @@ gapfill_interpolate_initialize(GapFillInterpolateColumnState *interpolate, GapFi
 	interpolate->next.isnull = true;
 	if (list_length(((FuncExpr *) function)->args) > 1)
 		interpolate->lookup_before =
-			gapfill_adjust_varnos(state, lsecond(((FuncExpr *) function)->args));
+			gapfill_adjust_varnos(state,(Expr *) lsecond(((FuncExpr *) function)->args));
 	if (list_length(((FuncExpr *) function)->args) > 2)
 		interpolate->lookup_after =
-			gapfill_adjust_varnos(state, lthird(((FuncExpr *) function)->args));
+			gapfill_adjust_varnos(state,(Expr *) lthird(((FuncExpr *) function)->args));
 }
 
 /*
@@ -103,7 +103,8 @@ gapfill_fetch_sample(GapFillState *state, GapFillInterpolateColumnState *column,
 	}
 
 	th = DatumGetHeapTupleHeader(datum);
-	if (HeapTupleHeaderGetNatts(th) != 2)
+	//tsdb 原本函数为(HeapTupleHeaderGetNatts(th) != 2)
+	if (HeapTupleHeaderGetNatts(th,tupdesc) != 2)
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
 				 errmsg("interpolate RECORD arguments must have 2 elements")));

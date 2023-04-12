@@ -1,9 +1,9 @@
 set(SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/create.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/drop.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/insert.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/job.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/materialize.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/options.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/create.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/drop.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/insert.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/job.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/materialize.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/options.cpp
 )
 target_sources(${TSL_LIBRARY_NAME} PRIVATE ${SOURCES})

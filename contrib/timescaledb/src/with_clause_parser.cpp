@@ -7,7 +7,7 @@
 #include <c.h>
 #include <fmgr.h>
 
-#include <access/htup_details.h>
+#include <access/htup.h>
 #include <catalog/pg_type.h>
 #include <commands/defrem.h>
 #include <nodes/parsenodes.h>
@@ -71,7 +71,7 @@ WithClauseResult *
 ts_with_clauses_parse(const List *def_elems, const WithClauseDefinition *args, Size nargs)
 {
 	ListCell *cell;
-	WithClauseResult *results = palloc0(sizeof(*results) * nargs);
+	WithClauseResult *results =(WithClauseResult *) palloc0(sizeof(*results) * nargs);
 	Size i;
 
 	for (i = 0; i < nargs; i++)

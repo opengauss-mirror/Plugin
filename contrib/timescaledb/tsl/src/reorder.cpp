@@ -14,7 +14,7 @@
 /* see postgres commit ab5e9caa4a3ec4765348a0482e88edcf3f6aab4a */
 
 #include <postgres.h>
-#include <access/amapi.h>
+//#include <access/amapi.h>
 #include <access/multixact.h>
 #include <access/relscan.h>
 #include <access/rewriteheap.h>
@@ -37,10 +37,10 @@
 #include <miscadmin.h>
 #include <nodes/pg_list.h>
 #include <optimizer/planner.h>
-#include <storage/bufmgr.h>
+#include <storage/buf/bufmgr.h>
 #include <storage/lmgr.h>
 #include <storage/predicate.h>
-#include <storage/smgr.h>
+#include <storage/smgr/smgr.h>
 #include <utils/acl.h>
 #include <utils/fmgroids.h>
 #include <utils/guc.h>
@@ -55,7 +55,7 @@
 
 #include "compat.h"
 #if PG12_LT
-#include <utils/tqual.h>
+//#include <utils/tqual.h>
 #endif
 
 #include "chunk.h"
@@ -257,7 +257,7 @@ reorder_chunk(Oid chunk_id, Oid index_id, bool verbose, Oid wait_id, Oid destina
 							get_rel_name(chunk_id))));
 	}
 
-	if (OidIsValid(destination_tablespace) && destination_tablespace != MyDatabaseTableSpace)
+	if (OidIsValid(destination_tablespace) && destination_tablespace != u_sess->proc_cxt.MyDatabaseTableSpace)
 	{
 		AclResult aclresult;
 
@@ -270,7 +270,7 @@ reorder_chunk(Oid chunk_id, Oid index_id, bool verbose, Oid wait_id, Oid destina
 		;
 	}
 
-	if (OidIsValid(index_tablespace) && index_tablespace != MyDatabaseTableSpace)
+	if (OidIsValid(index_tablespace) && index_tablespace != u_sess->proc_cxt.MyDatabaseTableSpace)
 	{
 		AclResult aclresult;
 
@@ -493,7 +493,8 @@ timescale_rebuild_relation(Relation OldHeap, Oid indexOid, bool verbose, Oid wai
 	table_close(OldHeap, NoLock);
 
 	/* Create the transient table that will receive the re-ordered data */
-	OIDNewHeap = make_new_heap(tableOid, tableSpace, relpersistence, ExclusiveLock);
+	//tsdb 原本函数为make_new_heap(tableOid, tableSpace, relpersistence, ExclusiveLock);
+	OIDNewHeap = make_new_heap(tableOid, tableSpace);
 
 	/* Copy the heap data into the new table in the desired order */
 	copy_heap_data(OIDNewHeap,
@@ -652,16 +653,18 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 	 * Since we're going to rewrite the whole table anyway, there's no reason
 	 * not to be aggressive about this.
 	 */
+	//tsdb 注释了一些参数
 	vacuum_set_xid_limits(OldHeap,
 						  0,
 						  0,
-						  0,
-						  0,
+						//   0,
+						//   0,
 						  &OldestXmin,
 						  &FreezeXid,
-						  NULL,
+						//  NULL,
 						  &MultiXactCutoff,
-						  NULL);
+						  NULL
+						);
 
 	/*
 	 * FreezeXid will become the table's new relfrozenxid, and that mustn't go
@@ -673,8 +676,8 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 	/*
 	 * MultiXactCutoff, similarly, shouldn't go backwards either.
 	 */
-	if (MultiXactIdPrecedes(MultiXactCutoff, OldHeap->rd_rel->relminmxid))
-		MultiXactCutoff = OldHeap->rd_rel->relminmxid;
+	if (MultiXactIdPrecedes(MultiXactCutoff, 1))//tsdb OldHeap->rd_rel->relminmxid
+		MultiXactCutoff = 1;//tsdb OldHeap->rd_rel->relminmxid
 
 	/* return selected values to caller */
 	*pFreezeXid = FreezeXid;
@@ -730,11 +733,15 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 	if (use_sort)
 		tuplesort = tuplesort_begin_cluster(oldTupDesc,
 											OldIndex,
-											maintenance_work_mem,
+											u_sess->attr.attr_memory.maintenance_work_mem,
 #if PG11_GE
 											NULL,
 #endif
-											false);
+											false
+#ifdef OG30
+											,10,false
+#endif
+											);
 	else
 		tuplesort = NULL;
 
@@ -750,8 +757,9 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 		index_rescan(indexScan, NULL, 0, NULL, 0);
 	}
 	else
-	{
-		heapScan = heap_beginscan(OldHeap, SnapshotAny, 0, (ScanKey) NULL);
+	{	
+		//tsdb 原本函数为heap_beginscan(OldHeap, SnapshotAny, 0, (ScanKey) NULL,0);
+		heapScan =(HeapScanDesc) heap_beginscan(OldHeap, SnapshotAny, 0, (ScanKey) NULL);
 		indexScan = NULL;
 	}
 
@@ -772,7 +780,8 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 		if (indexScan != NULL)
 		{
 			Assert(heapScan == NULL);
-			tuple = index_getnext(indexScan, ForwardScanDirection);
+			//tsdb 强制类型转换
+			tuple =(HeapTuple) index_getnext(indexScan, ForwardScanDirection);
 			if (tuple == NULL)
 				break;
 
@@ -785,11 +794,12 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 		else
 		{
 			Assert(heapScan != NULL);
-			tuple = heap_getnext(heapScan, ForwardScanDirection);
+			//tsdb 这里本来没有强制类型转化(TableScanDescData *)
+			tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection);
 			if (tuple == NULL)
 				break;
 
-			buf = heapScan->rs_cbuf;
+			buf = 0;//mytsdb
 		}
 
 		LockBuffer(buf, BUFFER_LOCK_SHARE);
@@ -854,7 +864,7 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 
 		num_tuples += 1;
 		if (tuplesort != NULL)
-			tuplesort_putheaptuple(tuplesort, tuple);
+			TuplesortPutheaptuple(tuplesort, tuple);
 		else
 			reform_and_rewrite_tuple(tuple, oldTupDesc, newTupDesc, values, isnull, rwstate);
 	}
@@ -881,7 +891,7 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 
 			CHECK_FOR_INTERRUPTS();
 
-			tuple = tuplesort_getheaptuple(tuplesort,
+			tuple =(HeapTuple) tuplesort_getheaptuple(tuplesort,
 										   /* forward= */ true
 #if PG96
 										   ,
@@ -1194,7 +1204,7 @@ swap_relation_files(Oid r1, Oid r2, bool swap_toast_by_content, bool is_internal
 		Assert(TransactionIdIsNormal(frozenXid));
 		relform1->relfrozenxid = frozenXid;
 		Assert(MultiXactIdIsValid(cutoffMulti));
-		relform1->relminmxid = cutoffMulti;
+		// relform1->relminmxid = cutoffMulti;
 	}
 
 	/* swap size statistics too, since new rel has freshly-updated stats */

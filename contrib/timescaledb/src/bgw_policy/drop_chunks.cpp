@@ -26,7 +26,7 @@
 static ScanTupleResult
 bgw_policy_drop_chunks_tuple_found(TupleInfo *ti, void *const data)
 {
-	BgwPolicyDropChunks **policy = data;
+	BgwPolicyDropChunks **policy =(BgwPolicyDropChunks **) data;
 	bool nulls[Natts_bgw_policy_drop_chunks];
 	Datum values[Natts_bgw_policy_drop_chunks];
 
@@ -35,7 +35,7 @@ bgw_policy_drop_chunks_tuple_found(TupleInfo *ti, void *const data)
 	 */
 	heap_deform_tuple(ti->tuple, ti->desc, values, nulls);
 
-	*policy = MemoryContextAllocZero(ti->mctx, sizeof(BgwPolicyDropChunks));
+	*policy =(BgwPolicyDropChunks*) MemoryContextAllocZero(ti->mctx, sizeof(BgwPolicyDropChunks));
 	Assert(!nulls[AttrNumberGetAttrOffset(Anum_bgw_policy_drop_chunks_job_id)]);
 	(*policy)->job_id =
 		DatumGetInt32(values[AttrNumberGetAttrOffset(Anum_bgw_policy_drop_chunks_job_id)]);

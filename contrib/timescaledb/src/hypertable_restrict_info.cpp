@@ -56,23 +56,23 @@ typedef struct DimensionValues
 static DimensionRestrictInfoOpen *
 dimension_restrict_info_open_create(Dimension *d)
 {
-	DimensionRestrictInfoOpen *new = palloc(sizeof(DimensionRestrictInfoOpen));
+	DimensionRestrictInfoOpen *neww =(DimensionRestrictInfoOpen *) palloc(sizeof(DimensionRestrictInfoOpen));
 
-	new->base.dimension = d;
-	new->lower_strategy = InvalidStrategy;
-	new->upper_strategy = InvalidStrategy;
-	return new;
+	neww->base.dimension = d;
+	neww->lower_strategy = InvalidStrategy;
+	neww->upper_strategy = InvalidStrategy;
+	return neww;
 }
 
 static DimensionRestrictInfoClosed *
 dimension_restrict_info_closed_create(Dimension *d)
 {
-	DimensionRestrictInfoClosed *new = palloc(sizeof(DimensionRestrictInfoClosed));
+	DimensionRestrictInfoClosed *neww =(DimensionRestrictInfoClosed *) palloc(sizeof(DimensionRestrictInfoClosed));
 
-	new->partitions = NIL;
-	new->base.dimension = d;
-	new->strategy = InvalidStrategy;
-	return new;
+	neww->partitions = NIL;
+	neww->base.dimension = d;
+	neww->strategy = InvalidStrategy;
+	return neww;
 }
 
 static DimensionRestrictInfo *
@@ -315,7 +315,7 @@ ts_hypertable_restrict_info_create(RelOptInfo *rel, Hypertable *ht)
 {
 	int num_dimensions = ht->space->num_dimensions;
 	HypertableRestrictInfo *res =
-		palloc0(sizeof(HypertableRestrictInfo) + sizeof(DimensionRestrictInfo *) * num_dimensions);
+		(HypertableRestrictInfo *)palloc0(sizeof(HypertableRestrictInfo) + sizeof(DimensionRestrictInfo *) * num_dimensions);
 	int i;
 
 	res->num_dimensions = num_dimensions;
@@ -363,8 +363,8 @@ hypertable_restrict_info_add_expr(HypertableRestrictInfo *hri, PlannerInfo *root
 	if (list_length(expr_args) != 2)
 		return false;
 
-	leftop = linitial(expr_args);
-	rightop = lsecond(expr_args);
+	leftop =(Expr *) linitial(expr_args);
+	rightop =(Expr *) lsecond(expr_args);
 
 	if (IsA(leftop, RelabelType))
 		leftop = ((RelabelType *) leftop)->arg;
@@ -416,7 +416,7 @@ dimension_values_create(List *values, Oid type, bool use_or)
 {
 	DimensionValues *dimvalues;
 
-	dimvalues = palloc(sizeof(DimensionValues));
+	dimvalues =(DimensionValues *) palloc(sizeof(DimensionValues));
 	dimvalues->values = values;
 	dimvalues->use_or = use_or;
 	dimvalues->type = type;
@@ -511,7 +511,7 @@ ts_hypertable_restrict_info_add(HypertableRestrictInfo *hri, PlannerInfo *root,
 
 	foreach (lc, base_restrict_infos)
 	{
-		RestrictInfo *ri = lfirst(lc);
+		RestrictInfo *ri =(RestrictInfo *) lfirst(lc);
 
 		hypertable_restrict_info_add_restrict_info(hri, root, ri);
 	}

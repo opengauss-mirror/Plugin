@@ -24,7 +24,7 @@ ts_jsonb_add_bool(JsonbParseState *state, const char *key, bool boolean)
 	JsonbValue json_value;
 
 	json_value.type = jbvBool;
-	json_value.val.boolean = boolean;
+	json_value.boolean = boolean;
 
 	ts_jsonb_add_value(state, key, &json_value);
 }
@@ -39,8 +39,8 @@ ts_jsonb_add_str(JsonbParseState *state, const char *key, const char *value)
 		return;
 
 	json_value.type = jbvString;
-	json_value.val.string.val = (char *) value;
-	json_value.val.string.len = strlen(value);
+	json_value.string.val = (char *) value;
+	json_value.string.len = strlen(value);
 
 	ts_jsonb_add_value(state, key, &json_value);
 }
@@ -49,14 +49,14 @@ void
 ts_jsonb_add_value(JsonbParseState *state, const char *key, JsonbValue *value)
 {
 	JsonbValue json_key;
-
+	
 	Assert(key != NULL);
 	if (value == NULL)
 		return;
 
 	json_key.type = jbvString;
-	json_key.val.string.val = (char *) key;
-	json_key.val.string.len = strlen(key);
+	json_key.string.val = (char *) key;
+	json_key.string.len = strlen(key);
 
 	ts_jsonb_add_pair(state, &json_key, value);
 }
@@ -81,6 +81,7 @@ ts_jsonb_get_text_field(Jsonb *json, text *field_name)
 	 * we cannot use `DirectFunctionCall`
 	 */
 	LOCAL_FCINFO(fcinfo, 2);
+	
 	Datum result;
 
 	InitFunctionCallInfoData(*fcinfo, NULL, 2, InvalidOid, NULL, NULL);

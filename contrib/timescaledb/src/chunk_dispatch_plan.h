@@ -9,11 +9,12 @@
 #include <postgres.h>
 #include <nodes/plannodes.h>
 #include <nodes/parsenodes.h>
-#include <nodes/extensible.h>
+#include "compat.h"
+//#include <nodes/extensible.h>
 
 typedef struct ChunkDispatchPath
 {
-	CustomPath cpath;
+	ExtensiblePath cpath;
 	ModifyTablePath *mtpath;
 	Index hypertable_rti;
 	Oid hypertable_relid;

@@ -5,12 +5,11 @@
  */
 #include <postgres.h>
 #include <nodes/nodes.h>
-#include <nodes/extensible.h>
+//#include <nodes/extensible.h>
 #include <nodes/makefuncs.h>
 #include <nodes/nodeFuncs.h>
 #include <utils/rel.h>
 #include <catalog/pg_type.h>
-
 #include "compat.h"
 #include "chunk_dispatch.h"
 #include "chunk_insert_state.h"
@@ -21,7 +20,7 @@
 ChunkDispatch *
 ts_chunk_dispatch_create(Hypertable *ht, EState *estate)
 {
-	ChunkDispatch *cd = palloc0(sizeof(ChunkDispatch));
+	ChunkDispatch *cd =(ChunkDispatch*) palloc0(sizeof(ChunkDispatch));
 
 	cd->hypertable = ht;
 	cd->estate = estate;
@@ -59,7 +58,7 @@ ts_chunk_dispatch_get_returning_clauses(const ChunkDispatch *dispatch)
 {
 	ModifyTableState *mtstate = dispatch->dispatch_state->mtstate;
 
-	return list_nth(get_modifytable(dispatch)->returningLists, mtstate->mt_whichplan);
+	return (List*)list_nth(get_modifytable(dispatch)->returningLists, mtstate->mt_whichplan);
 }
 
 List *
@@ -73,7 +72,7 @@ ts_chunk_dispatch_get_on_conflict_action(const ChunkDispatch *dispatch)
 {
 	if (NULL == dispatch->dispatch_state)
 		return ONCONFLICT_NONE;
-	return get_modifytable(dispatch)->onConflictAction;
+	return (OnConflictAction)get_modifytable(dispatch)->onConflictAction;
 }
 
 List *
@@ -118,7 +117,7 @@ ts_chunk_dispatch_get_chunk_insert_state(ChunkDispatch *dispatch, Point *point,
 	ChunkInsertState *cis;
 	bool cis_changed = true;
 
-	cis = ts_subspace_store_get(dispatch->cache, point);
+	cis = (ChunkInsertState*)ts_subspace_store_get(dispatch->cache, point);
 
 	if (NULL == cis)
 	{

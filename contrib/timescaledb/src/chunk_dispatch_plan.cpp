@@ -5,7 +5,7 @@
  */
 #include <postgres.h>
 #include <nodes/nodes.h>
-#include <nodes/extensible.h>
+//#include <nodes/extensible.h>
 #include <nodes/makefuncs.h>
 #include <nodes/nodeFuncs.h>
 #include <nodes/readfuncs.h>
@@ -24,15 +24,15 @@
  * execution.
  */
 static Node *
-create_chunk_dispatch_state(CustomScan *cscan)
+create_chunk_dispatch_state(ExtensiblePlan *cscan)
 {
-	return (Node *) ts_chunk_dispatch_state_create(linitial_oid(cscan->custom_private),
-												   linitial(cscan->custom_plans));
+	return (Node *) ts_chunk_dispatch_state_create(linitial_oid(cscan->extensible_private),
+												   (Plan*)linitial(cscan->extensible_plans));
 }
 
-static CustomScanMethods chunk_dispatch_plan_methods = {
-	.CustomName = "ChunkDispatch",
-	.CreateCustomScanState = create_chunk_dispatch_state,
+static ExtensiblePlanMethods chunk_dispatch_plan_methods = {
+	.ExtensibleName = "ChunkDispatch",
+	.CreateExtensiblePlanState = create_chunk_dispatch_state,
 };
 
 /* Create a chunk dispatch plan node in the form of a CustomScan node. The
@@ -50,16 +50,16 @@ static CustomScanMethods chunk_dispatch_plan_methods = {
  * them up to the ModifyTable node.
  */
 static Plan *
-chunk_dispatch_plan_create(PlannerInfo *root, RelOptInfo *relopt, CustomPath *best_path,
+chunk_dispatch_plan_create(PlannerInfo *root, RelOptInfo *relopt, ExtensiblePath *best_path,
 						   List *tlist, List *clauses, List *custom_plans)
 {
 	ChunkDispatchPath *cdpath = (ChunkDispatchPath *) best_path;
-	CustomScan *cscan = makeNode(CustomScan);
+	ExtensiblePlan *cscan = makeNode(ExtensiblePlan);
 	ListCell *lc;
 
 	foreach (lc, custom_plans)
 	{
-		Plan *subplan = lfirst(lc);
+		Plan *subplan = (Plan*)lfirst(lc);
 
 		cscan->scan.plan.startup_cost += subplan->startup_cost;
 		cscan->scan.plan.total_cost += subplan->total_cost;
@@ -67,21 +67,21 @@ chunk_dispatch_plan_create(PlannerInfo *root, RelOptInfo *relopt, CustomPath *be
 		cscan->scan.plan.plan_width += subplan->plan_width;
 	}
 
-	cscan->custom_private = list_make1_oid(cdpath->hypertable_relid);
+	cscan->extensible_private = list_make1_oid(cdpath->hypertable_relid);
 	cscan->methods = &chunk_dispatch_plan_methods;
-	cscan->custom_plans = custom_plans;
+	cscan->extensible_plans = custom_plans;
 	cscan->scan.scanrelid = 0; /* Indicate this is not a real relation we are
 								* scanning */
 	/* The "input" and "output" target lists should be the same */
-	cscan->custom_scan_tlist = tlist;
+	cscan->extensible_plan_tlist = tlist;
 	cscan->scan.plan.targetlist = tlist;
 
 	return &cscan->scan.plan;
 }
 
-static CustomPathMethods chunk_dispatch_path_methods = {
-	.CustomName = "ChunkDispatchPath",
-	.PlanCustomPath = chunk_dispatch_plan_create,
+static ExtensiblePathMethods chunk_dispatch_path_methods = {
+	.ExtensibleName = "ChunkDispatchPath",
+	.PlanExtensiblePath = chunk_dispatch_plan_create,
 };
 
 Path *
@@ -91,10 +91,10 @@ ts_chunk_dispatch_path_create(ModifyTablePath *mtpath, Path *subpath, Index hype
 	ChunkDispatchPath *path = (ChunkDispatchPath *) palloc0(sizeof(ChunkDispatchPath));
 
 	memcpy(&path->cpath.path, subpath, sizeof(Path));
-	path->cpath.path.type = T_CustomPath;
-	path->cpath.path.pathtype = T_CustomScan;
+	path->cpath.path.type = T_ExtensiblePath;
+	path->cpath.path.pathtype = T_ExtensiblePath;
 	path->cpath.methods = &chunk_dispatch_path_methods;
-	path->cpath.custom_paths = list_make1(subpath);
+	path->cpath.extensible_paths = list_make1(subpath);
 	path->mtpath = mtpath;
 	path->hypertable_rti = hypertable_rti;
 	path->hypertable_relid = hypertable_relid;

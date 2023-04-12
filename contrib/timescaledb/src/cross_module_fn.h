@@ -8,7 +8,7 @@
 
 #include <postgres.h>
 #include <fmgr.h>
-#include <commands/event_trigger.h>
+//#include <commands/event_trigger.h>
 #include <optimizer/planner.h>
 #include <utils/timestamp.h>
 #include <utils/jsonb.h>

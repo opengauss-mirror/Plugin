@@ -49,6 +49,7 @@ static inline void
 bit_array_init(BitArray *array)
 {
 	*array = (BitArray){
+		.buckets = {},
 		.bits_used_in_last_bucket = 0,
 	};
 	uint64_vec_init(&array->buckets, CurrentMemoryContext, 0);
@@ -61,13 +62,14 @@ bit_array_wrap_internal(BitArray *array, uint32 num_buckets, uint8 bits_used_in_
 						uint64 *buckets)
 {
 	*array = (BitArray){
-		.bits_used_in_last_bucket = bits_used_in_last_bucket,
 		.buckets =
 			(uint64_vec){
-				.data = buckets,
-				.num_elements = num_buckets,
 				.max_elements = num_buckets,
+				.num_elements = num_buckets,
+				.data = buckets,
 			},
+		.bits_used_in_last_bucket = bits_used_in_last_bucket,
+		
 	};
 }
 
@@ -110,13 +112,15 @@ bit_array_recv(const StringInfo buffer)
 		elog(ERROR, "invalid number of bits in last bucket of bit array");
 
 	array = (BitArray){
-		.bits_used_in_last_bucket = bits_used_in_last_bucket,
 		.buckets = {
-			.num_elements = num_elements,
 			.max_elements = num_elements,
+			.num_elements = num_elements,
+			.data =(uint64 *) palloc0(num_elements * sizeof(uint64)),
 			.ctx = CurrentMemoryContext,
-			.data = palloc0(num_elements * sizeof(uint64)),
+			
 		},
+		.bits_used_in_last_bucket = bits_used_in_last_bucket,
+		
 	};
 
 	for (i = 0; i < num_elements; i++)
@@ -296,8 +300,8 @@ bit_array_iterator_init_rev(BitArrayIterator *iter, const BitArray *array)
 {
 	*iter = (BitArrayIterator){
 		.array = array,
-		.current_bucket = array->buckets.num_elements - 1,
 		.bits_used_in_current_bucket = array->bits_used_in_last_bucket,
+		.current_bucket = array->buckets.num_elements - 1,
 	};
 }
 

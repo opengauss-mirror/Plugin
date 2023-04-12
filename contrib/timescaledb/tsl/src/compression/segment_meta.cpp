@@ -30,7 +30,7 @@ typedef struct SegmentMetaMinMaxBuilder
 SegmentMetaMinMaxBuilder *
 segment_meta_min_max_builder_create(Oid type_oid, Oid collation)
 {
-	SegmentMetaMinMaxBuilder *builder = palloc(sizeof(*builder));
+	SegmentMetaMinMaxBuilder *builder =(SegmentMetaMinMaxBuilder *) palloc(sizeof(*builder));
 	TypeCacheEntry *type = lookup_type_cache(type_oid, TYPECACHE_LT_OPR);
 
 	if (!OidIsValid(type->lt_opr))
@@ -43,6 +43,7 @@ segment_meta_min_max_builder_create(Oid type_oid, Oid collation)
 		.type_oid = type_oid,
 		.empty = true,
 		.has_null = false,
+		.ssup = {},
 		.type_by_val = type->typbyval,
 		.type_len = type->typlen,
 	};

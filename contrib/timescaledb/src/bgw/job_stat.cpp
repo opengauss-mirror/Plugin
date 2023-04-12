@@ -31,7 +31,7 @@ bgw_job_stat_next_start_was_set(FormData_bgw_job_stat *fd)
 static ScanTupleResult
 bgw_job_stat_tuple_found(TupleInfo *ti, void *const data)
 {
-	BgwJobStat **job_stat_pp = data;
+	BgwJobStat **job_stat_pp =(BgwJobStat **) data;
 
 	*job_stat_pp = STRUCT_FROM_TUPLE(ti->tuple, ti->mctx, BgwJobStat, FormData_bgw_job_stat);
 
@@ -50,13 +50,20 @@ bgw_job_stat_scan_one(int indexid, ScanKeyData scankey[], int nkeys, tuple_found
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, BGW_JOB_STAT),
 		.index = catalog_get_index(catalog, BGW_JOB_STAT, indexid),
-		.nkeys = nkeys,
 		.scankey = scankey,
-		.tuple_found = tuple_found,
-		.filter = tuple_filter,
-		.data = data,
+		.nkeys = nkeys,
+		.norderbys = 0,
+		.limit = 0,
+		.want_itup = false,
 		.lockmode = lockmode,
+		.result_mctx = NULL,
+		.tuplock = NULL,
 		.scandirection = ForwardScanDirection,
+		.data = data,
+		.prescan = NULL,
+		.postscan = NULL,
+		.filter = tuple_filter,
+		.tuple_found = tuple_found,
 	};
 
 	return ts_scanner_scan_one(&scanctx, false, "bgw job stat");
@@ -278,7 +285,7 @@ calculate_next_start_on_crash(int consecutive_crashes, BgwJob *job)
 static ScanTupleResult
 bgw_job_stat_tuple_mark_end(TupleInfo *ti, void *const data)
 {
-	JobResultCtx *result_ctx = data;
+	JobResultCtx *result_ctx =(JobResultCtx *) data;
 	HeapTuple tuple = heap_copytuple(ti->tuple);
 	FormData_bgw_job_stat *fd = (FormData_bgw_job_stat *) GETSTRUCT(tuple);
 	Interval *duration;
@@ -334,7 +341,7 @@ bgw_job_stat_tuple_mark_end(TupleInfo *ti, void *const data)
 static ScanTupleResult
 bgw_job_stat_tuple_set_next_start(TupleInfo *ti, void *const data)
 {
-	TimestampTz *next_start = data;
+	TimestampTz *next_start =(TimestampTz *) data;
 	HeapTuple tuple = heap_copytuple(ti->tuple);
 	FormData_bgw_job_stat *fd = (FormData_bgw_job_stat *) GETSTRUCT(tuple);
 
@@ -425,8 +432,8 @@ void
 ts_bgw_job_stat_mark_end(BgwJob *job, JobResult result)
 {
 	JobResultCtx res = {
-		.job = job,
 		.result = result,
+		.job = job,
 	};
 
 	if (!bgw_job_stat_scan_job_id(job->fd.id,

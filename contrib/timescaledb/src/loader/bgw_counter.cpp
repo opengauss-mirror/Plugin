@@ -7,7 +7,7 @@
 #include <postgres.h>
 
 #include <miscadmin.h>
-#include <storage/lwlock.h>
+#include <storage/lock/lwlock.h>
 #include <utils/hsearch.h>
 #include <storage/spin.h>
 #include <storage/shmem.h>
@@ -47,7 +47,7 @@ bgw_counter_state_init()
 	bool found;
 
 	LWLockAcquire(AddinShmemInitLock, LW_EXCLUSIVE);
-	ct = ShmemInitStruct(BGW_COUNTER_STATE_NAME, sizeof(CounterState), &found);
+	ct =(CounterState *) ShmemInitStruct(BGW_COUNTER_STATE_NAME, sizeof(CounterState), &found);
 	if (!found)
 	{
 		memset(ct, 0, sizeof(CounterState));

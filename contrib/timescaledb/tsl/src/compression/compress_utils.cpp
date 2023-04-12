@@ -31,7 +31,7 @@
 #include "scan_iterator.h"
 #include "license.h"
 #include "compression_chunk_size.h"
-
+#include "trigger.cpp"
 #if !PG96
 #include <utils/fmgrprotos.h>
 #endif
@@ -127,16 +127,17 @@ chunk_dml_blocker_trigger_add(Oid relid)
 	/* stmt triggers are blocked on hypertable chunks */
 	CreateTrigStmt stmt = {
 		.type = T_CreateTrigStmt,
-		.row = true,
-		.timing = TRIGGER_TYPE_BEFORE,
 		.trigname = CHUNK_DML_BLOCKER_NAME,
 		.relation = makeRangeVar(schema, relname, -1),
+		
 		.funcname =
 			list_make2(makeString(INTERNAL_SCHEMA_NAME), makeString(CHUNK_DML_BLOCKER_TRIGGER)),
 		.args = NIL,
+		.row = true,
+		.timing = TRIGGER_TYPE_BEFORE,	
 		.events = TRIGGER_TYPE_INSERT,
 	};
-	objaddr = CreateTriggerCompat(&stmt, NULL, relid, InvalidOid, InvalidOid, InvalidOid, false);
+	objaddr = CreateTriggerCompat(&stmt, NULL, relid, InvalidOid, InvalidOid, InvalidOid, false,0);
 
 	if (!OidIsValid(objaddr.objectId))
 		elog(ERROR, "could not create DML blocker trigger");
@@ -222,7 +223,7 @@ compress_chunk_impl(Oid hypertable_relid, Oid chunk_relid)
 	/* create compressed chunk DDL and compress the data */
 	compress_ht_chunk = create_compress_chunk_table(cxt.compress_ht, cxt.srcht_chunk);
 	/* convert list to array of pointers for compress_chunk */
-	colinfo_array = palloc(sizeof(ColumnCompressionInfo *) * htcols_listlen);
+	colinfo_array =(const ColumnCompressionInfo **) palloc(sizeof(ColumnCompressionInfo *) * htcols_listlen);
 	foreach (lc, htcols_list)
 	{
 		FormData_hypertable_compression *fd = (FormData_hypertable_compression *) lfirst(lc);

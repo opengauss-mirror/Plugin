@@ -7,7 +7,7 @@
 #include <access/relscan.h>
 #include <access/xact.h>
 #include <storage/lmgr.h>
-#include <storage/bufmgr.h>
+//#include <storage/bufmgr.h>
 #include <utils/rel.h>
 
 #include "scanner.h"
@@ -50,7 +50,8 @@ heap_scanner_beginscan(InternalScannerCtx *ctx)
 static bool
 heap_scanner_getnext(InternalScannerCtx *ctx)
 {
-	ctx->tinfo.tuple = heap_getnext(ctx->scan.heap_scan, ctx->sctx->scandirection);
+	//tsdb 这里本来没有强制类型转化(TableScanDescData *)
+	ctx->tinfo.tuple = heap_getnext((TableScanDescData *)ctx->scan.heap_scan, ctx->sctx->scandirection);
 	return HeapTupleIsValid(ctx->tinfo.tuple);
 }
 
@@ -92,7 +93,8 @@ index_scanner_getnext(InternalScannerCtx *ctx)
 {
 	bool success;
 #if PG12_LT
-	ctx->tinfo.tuple = index_getnext(ctx->scan.index_scan, ctx->sctx->scandirection);
+	//tsdb 这里本来没有强制类型转换
+	ctx->tinfo.tuple =(HeapTuple) index_getnext(ctx->scan.index_scan, ctx->sctx->scandirection);
 	success = HeapTupleIsValid(ctx->tinfo.tuple);
 #else /* TODO we should not materialize a HeapTuple unless needed */
 	success = index_getnext_slot(ctx->scan.index_scan, ctx->sctx->scandirection, ctx->tinfo.slot);
@@ -224,15 +226,24 @@ ts_scanner_next(ScannerCtx *ctx, InternalScannerCtx *ictx)
 			{
 				Buffer buffer;
 				TM_FailureData hufd;
-
-				ictx->tinfo.lockresult = heap_lock_tuple(ictx->tablerel,
+				//tsdb 这里本来没有强制类型转化
+				//原函数为
+				// heap_lock_tuple(ictx->tablerel,
+				// 										 ictx->tinfo.tuple,
+				// 										 GetCurrentCommandId(false),
+				// 										 ctx->tuplock->lockmode,
+				// 										 ctx->tuplock->waitpolicy,
+				// 										 ctx->tuplock->follow_updates,
+				// 										 &buffer,
+				// 										 &hufd);
+				ictx->tinfo.lockresult =(HTSU_Result) heap_lock_tuple(ictx->tablerel,
 														 ictx->tinfo.tuple,
+														 &buffer,
 														 GetCurrentCommandId(false),
 														 ctx->tuplock->lockmode,
 														 ctx->tuplock->waitpolicy,
 														 ctx->tuplock->follow_updates,
-														 &buffer,
-														 &hufd);
+														 &hufd.tsdb_for_og);
 
 				/*
 				 * A tuple lock pins the underlying buffer, so we need to

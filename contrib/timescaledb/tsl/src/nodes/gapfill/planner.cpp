@@ -6,7 +6,7 @@
 
 #include <postgres.h>
 #include <nodes/execnodes.h>
-#include <nodes/extensible.h>
+//#include <nodes/extensible.h>
 #include <nodes/nodeFuncs.h>
 #include <optimizer/clauses.h>
 #include <optimizer/pathnode.h>
@@ -28,9 +28,9 @@
 #include "nodes/gapfill/planner.h"
 #include "nodes/gapfill/exec.h"
 
-static CustomScanMethods gapfill_plan_methods = {
-	.CustomName = "GapFill",
-	.CreateCustomScanState = gapfill_state_create,
+static ExtensiblePlanMethods gapfill_plan_methods = {
+	.ExtensibleName = "GapFill",
+	.CreateExtensiblePlanState = gapfill_state_create,
 };
 
 typedef struct gapfill_walker_context
@@ -81,7 +81,7 @@ gapfill_function_walker(Node *node, gapfill_walker_context *context)
 		context->count++;
 	}
 
-	return expression_tree_walker((Node *) node, gapfill_function_walker, context);
+	return expression_tree_walker((Node *) node,(bool (*)()) gapfill_function_walker, context);
 }
 
 /*
@@ -99,7 +99,7 @@ marker_function_walker(Node *node, gapfill_walker_context *context)
 		context->count++;
 	}
 
-	return expression_tree_walker((Node *) node, marker_function_walker, context);
+	return expression_tree_walker((Node *) node,(bool (*)()) marker_function_walker, context);
 }
 
 /*
@@ -117,7 +117,7 @@ window_function_walker(Node *node, gapfill_walker_context *context)
 		context->count++;
 	}
 
-	return expression_tree_walker(node, window_function_walker, context);
+	return expression_tree_walker(node,(bool (*)()) window_function_walker, context);
 }
 
 /*
@@ -134,8 +134,8 @@ gapfill_correct_order(PlannerInfo *root, Path *subpath, FuncExpr *func)
 
 	if (list_length(subpath->pathkeys) > 0)
 	{
-		PathKey *pk = llast(subpath->pathkeys);
-		EquivalenceMember *em = linitial(pk->pk_eclass->ec_members);
+		PathKey *pk =(PathKey *) llast(subpath->pathkeys);
+		EquivalenceMember *em =(EquivalenceMember *) linitial(pk->pk_eclass->ec_members);
 
 		/* time_bucket_gapfill is last element */
 		if (BTLessStrategyNumber == pk->pk_strategy && IsA(em->em_expr, FuncExpr) &&
@@ -167,21 +167,21 @@ gapfill_correct_order(PlannerInfo *root, Path *subpath, FuncExpr *func)
  * Agg node. During execution, the gapfill node will produce the new tuples.
  */
 static Plan *
-gapfill_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path, List *tlist,
+gapfill_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath *path, List *tlist,
 					List *clauses, List *custom_plans)
 {
 	GapFillPath *gfpath = (GapFillPath *) path;
-	CustomScan *cscan = makeNode(CustomScan);
+	ExtensiblePlan *cscan = makeNode(ExtensiblePlan);
 	List *args = list_copy(gfpath->func->args);
 
 	cscan->scan.scanrelid = 0;
 	cscan->scan.plan.targetlist = tlist;
-	cscan->custom_plans = custom_plans;
-	cscan->custom_scan_tlist = tlist;
+	cscan->extensible_plans = custom_plans;
+	cscan->extensible_plan_tlist = tlist;
 	cscan->flags = path->flags;
 	cscan->methods = &gapfill_plan_methods;
 
-	cscan->custom_private =
+	cscan->extensible_private =
 		list_make4(gfpath->func, root->parse->groupClause, root->parse->jointree, args);
 
 	/* remove start and end argument from time_bucket call */
@@ -190,13 +190,13 @@ gapfill_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path, List *
 	return &cscan->scan.plan;
 }
 
-static CustomPathMethods gapfill_path_methods = {
-	.CustomName = "GapFill",
-	.PlanCustomPath = gapfill_plan_create,
+static ExtensiblePathMethods gapfill_path_methods = {
+	.ExtensibleName = "GapFill",
+	.PlanExtensiblePath = gapfill_plan_create,
 };
 
 static bool
-gapfill_expression_walker(Expr *node, bool (*walker)(), gapfill_walker_context *context)
+gapfill_expression_walker(Expr *node, bool (*walker)(Node *,gapfill_walker_context *), gapfill_walker_context *context)
 {
 	context->count = 0;
 	context->call.node = NULL;
@@ -218,12 +218,12 @@ gapfill_build_pathtarget(PathTarget *pt_upper, PathTarget *pt_path, PathTarget *
 
 	foreach (lc, pt_upper->exprs)
 	{
-		Expr *expr = lfirst(lc);
+		Expr *expr =(Expr *) lfirst(lc);
 		gapfill_walker_context context;
 		i++;
 
 		/* check for locf/interpolate calls */
-		gapfill_expression_walker(expr, marker_function_walker, &context);
+		gapfill_expression_walker(expr,marker_function_walker, &context);
 		if (context.count > 1)
 			ereport(ERROR,
 					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -244,7 +244,7 @@ gapfill_build_pathtarget(PathTarget *pt_upper, PathTarget *pt_path, PathTarget *
 
 			/* if there is an aggregation it needs to be a child of the marker function */
 			if (contain_agg_clause((Node *) expr) &&
-				!contain_agg_clause(linitial(context.call.func->args)))
+				!contain_agg_clause((Node *)linitial(context.call.func->args)))
 				ereport(ERROR,
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 						 errmsg("aggregate functions must be below %s",
@@ -258,7 +258,7 @@ gapfill_build_pathtarget(PathTarget *pt_upper, PathTarget *pt_path, PathTarget *
 
 			add_column_to_pathtarget(pt_path, context.call.expr, pt_upper->sortgrouprefs[i]);
 			add_column_to_pathtarget(pt_subpath,
-									 linitial(context.call.func->args),
+									 (Expr*)linitial(context.call.func->args),
 									 pt_upper->sortgrouprefs[i]);
 			continue;
 		}
@@ -286,20 +286,20 @@ gapfill_build_pathtarget(PathTarget *pt_upper, PathTarget *pt_path, PathTarget *
 				for (lc_arg = lnext(list_head(context.call.window->args)); lc_arg != NULL;
 					 lc_arg = lnext(lc_arg))
 				{
-					if (contain_var_clause(lfirst(lc_arg)))
+					if (contain_var_clause((Node*)lfirst(lc_arg)))
 						ereport(ERROR,
 								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 								 errmsg("window functions with multiple column "
 										"references not supported")));
 				}
 
-				if (contain_var_clause(linitial(context.call.window->args)))
+				if (contain_var_clause((Node*)linitial(context.call.window->args)))
 				{
 					add_column_to_pathtarget(pt_path,
-											 linitial(context.call.window->args),
+											 (Expr*)linitial(context.call.window->args),
 											 pt_upper->sortgrouprefs[i]);
 					add_column_to_pathtarget(pt_subpath,
-											 linitial(context.call.window->args),
+											 (Expr*)linitial(context.call.window->args),
 											 pt_upper->sortgrouprefs[i]);
 				}
 			}
@@ -328,8 +328,8 @@ gapfill_path_create(PlannerInfo *root, Path *subpath, FuncExpr *func)
 {
 	GapFillPath *path;
 
-	path = (GapFillPath *) newNode(sizeof(GapFillPath), T_CustomPath);
-	path->cpath.path.pathtype = T_CustomScan;
+	path = (GapFillPath *) newNode(sizeof(GapFillPath), T_ExtensiblePath);
+	path->cpath.path.pathtype = T_ExtensiblePlan;
 	path->cpath.methods = &gapfill_path_methods;
 
 	/*
@@ -358,8 +358,8 @@ gapfill_path_create(PlannerInfo *root, Path *subpath, FuncExpr *func)
 		/* subpath does not have correct order */
 		foreach (lc, root->group_pathkeys)
 		{
-			PathKey *pk = lfirst(lc);
-			EquivalenceMember *em = linitial(pk->pk_eclass->ec_members);
+			PathKey *pk =(PathKey *) lfirst(lc);
+			EquivalenceMember *em =(EquivalenceMember *) linitial(pk->pk_eclass->ec_members);
 
 			if (!pk_func && IsA(em->em_expr, FuncExpr) &&
 				((FuncExpr *) em->em_expr)->funcid == func->funcid)
@@ -389,7 +389,7 @@ gapfill_path_create(PlannerInfo *root, Path *subpath, FuncExpr *func)
 	path->cpath.path.startup_cost = subpath->startup_cost;
 	path->cpath.path.total_cost = subpath->total_cost;
 	path->cpath.path.pathkeys = subpath->pathkeys;
-	path->cpath.custom_paths = list_make1(subpath);
+	path->cpath.extensible_paths = list_make1(subpath);
 	path->func = func;
 
 	return &path->cpath.path;
@@ -403,7 +403,8 @@ plan_add_gapfill(PlannerInfo *root, RelOptInfo *group_rel)
 {
 	ListCell *lc;
 	Query *parse = root->parse;
-	gapfill_walker_context context = { .call.node = NULL, .count = 0 };
+
+	gapfill_walker_context context = { .call={.node = NULL,}, .count = 0 };
 
 	if (CMD_SELECT != parse->commandType || parse->groupClause == NIL)
 		return;
@@ -450,7 +451,7 @@ plan_add_gapfill(PlannerInfo *root, RelOptInfo *group_rel)
 
 		foreach (lc, copy)
 		{
-			add_path(group_rel, gapfill_path_create(root, lfirst(lc), context.call.func));
+			add_path(group_rel, gapfill_path_create(root,(Path*) lfirst(lc), context.call.func));
 		}
 		list_free(copy);
 	}
@@ -459,7 +460,7 @@ plan_add_gapfill(PlannerInfo *root, RelOptInfo *group_rel)
 static inline bool
 is_gapfill_path(Path *path)
 {
-	return IsA(path, CustomPath) && castNode(CustomPath, path)->methods == &gapfill_path_methods;
+	return IsA(path, ExtensiblePath) && castNode(ExtensiblePath, path)->methods == &gapfill_path_methods;
 }
 
 /*
@@ -487,12 +488,12 @@ gapfill_adjust_window_targetlist(PlannerInfo *root, RelOptInfo *input_rel, RelOp
 {
 	ListCell *lc;
 
-	if (!is_gapfill_path(linitial(input_rel->pathlist)))
+	if (!is_gapfill_path((Path*)linitial(input_rel->pathlist)))
 		return;
 
 	foreach (lc, output_rel->pathlist)
 	{
-		WindowAggPath *toppath = lfirst(lc);
+		WindowAggPath *toppath =(WindowAggPath *) lfirst(lc);
 
 		/*
 		 * the toplevel WindowAggPath has the highest index. If winref is
@@ -525,7 +526,7 @@ gapfill_adjust_window_targetlist(PlannerInfo *root, RelOptInfo *input_rel, RelOp
 					gapfill_walker_context context;
 					i++;
 
-					gapfill_expression_walker(lfirst(lc_expr), window_function_walker, &context);
+					gapfill_expression_walker((Expr*)lfirst(lc_expr), window_function_walker, &context);
 
 					/*
 					 * we error out on multiple window functions per resultset column
@@ -540,7 +541,7 @@ gapfill_adjust_window_targetlist(PlannerInfo *root, RelOptInfo *input_rel, RelOp
 							 * window function of current level or below
 							 * so we can put in verbatim
 							 */
-							add_column_to_pathtarget(pt, lfirst(lc_expr), pt_top->sortgrouprefs[i]);
+							add_column_to_pathtarget(pt, (Expr*)lfirst(lc_expr), pt_top->sortgrouprefs[i]);
 						else if (context.call.window->args != NIL)
 						{
 							ListCell *lc_arg;
@@ -552,21 +553,21 @@ gapfill_adjust_window_targetlist(PlannerInfo *root, RelOptInfo *input_rel, RelOp
 									 lc_arg != NULL;
 									 lc_arg = lnext(lc_arg))
 								{
-									if (contain_var_clause(lfirst(lc_arg)))
+									if (contain_var_clause((Node*)lfirst(lc_arg)))
 										ereport(ERROR,
 												(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 												 errmsg("window functions with multiple column "
 														"references not supported")));
 								}
 
-							if (contain_var_clause(linitial(context.call.window->args)))
+							if (contain_var_clause((Node*)linitial(context.call.window->args)))
 								add_column_to_pathtarget(pt,
-														 linitial(context.call.window->args),
+														 (Expr*)linitial(context.call.window->args),
 														 pt_top->sortgrouprefs[i]);
 						}
 					}
 					else
-						add_column_to_pathtarget(pt, lfirst(lc_expr), pt_top->sortgrouprefs[i]);
+						add_column_to_pathtarget(pt, (Expr*)lfirst(lc_expr), pt_top->sortgrouprefs[i]);
 				}
 				path->path.pathtarget = pt;
 			}

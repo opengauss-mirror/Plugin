@@ -53,27 +53,44 @@ static Cache *
 hypertable_cache_create()
 {
 	MemoryContext ctx =
-		AllocSetContextCreate(CacheMemoryContext, "Hypertable cache", ALLOCSET_DEFAULT_SIZES);
+		AllocSetContextCreate(u_sess->cache_mem_cxt, "Hypertable cache", ALLOCSET_DEFAULT_SIZES);
 
-	Cache *cache = MemoryContextAlloc(ctx, sizeof(Cache));
-	Cache		template =
+	Cache *cache =(Cache *) MemoryContextAlloc(ctx, sizeof(Cache));
+	Cache		templatee =
 	{
 		.hctl =
 		{
+			.num_partitions = NULL,
+			.ssize = NULL,
+			.dsize = NULL,
+			.max_dsize =NULL,
+			.ffactor =NULL,
 			.keysize = sizeof(Oid),
 			.entrysize = sizeof(HypertableCacheEntry),
+			.hash = {},
+			.match = {},
+			.keycopy = {},
+			.alloc = {},
+			.dealloc = {},
 			.hcxt = ctx,
+			.hctl = {},
 		},
+		.htab = {},
+		.refcount = 0,
 		.name = "hypertable_cache",
 		.numelements = 16,
 		.flags = HASH_ELEM | HASH_CONTEXT | HASH_BLOBS,
+		.stats = {},
 		.get_key = hypertable_cache_get_key,
 		.create_entry = hypertable_cache_create_entry,
+		.update_entry = {},
 		.missing_error = hypertable_cache_missing_error,
 		.valid_result = hypertable_cache_valid_result,
+		.pre_destroy_hook = {},
+		.release_on_commit = false,
 	};
 
-	*cache = template;
+	*cache = templatee;
 
 	ts_cache_init(cache);
 
@@ -85,7 +102,7 @@ static Cache *hypertable_cache_current = NULL;
 static ScanTupleResult
 hypertable_tuple_found(TupleInfo *ti, void *data)
 {
-	HypertableCacheEntry *entry = data;
+	HypertableCacheEntry *entry =(HypertableCacheEntry *) data;
 
 	entry->hypertable = ts_hypertable_from_tupleinfo(ti);
 	return SCAN_DONE;
@@ -95,7 +112,7 @@ static void *
 hypertable_cache_create_entry(Cache *cache, CacheQuery *query)
 {
 	HypertableCacheQuery *hq = (HypertableCacheQuery *) query;
-	HypertableCacheEntry *cache_entry = query->result;
+	HypertableCacheEntry *cache_entry =(HypertableCacheEntry *) query->result;
 	int number_found;
 
 	if (NULL == hq->schema)
@@ -199,12 +216,14 @@ ts_hypertable_cache_get_entry_with_table(Cache *cache, const Oid relid, const ch
 										 const char *table, const unsigned int flags)
 {
 	HypertableCacheQuery query = {
-		.q.flags = flags,
+		.q={
+			.flags=flags,
+		} ,
 		.relid = relid,
 		.schema = schema,
 		.table = table,
 	};
-	HypertableCacheEntry *entry = ts_cache_fetch(cache, &query.q);
+	HypertableCacheEntry *entry =(HypertableCacheEntry *) ts_cache_fetch(cache, &query.q);
 	Assert((flags & CACHE_FLAG_MISSING_OK) ? true : (entry != NULL && entry->hypertable != NULL));
 	return entry == NULL ? NULL : entry->hypertable;
 }
