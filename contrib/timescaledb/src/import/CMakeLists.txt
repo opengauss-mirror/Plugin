@@ -1,12 +1,12 @@
 set(SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/planner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/planner.c
 )
 
 if ((${PG_VERSION_MAJOR} EQUAL "12") OR
     (${PG_VERSION_MAJOR} GREATER "12"))
   set(SOURCES
       ${SOURCES}
-      ${CMAKE_CURRENT_SOURCE_DIR}/allpaths.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/allpaths.c
     )
 endif ()
 

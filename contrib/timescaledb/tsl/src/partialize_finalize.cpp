@@ -10,7 +10,7 @@
 #include <utils/syscache.h>
 #include <utils/datum.h>
 #include <utils/builtins.h>
-#include <access/htup.h>
+#include <access/htup_details.h>
 #include <catalog/namespace.h>
 #include <catalog/pg_collation.h>
 #include <parser/parse_agg.h>
@@ -214,7 +214,7 @@ get_input_types(ArrayType *input_types, size_t *number_types)
 		elog(ERROR, "invalid input type array: wrong number of dimensions");
 
 	*number_types = ARR_DIMS(input_types)[0];
-	type_oids =(Oid *) palloc0(sizeof(*type_oids) * (*number_types));
+	type_oids = palloc0(sizeof(*type_oids) * (*number_types));
 
 	iter = array_create_iterator(input_types, 1, &meta);
 
@@ -311,12 +311,12 @@ fa_perquery_state_init(FunctionCallInfo fcinfo)
 			 "no valid combine function for the aggregate specified in Timescale finalize call");
 
 	fmgr_info_cxt(tstate->combine_meta.combinefnoid, &tstate->combine_meta.combinefn, qcontext);
-	tstate->combine_meta.combfn_fcinfo =(FunctionCallInfo) HEAP_FCINFO(2);
+	tstate->combine_meta.combfn_fcinfo = HEAP_FCINFO(2);
 	InitFunctionCallInfoData(*tstate->combine_meta.combfn_fcinfo,
 							 &tstate->combine_meta.combinefn,
 							 2, /* combine fn always has two args */
 							 collation,
-							 (fmNodePtr) fa_aggstate,
+							 (void *) fa_aggstate,
 							 NULL);
 
 	if (OidIsValid(tstate->combine_meta.deserialfnoid)) /* deserial fn not necessary, no need to
@@ -325,12 +325,12 @@ fa_perquery_state_init(FunctionCallInfo fcinfo)
 		fmgr_info_cxt(tstate->combine_meta.deserialfnoid,
 					  &tstate->combine_meta.deserialfn,
 					  qcontext);
-		tstate->combine_meta.deserialfn_fcinfo =(FunctionCallInfo) HEAP_FCINFO(1);
+		tstate->combine_meta.deserialfn_fcinfo = HEAP_FCINFO(1);
 		InitFunctionCallInfoData(*tstate->combine_meta.deserialfn_fcinfo,
 								 &tstate->combine_meta.deserialfn,
 								 1, /* deserialize always has 1 arg */
 								 collation,
-								 (fmNodePtr) fa_aggstate,
+								 (void *) fa_aggstate,
 								 NULL);
 	}
 	else
@@ -343,7 +343,7 @@ fa_perquery_state_init(FunctionCallInfo fcinfo)
 		fmgr_info_cxt(tstate->combine_meta.recv_fn,
 					  &tstate->combine_meta.internal_deserialfn,
 					  qcontext);
-		tstate->combine_meta.internal_deserialfn_fcinfo =(FunctionCallInfo) HEAP_FCINFO(3);
+		tstate->combine_meta.internal_deserialfn_fcinfo = HEAP_FCINFO(3);
 		InitFunctionCallInfoData(*tstate->combine_meta.internal_deserialfn_fcinfo,
 								 &tstate->combine_meta.internal_deserialfn,
 								 3,
@@ -367,12 +367,12 @@ fa_perquery_state_init(FunctionCallInfo fcinfo)
 
 		fmgr_info_cxt(tstate->final_meta.finalfnoid, &tstate->final_meta.finalfn, qcontext);
 		/* pass the aggstate information from our current call context */
-		tstate->final_meta.finalfn_fcinfo =(FunctionCallInfo) HEAP_FCINFO(num_args);
+		tstate->final_meta.finalfn_fcinfo = HEAP_FCINFO(num_args);
 		InitFunctionCallInfoData(*tstate->final_meta.finalfn_fcinfo,
 								 &tstate->final_meta.finalfn,
 								 num_args,
 								 collation,
-								 (fmNodePtr) fa_aggstate,
+								 (void *) fa_aggstate,
 								 NULL);
 		if (number_types > 0)
 		{

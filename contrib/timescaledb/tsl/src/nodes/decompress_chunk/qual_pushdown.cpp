@@ -59,7 +59,7 @@ pushdown_quals(PlannerInfo *root, RelOptInfo *chunk_rel, RelOptInfo *compressed_
 
 	foreach (lc, chunk_rel->baserestrictinfo)
 	{
-		RestrictInfo *ri =(RestrictInfo *) lfirst(lc);
+		RestrictInfo *ri = lfirst(lc);
 		Expr *expr;
 
 		/* pushdown is not safe for volatile expressions */
@@ -80,7 +80,7 @@ pushdown_quals(PlannerInfo *root, RelOptInfo *chunk_rel, RelOptInfo *compressed_
 				{
 					compressed_rel->baserestrictinfo =
 						lappend(compressed_rel->baserestrictinfo,
-								make_simple_restrictinfo((Expr*)lfirst(lc_and)));
+								make_simple_restrictinfo(lfirst(lc_and)));
 				}
 			}
 			else
@@ -128,7 +128,7 @@ make_segment_meta_opexpr(QualPushdownContext *context, Oid opno, AttrNumber meta
 									BOOLOID,
 									false,
 									(Expr *) meta_var,
-									(Expr*)copyObject(compare_to_expr),
+									copyObject(compare_to_expr),
 									InvalidOid,
 									uncompressed_var->varcollid);
 }
@@ -205,8 +205,8 @@ pushdown_op_to_segment_meta_min_max(QualPushdownContext *context, List *expr_arg
 	if (list_length(expr_args) != 2)
 		return NULL;
 
-	leftop =(Expr *) linitial(expr_args);
-	rightop =(Expr *) lsecond(expr_args);
+	leftop = linitial(expr_args);
+	rightop = lsecond(expr_args);
 
 	if (IsA(leftop, RelabelType))
 		leftop = ((RelabelType *) leftop)->arg;
@@ -386,7 +386,7 @@ modify_expression(Node *node, QualPushdownContext *context)
 				return NULL;
 			}
 
-			var =(Var *) copyObject(var);
+			var = copyObject(var);
 			compressed_attno =
 				get_attnum(context->compressed_rte->relid, compressioninfo->attname.data);
 			var->varno = context->compressed_rel->relid;
@@ -400,5 +400,5 @@ modify_expression(Node *node, QualPushdownContext *context)
 			break;
 	}
 
-	return expression_tree_mutator(node,(Node* (*)(Node*, void*)) modify_expression, context);
+	return expression_tree_mutator(node, modify_expression, context);
 }

@@ -22,16 +22,16 @@ HttpHeader *
 ts_http_header_create(const char *name, size_t name_len, const char *value, size_t value_len,
 					  HttpHeader *next)
 {
-	HttpHeader *new_header =(HttpHeader *) palloc(sizeof(HttpHeader));
+	HttpHeader *new_header = palloc(sizeof(HttpHeader));
 
 	memset(new_header, 0, sizeof(*new_header));
-	new_header->name =(char*) palloc(name_len + 1);
+	new_header->name = palloc(name_len + 1);
 	if (name_len > 0)
 		memcpy(new_header->name, name, name_len);
 	new_header->name[name_len] = '\0';
 	new_header->name_len = name_len;
 
-	new_header->value =(char*) palloc(value_len + 1);
+	new_header->value = palloc(value_len + 1);
 	if (value_len > 0)
 		memcpy(new_header->value, value, value_len);
 	new_header->value[value_len] = '\0';
@@ -84,7 +84,7 @@ ts_http_request_create(HttpRequestMethod method)
 	MemoryContext request_context =
 		AllocSetContextCreate(CurrentMemoryContext, "Http Request", ALLOCSET_DEFAULT_SIZES);
 	MemoryContext old = MemoryContextSwitchTo(request_context);
-	HttpRequest *req =(HttpRequest *) palloc0(sizeof(HttpRequest));
+	HttpRequest *req = palloc0(sizeof(HttpRequest));
 
 	req->context = request_context;
 	ts_http_request_init(req, method);
@@ -105,7 +105,7 @@ ts_http_request_set_uri(HttpRequest *req, const char *uri)
 	MemoryContext old = MemoryContextSwitchTo(req->context);
 	int uri_len = strlen(uri);
 
-	req->uri =(char*) palloc(uri_len + 1);
+	req->uri = palloc(uri_len + 1);
 	memcpy(req->uri, uri, uri_len);
 	req->uri[uri_len] = '\0';
 	req->uri_len = uri_len;
@@ -135,7 +135,7 @@ ts_http_request_set_body(HttpRequest *req, const char *body, size_t body_len)
 {
 	MemoryContext old = MemoryContextSwitchTo(req->context);
 
-	req->body =(char*) palloc(body_len + 1);
+	req->body = palloc(body_len + 1);
 	memcpy(req->body, body, body_len);
 	req->body[body_len] = '\0';
 	req->body_len = body_len;

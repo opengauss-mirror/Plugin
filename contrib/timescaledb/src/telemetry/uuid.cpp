@@ -26,7 +26,7 @@ ts_uuid_create(void)
 	 * PG9.6 doesn't expose the internals of pg_uuid_t, so we just treat it as
 	 * a byte array
 	 */
-	unsigned char *gen_uuid =(unsigned char *) palloc0(UUID_LEN);
+	unsigned char *gen_uuid = palloc0(UUID_LEN);
 	bool rand_success = false;
 
 #if !PG96

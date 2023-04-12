@@ -21,10 +21,9 @@ typedef double (*group_estimate_func)(PlannerInfo *root, FuncExpr *expr, double 
 
 typedef struct FuncInfo
 {
-	
+	const char *funcname;
 	bool is_timescaledb_func;
 	bool is_bucketing_func;
-	const char *funcname;
 	int nargs;
 	Oid arg_types[FUNC_CACHE_MAX_FUNC_ARGS];
 	group_estimate_func group_estimate;

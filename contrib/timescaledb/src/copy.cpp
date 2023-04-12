@@ -19,19 +19,19 @@
 #include <commands/trigger.h>
 #include <commands/tablecmds.h>
 #include <executor/executor.h>
-#include <executor/node/nodeModifyTable.h>
+#include <executor/nodeModifyTable.h>
 #include <miscadmin.h>
 #include <nodes/makefuncs.h>
 #include <parser/parse_expr.h>
 #include <parser/parse_coerce.h>
 #include <parser/parse_collate.h>
 #include <parser/parse_relation.h>
-#include <storage/buf/bufmgr.h>
+#include <storage/bufmgr.h>
 #include <utils/builtins.h>
 #include <utils/guc.h>
 #include <utils/lsyscache.h>
 #include <utils/rel.h>
-//#include <utils/rls.h>
+#include <utils/rls.h>
 
 #include "hypertable.h"
 #include "copy.h"
@@ -78,7 +78,7 @@ copy_chunk_state_create(Hypertable *ht, Relation rel, CopyFromFunc from_func, Co
 	CopyChunkState *ccstate;
 	EState *estate = CreateExecutorState();
 
-	ccstate =(CopyChunkState *) palloc(sizeof(CopyChunkState));
+	ccstate = palloc(sizeof(CopyChunkState));
 	ccstate->rel = rel;
 	ccstate->estate = estate;
 	ccstate->dispatch = ts_chunk_dispatch_create(ht, estate);
@@ -116,7 +116,7 @@ next_copy_from(CopyChunkState *ccstate, ExprContext *econtext, Datum *values, bo
 static void
 on_chunk_insert_state_changed(ChunkInsertState *state, void *data)
 {
-	BulkInsertState bistate =(BulkInsertState) data;
+	BulkInsertState bistate = data;
 
 	/* Different chunk so must release BulkInsertState */
 	if (bistate->current_buf != InvalidBuffer)
@@ -289,8 +289,8 @@ copyfrom(CopyChunkState *ccstate, List *range_table, Hypertable *ht)
 	{
 		errcallback.callback = CopyFromErrorCallback;
 		errcallback.arg = (void *) ccstate->cstate;
-		errcallback.previous = t_thrd.log_cxt.error_context_stack;
-		t_thrd.log_cxt.error_context_stack = &errcallback;
+		errcallback.previous = error_context_stack;
+		error_context_stack = &errcallback;
 	}
 
 	for (;;)
@@ -429,7 +429,7 @@ copyfrom(CopyChunkState *ccstate, List *range_table, Hypertable *ht)
 
 	/* Done, clean up */
 	if (errcallback.previous)
-		t_thrd.log_cxt.error_context_stack = errcallback.previous;
+		error_context_stack = errcallback.previous;
 
 	FreeBulkInsertState(bistate);
 
@@ -607,8 +607,7 @@ copy_constraints_and_check(ParseState *pstate, Relation rel, List *attnums)
 	}
 
 	/* check read-only transaction and parallel mode */
-	//tsdb 原本函数为GetConfigOptionByName("transaction_read_only", NULL, false)
-	xactReadOnly = GetConfigOptionByName("transaction_read_only", NULL);
+	xactReadOnly = GetConfigOptionByName("transaction_read_only", NULL, false);
 
 	if (strncmp(xactReadOnly, "on", sizeof("on")) == 0 && !rel->rd_islocaltemp)
 		PreventCommandIfReadOnly("COPY FROM");
@@ -705,8 +704,7 @@ next_copy_from_table_to_chunks(CopyChunkState *ccstate, ExprContext *econtext, D
 	HeapTuple tuple;
 
 	Assert(scandesc != NULL);
-	//tsdb 这里本来没有强制类型转化(TableScanDescData *)
-	tuple = heap_getnext((TableScanDescData *)scandesc, ForwardScanDirection);
+	tuple = heap_getnext(scandesc, ForwardScanDirection);
 
 	if (!HeapTupleIsValid(tuple))
 		return false;
@@ -733,12 +731,8 @@ timescaledb_move_from_table_to_chunks(Hypertable *ht, LOCKMODE lockmode)
 	List *attnums = NIL;
 
 	RangeVar rv = {
-		.type = {},
-		.catalogname = NULL,
 		.schemaname = NameStr(ht->fd.schema_name),
 		.relname = NameStr(ht->fd.table_name),
-		.partitionname = NULL,
-		.subpartitionname = NULL,
 #if PG96
 		.inhOpt = INH_NO,
 #else
@@ -749,7 +743,6 @@ timescaledb_move_from_table_to_chunks(Hypertable *ht, LOCKMODE lockmode)
 	TruncateStmt stmt = {
 		.type = T_TruncateStmt,
 		.relations = list_make1(&rv),
-		.restart_seqs = false,
 		.behavior = DROP_RESTRICT,
 	};
 	int i;
@@ -771,6 +764,5 @@ timescaledb_move_from_table_to_chunks(Hypertable *ht, LOCKMODE lockmode)
 	UnregisterSnapshot(snapshot);
 	table_close(rel, lockmode);
 
-	//tsdb,这里本来没有null
-	ExecuteTruncate(&stmt,NULL);
+	ExecuteTruncate(&stmt);
 }

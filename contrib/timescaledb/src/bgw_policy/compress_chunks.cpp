@@ -22,13 +22,13 @@
 static ScanTupleResult
 bgw_policy_compress_chunks_tuple_found(TupleInfo *ti, void *const data)
 {
-	BgwPolicyCompressChunks **policy =(BgwPolicyCompressChunks **) data;
+	BgwPolicyCompressChunks **policy = data;
 	bool nulls[Natts_bgw_policy_compress_chunks];
 	Datum values[Natts_bgw_policy_compress_chunks];
 
 	heap_deform_tuple(ti->tuple, ti->desc, values, nulls);
 
-	*policy =(BgwPolicyCompressChunks*) MemoryContextAllocZero(ti->mctx, sizeof(BgwPolicyCompressChunks));
+	*policy = MemoryContextAllocZero(ti->mctx, sizeof(BgwPolicyCompressChunks));
 	Assert(!nulls[AttrNumberGetAttrOffset(Anum_bgw_policy_compress_chunks_job_id)]);
 	(*policy)->fd.job_id =
 		DatumGetInt32(values[AttrNumberGetAttrOffset(Anum_bgw_policy_compress_chunks_job_id)]);

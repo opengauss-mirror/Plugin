@@ -6,11 +6,11 @@
 #include <postgres.h>
 #include <parser/parsetree.h>
 #include <nodes/execnodes.h>
-//#include <nodes/extensible.h>
+#include <nodes/extensible.h>
 #include <nodes/makefuncs.h>
 #include <nodes/nodeFuncs.h>
 #include <nodes/plannodes.h>
-#include <executor/node/nodeModifyTable.h>
+#include <executor/nodeModifyTable.h>
 #include <utils/rel.h>
 #include <utils/lsyscache.h>
 #include <foreign/foreign.h>
@@ -26,11 +26,11 @@ get_chunk_dispatch_state(ModifyTableState *mtstate, PlanState *substate)
 {
 	switch (nodeTag(substate))
 	{
-		case T_ExtensiblePlanState:
+		case T_CustomScanState:
 		{
-			ExtensiblePlanState *csstate = castNode(ExtensiblePlanState, substate);
+			CustomScanState *csstate = castNode(CustomScanState, substate);
 
-			if (strcmp(csstate->methods->ExtensibleName, CHUNK_DISPATCH_STATE_NAME) == 0)
+			if (strcmp(csstate->methods->CustomName, CHUNK_DISPATCH_STATE_NAME) == 0)
 				return substate;
 
 			break;
@@ -56,7 +56,7 @@ get_chunk_dispatch_state(ModifyTableState *mtstate, PlanState *substate)
  * the ModifyTableState node whenever it inserts into a new chunk.
  */
 static void
-hypertable_insert_begin(ExtensiblePlanState *node, EState *estate, int eflags)
+hypertable_insert_begin(CustomScanState *node, EState *estate, int eflags)
 {
 	HypertableInsertState *state = (HypertableInsertState *) node;
 	ModifyTableState *mtstate;
@@ -65,7 +65,7 @@ hypertable_insert_begin(ExtensiblePlanState *node, EState *estate, int eflags)
 	int i;
 
 	ps = ExecInitNode(&state->mt->plan, estate, eflags);
-	node->extensible_ps = list_make1(ps);
+	node->custom_ps = list_make1(ps);
 	mtstate = castNode(ModifyTableState, ps);
 
 	/*
@@ -89,56 +89,55 @@ hypertable_insert_begin(ExtensiblePlanState *node, EState *estate, int eflags)
 }
 
 static TupleTableSlot *
-hypertable_insert_exec(ExtensiblePlanState *node)
+hypertable_insert_exec(CustomScanState *node)
 {
-	return ExecProcNode((PlanState *)linitial(node->extensible_ps));
+	return ExecProcNode(linitial(node->custom_ps));
 }
 
 static void
-hypertable_insert_end(ExtensiblePlanState *node)
+hypertable_insert_end(CustomScanState *node)
 {
-	ExecEndNode((PlanState *)linitial(node->extensible_ps));
+	ExecEndNode(linitial(node->custom_ps));
 }
 
 static void
-hypertable_insert_rescan(ExtensiblePlanState *node)
+hypertable_insert_rescan(CustomScanState *node)
 {
-	ExecReScan((PlanState *)linitial(node->extensible_ps));
+	ExecReScan(linitial(node->custom_ps));
 }
 
-static ExtensibleExecMethods hypertable_insert_state_methods = {
-	.ExtensibleName = "HypertableInsertState",
-	.BeginExtensiblePlan = hypertable_insert_begin,
-	.ExecExtensiblePlan = hypertable_insert_exec,
-	.EndExtensiblePlan = hypertable_insert_end,
-	.ReScanExtensiblePlan = hypertable_insert_rescan,
+static CustomExecMethods hypertable_insert_state_methods = {
+	.CustomName = "HypertableInsertState",
+	.BeginCustomScan = hypertable_insert_begin,
+	.EndCustomScan = hypertable_insert_end,
+	.ExecCustomScan = hypertable_insert_exec,
+	.ReScanCustomScan = hypertable_insert_rescan,
 };
 
 static Node *
-hypertable_insert_state_create(ExtensiblePlan *cscan)
+hypertable_insert_state_create(CustomScan *cscan)
 {
 	HypertableInsertState *state;
-	ModifyTable *mt = castNode(ModifyTable, linitial(cscan->extensible_plans));
+	ModifyTable *mt = castNode(ModifyTable, linitial(cscan->custom_plans));
 
-	state = (HypertableInsertState *) newNode(sizeof(HypertableInsertState), T_ExtensiblePlanState);
+	state = (HypertableInsertState *) newNode(sizeof(HypertableInsertState), T_CustomScanState);
 	state->cscan_state.methods = &hypertable_insert_state_methods;
 	state->mt = mt;
-	state->mt->arbiterIndexes =(List*) linitial(cscan->extensible_private);
+	state->mt->arbiterIndexes = linitial(cscan->custom_private);
 
 	return (Node *) state;
 }
 
-static ExtensiblePlanMethods hypertable_insert_plan_methods = {
-	.ExtensibleName = "HypertableInsert",
-	.CreateExtensiblePlanState = hypertable_insert_state_create,
+static CustomScanMethods hypertable_insert_plan_methods = {
+	.CustomName = "HypertableInsert",
+	.CreateCustomScanState = hypertable_insert_state_create,
 };
-
 
 /*
  * Make a targetlist to meet CustomScan expectations.
  *
  * When a CustomScan isn't scanning a real relation (scanrelid=0), it will build
- * a virtual TupleDesc for the scan "input" based on extensible_plan_tlist. The
+ * a virtual TupleDesc for the scan "input" based on custom_scan_tlist. The
  * "output" targetlist is then expected to reference the attributes of the
  * input's TupleDesc. Without projection, the targetlist will be only Vars with
  * varno set to INDEX_VAR (to indicate reference to the TupleDesc instead of a
@@ -178,23 +177,23 @@ make_var_targetlist(const List *tlist)
 void
 ts_hypertable_insert_fixup_tlist(Plan *plan)
 {
-	if (IsA(plan, ExtensiblePlan))
+	if (IsA(plan, CustomScan))
 	{
-		ExtensiblePlan *cscan = (ExtensiblePlan *) plan;
+		CustomScan *cscan = (CustomScan *) plan;
 
 		if (cscan->methods == &hypertable_insert_plan_methods)
 		{
-			ModifyTable *mt = linitial_node(ModifyTable, cscan->extensible_plans);
+			ModifyTable *mt = linitial_node(ModifyTable, cscan->custom_plans);
 
 			if (mt->plan.targetlist == NIL)
 			{
-				cscan->extensible_plan_tlist = NIL;
+				cscan->custom_scan_tlist = NIL;
 				cscan->scan.plan.targetlist = NIL;
 			}
 			else
 			{
 				/* The input is the output of the child ModifyTable node */
-				cscan->extensible_plan_tlist = mt->plan.targetlist;
+				cscan->custom_scan_tlist = mt->plan.targetlist;
 
 				/* The output is a direct mapping of the input */
 				cscan->scan.plan.targetlist = make_var_targetlist(mt->plan.targetlist);
@@ -204,16 +203,16 @@ ts_hypertable_insert_fixup_tlist(Plan *plan)
 }
 
 static Plan *
-hypertable_insert_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath *best_path,
+hypertable_insert_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *best_path,
 							  List *tlist, List *clauses, List *custom_plans)
 {
-	ExtensiblePlan *cscan = makeNode(ExtensiblePlan);
-	ModifyTable *mt =(ModifyTable *) linitial(custom_plans);
+	CustomScan *cscan = makeNode(CustomScan);
+	ModifyTable *mt = linitial(custom_plans);
 
 	Assert(IsA(mt, ModifyTable));
 
 	cscan->methods = &hypertable_insert_plan_methods;
-	cscan->extensible_plans = list_make1(mt);
+	cscan->custom_plans = list_make1(mt);
 	cscan->scan.scanrelid = 0;
 
 	/* Copy costs, etc., from the original plan */
@@ -229,9 +228,9 @@ hypertable_insert_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath
 	/* Target list handling here needs special attention. Intuitively, we'd like
 	 * to adopt the target list of the ModifyTable subplan we wrap without
 	 * further projection. For a CustomScan this means setting the "input"
-	 * extensible_plan_tlist to the ModifyTable's target list and having an "output"
+	 * custom_scan_tlist to the ModifyTable's target list and having an "output"
 	 * targetlist that references the TupleDesc that is created from the
-	 * extensible_plan_tlist at execution time. Now, while this seems
+	 * custom_scan_tlist at execution time. Now, while this seems
 	 * straight-forward, there are several things with how ModifyTable nodes are
 	 * handled in the planner that complicates this:
 	 *
@@ -249,7 +248,7 @@ hypertable_insert_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath
 	 *	 CustomScan and thus not exempted.
 	 *
 	 * - Third, a CustomScan's targetlist should reference the attributes of the
-	 *   TupleDesc that gets created from the extensible_plan_tlist at the start of
+	 *   TupleDesc that gets created from the custom_scan_tlist at the start of
 	 *   execution. This means we need to make the targetlist into all Vars with
 	 *   attribute numbers that correspond to the TupleDesc instead of result
 	 *   relation in the ModifyTable.
@@ -258,8 +257,8 @@ hypertable_insert_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath
 	 * root->processed_tlist, and at the end of planning when the ModifyTable's
 	 * targetlist is set, we go back and fix up the CustomScan's targetlist.
 	 */
-	cscan->scan.plan.targetlist =(List*) copyObject(root->processed_tlist);
-	cscan->extensible_plan_tlist = cscan->scan.plan.targetlist;
+	cscan->scan.plan.targetlist = copyObject(root->processed_tlist);
+	cscan->custom_scan_tlist = cscan->scan.plan.targetlist;
 
 	/*
 	 * we save the original list of arbiter indexes here
@@ -267,14 +266,14 @@ hypertable_insert_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath
 	 * we still need the original list in case that plan
 	 * gets reused
 	 */
-	cscan->extensible_private = list_make1(mt->arbiterIndexes);
+	cscan->custom_private = list_make1(mt->arbiterIndexes);
 
 	return &cscan->scan.plan;
 }
 
-static ExtensiblePathMethods hypertable_insert_path_methods = {
-	.ExtensibleName = "HypertableInsertPath",
-	.PlanExtensiblePath = hypertable_insert_plan_create,
+static CustomPathMethods hypertable_insert_path_methods = {
+	.CustomName = "HypertableInsertPath",
+	.PlanCustomPath = hypertable_insert_plan_create,
 };
 
 Path *
@@ -291,18 +290,16 @@ ts_hypertable_insert_path_create(PlannerInfo *root, ModifyTablePath *mtpath)
 
 	forboth (lc_path, mtpath->subpaths, lc_rel, mtpath->resultRelations)
 	{
-		Path *subpath =(Path *) lfirst(lc_path);
+		Path *subpath = lfirst(lc_path);
 		Index rti = lfirst_int(lc_rel);
 		RangeTblEntry *rte = planner_rt_fetch(rti, root);
 
 		ht = ts_hypertable_cache_get_entry(hcache, rte->relid, CACHE_FLAG_MISSING_OK);
 
-		OnConflictExpr * root_parse_onconflict_constraint = (OnConflictExpr * )root->parse->onConflict;
-		
 		if (ht != NULL)
 		{
 			if (root->parse->onConflict != NULL &&
-				root_parse_onconflict_constraint->constraint != InvalidOid)
+				root->parse->onConflict->constraint != InvalidOid)
 				ereport(ERROR,
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 						 errmsg("hypertables do not support ON CONFLICT statements that reference "
@@ -322,13 +319,13 @@ ts_hypertable_insert_path_create(PlannerInfo *root, ModifyTablePath *mtpath)
 
 	ts_cache_release(hcache);
 
-	hipath =(HypertableInsertPath *) palloc0(sizeof(HypertableInsertPath));
+	hipath = palloc0(sizeof(HypertableInsertPath));
 
 	/* Copy costs, etc. */
 	memcpy(&hipath->cpath.path, path, sizeof(Path));
-	hipath->cpath.path.type = T_ExtensiblePath;
-	hipath->cpath.path.pathtype = T_ExtensiblePlan;
-	hipath->cpath.extensible_paths = list_make1(mtpath);
+	hipath->cpath.path.type = T_CustomPath;
+	hipath->cpath.path.pathtype = T_CustomScan;
+	hipath->cpath.custom_paths = list_make1(mtpath);
 	hipath->cpath.methods = &hypertable_insert_path_methods;
 	path = &hipath->cpath.path;
 	mtpath->subpaths = subpaths;

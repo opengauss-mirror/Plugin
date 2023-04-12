@@ -10,7 +10,7 @@
 #include <utils/builtins.h>
 #include <utils/datum.h>
 #include <access/tupmacs.h>
-#include <access/htup.h>
+#include <access/htup_details.h>
 #include <utils/lsyscache.h>
 #include <utils/syscache.h>
 #include <catalog/namespace.h>
@@ -39,7 +39,7 @@ typedef struct DatumSerializer
 DatumSerializer *
 create_datum_serializer(Oid type_oid)
 {
-	DatumSerializer *res =(DatumSerializer *) palloc(sizeof(*res));
+	DatumSerializer *res = palloc(sizeof(*res));
 	/* we use the syscache and not the type cache here b/c we need the
 	 * send/recv in/out functions that aren't in type cache */
 	Form_pg_type type;
@@ -56,8 +56,6 @@ create_datum_serializer(Oid type_oid)
 		.type_storage = type->typstorage,
 		.type_send = type->typsend,
 		.type_out = type->typoutput,
-		.send_info_set = NULL,
-		.send_flinfo = {},
 		.use_binary_send = OidIsValid(type->typsend),
 	};
 
@@ -254,7 +252,7 @@ typedef struct DatumDeserializer
 DatumDeserializer *
 create_datum_deserializer(Oid type_oid)
 {
-	DatumDeserializer *res =(DatumDeserializer *) palloc(sizeof(*res));
+	DatumDeserializer *res = palloc(sizeof(*res));
 	/* we use the syscache and not the type cache here b/c we need the
 	 * send/recv in/out functions that aren't in type cache */
 	Form_pg_type type;

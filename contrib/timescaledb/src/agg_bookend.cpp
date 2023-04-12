@@ -5,7 +5,7 @@
  */
 #include <postgres.h>
 #include <fmgr.h>
-#include <access/htup.h>
+#include <access/htup_details.h>
 #include <catalog/namespace.h>
 #include <catalog/pg_type.h>
 #include <libpq/pqformat.h>
@@ -147,7 +147,7 @@ polydatum_deserialize(PolyDatum *result, StringInfo buf, PolyDatumIOState *state
 
 	if (NULL == result)
 	{
-		result = (PolyDatum*)palloc(sizeof(PolyDatum));
+		result = palloc(sizeof(PolyDatum));
 	}
 
 	result->type_oid = polydatum_deserialize_type(buf);
@@ -541,7 +541,7 @@ ts_bookend_deserializefunc(PG_FUNCTION_ARGS)
 		my_extra = (InternalCmpAggStoreIOState *) fcinfo->flinfo->fn_extra;
 	}
 
-	result =(InternalCmpAggStore*) palloc(sizeof(InternalCmpAggStore));
+	result = palloc(sizeof(InternalCmpAggStore));
 	polydatum_deserialize(&result->value, &buf, &my_extra->value, fcinfo);
 	polydatum_deserialize(&result->cmp, &buf, &my_extra->cmp, fcinfo);
 	PG_RETURN_POINTER(result);

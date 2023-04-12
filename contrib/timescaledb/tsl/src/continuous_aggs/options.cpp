@@ -9,7 +9,7 @@
 #include <commands/view.h>
 #include <miscadmin.h>
 #include <rewrite/rewriteManip.h>
-//#include <utils/int8.h>//tsdn
+#include <utils/int8.h>
 #include <utils/builtins.h>
 
 #include "options.h"
@@ -139,16 +139,16 @@ update_refresh_lag(ContinuousAgg *agg, int64 new_lag)
 		bool nulls[Natts_continuous_agg];
 		Datum values[Natts_continuous_agg];
 		bool repl[Natts_continuous_agg] = { false };
-		HeapTuple neww;
+		HeapTuple new;
 
 		heap_deform_tuple(ti->tuple, ti->desc, values, nulls);
 
 		repl[AttrNumberGetAttrOffset(Anum_continuous_agg_refresh_lag)] = true;
 		values[AttrNumberGetAttrOffset(Anum_continuous_agg_refresh_lag)] = Int64GetDatum(new_lag);
 
-		neww = heap_modify_tuple(ti->tuple, ti->desc, values, nulls, repl);
+		new = heap_modify_tuple(ti->tuple, ti->desc, values, nulls, repl);
 
-		ts_catalog_update(ti->scanrel, neww);
+		ts_catalog_update(ti->scanrel, new);
 		break;
 	}
 	ts_scan_iterator_close(&iterator);
@@ -173,7 +173,7 @@ update_materialized_only(ContinuousAgg *agg, bool materialized_only)
 		bool nulls[Natts_continuous_agg];
 		Datum values[Natts_continuous_agg];
 		bool repl[Natts_continuous_agg] = { false };
-		HeapTuple neww;
+		HeapTuple new;
 
 		heap_deform_tuple(ti->tuple, ti->desc, values, nulls);
 
@@ -181,9 +181,9 @@ update_materialized_only(ContinuousAgg *agg, bool materialized_only)
 		values[AttrNumberGetAttrOffset(Anum_continuous_agg_materialize_only)] =
 			BoolGetDatum(materialized_only);
 
-		neww = heap_modify_tuple(ti->tuple, ti->desc, values, nulls, repl);
+		new = heap_modify_tuple(ti->tuple, ti->desc, values, nulls, repl);
 
-		ts_catalog_update(ti->scanrel, neww);
+		ts_catalog_update(ti->scanrel, new);
 		break;
 	}
 	ts_scan_iterator_close(&iterator);
@@ -208,7 +208,7 @@ update_max_interval_per_job(ContinuousAgg *agg, int64 new_max)
 		bool nulls[Natts_continuous_agg];
 		Datum values[Natts_continuous_agg];
 		bool repl[Natts_continuous_agg] = { false };
-		HeapTuple neww;
+		HeapTuple new;
 
 		heap_deform_tuple(ti->tuple, ti->desc, values, nulls);
 
@@ -216,9 +216,9 @@ update_max_interval_per_job(ContinuousAgg *agg, int64 new_max)
 		values[AttrNumberGetAttrOffset(Anum_continuous_agg_max_interval_per_job)] =
 			Int64GetDatum(new_max);
 
-		neww = heap_modify_tuple(ti->tuple, ti->desc, values, nulls, repl);
+		new = heap_modify_tuple(ti->tuple, ti->desc, values, nulls, repl);
 
-		ts_catalog_update(ti->scanrel, neww);
+		ts_catalog_update(ti->scanrel, new);
 		break;
 	}
 	ts_scan_iterator_close(&iterator);
@@ -243,7 +243,7 @@ update_ignore_invalidation_older_than(ContinuousAgg *agg, int64 new_ignore_inval
 		bool nulls[Natts_continuous_agg];
 		Datum values[Natts_continuous_agg];
 		bool repl[Natts_continuous_agg] = { false };
-		HeapTuple neww;
+		HeapTuple new;
 
 		heap_deform_tuple(ti->tuple, ti->desc, values, nulls);
 
@@ -251,9 +251,9 @@ update_ignore_invalidation_older_than(ContinuousAgg *agg, int64 new_ignore_inval
 		values[AttrNumberGetAttrOffset(Anum_continuous_agg_ignore_invalidation_older_than)] =
 			Int64GetDatum(new_ignore_invalidation_older_than);
 
-		neww = heap_modify_tuple(ti->tuple, ti->desc, values, nulls, repl);
+		new = heap_modify_tuple(ti->tuple, ti->desc, values, nulls, repl);
 
-		ts_catalog_update(ti->scanrel, neww);
+		ts_catalog_update(ti->scanrel, new);
 		break;
 	}
 	ts_scan_iterator_close(&iterator);

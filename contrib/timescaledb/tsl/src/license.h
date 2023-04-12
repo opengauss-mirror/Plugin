@@ -14,7 +14,7 @@
 
 typedef struct LicenseInfo LicenseInfo;
 
-extern "C"  PGDLLEXPORT Datum tsl_license_update_check(PG_FUNCTION_ARGS);
+extern PGDLLEXPORT Datum tsl_license_update_check(PG_FUNCTION_ARGS);
 extern void tsl_license_on_assign(const char *newval, const void *license);
 extern void license_switch_to(const LicenseInfo *license);
 

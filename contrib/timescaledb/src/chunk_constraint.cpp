@@ -24,7 +24,7 @@
 #include <catalog/pg_constraint.h>
 #include "compat.h"
 #if PG11_LT /* PG11 consolidates pg_foo_fn.h -> pg_foo.h */
-//#include <catalog/pg_constraint_fn.h>
+#include <catalog/pg_constraint_fn.h>
 #endif
 
 #include "export.h"
@@ -46,13 +46,13 @@
 ChunkConstraints *
 ts_chunk_constraints_alloc(int size_hint, MemoryContext mctx)
 {
-	ChunkConstraints *ccs =(ChunkConstraints*) MemoryContextAlloc(mctx, sizeof(ChunkConstraints));
+	ChunkConstraints *ccs = MemoryContextAlloc(mctx, sizeof(ChunkConstraints));
 
 	ccs->mctx = mctx;
 	ccs->capacity = size_hint + DEFAULT_EXTRA_CONSTRAINTS_SIZE;
 	ccs->num_constraints = 0;
 	ccs->num_dimension_constraints = 0;
-	ccs->constraints = (ChunkConstraint*)MemoryContextAllocZero(mctx, CHUNK_CONSTRAINTS_SIZE(ccs->capacity));
+	ccs->constraints = MemoryContextAllocZero(mctx, CHUNK_CONSTRAINTS_SIZE(ccs->capacity));
 
 	return ccs;
 }
@@ -60,10 +60,10 @@ ts_chunk_constraints_alloc(int size_hint, MemoryContext mctx)
 ChunkConstraints *
 ts_chunk_constraints_copy(ChunkConstraints *ccs)
 {
-	ChunkConstraints *copy =(ChunkConstraints *) palloc(sizeof(ChunkConstraints));
+	ChunkConstraints *copy = palloc(sizeof(ChunkConstraints));
 
 	memcpy(copy, ccs, sizeof(ChunkConstraints));
-	copy->constraints = (ChunkConstraint*)palloc0(CHUNK_CONSTRAINTS_SIZE(ccs->capacity));
+	copy->constraints = palloc0(CHUNK_CONSTRAINTS_SIZE(ccs->capacity));
 	memcpy(copy->constraints, ccs->constraints, CHUNK_CONSTRAINTS_SIZE(ccs->num_constraints));
 
 	return copy;
@@ -79,7 +79,7 @@ chunk_constraints_expand(ChunkConstraints *ccs, int16 new_capacity)
 
 	old = MemoryContextSwitchTo(ccs->mctx);
 	ccs->capacity = new_capacity;
-	ccs->constraints =(ChunkConstraint*) repalloc(ccs->constraints, CHUNK_CONSTRAINTS_SIZE(new_capacity));
+	ccs->constraints = repalloc(ccs->constraints, CHUNK_CONSTRAINTS_SIZE(new_capacity));
 	MemoryContextSwitchTo(old);
 }
 
@@ -453,7 +453,7 @@ ts_chunk_constraint_scan_by_dimension_slice(DimensionSlice *slice, ChunkScanCtx 
 		Assert(
 			!heap_attisnull_compat(ti->tuple, Anum_chunk_constraint_dimension_slice_id, ti->desc));
 
-		entry =(ChunkScanEntry*) hash_search(ctx->htab, &chunk_id, HASH_ENTER, &found);
+		entry = hash_search(ctx->htab, &chunk_id, HASH_ENTER, &found);
 
 		if (!found)
 		{
@@ -805,12 +805,8 @@ chunk_constraint_rename_on_chunk_table(int32 chunk_id, const char *old_name, con
 	Oid chunk_relid = ts_chunk_get_relid(chunk_id, false);
 	Oid nspid = get_rel_namespace(chunk_relid);
 	RenameStmt rename = {
-		.type = {},
 		.renameType = OBJECT_TABCONSTRAINT,
-		.relationType = {},
 		.relation = makeRangeVar(get_namespace_name(nspid), get_rel_name(chunk_relid), 0),
-		.object = NULL,
-		.objarg =NULL,
 		.subname = pstrdup(old_name),
 		.newname = pstrdup(new_name),
 	};

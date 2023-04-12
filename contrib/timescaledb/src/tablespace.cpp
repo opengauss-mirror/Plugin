@@ -29,10 +29,10 @@ tablespaces_alloc(int capacity)
 {
 	Tablespaces *tspcs;
 
-	tspcs =(Tablespaces *) palloc(sizeof(Tablespaces));
+	tspcs = palloc(sizeof(Tablespaces));
 	tspcs->capacity = capacity;
 	tspcs->num_tablespaces = 0;
-	tspcs->tablespaces =(Tablespace*) palloc(sizeof(Tablespace) * tspcs->capacity);
+	tspcs->tablespaces = palloc(sizeof(Tablespace) * tspcs->capacity);
 
 	return tspcs;
 }
@@ -45,7 +45,7 @@ ts_tablespaces_add(Tablespaces *tspcs, FormData_tablespace *form, Oid tspc_oid)
 	if (tspcs->num_tablespaces >= tspcs->capacity)
 	{
 		tspcs->capacity += TABLESPACE_DEFAULT_CAPACITY;
-		tspcs->tablespaces =(Tablespace *) repalloc(tspcs->tablespaces, sizeof(Tablespace) * tspcs->capacity);
+		tspcs->tablespaces = repalloc(tspcs->tablespaces, sizeof(Tablespace) * tspcs->capacity);
 	}
 
 	tspc = &tspcs->tablespaces[tspcs->num_tablespaces++];
@@ -70,7 +70,7 @@ ts_tablespaces_contain(Tablespaces *tspcs, Oid tspc_oid)
 static ScanTupleResult
 tablespace_tuple_found(TupleInfo *ti, void *data)
 {
-	Tablespaces *tspcs =(Tablespaces *) data;
+	Tablespaces *tspcs = data;
 	FormData_tablespace *form = (FormData_tablespace *) GETSTRUCT(ti->tuple);
 	Oid tspcoid = get_tablespace_oid(NameStr(form->tablespace_name), true);
 
@@ -88,20 +88,14 @@ tablespace_scan_internal(int indexid, ScanKeyData *scankey, int nkeys, tuple_fou
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, TABLESPACE),
 		.index = catalog_get_index(catalog, TABLESPACE, indexid),
-		.scankey = scankey,
 		.nkeys = nkeys,
-		.norderbys = 0,
-		.limit = limit,
-		.want_itup = false,
-		.lockmode = lockmode,
-		.result_mctx = NULL,
-		.tuplock = NULL,
-		.scandirection = ForwardScanDirection,
-		.data = data,
-		.prescan = NULL,
-		.postscan = NULL,
-		.filter = tuple_filter,
+		.scankey = scankey,
 		.tuple_found = tuple_found,
+		.filter = tuple_filter,
+		.data = data,
+		.limit = limit,
+		.lockmode = lockmode,
+		.scandirection = ForwardScanDirection,
 	};
 
 	return ts_scanner_scan(&scanctx);
@@ -176,9 +170,6 @@ tablespace_validate_revoke_internal(const char *tspcname, tuple_found_func tuple
 	TablespaceScanInfo info = {
 		.database_info = ts_catalog_database_info_get(),
 		.hcache = ts_hypertable_cache_pin(),
-		.userid = NULL,
-		.num_filtered = NULL,
-		.stopcount = NULL,
 		.data = stmt,
 	};
 
@@ -211,8 +202,8 @@ validate_revoke_create(Oid tspcoid, Oid role, Oid relid)
 static ScanTupleResult
 revoke_tuple_found(TupleInfo *ti, void *data)
 {
-	TablespaceScanInfo *info =(TablespaceScanInfo *) data;
-	GrantStmt *stmt =(GrantStmt *) info->data;
+	TablespaceScanInfo *info = data;
+	GrantStmt *stmt = info->data;
 	ListCell *lc_role;
 	Form_tablespace form = (Form_tablespace) GETSTRUCT(ti->tuple);
 	Oid tspcoid = get_tablespace_oid(NameStr(form->tablespace_name), false);
@@ -221,7 +212,7 @@ revoke_tuple_found(TupleInfo *ti, void *data)
 
 	foreach (lc_role, stmt->grantees)
 	{
-		RoleSpec *role =(RoleSpec *) lfirst(lc_role);
+		RoleSpec *role = lfirst(lc_role);
 		Oid roleoid = get_role_oid_or_public(role->rolename);
 
 		/* Check if this is a role we're interested in */
@@ -253,8 +244,8 @@ ts_tablespace_validate_revoke(GrantStmt *stmt)
 static ScanTupleResult
 revoke_role_tuple_found(TupleInfo *ti, void *data)
 {
-	TablespaceScanInfo *info =(TablespaceScanInfo *) data;
-	GrantRoleStmt *stmt =(GrantRoleStmt *) info->data;
+	TablespaceScanInfo *info = data;
+	GrantRoleStmt *stmt = info->data;
 	Form_tablespace form = (Form_tablespace) GETSTRUCT(ti->tuple);
 	Oid tspcoid = get_tablespace_oid(NameStr(form->tablespace_name), false);
 	Hypertable *ht = ts_hypertable_cache_get_entry_by_id(info->hcache, form->hypertable_id);
@@ -263,7 +254,7 @@ revoke_role_tuple_found(TupleInfo *ti, void *data)
 
 	foreach (lc_role, stmt->grantee_roles)
 	{
-		RoleSpec *rolespec =(RoleSpec *) lfirst(lc_role);
+		RoleSpec *rolespec = lfirst(lc_role);
 #if PG96
 		Oid grantee = get_rolespec_oid((Node *) rolespec, true);
 #else
@@ -329,7 +320,7 @@ tablespace_insert(int32 hypertable_id, const char *tspcname)
 static ScanTupleResult
 tablespace_tuple_delete(TupleInfo *ti, void *data)
 {
-	TablespaceScanInfo *info =(TablespaceScanInfo *) data;
+	TablespaceScanInfo *info = data;
 	CatalogSecurityContext sec_ctx;
 
 	ts_catalog_database_info_become_owner(info->database_info, &sec_ctx);
@@ -346,9 +337,6 @@ ts_tablespace_delete(int32 hypertable_id, const char *tspcname)
 	ScanKeyData scankey[2];
 	TablespaceScanInfo info = {
 		.database_info = ts_catalog_database_info_get(),
-		.hcache = NULL,
-		.userid = NULL,
-		.num_filtered =NULL,
 		.stopcount = (NULL != tspcname),
 	};
 	int num_deleted, nkeys = 0;
@@ -384,7 +372,7 @@ ts_tablespace_delete(int32 hypertable_id, const char *tspcname)
 static ScanFilterResult
 tablespace_tuple_owner_filter(TupleInfo *ti, void *data)
 {
-	TablespaceScanInfo *info =(TablespaceScanInfo *) data;
+	TablespaceScanInfo *info = data;
 	FormData_tablespace *form = (FormData_tablespace *) GETSTRUCT(ti->tuple);
 	Hypertable *ht;
 
@@ -496,7 +484,7 @@ ts_tablespace_attach_internal(Name tspcname, Oid hypertable_oid, bool if_not_att
 	 * Which was handled in a similar way. (See
 	 * tablecmds.c::ATPrepSetTableSpace)
 	 */
-	if (tspc_oid != u_sess->proc_cxt.MyDatabaseTableSpace)
+	if (tspc_oid != MyDatabaseTableSpace)
 	{
 		/*
 		 * Note that we check against the table owner rather than the current
@@ -667,7 +655,7 @@ ts_tablespace_show(PG_FUNCTION_ARGS)
 	}
 
 	funcctx = SRF_PERCALL_SETUP();
-	hcache =(Cache *) funcctx->user_fctx;
+	hcache = funcctx->user_fctx;
 	ht = ts_hypertable_cache_get_entry(hcache, hypertable_oid, CACHE_FLAG_NONE);
 
 	tspcs = ts_tablespace_scan(ht->fd.id);

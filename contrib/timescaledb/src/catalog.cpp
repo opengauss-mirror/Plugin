@@ -12,7 +12,7 @@
 #include <utils/syscache.h>
 #include <utils/inval.h>
 #include <access/xact.h>
-#include <access/htup.h>
+#include <access/htup_details.h>
 #include <miscadmin.h>
 #include <commands/dbcommands.h>
 #include <commands/sequence.h>
@@ -196,10 +196,8 @@ static const TableIndexDef catalog_table_index_definitions[_MAX_CATALOG_TABLES] 
 	[BGW_POLICY_DROP_CHUNKS] = {
 		.length = _MAX_BGW_POLICY_DROP_CHUNKS_INDEX,
 		.names = (char *[]) {
-			
-			[BGW_POLICY_DROP_CHUNKS_HYPERTABLE_ID_KEY] = "bgw_policy_drop_chunks_hypertable_id_key",
 			[BGW_POLICY_DROP_CHUNKS_PKEY] = "bgw_policy_drop_chunks_pkey",
-			
+			[BGW_POLICY_DROP_CHUNKS_HYPERTABLE_ID_KEY] = "bgw_policy_drop_chunks_hypertable_id_key",
 		},
 	},
 	[BGW_POLICY_CHUNK_STATS] = {
@@ -257,12 +255,10 @@ static const TableIndexDef catalog_table_index_definitions[_MAX_CATALOG_TABLES] 
 	[BGW_POLICY_COMPRESS_CHUNKS] = {
 		.length = _MAX_BGW_POLICY_COMPRESS_CHUNKS_INDEX,
 		.names = (char *[]) {
-			[BGW_POLICY_COMPRESS_CHUNKS_HYPERTABLE_ID_KEY] = "bgw_policy_compress_chunks_hypertable_id_key",
 			[BGW_POLICY_COMPRESS_CHUNKS_PKEY] = "bgw_policy_compress_chunks_pkey",
-			
+			[BGW_POLICY_COMPRESS_CHUNKS_HYPERTABLE_ID_KEY] = "bgw_policy_compress_chunks_hypertable_id_key",
 		},
 	},
-	
 };
 
 static const char *catalog_table_serial_id_names[_MAX_CATALOG_TABLES] = {
@@ -275,11 +271,8 @@ static const char *catalog_table_serial_id_names[_MAX_CATALOG_TABLES] = {
 	[TABLESPACE] = CATALOG_SCHEMA_NAME ".tablespace_id_seq",
 	[BGW_JOB] = CONFIG_SCHEMA_NAME ".bgw_job_id_seq",
 	[BGW_JOB_STAT] = NULL,
-	[9] = NULL,
 	[BGW_POLICY_REORDER] = NULL,
 	[BGW_POLICY_DROP_CHUNKS] = NULL,
-	[12] = NULL,
-	[13] = NULL,
 	[CONTINUOUS_AGGS_COMPLETED_THRESHOLD] = NULL,
 	[CONTINUOUS_AGGS_HYPERTABLE_INVALIDATION_LOG] = NULL,
 	[CONTINUOUS_AGGS_INVALIDATION_THRESHOLD] = NULL,
@@ -309,36 +302,17 @@ const static InternalFunctionDef internal_function_definitions[_MAX_INTERNAL_FUN
 /* Names for proxy tables used for cache invalidation. Must match names in
  * sql/cache.sql */
 static const char *cache_proxy_table_names[_MAX_CACHE_TYPES] = {
-	[0] = "",
-	[1] ="",
-	[2] ="",
-	[3] ="",
-	[4] ="",
-	[5] ="",
-	[6] ="",
 	[CACHE_TYPE_HYPERTABLE] = "cache_inval_hypertable",
 	[CACHE_TYPE_BGW_JOB] = "cache_inval_bgw_job",
-	
-	
 };
 
 /* Catalog information for the current database. */
-
 static Catalog s_catalog = {
-	.tables = {},
-	.cache_schema_id = 0,
-	.caches = {},
-	.internal_schema_id =0,
-	.functions = {},
 	.initialized = false,
 };
 
-
 static CatalogDatabaseInfo database_info = {
-	.database_name ={},
 	.database_id = InvalidOid,
-	.schema_id = InvalidOid,
-	.owner_uid = InvalidOid,
 };
 
 static bool
@@ -380,8 +354,8 @@ catalog_table_name(CatalogTable table)
 static void
 catalog_database_info_init(CatalogDatabaseInfo *info)
 {
-	info->database_id = u_sess->proc_cxt.MyDatabaseId;
-	StrNCpy(info->database_name, get_database_name(u_sess->proc_cxt.MyDatabaseId), NAMEDATALEN);
+	info->database_id = MyDatabaseId;
+	StrNCpy(info->database_name, get_database_name(MyDatabaseId), NAMEDATALEN);
 	info->schema_id = get_namespace_oid(CATALOG_SCHEMA_NAME, false);
 	info->owner_uid = catalog_owner();
 
@@ -469,7 +443,7 @@ ts_catalog_get(void)
 {
 	int i;
 
-	if (!OidIsValid(u_sess->proc_cxt.MyDatabaseId))
+	if (!OidIsValid(MyDatabaseId))
 		elog(ERROR, "invalid database ID");
 
 	if (!ts_extension_is_loaded())
@@ -537,7 +511,7 @@ catalog_get_table(Catalog *catalog, Oid relid)
 
 		for (i = 0; i < _MAX_CATALOG_TABLES; i++)
 			if (strcmp(catalog_table_names[i].schema_name, schema_name) == 0 &&
-				strcmp(catalog_table_name((CatalogTable)i), relname) == 0)
+				strcmp(catalog_table_name(i), relname) == 0)
 				return (CatalogTable) i;
 
 		return INVALID_CATALOG_TABLE;
@@ -755,21 +729,12 @@ ts_catalog_scan_one(CatalogTable table, int indexid, ScanKeyData *scankey, int n
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, table),
 		.index = catalog_get_index(catalog, table, indexid),
-		.scankey = scankey,
 		.nkeys = num_keys,
-		.norderbys = 0,
-		.limit = 0,
-		.want_itup = false,
-		.lockmode = lockmode,
-		.result_mctx = NULL,
-		.tuplock = NULL,
-		.scandirection = ForwardScanDirection,
-		.data = data,
-		.prescan = 0,
-		.postscan = 0,
-		.filter = 0,
+		.scankey = scankey,
 		.tuple_found = tuple_found,
-		
+		.data = data,
+		.lockmode = lockmode,
+		.scandirection = ForwardScanDirection,
 	};
 
 	return ts_scanner_scan_one(&scanctx, false, table_name);
@@ -784,20 +749,12 @@ ts_catalog_scan_all(CatalogTable table, int indexid, ScanKeyData *scankey, int n
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, table),
 		.index = catalog_get_index(catalog, table, indexid),
-		.scankey = scankey,
 		.nkeys = num_keys,
-		.norderbys = 0,
-		.limit = 0,
-		.want_itup = false,
-		.lockmode = lockmode,
-		.result_mctx = NULL,
-		.tuplock = NULL,
-		.scandirection = ForwardScanDirection,
-		.data = data,
-		.prescan = 0,
-		.postscan = 0,
-		.filter = 0,
+		.scankey = scankey,
 		.tuple_found = tuple_found,
+		.data = data,
+		.lockmode = lockmode,
+		.scandirection = ForwardScanDirection,
 	};
 
 	ts_scanner_scan(&scanctx);

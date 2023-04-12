@@ -7,8 +7,7 @@
 #define TIMESCALEDB_CHUNK_APPEND_TRANSFORM_H
 
 #include <postgres.h>
-#include "compat.h"
-//#include <nodes/extensible.h>
+#include <nodes/extensible.h>
 
 extern Expr *ts_transform_cross_datatype_comparison(Expr *clause);
 

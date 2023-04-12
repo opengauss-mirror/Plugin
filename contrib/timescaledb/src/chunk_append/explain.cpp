@@ -13,7 +13,7 @@
 #include <parser/parsetree.h>
 #include <utils/builtins.h>
 #include <utils/lsyscache.h>
-//#include <utils/ruleutils.h>
+#include <utils/ruleutils.h>
 #include <utils/typcache.h>
 
 #include "chunk_append/exec.h"
@@ -32,7 +32,7 @@ static void show_sortorder_options(StringInfo buf, Node *sortexpr, Oid sortOpera
  * private state.
  */
 void
-ts_chunk_append_explain(ExtensiblePlanState *node, List *ancestors, ExplainState *es)
+ts_chunk_append_explain(CustomScanState *node, List *ancestors, ExplainState *es)
 {
 	ChunkAppendState *state = (ChunkAppendState *) node;
 
@@ -49,7 +49,7 @@ ts_chunk_append_explain(ExtensiblePlanState *node, List *ancestors, ExplainState
 		ExplainPropertyIntegerCompat("Chunks excluded during startup",
 									 NULL,
 									 list_length(state->initial_subplans) -
-										 list_length(node->extensible_ps),
+										 list_length(node->custom_ps),
 									 es);
 
 	if (state->runtime_exclusion && state->runtime_number_loops > 0)
@@ -73,11 +73,11 @@ show_sort_group_keys(ChunkAppendState *state, List *ancestors, ExplainState *es)
 	StringInfoData sortkeybuf;
 	bool useprefix;
 	int keyno;
-	int nkeys = list_length((const List *)linitial(state->sort_options));
-	List *sort_indexes =(List *) linitial(state->sort_options);
-	List *sort_ops =(List *) lsecond(state->sort_options);
-	List *sort_collations =(List *) lthird(state->sort_options);
-	List *sort_nulls =(List *) lfourth(state->sort_options);
+	int nkeys = list_length(linitial(state->sort_options));
+	List *sort_indexes = linitial(state->sort_options);
+	List *sort_ops = lsecond(state->sort_options);
+	List *sort_collations = lthird(state->sort_options);
+	List *sort_nulls = lfourth(state->sort_options);
 
 	if (nkeys <= 0)
 		return;
@@ -93,7 +93,7 @@ show_sort_group_keys(ChunkAppendState *state, List *ancestors, ExplainState *es)
 		/* find key expression in tlist */
 		AttrNumber keyresno = list_nth_oid(sort_indexes, keyno);
 		TargetEntry *target =
-			get_tle_by_resno(castNode(ExtensiblePlan, plan)->extensible_plan_tlist, keyresno);
+			get_tle_by_resno(castNode(CustomScan, plan)->custom_scan_tlist, keyresno);
 		char *exprstr;
 
 		if (!target)

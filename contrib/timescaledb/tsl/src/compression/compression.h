@@ -10,7 +10,7 @@
 #include <c.h>
 #include <fmgr.h>
 #include <lib/stringinfo.h>
-#include "compat.h"
+
 /*
  * Compressed data starts with a specialized varlen type starting with the usual
  * varlen header, and followed by a version specifying which compression
@@ -27,8 +27,6 @@ typedef struct CompressedDataHeader
 {
 	CompressedDataHeaderFields;
 } CompressedDataHeader;
-
-
 
 /* On 32-bit architectures, 64-bit values are boxed when returned as datums. To avoid
 this overhead we have this type and corresponding iterators for efficiency. The iterators
@@ -60,7 +58,6 @@ struct Compressor
 	void (*append_val)(Compressor *compressor, Datum val);
 	void *(*finish)(Compressor *data);
 };
-
 
 typedef struct DecompressionIterator
 {
@@ -94,7 +91,21 @@ typedef struct CompressionAlgorithmDefinition
 	CompressionStorage compressed_data_storage;
 } CompressionAlgorithmDefinition;
 
+typedef enum CompressionAlgorithms
+{
+	/* Not a real algorithm, if this does get used, it's a bug in the code */
+	_INVALID_COMPRESSION_ALGORITHM = 0,
 
+	COMPRESSION_ALGORITHM_ARRAY,
+	COMPRESSION_ALGORITHM_DICTIONARY,
+	COMPRESSION_ALGORITHM_GORILLA,
+	COMPRESSION_ALGORITHM_DELTADELTA,
+
+	/* When adding an algorithm also add a static assert statement below */
+	/* end of real values */
+	_END_COMPRESSION_ALGORITHMS,
+	_MAX_NUM_COMPRESSION_ALGORITHMS = 128,
+} CompressionAlgorithms;
 
 extern Datum tsl_compressed_data_decompress_forward(PG_FUNCTION_ARGS);
 extern Datum tsl_compressed_data_decompress_reverse(PG_FUNCTION_ARGS);

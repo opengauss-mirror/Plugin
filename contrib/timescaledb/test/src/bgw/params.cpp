@@ -7,8 +7,8 @@
 #include <access/relscan.h>
 #include <access/xact.h>
 #include <catalog/namespace.h>
-#include <storage/buf/bufmgr.h>
-//#include <storage/dsm.h>
+#include <storage/bufmgr.h>
+#include <storage/dsm.h>
 #include <storage/lmgr.h>
 #include <storage/spin.h>
 #include <utils/builtins.h>
@@ -17,7 +17,7 @@
 
 #include "compat.h"
 #if PG12_LT
-//#include <utils/tqual.h>
+#include <utils/tqual.h>
 #endif
 
 #include "params.h"
@@ -149,7 +149,7 @@ ts_params_get()
 
 	Assert(wrapper != NULL);
 
-	res =(TestParams *) palloc(sizeof(TestParams));
+	res = palloc(sizeof(TestParams));
 
 	SpinLockAcquire(&wrapper->mutex);
 

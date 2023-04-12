@@ -16,34 +16,34 @@
  * defaults to "source"
  */
 #define TIMESCALEDB_INSTALL_METHOD "@PROJECT_INSTALL_METHOD@"
-//这个文件里面的define,原来都是cmakedefine
+
 /* Platform */
 #ifndef WIN32
 #cmakedefine WIN32
 #endif
 #ifndef MSVC
-#define MSVC
+#cmakedefine MSVC
 #endif
 #ifndef UNIX
-#define UNIX
+#cmakedefine UNIX
 #endif
 #ifndef APPLE
-#define APPLE
+#cmakedefine APPLE
 #endif
 
 #ifndef DEBUG
-#define DEBUG
+#cmakedefine DEBUG
 #endif
 
 #ifndef TS_DEBUG
-#define TS_DEBUG
+#cmakedefine TS_DEBUG
 #endif
 
 #ifndef TELEMETRY_DEFAULT
-#define TELEMETRY_DEFAULT @TELEMETRY_DEFAULT@
+#cmakedefine TELEMETRY_DEFAULT @TELEMETRY_DEFAULT@
 #endif
 
 /* Avoid conflicts with USE_OPENSSL defined by PostgreSQL */
-//#define TS_USE_OPENSSL
+#cmakedefine TS_USE_OPENSSL
 
 #endif /* TIMESCALEDB_CONFIG_H */

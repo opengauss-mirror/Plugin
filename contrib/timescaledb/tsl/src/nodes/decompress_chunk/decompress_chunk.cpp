@@ -39,9 +39,9 @@
 #define DECOMPRESS_CHUNK_CPU_TUPLE_COST 0.01
 #define DECOMPRESS_CHUNK_BATCH_SIZE 1000
 
-static ExtensiblePathMethods decompress_chunk_path_methods = {
-	.ExtensibleName = "DecompressChunk",
-	.PlanExtensiblePath = decompress_chunk_plan_create,
+static CustomPathMethods decompress_chunk_path_methods = {
+	.CustomName = "DecompressChunk",
+	.PlanCustomPath = decompress_chunk_plan_create,
 };
 
 typedef struct SortInfo
@@ -186,7 +186,7 @@ build_compressed_scan_pathkeys(SortInfo *sort_info, PlannerInfo *root, List *chu
 			 lc != NULL && bms_num_members(segmentby_columns) < info->num_segmentby_columns;
 			 lc = lnext(lc))
 		{
-			PathKey *pk =(PathKey *) lfirst(lc);
+			PathKey *pk = lfirst(lc);
 			var = (Var *) ts_find_em_expr_for_rel(pk->pk_eclass, info->chunk_rel);
 
 			if (var == NULL || !IsA(var, Var))
@@ -269,7 +269,7 @@ build_compressed_scan_pathkeys(SortInfo *sort_info, PlannerInfo *root, List *chu
 static DecompressChunkPath *
 copy_decompress_chunk_path(DecompressChunkPath *src)
 {
-	DecompressChunkPath *dst =(DecompressChunkPath *) palloc(sizeof(DecompressChunkPath));
+	DecompressChunkPath *dst = palloc(sizeof(DecompressChunkPath));
 	memcpy(dst, src, sizeof(DecompressChunkPath));
 
 	return dst;
@@ -280,7 +280,7 @@ build_compressioninfo(PlannerInfo *root, Hypertable *ht, RelOptInfo *chunk_rel)
 {
 	ListCell *lc;
 	AppendRelInfo *appinfo;
-	CompressionInfo *info =(CompressionInfo *) palloc0(sizeof(CompressionInfo));
+	CompressionInfo *info = palloc0(sizeof(CompressionInfo));
 
 	info->chunk_rel = chunk_rel;
 	info->chunk_rte = planner_rt_fetch(chunk_rel->relid, root);
@@ -293,7 +293,7 @@ build_compressioninfo(PlannerInfo *root, Hypertable *ht, RelOptInfo *chunk_rel)
 
 	foreach (lc, info->hypertable_compression_info)
 	{
-		FormData_hypertable_compression *fd =(FormData_hypertable_compression *) lfirst(lc);
+		FormData_hypertable_compression *fd = lfirst(lc);
 		if (fd->orderby_column_index > 0)
 			info->num_orderby_columns++;
 		if (fd->segmentby_column_index > 0)
@@ -378,7 +378,7 @@ ts_decompress_chunk_generate_paths(PlannerInfo *root, RelOptInfo *chunk_rel, Hyp
 	/* create non-parallel paths */
 	foreach (lc, compressed_rel->pathlist)
 	{
-		Path *child_path =(Path *) lfirst(lc);
+		Path *child_path = lfirst(lc);
 		DecompressChunkPath *path;
 
 		/*
@@ -421,7 +421,7 @@ ts_decompress_chunk_generate_paths(PlannerInfo *root, RelOptInfo *chunk_rel, Hyp
 						  child_path->rows,
 						  child_path->pathtarget->width,
 						  0.0,
-						  u_sess->attr.attr_memory.work_mem,
+						  work_mem,
 						  -1);
 				cost_decompress_chunk(&dcpath->cpath.path, &sort_path);
 			}
@@ -440,7 +440,7 @@ ts_decompress_chunk_generate_paths(PlannerInfo *root, RelOptInfo *chunk_rel, Hyp
 	{
 		foreach (lc, compressed_rel->partial_pathlist)
 		{
-			Path *child_path =(Path *) lfirst(lc);
+			Path *child_path = lfirst(lc);
 			DecompressChunkPath *path;
 			if (child_path->param_info != NULL &&
 				(bms_is_member(chunk_rel->relid, child_path->param_info->ppi_req_outer) ||
@@ -491,7 +491,7 @@ compressed_rel_setup_reltarget(RelOptInfo *compressed_rel, CompressionInfo *info
 	foreach (lc, info->chunk_rel->reltarget->exprs)
 	{
 		ListCell *lc2;
-		List *chunk_vars = pull_var_clause((Node*)lfirst(lc), PVC_RECURSE_PLACEHOLDERS);
+		List *chunk_vars = pull_var_clause(lfirst(lc), PVC_RECURSE_PLACEHOLDERS);
 		foreach (lc2, chunk_vars)
 		{
 			FormData_hypertable_compression *column_info;
@@ -571,7 +571,7 @@ chunk_joininfo_mutator(Node *node, CompressionInfo *context)
 	if (IsA(node, Var))
 	{
 		Var *var = castNode(Var, node);
-		Var *compress_var =(Var *) copyObject(var);
+		Var *compress_var = copyObject(var);
 		char *column_name;
 		AttrNumber compressed_attno;
 		FormData_hypertable_compression *compressioninfo;
@@ -634,15 +634,15 @@ chunk_joininfo_mutator(Node *node, CompressionInfo *context)
 		newinfo->left_em = NULL;
 		newinfo->right_em = NULL;
 		newinfo->scansel_cache = NIL;
-		newinfo->left_bucketsize = {};//tsdb
-		newinfo->right_bucketsize = {};//tsdb
+		newinfo->left_bucketsize = -1;
+		newinfo->right_bucketsize = -1;
 #if PG11_GE
 		newinfo->left_mcvfreq = -1;
 		newinfo->right_mcvfreq = -1;
 #endif
 		return (Node *) newinfo;
 	}
-	return expression_tree_mutator(node,(Node* (*)(Node*, void*)) chunk_joininfo_mutator, context);
+	return expression_tree_mutator(node, chunk_joininfo_mutator, context);
 }
 
 /* translate chunk_rel->joininfo for compressed_rel
@@ -886,9 +886,9 @@ decompress_chunk_add_plannerinfo(PlannerInfo *root, CompressionInfo *info, Chunk
 	RelOptInfo *compressed_rel;
 
 	root->simple_rel_array_size++;
-	root->simple_rel_array =(RelOptInfo **)
+	root->simple_rel_array =
 		repalloc(root->simple_rel_array, root->simple_rel_array_size * sizeof(RelOptInfo *));
-	root->simple_rte_array =(RangeTblEntry **)
+	root->simple_rte_array =
 		repalloc(root->simple_rte_array, root->simple_rel_array_size * sizeof(RangeTblEntry *));
 #if PG11_GE
 	root->append_rel_array =
@@ -922,7 +922,7 @@ decompress_chunk_add_plannerinfo(PlannerInfo *root, CompressionInfo *info, Chunk
 	info->compressed_rel = compressed_rel;
 	foreach (lc, info->hypertable_compression_info)
 	{
-		FormData_hypertable_compression *fd =(FormData_hypertable_compression *) lfirst(lc);
+		FormData_hypertable_compression *fd = lfirst(lc);
 		if (fd->segmentby_column_index <= 0)
 		{
 			/* store attnos for the compressed chunk here */
@@ -944,11 +944,11 @@ decompress_chunk_path_create(PlannerInfo *root, CompressionInfo *info, int paral
 {
 	DecompressChunkPath *path;
 
-	path = (DecompressChunkPath *) newNode(sizeof(DecompressChunkPath), T_ExtensiblePath);
+	path = (DecompressChunkPath *) newNode(sizeof(DecompressChunkPath), T_CustomPath);
 
 	path->info = info;
 
-	path->cpath.path.pathtype = T_ExtensiblePlan;
+	path->cpath.path.pathtype = T_CustomScan;
 	path->cpath.path.parent = info->chunk_rel;
 	path->cpath.path.pathtarget = info->chunk_rel->reltarget;
 
@@ -963,7 +963,7 @@ decompress_chunk_path_create(PlannerInfo *root, CompressionInfo *info, int paral
 	path->cpath.path.parallel_safe = compressed_path->parallel_safe;
 	path->cpath.path.parallel_workers = parallel_workers;
 
-	path->cpath.extensible_paths = list_make1(compressed_path);
+	path->cpath.custom_paths = list_make1(compressed_path);
 	path->reverse = false;
 	path->compressed_pathkeys = NIL;
 	cost_decompress_chunk(&path->cpath.path, compressed_path);
@@ -1084,7 +1084,7 @@ get_column_compressioninfo(List *hypertable_compression_info, char *column_name)
 
 	foreach (lc, hypertable_compression_info)
 	{
-		FormData_hypertable_compression *fd =(FormData_hypertable_compression *) lfirst(lc);
+		FormData_hypertable_compression *fd = lfirst(lc);
 		if (namestrcmp(&fd->attname, column_name) == 0)
 			return fd;
 	}
@@ -1128,7 +1128,7 @@ find_restrictinfo_equality(RelOptInfo *chunk_rel, CompressionInfo *info)
 		ListCell *lc_ri;
 		foreach (lc_ri, chunk_rel->baserestrictinfo)
 		{
-			RestrictInfo *ri =(RestrictInfo *) lfirst(lc_ri);
+			RestrictInfo *ri = lfirst(lc_ri);
 
 			if (IsA(ri->clause, OpExpr) && list_length(castNode(OpExpr, ri->clause)->args) == 2)
 			{
@@ -1142,12 +1142,12 @@ find_restrictinfo_equality(RelOptInfo *chunk_rel, CompressionInfo *info)
 				if (IsA(linitial(op->args), Var))
 				{
 					var = castNode(Var, linitial(op->args));
-					other =(Expr*) lsecond(op->args);
+					other = lsecond(op->args);
 				}
 				else if (IsA(lsecond(op->args), Var))
 				{
 					var = castNode(Var, lsecond(op->args));
-					other =(Expr*) linitial(op->args);
+					other = linitial(op->args);
 				}
 				else
 					continue;
@@ -1191,11 +1191,7 @@ build_sortinfo(RelOptInfo *chunk_rel, CompressionInfo *info, List *pathkeys)
 	char *column_name;
 	FormData_hypertable_compression *ci;
 	ListCell *lc = list_head(pathkeys);
-	SortInfo sort_info = {
-	.compressed_pathkeys = NULL,
-	 .needs_sequence_num = false,
-	 .can_pushdown_sort = false,
-	   };
+	SortInfo sort_info = { .can_pushdown_sort = false, .needs_sequence_num = false };
 
 	if (pathkeys == NIL)
 		return sort_info;
@@ -1220,7 +1216,7 @@ build_sortinfo(RelOptInfo *chunk_rel, CompressionInfo *info, List *pathkeys)
 		for (; lc != NULL; lc = lnext(lc))
 		{
 			Assert(bms_num_members(segmentby_columns) <= info->num_segmentby_columns);
-			pk =(PathKey*) lfirst(lc);
+			pk = lfirst(lc);
 			expr = ts_find_em_expr_for_rel(pk->pk_eclass, info->chunk_rel);
 
 			if (expr == NULL || !IsA(expr, Var))
@@ -1260,7 +1256,7 @@ build_sortinfo(RelOptInfo *chunk_rel, CompressionInfo *info, List *pathkeys)
 	for (pk_index = 1; lc != NULL; lc = lnext(lc), pk_index++)
 	{
 		bool reverse = false;
-		pk =(PathKey*) lfirst(lc);
+		pk = lfirst(lc);
 		expr = ts_find_em_expr_for_rel(pk->pk_eclass, info->chunk_rel);
 
 		if (expr == NULL || !IsA(expr, Var))

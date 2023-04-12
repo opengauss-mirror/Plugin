@@ -7,8 +7,19 @@
 #define TIMESCALEDB_CONSTRAINT_AWARE_APPEND_H
 
 #include <postgres.h>
-//#include <nodes/extensible.h>
+#include <nodes/extensible.h>
 
+typedef struct ConstraintAwareAppendPath
+{
+	CustomPath cpath;
+} ConstraintAwareAppendPath;
+
+typedef struct ConstraintAwareAppendState
+{
+	CustomScanState csstate;
+	Plan *subplan;
+	Size num_append_subplans;
+} ConstraintAwareAppendState;
 
 typedef struct Hypertable Hypertable;
 

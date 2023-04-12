@@ -7,7 +7,7 @@
 
 #include "compression/array.h"
 
-#include <access/htup.h>
+#include <access/htup_details.h>
 #include <access/tupmacs.h>
 #include <catalog/namespace.h>
 #include <catalog/pg_type.h>
@@ -146,18 +146,17 @@ array_compressor_finish_and_reset(Compressor *compressor)
 }
 
 const Compressor array_compressor = {
-	.append_null = array_compressor_append_null_value,
 	.append_val = array_compressor_append_datum,
+	.append_null = array_compressor_append_null_value,
 	.finish = array_compressor_finish_and_reset,
 };
 
 Compressor *
 array_compressor_for_type(Oid element_type)
 {
-	ExtendedCompressor *compressor =(ExtendedCompressor *) palloc(sizeof(*compressor));
+	ExtendedCompressor *compressor = palloc(sizeof(*compressor));
 	*compressor = (ExtendedCompressor){
 		.base = array_compressor,
-		.internal = {},
 		.element_type = element_type,
 	};
 	return &compressor->base;
@@ -166,7 +165,7 @@ array_compressor_for_type(Oid element_type)
 ArrayCompressor *
 array_compressor_alloc(Oid type_to_compress)
 {
-	ArrayCompressor *compressor =(ArrayCompressor *) palloc(sizeof(*compressor));
+	ArrayCompressor *compressor = palloc(sizeof(*compressor));
 	compressor->has_nulls = false;
 
 	simple8brle_compressor_init(&compressor->nulls);
@@ -220,7 +219,7 @@ typedef struct ArrayCompressorSerializationInfo
 ArrayCompressorSerializationInfo *
 array_compressor_get_serialization_info(ArrayCompressor *compressor)
 {
-	ArrayCompressorSerializationInfo *info =(ArrayCompressorSerializationInfo *) palloc(sizeof(*info));
+	ArrayCompressorSerializationInfo *info = palloc(sizeof(*info));
 	*info = (ArrayCompressorSerializationInfo){
 		.sizes = simple8brle_compressor_finish(&compressor->sizes),
 		.nulls = compressor->has_nulls ? simple8brle_compressor_finish(&compressor->nulls) : NULL,
@@ -286,13 +285,11 @@ array_compressed_from_serialization_info(ArrayCompressorSerializationInfo *info,
 				(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
 				 errmsg("compressed size exceeds the maximum allowed (%d)", (int) MaxAllocSize)));
 
-	compressed_data =(char *) palloc0(compressed_size);
+	compressed_data = palloc0(compressed_size);
 	compressed_array = (ArrayCompressed *) compressed_data;
 	*compressed_array = (ArrayCompressed){
-		.vl_len_ = {},
 		.compression_algorithm = COMPRESSION_ALGORITHM_ARRAY,
 		.has_nulls = info->nulls != NULL,
-		.padding = {},
 		.element_type = element_type,
 	};
 	SET_VARSIZE(compressed_array->vl_len_, compressed_size);
@@ -346,7 +343,7 @@ array_decompression_iterator_alloc_forward(const char *serialized_data, Size dat
 	ArrayCompressedData data =
 		array_compressed_data_from_bytes(serialized_data, data_size, element_type, has_nulls);
 
-	ArrayDecompressionIterator *iterator =(ArrayDecompressionIterator *) palloc(sizeof(*iterator));
+	ArrayDecompressionIterator *iterator = palloc(sizeof(*iterator));
 	iterator->base.compression_algorithm = COMPRESSION_ALGORITHM_ARRAY;
 	iterator->base.forward = true;
 	iterator->base.element_type = element_type;
@@ -371,7 +368,7 @@ tsl_array_decompression_iterator_from_datum_forward(Datum compressed_array, Oid 
 {
 	ArrayCompressed *compressed_array_header;
 	uint32 data_size;
-	const char *compressed_data =(const char *) PG_DETOAST_DATUM(compressed_array);
+	const char *compressed_data = (void *) PG_DETOAST_DATUM(compressed_array);
 
 	compressed_array_header = (ArrayCompressed *) compressed_data;
 	compressed_data += sizeof(*compressed_array_header);
@@ -408,24 +405,18 @@ array_decompression_iterator_try_next_forward(DecompressionIterator *general_ite
 			simple8brle_decompression_iterator_try_next_forward(&iter->nulls);
 		if (null.is_done)
 			return (DecompressResult){
-				.val = NULL,
-				.is_null = false,
 				.is_done = true,
 			};
 
 		if (null.val != 0)
 			return (DecompressResult){
-				.val = NULL,
 				.is_null = true,
-				.is_done = true,
 			};
 	}
 
 	datum_size = simple8brle_decompression_iterator_try_next_forward(&iter->sizes);
 	if (datum_size.is_done)
 		return (DecompressResult){
-			.val = NULL,
-			.is_null = NULL,
 			.is_done = true,
 		};
 
@@ -451,8 +442,8 @@ tsl_array_decompression_iterator_from_datum_reverse(Datum compressed_array, Oid 
 	ArrayCompressed *compressed_array_header;
 	uint32 data_size;
 	ArrayCompressedData array_compressed_data;
-	ArrayDecompressionIterator *iterator =(ArrayDecompressionIterator *) palloc(sizeof(*iterator));
-	const char *compressed_data = (const char *) PG_DETOAST_DATUM(compressed_array);
+	ArrayDecompressionIterator *iterator = palloc(sizeof(*iterator));
+	const char *compressed_data = (void *) PG_DETOAST_DATUM(compressed_array);
 	iterator->base.compression_algorithm = COMPRESSION_ALGORITHM_ARRAY;
 	iterator->base.forward = false;
 	iterator->base.element_type = element_type;
@@ -505,24 +496,18 @@ array_decompression_iterator_try_next_reverse(DecompressionIterator *base_iter)
 			simple8brle_decompression_iterator_try_next_reverse(&iter->nulls);
 		if (null.is_done)
 			return (DecompressResult){
-				.val = NULL,
-				.is_null = NULL,
 				.is_done = true,
 			};
 
 		if (null.val != 0)
 			return (DecompressResult){
-				.val = 0,
 				.is_null = true,
-				.is_done = NULL,
 			};
 	}
 
 	datum_size = simple8brle_decompression_iterator_try_next_reverse(&iter->sizes);
 	if (datum_size.is_done)
 		return (DecompressResult){
-			.val = NULL,
-			.is_null = false,
 			.is_done = true,
 		};
 

@@ -1,7 +1,7 @@
 set(SOURCES
   init.c
-  ${PROJECT_SOURCE_DIR}/src/extension.cpp
-  ${PROJECT_SOURCE_DIR}/src/guc.cpp
+  ${PROJECT_SOURCE_DIR}/src/extension.c
+  ${PROJECT_SOURCE_DIR}/src/guc.c
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src)

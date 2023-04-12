@@ -7,7 +7,7 @@
 #include <access/relscan.h>
 #include <access/xact.h>
 #include <catalog/namespace.h>
-#include <storage/buf/bufmgr.h>
+#include <storage/bufmgr.h>
 #include <storage/lmgr.h>
 #include <utils/builtins.h>
 #include <utils/lsyscache.h>
@@ -15,7 +15,7 @@
 
 #include "compat.h"
 #if PG12_LT
-//#include <utils/tqual.h>
+#include <utils/tqual.h>
 #endif
 
 #include "timer_mock.h"

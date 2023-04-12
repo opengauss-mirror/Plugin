@@ -9,7 +9,7 @@
 
 #include <postgres.h>
 
-extern Plan *decompress_chunk_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath *path,
+extern Plan *decompress_chunk_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path,
 										  List *tlist, List *clauses, List *custom_plans);
 
 extern void _decompress_chunk_init(void);

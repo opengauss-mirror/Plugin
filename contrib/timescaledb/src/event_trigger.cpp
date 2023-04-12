@@ -1,14 +1,13 @@
-//此文件在og中没有
 /*
  * This file and its contents are licensed under the Apache License 2.0.
  * Please see the included NOTICE for copyright information and
  * LICENSE-APACHE for a copy of the license.
  */
 #include <postgres.h>
-#include <event_trigger.h>
+#include <commands/event_trigger.h>
 #include <utils/builtins.h>
 #include <executor/executor.h>
-#include <access/htup.h>
+#include <access/htup_details.h>
 #include <catalog/pg_type.h>
 #include <catalog/pg_constraint.h>
 #include <catalog/pg_class.h>
@@ -16,7 +15,7 @@
 #include <catalog/pg_trigger.h>
 
 #include "compat.h"
-//#include "event_trigger.h"
+#include "event_trigger.h"
 
 #define DDL_INFO_NATTS 9
 #define DROPPED_OBJECTS_NATTS 12
@@ -112,7 +111,7 @@ extract_addrnames(ArrayType *arr)
 static EventTriggerDropTableConstraint *
 make_event_trigger_drop_table_constraint(char *constraint_name, char *schema, char *table)
 {
-	EventTriggerDropTableConstraint *obj =(EventTriggerDropTableConstraint *) palloc(sizeof(EventTriggerDropTableConstraint));
+	EventTriggerDropTableConstraint *obj = palloc(sizeof(EventTriggerDropTableConstraint));
 
 	*obj =
 		(EventTriggerDropTableConstraint){ .obj = { .type = EVENT_TRIGGER_DROP_TABLE_CONSTRAINT },
@@ -126,7 +125,7 @@ make_event_trigger_drop_table_constraint(char *constraint_name, char *schema, ch
 static EventTriggerDropIndex *
 make_event_trigger_drop_index(char *index_name, char *schema)
 {
-	EventTriggerDropIndex *obj =(EventTriggerDropIndex *) palloc(sizeof(EventTriggerDropIndex));
+	EventTriggerDropIndex *obj = palloc(sizeof(EventTriggerDropIndex));
 
 	*obj = (EventTriggerDropIndex){
 		.obj = { .type = EVENT_TRIGGER_DROP_INDEX },
@@ -139,7 +138,7 @@ make_event_trigger_drop_index(char *index_name, char *schema)
 static EventTriggerDropTable *
 make_event_trigger_drop_table(char *table_name, char *schema)
 {
-	EventTriggerDropTable *obj =(EventTriggerDropTable *) palloc(sizeof(EventTriggerDropTable));
+	EventTriggerDropTable *obj = palloc(sizeof(EventTriggerDropTable));
 
 	*obj = (EventTriggerDropTable){
 		.obj = { .type = EVENT_TRIGGER_DROP_TABLE },
@@ -152,7 +151,7 @@ make_event_trigger_drop_table(char *table_name, char *schema)
 static EventTriggerDropView *
 make_event_trigger_drop_view(char *view_name, char *schema)
 {
-	EventTriggerDropView *obj =(EventTriggerDropView *) palloc(sizeof(*obj));
+	EventTriggerDropView *obj = palloc(sizeof(*obj));
 
 	*obj = (EventTriggerDropView){
 		.obj = { .type = EVENT_TRIGGER_DROP_VIEW },
@@ -165,7 +164,7 @@ make_event_trigger_drop_view(char *view_name, char *schema)
 static EventTriggerDropSchema *
 make_event_trigger_drop_schema(char *schema)
 {
-	EventTriggerDropSchema *obj =(EventTriggerDropSchema *) palloc(sizeof(EventTriggerDropSchema));
+	EventTriggerDropSchema *obj = palloc(sizeof(EventTriggerDropSchema));
 
 	*obj = (EventTriggerDropSchema){
 		.obj = { .type = EVENT_TRIGGER_DROP_SCHEMA },
@@ -177,7 +176,7 @@ make_event_trigger_drop_schema(char *schema)
 static EventTriggerDropTrigger *
 make_event_trigger_drop_trigger(char *trigger_name, char *schema, char *table)
 {
-	EventTriggerDropTrigger *obj =(EventTriggerDropTrigger *) palloc(sizeof(EventTriggerDropTrigger));
+	EventTriggerDropTrigger *obj = palloc(sizeof(EventTriggerDropTrigger));
 
 	*obj = (EventTriggerDropTrigger){ .obj = { .type = EVENT_TRIGGER_DROP_TRIGGER },
 									  .trigger_name = trigger_name,
@@ -232,9 +231,9 @@ ts_event_trigger_dropped_objects(void)
 					List *addrnames = extract_addrnames(DatumGetArrayTypeP(values[10]));
 
 					objects = lappend(objects,
-									  make_event_trigger_drop_table_constraint((char*)lthird(addrnames),
-																			   (char*)linitial(addrnames),
-																			   (char*)lsecond(addrnames)));
+									  make_event_trigger_drop_table_constraint(lthird(addrnames),
+																			   linitial(addrnames),
+																			   lsecond(addrnames)));
 				}
 				break;
 			case RelationRelationId:
@@ -246,31 +245,31 @@ ts_event_trigger_dropped_objects(void)
 					List *addrnames = extract_addrnames(DatumGetArrayTypeP(values[10]));
 
 					objects = lappend(objects,
-									  make_event_trigger_drop_index((char*)lsecond(addrnames),
-																	(char*)linitial(addrnames)));
+									  make_event_trigger_drop_index(lsecond(addrnames),
+																	linitial(addrnames)));
 				}
 				else if (strcmp(objtype, "table") == 0)
 				{
 					List *addrnames = extract_addrnames(DatumGetArrayTypeP(values[10]));
 
 					objects = lappend(objects,
-									  make_event_trigger_drop_table((char*)lsecond(addrnames),
-																	(char*)linitial(addrnames)));
+									  make_event_trigger_drop_table(lsecond(addrnames),
+																	linitial(addrnames)));
 				}
 				else if (strcmp(objtype, "view") == 0)
 				{
 					List *addrnames = extract_addrnames(DatumGetArrayTypeP(values[10]));
 
 					objects = lappend(objects,
-									  make_event_trigger_drop_view((char*)lsecond(addrnames),
-																   (char*)linitial(addrnames)));
+									  make_event_trigger_drop_view(lsecond(addrnames),
+																   linitial(addrnames)));
 				}
 				break;
 			case NamespaceRelationId:
 			{
 				List *addrnames = extract_addrnames(DatumGetArrayTypeP(values[10]));
 
-				objects = lappend(objects, make_event_trigger_drop_schema((char*)linitial(addrnames)));
+				objects = lappend(objects, make_event_trigger_drop_schema(linitial(addrnames)));
 			}
 			break;
 			case TriggerRelationId:
@@ -278,9 +277,9 @@ ts_event_trigger_dropped_objects(void)
 				List *addrnames = extract_addrnames(DatumGetArrayTypeP(values[10]));
 
 				objects = lappend(objects,
-								  make_event_trigger_drop_trigger((char*)lthird(addrnames),
-																  (char*)linitial(addrnames),
-																  (char*)lsecond(addrnames)));
+								  make_event_trigger_drop_trigger(lthird(addrnames),
+																  linitial(addrnames),
+																  lsecond(addrnames)));
 			}
 			break;
 
@@ -299,7 +298,6 @@ ts_event_trigger_dropped_objects(void)
 void
 _event_trigger_init(void)
 {
-	//tsdb og中没有event trigger,这里会导致报错cache lookup failed for function 0,在init.cpp中注释
 	fmgr_info(fmgr_internal_function("pg_event_trigger_ddl_commands"), &ddl_commands_fmgrinfo);
 	fmgr_info(fmgr_internal_function("pg_event_trigger_dropped_objects"),
 			  &dropped_objects_fmgrinfo);

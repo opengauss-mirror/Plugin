@@ -44,7 +44,7 @@
  */
 #ifndef TS_SUBMODULE
 /* In the core timescaledb TSDLLEXPORT is export */
-#define TSDLLEXPORT  PGDLLEXPORT
+#define TSDLLEXPORT PGDLLEXPORT
 
 #elif defined(PGDLLIMPORT)
 /* In submodules it works as imports */
@@ -56,8 +56,8 @@
 
 #endif
 
-#define TS_FUNCTION_INFO_V1(fn)                                                \
-	extern "C"  PGDLLEXPORT Datum fn(PG_FUNCTION_ARGS);                         \
-	PG_FUNCTION_INFO_V1(fn)													   
+#define TS_FUNCTION_INFO_V1(fn)                                                                    \
+	PGDLLEXPORT Datum fn(PG_FUNCTION_ARGS);                                     \
+	PG_FUNCTION_INFO_V1(fn)
 
 #endif /* TIMESCALEDB_EXPORT_H */

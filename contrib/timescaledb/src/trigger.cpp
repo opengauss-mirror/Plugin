@@ -41,7 +41,7 @@ ts_trigger_create_on_chunk(Oid trigger_oid, char *chunk_schema_name, char *chunk
 
 	deparsed_list = pg_parse_query(def);
 	Assert(list_length(deparsed_list) == 1);
-	deparsed_node =(Node *) linitial(deparsed_list);
+	deparsed_node = linitial(deparsed_list);
 
 #if PG96
 	stmt = (CreateTrigStmt *) deparsed_node;
@@ -64,7 +64,7 @@ ts_trigger_create_on_chunk(Oid trigger_oid, char *chunk_schema_name, char *chunk
 	stmt->relation->relname = chunk_table_name;
 	stmt->relation->schemaname = chunk_schema_name;
 
-	CreateTriggerCompat(stmt, def, InvalidOid, InvalidOid, InvalidOid, InvalidOid, false,0);
+	CreateTriggerCompat(stmt, def, InvalidOid, InvalidOid, InvalidOid, InvalidOid, false);
 
 	CommandCounterIncrement(); /* needed to prevent pg_class being updated
 								* twice */
@@ -103,7 +103,7 @@ for_each_trigger(Oid relid, trigger_handler on_trigger, void *arg)
 static bool
 create_trigger_handler(Trigger *trigger, void *arg)
 {
-	Chunk *chunk =(Chunk *) arg;
+	Chunk *chunk = arg;
 
 #if PG10_GE
 	if (TRIGGER_USES_TRANSITION_TABLE(trigger->tgnewtable) ||

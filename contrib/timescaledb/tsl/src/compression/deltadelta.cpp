@@ -6,7 +6,7 @@
 
 #include "compression/deltadelta.h"
 
-#include <access/htup.h>
+#include <access/htup_details.h>
 #include <catalog/pg_aggregate.h>
 #include <catalog/pg_type.h>
 #include <utils/builtins.h>
@@ -168,49 +168,49 @@ deltadelta_compressor_finish_and_reset(Compressor *compressor)
 }
 
 const Compressor deltadelta_bool_compressor = {
-	.append_null = deltadelta_compressor_append_null_value,
 	.append_val = deltadelta_compressor_append_bool,
+	.append_null = deltadelta_compressor_append_null_value,
 	.finish = deltadelta_compressor_finish_and_reset,
 };
 
 const Compressor deltadelta_uint16_compressor = {
-	.append_null = deltadelta_compressor_append_null_value,
 	.append_val = deltadelta_compressor_append_int16,
+	.append_null = deltadelta_compressor_append_null_value,
 	.finish = deltadelta_compressor_finish_and_reset,
 };
 const Compressor deltadelta_uint32_compressor = {
-	.append_null = deltadelta_compressor_append_null_value,
 	.append_val = deltadelta_compressor_append_int32,
+	.append_null = deltadelta_compressor_append_null_value,
 	.finish = deltadelta_compressor_finish_and_reset,
 };
 const Compressor deltadelta_uint64_compressor = {
-	.append_null = deltadelta_compressor_append_null_value,
 	.append_val = deltadelta_compressor_append_int64,
+	.append_null = deltadelta_compressor_append_null_value,
 	.finish = deltadelta_compressor_finish_and_reset,
 };
 
 const Compressor deltadelta_date_compressor = {
-	.append_null = deltadelta_compressor_append_null_value,
 	.append_val = deltadelta_compressor_append_date,
+	.append_null = deltadelta_compressor_append_null_value,
 	.finish = deltadelta_compressor_finish_and_reset,
 };
 
 const Compressor deltadelta_timestamp_compressor = {
-	.append_null = deltadelta_compressor_append_null_value,
 	.append_val = deltadelta_compressor_append_timestamp,
+	.append_null = deltadelta_compressor_append_null_value,
 	.finish = deltadelta_compressor_finish_and_reset,
 };
 
 const Compressor deltadelta_timestamptz_compressor = {
-	.append_null = deltadelta_compressor_append_null_value,
 	.append_val = deltadelta_compressor_append_timestamptz,
+	.append_null = deltadelta_compressor_append_null_value,
 	.finish = deltadelta_compressor_finish_and_reset,
 };
 
 Compressor *
 delta_delta_compressor_for_type(Oid element_type)
 {
-	ExtendedCompressor *compressor =(ExtendedCompressor *) palloc(sizeof(*compressor));
+	ExtendedCompressor *compressor = palloc(sizeof(*compressor));
 	switch (element_type)
 	{
 		case BOOLOID:
@@ -281,7 +281,7 @@ tsl_deltadelta_compressor_append(PG_FUNCTION_ARGS)
 DeltaDeltaCompressor *
 delta_delta_compressor_alloc(void)
 {
-	DeltaDeltaCompressor *compressor =(DeltaDeltaCompressor *) palloc0(sizeof(*compressor));
+	DeltaDeltaCompressor *compressor = palloc0(sizeof(*compressor));
 	simple8brle_compressor_init(&compressor->delta_delta);
 	simple8brle_compressor_init(&compressor->nulls);
 	return compressor;
@@ -305,7 +305,7 @@ delta_delta_from_parts(uint64 last_value, uint64 last_delta, Simple8bRleSerializ
 				(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
 				 errmsg("compressed size exceeds the maximum allowed (%d)", (int) MaxAllocSize)));
 
-	compressed_data =(char *) palloc(compressed_size);
+	compressed_data = palloc(compressed_size);
 	compressed = (DeltaDeltaCompressed *) compressed_data;
 	SET_VARSIZE(&compressed->vl_len_, compressed_size);
 
@@ -424,8 +424,6 @@ int64_decompression_iterator_init_forward(DeltaDeltaDecompressionIterator *iter,
 		},
 		.prev_val = 0,
 		.prev_delta = 0,
-		.delta_deltas = {},
-		.nulls = {},
 		.has_nulls = has_nulls,
 	};
 
@@ -458,8 +456,6 @@ int64_decompression_iterator_init_reverse(DeltaDeltaDecompressionIterator *iter,
 		},
 		.prev_val = compressed->last_value,
 		.prev_delta = compressed->last_delta,
-		.delta_deltas = {},
-		.nulls = {},
 		.has_nulls = has_nulls,
 	};
 
@@ -475,10 +471,8 @@ convert_from_internal(DecompressResultInternal res_internal, Oid element_type)
 	if (res_internal.is_done || res_internal.is_null)
 	{
 		return (DecompressResult){
-			.val = NULL,
-			.is_null = res_internal.is_null,
 			.is_done = res_internal.is_done,
-			
+			.is_null = res_internal.is_null,
 		};
 	}
 
@@ -534,8 +528,6 @@ delta_delta_decompression_iterator_try_next_forward_internal(DeltaDeltaDecompres
 			simple8brle_decompression_iterator_try_next_forward(&iter->nulls);
 		if (result.is_done)
 			return (DecompressResultInternal){
-				.val = NULL,
-				.is_null = NULL,
 				.is_done = true,
 			};
 
@@ -543,9 +535,7 @@ delta_delta_decompression_iterator_try_next_forward_internal(DeltaDeltaDecompres
 		{
 			Assert(result.val == 1);
 			return (DecompressResultInternal){
-				.val = NULL,
 				.is_null = true,
-				.is_done = NULL,
 			};
 		}
 	}
@@ -554,8 +544,6 @@ delta_delta_decompression_iterator_try_next_forward_internal(DeltaDeltaDecompres
 
 	if (result.is_done)
 		return (DecompressResultInternal){
-			.val = NULL,
-			.is_null =NULL,
 			.is_done = true,
 		};
 
@@ -593,8 +581,6 @@ delta_delta_decompression_iterator_try_next_reverse_internal(DeltaDeltaDecompres
 			simple8brle_decompression_iterator_try_next_reverse(&iter->nulls);
 		if (result.is_done)
 			return (DecompressResultInternal){
-				.val = NULL,
-				.is_null = NULL,
 				.is_done = true,
 			};
 
@@ -602,9 +588,7 @@ delta_delta_decompression_iterator_try_next_reverse_internal(DeltaDeltaDecompres
 		{
 			Assert(result.val == 1);
 			return (DecompressResultInternal){
-				.val = NULL,
 				.is_null = true,
-				.is_done = NULL,
 			};
 		}
 	}
@@ -613,8 +597,6 @@ delta_delta_decompression_iterator_try_next_reverse_internal(DeltaDeltaDecompres
 
 	if (result.is_done)
 		return (DecompressResultInternal){
-			.val = NULL,
-			.is_null = NULL,
 			.is_done = true,
 		};
 
@@ -641,9 +623,9 @@ delta_delta_decompression_iterator_try_next_reverse(DecompressionIterator *iter)
 DecompressionIterator *
 delta_delta_decompression_iterator_from_datum_forward(Datum deltadelta_compressed, Oid element_type)
 {
-	DeltaDeltaDecompressionIterator *iterator =(DeltaDeltaDecompressionIterator *) palloc(sizeof(*iterator));
+	DeltaDeltaDecompressionIterator *iterator = palloc(sizeof(*iterator));
 	int64_decompression_iterator_init_forward(iterator,
-											  (DeltaDeltaCompressed *) PG_DETOAST_DATUM(deltadelta_compressed),
+											  (void *) PG_DETOAST_DATUM(deltadelta_compressed),
 											  element_type);
 	return &iterator->base;
 }
@@ -651,9 +633,9 @@ delta_delta_decompression_iterator_from_datum_forward(Datum deltadelta_compresse
 DecompressionIterator *
 delta_delta_decompression_iterator_from_datum_reverse(Datum deltadelta_compressed, Oid element_type)
 {
-	DeltaDeltaDecompressionIterator *iterator =(DeltaDeltaDecompressionIterator *) palloc(sizeof(*iterator));
+	DeltaDeltaDecompressionIterator *iterator = palloc(sizeof(*iterator));
 	int64_decompression_iterator_init_reverse(iterator,
-											  (DeltaDeltaCompressed *) PG_DETOAST_DATUM(deltadelta_compressed),
+											  (void *) PG_DETOAST_DATUM(deltadelta_compressed),
 											  element_type);
 	return &iterator->base;
 }

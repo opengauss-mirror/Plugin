@@ -1,9 +1,9 @@
 set(SOURCES
-  test_auto_policy.cpp
-  test_chunk_stats.cpp
-  test_compression.cpp
-  test_ddl_hook.cpp
-  test_continuous_aggs.cpp
+  test_auto_policy.c
+  test_chunk_stats.c
+  test_compression.c
+  test_ddl_hook.c
+  test_continuous_aggs.c
 )
 include(${PROJECT_SOURCE_DIR}/tsl/src/build-defs.cmake)
 

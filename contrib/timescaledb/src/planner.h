@@ -34,13 +34,13 @@ ts_create_private_reloptinfo(RelOptInfo *rel)
 {
 	Assert(rel->fdw_private == NULL);
 	rel->fdw_private = palloc0(sizeof(TimescaleDBPrivate));
-	return (TimescaleDBPrivate *)rel->fdw_private;
+	return rel->fdw_private;
 }
 
 static inline TimescaleDBPrivate *
 ts_get_private_reloptinfo(const RelOptInfo *rel)
 {
-	return (TimescaleDBPrivate *)rel->fdw_private;
+	return rel->fdw_private;
 }
 
 #endif /* TIMESCALEDB_PLANNER_H */

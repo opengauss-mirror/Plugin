@@ -61,7 +61,7 @@ ts_http_response_state_create()
 	MemoryContext context =
 		AllocSetContextCreate(CurrentMemoryContext, "Http Response", ALLOCSET_DEFAULT_SIZES);
 	MemoryContext old = MemoryContextSwitchTo(context);
-	HttpResponseState *ret =(HttpResponseState *) palloc(sizeof(HttpResponseState));
+	HttpResponseState *ret = palloc(sizeof(HttpResponseState));
 
 	memset(ret, 0, sizeof(*ret));
 
@@ -165,7 +165,7 @@ http_parse_version(HttpResponseState *state)
 static void
 http_parse_status(HttpResponseState *state, const char next)
 {
-	char *raw_buf =(char *) palloc(state->parse_offset + 1);
+	char *raw_buf = palloc(state->parse_offset + 1);
 
 	switch (next)
 	{
