@@ -34,8 +34,8 @@
  */
 #include <postgres.h>
 
-#include <access/htup.h>
-//#include <access/stratnum.h>
+#include <access/htup_details.h>
+#include <access/stratnum.h>
 #include <catalog/namespace.h>
 #include <catalog/pg_aggregate.h>
 #include <catalog/pg_proc.h>
@@ -117,7 +117,7 @@ mutate_aggref_node(Node *node, MutatorContext *context)
 			}
 		}
 	}
-	return expression_tree_mutator(node,(Node* (*)(Node*, void*)) mutate_aggref_node, (void *) context);
+	return expression_tree_mutator(node, mutate_aggref_node, (void *) context);
 }
 
 /*
@@ -138,7 +138,7 @@ replace_aggref_in_tlist(MinMaxAggPath *minmaxagg_path)
 
 	((Path *) minmaxagg_path)->pathtarget->exprs =
 		(List *) mutate_aggref_node((Node *) ((Path *) minmaxagg_path)->pathtarget->exprs,
-									(MutatorContext*) &context);
+									(void *) &context);
 }
 
 /* Stores function id (FIRST/LAST) with proper comparison strategy */
@@ -191,7 +191,7 @@ is_first_last_node(Node *node, List **context)
 		if (func_strategy != NULL)
 			return true;
 	}
-	return expression_tree_walker(node,(bool (*)()) is_first_last_node, context);
+	return expression_tree_walker(node, is_first_last_node, context);
 }
 
 static bool
@@ -203,7 +203,7 @@ contains_first_last_node(List *sortClause, List *targetList)
 
 	foreach (cell, exprs)
 	{
-		Node *expr =(Node *) lfirst(cell);
+		Node *expr = lfirst(cell);
 		bool found = is_first_last_node(expr, &context);
 
 		if (found)
@@ -232,177 +232,177 @@ contains_first_last_node(List *sortClause, List *targetList)
  *  - replace Aggref node with Param node
  *	- reject ORDER BY on FIRST/LAST
  */
-// void
-// ts_preprocess_first_last_aggregates(PlannerInfo *root, List *tlist)
-// {
-// 	Query *parse = root->parse;
-// 	FromExpr *jtnode;
-// 	RangeTblRef *rtr;
-// 	RangeTblEntry *rte;
-// 	List *first_last_aggs;
-// 	RelOptInfo *grouped_rel;
-// 	ListCell *lc;
-// 	List *mm_agg_list;
-// 	MinMaxAggPath *minmaxagg_path;
+void
+ts_preprocess_first_last_aggregates(PlannerInfo *root, List *tlist)
+{
+	Query *parse = root->parse;
+	FromExpr *jtnode;
+	RangeTblRef *rtr;
+	RangeTblEntry *rte;
+	List *first_last_aggs;
+	RelOptInfo *grouped_rel;
+	ListCell *lc;
+	List *mm_agg_list;
+	MinMaxAggPath *minmaxagg_path;
 
-// 	/* minmax_aggs list should be empty at this point */
-// 	Assert(root->minmax_aggs == NIL);
+	/* minmax_aggs list should be empty at this point */
+	Assert(root->minmax_aggs == NIL);
 
-// 	/* Nothing to do if query has no aggregates */
-// 	if (!parse->hasAggs)
-// 		return;
+	/* Nothing to do if query has no aggregates */
+	if (!parse->hasAggs)
+		return;
 
-// 	Assert(!parse->setOperations);  /* shouldn't get here if a setop */
-// 	Assert(parse->rowMarks == NIL); /* nor if FOR UPDATE */
+	Assert(!parse->setOperations);  /* shouldn't get here if a setop */
+	Assert(parse->rowMarks == NIL); /* nor if FOR UPDATE */
 
-// 	/*
-// 	 * Reject unoptimizable cases.
-// 	 *
-// 	 * We don't handle the case when agg function is in ORDER BY. The reason
-// 	 * being is that we replace Aggref node before sort keys are being
-// 	 * generated.
-// 	 *
-// 	 * We don't handle GROUP BY or windowing, because our current
-// 	 * implementations of grouping require looking at all the rows anyway, and
-// 	 * so there's not much point in optimizing FIRST/LAST.
-// 	 */
-// 	if (parse->groupClause || list_length(parse->groupingSets) > 1 || parse->hasWindowFuncs ||
-// 		contains_first_last_node(parse->sortClause, tlist))
-// 		return;
+	/*
+	 * Reject unoptimizable cases.
+	 *
+	 * We don't handle the case when agg function is in ORDER BY. The reason
+	 * being is that we replace Aggref node before sort keys are being
+	 * generated.
+	 *
+	 * We don't handle GROUP BY or windowing, because our current
+	 * implementations of grouping require looking at all the rows anyway, and
+	 * so there's not much point in optimizing FIRST/LAST.
+	 */
+	if (parse->groupClause || list_length(parse->groupingSets) > 1 || parse->hasWindowFuncs ||
+		contains_first_last_node(parse->sortClause, tlist))
+		return;
 
-// 	/*
-// 	 * Reject if query contains any CTEs; there's no way to build an indexscan
-// 	 * on one so we couldn't succeed here.  (If the CTEs are unreferenced,
-// 	 * that's not true, but it doesn't seem worth expending cycles to check.)
-// 	 */
-// 	if (parse->cteList)
-// 		return;
+	/*
+	 * Reject if query contains any CTEs; there's no way to build an indexscan
+	 * on one so we couldn't succeed here.  (If the CTEs are unreferenced,
+	 * that's not true, but it doesn't seem worth expending cycles to check.)
+	 */
+	if (parse->cteList)
+		return;
 
-// 	/*
-// 	 * We also restrict the query to reference exactly one table, since join
-// 	 * conditions can't be handled reasonably.  (We could perhaps handle a
-// 	 * query containing cartesian-product joins, but it hardly seems worth the
-// 	 * trouble.)  However, the single table could be buried in several levels
-// 	 * of FromExpr due to subqueries.  Note the "single" table could be an
-// 	 * inheritance parent, too, including the case of a UNION ALL subquery
-// 	 * that's been flattened to an appendrel.
-// 	 */
-// 	jtnode = parse->jointree;
-// 	while (IsA(jtnode, FromExpr))
-// 	{
-// 		if (list_length(jtnode->fromlist) != 1)
-// 			return;
-// 		jtnode =(FromExpr *) linitial(jtnode->fromlist);
-// 	}
-// 	if (!IsA(jtnode, RangeTblRef))
-// 		return;
-// 	rtr = (RangeTblRef *) jtnode;
-// 	rte = planner_rt_fetch(rtr->rtindex, root);
-// 	if (rte->rtekind == RTE_RELATION)
-// 		/* ordinary relation, ok */;
-// 	else if (rte->rtekind == RTE_SUBQUERY && rte->inh)
-// 		/* flattened UNION ALL subquery, ok */;
-// 	else
-// 		return;
+	/*
+	 * We also restrict the query to reference exactly one table, since join
+	 * conditions can't be handled reasonably.  (We could perhaps handle a
+	 * query containing cartesian-product joins, but it hardly seems worth the
+	 * trouble.)  However, the single table could be buried in several levels
+	 * of FromExpr due to subqueries.  Note the "single" table could be an
+	 * inheritance parent, too, including the case of a UNION ALL subquery
+	 * that's been flattened to an appendrel.
+	 */
+	jtnode = parse->jointree;
+	while (IsA(jtnode, FromExpr))
+	{
+		if (list_length(jtnode->fromlist) != 1)
+			return;
+		jtnode = linitial(jtnode->fromlist);
+	}
+	if (!IsA(jtnode, RangeTblRef))
+		return;
+	rtr = (RangeTblRef *) jtnode;
+	rte = planner_rt_fetch(rtr->rtindex, root);
+	if (rte->rtekind == RTE_RELATION)
+		/* ordinary relation, ok */;
+	else if (rte->rtekind == RTE_SUBQUERY && rte->inh)
+		/* flattened UNION ALL subquery, ok */;
+	else
+		return;
 
-// 	/*
-// 	 * Scan the tlist and HAVING qual to find all the aggregates and verify
-// 	 * all are FIRST/LAST aggregates.  Stop as soon as we find one that isn't.
-// 	 */
-// 	first_last_aggs = NIL;
-// 	if (find_first_last_aggs_walker((Node *) tlist, &first_last_aggs))
-// 		return;
-// 	if (find_first_last_aggs_walker(parse->havingQual, &first_last_aggs))
-// 		return;
+	/*
+	 * Scan the tlist and HAVING qual to find all the aggregates and verify
+	 * all are FIRST/LAST aggregates.  Stop as soon as we find one that isn't.
+	 */
+	first_last_aggs = NIL;
+	if (find_first_last_aggs_walker((Node *) tlist, &first_last_aggs))
+		return;
+	if (find_first_last_aggs_walker(parse->havingQual, &first_last_aggs))
+		return;
 
-// 	/*
-// 	 * OK, there is at least the possibility of performing the optimization.
-// 	 * Build an access path for each aggregate.  If any of the aggregates
-// 	 * prove to be non-indexable, give up; there is no point in optimizing
-// 	 * just some of them.
-// 	 */
-// 	foreach (lc, first_last_aggs)
-// 	{
-// 		FirstLastAggInfo *fl_info = (FirstLastAggInfo *) lfirst(lc);
-// 		MinMaxAggInfo *mminfo = fl_info->m_agg_info;
-// 		Oid eqop;
-// 		bool reverse;
+	/*
+	 * OK, there is at least the possibility of performing the optimization.
+	 * Build an access path for each aggregate.  If any of the aggregates
+	 * prove to be non-indexable, give up; there is no point in optimizing
+	 * just some of them.
+	 */
+	foreach (lc, first_last_aggs)
+	{
+		FirstLastAggInfo *fl_info = (FirstLastAggInfo *) lfirst(lc);
+		MinMaxAggInfo *mminfo = fl_info->m_agg_info;
+		Oid eqop;
+		bool reverse;
 
-// 		/*
-// 		 * We'll need the equality operator that goes with the aggregate's
-// 		 * ordering operator.
-// 		 */
-// 		eqop = get_equality_op_for_ordering_op(mminfo->aggsortop, &reverse);
-// 		if (!OidIsValid(eqop)) /* shouldn't happen */
-// 			elog(ERROR,
-// 				 "could not find equality operator for ordering operator %u",
-// 				 mminfo->aggsortop);
+		/*
+		 * We'll need the equality operator that goes with the aggregate's
+		 * ordering operator.
+		 */
+		eqop = get_equality_op_for_ordering_op(mminfo->aggsortop, &reverse);
+		if (!OidIsValid(eqop)) /* shouldn't happen */
+			elog(ERROR,
+				 "could not find equality operator for ordering operator %u",
+				 mminfo->aggsortop);
 
-// 		/*
-// 		 * We can use either an ordering that gives NULLS FIRST or one that
-// 		 * gives NULLS LAST; furthermore there's unlikely to be much
-// 		 * performance difference between them, so it doesn't seem worth
-// 		 * costing out both ways if we get a hit on the first one.  NULLS
-// 		 * FIRST is more likely to be available if the operator is a
-// 		 * reverse-sort operator, so try that first if reverse.
-// 		 */
-// 		if (build_first_last_path(root, fl_info, eqop, mminfo->aggsortop, reverse))
-// 			continue;
-// 		if (build_first_last_path(root, fl_info, eqop, mminfo->aggsortop, !reverse))
-// 			continue;
+		/*
+		 * We can use either an ordering that gives NULLS FIRST or one that
+		 * gives NULLS LAST; furthermore there's unlikely to be much
+		 * performance difference between them, so it doesn't seem worth
+		 * costing out both ways if we get a hit on the first one.  NULLS
+		 * FIRST is more likely to be available if the operator is a
+		 * reverse-sort operator, so try that first if reverse.
+		 */
+		if (build_first_last_path(root, fl_info, eqop, mminfo->aggsortop, reverse))
+			continue;
+		if (build_first_last_path(root, fl_info, eqop, mminfo->aggsortop, !reverse))
+			continue;
 
-// 		/* No indexable path for this aggregate, so fail */
-// 		return;
-// 	}
+		/* No indexable path for this aggregate, so fail */
+		return;
+	}
 
-// 	/*
-// 	 * OK, we can do the query this way. We are using MinMaxAggPath to store
-// 	 * First/Last Agg path since the logic is almost the same. MinMaxAggPath
-// 	 * is used later on by planner so by reusing it we don't need to re-invent
-// 	 * planner.
-// 	 *
-// 	 * Prepare to create a MinMaxAggPath node.
-// 	 *
-// 	 * First, create an output Param node for each agg.  (If we end up not
-// 	 * using the MinMaxAggPath, we'll waste a PARAM_EXEC slot for each agg,
-// 	 * which is not worth worrying about.  We can't wait till create_plan time
-// 	 * to decide whether to make the Param, unfortunately.)
-// 	 */
-// 	mm_agg_list = NIL;
-// 	foreach (lc, first_last_aggs)
-// 	{
-// 		FirstLastAggInfo *fl_info = (FirstLastAggInfo *) lfirst(lc);
-// 		MinMaxAggInfo *mminfo = fl_info->m_agg_info;
+	/*
+	 * OK, we can do the query this way. We are using MinMaxAggPath to store
+	 * First/Last Agg path since the logic is almost the same. MinMaxAggPath
+	 * is used later on by planner so by reusing it we don't need to re-invent
+	 * planner.
+	 *
+	 * Prepare to create a MinMaxAggPath node.
+	 *
+	 * First, create an output Param node for each agg.  (If we end up not
+	 * using the MinMaxAggPath, we'll waste a PARAM_EXEC slot for each agg,
+	 * which is not worth worrying about.  We can't wait till create_plan time
+	 * to decide whether to make the Param, unfortunately.)
+	 */
+	mm_agg_list = NIL;
+	foreach (lc, first_last_aggs)
+	{
+		FirstLastAggInfo *fl_info = (FirstLastAggInfo *) lfirst(lc);
+		MinMaxAggInfo *mminfo = fl_info->m_agg_info;
 
-// 		mminfo->param = SS_make_initplan_output_param(root,
-// 													  exprType((Node *) mminfo->target),
-// 													  -1,
-// 													  exprCollation((Node *) mminfo->target));
-// 		mm_agg_list = lcons(mminfo, mm_agg_list);
-// 	}
+		mminfo->param = SS_make_initplan_output_param(root,
+													  exprType((Node *) mminfo->target),
+													  -1,
+													  exprCollation((Node *) mminfo->target));
+		mm_agg_list = lcons(mminfo, mm_agg_list);
+	}
 
-// 	/*
-// 	 * Create a MinMaxAggPath node with the appropriate estimated costs and
-// 	 * other needed data, and add it to the UPPERREL_GROUP_AGG upperrel, where
-// 	 * it will compete against the standard aggregate implementation.  (It
-// 	 * will likely always win, but we need not assume that here.)
-// 	 *
-// 	 * Note: grouping_planner won't have created this upperrel yet, but it's
-// 	 * fine for us to create it first.  We will not have inserted the correct
-// 	 * consider_parallel value in it, but MinMaxAggPath paths are currently
-// 	 * never parallel-safe anyway, so that doesn't matter.  Likewise, it
-// 	 * doesn't matter that we haven't filled FDW-related fields in the rel.
-// 	 */
-// 	grouped_rel = fetch_upper_rel(root, UPPERREL_GROUP_AGG, NULL);
-// 	minmaxagg_path = create_minmaxagg_path(root,
-// 										   grouped_rel,
-// 										   create_pathtarget(root, tlist),
-// 										   mm_agg_list,
-// 										   (List *) parse->havingQual);
-// 	/* Let's replace Aggref node since we will use subquery we've generated  */
-// 	replace_aggref_in_tlist(minmaxagg_path);
-// 	add_path(grouped_rel, (Path *) minmaxagg_path);
-// }
+	/*
+	 * Create a MinMaxAggPath node with the appropriate estimated costs and
+	 * other needed data, and add it to the UPPERREL_GROUP_AGG upperrel, where
+	 * it will compete against the standard aggregate implementation.  (It
+	 * will likely always win, but we need not assume that here.)
+	 *
+	 * Note: grouping_planner won't have created this upperrel yet, but it's
+	 * fine for us to create it first.  We will not have inserted the correct
+	 * consider_parallel value in it, but MinMaxAggPath paths are currently
+	 * never parallel-safe anyway, so that doesn't matter.  Likewise, it
+	 * doesn't matter that we haven't filled FDW-related fields in the rel.
+	 */
+	grouped_rel = fetch_upper_rel(root, UPPERREL_GROUP_AGG, NULL);
+	minmaxagg_path = create_minmaxagg_path(root,
+										   grouped_rel,
+										   create_pathtarget(root, tlist),
+										   mm_agg_list,
+										   (List *) parse->havingQual);
+	/* Let's replace Aggref node since we will use subquery we've generated  */
+	replace_aggref_in_tlist(minmaxagg_path);
+	add_path(grouped_rel, (Path *) minmaxagg_path);
+}
 
 /*
  * find_first_last_aggs_walker
@@ -518,7 +518,7 @@ find_first_last_aggs_walker(Node *node, List **context)
 		mminfo->pathcost = 0;
 		mminfo->param = NULL;
 
-		fl_info =(FirstLastAggInfo *) palloc(sizeof(FirstLastAggInfo));
+		fl_info = palloc(sizeof(FirstLastAggInfo));
 
 		fl_info->m_agg_info = mminfo;
 		fl_info->sort = sort->expr;
@@ -531,7 +531,7 @@ find_first_last_aggs_walker(Node *node, List **context)
 		return false;
 	}
 	Assert(!IsA(node, SubLink));
-	return expression_tree_walker(node,(bool (*)()) find_first_last_aggs_walker, (void *) context);
+	return expression_tree_walker(node, find_first_last_aggs_walker, (void *) context);
 }
 
 /*
@@ -585,11 +585,11 @@ build_first_last_path(PlannerInfo *root, FirstLastAggInfo *fl_info, Oid eqop, Oi
 	/* reset EquivalenceClass since we will create it later on */
 	subroot->eq_classes = NIL;
 
-	subroot->parse = parse =(Query *) copyObject(root->parse);
+	subroot->parse = parse = copyObject(root->parse);
 	IncrementVarSublevelsUp((Node *) parse, 1, 1);
 
 	/* append_rel_list might contain outer Vars? */
-	subroot->append_rel_list =(List*) copyObject(root->append_rel_list);
+	subroot->append_rel_list = copyObject(root->append_rel_list);
 	IncrementVarSublevelsUp((Node *) subroot->append_rel_list, 1, 1);
 	/* There shouldn't be any OJ info to translate, as yet */
 	Assert(subroot->join_info_list == NIL);
@@ -614,8 +614,8 @@ build_first_last_path(PlannerInfo *root, FirstLastAggInfo *fl_info, Oid eqop, Oi
 	 * from target list
 	 */
 	value_target =
-		makeTargetEntry((Expr *)copyObject(mminfo->target), (AttrNumber) 1, pstrdup("value"), false);
-	sort_target = makeTargetEntry((Expr *)copyObject(fl_info->sort), (AttrNumber) 2, pstrdup("sort"), true);
+		makeTargetEntry(copyObject(mminfo->target), (AttrNumber) 1, pstrdup("value"), false);
+	sort_target = makeTargetEntry(copyObject(fl_info->sort), (AttrNumber) 2, pstrdup("sort"), true);
 	tlist = list_make2(value_target, sort_target);
 	subroot->processed_tlist = parse->targetList = tlist;
 
@@ -629,7 +629,7 @@ build_first_last_path(PlannerInfo *root, FirstLastAggInfo *fl_info, Oid eqop, Oi
 	/* Build "sort IS NOT NULL" expression. Not that target can still be NULL */
 	ntest = makeNode(NullTest);
 	ntest->nulltesttype = IS_NOT_NULL;
-	ntest->arg =(Expr *) copyObject(fl_info->sort);
+	ntest->arg = copyObject(fl_info->sort);
 	/* we checked it wasn't a rowtype in find_minmax_aggs_walker */
 	ntest->argisrow = false;
 	ntest->location = -1;

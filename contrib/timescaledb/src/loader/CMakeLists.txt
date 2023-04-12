@@ -1,25 +1,14 @@
 set(SOURCES
-  loader.cpp
-  bgw_message_queue.cpp
-  bgw_counter.cpp
-  bgw_launcher.cpp
-  bgw_interface.cpp
-  lwlocks.cpp
-  tsdb_loader.cpp
-  ${PROJECT_SOURCE_DIR}/src/tsdb_dsm.cpp
-  ${PROJECT_SOURCE_DIR}/src/tsdb_shm.cpp
-  ${PROJECT_SOURCE_DIR}/src/tsdb_event_trigger.cpp
-  ${PROJECT_SOURCE_DIR}/src/tsdb_get_obj.cpp
-  ${PROJECT_SOURCE_DIR}/src/tsdb_extension.cpp
-  ${PROJECT_SOURCE_DIR}/src/tsdb_head.cpp
-  ${PROJECT_SOURCE_DIR}/src/tsdb_static.cpp
-  ${PROJECT_SOURCE_DIR}/src/tsdb_static2.cpp
-  ${PROJECT_SOURCE_DIR}/src/tsdb.cpp
-  
+  loader.c
+  bgw_message_queue.c
+  bgw_counter.c
+  bgw_launcher.c
+  bgw_interface.c
+  lwlocks.c
 )
 
 set(TEST_SOURCES
-  ${PROJECT_SOURCE_DIR}/test/src/symbol_conflict.cpp
+  ${PROJECT_SOURCE_DIR}/test/src/symbol_conflict.c
 )
 
 add_library(${PROJECT_NAME}-loader MODULE ${SOURCES})

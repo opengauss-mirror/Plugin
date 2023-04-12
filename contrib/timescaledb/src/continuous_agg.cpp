@@ -11,7 +11,7 @@
 
 #include <postgres.h>
 #include <fmgr.h>
-#include <access/htup.h>
+#include <access/htup_details.h>
 #include <catalog/dependency.h>
 #include <catalog/namespace.h>
 #include <storage/lmgr.h>
@@ -39,14 +39,13 @@ static const WithClauseDefinition continuous_aggregate_with_clause_def[] = {
 			.type_id = BOOLOID,
 			.default_val = BoolGetDatum(false),
 		},
-		
-		[ContinuousViewOptionRefreshLag] = {
-			 .arg_name = "refresh_lag",
-			 .type_id = TEXTOID,
-		},
 		[ContinuousViewOptionRefreshInterval] = {
 			.arg_name = "refresh_interval",
 			.type_id = INTERVALOID,
+		},
+		[ContinuousViewOptionRefreshLag] = {
+			 .arg_name = "refresh_lag",
+			 .type_id = TEXTOID,
 		},
 		[ContinuousViewOptionMaxIntervalPerRun] = {
 			.arg_name = "max_interval_per_job",
@@ -278,9 +277,9 @@ ts_continuous_agg_hypertable_status(int32 hypertable_id)
 			(FormData_continuous_agg *) GETSTRUCT(ts_scan_iterator_tuple(&iterator));
 
 		if (data->raw_hypertable_id == hypertable_id)
-			status =  (ContinuousAggHypertableStatus)(status |HypertableIsRawTable);
+			status |= HypertableIsRawTable;
 		if (data->mat_hypertable_id == hypertable_id)
-			status= (ContinuousAggHypertableStatus)(status|HypertableIsMaterialization);
+			status |= HypertableIsMaterialization;
 
 		if (status == HypertableIsMaterializationAndRaw)
 		{
@@ -306,7 +305,7 @@ ts_continuous_aggs_find_by_raw_table_id(int32 raw_hypertable_id)
 		Form_continuous_agg data =
 			(Form_continuous_agg) GETSTRUCT(ts_scan_iterator_tuple(&iterator));
 
-		ca = (ContinuousAgg*)palloc0(sizeof(*ca));
+		ca = palloc0(sizeof(*ca));
 		continuous_agg_init(ca, data);
 		continuous_aggs = lappend(continuous_aggs, ca);
 	}
@@ -398,7 +397,7 @@ ts_continuous_agg_find_by_view_name(const char *schema, const char *name)
 		ContinuousAggViewType vtyp = ts_continuous_agg_view_type(data, schema, name);
 		if (vtyp != ContinuousAggNone)
 		{
-			ca = (ContinuousAgg*)palloc0(sizeof(*ca));
+			ca = palloc0(sizeof(*ca));
 			continuous_agg_init(ca, data);
 			count++;
 		}
@@ -433,7 +432,7 @@ ts_continuous_agg_find_userview_name(const char *schema, const char *name)
 		vtyp = ts_continuous_agg_view_type(data, chkschema, name);
 		if (vtyp == ContinuousAggUserView)
 		{
-			ca =(ContinuousAgg*) palloc0(sizeof(*ca));
+			ca = palloc0(sizeof(*ca));
 			continuous_agg_init(ca, data);
 			count++;
 		}
@@ -457,7 +456,7 @@ ts_continuous_agg_find_by_job_id(int32 job_id)
 
 		if (data->job_id == job_id)
 		{
-			ca = (ContinuousAgg*)palloc0(sizeof(*ca));
+			ca = palloc0(sizeof(*ca));
 			continuous_agg_init(ca, data);
 			count++;
 		}
@@ -485,8 +484,8 @@ drop_continuous_agg(ContinuousAgg *agg, bool drop_user_view)
 	ScanIterator iterator =
 		ts_scan_iterator_create(CONTINUOUS_AGG, RowExclusiveLock, CurrentMemoryContext);
 	Catalog *catalog = ts_catalog_get();
-	ObjectAddress user_view = {.classId = InvalidOid,.objectId = InvalidOid,.objectSubId = InvalidOid,.rbDropMode ={},.deptype = ' ',}, partial_view = { .classId = InvalidOid,.objectId = InvalidOid, .objectSubId = InvalidOid,.rbDropMode ={},.deptype = ' ',},
-				  rawht_trig = {.classId = InvalidOid,.objectId = InvalidOid,.objectSubId = InvalidOid,.rbDropMode ={},.deptype = ' ', }, direct_view = { .classId = InvalidOid,.objectId = InvalidOid, .objectSubId = InvalidOid,.rbDropMode ={},.deptype = ' ',};
+	ObjectAddress user_view = { .objectId = InvalidOid }, partial_view = { .objectId = InvalidOid },
+				  rawht_trig = { .objectId = InvalidOid }, direct_view = { .objectId = InvalidOid };
 	Hypertable *mat_hypertable, *raw_hypertable;
 	int32 count = 0;
 	bool raw_hypertable_has_other_caggs = true;

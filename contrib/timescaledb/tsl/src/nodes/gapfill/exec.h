@@ -8,7 +8,7 @@
 
 #include <postgres.h>
 #include <nodes/execnodes.h>
-#include "compat.h"
+
 /*
  * GapFillFetchState describes the state of subslot in GapFillState:
  * FETCHED_NONE: no tuple in subslot
@@ -87,7 +87,7 @@ typedef struct GapFillGroupColumnState
 
 typedef struct GapFillState
 {
-	ExtensiblePlanState csstate;
+	CustomScanState csstate;
 	Plan *subplan;
 
 	Oid gapfill_typid;
@@ -112,7 +112,7 @@ typedef struct GapFillState
 	GapFillFetchState state;
 } GapFillState;
 
-Node *gapfill_state_create(ExtensiblePlan *);
+Node *gapfill_state_create(CustomScan *);
 Expr *gapfill_adjust_varnos(GapFillState *state, Expr *expr);
 Datum gapfill_exec_expr(GapFillState *state, Expr *expr, bool *isnull);
 int64 gapfill_datum_get_internal(Datum, Oid);

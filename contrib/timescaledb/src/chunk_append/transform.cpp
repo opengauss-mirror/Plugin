@@ -45,12 +45,12 @@
 Expr *
 ts_transform_cross_datatype_comparison(Expr *clause)
 {
-	clause =(Expr*) copyObject(clause);
+	clause = copyObject(clause);
 	if (IsA(clause, OpExpr) && list_length(castNode(OpExpr, clause)->args) == 2)
 	{
 		OpExpr *op = castNode(OpExpr, clause);
-		Oid left_type = exprType((const Node *)linitial(op->args));
-		Oid right_type = exprType((const Node *)lsecond(op->args));
+		Oid left_type = exprType(linitial(op->args));
+		Oid right_type = exprType(lsecond(op->args));
 
 		if (op->opresulttype != BOOLOID || op->opretset == true)
 			return clause;
@@ -84,8 +84,8 @@ ts_transform_cross_datatype_comparison(Expr *clause)
 
 			if (OidIsValid(opno) && OidIsValid(cast_oid))
 			{
-				Expr *left =(Expr *) linitial(op->args);
-				Expr *right =(Expr *) lsecond(op->args);
+				Expr *left = linitial(op->args);
+				Expr *right = lsecond(op->args);
 
 				if (source_type == left_type)
 					left = (Expr *) makeFuncExpr(cast_oid,
@@ -93,14 +93,14 @@ ts_transform_cross_datatype_comparison(Expr *clause)
 												 list_make1(left),
 												 InvalidOid,
 												 InvalidOid,
-												 (CoercionForm)0);
+												 0);
 				else
 					right = (Expr *) makeFuncExpr(cast_oid,
 												  target_type,
 												  list_make1(right),
 												  InvalidOid,
 												  InvalidOid,
-												  (CoercionForm)0);
+												  0);
 
 				clause = make_opclause(opno, BOOLOID, false, left, right, InvalidOid, InvalidOid);
 			}

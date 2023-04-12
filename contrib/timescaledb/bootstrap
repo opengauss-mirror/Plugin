@@ -38,31 +38,5 @@ mkdir -p ${BUILD_DIR} && \
     cd ${BUILD_DIR} && \
     cmake ${SRC_DIR} "$@"
 
-TSL_PATH=$(pwd)/${TSL_PATH:-tsl/src/CMakeFiles/timescaledb-tsl.dir/flags.make}
-TAR_PATH_1=$(pwd)/${TAR_PATH_1:-src/CMakeFiles/timescaledb.dir/flags.make}
-TAR_PATH_2=$(pwd)/${TAR_PATH_2:-src/loader/CMakeFiles/timescaledb-loader.dir/flags.make}
-
-# find line number
-line1=$(grep -n "CXX_INCLUDES" ${TAR_PATH_1} | cut -d: -f1)
-line2=$(grep -n "CXX_INCLUDES" ${TAR_PATH_2} | cut -d: -f1)
-
-while read line
-do
-    if [[ $line =~ CXX_INCLUDES ]]
-    then
-                # 首先根据空格划分字符串
-                ARR=($line)
-                for var in "${ARR[@]}"
-                do
-                    if [[ "$var" == *"tsl/src"* && "$var" != *"build"* ]]; then
-                        sed -i "${line1}s|$| ${var}|" $TAR_PATH_1
-                        sed -i "${line2}s|$| ${var}|" $TAR_PATH_2
-                        echo -e "modify flags.make: \n  path1: ${TAR_PATH_1}\n  path2: ${TAR_PATH_2}"
-                        break
-                    fi
-                done
-    fi
-done < $TSL_PATH
-
 echo "TimescaleDB build system initialized in ${BUILD_DIR}. To compile, do:"
 echo -e "\033[1mcd ${BUILD_DIR} && make\033[0m"

@@ -9,7 +9,7 @@
 #include <catalog/pg_class.h>
 #include <commands/trigger.h>
 #include <nodes/nodes.h>
-//#include <nodes/extensible.h>
+#include <nodes/extensible.h>
 
 #include "compat.h"
 #include "chunk_dispatch_state.h"
@@ -23,7 +23,7 @@
 #include "hypertable.h"
 
 static void
-chunk_dispatch_begin(ExtensiblePlanState *node, EState *estate, int eflags)
+chunk_dispatch_begin(CustomScanState *node, EState *estate, int eflags)
 {
 	ChunkDispatchState *state = (ChunkDispatchState *) node;
 	Hypertable *ht;
@@ -37,7 +37,7 @@ chunk_dispatch_begin(ExtensiblePlanState *node, EState *estate, int eflags)
 	state->hypertable_cache = hypertable_cache;
 	state->dispatch = ts_chunk_dispatch_create(ht, estate);
 	state->dispatch->dispatch_state = state;
-	node->extensible_ps = list_make1(ps);
+	node->custom_ps = list_make1(ps);
 }
 
 /*
@@ -61,7 +61,7 @@ on_chunk_insert_state_changed(ChunkInsertState *cis, void *data)
 static void
 on_chunk_insert_state_changed(ChunkInsertState *cis, void *data)
 {
-	ChunkDispatchState *state =(ChunkDispatchState*) data;
+	ChunkDispatchState *state = data;
 	ModifyTableState *mtstate = state->mtstate;
 	ModifyTable *mtplan = castNode(ModifyTable, mtstate->ps.plan);
 
@@ -98,10 +98,10 @@ on_chunk_insert_state_changed(ChunkInsertState *cis, void *data)
 #endif /* PG12_GE */
 
 static TupleTableSlot *
-chunk_dispatch_exec(ExtensiblePlanState *node)
+chunk_dispatch_exec(CustomScanState *node)
 {
 	ChunkDispatchState *state = (ChunkDispatchState *) node;
-	PlanState *substate =(PlanState*) linitial(node->extensible_ps);
+	PlanState *substate = linitial(node->custom_ps);
 	TupleTableSlot *slot;
 	Point *point;
 	ChunkInsertState *cis;
@@ -151,10 +151,10 @@ chunk_dispatch_exec(ExtensiblePlanState *node)
 }
 
 static void
-chunk_dispatch_end(ExtensiblePlanState *node)
+chunk_dispatch_end(CustomScanState *node)
 {
 	ChunkDispatchState *state = (ChunkDispatchState *) node;
-	PlanState *substate =(PlanState*) linitial(node->extensible_ps);
+	PlanState *substate = linitial(node->custom_ps);
 
 	ExecEndNode(substate);
 	ts_chunk_dispatch_destroy(state->dispatch);
@@ -162,19 +162,19 @@ chunk_dispatch_end(ExtensiblePlanState *node)
 }
 
 static void
-chunk_dispatch_rescan(ExtensiblePlanState *node)
+chunk_dispatch_rescan(CustomScanState *node)
 {
-	PlanState *substate = (PlanState*)linitial(node->extensible_ps);
+	PlanState *substate = linitial(node->custom_ps);
 
 	ExecReScan(substate);
 }
 
-static ExtensibleExecMethods chunk_dispatch_state_methods = {
-	.ExtensibleName = CHUNK_DISPATCH_STATE_NAME,
-	.BeginExtensiblePlan = chunk_dispatch_begin,
-	.ExecExtensiblePlan = chunk_dispatch_exec,
-	.EndExtensiblePlan = chunk_dispatch_end,
-	.ReScanExtensiblePlan = chunk_dispatch_rescan,
+static CustomExecMethods chunk_dispatch_state_methods = {
+	.CustomName = CHUNK_DISPATCH_STATE_NAME,
+	.BeginCustomScan = chunk_dispatch_begin,
+	.EndCustomScan = chunk_dispatch_end,
+	.ExecCustomScan = chunk_dispatch_exec,
+	.ReScanCustomScan = chunk_dispatch_rescan,
 };
 
 ChunkDispatchState *
@@ -182,7 +182,7 @@ ts_chunk_dispatch_state_create(Oid hypertable_relid, Plan *subplan)
 {
 	ChunkDispatchState *state;
 
-	state = (ChunkDispatchState *) newNode(sizeof(ChunkDispatchState), T_ExtensiblePlanState);
+	state = (ChunkDispatchState *) newNode(sizeof(ChunkDispatchState), T_CustomScanState);
 	state->hypertable_relid = hypertable_relid;
 	state->subplan = subplan;
 	state->cscan_state.methods = &chunk_dispatch_state_methods;

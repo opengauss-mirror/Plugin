@@ -10,14 +10,13 @@
 #include "extension.h"
 #include "launcher_interface.h"
 #include "compat.h"
-// #include "tsdb.h"
 
 #define MIN_LOADER_API_VERSION 3
 
 extern bool
 ts_bgw_worker_reserve(void)
 {
-	PGFunction reserve = load_external_function(EXTENSION_SO, "ts_bgw_worker_reserve", true, NULL,0);
+	PGFunction reserve = load_external_function(EXTENSION_SO, "ts_bgw_worker_reserve", true, NULL);
 
 	return DatumGetBool(
 		DirectFunctionCall1(reserve, BoolGetDatum(false))); /* no function call zero */
@@ -26,7 +25,7 @@ ts_bgw_worker_reserve(void)
 extern void
 ts_bgw_worker_release(void)
 {
-	PGFunction release = load_external_function(EXTENSION_SO, "ts_bgw_worker_release", true, NULL,0);
+	PGFunction release = load_external_function(EXTENSION_SO, "ts_bgw_worker_release", true, NULL);
 
 	DirectFunctionCall1(release, BoolGetDatum(false)); /* no function call zero */
 }
@@ -35,7 +34,7 @@ extern int
 ts_bgw_num_unreserved(void)
 {
 	PGFunction unreserved =
-		load_external_function(EXTENSION_SO, "ts_bgw_num_unreserved", true, NULL,0);
+		load_external_function(EXTENSION_SO, "ts_bgw_num_unreserved", true, NULL);
 
 	return DatumGetInt32(
 		DirectFunctionCall1(unreserved, BoolGetDatum(false))); /* no function call zero */
@@ -55,11 +54,10 @@ extern void
 ts_bgw_check_loader_api_version()
 {
 	int version = ts_bgw_loader_api_version();
-	int fit_og_version = 3; //  tsdb，新加进来的
 
-	if (version + fit_og_version < MIN_LOADER_API_VERSION)// tsdb,原本是version<MIN_LOADER_API_VERSION
+	if (version < MIN_LOADER_API_VERSION)
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-				 errmsg("loader version out-of-date %d", version),
+				 errmsg("loader version out-of-date"),
 				 errhint("Please restart the database to upgrade the loader version.")));
 }

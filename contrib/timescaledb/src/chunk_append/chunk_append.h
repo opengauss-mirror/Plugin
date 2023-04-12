@@ -12,7 +12,7 @@
 
 typedef struct ChunkAppendPath
 {
-	ExtensiblePath cpath;
+	CustomPath cpath;
 	bool startup_exclusion;
 	bool runtime_exclusion;
 	bool pushdown_limit;

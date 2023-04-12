@@ -80,8 +80,8 @@ estimate_max_spread_opexpr(PlannerInfo *root, OpExpr *opexpr)
 	if (list_length(opexpr->args) != 2 || strlen(function_name) != 1)
 		return INVALID_ESTIMATE;
 
-	left =(Expr *) linitial(opexpr->args);
-	right =(Expr *) lsecond(opexpr->args);
+	left = linitial(opexpr->args);
+	right = lsecond(opexpr->args);
 
 	if (IsA(left, Const))
 		nonconst = right;
@@ -187,8 +187,8 @@ group_estimate_opexpr(PlannerInfo *root, OpExpr *opexpr, double path_rows)
 	if (list_length(opexpr->args) != 2)
 		return INVALID_ESTIMATE;
 
-	first = eval_const_expressions(root,(Node *) linitial(opexpr->args));
-	second = eval_const_expressions(root,(Node *) lsecond(opexpr->args));
+	first = eval_const_expressions(root, linitial(opexpr->args));
+	second = eval_const_expressions(root, lsecond(opexpr->args));
 
 	estimate = group_estimate_integer_division(root, opexpr->opno, first, second);
 	if (IS_VALID_ESTIMATE(estimate))
@@ -224,7 +224,7 @@ ts_estimate_group(PlannerInfo *root, double path_rows)
 
 	foreach (lc, group_exprs)
 	{
-		Node *item =(Node *) lfirst(lc);
+		Node *item = lfirst(lc);
 		double estimate = group_estimate_expr(root, item, path_rows);
 
 		if (IS_VALID_ESTIMATE(estimate))

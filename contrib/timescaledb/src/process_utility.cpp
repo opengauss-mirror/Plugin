@@ -18,8 +18,8 @@
 #include <commands/trigger.h>
 #include <commands/tablecmds.h>
 #include <commands/cluster.h>
-//#include <commands/event_trigger.h>
-#include <access/htup.h>
+#include <commands/event_trigger.h>
+#include <access/htup_details.h>
 #include <access/xact.h>
 #include <storage/lmgr.h>
 #include <utils/rel.h>
@@ -37,7 +37,7 @@
 #include "compat.h"
 #if PG11_LT /* PG11 consolidates pg_foo_fn.h -> pg_foo.h */
 #include <catalog/pg_inherits_fn.h>
-//#include <catalog/pg_constraint_fn.h>
+#include <catalog/pg_constraint_fn.h>
 #endif
 
 #include <miscadmin.h>
@@ -71,7 +71,8 @@
 void _process_utility_init(void);
 void _process_utility_fini(void);
 
-static ProcessUtility_hook_type_tsdb prev_ProcessUtility_hook;
+static ProcessUtility_hook_type prev_ProcessUtility_hook;
+
 static bool expect_chunk_modification = false;
 static bool process_altertable_set_options(AlterTableCmd *cmd, Hypertable *ht);
 static bool process_altertable_reset_options(AlterTableCmd *cmd, Hypertable *ht);
@@ -94,7 +95,7 @@ prev_ProcessUtility(ProcessUtilityArgs *args)
 #else
 		(prev_ProcessUtility_hook)(args->parsetree,
 								   args->query_string,
-									args->context,
+								   args->context,
 								   args->params,
 								   args->dest,
 								   args->completion_tag);
@@ -278,7 +279,7 @@ process_add_hypertable(ProcessUtilityArgs *args, Hypertable *ht)
 static void
 add_chunk_oid(Hypertable *ht, Oid chunk_relid, void *vargs)
 {
-	ProcessUtilityArgs *args =(ProcessUtilityArgs *) vargs;
+	ProcessUtilityArgs *args = vargs;
 	GrantStmt *stmt = castNode(GrantStmt, args->parsetree);
 	Chunk *chunk = ts_chunk_get_by_relid(chunk_relid, true);
 	RangeVar *rv = makeRangeVar(NameStr(chunk->fd.schema_name), NameStr(chunk->fd.table_name), -1);
@@ -664,7 +665,7 @@ process_vacuum(ProcessUtilityArgs *args)
 static void
 process_truncate_chunk(Hypertable *ht, Oid chunk_relid, void *arg)
 {
-	TruncateStmt *stmt =(TruncateStmt *) arg;
+	TruncateStmt *stmt = arg;
 	ObjectAddress objaddr = {
 		.classId = RelationRelationId,
 		.objectId = chunk_relid,
@@ -681,8 +682,7 @@ relation_should_recurse(RangeVar *rv)
 #else
 	if (rv->inhOpt == INH_DEFAULT)
 	{
-		//tsdb 这个函数多次提到了
-		char *inherit_guc = GetConfigOptionByName("SQL_inheritance", NULL);
+		char *inherit_guc = GetConfigOptionByName("SQL_inheritance", NULL, false);
 
 		return strncmp(inherit_guc, "on", 2) == 0;
 	}
@@ -721,7 +721,7 @@ process_truncate(ProcessUtilityArgs *args)
 	 */
 	foreach (cell, stmt->relations)
 	{
-		RangeVar *rv =(RangeVar *) lfirst(cell);
+		RangeVar *rv = lfirst(cell);
 		Oid relid;
 
 		if (NULL == rv)
@@ -785,8 +785,7 @@ process_truncate(ProcessUtilityArgs *args)
 												-1));
 
 					/* TRUNCATE the compressed hypertable */
-					//tsdb 这里增加NULL,匹配og
-					ExecuteTruncate(&compressed_stmt,NULL);
+					ExecuteTruncate(&compressed_stmt);
 
 					handle_truncate_hypertable(args, stmt, compressed_ht);
 				}
@@ -802,7 +801,7 @@ process_truncate(ProcessUtilityArgs *args)
 static void
 process_drop_table_chunk(Hypertable *ht, Oid chunk_relid, void *arg)
 {
-	DropStmt *stmt =(DropStmt *) arg;
+	DropStmt *stmt = arg;
 	ObjectAddress objaddr = {
 		.classId = RelationRelationId,
 		.objectId = chunk_relid,
@@ -820,7 +819,7 @@ process_drop_chunk(ProcessUtilityArgs *args, DropStmt *stmt)
 
 	foreach (lc, stmt->objects)
 	{
-		List *object =(List *) lfirst(lc);
+		List *object = lfirst(lc);
 		RangeVar *relation = makeRangeVarFromNameList(object);
 		Oid relid;
 		Chunk *chunk;
@@ -867,7 +866,7 @@ process_drop_hypertable(ProcessUtilityArgs *args, DropStmt *stmt)
 
 	foreach (lc, stmt->objects)
 	{
-		List *object =(List *) lfirst(lc);
+		List *object = lfirst(lc);
 		RangeVar *relation = makeRangeVarFromNameList(object);
 		Oid relid;
 
@@ -933,7 +932,7 @@ process_drop_hypertable_index(ProcessUtilityArgs *args, DropStmt *stmt)
 
 	foreach (lc, stmt->objects)
 	{
-		List *object =(List *) lfirst(lc);
+		List *object = lfirst(lc);
 		RangeVar *relation = makeRangeVarFromNameList(object);
 		Oid relid;
 		Hypertable *ht;
@@ -1058,7 +1057,7 @@ block_dropping_continuous_aggregates_without_cascade(ProcessUtilityArgs *args, D
 
 	foreach (lc, stmt->objects)
 	{
-		List *object =(List *) lfirst(lc);
+		List *object = lfirst(lc);
 		RangeVar *relation = makeRangeVarFromNameList(object);
 		Oid relid;
 		char *schema;
@@ -1113,7 +1112,7 @@ process_drop_start(ProcessUtilityArgs *args)
 static void
 reindex_chunk(Hypertable *ht, Oid chunk_relid, void *arg)
 {
-	ProcessUtilityArgs *args =(ProcessUtilityArgs *) arg;
+	ProcessUtilityArgs *args = arg;
 	ReindexStmt *stmt = (ReindexStmt *) args->parsetree;
 	Chunk *chunk = ts_chunk_get_by_relid(chunk_relid, true);
 
@@ -1363,7 +1362,7 @@ static void
 validate_hypertable_constraint(Hypertable *ht, Oid chunk_relid, void *arg)
 {
 	AlterTableCmd *cmd = (AlterTableCmd *) arg;
-	AlterTableCmd *chunk_cmd =(AlterTableCmd *) copyObject(cmd);
+	AlterTableCmd *chunk_cmd = copyObject(cmd);
 
 	chunk_cmd->name =
 		ts_chunk_constraint_get_name_from_hypertable_constraint(chunk_relid, cmd->name);
@@ -1456,7 +1455,7 @@ process_rename(ProcessUtilityArgs *args)
 static void
 process_altertable_change_owner_chunk(Hypertable *ht, Oid chunk_relid, void *arg)
 {
-	AlterTableCmd *cmd =(AlterTableCmd *) arg;
+	AlterTableCmd *cmd = arg;
 	Oid roleid = get_rolespec_oid(cmd->newowner, false);
 
 	ATExecChangeOwner(chunk_relid, roleid, false, AccessExclusiveLock);
@@ -1658,7 +1657,7 @@ verify_constraint_list(RangeVar *relation, List *constraint_list)
 
 	foreach (lc, constraint_list)
 	{
-		Constraint *constraint =(Constraint *) lfirst(lc);
+		Constraint *constraint = lfirst(lc);
 
 		verify_constraint(relation, constraint);
 	}
@@ -1875,14 +1874,9 @@ process_index_start(ProcessUtilityArgs *args)
 	WithClauseResult *parsed_with_clauses;
 	CreateIndexInfo info = {
 		.stmt = stmt,
-		.obj = {},
-		.main_table_relid = NULL,
-// #ifdef DEBUG
-// 		.extended_options = {0, .max_chunks = -1,},
-		
-// #endif
-		.extended_options = {},
-		.mctx = NULL,
+#ifdef DEBUG
+		.extended_options = {0, .max_chunks = -1,},
+#endif
 	};
 	ObjectAddress root_table_index;
 	Relation main_table_relation;
@@ -2159,7 +2153,7 @@ process_cluster_start(ProcessUtilityArgs *args)
 		 * The list of chunks and their indexes need to be on a memory context
 		 * that will survive moving to a new transaction for each chunk
 		 */
-		mcxt = AllocSetContextCreate(t_thrd.mem_cxt.portal_mem_cxt, "Hypertable cluster", ALLOCSET_DEFAULT_SIZES);
+		mcxt = AllocSetContextCreate(PortalContext, "Hypertable cluster", ALLOCSET_DEFAULT_SIZES);
 
 		/*
 		 * Get a list of chunks and indexes that correspond to the
@@ -2175,11 +2169,11 @@ process_cluster_start(ProcessUtilityArgs *args)
 			 * it only for "verbose" output, but this doesn't seem worth it as the
 			 * cost of sorting is quickly amortized over the actual work to cluster
 			 * the chunks. */
-			mappings =(ChunkIndexMapping **) palloc(sizeof(ChunkIndexMapping *) * list_length(chunk_indexes));
+			mappings = palloc(sizeof(ChunkIndexMapping *) * list_length(chunk_indexes));
 
 			i = 0;
 			foreach (lc, chunk_indexes)
-				mappings[i++] =(ChunkIndexMapping *) lfirst(lc);
+				mappings[i++] = lfirst(lc);
 
 			qsort(mappings,
 				  list_length(chunk_indexes),
@@ -2275,7 +2269,7 @@ process_create_table_end(Node *parsetree)
 		switch (nodeTag(lfirst(lc)))
 		{
 			case T_ColumnDef:
-				coldef =(ColumnDef *) lfirst(lc);
+				coldef = lfirst(lc);
 				verify_constraint_list(stmt->relation, coldef->constraints);
 				break;
 			case T_Constraint:
@@ -2284,7 +2278,7 @@ process_create_table_end(Node *parsetree)
 				 * There should be no Constraints in the list after parse
 				 * analysis, but this case is included anyway for completeness
 				 */
-				verify_constraint(stmt->relation,(Constraint *) lfirst(lc));
+				verify_constraint(stmt->relation, lfirst(lc));
 				break;
 			case T_TableLikeClause:
 				/* Some as above case */
@@ -2298,7 +2292,7 @@ process_create_table_end(Node *parsetree)
 static inline const char *
 typename_get_unqual_name(TypeName *tn)
 {
-	Value *name =(Value *) llast(tn->names);
+	Value *name = llast(tn->names);
 
 	return name->val.str;
 }
@@ -2353,7 +2347,7 @@ process_altertable_clusteron_end(Hypertable *ht, AlterTableCmd *cmd)
 
 	foreach (lc, chunk_indexes)
 	{
-		ChunkIndexMapping *cim =(ChunkIndexMapping *) lfirst(lc);
+		ChunkIndexMapping *cim = lfirst(lc);
 
 		ts_chunk_index_mark_clustered(cim->chunkoid, cim->indexoid);
 	}
@@ -2367,7 +2361,7 @@ process_altertable_clusteron_end(Hypertable *ht, AlterTableCmd *cmd)
 static void
 process_altertable_chunk(Hypertable *ht, Oid chunk_relid, void *arg)
 {
-	AlterTableCmd *cmd =(AlterTableCmd *) arg;
+	AlterTableCmd *cmd = arg;
 
 	AlterTableInternal(chunk_relid, list_make1(cmd), false);
 }
@@ -2524,10 +2518,10 @@ process_altertable_start_table(ProcessUtilityArgs *args)
 
 				if (NULL == ht)
 					foreach (constraint_lc, col->constraints)
-						verify_constraint_plaintable(stmt->relation,(Constraint *) lfirst(constraint_lc));
+						verify_constraint_plaintable(stmt->relation, lfirst(constraint_lc));
 				else
 					foreach (constraint_lc, col->constraints)
-						verify_constraint_hypertable(ht,(Node *) lfirst(constraint_lc));
+						verify_constraint_hypertable(ht, lfirst(constraint_lc));
 				break;
 			}
 			case AT_DropColumn:
@@ -2901,7 +2895,7 @@ process_altertable_end_simple_cmd(Hypertable *ht, CollectedCommand *cmd)
 	AlterTableStmt *stmt = (AlterTableStmt *) cmd->parsetree;
 
 	Assert(IsA(stmt, AlterTableStmt));
-	process_altertable_end_subcmd(ht,(Node*) linitial(stmt->cmds), &cmd->d.simple.secondaryObject);
+	process_altertable_end_subcmd(ht, linitial(stmt->cmds), &cmd->d.simple.secondaryObject);
 }
 
 static void
@@ -2911,7 +2905,7 @@ process_altertable_end_subcmds(Hypertable *ht, List *cmds)
 
 	foreach (lc, cmds)
 	{
-		CollectedATSubcmd *cmd =(CollectedATSubcmd *) lfirst(lc);
+		CollectedATSubcmd *cmd = lfirst(lc);
 
 		process_altertable_end_subcmd(ht, cmd->parsetree, &cmd->address);
 	}
@@ -3277,7 +3271,7 @@ process_ddl_command_end(CollectedCommand *cmd)
 static void
 process_drop_constraint_on_chunk(Hypertable *ht, Oid chunk_relid, void *arg)
 {
-	char *hypertable_constraint_name =(char *) arg;
+	char *hypertable_constraint_name = arg;
 	Chunk *chunk = ts_chunk_get_by_relid(chunk_relid, true);
 
 	/* drop both metadata and table; sql_drop won't be called recursively */
@@ -3450,21 +3444,20 @@ timescaledb_ddl_command_start(
 	DestReceiver *dest, char *completion_tag)
 {
 	ProcessUtilityArgs args = {
-		.hcache = NULL,
-	#if PG10_GE
-		.pstmt = pstmt,
-		.parsetree = pstmt->utilityStmt,
-		.queryEnv = queryEnv,
-		.parse_state = make_parsestate(NULL),
-	#else
-		.parsetree = parsetree,
-	#endif
 		.query_string = query_string,
 		.context = context,
 		.params = params,
 		.dest = dest,
-		.hypertable_list = NIL,
 		.completion_tag = completion_tag,
+#if PG10_GE
+		.pstmt = pstmt,
+		.parsetree = pstmt->utilityStmt,
+		.queryEnv = queryEnv,
+		.parse_state = make_parsestate(NULL),
+#else
+		.parsetree = parsetree,
+#endif
+		.hypertable_list = NIL
 	};
 
 	bool altering_timescaledb = false;
@@ -3527,7 +3520,7 @@ process_ddl_event_command_end(EventTriggerData *trigdata)
 		case T_CreateStmt:
 		case T_IndexStmt:
 			foreach (lc, ts_event_trigger_ddl_commands())
-				process_ddl_command_end((CollectedCommand*)lfirst(lc));
+				process_ddl_command_end(lfirst(lc));
 			break;
 		default:
 			break;
@@ -3546,7 +3539,7 @@ process_ddl_event_sql_drop(EventTriggerData *trigdata)
 		ts_cm_functions->sql_drop(dropped_objects);
 
 	foreach (lc, dropped_objects)
-		process_ddl_sql_drop((EventTriggerDropObject *)lfirst(lc));
+		process_ddl_sql_drop(lfirst(lc));
 }
 
 TS_FUNCTION_INFO_V1(ts_timescaledb_process_ddl_event);
@@ -3617,8 +3610,8 @@ process_utility_subxact_abort(SubXactEvent event, SubTransactionId mySubid,
 void
 _process_utility_init(void)
 {
-	prev_ProcessUtility_hook = ProcessUtility_hook_tsdb;
-	ProcessUtility_hook_tsdb = timescaledb_ddl_command_start;
+	prev_ProcessUtility_hook = ProcessUtility_hook;
+	ProcessUtility_hook = timescaledb_ddl_command_start;
 	RegisterXactCallback(process_utility_xact_abort, NULL);
 	RegisterSubXactCallback(process_utility_subxact_abort, NULL);
 }
@@ -3626,7 +3619,7 @@ _process_utility_init(void)
 void
 _process_utility_fini(void)
 {
-	ProcessUtility_hook_tsdb = prev_ProcessUtility_hook;
+	ProcessUtility_hook = prev_ProcessUtility_hook;
 	UnregisterXactCallback(process_utility_xact_abort, NULL);
 	UnregisterSubXactCallback(process_utility_subxact_abort, NULL);
 }

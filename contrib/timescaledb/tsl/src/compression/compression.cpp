@@ -7,7 +7,7 @@
 #include "compression/compression.h"
 
 #include <access/heapam.h>
-#include <access/htup.h>
+#include <access/htup_details.h>
 #include <access/multixact.h>
 #include <access/xact.h>
 #include <catalog/namespace.h>
@@ -51,7 +51,6 @@
 #define COMPRESSIONCOL_IS_ORDER_BY(col) (col->orderby_column_index > 0)
 
 static const CompressionAlgorithmDefinition definitions[_END_COMPRESSION_ALGORITHMS] = {
-	[_INVALID_COMPRESSION_ALGORITHM] = {},
 	[COMPRESSION_ALGORITHM_ARRAY] = ARRAY_ALGORITHM_DEFINITION,
 	[COMPRESSION_ALGORITHM_DICTIONARY] = DICTIONARY_ALGORITHM_DEFINITION,
 	[COMPRESSION_ALGORITHM_GORILLA] = GORILLA_ALGORITHM_DEFINITION,
@@ -186,7 +185,7 @@ truncate_relation(Oid table_oid)
 							  rel->rd_rel->relpersistence
 #if PG12_LT
 							  ,
-							  u_sess->utils_cxt.RecentXmin,
+							  RecentXmin,
 							  minmulti
 #endif
 	);
@@ -202,7 +201,7 @@ truncate_relation(Oid table_oid)
 								  rel->rd_rel->relpersistence
 #if PG12_LT
 								  ,
-								  u_sess->utils_cxt.RecentXmin,
+								  RecentXmin,
 								  minmulti
 #endif
 		);
@@ -278,7 +277,7 @@ static int16 *
 compress_chunk_populate_keys(Oid in_table, const ColumnCompressionInfo **columns, int n_columns,
 							 int *n_keys_out, const ColumnCompressionInfo ***keys_out)
 {
-	int16 *column_offsets =(int16 *) palloc(sizeof(*column_offsets) * n_columns);
+	int16 *column_offsets = palloc(sizeof(*column_offsets) * n_columns);
 
 	int i;
 	int n_segment_keys = 0;
@@ -296,7 +295,7 @@ compress_chunk_populate_keys(Oid in_table, const ColumnCompressionInfo **columns
 	if (*n_keys_out == 0)
 		elog(ERROR, "compression should be configured with an orderby or segment by");
 
-	*keys_out =(const ColumnCompressionInfo **) palloc(sizeof(**keys_out) * *n_keys_out);
+	*keys_out = palloc(sizeof(**keys_out) * *n_keys_out);
 
 	for (i = 0; i < n_columns; i++)
 	{
@@ -334,10 +333,10 @@ compress_chunk_sort_relation(Relation in_rel, int n_keys, const ColumnCompressio
 	HeapTuple tuple;
 	TableScanDesc heapScan;
 	TupleTableSlot *heap_tuple_slot = MakeTupleTableSlotCompat(tupDesc, TTSOpsHeapTupleP);
-	AttrNumber *sort_keys =(AttrNumber *) palloc(sizeof(*sort_keys) * n_keys);
-	Oid *sort_operators =(Oid *) palloc(sizeof(*sort_operators) * n_keys);
-	Oid *sort_collations =(Oid *) palloc(sizeof(*sort_collations) * n_keys);
-	bool *nulls_first =(bool *) palloc(sizeof(*nulls_first) * n_keys);
+	AttrNumber *sort_keys = palloc(sizeof(*sort_keys) * n_keys);
+	Oid *sort_operators = palloc(sizeof(*sort_operators) * n_keys);
+	Oid *sort_collations = palloc(sizeof(*sort_collations) * n_keys);
+	bool *nulls_first = palloc(sizeof(*nulls_first) * n_keys);
 	int n;
 
 	for (n = 0; n < n_keys; n++)
@@ -354,16 +353,15 @@ compress_chunk_sort_relation(Relation in_rel, int n_keys, const ColumnCompressio
 										  sort_operators,
 										  sort_collations,
 										  nulls_first,
-										  u_sess->attr.attr_memory.work_mem,
+										  work_mem,
 #if PG11_GE
 										  NULL,
 #endif
 										  false /*=randomAccess*/);
 
 	heapScan = table_beginscan(in_rel, GetLatestSnapshot(), 0, (ScanKey) NULL);
-	//tsdb 这里本来没有强制类型转化(TableScanDescData *)
-	for (tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection); tuple != NULL;
-		 tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection))
+	for (tuple = heap_getnext(heapScan, ForwardScanDirection); tuple != NULL;
+		 tuple = heap_getnext(heapScan, ForwardScanDirection))
 	{
 		if (HeapTupleIsValid(tuple))
 		{
@@ -477,16 +475,16 @@ row_compressor_init(RowCompressor *row_compressor, TupleDesc uncompressed_tuple_
 		.compressed_table = compressed_table,
 		.bistate = GetBulkInsertState(),
 		.n_input_columns = uncompressed_tuple_desc->natts,
-		.per_column =(PerColumn *) palloc0(sizeof(PerColumn) * uncompressed_tuple_desc->natts),
+		.per_column = palloc0(sizeof(PerColumn) * uncompressed_tuple_desc->natts),
 		.uncompressed_col_to_compressed_col =
-			(int16 *)palloc0(sizeof(*row_compressor->uncompressed_col_to_compressed_col) *
+			palloc0(sizeof(*row_compressor->uncompressed_col_to_compressed_col) *
 					uncompressed_tuple_desc->natts),
 		.count_metadata_column_offset = AttrNumberGetAttrOffset(count_metadata_column_num),
 		.sequence_num_metadata_column_offset = AttrNumberGetAttrOffset(sequence_num_column_num),
+		.compressed_values = palloc(sizeof(Datum) * num_columns_in_compressed_table),
+		.compressed_is_null = palloc(sizeof(bool) * num_columns_in_compressed_table),
 		.rows_compressed_into_current_value = 0,
 		.sequence_num = SEQUENCE_NUM_GAP,
-		.compressed_values =(Datum *) palloc(sizeof(Datum) * num_columns_in_compressed_table),
-		.compressed_is_null =(bool*)  palloc(sizeof(bool) * num_columns_in_compressed_table),
 	};
 
 	memset(row_compressor->compressed_is_null, 1, sizeof(bool) * num_columns_in_compressed_table);
@@ -534,7 +532,7 @@ row_compressor_init(RowCompressor *row_compressor, TupleDesc uncompressed_tuple_
 														column_attr->attcollation);
 			}
 			*column = (PerColumn){
-				.compressor = compressor_for_algorithm_and_type((CompressionAlgorithms)compression_info->algo_id,
+				.compressor = compressor_for_algorithm_and_type(compression_info->algo_id,
 																column_attr->atttypid),
 				.min_metadata_attr_offset = segment_min_attr_offset,
 				.max_metadata_attr_offset = segment_max_attr_offset,
@@ -548,12 +546,9 @@ row_compressor_init(RowCompressor *row_compressor, TupleDesc uncompressed_tuple_
 					 "expected segment by column \"%s\" to be same type as uncompressed column",
 					 compression_info->attname.data);
 			*column = (PerColumn){
-				.compressor = {},
+				.segment_info = segment_info_new(column_attr),
 				.min_metadata_attr_offset = -1,
 				.max_metadata_attr_offset = -1,
-				.min_max_metadata_builder = {},
-				.segment_info = segment_info_new(column_attr),
-				
 			};
 		}
 	}
@@ -852,14 +847,10 @@ segment_info_new(Form_pg_attribute column_attr)
 {
 	Oid eq_fn_oid =
 		lookup_type_cache(column_attr->atttypid, TYPECACHE_EQ_OPR_FINFO)->eq_opr_finfo.fn_oid;
-	SegmentInfo *segment_info =(SegmentInfo *) palloc(sizeof(*segment_info));
+	SegmentInfo *segment_info = palloc(sizeof(*segment_info));
 
 	*segment_info = (SegmentInfo){
-		.val = NULL,
-		.eq_fn = {},
-		.eq_fcinfo = {},
 		.typlen = column_attr->attlen,
-		.is_null = NULL,
 		.typ_by_val = column_attr->attbyval,
 	};
 
@@ -867,7 +858,7 @@ segment_info_new(Form_pg_attribute column_attr)
 		elog(ERROR, "no equality function for column \"%s\"", NameStr(column_attr->attname));
 	fmgr_info_cxt(eq_fn_oid, &segment_info->eq_fn, CurrentMemoryContext);
 
-	segment_info->eq_fcinfo =(FunctionCallInfo) HEAP_FCINFO(2);
+	segment_info->eq_fcinfo = HEAP_FCINFO(2);
 	InitFunctionCallInfoData(*segment_info->eq_fcinfo,
 							 &segment_info->eq_fn /*=Flinfo*/,
 							 2 /*=Nargs*/,
@@ -1013,11 +1004,11 @@ decompress_chunk(Oid in_table, Oid out_table)
 			.bistate = GetBulkInsertState(),
 
 			/* cache memory used to store the decompressed datums/is_null for form_tuple */
-			.decompressed_datums =(Datum *) palloc(sizeof(Datum) * out_desc->natts),
-			.decompressed_is_nulls =(bool *) palloc(sizeof(bool) * out_desc->natts),
+			.decompressed_datums = palloc(sizeof(Datum) * out_desc->natts),
+			.decompressed_is_nulls = palloc(sizeof(bool) * out_desc->natts),
 		};
-		Datum *compressed_datums =(Datum *) palloc(sizeof(*compressed_datums) * in_desc->natts);
-		bool *compressed_is_nulls =(bool *)  palloc(sizeof(*compressed_is_nulls) * in_desc->natts);
+		Datum *compressed_datums = palloc(sizeof(*compressed_datums) * in_desc->natts);
+		bool *compressed_is_nulls = palloc(sizeof(*compressed_is_nulls) * in_desc->natts);
 
 		HeapTuple compressed_tuple;
 		TableScanDesc heapScan = table_beginscan(in_rel, GetLatestSnapshot(), 0, (ScanKey) NULL);
@@ -1025,10 +1016,10 @@ decompress_chunk(Oid in_table, Oid out_table)
 			AllocSetContextCreate(CurrentMemoryContext,
 								  "decompress chunk per-compressed row",
 								  ALLOCSET_DEFAULT_SIZES);
-		//tsdb 这里本来没有强制类型转化(TableScanDescData *)
-		for (compressed_tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection);
+
+		for (compressed_tuple = heap_getnext(heapScan, ForwardScanDirection);
 			 compressed_tuple != NULL;
-			 compressed_tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection))
+			 compressed_tuple = heap_getnext(heapScan, ForwardScanDirection))
 		{
 			MemoryContext old_ctx;
 
@@ -1064,7 +1055,7 @@ create_per_compressed_column(TupleDesc in_desc, TupleDesc out_desc, Oid out_reli
 							 Oid compressed_data_type_oid)
 {
 	PerCompressedColumn *per_compressed_cols =
-	(PerCompressedColumn *)	palloc(sizeof(*per_compressed_cols) * in_desc->natts);
+		palloc(sizeof(*per_compressed_cols) * in_desc->natts);
 
 	Assert(OidIsValid(compressed_data_type_oid));
 
@@ -1085,13 +1076,8 @@ create_per_compressed_column(TupleDesc in_desc, TupleDesc out_desc, Oid out_reli
 		if (!AttributeNumberIsValid(decompressed_colnum))
 		{
 			*per_compressed_col = (PerCompressedColumn){
-				.decompressed_type = NULL,
-				.iterator = {},
-				.val = NULL,
-				.is_compressed = NULL,
-				.is_null = true,
 				.decompressed_column_offset = -1,
-				
+				.is_null = true,
 			};
 			continue;
 		}
@@ -1111,13 +1097,10 @@ create_per_compressed_column(TupleDesc in_desc, TupleDesc out_desc, Oid out_reli
 				 col_name);
 
 		*per_compressed_col = (PerCompressedColumn){
-		
-			.decompressed_type = decompressed_type,
-			.iterator = {},
-			.val = NULL,
-			.is_compressed = is_compressed,
-			.is_null = true,
 			.decompressed_column_offset = decompressed_column_offset,
+			.is_null = true,
+			.is_compressed = is_compressed,
+			.decompressed_type = decompressed_type,
 		};
 	}
 
@@ -1285,7 +1268,7 @@ tsl_compressed_data_decompress_forward(PG_FUNCTION_ARGS)
 
 	funcctx = SRF_PERCALL_SETUP();
 
-	iter =(DecompressionIterator *) funcctx->user_fctx;
+	iter = funcctx->user_fctx;
 	res = iter->try_next(iter);
 
 	if (res.is_done)
@@ -1327,7 +1310,7 @@ tsl_compressed_data_decompress_reverse(PG_FUNCTION_ARGS)
 
 	funcctx = SRF_PERCALL_SETUP();
 
-	iter =(DecompressionIterator *) funcctx->user_fctx;
+	iter = funcctx->user_fctx;
 	res = iter->try_next(iter);
 
 	if (res.is_done)
@@ -1378,7 +1361,7 @@ tsl_compressed_data_in(PG_FUNCTION_ARGS)
 		elog(ERROR, "input too long");
 
 	decoded_len = pg_b64_dec_len(input_len);
-	decoded =(char*) palloc(decoded_len + 1);
+	decoded = palloc(decoded_len + 1);
 	decoded_len = pg_b64_decode(input, input_len, decoded);
 	decoded[decoded_len] = '\0';
 	data = (StringInfoData){
@@ -1400,7 +1383,7 @@ tsl_compressed_data_out(PG_FUNCTION_ARGS)
 	int raw_len = VARSIZE_ANY_EXHDR(bytes);
 	const char *raw_data = VARDATA(bytes);
 	int encoded_len = pg_b64_enc_len(raw_len);
-	char *encoded =(char*) palloc(encoded_len + 1);
+	char *encoded = palloc(encoded_len + 1);
 	encoded_len = pg_b64_encode(raw_data, raw_len, encoded);
 	encoded[encoded_len] = '\0';
 

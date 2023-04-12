@@ -6,7 +6,7 @@
 
 #include <postgres.h>
 #include <fmgr.h>
-#include <access/htup.h>
+#include <access/htup_details.h>
 #include <catalog/dependency.h>
 #include <catalog/namespace.h>
 #include <catalog/pg_type.h>
@@ -111,7 +111,7 @@ parse_segment_collist(char *inpstr, Hypertable *hypertable)
 #if PG96
 	if (!IsA(linitial(parsed), SelectStmt))
 		throw_segment_by_error(inpstr);
-	select =(SelectStmt *) linitial(parsed);
+	select = linitial(parsed);
 #else
 	if (!IsA(linitial(parsed), RawStmt))
 		throw_segment_by_error(inpstr);
@@ -135,7 +135,7 @@ parse_segment_collist(char *inpstr, Hypertable *hypertable)
 
 		if (!IsA(lfirst(lc), ColumnRef))
 			throw_segment_by_error(inpstr);
-		cf =(ColumnRef *) lfirst(lc);
+		cf = lfirst(lc);
 		if (list_length(cf->fields) != 1)
 			throw_segment_by_error(inpstr);
 
@@ -204,7 +204,7 @@ parse_order_collist(char *inpstr, Hypertable *hypertable)
 #if PG96
 	if (!IsA(linitial(parsed), SelectStmt))
 		throw_order_by_error(inpstr);
-	select =(SelectStmt *) linitial(parsed);
+	select = linitial(parsed);
 #else
 	if (!IsA(linitial(parsed), RawStmt))
 		throw_order_by_error(inpstr);
@@ -228,7 +228,7 @@ parse_order_collist(char *inpstr, Hypertable *hypertable)
 
 		if (!IsA(lfirst(lc), SortBy))
 			throw_order_by_error(inpstr);
-		sort_by =(SortBy *) lfirst(lc);
+		sort_by = lfirst(lc);
 
 		if (!IsA(sort_by->node, ColumnRef))
 			throw_order_by_error(inpstr);

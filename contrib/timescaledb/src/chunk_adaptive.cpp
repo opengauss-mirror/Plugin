@@ -460,7 +460,7 @@ ts_calculate_chunk_interval(PG_FUNCTION_ARGS)
 
 	foreach (lc, chunks)
 	{
-		Chunk *chunk = (Chunk *)lfirst(lc);
+		Chunk *chunk = lfirst(lc);
 		DimensionSlice *slice = ts_hypercube_get_slice_by_dimension_id(chunk->cube, dimension_id);
 		int64 chunk_size, slice_interval;
 		Datum minmax[2];
@@ -628,13 +628,11 @@ ts_chunk_sizing_func_validate(regproc func, ChunkSizingInfo *info)
 		typearr[1] != INT8OID || typearr[2] != INT8OID || form->prorettype != INT8OID)
 	{
 		ReleaseSysCache(tuple);
-		#ifndef OG30
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_FUNCTION_DEFINITION),
 				 errmsg("invalid function signature"),
 				 errhint("A chunk sizing function's signature should be (int, bigint, bigint) -> "
 						 "bigint")));
-		#endif
 	}
 
 	if (NULL != info)
@@ -738,9 +736,8 @@ ts_chunk_adaptive_set(PG_FUNCTION_ARGS)
 {
 	ChunkSizingInfo info = {
 		.table_relid = PG_GETARG_OID(0),
-		.func = PG_ARGISNULL(2) ? InvalidOid : PG_GETARG_OID(2),
 		.target_size = PG_ARGISNULL(1) ? NULL : PG_GETARG_TEXT_P(1),
-		
+		.func = PG_ARGISNULL(2) ? InvalidOid : PG_GETARG_OID(2),
 		.colname = NULL,
 		.check_for_index = true,
 	};
@@ -827,12 +824,11 @@ get_default_chunk_sizing_fn_oid()
 ChunkSizingInfo *
 ts_chunk_sizing_info_get_default_disabled(Oid table_relid)
 {
-	ChunkSizingInfo *chunk_sizing_info =(ChunkSizingInfo *) palloc(sizeof(*chunk_sizing_info));
+	ChunkSizingInfo *chunk_sizing_info = palloc(sizeof(*chunk_sizing_info));
 	*chunk_sizing_info = (ChunkSizingInfo){
 		.table_relid = table_relid,
-		.func = get_default_chunk_sizing_fn_oid(),
 		.target_size = NULL,
-		
+		.func = get_default_chunk_sizing_fn_oid(),
 		.colname = NULL,
 		.check_for_index = false,
 	};

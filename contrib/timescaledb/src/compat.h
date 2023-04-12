@@ -3,7 +3,6 @@
  * Please see the included NOTICE for copyright information and
  * LICENSE-APACHE for a copy of the license.
  */
-
 #ifndef TIMESCALEDB_COMPAT_H
 #define TIMESCALEDB_COMPAT_H
 
@@ -20,12 +19,7 @@
 #include "export.h"
 #include "import/planner.h"
 
-#include "tsdb.h"
-#include "tsdb_head.h"
-//#include "compression/compression.h"//10-22注释
-
-#define is_supported_og_version_30(version) ((version >= 90204) && (version < 100000))
-#define is_supported_pg_version_96(version) ((version >= 90204) && (version < 100000))
+#define is_supported_pg_version_96(version) ((version >= 90603) && (version < 100000))
 #define is_supported_pg_version_10(version) ((version >= 100002) && (version < 110000))
 #define is_supported_pg_version_11(version) ((version >= 110000) && (version < 120000))
 #define is_supported_pg_version_12(version) ((version >= 120000) && (version < 130000))
@@ -34,7 +28,6 @@
 	(is_supported_pg_version_96(version) || is_supported_pg_version_10(version) ||                 \
 	 is_supported_pg_version_11(version) || is_supported_pg_version_12(version))
 
-#define OG30 is_supported_og_version_30(PG_VERSION_NUM)
 #define PG96 is_supported_pg_version_96(PG_VERSION_NUM)
 #define PG10 is_supported_pg_version_10(PG_VERSION_NUM)
 #define PG11 is_supported_pg_version_11(PG_VERSION_NUM)
@@ -191,9 +184,8 @@
  * partitioned tables, InvalidOid otherwise.
  * The PG96 interface is used for compatibility.
  */
-//tsdb 原为#define DefineIndexCompat DefineIndex
 #if PG96
-#define DefineIndexCompat DefineIndex_tsdb
+#define DefineIndexCompat DefineIndex
 #elif PG10
 #define DefineIndexCompat(relationId,                                                              \
 						  stmt,                                                                    \
@@ -232,7 +224,7 @@
 
 #if PG96
 #define DefineRelationCompat(stmt, relkind, ownerid, typaddress, queryString)                      \
-	DefineRelation(stmt, relkind, ownerid, typaddress,0)
+	DefineRelation(stmt, relkind, ownerid, typaddress)
 #else
 #define DefineRelationCompat(stmt, relkind, ownerid, typaddress, queryString)                      \
 	DefineRelation(stmt, relkind, ownerid, typaddress, queryString)
@@ -244,7 +236,7 @@
 #else
 #define ExecInsertIndexTuplesCompat(slot, estate, no_dup_err, spec_conflict, arbiter_indexes)      \
 	ExecInsertIndexTuples(slot,                                                                    \
-						  &(((HeapTuple)(slot)->tts_tuple)->t_self),                               \
+						  &((slot)->tts_tuple->t_self),                                            \
 						  estate,                                                                  \
 						  no_dup_err,                                                              \
 						  spec_conflict,                                                           \
@@ -253,14 +245,12 @@
 
 /* ExecARInsertTriggers */
 #if PG96
-//tsdb ExecARInsertTriggers这个原来没有倒数第二项NULL
-//原本函数为ExecARInsertTriggers(estate, relinfo, tuple, recheck_indexes);
 #define ExecARInsertTriggersCompat(estate, relinfo, slot, recheck_indexes, transition_capture)     \
 	do                                                                                             \
 	{                                                                                              \
 		bool should_free;                                                                          \
 		HeapTuple tuple = ExecFetchSlotHeapTuple(slot, true, &should_free);                        \
-		ExecARInsertTriggers(estate, relinfo,NULL, NULL, tuple, recheck_indexes);                             \
+		ExecARInsertTriggers(estate, relinfo, tuple, recheck_indexes);                             \
 		if (should_free)                                                                           \
 			heap_freetuple(tuple);                                                                 \
 	} while (0);
@@ -406,7 +396,7 @@ MakeTupleTableSlotCompat(TupleDesc tupdesc, void *tts_ops)
 #define LOCAL_FCINFO(name, nargs)                                                                  \
 	union                                                                                          \
 	{                                                                                              \
-		FunctionCallInfoData fcinfo ={};                                                               \
+		FunctionCallInfoData fcinfo;                                                               \
 	} name##data;                                                                                  \
 	FunctionCallInfo name = &name##data.fcinfo
 
@@ -501,7 +491,7 @@ get_attname_compat(Oid relid, AttrNumber attnum, bool missing_ok)
  * simply omit in earlier versions.
  */
 #if PG11_LT
-#define heap_attisnull_compat(tup, attnum, tupledesc) heap_attisnull(tup, attnum, tupledesc)
+#define heap_attisnull_compat(tup, attnum, tupledesc) heap_attisnull(tup, attnum)
 #else
 #define heap_attisnull_compat heap_attisnull
 #endif
@@ -722,11 +712,11 @@ get_attname_compat(Oid relid, AttrNumber attnum, bool missing_ok)
 #define RVR_MISSING_OK (1 << 0)
 #define RVR_NOWAIT (1 << 1)
 #define RangeVarGetRelidExtendedCompat(relation, lockmode, flags, callback, callback_arg)          \
-	RangeVarGetRelidExtended_tsdb(relation,                                                             \
+	RangeVarGetRelidExtended(relation,                                                             \
 							 lockmode,                                                             \
 							 (flags & RVR_MISSING_OK) != 0,                                        \
 							 (flags & RVR_NOWAIT) != 0,                                            \
-							 (RangeVarGetRelidCallback_tsdb)callback,                                                             \
+							 callback,                                                             \
 							 callback_arg)
 #else
 #define RangeVarGetRelidExtendedCompat RangeVarGetRelidExtended
@@ -736,9 +726,7 @@ get_attname_compat(Oid relid, AttrNumber attnum, bool missing_ok)
  */
 #if PG12_LT
 #define RenameRelationInternalCompat(relid, name, is_internal, is_index)                           \
-	RenameRelationInternal(relid, name)
-
-	//tsdb 原为 RenameRelationInternal(relid, name, is_internal)
+	RenameRelationInternal(relid, name, is_internal)
 #else
 #define RenameRelationInternalCompat RenameRelationInternal
 #endif
@@ -787,7 +775,7 @@ extern int oid_cmp(const void *p1, const void *p2);
 
 /* pq_sendint is deprecated in PG11, so create pq_sendint32 in 9.6 and 10 */
 #if PG11_LT
-//#define pq_sendint32(buf, i) pq_sendint(buf, i, 4)//tsdb,此条og中有定义
+#define pq_sendint32(buf, i) pq_sendint(buf, i, 4)
 #endif
 
 /* create this function for symmetry with above */
@@ -984,19 +972,6 @@ list_qsort(const List *list, list_qsort_comparator cmp)
 #if PG11_LT
 #define RelationGetFKeyListCompat(rel) ts_relation_get_fk_list(rel)
 #define T_ForeignKeyCacheInfoCompat T_ForeignKeyCacheInfo
-
-typedef struct ForeignKeyCacheInfo
-{
-	NodeTag		type;
-	Oid			conrelid;		/* relation constrained by the foreign key */
-	Oid			confrelid;		/* relation referenced by the foreign key */
-	int			nkeys;			/* number of columns in the foreign key */
-	/* these arrays each have nkeys valid entries: */
-	AttrNumber	conkey[INDEX_MAX_KEYS]; /* cols in referencing table */
-	AttrNumber	confkey[INDEX_MAX_KEYS];		/* cols in referenced table */
-	Oid			conpfeqop[INDEX_MAX_KEYS];		/* PK = FK operator OIDs */
-} ForeignKeyCacheInfo; 
-
 typedef struct ForeignKeyCacheInfoCompat
 {
 	ForeignKeyCacheInfo base;
@@ -1012,4 +987,3 @@ typedef struct ForeignKeyCacheInfoCompat
 #endif /* PG11_LT */
 
 #endif /* TIMESCALEDB_COMPAT_H */
-

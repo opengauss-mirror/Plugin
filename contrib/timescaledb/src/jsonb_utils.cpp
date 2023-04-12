@@ -49,7 +49,7 @@ void
 ts_jsonb_add_value(JsonbParseState *state, const char *key, JsonbValue *value)
 {
 	JsonbValue json_key;
-	
+
 	Assert(key != NULL);
 	if (value == NULL)
 		return;
@@ -81,7 +81,6 @@ ts_jsonb_get_text_field(Jsonb *json, text *field_name)
 	 * we cannot use `DirectFunctionCall`
 	 */
 	LOCAL_FCINFO(fcinfo, 2);
-	
 	Datum result;
 
 	InitFunctionCallInfoData(*fcinfo, NULL, 2, InvalidOid, NULL, NULL);

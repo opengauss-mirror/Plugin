@@ -10,7 +10,7 @@
 #include <postgres.h>
 #include <fmgr.h>
 #include <funcapi.h>
-#include <access/htup.h>
+#include <access/htup_details.h>
 #include <utils/memutils.h>
 
 #include "export.h"
@@ -63,8 +63,8 @@ ts_test_job_refresh(PG_FUNCTION_ARGS)
 	{
 		/* Return the current list_cell and advance ptr */
 		HeapTuple tuple;
-		Datum *values =(Datum *) palloc(sizeof(*values) * funcctx->tuple_desc->natts);
-		bool *nulls =(bool *) palloc(sizeof(*nulls) * funcctx->tuple_desc->natts);
+		Datum *values = palloc(sizeof(*values) * funcctx->tuple_desc->natts);
+		bool *nulls = palloc(sizeof(*nulls) * funcctx->tuple_desc->natts);
 
 		ts_populate_scheduled_job_tuple(lfirst(lc), values);
 		memset(nulls, 0, sizeof(*nulls) * funcctx->tuple_desc->natts);

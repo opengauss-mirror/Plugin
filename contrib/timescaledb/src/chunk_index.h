@@ -77,8 +77,8 @@ extern TSDLLEXPORT List *ts_chunk_index_duplicate(Oid src_chunkrelid, Oid dest_c
  * Note that both reindex and recreate both block writes to table. Also note that recreate
  * will use more disk space than reindex during phase 1 and does more total work.
  */
-extern "C" TSDLLEXPORT Datum ts_chunk_index_clone(PG_FUNCTION_ARGS);
-extern "C" TSDLLEXPORT Datum ts_chunk_index_replace(PG_FUNCTION_ARGS);
+TSDLLEXPORT Datum ts_chunk_index_clone(PG_FUNCTION_ARGS);
+TSDLLEXPORT Datum ts_chunk_index_replace(PG_FUNCTION_ARGS);
 
 extern Oid ts_chunk_index_get_tablespace(int32 hypertable_id, Relation template_indexrel,
 										 Relation chunkrel);

@@ -7,7 +7,7 @@
 #define TIMESCALEDB_UTILS_H
 
 #include <postgres.h>
-#include <access/htup.h>
+#include <access/htup_details.h>
 #include <catalog/pg_proc.h>
 #include <utils/datetime.h>
 
@@ -72,7 +72,7 @@ extern Oid ts_inheritance_parent_relid(Oid relid);
 
 extern Oid ts_lookup_proc_filtered(const char *schema, const char *funcname, Oid *rettype,
 								   proc_filter filter, void *filter_arg);
-extern Oid ts_get_operator(const char *name, Oid namespacee, Oid left, Oid right);
+extern Oid ts_get_operator(const char *name, Oid namespace, Oid left, Oid right);
 
 extern TSDLLEXPORT Oid ts_get_cast_func(Oid source, Oid target);
 

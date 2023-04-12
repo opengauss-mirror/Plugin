@@ -9,7 +9,7 @@
 #include <postmaster/bgworker.h>
 #include <storage/ipc.h>
 #include <storage/latch.h>
-#include <storage/lock/lwlock.h>
+#include <storage/lwlock.h>
 #include <storage/lmgr.h>
 #include <storage/proc.h>
 #include <storage/shmem.h>

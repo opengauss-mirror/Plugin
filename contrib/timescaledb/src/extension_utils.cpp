@@ -135,7 +135,7 @@ static bool inline extension_is_transitioning()
 	 */
 	if (creating_extension)
 	{
-		return get_extension_oid(EXTENSION_NAME, true) == u_sess->cmd_cxt.CurrentExtensionObject;
+		return get_extension_oid(EXTENSION_NAME, true) == CurrentExtensionObject;
 	}
 	return false;
 }
@@ -149,7 +149,7 @@ extension_current_state()
 	 * ready (which may result in an infinite loop). More concretely we need
 	 * RelationCacheInitializePhase3 to have been already called.
 	 */
-	if (!IsNormalProcessingMode() || !IsTransactionState() || !OidIsValid(u_sess->proc_cxt.MyDatabaseId))
+	if (!IsNormalProcessingMode() || !IsTransactionState() || !OidIsValid(MyDatabaseId))
 		return EXTENSION_STATE_UNKNOWN;
 
 	/*
@@ -177,14 +177,8 @@ static void
 extension_load_without_preload()
 {
 	/* cannot use GUC variable here since extension not yet loaded */
-	//tsdb 原本函数为GetConfigOptionByName("timescaledb.allow_install_without_preload", NULL, true)
-
-	// tsdb 修改
-	// char *allow_install_without_preload =
-	// 	GetConfigOptionByName("timescaledb.allow_install_without_preload", NULL);
-
-	char *allow_install_without_preload = "on";
-
+	char *allow_install_without_preload =
+		GetConfigOptionByName("timescaledb.allow_install_without_preload", NULL, true);
 
 	if (allow_install_without_preload == NULL || strcmp(allow_install_without_preload, "on") != 0)
 	{
@@ -200,8 +194,7 @@ extension_load_without_preload()
 		if (is_member_of_role(GetUserId(), DEFAULT_ROLE_READ_ALL_SETTINGS))
 #endif
 		{
-			//tsdb 原本函数为GetConfigOptionByName("config_file", NULL, true)
-			char *config_file = GetConfigOptionByName("config_file", NULL);
+			char *config_file = GetConfigOptionByName("config_file", NULL, false);
 
 			ereport(FATAL,
 					(errmsg("extension \"%s\" must be preloaded", EXTENSION_NAME),

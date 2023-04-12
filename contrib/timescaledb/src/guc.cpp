@@ -196,7 +196,7 @@ _guc_init(void)
 							"Maximum open chunks per insert",
 							"Maximum number of open chunk tables per insert",
 							&ts_guc_max_open_chunks_per_insert,
-							Min(u_sess->attr.attr_memory.work_mem * INT64CONST(1024) / INT64CONST(25000),
+							Min(work_mem * INT64CONST(1024) / INT64CONST(25000),
 								PG_INT16_MAX), /* Measurements via
 												* `MemoryContextStats(TopMemoryContext)`
 												* show chunk insert

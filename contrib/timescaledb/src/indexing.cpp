@@ -14,7 +14,7 @@
 #include <utils/builtins.h>
 #include <utils/lsyscache.h>
 #include <utils/syscache.h>
-//#include <commands/event_trigger.h>
+#include <commands/event_trigger.h>
 #include <commands/defrem.h>
 #include <commands/tablecmds.h>
 #include <commands/tablespace.h>
@@ -40,7 +40,7 @@ index_has_attribute(List *indexelems, const char *attrname)
 
 	foreach (lc, indexelems)
 	{
-		Node *node =(Node *) lfirst(lc);
+		Node *node = lfirst(lc);
 		const char *colname = NULL;
 
 		/*
@@ -140,10 +140,9 @@ create_default_index(Hypertable *ht, List *indexelems)
 {
 	IndexStmt stmt = {
 		.type = T_IndexStmt,
-		.schemaname = "",
+		.accessMethod = DEFAULT_INDEX_TYPE,
 		.idxname = NULL,
 		.relation = makeRangeVar(NameStr(ht->fd.schema_name), NameStr(ht->fd.table_name), 0),
-		.accessMethod = DEFAULT_INDEX_TYPE,
 		.tableSpace = get_tablespace_name(get_rel_tablespace(ht->main_table_relid)),
 		.indexParams = indexelems,
 	};
@@ -182,12 +181,8 @@ create_default_indexes(Hypertable *ht, Dimension *time_dim, Dimension *space_dim
 	IndexElem telem = {
 		.type = T_IndexElem,
 		.name = get_open_dim_name(time_dim),
-		.expr = get_open_dim_expr(time_dim),
-		.indexcolname = "",
-		.collation = NULL,
-		.opclass = NULL,
 		.ordering = SORTBY_DESC,
-		
+		.expr = get_open_dim_expr(time_dim),
 	};
 
 	/* In case we'd allow tables that are only space partitioned */
@@ -204,10 +199,6 @@ create_default_indexes(Hypertable *ht, Dimension *time_dim, Dimension *space_dim
 		IndexElem selem = {
 			.type = T_IndexElem,
 			.name = NameStr(space_dim->fd.column_name),
-			.expr = NULL,
-			.indexcolname = "",
-			.collation = NULL,
-			.opclass = NULL,
 			.ordering = SORTBY_ASC,
 		};
 
@@ -343,8 +334,7 @@ ts_indexing_root_table_create_index(IndexStmt *stmt, const char *queryString,
 
 	/* ... and do it */
 	EventTriggerAlterTableStart((Node *) stmt);
-	
-	//tsdb下面原来没有注释
+
 	root_table_address = DefineIndexCompat(relid, /* OID of heap relation */
 										   stmt,
 										   InvalidOid, /* no predefined OID */
@@ -437,7 +427,7 @@ ts_indexing_mark_as(Oid index_id, IndexValidity validity)
 	switch (validity)
 	{
 		case IndexValid:
-			//Assert(indexForm->indislive);
+			Assert(indexForm->indislive);
 			Assert(indexForm->indisready);
 			indexForm->indisvalid = true;
 			break;

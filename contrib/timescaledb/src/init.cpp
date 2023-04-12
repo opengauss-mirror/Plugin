@@ -47,13 +47,13 @@ extern void _conn_plain_init();
 extern void _conn_plain_fini();
 
 #ifdef TS_USE_OPENSSL
-extern void _conn_ssl_init(); 
-extern void _conn_ssl_fini(); 
+extern void _conn_ssl_init();
+extern void _conn_ssl_fini();
 #endif
 
 #ifdef TS_DEBUG
-// extern void _conn_mock_init(); //tsdb
-// extern void _conn_mock_fini(); //tsdb
+extern void _conn_mock_init();
+extern void _conn_mock_fini();
 #endif
 
 extern void _chunk_append_init();
@@ -73,15 +73,14 @@ _PG_init(void)
 	ts_extension_check_version(TIMESCALEDB_VERSION_MOD);
 	ts_extension_check_server_version();
 	ts_bgw_check_loader_api_version();
-	
-	// u_sess->misc_cxt.process_shared_preload_libraries_in_progress = true;//tsdb
+
 	_cache_init();
 	_hypertable_cache_init();
 	_cache_invalidate_init();
 	_planner_init();
 	_constraint_aware_append_init();
 	_chunk_append_init();
-	//_event_trigger_init();tsdb
+	_event_trigger_init();
 	_process_utility_init();
 	_guc_init();
 	_conn_plain_init();
@@ -89,7 +88,7 @@ _PG_init(void)
 	_conn_ssl_init();
 #endif
 #ifdef TS_DEBUG
-	// _conn_mock_init(); //tsdb
+	_conn_mock_init();
 #endif
 }
 
@@ -101,7 +100,7 @@ _PG_fini(void)
 	 * document any exceptions.
 	 */
 #ifdef TS_DEBUG
-	// _conn_mock_fini(); //tsdb
+	_conn_mock_fini();
 #endif
 #ifdef TS_USE_OPENSSL
 	_conn_ssl_fini();

@@ -30,7 +30,7 @@ plan_add_parallel_hashagg(PlannerInfo *root, RelOptInfo *input_rel, RelOptInfo *
 						  double d_num_groups)
 {
 	Query *parse = root->parse;
-	Path *cheapest_partial_path =(Path *) linitial(input_rel->partial_pathlist);
+	Path *cheapest_partial_path = linitial(input_rel->partial_pathlist);
 	PathTarget *target = root->upper_targets[UPPERREL_GROUP_AGG];
 	PathTarget *partial_grouping_target = ts_make_partial_grouping_target(root, target);
 	AggClauseCosts agg_partial_costs;
@@ -71,7 +71,7 @@ plan_add_parallel_hashagg(PlannerInfo *root, RelOptInfo *input_rel, RelOptInfo *
 	 * Tentatively produce a partial HashAgg Path, depending on if it looks as
 	 * if the hash table will fit in work_mem.
 	 */
-	if (hashagg_table_size >= u_sess->attr.attr_memory.work_mem * UINT64CONST(1024))
+	if (hashagg_table_size >= work_mem * UINT64CONST(1024))
 		return;
 
 	add_partial_path(output_rel,
@@ -119,7 +119,7 @@ void
 ts_plan_add_hashagg(PlannerInfo *root, RelOptInfo *input_rel, RelOptInfo *output_rel)
 {
 	Query *parse = root->parse;
-	Path *cheapest_path =(Path *) input_rel->cheapest_total_path;
+	Path *cheapest_path = input_rel->cheapest_total_path;
 	AggClauseCosts agg_costs;
 	bool can_hash;
 	double d_num_groups;
@@ -148,7 +148,7 @@ ts_plan_add_hashagg(PlannerInfo *root, RelOptInfo *input_rel, RelOptInfo *output
 
 	hashaggtablesize = ts_estimate_hashagg_tablesize(cheapest_path, &agg_costs, d_num_groups);
 
-	if (hashaggtablesize >= u_sess->attr.attr_memory.work_mem * UINT64CONST(1024))
+	if (hashaggtablesize >= work_mem * UINT64CONST(1024))
 		return;
 
 	if (!output_rel->consider_parallel)

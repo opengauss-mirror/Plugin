@@ -56,7 +56,7 @@ date_trunc_sort_transform(FuncExpr *func)
 	if (list_length(func->args) != 2 || !IsA(linitial(func->args), Const))
 		return (Expr *) func;
 
-	second = ts_sort_transform_expr((Expr*)lsecond(func->args));
+	second = ts_sort_transform_expr(lsecond(func->args));
 
 	if (!IsA(second, Var))
 		return (Expr *) func;
@@ -91,7 +91,7 @@ time_bucket_sort_transform(FuncExpr *func)
 	if (!time_bucket_has_const_period_and_offset(func))
 		return (Expr *) func;
 
-	second = ts_sort_transform_expr((Expr*)lsecond(func->args));
+	second = ts_sort_transform_expr(lsecond(func->args));
 
 	if (!IsA(second, Var))
 		return (Expr *) func;
@@ -106,8 +106,8 @@ time_bucket_sort_transform(FuncExpr *func)
 static double
 time_bucket_group_estimate(PlannerInfo *root, FuncExpr *expr, double path_rows)
 {
-	Node *first_arg = eval_const_expressions(root,(Node*) linitial(expr->args));
-	Expr *second_arg =(Expr*) lsecond(expr->args);
+	Node *first_arg = eval_const_expressions(root, linitial(expr->args));
+	Expr *second_arg = lsecond(expr->args);
 	Const *c;
 	double period;
 
@@ -142,8 +142,8 @@ time_bucket_group_estimate(PlannerInfo *root, FuncExpr *expr, double path_rows)
 static double
 date_trunc_group_estimate(PlannerInfo *root, FuncExpr *expr, double path_rows)
 {
-	Node *first_arg = eval_const_expressions(root, (Node*)linitial(expr->args));
-	Expr *second_arg =(Expr*) lsecond(expr->args);
+	Node *first_arg = eval_const_expressions(root, linitial(expr->args));
+	Expr *second_arg = lsecond(expr->args);
 	Const *c;
 	text *interval;
 
@@ -309,25 +309,13 @@ proc_get_oid(HeapTuple tuple)
 #endif
 }
 
-
 static void
 initialize_func_info()
 {
 	HASHCTL hashctl = {
-		.num_partitions = 0,
-		.ssize = 0,
-		.dsize = 0,
-		.max_dsize = 100,
-		.ffactor = 0,
 		.keysize = sizeof(Oid),
 		.entrysize = sizeof(FuncEntry),
-		.hash = 0,
-		.match = 0,
-		.keycopy = 0,
-		.alloc = 0,
-		.dealloc = 0,
-		.hcxt = u_sess->cache_mem_cxt,
-		.hctl = NULL,
+		.hcxt = CacheMemoryContext,
 	};
 	Oid extension_nsp = get_namespace_oid(ts_extension_schema_name(), false);
 	Oid pg_nsp = get_namespace_oid("pg_catalog", false);
@@ -361,7 +349,7 @@ initialize_func_info()
 
 		funcid = proc_get_oid(tuple);
 
-		fentry =(FuncEntry*) hash_search(func_hash, &funcid, HASH_ENTER, &hash_found);
+		fentry = hash_search(func_hash, &funcid, HASH_ENTER, &hash_found);
 		Assert(!hash_found);
 		fentry->funcid = funcid;
 		fentry->funcinfo = finfo;
@@ -379,7 +367,7 @@ ts_func_cache_get(Oid funcid)
 	if (NULL == func_hash)
 		initialize_func_info();
 
-	entry =(FuncEntry*) hash_search(func_hash, &funcid, HASH_FIND, NULL);
+	entry = hash_search(func_hash, &funcid, HASH_FIND, NULL);
 
 	return (NULL == entry) ? NULL : entry->funcinfo;
 }

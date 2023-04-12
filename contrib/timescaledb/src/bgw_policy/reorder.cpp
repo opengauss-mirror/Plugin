@@ -24,7 +24,7 @@
 static ScanTupleResult
 bgw_policy_reorder_tuple_found(TupleInfo *ti, void *const data)
 {
-	BgwPolicyReorder **policy =(BgwPolicyReorder **) data;
+	BgwPolicyReorder **policy = data;
 
 	*policy = STRUCT_FROM_TUPLE(ti->tuple, ti->mctx, BgwPolicyReorder, FormData_bgw_policy_reorder);
 

@@ -21,12 +21,12 @@ gapfill_locf_initialize(GapFillLocfColumnState *locf, GapFillState *state, FuncE
 
 	/* check if out of boundary lookup expression was supplied */
 	if (list_length(function->args) > 1)
-		locf->lookup_last = gapfill_adjust_varnos(state,(Expr *) lsecond(function->args));
+		locf->lookup_last = gapfill_adjust_varnos(state, lsecond(function->args));
 
 	/* check if treat_null_as_missing was supplied */
 	if (list_length(function->args) > 2)
 	{
-		Const *treat_null_as_missing =(Const *) lthird(function->args);
+		Const *treat_null_as_missing = lthird(function->args);
 		if (!IsA(treat_null_as_missing, Const) || treat_null_as_missing->consttype != BOOLOID)
 			ereport(ERROR,
 					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),

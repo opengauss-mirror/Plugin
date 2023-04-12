@@ -70,7 +70,7 @@ check_for_partialize_function_call(Node *node, PartializeWalkerState *state)
 		if (state->looking_for_agg)
 		{
 			state->looking_for_agg = false;
-			aggref->aggsplit =6 ;//AGGSPLIT_INITIAL_SERIAL
+			aggref->aggsplit = AGGSPLIT_INITIAL_SERIAL;
 
 			if (aggref->aggtranstype == INTERNALOID &&
 				DO_AGGSPLIT_SERIALIZE(AGGSPLIT_INITIAL_SERIAL))
@@ -94,7 +94,7 @@ check_for_partialize_function_call(Node *node, PartializeWalkerState *state)
 		state->looking_for_agg = true;
 	}
 
-	return expression_tree_walker(node,(bool (*)()) check_for_partialize_function_call, state);
+	return expression_tree_walker(node, check_for_partialize_function_call, state);
 }
 
 static bool
@@ -130,7 +130,7 @@ partialize_agg_paths(RelOptInfo *rel)
 
 	foreach (lc, rel->pathlist)
 	{
-		Path *path =(Path *) lfirst(lc);
+		Path *path = lfirst(lc);
 
 		if (IsA(path, AggPath))
 			castNode(AggPath, path)->aggsplit = AGGSPLIT_INITIAL_SERIAL;

@@ -13,7 +13,7 @@
 extern void ts_bgw_cluster_launcher_register(void);
 
 /*called by postmaster at launcher bgw startup*/
-extern "C" TSDLLEXPORT  Datum ts_bgw_cluster_launcher_main(PG_FUNCTION_ARGS);
-extern "C" TSDLLEXPORT  Datum ts_bgw_db_scheduler_entrypoint(PG_FUNCTION_ARGS);
+TSDLLEXPORT extern Datum ts_bgw_cluster_launcher_main(PG_FUNCTION_ARGS);
+TSDLLEXPORT extern Datum ts_bgw_db_scheduler_entrypoint(PG_FUNCTION_ARGS);
 
 #endif /* TIMESCALEDB_BGW_LAUNCHER_H */

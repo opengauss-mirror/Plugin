@@ -22,7 +22,7 @@
 Hypercube *
 ts_hypercube_alloc(int16 num_dimensions)
 {
-	Hypercube *hc =(Hypercube *) palloc0(HYPERCUBE_SIZE(num_dimensions));
+	Hypercube *hc = palloc0(HYPERCUBE_SIZE(num_dimensions));
 
 	hc->capacity = num_dimensions;
 	return hc;
@@ -63,7 +63,7 @@ ts_hypercube_copy(Hypercube *hc)
 	size_t nbytes = HYPERCUBE_SIZE(hc->capacity);
 	int i;
 
-	copy =(Hypercube *) palloc(nbytes);
+	copy = palloc(nbytes);
 	memcpy(copy, hc, nbytes);
 
 	for (i = 0; i < hc->num_slices; i++)
@@ -113,12 +113,8 @@ ts_hypercube_slice_sort(Hypercube *hc)
 DimensionSlice *
 ts_hypercube_get_slice_by_dimension_id(Hypercube *hc, int32 dimension_id)
 {
-	FormData_dimension_slice fdd ={
-		.id = NULL,
-		.dimension_id = dimension_id,
-	};
 	DimensionSlice slice = {
-		.fd = fdd,
+		.fd.dimension_id = dimension_id,
 	};
 	void *ptr = &slice;
 

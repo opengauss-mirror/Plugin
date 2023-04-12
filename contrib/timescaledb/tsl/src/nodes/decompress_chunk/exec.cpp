@@ -56,7 +56,7 @@ typedef struct DecompressChunkColumnState
 
 typedef struct DecompressChunkState
 {
-	ExtensiblePlanState csstate;
+	CustomScanState csstate;
 	List *varattno_map;
 	int num_columns;
 	DecompressChunkColumnState *columns;
@@ -70,35 +70,34 @@ typedef struct DecompressChunkState
 	MemoryContext per_batch_context;
 } DecompressChunkState;
 
-static TupleTableSlot *decompress_chunk_exec(ExtensiblePlanState *node);
-static void decompress_chunk_begin(ExtensiblePlanState *node, EState *estate, int eflags);
-static void decompress_chunk_end(ExtensiblePlanState *node);
-static void decompress_chunk_rescan(ExtensiblePlanState *node);
+static TupleTableSlot *decompress_chunk_exec(CustomScanState *node);
+static void decompress_chunk_begin(CustomScanState *node, EState *estate, int eflags);
+static void decompress_chunk_end(CustomScanState *node);
+static void decompress_chunk_rescan(CustomScanState *node);
 static TupleTableSlot *decompress_chunk_create_tuple(DecompressChunkState *state);
 
-static ExtensibleExecMethods decompress_chunk_state_methods = {
-	.ExtensibleName = {},
-	.BeginExtensiblePlan = decompress_chunk_begin,
-	.ExecExtensiblePlan = decompress_chunk_exec,
-	.EndExtensiblePlan = decompress_chunk_end,
-	.ReScanExtensiblePlan = decompress_chunk_rescan,
+static CustomExecMethods decompress_chunk_state_methods = {
+	.BeginCustomScan = decompress_chunk_begin,
+	.ExecCustomScan = decompress_chunk_exec,
+	.EndCustomScan = decompress_chunk_end,
+	.ReScanCustomScan = decompress_chunk_rescan,
 };
 
 Node *
-decompress_chunk_state_create(ExtensiblePlan *cscan)
+decompress_chunk_state_create(CustomScan *cscan)
 {
 	DecompressChunkState *state;
 	List *settings;
 
-	state = (DecompressChunkState *) newNode(sizeof(DecompressChunkState), T_ExtensiblePlanState);
+	state = (DecompressChunkState *) newNode(sizeof(DecompressChunkState), T_CustomScanState);
 
 	state->csstate.methods = &decompress_chunk_state_methods;
 
-	settings =(List *) linitial(cscan->extensible_private);
+	settings = linitial(cscan->custom_private);
 	state->hypertable_id = linitial_int(settings);
 	state->chunk_relid = lsecond_int(settings);
 	state->reverse = lthird_int(settings);
-	state->varattno_map =(List *) lsecond(cscan->extensible_private);
+	state->varattno_map = lsecond(cscan->custom_private);
 
 	return (Node *) state;
 }
@@ -120,7 +119,7 @@ initialize_column_state(DecompressChunkState *state)
 
 	state->num_columns = list_length(state->varattno_map);
 
-	state->columns =(DecompressChunkColumnState*) palloc0(state->num_columns * sizeof(DecompressChunkColumnState));
+	state->columns = palloc0(state->num_columns * sizeof(DecompressChunkColumnState));
 
 	for (i = 0, lc = list_head(state->varattno_map); i < state->num_columns; lc = lnext(lc), i++)
 	{
@@ -195,7 +194,7 @@ constify_tableoid_walker(Node *node, ConstifyTableOidContext *ctx)
 		return node;
 	}
 
-	return expression_tree_mutator(node,(Node* (*)(Node*, void*)) constify_tableoid_walker, (void *) ctx);
+	return expression_tree_mutator(node, constify_tableoid_walker, (void *) ctx);
 }
 
 static List *
@@ -216,12 +215,12 @@ constify_tableoid(List *node, Index chunk_index, Oid chunk_relid)
  * but any private fields should be initialized here.
  */
 static void
-decompress_chunk_begin(ExtensiblePlanState *node, EState *estate, int eflags)
+decompress_chunk_begin(CustomScanState *node, EState *estate, int eflags)
 {
 	DecompressChunkState *state = (DecompressChunkState *) node;
-	ExtensiblePlan *cscan = castNode(ExtensiblePlan, node->ss.ps.plan);
-	Plan *compressed_scan =(Plan *) linitial(cscan->extensible_plans);
-	Assert(list_length(cscan->extensible_plans) == 1);
+	CustomScan *cscan = castNode(CustomScan, node->ss.ps.plan);
+	Plan *compressed_scan = linitial(cscan->custom_plans);
+	Assert(list_length(cscan->custom_plans) == 1);
 
 	if (node->ss.ps.ps_ProjInfo)
 	{
@@ -250,7 +249,7 @@ decompress_chunk_begin(ExtensiblePlanState *node, EState *estate, int eflags)
 
 	initialize_column_state(state);
 
-	node->extensible_ps = lappend(node->extensible_ps, ExecInitNode(compressed_scan, estate, eflags));
+	node->custom_ps = lappend(node->custom_ps, ExecInitNode(compressed_scan, estate, eflags));
 
 	state->per_batch_context = AllocSetContextCreate(CurrentMemoryContext,
 													 "DecompressChunk per_batch",
@@ -280,7 +279,7 @@ initialize_batch(DecompressChunkState *state, TupleTableSlot *slot)
 					CompressedDataHeader *header = (CompressedDataHeader *) PG_DETOAST_DATUM(value);
 
 					column->compressed.iterator =
-						tsl_get_decompression_iterator_init((CompressionAlgorithms)header->compression_algorithm,
+						tsl_get_decompression_iterator_init(header->compression_algorithm,
 															state->reverse)(PointerGetDatum(header),
 																			column->typid);
 				}
@@ -317,7 +316,7 @@ initialize_batch(DecompressChunkState *state, TupleTableSlot *slot)
 }
 
 static TupleTableSlot *
-decompress_chunk_exec(ExtensiblePlanState *node)
+decompress_chunk_exec(CustomScanState *node)
 {
 	DecompressChunkState *state = (DecompressChunkState *) node;
 	ExprContext *econtext = node->ss.ps.ps_ExprContext;
@@ -326,7 +325,7 @@ decompress_chunk_exec(ExtensiblePlanState *node)
 	ExprDoneCond isDone;
 #endif
 
-	if (node->extensible_ps == NIL)
+	if (node->custom_ps == NIL)
 		return NULL;
 
 #if PG96
@@ -381,17 +380,17 @@ decompress_chunk_exec(ExtensiblePlanState *node)
 }
 
 static void
-decompress_chunk_rescan(ExtensiblePlanState *node)
+decompress_chunk_rescan(CustomScanState *node)
 {
 	((DecompressChunkState *) node)->initialized = false;
-	ExecReScan((PlanState *)linitial(node->extensible_ps));
+	ExecReScan(linitial(node->custom_ps));
 }
 
 static void
-decompress_chunk_end(ExtensiblePlanState *node)
+decompress_chunk_end(CustomScanState *node)
 {
 	MemoryContextReset(((DecompressChunkState *) node)->per_batch_context);
-	ExecEndNode((PlanState *)linitial(node->extensible_ps));
+	ExecEndNode(linitial(node->custom_ps));
 }
 
 /*
@@ -408,7 +407,7 @@ decompress_chunk_create_tuple(DecompressChunkState *state)
 	{
 		if (!state->initialized)
 		{
-			TupleTableSlot *subslot = ExecProcNode((PlanState *)linitial(state->csstate.extensible_ps));
+			TupleTableSlot *subslot = ExecProcNode(linitial(state->csstate.custom_ps));
 
 			if (TupIsNull(subslot))
 				return NULL;

@@ -9,7 +9,7 @@
 #include <catalog/pg_namespace.h>
 #include <catalog/pg_operator.h>
 #include <nodes/bitmapset.h>
-//#include <nodes/extensible.h>
+#include <nodes/extensible.h>
 #include <nodes/makefuncs.h>
 #include <nodes/nodeFuncs.h>
 #include <optimizer/paths.h>
@@ -20,10 +20,6 @@
 #include <utils/typcache.h>
 
 #include "compat.h"
-#ifdef OG30
-#include "executor/node/nodeExtensible.h"
-#endif
-
 #if PG12_LT
 #include <optimizer/clauses.h>
 #include <optimizer/pathnode.h>
@@ -45,9 +41,9 @@
 #include "guc.h"
 #include "custom_type_cache.h"
 
-static ExtensiblePlanMethods decompress_chunk_plan_methods = {
-	.ExtensibleName = "DecompressChunk",
-	.CreateExtensiblePlanState = decompress_chunk_state_create,
+static CustomScanMethods decompress_chunk_plan_methods = {
+	.CustomName = "DecompressChunk",
+	.CreateCustomScanState = decompress_chunk_state_create,
 };
 
 void
@@ -59,7 +55,7 @@ _decompress_chunk_init(void)
 	 * per session so we check if ChunkDecompress node has been
 	 * registered already here to prevent registering it twice.
 	 */
-	if (GetExtensiblePlanMethods("DecompressChunk", true) == NULL)
+	if (GetCustomScanMethods("DecompressChunk", true) == NULL)
 	{
 		RegisterCustomScanMethods(&decompress_chunk_plan_methods);
 	}
@@ -294,7 +290,7 @@ replace_compressed_vars(Node *node, CompressionInfo *info)
 		//  /* Replace the PlaceHolderVar with a nestloop Param */
 		//  return (Node *) replace_nestloop_param_placeholdervar(root, phv);
 	}
-	return expression_tree_mutator(node,(Node *(*)(Node *, void *)) replace_compressed_vars, (void *) info);
+	return expression_tree_mutator(node, replace_compressed_vars, (void *) info);
 }
 
 typedef struct CompressedAttnoContext
@@ -321,21 +317,21 @@ clause_has_compressed_attrs(Node *node, void *context)
 				return true;
 		}
 	}
-	return expression_tree_walker(node,(bool (*)()) clause_has_compressed_attrs, context);
+	return expression_tree_walker(node, clause_has_compressed_attrs, context);
 }
 
 Plan *
-decompress_chunk_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath *path, List *tlist,
+decompress_chunk_plan_create(PlannerInfo *root, RelOptInfo *rel, CustomPath *path, List *tlist,
 							 List *clauses, List *custom_plans)
 {
 	DecompressChunkPath *dcpath = (DecompressChunkPath *) path;
-	ExtensiblePlan *cscan = makeNode(ExtensiblePlan);
-	Scan *compressed_scan =(Scan *) linitial(custom_plans);
-	Path *compressed_path =(Path *) linitial(path->extensible_paths);
+	CustomScan *cscan = makeNode(CustomScan);
+	Scan *compressed_scan = linitial(custom_plans);
+	Path *compressed_path = linitial(path->custom_paths);
 	List *settings;
 
 	Assert(list_length(custom_plans) == 1);
-	Assert(list_length(path->extensible_paths) == 1);
+	Assert(list_length(path->custom_paths) == 1);
 
 	cscan->flags = path->flags;
 	cscan->methods = &decompress_chunk_plan_methods;
@@ -344,7 +340,7 @@ decompress_chunk_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath 
 	/* output target list */
 	cscan->scan.plan.targetlist = tlist;
 	/* input target list */
-	cscan->extensible_plan_tlist = NIL;
+	cscan->custom_scan_tlist = NIL;
 
 	if (IsA(compressed_path, IndexPath))
 	{
@@ -369,7 +365,7 @@ decompress_chunk_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath 
 		 * to the function and so were added as filters
 		 * for cscan->scan.plan.qual in the loop above. )
 		 */
-		indexplan =(Plan *) linitial(custom_plans);
+		indexplan = linitial(custom_plans);
 		Assert(IsA(indexplan, IndexScan) || IsA(indexplan, IndexOnlyScan));
 		foreach (lc, indexplan->qual)
 		{
@@ -423,11 +419,11 @@ decompress_chunk_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath 
 		Sort *sort = ts_make_sort_from_pathkeys((Plan *) compressed_scan,
 												compressed_pks,
 												bms_make_singleton(compressed_scan->scanrelid));
-		cscan->extensible_plans = list_make1(sort);
+		cscan->custom_plans = list_make1(sort);
 	}
 	else
 	{
-		cscan->extensible_plans = custom_plans;
+		cscan->custom_plans = custom_plans;
 	}
 
 	Assert(list_length(custom_plans) == 1);
@@ -435,7 +431,7 @@ decompress_chunk_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath 
 	settings = list_make3_int(dcpath->info->hypertable_id,
 							  dcpath->info->chunk_rte->relid,
 							  dcpath->reverse);
-	cscan->extensible_private = list_make2(settings, dcpath->varattno_map);
+	cscan->custom_private = list_make2(settings, dcpath->varattno_map);
 
 	return &cscan->scan.plan;
 }

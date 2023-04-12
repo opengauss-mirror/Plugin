@@ -110,7 +110,7 @@ cache_invalidate_xact_end(XactEvent event, void *arg)
 	switch (event)
 	{
 		case XACT_EVENT_ABORT:
-		case XACT_EVENT_PARALLEL_ABORT://
+		case XACT_EVENT_PARALLEL_ABORT:
 
 			/*
 			 * Invalidate caches on aborted transactions to purge entries that
@@ -148,7 +148,7 @@ _cache_invalidate_init(void)
 {
 	RegisterXactCallback(cache_invalidate_xact_end, NULL);
 	RegisterSubXactCallback(cache_invalidate_subxact_end, NULL);
-	CacheRegisterThreadRelcacheCallback(cache_invalidate_callback, PointerGetDatum(NULL));
+	CacheRegisterRelcacheCallback(cache_invalidate_callback, PointerGetDatum(NULL));
 }
 
 void

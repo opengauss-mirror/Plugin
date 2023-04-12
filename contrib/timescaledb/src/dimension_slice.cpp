@@ -35,7 +35,7 @@
 static inline DimensionSlice *
 dimension_slice_alloc(void)
 {
-	return (DimensionSlice *)palloc0(sizeof(DimensionSlice));
+	return palloc0(sizeof(DimensionSlice));
 }
 
 static inline DimensionSlice *
@@ -143,7 +143,7 @@ lock_result_ok_or_abort(TupleInfo *ti, DimensionSlice *slice)
 static ScanTupleResult
 dimension_vec_tuple_found(TupleInfo *ti, void *data)
 {
-	DimensionVec **slices =(DimensionVec **) data;
+	DimensionVec **slices = data;
 	DimensionSlice *slice = dimension_slice_from_tuple(ti->tuple);
 
 	lock_result_ok_or_abort(ti, slice);
@@ -162,20 +162,15 @@ dimension_slice_scan_limit_direction_internal(int indexid, ScanKeyData *scankey,
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, DIMENSION_SLICE),
 		.index = catalog_get_index(catalog, DIMENSION_SLICE, indexid),
-		.scankey = scankey,
 		.nkeys = nkeys,
-		.norderbys = 0,
-		.limit = limit,
-		.want_itup = false,
-		.lockmode = lockmode,
-		.result_mctx = mctx,
-		.tuplock = tuplock,
-		.scandirection = scandir,
+		.scankey = scankey,
 		.data = scandata,
-		.prescan = 0,
-		.postscan = 0,
-		.filter = 0,
+		.limit = limit,
+		.tuplock = tuplock,
 		.tuple_found = on_tuple_found,
+		.lockmode = lockmode,
+		.scandirection = scandir,
+		.result_mctx = mctx,
 	};
 
 	return ts_scanner_scan(&scanctx);
@@ -463,7 +458,7 @@ dimension_slice_tuple_delete(TupleInfo *ti, void *data)
 {
 	bool isnull;
 	Datum dimension_slice_id = heap_getattr(ti->tuple, Anum_dimension_slice_id, ti->desc, &isnull);
-	bool *delete_constraints =(bool *) data;
+	bool *delete_constraints = data;
 	CatalogSecurityContext sec_ctx;
 
 	Assert(!isnull);
@@ -527,7 +522,7 @@ ts_dimension_slice_delete_by_id(int32 dimension_slice_id, bool delete_constraint
 static ScanTupleResult
 dimension_slice_fill(TupleInfo *ti, void *data)
 {
-	DimensionSlice **slice =(DimensionSlice **) data;
+	DimensionSlice **slice = data;
 
 	memcpy(&(*slice)->fd, GETSTRUCT(ti->tuple), sizeof(FormData_dimension_slice));
 	return SCAN_DONE;
@@ -577,7 +572,7 @@ ts_dimension_slice_scan_for_existing(DimensionSlice *slice)
 static ScanTupleResult
 dimension_slice_tuple_found(TupleInfo *ti, void *data)
 {
-	DimensionSlice **slice =(DimensionSlice **) data;
+	DimensionSlice **slice = data;
 	MemoryContext old;
 
 	lock_result_ok_or_abort(ti, *slice);
@@ -622,13 +617,13 @@ ts_dimension_slice_scan_by_id_and_lock(int32 dimension_slice_id, ScanTupLock *tu
 DimensionSlice *
 ts_dimension_slice_copy(const DimensionSlice *original)
 {
-	DimensionSlice *neww =(DimensionSlice *) palloc(sizeof(DimensionSlice));
+	DimensionSlice *new = palloc(sizeof(DimensionSlice));
 
 	Assert(original->storage == NULL);
 	Assert(original->storage_free == NULL);
 
-	memcpy(neww, original, sizeof(DimensionSlice));
-	return neww;
+	memcpy(new, original, sizeof(DimensionSlice));
+	return new;
 }
 
 /*
@@ -762,7 +757,7 @@ ts_dimension_slice_insert_multi(DimensionSlice **slices, Size num_slices)
 static ScanTupleResult
 dimension_slice_nth_tuple_found(TupleInfo *ti, void *data)
 {
-	DimensionSlice **slice =(DimensionSlice **) data;
+	DimensionSlice **slice = data;
 	MemoryContext old = MemoryContextSwitchTo(ti->mctx);
 
 	*slice = dimension_slice_from_tuple(ti->tuple);
@@ -814,7 +809,7 @@ dimension_slice_check_chunk_stats_tuple_found(TupleInfo *ti, void *data)
 	ListCell *lc;
 	DimensionSlice *slice = dimension_slice_from_tuple(ti->tuple);
 	List *chunk_ids = NIL;
-	ChunkStatInfo *info =(ChunkStatInfo *) data;
+	ChunkStatInfo *info = data;
 
 	ts_chunk_constraint_scan_by_dimension_slice_to_list(slice, &chunk_ids, CurrentMemoryContext);
 
@@ -843,8 +838,8 @@ ts_dimension_slice_oldest_valid_chunk_for_reorder(int32 job_id, int32 dimension_
 												  StrategyNumber end_strategy, int64 end_value)
 {
 	ChunkStatInfo info = {
-		.chunk_id = -1,
 		.job_id = job_id,
+		.chunk_id = -1,
 	};
 
 	dimension_slice_scan_with_strategies(dimension_id,

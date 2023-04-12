@@ -84,7 +84,7 @@ datum_eq(dictionary_hash *tb, Datum a, Datum b)
 static dictionary_hash *
 dictionary_hash_alloc(TypeCacheEntry *tentry)
 {
-	HashMeta *meta =(HashMeta *) palloc(sizeof(*meta));
+	HashMeta *meta = palloc(sizeof(*meta));
 	Oid collation = InvalidOid;
 #if PG12_GE
 	collation = tentry->typcollation;
@@ -98,10 +98,10 @@ dictionary_hash_alloc(TypeCacheEntry *tentry)
 	/* TODO get collation from table? we need to think about backcompat,
 	 * and different collations should only affect compression ratios anyaway
 	 */
-	meta->eq_info =(FunctionCallInfo) HEAP_FCINFO(2);
+	meta->eq_info = HEAP_FCINFO(2);
 	InitFunctionCallInfoData(*meta->eq_info, &tentry->eq_opr_finfo, 2, collation, NULL, NULL);
 
-	meta->hash_info =(FunctionCallInfo) HEAP_FCINFO(2);
+	meta->hash_info = HEAP_FCINFO(2);
 	InitFunctionCallInfoData(*meta->hash_info, &tentry->hash_proc_finfo, 1, collation, NULL, NULL);
 
 	return dictionary_create(CurrentMemoryContext, 10, meta);

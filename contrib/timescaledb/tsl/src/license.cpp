@@ -50,21 +50,20 @@ static bool validate_license_info(const LicenseInfo *license);
 static LicenseInfo current_license = {
 	.id = { 0 },
 	.kind = { 0 },
-	.start_time = NULL,
 	.end_time = DT_NOBEGIN,
 	.enterprise_features_enabled = false,
 };
 
 static const LicenseInfo no_license = {
-	.id = {},
-	.kind = {  },
+	.id = "",
+	.kind = { "" },
 	.start_time = DT_NOBEGIN,
 	.end_time = DT_NOBEGIN,
 	.enterprise_features_enabled = false,
 };
 
-static const LicenseInfo community_license = { .id = {},
-											   .kind = { },
+static const LicenseInfo community_license = { .id = "",
+											   .kind = { "" },
 											   .start_time = DT_NOBEGIN,
 											   .end_time = DT_NOEND,
 											   .enterprise_features_enabled = false };
@@ -100,7 +99,7 @@ tsl_license_update_check(PG_FUNCTION_ARGS)
 		 * function during the assign, with the assumption that since we
 		 * called the function during the check hook it cannot fail now.
 		 */
-		*guc_extra =(LicenseInfo *) malloc(sizeof(LicenseInfo));
+		*guc_extra = malloc(sizeof(LicenseInfo));
 		memcpy(*guc_extra, &license_info, sizeof(LicenseInfo));
 	}
 
@@ -220,7 +219,7 @@ base64_decode(char *license_key)
 {
 	int raw_len = strlen(license_key);
 	int decoded_buffer_len = pg_b64_dec_len(raw_len) + 1;
-	char *decoded =(char *) palloc(decoded_buffer_len);
+	char *decoded = palloc(decoded_buffer_len);
 	int decoded_len = pg_b64_decode(license_key, raw_len, decoded);
 
 	if (decoded_len < 0)
@@ -323,7 +322,7 @@ tsl_license_on_assign(const char *newval, const void *license)
 		return;
 	}
 
-	license_switch_to((const LicenseInfo *)license);
+	license_switch_to(license);
 }
 
 void
@@ -430,7 +429,6 @@ license_print_expiration_warning_if_needed(void)
 	else
 	{
 		Interval week = {
-			.time = NULL,
 			.day = 7,
 		};
 		TimestampTz warn_after =

@@ -66,7 +66,7 @@ ts_bgw_db_workers_start(PG_FUNCTION_ARGS)
 				(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 				 (errmsg("must be superuser to start background workers"))));
 
-	PG_RETURN_BOOL(ts_bgw_message_send_and_wait(START, u_sess->proc_cxt.MyDatabaseId));
+	PG_RETURN_BOOL(ts_bgw_message_send_and_wait(START, MyDatabaseId));
 }
 
 Datum
@@ -77,7 +77,7 @@ ts_bgw_db_workers_stop(PG_FUNCTION_ARGS)
 				(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 				 (errmsg("must be superuser to stop background workers"))));
 
-	PG_RETURN_BOOL(ts_bgw_message_send_and_wait(STOP, u_sess->proc_cxt.MyDatabaseId));
+	PG_RETURN_BOOL(ts_bgw_message_send_and_wait(STOP, MyDatabaseId));
 }
 
 Datum
@@ -88,5 +88,5 @@ ts_bgw_db_workers_restart(PG_FUNCTION_ARGS)
 				(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 				 (errmsg("must be superuser to restart background workers"))));
 
-	PG_RETURN_BOOL(ts_bgw_message_send_and_wait(RESTART, u_sess->proc_cxt.MyDatabaseId));
+	PG_RETURN_BOOL(ts_bgw_message_send_and_wait(RESTART, MyDatabaseId));
 }

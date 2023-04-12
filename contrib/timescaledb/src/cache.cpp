@@ -7,13 +7,11 @@
 #include <access/xact.h>
 
 #include "cache.h"
-#include "compat.h"
 
 /* List of pinned caches. A cache occurs once in this list for every pin
  * taken */
 static List *pinned_caches = NIL;
 static MemoryContext pinned_caches_mctx = NULL;
-
 
 typedef struct CachePin
 {
@@ -28,7 +26,7 @@ cache_reset_pinned_caches(void)
 		MemoryContextDelete(pinned_caches_mctx);
 
 	pinned_caches_mctx =
-		AllocSetContextCreate(u_sess->cache_mem_cxt, "Cache pins", ALLOCSET_DEFAULT_SIZES);
+		AllocSetContextCreate(CacheMemoryContext, "Cache pins", ALLOCSET_DEFAULT_SIZES);
 
 	pinned_caches = NIL;
 }
@@ -92,7 +90,7 @@ extern Cache *
 ts_cache_pin(Cache *cache)
 {
 	MemoryContext old = MemoryContextSwitchTo(pinned_caches_mctx);
-	CachePin *cp = (CachePin*)palloc(sizeof(CachePin));
+	CachePin *cp = palloc(sizeof(CachePin));
 
 	cp->cache = cache;
 	cp->subtxnid = GetCurrentSubTransactionId();
@@ -109,7 +107,7 @@ remove_pin(Cache *cache, SubTransactionId subtxnid)
 
 	foreach (lc, pinned_caches)
 	{
-		CachePin *cp = (CachePin*)lfirst(lc);
+		CachePin *cp = lfirst(lc);
 
 		if (cp->cache == cache && cp->subtxnid == subtxnid)
 		{
@@ -222,7 +220,7 @@ release_all_pinned_caches()
 	 */
 	foreach (lc, pinned_caches)
 	{
-		CachePin *cp =(CachePin*) lfirst(lc);
+		CachePin *cp = lfirst(lc);
 
 		cp->cache->refcount--;
 		cache_destroy(cp->cache);
@@ -242,7 +240,7 @@ release_subtxn_pinned_caches(SubTransactionId subtxnid, bool abort)
 	/* Only release caches created in subtxn */
 	foreach (lc, pinned_caches_copy)
 	{
-		CachePin *cp = (CachePin*)lfirst(lc);
+		CachePin *cp = lfirst(lc);
 
 		if (cp->subtxnid == subtxnid)
 		{
@@ -275,7 +273,7 @@ cache_xact_end(XactEvent event, void *arg)
 	switch (event)
 	{
 		case XACT_EVENT_ABORT:
-		case 5://XACT_EVENT_PARALLEL_ABORT
+		case XACT_EVENT_PARALLEL_ABORT:
 			release_all_pinned_caches();
 			break;
 		default:
@@ -292,7 +290,7 @@ cache_xact_end(XactEvent event, void *arg)
 			 */
 			foreach (lc, pinned_caches_copy)
 			{
-				CachePin *cp =(CachePin*) lfirst(lc);
+				CachePin *cp = lfirst(lc);
 
 				/*
 				 * This assert makes sure that that we don't have a cache
@@ -331,7 +329,7 @@ cache_subxact_abort(SubXactEvent event, SubTransactionId subtxn_id, SubTransacti
 	switch (event)
 	{
 		case SUBXACT_EVENT_START_SUB:
-		case 3://SUBXACT_EVENT_PRE_COMMIT_SUB
+		case SUBXACT_EVENT_PRE_COMMIT_SUB:
 			/* do nothing */
 			break;
 		case SUBXACT_EVENT_COMMIT_SUB:

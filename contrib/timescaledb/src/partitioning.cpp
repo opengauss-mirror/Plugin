@@ -20,7 +20,7 @@
 #include <catalog/namespace.h>
 #include <catalog/pg_type.h>
 #include <access/hash.h>
-#include <access/htup.h>
+#include <access/htup_details.h>
 #include <parser/parse_coerce.h>
 #include <nodes/makefuncs.h>
 #include <nodes/pg_list.h>
@@ -50,7 +50,7 @@
 static bool
 closed_dim_partitioning_func_filter(Form_pg_proc form, void *arg)
 {
-	Oid *argtype =(Oid *) arg;
+	Oid *argtype = arg;
 
 	return IS_VALID_CLOSED_PARTITIONING_FUNC(form, *argtype);
 }
@@ -58,7 +58,7 @@ closed_dim_partitioning_func_filter(Form_pg_proc form, void *arg)
 static bool
 open_dim_partitioning_func_filter(Form_pg_proc form, void *arg)
 {
-	Oid *argtype =(Oid *) arg;
+	Oid *argtype = arg;
 
 	return IS_VALID_OPEN_PARTITIONING_FUNC(form, *argtype);
 }
@@ -183,7 +183,7 @@ ts_partitioning_info_create(const char *schema, const char *partfunc, const char
 				(errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
 				 errmsg("partitioning function information cannot be null")));
 
-	pinfo =(PartitioningInfo *) palloc0(sizeof(PartitioningInfo));
+	pinfo = palloc0(sizeof(PartitioningInfo));
 	StrNCpy(pinfo->partfunc.name, partfunc, NAMEDATALEN);
 	StrNCpy(pinfo->column, partcol, NAMEDATALEN);
 	pinfo->column_attnum = get_attnum(relid, pinfo->column);
@@ -298,7 +298,7 @@ resolve_function_argtype(FunctionCallInfo fcinfo)
 	if (list_length(fe->args) != 1)
 		elog(ERROR, "unexpected number of arguments in function expression");
 
-	node =(Node *) linitial(fe->args);
+	node = linitial(fe->args);
 
 	switch (nodeTag(node))
 	{
@@ -347,7 +347,7 @@ part_func_cache_create(Oid argtype, TypeCacheEntry *tce, Oid coerce_funcid, Memo
 {
 	PartFuncCache *pfc;
 
-	pfc =(PartFuncCache *) MemoryContextAlloc(mcxt, sizeof(PartFuncCache));
+	pfc = MemoryContextAlloc(mcxt, sizeof(PartFuncCache));
 	pfc->argtype = argtype;
 	pfc->tce = tce;
 	pfc->coerce_funcid = coerce_funcid;
@@ -356,7 +356,7 @@ part_func_cache_create(Oid argtype, TypeCacheEntry *tce, Oid coerce_funcid, Memo
 }
 
 /* _timescaledb_catalog.ts_get_partition_for_key(key anyelement) RETURNS INT */
-extern "C" TSDLLEXPORT Datum ts_get_partition_for_key(PG_FUNCTION_ARGS);
+TSDLLEXPORT Datum ts_get_partition_for_key(PG_FUNCTION_ARGS);
 
 TS_FUNCTION_INFO_V1(ts_get_partition_for_key);
 
@@ -368,7 +368,7 @@ Datum
 ts_get_partition_for_key(PG_FUNCTION_ARGS)
 {
 	Datum arg = PG_GETARG_DATUM(0);
-	PartFuncCache *pfc =(PartFuncCache *) fcinfo->flinfo->fn_extra;
+	PartFuncCache *pfc = fcinfo->flinfo->fn_extra;
 	struct varlena *data;
 	uint32 hash_u;
 	int32 res;
@@ -409,7 +409,7 @@ ts_get_partition_for_key(PG_FUNCTION_ARGS)
 	PG_RETURN_INT32(res);
 }
 
-extern "C" TSDLLEXPORT Datum ts_get_partition_hash(PG_FUNCTION_ARGS);
+TSDLLEXPORT Datum ts_get_partition_hash(PG_FUNCTION_ARGS);
 
 TS_FUNCTION_INFO_V1(ts_get_partition_hash);
 
@@ -426,7 +426,7 @@ Datum
 ts_get_partition_hash(PG_FUNCTION_ARGS)
 {
 	Datum arg = PG_GETARG_DATUM(0);
-	PartFuncCache *pfc =(PartFuncCache *) fcinfo->flinfo->fn_extra;
+	PartFuncCache *pfc = fcinfo->flinfo->fn_extra;
 	Datum hash;
 	int32 res;
 	Oid collation;

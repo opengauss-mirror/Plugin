@@ -23,22 +23,11 @@ typedef struct ScanIterator
 	(ScanIterator)                                                                                 \
 	{                                                                                              \
 		.ctx = {                                                                                   \
-		.table = catalog_get_table_id(ts_catalog_get(), catalog_table_id),                                             \
-		.index = 0,                                              								   \
-		.scankey = 0,                                              						   \
-		.nkeys = 0,                                             	 						   \
-		.norderbys = 0,                                             				 			   \
-		.limit = 0,                                              								   \
-		.want_itup = false,                                             						   \
-		.lockmode = lock_mode,                                              						   \
-		.result_mctx = mctx,                                              						   \
-		.tuplock = NULL,                                                                           \
-		.scandirection = ForwardScanDirection,                                                     \
-		.data = 0,                                                                              \
-		.prescan = 0,                                                                              \
-		.postscan = 0,                                                                             \
-		.filter = 0,                                                                               \
-		.tuple_found = 0,                                                                \
+			.table = catalog_get_table_id(ts_catalog_get(), catalog_table_id),                     \
+			.nkeys = 0,                                                                            \
+			.scandirection = ForwardScanDirection,                                                 \
+			.lockmode = lock_mode,                                                                 \
+			.result_mctx = mctx,                                                                   \
 		}                                                                                          \
 	}
 
