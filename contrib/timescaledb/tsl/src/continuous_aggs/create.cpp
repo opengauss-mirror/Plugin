@@ -47,8 +47,8 @@
 #include <rewrite/rewriteManip.h>
 #include <utils/builtins.h>
 #include <utils/catcache.h>
-#include <utils/int8.h>
-#include <utils/ruleutils.h>
+//#include <utils/int8.h>//tsdb
+//#include <utils/ruleutils.h>
 #include <utils/syscache.h>
 #include <utils/typcache.h>
 
@@ -145,7 +145,7 @@
 		selquery->querySource = srcquery->querySource;                                             \
 		selquery->queryId = srcquery->queryId;                                                     \
 		selquery->canSetTag = srcquery->canSetTag;                                                 \
-		selquery->utilityStmt = copyObject(srcquery->utilityStmt);                                 \
+		selquery->utilityStmt =(Node*) copyObject(srcquery->utilityStmt);                                 \
 		selquery->resultRelation = 0;                                                              \
 		selquery->hasAggs = true;                                                                  \
 		selquery->hasRowSecurity = false;                                                          \
@@ -365,13 +365,13 @@ cagg_add_trigger_hypertable(Oid relid, char *trigarg)
 
 	CreateTrigStmt stmt = {
 		.type = T_CreateTrigStmt,
-		.row = true,
-		.timing = TRIGGER_TYPE_AFTER,
 		.trigname = CAGGINVAL_TRIGGER_NAME,
 		.relation = makeRangeVar(schema, relname, -1),
 		.funcname =
 			list_make2(makeString(INTERNAL_SCHEMA_NAME), makeString(CAGG_INVALIDATION_TRIGGER)),
 		.args = list_make1(makeString(trigarg)),
+		.row = true,
+		.timing = TRIGGER_TYPE_AFTER,
 		.events = TRIGGER_TYPE_INSERT | TRIGGER_TYPE_UPDATE | TRIGGER_TYPE_DELETE,
 	};
 	if (check_trigger_exists_hypertable(relid, CAGGINVAL_TRIGGER_NAME))
@@ -397,13 +397,18 @@ mattablecolumninfo_add_mattable_index(MatTableColumnInfo *matcolinfo, Hypertable
 {
 	IndexStmt stmt = {
 		.type = T_IndexStmt,
-		.accessMethod = DEFAULT_INDEX_TYPE,
+		.schemaname = NULL,
 		.idxname = NULL,
 		.relation = makeRangeVar(NameStr(ht->fd.schema_name), NameStr(ht->fd.table_name), 0),
+		.accessMethod = DEFAULT_INDEX_TYPE,
 		.tableSpace = get_tablespace_name(get_rel_tablespace(ht->main_table_relid)),
 	};
 	IndexElem timeelem = { .type = T_IndexElem,
 						   .name = matcolinfo->matpartcolname,
+						   .expr = {},
+						   .indexcolname = {},
+						   .collation = NULL,
+						   .opclass = NULL,
 						   .ordering = SORTBY_DESC };
 	ListCell *le = NULL;
 	foreach (le, matcolinfo->mat_groupcolname_list)
@@ -515,8 +520,8 @@ mattablecolumninfo_get_partial_select_query(MatTableColumnInfo *mattblinfo, Quer
 {
 	Query *partial_selquery;
 	CAGG_MAKEQUERY(partial_selquery, userview_query);
-	partial_selquery->rtable = copyObject(userview_query->rtable);
-	partial_selquery->jointree = copyObject(userview_query->jointree);
+	partial_selquery->rtable =(List*) copyObject(userview_query->rtable);
+	partial_selquery->jointree =(FromExpr*) copyObject(userview_query->jointree);
 	partial_selquery->targetList = mattblinfo->partial_seltlist;
 	partial_selquery->groupClause = mattblinfo->partial_grouplist;
 	partial_selquery->havingQual = NULL;
@@ -614,7 +619,7 @@ caggtimebucket_validate(CAggTimebucketInfo *tbinfo, List *groupClause, List *tar
 				found = true;
 
 			/*only column allowed : time_bucket('1day', <column> ) */
-			col_arg = lsecond(fe->args);
+			col_arg =(Node*) lsecond(fe->args);
 			if (!(IsA(col_arg, Var)) || ((Var *) col_arg)->varattno != tbinfo->htpartcolno)
 				elog(ERROR,
 					 "time_bucket function for continuous aggregate query should be called "
@@ -699,8 +704,7 @@ cagg_agg_validate(Node *node, void *context)
 					 errmsg("ordered set/hypothetical aggregates are not supported by "
 							"continuous aggregate query")));
 		}
-		if (aggform->aggcombinefn == InvalidOid ||
-			(aggform->aggtranstype == INTERNALOID && aggform->aggdeserialfn == InvalidOid))
+		if (0)//aggform->aggcombinefn == InvalidOid ||(aggform->aggtranstype == INTERNALOID && aggform->aggdeserialfn == InvalidOid)
 		{
 			ReleaseSysCache(aggtuple);
 			ereport(ERROR,
@@ -712,7 +716,7 @@ cagg_agg_validate(Node *node, void *context)
 
 		return false;
 	}
-	return expression_tree_walker(node, cagg_agg_validate, context);
+	return expression_tree_walker(node,(bool (*)()) cagg_agg_validate, context);
 }
 
 static CAggTimebucketInfo
@@ -767,7 +771,7 @@ cagg_validate_query(Query *query)
 	}
 	/* check if we have a hypertable in the FROM clause */
 	rtref = linitial_node(RangeTblRef, query->jointree->fromlist);
-	rte = list_nth(query->rtable, rtref->rtindex - 1);
+	rte =(RangeTblEntry *) list_nth(query->rtable, rtref->rtindex - 1);
 	/* FROM only <tablename> sets rte->inh to false */
 	if (rte->relkind != RELKIND_RELATION || rte->tablesample || rte->inh == false)
 	{
@@ -879,7 +883,7 @@ get_input_types_array_datum(Aggref *original_aggregate)
 
 	foreach (lc, original_aggregate->args)
 	{
-		TargetEntry *te = lfirst(lc);
+		TargetEntry *te =(TargetEntry *) lfirst(lc);
 		Oid type_oid = exprType((Node *) te->expr);
 		ArrayBuildState *schema_name_builder = initArrayResult(NAMEOID, builder_context, false);
 		HeapTuple tp;
@@ -1031,7 +1035,7 @@ get_finalize_aggref(Aggref *inp, Var *partial_state_var)
 	te = makeTargetEntry((Expr *) input_types_const, tlist_attno++, NULL, false);
 	tlist = lappend(tlist, te);
 
-	partial_bytea_var = copyObject(partial_state_var);
+	partial_bytea_var =(Var*) copyObject(partial_state_var);
 	te = makeTargetEntry((Expr *) partial_bytea_var, tlist_attno++, NULL, false);
 	tlist = lappend(tlist, te);
 
@@ -1302,7 +1306,7 @@ add_aggregate_partialize_mutator(Node *node, AggPartCxt *cxt)
 		newagg = get_finalize_aggref((Aggref *) node, var);
 		return (Node *) newagg;
 	}
-	return expression_tree_mutator(node, add_aggregate_partialize_mutator, cxt);
+	return expression_tree_mutator(node,(Node *(*)(Node *, void *)) add_aggregate_partialize_mutator, cxt);
 }
 
 /* This code modifies modquery */
@@ -1328,7 +1332,7 @@ add_aggregate_partialize_mutator(Node *node, AggPartCxt *cxt)
 typedef struct Cagg_havingcxt
 {
 	TargetEntry *old;
-	TargetEntry *new;
+	TargetEntry *new_tsdb;//tsdb
 	bool found;
 } cagg_havingcxt;
 
@@ -1343,9 +1347,9 @@ replace_having_qual_mutator(Node *node, cagg_havingcxt *cxt)
 	if (equal(node, cxt->old->expr))
 	{
 		cxt->found = true;
-		return (Node *) cxt->new->expr;
+		return (Node *) cxt->new_tsdb->expr;
 	}
-	return expression_tree_mutator(node, replace_having_qual_mutator, cxt);
+	return expression_tree_mutator(node,(Node *(*)(Node *, void *)) replace_having_qual_mutator, cxt);
 }
 
 /* modify the havingqual and replace exprs that already occur in targetlist
@@ -1355,7 +1359,7 @@ replace_having_qual_mutator(Node *node, cagg_havingcxt *cxt)
 static Node *
 replace_targetentry_in_havingqual(Query *origquery, List *newtlist)
 {
-	Node *having = copyObject(origquery->havingQual);
+	Node *having =(Node *) copyObject(origquery->havingQual);
 	List *origtlist = origquery->targetList;
 	List *modtlist = newtlist;
 	ListCell *lc, *lc2;
@@ -1369,10 +1373,10 @@ replace_targetentry_in_havingqual(Query *origquery, List *newtlist)
 		TargetEntry *te = (TargetEntry *) lfirst(lc);
 		TargetEntry *modte = (TargetEntry *) lfirst(lc2);
 		hcxt.old = te;
-		hcxt.new = modte;
+		hcxt.new_tsdb = modte;
 		hcxt.found = false;
 		having =
-			(Node *) expression_tree_mutator((Node *) having, replace_having_qual_mutator, &hcxt);
+			(Node *) expression_tree_mutator((Node *) having,(Node *(*)(Node *, void *)) replace_having_qual_mutator, &hcxt);
 	}
 	return having;
 }
@@ -1396,7 +1400,7 @@ finalizequery_init(FinalizeQueryInfo *inp, Query *orig_query, MatTableColumnInfo
 	Node *newhavingQual;
 	int resno = 1;
 
-	inp->final_userquery = copyObject(orig_query);
+	inp->final_userquery =(Query*) copyObject(orig_query);
 	inp->final_seltlist = NIL;
 	inp->final_havingqual = NULL;
 
@@ -1413,7 +1417,7 @@ finalizequery_init(FinalizeQueryInfo *inp, Query *orig_query, MatTableColumnInfo
 	foreach (lc, orig_query->targetList)
 	{
 		TargetEntry *tle = (TargetEntry *) lfirst(lc);
-		TargetEntry *modte = copyObject(tle);
+		TargetEntry *modte =(TargetEntry *) copyObject(tle);
 		cxt.addcol = false;
 		cxt.original_query_resno = resno;
 		/* if tle has aggrefs , get the corresponding
@@ -1421,7 +1425,7 @@ finalizequery_init(FinalizeQueryInfo *inp, Query *orig_query, MatTableColumnInfo
 		 * also add correspong materialization table column info
 		 * for the aggrefs in tle. */
 		modte = (TargetEntry *) expression_tree_mutator((Node *) modte,
-														add_aggregate_partialize_mutator,
+														(Node *(*)(Node *, void *))add_aggregate_partialize_mutator,
 														&cxt);
 		/* We need columns for non-aggregate targets
 		 * if it is not a resjunk OR appears in the grouping clause
@@ -1465,7 +1469,7 @@ finalizequery_init(FinalizeQueryInfo *inp, Query *orig_query, MatTableColumnInfo
 	cxt.ignore_aggoid = get_finalizefnoid();
 	cxt.original_query_resno = 0;
 	inp->final_havingqual =
-		expression_tree_mutator((Node *) newhavingQual, add_aggregate_partialize_mutator, &cxt);
+		expression_tree_mutator((Node *) newhavingQual,(Node *(*)(Node *, void *)) add_aggregate_partialize_mutator, &cxt);
 }
 /* Create select query with the finalize aggregates
  * for the materialization table
@@ -1653,7 +1657,7 @@ cagg_create(ViewStmt *stmt, Query *panquery, CAggTimebucketInfo *origquery_ht,
 	/* assign the column_name aliases in CREATE VIEW to the query. No other modifications to
 	 * panquery */
 	fixup_userview_query_tlist(panquery, stmt->aliases);
-	mattablecolumninfo_init(&mattblinfo, NIL, NIL, copyObject(panquery->groupClause));
+	mattablecolumninfo_init(&mattblinfo, NIL, NIL,(List*) copyObject(panquery->groupClause));
 	finalizequery_init(&finalqinfo, panquery, &mattblinfo);
 
 	/* invalidate all options on the stmt before using it
@@ -1664,7 +1668,7 @@ cagg_create(ViewStmt *stmt, Query *panquery, CAggTimebucketInfo *origquery_ht,
 	/* Step 0: add any internal columns needed for materialization based
 		on the user query's table
 	*/
-	usertbl_rte = list_nth(panquery->rtable, 0);
+	usertbl_rte =(RangeTblEntry *) list_nth(panquery->rtable, 0);
 	mattablecolumninfo_addinternal(&mattblinfo, usertbl_rte, origquery_ht->htid);
 
 	/* Step 1: create the materialization table */
@@ -1707,7 +1711,7 @@ cagg_create(ViewStmt *stmt, Query *panquery, CAggTimebucketInfo *origquery_ht,
 	/* create a dummy view to store the user supplied view query. This is to get PG
 	 * to display the view correctly without having to replicate the PG source code for make_viewdef
 	 */
-	orig_userview_query = copyObject(panquery);
+	orig_userview_query =(Query *) copyObject(panquery);
 	PRINT_MATINTERNAL_NAME(relnamebuf, "_direct_view_%d", materialize_hypertable_id);
 	dum_rel = makeRangeVar(pstrdup(INTERNAL_SCHEMA_NAME), pstrdup(relnamebuf), -1);
 	create_view_for_query(orig_userview_query, dum_rel);
@@ -1766,7 +1770,7 @@ tsl_process_continuous_agg_viewstmt(ViewStmt *stmt, const char *query_string, vo
 	rawstmt->stmt_len = pstmt_info->stmt_len;
 	query = parse_analyze(rawstmt, query_string, NULL, 0, NULL);
 #else
-	query = parse_analyze(copyObject(stmt->query), query_string, NULL, 0);
+	query = parse_analyze((Node *)copyObject(stmt->query), query_string, NULL, 0);
 #endif
 
 	nspid = RangeVarGetCreationNamespace(stmt->view);
@@ -1810,7 +1814,7 @@ cagg_update_view_definition(ContinuousAgg *agg, Hypertable *mat_ht,
 
 	Oid direct_view_oid = relation_oid(agg->data.direct_view_schema, agg->data.direct_view_name);
 	Relation direct_view_rel = relation_open(direct_view_oid, AccessShareLock);
-	Query *direct_query = copyObject(get_view_query(direct_view_rel));
+	Query *direct_query =(Query *) copyObject(get_view_query(direct_view_rel));
 	List *rtable = direct_query->rtable;
 	/* When a view is created (StoreViewQuery), 2 dummy rtable entries corresponding to "old" and
 	 * "new" are prepended to the rtable list. We remove these and adjust the varnos to recreate
@@ -1823,7 +1827,7 @@ cagg_update_view_definition(ContinuousAgg *agg, Hypertable *mat_ht,
 	Assert(list_length(direct_query->rtable) == 1);
 	CAggTimebucketInfo timebucket_exprinfo = cagg_validate_query(direct_query);
 
-	mattablecolumninfo_init(&mattblinfo, NIL, NIL, copyObject(direct_query->groupClause));
+	mattablecolumninfo_init(&mattblinfo, NIL, NIL,(List*) copyObject(direct_query->groupClause));
 	finalizequery_init(&fqi, direct_query, &mattblinfo);
 
 	Query *view_query = finalizequery_get_select_query(&fqi, mattblinfo.matcollist, &mataddress);
@@ -2044,7 +2048,7 @@ make_subquery_rte(Query *subquery, const char *aliasname)
 	rte->relid = InvalidOid;
 	rte->subquery = subquery;
 	rte->alias = makeAlias(aliasname, NIL);
-	rte->eref = copyObject(rte->alias);
+	rte->eref =(Alias *) copyObject(rte->alias);
 
 	foreach (lc, subquery->targetList)
 	{
@@ -2089,8 +2093,8 @@ build_union_query(CAggTimebucketInfo *tbinfo, MatTableColumnInfo *mattblinfo, Qu
 
 	Assert(list_length(q1->targetList) == list_length(q2->targetList));
 
-	q1 = copyObject(q1);
-	q2 = copyObject(q2);
+	q1 =(Query *) copyObject(q1);
+	q2 =(Query *) copyObject(q2);
 
 	TypeCacheEntry *tce = lookup_type_cache(tbinfo->htpartcoltype, TYPECACHE_LT_OPR);
 

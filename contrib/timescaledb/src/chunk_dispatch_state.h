@@ -16,7 +16,7 @@ typedef struct Cache Cache;
 /* State used for every tuple in an insert statement */
 typedef struct ChunkDispatchState
 {
-	CustomScanState cscan_state;
+	ExtensiblePlanState cscan_state;
 	Plan *subplan;
 	Cache *hypertable_cache;
 	Oid hypertable_relid;

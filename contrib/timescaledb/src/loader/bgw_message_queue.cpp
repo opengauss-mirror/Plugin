@@ -6,11 +6,11 @@
 #include <postgres.h>
 
 #include <miscadmin.h>
-#include <storage/lwlock.h>
+#include <storage/lock/lwlock.h>
 #include <storage/shmem.h>
 #include <storage/proc.h>
 #include <storage/procarray.h>
-#include <storage/shm_mq.h>
+//#include <storage/shm_mq.h>
 #include <access/xact.h>
 #include <storage/spin.h>
 #include <pgstat.h>
@@ -68,13 +68,13 @@ queue_init()
 	bool found;
 
 	LWLockAcquire(AddinShmemInitLock, LW_EXCLUSIVE);
-	mq = ShmemInitStruct(BGW_MQ_NAME, sizeof(MessageQueue), &found);
+	mq =(MessageQueue *) ShmemInitStruct(BGW_MQ_NAME, sizeof(MessageQueue), &found);
 	if (!found)
 	{
 		memset(mq, 0, sizeof(MessageQueue));
 		mq->reader_pid = InvalidPid;
 		SpinLockInit(&mq->mutex);
-		mq->lock = &(GetNamedLWLockTranche(BGW_MQ_TRANCHE_NAME))->lock;
+		//mq->lock = &(GetNamedLWLockTranche(BGW_MQ_TRANCHE_NAME))->lock;//tsdb
 	}
 	LWLockRelease(AddinShmemInitLock);
 }
@@ -93,7 +93,7 @@ extern void
 ts_bgw_message_queue_alloc(void)
 {
 	RequestAddinShmemSpace(sizeof(MessageQueue));
-	RequestNamedLWLockTranche(BGW_MQ_TRANCHE_NAME, 1);
+	//RequestNamedLWLockTranche(BGW_MQ_TRANCHE_NAME, 1);
 }
 
 /*
@@ -126,11 +126,11 @@ queue_set_reader(MessageQueue *queue)
 	SpinLockAcquire(&vq->mutex);
 	if (vq->reader_pid == InvalidPid)
 	{
-		vq->reader_pid = MyProcPid;
+		vq->reader_pid = t_thrd.proc_cxt.MyProcPid;
 	}
 	reader_pid = vq->reader_pid;
 	SpinLockRelease(&vq->mutex);
-	if (reader_pid != MyProcPid)
+	if (reader_pid != t_thrd.proc_cxt.MyProcPid)
 		ereport(ERROR,
 				(errmsg("only one reader allowed for TimescaleDB background worker message queue"),
 				 errhint("Current process is %d", reader_pid)));
@@ -143,7 +143,7 @@ queue_reset_reader(MessageQueue *queue)
 	bool reset = false;
 
 	SpinLockAcquire(&vq->mutex);
-	if (vq->reader_pid == MyProcPid)
+	if (vq->reader_pid == t_thrd.proc_cxt.MyProcPid)
 	{
 		reset = true;
 		vq->reader_pid = InvalidPid;
@@ -188,14 +188,14 @@ queue_remove(MessageQueue *queue)
 	BgwMessage *message = NULL;
 
 	LWLockAcquire(queue->lock, LW_EXCLUSIVE);
-	if (queue_get_reader(queue) != MyProcPid)
+	if (queue_get_reader(queue) != t_thrd.proc_cxt.MyProcPid)
 		ereport(ERROR,
 				(errmsg(
 					"cannot read if not reader for TimescaleDB background worker message queue")));
 
 	if (queue->num_elements > 0)
 	{
-		message = palloc(sizeof(BgwMessage));
+		message =(BgwMessage *) palloc(sizeof(BgwMessage));
 		memcpy(message, &queue->buffer[queue->read_upto], sizeof(BgwMessage));
 		queue->read_upto = (queue->read_upto + 1) % BGW_MQ_MAX_MESSAGES;
 		queue->num_elements--;
@@ -208,13 +208,13 @@ queue_remove(MessageQueue *queue)
 static BgwMessage *
 bgw_message_create(BgwMessageType message_type, Oid db_oid)
 {
-	BgwMessage *message = palloc(sizeof(BgwMessage));
+	BgwMessage *message =(BgwMessage *) palloc(sizeof(BgwMessage));
 	dsm_segment *seg;
 
 	seg = dsm_create(BGW_ACK_QUEUE_SIZE, 0);
 
 	*message = (BgwMessage){ .message_type = message_type,
-							 .sender_pid = MyProcPid,
+							 .sender_pid = t_thrd.proc_cxt.MyProcPid,
 							 .db_oid = db_oid,
 							 .ack_dsm_handle = dsm_segment_handle(seg) };
 
@@ -241,17 +241,17 @@ ts_shm_mq_wait_for_attach(MessageQueue *queue, shm_mq_handle *ack_queue_handle)
 			return SHM_MQ_DETACHED; /* Reader died after we enqueued our
 									 * message */
 #if PG96
-		WaitLatch(MyLatch, WL_LATCH_SET | WL_TIMEOUT, BGW_MQ_WAIT_INTERVAL);
+		WaitLatch(&t_thrd.proc->procLatch, WL_LATCH_SET | WL_TIMEOUT, BGW_MQ_WAIT_INTERVAL);
 #elif PG12_LT
-		WaitLatch(MyLatch, WL_LATCH_SET | WL_TIMEOUT, BGW_MQ_WAIT_INTERVAL, WAIT_EVENT_MQ_INTERNAL);
+		WaitLatch(&t_thrd.proc->procLatch, WL_LATCH_SET | WL_TIMEOUT, BGW_MQ_WAIT_INTERVAL, WAIT_EVENT_MQ_INTERNAL);
 #else
-		WaitLatch(MyLatch,
+		WaitLatch(&t_thrd.proc->procLatch,
 				  WL_LATCH_SET | WL_TIMEOUT | WL_EXIT_ON_PM_DEATH,
 				  BGW_MQ_WAIT_INTERVAL,
 				  WAIT_EVENT_MQ_INTERNAL);
 #endif
 
-		ResetLatch(MyLatch);
+		ResetLatch(&t_thrd.proc->procLatch);
 		CHECK_FOR_INTERRUPTS();
 	}
 	return SHM_MQ_DETACHED;
@@ -291,19 +291,19 @@ enqueue_message_wait_for_ack(MessageQueue *queue, BgwMessage *message,
 			break;
 		ereport(DEBUG1, (errmsg("TimescaleDB ack message receive failure, retrying")));
 #if PG96
-		WaitLatch(MyLatch, WL_LATCH_SET | WL_TIMEOUT, BGW_ACK_WAIT_INTERVAL);
+		WaitLatch(&t_thrd.proc->procLatch, WL_LATCH_SET | WL_TIMEOUT, BGW_ACK_WAIT_INTERVAL);
 #elif PG12_LT
-		WaitLatch(MyLatch,
+		WaitLatch(&t_thrd.proc->procLatch,
 				  WL_LATCH_SET | WL_TIMEOUT,
 				  BGW_ACK_WAIT_INTERVAL,
 				  WAIT_EVENT_MQ_INTERNAL);
 #else
-		WaitLatch(MyLatch,
+		WaitLatch(&t_thrd.proc->procLatch,
 				  WL_LATCH_SET | WL_TIMEOUT | WL_EXIT_ON_PM_DEATH,
 				  BGW_ACK_WAIT_INTERVAL,
 				  WAIT_EVENT_MQ_INTERNAL);
 #endif
-		ResetLatch(MyLatch);
+		ResetLatch(&t_thrd.proc->procLatch);
 		CHECK_FOR_INTERRUPTS();
 	}
 
@@ -335,7 +335,7 @@ ts_bgw_message_send_and_wait(BgwMessageType message_type, Oid db_oid)
 		ereport(ERROR,
 				(errmsg("TimescaleDB background worker dynamic shared memory segment not mapped")));
 	ack_queue = shm_mq_create(dsm_segment_address(seg), BGW_ACK_QUEUE_SIZE);
-	shm_mq_set_receiver(ack_queue, MyProc);
+	shm_mq_set_receiver(ack_queue, t_thrd.proc);
 	ack_queue_handle = shm_mq_attach(ack_queue, seg, NULL);
 	if (ack_queue_handle != NULL)
 		ack_received = enqueue_message_wait_for_ack(mq, message, ack_queue_handle);
@@ -380,11 +380,11 @@ send_ack(dsm_segment *seg, bool success)
 	shm_mq_result ack_res;
 	int n;
 
-	ack_queue = dsm_segment_address(seg);
+	ack_queue =(shm_mq *) dsm_segment_address(seg);
 	if (ack_queue == NULL)
 		return DSM_SEGMENT_UNAVAILABLE;
 
-	shm_mq_set_sender(ack_queue, MyProc);
+	shm_mq_set_sender(ack_queue, t_thrd.proc);
 	ack_queue_handle = shm_mq_attach(ack_queue, seg, NULL);
 	if (ack_queue_handle == NULL)
 		return QUEUE_NOT_ATTACHED;
@@ -397,19 +397,19 @@ send_ack(dsm_segment *seg, bool success)
 			break;
 		ereport(DEBUG1, (errmsg("TimescaleDB ack message send failure, retrying")));
 #if PG96
-		WaitLatch(MyLatch, WL_LATCH_SET | WL_TIMEOUT, BGW_ACK_WAIT_INTERVAL);
+		WaitLatch(&t_thrd.proc->procLatch, WL_LATCH_SET | WL_TIMEOUT, BGW_ACK_WAIT_INTERVAL);
 #elif PG12_LT
-		WaitLatch(MyLatch,
+		WaitLatch(&t_thrd.proc->procLatch,
 				  WL_LATCH_SET | WL_TIMEOUT,
 				  BGW_ACK_WAIT_INTERVAL,
 				  WAIT_EVENT_MQ_INTERNAL);
 #else
-		WaitLatch(MyLatch,
+		WaitLatch(&t_thrd.proc->procLatch,
 				  WL_LATCH_SET | WL_TIMEOUT | WL_EXIT_ON_PM_DEATH,
 				  BGW_ACK_WAIT_INTERVAL,
 				  WAIT_EVENT_MQ_INTERNAL);
 #endif
-		ResetLatch(MyLatch);
+		ResetLatch(&t_thrd.proc->procLatch);
 		CHECK_FOR_INTERRUPTS();
 	}
 

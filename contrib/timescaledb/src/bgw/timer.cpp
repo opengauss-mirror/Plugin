@@ -8,7 +8,7 @@
 #include <postmaster/bgworker.h>
 #include <storage/ipc.h>
 #include <storage/latch.h>
-#include <storage/lwlock.h>
+#include <storage/lock/lwlock.h>
 #include <storage/proc.h>
 #include <storage/shmem.h>
 #include <utils/jsonb.h>
@@ -76,8 +76,8 @@ wait_using_wait_latch(TimestampTz until)
 	if ((int64) timeout > (int64) INT_MAX)
 		timeout = INT_MAX;
 
-	wl_rc = WaitLatchCompat(MyLatch, WL_LATCH_SET | WL_TIMEOUT | WL_POSTMASTER_DEATH, timeout);
-	ResetLatch(MyLatch);
+	wl_rc = WaitLatchCompat(&t_thrd.proc->procLatch, WL_LATCH_SET | WL_TIMEOUT | WL_POSTMASTER_DEATH, timeout);
+	ResetLatch(&t_thrd.proc->procLatch);
 	if (wl_rc & WL_POSTMASTER_DEATH)
 		on_postmaster_death();
 

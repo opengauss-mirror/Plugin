@@ -5,11 +5,11 @@
  */
 #include <postgres.h>
 #include <string.h>
-#include <access/htup_details.h>
+#include <access/htup.h>
 #include <utils/builtins.h>
 #include <funcapi.h>
 #include <fmgr.h>
-#include <storage/fd.h>
+#include <storage/smgr/fd.h>
 
 #include "fmgr.h"
 #include "compat.h"
@@ -90,7 +90,7 @@ static bool
 get_pretty_version(char *pretty_version)
 {
 	FILE *version_file;
-	char *contents = palloc(MAX_READ_LEN);
+	char *contents =(char *) palloc(MAX_READ_LEN);
 	size_t bytes_read;
 	bool got_pretty_version = false;
 	int i;

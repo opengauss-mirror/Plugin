@@ -5,7 +5,7 @@
  */
 
 #include <postgres.h>
-#include <nodes/extensible.h>
+//#include <nodes/extensible.h>
 #include <optimizer/pathnode.h>
 #include <optimizer/paths.h>
 
@@ -23,46 +23,46 @@
 
 static Path *compress_chunk_dml_path_create(Path *subpath, Oid chunk_relid);
 static Plan *compress_chunk_dml_plan_create(PlannerInfo *root, RelOptInfo *relopt,
-											CustomPath *best_path, List *tlist, List *clauses,
+											ExtensiblePath *best_path, List *tlist, List *clauses,
 											List *custom_plans);
-static Node *compress_chunk_dml_state_create(CustomScan *scan);
+static Node *compress_chunk_dml_state_create(ExtensiblePlan *scan);
 
-static void compress_chunk_dml_begin(CustomScanState *node, EState *estate, int eflags);
-static TupleTableSlot *compress_chunk_dml_exec(CustomScanState *node);
-static void compress_chunk_dml_end(CustomScanState *node);
-static void compress_chunk_dml_rescan(CustomScanState *node);
+static void compress_chunk_dml_begin(ExtensiblePlanState *node, EState *estate, int eflags);
+static TupleTableSlot *compress_chunk_dml_exec(ExtensiblePlanState *node);
+static void compress_chunk_dml_end(ExtensiblePlanState *node);
+static void compress_chunk_dml_rescan(ExtensiblePlanState *node);
 
-static CustomPathMethods compress_chunk_dml_path_methods = {
-	.CustomName = "CompressChunkDml",
-	.PlanCustomPath = compress_chunk_dml_plan_create,
+static ExtensiblePathMethods compress_chunk_dml_path_methods = {
+	.ExtensibleName = "CompressChunkDml",
+	.PlanExtensiblePath = compress_chunk_dml_plan_create,
 };
 
-static CustomScanMethods compress_chunk_dml_plan_methods = {
-	.CustomName = "CompressChunkDml",
-	.CreateCustomScanState = compress_chunk_dml_state_create,
+static ExtensiblePlanMethods compress_chunk_dml_plan_methods = {
+	.ExtensibleName = "CompressChunkDml",
+	.CreateExtensiblePlanState = compress_chunk_dml_state_create,
 };
 
-static CustomExecMethods compress_chunk_dml_state_methods = {
-	.CustomName = COMPRESS_CHUNK_DML_STATE_NAME,
-	.BeginCustomScan = compress_chunk_dml_begin,
-	.EndCustomScan = compress_chunk_dml_end,
-	.ExecCustomScan = compress_chunk_dml_exec,
-	.ReScanCustomScan = compress_chunk_dml_rescan,
+static ExtensibleExecMethods compress_chunk_dml_state_methods = {
+	.ExtensibleName = COMPRESS_CHUNK_DML_STATE_NAME,
+	.BeginExtensiblePlan = compress_chunk_dml_begin,
+	.ExecExtensiblePlan = compress_chunk_dml_exec,
+	.EndExtensiblePlan = compress_chunk_dml_end,
+	.ReScanExtensiblePlan = compress_chunk_dml_rescan,
 };
 
 static void
-compress_chunk_dml_begin(CustomScanState *node, EState *estate, int eflags)
+compress_chunk_dml_begin(ExtensiblePlanState *node, EState *estate, int eflags)
 {
-	CustomScan *cscan = castNode(CustomScan, node->ss.ps.plan);
-	Plan *subplan = linitial(cscan->custom_plans);
-	node->custom_ps = list_make1(ExecInitNode(subplan, estate, eflags));
+	ExtensiblePlan *cscan = castNode(ExtensiblePlan, node->ss.ps.plan);
+	Plan *subplan =(Plan *) linitial(cscan->extensible_plans);
+	node->extensible_ps = list_make1(ExecInitNode(subplan, estate, eflags));
 }
 
 /*
  * nothing to reset for rescan in dml blocker
  */
 static void
-compress_chunk_dml_rescan(CustomScanState *node)
+compress_chunk_dml_rescan(ExtensiblePlanState *node)
 {
 }
 
@@ -71,7 +71,7 @@ compress_chunk_dml_rescan(CustomScanState *node)
  * and all rows are saved in the compressed chunk.
  */
 static TupleTableSlot *
-compress_chunk_dml_exec(CustomScanState *node)
+compress_chunk_dml_exec(ExtensiblePlanState *node)
 {
 	CompressChunkDmlState *state = (CompressChunkDmlState *) node;
 	Oid chunk_relid = state->chunk_relid;
@@ -82,10 +82,10 @@ compress_chunk_dml_exec(CustomScanState *node)
 }
 
 static void
-compress_chunk_dml_end(CustomScanState *node)
+compress_chunk_dml_end(ExtensiblePlanState *node)
 {
 	// CompressChunkDmlState *state = (CompressChunkDmlState *) node;
-	PlanState *substate = linitial(node->custom_ps);
+	PlanState *substate =(PlanState *) linitial(node->extensible_ps);
 	ExecEndNode(substate);
 }
 
@@ -95,43 +95,43 @@ compress_chunk_dml_path_create(Path *subpath, Oid chunk_relid)
 	CompressChunkDmlPath *path = (CompressChunkDmlPath *) palloc0(sizeof(CompressChunkDmlPath));
 
 	memcpy(&path->cpath.path, subpath, sizeof(Path));
-	path->cpath.path.type = T_CustomPath;
-	path->cpath.path.pathtype = T_CustomScan;
+	path->cpath.path.type = T_ExtensiblePath;
+	path->cpath.path.pathtype = T_ExtensiblePlan;
 	path->cpath.path.parent = subpath->parent;
 	path->cpath.path.pathtarget = subpath->pathtarget;
 	// path->cpath.path.param_info = subpath->param_info;
 	path->cpath.methods = &compress_chunk_dml_path_methods;
-	path->cpath.custom_paths = list_make1(subpath);
+	path->cpath.extensible_paths = list_make1(subpath);
 	path->chunk_relid = chunk_relid;
 
 	return &path->cpath.path;
 }
 
 static Plan *
-compress_chunk_dml_plan_create(PlannerInfo *root, RelOptInfo *relopt, CustomPath *best_path,
+compress_chunk_dml_plan_create(PlannerInfo *root, RelOptInfo *relopt, ExtensiblePath *best_path,
 							   List *tlist, List *clauses, List *custom_plans)
 {
 	CompressChunkDmlPath *cdpath = (CompressChunkDmlPath *) best_path;
-	CustomScan *cscan = makeNode(CustomScan);
+	ExtensiblePlan *cscan = makeNode(ExtensiblePlan);
 
 	Assert(list_length(custom_plans) == 1);
 
 	cscan->methods = &compress_chunk_dml_plan_methods;
-	cscan->custom_plans = custom_plans;
+	cscan->extensible_plans = custom_plans;
 	cscan->scan.scanrelid = relopt->relid;
 	cscan->scan.plan.targetlist = tlist;
-	cscan->custom_scan_tlist = NIL;
-	cscan->custom_private = list_make1_oid(cdpath->chunk_relid);
+	cscan->extensible_plan_tlist = NIL;
+	cscan->extensible_private = list_make1_oid(cdpath->chunk_relid);
 	return &cscan->scan.plan;
 }
 
 static Node *
-compress_chunk_dml_state_create(CustomScan *scan)
+compress_chunk_dml_state_create(ExtensiblePlan *scan)
 {
 	CompressChunkDmlState *state;
 
-	state = (CompressChunkDmlState *) newNode(sizeof(CompressChunkDmlState), T_CustomScanState);
-	state->chunk_relid = linitial_oid(scan->custom_private);
+	state = (CompressChunkDmlState *) newNode(sizeof(CompressChunkDmlState), T_ExtensiblePlanState);
+	state->chunk_relid = linitial_oid(scan->extensible_private);
 	state->cscan_state.methods = &compress_chunk_dml_state_methods;
 	return (Node *) state;
 }

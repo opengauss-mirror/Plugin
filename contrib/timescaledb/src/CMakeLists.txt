@@ -1,63 +1,73 @@
 set(SOURCES
-  agg_bookend.c
-  base64_compat.c
-  func_cache.c
-  cache.c
-  cache_invalidate.c
-  catalog.c
-  continuous_agg.c
-  chunk.c
-  chunk_adaptive.c
-  chunk_constraint.c
-  chunk_dispatch.c
-  chunk_dispatch_plan.c
-  chunk_dispatch_state.c
-  chunk_index.c
-  chunk_insert_state.c
-  constraint_aware_append.c
-  cross_module_fn.c
-  copy.c
-  compression_chunk_size.c
-  compression_with_clause.c
-  dimension.c
-  dimension_slice.c
-  dimension_vector.c
-  estimate.c
-  event_trigger.c
-  extension.c
-  gapfill.c
-  guc.c
-  histogram.c
-  hypercube.c
-  hypertable.c
-  hypertable_cache.c
-  hypertable_compression.c
-  hypertable_insert.c
-  hypertable_restrict_info.c
-  indexing.c
-  init.c
-  interval.c
-  metadata.c
-  jsonb_utils.c
-  license_guc.c
-  partitioning.c
-  planner.c
-  plan_expand_hypertable.c
-  plan_add_hashagg.c
-  plan_agg_bookend.c
-  plan_partialize.c
-  process_utility.c
-  scanner.c
-  scan_iterator.c
-  sort_transform.c
-  subspace_store.c
-  tablespace.c
-  time_bucket.c
-  custom_type_cache.c
-  trigger.c
-  utils.c
-  version.c
-  with_clause_parser.c
+agg_bookend.cpp
+base64_compat.cpp
+tsdb_dsm.cpp
+tsdb_shm.cpp
+tsdb_event_trigger.cpp
+tsdb_get_obj.cpp
+tsdb_extension.cpp
+tsdb_head.cpp
+tsdb_static.cpp
+tsdb_static2.cpp
+tsdb.cpp
+func_cache.cpp
+cache.cpp
+cache_invalidate.cpp
+catalog.cpp
+continuous_agg.cpp
+chunk.cpp
+chunk_adaptive.cpp
+chunk_constraint.cpp
+chunk_dispatch.cpp
+chunk_dispatch_plan.cpp
+chunk_dispatch_state.cpp
+chunk_index.cpp
+chunk_insert_state.cpp
+constraint_aware_append.cpp
+cross_module_fn.cpp
+copy.cpp
+compression_chunk_size.cpp
+compression_with_clause.cpp
+debug_wait.cpp
+dimension.cpp
+dimension_slice.cpp
+dimension_vector.cpp
+estimate.cpp
+event_trigger.cpp
+extension.cpp
+gapfill.cpp
+guc.cpp
+histogram.cpp
+hypercube.cpp
+hypertable.cpp
+hypertable_cache.cpp
+hypertable_compression.cpp
+hypertable_insert.cpp
+hypertable_restrict_info.cpp
+indexing.cpp
+init.cpp
+interval.cpp
+metadata.cpp
+jsonb_utils.cpp
+license_guc.cpp
+partitioning.cpp
+planner.cpp
+plan_expand_hypertable.cpp
+plan_add_hashagg.cpp
+plan_agg_bookend.cpp
+plan_partialize.cpp
+process_utility.cpp
+scanner.cpp
+scan_iterator.cpp
+sort_transform.cpp
+subspace_store.cpp
+tablespace.cpp
+time_bucket.cpp
+custom_type_cache.cpp
+trigger.cpp
+utils.cpp
+version.cpp
+with_clause_parser.cpp
 )
 
 # Add test source code in Debug builds
@@ -65,7 +75,7 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
   set(TS_DEBUG 1)
   set(DEBUG 1)
   list(APPEND SOURCES
-    debug_wait.c)
+    debug_wait.cpp)
 endif (CMAKE_BUILD_TYPE MATCHES Debug)
 
 include(build-defs.cmake)

@@ -12,7 +12,7 @@
 #include <catalog/pg_constraint.h>
 #include <catalog/objectaddress.h>
 #include <catalog/namespace.h>
-#include <access/htup_details.h>
+#include <access/htup.h>
 #include <utils/syscache.h>
 #include <utils/lsyscache.h>
 #include <utils/rel.h>
@@ -38,6 +38,7 @@
 #include "catalog.h"
 #include "scanner.h"
 #include "chunk.h"
+// #include "tsdb.h" // TSDB
 
 static bool chunk_index_insert(int32 chunk_id, const char *chunk_index, int32 hypertable_id,
 							   const char *hypertable_index);
@@ -100,11 +101,11 @@ adjust_expr_attnos(Oid ht_relid, IndexInfo *ii, Relation chunkrel)
 
 	/* Get a list of references to all Vars in the expression */
 	if (ii->ii_Expressions != NIL)
-		vars = list_concat(vars, pull_var_clause((Node *) ii->ii_Expressions, 0));
+		vars = list_concat(vars, pull_var_clause((Node *) ii->ii_Expressions, {},{}));
 
 	/* Get a list of references to all Vars in the predicate */
 	if (ii->ii_Predicate != NIL)
-		vars = list_concat(vars, pull_var_clause((Node *) ii->ii_Predicate, 0));
+		vars = list_concat(vars, pull_var_clause((Node *) ii->ii_Predicate,  {},{}));
 
 	foreach (lc, vars)
 	{
@@ -290,8 +291,8 @@ ts_chunk_index_create_post_adjustment(int32 hypertable_id, Relation template_ind
 										   0,	  /* constr_flags constant and 0
 													* for now */
 										   false,  /* allow system table mods */
-										   false); /* is internal */
-
+										   (IndexCreateExtraArgs*)false); /* is internal */
+											//tsdb 这里本来没有强制类型转化
 	ReleaseSysCache(tuple);
 
 	return chunk_indexrelid;
@@ -470,13 +471,22 @@ chunk_index_scan(int indexid, ScanKeyData scankey[], int nkeys, tuple_found_func
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, CHUNK_INDEX),
 		.index = catalog_get_index(catalog, CHUNK_INDEX, indexid),
-		.nkeys = nkeys,
 		.scankey = scankey,
-		.tuple_found = tuple_found,
-		.filter = tuple_filter,
-		.data = data,
+		.nkeys = nkeys,
+		.norderbys = 0,
+		.limit = 0,
+		.want_itup = false,
 		.lockmode = lockmode,
+		.result_mctx = NULL,
+		.tuplock = NULL,
 		.scandirection = ForwardScanDirection,
+		.data = data,
+		.prescan = 0,
+		.postscan = 0,
+		.filter = tuple_filter,
+		.tuple_found = tuple_found,
+		
+		
 	};
 
 	return ts_scanner_scan(&scanctx);
@@ -495,7 +505,7 @@ chunk_index_mapping_from_tuple(TupleInfo *ti, ChunkIndexMapping *cim)
 
 	if (cim == NULL)
 	{
-		cim = palloc(sizeof(ChunkIndexMapping));
+		cim =(ChunkIndexMapping*) palloc(sizeof(ChunkIndexMapping));
 	}
 	cim->chunkoid = chunk->table_id;
 	cim->indexoid = get_relname_relid(NameStr(chunk_index->index_name), nspoid_chunk);
@@ -509,7 +519,7 @@ chunk_index_mapping_from_tuple(TupleInfo *ti, ChunkIndexMapping *cim)
 static ScanTupleResult
 chunk_index_collect(TupleInfo *ti, void *data)
 {
-	List **mappings = data;
+	List **mappings =(List **) data;
 	ChunkIndexMapping *cim = chunk_index_mapping_from_tuple(ti, NULL);
 
 	*mappings = lappend(*mappings, cim);
@@ -610,7 +620,7 @@ chunk_index_tuple_delete(TupleInfo *ti, void *data)
 {
 	FormData_chunk_index *chunk_index = (FormData_chunk_index *) GETSTRUCT(ti->tuple);
 	Oid schemaid = chunk_index_get_schemaid(chunk_index, true);
-	ChunkIndexDeleteData *cid = data;
+	ChunkIndexDeleteData *cid =(ChunkIndexDeleteData *) data;
 
 	ts_catalog_delete(ti->scanrel, ti->tuple);
 
@@ -652,7 +662,7 @@ static ScanFilterResult
 chunk_index_name_and_schema_filter(TupleInfo *ti, void *data)
 {
 	FormData_chunk_index *chunk_index = (FormData_chunk_index *) GETSTRUCT(ti->tuple);
-	ChunkIndexDeleteData *cid = data;
+	ChunkIndexDeleteData *cid =(ChunkIndexDeleteData *) data;
 
 	if (namestrcmp(&chunk_index->index_name, cid->index_name) == 0)
 	{
@@ -680,6 +690,8 @@ ts_chunk_index_delete(int32 chunk_id, const char *indexname, bool drop_index)
 {
 	ScanKeyData scankey[2];
 	ChunkIndexDeleteData data = {
+		.index_name = "",
+		.schema = "",
 		.drop_index = drop_index,
 	};
 
@@ -707,8 +719,9 @@ ts_chunk_index_delete_by_name(const char *schema, const char *index_name, bool d
 {
 	ChunkIndexDeleteData data = {
 		.index_name = index_name,
-		.drop_index = drop_index,
 		.schema = schema,
+		.drop_index = drop_index,
+		
 	};
 
 	chunk_index_scan_update(INVALID_INDEXID,
@@ -724,6 +737,8 @@ ts_chunk_index_delete_by_chunk_id(int32 chunk_id, bool drop_index)
 {
 	ScanKeyData scankey[1];
 	ChunkIndexDeleteData data = {
+		.index_name = "",
+		.schema = "",
 		.drop_index = drop_index,
 	};
 
@@ -744,7 +759,7 @@ ts_chunk_index_delete_by_chunk_id(int32 chunk_id, bool drop_index)
 static ScanTupleResult
 chunk_index_tuple_found(TupleInfo *ti, void *const data)
 {
-	ChunkIndexMapping *const cim = data;
+	ChunkIndexMapping *const cim =(ChunkIndexMapping *) data;
 
 	chunk_index_mapping_from_tuple(ti, cim);
 	return SCAN_DONE;
@@ -785,7 +800,7 @@ static ScanFilterResult
 chunk_hypertable_index_name_filter(TupleInfo *ti, void *data)
 {
 	FormData_chunk_index *chunk_index = (FormData_chunk_index *) GETSTRUCT(ti->tuple);
-	ChunkIndexMapping *cim = data;
+	ChunkIndexMapping *cim =(ChunkIndexMapping *) data;
 	const char *hypertable_indexname = get_rel_name(cim->parent_indexoid);
 
 	if (namestrcmp(&chunk_index->hypertable_index_name, hypertable_indexname) == 0)
@@ -831,7 +846,7 @@ typedef struct ChunkIndexRenameInfo
 static ScanTupleResult
 chunk_index_tuple_rename(TupleInfo *ti, void *data)
 {
-	ChunkIndexRenameInfo *info = data;
+	ChunkIndexRenameInfo *info =(ChunkIndexRenameInfo *) data;
 	HeapTuple tuple = heap_copytuple(ti->tuple);
 	FormData_chunk_index *chunk_index = (FormData_chunk_index *) GETSTRUCT(tuple);
 
@@ -928,7 +943,7 @@ ts_chunk_index_rename_parent(Hypertable *ht, Oid hypertable_indexrelid, const ch
 static ScanTupleResult
 chunk_index_tuple_set_tablespace(TupleInfo *ti, void *data)
 {
-	char *tablespace = data;
+	char *tablespace =(char *) data;
 	FormData_chunk_index *chunk_index = (FormData_chunk_index *) GETSTRUCT(ti->tuple);
 	Oid schemaoid = chunk_index_get_schemaid(chunk_index, false);
 	Oid indexrelid = get_relname_relid(NameStr(chunk_index->index_name), schemaoid);

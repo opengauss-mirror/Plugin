@@ -8,7 +8,7 @@
 #include <funcapi.h>
 #include <access/genam.h>
 #include <access/heapam.h>
-#include <access/htup_details.h>
+// #include <access/htup_details.h>
 #include <access/htup.h>
 #include <access/xact.h>
 #include <catalog/indexing.h>
@@ -332,7 +332,7 @@ Datum
 ts_pg_unix_microseconds_to_interval(PG_FUNCTION_ARGS)
 {
 	int64 microseconds = PG_GETARG_INT64(0);
-	Interval *interval = palloc0(sizeof(*interval));
+	Interval *interval =(Interval *) palloc0(sizeof(*interval));
 	interval->day = microseconds / USECS_PER_DAY;
 	interval->time = microseconds % USECS_PER_DAY;
 	PG_RETURN_INTERVAL_P(interval);
@@ -514,7 +514,7 @@ ts_lookup_proc_filtered(const char *schema, const char *funcname, Oid *rettype, 
 	int i;
 
 	/*
-	 * We could use SearchSysCache3 to get by (name, args, namespace), but
+	 * We could use SearchSysCache3 to get by (name, args, namespacee), but
 	 * that would not allow us to check for functions that take either
 	 * ANYELEMENTOID or a dimension-specific in the same search.
 	 */
@@ -548,11 +548,11 @@ ts_lookup_proc_filtered(const char *schema, const char *funcname, Oid *rettype, 
 /*
  * ts_get_operator
  *
- *    finds an operator given an exact specification (name, namespace,
+ *    finds an operator given an exact specification (name, namespacee,
  *    left and right type IDs).
  */
 Oid
-ts_get_operator(const char *name, Oid namespace, Oid left, Oid right)
+ts_get_operator(const char *name, Oid namespacee, Oid left, Oid right)
 {
 	HeapTuple tup;
 	Oid opoid = InvalidOid;
@@ -561,7 +561,7 @@ ts_get_operator(const char *name, Oid namespace, Oid left, Oid right)
 						  PointerGetDatum(name),
 						  ObjectIdGetDatum(left),
 						  ObjectIdGetDatum(right),
-						  ObjectIdGetDatum(namespace));
+						  ObjectIdGetDatum(namespacee));
 	if (HeapTupleIsValid(tup))
 	{
 #if PG12_LT
@@ -619,7 +619,7 @@ ts_get_appendrelinfo(PlannerInfo *root, Index rti, bool missing_ok)
 
 	foreach (lc, root->append_rel_list)
 	{
-		AppendRelInfo *appinfo = lfirst(lc);
+		AppendRelInfo *appinfo =(AppendRelInfo *) lfirst(lc);
 		if (appinfo->child_relid == rti)
 			return appinfo;
 	}
@@ -637,7 +637,7 @@ ts_find_em_expr_for_rel(EquivalenceClass *ec, RelOptInfo *rel)
 
 	foreach (lc_em, ec->ec_members)
 	{
-		EquivalenceMember *em = lfirst(lc_em);
+		EquivalenceMember *em =(EquivalenceMember *) lfirst(lc_em);
 
 		if (bms_is_subset(em->em_relids, rel->relids) && !bms_is_empty(em->em_relids))
 		{
@@ -667,8 +667,8 @@ ts_has_row_security(Oid relid)
 	if (!HeapTupleIsValid(tuple))
 		elog(ERROR, "cache lookup failed for relid %d", relid);
 	classform = (Form_pg_class) GETSTRUCT(tuple);
-	relrowsecurity = classform->relrowsecurity;
-	relforcerowsecurity = classform->relforcerowsecurity;
+	relrowsecurity = true;
+	relforcerowsecurity = true;
 	ReleaseSysCache(tuple);
 	return (relrowsecurity || relforcerowsecurity);
 }

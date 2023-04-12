@@ -14,7 +14,7 @@
 #include <access/tupconvert.h>
 
 #include "tupconvert.h"
-
+#include "compat.h"
 /*
  * Perform conversion of a tuple slot according to the map.
  */

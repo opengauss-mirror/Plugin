@@ -44,11 +44,12 @@ cmp_dimension_id(const void *left, const void *right)
 Dimension *
 ts_hyperspace_get_dimension_by_id(Hyperspace *hs, int32 id)
 {
+	FormData_dimension fdd = {.id = id};
 	Dimension dim = {
-		.fd.id = id,
+		.fd = fdd,
 	};
 
-	return bsearch(&dim, hs->dimensions, hs->num_dimensions, sizeof(Dimension), cmp_dimension_id);
+	return (Dimension *)bsearch(&dim, hs->dimensions, hs->num_dimensions, sizeof(Dimension), cmp_dimension_id);
 }
 
 Dimension *
@@ -250,9 +251,20 @@ Datum
 ts_dimension_calculate_open_range_default(PG_FUNCTION_ARGS)
 {
 	int64 value = PG_GETARG_INT64(0);
+	FormData_dimension fdd ={
+		.id = 0,
+		.hypertable_id = 0,
+		.column_name = {},
+		.column_type = 0,
+		.aligned = false,
+		.num_slices = 0,
+		.partitioning_func_schema = {},
+		.partitioning_func = {},
+		.interval_length =PG_GETARG_INT64(1), 
+	};
+
 	Dimension dim = {
-		.fd.id = 0,
-		.fd.interval_length = PG_GETARG_INT64(1),
+		.fd=fdd,
 	};
 	DimensionSlice *slice = calculate_open_range_default(&dim, value);
 
@@ -300,9 +312,19 @@ Datum
 ts_dimension_calculate_closed_range_default(PG_FUNCTION_ARGS)
 {
 	int64 value = PG_GETARG_INT64(0);
+	FormData_dimension fdd ={
+		.id = 0,
+		.hypertable_id = 0,
+		.column_name = {},
+		.column_type = 0,
+		.aligned = false,
+		.num_slices =PG_GETARG_INT16(1),
+		.partitioning_func_schema = {},
+		.partitioning_func = {},
+		 
+	};
 	Dimension dim = {
-		.fd.id = 0,
-		.fd.num_slices = PG_GETARG_INT16(1),
+		.fd = fdd,
 	};
 	DimensionSlice *slice = calculate_closed_range_default(&dim, value);
 
@@ -322,7 +344,7 @@ static Hyperspace *
 hyperspace_create(int32 hypertable_id, Oid main_table_relid, uint16 num_dimensions,
 				  MemoryContext mctx)
 {
-	Hyperspace *hs = MemoryContextAllocZero(mctx, HYPERSPACE_SIZE(num_dimensions));
+	Hyperspace *hs =(Hyperspace *) MemoryContextAllocZero(mctx, HYPERSPACE_SIZE(num_dimensions));
 
 	hs->hypertable_id = hypertable_id;
 	hs->main_table_relid = main_table_relid;
@@ -334,7 +356,7 @@ hyperspace_create(int32 hypertable_id, Oid main_table_relid, uint16 num_dimensio
 static ScanTupleResult
 dimension_tuple_found(TupleInfo *ti, void *data)
 {
-	Hyperspace *hs = data;
+	Hyperspace *hs =(Hyperspace *) data;
 	Dimension *d = &hs->dimensions[hs->num_dimensions++];
 
 	dimension_fill_in_from_tuple(d, ti, hs->main_table_relid);
@@ -350,14 +372,20 @@ dimension_scan_internal(ScanKeyData *scankey, int nkeys, tuple_found_func tuple_
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, DIMENSION),
 		.index = catalog_get_index(catalog, DIMENSION, dimension_index),
-		.nkeys = nkeys,
-		.limit = limit,
 		.scankey = scankey,
-		.data = data,
-		.tuple_found = tuple_found,
+		.nkeys = nkeys,
+		.norderbys = 0,
+		.limit = limit,
+		.want_itup = false,
 		.lockmode = lockmode,
-		.scandirection = ForwardScanDirection,
 		.result_mctx = mctx,
+		.tuplock = NULL,
+		.scandirection = ForwardScanDirection,
+		.data = data,
+		.prescan = 0,
+		.postscan = 0,
+		.filter = 0,
+		.tuple_found = tuple_found,
 	};
 
 	return ts_scanner_scan(&scanctx);
@@ -395,7 +423,7 @@ ts_dimension_scan(int32 hypertable_id, Oid main_table_relid, int16 num_dimension
 static ScanTupleResult
 dimension_find_hypertable_id_tuple_found(TupleInfo *ti, void *data)
 {
-	int32 *hypertable_id = data;
+	int32 *hypertable_id =(int32 *) data;
 	bool isnull = false;
 
 	*hypertable_id = heap_getattr(ti->tuple, Anum_dimension_hypertable_id, ti->desc, &isnull);
@@ -447,13 +475,20 @@ dimension_scan_update(int32 dimension_id, tuple_found_func tuple_found, void *da
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, DIMENSION),
 		.index = catalog_get_index(catalog, DIMENSION, DIMENSION_ID_IDX),
-		.nkeys = 1,
-		.limit = 1,
 		.scankey = scankey,
-		.data = data,
-		.tuple_found = tuple_found,
+		.nkeys = 1,
+		.norderbys = 0,
+		.limit = 1,
+		.want_itup = false,
 		.lockmode = lockmode,
+		.result_mctx = NULL,
+		.tuplock = NULL,
 		.scandirection = ForwardScanDirection,
+		.data = data,
+		.prescan = NULL,
+		.postscan = NULL,
+		.filter = NULL,
+		.tuple_found = tuple_found,
 	};
 
 	ScanKeyInit(&scankey[0],
@@ -471,7 +506,7 @@ dimension_tuple_delete(TupleInfo *ti, void *data)
 	CatalogSecurityContext sec_ctx;
 	bool isnull;
 	Datum dimension_id = heap_getattr(ti->tuple, Anum_dimension_id, ti->desc, &isnull);
-	bool *delete_slices = data;
+	bool *delete_slices =(bool *) data;
 
 	Assert(!isnull);
 
@@ -511,7 +546,7 @@ ts_dimension_delete_by_hypertable_id(int32 hypertable_id, bool delete_slices)
 static ScanTupleResult
 dimension_tuple_update(TupleInfo *ti, void *data)
 {
-	Dimension *dim = data;
+	Dimension *dim =(Dimension *) data;
 	HeapTuple tuple;
 	Datum values[Natts_dimension];
 	bool nulls[Natts_dimension];
@@ -710,7 +745,7 @@ ts_dimension_transform_value(Dimension *dim, Oid collation, Datum value, Oid con
 static Point *
 point_create(int16 num_dimensions)
 {
-	Point *p = palloc0(POINT_SIZE(num_dimensions));
+	Point *p =(Point *) palloc0(POINT_SIZE(num_dimensions));
 
 	p->cardinality = num_dimensions;
 	p->num_coords = 0;
@@ -918,6 +953,8 @@ dimension_add_not_null_on_column(Oid table_relid, char *colname)
 		.type = T_AlterTableCmd,
 		.subtype = AT_SetNotNull,
 		.name = colname,
+		.def = {},
+		.behavior = {},
 		.missing_ok = false,
 	};
 
@@ -1086,13 +1123,17 @@ DimensionInfo *
 ts_dimension_info_create_open(Oid table_relid, Name column_name, Datum interval, Oid interval_type,
 							  regproc partitioning_func)
 {
-	DimensionInfo *info = palloc(sizeof(*info));
+	DimensionInfo *info =(DimensionInfo *) palloc(sizeof(*info));
 	*info = (DimensionInfo){
-		.type = DIMENSION_TYPE_OPEN,
 		.table_relid = table_relid,
+		.dimension_id = 0,
 		.colname = column_name,
+		.coltype = 0,
+		.type = DIMENSION_TYPE_OPEN,
 		.interval_datum = interval,
 		.interval_type = interval_type,
+		.interval = 0,
+		.num_slices = 0,
 		.partitioning_func = partitioning_func,
 	};
 	return info;
@@ -1102,14 +1143,22 @@ DimensionInfo *
 ts_dimension_info_create_closed(Oid table_relid, Name column_name, int32 num_slices,
 								regproc partitioning_func)
 {
-	DimensionInfo *info = palloc(sizeof(*info));
+	DimensionInfo *info =(DimensionInfo *) palloc(sizeof(*info));
 	*info = (DimensionInfo){
-		.type = DIMENSION_TYPE_CLOSED,
 		.table_relid = table_relid,
+		.dimension_id = 0,
 		.colname = column_name,
+		.coltype = 0,
+		.type = DIMENSION_TYPE_CLOSED,
+		.interval_datum = 0,
+		.interval_type = 0,
+		.interval = 0,
 		.num_slices = num_slices,
-		.num_slices_is_set = true,
 		.partitioning_func = partitioning_func,
+		.if_not_exists = false,
+		.skip = false,
+		.set_not_null = false,
+		.num_slices_is_set = true,
 	};
 	return info;
 }
@@ -1324,15 +1373,20 @@ ts_dimension_add(PG_FUNCTION_ARGS)
 {
 	Cache *hcache;
 	DimensionInfo info = {
-		.type = PG_ARGISNULL(2) ? DIMENSION_TYPE_OPEN : DIMENSION_TYPE_CLOSED,
 		.table_relid = PG_GETARG_OID(0),
+		.dimension_id = 0,
 		.colname = PG_ARGISNULL(1) ? NULL : PG_GETARG_NAME(1),
-		.num_slices = PG_ARGISNULL(2) ? DatumGetInt32(-1) : PG_GETARG_INT32(2),
-		.num_slices_is_set = !PG_ARGISNULL(2),
+		.coltype = 0,
+		.type = PG_ARGISNULL(2) ? DIMENSION_TYPE_OPEN : DIMENSION_TYPE_CLOSED,
 		.interval_datum = PG_ARGISNULL(3) ? DatumGetInt32(-1) : PG_GETARG_DATUM(3),
 		.interval_type = PG_ARGISNULL(3) ? InvalidOid : get_fn_expr_argtype(fcinfo->flinfo, 3),
+		.interval = 0,
+		.num_slices = PG_ARGISNULL(2) ? DatumGetInt32(-1) : PG_GETARG_INT32(2),
 		.partitioning_func = PG_ARGISNULL(4) ? InvalidOid : PG_GETARG_OID(4),
 		.if_not_exists = PG_ARGISNULL(5) ? false : PG_GETARG_BOOL(5),
+		.skip = false,
+		.set_not_null = false,
+		.num_slices_is_set = !PG_ARGISNULL(2),
 	};
 	Datum retval = 0;
 
@@ -1478,12 +1532,20 @@ ts_dimensions_rename_schema_name(char *old_name, char *new_name)
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, DIMENSION),
 		.index = InvalidOid,
-		.nkeys = 1,
 		.scankey = scankey,
-		.tuple_found = dimension_rename_schema_name,
-		.data = names,
+		.nkeys = 1,
+		.norderbys = 0,
+		.limit = 0,
+		.want_itup = false,
 		.lockmode = RowExclusiveLock,
+		.result_mctx = NULL,
+		.tuplock = NULL,
 		.scandirection = ForwardScanDirection,
+		.data = names,
+		.prescan = NULL,
+		.postscan = NULL,
+		.filter = NULL,
+		.tuple_found = dimension_rename_schema_name,
 	};
 
 	namestrcpy(&old_schema_name, old_name);

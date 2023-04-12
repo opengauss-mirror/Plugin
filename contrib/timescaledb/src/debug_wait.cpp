@@ -7,11 +7,11 @@
 #include "debug_wait.h"
 
 #include <postgres.h>
-
+#include "compat.h" // tsdb
 #include <fmgr.h>
 
 #include <access/hash.h>
-#include <storage/lock.h>
+#include <storage/lock/lock.h>
 #include <miscadmin.h>
 #include <utils/builtins.h>
 
@@ -23,7 +23,7 @@ ts_debug_waitpoint_init(DebugWait *waitpoint, const char *tagname)
 	/* Use 64-bit hashing to get two independent 32-bit hashes */
 	uint64 hash = DatumGetUInt32(hash_any((const unsigned char *) tagname, strlen(tagname)));
 
-	SET_LOCKTAG_ADVISORY(waitpoint->tag, MyDatabaseId, (uint32)(hash >> 32), (uint32) hash, 1);
+	SET_LOCKTAG_ADVISORY(waitpoint->tag, u_sess->proc_cxt.MyDatabaseId, (uint32)(hash >> 32), (uint32) hash, 1);
 	waitpoint->tagname = pstrdup(tagname);
 	ereport(DEBUG1, (errmsg("initializing waitpoint '%s' to use %lu", waitpoint->tagname, hash)));
 }

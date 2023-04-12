@@ -6,7 +6,7 @@
 #include <postgres.h>
 #include <access/xact.h>
 #include <access/transam.h>
-#include <commands/event_trigger.h>
+//#include <commands/event_trigger.h>
 #include <catalog/namespace.h>
 #include <utils/lsyscache.h>
 #include <utils/inval.h>
@@ -23,11 +23,12 @@
 #include <utils/builtins.h>
 #include <utils/fmgroids.h>
 
+#include "config.h"
 #include "catalog.h"
 #include "extension.h"
 #include "guc.h"
 #include "config.h"
-#include "extension_utils.c"
+#include "extension_utils.cpp"
 #include "compat.h"
 
 #define TS_UPDATE_SCRIPT_CONFIG_VAR "timescaledb.update_script_stage"
@@ -83,7 +84,7 @@ ts_extension_check_version(const char *so_version)
 						sql_version)));
 	}
 
-	if (!process_shared_preload_libraries_in_progress && !extension_loader_present())
+	if (!u_sess->misc_cxt.process_shared_preload_libraries_in_progress && !extension_loader_present())
 	{
 		extension_load_without_preload();
 	}
@@ -96,12 +97,14 @@ ts_extension_check_server_version()
 	 * This is a load-time check for the correct server version since the
 	 * extension may be distributed as a binary
 	 */
-	char *server_version_num_guc = GetConfigOptionByName("server_version_num", NULL, false);
+	//tsdb 原本函数为GetConfigOptionByName("server_version_num", NULL, true)
+	char *server_version_num_guc = GetConfigOptionByName("server_version_num", NULL);
 	long server_version_num = strtol(server_version_num_guc, NULL, 10);
 
 	if (!is_supported_pg_version(server_version_num))
 	{
-		char *server_version_guc = GetConfigOptionByName("server_version", NULL, false);
+		//tsdb 原本函数为GetConfigOptionByName("server_version", NULL, true)
+		char *server_version_guc = GetConfigOptionByName("server_version", NULL);
 
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -260,7 +263,7 @@ ts_extension_is_loaded(void)
 	 * `pg_upgrade` to fail.
 	 *
 	 * See dumpDatabaseConfig in pg_dump.c. */
-	if (ts_guc_restoring || IsBinaryUpgrade)
+	if (ts_guc_restoring || u_sess->proc_cxt.IsBinaryUpgrade)
 		return false;
 
 	if (EXTENSION_STATE_UNKNOWN == extstate || EXTENSION_STATE_TRANSITIONING == extstate)

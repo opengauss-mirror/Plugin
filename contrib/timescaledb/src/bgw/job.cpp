@@ -15,7 +15,7 @@
 #include <utils/memutils.h>
 #include <utils/syscache.h>
 #include <utils/timestamp.h>
-#include <storage/lock.h>
+#include <storage/lock/lock.h>
 #include <storage/proc.h>
 #include <storage/procarray.h>
 #include <storage/sinvaladt.h>
@@ -156,7 +156,7 @@ get_job_type_from_name(Name job_type_name)
 
 	for (i = 0; i < _MAX_JOB_TYPE; i++)
 		if (namestrcmp(job_type_name, job_type_names[i]) == 0)
-			return i;
+			return (JobType)i;
 	return JOB_TYPE_UNKNOWN;
 }
 
@@ -185,7 +185,7 @@ typedef struct AccumData
 static ScanTupleResult
 bgw_job_accum_tuple_found(TupleInfo *ti, void *data)
 {
-	AccumData *list_data = data;
+	AccumData *list_data =(AccumData *) data;
 	BgwJob *job = bgw_job_from_tuple(ti->tuple, list_data->alloc_size, ti->mctx);
 	MemoryContext orig = MemoryContextSwitchTo(ti->mctx);
 
@@ -206,11 +206,23 @@ ts_bgw_job_get_all(size_t alloc_size, MemoryContext mctx)
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, BGW_JOB),
 		.index = InvalidOid,
-		.data = &list_data,
-		.tuple_found = bgw_job_accum_tuple_found,
+		.scankey = NULL,
+		.nkeys = NULL,
+		.norderbys = 0,
+		.limit = 0,
+		.want_itup = false,
 		.lockmode = AccessShareLock,
-		.scandirection = ForwardScanDirection,
 		.result_mctx = mctx,
+		.tuplock = NULL,
+		.scandirection = ForwardScanDirection,
+		.data = &list_data,
+		.prescan = NULL,
+		.postscan = NULL,
+		.filter = NULL,
+		.tuple_found = bgw_job_accum_tuple_found,
+		
+		
+		
 	};
 
 	ts_scanner_scan(&scanctx);
@@ -249,7 +261,7 @@ static bool
 lock_job(int32 job_id, LOCKMODE mode, JobLockLifetime lock_type, LOCKTAG *tag, bool block)
 {
 	/* Use a special pseudo-random field 4 value to avoid conflicting with user-advisory-locks */
-	TS_SET_LOCKTAG_ADVISORY(*tag, MyDatabaseId, job_id, 0);
+	TS_SET_LOCKTAG_ADVISORY(*tag, u_sess->proc_cxt.MyDatabaseId, job_id, 0);
 
 	return LockAcquire(tag, mode, lock_type == SESSION_LOCK, !block) != LOCKACQUIRE_NOT_AVAIL;
 }
@@ -354,9 +366,9 @@ get_job_lock_for_delete(int32 job_id)
 	 * equivalent of a row-based FOR UPDATE lock */
 	got_lock = lock_job(job_id,
 						AccessExclusiveLock,
-						/* session_lock */ false,
+						/* session_lock */(JobLockLifetime) false,
 						&tag,
-						/* block */ false);
+						/* block */(JobLockLifetime) false);
 	if (!got_lock)
 	{
 		/* If I couldn't get a lock, try killing the background worker that's running the job.
@@ -380,7 +392,7 @@ get_job_lock_for_delete(int32 job_id)
 		/* We have to grab this lock before proceeding so grab it in a blocking manner now */
 		got_lock = lock_job(job_id,
 							AccessExclusiveLock,
-							/* session lock */ false,
+							/* session lock */(JobLockLifetime) false,
 							&tag,
 							/* block */ true);
 	}
@@ -423,14 +435,23 @@ bgw_job_delete_scan(ScanKeyData *scankey, int32 job_id)
 	scanctx = (ScannerCtx){
 		.table = catalog_get_table_id(catalog, BGW_JOB),
 		.index = catalog_get_index(catalog, BGW_JOB, BGW_JOB_PKEY_IDX),
-		.nkeys = 1,
 		.scankey = scankey,
-		.data = NULL,
+		.nkeys = 1,
+		.norderbys = 0,
 		.limit = 1,
-		.tuple_found = bgw_job_tuple_delete,
+		.want_itup = false,
 		.lockmode = RowExclusiveLock,
-		.scandirection = ForwardScanDirection,
 		.result_mctx = CurrentMemoryContext,
+		.tuplock = NULL,
+		.scandirection = ForwardScanDirection,
+		.data = NULL,
+		.prescan = NULL,
+		.postscan = NULL,
+		.filter = NULL,
+		.tuple_found = bgw_job_tuple_delete,
+		
+		
+		
 	};
 
 	return ts_scanner_scan(&scanctx);
@@ -648,7 +669,7 @@ ts_bgw_job_entrypoint(PG_FUNCTION_ARGS)
 		zero_guc("max_parallel_maintenance_workers");
 #endif
 
-		res = ts_bgw_job_execute(job);
+		res =(JobResult) ts_bgw_job_execute(job);
 		/* The job is responsible for committing or aborting it's own txns */
 		if (IsTransactionState())
 			elog(ERROR,
@@ -846,20 +867,27 @@ bgw_job_update_scan(ScanKeyData *scankey, void *data)
 {
 	Catalog *catalog = ts_catalog_get();
 	ScanTupLock scantuplock = {
-		.waitpolicy = LockWaitBlock,
 		.lockmode = LockTupleExclusive,
+		.waitpolicy = LockWaitBlock,
+		
 	};
 	ScannerCtx scanctx = { .table = catalog_get_table_id(catalog, BGW_JOB),
 						   .index = catalog_get_index(catalog, BGW_JOB, BGW_JOB_PKEY_IDX),
-						   .nkeys = 1,
 						   .scankey = scankey,
-						   .data = data,
+						   .nkeys = 1,
+						   .norderbys = 0,
 						   .limit = 1,
-						   .tuple_found = bgw_job_tuple_update_by_id,
+						   .want_itup = false,
 						   .lockmode = RowExclusiveLock,
-						   .scandirection = ForwardScanDirection,
 						   .result_mctx = CurrentMemoryContext,
-						   .tuplock = &scantuplock };
+						   .tuplock = &scantuplock, 
+						   .scandirection = ForwardScanDirection,
+						   .data = data,
+						   .prescan = NULL,
+						   .postscan = NULL,
+						   .filter = NULL,
+						   .tuple_found = bgw_job_tuple_update_by_id,
+						   };
 
 	return ts_scanner_scan(&scanctx);
 }

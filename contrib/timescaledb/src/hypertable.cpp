@@ -4,7 +4,7 @@
  * LICENSE-APACHE for a copy of the license.
  */
 #include <postgres.h>
-#include <access/htup_details.h>
+#include <access/htup.h>
 #include <access/heapam.h>
 #include <access/relscan.h>
 #include <utils/lsyscache.h>
@@ -35,7 +35,7 @@
 #include "compat.h"
 #if PG11_LT /* PG11 consolidates pg_foo_fn.h -> pg_foo.h */
 #include <catalog/pg_inherits_fn.h>
-#include <catalog/pg_constraint_fn.h>
+//#include <catalog/pg_constraint_fn.h>
 #endif
 
 #include "hypertable.h"
@@ -227,7 +227,7 @@ static Hypertable *
 hypertable_from_tuple(HeapTuple tuple, MemoryContext mctx, TupleDesc desc)
 {
 	Oid namespace_oid;
-	Hypertable *h = MemoryContextAllocZero(mctx, sizeof(Hypertable));
+	Hypertable *h =(Hypertable *) MemoryContextAllocZero(mctx, sizeof(Hypertable));
 	hypertable_formdata_fill(&h->fd, tuple, desc);
 
 	namespace_oid = get_namespace_oid(NameStr(h->fd.schema_name), false);
@@ -249,7 +249,7 @@ ts_hypertable_from_tupleinfo(TupleInfo *ti)
 static ScanTupleResult
 hypertable_tuple_get_relid(TupleInfo *ti, void *data)
 {
-	Oid *relid = data;
+	Oid *relid =(Oid *) data;
 	FormData_hypertable fd;
 	Oid schema_oid;
 
@@ -272,12 +272,20 @@ ts_hypertable_id_to_relid(int32 hypertable_id)
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, HYPERTABLE),
 		.index = catalog_get_index(catalog, HYPERTABLE, HYPERTABLE_ID_INDEX),
-		.nkeys = 1,
 		.scankey = scankey,
-		.tuple_found = hypertable_tuple_get_relid,
-		.data = &relid,
+		.nkeys = 1,
+		.norderbys = 0,
+		.limit = 0,
+		.want_itup = false,
 		.lockmode = AccessShareLock,
+		.result_mctx = NULL,
+		.tuplock = NULL,
 		.scandirection = ForwardScanDirection,
+		.data = &relid,
+		.prescan = NULL,
+		.postscan = NULL,
+		.filter = NULL,
+		.tuple_found = hypertable_tuple_get_relid,
 	};
 
 	/* Perform an index scan on the hypertable pkey. */
@@ -363,15 +371,20 @@ hypertable_scan_limit_internal(ScanKeyData *scankey, int num_scankeys, int index
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, HYPERTABLE),
 		.index = catalog_get_index(catalog, HYPERTABLE, indexid),
-		.nkeys = num_scankeys,
 		.scankey = scankey,
-		.data = scandata,
+		.nkeys = num_scankeys,
+		.norderbys = 0,
 		.limit = limit,
-		.tuple_found = on_tuple_found,
+		.want_itup = false,
 		.lockmode = lock,
-		.filter = filter,
-		.scandirection = ForwardScanDirection,
 		.result_mctx = mctx,
+		.tuplock = NULL,
+		.scandirection = ForwardScanDirection,
+		.data = scandata,
+		.prescan = NULL,
+		.postscan = NULL,
+		.filter = filter,
+		.tuple_found = on_tuple_found,
 	};
 
 	return ts_scanner_scan(&scanctx);
@@ -419,7 +432,7 @@ ts_number_compressed_hypertables()
 static ScanTupleResult
 hypertable_tuple_append(TupleInfo *ti, void *data)
 {
-	List **hypertables = data;
+	List **hypertables =(List **) data;
 
 	*hypertables = lappend(*hypertables, ts_hypertable_from_tupleinfo(ti));
 
@@ -461,7 +474,7 @@ ts_hypertable_get_max_ignore_invalidation_older_than(Hypertable *ht)
 static ScanTupleResult
 hypertable_tuple_update(TupleInfo *ti, void *data)
 {
-	Hypertable *ht = data;
+	Hypertable *ht =(Hypertable *) data;
 	HeapTuple new_tuple;
 	CatalogSecurityContext sec_ctx;
 
@@ -470,8 +483,10 @@ hypertable_tuple_update(TupleInfo *ti, void *data)
 		Dimension *dim = ts_hyperspace_get_dimension(ht->space, DIMENSION_TYPE_OPEN, 0);
 		ChunkSizingInfo info = {
 			.table_relid = ht->main_table_relid,
-			.colname = dim == NULL ? NULL : NameStr(dim->fd.column_name),
 			.func = ht->chunk_sizing_func,
+			.target_size = 0,
+			.colname = dim == NULL ? NULL : NameStr(dim->fd.column_name),
+			
 		};
 
 		ts_chunk_adaptive_sizing_info_validate(&info);
@@ -571,7 +586,7 @@ ts_hypertable_create_trigger(Hypertable *ht, CreateTrigStmt *stmt, const char *q
 	/* create the trigger on the root table */
 	/* ACL permissions checks happen within this call */
 	root_trigger_addr =
-		CreateTriggerCompat(stmt, query, InvalidOid, InvalidOid, InvalidOid, InvalidOid, false);
+		CreateTriggerCompat(stmt, query, InvalidOid, InvalidOid, InvalidOid, InvalidOid, false,0);
 
 	/* and forward it to the chunks */
 	CommandCounterIncrement();
@@ -767,7 +782,7 @@ ts_hypertable_reset_associated_schema_name(const char *associated_schema)
 static ScanTupleResult
 tuple_found_lock(TupleInfo *ti, void *data)
 {
-	TM_Result *result = data;
+	TM_Result *result =(TM_Result *) data;
 
 	*result = ti->lockresult;
 	return SCAN_DONE;
@@ -946,7 +961,7 @@ hypertable_insert(int32 hypertable_id, Name schema_name, Name table_name,
 static ScanTupleResult
 hypertable_tuple_found(TupleInfo *ti, void *data)
 {
-	Hypertable **entry = data;
+	Hypertable **entry =(Hypertable **) data;
 
 	*entry = ts_hypertable_from_tupleinfo(ti);
 	return SCAN_DONE;
@@ -999,7 +1014,7 @@ hypertable_chunk_store_add(Hypertable *h, Chunk *chunk)
 
 	/* Add the chunk to the subspace store */
 	old_mcxt = MemoryContextSwitchTo(chunk_mcxt);
-	cse = palloc(sizeof(ChunkStoreEntry));
+	cse =(ChunkStoreEntry *) palloc(sizeof(ChunkStoreEntry));
 	cse->mcxt = chunk_mcxt;
 	cse->chunk = ts_chunk_copy(chunk);
 	ts_subspace_store_add(h->chunk_cache, chunk->cube, cse, chunk_store_entry_free);
@@ -1012,7 +1027,7 @@ static inline Chunk *
 hypertable_get_chunk(Hypertable *h, Point *point, bool create_if_not_exists)
 {
 	Chunk *chunk;
-	ChunkStoreEntry *cse = ts_subspace_store_get(h->chunk_cache, point);
+	ChunkStoreEntry *cse =(ChunkStoreEntry *) ts_subspace_store_get(h->chunk_cache, point);
 
 	if (cse != NULL)
 	{
@@ -1213,12 +1228,12 @@ hypertable_check_associated_schema_permissions(const char *schema_name, Oid user
 		 * Schema does not exist, so we must check that the user has
 		 * privileges to create the schema in the current database
 		 */
-		if (pg_database_aclcheck(MyDatabaseId, user_oid, ACL_CREATE) != ACLCHECK_OK)
+		if (pg_database_aclcheck(u_sess->proc_cxt.MyDatabaseId, user_oid, ACL_CREATE) != ACLCHECK_OK)
 			ereport(ERROR,
 					(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 					 errmsg("permissions denied: cannot create schema \"%s\" in database \"%s\"",
 							schema_name,
-							get_database_name(MyDatabaseId))));
+							get_database_name(u_sess->proc_cxt.MyDatabaseId))));
 	}
 	else if (pg_namespace_aclcheck(schema_oid, user_oid, ACL_CREATE) != ACLCHECK_OK)
 		ereport(ERROR,
@@ -1232,7 +1247,8 @@ static bool
 relation_has_tuples(Relation rel)
 {
 	TableScanDesc scandesc = table_beginscan(rel, GetActiveSnapshot(), 0, NULL);
-	bool hastuples = HeapTupleIsValid(heap_getnext(scandesc, ForwardScanDirection));
+	//tsdb 这里本来没有强制类型转化(TableScanDescData *)
+	bool hastuples = HeapTupleIsValid(heap_getnext((TableScanDescData *)scandesc, ForwardScanDirection));
 
 	heap_endscan(scandesc);
 	return hastuples;
@@ -1257,6 +1273,9 @@ table_is_logged(Oid table_relid)
 static bool
 table_has_replica_identity(Relation rel)
 {
+#ifdef OG30
+return false;
+#endif
 	return rel->rd_rel->relreplident != REPLICA_IDENTITY_DEFAULT;
 }
 
@@ -1294,14 +1313,20 @@ static void
 hypertable_create_schema(const char *schema_name)
 {
 	CreateSchemaStmt stmt = {
+		.type = {},
 		.schemaname = (char *) schema_name,
-		.authrole = NULL,
+		.authid = "",
+		.hasBlockChain = false,
 		.schemaElts = NIL,
+		.temptype = {},
+		.uuids = NULL,
+		.authrole = 0,
 		.if_not_exists = true,
 	};
-
+	//tsdb 加入了false
 	CreateSchemaCommand(&stmt,
-						"(generated CREATE SCHEMA command)"
+						"(generated CREATE SCHEMA command)",
+						false
 #if !PG96
 						,
 						-1,
@@ -1478,13 +1503,13 @@ insert_blocker_trigger_add(Oid relid)
 	char *schema = get_namespace_name(schemaid);
 	CreateTrigStmt stmt = {
 		.type = T_CreateTrigStmt,
-		.row = true,
-		.timing = TRIGGER_TYPE_BEFORE,
 		.trigname = INSERT_BLOCKER_NAME,
 		.relation = makeRangeVar(schema, relname, -1),
 		.funcname =
 			list_make2(makeString(INTERNAL_SCHEMA_NAME), makeString(OLD_INSERT_BLOCKER_NAME)),
 		.args = NIL,
+		.row = true,
+		.timing = TRIGGER_TYPE_BEFORE,
 		.events = TRIGGER_TYPE_INSERT,
 	};
 
@@ -1493,7 +1518,7 @@ insert_blocker_trigger_add(Oid relid)
 	 * the hypertable. This call will error out if a trigger with the same
 	 * name already exists. (This is the desired behavior.)
 	 */
-	objaddr = CreateTriggerCompat(&stmt, NULL, relid, InvalidOid, InvalidOid, InvalidOid, false);
+	objaddr = CreateTriggerCompat(&stmt, NULL, relid, InvalidOid, InvalidOid, InvalidOid, false,0);
 
 	if (!OidIsValid(objaddr.objectId))
 		elog(ERROR, "could not create insert blocker trigger");
@@ -1622,8 +1647,8 @@ ts_hypertable_create(PG_FUNCTION_ARGS)
 
 	ChunkSizingInfo chunk_sizing_info = {
 		.table_relid = table_relid,
-		.target_size = PG_ARGISNULL(11) ? NULL : PG_GETARG_TEXT_P(11),
 		.func = PG_ARGISNULL(12) ? InvalidOid : PG_GETARG_OID(12),
+		.target_size = PG_ARGISNULL(11) ? NULL : PG_GETARG_TEXT_P(11),
 		.colname = PG_ARGISNULL(1) ? NULL : PG_GETARG_CSTRING(1),
 		.check_for_index = !create_default_indexes,
 	};
@@ -1993,10 +2018,20 @@ ts_hypertables_rename_schema_name(const char *old_name, const char *new_name)
 	ScannerCtx scanctx = {
 		.table = catalog_get_table_id(catalog, HYPERTABLE),
 		.index = InvalidOid,
-		.tuple_found = hypertable_rename_schema_name,
-		.data = (void *) schema_names,
+		.scankey = 0,
+		.nkeys = 0,
+		.norderbys = 0,
+		.limit = 0,
+		.want_itup = false,
 		.lockmode = RowExclusiveLock,
+		.result_mctx = NULL,
+		.tuplock = NULL,
 		.scandirection = ForwardScanDirection,
+		.data = (void *) schema_names,
+		.prescan = NULL,
+		.postscan = NULL,
+		.filter = NULL,
+		.tuple_found = hypertable_rename_schema_name,
 	};
 
 	ts_scanner_scan(&scanctx);
@@ -2014,7 +2049,7 @@ hypertable_tuple_match_name(TupleInfo *ti, void *data)
 {
 	Oid relid;
 	FormData_hypertable fd;
-	AccumHypertable *accum = data;
+	AccumHypertable *accum =(AccumHypertable *) data;
 	Oid schema_oid;
 
 	hypertable_formdata_fill(&fd, ti->tuple, ti->desc);
@@ -2246,7 +2281,7 @@ ts_hypertable_clone_constraints_to_compressed(Hypertable *user_ht, List *constra
 	ts_catalog_database_info_become_owner(ts_catalog_database_info_get(), &sec_ctx);
 	foreach (lc, constraint_list)
 	{
-		NameData *conname = lfirst(lc);
+		NameData *conname =(NameData *) lfirst(lc);
 		CatalogInternalCall4(DDL_ADD_HYPERTABLE_FK_CONSTRAINT,
 							 NameGetDatum(conname),
 							 NameGetDatum(&user_ht->fd.schema_name),

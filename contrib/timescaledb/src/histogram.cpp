@@ -75,7 +75,7 @@ ts_hist_sfunc(PG_FUNCTION_ARGS)
 	{
 		/* Allocate memory to a new histogram state array */
 		nbuckets += 2;
-		state = MemoryContextAllocZero(aggcontext, HISTOGRAM_SIZE(state, nbuckets));
+		state =(Histogram *) MemoryContextAllocZero(aggcontext, HISTOGRAM_SIZE(state, nbuckets));
 		state->nbuckets = nbuckets;
 	}
 
@@ -96,7 +96,7 @@ copy_state(MemoryContext aggcontext, Histogram *state)
 	Histogram *copy;
 	Size bucket_bytes = state->nbuckets * sizeof(*copy->buckets);
 
-	copy = MemoryContextAlloc(aggcontext, sizeof(*copy) + bucket_bytes);
+	copy =(Histogram *) MemoryContextAlloc(aggcontext, sizeof(*copy) + bucket_bytes);
 	copy->nbuckets = state->nbuckets;
 	memcpy(copy->buckets, state->buckets, bucket_bytes);
 
@@ -198,7 +198,7 @@ ts_hist_deserializefunc(PG_FUNCTION_ARGS)
 
 	nbuckets = pq_getmsgint(&buf, 4);
 
-	state = MemoryContextAllocZero(aggcontext, HISTOGRAM_SIZE(state, nbuckets));
+	state =(Histogram *) MemoryContextAllocZero(aggcontext, HISTOGRAM_SIZE(state, nbuckets));
 	state->nbuckets = nbuckets;
 
 	for (i = 0; i < state->nbuckets; i++)

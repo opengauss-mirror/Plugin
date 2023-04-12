@@ -11,7 +11,7 @@
 
 #include <utils/memutils.h>
 #include <utils/rel.h>
-#include <utils/rls.h>
+//#include <utils/rls.h>
 #include <utils/lsyscache.h>
 #include <utils/builtins.h>
 #include <utils/guc.h>
@@ -75,7 +75,7 @@ create_chunk_rri_constraint_expr(ResultRelInfo *rri, Relation rel)
 	for (i = 0; i < ncheck; i++)
 	{
 		/* ExecQual wants implicit-AND form */
-		List *qual = make_ands_implicit(stringToNode(check[i].ccbin));
+		List *qual = make_ands_implicit((Expr*)stringToNode(check[i].ccbin));
 
 		rri->ri_ConstraintExprs[i] = (List *) prepare_constr_expr((Expr *) qual);
 	}
@@ -105,7 +105,7 @@ create_chunk_result_relation_info(ChunkDispatch *dispatch, Relation rel)
 {
 	ResultRelInfo *rri, *rri_orig;
 	Index hyper_rti = dispatch->hypertable_result_rel_info->ri_RangeTableIndex;
-	rri = palloc0(sizeof(ResultRelInfo));
+	rri =(ResultRelInfo*) palloc0(sizeof(ResultRelInfo));
 	NodeSetTag(rri, T_ResultRelInfo);
 
 	InitResultRelInfoCompat(rri, rel, hyper_rti, dispatch->estate->es_instrument);
@@ -436,7 +436,7 @@ setup_on_conflict_state(ChunkInsertState *state, ChunkDispatch *dispatch, AttrNu
 											hyper_rel,
 											chunk_rel);
 
-			ResultRelInfo_OnConflictWhereCompat(chunk_rri) = create_on_conflict_where_qual(clause);
+			ResultRelInfo_OnConflictWhereCompat(chunk_rri) =(ProjectionInfo*) create_on_conflict_where_qual(clause);
 		}
 	}
 }
@@ -572,7 +572,7 @@ ts_chunk_insert_state_create(Chunk *chunk, ChunkDispatch *dispatch)
 	resrelinfo = create_chunk_result_relation_info(dispatch, rel);
 	CheckValidResultRelCompat(resrelinfo, ts_chunk_dispatch_get_cmd_type(dispatch));
 
-	state = palloc0(sizeof(ChunkInsertState));
+	state =(ChunkInsertState*) palloc0(sizeof(ChunkInsertState));
 	state->mctx = cis_context;
 	state->rel = rel;
 	state->result_relation_info = resrelinfo;

@@ -8,7 +8,7 @@
 #include <access/xact.h>
 #include <config.h>
 #ifndef WIN32
-#include <access/parallel.h>
+#include "parallel.h"
 #endif
 #include <commands/extension.h>
 #include <miscadmin.h>
@@ -81,7 +81,7 @@ _PG_init(void)
 		elog(ERROR, "the extension called with a loader should always have a NULL prev hook");
 #endif
 	post_parse_analyze_hook = post_analyze_hook;
-	CacheRegisterRelcacheCallback(cache_invalidate_callback, PointerGetDatum(NULL));
+	CacheRegisterThreadRelcacheCallback(cache_invalidate_callback, PointerGetDatum(NULL));
 }
 
 void

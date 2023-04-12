@@ -51,6 +51,7 @@ ts_plain_connect(Connection *conn, const char *host, const char *servname, int p
 {
 	char strport[6];
 	struct addrinfo *ainfo, hints = {
+		.ai_flags = NULL,
 		.ai_family = AF_UNSPEC,
 		.ai_socktype = SOCK_STREAM,
 	};
@@ -261,6 +262,7 @@ static ConnOps plain_ops = {
 	.close = ts_plain_close,
 	.write = plain_write,
 	.read = plain_read,
+	.set_timeout = NULL,
 	.errmsg = ts_plain_errmsg,
 };
 

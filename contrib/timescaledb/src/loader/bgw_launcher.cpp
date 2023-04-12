@@ -11,7 +11,7 @@
 #include <postmaster/bgworker.h>
 #include <storage/ipc.h>
 #include <storage/latch.h>
-#include <storage/lwlock.h>
+#include <storage/lock/lwlock.h>
 #include <storage/proc.h>
 #include <storage/shmem.h>
 
@@ -20,7 +20,7 @@
 
 /* needed for getting database list*/
 #include <access/heapam.h>
-#include <access/htup_details.h>
+#include <access/htup.h>
 #include <catalog/pg_database.h>
 #include <utils/snapmgr.h>
 #include <access/xact.h>
@@ -97,7 +97,7 @@ static void launcher_sighup(SIGNAL_ARGS)
 	int save_errno = errno;
 
 	got_SIGHUP = true;
-	SetLatch(MyLatch);
+	SetLatch(&t_thrd.proc->procLatch);
 
 	errno = save_errno;
 }
@@ -131,6 +131,59 @@ typedef struct DbHashEntry
 
 static void scheduler_state_trans_enabled_to_allocated(DbHashEntry *entry);
 
+// #ifdef OG30
+// static inline BackgroundWorker* GetFreeBgworker()
+// {
+//     BGW_HDR* bgworker_base = (BGW_HDR *)g_instance.bgw_base;
+//     if (!bgworker_base->free_bgws) {
+//         return NULL;
+//     }
+//     BackgroundWorker* bgworker = bgworker_base->free_bgws;
+//     bgworker_base->free_bgws = (BackgroundWorker *)bgworker->links.next;
+//     return bgworker;
+// }
+
+// bool RegisterBackgroundWorker(BackgroundWorker *worker)
+// {
+//     BGW_HDR* bgworker_base = (BGW_HDR *)g_instance.bgw_base;
+//     BackgroundWorker *bgw = NULL;
+//     BackgroundWorkerArgs *bwa = NULL;
+
+//     pthread_mutex_lock(&g_instance.bgw_base_lock);
+//     bgw = GetFreeBgworker();
+//     if (bgw == NULL) {
+//         pthread_mutex_unlock(&g_instance.bgw_base_lock);
+//         ereport(WARNING, (errmsg("There are no more free background workers available")));
+//         return false;
+//     }
+//     bgw->bgw_id = pg_atomic_fetch_add_u64(&bgworker_base->bgw_id_seq, 1);
+//     pthread_mutex_unlock(&g_instance.bgw_base_lock);
+
+//     bgw->bgw_status = BGW_NOT_YET_STARTED;
+//     bgw->bgw_status_dur = 0;
+//     bgw->disable_count = 0;
+
+//     /* Construct bgworker thread args */
+//     bwa = (BackgroundWorkerArgs*)MemoryContextAllocZero(
+//         INSTANCE_GET_MEM_CXT_GROUP(MEMORY_CONTEXT_STORAGE), sizeof(BackgroundWorkerArgs));
+//     bwa->bgwcontext =(BgWorkerContext *) worker;
+//     bwa->bgworker = bgw;
+//     bwa->bgworkerId = bgw->bgw_id;
+
+//     /* Fork a new worker thread */
+//     bgw->bgw_notify_pid = initialize_util_thread(BGWORKER, bwa);
+//     /* failed to fork a new thread */
+//     if (bgw->bgw_notify_pid == 0) {
+//         pfree_ext(bwa);
+//         return false;
+//     }
+
+//     /* Copy the registration data into the registered workers list. */
+//     slist_push_head(&t_thrd.bgworker_cxt.bgwlist, &bgw->rw_lnode);
+//     return true;
+// }
+// #endif
+//end og30
 static void
 bgw_on_postmaster_death(void)
 {
@@ -160,7 +213,7 @@ report_error_on_worker_register_failure(DbHashEntry *entry)
 		ereport(LOG,
 				(errcode(ERRCODE_INSUFFICIENT_RESOURCES),
 				 errmsg("no available background worker slots"),
-				 errhint("Consider increasing max_worker_processes in tandem with "
+				 errhint("Consider increasing g_max_worker_processes in tandem with "
 						 "timescaledb.max_background_workers.")));
 	entry->state_transition_failures++;
 }
@@ -266,7 +319,7 @@ ts_bgw_cluster_launcher_register(void)
 	worker.bgw_notify_pid = 0;
 	snprintf(worker.bgw_library_name, BGW_MAXLEN, EXTENSION_NAME);
 	snprintf(worker.bgw_function_name, BGW_MAXLEN, "ts_bgw_cluster_launcher_main");
-	RegisterBackgroundWorker(&worker);
+	//RegisterBackgroundWorker((BgWorkerContext *)&worker);
 }
 
 /*
@@ -288,7 +341,7 @@ register_entrypoint_for_db(Oid db_id, VirtualTransactionId vxid, BackgroundWorke
 	worker.bgw_start_time = BgWorkerStart_RecoveryFinished;
 	snprintf(worker.bgw_library_name, BGW_MAXLEN, EXTENSION_NAME);
 	snprintf(worker.bgw_function_name, BGW_MAXLEN, BGW_ENTRYPOINT_FUNCNAME);
-	worker.bgw_notify_pid = MyProcPid;
+	worker.bgw_notify_pid = t_thrd.proc_cxt.MyProcPid;
 	worker.bgw_main_arg = ObjectIdGetDatum(db_id);
 	memcpy(worker.bgw_extra, &vxid, sizeof(VirtualTransactionId));
 
@@ -302,7 +355,15 @@ register_entrypoint_for_db(Oid db_id, VirtualTransactionId vxid, BackgroundWorke
 static HTAB *
 init_database_htab(void)
 {
-	HASHCTL info = { .keysize = sizeof(Oid), .entrysize = sizeof(DbHashEntry) };
+	HASHCTL info = {
+		 .num_partitions = NULL,
+		 .ssize = NULL,
+		 .dsize = NULL,
+		 .max_dsize = NULL,
+		 .ffactor = NULL,	
+		 .keysize = sizeof(Oid), 
+		 .entrysize = sizeof(DbHashEntry) 
+		 };
 
 	return hash_create("launcher_db_htab",
 					   ts_guc_max_background_workers,
@@ -364,8 +425,8 @@ populate_database_htab(HTAB *db_htab)
 
 	rel = table_open(DatabaseRelationId, AccessShareLock);
 	scan = table_beginscan_catalog(rel, 0, NULL);
-
-	while (HeapTupleIsValid(tup = heap_getnext(scan, ForwardScanDirection)))
+	//tsdb 这里本来没有强制类型转化(TableScanDescData *)
+	while (HeapTupleIsValid(tup = heap_getnext((TableScanDescData *)scan, ForwardScanDirection)))
 	{
 		Form_pg_database pgdb = (Form_pg_database) GETSTRUCT(tup);
 
@@ -512,7 +573,7 @@ scheduler_state_trans_automatic_all(HTAB *db_htab)
 	DbHashEntry *current_entry;
 
 	hash_seq_init(&hash_seq, db_htab);
-	while ((current_entry = hash_seq_search(&hash_seq)) != NULL)
+	while ((current_entry =(DbHashEntry *) hash_seq_search(&hash_seq)) != NULL)
 		scheduler_state_trans_automatic(current_entry);
 }
 
@@ -533,7 +594,7 @@ launcher_pre_shmem_cleanup(int code, Datum arg)
 		 * Stop everyone (or at least tell the Postmaster we don't care about
 		 * them anymore)
 		 */
-		while ((current_entry = hash_seq_search(&hash_seq)) != NULL)
+		while ((current_entry =(DbHashEntry *) hash_seq_search(&hash_seq)) != NULL)
 		{
 			if (current_entry->db_scheduler_handle != NULL)
 			{
@@ -764,7 +825,7 @@ ts_bgw_cluster_launcher_main(PG_FUNCTION_ARGS)
 	pgstat_report_appname(MyBgworkerEntry->bgw_name);
 	ereport(LOG, (errmsg("TimescaleDB background worker launcher connected to shared catalogs")));
 
-	htab_storage = MemoryContextAllocZero(TopMemoryContext, sizeof(*htab_storage));
+	htab_storage =(HTAB **) MemoryContextAllocZero(TopMemoryContext, sizeof(*htab_storage));
 
 	/*
 	 * We must setup the cleanup function _before_ initializing any state it
@@ -794,10 +855,10 @@ ts_bgw_cluster_launcher_main(PG_FUNCTION_ARGS)
 		if (handled_msgs)
 			continue;
 
-		wl_rc = WaitLatchCompat(MyLatch,
+		wl_rc = WaitLatchCompat(&t_thrd.proc->procLatch,
 								WL_LATCH_SET | WL_POSTMASTER_DEATH | WL_TIMEOUT,
 								BGW_LAUNCHER_POLL_TIME_MS);
-		ResetLatch(MyLatch);
+		ResetLatch(&t_thrd.proc->procLatch);
 		if (wl_rc & WL_POSTMASTER_DEATH)
 			bgw_on_postmaster_death();
 
@@ -834,7 +895,7 @@ database_is_template_check(void)
 	Form_pg_database pgdb;
 	HeapTuple tuple;
 
-	tuple = SearchSysCache1(DATABASEOID, ObjectIdGetDatum(MyDatabaseId));
+	tuple = SearchSysCache1(DATABASEOID, ObjectIdGetDatum(u_sess->proc_cxt.MyDatabaseId));
 	if (!HeapTupleIsValid(tuple))
 		ereport(ERROR,
 				(errmsg("TimescaleDB background worker failed to find entry for database in "
@@ -871,7 +932,8 @@ process_settings(Oid databaseid)
 	relsetting = heap_open(DbRoleSettingRelationId, AccessShareLock);
 
 	/* read all the settings under the same snapshot for efficiency */
-	snapshot = RegisterSnapshot(GetCatalogSnapshot(DbRoleSettingRelationId));
+	//tsdb 原本函数为 snapshot = RegisterSnapshot(GetCatalogSnapshot(DbRoleSettingRelationId));
+	snapshot = RegisterSnapshot(GetCatalogSnapshot());
 
 	/* Later settings are ignored if set earlier. */
 	ApplySetting(snapshot, databaseid, InvalidOid, relsetting, PGC_S_DATABASE);
@@ -930,7 +992,7 @@ ts_bgw_db_scheduler_entrypoint(PG_FUNCTION_ARGS)
 	 */
 	database_is_template_check();
 	/*  Process any config changes caused by an ALTER DATABASE */
-	process_settings(MyDatabaseId);
+	process_settings(u_sess->proc_cxt.MyDatabaseId);
 	ts_installed = ts_loader_extension_exists();
 	if (ts_installed)
 		StrNCpy(version, ts_loader_extension_version(), MAX_VERSION_LEN);

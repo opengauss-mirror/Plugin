@@ -19,7 +19,7 @@ static const char *conn_names[] = {
 static Connection *
 connection_internal_create(ConnectionType type, ConnOps *ops)
 {
-	Connection *conn = palloc(ops->size);
+	Connection *conn =(Connection *) palloc(ops->size);
 
 	if (NULL == conn)
 		return NULL;

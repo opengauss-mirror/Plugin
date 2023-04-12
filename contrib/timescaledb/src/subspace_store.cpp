@@ -40,7 +40,7 @@ typedef struct SubspaceStore
 static inline SubspaceStoreInternalNode *
 subspace_store_internal_node_create(bool last_internal_node)
 {
-	SubspaceStoreInternalNode *node = palloc(sizeof(SubspaceStoreInternalNode));
+	SubspaceStoreInternalNode *node =(SubspaceStoreInternalNode *) palloc(sizeof(SubspaceStoreInternalNode));
 
 	node->vector = ts_dimension_vec_create(DIMENSION_VEC_DEFAULT_SIZE);
 	node->descendants = 0;
@@ -73,7 +73,7 @@ SubspaceStore *
 ts_subspace_store_init(Hyperspace *space, MemoryContext mcxt, int16 max_items)
 {
 	MemoryContext old = MemoryContextSwitchTo(mcxt);
-	SubspaceStore *sst = palloc(sizeof(SubspaceStore));
+	SubspaceStore *sst =(SubspaceStore *) palloc(sizeof(SubspaceStore));
 
 	/*
 	 * make sure that the first dimension is a time dimension, otherwise the
@@ -118,7 +118,7 @@ ts_subspace_store_add(SubspaceStore *store, const Hypercube *hc, void *object,
 			Assert(last != NULL);
 			last->storage = subspace_store_internal_node_create(i == (hc->num_slices - 1));
 			last->storage_free = subspace_store_internal_node_free;
-			node = last->storage;
+			node =(SubspaceStoreInternalNode *) last->storage;
 		}
 
 		Assert(store->max_items == 0 || node->descendants <= (size_t) store->max_items);
@@ -185,7 +185,7 @@ ts_subspace_store_add(SubspaceStore *store, const Hypercube *hc, void *object,
 
 		last = match;
 		/* internal slices point to the next SubspaceStoreInternalNode */
-		node = last->storage;
+		node =(SubspaceStoreInternalNode *) last->storage;
 	}
 
 	Assert(last != NULL && last->storage == NULL);

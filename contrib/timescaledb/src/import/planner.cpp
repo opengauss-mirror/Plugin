@@ -15,10 +15,10 @@
  * our manipulations.
  */
 #include <postgres.h>
-#include <access/htup_details.h>
+#include <access/htup.h>
 #include <catalog/pg_collation.h>
 #include <catalog/pg_statistic.h>
-#include <executor/nodeAgg.h>
+#include <executor/node/nodeAgg.h>
 #include <nodes/makefuncs.h>
 #include <nodes/nodeFuncs.h>
 #include <optimizer/cost.h>
@@ -331,7 +331,7 @@ ts_get_variable_range(PlannerInfo *root, VariableStatData *vardata, Oid sortop, 
 	opfuncoid = get_opcode(sortop);
 #endif
 
-	get_typlenbyval(vardata->atttype, &typLen, &typByVal);
+	get_typlenbyval(vardata->atttype, &typLen,(bool*) &typByVal);
 
 	/*
 	 * If there is a histogram, grab the first and last values.
@@ -651,13 +651,23 @@ ts_make_pathkey_from_sortinfo(PlannerInfo *root, Expr *expr, Relids nullable_rel
 		elog(ERROR, "could not find opfamilies for equality operator %u", equality_op);
 
 	/* Now find or (optionally) create a matching EquivalenceClass */
+	//tsdb 原函数为
+	// eclass = get_eclass_for_sort_expr_tsdb(root,
+	// 								  expr,
+	// 								  nullable_relids,
+	// 								  opfamilies,
+	// 								  opcintype,
+	// 								  collation,
+	// 								  sortref,
+	// 								  rel,
+	// 								  create_it);
 	eclass = get_eclass_for_sort_expr(root,
 									  expr,
-									  nullable_relids,
 									  opfamilies,
 									  opcintype,
 									  collation,
 									  sortref,
+									  nullable_relids,
 									  rel,
 									  create_it);
 
@@ -949,7 +959,7 @@ ts_prepare_sort_from_pathkeys(Plan *lefttree, List *pathkeys, Relids relids,
 											   PVC_INCLUDE_PLACEHOLDERS);
 				foreach (k, exprvars)
 				{
-					if (!tlist_member_ignore_relabel(lfirst(k), tlist))
+					if (!tlist_member_ignore_relabel((Node *)lfirst(k), tlist))
 						break;
 				}
 				list_free(exprvars);
@@ -1110,7 +1120,7 @@ replace_nestloop_params_mutator(Node *node, PlannerInfo *root)
 		/* Replace the PlaceHolderVar with a nestloop Param */
 		return (Node *) replace_nestloop_param_placeholdervar(root, phv);
 	}
-	return expression_tree_mutator(node, replace_nestloop_params_mutator, (void *) root);
+	return expression_tree_mutator(node,(Node *(*)(Node *, void *)) replace_nestloop_params_mutator, (void *) root);
 }
 
 #if PG11_LT
@@ -1280,7 +1290,7 @@ replace_nestloop_param_var(PlannerInfo *root, Var *var)
 	/* Add it to the list of required NLPs */
 	nlp = makeNode(NestLoopParam);
 	nlp->paramno = param->paramid;
-	nlp->paramval = copyObject(var);
+	nlp->paramval =(Var*) copyObject(var);
 	root->curOuterParams = lappend(root->curOuterParams, nlp);
 
 	/* And return the replacement Param */

@@ -354,7 +354,7 @@ finish:
 static ScanTupleResult
 continuous_agg_tuple_found(TupleInfo *ti, void *data)
 {
-	Form_continuous_agg *cagg = data;
+	Form_continuous_agg *cagg =(Form_continuous_agg *) data;
 	*cagg = (Form_continuous_agg) GETSTRUCT(ti->tuple);
 	return SCAN_CONTINUE;
 }
@@ -654,7 +654,7 @@ scan_take_invalidation_tuple(TupleInfo *ti, void *data)
 	MemoryContext old_ctx = MemoryContextSwitchTo(scan_state->mctx);
 	Form_continuous_aggs_hypertable_invalidation_log invalidation_form =
 		((Form_continuous_aggs_hypertable_invalidation_log) GETSTRUCT(ti->tuple));
-	Invalidation *invalidation = palloc(sizeof(*invalidation));
+	Invalidation *invalidation =(Invalidation *) palloc(sizeof(*invalidation));
 
 	invalidation->modification_time = invalidation_form->modification_time;
 	invalidation->lowest_modified_value = invalidation_form->lowest_modified_value;
@@ -693,8 +693,9 @@ static void
 lock_invalidation_threshold_hypertable_row(int32 raw_hypertable_id)
 {
 	ScanTupLock scantuplock = {
-		.waitpolicy = LockWaitBlock,
 		.lockmode = LockTupleExclusive,
+		.waitpolicy = LockWaitBlock,
+		
 	};
 	Catalog *catalog = ts_catalog_get();
 	ScanKeyData scankey[1];
@@ -713,14 +714,21 @@ lock_invalidation_threshold_hypertable_row(int32 raw_hypertable_id)
 							.index = catalog_get_index(catalog,
 													   CONTINUOUS_AGGS_INVALIDATION_THRESHOLD,
 													   CONTINUOUS_AGGS_INVALIDATION_THRESHOLD_PKEY),
-							.nkeys = 1,
 							.scankey = scankey,
+							.nkeys = 1,
+							.norderbys = 0,
 							.limit = 1,
-							.tuple_found = invalidation_threshold_htid_found,
+							.want_itup = false,
 							.lockmode = AccessShareLock,
-							.scandirection = ForwardScanDirection,
 							.result_mctx = CurrentMemoryContext,
-							.tuplock = &scantuplock };
+							.tuplock = &scantuplock,
+							.scandirection = ForwardScanDirection,
+							.data = NULL,
+							.prescan = NULL,
+							.postscan = NULL,
+							.filter = NULL,
+							.tuple_found = invalidation_threshold_htid_found,
+							 };
 	retcnt = ts_scanner_scan(&scanctx);
 	if (retcnt > 1)
 	{
@@ -967,7 +975,7 @@ insert_materialization_invalidation_logs(List *caggs, List *invalidations,
 	desc = RelationGetDescr(materialization_invalidation_log_rel);
 	foreach (lc, caggs)
 	{
-		ContinuousAgg *ca = lfirst(lc);
+		ContinuousAgg *ca =(ContinuousAgg*) lfirst(lc);
 		int32 cagg_id = ca->data.mat_hypertable_id;
 		int64 ignore_invalidation_older_than = ca->data.ignore_invalidation_older_than;
 		foreach (lc2, invalidations)
@@ -1214,7 +1222,7 @@ invalidation_threshold_set(int32 raw_hypertable_id, int64 invalidation_threshold
 static ScanTupleResult
 invalidation_threshold_tuple_found(TupleInfo *ti, void *data)
 {
-	int64 *threshold = data;
+	int64 *threshold =(int64 *) data;
 	*threshold = ((Form_continuous_aggs_invalidation_threshold) GETSTRUCT(ti->tuple))->watermark;
 	return SCAN_CONTINUE;
 }

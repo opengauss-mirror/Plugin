@@ -109,7 +109,7 @@ static char *
 compression_column_segment_metadata_name(const FormData_hypertable_compression *fd,
 										 const char *type)
 {
-	char *buf = palloc(sizeof(char) * NAMEDATALEN);
+	char *buf =(char *) palloc(sizeof(char) * NAMEDATALEN);
 	int ret;
 
 	Assert(fd->orderby_column_index > 0);
@@ -219,7 +219,7 @@ compresscolinfo_init(CompressColInfo *cc, Oid srctbl_relid, List *segmentby_cols
 
 	seg_attnolen = list_length(segmentby_cols);
 	rel = table_open(srctbl_relid, AccessShareLock);
-	segorder_colindex = palloc0(sizeof(int32) * (rel->rd_att->natts));
+	segorder_colindex =(int16*) palloc0(sizeof(int32) * (rel->rd_att->natts));
 	tupdesc = rel->rd_att;
 	i = 1;
 
@@ -271,7 +271,7 @@ compresscolinfo_init(CompressColInfo *cc, Oid srctbl_relid, List *segmentby_cols
 	}
 
 	cc->numcols = 0;
-	cc->col_meta = palloc0(sizeof(FormData_hypertable_compression) * tupdesc->natts);
+	cc->col_meta =(FormData_hypertable_compression*) palloc0(sizeof(FormData_hypertable_compression) * tupdesc->natts);
 	cc->coldeflist = NIL;
 	colno = 0;
 	for (attno = 0; attno < tupdesc->natts; attno++)
@@ -299,7 +299,7 @@ compresscolinfo_init(CompressColInfo *cc, Oid srctbl_relid, List *segmentby_cols
 			else
 			{
 				int orderby_index = segorder_colindex[attno] - seg_attnolen;
-				CompressedParsedCol *ordercol = list_nth(orderby_cols, orderby_index - 1);
+				CompressedParsedCol *ordercol =(CompressedParsedCol *) list_nth(orderby_cols, orderby_index - 1);
 				cc->col_meta[colno].orderby_column_index = orderby_index;
 				cc->col_meta[colno].orderby_asc = ordercol->asc;
 				cc->col_meta[colno].orderby_nullsfirst = ordercol->nullsfirst;
@@ -337,7 +337,7 @@ modify_compressed_toast_table_storage(CompressColInfo *cc, Oid compress_relid)
 		// get storage type for columns which have compression on
 		if (cc->col_meta[colno].algo_id != 0)
 		{
-			CompressionStorage stor = compression_get_toast_storage(cc->col_meta[colno].algo_id);
+			CompressionStorage stor = compression_get_toast_storage((CompressionAlgorithms)cc->col_meta[colno].algo_id);
 			if (stor != TOAST_STORAGE_EXTERNAL)
 			/* external is default storage for toast columns */
 			{
@@ -396,9 +396,10 @@ create_compressed_table_indexes(Oid compresstable_relid, CompressColInfo *compre
 		ts_hypertable_cache_get_cache_and_entry(compresstable_relid, CACHE_FLAG_NONE, &hcache);
 	IndexStmt stmt = {
 		.type = T_IndexStmt,
-		.accessMethod = DEFAULT_INDEX_TYPE,
+		.schemaname = {},
 		.idxname = NULL,
 		.relation = makeRangeVar(NameStr(ht->fd.schema_name), NameStr(ht->fd.table_name), 0),
+		.accessMethod = DEFAULT_INDEX_TYPE,
 		.tableSpace = get_tablespace_name(get_rel_tablespace(ht->main_table_relid)),
 	};
 	IndexElem sequence_num_elem = {
@@ -662,11 +663,12 @@ add_time_to_order_by_if_not_included(List *orderby_cols, List *segmentby_cols, H
 	if (!found)
 	{
 		/* Add time DESC NULLS FIRST to order by list */
-		CompressedParsedCol *col = palloc(sizeof(*col));
+		CompressedParsedCol *col =(CompressedParsedCol *) palloc(sizeof(*col));
 		*col = (CompressedParsedCol){
 			.index = list_length(orderby_cols),
-			.asc = false,
+			.colname = {},
 			.nullsfirst = true,
+			.asc = false,
 		};
 		namestrcpy(&col->colname, time_col_name);
 		orderby_cols = lappend(orderby_cols, col);
@@ -801,7 +803,7 @@ validate_existing_constraints(Hypertable *ht, CompressColInfo *colinfo)
 			}
 			if (form->contype == CONSTRAINT_FOREIGN)
 			{
-				Name conname = palloc0(NAMEDATALEN);
+				Name conname =(Name) palloc0(NAMEDATALEN);
 				namecpy(conname, &form->conname);
 				conlist = lappend(conlist, conname);
 			}
@@ -849,7 +851,7 @@ check_modify_compression_options(Hypertable *ht, WithClauseResult *with_clause_o
 
 		foreach (lc, info)
 		{
-			FormData_hypertable_compression *fd = lfirst(lc);
+			FormData_hypertable_compression *fd =(FormData_hypertable_compression *) lfirst(lc);
 			if (fd->segmentby_column_index > 0)
 				segment_by_set = true;
 			if (fd->orderby_column_index > 0)

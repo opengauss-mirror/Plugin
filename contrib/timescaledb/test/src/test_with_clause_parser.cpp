@@ -7,7 +7,7 @@
 #include <postgres.h>
 #include <fmgr.h>
 #include <funcapi.h>
-#include <access/htup_details.h>
+#include <access/htup.h>
 #include <commands/defrem.h>
 #include <catalog/pg_type.h>
 #include <utils/array.h>
@@ -26,7 +26,7 @@
 static DefElem *
 def_elem_from_texts(Datum *texts, int nelems)
 {
-	DefElem *elem = palloc0(sizeof(*elem));
+	DefElem *elem =(DefElem *) palloc0(sizeof(*elem));
 	switch (nelems)
 	{
 		case 1:
@@ -88,8 +88,8 @@ typedef struct FilteredWithClauses
 static HeapTuple
 create_filter_tuple(TupleDesc tuple_desc, DefElem *d, bool within)
 {
-	Datum *values = palloc0(sizeof(*values) * tuple_desc->natts);
-	bool *nulls = palloc0(sizeof(*nulls) * tuple_desc->natts);
+	Datum *values =(Datum *) palloc0(sizeof(*values) * tuple_desc->natts);
+	bool *nulls =(bool *) palloc0(sizeof(*nulls) * tuple_desc->natts);
 
 	Assert(tuple_desc->natts >= 4);
 
@@ -138,7 +138,7 @@ TS_TEST_FN(ts_test_with_clause_filter)
 
 		def_elems = def_elems_from_array(with_clause_array);
 
-		filtered = palloc(sizeof(*filtered));
+		filtered =(FilteredWithClauses *) palloc(sizeof(*filtered));
 		filtered->within = NIL;
 		filtered->without = NIL;
 
@@ -151,11 +151,11 @@ TS_TEST_FN(ts_test_with_clause_filter)
 
 	funcctx = SRF_PERCALL_SETUP();
 
-	filtered = funcctx->user_fctx;
+	filtered =(FilteredWithClauses *) funcctx->user_fctx;
 	if (filtered->within != NIL)
 	{
 		HeapTuple tuple;
-		DefElem *d = linitial(filtered->within);
+		DefElem *d =(DefElem *) linitial(filtered->within);
 		tuple = create_filter_tuple(funcctx->tuple_desc, d, true);
 		filtered->within = list_delete_first(filtered->within);
 		SRF_RETURN_NEXT(funcctx, HeapTupleGetDatum(tuple));
@@ -163,7 +163,7 @@ TS_TEST_FN(ts_test_with_clause_filter)
 	else if (filtered->without != NIL)
 	{
 		HeapTuple tuple;
-		DefElem *d = linitial(filtered->without);
+		DefElem *d =(DefElem *) linitial(filtered->without);
 		tuple = create_filter_tuple(funcctx->tuple_desc, d, false);
 		filtered->without = list_delete_first(filtered->without);
 		SRF_RETURN_NEXT(funcctx, HeapTupleGetDatum(tuple));
@@ -232,7 +232,7 @@ TS_TEST_FN(ts_test_with_clause_parse)
 		def_elems = def_elems_from_array(with_clause_array);
 
 		parsed = ts_with_clauses_parse(def_elems, test_args, TS_ARRAY_LEN(test_args));
-		result = palloc(sizeof(*result));
+		result =(WithClauseValue* ) palloc(sizeof(*result));
 		result->parsed = parsed;
 		result->i = 0;
 
@@ -242,12 +242,12 @@ TS_TEST_FN(ts_test_with_clause_parse)
 
 	funcctx = SRF_PERCALL_SETUP();
 
-	result = funcctx->user_fctx;
+	result =(WithClauseValue* ) funcctx->user_fctx;
 	if (result == NULL || result->i >= TS_ARRAY_LEN(test_args))
 		SRF_RETURN_DONE(funcctx);
 
-	values = palloc0(sizeof(*values) * funcctx->tuple_desc->natts);
-	nulls = palloc(sizeof(*nulls) * funcctx->tuple_desc->natts);
+	values =(Datum *) palloc0(sizeof(*values) * funcctx->tuple_desc->natts);
+	nulls =(bool*) palloc(sizeof(*nulls) * funcctx->tuple_desc->natts);
 	memset(nulls, true, sizeof(*nulls) * funcctx->tuple_desc->natts);
 
 	values[0] = CStringGetTextDatum(test_args[result->i].arg_name);

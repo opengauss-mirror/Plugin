@@ -17,7 +17,7 @@
 static ScanTupleResult
 bgw_policy_chunk_stats_tuple_found(TupleInfo *ti, void *const data)
 {
-	BgwPolicyChunkStats **chunk_stats = data;
+	BgwPolicyChunkStats **chunk_stats =(BgwPolicyChunkStats **) data;
 
 	*chunk_stats = STRUCT_FROM_TUPLE(ti->tuple,
 									 ti->mctx,
@@ -153,7 +153,7 @@ ts_bgw_policy_chunk_stats_find(int32 job_id, int32 chunk_id)
 static ScanTupleResult
 bgw_policy_chunk_stats_update_tuple_found(TupleInfo *ti, void *const data)
 {
-	TimestampTz *updated_last_time_job_run = data;
+	TimestampTz *updated_last_time_job_run =(TimestampTz *) data;
 	HeapTuple tuple = heap_copytuple(ti->tuple);
 	BgwPolicyChunkStats *chunk_stats = STRUCT_FROM_TUPLE(ti->tuple,
 														 ti->mctx,

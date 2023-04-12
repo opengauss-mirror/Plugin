@@ -16,7 +16,7 @@
 
 #include "func_cache.h"
 #include "sort_transform.h"
-
+#include "compat.h"
 /* This optimizations allows GROUP BY clauses that transform time in
  * order-preserving ways to use indexes on the time field. It works
  * by transforming sorting clauses from their more complex versions
@@ -46,7 +46,7 @@ transform_timestamp_cast(FuncExpr *func)
 	if (list_length(func->args) != 1)
 		return (Expr *) func;
 
-	first = ts_sort_transform_expr(linitial(func->args));
+	first = ts_sort_transform_expr((Expr *)linitial(func->args));
 	if (!IsA(first, Var))
 		return (Expr *) func;
 
@@ -73,7 +73,7 @@ transform_timestamptz_cast(FuncExpr *func)
 	if (list_length(func->args) != 1)
 		return (Expr *) func;
 
-	first = ts_sort_transform_expr(linitial(func->args));
+	first = ts_sort_transform_expr((Expr *)(func->args));
 	if (!IsA(first, Var))
 		return (Expr *) func;
 
@@ -104,7 +104,7 @@ transform_time_op_const_interval(OpExpr *op)
 				Expr *first = ts_sort_transform_expr((Expr *) linitial(op->args));
 
 				if (IsA(first, Var))
-					return copyObject(first);
+					return (Expr *)copyObject(first);
 			}
 		}
 	}
@@ -146,14 +146,14 @@ transform_int_op_const(OpExpr *op)
 							Expr *nonconst = ts_sort_transform_expr((Expr *) lsecond(op->args));
 
 							if (IsA(nonconst, Var))
-								return copyObject(nonconst);
+								return (Expr *)copyObject(nonconst);
 						}
 						else
 						{
 							Expr *nonconst = ts_sort_transform_expr((Expr *) linitial(op->args));
 
 							if (IsA(nonconst, Var))
-								return copyObject(nonconst);
+								return (Expr *)copyObject(nonconst);
 						}
 						break;
 					case '/':
@@ -163,7 +163,7 @@ transform_int_op_const(OpExpr *op)
 							Expr *nonconst = ts_sort_transform_expr((Expr *) linitial(op->args));
 
 							if (IsA(nonconst, Var))
-								return copyObject(nonconst);
+								return (Expr*)copyObject(nonconst);
 						}
 						break;
 				}
@@ -254,13 +254,24 @@ sort_transform_ec(PlannerInfo *root, EquivalenceClass *orig)
 			 * if the transform already exists for even one member, assume
 			 * exists for all
 			 */
+			//tsdb 原本函数为
+			// EquivalenceClass *exist = get_eclass_for_sort_expr(root,
+			// 												   transformed_expr,
+			// 												   ec_mem->em_nullable_relids,
+			// 												   opfamilies,
+			// 												   type_oid,
+			// 												   orig->ec_collation,
+			// 												   orig->ec_sortref,
+			// 												   ec_mem->em_relids,
+			// 												   false); 
+
 			EquivalenceClass *exist = get_eclass_for_sort_expr(root,
 															   transformed_expr,
-															   ec_mem->em_nullable_relids,
 															   opfamilies,
 															   type_oid,
 															   orig->ec_collation,
 															   orig->ec_sortref,
+															   ec_mem->em_nullable_relids,
 															   ec_mem->em_relids,
 															   false);
 
@@ -347,7 +358,7 @@ ts_sort_transform_optimization(PlannerInfo *root, RelOptInfo *rel)
 	 * clauses or as last member of the ORDER BY clause.
 	 * Using it for other ORDER BY clauses will result in wrong ordering.
 	 */
-	last_pk = llast(root->query_pathkeys);
+	last_pk =(PathKey *) llast(root->query_pathkeys);
 	transformed = sort_transform_ec(root, last_pk->pk_eclass);
 
 	if (transformed == NULL)
@@ -384,7 +395,7 @@ ts_sort_transform_optimization(PlannerInfo *root, RelOptInfo *rel)
 	 */
 	foreach (lc, rel->pathlist)
 	{
-		Path *path = lfirst(lc);
+		Path *path =(Path *) lfirst(lc);
 
 		if (compare_pathkeys(path->pathkeys, transformed_query_pathkey) == PATHKEYS_EQUAL)
 		{
