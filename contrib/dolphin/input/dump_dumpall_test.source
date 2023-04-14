@@ -1,0 +1,513 @@
+create database table_test dbcompatibility 'B';
+\c table_test
+
+/*
+ * establish objects
+ */
+
+-- test for table created by like
+drop table if exists table_like_test_1;
+drop table if exists table_like_test_2;
+create table table_like_test_1(a int, b text);
+create table table_like_test_2 like table_like_test_1;
+
+-- test for table created with index
+drop table if exists table_created_with_index_test;
+create table table_created_with_index_test(c1 int, c2 int, c3 int, index create_table_idx_1 using btree(c1 desc, c2 asc) comment 'test_message');
+select count(*) from pg_indexes where indexname = 'create_table_idx_1' and tablename = 'table_created_with_index_test';
+
+-- test for create table with compression option
+drop table if exists table_created_with_compression_option_pglz;
+drop table if exists table_created_with_compression_option_zstd;
+drop table if exists table_created_with_compression_option_none;
+create table table_created_with_compression_option_pglz(c1 int, c2 text) compression = pglz;
+create table table_created_with_compression_option_zstd(c1 int, c2 text) compression = zstd;
+create table table_created_with_compression_option_none(c1 int, c2 text) compression = none;
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_pglz';
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_zstd';
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_none';
+
+-- test for create list partition table with VALUES IN
+drop table if exists table_list_partition_values_in;
+CREATE TABLE table_list_partition_values_in (col1 int, col2 int)
+PARTITION BY list(col1)
+(
+PARTITION p1 VALUES IN (2000),
+PARTITION p2 VALUES IN (3000),
+PARTITION p3 VALUES IN (4000),
+PARTITION p4 VALUES IN (5000)
+);
+insert into table_list_partition_values_in values(2000);
+select * from table_list_partition_values_in;
+\d+ table_list_partition_values_in
+
+-- test for create table timestamp column with on update current_timestamp
+drop table if exists table_timestamp_on_update;
+create table table_timestamp_on_update(c1 int, c2 timestamp on update current_timestamp);
+\d+ table_timestamp_on_update
+
+-- test for view created with definer
+drop view if exists view_created_with_definer_test;
+drop user if exists Test_User;
+CREATE USER "Test_User" with password 'openGauss@123';
+GRANT ALL PRIVILEGES TO "Test_User";
+CREATE DEFINER="Test_User" VIEW view_created_with_definer_test AS SELECT log(10, 100);
+SELECT c.relname as view_name, u.usename as rolname FROM pg_class c, pg_user u WHERE u.usesysid = c.relowner AND relname like '%view_created_with_definer_test%' ORDER BY rolname;
+
+-- test for functionality of select distinctrow on
+drop table if exists normal_test_table;
+create table normal_test_table(c1 int, c2 int);
+insert into normal_test_table values(1, 3),(1, 3),(2, 1),(3, 1),(3, 2);
+select distinctrow on (c1 % 2) * from normal_test_table;
+select distinctrow on (c1, c2) * from normal_test_table;
+
+-- test for min/max function used by type inet/cidr
+drop table if exists table_inet;
+create table table_inet(c inet, name text);
+insert into table_inet values('192.168.1.0', 'server00');
+insert into table_inet values('192.168.1.1', 'server01');
+insert into table_inet values('192.168.1.2', 'server02');
+drop table if exists table_cidr;
+create table table_cidr(c cidr, name text);
+insert into table_cidr values('192.168.1.0/32', 'server00');
+insert into table_cidr values('192.168.1.0/31', 'server00');
+insert into table_cidr values('192.168.1.0/30', 'server00');
+
+-- test for comments
+create schema test_b_comments;
+set search_path to 'test_b_comments';
+create table comment_test_row(a int not null comment 'comment_test_row.a', b int not null comment 'comment_test_row.b') comment 'comment_test_row';
+create index on comment_test_row(a,b) comment 'comment_test_row_index';
+create table comment_test_column(a int comment 'comment_test_column.a', b int comment 'comment_test_column.b') with (orientation='column') comment 'comment_test_column';
+create function comment_test_function(a int) returns void as $$ begin end; $$ language plpgsql comment 'comment_test_function';
+create procedure comment_test_procedure(int,int) comment 'comment_test_procedure' as begin select $1 + $2;end;
+/
+reset search_path;
+
+-- test for drop index .. on table
+create table test_drop_index_on_table(a int);
+create index test_drop_on_index on test_drop_index_on_table using btree(a);
+drop index test_drop_on_index on test_drop_index_on_table;
+
+-- test for insert statement with no INTO
+create table test_insert_no_into(c1 int, c2 text);
+insert test_insert_no_into values(1, 'one');
+insert test_insert_no_into values(2, 'two');
+
+-- test for insert statement with VALUE
+create table test_insert_value(c1 int, c2 text);
+insert test_insert_value value(1, 'one');
+insert test_insert_value value(2, 'two');
+
+-- test for insert with empty value list
+set dolphin.sql_mode = '';
+drop table if exists test_insert_empty_value_with_not_null;
+create table test_insert_empty_value_with_not_null(c1 int not null, c2 date not null);
+insert into test_insert_empty_value_with_not_null values();
+drop table if exists test_insert_empty_value_with_unique;
+create table test_insert_empty_value_with_unique(c1 int unique, c2 date unique);
+insert into test_insert_empty_value_with_unique values();
+insert into test_insert_empty_value_with_unique values();
+drop table if exists test_insert_value_with_no_constraint;
+create table test_insert_value_with_no_constraint(c1 int, c2 text);
+insert into test_insert_value_with_no_constraint values(), (), ();
+drop table if exists test_insert_empty_value_types_1;
+create table test_insert_empty_value_types_1(c1 tinyint, c2 smallint, c3 integer, c4 mediumint, c5 bigint, c6 tinyint unsigned, c7 smallint unsigned,
+                                           c8 integer unsigned, c9 mediumint unsigned, c10 bigint unsigned, c11 numeric, c12 number, c13 float, c14 float8,
+                                           c15 char(10), c16 text,
+                                           c17 date, c18 time, c19 datetime, c20 timestamp, c21 year, c22 time, c23 datetime,
+                                           c24 bit(10),
+                                           c25 ENUM('a', 'b'));
+insert into test_insert_empty_value_types_1 values();
+drop table if exists test_insert_empty_value_types_2;
+create table test_insert_empty_value_types_2(c1 smallserial, c2 serial, c3 bigserial, c4 money, c5 boolean,
+                                             c6 varchar(10), c7 name, c8 blob, c9 raw, c10 bytea,
+                                             c11 smalldatetime, c12 interval, c13 reltime, c14 abstime,
+                                             c15 point, c16 lseg, c17 box, c18 box, c19 path, c20 polygon, c21 circle,
+                                             c22 cidr, c23 inet, c24 macaddr);
+insert into test_insert_empty_value_types_2 values();
+drop table if exists test_insert_empty_value_types_3;
+create table test_insert_empty_value_types_3(c1 uuid, c2 json, c3 jsonb, c4 int4range, c5 int8range, c6 numrange, c7 tsrange,
+                                             c8 tstzrange, c9 daterange, c10 xml, c11 hash16, c12 hash32, c13 set('a', 'b', 'c'));
+insert into test_insert_empty_value_types_3 values();
+
+-- test for IGNORE
+set sql_ignore_strategy = 'overwrite_null';
+drop table if exists test_ignore_not_null;
+create table test_ignore_not_null(c1 int not null);
+insert ignore into test_ignore_not_null values(null);
+update ignore test_ignore_not_null set c1 = null;
+drop table if exists test_ignore_unique;
+create table test_ignore_unique(c1 int unique);
+insert into test_ignore_unique values(1),(2);
+insert ignore into test_ignore_unique values(1);
+update ignore test_ignore_unique set c1 = 1 where c1 =2;
+drop table if exists test_ignore_normal;
+create table test_ignore_normal(c1 int, c2 text);
+insert ignore into test_ignore_normal values(1, 'a');
+drop table if exists test_ignore_invalid_input;
+create table test_ignore_invalid_input(c1 int, c2 char(5), c3 timestamp, c4 bit(5), c5 boolean, c6 point, c7 uuid,
+                                         c8 json, c9 jsonb, c10 xml);
+insert ignore into test_ignore_invalid_input values('invalid input', 'invalid input', 'invalid input', b'100001', 1000, 'invalid input',
+                                                    'invalid input', 'invalid input', 'invalid input', 'invalid input');
+
+/*
+ * test for restore by gs_restore
+ */
+drop database if exists table_test_restore;
+create database table_test_restore dbcompatibility 'B';
+\! @abs_bindir@/gs_dump table_test -p @portstring@ -f @abs_bindir@/table_test.tar -F t >/dev/null 2>&1; echo $?
+\! @abs_bindir@/gs_restore -d table_test_restore -p @portstring@ @abs_bindir@/table_test.tar >/dev/null 2>&1; echo $?
+\c table_test_restore
+
+-- test for table created by like
+select * from table_like_test_2;
+
+-- test for table created with index
+\d table_created_with_index_test
+select count(*) from pg_indexes where indexname = 'create_table_idx_1' and tablename = 'table_created_with_index_test';
+
+-- test for create table with compression option
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_pglz';
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_zstd';
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_none';
+
+-- test for create list partition table with VALUES IN
+select * from table_list_partition_values_in;
+\d+ table_list_partition_values_in
+
+-- test for create table timestamp column with on update current_timestamp
+\d+ table_timestamp_on_update
+
+-- test for view created with definer
+SELECT c.relname as view_name, u.usename as rolname FROM pg_class c, pg_user u WHERE u.usesysid = c.relowner AND relname like '%view_created_with_definer_test%' ORDER BY rolname;
+
+-- test for functionality of select distinctrow on
+select distinctrow on (c1 % 2) * from normal_test_table;
+select distinctrow on (c1, c2) * from normal_test_table;
+
+-- test for functionality of functions
+select log(10);
+select log(10, 100);
+select log10(100);
+select log2(16);
+select mod(16, 7);
+select mod(0.0::float8, 0.0::numeric);
+select sqrt(64::numeric);
+select sqrt(b'10000');
+select ascii('你');
+select instr(null,'bc');
+select instr('abcd12abc',null);
+select instr('abcd12abc','bc');
+select instr('abcd12abc','bc', 2);
+select instr('abcd12abc','bc', 2, 2);
+select left('abcdefg', 3);
+select left('abcdefg', -3);
+select right('abcdefg', 3);
+select right('abcdefg', -3);
+select locate('test','testgood');
+select locate('','testgood');
+select locate(NULL,'testgood');
+select locate(true,'testgood');
+select locate(false,'testgood');
+select ltrim('') is null;
+select ltrim('ab', 'ab') is null;
+select mid(E'\\xDEADBEEF'::bytea,2,10);
+select mid(E'\\xDEADBEEF'::bytea,2,0);
+select mid(E'\\xDEADBEEF'::bytea,2,-1);
+select quote('O\hello');
+SELECT right('abcdefg', 3);
+SELECT right('abcdefg', -3);
+select rtrim('ab  ');
+select rtrim('ab', 'ab') is null;
+select rtrim('') is null;
+select substr(E'\\xDEADBEEF'::bytea,2,-1);
+select substr(E'\\xDEADBEEF'::bytea,2,2);
+select hex(-1);
+select hex(9223372036854775807);
+set dolphin.b_compatibility_mode = 1;
+select format(1234.456, 2);
+set dolphin.b_compatibility_mode = 0;
+select format('%1s %1s!', 'Hello', 'world');
+select uuid();
+select if(true,'A','B');
+select max(c) as max_ip_addr from table_inet;
+select min(c) as min_ip_addr from table_inet;
+select max(c) as max_ip_addr from table_inet;
+select min(c) as min_ip_addr from table_inet;
+select max(c) as max_ip_addr from table_cidr;
+select min(c) as min_ip_addr from table_cidr;
+
+-- test for comments
+select description
+from pg_description
+where objoid in (select relfilenode
+                 from pg_class
+                 where relnamespace in (select oid from pg_catalog.pg_namespace where nspname = 'test_b_comments'))
+order by description;
+select obj_description(oid, 'pg_proc') AS comment from pg_proc where proname = 'comment_test_procedure';
+select obj_description(oid, 'pg_proc') AS comment from pg_proc where proname = 'comment_test_function';
+
+-- test for drop index .. on table
+\d test_drop_index_on_table
+
+-- test for insert statement with no INTO
+select * from test_insert_no_into;
+
+-- test for insert statement with VALUE
+select * from test_insert_value;
+
+-- test for insert with empty value list
+select * from test_insert_empty_value_with_not_null;
+select * from test_insert_empty_value_with_unique;
+select * from test_insert_value_with_no_constraint;
+select * from test_insert_empty_value_types_1;
+select * from test_insert_empty_value_types_2;
+select * from test_insert_empty_value_types_3;
+
+-- test for IGNORE
+select * from test_ignore_not_null;
+select * from test_ignore_unique;
+select * from test_ignore_normal;
+
+/*
+ * test for restore by gsql
+ */
+drop database if exists table_test_gsql;
+create database table_test_gsql dbcompatibility 'B';
+\! @abs_bindir@/gs_dump table_test -p @portstring@ -f @abs_bindir@/gsql_table_test.sql >/dev/null 2>&1; echo $?
+\! @abs_bindir@/gsql -d table_test_gsql -p @portstring@ -f @abs_bindir@/gsql_table_test.sql >/dev/null 2>&1; echo $?
+\c table_test_gsql
+
+-- test for table created by like
+select * from table_like_test_2;
+
+-- test for table created with index
+\d table_created_with_index_test
+select count(*) from pg_indexes where indexname = 'create_table_idx_1' and tablename = 'table_created_with_index_test';
+
+-- test for create table with compression option
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_pglz';
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_zstd';
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_none';
+
+-- test for create list partition table with VALUES IN
+select * from table_list_partition_values_in;
+\d+ table_list_partition_values_in
+
+-- test for create table timestamp column with on update current_timestamp
+\d+ table_timestamp_on_update
+
+-- test for view created with definer
+SELECT c.relname as view_name, u.usename as rolname FROM pg_class c, pg_user u WHERE u.usesysid = c.relowner AND relname like '%view_created_with_definer_test%' ORDER BY rolname;
+
+-- test for functionality of select distinctrow on
+select distinctrow on (c1 % 2) * from normal_test_table;
+select distinctrow on (c1, c2) * from normal_test_table;
+
+-- test for functionality of functions
+select log(10);
+select log(10, 100);
+select log10(100);
+select log2(16);
+select mod(16, 7);
+select mod(0.0::float8, 0.0::numeric);
+select sqrt(64::numeric);
+select sqrt(b'10000');
+select ascii('你');
+select instr(null,'bc');
+select instr('abcd12abc',null);
+select instr('abcd12abc','bc');
+select instr('abcd12abc','bc', 2);
+select instr('abcd12abc','bc', 2, 2);
+select left('abcdefg', 3);
+select left('abcdefg', -3);
+select right('abcdefg', 3);
+select right('abcdefg', -3);
+select locate('test','testgood');
+select locate('','testgood');
+select locate(NULL,'testgood');
+select locate(true,'testgood');
+select locate(false,'testgood');
+select ltrim('') is null;
+select ltrim('ab', 'ab') is null;
+select mid(E'\\xDEADBEEF'::bytea,2,10);
+select mid(E'\\xDEADBEEF'::bytea,2,0);
+select mid(E'\\xDEADBEEF'::bytea,2,-1);
+select quote('O\hello');
+SELECT right('abcdefg', 3);
+SELECT right('abcdefg', -3);
+select rtrim('ab  ');
+select rtrim('ab', 'ab') is null;
+select rtrim('') is null;
+select substr(E'\\xDEADBEEF'::bytea,2,-1);
+select substr(E'\\xDEADBEEF'::bytea,2,2);
+select hex(-1);
+select hex(9223372036854775807);
+set dolphin.b_compatibility_mode = 1;
+select format(1234.456, 2);
+set dolphin.b_compatibility_mode = 0;
+select format('%1s %1s!', 'Hello', 'world');
+select uuid();
+select if(true,'A','B');
+select max(c) as max_ip_addr from table_inet;
+select min(c) as min_ip_addr from table_inet;
+select max(c) as max_ip_addr from table_inet;
+select min(c) as min_ip_addr from table_inet;
+select max(c) as max_ip_addr from table_cidr;
+select min(c) as min_ip_addr from table_cidr;
+
+-- test for comments
+select description
+from pg_description
+where objoid in (select relfilenode
+                 from pg_class
+                 where relnamespace in (select oid from pg_catalog.pg_namespace where nspname = 'test_b_comments'))
+order by description;
+select obj_description(oid, 'pg_proc') AS comment from pg_proc where proname = 'comment_test_procedure';
+select obj_description(oid, 'pg_proc') AS comment from pg_proc where proname = 'comment_test_function';
+
+-- test for drop index .. on table
+\d test_drop_index_on_table
+
+-- test for insert statement with no INTO
+select * from test_insert_no_into;
+
+-- test for insert statement with VALUE
+select * from test_insert_value;
+
+-- test for insert with empty value list
+select * from test_insert_empty_value_with_not_null;
+select * from test_insert_empty_value_with_unique;
+select * from test_insert_value_with_no_constraint;
+select * from test_insert_empty_value_types_1;
+select * from test_insert_empty_value_types_2;
+select * from test_insert_empty_value_types_3;
+
+-- test for IGNORE
+select * from test_ignore_not_null;
+select * from test_ignore_unique;
+select * from test_ignore_normal;
+
+/*
+ * test for restore by gs_dumpall
+ */
+drop database if exists table_test_restore;
+drop database if exists table_test_gsql;
+\! @abs_bindir@/gs_dumpall -p @portstring@ -f @abs_bindir@/dumpall_table_test.sql >/dev/null 2>&1; echo $?
+drop database if exists table_test;
+\! @abs_bindir@/gsql -d postgres -p @portstring@ -f @abs_bindir@/dumpall_table_test.sql >/dev/null 2>&1; echo $?
+\c table_test
+
+-- test for table created by like
+select * from table_like_test_2;
+
+-- test for table created with index
+\d table_created_with_index_test
+select count(*) from pg_indexes where indexname = 'create_table_idx_1' and tablename = 'table_created_with_index_test';
+
+-- test for create table with compression option
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_pglz';
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_zstd';
+select relname, reloptions from pg_class where relname = 'table_created_with_compression_option_none';
+
+-- test for create list partition table with VALUES IN
+select * from table_list_partition_values_in;
+\d+ table_list_partition_values_in
+
+-- test for create table timestamp column with on update current_timestamp
+\d+ table_timestamp_on_update
+
+-- test for view created with definer
+SELECT c.relname as view_name, u.usename as rolname FROM pg_class c, pg_user u WHERE u.usesysid = c.relowner AND relname like '%view_created_with_definer_test%' ORDER BY rolname;
+
+-- test for functionality of select distinctrow on
+select distinctrow on (c1 % 2) * from normal_test_table;
+select distinctrow on (c1, c2) * from normal_test_table;
+
+-- test for functionality of functions
+select log(10);
+select log(10, 100);
+select log10(100);
+select log2(16);
+select mod(16, 7);
+select mod(0.0::float8, 0.0::numeric);
+select sqrt(64::numeric);
+select sqrt(b'10000');
+select ascii('你');
+select instr(null,'bc');
+select instr('abcd12abc',null);
+select instr('abcd12abc','bc');
+select instr('abcd12abc','bc', 2);
+select instr('abcd12abc','bc', 2, 2);
+select left('abcdefg', 3);
+select left('abcdefg', -3);
+select right('abcdefg', 3);
+select right('abcdefg', -3);
+select locate('test','testgood');
+select locate('','testgood');
+select locate(NULL,'testgood');
+select locate(true,'testgood');
+select locate(false,'testgood');
+select ltrim('') is null;
+select ltrim('ab', 'ab') is null;
+select mid(E'\\xDEADBEEF'::bytea,2,10);
+select mid(E'\\xDEADBEEF'::bytea,2,0);
+select mid(E'\\xDEADBEEF'::bytea,2,-1);
+select quote('O\hello');
+SELECT right('abcdefg', 3);
+SELECT right('abcdefg', -3);
+select rtrim('ab  ');
+select rtrim('ab', 'ab') is null;
+select rtrim('') is null;
+select substr(E'\\xDEADBEEF'::bytea,2,-1);
+select substr(E'\\xDEADBEEF'::bytea,2,2);
+select hex(-1);
+select hex(9223372036854775807);
+set dolphin.b_compatibility_mode = 1;
+select format(1234.456, 2);
+set dolphin.b_compatibility_mode = 0;
+select format('%1s %1s!', 'Hello', 'world');
+select uuid();
+select if(true,'A','B');
+select max(c) as max_ip_addr from table_inet;
+select min(c) as min_ip_addr from table_inet;
+select max(c) as max_ip_addr from table_inet;
+select min(c) as min_ip_addr from table_inet;
+select max(c) as max_ip_addr from table_cidr;
+select min(c) as min_ip_addr from table_cidr;
+
+-- test for comments
+select description
+from pg_description
+where objoid in (select relfilenode
+                 from pg_class
+                 where relnamespace in (select oid from pg_catalog.pg_namespace where nspname = 'test_b_comments'))
+order by description;
+select obj_description(oid, 'pg_proc') AS comment from pg_proc where proname = 'comment_test_procedure';
+select obj_description(oid, 'pg_proc') AS comment from pg_proc where proname = 'comment_test_function';
+
+-- test for drop index .. on table
+\d test_drop_index_on_table
+
+-- test for insert statement with no INTO
+select * from test_insert_no_into;
+
+-- test for insert statement with VALUE
+select * from test_insert_value;
+
+-- test for insert with empty value list
+select * from test_insert_empty_value_with_not_null;
+select * from test_insert_empty_value_with_unique;
+select * from test_insert_value_with_no_constraint;
+select * from test_insert_empty_value_types_1;
+select * from test_insert_empty_value_types_2;
+select * from test_insert_empty_value_types_3;
+
+-- test for IGNORE
+select * from test_ignore_not_null;
+select * from test_ignore_unique;
+select * from test_ignore_normal;
+
+\c postgres
+drop database if exists table_test;
