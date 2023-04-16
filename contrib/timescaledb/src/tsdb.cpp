@@ -5435,8 +5435,8 @@ RelationGetFKeyList(Relation relation)
 
 	/* Quick exit if we already computed the list. */
     //tsdb 需要在RelationData加入成员rd_fkeyvalid,rd_fkeylist
-	if (relation->rd_fkeyvalid)
-		return relation->rd_fkeylist;
+	// if (relation->rd_fkeyvalid)
+	// 	return relation->rd_fkeylist;
 
 	/* Fast path: if it doesn't have any triggers, it can't have FKs */
 	if (!relation->rd_rel->relhastriggers)
@@ -5526,9 +5526,9 @@ RelationGetFKeyList(Relation relation)
 
 	/* Now save a copy of the completed list in the relcache entry. */
 	oldcxt = MemoryContextSwitchTo(u_sess->cache_mem_cxt);
-	oldlist = relation->rd_fkeylist;
-	relation->rd_fkeylist =(List*) copyObject(result);
-	relation->rd_fkeyvalid = true;
+	oldlist = NIL;//relation->rd_fkeylist;
+	// relation->rd_fkeylist =(List*) copyObject(result);
+	// relation->rd_fkeyvalid = true;
 	MemoryContextSwitchTo(oldcxt);
 
 	/* Don't leak the old list, if there is one */
