@@ -651,16 +651,6 @@ ts_make_pathkey_from_sortinfo(PlannerInfo *root, Expr *expr, Relids nullable_rel
 		elog(ERROR, "could not find opfamilies for equality operator %u", equality_op);
 
 	/* Now find or (optionally) create a matching EquivalenceClass */
-	//tsdb 原函数为
-	// eclass = get_eclass_for_sort_expr_tsdb(root,
-	// 								  expr,
-	// 								  nullable_relids,
-	// 								  opfamilies,
-	// 								  opcintype,
-	// 								  collation,
-	// 								  sortref,
-	// 								  rel,
-	// 								  create_it);
 	eclass = get_eclass_for_sort_expr(root,
 									  expr,
 									  opfamilies,

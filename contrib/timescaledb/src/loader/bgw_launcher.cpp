@@ -131,59 +131,6 @@ typedef struct DbHashEntry
 
 static void scheduler_state_trans_enabled_to_allocated(DbHashEntry *entry);
 
-// #ifdef OG30
-// static inline BackgroundWorker* GetFreeBgworker()
-// {
-//     BGW_HDR* bgworker_base = (BGW_HDR *)g_instance.bgw_base;
-//     if (!bgworker_base->free_bgws) {
-//         return NULL;
-//     }
-//     BackgroundWorker* bgworker = bgworker_base->free_bgws;
-//     bgworker_base->free_bgws = (BackgroundWorker *)bgworker->links.next;
-//     return bgworker;
-// }
-
-// bool RegisterBackgroundWorker(BackgroundWorker *worker)
-// {
-//     BGW_HDR* bgworker_base = (BGW_HDR *)g_instance.bgw_base;
-//     BackgroundWorker *bgw = NULL;
-//     BackgroundWorkerArgs *bwa = NULL;
-
-//     pthread_mutex_lock(&g_instance.bgw_base_lock);
-//     bgw = GetFreeBgworker();
-//     if (bgw == NULL) {
-//         pthread_mutex_unlock(&g_instance.bgw_base_lock);
-//         ereport(WARNING, (errmsg("There are no more free background workers available")));
-//         return false;
-//     }
-//     bgw->bgw_id = pg_atomic_fetch_add_u64(&bgworker_base->bgw_id_seq, 1);
-//     pthread_mutex_unlock(&g_instance.bgw_base_lock);
-
-//     bgw->bgw_status = BGW_NOT_YET_STARTED;
-//     bgw->bgw_status_dur = 0;
-//     bgw->disable_count = 0;
-
-//     /* Construct bgworker thread args */
-//     bwa = (BackgroundWorkerArgs*)MemoryContextAllocZero(
-//         INSTANCE_GET_MEM_CXT_GROUP(MEMORY_CONTEXT_STORAGE), sizeof(BackgroundWorkerArgs));
-//     bwa->bgwcontext =(BgWorkerContext *) worker;
-//     bwa->bgworker = bgw;
-//     bwa->bgworkerId = bgw->bgw_id;
-
-//     /* Fork a new worker thread */
-//     bgw->bgw_notify_pid = initialize_util_thread(BGWORKER, bwa);
-//     /* failed to fork a new thread */
-//     if (bgw->bgw_notify_pid == 0) {
-//         pfree_ext(bwa);
-//         return false;
-//     }
-
-//     /* Copy the registration data into the registered workers list. */
-//     slist_push_head(&t_thrd.bgworker_cxt.bgwlist, &bgw->rw_lnode);
-//     return true;
-// }
-// #endif
-//end og30
 static void
 bgw_on_postmaster_death(void)
 {
@@ -319,7 +266,6 @@ ts_bgw_cluster_launcher_register(void)
 	worker.bgw_notify_pid = 0;
 	snprintf(worker.bgw_library_name, BGW_MAXLEN, EXTENSION_NAME);
 	snprintf(worker.bgw_function_name, BGW_MAXLEN, "ts_bgw_cluster_launcher_main");
-	//RegisterBackgroundWorker((BgWorkerContext *)&worker);
 }
 
 /*
@@ -425,7 +371,6 @@ populate_database_htab(HTAB *db_htab)
 
 	rel = table_open(DatabaseRelationId, AccessShareLock);
 	scan = table_beginscan_catalog(rel, 0, NULL);
-	//tsdb 这里本来没有强制类型转化(TableScanDescData *)
 	while (HeapTupleIsValid(tup = heap_getnext((TableScanDescData *)scan, ForwardScanDirection)))
 	{
 		Form_pg_database pgdb = (Form_pg_database) GETSTRUCT(tup);
@@ -932,7 +877,6 @@ process_settings(Oid databaseid)
 	relsetting = heap_open(DbRoleSettingRelationId, AccessShareLock);
 
 	/* read all the settings under the same snapshot for efficiency */
-	//tsdb 原本函数为 snapshot = RegisterSnapshot(GetCatalogSnapshot(DbRoleSettingRelationId));
 	snapshot = RegisterSnapshot(GetCatalogSnapshot());
 
 	/* Later settings are ignored if set earlier. */

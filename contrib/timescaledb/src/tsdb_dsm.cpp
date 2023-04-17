@@ -55,8 +55,6 @@
 #include "utils/memutils.h"
 #include "postmaster/postmaster.h" 
 
-// #include "utils/resowner_private.h"
-
 #define PG_DYNSHMEM_CONTROL_MAGIC		0x9a503d32
 
 /*
@@ -78,19 +76,6 @@ typedef struct dsm_segment_detach_callback
 	Datum		arg;
 	slist_node	node;
 } dsm_segment_detach_callback;
-
-/* Backend-local state for a dynamic shared memory segment. */
-// struct dsm_segment
-// {
-// 	dlist_node	node;			/* List link in dsm_segment_list. */
-// 	ResourceOwner resowner;		/* Resource owner. */
-// 	dsm_handle	handle;			/* Segment name. */
-// 	uint32		control_slot;	/* Slot in control segment. */
-// 	void	   *impl_private;	/* Implementation-specific private data. */
-// 	void	   *mapped_address; /* Mapping address, or NULL if unmapped. */
-// 	Size		mapped_size;	/* Size of our mapping. */
-// 	slist_head	on_detach;		/* On-detach callbacks. */
-// };
 
 /* Shared-memory state for a dynamic shared memory segment. */
 typedef struct dsm_control_item
@@ -149,12 +134,6 @@ static dsm_control_header *dsm_control;
 static Size dsm_control_mapped_size = 0;
 static void *dsm_control_impl_private = NULL;
 
-//tsdb
-
-
-
-
-//
 /*
  * Start up the dynamic shared memory system.
  *
@@ -213,7 +192,6 @@ dsm_postmaster_startup(PGShmemHeader *shim)
 	elog(DEBUG2,
 		 "created dynamic shared memory control segment %u (%zu bytes)",
 		 dsm_control_handle, segsize);
-	//PGShmemHeader加入成员dsm_control
 	shim->dsm_control = dsm_control_handle;
 
 	/* Initialize control segment. */

@@ -1200,13 +1200,6 @@ typedef enum Anum_bgw_policy_compress_chunks_pkey
  */
 #define _MAX_TABLE_INDEXES 5
 
-// typedef enum CacheType
-// {
-// 	CACHE_TYPE_HYPERTABLE,
-// 	CACHE_TYPE_BGW_JOB,
-// 	_MAX_CACHE_TYPES
-// } CacheType;
-
 typedef struct CatalogTableInfo
 {
 	const char *schema_name;

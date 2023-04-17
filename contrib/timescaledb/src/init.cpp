@@ -51,11 +51,6 @@ extern void _conn_ssl_init();
 extern void _conn_ssl_fini(); 
 #endif
 
-#ifdef TS_DEBUG
-// extern void _conn_mock_init(); //tsdb
-// extern void _conn_mock_fini(); //tsdb
-#endif
-
 extern void _chunk_append_init();
 
 extern void TSDLLEXPORT _PG_init(void);
@@ -74,23 +69,19 @@ _PG_init(void)
 	ts_extension_check_server_version();
 	ts_bgw_check_loader_api_version();
 	
-	// u_sess->misc_cxt.process_shared_preload_libraries_in_progress = true;//tsdb
 	_cache_init();
 	_hypertable_cache_init();
 	_cache_invalidate_init();
 	_planner_init();
 	_constraint_aware_append_init();
 	_chunk_append_init();
-	//_event_trigger_init();tsdb
 	_process_utility_init();
 	_guc_init();
 	_conn_plain_init();
 #ifdef TS_USE_OPENSSL
 	_conn_ssl_init();
 #endif
-#ifdef TS_DEBUG
-	// _conn_mock_init(); //tsdb
-#endif
+
 }
 
 void
@@ -100,9 +91,6 @@ _PG_fini(void)
 	 * Order of items should be strict reverse order of _PG_init. Please
 	 * document any exceptions.
 	 */
-#ifdef TS_DEBUG
-	// _conn_mock_fini(); //tsdb
-#endif
 #ifdef TS_USE_OPENSSL
 	_conn_ssl_fini();
 #endif

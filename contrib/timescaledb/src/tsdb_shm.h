@@ -17,7 +17,6 @@
 
 #include "storage/proc.h"
 #include "utils/hsearch.h"
-// #include "compat.h"
 #include "tsdb_dsm.h"
 
 

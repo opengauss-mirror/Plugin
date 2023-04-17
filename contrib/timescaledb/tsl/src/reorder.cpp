@@ -14,7 +14,6 @@
 /* see postgres commit ab5e9caa4a3ec4765348a0482e88edcf3f6aab4a */
 
 #include <postgres.h>
-//#include <access/amapi.h>
 #include <access/multixact.h>
 #include <access/relscan.h>
 #include <access/rewriteheap.h>
@@ -54,9 +53,6 @@
 #include <utils/tuplesort.h>
 
 #include "compat.h"
-#if PG12_LT
-//#include <utils/tqual.h>
-#endif
 
 #include "chunk.h"
 #include "chunk_index.h"
@@ -493,7 +489,6 @@ timescale_rebuild_relation(Relation OldHeap, Oid indexOid, bool verbose, Oid wai
 	table_close(OldHeap, NoLock);
 
 	/* Create the transient table that will receive the re-ordered data */
-	//tsdb 原本函数为make_new_heap(tableOid, tableSpace, relpersistence, ExclusiveLock);
 	OIDNewHeap = make_new_heap(tableOid, tableSpace);
 
 	/* Copy the heap data into the new table in the desired order */
@@ -653,15 +648,11 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 	 * Since we're going to rewrite the whole table anyway, there's no reason
 	 * not to be aggressive about this.
 	 */
-	//tsdb 注释了一些参数
 	vacuum_set_xid_limits(OldHeap,
 						  0,
 						  0,
-						//   0,
-						//   0,
 						  &OldestXmin,
 						  &FreezeXid,
-						//  NULL,
 						  &MultiXactCutoff,
 						  NULL
 						);
@@ -676,8 +667,8 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 	/*
 	 * MultiXactCutoff, similarly, shouldn't go backwards either.
 	 */
-	if (MultiXactIdPrecedes(MultiXactCutoff, 1))//tsdb OldHeap->rd_rel->relminmxid
-		MultiXactCutoff = 1;//tsdb OldHeap->rd_rel->relminmxid
+	if (MultiXactIdPrecedes(MultiXactCutoff, 1))
+		MultiXactCutoff = 1;
 
 	/* return selected values to caller */
 	*pFreezeXid = FreezeXid;
@@ -758,7 +749,6 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 	}
 	else
 	{	
-		//tsdb 原本函数为heap_beginscan(OldHeap, SnapshotAny, 0, (ScanKey) NULL,0);
 		heapScan =(HeapScanDesc) heap_beginscan(OldHeap, SnapshotAny, 0, (ScanKey) NULL);
 		indexScan = NULL;
 	}
@@ -780,7 +770,6 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 		if (indexScan != NULL)
 		{
 			Assert(heapScan == NULL);
-			//tsdb 强制类型转换
 			tuple =(HeapTuple) index_getnext(indexScan, ForwardScanDirection);
 			if (tuple == NULL)
 				break;
@@ -794,12 +783,11 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 		else
 		{
 			Assert(heapScan != NULL);
-			//tsdb 这里本来没有强制类型转化(TableScanDescData *)
 			tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection);
 			if (tuple == NULL)
 				break;
 
-			buf = 0;//mytsdb
+			buf = 0;
 		}
 
 		LockBuffer(buf, BUFFER_LOCK_SHARE);
@@ -1204,7 +1192,6 @@ swap_relation_files(Oid r1, Oid r2, bool swap_toast_by_content, bool is_internal
 		Assert(TransactionIdIsNormal(frozenXid));
 		relform1->relfrozenxid = frozenXid;
 		Assert(MultiXactIdIsValid(cutoffMulti));
-		// relform1->relminmxid = cutoffMulti;
 	}
 
 	/* swap size statistics too, since new rel has freshly-updated stats */

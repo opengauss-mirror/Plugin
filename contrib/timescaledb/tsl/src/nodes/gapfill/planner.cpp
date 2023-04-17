@@ -6,7 +6,6 @@
 
 #include <postgres.h>
 #include <nodes/execnodes.h>
-//#include <nodes/extensible.h>
 #include <nodes/nodeFuncs.h>
 #include <optimizer/clauses.h>
 #include <optimizer/pathnode.h>

@@ -708,7 +708,6 @@ deltadelta_compressed_recv(StringInfo buffer)
 static inline uint64
 zig_zag_encode(uint64 value)
 {
-	// (((uint64)value) << 1) ^ (uint64)(value >> 63);
 	/* since shift is underspecified, we use (value < 0 ? 0xFFFFFFFFFFFFFFFFull : 0)
 	 * which compiles to the correct asm, and is well defined
 	 */

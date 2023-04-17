@@ -6,7 +6,6 @@
 #include <postgres.h>
 #include <access/xact.h>
 #include <access/transam.h>
-//#include <commands/event_trigger.h>
 #include <catalog/namespace.h>
 #include <utils/lsyscache.h>
 #include <utils/inval.h>
@@ -97,13 +96,11 @@ ts_extension_check_server_version()
 	 * This is a load-time check for the correct server version since the
 	 * extension may be distributed as a binary
 	 */
-	//tsdb 原本函数为GetConfigOptionByName("server_version_num", NULL, true)
 	char *server_version_num_guc = GetConfigOptionByName("server_version_num", NULL);
 	long server_version_num = strtol(server_version_num_guc, NULL, 10);
 
 	if (!is_supported_pg_version(server_version_num))
 	{
-		//tsdb 原本函数为GetConfigOptionByName("server_version", NULL, true)
 		char *server_version_guc = GetConfigOptionByName("server_version", NULL);
 
 		ereport(ERROR,

@@ -1,7 +1,6 @@
 #include <postgres.h>
 #include <access/xact.h>
 #include <access/transam.h>
-//#include <commands/event_trigger.h>
 #include <catalog/namespace.h>
 #include <utils/lsyscache.h>
 #include <utils/inval.h>

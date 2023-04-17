@@ -93,7 +93,7 @@ PG_MODULE_MAGIC;
 #ifdef WIN32
 #define CalledInParallelWorker() false
 #else
-#define CalledInParallelWorker() false//IsParallelWorker()//tsdb
+#define CalledInParallelWorker() false
 #endif /* WIN32 */
 #else
 #define CalledInParallelWorker()                                                                   \

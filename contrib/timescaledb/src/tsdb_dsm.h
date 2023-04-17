@@ -13,8 +13,6 @@
 #ifndef DSM_H
 #define DSM_H
 
-//#include "compat.h"
-
 
 
 /* A "name" for a dynamic shared memory segment. */

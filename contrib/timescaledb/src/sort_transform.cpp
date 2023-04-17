@@ -254,17 +254,6 @@ sort_transform_ec(PlannerInfo *root, EquivalenceClass *orig)
 			 * if the transform already exists for even one member, assume
 			 * exists for all
 			 */
-			//tsdb 原本函数为
-			// EquivalenceClass *exist = get_eclass_for_sort_expr(root,
-			// 												   transformed_expr,
-			// 												   ec_mem->em_nullable_relids,
-			// 												   opfamilies,
-			// 												   type_oid,
-			// 												   orig->ec_collation,
-			// 												   orig->ec_sortref,
-			// 												   ec_mem->em_relids,
-			// 												   false); 
-
 			EquivalenceClass *exist = get_eclass_for_sort_expr(root,
 															   transformed_expr,
 															   opfamilies,

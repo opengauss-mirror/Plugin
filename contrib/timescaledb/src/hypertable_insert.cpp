@@ -6,7 +6,6 @@
 #include <postgres.h>
 #include <parser/parsetree.h>
 #include <nodes/execnodes.h>
-//#include <nodes/extensible.h>
 #include <nodes/makefuncs.h>
 #include <nodes/nodeFuncs.h>
 #include <nodes/plannodes.h>

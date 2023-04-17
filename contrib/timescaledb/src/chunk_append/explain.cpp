@@ -13,7 +13,6 @@
 #include <parser/parsetree.h>
 #include <utils/builtins.h>
 #include <utils/lsyscache.h>
-//#include <utils/ruleutils.h>
 #include <utils/typcache.h>
 
 #include "chunk_append/exec.h"

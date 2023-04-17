@@ -10,7 +10,6 @@
 
 #include <access/genam.h>
 #include <access/heapam.h>
-//#include <nodes/lockoptions.h>
 #include <utils.h>
 #include <utils/fmgroids.h>
 

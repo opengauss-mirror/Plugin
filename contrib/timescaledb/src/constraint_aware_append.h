@@ -7,7 +7,6 @@
 #define TIMESCALEDB_CONSTRAINT_AWARE_APPEND_H
 
 #include <postgres.h>
-//#include <nodes/extensible.h>
 
 
 typedef struct Hypertable Hypertable;

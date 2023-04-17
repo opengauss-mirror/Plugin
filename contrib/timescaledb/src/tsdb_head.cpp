@@ -14,11 +14,8 @@ long swaptype;
 long es;
 
 
-double		parallel_setup_cost ;//= DEFAULT_PARALLEL_SETUP_COST
-double		parallel_tuple_cost ;//= DEFAULT_PARALLEL_TUPLE_COST
-// double		cpu_tuple_cost = DEFAULT_CPU_TUPLE_COST;
-
-
+double		parallel_setup_cost ;
+double		parallel_tuple_cost ;
 
 
 Datum
@@ -85,7 +82,6 @@ RunObjectPostAlterHook(Oid classId, Oid objectId, int subId,
 	memset(&pa_arg, 0, sizeof(ObjectAccessPostAlter));
 	pa_arg.auxiliary_id = auxiliaryId;
 	pa_arg.is_internal = is_internal;
-    //tsdb 2原来为OAT_POST_ALTER
 	(*object_access_hook) ((ObjectAccessType)2,
 						   classId, objectId, subId,
 						   (void *) &pa_arg);

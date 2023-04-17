@@ -1,4 +1,3 @@
-//此文件在og中没有
 /*
  * This file and its contents are licensed under the Apache License 2.0.
  * Please see the included NOTICE for copyright information and
@@ -16,7 +15,6 @@
 #include <catalog/pg_trigger.h>
 
 #include "compat.h"
-//#include "event_trigger.h"
 
 #define DDL_INFO_NATTS 9
 #define DROPPED_OBJECTS_NATTS 12
@@ -299,7 +297,6 @@ ts_event_trigger_dropped_objects(void)
 void
 _event_trigger_init(void)
 {
-	//tsdb og中没有event trigger,这里会导致报错cache lookup failed for function 0,在init.cpp中注释
 	fmgr_info(fmgr_internal_function("pg_event_trigger_ddl_commands"), &ddl_commands_fmgrinfo);
 	fmgr_info(fmgr_internal_function("pg_event_trigger_dropped_objects"),
 			  &dropped_objects_fmgrinfo);

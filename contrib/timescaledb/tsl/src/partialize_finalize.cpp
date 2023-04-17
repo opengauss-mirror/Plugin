@@ -300,8 +300,6 @@ fa_perquery_state_init(FunctionCallInfo fcinfo)
 	tstate = (FAPerQueryState *) MemoryContextAlloc(qcontext, sizeof(FAPerQueryState));
 
 	tstate->final_meta.finalfnoid = inner_agg_form->aggfinalfn;
-	//tstate->combine_meta.combinefnoid = inner_agg_form->aggcombinefn;
-	//tstate->combine_meta.deserialfnoid = inner_agg_form->aggdeserialfn;
 	tstate->combine_meta.transtype = inner_agg_form->aggtranstype;
 	ReleaseSysCache(inner_agg_tuple);
 
@@ -357,7 +355,7 @@ fa_perquery_state_init(FunctionCallInfo fcinfo)
 		int num_args = 1;
 		Oid *types = NULL;
 		size_t number_types = 0;
-		if (0)//inner_agg_form->aggfinalextra
+		if (0)
 		{
 			types = get_input_types(input_types, &number_types);
 			num_args += number_types;
