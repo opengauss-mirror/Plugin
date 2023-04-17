@@ -2439,7 +2439,7 @@ static void DelChar(char *inStr, char *outStr, int &a, int &b)
     tmp = outStr;
     tep = inStr;
     while (*tep != '\0') {
-        if (*tep == '"') {
+        while (*tep == '"') {
             tep++;
             a++;
         }
