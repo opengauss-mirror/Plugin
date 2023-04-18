@@ -103,7 +103,6 @@ gapfill_fetch_sample(GapFillState *state, GapFillInterpolateColumnState *column,
 	}
 
 	th = DatumGetHeapTupleHeader(datum);
-	//tsdb 原本函数为(HeapTupleHeaderGetNatts(th) != 2)
 	if (HeapTupleHeaderGetNatts(th,tupdesc) != 2)
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),

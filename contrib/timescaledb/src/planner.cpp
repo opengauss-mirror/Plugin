@@ -4,7 +4,6 @@
  * LICENSE-APACHE for a copy of the license.
  */
 #include <postgres.h>
-//#include <access/tsmapi.h>
 #include <nodes/plannodes.h>
 #include <parser/parsetree.h>
 #include <optimizer/clauses.h>
@@ -35,7 +34,6 @@
 #include <catalog/pg_constraint.h>
 #include "compat.h"
 #if PG11_LT /* PG11 consolidates pg_foo_fn.h -> pg_foo.h */
-//#include <catalog/pg_constraint_fn.h>
 #endif
 #include "compat-msvc-exit.h"
 
@@ -75,7 +73,7 @@ void _planner_init(void);
 void _planner_fini(void);
 
 static planner_hook_type prev_planner_hook;
-static planner_hook_type_tsdb prev_planner_hook_tsdb;//tsdb
+static planner_hook_type_tsdb prev_planner_hook_tsdb;
 static set_rel_pathlist_hook_type prev_set_rel_pathlist_hook;
 static get_relation_info_hook_type prev_get_relation_info_hook;
 static create_upper_paths_hook_type prev_create_upper_paths_hook;

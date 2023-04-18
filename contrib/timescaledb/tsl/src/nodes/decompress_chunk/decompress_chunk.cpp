@@ -634,8 +634,8 @@ chunk_joininfo_mutator(Node *node, CompressionInfo *context)
 		newinfo->left_em = NULL;
 		newinfo->right_em = NULL;
 		newinfo->scansel_cache = NIL;
-		newinfo->left_bucketsize = {};//tsdb
-		newinfo->right_bucketsize = {};//tsdb
+		newinfo->left_bucketsize = {};
+		newinfo->right_bucketsize = {};
 #if PG11_GE
 		newinfo->left_mcvfreq = -1;
 		newinfo->right_mcvfreq = -1;

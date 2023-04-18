@@ -96,22 +96,6 @@ ts_license_enable_module_loading(void)
 		return;
 
 	can_load = true;
-	
-	/* re-set the license key to actually load the submodule if needed */
-
-	//tsdb
-	// result = set_config_option("timescaledb.license_key",
-	// 						   ts_guc_license_key,
-	// 						   PGC_SUSET,
-	// 						   load_source,
-	// 						   GUC_ACTION_SET,
-	// 						   true,
-	// 						   0,
-	// 						   false);
-
-	
-	// if (result <= 0)
-	// 	elog(ERROR, "invalid value for timescaledb.license_key '%s'", ts_guc_license_key);
 }
 
 

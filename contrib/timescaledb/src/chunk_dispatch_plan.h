@@ -10,7 +10,6 @@
 #include <nodes/plannodes.h>
 #include <nodes/parsenodes.h>
 #include "compat.h"
-//#include <nodes/extensible.h>
 
 typedef struct ChunkDispatchPath
 {

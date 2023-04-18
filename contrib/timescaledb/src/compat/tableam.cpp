@@ -63,7 +63,6 @@ ts_table_scan_getnextslot(TableScanDesc scan, const ScanDirection direction, Tup
 bool
 ts_index_getnext_slot(IndexScanDesc scan, const ScanDirection direction, TupleTableSlot *slot)
 {
-	//tsdb 这里本来没有强制类型转化(HeapTuple)
 	HeapTuple tuple = (HeapTuple)index_getnext(scan, direction);
 
 	if (HeapTupleIsValid(tuple))

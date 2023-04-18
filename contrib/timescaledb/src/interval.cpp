@@ -63,7 +63,6 @@ ts_interval_from_tuple(Datum interval)
 	tuple.t_data = th;
 
 	heap_deform_tuple(&tuple, rowdesc, values, isnull);
-	// lookup_rowtype_tupdesc gives a ref counted pointer
 	DecrTupleDescRefCount(rowdesc);
 
 	invl =(FormData_ts_interval *) palloc0(sizeof(FormData_ts_interval));
@@ -456,7 +455,7 @@ ts_interval_subtract_from_now(FormData_ts_interval *invl, Dimension *open_dim)
 	return 0;
 }
 
-PG_FUNCTION_INFO_V1(ts_valid_ts_interval);//tsdb
+PG_FUNCTION_INFO_V1(ts_valid_ts_interval);
 Datum
 ts_valid_ts_interval(PG_FUNCTION_ARGS)
 {

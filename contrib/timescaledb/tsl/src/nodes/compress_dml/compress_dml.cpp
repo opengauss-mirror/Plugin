@@ -5,7 +5,6 @@
  */
 
 #include <postgres.h>
-//#include <nodes/extensible.h>
 #include <optimizer/pathnode.h>
 #include <optimizer/paths.h>
 
@@ -84,7 +83,6 @@ compress_chunk_dml_exec(ExtensiblePlanState *node)
 static void
 compress_chunk_dml_end(ExtensiblePlanState *node)
 {
-	// CompressChunkDmlState *state = (CompressChunkDmlState *) node;
 	PlanState *substate =(PlanState *) linitial(node->extensible_ps);
 	ExecEndNode(substate);
 }
@@ -99,7 +97,6 @@ compress_chunk_dml_path_create(Path *subpath, Oid chunk_relid)
 	path->cpath.path.pathtype = T_ExtensiblePlan;
 	path->cpath.path.parent = subpath->parent;
 	path->cpath.path.pathtarget = subpath->pathtarget;
-	// path->cpath.path.param_info = subpath->param_info;
 	path->cpath.methods = &compress_chunk_dml_path_methods;
 	path->cpath.extensible_paths = list_make1(subpath);
 	path->chunk_relid = chunk_relid;

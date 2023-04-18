@@ -177,12 +177,6 @@ static void
 extension_load_without_preload()
 {
 	/* cannot use GUC variable here since extension not yet loaded */
-	//tsdb 原本函数为GetConfigOptionByName("timescaledb.allow_install_without_preload", NULL, true)
-
-	// tsdb 修改
-	// char *allow_install_without_preload =
-	// 	GetConfigOptionByName("timescaledb.allow_install_without_preload", NULL);
-
 	char *allow_install_without_preload = "on";
 
 
@@ -200,7 +194,6 @@ extension_load_without_preload()
 		if (is_member_of_role(GetUserId(), DEFAULT_ROLE_READ_ALL_SETTINGS))
 #endif
 		{
-			//tsdb 原本函数为GetConfigOptionByName("config_file", NULL, true)
 			char *config_file = GetConfigOptionByName("config_file", NULL);
 
 			ereport(FATAL,

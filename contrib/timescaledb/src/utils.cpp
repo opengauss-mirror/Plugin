@@ -8,7 +8,6 @@
 #include <funcapi.h>
 #include <access/genam.h>
 #include <access/heapam.h>
-// #include <access/htup_details.h>
 #include <access/htup.h>
 #include <access/xact.h>
 #include <catalog/indexing.h>

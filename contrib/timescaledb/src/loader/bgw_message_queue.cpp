@@ -10,7 +10,6 @@
 #include <storage/shmem.h>
 #include <storage/proc.h>
 #include <storage/procarray.h>
-//#include <storage/shm_mq.h>
 #include <access/xact.h>
 #include <storage/spin.h>
 #include <pgstat.h>
@@ -74,7 +73,6 @@ queue_init()
 		memset(mq, 0, sizeof(MessageQueue));
 		mq->reader_pid = InvalidPid;
 		SpinLockInit(&mq->mutex);
-		//mq->lock = &(GetNamedLWLockTranche(BGW_MQ_TRANCHE_NAME))->lock;//tsdb
 	}
 	LWLockRelease(AddinShmemInitLock);
 }
@@ -93,7 +91,6 @@ extern void
 ts_bgw_message_queue_alloc(void)
 {
 	RequestAddinShmemSpace(sizeof(MessageQueue));
-	//RequestNamedLWLockTranche(BGW_MQ_TRANCHE_NAME, 1);
 }
 
 /*

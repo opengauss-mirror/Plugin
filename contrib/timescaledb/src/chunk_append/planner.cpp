@@ -6,7 +6,6 @@
 
 #include <postgres.h>
 #include <catalog/pg_namespace.h>
-//#include <nodes/extensible.h>
 #include <nodes/makefuncs.h>
 #include <nodes/nodeFuncs.h>
 #include <optimizer/pathnode.h>

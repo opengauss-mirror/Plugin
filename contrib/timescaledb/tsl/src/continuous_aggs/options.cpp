@@ -9,7 +9,6 @@
 #include <commands/view.h>
 #include <miscadmin.h>
 #include <rewrite/rewriteManip.h>
-//#include <utils/int8.h>//tsdn
 #include <utils/builtins.h>
 
 #include "options.h"

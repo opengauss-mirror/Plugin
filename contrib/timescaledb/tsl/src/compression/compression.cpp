@@ -232,8 +232,6 @@ compress_chunk(Oid in_table, Oid out_table, const ColumnCompressionInfo **column
 	 * we're taking the stricter lock to prevent accidents.
 	 */
 	Relation out_rel = table_open(out_table, ExclusiveLock);
-	// TODO error if out_rel is non-empty
-	// TODO typecheck the output types
 	int16 *in_column_offsets = compress_chunk_populate_keys(in_table,
 															column_compression_info,
 															num_compression_infos,
@@ -361,15 +359,11 @@ compress_chunk_sort_relation(Relation in_rel, int n_keys, const ColumnCompressio
 										  false /*=randomAccess*/);
 
 	heapScan = table_beginscan(in_rel, GetLatestSnapshot(), 0, (ScanKey) NULL);
-	//tsdb 这里本来没有强制类型转化(TableScanDescData *)
 	for (tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection); tuple != NULL;
 		 tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection))
 	{
 		if (HeapTupleIsValid(tuple))
 		{
-			// TODO is this the most efficient way to do this?
-			//     (since we use begin_heap() the tuplestore expects tupleslots,
-			//      so ISTM that the options are this or maybe putdatum())
 #if PG12_LT
 			ExecStoreTuple(tuple, heap_tuple_slot, InvalidBuffer, false);
 #else
@@ -403,7 +397,6 @@ compress_chunk_populate_sort_info_for_column(Oid table, const ColumnCompressionI
 		elog(ERROR, "table %d does not have column \"%s\"", table, NameStr(column->attname));
 
 	att_tup = (Form_pg_attribute) GETSTRUCT(tp);
-	// TODO other valdation checks?
 
 	*att_nums = att_tup->attnum;
 	*collation = att_tup->attcollation;
@@ -638,7 +631,6 @@ row_compressor_update_group(RowCompressor *row_compressor, TupleTableSlot *row)
 		Assert(column->compressor == NULL);
 
 		MemoryContextSwitchTo(row_compressor->per_row_ctx->parent);
-		// TODO we should just use array access here; everything is guaranteed to be fetched
 		val = slot_getattr(row, AttrOffsetGetAttrNumber(col), &is_null);
 		segment_info_update(column->segment_info, val, is_null);
 		MemoryContextSwitchTo(row_compressor->per_row_ctx);
@@ -683,8 +675,6 @@ row_compressor_append_row(RowCompressor *row_compressor, TupleTableSlot *row)
 		if (compressor == NULL)
 			continue;
 
-		// TODO since we call getallatts at the beginning, slot_getattr is useless
-		//     overhead here, and we should just access the array directly
 		val = slot_getattr(row, AttrOffsetGetAttrNumber(col), &is_null);
 		if (is_null)
 		{
@@ -988,7 +978,6 @@ decompress_chunk(Oid in_table, Oid out_table)
 	 * we are compressing, so we only take an ExclusiveLock instead of AccessExclusive.
 	 */
 	Relation in_rel = table_open(in_table, ExclusiveLock);
-	// TODO error if out_rel is non-empty
 
 	TupleDesc in_desc = RelationGetDescr(in_rel);
 	TupleDesc out_desc = RelationGetDescr(out_rel);
@@ -1025,7 +1014,6 @@ decompress_chunk(Oid in_table, Oid out_table)
 			AllocSetContextCreate(CurrentMemoryContext,
 								  "decompress chunk per-compressed row",
 								  ALLOCSET_DEFAULT_SIZES);
-		//tsdb 这里本来没有强制类型转化(TableScanDescData *)
 		for (compressed_tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection);
 			 compressed_tuple != NULL;
 			 compressed_tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection))
@@ -1183,7 +1171,6 @@ row_decompressor_decompress_row(RowDecompressor *row_decompressor)
 		 */
 		if (!is_done || !wrote_data)
 		{
-			// FIXME getting invalid bool here
 			HeapTuple decompressed_tuple = heap_form_tuple(row_decompressor->out_desc,
 														   row_decompressor->decompressed_datums,
 														   row_decompressor->decompressed_is_nulls);
@@ -1235,7 +1222,6 @@ per_compressed_col_get_data(PerCompressedColumn *per_compressed_col, Datum *deco
 	decompressed = per_compressed_col->iterator->try_next(per_compressed_col->iterator);
 	if (decompressed.is_done)
 	{
-		// TODO we want a way to free the decompression iterator's data
 		per_compressed_col->iterator = NULL;
 		decompressed_is_nulls[decompressed_column_offset] = true;
 		return true;

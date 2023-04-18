@@ -70,7 +70,7 @@ check_for_partialize_function_call(Node *node, PartializeWalkerState *state)
 		if (state->looking_for_agg)
 		{
 			state->looking_for_agg = false;
-			aggref->aggsplit =6 ;//AGGSPLIT_INITIAL_SERIAL
+			aggref->aggsplit =6 ;
 
 			if (aggref->aggtranstype == INTERNALOID &&
 				DO_AGGSPLIT_SERIALIZE(AGGSPLIT_INITIAL_SERIAL))

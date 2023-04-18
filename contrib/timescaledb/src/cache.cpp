@@ -275,7 +275,7 @@ cache_xact_end(XactEvent event, void *arg)
 	switch (event)
 	{
 		case XACT_EVENT_ABORT:
-		case 5://XACT_EVENT_PARALLEL_ABORT
+		case 5:
 			release_all_pinned_caches();
 			break;
 		default:
@@ -331,7 +331,7 @@ cache_subxact_abort(SubXactEvent event, SubTransactionId subtxn_id, SubTransacti
 	switch (event)
 	{
 		case SUBXACT_EVENT_START_SUB:
-		case 3://SUBXACT_EVENT_PRE_COMMIT_SUB
+		case 3:
 			/* do nothing */
 			break;
 		case SUBXACT_EVENT_COMMIT_SUB:

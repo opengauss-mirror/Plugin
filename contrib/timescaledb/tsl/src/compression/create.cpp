@@ -312,7 +312,7 @@ compresscolinfo_init(CompressColInfo *cc, Oid srctbl_relid, List *segmentby_cols
 		}
 		else
 		{
-			cc->col_meta[colno].algo_id = 0; // invalid algo number
+			cc->col_meta[colno].algo_id = 0;
 		}
 		coldef = makeColumnDef(NameStr(attr->attname), attroid, -1 /*typmod*/, 0 /*collation*/);
 		cc->coldeflist = lappend(cc->coldeflist, coldef);
@@ -334,7 +334,6 @@ modify_compressed_toast_table_storage(CompressColInfo *cc, Oid compress_relid)
 	List *cmds = NIL;
 	for (colno = 0; colno < cc->numcols; colno++)
 	{
-		// get storage type for columns which have compression on
 		if (cc->col_meta[colno].algo_id != 0)
 		{
 			CompressionStorage stor = compression_get_toast_storage((CompressionAlgorithms)cc->col_meta[colno].algo_id);

@@ -14,7 +14,6 @@
 #include <utils/builtins.h>
 #include <utils/lsyscache.h>
 #include <utils/syscache.h>
-//#include <commands/event_trigger.h>
 #include <commands/defrem.h>
 #include <commands/tablecmds.h>
 #include <commands/tablespace.h>
@@ -344,7 +343,6 @@ ts_indexing_root_table_create_index(IndexStmt *stmt, const char *queryString,
 	/* ... and do it */
 	EventTriggerAlterTableStart((Node *) stmt);
 	
-	//tsdb下面原来没有注释
 	root_table_address = DefineIndexCompat(relid, /* OID of heap relation */
 										   stmt,
 										   InvalidOid, /* no predefined OID */
@@ -437,7 +435,6 @@ ts_indexing_mark_as(Oid index_id, IndexValidity validity)
 	switch (validity)
 	{
 		case IndexValid:
-			//Assert(indexForm->indislive);
 			Assert(indexForm->indisready);
 			indexForm->indisvalid = true;
 			break;

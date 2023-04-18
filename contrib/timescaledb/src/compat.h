@@ -22,7 +22,6 @@
 
 #include "tsdb.h"
 #include "tsdb_head.h"
-//#include "compression/compression.h"//10-22注释
 
 #define is_supported_og_version_30(version) ((version >= 90204) && (version < 100000))
 #define is_supported_pg_version_96(version) ((version >= 90204) && (version < 100000))
@@ -191,7 +190,6 @@
  * partitioned tables, InvalidOid otherwise.
  * The PG96 interface is used for compatibility.
  */
-//tsdb 原为#define DefineIndexCompat DefineIndex
 #if PG96
 #define DefineIndexCompat DefineIndex_tsdb
 #elif PG10
@@ -253,8 +251,6 @@
 
 /* ExecARInsertTriggers */
 #if PG96
-//tsdb ExecARInsertTriggers这个原来没有倒数第二项NULL
-//原本函数为ExecARInsertTriggers(estate, relinfo, tuple, recheck_indexes);
 #define ExecARInsertTriggersCompat(estate, relinfo, slot, recheck_indexes, transition_capture)     \
 	do                                                                                             \
 	{                                                                                              \
@@ -738,7 +734,6 @@ get_attname_compat(Oid relid, AttrNumber attnum, bool missing_ok)
 #define RenameRelationInternalCompat(relid, name, is_internal, is_index)                           \
 	RenameRelationInternal(relid, name)
 
-	//tsdb 原为 RenameRelationInternal(relid, name, is_internal)
 #else
 #define RenameRelationInternalCompat RenameRelationInternal
 #endif
@@ -783,11 +778,6 @@ extern int oid_cmp(const void *p1, const void *p2);
 #else
 #define create_merge_append_path_compat(root, rel, merge_childs, pathkeys, subpath)                \
 	create_merge_append_path(root, rel, merge_childs, pathkeys, subpath, NIL)
-#endif
-
-/* pq_sendint is deprecated in PG11, so create pq_sendint32 in 9.6 and 10 */
-#if PG11_LT
-//#define pq_sendint32(buf, i) pq_sendint(buf, i, 4)//tsdb,此条og中有定义
 #endif
 
 /* create this function for symmetry with above */

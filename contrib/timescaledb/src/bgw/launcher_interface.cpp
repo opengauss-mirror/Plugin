@@ -10,7 +10,6 @@
 #include "extension.h"
 #include "launcher_interface.h"
 #include "compat.h"
-// #include "tsdb.h"
 
 #define MIN_LOADER_API_VERSION 3
 
@@ -55,9 +54,9 @@ extern void
 ts_bgw_check_loader_api_version()
 {
 	int version = ts_bgw_loader_api_version();
-	int fit_og_version = 3; //  tsdb，新加进来的
+	int fit_og_version = 3;
 
-	if (version + fit_og_version < MIN_LOADER_API_VERSION)// tsdb,原本是version<MIN_LOADER_API_VERSION
+	if (version + fit_og_version < MIN_LOADER_API_VERSION)
 		ereport(ERROR,
 				(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				 errmsg("loader version out-of-date %d", version),

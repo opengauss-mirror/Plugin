@@ -13,7 +13,6 @@
 #include <utils/json.h>
 #include <utils/jsonb.h>
 #include "compat.h"
-// #include "build/src/config.h"
 #if !PG96
 #include <utils/fmgrprotos.h>
 #else
@@ -297,7 +296,6 @@ get_pgversion_string()
 	 * the extension is compiled against instead of the version actually
 	 * running.
 	 */
-	//tsdb 此函数多次说明过
 	char *server_version_num_guc = GetConfigOptionByName("server_version_num", NULL);
 	long server_version_num = strtol(server_version_num_guc, NULL, 10);
 

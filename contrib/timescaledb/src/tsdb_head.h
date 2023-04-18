@@ -68,17 +68,16 @@ extern bool row_security;
 
 
 
-extern PGDLLIMPORT int NamedLWLockTrancheRequests;//跳过
+extern PGDLLIMPORT int NamedLWLockTrancheRequests;
 
 
-//extern bool am_walsender;//改成AM_WAL_SENDER
 extern PGDLLIMPORT double parallel_setup_cost;
 extern PGDLLIMPORT double parallel_tuple_cost;
 
 
-extern PGDLLIMPORT int old_snapshot_threshold;//og没有
+extern PGDLLIMPORT int old_snapshot_threshold;
 
-extern PGDLLIMPORT BackgroundWorker *MyBgworkerEntry; //og没有
+extern PGDLLIMPORT BackgroundWorker *MyBgworkerEntry;
 
 
 
@@ -95,20 +94,13 @@ extern PGDLLIMPORT BackgroundWorker *MyBgworkerEntry; //og没有
 #define INVALID_CONTROL_SLOT		((uint32) -1) 
 
 typedef void (*RangeVarGetRelidCallback_tsdb) (const RangeVar *relation, Oid relId,
-										   Oid oldRelId, void *callback_arg);//这个后面加个tsdb吧
+										   Oid oldRelId, void *callback_arg);
 
 typedef IndexBuildResult *(*ambuild_function) (Relation heapRelation,
 													  Relation indexRelation,
 												struct IndexInfo *indexInfo);
 
 typedef bool (*check_function_callback) (Oid func_id, void *context); 
-
-
-
-// #define slist_container(type, membername, ptr)								\
-// 	(AssertVariableIsOfTypeMacro(ptr, slist_node *),						\
-// 	 AssertVariableIsOfTypeMacro(((type *) NULL)->membername, slist_node),	\
-// 	 ((type *) ((char *) (ptr) - offsetof(type, membername))))
 
 #define VALGRIND_MEMPOOL_ALLOC(context, addr, size)			do {} while (0)
 #define AssertNotInCriticalSection(context) \
@@ -143,7 +135,6 @@ typedef bool (*check_function_callback) (Oid func_id, void *context);
 #define XLH_LOCK_ALL_FROZEN_CLEARED	0x01 
 #define VISIBILITYMAP_ALL_FROZEN	0x02
 #define ObjectIdAttributeNumber					(-2)
-//#define FirstLowInvalidHeapAttributeNumber		(-8) og(-11)
 
 #define PQ_RECV_BUFFER_SIZE 8192 
 #define pq_flush() (PqCommMethods->flush())
@@ -260,7 +251,6 @@ do \
 #define Anum_pg_inherits_inhparent		2
 #define Anum_pg_inherits_inhseqno		3
 
-//#define Natts_pg_constraint					24 og中定义是27
 
 #define Anum_pg_constraint_conname			1
 #define Anum_pg_constraint_connamespace		2
@@ -278,14 +268,6 @@ do \
 #define Anum_pg_constraint_conislocal		14
 #define Anum_pg_constraint_coninhcount		15
 #define Anum_pg_constraint_connoinherit		16
-//#define Anum_pg_constraint_conkey			17 og中是19
-//#define Anum_pg_constraint_confkey			18 og中是20
-//#define Anum_pg_constraint_conpfeqop		19 21
-//#define Anum_pg_constraint_conppeqop		20 og中是22
-//#define Anum_pg_constraint_conffeqop		21 23
-//#define Anum_pg_constraint_conexclop		22 24
-//#define Anum_pg_constraint_conbin			23 og中是25
-//#define Anum_pg_constraint_consrc			24  og中是26
 
 #define RESARRAY_IS_ARRAY(resarr) ((resarr)->capacity <= RESARRAY_MAX_ARRAY)
 #define TRACE_POSTGRESQL_SORT_START(INT1, INT2, INT3, INT4, INT5) 
@@ -316,9 +298,6 @@ do \
 #endif
 
 typedef uint32 TriggerFlags; 
-// #define TRIGGER_TYPE_MATCHES(type, level, timing, event) \
-// 	(((type) & (TRIGGER_TYPE_LEVEL_MASK | TRIGGER_TYPE_TIMING_MASK | (event))) == ((level) | (timing) | (event)))
-
 
 typedef void (*PG_init_t) (void);
 
@@ -369,7 +348,6 @@ typedef void (*PG_init_t) (void);
 
 #define HEAP_XMIN_COMMITTED		0x0100	/* t_xmin committed */
 #define HEAP_XMIN_INVALID		0x0200	/* t_xmin invalid/aborted */
-//#define HEAP_XMIN_FROZEN		(HEAP_XMIN_COMMITTED|HEAP_XMIN_INVALID) 
 
 #define HeapTupleHeaderGetRawXmin(tup) \
 ( \
@@ -386,7 +364,6 @@ typedef void (*PG_init_t) (void);
 ( \
 	(tup)->t_choice.t_heap.t_xmax \
 ) 
-//原本6是LOCKTAG_SPECULATIVE_TOKEN
 #define SET_LOCKTAG_SPECULATIVE_INSERTION(locktag,xid,token) \
 	((locktag).locktag_field1 = (xid), \
 	 (locktag).locktag_field2 = (token),		\
@@ -407,7 +384,6 @@ typedef void (*PG_init_t) (void);
 
 
 
-//#define HEAP_XMAX_LOCK_ONLY		0x0080	/* xmax, if valid, is only a locker */
 #define HEAP_XMAX_IS_MULTI		0x1000	/* t_xmax is a MultiXactId */
 #define HEAP_XMAX_INVALID		0x0800	/* t_xmax invalid/aborted */
 
@@ -424,11 +400,6 @@ typedef void (*PG_init_t) (void);
 	 ((infomask) & HEAP_XMAX_LOCK_ONLY) != 0 && \
 	 (((infomask) & (HEAP_XMAX_EXCL_LOCK | HEAP_XMAX_KEYSHR_LOCK)) == 0) \
 ) 
-
-// #define HeapTupleHeaderSetXmax(tup, xid) \
-// ( \
-// 	(tup)->t_choice.t_heap.t_xmax = (xid) \
-// ) 
 
 
 #define HeapTupleHeaderGetUpdateXid_tsdb(tup,tup_head) \
@@ -497,7 +468,6 @@ typedef void (*pqsigfunc) (int signo);
 extern Datum make_interval(PG_FUNCTION_ARGS);
 extern pqsigfunc pqsignal(int signo, pqsigfunc func);
 
-// #define PG_SETMASK(mask) pthread_sigmask(SIG_SETMASK, mask, NULL)
 #define PG_SETMASK(mask)	sigprocmask(SIG_SETMASK, mask, NULL)
 
 #define IS_VALID_TIMESTAMP(t)  (MIN_TIMESTAMP <= (t) && (t) < END_TIMESTAMP) 
@@ -541,48 +511,11 @@ extern void RunObjectPostAlterHook(Oid classId, Oid objectId, int subId,
 	} while(0)  
 
 
-// #define PG_TRY()  \
-// 	do { \
-// 		sigjmp_buf *_save_exception_stack = PG_exception_stack; \
-// 		ErrorContextCallback *_save_context_stack = error_context_stack; \
-// 		sigjmp_buf _local_sigjmp_buf; \
-// 		bool _do_rethrow = false; \
-// 		if (sigsetjmp(_local_sigjmp_buf, 0) == 0) \
-// 		{ \
-// 			PG_exception_stack = &_local_sigjmp_buf
-
-// #define PG_CATCH()	\
-// 		} \
-// 		else \
-// 		{ \
-// 			PG_exception_stack = _save_exception_stack; \
-// 			error_context_stack = _save_context_stack
-
-// #define PG_FINALLY() \
-// 		} \
-// 		else \
-// 			_do_rethrow = true; \
-// 		{ \
-// 			PG_exception_stack = _save_exception_stack; \
-// 			error_context_stack = _save_context_stack 
-
-// #define PG_END_TRY()  \
-// 		} \
-// 		if (_do_rethrow) \
-// 				PG_RE_THROW(); \
-// 		PG_exception_stack = _save_exception_stack; \
-// 		error_context_stack = _save_context_stack; \
-// 	} while (0) 
-
-
-
-
 #define CONSTRAINT_TRIGGER			't'
 #define ConstraintRelationId  2606
 #define TRIGGER_TYPE_BEFORE		(1 << 1) 
 #define TRIGGER_TYPE_INSERT				(1 << 2) 
 
-//#define Natts_pg_trigger				15 16
 #define Anum_pg_trigger_tgrelid			1
 #define Anum_pg_trigger_tgname			2
 #define Anum_pg_trigger_tgfoid			3
@@ -632,15 +565,6 @@ extern void RunObjectPostAlterHook(Oid classId, Oid objectId, int subId,
 #define TRIGGER_SETT_UPDATE(type)		((type) |= TRIGGER_TYPE_UPDATE)
 #define TRIGGER_SETT_TRUNCATE(type)		((type) |= TRIGGER_TYPE_TRUNCATE)
 
-//#define TRIGGER_FOR_ROW(type)			((type) & TRIGGER_TYPE_ROW)
-//#define TRIGGER_FOR_BEFORE(type)		(((type) & TRIGGER_TYPE_TIMING_MASK) == TRIGGER_TYPE_BEFORE)
-//#define TRIGGER_FOR_AFTER(type)			(((type) & TRIGGER_TYPE_TIMING_MASK) == TRIGGER_TYPE_AFTER)
-//#define TRIGGER_FOR_INSTEAD(type)		(((type) & TRIGGER_TYPE_TIMING_MASK) == TRIGGER_TYPE_INSTEAD)
-//#define TRIGGER_FOR_INSERT(type)		((type) & TRIGGER_TYPE_INSERT)
-//#define TRIGGER_FOR_DELETE(type)		((type) & TRIGGER_TYPE_DELETE)
-//#define TRIGGER_FOR_UPDATE(type)		((type) & TRIGGER_TYPE_UPDATE)
-//#define TRIGGER_FOR_TRUNCATE(type)		((type) & TRIGGER_TYPE_TRUNCATE)
-
 #define TriggerRelationId  2620 
 
 #define list_make5_oid(x1,x2,x3,x4,x5)	lcons_oid(x1, list_make4_oid(x2, x3, x4, x5)) 
@@ -674,15 +598,6 @@ extern void RunObjectPostAlterHook(Oid classId, Oid objectId, int subId,
 	) 
 
 #define RI_INIT_CONSTRAINTHASHSIZE		64
-
-// #define dlist_foreach_modify(iter, lhead)									\
-// 	for (AssertVariableIsOfTypeMacro(iter, dlist_mutable_iter),				\
-// 		 AssertVariableIsOfTypeMacro(lhead, dlist_head *),					\
-// 		 (iter).end = &(lhead)->head,										\
-// 		 (iter).cur = (iter).end->next ? (iter).end->next : (iter).end,		\
-// 		 (iter).next = (iter).cur->next;									\
-// 		 (iter).cur != (iter).end;											\
-// 		 (iter).cur = (iter).next, (iter).next = (iter).cur->next)
 
 #define RI_INIT_QUERYHASHSIZE			(RI_INIT_CONSTRAINTHASHSIZE * 4)
 #define COMPARETUP(state,a,b)	((*(state)->comparetup) (a, b, state))
@@ -820,70 +735,12 @@ typedef struct CustomScanState
 } CustomScanState;
 
 
-
-// typedef struct shm_toc_entry
-// {
-// 	uint64		key;			/* Arbitrary identifier */
-// 	uint64		offset;			/* Bytes offset */
-// } shm_toc_entry; 
-
-// struct shm_toc
-// {
-// 	uint64		toc_magic;		/* Magic number for this TOC */
-// 	slock_t		toc_mutex;		/* Spinlock for mutual exclusion */
-// 	Size		toc_total_bytes;	/* Bytes managed by this TOC */
-// 	Size		toc_allocated_bytes;	/* Bytes allocated of those managed */
-// 	Size		toc_nentry;		/* Number of entries in TOC */
-// 	shm_toc_entry toc_entry[FLEXIBLE_ARRAY_MEMBER];
-// }; 
-
-
-// struct shm_mq
-// {
-// 	slock_t		mq_mutex;
-// 	PGPROC	   *mq_receiver;
-// 	PGPROC	   *mq_sender;
-// 	uint64		mq_bytes_read;
-// 	uint64		mq_bytes_written;
-// 	Size		mq_ring_size;
-// 	bool		mq_detached;
-// 	uint8		mq_ring_offset;
-// 	char		mq_ring[FLEXIBLE_ARRAY_MEMBER];
-// }; 
-
-// struct shm_mq_handle
-// {
-// 	shm_mq	   *mqh_queue;
-// 	dsm_segment *mqh_segment;
-// 	BackgroundWorkerHandle *mqh_handle;
-// 	char	   *mqh_buffer;
-// 	Size		mqh_buflen;
-// 	Size		mqh_consume_pending;
-// 	Size		mqh_partial_bytes;
-// 	Size		mqh_expected_bytes;
-// 	bool		mqh_length_word_complete;
-// 	bool		mqh_counterparty_attached;
-// 	MemoryContext mqh_context;
-// }; 
-
 typedef struct ParallelWorkerInfo
 {
 	BackgroundWorkerHandle *bgwhandle;
 	shm_mq_handle *error_mqh;
 	int32		pid;
 } ParallelWorkerInfo; 
-
-// struct dsm_segment
-// {
-// 	dlist_node	node;			/* List link in dsm_segment_list. */
-// 	ResourceOwner resowner;		/* Resource owner. */
-// 	dsm_handle	handle;			/* Segment name. */
-// 	uint32		control_slot;	/* Slot in control segment. */
-// 	void	   *impl_private;	/* Implementation-specific private data. */
-// 	void	   *mapped_address; /* Mapping address, or NULL if unmapped. */
-// 	Size		mapped_size;	/* Size of our mapping. */
-// 	slist_head	on_detach;		/* On-detach callbacks. */
-// }; 
 
 typedef struct ParallelContext
 {
@@ -995,7 +852,7 @@ typedef struct HeapUpdateFailureData
 	ItemPointerData ctid;
 	TransactionId xmax;
 	CommandId	cmax;
-	TM_FailureData tsdb_for_og;//tsdb
+	TM_FailureData tsdb_for_og;
 } HeapUpdateFailureData; 
 typedef struct CustomScan
 {
@@ -1131,7 +988,6 @@ typedef struct RoleSpec
 } RoleSpec;
 
 
-//strart EventTrigger
 #define EventTriggerRelationId	3466
 
 CATALOG(pg_event_trigger,3466)
@@ -1168,7 +1024,7 @@ typedef FormData_pg_event_trigger *Form_pg_event_trigger;
 #define Anum_pg_event_trigger_evtenabled		5
 #define Anum_pg_event_trigger_evttags			6
 
-#define Anum_pg_index_indislive			12//这个可能有问题
+#define Anum_pg_index_indislive			12
 
 
 
@@ -1204,7 +1060,6 @@ typedef struct CollectedATSubcmd
 
 
  
-//end EventTrigger
 
 
 
@@ -1404,27 +1259,6 @@ typedef struct BackgroundWorkerArray
 	BackgroundWorkerSlot slot[FLEXIBLE_ARRAY_MEMBER];
 } BackgroundWorkerArray; 
 
-// typedef enum
-// {
-// 	PMSIGNAL_RECOVERY_STARTED,	/* recovery has started */
-// 	PMSIGNAL_BEGIN_HOT_STANDBY, /* begin Hot Standby */
-// 	PMSIGNAL_WAKEN_ARCHIVER,	/* send a NOTIFY signal to xlog archiver */
-// 	PMSIGNAL_ROTATE_LOGFILE,	/* send SIGUSR1 to syslogger to rotate logfile */
-// 	PMSIGNAL_START_AUTOVAC_LAUNCHER,	/* start an autovacuum launcher */
-// 	PMSIGNAL_START_AUTOVAC_WORKER,		/* start an autovacuum worker */
-// 	PMSIGNAL_BACKGROUND_WORKER_CHANGE,	/* background worker state change */
-// 	PMSIGNAL_START_WALRECEIVER, /* start a walreceiver */
-// 	PMSIGNAL_ADVANCE_STATE_MACHINE,		/* advance postmaster's state machine */
-
-// 	NUM_PMSIGNALS				/* Must be last value of enum! */
-// } PMSignalReason; 
-
-// typedef enum JobLockLifetime
-// {
-// 	SESSION_LOCK = 0,
-// 	TXN_LOCK,
-// } JobLockLifetime; 
-
 typedef struct
 {
 	PlannerInfo *root;
@@ -1439,44 +1273,6 @@ typedef struct ProjectionPath
 	bool		dummypp;		/* true if no separate Result is needed */
 } ProjectionPath; 
 
-// typedef struct SQLDropObject
-// {
-// 	ObjectAddress address;
-// 	const char *schemaname;
-// 	const char *objname;
-// 	const char *objidentity;
-// 	const char *objecttype;
-// 	List	   *addrnames;
-// 	List	   *addrargs;
-// 	bool		original;
-// 	bool		normal;
-// 	bool		istemp;
-// 	slist_node	next;
-// } SQLDropObject; 
-
-// typedef struct EventTriggerQueryState
-// {
-// 	/* memory context for this state's objects */
-// 	MemoryContext cxt;
-
-// 	/* sql_drop */
-// 	slist_head	SQLDropList;
-// 	bool		in_sql_drop;
-
-// 	/* table_rewrite */
-// 	Oid			table_rewrite_oid;		/* InvalidOid, or set for
-// 										 * table_rewrite event */
-// 	int			table_rewrite_reason;	/* AT_REWRITE reason */
-
-// 	/* Support for command collection */
-// 	bool		commandCollectionInhibited;
-// 	CollectedCommand *currentCommand;
-// 	List	   *commandList;	/* list of CollectedCommand; see
-// 								 * deparse_utility.h */
-// 	struct EventTriggerQueryState *previous;
-// } EventTriggerQueryState; 
-
-
 typedef enum
 {
 	EVT_DDLCommandStart,
@@ -1489,23 +1285,7 @@ typedef enum
 {
 EVENTTRIGGERNAME,
 EVENTTRIGGEROID,
-}Eventtrigger_tsdb;//这个是用来乱加的
-
-// typedef enum
-// {
-// 	EVENT_TRIGGER_COMMAND_TAG_OK,
-// 	EVENT_TRIGGER_COMMAND_TAG_NOT_SUPPORTED,
-// 	EVENT_TRIGGER_COMMAND_TAG_NOT_RECOGNIZED
-// } event_trigger_command_tag_check_result; 
-
-// typedef struct
-// {
-// 	const char *obtypename;
-// 	bool		supported;
-// } event_trigger_support_data; 
-
-
-
+}Eventtrigger_tsdb;
 
 typedef enum IndexAMProperty
 {
@@ -1777,17 +1557,6 @@ CATALOG(pg_policy,3256)
 #endif
 } FormData_pg_policy; 
 
-// CATALOG(pg_default_acl,826) BKI_SCHEMA_MACRO
-// {
-//     Oid         defaclrole;       /* OID of role owning this ACL */
-//     Oid         defaclnamespace;  /* OID of namespace, or 0 for all */
-//     char        defaclobjtype;    /* see DEFACLOBJ_xxx constants below */
-
-// #ifdef CATALOG_VARLEN             /* variable-length fields start here */
-//     aclitem     defaclacl[1];     /* permissions to add at CREATE time */
-// #endif
-// } FormData_pg_default_acl; 
-// typedef FormData_pg_default_acl *Form_pg_default_acl;
 typedef FormData_pg_policy *Form_pg_policy;
 
  
@@ -1797,7 +1566,6 @@ typedef FormData_pg_policy *Form_pg_policy;
 static const int MultiXactStatusLock[MaxMultiXactStatus + 1] =
 {
 	LockTupleKeyShare,			/* ForKeyShare */
-//tsdb暂时不加	LockTupleShare,				/* ForShare */
 	LockTupleNoKeyExclusive,	/* ForNoKeyUpdate */
 	LockTupleExclusive,			/* ForUpdate */
 	LockTupleNoKeyExclusive,	/* NoKeyUpdate */
@@ -1817,7 +1585,7 @@ typedef enum
 {
 	ETCS_NEEDS_REBUILD,
 	ETCS_REBUILD_STARTED,
-	ETCS_VALID,//tsdb
+	ETCS_VALID,
 } EventTriggerCacheStateType; 
 
 
@@ -1861,49 +1629,6 @@ typedef struct ResourceOwnerData
 	LOCALLOCK  *locks[MAX_RESOWNER_LOCKS];		/* list of owned locks */
 }	ResourceOwnerData; 
 
-// CATALOG(pg_user_mapping,1418)
-// {
-// 	Oid			umuser;			/* Id of the user, InvalidOid if PUBLIC is
-// 								 * wanted */
-// 	Oid			umserver;		/* server of this mapping */
-
-// #ifdef CATALOG_VARLEN			/* variable-length fields start here */
-// 	text		umoptions[1];	/* user mapping options */
-// #endif
-// } FormData_pg_user_mapping; 
-
-
-
-// CATALOG(pg_constraint,2606)
-// {
-// 	NameData	conname;		/* name of this constraint */
-// 	Oid			connamespace;	/* OID of namespace containing constraint */
-// 	char		contype;		/* constraint type; see codes below */
-// 	bool		condeferrable;	/* deferrable constraint? */
-// 	bool		condeferred;	/* deferred by default? */
-// 	bool		convalidated;	/* constraint has been validated? */
-// 	Oid			conrelid;		/* relation this constraint constrains */
-// 	Oid			contypid;		/* domain this constraint constrains */
-// 	Oid			conindid;		/* index supporting this constraint */
-// 	Oid			confrelid;		/* relation referenced by foreign key */
-// 	char		confupdtype;	/* foreign key's ON UPDATE action */
-// 	char		confdeltype;	/* foreign key's ON DELETE action */
-// 	char		confmatchtype;	/* foreign key's match type */
-
-// 	/* Has a local definition (hence, do not drop when coninhcount is 0) */
-// 	bool		conislocal;
-
-// 	/* Number of times inherited from direct parent relation(s) */
-// 	int32		coninhcount;
-
-// 	/* Has a local definition and cannot be inherited */
-// 	bool		connoinherit;
-
-// #ifdef CATALOG_VARLEN			/* variable-length fields start here */
-// #endif
-// } FormData_pg_constraint;
-
-
 CATALOG(pg_transform,3576)
 {
 	Oid			trftype;
@@ -1913,7 +1638,6 @@ CATALOG(pg_transform,3576)
 } FormData_pg_transform;
 typedef FormData_pg_transform *Form_pg_transform;
 
-// typedef FormData_pg_user_mapping *Form_pg_user_mapping; 
 typedef FormData_pg_constraint *Form_pg_constraint;
 
 typedef struct AfterTriggerEventChunk
@@ -1967,43 +1691,6 @@ typedef struct AfterTriggersData
 	CommandId  *firing_stack;	/* stacked firing_counters */
 	int			maxtransdepth;	/* allocated len of above arrays */
 } AfterTriggersData; 
-
-
-// typedef struct
-// {
-// 	Oid			class_oid;		/* oid of catalog */
-// 	Oid			oid_index_oid;	/* oid of index on system oid column */
-// 	int			oid_catcache_id;	/* id of catcache on system oid column	*/
-// 	int			name_catcache_id;		/* id of catcache on (name,namespace),
-// 										 * or (name) if the object does not
-// 										 * live in a namespace */
-// 	AttrNumber	attnum_name;	/* attnum of name field */
-// 	AttrNumber	attnum_namespace;		/* attnum of namespace field */
-// 	AttrNumber	attnum_owner;	/* attnum of owner field */
-// 	AttrNumber	attnum_acl;		/* attnum of acl field */
-// 	AclObjectKind acl_kind;		/* ACL_KIND_* of this object type */
-// 	bool		is_nsp_name_unique;		/* can the nsp/name combination (or
-// 										 * name alone, if there's no
-// 										 * namespace) be considered a unique
-// 										 * identifier for an object of this
-// 										 * class? */
-// } ObjectPropertyType; 
-
-
-// typedef struct CookedConstraint
-// {
-// 	ConstrType	contype;		/* CONSTR_DEFAULT or CONSTR_CHECK */
-// 	Oid			conoid;			/* constr OID if created, otherwise Invalid */
-// 	char	   *name;			/* name, or NULL if none */
-// 	AttrNumber	attnum;			/* which attr (only for DEFAULT) */
-// 	Node	   *expr;			/* transformed default or check expr */
-// 	bool		skip_validation;	/* skip validation? (only for CHECK) */
-// 	bool		is_local;		/* constraint has local (non-inherited) def */
-// 	int			inhcount;		/* number of times constraint is inherited */
-// 	bool		is_no_inherit;	/* constraint has local def and cannot be
-// 								 * inherited */
-// } CookedConstraint;
-
 
 typedef struct
 {
@@ -2377,13 +2064,6 @@ struct Tuplesortstate
 	Oid			datumType;
 	/* we need typelen in order to know how to copy the Datums. */
 	int			datumTypeLen;
-
-	/*
-	 * Resource snapshot for time of sort start.
-	 */
-#ifdef TRACE_SORT
-	//PGRUsage	ru_start;
-#endif
 };
 
 typedef enum TBlockState
@@ -2585,16 +2265,6 @@ typedef struct RI_QueryHashEntry
 	SPIPlanPtr	plan;
 } RI_QueryHashEntry;
 
-
-// typedef enum CoercionPathType
-// {
-// 	COERCION_PATH_NONE,			/* failed to find any coercion pathway */
-// 	COERCION_PATH_FUNC,			/* apply the specified coercion function */
-// 	COERCION_PATH_RELABELTYPE,	/* binary-compatible cast, no function */
-// 	COERCION_PATH_ARRAYCOERCE,	/* need an ArrayCoerceExpr node */
-// 	COERCION_PATH_COERCEVIAIO	/* need a CoerceViaIO node */
-// } CoercionPathType;
-
 typedef void (*timeout_handler_proc) (void);
 
 typedef struct
@@ -2608,65 +2278,6 @@ typedef struct XactLockTableWaitInfo
 	ItemPointer ctid;
 } XactLockTableWaitInfo;
 
-//access/reloptions.h
-// typedef enum relopt_type
-// {
-// 	RELOPT_TYPE_BOOL,
-// 	RELOPT_TYPE_INT,
-// 	RELOPT_TYPE_REAL,
-// 	RELOPT_TYPE_STRING
-// } relopt_type;
-// typedef struct relopt_gen
-// {
-// 	const char *name;			/* must be first (used as list termination
-// 								 * marker) */
-// 	const char *desc;
-// 	bits32		kinds;
-// 	LOCKMODE	lockmode;
-// 	int			namelen;
-// 	relopt_type type;
-// } relopt_gen;
-// typedef struct relopt_value
-// {
-// 	relopt_gen *gen;
-// 	bool		isset;
-// 	union
-// 	{
-// 		bool		bool_val;
-// 		int			int_val;
-// 		double		real_val;
-// 		char	   *string_val; /* allocated separately */
-// 	}			values;
-// } relopt_value;
-
-//access/reloptions.h
-// typedef enum relopt_kind
-// {
-// 	RELOPT_KIND_LOCAL = 0,
-// 	RELOPT_KIND_HEAP = (1 << 0),
-// 	RELOPT_KIND_TOAST = (1 << 1),
-// 	RELOPT_KIND_BTREE = (1 << 2),
-// 	RELOPT_KIND_HASH = (1 << 3),
-// 	RELOPT_KIND_GIN = (1 << 4),
-// 	RELOPT_KIND_GIST = (1 << 5),
-// 	RELOPT_KIND_ATTRIBUTE = (1 << 6),
-// 	RELOPT_KIND_TABLESPACE = (1 << 7),
-// 	RELOPT_KIND_SPGIST = (1 << 8),
-// 	RELOPT_KIND_VIEW = (1 << 9),
-// 	RELOPT_KIND_BRIN = (1 << 10),
-// 	RELOPT_KIND_PARTITIONED = (1 << 11),
-// 	/* if you add a new kind, make sure you update "last_default" too */
-// 	RELOPT_KIND_LAST_DEFAULT = RELOPT_KIND_PARTITIONED,
-// 	/* some compilers treat enums as signed ints, so we can't use 1 << 31 */
-// 	RELOPT_KIND_MAX = (1 << 30)
-// } relopt_kind;
-
-// typedef struct
-// {
-// 	const char *optname;		/* option's name */
-// 	relopt_type opttype;		/* option's datatype */
-// 	int			offset;			/* offset of field in result struct */
-// } relopt_parse_elt; 
 typedef enum ProgressCommandType
 {
 	PROGRESS_COMMAND_INVALID,
@@ -2725,7 +2336,6 @@ struct WaitEventSet
 #endif
 };
 
-
 typedef struct WaitEventSet WaitEventSet;
 typedef struct PendingRelDelete
 {
@@ -2735,17 +2345,6 @@ typedef struct PendingRelDelete
 	int			nestLevel;		/* xact nesting level of request */
 	struct PendingRelDelete *next;		/* linked-list link */
 } PendingRelDelete;
-
-
-
-// typedef struct PendingRelDelete
-// {
-// 	RelFileNode relnode;		/* relation that may need to be deleted */
-// 	BackendId	backend;		/* InvalidBackendId if not a temp rel */
-// 	bool		atCommit;		/* T=delete at commit; F=delete at abort */
-// 	int			nestLevel;		/* xact nesting level of request */
-// 	struct PendingRelDelete *next;		/* linked-list link */
-// } PendingRelDelete;
 
 typedef struct ProcArrayStruct
 {
@@ -2927,75 +2526,4 @@ typedef struct OldSnapshotControlData
 	int			count_used;		/* how many slots are in use */
 	TransactionId xid_by_minute[FLEXIBLE_ARRAY_MEMBER];
 } OldSnapshotControlData;
-
-
-// enum SysCacheIdentifier
-// {
-// 	AGGFNOID = 0,
-// 	AMNAME,
-// 	AMOID,
-// 	AMOPOPID,
-// 	AMOPSTRATEGY,
-// 	AMPROCNUM,
-// 	ATTNAME,
-// 	ATTNUM,
-// 	AUTHMEMMEMROLE,
-// 	AUTHMEMROLEMEM,
-// 	AUTHNAME,
-// 	AUTHOID,
-// 	CASTSOURCETARGET,
-// 	CLAAMNAMENSP,
-// 	CLAOID,
-// 	COLLNAMEENCNSP,
-// 	COLLOID,
-// 	CONDEFAULT,
-// 	CONNAMENSP,
-// 	CONSTROID,
-// 	CONVOID,
-// 	DATABASEOID,
-// 	DEFACLROLENSPOBJ,
-// 	ENUMOID,
-// 	ENUMTYPOIDNAME,
-// 	EVENTTRIGGERNAME,
-// 	EVENTTRIGGEROID,
-// 	FOREIGNDATAWRAPPERNAME,
-// 	FOREIGNDATAWRAPPEROID,
-// 	FOREIGNSERVERNAME,
-// 	FOREIGNSERVEROID,
-// 	FOREIGNTABLEREL,
-// 	INDEXRELID,
-// 	LANGNAME,
-// 	LANGOID,
-// 	NAMESPACENAME,
-// 	NAMESPACEOID,
-// 	OPERNAMENSP,
-// 	OPEROID,
-// 	OPFAMILYAMNAMENSP,
-// 	OPFAMILYOID,
-// 	PROCNAMEARGSNSP,
-// 	PROCOID,
-// 	RANGETYPE,
-// 	RELNAMENSP,
-// 	RELOID,
-// 	REPLORIGIDENT,
-// 	REPLORIGNAME,
-// 	RULERELNAME,
-// 	STATRELATTINH,
-// 	TABLESPACEOID,
-// 	TRFOID,
-// 	TRFTYPELANG,
-// 	TSCONFIGMAP,
-// 	TSCONFIGNAMENSP,
-// 	TSCONFIGOID,
-// 	TSDICTNAMENSP,
-// 	TSDICTOID,
-// 	TSPARSERNAMENSP,
-// 	TSPARSEROID,
-// 	TSTEMPLATENAMENSP,
-// 	TSTEMPLATEOID,
-// 	TYPENAMENSP,
-// 	TYPEOID,
-// 	USERMAPPINGOID,
-// 	USERMAPPINGUSERSERVER
-// }; 
 #endif

@@ -110,7 +110,7 @@ cache_invalidate_xact_end(XactEvent event, void *arg)
 	switch (event)
 	{
 		case XACT_EVENT_ABORT:
-		case XACT_EVENT_PARALLEL_ABORT://
+		case XACT_EVENT_PARALLEL_ABORT:
 
 			/*
 			 * Invalidate caches on aborted transactions to purge entries that

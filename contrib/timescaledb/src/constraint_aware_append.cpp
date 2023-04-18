@@ -10,7 +10,6 @@
 #include <catalog/pg_operator.h>
 #include <commands/explain.h>
 #include <executor/executor.h>
-//#include <nodes/extensible.h>
 #include <nodes/makefuncs.h>
 #include <nodes/nodeFuncs.h>
 #include <nodes/nodes.h>
@@ -33,7 +32,6 @@
 #include <optimizer/optimizer.h>
 #endif
 
-//#include "constraint_aware_append.h"
 #include "hypertable.h"
 #include "chunk_append/transform.h"
 #include "guc.h"
@@ -423,11 +421,6 @@ static ExtensibleExecMethods constraint_aware_append_state_methods = {
 	.ExecExtensiblePlan = ca_append_exec,
 	.EndExtensiblePlan = ca_append_end,
 	.ReScanExtensiblePlan = ca_append_rescan,
-	// .MarkPosCustomScan = NULL,
-	// .RestrPosCustomScan = NULL,
-	// .EstimateDSMCustomScan = NULL,
-	// .InitializeDSMCustomScan = NULL,
-	// .InitializeWorkerCustomScan = NULL,
 	.ExplainExtensiblePlan = ca_append_explain,
 };
 

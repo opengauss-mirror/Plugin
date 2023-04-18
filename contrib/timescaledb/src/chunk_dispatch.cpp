@@ -5,7 +5,6 @@
  */
 #include <postgres.h>
 #include <nodes/nodes.h>
-//#include <nodes/extensible.h>
 #include <nodes/makefuncs.h>
 #include <nodes/nodeFuncs.h>
 #include <utils/rel.h>

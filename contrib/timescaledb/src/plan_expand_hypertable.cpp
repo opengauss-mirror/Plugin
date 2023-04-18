@@ -23,7 +23,6 @@
 
 #include "compat.h"
 #if PG11_LT /* PG11 consolidates pg_foo_fn.h -> pg_foo.h */
-//#include <catalog/pg_constraint_fn.h>
 #include <catalog/pg_inherits_fn.h>
 #endif
 #if PG11_GE

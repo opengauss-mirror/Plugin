@@ -31,9 +31,6 @@ typedef enum LicenseType
 #define TS_APACHE_ONLY_LICENSE "ApacheOnly"
 #define TS_COMMUNITY_LICENSE "CommunityLicense"
 
-// #ifdef OG30
-// #define APACHE_ONLY
-// #endif
 /*
  * If compiled with APACHE_ONLY, default to using only Apache code.
  */

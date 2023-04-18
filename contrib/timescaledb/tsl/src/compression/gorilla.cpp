@@ -80,7 +80,6 @@ pg_attribute_unused() assertions(void)
 
 typedef struct GorillaCompressor
 {
-	// NOTE it is a small win to replace these next two with specialized RLE bitmaps
 	Simple8bRleCompressor tag0s;
 	Simple8bRleCompressor tag1s;
 	BitArray leading_zeros;
@@ -674,7 +673,6 @@ gorilla_decompression_iterator_try_next_forward_internal(GorillaDecompressionIte
 	{
 		Simple8bRleDecompressResult null =
 			simple8brle_decompression_iterator_try_next_forward(&iter->nulls);
-		// FIXME we probably don't need to return a tail of non-null bits
 		if (null.is_done)
 			return (DecompressResultInternal){
 				.val = NULL,

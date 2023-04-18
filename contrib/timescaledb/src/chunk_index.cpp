@@ -38,7 +38,6 @@
 #include "catalog.h"
 #include "scanner.h"
 #include "chunk.h"
-// #include "tsdb.h" // TSDB
 
 static bool chunk_index_insert(int32 chunk_id, const char *chunk_index, int32 hypertable_id,
 							   const char *hypertable_index);
@@ -292,7 +291,6 @@ ts_chunk_index_create_post_adjustment(int32 hypertable_id, Relation template_ind
 													* for now */
 										   false,  /* allow system table mods */
 										   (IndexCreateExtraArgs*)false); /* is internal */
-											//tsdb 这里本来没有强制类型转化
 	ReleaseSysCache(tuple);
 
 	return chunk_indexrelid;

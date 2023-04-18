@@ -18,7 +18,6 @@
 #include "catalog/dependency.h"
 #include "catalog/indexing.h"
 #include "catalog/objectaccess.h"
-//#include "catalog/pg_event_trigger.h"
 #include "catalog/pg_namespace.h"
 #include "catalog/pg_opclass.h"
 #include "catalog/pg_opfamily.h"
@@ -27,7 +26,6 @@
 #include "catalog/pg_ts_config.h"
 #include "catalog/pg_type.h"
 #include "commands/dbcommands.h"
-//#include "commands/event_trigger.h"
 #include "commands/extension.h"
 #include "commands/trigger.h"
 #include "funcapi.h"
@@ -35,15 +33,12 @@
 #include "pgstat.h"
 #include "lib/ilist.h"
 #include "miscadmin.h"
-//#include "tcop/deparse_utility.h"
 #include "utils/acl.h"
 #include "utils/builtins.h"
-//#include "utils/evtcache.h"
 #include "utils/fmgroids.h"
 #include "utils/lsyscache.h"
 #include "utils/memutils.h"
 #include "utils/rel.h"
-//#include "utils/tqual.h"
 #include "utils/syscache.h"
 #include "tcop/utility.h"
 
@@ -519,8 +514,6 @@ AlterEventTrigger(AlterEventTrigStmt *stmt)
 
 	trigoid = HeapTupleGetOid(tup);
 
-	//函数原为aclcheck_error(ACLCHECK_NOT_OWNER,(AclObjectKind) ACL_KIND_EVENT_TRIGGER,
-	//				   stmt->trigname);
 	if (!pg_event_trigger_ownercheck(trigoid, GetUserId()))
 		aclcheck_error(ACLCHECK_NOT_OWNER,(AclObjectKind) 19,
 					   stmt->trigname);
@@ -1071,7 +1064,6 @@ EventTriggerInvoke(List *fn_oid_list, EventTriggerData *trigdata)
 /*
  * Do event triggers support this object type?
  */
-//这个文件中会注释掉许多case,因为og中没有对应的枚举类成员
 bool
 EventTriggerSupportsObjectType(ObjectType obtype)
 {
@@ -1082,22 +1074,13 @@ EventTriggerSupportsObjectType(ObjectType obtype)
 		case OBJECT_ROLE:
 			/* no support for global objects */
 			return false;
-		//case OBJECT_EVENT_TRIGGER:
-			/* no support for event triggers on event triggers */
-			return false;
-		//case OBJECT_ACCESS_METHOD:
 		case OBJECT_AGGREGATE:
-		//case OBJECT_AMOP:
-		//case OBJECT_AMPROC:
 		case OBJECT_ATTRIBUTE:
 		case OBJECT_CAST:
 		case OBJECT_COLUMN:
 		case OBJECT_COLLATION:
 		case OBJECT_CONVERSION:
-		//case OBJECT_DEFACL:
-		//case OBJECT_DEFAULT:
 		case OBJECT_DOMAIN:
-		//case OBJECT_DOMCONSTRAINT:
 		case OBJECT_EXTENSION:
 		case OBJECT_FDW:
 		case OBJECT_FOREIGN_SERVER:
@@ -1110,20 +1093,17 @@ EventTriggerSupportsObjectType(ObjectType obtype)
 		case OBJECT_OPCLASS:
 		case OBJECT_OPERATOR:
 		case OBJECT_OPFAMILY:
-		//case OBJECT_POLICY:
 		case OBJECT_RULE:
 		case OBJECT_SCHEMA:
 		case OBJECT_SEQUENCE:
 		case OBJECT_TABCONSTRAINT:
 		case OBJECT_TABLE:
-		//case OBJECT_TRANSFORM:
 		case OBJECT_TRIGGER:
 		case OBJECT_TSCONFIGURATION:
 		case OBJECT_TSDICTIONARY:
 		case OBJECT_TSPARSER:
 		case OBJECT_TSTEMPLATE:
 		case OBJECT_TYPE:
-		//case OBJECT_USER_MAPPING:
 		case OBJECT_VIEW:
 			return true;
 	}
@@ -1143,9 +1123,6 @@ EventTriggerSupportsObjectClass(ObjectClass objclass)
 		case OCLASS_ROLE:
 			/* no support for global objects */
 			return false;
-		//case OCLASS_EVENT_TRIGGER:
-			/* no support for event triggers on event triggers */
-			return false;
 		case OCLASS_CLASS:
 		case OCLASS_PROC:
 		case OCLASS_TYPE:
@@ -1164,7 +1141,6 @@ EventTriggerSupportsObjectClass(ObjectClass objclass)
 		case OCLASS_REWRITE:
 		case OCLASS_TRIGGER:
 		case OCLASS_SCHEMA:
-		//case OCLASS_TRANSFORM:
 		case OCLASS_TSPARSER:
 		case OCLASS_TSDICT:
 		case OCLASS_TSTEMPLATE:
@@ -1174,8 +1150,6 @@ EventTriggerSupportsObjectClass(ObjectClass objclass)
 		case OCLASS_USER_MAPPING:
 		case OCLASS_DEFACL:
 		case OCLASS_EXTENSION:
-		//case OCLASS_POLICY:
-		//case OCLASS_AM:
 			return true;
 	}
 

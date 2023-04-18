@@ -7,7 +7,7 @@
 #include "debug_wait.h"
 
 #include <postgres.h>
-#include "compat.h" // tsdb
+#include "compat.h"
 #include <fmgr.h>
 
 #include <access/hash.h>

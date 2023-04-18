@@ -15,11 +15,8 @@
 
 #include "catalog/dependency.h"
 #include "catalog/objectaddress.h"
-//#include "catalog/pg_event_trigger.h"
 #include "nodes/parsenodes.h"
 #include "tsdb.h"
-// #include "utils/aclchk_internal.h"
-//#include "tcop/deparse_utility.h"
 
 
 typedef struct EventTriggerData
@@ -78,7 +75,7 @@ typedef struct CollectedCommand
 	bool		in_extension;
 	Node	   *parsetree;
 
-	CollectedCommand * parent;//tsdb
+	CollectedCommand * parent;
 	union
 	{
 		/* most commands */

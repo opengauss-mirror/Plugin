@@ -18,7 +18,6 @@
 #include <commands/trigger.h>
 #include <commands/tablecmds.h>
 #include <commands/cluster.h>
-//#include <commands/event_trigger.h>
 #include <access/htup.h>
 #include <access/xact.h>
 #include <storage/lmgr.h>
@@ -37,7 +36,6 @@
 #include "compat.h"
 #if PG11_LT /* PG11 consolidates pg_foo_fn.h -> pg_foo.h */
 #include <catalog/pg_inherits_fn.h>
-//#include <catalog/pg_constraint_fn.h>
 #endif
 
 #include <miscadmin.h>
@@ -681,7 +679,6 @@ relation_should_recurse(RangeVar *rv)
 #else
 	if (rv->inhOpt == INH_DEFAULT)
 	{
-		//tsdb 这个函数多次提到了
 		char *inherit_guc = GetConfigOptionByName("SQL_inheritance", NULL);
 
 		return strncmp(inherit_guc, "on", 2) == 0;
@@ -785,7 +782,6 @@ process_truncate(ProcessUtilityArgs *args)
 												-1));
 
 					/* TRUNCATE the compressed hypertable */
-					//tsdb 这里增加NULL,匹配og
 					ExecuteTruncate(&compressed_stmt,NULL);
 
 					handle_truncate_hypertable(args, stmt, compressed_ht);
@@ -1877,10 +1873,6 @@ process_index_start(ProcessUtilityArgs *args)
 		.stmt = stmt,
 		.obj = {},
 		.main_table_relid = NULL,
-// #ifdef DEBUG
-// 		.extended_options = {0, .max_chunks = -1,},
-		
-// #endif
 		.extended_options = {},
 		.mctx = NULL,
 	};

@@ -47,8 +47,6 @@
 #include <rewrite/rewriteManip.h>
 #include <utils/builtins.h>
 #include <utils/catcache.h>
-//#include <utils/int8.h>//tsdb
-//#include <utils/ruleutils.h>
 #include <utils/syscache.h>
 #include <utils/typcache.h>
 
@@ -298,7 +296,6 @@ cagg_create_hypertable(int32 hypertable_id, Oid mat_tbloid, const char *matpartc
 												  Int64GetDatum(mat_tbltimecol_interval),
 												  INT8OID,
 												  InvalidOid);
-	// TODO fix this after change in C interface
 	chunk_sizing_info = ts_chunk_sizing_info_get_default_disabled(mat_tbloid);
 	chunk_sizing_info->colname = matpartcolname;
 	created = ts_hypertable_create_from_info(mat_tbloid,
@@ -704,7 +701,7 @@ cagg_agg_validate(Node *node, void *context)
 					 errmsg("ordered set/hypothetical aggregates are not supported by "
 							"continuous aggregate query")));
 		}
-		if (0)//aggform->aggcombinefn == InvalidOid ||(aggform->aggtranstype == INTERNALOID && aggform->aggdeserialfn == InvalidOid)
+		if (0)
 		{
 			ReleaseSysCache(aggtuple);
 			ereport(ERROR,
@@ -969,7 +966,7 @@ get_finalize_aggref(Aggref *inp, Var *partial_state_var)
 	aggref->aggstar = false;
 	aggref->aggvariadic = false;
 	aggref->aggkind = AGGKIND_NORMAL;
-	aggref->aggsplit = AGGSPLIT_SIMPLE; // TODO make sure plannerdoes not change this ???
+	aggref->aggsplit = AGGSPLIT_SIMPLE;
 	aggref->location = -1;				/*unknown */
 										/* construct the arguments */
 	agggregate_signature = DatumGetCString(DirectFunctionCall1(regprocedureout, inp->aggfnoid));
@@ -1332,7 +1329,7 @@ add_aggregate_partialize_mutator(Node *node, AggPartCxt *cxt)
 typedef struct Cagg_havingcxt
 {
 	TargetEntry *old;
-	TargetEntry *new_tsdb;//tsdb
+	TargetEntry *new_tsdb;
 	bool found;
 } cagg_havingcxt;
 

@@ -31,7 +31,6 @@
 #include <utils/guc.h>
 #include <utils/lsyscache.h>
 #include <utils/rel.h>
-//#include <utils/rls.h>
 
 #include "hypertable.h"
 #include "copy.h"
@@ -607,7 +606,6 @@ copy_constraints_and_check(ParseState *pstate, Relation rel, List *attnums)
 	}
 
 	/* check read-only transaction and parallel mode */
-	//tsdb 原本函数为GetConfigOptionByName("transaction_read_only", NULL, false)
 	xactReadOnly = GetConfigOptionByName("transaction_read_only", NULL);
 
 	if (strncmp(xactReadOnly, "on", sizeof("on")) == 0 && !rel->rd_islocaltemp)
@@ -705,7 +703,6 @@ next_copy_from_table_to_chunks(CopyChunkState *ccstate, ExprContext *econtext, D
 	HeapTuple tuple;
 
 	Assert(scandesc != NULL);
-	//tsdb 这里本来没有强制类型转化(TableScanDescData *)
 	tuple = heap_getnext((TableScanDescData *)scandesc, ForwardScanDirection);
 
 	if (!HeapTupleIsValid(tuple))
@@ -771,6 +768,5 @@ timescaledb_move_from_table_to_chunks(Hypertable *ht, LOCKMODE lockmode)
 	UnregisterSnapshot(snapshot);
 	table_close(rel, lockmode);
 
-	//tsdb,这里本来没有null
 	ExecuteTruncate(&stmt,NULL);
 }

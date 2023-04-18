@@ -8,7 +8,6 @@
 
 #include <postgres.h>
 #include "compat.h"
-//#include <nodes/extensible.h>
 
 extern Expr *ts_transform_cross_datatype_comparison(Expr *clause);
 

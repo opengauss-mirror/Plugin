@@ -35,7 +35,6 @@
 #include "compat.h"
 #if PG11_LT /* PG11 consolidates pg_foo_fn.h -> pg_foo.h */
 #include <catalog/pg_inherits_fn.h>
-//#include <catalog/pg_constraint_fn.h>
 #endif
 
 #include "hypertable.h"
@@ -1247,7 +1246,6 @@ static bool
 relation_has_tuples(Relation rel)
 {
 	TableScanDesc scandesc = table_beginscan(rel, GetActiveSnapshot(), 0, NULL);
-	//tsdb 这里本来没有强制类型转化(TableScanDescData *)
 	bool hastuples = HeapTupleIsValid(heap_getnext((TableScanDescData *)scandesc, ForwardScanDirection));
 
 	heap_endscan(scandesc);
@@ -1323,7 +1321,6 @@ hypertable_create_schema(const char *schema_name)
 		.authrole = 0,
 		.if_not_exists = true,
 	};
-	//tsdb 加入了false
 	CreateSchemaCommand(&stmt,
 						"(generated CREATE SCHEMA command)",
 						false

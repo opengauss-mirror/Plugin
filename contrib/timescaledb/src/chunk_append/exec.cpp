@@ -58,15 +58,7 @@ static ExtensibleExecMethods chunk_append_state_methods = {
 	.ExecExtensiblePlan = chunk_append_exec,
 	.EndExtensiblePlan = chunk_append_end,
 	.ReScanExtensiblePlan = chunk_append_rescan,
-	//tsdb openguass中没有这几个成员
-	// .MarkPosCustomScan = NULL,
-	// .RestrPosCustomScan = NULL,
-	// .EstimateDSMCustomScan = chunk_append_estimate_dsm,
-	// .InitializeDSMCustomScan = chunk_append_initialize_dsm,
-	// .InitializeWorkerCustomScan = chunk_append_initialize_worker,
 	.ExplainExtensiblePlan = ts_chunk_append_explain,
-	
-	
 #if !PG96
 	.ReInitializeDSMCustomScan = chunk_append_reinitialize_dsm,
 #endif
@@ -641,7 +633,7 @@ chunk_append_initialize_dsm(ExtensiblePlanState *node, ParallelContext *pcxt, vo
 	ChunkAppendState *state = (ChunkAppendState *) node;
 	ParallelChunkAppendState *pstate = (ParallelChunkAppendState *) coordinate;
 
-	memset(pstate, 0, 64);//tsdb 原本为node->pscan_len
+	memset(pstate, 0, 64);
 
 	state->lock = chunk_append_get_lock_pointer();
 	pstate->next_plan = INVALID_SUBPLAN_INDEX;

@@ -15,7 +15,6 @@
 
 #include "compat.h"
 #if PG12_LT
-//#include <utils/tqual.h>
 #endif
 
 #include "timer_mock.h"

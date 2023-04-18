@@ -9,7 +9,6 @@
 #include <postgres.h>
 #include <nodes/bitmapset.h>
 #include "compat.h"
-//#include <nodes/extensible.h>
 
 typedef struct ParallelChunkAppendState
 {

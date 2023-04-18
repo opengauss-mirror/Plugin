@@ -9,7 +9,6 @@
 #include <catalog/pg_class.h>
 #include <commands/trigger.h>
 #include <nodes/nodes.h>
-//#include <nodes/extensible.h>
 
 #include "compat.h"
 #include "chunk_dispatch_state.h"

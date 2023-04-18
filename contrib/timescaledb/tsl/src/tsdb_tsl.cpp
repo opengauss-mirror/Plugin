@@ -1,8 +1,8 @@
-// /*
-//  * This file and its contents are licensed under the Apache License 2.0.
-//  * Please see the included NOTICE for copyright information and
-//  * LICENSE-APACHE for a copy of the license.
-//  */
+/*
+ * This file and its contents are licensed under the Apache License 2.0.
+ * Please see the included NOTICE for copyright information and
+ * LICENSE-APACHE for a copy of the license.
+ */
 #include <postgres.h>
 #include <pg_config.h>
 #include <access/xact.h>
@@ -43,7 +43,7 @@ static post_parse_analyze_hook_type extension_post_parse_analyze_hook = NULL;
 #ifdef WIN32
 #define CalledInParallelWorker() false
 #else
-#define CalledInParallelWorker() false//IsParallelWorker()//tsdb
+#define CalledInParallelWorker() false
 #endif /* WIN32 */
 #else
 #define CalledInParallelWorker()                                                                   \
