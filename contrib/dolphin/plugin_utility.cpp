@@ -5842,6 +5842,13 @@ ProcessUtilitySlow(Node *parse_tree,
                     }
                 }
 #endif
+
+#ifdef DOLPHIN
+                if (OidIsValid(rel_id)) {
+                    TransformIndexName(stmt, GetNamespaceIdbyRelId(rel_id), stmt->relation->relname);
+                }
+#endif
+
                 /*
                  * Look up the relation OID just once, right here at the
                  * beginning, so that we don't end up repeating the name
