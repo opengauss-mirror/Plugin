@@ -159,4 +159,8 @@ void send_binary_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tupta
 
 void read_send_long_data_request(StringInfo buf);
 
+void sendRowDescriptionPacket(StringInfo buf, SPITupleTable  *SPI_tuptable);
+
+void send_text_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tuptable);
+
 #endif /* DQ_FORMAT_H */
