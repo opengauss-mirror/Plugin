@@ -1,6 +1,7 @@
 create schema test_json_unquote;
 set current_schema to 'test_json_unquote';
 
+select json_unquote('""');
 select json_unquote('"abc"');
 select json_unquote('abc');
 select json_unquote('"abc');
