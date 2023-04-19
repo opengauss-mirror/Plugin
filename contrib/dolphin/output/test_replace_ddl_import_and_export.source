@@ -1,0 +1,92 @@
+--replace语法测试
+drop database if exists dump_replace_db;
+NOTICE:  database "dump_replace_db" does not exist, skipping
+drop database if exists restore_replace_db;
+NOTICE:  database "restore_replace_db" does not exist, skipping
+create database dump_replace_db with dbcompatibility = 'B';
+create database restore_replace_db with dbcompatibility = 'B';
+\c dump_replace_db
+create table t_replace_001(c int unique);
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t_replace_001_c_key" for table "t_replace_001"
+replace low_priority t_replace_001 values(1);
+replace delayed t_replace_001 values(1);
+create table t_replace_002(c int) with (orientation = column);
+replace delayed into t_replace_002 value(1);
+create table t_replace_003(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than maxvalue
+);
+replace low_priority into t_replace_003 values(1, 1);
+--test replace into
+create table t_replace_004(col1 int unique default 0, col2 int default 0);
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t_replace_004_col1_key" for table "t_replace_004"
+replace into t_replace_004 values(1);
+replace into t_replace_004 value(default, default);
+replace into t_replace_004 set col1 = 1, col2 = 1;
+replace into t_replace_004 set col1 = 1, col2 = default;
+select c from t_replace_001 order by c;
+ c 
+---
+ 1
+(1 row)
+
+select c from t_replace_002 order by c;
+ c 
+---
+ 1
+(1 row)
+
+select col1, col2 from t_replace_003 order by (col1, col2);
+ col1 | col2 
+------+------
+    1 |    1
+(1 row)
+
+select col1, col2 from t_replace_004 order by (col1, col2);
+ col1 | col2 
+------+------
+    0 |    0
+    1 |    0
+(2 rows)
+
+--导入导出
+\! @abs_bindir@/gs_dump dump_replace_db -p @portstring@ -f @abs_bindir@/dump_replace.tar -F t >/dev/null 2>&1; echo $?
+0
+drop table if exists t_replace_001;
+drop table if exists t_replace_002;
+drop table if exists t_replace_003;
+drop table if exists t_replace_004;
+\! @abs_bindir@/gs_restore -d restore_replace_db -p @portstring@ @abs_bindir@/dump_replace.tar >/dev/null 2>&1; echo $?
+0
+\c restore_replace_db
+select c from t_replace_001 order by c;
+ c 
+---
+ 1
+(1 row)
+
+select c from t_replace_002 order by c;
+ c 
+---
+ 1
+(1 row)
+
+select col1, col2 from t_replace_003 order by (col1, col2);
+ col1 | col2 
+------+------
+    1 |    1
+(1 row)
+
+select col1, col2 from t_replace_004 order by (col1, col2);
+ col1 | col2 
+------+------
+    0 |    0
+    1 |    0
+(2 rows)
+
+\c postgres
+drop database if exists restore_replace_db;
+drop database if exists dump_replace_db;

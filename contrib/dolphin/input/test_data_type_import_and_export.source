@@ -1,0 +1,474 @@
+--数据类型测试用例
+drop database if exists dump_data_type_db;
+drop database if exists restore_data_type_db;
+create database dump_data_type_db with dbcompatibility = 'B';
+create database restore_data_type_db with dbcompatibility = 'B';
+\c dump_data_type_db
+
+--数值类型
+create table value_type_001(c tinyint(10));
+insert into value_type_001 values(-128);
+insert into value_type_001 values(127);
+create table value_type_002(c tinyint(10) unsigned);
+insert into value_type_002 values(0);
+insert into value_type_002 values(255);
+create table value_type_003(c tinyint(10) zerofill);
+insert into value_type_003 values(0);
+insert into value_type_003 values(255);
+create table value_type_004(c tinyint(10) unsigned zerofill);
+insert into value_type_004 values(0);
+insert into value_type_004 values(255);
+create table value_type_005(c smallint(10)) with (orientation = column);
+insert into value_type_005 values(-32768);
+insert into value_type_005 values(32767);
+create table value_type_006(c smallint(10) unsigned);
+insert into value_type_006 values(0);
+insert into value_type_006 values(65535);
+create table value_type_007(c smallint(10) zerofill);
+insert into value_type_007 values(0);
+insert into value_type_007 values(65535);
+create table value_type_008(c smallint(10) unsigned zerofill);
+insert into value_type_008 values(0);
+insert into value_type_008 values(65535);
+create unlogged table value_type_009(c integer(10));
+insert into value_type_009 values(-2147483648);
+insert into value_type_009 values(2147483647);
+create table value_type_010(c integer(10) unsigned);
+insert into value_type_010 values(0);
+insert into value_type_010 values(4294967295);
+create table value_type_011(c integer(10) zerofill);
+insert into value_type_011 values(0);
+insert into value_type_011 values(4294967295);
+create table value_type_012(c integer(10) unsigned zerofill);
+insert into value_type_012 values(0);
+insert into value_type_012 values(4294967295);
+create table value_type_013(c mediumint(10));
+insert into value_type_013 values(-2147483648);
+insert into value_type_013 values(2147483647);
+create table value_type_014(c mediumint(10) unsigned);
+insert into value_type_014 values(0);
+insert into value_type_014 values(4294967295);
+create table value_type_015(c mediumint(10) zerofill);
+insert into value_type_015 values(0);
+insert into value_type_015 values(4294967295);
+create table value_type_016(c mediumint(10) unsigned zerofill);
+insert into value_type_016 values(0);
+insert into value_type_016 values(4294967295);
+create table value_type_017(c bigint(10));
+insert into value_type_017 values(-9223372036854775808);
+insert into value_type_017 values(9223372036854775807);
+create table value_type_018(c bigint(10) unsigned);
+insert into value_type_018 values(0);
+insert into value_type_018 values(18446744073709551615);
+create table value_type_019(c bigint(10) zerofill);
+insert into value_type_019 values(0);
+insert into value_type_019 values(18446744073709551615);
+create table value_type_020(c bigint(10) unsigned zerofill);
+insert into value_type_020 values(0);
+insert into value_type_020 values(18446744073709551615);
+create table value_type_021(c numeric) with (storage_type = ustore);;
+create table value_type_022(c numeric(10));
+create table value_type_023(c numeric(10,2));
+create table value_type_024(c dec);
+create table value_type_025(c dec(10));
+create table value_type_026(c dec(10,2));
+create table value_type_027(c decimal);
+create table value_type_028(c decimal(10));
+create table value_type_029(c decimal(10,2));
+create table value_type_030(c fixed);
+create table value_type_031(c fixed(10));
+create table value_type_032(c fixed(10,2));
+create table value_type_033(c float(10));
+create table value_type_034(c float(10,2));
+create table value_type_035(c float4(10));
+create table value_type_036(c float4(10,2));
+create table value_type_037(c double);
+create table value_type_038(c double(10,2));
+create table value_type_039(c real(10,2));
+create table value_type_040(c double precision(10,2));
+
+--字符类型
+create table character_type_001(c national varchar(10));
+create table character_type_002(c nvarchar);
+create table character_type_003(c text(10));
+create table character_type_004(c tinytext(10));
+create table character_type_005(c mediumint(10));
+create table character_type_006(c longtext(10));
+
+--布尔类型
+create table bool_type_001(c bool);
+
+--时间日期类型
+create table time_date_type_001(c date);
+create table time_date_type_002(c time);
+create table time_date_type_003(c time(6));
+create table time_date_type_004(c datetime);
+create table time_date_type_005(c datetime(6));
+create table time_date_type_006(c timestamp);
+create table time_date_type_007(c timestamp(6));
+create table time_date_type_008(c year);
+create table time_date_type_009(c year(2));
+create table time_date_type_010(c year(4));
+
+--位串类型
+create table bitstring_type_001(c bit);
+create table bitstring_type_002(c bit(10));
+create table bitstring_type_003(c bit varying(10));
+
+--枚举类型
+create table enum_type_001(name varchar(40), gender enum('male','female'));
+
+--二进制类型
+create table binary_type_001(c blob);
+create table binary_type_002(c tinyblob);
+create table binary_type_003(c mediumblob);
+create table binary_type_004(c longblob);
+create table binary_type_005(c binary);
+create table binary_type_006(c varbinary);
+
+\d value_type_001
+\d value_type_002
+\d value_type_003
+\d value_type_004
+\d value_type_005
+\d value_type_006
+\d value_type_007
+\d value_type_008
+\d value_type_009
+\d value_type_010
+\d value_type_011
+\d value_type_012
+\d value_type_013
+\d value_type_014
+\d value_type_015
+\d value_type_016
+\d value_type_017
+\d value_type_018
+\d value_type_019
+\d value_type_020
+\d value_type_021
+\d value_type_022
+\d value_type_023
+\d value_type_024
+\d value_type_025
+\d value_type_026
+\d value_type_027
+\d value_type_028
+\d value_type_029
+\d value_type_030
+\d value_type_031
+\d value_type_032
+\d value_type_033
+\d value_type_034
+\d value_type_035
+\d value_type_036
+\d value_type_037
+\d value_type_038
+\d value_type_039
+\d value_type_040
+\d character_type_001
+\d character_type_002
+\d character_type_003
+\d character_type_004
+\d character_type_005
+\d character_type_006
+\d bool_type_001
+\d time_date_type_001
+\d time_date_type_002
+\d time_date_type_003
+\d time_date_type_004
+\d time_date_type_005
+\d time_date_type_006
+\d time_date_type_007
+\d time_date_type_008
+\d time_date_type_009
+\d time_date_type_010
+\d bitstring_type_001
+\d bitstring_type_002
+\d bitstring_type_003
+\d enum_type_001
+\d binary_type_001
+\d binary_type_002
+\d binary_type_003
+\d binary_type_004
+\d binary_type_005
+\d binary_type_006
+
+show create table value_type_001;
+show create table value_type_002;
+show create table value_type_003;
+show create table value_type_004;
+show create table value_type_005;
+show create table value_type_006;
+show create table value_type_007;
+show create table value_type_008;
+show create table value_type_009;
+show create table value_type_010;
+show create table value_type_011;
+show create table value_type_012;
+show create table value_type_013;
+show create table value_type_014;
+show create table value_type_015;
+show create table value_type_016;
+show create table value_type_017;
+show create table value_type_018;
+show create table value_type_019;
+show create table value_type_020;
+show create table value_type_021;
+show create table value_type_022;
+show create table value_type_023;
+show create table value_type_024;
+show create table value_type_025;
+show create table value_type_026;
+show create table value_type_027;
+show create table value_type_028;
+show create table value_type_029;
+show create table value_type_030;
+show create table value_type_031;
+show create table value_type_032;
+show create table value_type_033;
+show create table value_type_034;
+show create table value_type_035;
+show create table value_type_036;
+show create table value_type_037;
+show create table value_type_038;
+show create table value_type_039;
+show create table value_type_040;
+show create table character_type_001;
+show create table character_type_002;
+show create table character_type_003;
+show create table character_type_004;
+show create table character_type_005;
+show create table character_type_006;
+show create table bool_type_001;
+show create table time_date_type_001;
+show create table time_date_type_002;
+show create table time_date_type_003;
+show create table time_date_type_004;
+show create table time_date_type_005;
+show create table time_date_type_006;
+show create table time_date_type_007;
+show create table time_date_type_008;
+show create table time_date_type_009;
+show create table time_date_type_010;
+show create table bitstring_type_001;
+show create table bitstring_type_002;
+show create table bitstring_type_003;
+show create table enum_type_001;
+show create table binary_type_001;
+show create table binary_type_002;
+show create table binary_type_003;
+show create table binary_type_004;
+show create table binary_type_005;
+show create table binary_type_006;
+
+\! @abs_bindir@/gs_dump dump_data_type_db -p @portstring@ -f @abs_bindir@/dump_data_type.sql -F p >/dev/null 2>&1; echo $?
+drop table value_type_001;
+drop table value_type_002;
+drop table value_type_003;
+drop table value_type_004;
+drop table value_type_005;
+drop table value_type_006;
+drop table value_type_007;
+drop table value_type_008;
+drop table value_type_009;
+drop table value_type_010;
+drop table value_type_011;
+drop table value_type_012;
+drop table value_type_013;
+drop table value_type_014;
+drop table value_type_015;
+drop table value_type_016;
+drop table value_type_017;
+drop table value_type_018;
+drop table value_type_019;
+drop table value_type_020;
+drop table value_type_021;
+drop table value_type_022;
+drop table value_type_023;
+drop table value_type_024;
+drop table value_type_025;
+drop table value_type_026;
+drop table value_type_027;
+drop table value_type_028;
+drop table value_type_029;
+drop table value_type_030;
+drop table value_type_031;
+drop table value_type_032;
+drop table value_type_033;
+drop table value_type_034;
+drop table value_type_035;
+drop table value_type_036;
+drop table value_type_037;
+drop table value_type_038;
+drop table value_type_039;
+drop table value_type_040;
+drop table character_type_001;
+drop table character_type_002;
+drop table character_type_003;
+drop table character_type_004;
+drop table character_type_005;
+drop table character_type_006;
+drop table bool_type_001;
+drop table time_date_type_001;
+drop table time_date_type_002;
+drop table time_date_type_003;
+drop table time_date_type_004;
+drop table time_date_type_005;
+drop table time_date_type_006;
+drop table time_date_type_007;
+drop table time_date_type_008;
+drop table time_date_type_009;
+drop table time_date_type_010;
+drop table bitstring_type_001;
+drop table bitstring_type_002;
+drop table bitstring_type_003;
+drop table enum_type_001;
+drop table binary_type_001;
+drop table binary_type_002;
+drop table binary_type_003;
+drop table binary_type_004;
+drop table binary_type_005;
+drop table binary_type_006;
+\! @abs_bindir@/gsql restore_data_type_db -p @portstring@ -f @abs_bindir@/dump_data_type.sql > /dev/null 2>&1 ; echo $?
+\c restore_data_type_db
+
+\d value_type_001
+\d value_type_002
+\d value_type_003
+\d value_type_004
+\d value_type_005
+\d value_type_006
+\d value_type_007
+\d value_type_008
+\d value_type_009
+\d value_type_010
+\d value_type_011
+\d value_type_012
+\d value_type_013
+\d value_type_014
+\d value_type_015
+\d value_type_016
+\d value_type_017
+\d value_type_018
+\d value_type_019
+\d value_type_020
+\d value_type_021
+\d value_type_022
+\d value_type_023
+\d value_type_024
+\d value_type_025
+\d value_type_026
+\d value_type_027
+\d value_type_028
+\d value_type_029
+\d value_type_030
+\d value_type_031
+\d value_type_032
+\d value_type_033
+\d value_type_034
+\d value_type_035
+\d value_type_036
+\d value_type_037
+\d value_type_038
+\d value_type_039
+\d value_type_040
+\d character_type_001
+\d character_type_002
+\d character_type_003
+\d character_type_004
+\d character_type_005
+\d character_type_006
+\d bool_type_001
+\d time_date_type_001
+\d time_date_type_002
+\d time_date_type_003
+\d time_date_type_004
+\d time_date_type_005
+\d time_date_type_006
+\d time_date_type_007
+\d time_date_type_008
+\d time_date_type_009
+\d time_date_type_010
+\d bitstring_type_001
+\d bitstring_type_002
+\d bitstring_type_003
+\d enum_type_001
+\d binary_type_001
+\d binary_type_002
+\d binary_type_003
+\d binary_type_004
+\d binary_type_005
+\d binary_type_006
+
+show create table value_type_001;
+show create table value_type_002;
+show create table value_type_003;
+show create table value_type_004;
+show create table value_type_005;
+show create table value_type_006;
+show create table value_type_007;
+show create table value_type_008;
+show create table value_type_009;
+show create table value_type_010;
+show create table value_type_011;
+show create table value_type_012;
+show create table value_type_013;
+show create table value_type_014;
+show create table value_type_015;
+show create table value_type_016;
+show create table value_type_017;
+show create table value_type_018;
+show create table value_type_019;
+show create table value_type_020;
+show create table value_type_021;
+show create table value_type_022;
+show create table value_type_023;
+show create table value_type_024;
+show create table value_type_025;
+show create table value_type_026;
+show create table value_type_027;
+show create table value_type_028;
+show create table value_type_029;
+show create table value_type_030;
+show create table value_type_031;
+show create table value_type_032;
+show create table value_type_033;
+show create table value_type_034;
+show create table value_type_035;
+show create table value_type_036;
+show create table value_type_037;
+show create table value_type_038;
+show create table value_type_039;
+show create table value_type_040;
+show create table character_type_001;
+show create table character_type_002;
+show create table character_type_003;
+show create table character_type_004;
+show create table character_type_005;
+show create table character_type_006;
+show create table bool_type_001;
+show create table time_date_type_001;
+show create table time_date_type_002;
+show create table time_date_type_003;
+show create table time_date_type_004;
+show create table time_date_type_005;
+show create table time_date_type_006;
+show create table time_date_type_007;
+show create table time_date_type_008;
+show create table time_date_type_009;
+show create table time_date_type_010;
+show create table bitstring_type_001;
+show create table bitstring_type_002;
+show create table bitstring_type_003;
+show create table enum_type_001;
+show create table binary_type_001;
+show create table binary_type_002;
+show create table binary_type_003;
+show create table binary_type_004;
+show create table binary_type_005;
+show create table binary_type_006;
+
+\c postgres
+drop database if exists restore_data_type_db;
+drop database if exists dump_data_type_db;

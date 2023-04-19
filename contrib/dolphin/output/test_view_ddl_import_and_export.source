@@ -1,0 +1,514 @@
+--create view测试
+drop database if exists dump_view_db;
+NOTICE:  database "dump_view_db" does not exist, skipping
+drop database if exists restore_view_db;
+NOTICE:  database "restore_view_db" does not exist, skipping
+create database dump_view_db with dbcompatibility = 'B';
+create database restore_view_db with dbcompatibility = 'B';
+\c dump_view_db
+create table t_create_view_001(c int);
+create table t_create_view_002(c int) with (orientation = column);
+create table t_create_view_003(col1 int, col2 int) with (storage_type = ustore);
+create table t_create_view_004(col1 int, col2 int) with (segment = on);
+create unlogged table t_create_view_005(col1 int, col2 int);
+create table t_create_view_006(col1 int, col2 int)
+partition by range(col1)
+(       
+	partition p1 values less than (1000),
+	partition p2 values less than (2000),
+	partition p3 values less than (4000)
+);
+create user viewdefiner001 password 'Test@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+create table t_create_view_007(col1 date, col2 int)
+partition by range(col1)
+interval('1 day')
+(
+	partition p1 values less than ('2019-02-01 00:00:00'),
+	partition p2 values less than ('2019-02-02 00:00:00'),
+	partition p3 values less than ('2019-02-03 00:00:00')
+);
+create table t_create_view_008(col1 int, col2 int)
+partition by list(col1)
+(
+	partition p1 values in (1000),
+	partition p2 values in (2000),
+	partition p3 values in (4000)
+);
+create table t_create_view_009(col1 int, col2 int)
+partition by hash(col1)
+(
+	partition p1,
+	partition p2,
+	partition p3
+);
+create table t_create_view_010(col1 int, col2 int)
+partition by range(col1) subpartition by range(col2)
+(
+	partition p1 values less than (1000)
+	(
+		subpartition p11 values less than (500),
+		subpartition p12 values less than (1000)
+	),
+	partition p2 values less than (2000)
+	(
+		subpartition p21 values less than (1500),
+		subpartition p22 values less than (2000)
+	),
+	partition p3 values less than (4000)
+	(
+		subpartition p31 values less than (3000),
+		subpartition p32 values less than (4000)
+	)
+);
+grant proxy on current_user() to viewdefiner001;
+create or replace definer = viewdefiner001 view view001(c) as select c from t_create_view_001 order by c;
+create or replace definer = viewdefiner001 view view002(c) as select c from t_create_view_002 order by c;
+create or replace definer = viewdefiner001 view view003(col1, col2) as select col1, col2 from t_create_view_003 order by (col1, col2);
+create or replace definer = viewdefiner001 view view004(col1, col2) as select col1, col2 from t_create_view_004 order by (col1, col2);
+create or replace definer = viewdefiner001 view view005(col1, col2) as select col1, col2 from t_create_view_005 order by (col1, col2);
+create or replace definer = viewdefiner001 view view006(col1, col2) as select * from t_create_view_006 partition(p1, p2, p3) order by (col1, col2);
+create or replace definer = viewdefiner001 view view007(col1, col2) as select * from t_create_view_007 partition(p1, p2, p3) order by (col1, col2);
+create or replace definer = viewdefiner001 view view008(col1, col2) as select * from t_create_view_008 partition(p1, p2, p3) order by (col1, col2);
+create or replace definer = viewdefiner001 view view009(col1, col2) as select * from t_create_view_009 partition(p1, p2, p3) order by (col1, col2);
+create or replace definer = viewdefiner001 view view010(col1, col2) as select * from t_create_view_010 partition(p1, p2, p3) order by (col1, col2);
+show lc_collate;
+ lc_collate 
+------------
+ C
+(1 row)
+
+show create view view001;
+  View   |                                   Create View                                   | character_set_client | collation_connection 
+---------+---------------------------------------------------------------------------------+----------------------+----------------------
+ view001 | CREATE OR REPLACE VIEW public.view001 AS                                       +| UTF8                 | C
+         | SELECT t_create_view_001.c FROM t_create_view_001 ORDER BY t_create_view_001.c; |                      | 
+(1 row)
+
+show create view view002;
+  View   |                                   Create View                                   | character_set_client | collation_connection 
+---------+---------------------------------------------------------------------------------+----------------------+----------------------
+ view002 | CREATE OR REPLACE VIEW public.view002 AS                                       +| UTF8                 | C
+         | SELECT t_create_view_002.c FROM t_create_view_002 ORDER BY t_create_view_002.c; |                      | 
+(1 row)
+
+show create view view003;
+  View   |                                                                Create View                                                                 | character_set_client | collation_connection 
+---------+--------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view003 | CREATE OR REPLACE VIEW public.view003 AS                                                                                                  +| UTF8                 | C
+         | SELECT t_create_view_003.col1, t_create_view_003.col2 FROM t_create_view_003 ORDER BY ROW(t_create_view_003.col1, t_create_view_003.col2); |                      | 
+(1 row)
+
+show create view view004;
+  View   |                                                                Create View                                                                 | character_set_client | collation_connection 
+---------+--------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view004 | CREATE OR REPLACE VIEW public.view004 AS                                                                                                  +| UTF8                 | C
+         | SELECT t_create_view_004.col1, t_create_view_004.col2 FROM t_create_view_004 ORDER BY ROW(t_create_view_004.col1, t_create_view_004.col2); |                      | 
+(1 row)
+
+show create view view005;
+  View   |                                                                Create View                                                                 | character_set_client | collation_connection 
+---------+--------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view005 | CREATE OR REPLACE VIEW public.view005 AS                                                                                                  +| UTF8                 | C
+         | SELECT t_create_view_005.col1, t_create_view_005.col2 FROM t_create_view_005 ORDER BY ROW(t_create_view_005.col1, t_create_view_005.col2); |                      | 
+(1 row)
+
+show create view view006;
+  View   |                                                      Create View                                                      | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view006 | CREATE OR REPLACE VIEW public.view006 AS                                                                             +| UTF8                 | C
+         | SELECT  * FROM t_create_view_006 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_006.col1, t_create_view_006.col2); |                      | 
+(1 row)
+
+show create view view007;
+  View   |                                                      Create View                                                      | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view007 | CREATE OR REPLACE VIEW public.view007 AS                                                                             +| UTF8                 | C
+         | SELECT  * FROM t_create_view_007 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_007.col1, t_create_view_007.col2); |                      | 
+(1 row)
+
+show create view view008;
+  View   |                                                      Create View                                                      | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view008 | CREATE OR REPLACE VIEW public.view008 AS                                                                             +| UTF8                 | C
+         | SELECT  * FROM t_create_view_008 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_008.col1, t_create_view_008.col2); |                      | 
+(1 row)
+
+show create view view009;
+  View   |                                                      Create View                                                      | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view009 | CREATE OR REPLACE VIEW public.view009 AS                                                                             +| UTF8                 | C
+         | SELECT  * FROM t_create_view_009 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_009.col1, t_create_view_009.col2); |                      | 
+(1 row)
+
+show create view view010;
+  View   |                                                      Create View                                                      | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view010 | CREATE OR REPLACE VIEW public.view010 AS                                                                             +| UTF8                 | C
+         | SELECT  * FROM t_create_view_010 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_010.col1, t_create_view_010.col2); |                      | 
+(1 row)
+
+\dv view001;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view001 | view | viewdefiner001 | 
+(1 row)
+
+\dv view002;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view002 | view | viewdefiner001 | 
+(1 row)
+
+\dv view003;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view003 | view | viewdefiner001 | 
+(1 row)
+
+\dv view004;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view004 | view | viewdefiner001 | 
+(1 row)
+
+\dv view005;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view005 | view | viewdefiner001 | 
+(1 row)
+
+\dv view006;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view006 | view | viewdefiner001 | 
+(1 row)
+
+\dv view007;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view007 | view | viewdefiner001 | 
+(1 row)
+
+\dv view008;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view008 | view | viewdefiner001 | 
+(1 row)
+
+\dv view009;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view009 | view | viewdefiner001 | 
+(1 row)
+
+\dv view010;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view010 | view | viewdefiner001 | 
+(1 row)
+
+--alter view测试
+--修改视图definer
+create user viewdefiner002 password 'Test@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+grant proxy on current_user() to viewdefiner002;
+create table t_alter_view_001(c int);
+create or replace definer = viewdefiner001 view view011(c) as select c from t_alter_view_001;
+alter definer = viewdefiner002 view view011(c) as select c from t_alter_view_001;
+\dv view011;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view011 | view | viewdefiner002 | 
+(1 row)
+
+--修改视图定义
+create table t_alter_view_002(col1 int, col2 int);
+create table t_alter_view_003(col1 int, col2 int, col3 int);
+create or replace definer = viewdefiner001 view view012(col1, col2) as select col1, col2 from t_alter_view_002;
+alter view view012(col1, col2, col3) as select * from t_alter_view_003;
+\dv view012;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view012 | view | viewdefiner001 | 
+(1 row)
+
+\dv view011;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view011 | view | viewdefiner002 | 
+(1 row)
+
+\dv view012;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view012 | view | viewdefiner001 | 
+(1 row)
+
+--drop view测试
+--create view后删除
+--不指定用户
+create table t_drop_view_001(c int);
+create or replace view view013(c) as select c from t_drop_view_001;
+drop view view013;
+--指定用户
+create table t_drop_view_002(c int);
+create or replace definer = viewdefiner001 view view014(c) as select c from t_drop_view_002;
+drop view view014;
+--alter view后删除
+--不修改用户
+create table t_drop_view_003(col1 int);
+create table t_drop_view_004(col1 int, col2 int);
+create or replace view view015(col1) as select col1 from t_drop_view_003;
+alter view view015(col1, col2) as select * from t_drop_view_004;
+drop view view015;
+--修改用户
+create table t_drop_view_005(c int);
+create or replace definer = viewdefiner001 view view016(c) as select c from t_drop_view_005;
+alter definer = viewdefiner002 view view016(c) as select c from t_drop_view_005;
+drop view view016;
+\dv view013;
+           List of relations
+ Schema | Name | Type | Owner | Storage 
+--------+------+------+-------+---------
+(0 rows)
+
+\dv view014;
+           List of relations
+ Schema | Name | Type | Owner | Storage 
+--------+------+------+-------+---------
+(0 rows)
+
+\dv view015;
+           List of relations
+ Schema | Name | Type | Owner | Storage 
+--------+------+------+-------+---------
+(0 rows)
+
+\dv view016;
+           List of relations
+ Schema | Name | Type | Owner | Storage 
+--------+------+------+-------+---------
+(0 rows)
+
+--导入导出
+\! @abs_bindir@/gs_dump dump_view_db -p @portstring@ -f @abs_bindir@/dump_view.sql -F p >/dev/null 2>&1; echo $?
+0
+drop view if exists view001;
+drop view if exists view002;
+drop view if exists view003;
+drop view if exists view004;
+drop view if exists view005;
+drop view if exists view006;
+drop view if exists view007;
+drop view if exists view008;
+drop view if exists view009;
+drop view if exists view010;
+drop view if exists view011;
+drop view if exists view012;
+\! @abs_bindir@/gsql restore_view_db -p @portstring@ -f @abs_bindir@/dump_view.sql >/dev/null 2>&1; echo $?
+0
+\c restore_view_db
+show lc_collate;
+ lc_collate 
+------------
+ C
+(1 row)
+
+show create view view001;
+  View   |                                   Create View                                   | character_set_client | collation_connection 
+---------+---------------------------------------------------------------------------------+----------------------+----------------------
+ view001 | CREATE OR REPLACE VIEW public.view001 AS                                       +| UTF8                 | C
+         | SELECT t_create_view_001.c FROM t_create_view_001 ORDER BY t_create_view_001.c; |                      | 
+(1 row)
+
+show create view view002;
+  View   |                                   Create View                                   | character_set_client | collation_connection 
+---------+---------------------------------------------------------------------------------+----------------------+----------------------
+ view002 | CREATE OR REPLACE VIEW public.view002 AS                                       +| UTF8                 | C
+         | SELECT t_create_view_002.c FROM t_create_view_002 ORDER BY t_create_view_002.c; |                      | 
+(1 row)
+
+show create view view003;
+  View   |                                                                Create View                                                                 | character_set_client | collation_connection 
+---------+--------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view003 | CREATE OR REPLACE VIEW public.view003 AS                                                                                                  +| UTF8                 | C
+         | SELECT t_create_view_003.col1, t_create_view_003.col2 FROM t_create_view_003 ORDER BY ROW(t_create_view_003.col1, t_create_view_003.col2); |                      | 
+(1 row)
+
+show create view view004;
+  View   |                                                                Create View                                                                 | character_set_client | collation_connection 
+---------+--------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view004 | CREATE OR REPLACE VIEW public.view004 AS                                                                                                  +| UTF8                 | C
+         | SELECT t_create_view_004.col1, t_create_view_004.col2 FROM t_create_view_004 ORDER BY ROW(t_create_view_004.col1, t_create_view_004.col2); |                      | 
+(1 row)
+
+show create view view005;
+  View   |                                                                Create View                                                                 | character_set_client | collation_connection 
+---------+--------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view005 | CREATE OR REPLACE VIEW public.view005 AS                                                                                                  +| UTF8                 | C
+         | SELECT t_create_view_005.col1, t_create_view_005.col2 FROM t_create_view_005 ORDER BY ROW(t_create_view_005.col1, t_create_view_005.col2); |                      | 
+(1 row)
+
+show create view view006;
+  View   |                                                      Create View                                                      | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view006 | CREATE OR REPLACE VIEW public.view006 AS                                                                             +| UTF8                 | C
+         | SELECT  * FROM t_create_view_006 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_006.col1, t_create_view_006.col2); |                      | 
+(1 row)
+
+show create view view007;
+  View   |                                                      Create View                                                      | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view007 | CREATE OR REPLACE VIEW public.view007 AS                                                                             +| UTF8                 | C
+         | SELECT  * FROM t_create_view_007 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_007.col1, t_create_view_007.col2); |                      | 
+(1 row)
+
+show create view view008;
+  View   |                                                      Create View                                                      | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view008 | CREATE OR REPLACE VIEW public.view008 AS                                                                             +| UTF8                 | C
+         | SELECT  * FROM t_create_view_008 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_008.col1, t_create_view_008.col2); |                      | 
+(1 row)
+
+show create view view009;
+  View   |                                                      Create View                                                      | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view009 | CREATE OR REPLACE VIEW public.view009 AS                                                                             +| UTF8                 | C
+         | SELECT  * FROM t_create_view_009 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_009.col1, t_create_view_009.col2); |                      | 
+(1 row)
+
+show create view view010;
+  View   |                                                      Create View                                                      | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view010 | CREATE OR REPLACE VIEW public.view010 AS                                                                             +| UTF8                 | C
+         | SELECT  * FROM t_create_view_010 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_010.col1, t_create_view_010.col2); |                      | 
+(1 row)
+
+\dv view001;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view001 | view | viewdefiner001 | 
+(1 row)
+
+\dv view002;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view002 | view | viewdefiner001 | 
+(1 row)
+
+\dv view003;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view003 | view | viewdefiner001 | 
+(1 row)
+
+\dv view004;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view004 | view | viewdefiner001 | 
+(1 row)
+
+\dv view005;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view005 | view | viewdefiner001 | 
+(1 row)
+
+\dv view006;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view006 | view | viewdefiner001 | 
+(1 row)
+
+\dv view007;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view007 | view | viewdefiner001 | 
+(1 row)
+
+\dv view008;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view008 | view | viewdefiner001 | 
+(1 row)
+
+\dv view009;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view009 | view | viewdefiner001 | 
+(1 row)
+
+\dv view010;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view010 | view | viewdefiner001 | 
+(1 row)
+
+\dv view011;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view011 | view | viewdefiner002 | 
+(1 row)
+
+\dv view012;
+                 List of relations
+ Schema |  Name   | Type |     Owner      | Storage 
+--------+---------+------+----------------+---------
+ public | view012 | view | viewdefiner001 | 
+(1 row)
+
+\dv view013;
+           List of relations
+ Schema | Name | Type | Owner | Storage 
+--------+------+------+-------+---------
+(0 rows)
+
+\dv view014;
+           List of relations
+ Schema | Name | Type | Owner | Storage 
+--------+------+------+-------+---------
+(0 rows)
+
+\dv view015;
+           List of relations
+ Schema | Name | Type | Owner | Storage 
+--------+------+------+-------+---------
+(0 rows)
+
+\dv view016;
+           List of relations
+ Schema | Name | Type | Owner | Storage 
+--------+------+------+-------+---------
+(0 rows)
+
+\c postgres
+drop database if exists restore_view_db;
+drop database if exists dump_view_db;
+drop user if exists viewdefiner001;
+drop user if exists viewdefiner002;

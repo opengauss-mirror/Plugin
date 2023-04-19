@@ -14,6 +14,11 @@ test: empty_value_list empty_value_lists empty_value_support_value create_index 
 
 test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict mysqlmode_strict2 none_strict_warning test_alter_table
 
+#import and export
+test: test_table_ddl_import_and_export test_table_partition_ddl_import_and_export test_view_ddl_import_and_export test_replace_ddl_import_and_export test_index_ddl_import_and_export test_function_import_and_export
+
+test: test_procedure_ddl_import_and_export test_function_ddl_import_and_export test_trigger_ddl_import_and_export test_insert_ddl_import_and_export test_load_data_ddl_import_and_export test_data_type_import_and_export
+
 # must be single test group, cause other connection will affect the result
 test: test_shows
 

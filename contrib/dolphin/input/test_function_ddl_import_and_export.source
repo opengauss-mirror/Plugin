@@ -1,0 +1,492 @@
+--create function测试
+drop database if exists dump_function_db;
+drop database if exists restore_function_db;
+create database dump_function_db with dbcompatibility = 'B';
+create database restore_function_db with dbcompatibility = 'B';
+\c dump_function_db
+
+create user test_function_definer password 'Test@123';
+
+--test language sql
+delimiter //;
+create definer = test_function_definer function create_function_001() returns void language plpgsql
+BEGIN
+	return;
+END;
+//
+delimiter ;//
+
+--test [not] deterministic
+delimiter //;
+create definer = test_function_definer function create_function_002() returns void deterministic
+BEGIN
+	return;
+END;
+//
+delimiter ;//
+
+delimiter //;
+create definer = test_function_definer function create_function_003() returns void not deterministic
+BEGIN
+	return;
+END;
+//
+delimiter ;//
+
+--test contains sql
+delimiter //;
+create definer = test_function_definer function create_function_004() returns void contains sql
+BEGIN
+	return;
+END;
+//
+delimiter ;//
+
+--no sql
+delimiter //;
+create definer = test_function_definer function create_function_005() returns void no sql
+BEGIN
+	return;
+END;
+//
+delimiter ;//
+
+delimiter //;
+create definer = test_function_definer function create_function_006() returns void reads sql data
+BEGIN
+	return;
+END;
+//
+delimiter ;//
+
+--test modifies sql data
+delimiter //;
+create definer = test_function_definer function create_function_007() returns void modifies sql data
+BEGIN
+	return;
+END;
+//
+delimiter ;//
+
+--test sql security
+delimiter //;
+create definer = test_function_definer function create_function_008() returns void sql security definer
+BEGIN
+	return;
+END;
+//
+delimiter ;//
+
+delimiter //;
+create definer = test_function_definer function create_function_009() returns void sql security invoker
+BEGIN
+	return;
+END;
+//
+delimiter ;//
+
+--test definer
+delimiter //;
+create definer = test_function_definer function create_function_010() returns void
+BEGIN
+	return;
+END;
+//
+delimiter ;//
+
+--test repeat
+delimiter //;
+create definer = test_function_definer function create_function_011(int) returns void
+AS
+$$
+DECLARE
+        i int = 0;
+BEGIN
+        repeat
+                i = i + 1;
+                until i > $1
+        end repeat;
+END;
+$$ language plpgsql immutable;
+//
+delimiter ;//
+select create_function_011(5);
+
+delimiter //;
+create definer = test_function_definer function create_function_012(int) returns void
+AS
+$$
+DECLARE
+        i int = 0;
+BEGIN
+        <<label>> repeat
+                i = i + 1;
+                until i > $1
+        end repeat label;
+END;
+$$ language plpgsql immutable;
+//
+delimiter ;//
+select create_function_012(5);
+
+--test declare cursor
+create table company(name varchar(100), loc varchar(100), no integer);
+insert into company values('macrosoft', 'usa', 001);
+insert into company values('oracle', 'usa', 002);
+insert into company values('backbery', 'canada', 003);
+delimiter //;
+create definer = test_function_definer function create_function_013 returns void
+AS
+$$
+DECLARE
+        company_name varchar(100);
+        company_loc varchar(100);
+        company_no integer;
+begin
+        declare c1_all cursor is
+                select name, loc, no from company order by 1, 2, 3;
+        if not c1_all%isopen then open c1_all;
+        end if;
+        loop
+                fetch c1_all into company_name, company_loc, company_no;
+                exit when c1_all%notfound;
+                raise notice '% : % : %', company_name, company_loc, company_no;
+        end loop;
+        if c1_all%isopen then
+                close c1_all;
+        end if;
+end;
+$$ language plpgsql immutable;
+//
+delimiter ;//
+select create_function_013();
+
+--test declare condition
+delimiter //;
+create definer = test_function_definer function create_function_014 returns text
+AS
+$$
+BEGIN
+        declare DISVISION_ZERO condition for 1;
+        return 'declare condition successed';
+END;
+$$ language plpgsql immutable;
+//
+delimiter ;//
+select create_function_014();
+
+--test do statement
+delimiter //;
+create definer = test_function_definer function create_function_015 returns void
+AS
+$$
+DECLARE
+        x,y,z int =1;
+BEGIN
+        y := 2;
+        z := 4;
+        do x + x;
+        do y * z;
+        do x + x, y * z;
+        do sin(x);
+        do pg_sleep(1);
+END;
+$$ language plpgsql immutable;
+//
+delimiter ;//
+
+--test iterate label
+delimiter //;
+create definer = test_function_definer function create_function_016(int) returns int
+AS
+$$
+BEGIN
+        label1: loop
+        $1 := $1 + 1;
+        if $1 < 10 then iterate label1;
+        end if;
+        leave label1;
+        end loop label1;
+        return $1;
+END;
+$$ language plpgsql immutable;
+//
+delimiter ;//
+
+delimiter //;
+create definer = test_function_definer function create_function_017(int) returns int
+AS
+$$
+BEGIN
+        loop
+                $1 := $1 + 1;
+                if $1 < 10 then iterate;
+                end if;
+                leave;
+        end loop;
+        return $1;
+END;
+$$ language plpgsql immutable;
+//
+delimiter ;//
+
+--test case when condition
+delimiter //;
+create definer = test_function_definer function create_function_018(int) returns text
+AS
+$$
+BEGIN
+        case $1
+                when 1 then
+                        return 'one';
+                when 2 then
+                        return 'two';
+                when 3 then
+                        return 'three';
+                else
+                        return 'more than three';
+        end case;
+END;
+$$ language plpgsql immutable;
+//
+delimiter ;//
+select create_function_018(5);
+
+--test while
+delimiter //;
+create definer = test_function_definer function create_function_019(int) returns int
+AS
+$$
+BEGIN
+        while $1 < 10
+                do $1 := $1 + 1;
+        end while;
+        return $1;
+END;
+$$ language plpgsql immutable;
+//
+delimiter ;//
+
+delimiter //;
+create definer = test_function_definer function create_function_020(int) returns int
+AS
+$$
+BEGIN
+        label: while $1 < 10
+                do $1 := $1 + 1;
+        end while label;
+        return $1;
+END;
+$$ language plpgsql immutable;
+//
+delimiter ;//
+select create_function_020(5);
+
+show lc_collate;
+show create function create_function_001;
+show create function create_function_002;
+show create function create_function_003;
+show create function create_function_004;
+show create function create_function_005;
+show create function create_function_006;
+show create function create_function_007;
+show create function create_function_008;
+show create function create_function_009;
+show create function create_function_010;
+show create function create_function_011;
+show create function create_function_012;
+show create function create_function_013;
+show create function create_function_014;
+show create function create_function_015;
+show create function create_function_016;
+show create function create_function_017;
+show create function create_function_018;
+show create function create_function_019;
+show create function create_function_020;
+
+select create_function_001();
+select create_function_002();
+select create_function_003();
+select create_function_004();
+select create_function_005();
+select create_function_006();
+select create_function_007();
+select create_function_008();
+select create_function_009();
+select create_function_010();
+select create_function_011(5);
+select create_function_012(5);
+select create_function_013();
+select create_function_014();
+select create_function_015();
+select create_function_016(5);
+select create_function_017(5);
+select create_function_018(5);
+select create_function_019(5);
+select create_function_020(5);
+
+--alter function测试
+--language sql
+delimiter //;
+create definer = test_function_definer function alter_function_001() returns void language plpgsql
+BEGIN
+        return;
+END;
+//
+delimiter ;//
+alter function alter_function_001 language sql;
+
+--no sql
+delimiter //;
+create definer = test_function_definer function alter_function_002() returns void
+BEGIN
+        return;
+END;
+//
+delimiter ;//
+alter function alter_function_002 no sql;
+
+--reads sql data
+delimiter //;
+create definer = test_function_definer function alter_function_003() returns void
+BEGIN
+        return;
+END;
+//
+delimiter ;//
+alter function alter_function_003 reads sql data;
+
+--contains sql
+delimiter //;
+create definer = test_function_definer function alter_function_004() returns void
+BEGIN
+        return;
+END;
+//
+delimiter ;//
+alter function alter_function_004 contains sql;
+
+--modifies sql data
+delimiter //;
+create definer = test_function_definer function alter_function_005() returns void
+BEGIN
+        return;
+END;
+//
+delimiter ;//
+alter function alter_function_005 modifies sql data;
+
+--sql security
+delimiter //;
+create definer = test_function_definer function alter_function_006() returns void sql security definer
+BEGIN
+        return;
+END;
+//
+delimiter ;//
+alter function alter_function_006 sql security invoker;
+
+delimiter //;
+create definer = test_function_definer function alter_function_007() returns void sql security invoker
+BEGIN
+        return;
+END;
+//
+delimiter ;//
+alter function alter_function_007 sql security definer;
+
+\df+ alter_function_001;
+\df+ alter_function_002;
+\df+ alter_function_003;
+\df+ alter_function_004;
+\df+ alter_function_005;
+\df+ alter_function_006;
+\df+ alter_function_007;
+
+--导入导出
+\! @abs_bindir@/gs_dump dump_function_db -p @portstring@ -f @abs_bindir@/dump_function.tar -F t >/dev/null 2>&1; echo $?
+drop function create_function_001;
+drop function create_function_002;
+drop function create_function_003;
+drop function create_function_004;
+drop function create_function_005;
+drop function create_function_006;
+drop function create_function_007;
+drop function create_function_008;
+drop function create_function_009;
+drop function create_function_010;
+drop function create_function_011;
+drop function create_function_012;
+drop function create_function_013;
+drop function create_function_014;
+drop function create_function_015;
+drop function create_function_016;
+drop function create_function_017;
+drop function create_function_018;
+drop function create_function_019;
+drop function create_function_020;
+drop function alter_function_001;
+drop function alter_function_002;
+drop function alter_function_003;
+drop function alter_function_004;
+drop function alter_function_005;
+drop function alter_function_006;
+drop function alter_function_007;
+\! @abs_bindir@/gs_restore -d restore_function_db -p @portstring@ @abs_bindir@/dump_function.tar >/dev/null 2>&1; echo $?
+\c restore_function_db
+
+show lc_collate;
+show create function create_function_001;
+show create function create_function_002;
+show create function create_function_003;
+show create function create_function_004;
+show create function create_function_005;
+show create function create_function_006;
+show create function create_function_007;
+show create function create_function_008;
+show create function create_function_009;
+show create function create_function_010;
+show create function create_function_011;
+show create function create_function_012;
+show create function create_function_013;
+show create function create_function_014;
+show create function create_function_015;
+show create function create_function_016;
+show create function create_function_017;
+show create function create_function_018;
+show create function create_function_019;
+show create function create_function_020;
+
+select create_function_001();
+select create_function_002();
+select create_function_003();
+select create_function_004();
+select create_function_005();
+select create_function_006();
+select create_function_007();
+select create_function_008();
+select create_function_009();
+select create_function_010();
+select create_function_011(5);
+select create_function_012(5);
+select create_function_013();
+select create_function_014();
+select create_function_015();
+select create_function_016(5);
+select create_function_017(5);
+select create_function_018(5);
+select create_function_019(5);
+select create_function_020(5);
+
+\df+ alter_function_001;
+\df+ alter_function_002;
+\df+ alter_function_003;
+\df+ alter_function_004;
+\df+ alter_function_005;
+\df+ alter_function_006;
+\df+ alter_function_007;
+
+\c postgres
+drop database if exists restore_function_db;
+drop database if exists dump_function_db;
+drop user if exists test_function_definer;

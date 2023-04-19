@@ -1,0 +1,33 @@
+--create database测试
+create database restore_create_database_db dbcompatibility = 'B';
+create database if not exists t_create_database_001 template = template0;
+create database if not exists t_create_database_002 with encoding 'utf8';
+create database if not exists t_create_database_003 dbcompatibility = 'B';
+create database if not exists t_create_database_004 with connection limit 10;
+create database if not exists t_create_database_005 with lc_collate = 'en_US.UTF-8';
+create database if not exists t_create_database_006 with lc_ctype 'en_US.UTF-8';
+create database if not exists t_create_database_007 with tablespace = pg_default;
+
+select datname, encoding, datcollate, datctype, datconnlimit, dattablespace, datcompatibility from pg_database where datname like 't_create_database%';
+
+--导入导出
+\! @abs_bindir@/gs_dumpall -p @portstring@ -f @abs_bindir@/dumpall_create_database.sql >/dev/null 2>&1 ; echo $?
+drop database if exists t_create_database_001;
+drop database if exists t_create_database_002;
+drop database if exists t_create_database_003;
+drop database if exists t_create_database_004;
+drop database if exists t_create_database_005;
+drop database if exists t_create_database_006;
+drop database if exists t_create_database_007;
+\! @abs_bindir@/gsql restore_create_database_db -p @portstring@ -f @abs_bindir@/dumpall_create_database.sql >/dev/null 2>&1; echo $?
+\c restore_create_database_db;
+select datname, encoding, datcollate, datctype, datconnlimit, dattablespace, datcompatibility from pg_database where datname like 't_create_database%';
+\c postgres;
+drop database if exists t_create_database_001; 
+drop database if exists t_create_database_002; 
+drop database if exists t_create_database_003; 
+drop database if exists t_create_database_004; 
+drop database if exists t_create_database_005;
+drop database if exists t_create_database_006;
+drop database if exists t_create_database_007;
+drop database if exists restore_create_database_db;

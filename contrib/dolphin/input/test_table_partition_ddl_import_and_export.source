@@ -1,0 +1,799 @@
+--create table partition
+drop database if exists dump_table_partition_db;
+drop database if exists restore_table_partition_db;
+create database dump_table_partition_db with dbcompatibility = 'B';
+create database restore_table_partition_db with dbcompatibility 'B';
+\c dump_table_partition_db
+
+--less than maxvalue语法
+create table t_create_table_partition_001(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p0 values less than (18),
+        partition p1 values less than (35),
+        partition p2 values less than maxvalue
+);
+insert into t_create_table_partition_001 values(10, 1), (18, 2), (20, 3), (30, 4), (35, 5), (40, 6), (50, 7);
+select * from t_create_table_partition_001 partition(p0, p1, p2) order by (col1, col2);
+
+create table t_create_table_partition_002(col1 int, col2 int)
+partition by range(col1) subpartition by range(col2)
+(
+        partition p0 values less than (18)
+        (
+                subpartition p0_0 values less than (1000),
+                subpartition p0_1 values less than (2000),
+                subpartition p0_2 values less than (4000)
+        ),
+        partition p1 values less than (35)
+        (
+                subpartition p1_0 values less than (5000),
+                subpartition p1_1 values less than (6000),
+                subpartition p1_2 values less than (8000)
+        ),
+        partition p2 values less than maxvalue
+        (
+                subpartition p2_0 values less than (10000),
+                subpartition p2_1 values less than (20000),
+                subpartition p2_2 values less than maxvalue
+        )
+);
+
+insert into t_create_table_partition_002 values(10, 1000), (18, 2000), (20, 3000), (30, 4000), (35, 5000), (40, 6000), (50, 8000), (60, 10000), (70, 20000), (80, 30000);
+select * from t_create_table_partition_002 partition(p0, p1, p2) order by (col1, col2);
+select * from t_create_table_partition_002 partition(p0_0, p0_1, p0_2) order by (col1, col2);
+select * from t_create_table_partition_002 partition(p1, p1_0, p1_1, p1_2) order by (col1, col2);
+
+--list分区表创建时支持values in语法
+create table t_create_table_partition_003(col1 int, col2 int)
+partition by list(col1)
+(
+        partition p1 values in (1000),
+        partition p2 values in (2000),
+        partition p3 values in (4000),
+        partition p4 values in (8000)
+);
+insert into t_create_table_partition_003 values(1000, 0), (2000, 0), (4000, 0), (8000, 0);
+select * from t_create_table_partition_003 partition(p1, p2, p3) order by (col1, col2);
+
+--支持对分区表的create table like语法，感知源表是否为分区表
+create table t_create_table_partition_004(c int, index using btree(c))
+partition by range(c)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000),
+        partition p4 values less than maxvalue
+);
+create table t_create_table_partition_005(c int check(c > 0), index using btree(c))
+partition by range(c)
+(
+        partition p1 start (0) end (1000),
+        partition p2 end (2000),
+        partition p3 start (2000) end (4000),
+        partition p4 start (4000)
+);
+create table t_create_table_partition_006(col1 int not null, col2 int)
+partition by range(col1) subpartition by range(col2)
+(
+        partition p1 values less than (1000)
+		(
+			subpartition p11 values less than (500),
+			subpartition p12 values less than (1000)
+		),
+        partition p2 values less than (2000)
+		(
+			subpartition p21 values less than (1500),
+			subpartition p22 values less than (2000)
+		),
+        partition p3 values less than (4000)
+		(
+			subpartition p31 values less than (3000),
+			subpartition p32 values less than (4000)
+		),
+        partition p4 values less than maxvalue
+		(
+			subpartition p41 values less than (8000),
+			subpartition p42 values less than maxvalue
+		)
+);
+
+create table t_create_table_partition_007 like t_create_table_partition_004 including all;
+create table t_create_table_partition_008 like t_create_table_partition_004 including indexes;
+create table t_create_table_partition_009 like t_create_table_partition_004 including partition;
+create table t_create_table_partition_010 like t_create_table_partition_005 including defaults;
+create table t_create_table_partition_011 like t_create_table_partition_005 including generated;
+create table t_create_table_partition_012 like t_create_table_partition_005 including constraints;
+create table t_create_table_partition_013 like t_create_table_partition_006 including storage;
+create table t_create_table_partition_014 like t_create_table_partition_006 including comments;
+create table t_create_table_partition_015 like t_create_table_partition_006 including reloptions;
+create table t_create_table_partition_016 like t_create_table_partition_004 excluding defaults;
+create table t_create_table_partition_017 like t_create_table_partition_004 excluding generated;
+create table t_create_table_partition_018 like t_create_table_partition_004 excluding constraints;
+create table t_create_table_partition_019 like t_create_table_partition_005 excluding indexes;
+create table t_create_table_partition_020 like t_create_table_partition_005 excluding storage;
+create table t_create_table_partition_021 like t_create_table_partition_005 excluding comments;
+create table t_create_table_partition_022 like t_create_table_partition_006 excluding reloptions;
+create table t_create_table_partition_023 like t_create_table_partition_006 excluding all;
+create table t_create_table_partition_024 like t_create_table_partition_006;
+
+show create table t_create_table_partition_001;
+show create table t_create_table_partition_002;
+show create table t_create_table_partition_003;
+show create table t_create_table_partition_004;
+show create table t_create_table_partition_005;
+show create table t_create_table_partition_006;
+show create table t_create_table_partition_007;
+show create table t_create_table_partition_008;
+show create table t_create_table_partition_009;
+show create table t_create_table_partition_010;
+show create table t_create_table_partition_011;
+show create table t_create_table_partition_012;
+show create table t_create_table_partition_013;
+show create table t_create_table_partition_014;
+show create table t_create_table_partition_015;
+show create table t_create_table_partition_016;
+show create table t_create_table_partition_017;
+show create table t_create_table_partition_018;
+show create table t_create_table_partition_019;
+show create table t_create_table_partition_020;
+show create table t_create_table_partition_021;
+show create table t_create_table_partition_022;
+show create table t_create_table_partition_023;
+show create table t_create_table_partition_024;
+
+select * from t_create_table_partition_001 partition(p0, p1, p2) order by (col1, col2);
+select * from t_create_table_partition_002 partition(p0, p1, p2) order by (col1, col2);
+select * from t_create_table_partition_002 partition(p0_0, p0_1, p0_2) order by (col1, col2);
+select * from t_create_table_partition_002 partition(p1, p1_0, p1_1, p1_2) order by (col1, col2);
+select * from t_create_table_partition_003 partition(p1, p2, p3) order by (col1, col2);
+
+--alter分区测试
+--一级分区
+--range分区
+create table t_alter_table_partition_001(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_001 remove partitioning;
+create table t_alter_table_partition_002(col1 int, col2 int)
+partition by list(col1)
+(
+        partition p1 values in (1000),
+        partition p2 values in (2000),
+        partition p3 values in (4000)
+);
+alter table t_alter_table_partition_002 rebuild partition p1;
+create table t_alter_table_partition_003(col1 int, col2 int)
+partition by hash(col1)
+(
+        partition p1,
+        partition p2,
+        partition p3
+);
+alter table t_alter_table_partition_003 rebuild partition all;
+create table t_alter_table_partition_004(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_004 reorganize partition p1 into
+(
+        partition p11 values less than (500),
+        partition p12 values less than (1000)
+);
+create table t_alter_table_partition_005(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_005 reorganize partition p2, p3 into (partition p2 values less than (4000));
+create table t_alter_table_partition_006(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_006 check partition p1;
+create table t_alter_table_partition_007(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_007 check partition all;
+create table t_alter_table_partition_008(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_008 repair partition p2;
+create table t_alter_table_partition_009(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_009 repair partition all;
+create table t_alter_table_partition_010(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_010 optimize partition p3;
+create table t_alter_table_partition_011(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_011 optimize partition all;
+create table t_alter_table_partition_012(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+create table t_alter_table_partition_013(col1 int, col2 int);
+create table t_alter_table_partition_014(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+
+alter table t_alter_table_partition_014 exchange partition p1 with table t_alter_table_partition_013 with validation;
+create table t_alter_table_partition_015(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_015 exchange partition p2 with table t_alter_table_partition_013 without validation;
+create table t_alter_table_partition_016(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_016 analyze partition p1;
+create table t_alter_table_partition_017(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_017 analyze partition all;
+create table t_alter_table_partition_018(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_018 add partition p4 values less than maxvalue;
+create table t_alter_table_partition_019(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000),
+        partition p4 values less than maxvalue
+);
+alter table t_alter_table_partition_019 drop partition p4;
+create table t_alter_table_partition_020(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_020 truncate partition p1;
+create table t_alter_table_partition_021(col1 int, col2 int)
+partition by range(col1)
+(
+        partition p1 values less than (1000),
+        partition p2 values less than (2000),
+        partition p3 values less than (4000)
+);
+alter table t_alter_table_partition_021 truncate partition all;
+
+--二级分区
+create table t_alter_table_partition_022(col1 int, col2 int)
+partition by range(col1) subpartition by hash(col2)
+(
+        partition p0 values less than (18)
+        (
+                subpartition p00,
+                subpartition p01,
+                subpartition p02
+        ),
+        partition p1 values less than (35)
+        (
+                subpartition p10,
+                subpartition p11,
+                subpartition p12
+        ),
+        partition p2 values less than maxvalue
+        (
+                subpartition p20,
+                subpartition p21,
+                subpartition p22
+        )
+);
+alter table t_alter_table_partition_022 reorganize partition p0 into
+(
+        partition p0 values less than (18)
+        (
+                subpartition p00,
+                subpartition p01,
+                subpartition p02,
+                subpartition p03
+        )
+);
+create table t_alter_table_partition_023(col1 int, col2 int)
+partition by range(col1) subpartition by hash(col2)
+(
+        partition p0 values less than (18)
+        (
+                subpartition p00,
+                subpartition p01,
+                subpartition p02
+        ),
+        partition p1 values less than (35)
+        (
+                subpartition p10,
+                subpartition p11,
+                subpartition p12
+        ),
+        partition p2 values less than maxvalue
+        (
+                subpartition p20,
+                subpartition p21,
+                subpartition p22
+        )
+);
+alter table t_alter_table_partition_023 reorganize partition p0 into
+(
+        partition p0 values less than (18)
+        (
+                subpartition p00,
+                subpartition p01
+        )
+);
+create table t_alter_table_partition_024(col1 int, col2 int)
+partition by range(col1) subpartition by range(col2)
+(
+        partition p0 values less than (18)
+        (
+                subpartition p00 values less than (1000),
+                subpartition p01 values less than (2000),
+                subpartition p02 values less than maxvalue
+        ),
+        partition p1 values less than (35)
+        (
+                subpartition p10 values less than (1000),
+                subpartition p11 values less than (2000),
+                subpartition p12 values less than maxvalue
+        ),
+        partition p2 values less than maxvalue
+        (
+                subpartition p20 values less than (1000),
+                subpartition p21 values less than (2000),
+                subpartition p22 values less than maxvalue
+        )
+);
+alter table t_alter_table_partition_024 remove partitioning;
+create table t_alter_table_partition_025(col1 int, col2 int)
+partition by list(col1) subpartition by range(col2)
+(
+        partition p0 values in (18)
+        (
+                subpartition p00 values less than (1000),
+                subpartition p01 values less than (2000),
+                subpartition p02 values less than (4000)
+        ),
+        partition p1 values in (35)
+        (
+                subpartition p10 values less than (5000),
+                subpartition p11 values less than (6000),
+                subpartition p12 values less than (8000)
+        ),
+        partition p2 values in (60)
+        (
+                subpartition p20 values less than (10000),
+                subpartition p21 values less than (20000),
+                subpartition p22 values less than maxvalue
+        )
+);
+alter table t_alter_table_partition_025 check partition p1;
+create table t_alter_table_partition_026(col1 int, col2 int)
+partition by list(col1) subpartition by list(col2)
+(
+        partition p0 values in (18)
+        (
+                subpartition p00 values (1000),
+                subpartition p01 values (2000),
+                subpartition p02 values (4000)
+        ),
+        partition p1 values in (35)
+        (
+                subpartition p10 values (5000),
+                subpartition p11 values (6000),
+                subpartition p12 values (8000)
+        ),
+        partition p2 values in (60)
+        (
+                subpartition p20 values (10000),
+                subpartition p21 values (20000),
+                subpartition p22 values (40000)
+        )
+);
+alter table t_alter_table_partition_026 check partition all;
+create table t_alter_table_partition_027(col1 int, col2 int)
+partition by list(col1) subpartition by hash(col2)
+(
+        partition p0 values in (18)
+        (
+                subpartition p00,
+                subpartition p01,
+                subpartition p02
+        ),
+        partition p1 values in (35)
+        (
+                subpartition p10,
+                subpartition p11,
+                subpartition p12
+        ),
+        partition p2 values in (60)
+        (
+                subpartition p20,
+                subpartition p21,
+                subpartition p22
+        )
+);
+alter table t_alter_table_partition_027 repair partition p2;
+create table t_alter_table_partition_028(col1 int, col2 int)
+partition by hash(col1) subpartition by range(col2)
+(
+        partition p0
+        (
+                subpartition p00 values less than (1000),
+                subpartition p01 values less than (2000),
+                subpartition p02 values less than maxvalue
+        ),
+        partition p1
+        (
+                subpartition p10 values less than (1000),
+                subpartition p11 values less than (2000),
+                subpartition p12 values less than maxvalue
+        ),
+        partition p2
+        (
+                subpartition p20 values less than (1000),
+                subpartition p21 values less than (2000),
+                subpartition p22 values less than maxvalue
+        )
+);
+alter table t_alter_table_partition_028 repair partition all;
+create table t_alter_table_partition_029(col1 int, col2 int)
+partition by hash(col1) subpartition by list(col2)
+(
+        partition p0
+        (
+                subpartition p00 values (1000),
+                subpartition p01 values (2000),
+                subpartition p02 values (4000)
+        ),
+        partition p1
+        (
+                subpartition p10 values (1000),
+                subpartition p11 values (2000),
+                subpartition p12 values (4000)
+        ),
+        partition p2
+        (
+                subpartition p20 values (1000),
+                subpartition p21 values (2000),
+                subpartition p22 values (4000)
+        )
+);
+alter table t_alter_table_partition_029 optimize partition p3;
+create table t_alter_table_partition_030(col1 int, col2 int)
+partition by hash(col1) subpartition by hash(col2)
+(
+        partition p0
+        (
+                subpartition p00,
+                subpartition p01,
+                subpartition p02
+        ),
+        partition p1
+        (
+                subpartition p10,
+                subpartition p11,
+                subpartition p12
+        ),
+        partition p2
+        (
+                subpartition p20,
+                subpartition p21,
+                subpartition p22
+        )
+);
+alter table t_alter_table_partition_030 optimize partition all;
+create table t_alter_table_partition_031(col1 int, col2 int)
+partition by range(col1) subpartition by range(col2)
+(
+        partition p0 values less than (4000)
+        (
+                subpartition p00 values less than (1000),
+                subpartition p01 values less than (2000),
+                subpartition p02 values less than (4000)
+        ),
+        partition p1 values less than (8000)
+        (
+                subpartition p10 values less than (5000),
+                subpartition p11 values less than (6000),
+                subpartition p12 values less than (8000)
+        ),
+        partition p2 values less than (20000)
+        (
+                subpartition p20 values less than (10000),
+                subpartition p21 values less than (15000),
+                subpartition p22 values less than (20000)
+        )
+);
+alter table t_alter_table_partition_031 add
+        partition p3 values less than maxvalue(
+                subpartition p30 values less than (40000),
+                subpartition p31 values less than (80000),
+                subpartition p32 values less than maxvalue
+        )
+;
+create table t_alter_table_partition_032(col1 int, col2 int)
+partition by list(col1) subpartition by list(col1)
+(
+        partition p0 values in (4000)
+        (
+                subpartition p00 values (1000),
+                subpartition p01 values (2000),
+                subpartition p02 values (4000)
+        ),
+        partition p1 values in (8000)
+        (
+                subpartition p10 values (5000),
+                subpartition p11 values (6000),
+                subpartition p12 values (8000)
+        ),
+        partition p2 values in (40000)
+        (
+                subpartition p20 values (10000),
+                subpartition p21 values (20000),
+                subpartition p22 values (40000)
+        )
+);
+alter table t_alter_table_partition_032 drop subpartition p02;
+create table t_alter_table_partition_033(col1 int, col2 int)
+partition by hash(col1) subpartition by hash(col1)
+(
+        partition p0
+        (
+                subpartition p00,
+                subpartition p01,
+                subpartition p02
+        ),
+        partition p1
+        (
+                subpartition p10,
+                subpartition p11,
+                subpartition p12
+        ),
+        partition p2
+        (
+                subpartition p20,
+                subpartition p21,
+                subpartition p22
+        )
+);
+alter table t_alter_table_partition_033 truncate partition p1;
+
+--间隔分区表
+create table t_alter_table_partition_034(time_id date, col2 int)
+partition by range(time_id)
+interval('1 day')
+(
+        partition p0 values less than ('2019-02-01 00:00:00'),
+        partition p1 values less than ('2019-02-02 00:00:00'),
+        partition p2 values less than ('2019-02-03 00:00:00')
+);
+alter table t_alter_table_partition_034 truncate partition all;
+
+\d t_alter_table_partition_001
+\d t_alter_table_partition_002
+\d t_alter_table_partition_003
+\d t_alter_table_partition_004
+\d t_alter_table_partition_005
+\d t_alter_table_partition_006
+\d t_alter_table_partition_007
+\d t_alter_table_partition_008
+\d t_alter_table_partition_009
+\d t_alter_table_partition_010
+\d t_alter_table_partition_011
+\d t_alter_table_partition_012
+\d t_alter_table_partition_013
+\d t_alter_table_partition_014
+\d t_alter_table_partition_015
+\d t_alter_table_partition_016
+\d t_alter_table_partition_017
+\d t_alter_table_partition_018
+\d t_alter_table_partition_019
+\d t_alter_table_partition_020
+\d t_alter_table_partition_021
+\d t_alter_table_partition_022
+\d t_alter_table_partition_023
+\d t_alter_table_partition_024
+\d t_alter_table_partition_025
+\d t_alter_table_partition_026
+\d t_alter_table_partition_027
+\d t_alter_table_partition_028
+\d t_alter_table_partition_029
+\d t_alter_table_partition_030
+\d t_alter_table_partition_031
+\d t_alter_table_partition_032
+\d t_alter_table_partition_033
+\d t_alter_table_partition_034
+
+--导入导出
+\! @abs_bindir@/gs_dump dump_table_partition_db -p @portstring@ -f @abs_bindir@/dump_table_partition.sql -F p >/dev/null 2>&1; echo $?
+drop table t_create_table_partition_001;
+drop table t_create_table_partition_002;
+drop table t_create_table_partition_003;
+drop table t_create_table_partition_004;
+drop table t_create_table_partition_005;
+drop table t_create_table_partition_006;
+drop table t_create_table_partition_007;
+drop table t_create_table_partition_008;
+drop table t_create_table_partition_009;
+drop table t_create_table_partition_010;
+drop table t_create_table_partition_011;
+drop table t_create_table_partition_012;
+drop table t_create_table_partition_013;
+drop table t_create_table_partition_014;
+drop table t_create_table_partition_015;
+drop table t_create_table_partition_016;
+drop table t_create_table_partition_017;
+drop table t_create_table_partition_018;
+drop table t_create_table_partition_019;
+drop table t_create_table_partition_020;
+drop table t_create_table_partition_021;
+drop table t_create_table_partition_022;
+drop table t_create_table_partition_023;
+drop table t_create_table_partition_024;
+
+drop table t_alter_table_partition_001;
+drop table t_alter_table_partition_002;
+drop table t_alter_table_partition_003;
+drop table t_alter_table_partition_004;
+drop table t_alter_table_partition_005;
+drop table t_alter_table_partition_006;
+drop table t_alter_table_partition_007;
+drop table t_alter_table_partition_008;
+drop table t_alter_table_partition_009;
+drop table t_alter_table_partition_010;
+drop table t_alter_table_partition_011;
+drop table t_alter_table_partition_012;
+drop table t_alter_table_partition_013;
+drop table t_alter_table_partition_014;
+drop table t_alter_table_partition_015;
+drop table t_alter_table_partition_016;
+drop table t_alter_table_partition_017;
+drop table t_alter_table_partition_018;
+drop table t_alter_table_partition_019;
+drop table t_alter_table_partition_020;
+drop table t_alter_table_partition_021;
+drop table t_alter_table_partition_022;
+drop table t_alter_table_partition_023;
+drop table t_alter_table_partition_024;
+drop table t_alter_table_partition_025;
+drop table t_alter_table_partition_026;
+drop table t_alter_table_partition_027;
+drop table t_alter_table_partition_028;
+drop table t_alter_table_partition_029;
+drop table t_alter_table_partition_030;
+drop table t_alter_table_partition_031;
+drop table t_alter_table_partition_032;
+drop table t_alter_table_partition_033;
+drop table t_alter_table_partition_034;
+\! @abs_bindir@/gsql restore_table_partition_db -p @portstring@ -f @abs_bindir@/dump_table_partition.sql >/dev/null 2>&1; echo $?
+\c restore_table_partition_db
+
+show create table t_create_table_partition_001;
+show create table t_create_table_partition_002;
+show create table t_create_table_partition_003;
+show create table t_create_table_partition_004;
+show create table t_create_table_partition_005;
+show create table t_create_table_partition_006;
+show create table t_create_table_partition_007;
+show create table t_create_table_partition_008;
+show create table t_create_table_partition_009;
+show create table t_create_table_partition_010;
+show create table t_create_table_partition_011;
+show create table t_create_table_partition_012;
+show create table t_create_table_partition_013;
+show create table t_create_table_partition_014;
+show create table t_create_table_partition_015;
+show create table t_create_table_partition_016;
+show create table t_create_table_partition_017;
+show create table t_create_table_partition_018;
+show create table t_create_table_partition_019;
+show create table t_create_table_partition_020;
+show create table t_create_table_partition_021;
+show create table t_create_table_partition_022;
+show create table t_create_table_partition_023;
+show create table t_create_table_partition_024;
+
+select * from t_create_table_partition_001 partition(p0, p1, p2) order by (col1, col2);
+select * from t_create_table_partition_002 partition(p0, p1, p2) order by (col1, col2);
+select * from t_create_table_partition_002 partition(p0_0, p0_1, p0_2) order by (col1, col2);
+select * from t_create_table_partition_002 partition(p1, p1_0, p1_1, p1_2) order by (col1, col2);
+select * from t_create_table_partition_003 partition(p1, p2, p3) order by (col1, col2);
+
+\d t_alter_table_partition_001
+\d t_alter_table_partition_002
+\d t_alter_table_partition_003
+\d t_alter_table_partition_004
+\d t_alter_table_partition_005
+\d t_alter_table_partition_006
+\d t_alter_table_partition_007
+\d t_alter_table_partition_008
+\d t_alter_table_partition_009
+\d t_alter_table_partition_010
+\d t_alter_table_partition_011
+\d t_alter_table_partition_012
+\d t_alter_table_partition_013
+\d t_alter_table_partition_014
+\d t_alter_table_partition_015
+\d t_alter_table_partition_016
+\d t_alter_table_partition_017
+\d t_alter_table_partition_018
+\d t_alter_table_partition_019
+\d t_alter_table_partition_020
+\d t_alter_table_partition_021
+\d t_alter_table_partition_022
+\d t_alter_table_partition_023
+\d t_alter_table_partition_024
+\d t_alter_table_partition_025
+\d t_alter_table_partition_026
+\d t_alter_table_partition_027
+\d t_alter_table_partition_028
+\d t_alter_table_partition_029
+\d t_alter_table_partition_030
+\d t_alter_table_partition_031
+\d t_alter_table_partition_032
+\d t_alter_table_partition_033
+\d t_alter_table_partition_034
+
+\c postgres
+drop database if exists restore_table_partition_db;
+drop database if exists dump_table_partition_db;
