@@ -4002,7 +4002,7 @@ VariableShowStmt:
 					SelectStmt *n = makeShowCreateDatabaseQuery(TRUE,$7);
 					$$ = (Node *) n;
 				}
-            | SHOW GRANTS FOR user 
+            | SHOW GRANTS FOR UserId
                   {
                       $$ = (Node *)MakeShowGrantStmt($4, @4, yyscanner);
                   }
@@ -39603,7 +39603,7 @@ static char* GetValidUserHostId(char* userName, char* hostId)
 	if (strchr(userName,'@'))
 		ereport(ERROR,(errcode(ERRCODE_INVALID_NAME),errmsg("@ can't be allowed in username")));
 	char* userHostId = NULL;
-	if (*hostId == '\'') {
+	if (*hostId == '\'' || *hostId == '`') {
 		userHostId = hostId + 1;
 		hostId[strlen(hostId)-1] = '\0';
 	} else {
