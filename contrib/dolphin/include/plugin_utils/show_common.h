@@ -20,6 +20,7 @@ typedef struct {
 typedef struct {
     Datum aclDatum;
     int aclIndex;
+    Oid itemOid;
     char scanSQL[SCAN_SQL_LEN];
 } AclSanStatus;
 
