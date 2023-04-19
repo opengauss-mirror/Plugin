@@ -187,6 +187,10 @@ int execute_text_protocol_sql(const char *sql)
     
     start_xact_command();
 
+    if (!u_sess->attr.attr_storage.phony_autocommit) {
+        BeginTxnForAutoCommitOff();
+    }
+
     SPI_STACK_LOG("connect", NULL, NULL);
     if ((rc = SPI_connect(DestRemote)) != SPI_OK_CONNECT) {
         ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
@@ -223,6 +227,10 @@ int execute_com_stmt_prepare(const char *client_sql)
     char stmt_name[NAMEDATALEN];
     
     start_xact_command();
+
+    if (!u_sess->attr.attr_storage.phony_autocommit) {
+        BeginTxnForAutoCommitOff();
+    }
 
     SPI_STACK_LOG("connect", NULL, NULL);
     if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
@@ -277,6 +285,10 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
     int rc;
     
     start_xact_command();
+
+    if (!u_sess->attr.attr_storage.phony_autocommit) {
+        BeginTxnForAutoCommitOff();
+    }
 
     SPI_STACK_LOG("connect", NULL, NULL);
     if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
