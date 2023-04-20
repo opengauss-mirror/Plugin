@@ -104,6 +104,7 @@ extern Oid transform_default_collation(const char* collate, int charset, Oid def
     bool is_attr = false);
 #ifdef DOLPHIN
 extern char* transformIndexOptions(List* list);
+extern void TransformIndexName(IndexStmt* index, Oid nsp_oid, char* rel_name);
 #endif
 
 #endif /* PARSE_UTILCMD_H */
