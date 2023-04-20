@@ -135,6 +135,22 @@ bool DefaultFilter(HeapTuple tuple)
     return true;
 }
 
+static const char* ConstructUserName(char* userName)
+{
+    char* atPos = strchr(userName, '@');
+    if (atPos == NULL) {
+        return quote_identifier(userName);
+    }
+
+    char namePart[NAMEDATALEN];
+    int rc = strncpy_s(namePart, NAMEDATALEN, userName, atPos - userName);
+    securec_check(rc, "", "");
+    StringInfoData fullName;
+    initStringInfo(&fullName);
+    appendStringInfo(&fullName, "%s@'%s'", quote_identifier(namePart), atPos + 1);
+    return fullName.data;
+}
+
 static const priv_map ACl_OPTION_CHARS[] = {
     {"INSERT", ACL_INSERT},   {"SELECT", ACL_SELECT},     {"UPDATE", ACL_UPDATE},
     {"DELETE", ACL_DELETE},   {"TRUNCATE", ACL_TRUNCATE}, {"REFERENCES", ACL_REFERENCES},
@@ -169,9 +185,16 @@ static void ConstructSubGrantSql(ShowGrantState *grantStatus, AclItem *aclItem, 
 
 char *ConstructObjectGrantSQL(AclItem *aclItem, char *objectType, ShowGrantState *grantStatus)
 {
+#define GRANT_STR_PREFIX_LEN 2 // 2 means ", ", check ConstructSubGrantSql
     uint32 privs = ACLITEM_GET_PRIVS(*aclItem);
     const priv_map *privMaps = ACLMODE_FOR_DDL(privs) ? DDL_RIGHT : ACl_OPTION_CHARS;
-    
+    char *funcArgStr = NULL;
+
+    if (strcmp(objectType, "FUNCTION") == 0 || strcmp(objectType, "PROCEDURE") == 0) {
+        funcArgStr = TextDatumGetCString(DirectFunctionCall1(
+            pg_get_function_identity_arguments, ObjectIdGetDatum(grantStatus->aclStatus.itemOid)));
+    }
+
     size_t ddlLength = sizeof(DDL_RIGHT) / sizeof(priv_map);
     size_t aclOptionLength = sizeof(ACl_OPTION_CHARS) / sizeof(priv_map);
     size_t length = ACLMODE_FOR_DDL(privs) ? ddlLength : aclOptionLength;
@@ -188,18 +211,27 @@ char *ConstructObjectGrantSQL(AclItem *aclItem, char *objectType, ShowGrantState
     bool isAttribute = grantStatus->relationScan.relationIndex == ATTRIBUTE_INDEX;
     char *object = isAttribute ? grantStatus->tableNameUsedForColumn : grantStatus->currentObjectName;
     if (noGrantOptionStr->len != 0) {
-        appendStringInfo(noGrantResult, "GRANT %s ON %s %s TO %s", noGrantOptionStr->data + 2, objectType, object,
-                         grantStatus->role.roleName);
+        appendStringInfo(noGrantResult, "GRANT %s ON %s %s", noGrantOptionStr->data + GRANT_STR_PREFIX_LEN,
+            objectType, quote_identifier(object));
+        if (funcArgStr != NULL) {
+            appendStringInfo(noGrantResult, "(%s)", funcArgStr);
+        }
+        appendStringInfo(noGrantResult, " TO %s", ConstructUserName(grantStatus->role.roleName));
     }
     if (grantOptionStr->len != 0) {
-        appendStringInfo(grantResult, "GRANT %s ON %s %s TO %s WITH ADMIN OPTION", grantOptionStr->data + 2, objectType,
-                         object, grantStatus->role.roleName);
+        appendStringInfo(grantResult, "GRANT %s ON %s %s", grantOptionStr->data + GRANT_STR_PREFIX_LEN,
+            objectType, quote_identifier(object));
+        if (funcArgStr != NULL) {
+            appendStringInfo(grantResult, "(%s)", funcArgStr);
+        }
+        appendStringInfo(grantResult, " TO %s WITH GRANT OPTION", ConstructUserName(grantStatus->role.roleName));
     }
 
     DestroyStringInfo(noGrantOptionStr);
     DestroyStringInfo(grantOptionStr);
+    pfree_ext(funcArgStr);
     if (noGrantResult->len != 0 && grantResult->len != 0) {
-        int rc = memcpy_s(grantStatus->aclStatus.scanSQL, SCAN_SQL_LEN, grantResult->data, grantResult->len);
+        int rc = strcpy_s(grantStatus->aclStatus.scanSQL, SCAN_SQL_LEN, grantResult->data);
         securec_check(rc, "\0", "\0");
         DestroyStringInfo(grantResult);
         return noGrantResult->data;
@@ -344,7 +376,7 @@ Datum ShowRolePrivilege(PG_FUNCTION_ARGS)
         {Anum_pg_authid_rolpolicyadmin, "POLADMIN"},
     };
     StringInfo stringInfo = makeStringInfo();
-    appendStringInfo(stringInfo, "ALTER ROLE %s WITH", roleName);
+    appendStringInfo(stringInfo, "ALTER USER %s WITH", ConstructUserName(roleName));
     int len = stringInfo->len;
     for (size_t i = 0; i < sizeof(rolePrivileges) / sizeof(RolePrivilege); ++i) {
         RolePrivilege rolePrivilege = rolePrivileges[i];
@@ -427,6 +459,7 @@ Datum ShowObjectGrants(PG_FUNCTION_ARGS)
                 securec_check(strcpy_s(currentObjectName, MAX_OBJECT_NAME_LEN, objectNameChar), "\0", "\0");
                 showGrantState->aclStatus.aclDatum = aclDatum;
                 showGrantState->aclStatus.aclIndex = 0;
+                showGrantState->aclStatus.itemOid = HeapTupleGetOid(tuple);
                 HeapTuple returnTuple = LoopAcl(fctx, grantRelation.grantType);
                 if (!HeapTupleIsValid(returnTuple)) {
                     continue;
@@ -448,7 +481,7 @@ char *ConstraintAnyPrivilege(char *name, char *privilege, bool adminOption)
 {
     StringInfoData grantSQL;
     initStringInfo(&grantSQL);
-    appendStringInfo(&grantSQL, "GRANT %s TO %s", privilege, name);
+    appendStringInfo(&grantSQL, "GRANT %s TO %s", privilege, ConstructUserName(name));
     if (adminOption) {
         appendStringInfoString(&grantSQL, " WITH ADMIN OPTION");
     }
