@@ -773,7 +773,7 @@ void send_text_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tuptabl
         for (int j = 0; j < natts; ++j) {
             bool isnull = false;
             Datum origattr = SPI_getbinval(spi_tuple, spi_tupdesc, (int)j + 1, &isnull);
-            Datum attr = static_cast<uintptr_t>(0);
+            Datum attr = (Datum)0;
             char *outputstr = NULL;
 
             if (isnull) {
