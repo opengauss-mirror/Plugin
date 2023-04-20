@@ -1,0 +1,30 @@
+create schema db_show_status;
+set current_schema to 'db_show_status';
+set dolphin.sql_mode='';
+\! gsql -d contrib_regression -r -p @portstring@ -c "show status" > /dev/null; echo $?
+0
+\! gsql -d contrib_regression -r -p @portstring@ -c "show session status" > /dev/null; echo $?
+0
+\! gsql -d contrib_regression -r -p @portstring@ -c "show global status" > /dev/null; echo $?
+0
+show session status like 'buffers_backend';
+  Variable_name  | Value 
+-----------------+-------
+--?.*
+--?.*
+
+show global status where variable_name = 'buffers_backend';
+  Variable_name  | Value 
+-----------------+-------
+--?.*
+--?.*
+
+show dolphin.sql_mode;
+ dolphin.sql_mode 
+------------------
+ 
+(1 row)
+
+reset dolphin.sql_mode;
+drop schema db_show_status cascade;
+reset current_schema;
