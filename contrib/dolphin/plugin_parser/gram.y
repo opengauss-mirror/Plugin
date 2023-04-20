@@ -30871,7 +30871,7 @@ charset:
 				int encoding = pg_valid_server_encoding($2);
 				if (encoding < 0) {
 					ereport(WARNING, (errmsg("%s is not a valid encoding name. default value set", $2)));
-					$$ = GetDatabaseEncoding();
+					$$ = PG_INVALID_ENCODING;
 				} else {
 					$$ = encoding;
 				}
@@ -30916,7 +30916,7 @@ default_charset:
 				int encoding = pg_valid_server_encoding($4);
 				if (encoding < 0) {		
 					ereport(WARNING, (errmsg("%s is not a valid encoding name. default value set", $4)));
-					$$ = GetDatabaseEncoding();
+					$$ = PG_INVALID_ENCODING;
 				} else {
 					$$ = encoding;
 				}
@@ -30926,7 +30926,7 @@ default_charset:
 				int encoding = pg_valid_server_encoding($3);
 				if (encoding < 0) {
 					ereport(WARNING, (errmsg("%s is not a valid encoding name. default value set", $3)));
-					$$ = GetDatabaseEncoding();
+					$$ = PG_INVALID_ENCODING;
 				} else {
 					$$ = encoding;
 				}
