@@ -192,7 +192,7 @@ int execute_text_protocol_sql(const char *sql)
     }
 
     SPI_STACK_LOG("connect", NULL, NULL);
-    if ((rc = SPI_connect(DestRemote)) != SPI_OK_CONNECT) {
+    if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
         ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
             errmsg("dolphin SPI_connect failed: %s", SPI_result_code_string(rc)),
             errdetail("SPI_connect failed"),
@@ -203,8 +203,15 @@ int execute_text_protocol_sql(const char *sql)
     rc = SPI_execute(sql, false, 0);
 
     StringInfo buf = makeStringInfo();
-    if (rc == SPI_OK_SELECT) {
-        /* EOF packet at end of all rows*/
+    if (SPI_tuptable) {
+        sendRowDescriptionPacket(buf, SPI_tuptable);
+
+        // send None or many text Protocol Resultset Row packet
+        if (SPI_processed > 0) {
+            send_text_protocol_resultset_row(buf, SPI_tuptable);
+        }
+
+        // EOF packet
         send_network_eof_packet(buf);
     } else {
         network_mysqld_ok_packet_t *ok_packet = make_ok_packet(SPI_processed);
@@ -356,23 +363,7 @@ int execute_binary_protocol_req(com_stmt_exec_request *request)
     StringInfo buf = makeStringInfo();
 
     if (SPI_tuptable) {
-        TupleDesc spi_tupdesc = SPI_tuptable->tupdesc;
-        int natts = spi_tupdesc->natts;
-        Form_pg_attribute attrs = spi_tupdesc->attrs;
-
-        // FIELD_COUNT packet
-        send_field_count_packet(buf, natts);
-
-        // send column_count * column_definition packet
-        for (int i = 0; i < natts; ++i) {
-            // FIELD packet
-            dolphin_column_definition *field = make_dolphin_column_definition(&attrs[i]);
-            send_column_definition41_packet(buf, field);
-            pfree(field);
-        }
-
-        // EOF packet
-        send_network_eof_packet(buf);
+        sendRowDescriptionPacket(buf, SPI_tuptable);
 
         // send None or many Binary Protocol Resultset Row packet
         if (SPI_processed > 0) {

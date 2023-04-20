@@ -27,6 +27,7 @@
 #include "utils/geo_decls.h"
 #include "utils/varbit.h"
 #include "utils/bytea.h"
+#include "access/printtup.h"
 
 #include "plugin_utils/year.h"
 #include "plugin_utils/date.h"
@@ -724,4 +725,75 @@ void read_send_long_data_request(StringInfo buf)
     dq_get_int2(buf, &param_id);
     char *payload = dq_get_string_eof(buf);
     SaveCachedParamBlob(statement_id, payload);
+}
+
+void sendRowDescriptionPacket(StringInfo buf, SPITupleTable  *SPI_tuptable)
+{
+    TupleDesc spi_tupdesc = SPI_tuptable->tupdesc;
+    int natts = spi_tupdesc->natts;
+    Form_pg_attribute attrs = spi_tupdesc->attrs;
+
+    // FIELD_COUNT packet
+    send_field_count_packet(buf, natts);
+
+    // send column_count * column_definition packet
+    for (int i = 0; i < natts; ++i) {
+        // FIELD packet
+        dolphin_column_definition *field = make_dolphin_column_definition(&attrs[i]);
+        send_column_definition41_packet(buf, field);
+        pfree(field);
+    }
+
+    // EOF packet
+    send_network_eof_packet(buf);
+}
+
+void send_text_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tuptable)
+{
+    TupleDesc spi_tupdesc = SPI_tuptable->tupdesc;
+    int natts = spi_tupdesc->natts;
+    Form_pg_attribute attrs = spi_tupdesc->attrs;
+
+    PrinttupAttrInfo *myinfo = (PrinttupAttrInfo *)palloc0(natts * sizeof(PrinttupAttrInfo));
+
+    for (int i = 0; i < natts; i++) {
+        PrinttupAttrInfo *thisState = myinfo + i;
+
+        if (attrs[i].attisdropped) {
+            attrs[i].atttypid = UNKNOWNOID;
+        }
+        getTypeOutputInfo(attrs[i].atttypid, &thisState->typoutput, &thisState->typisvarlena);
+        fmgr_info(thisState->typoutput, &thisState->finfo);
+    }
+
+    for (uint32 i = 0; i < SPI_processed; i++) {
+        resetStringInfo(buf);
+        HeapTuple spi_tuple = SPI_tuptable->vals[i];
+
+        for (int j = 0; j < natts; ++j) {
+            bool isnull = false;
+            Datum origattr = SPI_getbinval(spi_tuple, spi_tupdesc, (int)j + 1, &isnull);
+            Datum attr = (Datum)0;
+            char *outputstr = NULL;
+
+            if (isnull) {
+                dq_append_string_lenenc(buf, "");
+                continue;
+            }
+
+            PrinttupAttrInfo *thisState = myinfo + j;
+            attr = thisState->typisvarlena ? PointerGetDatum(PG_DETOAST_DATUM(origattr)) : origattr;
+
+            outputstr = OutputFunctionCall(&thisState->finfo, attr);
+            dq_append_string_lenenc(buf, outputstr);
+
+            pfree(outputstr);
+
+            /* Clean up detoasted copy, if any */
+            if (DatumGetPointer(attr) != DatumGetPointer(origattr)) {
+                pfree(DatumGetPointer(attr));
+            }
+        }
+        dq_putmessage(buf->data, buf->len);
+    }
 }
