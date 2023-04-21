@@ -104,16 +104,16 @@ Table "public.t_create_table_003"
  c      | integer | 
 
 \d t_create_table_004;
-     Table "public.t_create_table_004"
- Column | Type |         Modifiers          
---------+------+----------------------------
- c      | text | collate utf8mb4_general_ci
+Table "public.t_create_table_004"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | text | 
 
 \d t_create_table_005;
-     Table "public.t_create_table_005"
- Column | Type |         Modifiers          
---------+------+----------------------------
- c      | text | collate utf8mb4_general_ci
+Table "public.t_create_table_005"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | text | 
 
 \d t_create_table_006;
   Table "public.t_create_table_006"
@@ -372,22 +372,22 @@ show create table t_create_table_003;
 (1 row)
 
 show create table t_create_table_004;
-       Table        |                        Create Table                        
---------------------+------------------------------------------------------------
- t_create_table_004 | SET search_path = public;                                 +
-                    | CREATE TABLE t_create_table_004 (                         +
-                    |     c text CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci+
-                    | )                                                         +
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_004 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_004 (      +
+                    |     c text                             +
+                    | )                                      +
                     | WITH (orientation=row, compression=no);
 (1 row)
 
 show create table t_create_table_005;
-       Table        |                        Create Table                        
---------------------+------------------------------------------------------------
- t_create_table_005 | SET search_path = public;                                 +
-                    | CREATE TABLE t_create_table_005 (                         +
-                    |     c text CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci+
-                    | )                                                         +
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_005 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_005 (      +
+                    |     c text                             +
+                    | )                                      +
                     | WITH (orientation=row, compression=no);
 (1 row)
 
@@ -1265,16 +1265,16 @@ Table "public.t_create_table_003"
  c      | integer | 
 
 \d t_create_table_004;
-     Table "public.t_create_table_004"
- Column | Type |         Modifiers          
---------+------+----------------------------
- c      | text | collate utf8mb4_general_ci
+Table "public.t_create_table_004"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | text | 
 
 \d t_create_table_005;
-     Table "public.t_create_table_005"
- Column | Type |         Modifiers          
---------+------+----------------------------
- c      | text | collate utf8mb4_general_ci
+Table "public.t_create_table_005"
+ Column | Type | Modifiers 
+--------+------+-----------
+ c      | text | 
 
 \d t_create_table_006;
   Table "public.t_create_table_006"
@@ -1533,22 +1533,22 @@ show create table t_create_table_003;
 (1 row)
 
 show create table t_create_table_004;
-       Table        |                        Create Table                        
---------------------+------------------------------------------------------------
- t_create_table_004 | SET search_path = public;                                 +
-                    | CREATE TABLE t_create_table_004 (                         +
-                    |     c text CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci+
-                    | )                                                         +
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_004 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_004 (      +
+                    |     c text                             +
+                    | )                                      +
                     | WITH (orientation=row, compression=no);
 (1 row)
 
 show create table t_create_table_005;
-       Table        |                        Create Table                        
---------------------+------------------------------------------------------------
- t_create_table_005 | SET search_path = public;                                 +
-                    | CREATE TABLE t_create_table_005 (                         +
-                    |     c text CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci+
-                    | )                                                         +
+       Table        |              Create Table               
+--------------------+-----------------------------------------
+ t_create_table_005 | SET search_path = public;              +
+                    | CREATE TABLE t_create_table_005 (      +
+                    |     c text                             +
+                    | )                                      +
                     | WITH (orientation=row, compression=no);
 (1 row)
 

@@ -114,7 +114,6 @@ select pg_get_tabledef('test_collate2');
      c2 text CHARACTER SET "UTF8" COLLATE utf8mb4_bin,+
      c4 text                                          +
  )                                                    +
- CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"+
  WITH (orientation=row, compression=no);
 (1 row)
 
