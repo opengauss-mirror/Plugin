@@ -8,6 +8,7 @@
 #include "plugin_parser/parse_show.h"
 #include "utils/fmgroids.h"
 #include "utils/lsyscache.h"
+#include "utils/builtins.h"
 #include "knl/knl_variable.h"
 
 static Node *makeNameString(char *str, char *aliasName);
@@ -17,8 +18,8 @@ static Node *makeTargetFuncAlias(char *funcName, List *fl, char *aliasName);
 static Node *makeWhereTargetForFunc(char *schemaName, char *name);
 static Node *makeWhereTargetForTrg(char *schemaName, char *name);
 static Node *makeCurrentSchemaFunc();
-static SelectStmt *makeShowCreateViewQuery(char *name, Oid viewOid);
-static SelectStmt *makeShowCreateTableQuery(char *tableName, Oid tableOid);
+static SelectStmt *makeShowCreateViewQuery(char *fullName, char *name);
+static SelectStmt *makeShowCreateTableQuery(char *fullName, char *tableName);
 static SelectStmt *makeShowCreateFuncQuery(char *schemaName, char *name, int model);
 static SelectStmt *makeShowCreateTriggerQuery(char *schemaName, char *name);
 
@@ -69,13 +70,17 @@ SelectStmt *makeShowCreateFuncQuery(char *schemaName, char *name, int model)
  *
  * select
  * 'tableName' as Table,
- * pg_get_tabledef(tableOid) as "Create Table";
+ * pg_get_tabledef('tableName'::regclass::oid) as "Create Table";
  *
  */
-static SelectStmt *makeShowCreateTableQuery(char *tableName, Oid tableOid)
+static SelectStmt *makeShowCreateTableQuery(char *fullName, char *tableName)
 {
     List *tl = (List *)list_make1(makeNameString(tableName, "Table"));
-    tl = lappend(tl, makeTargetFuncAlias("pg_get_tabledef", list_make1(plpsMakeIntConst(tableOid)), "Create Table"));
+    tl = lappend(tl,
+                 makeTargetFuncAlias("pg_get_tabledef",
+                                     list_make1(makeTypeCast(makeStringConstCast(fullName, SystemTypeName("regclass")),
+                                                             SystemTypeName("oid"))),
+                                     "Create Table"));
 
     SelectStmt *stmt = plpsMakeSelectStmt(tl, NIL, NULL, NIL);
     return stmt;
@@ -87,15 +92,15 @@ static SelectStmt *makeShowCreateTableQuery(char *tableName, Oid tableOid)
  *
  * select
  * 'name' as View,
- * gs_get_viewdef_oid('viewOid')  as "Create View",
+ * pg_get_viewdef('name')  as "Create View",
  * current_setting('client_encoding') as character_set_client,
  * current_setting('lc_collate') as collation_connection;
  *
  */
-static SelectStmt *makeShowCreateViewQuery(char *name, Oid viewOid)
+static SelectStmt *makeShowCreateViewQuery(char *fullName, char *name)
 {
     List *tl = (List *)list_make1(makeNameString(name, "View"));
-    tl = lappend(tl, makeTargetFuncAlias("gs_get_viewdef_oid", (List *)list_make1(plpsMakeIntConst(viewOid)),
+    tl = lappend(tl, makeTargetFuncAlias("gs_get_viewdef_name", (List *)list_make1(plpsMakeStringConst(fullName)),
                                          "Create View"));
     tl = lappend(tl, makeTargetFuncAlias("current_setting", (List *)list_make1(plpsMakeStringConst("client_encoding")),
                                          "character_set_client"));
@@ -256,7 +261,6 @@ SelectStmt *findCreateClass(RangeVar *classrel, int mode)
     Oid classoid = InvalidOid;
     Form_pg_class classForm = NULL;
     HeapTuple tuple = NULL;
-    int rc = EOK;
     char *fullName = NULL;
     SelectStmt *n = NULL;
     recomputeNamespacePath();
@@ -283,22 +287,16 @@ SelectStmt *findCreateClass(RangeVar *classrel, int mode)
     if (!HeapTupleIsValid(tuple)) {
         ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED), errmsg("cache lookup failed for %u.", classoid)));
     }
-    if (classrel->schemaname != NULL) {
-        int len = strlen(classrel->schemaname) + strlen(classrel->relname) + 2;
-        fullName = (char *)palloc(len);
-        rc = sprintf_s(fullName, len, "%s.%s", classrel->schemaname, classrel->relname);
-        securec_check_ss(rc, "\0", "\0");
-    } else
-        fullName = classrel->relname;
-
+    fullName = quote_qualified_identifier(classrel->schemaname, classrel->relname);
+    
     classForm = (Form_pg_class)GETSTRUCT(tuple);
     if (classForm->relkind == RELKIND_VIEW || classForm->relkind == RELKIND_MATVIEW) {
-        n = makeShowCreateViewQuery(classrel->relname, classoid);
+        n = makeShowCreateViewQuery(fullName, classrel->relname);
     } else {
         if (mode == GS_SHOW_CREATE_VIEW)
             ereport(ERROR, (errcode(ERRCODE_UNDEFINED_TABLE),
                             errmsg("\'%s.%s\' is not VIEW", get_namespace_name(namespaceId), classrel->relname)));
-        n = makeShowCreateTableQuery(classrel->relname, classoid);
+        n = makeShowCreateTableQuery(fullName, classrel->relname);
     }
     ReleaseSysCache(tuple);
     return n;
