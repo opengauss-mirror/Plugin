@@ -159,6 +159,8 @@ typedef struct BSqlPluginContext {
     bool is_b_declare;
     struct HTAB* b_stmtInputTypeHash;
     struct HTAB* b_sendBlobHash;
+    char* useless_sql_mode;
+    int useless_lower_case_table_names;
 #endif
 } bSqlPluginContext;
 

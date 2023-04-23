@@ -154,4 +154,56 @@ set @@license = "MulanPSL-2.0";
 ERROR:  Variable 'license' is a read only variable.
 set @@session.license = "MulanPSL-2.0";
 ERROR:  Variable 'license' is a read only variable.
+show dolphin.sql_mode;
+                                           dolphin.sql_mode                                           
+------------------------------------------------------------------------------------------------------
+ sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length
+(1 row)
+
+show sql_mode;
+                            sql_mode                             
+-----------------------------------------------------------------
+ sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes
+(1 row)
+
+set sql_mode = '';
+WARNING:  Variable 'sql_mode' has no actual meaning, please use variable 'dolphin.sql_mode'.
+show dolphin.sql_mode;
+                                           dolphin.sql_mode                                           
+------------------------------------------------------------------------------------------------------
+ sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length
+(1 row)
+
+show sql_mode;
+ sql_mode 
+----------
+ 
+(1 row)
+
+show dolphin.lower_case_table_names;
+ dolphin.lower_case_table_names 
+--------------------------------
+ 1
+(1 row)
+
+show lower_case_table_names;
+ lower_case_table_names 
+------------------------
+ 1
+(1 row)
+
+set lower_case_table_names = 0;
+WARNING:  Variable 'lower_case_table_names' has no actual meaning, please use variable 'dolphin.lower_case_table_names'.
+show dolphin.lower_case_table_names;
+ dolphin.lower_case_table_names 
+--------------------------------
+ 1
+(1 row)
+
+show lower_case_table_names;
+ lower_case_table_names 
+------------------------
+ 0
+(1 row)
+
 drop schema test_guc_select_and_set cascade;

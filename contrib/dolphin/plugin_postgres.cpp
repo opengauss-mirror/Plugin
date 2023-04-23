@@ -899,7 +899,7 @@ void init_session_vars(void)
     DefineCustomStringVariable("sql_mode",
                                gettext_noop("CUSTOM_OPTIONS"),
                                NULL,
-                               &GetSessionContext()->sqlModeString,
+                               &GetSessionContext()->useless_sql_mode,
                                "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,"
                                "pad_char_to_full_length",
                                PGC_USERSET,
@@ -910,7 +910,7 @@ void init_session_vars(void)
     DefineCustomIntVariable("lower_case_table_names",
                             gettext_noop("used to set the sensitive of identifier"),
                             NULL,
-                            &GetSessionContext()->lower_case_table_names,
+                            &GetSessionContext()->useless_lower_case_table_names,
                             1,
                             0,
                             2,
