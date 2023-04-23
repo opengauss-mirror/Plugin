@@ -158,6 +158,8 @@ typedef struct BSqlPluginContext {
     bool is_first_lable;
     bool is_b_declare;
     bool group_by_error;
+    char* useless_sql_mode;
+    int useless_lower_case_table_names;
     Alias *upSertAliasName;
 #endif
 } bSqlPluginContext;
