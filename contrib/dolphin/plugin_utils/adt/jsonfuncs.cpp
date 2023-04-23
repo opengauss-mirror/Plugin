@@ -2210,13 +2210,11 @@ static inline Datum populate_record_worker(FunctionCallInfo fcinfo, bool have_re
      * We arrange to look up the needed I/O info just once per series of
      * calls, assuming the record type doesn't change underneath us.
      */
-    my_extra = (RecordIOData *)fcinfo->flinfo->fn_extra;
+    my_extra = (RecordIOData *) fcinfo->flinfo->fn_extra;
     if (my_extra == NULL || my_extra->ncolumns != ncolumns) {
-        fcinfo->flinfo->fn_extra = MemoryContextAlloc(
+        fcinfo->flinfo->fn_extra = MemoryContextAllocZero(
             fcinfo->flinfo->fn_mcxt, sizeof(RecordIOData) - sizeof(ColumnIOData) + ncolumns * sizeof(ColumnIOData));
-        my_extra = (RecordIOData *)fcinfo->flinfo->fn_extra;
-        my_extra->record_type = InvalidOid;
-        my_extra->record_typmod = 0;
+        my_extra = (RecordIOData *) fcinfo->flinfo->fn_extra;
     }
 
     if (have_record_arg && (my_extra->record_type != tupType || my_extra->record_typmod != tupTypmod)) {
