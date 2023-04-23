@@ -2266,7 +2266,9 @@ typedef struct CreateFunctionStmt {
 typedef struct FunctionSources {
     char* headerSrc;
     char* bodySrc;
+#ifdef DOLPHIN
     bool hasReturn;     /* whether function body has RETURN, which should only be used by CreateFunctionStmt */
+#endif
 } FunctionSources;
 
 /*
