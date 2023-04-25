@@ -14220,11 +14220,15 @@ CreateTrigStmt:
 				{
 					if ($2 != false)
 					{
-						parser_yyerror("syntax error found");
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+							 	errmsg("syntax error.")));
 					}
 					if ($3 != NULL)
 					{
-						parser_yyerror("only support definer in B compatibility database and B syntax");
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("only support definer in B compatibility database and B syntax")));
 					}
 					CreateTrigStmt *n = makeNode(CreateTrigStmt);
 					n->definer = $3;
@@ -14286,15 +14290,20 @@ CreateTrigStmt:
 				u_sess->parser_cxt.isCreateFuncOrProc = true;
 			} triggerbody_subprogram_or_single
 				{
-					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT || $2 != false)
-					{
-						parser_yyerror("only support definer, trigger_order, subprogram_body in B compatibility database");
-					}
-					CreateTrigStmt *n = makeNode(CreateTrigStmt);
 					if ($2 != false)
 					{
-						parser_yyerror("syntax error found");
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("syntax error.")));
 					}
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
+					{
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("Current syntax is supported only in B compatibility database")));
+					}
+					CreateTrigStmt *n = makeNode(CreateTrigStmt);
+					
 					n->definer = $3;
 					n->if_not_exists = false;
 					n->schemaname = $5->schemaname;
@@ -14325,15 +14334,20 @@ CreateTrigStmt:
 				u_sess->parser_cxt.isCreateFuncOrProc = true;
 			} triggerbody_subprogram_or_single
 				{
-					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
-					{
-						parser_yyerror("only support definer, if not exists, trigger_order, subprogram_body in B compatibility database");
-					}
-					CreateTrigStmt *n = makeNode(CreateTrigStmt);
 					if ($2 != false)
 					{
-						parser_yyerror("syntax error");
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("syntax error.")));
 					}
+					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
+					{
+						ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("Current syntax is supported only in B compatibility database")));
+					}
+					CreateTrigStmt *n = makeNode(CreateTrigStmt);
+					
 					n->definer = $3;
 					n->if_not_exists = true;
 					n->schemaname = $8->schemaname;
@@ -21361,16 +21375,19 @@ subprogram_body: 	{
 				if (add_declare)
 				{
 					proc_body_str = (char *)palloc0(proc_body_len + DECLARE_LEN + 1);
-					strncpy(proc_body_str, DECLARE_STR, DECLARE_LEN + 1);
-					strncpy(proc_body_str + DECLARE_LEN,
-							yyextra->core_yy_extra.scanbuf + proc_b - 1, proc_body_len);
+					rc = strcpy_s(proc_body_str, proc_body_len + DECLARE_LEN + 1, DECLARE_STR);
+					securec_check(rc, "", "");
+					rc = strncpy_s(proc_body_str + DECLARE_LEN, proc_body_len + 1,
+							yyextra->core_yy_extra.scanbuf + proc_b, proc_body_len - 1);
+					securec_check(rc, "", "");
 					proc_body_len = DECLARE_LEN + proc_body_len;
 				}
 				else
 				{
 					proc_body_str = (char *)palloc0(proc_body_len + 1);
-					strncpy(proc_body_str,
-						yyextra->core_yy_extra.scanbuf + proc_b - 1, proc_body_len);
+					rc = strncpy_s(proc_body_str, proc_body_len + 1,
+						yyextra->core_yy_extra.scanbuf + proc_b, proc_body_len - 1);
+					securec_check(rc, "", "");
 				}
 
 				proc_body_str[proc_body_len] = '\0';

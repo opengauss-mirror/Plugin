@@ -70,12 +70,12 @@ NOTICE:  session2:<NULL>
 WARNING:  you don't own a lock of type ExclusiveLock
 CONTEXT:  referenced column: release_lock
 SQL statement "select release_lock('slock1')"
-PL/pgSQL function inline_code_block line 12 at SQL statement
+PL/pgSQL function inline_code_block line 11 at SQL statement
 NOTICE:  session2:0
 WARNING:  you don't own a lock of type ExclusiveLock
 CONTEXT:  referenced column: release_lock
 SQL statement "select release_lock('slock2')"
-PL/pgSQL function inline_code_block line 14 at SQL statement
+PL/pgSQL function inline_code_block line 13 at SQL statement
 NOTICE:  session2:0
 NOTICE:  session2:<NULL>
 NOTICE:  session2:0
