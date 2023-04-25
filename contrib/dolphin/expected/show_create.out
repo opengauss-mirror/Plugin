@@ -899,8 +899,7 @@ show create procedure test_proc_define;
                   |         out_1   OUT VARCHAR2,                                            +|                                     |                      |                      | 
                   |         inout_1  IN OUT VARCHAR                                          +|                                     |                      |                      | 
                   | )                                                                        +|                                     |                      |                      | 
-                  | AS  DECLARE                                                              +|                                     |                      |                      | 
-                  | BEGIN                                                                    +|                                     |                      |                      | 
+                  | AS  DECLARE BEGIN                                                        +|                                     |                      |                      | 
                   |         out_1   := in_1;                                                 +|                                     |                      |                      | 
                   |         inout_1 := inout_1 || in_2;                                      +|                                     |                      |                      | 
                   | END;                                                                     +|                                     |                      |                      | 
@@ -919,7 +918,7 @@ show create procedure proc_no_parameter;
      Procedure     |                              Create Procedure                               |              sql_mode               | character_set_client | collation_connection | Database Collation 
 -------------------+-----------------------------------------------------------------------------+-------------------------------------+----------------------+----------------------+--------------------
  proc_no_parameter | CREATE DEFINER = test_showcreate PROCEDURE test_get_def.proc_no_parameter()+| sql_mode_strict,sql_mode_full_group | UTF8                 | en_US.UTF-8          | en_US.UTF-8
-                   | AS  DECLARE     ret1 int;                                                  +|                                     |                      |                      | 
+                   | AS  DECLARE ret1 int;                                                      +|                                     |                      |                      | 
                    | BEGIN                                                                      +|                                     |                      |                      | 
                    |         ret1 := 0;                                                         +|                                     |                      |                      | 
                    | END;                                                                       +|                                     |                      |                      | 
@@ -931,7 +930,7 @@ show create procedure test_get_def.proc_no_parameter;
      Procedure     |                              Create Procedure                               |              sql_mode               | character_set_client | collation_connection | Database Collation 
 -------------------+-----------------------------------------------------------------------------+-------------------------------------+----------------------+----------------------+--------------------
  proc_no_parameter | CREATE DEFINER = test_showcreate PROCEDURE test_get_def.proc_no_parameter()+| sql_mode_strict,sql_mode_full_group | UTF8                 | en_US.UTF-8          | en_US.UTF-8
-                   | AS  DECLARE     ret1 int;                                                  +|                                     |                      |                      | 
+                   | AS  DECLARE ret1 int;                                                      +|                                     |                      |                      | 
                    | BEGIN                                                                      +|                                     |                      |                      | 
                    |         ret1 := 0;                                                         +|                                     |                      |                      | 
                    | END;                                                                       +|                                     |                      |                      | 
@@ -968,8 +967,7 @@ show create procedure test_proc_define;
                   |    out_1  OUT VARCHAR2                                                   +|                                     |                      |                      | 
                   |    -- inout_1  IN OUT VARCHAR                                            +|                                     |                      |                      | 
                   | )                                                                        +|                                     |                      |                      | 
-                  | AS  DECLARE                                                              +|                                     |                      |                      | 
-                  | BEGIN                                                                    +|                                     |                      |                      | 
+                  | AS  DECLARE BEGIN                                                        +|                                     |                      |                      | 
                   |         out_1 := in_1;                                                   +|                                     |                      |                      | 
                   |                                                                          +|                                     |                      |                      | 
                   | END;                                                                     +|                                     |                      |                      | 
@@ -997,8 +995,7 @@ show create procedure test_proc_define;
                   |    in_2    INTEGER,                                                      +|                                     |                      |                      | 
                   |    out_1  OUT INTEGER                                                    +|                                     |                      |                      | 
                   | )                                                                        +|                                     |                      |                      | 
-                  | AS  DECLARE                                                              +|                                     |                      |                      | 
-                  | BEGIN                                                                    +|                                     |                      |                      | 
+                  | AS  DECLARE BEGIN                                                        +|                                     |                      |                      | 
                   |         out_1 := in_1;                                                   +|                                     |                      |                      | 
                   | END;                                                                     +|                                     |                      |                      | 
                   | /                                                                        +|                                     |                      |                      | 
@@ -1025,8 +1022,7 @@ show create procedure test_proc_define;
                   |    in2    INTEGER,                                                       +|                                     |                      |                      | 
                   |    out1  OUT INTEGER                                                     +|                                     |                      |                      | 
                   | )                                                                        +|                                     |                      |                      | 
-                  | AS  DECLARE                                                              +|                                     |                      |                      | 
-                  | BEGIN                                                                    +|                                     |                      |                      | 
+                  | AS  DECLARE BEGIN                                                        +|                                     |                      |                      | 
                   |         out1 := in1;                                                     +|                                     |                      |                      | 
                   | END;                                                                     +|                                     |                      |                      | 
                   | /                                                                        +|                                     |                      |                      | 
@@ -1052,7 +1048,7 @@ show create procedure test_multi_level;
     Procedure     |                              Create Procedure                              |              sql_mode               | character_set_client | collation_connection | Database Collation 
 ------------------+----------------------------------------------------------------------------+-------------------------------------+----------------------+----------------------+--------------------
  test_multi_level | CREATE DEFINER = test_showcreate PROCEDURE test_get_def.test_multi_level()+| sql_mode_strict,sql_mode_full_group | UTF8                 | en_US.UTF-8          | en_US.UTF-8
-                  | AS  DECLARE  ret INT;                                                     +|                                     |                      |                      | 
+                  | AS  DECLARE ret INT;                                                      +|                                     |                      |                      | 
                   | begin                                                                     +|                                     |                      |                      | 
                   |           ret := 0;                                                       +|                                     |                      |                      | 
                   |           BEGIN                                                           +|                                     |                      |                      | 

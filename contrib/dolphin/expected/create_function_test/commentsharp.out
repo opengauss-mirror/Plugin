@@ -130,10 +130,9 @@ return 1;
 end;
 /
 ERROR:  syntax error at or near "int"
-LINE 4: int :=4;
+LINE 3: int :=4;
         ^
-QUERY:  
-declare
+QUERY:  declare
 a#b int := 5
 int :=4;
 begin
