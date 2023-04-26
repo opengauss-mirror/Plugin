@@ -2264,6 +2264,7 @@ typedef struct CreateFunctionStmt {
 } CreateFunctionStmt;
 
 typedef struct FunctionSources {
+    NodeTag type;
     char* headerSrc;
     char* bodySrc;
 #ifdef DOLPHIN
