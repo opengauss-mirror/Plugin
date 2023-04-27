@@ -503,7 +503,7 @@ static Plan *PlanTidRangeScanPath(PlannerInfo *root, RelOptInfo *rel, struct Ext
     node->scan.plan.startup_cost = best_path->path.startup_cost;
     node->scan.plan.total_cost = best_path->path.total_cost;
     node->scan.plan.plan_rows = best_path->path.rows;
-    node->scan.plan.plan_width = rel->width;
+    node->scan.plan.plan_width = rel->encodedwidth;
     node->methods = &tidrangescan_scan_methods;
 
     return plan;
