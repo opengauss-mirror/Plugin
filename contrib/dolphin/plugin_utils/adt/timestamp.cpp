@@ -174,6 +174,7 @@ static int cal_weekday_interval(struct pg_tm* tm, bool sunday_is_first_day);
 static int b_db_sumdays(int year, int month, int day);
 static bool timestampdiff_datetime_internal(int64 *result,  text *units, Timestamp dt1, Timestamp dt2);
 static inline long long str2ll_with_endptr(char *start, int tmp_len, int *true_len, int *error);
+static void check_timestamp_overflow(Timestamp* time);
 #endif
 
 void timestamp_FilpSign(pg_tm* tm);
@@ -1221,8 +1222,52 @@ static void AdjustTimestampForTypmod(Timestamp* time, int32 typmod)
 #else
         *time = rint((double)*time * TimestampScales[typmod]) / TimestampScales[typmod];
 #endif
+#ifdef DOLPHIN
+        check_timestamp_overflow(time);
+#endif
     }
 }
+
+#ifdef DOLPHIN
+static void check_timestamp_overflow(Timestamp* time)
+{
+    int tz;
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    const char* tzn = NULL;
+    char buf[MAXDATELEN + 1];
+
+    if (TIMESTAMP_NOT_FINITE(*time))
+        EncodeSpecialTimestamp(*time, buf);
+    else if (timestamp2tm(*time, &tz, tm, &fsec, &tzn, NULL) == 0)
+        EncodeDateTimeForBDatabase(tm, fsec, true, tz, tzn, u_sess->time_cxt.DateStyle, buf);
+    else {
+        ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
+            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+        tm->tm_year = 0;
+        tm->tm_mon = 0;
+        tm->tm_mday = 0;
+        tm->tm_hour = 0;
+        tm->tm_min = 0;
+        tm->tm_sec = 0;
+        tz = 0;
+        tm2timestamp(tm, fsec, &tz, time);
+        return;
+    }
+
+    if (tm2timestamp(tm, fsec, &tz, time) != 0) {
+        ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
+            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", buf)));
+        tm->tm_year = 0;
+        tm->tm_mon = 0;
+        tm->tm_mday = 0;
+        tm->tm_hour = 0;
+        tm->tm_min = 0;
+        tm->tm_sec = 0;
+        tm2timestamp(tm, fsec, &tz, time);
+    }
+}
+#endif
 
 /* timestamptz_in()
  * Convert a string to internal form.
@@ -2304,10 +2349,12 @@ recalc_t:
             tm->tm_year = tx->tm_year + 1900;
             tm->tm_mon = tx->tm_mon + 1;
             tm->tm_mday = tx->tm_mday;
+#ifdef DOLPHIN
+            tm->tm_hour = tx->tm_hour;
+            tm->tm_min = tx->tm_min;
+            tm->tm_sec = tx->tm_sec;
+#endif
         }
-        tm->tm_hour = tx->tm_hour;
-        tm->tm_min = tx->tm_min;
-        tm->tm_sec = tx->tm_sec;
         tm->tm_isdst = tx->tm_isdst;
         tm->tm_gmtoff = tx->tm_gmtoff;
         tm->tm_zone = tx->tm_zone;
@@ -2367,7 +2414,11 @@ int tm2timestamp(struct pg_tm* tm, const fsec_t fsec, const int* tzp, Timestamp*
 #else
     *result = date * SECS_PER_DAY + time;
 #endif
-    if (tzp != NULL)
+    if (tzp != NULL
+#ifdef DOLPHIN
+        && (tm->tm_year || tm->tm_mon || tm->tm_mday)
+#endif
+    )
         *result = dt2local(*result, -(*tzp));
 
     return 0;
