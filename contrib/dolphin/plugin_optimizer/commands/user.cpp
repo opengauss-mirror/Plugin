@@ -1734,7 +1734,10 @@ Oid AlterRole(AlterRoleStmt* stmt)
     ListCell* head = NULL;
 
     USER_STATUS rolestatus = UNLOCK_STATUS;
-
+#ifdef DOLPHIN
+    int create_if_not_exist = -1;
+    DefElem* dcreate_if_not_exist = NULL;
+#endif
     /*
      * Make sure that the user is not trying to alter a predefined role.
      */
@@ -1922,6 +1925,15 @@ Oid AlterRole(AlterRoleStmt* stmt)
                 ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("conflicting or redundant options")));
             }
             dexpired = defel;
+#ifdef DOLPHIN
+        } else if (strcmp(defel->defname, "b_mode_create_user_if_not_exist") == 0) {
+            if (dcreate_if_not_exist != NULL) {
+                clean_role_password(dpassword);
+                ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+                    errmsg("conflicting or redundant option: \"b_mode_create_user_if_not_exist\"")));
+            }
+            dcreate_if_not_exist = defel;
+#endif
         } else if (strcmp(defel->defname, "isvcadmin") == 0) {
             if (disvcadmin != NULL) {
                 clean_role_password(dpassword);
@@ -2018,7 +2030,11 @@ Oid AlterRole(AlterRoleStmt* stmt)
         ispersistence = intVal(dpersistence->arg);
     if (dexpired != NULL)
         isexpired = intVal(dexpired->arg);
-
+#ifdef DOLPHIN
+    if (dcreate_if_not_exist != NULL) {
+        create_if_not_exist = intVal(dcreate_if_not_exist->arg);
+    }
+#endif
     if (drespool != NULL) {
         char* rp = strVal(drespool->arg);
 
@@ -2098,6 +2114,20 @@ Oid AlterRole(AlterRoleStmt* stmt)
 
     HeapTuple tuple = SearchUserHostName(stmt->role, NULL);
     if (!HeapTupleIsValid(tuple)) {
+#ifdef DOLPHIN
+        if (create_if_not_exist == 1) {
+            /* fallback to create user if doesn't exist */
+            heap_close(pg_authid_rel, NoLock);
+            CreateRoleStmt *node = makeNode(CreateRoleStmt);
+            node->missing_ok = true;
+            node->stmt_type = ROLESTMT_USER;
+            node->role = stmt->role;
+            node->options = list_delete(stmt->options, dcreate_if_not_exist);
+            ereport(WARNING, (errmsg("Using GRANT for creating new user is deprecated"
+                "and will be removed in future release. Create new user with CREATE USER statement.")));
+            return CreateRole(node);
+        }
+#endif
         str_reset(password);
         str_reset(replPasswd);
 
@@ -2114,7 +2144,12 @@ Oid AlterRole(AlterRoleStmt* stmt)
         }   
     }
     roleid = HeapTupleGetOid(tuple);
-
+#ifdef DOLPHIN
+    if (create_if_not_exist == 1) {
+        ereport(WARNING, (errmsg("Using GRANT statement to modify existing user's password is deprecated"
+            " and will be removed in future release. Use ALTER USER statement for this operation.")));
+    }
+#endif
     /* check before heap_open */
     if (IsUnderPostmaster) {
         if (dparent_default != NULL)
