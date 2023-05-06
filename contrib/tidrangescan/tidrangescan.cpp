@@ -387,6 +387,7 @@ static void SetTidRangeScanPath(PlannerInfo *root, RelOptInfo *baserel, Index rt
         cpath->path.parent = baserel;
         cpath->path.param_info = get_baserel_parampathinfo(root, baserel, required_outer);
         cpath->path.pathkeys = NIL; /* always unordered */
+        cpath->path.pathtarget = baserel->reltarget;
         cpath->flags = EXTENSIBLEPATH_SUPPORT_BACKWARD_SCAN | EXTENSIBLEPATH_SUPPORT_PROJECTION;
 
         cpath->extensible_private = tidrangequals;
@@ -503,7 +504,7 @@ static Plan *PlanTidRangeScanPath(PlannerInfo *root, RelOptInfo *rel, struct Ext
     node->scan.plan.startup_cost = best_path->path.startup_cost;
     node->scan.plan.total_cost = best_path->path.total_cost;
     node->scan.plan.plan_rows = best_path->path.rows;
-    node->scan.plan.plan_width = rel->encodedwidth;
+    node->scan.plan.plan_width = best_path->path.pathtarget->width;
     node->methods = &tidrangescan_scan_methods;
 
     return plan;
