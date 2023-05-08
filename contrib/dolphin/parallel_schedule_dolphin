@@ -1,5 +1,4 @@
 test: float_numeric_test/db_b_log_test float_numeric_test/db_b_sqrt_test
-
 test: keyword_ignore_test/ignore_no_matched_partition keyword_ignore_test/ignore_not_null_constraints keyword_ignore_test/ignore_type_transform keyword_ignore_test/ignore_unique_constraints keyword_ignore_test/ignore_invalid_input
 
 test: string_func_test/db_b_ascii_test string_func_test/db_b_left_right_test string_func_test/db_b_quote_test string_func_test/db_b_string_length_test string_func_test/db_b_substr_test string_func_test/db_b_trim_test string_func_test/db_b_insert_test
@@ -147,4 +146,4 @@ test: test_show_status pad_char_to_full_length ai
 test: lock_tables lock_tables_1
 
 # test user@host
-test: user_host_test
+test: user_host_test sqlmode_having
