@@ -45,6 +45,7 @@
 #include "optimizer/nodegroups.h"
 #include "optimizer/pathnode.h"
 #include "optimizer/paths.h"
+#include "plugin_commands/mysqlmode.h"
 #include "plugin_optimizer/plancat.h"
 #include "plugin_optimizer/planmain.h"
 #include "optimizer/planmem_walker.h"
@@ -4054,6 +4055,60 @@ static Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                     current_pathkeys = root->group_pathkeys;
                 }
 #endif
+#ifdef DOLPHIN
+            } else if (root->hasHavingQual || parse->groupingSets) {
+                if (!(SQL_MODE_FULL_GROUP()) && (root->hasHavingQual)) {
+                    /*
+                     * Under mysql compatibility, for dolph.sql_mode does not
+                     * contain sql_mode_full_group, No aggregates, and no GROUP
+                     * BY, but we have a HAVING qual, and Having qual and targetList
+                     * can contain variables which are not in group by clause, so
+                     * we can not throw out lower plan and have HAVING qual as a
+                     * resconstantqual of the result node. we must treat Having
+                     * qual as an ordinary qual condition, just like where clause.
+                     * since Having qual has been push down to the scan node as the
+                     * qual condition, add result node here just ensures the final
+                     * targetList is correct (Note that the targetlist of the lower
+                     * scan node may be missing some information compared to the final
+                     * targetlist).
+                     */
+                    result_plan = (Plan*)make_result(root, tlist, NULL, result_plan);
+                } else {
+                    int nrows = list_length(parse->groupingSets);
+
+                    /*
+                     * No aggregates, and no GROUP BY, but we have a HAVING qual
+                     * or grouping sets (which by elimination of cases above must
+                     * consist solely of empty grouping sets, since otherwise
+                     * groupClause will be non-empty).
+                     *
+                     * This is a degenerate case in which we are supposed to emit
+                     * either 0 or 1 row for each grouping set depending on
+                     * whether HAVING succeeds.  Furthermore, there cannot be any
+                     * variables in either HAVING or the targetlist, so we
+                     * actually do not need the FROM table at all!	We can just
+                     * throw away the plan-so-far and generate a Result node. This
+                     * is a sufficiently unusual corner case that it's not worth
+                     * contorting the structure of this routine to avoid having to
+                     * generate the plan in the first place.
+                     */
+                    result_plan = (Plan*)make_result(root, tlist, parse->havingQual, NULL);
+                    /*
+                     * Doesn't seem worthwhile writing code to cons up a
+                     * generate_series or a values scan to emit multiple rows.
+                     * Instead just clone the result in an Append.
+                     */
+                    if (nrows > 1) {
+                        List* plans = list_make1(result_plan);
+
+                        while (--nrows > 0)
+                            plans = lappend(plans, copyObject(result_plan));
+
+                        result_plan = (Plan*)make_append(plans, tlist);
+                    }
+                }
+            }
+#else
             } else if (root->hasHavingQual || parse->groupingSets) {
                 int nrows = list_length(parse->groupingSets);
 
@@ -4088,6 +4143,7 @@ static Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                     result_plan = (Plan*)make_append(plans, tlist);
                 }
             }
+#endif
 
             if (parse->hasAggs || parse->groupClause != NIL || parse->groupingSets || parse->havingQual != NULL) {
                 if (ufdwCxt != NULL && ufdwCxt->state != FDW_UPPER_REL_END) {
