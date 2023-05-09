@@ -142,3 +142,13 @@ drop table test10;
 
 drop schema option cascade;
 reset current_schema;
+
+--test orientation notice
+CREATE TABLE TEST_ORC_TBL(A INT, B INT, PRIMARY KEY(A,B)) WITH (hashbucket=on, orientation=orc);
+DROP TABLE IF EXISTS TEST_ORC_TBL;
+CREATE TABLE TEST_row_TBL(A INT, B INT, PRIMARY KEY(A,B)) WITH (orientation=row);
+DROP TABLE IF EXISTS TEST_ROW_TBL;
+CREATE TABLE TEST_COLUMN_TBL(A INT, B INT, PRIMARY KEY(A,B)) WITH (orientation=column);
+DROP TABLE IF EXISTS TEST_COLUMN_TBL;
+CREATE TABLE TEST_TIMESERIES_TBL(A INT, B INT, PRIMARY KEY(A,B)) WITH (orientation=timeseries);
+DROP TABLE IF EXISTS TEST_TIMESERIES_TBL;
