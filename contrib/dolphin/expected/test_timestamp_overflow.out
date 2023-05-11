@@ -4,6 +4,7 @@ create schema test_timestamp_overflow;
 set current_schema = test_timestamp_overflow;
 set time zone 'PRC';
 create table test(c timestamp);
+create table test1(c datetime);
 --test overflow
 show dolphin.sql_mode;
                                            dolphin.sql_mode                                           
@@ -18,6 +19,15 @@ insert into test values('294277-1-9 4:00:54.5');
 ERROR:  timestamp out of range: "Tue Jan 09 04:00:55 294277 CST"
 CONTEXT:  referenced column: c
 insert into test values('294277-1-9 4:00:54.4');
+insert into test1 values('294277-1-9 4:00:54.775807');
+insert into test1 values('294277-1-9 4:00:54.5');
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into test1 values('294277-1-9 4:00:54.3');
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into test1 values('294277-1-9 4:00:54.2');
+insert into test1 values('294277-1-9 4:00:00');
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
 show dolphin.sql_mode;
                                    dolphin.sql_mode                                   
@@ -32,6 +42,14 @@ insert into test values('294277-1-9 4:00:54.5');
 WARNING:  timestamp out of range: "Tue Jan 09 04:00:55 294277 CST"
 CONTEXT:  referenced column: c
 insert into test values('294277-1-9 4:00:54.4');
+insert into test1 values('294277-1-9 4:00:54.775807');
+insert into test1 values('294277-1-9 4:00:54.5');
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into test1 values('294277-1-9 4:00:54.3');
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into test1 values('294277-1-9 4:00:54.2');
 --test zero date
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,pad_char_to_full_length';
 show dolphin.sql_mode;
@@ -43,6 +61,9 @@ show dolphin.sql_mode;
 insert into test values('0000-00-00 01:00:00');
 insert into test values('0000-00-00 11:00:00');
 insert into test values('0000-00-00 00:00:00');
+insert into test1 values('0000-00-00 01:00:00');
+insert into test1 values('0000-00-00 11:00:00');
+insert into test1 values('0000-00-00 00:00:00');
 select c from test order by c;
                c                
 --------------------------------
@@ -55,6 +76,22 @@ select c from test order by c;
  Tue Jan 09 04:00:54 294277 CST
 (7 rows)
 
+select c from test1 order by c;
+             c              
+----------------------------
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 01:00:00
+ 0000-00-00 11:00:00
+ Tue Jan 09 04:00:00 294277
+ Tue Jan 09 04:00:54 294277
+ Tue Jan 09 04:00:54 294277
+ infinity
+ infinity
+(10 rows)
+
 drop table test;
+drop table test1;
 reset current_schema;
 drop schema test_timestamp_overflow cascade;
