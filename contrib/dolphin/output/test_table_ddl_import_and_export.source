@@ -116,10 +116,10 @@ Table "public.t_create_table_005"
  c      | text | 
 
 \d t_create_table_006;
-  Table "public.t_create_table_006"
- Column | Type |      Modifiers      
---------+------+---------------------
- c      | text | collate utf8mb4_bin
+           Table "public.t_create_table_006"
+ Column | Type |               Modifiers                
+--------+------+----------------------------------------
+ c      | text | character set UTF8 collate utf8mb4_bin
 
 \d t_create_table_007;
 Table "public.t_create_table_007"
@@ -1277,10 +1277,10 @@ Table "public.t_create_table_005"
  c      | text | 
 
 \d t_create_table_006;
-  Table "public.t_create_table_006"
- Column | Type |      Modifiers      
---------+------+---------------------
- c      | text | collate utf8mb4_bin
+           Table "public.t_create_table_006"
+ Column | Type |               Modifiers                
+--------+------+----------------------------------------
+ c      | text | character set UTF8 collate utf8mb4_bin
 
 \d t_create_table_007;
 Table "public.t_create_table_007"
