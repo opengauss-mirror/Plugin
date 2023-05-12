@@ -55,6 +55,7 @@ extern "C" DLL_PUBLIC void dolphin_invoke(void);
 extern "C" DLL_PUBLIC void init_plugin_object();
 extern "C" DLL_PUBLIC void init_session_vars(void);
 extern "C" DLL_PUBLIC void create_dolphin_extension();
+extern "C" DLL_PUBLIC void set_extension_index(uint32 index);
 
 #define FLOAT8PLOID 591
 #define FLOAT8MIOID 592
