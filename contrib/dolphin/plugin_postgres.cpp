@@ -270,6 +270,7 @@ void init_plugin_object()
     u_sess->hook_cxt.pluginSearchCatHook = (void*)searchCat;
     u_sess->hook_cxt.pluginCCHashEqFuncs = (void*)ccHashEqFuncs;
     u_sess->hook_cxt.plpgsqlParserSetHook = (void*)b_plpgsql_parser_setup;
+    u_sess->hook_cxt.coreYYlexHook = (void*)core_yylex;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
