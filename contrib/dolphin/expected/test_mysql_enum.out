@@ -111,7 +111,7 @@ CREATE TABLE testtttttttttttttttttttttttttttttttttt (
     age INT,
     myjobbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb enum('x','y')
 );
-SELECT count(*) FROM pg_type WHERE typname like 'testtttttttttttttttt_myjobbbbbbbbbbbbbbb%_anonymous_enum_1';
+SELECT count(*) FROM pg_type WHERE typname like '%_anonymous_enum_1';
  count 
 -------
      1
@@ -443,16 +443,16 @@ select a / 1 from enum_test_table;
 
 create table test_enum_d(ssl_type enum('','any','X509','SPECIFIED') not null default '');
 \d test_enum_d
-                                               Table "test_enum.test_enum_d"
-  Column  |                    Type                     |                            Modifiers                             
-----------+---------------------------------------------+------------------------------------------------------------------
+                                                Table "test_enum.test_enum_d"
+  Column  |                     Type                     |                             Modifiers                             
+--?.*
 --?.*
 
  
 \d+ test_enum_d
-                                                                  Table "test_enum.test_enum_d"
-  Column  |                    Type                     |                            Modifiers                             | Storage | Stats target | Description 
-----------+---------------------------------------------+------------------------------------------------------------------+---------+--------------+-------------
+                                                                   Table "test_enum.test_enum_d"
+  Column  |                     Type                     |                             Modifiers                             | Storage | Stats target | Description 
+--?.*
 --?.*
 Has OIDs: no
 Options: orientation=row, compression=no

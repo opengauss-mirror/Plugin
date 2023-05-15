@@ -185,6 +185,9 @@ extern "C" DLL_PUBLIC Datum bit_count_text(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(bit_count_bit);
 extern "C" DLL_PUBLIC Datum bit_count_bit(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(bit_count_date);
+extern "C" DLL_PUBLIC Datum bit_count_date(PG_FUNCTION_ARGS);
+
 #endif
 /* ----------
  * Some preinitialized constants
@@ -351,6 +354,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint8);
 
 PG_FUNCTION_INFO_V1_PUBLIC(conv_str);
 PG_FUNCTION_INFO_V1_PUBLIC(conv_num);
+PG_FUNCTION_INFO_V1_PUBLIC(oct_str);
+PG_FUNCTION_INFO_V1_PUBLIC(oct_num);
 PG_FUNCTION_INFO_V1_PUBLIC(crc32);
 
 extern "C" DLL_PUBLIC Datum numeric_uint1(PG_FUNCTION_ARGS);
@@ -384,6 +389,8 @@ extern "C" DLL_PUBLIC Datum numeric_cast_uint8(PG_FUNCTION_ARGS);
 
 extern "C" DLL_PUBLIC Datum conv_str(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum conv_num(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum oct_str(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum oct_num(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum crc32(PG_FUNCTION_ARGS);
 
 #endif
@@ -21844,7 +21851,7 @@ text* TextExportSet(uint64 bits, char *on, char* off, char *separator, int numbe
     rp = result = (char*)palloc(maxLen);
 
     for(i = 0; i < numberOfBits; i++) {
-        if((bits & 1) == 1) {
+        if ((bits & 1) == 1) {
             rc = strcpy_s(rp, maxLen, on);
             securec_check(rc, "\0", "\0");
             rp = rp + lenOn;
@@ -21853,7 +21860,7 @@ text* TextExportSet(uint64 bits, char *on, char* off, char *separator, int numbe
             securec_check(rc, "\0", "\0");
             rp = rp + lenOff;
         }
-        if(i != numberOfBits-1) {
+        if (i != numberOfBits-1) {
             rc = strcpy_s(rp, maxLen, separator);
             securec_check(rc, "\0", "\0");
             rp = rp + lenSeq;
@@ -21892,7 +21899,7 @@ uint64 GetFirstArg(Numeric num)
     } else {
         if (bits > PG_UINT64_MAX)
             value = PG_INT64_MAX;
-        else if(bits < PG_INT64_MIN)
+        else if (bits < PG_INT64_MIN)
             value = PG_INT64_MIN;
         else
             value = bits;
@@ -21915,9 +21922,9 @@ Datum export_set_5args(PG_FUNCTION_ARGS)
     Numeric num4 = PG_GETARG_NUMERIC(4);
     uint64 numberOfBits = GetFirstArg(num4);
 
-    if(numberOfBits == 0)
+    if (numberOfBits == 0)
         PG_RETURN_TEXT_P(cstring_to_text(""));
-    else if(numberOfBits > 64)
+    else if (numberOfBits > 64)
         numberOfBits = 64;
     
     PG_RETURN_TEXT_P(TextExportSet(value, on, off, separator, numberOfBits));
@@ -21955,14 +21962,13 @@ Datum export_set_3args(PG_FUNCTION_ARGS)
 }
 
 
-int64 getCount(uint64 num)
+int getCount(uint64 num)
 {
-    int64 count = 0;
-    while (num > 0)
+    int count = 0;
+    while (num)
     {
-        if ((num&1) == 1)
-            count++;
-        num = num>>1;
+        count += num & 1;
+        num >>= 1;
     }
     return count;
 }
@@ -21986,15 +21992,14 @@ Datum bit_count_numeric(PG_FUNCTION_ARGS)
 
     /* Convert to variable format and thence to int8 */
     init_var_from_num(num, &x);
-    floor_var(&x, &x);
 
     if (!numericvar_to_int128(&x, &bits)) {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
             ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
             if (cmp_var(&x, &const_zero) < 0)
-                PG_RETURN_INT64(minNum);
+                PG_RETURN_INT32(minNum);
             else
-                PG_RETURN_INT64(maxNum);
+                PG_RETURN_INT32(maxNum);
         }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
     }
@@ -22002,15 +22007,26 @@ Datum bit_count_numeric(PG_FUNCTION_ARGS)
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
             ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
             if (bits > PG_UINT64_MAX)
-                PG_RETURN_INT64(maxNum);
-            else if(bits < PG_INT64_MIN)
-                PG_RETURN_INT64(minNum);
+                PG_RETURN_INT32(maxNum);
+            else if (bits < PG_INT64_MIN)
+                PG_RETURN_INT32(minNum);
         }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
     }
-    free_var(&x);
 
-    PG_RETURN_INT64(getCount(bits));
+    NumericVar result;
+    init_var(&result);
+    int128_to_numericvar(bits, &result);
+    sub_var(&x, &result, &result);
+    if (cmp_abs(&result, &const_zero_point_five) >= 0)
+    {
+        if (cmp_var(&x, &const_zero) < 0)
+            bits -= 1;
+        else
+            bits += 1;
+    }
+    free_var(&x);
+    PG_RETURN_INT32(getCount(bits));
 }
 
 Datum bit_count_text(PG_FUNCTION_ARGS)
@@ -22032,15 +22048,33 @@ Datum bit_count_text(PG_FUNCTION_ARGS)
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
             ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
             if (num > 0)
-                PG_RETURN_INT64(maxNum);
+                PG_RETURN_INT32(maxNum);
             else
-                PG_RETURN_INT64(minNum);
+                PG_RETURN_INT32(minNum);
         }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
     }
 
-    PG_RETURN_INT64(getCount(num));
+    PG_RETURN_INT32(getCount(num));
 }
+
+Datum bit_count_date(PG_FUNCTION_ARGS)
+{
+    DateADT dateVal = 0;
+    int128 res = 0;
+    int year = 0;
+    int month = 0;
+    int day = 0;
+
+    if (!PG_ARGISNULL(0)) {
+        dateVal = PG_GETARG_DATEADT(0);
+        j2date(dateVal + POSTGRES_EPOCH_JDATE, &year, &month, &day);
+        res = year*1e4+month*1e2+day;
+    }
+
+    PG_RETURN_INT32(getCount(res));
+}
+
 
 Datum bit_count_bit(PG_FUNCTION_ARGS)
 {
@@ -22050,18 +22084,60 @@ Datum bit_count_bit(PG_FUNCTION_ARGS)
     int64 maxNum = 64;
     for (int i = 0; i<len; i++)
     {
-        if(num[i] == '1')
+        if (num[i] == '1')
             count ++;
     }
-    if(count > maxNum)
+    if (count > maxNum)
     {
         if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
             ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
-            PG_RETURN_INT64(maxNum);
+            PG_RETURN_INT32(maxNum);
         }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
     }
-    PG_RETURN_INT64(count);
+    PG_RETURN_INT32(count);
+}
+
+Datum oct_num(PG_FUNCTION_ARGS)
+{
+    Numeric value = PG_GETARG_NUMERIC(0);
+    int128 num = conv_numeric_int128(value);
+    int from_base = 10;
+    int to_base = 8;
+    char result[CONV_MAX_CHAR_LEN + 1] = "";
+    int ret;
+
+    ret = conv_n(result, num, from_base, to_base);
+    if (ret != 0) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_TEXT_P(cstring_to_text(result));
+}
+
+Datum oct_str(PG_FUNCTION_ARGS)
+{
+    text* string = PG_GETARG_TEXT_PP(0);
+    int from_base = 10;
+    int to_base = 8;
+    char* data = VARDATA_ANY(string);
+    char result[CONV_MAX_CHAR_LEN + 1] = "0";
+    int len = VARSIZE_ANY_EXHDR(string);
+    int ret;
+    int128 num = 0;
+
+    if (len <= 0) {
+        PG_RETURN_NULL();
+    }
+
+    if (0 != str_to_int64(data, len, &num, &from_base)) {
+        PG_RETURN_NULL();
+    }
+
+    ret = conv_n(result, num, from_base, to_base);
+    if (ret != 0) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_TEXT_P(cstring_to_text(result));
 }
 
 static Numeric numeric_div_internal(NumericVar arg1, NumericVar arg2)

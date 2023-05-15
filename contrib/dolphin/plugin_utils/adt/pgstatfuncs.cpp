@@ -290,6 +290,10 @@ static int64 pgxc_exec_autoanalyze_timeout(Oid relOid, int32 coordnum, char* fun
 extern bool allow_autoanalyze(HeapTuple tuple);
 #ifdef DOLPHIN
 extern void validate_xlog_location(char *str);
+
+PG_FUNCTION_INFO_V1_PUBLIC(connection_id);
+extern "C" DLL_PUBLIC Datum connection_id(PG_FUNCTION_ARGS);
+
 #endif
 
 
@@ -4054,6 +4058,11 @@ Datum pg_stat_get_env(PG_FUNCTION_ARGS)
 }
 
 Datum pg_backend_pid(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_INT64(t_thrd.proc_cxt.MyProcPid);
+}
+
+Datum connection_id(PG_FUNCTION_ARGS)
 {
     PG_RETURN_INT64(t_thrd.proc_cxt.MyProcPid);
 }

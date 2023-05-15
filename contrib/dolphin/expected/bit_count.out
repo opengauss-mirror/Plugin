@@ -202,5 +202,11 @@ select bit_count(b'1000000011111111111111111111111111111111111111111111111111111
         64
 (1 row)
 
+select bit_count('2022-12-12'::date);
+ bit_count 
+-----------
+        11
+(1 row)
+
 drop schema test_bit_count cascade;
 reset current_schema;
