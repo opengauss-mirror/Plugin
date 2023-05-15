@@ -1226,9 +1226,19 @@ static void AdjustTimestampForTypmod(Timestamp* time, int32 typmod)
              */
 #ifdef HAVE_INT64_TIMESTAMP
         if (*time >= INT64CONST(0)) {
+    #ifdef DOLPHIN
+            *time = (*time / TimestampScales[typmod] + ((*time % TimestampScales[typmod]) +
+                TimestampOffsets[typmod]) / TimestampScales[typmod]) * TimestampScales[typmod];
+    #else
             *time = ((*time + TimestampOffsets[typmod]) / TimestampScales[typmod]) * TimestampScales[typmod];
+    #endif
         } else {
+    #ifdef DOLPHIN
+            *time = -(((-*time) / TimestampScales[typmod] + (((-*time) % TimestampScales[typmod]) +
+                TimestampOffsets[typmod]) / TimestampScales[typmod]) * TimestampScales[typmod]);
+    #else
             *time = -((((-*time) + TimestampOffsets[typmod]) / TimestampScales[typmod]) * TimestampScales[typmod]);
+    #endif
         }
 #else
         *time = rint((double)*time * TimestampScales[typmod]) / TimestampScales[typmod];
