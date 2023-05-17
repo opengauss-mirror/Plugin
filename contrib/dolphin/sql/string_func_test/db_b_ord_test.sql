@@ -24,6 +24,9 @@ select ord(99999);
 -- test empty
 select ord('');
 
+select ord(b'1');
+select ord(b'1000100110');
+
 -- test from table
 
 create table test_ord (name text);

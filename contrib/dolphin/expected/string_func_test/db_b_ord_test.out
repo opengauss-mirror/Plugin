@@ -72,6 +72,18 @@ select ord('');
    0
 (1 row)
 
+select ord(b'1');
+ ord 
+-----
+   1
+(1 row)
+
+select ord(b'1000100110');
+ ord 
+-----
+   2
+(1 row)
+
 -- test from table
 create table test_ord (name text);
 insert into test_ord values('1234'), ('嬴政'), ('𓃔𓃘𓃲𓃰');
