@@ -14,9 +14,15 @@
 #include "postgres.h"
 #include "knl/knl_variable.h"
 #include "plugin_postgres.h"
+#include "utils/builtins.h"
+#include "utils/numeric.h"
+#include "utils/varbit.h"
 #include <ctype.h>
 
 #include "utils/builtins.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 #ifdef DOLPHIN
 struct pg_encoding {
@@ -336,21 +342,7 @@ unsigned hex_decode(const char* src, unsigned len, char* dst, bool flag)
             return 0;
         }
         if (s >= srcend) {
-            if (flag)
-                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid hexadecimal data: odd number of digits")));
-            else {
-                char* newSrc = (char*)palloc(len + 2);
-                char* tempSrc = newSrc;
-                const char* oldSrc = src;
-                *tempSrc = '0';
-                tempSrc++;
-                while (oldSrc < srcend) {
-                    *tempSrc = *oldSrc;
-                    tempSrc++;
-                    oldSrc++;
-                }
-                return hex_decode(newSrc, len + 1, dst, flag);
-            }
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid hexadecimal data: odd number of digits")));
         }
 
         v2 = get_hex(*s++, flag, isValid);
@@ -798,3 +790,185 @@ static const struct pg_encoding* pg_find_encoding(const char* name)
 
     return NULL;
 }
+
+#ifdef DOLPHIN
+static text* b64_encode_internal(const char* data, int dataLength)
+{
+    int resultLength, res;
+    resultLength = b64_enc_len(data, dataLength);
+
+    text* result = (text*)palloc(VARHDRSZ + resultLength);
+    res = b64_encode(data, dataLength, VARDATA(result));
+    SET_VARSIZE(result, VARHDRSZ + res);
+    return result;
+}
+
+static bytea* b64_decode_internal(const char* data, int dataLength)
+{
+    int resultLength, res;
+    resultLength = b64_dec_len(data, dataLength);
+
+    bytea* result = (bytea*)palloc(VARHDRSZ + resultLength);
+    res = b64_decode(data, dataLength, VARDATA(result), false);
+    SET_VARSIZE(result, VARHDRSZ + res);
+    return result;
+}
+
+static bytea* hex_decode_internal(char* data, int dataLength)
+{
+    int resultLength, res;
+    resultLength = hex_dec_len(data, dataLength);
+
+    char* charDataEnd = data + dataLength;
+    const int evenLength = 2;
+    if (dataLength % evenLength != 0) {
+        resultLength += 1;
+        dataLength += 1;
+        char* newSrc = (char*)palloc(dataLength + 1);
+        char* tempSrc = newSrc;
+        const char* oldSrc = data;
+        *tempSrc = '0';
+        tempSrc++;
+        while (oldSrc < charDataEnd) {
+            *tempSrc = *oldSrc;
+            tempSrc++;
+            oldSrc++;
+        }
+        data = newSrc;
+    }
+
+    bytea* result = (bytea*)palloc(VARHDRSZ + resultLength);
+    res = hex_decode(data, dataLength, VARDATA(result), false);
+    SET_VARSIZE(result, VARHDRSZ + res);
+    return result;
+}
+
+bytea* bit_to_bytea(int64 arg_int, int len)
+{
+    char* hexResult = (char*)palloc(len + 1);
+    hexResult[len] = '\0';
+    const int andBits = 15;
+    const int rightBits = 4;
+    do {
+        hexResult[--len] = hextbl[arg_int & andBits];
+        arg_int >>= rightBits;
+    } while (len > 0);
+    bytea* decodeResult = hex_decode_internal(hexResult, strlen(hexResult));
+    pfree(hexResult);
+    return decodeResult;
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(base64_encode_text);
+extern "C" DLL_PUBLIC Datum base64_encode_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(base64_encode_bool);
+extern "C" DLL_PUBLIC Datum base64_encode_bool(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(base64_encode_bit);
+extern "C" DLL_PUBLIC Datum base64_encode_bit(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(base64_decode_text);
+extern "C" DLL_PUBLIC Datum base64_decode_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(base64_decode_bool);
+extern "C" DLL_PUBLIC Datum base64_decode_bool(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(base64_decode_bit);
+extern "C" DLL_PUBLIC Datum base64_decode_bit(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(hex_decode_text);
+extern "C" DLL_PUBLIC Datum hex_decode_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(hex_decode_bool);
+extern "C" DLL_PUBLIC Datum hex_decode_bool(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(hex_decode_bytea);
+extern "C" DLL_PUBLIC Datum hex_decode_bytea(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(hex_decode_bit);
+extern "C" DLL_PUBLIC Datum hex_decode_bit(PG_FUNCTION_ARGS);
+
+Datum base64_encode_text(PG_FUNCTION_ARGS)
+{
+    text* data = PG_GETARG_TEXT_P(0);
+    int dataLength = VARSIZE(data) - VARHDRSZ;
+    text* result = b64_encode_internal(VARDATA(data), dataLength);
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum base64_encode_bool(PG_FUNCTION_ARGS)
+{
+    bool firstArg = PG_GETARG_BOOL(0);
+    const char* boolString = firstArg ? "1" : "0";
+    text* result = b64_encode_internal(boolString, strlen(boolString));
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum base64_encode_bit(PG_FUNCTION_ARGS)
+{
+    int64 arg_int = DatumGetInt64(DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0)));
+    int len = VARBITBYTES(PG_GETARG_VARBIT_P(0)) * 2;
+    bytea* decodeResult = bit_to_bytea(arg_int, len);
+
+    int dataLength = VARSIZE(decodeResult) - VARHDRSZ;
+    text* result = b64_encode_internal(VARDATA(decodeResult), dataLength);
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum base64_decode_text(PG_FUNCTION_ARGS)
+{
+    text* data = PG_GETARG_TEXT_P(0);
+    int dataLength = VARSIZE(data) - VARHDRSZ;
+    bytea* result = b64_decode_internal(VARDATA(data), dataLength);
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum base64_decode_bool(PG_FUNCTION_ARGS)
+{
+    const char* nullString = "";
+    text* result = cstring_to_text_with_len(nullString, strlen(nullString));
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum base64_decode_bit(PG_FUNCTION_ARGS)
+{
+    int64 arg_int = DatumGetInt64(DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0)));
+    int len = VARBITBYTES(PG_GETARG_VARBIT_P(0)) * 2;
+    bytea* toBytea = bit_to_bytea(arg_int, len);
+
+    int dataLength = VARSIZE(toBytea) - VARHDRSZ;
+    bytea* decodeResult = b64_decode_internal(VARDATA(toBytea), dataLength);
+    PG_RETURN_TEXT_P(decodeResult);
+}
+
+Datum hex_decode_text(PG_FUNCTION_ARGS)
+{
+    text* data = PG_GETARG_TEXT_P(0);
+    int dataLength = VARSIZE(data) - VARHDRSZ;
+    bytea* result = hex_decode_internal(VARDATA(data), dataLength);
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum hex_decode_bytea(PG_FUNCTION_ARGS)
+{
+    const char* nullString = "";
+    text* result = cstring_to_text_with_len(nullString, strlen(nullString));
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum hex_decode_bit(PG_FUNCTION_ARGS)
+{
+    int64 arg_int = DatumGetInt64(DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0)));
+    int len = VARBITBYTES(PG_GETARG_VARBIT_P(0)) * 2;
+    bytea* toBytea = bit_to_bytea(arg_int, len);
+
+    int dataLength = VARSIZE(toBytea) - VARHDRSZ;
+    text* result = hex_decode_internal(VARDATA(toBytea), dataLength);
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum hex_decode_bool(PG_FUNCTION_ARGS)
+{
+    bool firstArg = PG_GETARG_BOOL(0);
+    const int boolLength = 2;
+    char* boolString = (char*)palloc(boolLength + 1);
+    boolString[boolLength] = '\0';
+    boolString[0] = '0';
+    boolString[1] = firstArg ? '1' : '0';
+    
+    bytea* result = hex_decode_internal(boolString, strlen(boolString));
+    pfree(boolString);
+    PG_RETURN_TEXT_P(result);
+}
+#endif

@@ -298,3 +298,21 @@ Datum get_b_database(PG_FUNCTION_ARGS)
 {
     return current_schema(fcinfo);
 }
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(get_b_schema);
+extern "C" DLL_PUBLIC Datum get_b_schema(PG_FUNCTION_ARGS);
+Datum get_b_schema(PG_FUNCTION_ARGS)
+{
+    return current_schema(fcinfo);
+}
+#endif
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(get_b_session_user);
+extern "C" DLL_PUBLIC Datum get_b_session_user(PG_FUNCTION_ARGS);
+Datum get_b_session_user(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_DATUM(DirectFunctionCall1(namein, CStringGetDatum(GetUserNameFromId(GetSessionUserId()))));
+}
+#endif

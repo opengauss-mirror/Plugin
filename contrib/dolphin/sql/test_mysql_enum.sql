@@ -76,7 +76,7 @@ CREATE TABLE testtttttttttttttttttttttttttttttttttt (
     myjobbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb enum('x','y')
 );
 
-SELECT count(*) FROM pg_type WHERE typname like 'testtttttttttttttttt_myjobbbbbbbbbbbbbbb%_anonymous_enum_1';
+SELECT count(*) FROM pg_type WHERE typname like '%_anonymous_enum_1';
 drop table testtttttttttttttttttttttttttttttttttt;
 
 

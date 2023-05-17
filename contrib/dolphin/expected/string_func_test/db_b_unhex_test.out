@@ -65,7 +65,7 @@ SELECT UNHEX(41424344454647484950515253545556575859);
 (1 row)
 
 --测试日期类型、bool类型、空值作为输入
-SELECT UNHEX(now());
+SELECT UNHEX('2022-12-31'::date);
  unhex 
 -------
  
