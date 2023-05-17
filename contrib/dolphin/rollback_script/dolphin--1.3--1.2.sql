@@ -20,6 +20,45 @@ drop CAST IF EXISTS (timestamp(0) without time zone as boolean);
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_bool(timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.timestamp_bool(timestamp(0) without time zone);
 
+DROP FUNCTION IF EXISTS pg_catalog.ord(varbit);
+DROP FUNCTION IF EXISTS pg_catalog.oct(bit);
+DROP FUNCTION IF EXISTS pg_catalog.substring_index ("any", "any", text);
+DROP FUNCTION IF EXISTS pg_catalog.substring_index ("any", "any", numeric);
+
+DO $for_og_310$
+BEGIN
+    if working_version_num() > 92780 then
+        DROP FUNCTION IF EXISTS pg_catalog.substring_index (text, text, numeric) CASCADE;
+        CREATE FUNCTION pg_catalog.substring_index (
+        text,
+        text,
+        numeric
+        ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index';
+        
+        DROP FUNCTION IF EXISTS pg_catalog.substring_index (boolean, text, numeric) CASCADE;
+        CREATE FUNCTION pg_catalog.substring_index (
+        boolean,
+        text,
+        numeric
+        ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_bool_1';
+        
+        DROP FUNCTION IF EXISTS pg_catalog.substring_index (text, boolean, numeric) CASCADE;
+        CREATE FUNCTION pg_catalog.substring_index (
+        text,
+        boolean,
+        numeric
+        ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_bool_2';
+        
+        DROP FUNCTION IF EXISTS pg_catalog.substring_index (boolean, boolean, numeric) CASCADE;
+        CREATE FUNCTION pg_catalog.substring_index (
+        boolean,
+        boolean,
+        numeric
+        ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_2bool';
+    end if;
+END
+$for_og_310$;
+
 do $$
 begin
     update pg_cast set castcontext='e', castowner=10 where castsource=1560 and casttarget=20 and castcontext='a';

@@ -1450,41 +1450,9 @@ DROP FUNCTION IF EXISTS pg_catalog.bittoint2(bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.bitfromint1(int1, int4) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.bitfromint2(int2, int4) CASCADE;
 
-DROP FUNCTION IF EXISTS pg_catalog.ord(varbit);
-DROP FUNCTION IF EXISTS pg_catalog.oct(bit);
-DROP FUNCTION IF EXISTS pg_catalog.substring_index ("any", "any", text);
-DROP FUNCTION IF EXISTS pg_catalog.substring_index ("any", "any", numeric);
-
 DO $for_og_310$
 BEGIN
     if working_version_num() > 92780 then
-        DROP FUNCTION IF EXISTS pg_catalog.substring_index (text, text, numeric) CASCADE;
-        CREATE FUNCTION pg_catalog.substring_index (
-        text,
-        text,
-        numeric
-        ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index';
-        
-        DROP FUNCTION IF EXISTS pg_catalog.substring_index (boolean, text, numeric) CASCADE;
-        CREATE FUNCTION pg_catalog.substring_index (
-        boolean,
-        text,
-        numeric
-        ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_bool_1';
-        
-        DROP FUNCTION IF EXISTS pg_catalog.substring_index (text, boolean, numeric) CASCADE;
-        CREATE FUNCTION pg_catalog.substring_index (
-        text,
-        boolean,
-        numeric
-        ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_bool_2';
-        
-        DROP FUNCTION IF EXISTS pg_catalog.substring_index (boolean, boolean, numeric) CASCADE;
-        CREATE FUNCTION pg_catalog.substring_index (
-        boolean,
-        boolean,
-        numeric
-        ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_2bool';
         DROP FUNCTION IF EXISTS pg_catalog.bit_count(numeric) CASCADE;
         CREATE OR REPLACE FUNCTION pg_catalog.bit_count (numeric)  RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'bit_count_numeric';
 

@@ -72,6 +72,18 @@ select ord('');
    0
 (1 row)
 
+select ord(b'1');
+ ord 
+-----
+   1
+(1 row)
+
+select ord(b'1000100110');
+ ord 
+-----
+   2
+(1 row)
+
 -- test numeric
 select ord(1);
  ord 

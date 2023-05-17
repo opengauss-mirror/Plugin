@@ -43,6 +43,37 @@ CREATE CAST (timestamptz as boolean) WITH FUNCTION timestamptz_bool(timestamptz)
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_bool(timestamp(0) without time zone) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'timestamp_bool';
 CREATE CAST (timestamp(0) without time zone as boolean) WITH FUNCTION timestamp_bool(timestamp(0) without time zone) AS ASSIGNMENT;
 
+DROP FUNCTION IF EXISTS pg_catalog.oct(bit);
+CREATE OR REPLACE FUNCTION pg_catalog.oct(bit) RETURNS text AS
+$$
+BEGIN
+    RETURN 0;
+END;
+$$
+LANGUAGE plpgsql;
+
+DROP FUNCTION IF EXISTS pg_catalog.ord(varbit);
+CREATE FUNCTION pg_catalog.ord (varbit) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'ord_bit';
+
+DROP FUNCTION IF EXISTS pg_catalog.substring_index (text, text, numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.substring_index (boolean, text, numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.substring_index (text, boolean, numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.substring_index (boolean, boolean, numeric) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.substring_index ("any", "any", text) CASCADE;
+CREATE FUNCTION pg_catalog.substring_index (
+"any",
+"any",
+text
+) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_text';
+
+DROP FUNCTION IF EXISTS pg_catalog.substring_index ("any", "any", numeric) CASCADE;
+CREATE FUNCTION pg_catalog.substring_index (
+"any",
+"any",
+numeric
+) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_numeric';
+
 --change bit -> int/bigint castcontext from 'e' to 'a'
 do $$
 begin
