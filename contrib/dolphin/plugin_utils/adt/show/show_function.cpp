@@ -57,7 +57,7 @@ void ShowFunctionStatusFirstCall(PG_FUNCTION_ARGS)
                             " CASE WHEN p.prokind = 'f' THEN 'FUNCTION' ELSE 'PROCEDURE' END AS \"Type\", "
                             " r.rolname AS \"Definer\", "
                             " o.mtime AS \"Modified\", "
-                            " O.ctime AS \"Created\", "
+                            " o.ctime AS \"Created\", "
                             " CASE WHEN p.prosecdef THEN 'DEFINER' ELSE 'INVOKER' END AS \"Security_type\", "
                             " d.description AS \"Comment\", "
                             " null AS \"character_set_client\", "
@@ -83,7 +83,7 @@ void ShowFunctionStatusFirstCall(PG_FUNCTION_ARGS)
     }
     PG_CATCH();
     {
-        SetSqlMode((const char*)fctx->user_fctx);
+        SetSqlMode((const char*)fctx->user_fctx, false);
         PG_RE_THROW();
     }
     PG_END_TRY();
@@ -128,7 +128,7 @@ Datum ShowFunctionStatus(PG_FUNCTION_ARGS)
     PG_CATCH();
     {
         if (setSqlMode) {
-            SetSqlMode((const char *)fctx->user_fctx);
+            SetSqlMode((const char *)fctx->user_fctx, false);
         }
         PG_RE_THROW();
     }

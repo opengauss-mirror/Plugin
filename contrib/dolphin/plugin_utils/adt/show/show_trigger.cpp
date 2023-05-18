@@ -94,7 +94,7 @@ Datum ShowTriggers(PG_FUNCTION_ARGS)
         }
         PG_CATCH();
         {
-            SetSqlMode((const char *)fctx->user_fctx);
+            SetSqlMode((const char *)fctx->user_fctx, false);
             PG_RE_THROW();
         }
         PG_END_TRY();
@@ -135,7 +135,7 @@ Datum ShowTriggers(PG_FUNCTION_ARGS)
     PG_CATCH();
     {
         if (setSqlMode) {
-            SetSqlMode((const char *)fctx->user_fctx);
+            SetSqlMode((const char *)fctx->user_fctx, false);
         }
         PG_RE_THROW();
     }
