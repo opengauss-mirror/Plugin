@@ -91,6 +91,9 @@
 #include "optimizer/gplanmgr.h"
 #include "instruments/instr_statement.h"
 
+/* Hook for plugins to get control in planner() */
+THR_LOCAL ndp_pushdown_hook_type ndp_pushdown_hook = NULL;
+
 #ifndef MIN
 #define MIN(A, B) ((B) < (A) ? (B) : (A))
 #endif
@@ -396,6 +399,10 @@ PlannedStmt* planner(Query* parse, int cursorOptions, ParamListInfo boundParams)
     result->plannertime = totaltime;
     if (u_sess->attr.attr_common.max_datanode_for_plan > 0 && IS_PGXC_COORDINATOR && !IsConnFromCoord()) {
         GetRemoteQuery(result, NULL);
+    }
+
+    if (ndp_pushdown_hook) {
+        (*ndp_pushdown_hook)(parse, result);
     }
 
     return result;
@@ -1222,6 +1229,25 @@ static bool has_foreign_table_in_rtable(Query* query)
     return false;
 }
 
+static inline bool contain_system_column(Node *var_list)
+{
+    List* vars = pull_var_clause(var_list, PVC_RECURSE_AGGREGATES, PVC_RECURSE_PLACEHOLDERS);
+    ListCell* lc = NULL;
+    bool result = false;
+
+    foreach (lc, vars) {
+        Var* var = (Var*)lfirst(lc);
+
+        if (var->varattno < 0) {
+            result = true;
+            break;
+        }
+    }
+
+    list_free_ext(vars);
+    return result;
+}
+
 /* --------------------
  * subquery_planner
  *	  Invokes the planner on a subquery.  We recurse to here for each
@@ -1778,27 +1804,39 @@ Plan* subquery_planner(PlannerGlobal* glob, Query* parse, PlannerInfo* parent_ro
 #endif
         {
             bool support_rewrite = true;
-            if (!fulljoin_2_left_union_right_anti_support(root->parse))
-                support_rewrite = false;
-            if (contain_volatile_functions((Node*)root->parse))
-                support_rewrite = false;
-            contain_func_context context =
-                init_contain_func_context(list_make3_oid(ECEXTENSIONFUNCOID, ECHADOOPFUNCOID, RANDOMFUNCOID));
-            if (contains_specified_func((Node*)root->parse, &context)) {
-                char* func_name = get_func_name(((FuncExpr*)linitial(context.func_exprs))->funcid);
-                ereport(DEBUG2,
-                    (errmodule(MOD_OPT_REWRITE),
-                        (errmsg("[Not rewrite full Join on true]: %s functions contained.", func_name))));
-                pfree_ext(func_name);
-                list_free_ext(context.funcids);
-                context.funcids = NIL;
-                list_free_ext(context.func_exprs);
-                context.func_exprs = NIL;
-                support_rewrite = false;
-            }
-            if (has_foreign_table_in_rtable(root->parse)) {
-                support_rewrite = false;
-            }
+            do {
+                if (contain_system_column((Node*)root->parse->targetList)) {
+                    support_rewrite = false;
+                    break;
+                }
+                if (!fulljoin_2_left_union_right_anti_support(root->parse)) {
+                    support_rewrite = false;
+                    break;
+                }
+                if (contain_volatile_functions((Node*)root->parse)) {
+                    support_rewrite = false;
+                    break;
+                }
+                contain_func_context context =
+                    init_contain_func_context(list_make3_oid(ECEXTENSIONFUNCOID, ECHADOOPFUNCOID, RANDOMFUNCOID));
+                if (contains_specified_func((Node*)root->parse, &context)) {
+                    char* func_name = get_func_name(((FuncExpr*)linitial(context.func_exprs))->funcid);
+                    ereport(DEBUG2,
+                        (errmodule(MOD_OPT_REWRITE),
+                            (errmsg("[Not rewrite full Join on true]: %s functions contained.", func_name))));
+                    pfree_ext(func_name);
+                    list_free_ext(context.funcids);
+                    context.funcids = NIL;
+                    list_free_ext(context.func_exprs);
+                    context.func_exprs = NIL;
+                    support_rewrite = false;
+                    break;
+                }
+                if (has_foreign_table_in_rtable(root->parse)) {
+                    support_rewrite = false;
+                    break;
+                }
+            } while (0);
             if (support_rewrite) {
                 reduce_inequality_fulljoins(root);
                 DEBUG_QRW("After full join conversion");
