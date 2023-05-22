@@ -2276,7 +2276,7 @@ bool RI_Initial_Check(Trigger* trigger, Relation fk_rel, Relation pk_rel)
     }
     PG_CATCH();
     {
-        SetSqlMode(sqlMode);
+        SetSqlMode(sqlMode, false);
         pfree(sqlMode);
         PG_RE_THROW();
     }
@@ -2776,7 +2776,7 @@ static SPIPlanPtr ri_PlanCheck(const char *querystr, int nargs, Oid *argtypes, R
     }
     PG_CATCH();
     {
-        SetSqlMode(sqlMode);
+        SetSqlMode(sqlMode, false);
         pfree(sqlMode);
         PG_RE_THROW();
     }
