@@ -593,8 +593,8 @@ LINE 1: insert  ignore into t_timestamptz values('');
                                                  ^
 CONTEXT:  referenced column: c
 select * from t_timestamptz;
-                  c                  
--------------------------------------
+              c               
+------------------------------
 --?.*
 --?.*
 --?.*
