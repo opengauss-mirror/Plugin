@@ -162,6 +162,7 @@ typedef struct BSqlPluginContext {
     struct HTAB* b_sendBlobHash;
     char* useless_sql_mode;
     int useless_lower_case_table_names;
+    bool is_dolphin_call_stmt;
 #endif
 } bSqlPluginContext;
 

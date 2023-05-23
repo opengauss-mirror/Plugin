@@ -11,7 +11,8 @@
 #define OPT_SQL_MODE_ANSI_QUOTES (1 << 4)
 #define OPT_SQL_MODE_NO_ZERO_DATE (1 << 5)
 #define OPT_SQL_MODE_PAD_CHAR_TO_FULL_LENGTH (1 << 6)
-#define OPT_SQL_MODE_MAX 7
+#define OPT_SQL_MODE_BLOCK_RETURN_MULTI_RESULTS (1 << 7)
+#define OPT_SQL_MODE_MAX 8
 #define SQL_MODE_STRICT() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT)
 #define SQL_MODE_FULL_GROUP() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_FULL_GROUP)
 #define PG_RETURN_INT8(x) return Int8GetDatum(x)
@@ -19,6 +20,8 @@
 #define SQL_MODE_ANSI_QUOTES() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_ANSI_QUOTES)
 #define SQL_MODE_NO_ZERO_DATE() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_NO_ZERO_DATE)
 #define SQL_MODE_PAD_CHAR_TO_FULL_LENGTH() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_PAD_CHAR_TO_FULL_LENGTH)
+#define SQL_MODE_AllOW_PROCEDURE_WITH_SELECT()                                      \
+    (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_BLOCK_RETURN_MULTI_RESULTS)
 
 extern int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool can_ignore, bool isUnsigned = false);
 extern int8 PgStrtoint8Internal(const char* s, bool sqlModeStrict, bool can_ignore);

@@ -2375,5 +2375,17 @@ typedef struct GetDiagStmt {
     bool hasCondNum;
     List *condNum;
 } GetDiagStmt;
+
+/* ----------------------
+ *		DolphinCall Type Statement, call procedure
+ * ----------------------
+ */
+typedef struct DolphinCallStmt {
+    NodeTag type;
+    FuncCall *funccall;           /* procedure */
+    FuncExpr *funcexpr;           /* transformCallstmt deal, only input args */
+    List *outargs;            /* output args only be UserVar */
+} DolphinCallStmt;
+
 #endif /* PARSENODES_H */
 

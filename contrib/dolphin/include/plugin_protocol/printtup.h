@@ -24,8 +24,22 @@
 
 #include "postgres.h"
 #include "tcop/dest.h"
+#include "access/printtup.h"
 
 extern DestReceiver* dophin_printtup_create_DR(CommandDest dest);
 extern void dolphin_set_DR_params(DestReceiver *self, List *target_list);
+extern void spi_sql_proc_dest_startup(DestReceiver* self, int operation, TupleDesc typeinfo);
+extern void SetSqlProcSpiStmtParams(DestReceiver *self, SPIPlanPtr plan);
+extern void spi_sql_proc_dest_printtup(TupleTableSlot *slot, DestReceiver *self);
+extern DestReceiver* CreateSqlProcSpiDestReciver(CommandDest dest);
 
+struct DR_Dolphin_proc_printtup {
+    DestReceiver dest;
+    StringInfoData buf;
+    bool sendDescrip;
+    Node* stmt;
+    TupleDesc attrinfo; /* The attr info we are set up for */
+    int nattrs;
+    PrinttupAttrInfo* myinfo; /* Cached info about each attr */
+};
 #endif  /* printtup.h */

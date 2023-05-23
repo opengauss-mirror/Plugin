@@ -203,6 +203,16 @@ void send_network_eof_packet(StringInfo buf)
     dq_putmessage(buf->data, buf->len);
 }
 
+void send_network_fetch_packet(StringInfo buf)
+{
+    resetStringInfo(buf);
+
+    dq_append_int1(buf, 0xfe);
+    dq_append_int2(buf, 0x00);       /* warning count */
+    dq_append_int2(buf, 0x2a);      /* status flags */
+    
+    dq_putmessage(buf->data, buf->len);
+}
 void send_network_err_packet(StringInfo buf, network_mysqld_err_packet_t *err_packet)
 {
     int errmsg_len;

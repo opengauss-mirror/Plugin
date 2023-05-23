@@ -92,6 +92,7 @@
 #include "utils/datetime.h"
 #ifdef DOLPHIN
 #include "plugin_utils/timestamp.h"
+#include "plugin_commands/mysqlmode.h"
 #endif
 #include "utils/rel.h"
 #include "utils/numeric.h"
@@ -38756,6 +38757,9 @@ makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
 					}
 					if (IsA(arg, UserVar)) {
 						userVarList = lappend(userVarList,arg);
+					} else if (SQL_MODE_AllOW_PROCEDURE_WITH_SELECT())
+					{
+						ereport(errstate,(errcode(ERRCODE_UNDEFINED_FUNCTION),errmsg("out args must be uservar type." )));
 					}
 				}
 			}
@@ -38771,6 +38775,14 @@ makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
 	}
 	ReleaseSysCache(proctup);
 
+	if (SQL_MODE_AllOW_PROCEDURE_WITH_SELECT()) {
+		DolphinCallStmt *n = makeNode(DolphinCallStmt);
+		FuncCall* func= makeFuncCall(funcname, in_parameters,-1);
+		n->funccall = func;
+		n->outargs = userVarList;
+
+		return	(Node *)n;
+	}
 	column = makeNode(ColumnRef);
 	column->fields = list_make1(makeNode(A_Star));
 	column->location = -1;

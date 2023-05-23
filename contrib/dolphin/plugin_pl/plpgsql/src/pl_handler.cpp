@@ -711,9 +711,18 @@ Datum b_plpgsql_call_handler(PG_FUNCTION_ARGS)
      * commit/rollback within stored procedure.
      * set the nonatomic and will be reused within function.
      */
+#ifdef DOLPHIN
+    if (fcinfo->context && IsA(fcinfo->context, FunctionScanState)) {
+        nonatomic = !castNode(FunctionScanState, fcinfo->context)->atomic;
+    } else if (fcinfo->context && IsA(fcinfo->context, CallContext)) {
+        nonatomic = !castNode(CallContext, fcinfo->context)->atomic;
+    } else {
+        nonatomic = false;
+    }
+#else
     nonatomic = fcinfo->context && IsA(fcinfo->context, FunctionScanState) &&
         !castNode(FunctionScanState, fcinfo->context)->atomic;
-
+#endif
     /* get cast owner and make sure current user is cast owner when execute cast-func */
     GetUserIdAndSecContext(&old_user, &save_sec_context);
     cast_owner = u_sess->exec_cxt.cast_owner;
