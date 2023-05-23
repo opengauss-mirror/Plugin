@@ -288,13 +288,13 @@ select variance(a), variance(b) from u4;
 select listagg(a) within group(order by a) from u4;
         listagg        
 -----------------------
- 429496729542949672950
+ 042949672954294967295
 (1 row)
 
 select listagg(a, ',') within group(order by a) from u4;
          listagg         
 -------------------------
- 4294967295,4294967295,0
+ 0,4294967295,4294967295
 (1 row)
 
 --uint8
@@ -387,13 +387,13 @@ select variance(a), variance(b) from u8;
 select listagg(a) within group(order by a) from u8;
                   listagg                  
 -------------------------------------------
- 18446744073709551615184467440737095516150
+ 01844674407370955161518446744073709551615
 (1 row)
 
 select listagg(a, ',') within group(order by a) from u8;
                    listagg                   
 ---------------------------------------------
- 18446744073709551615,18446744073709551615,0
+ 0,18446744073709551615,18446744073709551615
 (1 row)
 
 create table smp_test(a uint4, b uint8);
