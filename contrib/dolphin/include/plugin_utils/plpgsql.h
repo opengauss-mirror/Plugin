@@ -387,6 +387,8 @@ typedef struct PLpgSQL_var { /* Scalar variable */
     int cursor_explicit_argrow;
     int cursor_options;
     int customCondition; /* only for declare condition variable. */
+    char *sqlstateCondition;    /* only for declare condition variable. */
+    bool isSqlvalue;
 
     Datum value;
     bool isnull;
@@ -595,8 +597,10 @@ typedef struct {
 } PLpgSQL_gotoLabel;
 
 typedef struct PLpgSQL_condition { /* One EXCEPTION condition name */
-    int sqlerrstate;               /* SQLSTATE code */
-    char* condname;                /* condition name (for debugging) */
+    int sqlerrstate;               /* SQLSTATE integer format */
+    char *sqlstate;                /* SQLSTATE string format */
+    char *condname;                /* condition name (for debugging) */
+    bool isSqlvalue;
     struct PLpgSQL_condition* next;
 } PLpgSQL_condition;
 
@@ -1599,6 +1603,7 @@ extern PLpgSQL_rec_type* plpgsql_build_rec_type(const char* typname, int lineno,
 extern PLpgSQL_rec* plpgsql_build_record(const char* refname, int lineno, bool add2namespace, TupleDesc tupleDesc);
 extern int plpgsql_recognize_err_condition(const char* condname, bool allow_sqlstate);
 extern PLpgSQL_condition* plpgsql_parse_err_condition(char* condname);
+extern PLpgSQL_condition* plpgsql_parse_err_condition_b_signal(const char* condname);
 extern PLpgSQL_condition* plpgsql_parse_err_condition_b(const char* condname);
 extern int plpgsql_adddatum(PLpgSQL_datum* newm, bool isChange = true);
 extern int plpgsql_add_initdatums(int** varnos);
