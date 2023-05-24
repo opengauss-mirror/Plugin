@@ -1,6 +1,7 @@
 create schema unhex_test;
 set current_schema to 'unhex_test';
-
+-- 非严格模式，参数不合法，报warning，返回null
+set dolphin.sql_mode = 'sql_mode_full_group';
 --测试字符串作为输入，返回十六进制编码的编码结果
 SELECT UNHEX('6f70656e4761757373');
 SELECT UNHEX(HEX('string'));
@@ -29,6 +30,10 @@ SELECT UNHEX(NULL);
 CREATE TABLE test_unhex (name text);
 INSERT INTO test_unhex values('4142'), ('6f70656e4761757373');
 SELECT UNHEX(name) from test_unhex;
+
+-- 严格模式，参数不合法，报error
+set dolphin.sql_mode = 'sql_mode_strict';
+SELECT UNHEX('GG');
 
 drop schema unhex_test cascade;
 reset current_schema;

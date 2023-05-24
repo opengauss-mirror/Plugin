@@ -71,14 +71,21 @@ SELECT FROM_BASE64(now());
 
 -- 测试table类型作为输入
 CREATE TABLE test_base64 (name text);
-INSERT INTO test_base64 values('YWJj'), ('MTIzNDU2'), ('asjeifj');
+INSERT INTO test_base64 values('YWJj'), ('MTIzNDU2'), ('asjeifj'), (from_base64('as!@#$'));
 SELECT FROM_BASE64(name) from test_base64;
  from_base64 
 -------------
  abc
  123456
  
-(3 rows)
+ 
+(4 rows)
+
+SELECT * FROM test_base64 WHERE name IS NULL;
+ name 
+------
+ 
+(1 row)
 
 drop schema from_base64 cascade;
 NOTICE:  drop cascades to table test_base64

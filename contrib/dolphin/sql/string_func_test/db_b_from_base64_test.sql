@@ -20,8 +20,9 @@ SELECT FROM_BASE64(now());
 
 -- 测试table类型作为输入
 CREATE TABLE test_base64 (name text);
-INSERT INTO test_base64 values('YWJj'), ('MTIzNDU2'), ('asjeifj');
+INSERT INTO test_base64 values('YWJj'), ('MTIzNDU2'), ('asjeifj'), (from_base64('as!@#$'));
 SELECT FROM_BASE64(name) from test_base64;
+SELECT * FROM test_base64 WHERE name IS NULL;
 
 drop schema from_base64 cascade;
 reset current_schema;

@@ -50,6 +50,8 @@ CREATE OR REPLACE FUNCTION pg_catalog.to_base64 (text)  RETURNS text LANGUAGE C 
 CREATE OR REPLACE FUNCTION pg_catalog.to_base64 (boolean)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'base64_encode_bool';
 CREATE OR REPLACE FUNCTION pg_catalog.to_base64 (bit)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'base64_encode_bit';
 
+DROP FUNCTION IF EXISTS pg_catalog.unhex ("timestamp") CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.unhex (numeric) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.unhex (text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.unhex (boolean) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.unhex (bytea) CASCADE;
