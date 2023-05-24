@@ -338,6 +338,10 @@ extern "C" DLL_PUBLIC Datum ord_text(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(ord_numeric);
 extern "C" DLL_PUBLIC Datum ord_numeric(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(ord_bit);
+extern "C" DLL_PUBLIC Datum ord_bit(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(substring_index);
 extern "C" DLL_PUBLIC Datum substring_index(PG_FUNCTION_ARGS);
 
@@ -349,6 +353,12 @@ extern "C" DLL_PUBLIC Datum substring_index_bool_2(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(substring_index_2bool);
 extern "C" DLL_PUBLIC Datum substring_index_2bool(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(substring_index_numeric);
+extern "C" DLL_PUBLIC Datum substring_index_numeric(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(substring_index_text);
+extern "C" DLL_PUBLIC Datum substring_index_text(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(Varlena2Float8);
 extern "C" DLL_PUBLIC Datum Varlena2Float8(PG_FUNCTION_ARGS);
@@ -9844,28 +9854,35 @@ Datum ord_numeric(PG_FUNCTION_ARGS)
         PG_RETURN_INT128(0);
 }
 
+Datum ord_bit(PG_FUNCTION_ARGS)
+{
+    int128 result = 0;
 
-static int64 NumericToLongLongNoOverflow(Numeric num)
+    VarBit *bitData = PG_GETARG_VARBIT_P(0);
+    bits8* firstBit = VARBITS(bitData);
+    result = *firstBit;
+    result >>= VARBITPAD(bitData);
+    PG_RETURN_INT128(result);
+}
+
+static int64 StringToLongNoOverflow(char* str, bool can_ignore)
 {
     char* endptr = NULL;
-    char* tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
-    long double val = strtold(tmp, &endptr);
+    long val = strtol(str, &endptr, 10);
+    int level = (can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
     if (*endptr != '\0') {
-        ereport(ERROR,
+        ereport(level,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                 errmsg("invalid input syntax for type long long precision: \"%s\"", tmp)));
+                 errmsg("invalid input syntax for type long precision: \"%s\"", str)));
     }
-    pfree_ext(tmp);
     return val;
 }
 
-static text* SubstringIndexReally(text* textStr, text* textStrToSearch, Numeric count)
+static text* SubstringIndexReally(text* textStr, text* textStrToSearch, int64 count64)
 {
     text* result = NULL;
     int position = 0;
 
-    int64 count64 = NumericToLongLongNoOverflow(count);
-    
     if (TEXTISORANULL(textStr) || TEXTISORANULL(textStrToSearch) || (0 == count64)) {
         result = cstring_to_text("");
         return result;
@@ -9899,51 +9916,161 @@ static text* SubstringIndexReally(text* textStr, text* textStrToSearch, Numeric 
     return result;
 }
 
+/*
+ * function for dolphin--1.0
+ */
 Datum substring_index(PG_FUNCTION_ARGS)
 {
     text* textStr = PG_GETARG_TEXT_P(0);
     text* textStrToSearch = PG_GETARG_TEXT_P(1);
-    Numeric count = PG_GETARG_NUMERIC(2);
+    Datum count_dt = PG_GETARG_DATUM(2);
     text* result = NULL;
 
-    result = SubstringIndexReally(textStr, textStrToSearch, count);
+    int64 count64 = (int64)DirectFunctionCall1(numeric_int8, count_dt);
+    result = SubstringIndexReally(textStr, textStrToSearch, count64);
     PG_RETURN_TEXT_P(result);
 }
 
+/*
+ * function for dolphin--1.0
+ */
 Datum substring_index_bool_1(PG_FUNCTION_ARGS)
 {
     bool firstArg = PG_GETARG_BOOL(0);
     text* textStr = cstring_to_text(firstArg ? "1" : "0");
     text* textStrToSearch = PG_GETARG_TEXT_P(1);
-    Numeric count = PG_GETARG_NUMERIC(2);
+    Datum count_dt = PG_GETARG_DATUM(2);
     text* result = NULL;
 
-    result = SubstringIndexReally(textStr, textStrToSearch, count);
+    int64 count64 = (int64)DirectFunctionCall1(numeric_int8, count_dt);
+    result = SubstringIndexReally(textStr, textStrToSearch, count64);
     PG_RETURN_TEXT_P(result);
 }
 
+/*
+ * function for dolphin--1.0
+ */
 Datum substring_index_bool_2(PG_FUNCTION_ARGS)
 {
     text* textStr = PG_GETARG_TEXT_P(0);
     bool secondArg = PG_GETARG_BOOL(1);
     text* textStrToSearch = cstring_to_text(secondArg ? "1" : "0");
-    Numeric count = PG_GETARG_NUMERIC(2);
+    Datum count_dt = PG_GETARG_DATUM(2);
     text* result = NULL;
 
-    result = SubstringIndexReally(textStr, textStrToSearch, count);
+    int64 count64 = (int64)DirectFunctionCall1(numeric_int8, count_dt);
+    result = SubstringIndexReally(textStr, textStrToSearch, count64);
     PG_RETURN_TEXT_P(result);
 }
 
+/*
+ * function for dolphin--1.0
+ */
 Datum substring_index_2bool(PG_FUNCTION_ARGS)
 {
     bool firstArg = PG_GETARG_BOOL(0);
     text* textStr = cstring_to_text(firstArg ? "1" : "0");
     bool secondArg = PG_GETARG_BOOL(1);
     text* textStrToSearch = cstring_to_text(secondArg ? "1" : "0");
-    Numeric count = PG_GETARG_NUMERIC(2);
+    Datum count_dt = PG_GETARG_DATUM(2);
     text* result = NULL;
 
-    result = SubstringIndexReally(textStr, textStrToSearch, count);
+    int64 count64 = (int64)DirectFunctionCall1(numeric_int8, count_dt);
+    result = SubstringIndexReally(textStr, textStrToSearch, count64);
+    PG_RETURN_TEXT_P(result);
+}
+
+/*
+ * function for dolphin--1.1
+ */
+Datum substring_index_numeric(PG_FUNCTION_ARGS)
+{
+    bool typIsVarlena = false;
+    Oid typOutput;
+    Datum dt = 0;
+    Oid valtype = 0;
+    text* textStr = NULL;
+    text* textStrToSearch = NULL;
+    int64 count64 = 0;
+    text* result = NULL;
+
+    dt = PG_GETARG_DATUM(0);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of substring_index() input")));
+    if (valtype == BOOLOID) {
+        textStr = cstring_to_text(PG_GETARG_BOOL(0) ? "1" : "0");
+    } else {
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        textStr = cstring_to_text(OidOutputFunctionCall(typOutput, dt));
+    }
+    
+    dt = PG_GETARG_DATUM(1);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of substring_index() input")));
+    if (valtype == BOOLOID) {
+        textStrToSearch = cstring_to_text(PG_GETARG_BOOL(1) ? "1" : "0");
+    } else {
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        textStrToSearch = cstring_to_text(OidOutputFunctionCall(typOutput, dt));
+    }
+
+    Datum count_dt = PG_GETARG_DATUM(2);
+    count64 = (int64)DirectFunctionCall1(numeric_int8, count_dt);
+    result = SubstringIndexReally(textStr, textStrToSearch, count64);
+
+    PG_RETURN_TEXT_P(result);
+}
+
+/*
+ * function for dolphin--1.1
+ */
+Datum substring_index_text(PG_FUNCTION_ARGS)
+{
+    bool typIsVarlena = false;
+    Oid typOutput;
+    Datum dt = 0;
+    Oid valtype = 0;
+    text* textStr = NULL;
+    text* textStrToSearch = NULL;
+    int64 count64 = 0;
+    text* result = NULL;
+
+    dt = PG_GETARG_DATUM(0);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of substring_index() input")));
+    if (valtype == BOOLOID) {
+        textStr = cstring_to_text(PG_GETARG_BOOL(0) ? "1" : "0");
+    } else {
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        textStr = cstring_to_text(OidOutputFunctionCall(typOutput, dt));
+    }
+    
+    dt = PG_GETARG_DATUM(1);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of substring_index() input")));
+    if (valtype == BOOLOID) {
+        textStrToSearch = cstring_to_text(PG_GETARG_BOOL(1) ? "1" : "0");
+    } else {
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        textStrToSearch = cstring_to_text(OidOutputFunctionCall(typOutput, dt));
+    }
+
+    char* count = text_to_cstring(PG_GETARG_TEXT_P(2));
+    count64 = StringToLongNoOverflow(count, fcinfo->can_ignore);
+    result = SubstringIndexReally(textStr, textStrToSearch, count64);
+
     PG_RETURN_TEXT_P(result);
 }
 
