@@ -1,0 +1,108 @@
+create schema b_signal_resignal;
+set current_schema to 'b_signal_resignal';
+create procedure p_resignal1() resignal;
+call p_resignal1();
+ERROR:  RESIGNAL when handler not active
+CONTEXT:  PL/pgSQL function p_resignal1() line 3 at RESIGNAL
+show warnings;
+ level | code |             message              
+-------+------+----------------------------------
+ Error | 1088 | RESIGNAL when handler not active
+(1 row)
+
+create procedure p_resignal2() resignal set MESSAGE_TEXT = 'this is resignal statement', MYSQL_ERRNO = 1234;
+call p_resignal2();
+ERROR:  RESIGNAL when handler not active
+CONTEXT:  PL/pgSQL function p_resignal2() line 3 at RESIGNAL
+show warnings;
+ level | code |             message              
+-------+------+----------------------------------
+ Error | 1088 | RESIGNAL when handler not active
+(1 row)
+
+create procedure p_resignal3() resignal sqlstate '42000' set MESSAGE_TEXT = 'this is resignal statement', MYSQL_ERRNO = 1234;
+call p_resignal3();
+ERROR:  RESIGNAL when handler not active
+CONTEXT:  PL/pgSQL function p_resignal3() line 3 at RESIGNAL
+show warnings;
+ level | code |             message              
+-------+------+----------------------------------
+ Error | 1088 | RESIGNAL when handler not active
+(1 row)
+
+create procedure p_resignal4(a text, b int) resignal SQLSTATE '42000' set MESSAGE_TEXT = a, MYSQL_ERRNO = b;
+call p_resignal4('this is resignal error', 1234);
+ERROR:  RESIGNAL when handler not active
+CONTEXT:  PL/pgSQL function p_resignal4(text,integer) line 3 at RESIGNAL
+show warning;
+ERROR:  unrecognized configuration parameter "warning"
+create procedure p_resignal5() resignal sqlstate '42000' set MESSAGE_TEXT = 'this is resignal statement', MYSQL_ERRNO = 1234,
+        CLASS_ORIGIN = 'ISO 9075', SUBCLASS_ORIGIN = 'ISO 9075', CONSTRAINT_NAME = 'constraint_name',
+        CONSTRAINT_CATALOG = 'constraint_catalog', CONSTRAINT_SCHEMA = 'constraint_schema',
+        CATALOG_NAME = 'catalog_name', SCHEMA_NAME = 'schema_name', TABLE_NAME = 'table_name',
+        COLUMN_NAME = 'column name', CURSOR_NAME = 'cursor name';;
+call p_resignal5();
+ERROR:  RESIGNAL when handler not active
+CONTEXT:  PL/pgSQL function p_resignal5() line 3 at RESIGNAL
+show warnings;
+ level | code |             message              
+-------+------+----------------------------------
+ Error | 1088 | RESIGNAL when handler not active
+(1 row)
+
+create procedure p_signal1() signal SQLSTATE '42000';
+call p_signal1();
+ERROR:  Unhandled user-defined exception condition
+CONTEXT:  PL/pgSQL function p_signal1() line 3 at SIGNAL
+show warnings;
+ level | code |                  message                   
+-------+------+--------------------------------------------
+ Error |  192 | Unhandled user-defined exception condition
+(1 row)
+
+create procedure p_signal2() signal SQLSTATE '42000' set MESSAGE_TEXT = 'this is signal statement', MYSQL_ERRNO = 1234;
+call p_signal2();
+ERROR:  this is signal statement
+CONTEXT:  PL/pgSQL function p_signal2() line 3 at SIGNAL
+show warnings;
+ level | code |         message          
+-------+------+--------------------------
+ Error | 1234 | this is signal statement
+(1 row)
+
+create procedure p_signal3(a text, b int) resignal sqlstate '42000' set MESSAGE_TEXT = a, MYSQL_ERRNO = b;
+call p_signal3('this is signal error', 1234);
+ERROR:  RESIGNAL when handler not active
+CONTEXT:  PL/pgSQL function p_signal3(text,integer) line 3 at RESIGNAL
+show warnings;
+ level | code |             message              
+-------+------+----------------------------------
+ Error | 1088 | RESIGNAL when handler not active
+(1 row)
+
+create procedure p_signal4() resignal sqlstate '42000' set MESSAGE_TEXT = 'this is signal statement', MYSQL_ERRNO = 1234,
+        CLASS_ORIGIN = 'ISO 9075', SUBCLASS_ORIGIN = 'ISO 9075', CONSTRAINT_NAME = 'constraint_name',
+        CONSTRAINT_CATALOG = 'constraint_catalog', CONSTRAINT_SCHEMA = 'constraint_schema',
+        CATALOG_NAME = 'catalog_name', SCHEMA_NAME = 'schema_name', TABLE_NAME = 'table_name',
+        COLUMN_NAME = 'column name', CURSOR_NAME = 'cursor name';;
+call p_signal4();
+ERROR:  RESIGNAL when handler not active
+CONTEXT:  PL/pgSQL function p_signal4() line 3 at RESIGNAL
+show warnings;
+ level | code |             message              
+-------+------+----------------------------------
+ Error | 1088 | RESIGNAL when handler not active
+(1 row)
+
+drop schema b_signal_resignal cascade;
+NOTICE:  drop cascades to 9 other objects
+DETAIL:  drop cascades to function p_resignal1()
+drop cascades to function p_resignal2()
+drop cascades to function p_resignal3()
+drop cascades to function p_resignal4(text,integer)
+drop cascades to function p_resignal5()
+drop cascades to function p_signal1()
+drop cascades to function p_signal2()
+drop cascades to function p_signal3(text,integer)
+drop cascades to function p_signal4()
+reset current_schema;
