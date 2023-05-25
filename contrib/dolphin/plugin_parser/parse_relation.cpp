@@ -21,6 +21,7 @@
 #include "access/tableam.h"
 #include "plugin_catalog/heap.h"
 #include "catalog/namespace.h"
+#include "catalog/pg_auth_history.h"
 #include "catalog/pg_type.h"
 #include "funcapi.h"
 #include "nodes/makefuncs.h"
@@ -1018,7 +1019,7 @@ Relation parserOpenTable(ParseState *pstate, const RangeVar *relation, int lockm
     initStringInfo(&detailInfo);
 
     char *snapshot_name = strchr(relation->relname, DB4AI_SNAPSHOT_VERSION_DELIMITER);
-    if (snapshot_name) {
+    if (unlikely(snapshot_name)) {
         *snapshot_name = *u_sess->attr.attr_sql.db4ai_snapshot_version_delimiter;
         while (*(++snapshot_name)) {
             if (*snapshot_name == DB4AI_SNAPSHOT_VERSION_SEPARATOR) {
@@ -1147,7 +1148,7 @@ Relation parserOpenTable(ParseState *pstate, const RangeVar *relation, int lockm
     TrForbidAccessRbObject(RelationRelationId, RelationGetRelid(rel), relation->relname);
 
     /* check wlm session info whether is valid in this database */
-    if (!CheckWLMSessionInfoTableValid(relation->relname) && !u_sess->attr.attr_common.IsInplaceUpgrade) {
+    if (ENABLE_WORKLOAD_CONTROL && !CheckWLMSessionInfoTableValid(relation->relname) && !u_sess->attr.attr_common.IsInplaceUpgrade) {
         ereport(NOTICE,
             (errcode(ERRCODE_UNDEFINED_TABLE),
                 errmsg("relation \"%s\" has data only in database \"postgres\"", relation->relname),
@@ -1250,6 +1251,7 @@ RangeTblEntry* addRangeTableEntry(ParseState* pstate, RangeVar* relation, Alias*
     if (list_length(relation->partitionNameList) > 0) {
         GetPartitionOidListForRTE(rte, relation);
     }
+#ifdef ENABLE_MULTIPLE_NODES
     if (!rte->relhasbucket && relation->isbucket) {
         ereport(ERROR, (errmsg("table is normal,cannot contains buckets(0,1,2...)")));
     }
@@ -1262,6 +1264,7 @@ RangeTblEntry* addRangeTableEntry(ParseState* pstate, RangeVar* relation, Alias*
         rte->isbucket = true;
         rte->buckets = RangeVarGetBucketList(relation);
     }
+#endif
 
 #ifdef PGXC
     rte->relname = pstrdup(RelationGetRelationName(rel));
@@ -1945,7 +1948,7 @@ void addRTEtoQuery(
 {
     if (addToJoinList) {
         int rtindex = RTERangeTablePosn(pstate, rte, NULL);
-        RangeTblRef* rtr = makeNode(RangeTblRef);
+        RangeTblRef* rtr = makeNodeFast(RangeTblRef);
 
         rtr->rtindex = rtindex;
         pstate->p_joinlist = lappend(pstate->p_joinlist, rtr);
@@ -3027,6 +3030,7 @@ static void setRteOrientation(Relation rel, RangeTblEntry* rte)
 {
     if (RelationIsCUFormat(rel)) {
         rte->orientation = REL_COL_ORIENTED;
+#ifdef ENABLE_MULTIPLE_NODES
     } else if (RelationIsPAXFormat(rel)) {
         rte->orientation = REL_PAX_ORIENTED;
 
@@ -3037,6 +3041,7 @@ static void setRteOrientation(Relation rel, RangeTblEntry* rte)
         }
     } else if(RelationIsTsStore(rel)) {
         rte->orientation = REL_TIMESERIES_ORIENTED;
+#endif
     } else {
         rte->orientation = REL_ROW_ORIENTED;
     }

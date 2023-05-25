@@ -197,7 +197,9 @@ enum PLpgSQL_stmt_types {
     PLPGSQL_STMT_COMMIT,
     PLPGSQL_STMT_ROLLBACK,
     PLPGSQL_STMT_NULL,
-    PLPGSQL_STMT_SAVEPOINT
+    PLPGSQL_STMT_SAVEPOINT,
+    PLPGSQL_STMT_SIGNAL,
+    PLPGSQL_STMT_RESIGNAL
 };
 
 /* ----------
@@ -247,6 +249,26 @@ typedef enum { PLPGSQL_TRUE, PLPGSQL_FALSE, PLPGSQL_NULL } PLpgSQL_state;
  * --------
  */
 typedef enum { DECLARE_HANDLER_EXIT, DECLARE_HANDLER_CONTINUE } PLpgSQL_declare_handler;
+
+/* --------
+ * condition_information_item_name of the SIGNAL/RESIGNAL
+ * ref: https://docs.oracle.com/cd/E17952_01/mysql-5.7-en/signal.html
+*/
+
+typedef enum {
+    PLPGSQL_CLASS_ORIGIN,
+    PLPGSQL_SUBCLASS_ORIGIN,
+    PLPGSQL_MESSAGE_TEXT,
+    PLPGSQL_MYSQL_ERRNO,
+    PLPGSQL_CONSTRAINT_CATALOG,
+    PLPGSQL_CONSTRAINT_SCHEMA,
+    PLPGSQL_CONSTRAINT_NAME,
+    PLPGSQL_CATALOG_NAME,
+    PLPGSQL_SCHEMA_NAME,
+    PLPGSQL_TABLE_NAME,
+    PLPGSQL_COLUMN_NAME,
+    PLPGSQL_CURSOR_NAME
+} PLpgSQL_con_info_item_value;
 
 /**********************************************************************
  * Node and structure definitions
@@ -902,6 +924,38 @@ typedef struct { /* RAISE statement option */
     PLpgSQL_expr* expr;
 } PLpgSQL_raise_option;
 
+typedef struct {    /* signal/resignal statement */
+    int cmd_type;
+    int lineno;
+    int sqlerrstate;    /* SQLSTATE integer format */
+    char *sqlstate;     /* SQLSTATE string format */
+    char *condname;     /* condition name, SQLSTATE, or NULL */
+    List *cond_info_item;   /* PLpgSQL_signal_info_item */
+    char *sqlString;
+} PLpgSQL_stmt_signal;
+
+typedef struct {    /* condition information item name for signal/resignal */
+    char *sqlstate;
+    char *class_origin;
+    char *subclass_origin;
+    char *message_text;
+    char *constraint_catalog;
+    char *constraint_schema;
+    char *constraint_name;
+    char *catalog_name;
+    char *schema_name;
+    char *table_name;
+    char *column_name;
+    char *cursor_name;
+    int sqlerrcode;     /* mysql_errno */
+} PLpgSQL_condition_info_item;
+
+typedef struct {    /* siganl_information_item */
+    int con_info_value;    /* PLpgSQL_con_info_item_value */
+    char *con_name;
+    PLpgSQL_expr *expr;
+} PLpgSQL_signal_info_item;
+
 typedef struct { /* Generic SQL statement to execute */
     int cmd_type;
     int lineno;
@@ -1164,6 +1218,7 @@ typedef struct PLpgSQL_execstate { /* Runtime execution data	*/
     Oid curr_nested_table_type;
     int curr_nested_table_layers;
     bool is_exception;
+    bool is_declare_handler;    /* the block has declare handler stmt */
 } PLpgSQL_execstate;
 
 typedef struct PLpgSQL_pkg_execstate { /* Runtime execution data	*/
