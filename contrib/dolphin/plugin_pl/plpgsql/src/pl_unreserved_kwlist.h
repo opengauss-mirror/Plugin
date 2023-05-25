@@ -110,7 +110,7 @@ PG_KEYWORD("rowtype", K_ROWTYPE)
 PG_KEYWORD("save", K_SAVE)
 PG_KEYWORD("savepoint", K_SAVEPOINT)
 PG_KEYWORD("schema_name", K_SCHEMA_NAME)
-PG_KEYWORD("scroll", K_SCROLL) 
+PG_KEYWORD("scroll", K_SCROLL)
 #ifdef DOLPHIN
 PG_KEYWORD("set", K_SET)
 #endif
