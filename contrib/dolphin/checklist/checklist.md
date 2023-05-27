@@ -179,8 +179,10 @@
 |plugin_utils|date.h  |src\include\utils\date.h   |
 |plugin_utils|datetime.h  |src\include\utils\datetime.h  |
 |plugin_utils|fmgr.h    |src\include\fmgr.h |
+|plugin_utils|int8.h    |src\include\utils\int8.h |
 |plugin_utils|timestamp.h  |src\include\utils\timestamp.h   |
 |plugin_utils|plpgsql.h  |src\include\utils\plpgsql.h   |
+|plugin_utils|varbit.h  |src\include\utils\varbit.h   |
 |plugin_vector|vecfunc.h  |src\include\vecexecutor\vecfunc.h   |
 |plugin_catalog|heap.h  |src\include\catalog\heap.h   |
 |plugin_optimizer|pgxcplan.h  |src\include\optimizer\pgxcplan.h   |
@@ -190,5 +192,4 @@
 |plugin_optimizer|planmain.h  |src\include\optimizer\planmain.h   |
 |./|builtin_funcs.ini  |src\common\backend\catalog\builtin_funcs.ini   |
 |./|fmgrtab.h  |src\include\utils\fmgrtab.h   |
-|./|int8.h  |src\include\utils\int8.h   |
 |plugin_utils|jsonapi.h  |src\include\utils\jsonapi.h

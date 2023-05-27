@@ -127,11 +127,11 @@ extern Datum generate_series_int8(PG_FUNCTION_ARGS);
 extern Datum generate_series_step_int8(PG_FUNCTION_ARGS);
 
 #ifndef MADLIB
-#include "../plugin_vector/vecprimitive/int8.inl"
 #include "../plugin_vector/vecprimitive/int4.inl"
 #include "../plugin_vector/vecprimitive/float.inl"
 #include "../plugin_vector/vecprimitive/numeric.inl"
 #include "../plugin_vector/vecprimitive/varchar.inl"
+#include "../plugin_vector/vecprimitive/int8.inl"
 #endif
 
 #endif /* INT8_H */
