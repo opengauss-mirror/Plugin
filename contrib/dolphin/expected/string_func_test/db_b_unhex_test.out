@@ -1,5 +1,7 @@
 create schema unhex_test;
 set current_schema to 'unhex_test';
+-- 非严格模式，参数不合法，报warning，返回null
+set dolphin.sql_mode = 'sql_mode_full_group';
 --测试字符串作为输入，返回十六进制编码的编码结果
 SELECT UNHEX('6f70656e4761757373');
    unhex   
@@ -27,6 +29,8 @@ SELECT UNHEX(HEX('测试'));
 
 --测试非十六进制符号和二进制类型作为输入，返回NULL
 SELECT UNHEX('GG');
+WARNING:  Incorrect string value: "GG" for function unhex 
+CONTEXT:  referenced column: unhex
  unhex 
 -------
  
@@ -66,6 +70,8 @@ SELECT UNHEX(41424344454647484950515253545556575859);
 
 --测试日期类型、bool类型、空值作为输入
 SELECT UNHEX('2022-12-31'::date);
+WARNING:  Incorrect string value: "12-31-2022" for function unhex 
+CONTEXT:  referenced column: unhex
  unhex 
 -------
  
@@ -99,6 +105,11 @@ SELECT UNHEX(name) from test_unhex;
  openGauss
 (2 rows)
 
+-- 严格模式，参数不合法，报error
+set dolphin.sql_mode = 'sql_mode_strict';
+SELECT UNHEX('GG');
+ERROR:  Incorrect string value: "GG" for function unhex 
+CONTEXT:  referenced column: unhex
 drop schema unhex_test cascade;
 NOTICE:  drop cascades to table test_unhex
 reset current_schema;

@@ -818,27 +818,40 @@ static bytea* hex_decode_internal(char* data, int dataLength)
 {
     int resultLength, res;
     resultLength = hex_dec_len(data, dataLength);
+    errno_t rc = EOK;
 
-    char* charDataEnd = data + dataLength;
+    char* originData = (char*)palloc(dataLength + 1);
+    rc = memcpy_s(originData, dataLength, data, dataLength);
+    securec_check(rc, "\0", "\0");
+    originData[dataLength] = '\0';
+
     const int evenLength = 2;
+    char* newData;
     if (dataLength % evenLength != 0) {
         resultLength += 1;
         dataLength += 1;
-        char* newSrc = (char*)palloc(dataLength + 1);
-        char* tempSrc = newSrc;
-        const char* oldSrc = data;
-        *tempSrc = '0';
-        tempSrc++;
-        while (oldSrc < charDataEnd) {
-            *tempSrc = *oldSrc;
-            tempSrc++;
-            oldSrc++;
-        }
-        data = newSrc;
+        newData = (char*)palloc(dataLength + 1);
+        *newData = '0';
+        rc = memcpy_s(newData + 1, dataLength - 1, data, dataLength - 1);
+        securec_check(rc, "\0", "\0");
+    } else {
+        newData = (char*)palloc(dataLength + 1);
+        rc = memcpy_s(newData, dataLength, data, dataLength);
+        securec_check(rc, "\0", "\0");
     }
+    newData[dataLength] = '\0';
 
     bytea* result = (bytea*)palloc(VARHDRSZ + resultLength);
-    res = hex_decode(data, dataLength, VARDATA(result), false);
+    res = hex_decode(newData, dataLength, VARDATA(result), false);
+
+    if (dataLength != 0 && res == 0) {
+        int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
+        ereport(errlevel,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("Incorrect string value: \"%s\" for function unhex ", originData)));
+    }
+    pfree(newData);
+    pfree(originData);
     SET_VARSIZE(result, VARHDRSZ + res);
     return result;
 }
@@ -911,14 +924,14 @@ Datum base64_decode_text(PG_FUNCTION_ARGS)
     text* data = PG_GETARG_TEXT_P(0);
     int dataLength = VARSIZE(data) - VARHDRSZ;
     bytea* result = b64_decode_internal(VARDATA(data), dataLength);
+    int resultLength = VARSIZE(result) - VARHDRSZ;
+    if (dataLength != 0 && resultLength == 0) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(result);
 }
 
 Datum base64_decode_bool(PG_FUNCTION_ARGS)
 {
-    const char* nullString = "";
-    text* result = cstring_to_text_with_len(nullString, strlen(nullString));
-    PG_RETURN_TEXT_P(result);
+    PG_RETURN_NULL();
 }
 
 Datum base64_decode_bit(PG_FUNCTION_ARGS)
@@ -929,6 +942,8 @@ Datum base64_decode_bit(PG_FUNCTION_ARGS)
 
     int dataLength = VARSIZE(toBytea) - VARHDRSZ;
     bytea* decodeResult = b64_decode_internal(VARDATA(toBytea), dataLength);
+    int resultLength = VARSIZE(decodeResult) - VARHDRSZ;
+    if (dataLength != 0 && resultLength == 0)  PG_RETURN_NULL();
     PG_RETURN_TEXT_P(decodeResult);
 }
 
@@ -937,14 +952,14 @@ Datum hex_decode_text(PG_FUNCTION_ARGS)
     text* data = PG_GETARG_TEXT_P(0);
     int dataLength = VARSIZE(data) - VARHDRSZ;
     bytea* result = hex_decode_internal(VARDATA(data), dataLength);
+    int resultLength = VARSIZE(result) - VARHDRSZ;
+    if (dataLength != 0 && resultLength == 0) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(result);
 }
 
 Datum hex_decode_bytea(PG_FUNCTION_ARGS)
 {
-    const char* nullString = "";
-    text* result = cstring_to_text_with_len(nullString, strlen(nullString));
-    PG_RETURN_TEXT_P(result);
+    PG_RETURN_NULL();
 }
 
 Datum hex_decode_bit(PG_FUNCTION_ARGS)
@@ -955,6 +970,8 @@ Datum hex_decode_bit(PG_FUNCTION_ARGS)
 
     int dataLength = VARSIZE(toBytea) - VARHDRSZ;
     text* result = hex_decode_internal(VARDATA(toBytea), dataLength);
+    int resultLength = VARSIZE(result) - VARHDRSZ;
+    if (dataLength != 0 && resultLength == 0) PG_RETURN_NULL();
     PG_RETURN_TEXT_P(result);
 }
 
