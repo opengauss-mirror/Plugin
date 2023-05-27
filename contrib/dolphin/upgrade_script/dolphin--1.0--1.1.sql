@@ -91,3 +91,15 @@ CREATE FUNCTION pg_catalog.substring_index (
 "any",
 numeric
 ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_numeric';
+DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text, text, numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text, text) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any", "any", int8) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.export_set (int8, "any", "any", "any", int8) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'export_set_5args_any';
+
+DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any", "any") CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.export_set (int8, "any", "any", "any") RETURNS text LANGUAGE C STABLE STRICT  as '$libdir/dolphin', 'export_set_4args_any';
+
+DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any") CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.export_set (int8, "any", "any")  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'export_set_3args_any';

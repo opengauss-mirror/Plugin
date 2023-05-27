@@ -46,6 +46,7 @@
 #include "vecexecutor/vechashtable.h"
 #include "vecexecutor/vechashagg.h"
 #include "vectorsonic/vsonichashagg.h"
+
 #ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
 
@@ -21961,6 +21962,112 @@ Datum export_set_3args(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(TextExportSet(value, on, off, ",", 64));
 }
 
+static void check_huge_toast_pointer(Datum value, Oid valtype)
+{
+    if ((valtype == TEXTOID || valtype == CLOBOID || valtype == BLOBOID) &&
+        VARATT_IS_HUGE_TOAST_POINTER(DatumGetPointer(value))) {
+        ereport(ERROR,
+            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("export_set could not support more than 1GB clob/blob data")));
+    }
+}
+
+char *get_arg(Datum dt, Oid valtype, bool boolid)
+{
+    bool typIsVarlena = false;
+    Oid typOutput;
+    char *one = "1", *zero = "0", *nul = "";
+
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of export_set() input")));
+    if (valtype == BOOLOID) {
+        return boolid ? one : zero;
+    } else if (valtype == BITOID) {
+        return nul;
+    } else {
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        return OidOutputFunctionCall(typOutput, dt);
+    }
+    return nul;
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(export_set_5args_any);
+extern "C" DLL_PUBLIC Datum export_set_5args_any(PG_FUNCTION_ARGS);
+Datum export_set_5args_any(PG_FUNCTION_ARGS)
+{
+    char *on, *off, *separator;
+    const int arg2 = 2, arg3 = 3;
+    uint64 value = PG_GETARG_INT64(0);
+
+    Datum dt = PG_GETARG_DATUM(1);
+    Oid valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    check_huge_toast_pointer(dt, valtype);
+    on = get_arg(dt, valtype, PG_GETARG_BOOL(1));
+    
+    Datum dt1 = PG_GETARG_DATUM(2);
+    Oid valtype1 = get_fn_expr_argtype(fcinfo->flinfo, 2);
+    check_huge_toast_pointer(dt1, valtype1);
+    off = get_arg(dt1, valtype1, PG_GETARG_BOOL(arg2));
+
+    Datum dt2 = PG_GETARG_DATUM(3);
+    Oid valtype2 = get_fn_expr_argtype(fcinfo->flinfo, 3);
+    check_huge_toast_pointer(dt2, valtype2);
+    separator = get_arg(dt2, valtype2, PG_GETARG_BOOL(arg3));
+
+    int minN = 0, maxN = 64;
+    int64 numberOfBits = PG_GETARG_INT64(4);
+    if (numberOfBits < minN || numberOfBits > maxN)
+        numberOfBits = 64;
+
+    PG_RETURN_TEXT_P(TextExportSet(value, on, off, separator, numberOfBits));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(export_set_4args_any);
+extern "C" DLL_PUBLIC Datum export_set_4args_any(PG_FUNCTION_ARGS);
+Datum export_set_4args_any(PG_FUNCTION_ARGS)
+{
+    uint64 value = PG_GETARG_INT64(0);
+    const int arg2 = 2, arg3 = 3;
+    char *on, *off, *separator;
+
+    Datum dt = PG_GETARG_DATUM(1);
+    Oid valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    check_huge_toast_pointer(dt, valtype);
+    on = get_arg(dt, valtype, PG_GETARG_BOOL(1));
+
+    Datum dt1 = PG_GETARG_DATUM(2);
+    Oid valtype1 = get_fn_expr_argtype(fcinfo->flinfo, 2);
+    check_huge_toast_pointer(dt1, valtype1);
+    off = get_arg(dt1, valtype1, PG_GETARG_BOOL(arg2));
+    
+    Datum dt2 = PG_GETARG_DATUM(3);
+    Oid valtype2 = get_fn_expr_argtype(fcinfo->flinfo, 3);
+    check_huge_toast_pointer(dt2, valtype2);
+    separator = get_arg(dt2, valtype2, PG_GETARG_BOOL(arg3));
+    
+    PG_RETURN_TEXT_P(TextExportSet(value, on, off, separator, 64));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(export_set_3args_any);
+extern "C" DLL_PUBLIC Datum export_set_3args_any(PG_FUNCTION_ARGS);
+Datum export_set_3args_any(PG_FUNCTION_ARGS)
+{
+    uint64 value = PG_GETARG_INT64(0);
+    const int arg2 = 2;
+    char *on, *off;
+
+    Datum dt = PG_GETARG_DATUM(1);
+    Oid valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    check_huge_toast_pointer(dt, valtype);
+    on = get_arg(dt, valtype, PG_GETARG_BOOL(1));
+
+    Datum dt1 = PG_GETARG_DATUM(2);
+    Oid valtype1 = get_fn_expr_argtype(fcinfo->flinfo, 2);
+    check_huge_toast_pointer(dt1, valtype1);
+    off = get_arg(dt1, valtype1, PG_GETARG_BOOL(arg2));
+    
+    PG_RETURN_TEXT_P(TextExportSet(value, on, off, ",", 64));
+}
 
 int getCount(uint64 num)
 {

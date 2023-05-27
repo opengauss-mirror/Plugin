@@ -228,3 +228,13 @@ BEGIN
 END;
 $$
 LANGUAGE plpgsql;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any", "any", int8) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any", "any") CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any") CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text, text, numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text, text) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.export_set (numeric, text, text, text, numeric) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'export_set_5args';
+CREATE OR REPLACE FUNCTION pg_catalog.export_set (numeric, text, text, text) RETURNS text LANGUAGE C STABLE STRICT  as '$libdir/dolphin', 'export_set_4args';
+CREATE OR REPLACE FUNCTION pg_catalog.export_set (numeric, text, text)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'export_set_3args';
