@@ -19,6 +19,8 @@ set dolphin.sql_mode = 'sql_mode_strict';
 select sleep(-1);
 select sleep(null);
 select sleep('a');
+set dolphin.sql_mode = '';
+select sleep('0000-00-00'::date);
 
 drop schema test_sleep cascade;
 reset current_schema;

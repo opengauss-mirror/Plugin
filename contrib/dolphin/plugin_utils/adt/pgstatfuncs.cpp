@@ -4070,7 +4070,7 @@ Datum pg_backend_pid(PG_FUNCTION_ARGS)
 
 Datum connection_id(PG_FUNCTION_ARGS)
 {
-    PG_RETURN_INT64(t_thrd.proc_cxt.MyProcPid);
+    PG_RETURN_INT64(IS_THREAD_POOL_WORKER ? u_sess->session_id : t_thrd.proc_cxt.MyProcPid);
 }
 
 Datum pg_current_userid(PG_FUNCTION_ARGS)

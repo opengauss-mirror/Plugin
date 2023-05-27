@@ -103,3 +103,12 @@ CREATE OR REPLACE FUNCTION pg_catalog.export_set (int8, "any", "any", "any") RET
 
 DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any") CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.export_set (int8, "any", "any")  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'export_set_3args_any';
+DROP FUNCTION IF EXISTS pg_catalog.sleep(d date) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.sleep(d date)
+RETURNS int AS
+$$
+BEGIN
+    RETURN (select sleep(date_int(d)));
+END;
+$$
+LANGUAGE plpgsql;
