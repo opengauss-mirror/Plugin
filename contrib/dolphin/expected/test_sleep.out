@@ -49,5 +49,12 @@ ERROR:  invalid input syntax for type double precision: "a"
 LINE 1: select sleep('a');
                      ^
 CONTEXT:  referenced column: sleep
+set dolphin.sql_mode = '';
+select sleep('0000-00-00'::date);
+ sleep 
+-------
+     0
+(1 row)
+
 drop schema test_sleep cascade;
 reset current_schema;
