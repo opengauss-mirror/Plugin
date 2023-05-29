@@ -1340,6 +1340,75 @@ explain(costs off, verbose)select * from t4 where a = 1::int8;
          Index Cond: (t4.a = 1::bigint)
 (5 rows)
 
+create table t_order_test(a uint1, b uint2, c uint4, d uint8);
+insert into t_order_test values(255, 65535, 4294967295, 9223372036854775807);
+insert into t_order_test values(127, 32767, 2147483647, 4611686018427387903);
+insert into t_order_test values(0, 0, 0, 0);
+select a from t_order_test order by a;
+  a  
+-----
+ 0
+ 127
+ 255
+(3 rows)
+
+select a from t_order_test order by a desc;
+  a  
+-----
+ 255
+ 127
+ 0
+(3 rows)
+
+select b from t_order_test order by b;
+   b   
+-------
+ 0
+ 32767
+ 65535
+(3 rows)
+
+select b from t_order_test order by b desc;
+   b   
+-------
+ 65535
+ 32767
+ 0
+(3 rows)
+
+select c from t_order_test order by c;
+     c      
+------------
+ 0
+ 2147483647
+ 4294967295
+(3 rows)
+
+select c from t_order_test order by c desc;
+     c      
+------------
+ 4294967295
+ 2147483647
+ 0
+(3 rows)
+
+select d from t_order_test order by d;
+          d          
+---------------------
+ 0
+ 4611686018427387903
+ 9223372036854775807
+(3 rows)
+
+select d from t_order_test order by d desc;
+          d          
+---------------------
+ 9223372036854775807
+ 4611686018427387903
+ 0
+(3 rows)
+
+drop table t_order_test;
 drop schema uint_index cascade;
 NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to table t1

@@ -223,5 +223,19 @@ explain(costs off, verbose)select * from t4 where a = 1::int2;
 explain(costs off, verbose)select * from t4 where a = 1::int4;
 explain(costs off, verbose)select * from t4 where a = 1::int8;
 
+create table t_order_test(a uint1, b uint2, c uint4, d uint8);
+insert into t_order_test values(255, 65535, 4294967295, 9223372036854775807);
+insert into t_order_test values(127, 32767, 2147483647, 4611686018427387903);
+insert into t_order_test values(0, 0, 0, 0);
+select a from t_order_test order by a;
+select a from t_order_test order by a desc;
+select b from t_order_test order by b;
+select b from t_order_test order by b desc;
+select c from t_order_test order by c;
+select c from t_order_test order by c desc;
+select d from t_order_test order by d;
+select d from t_order_test order by d desc;
+drop table t_order_test;
+
 drop schema uint_index cascade;
 reset current_schema;
