@@ -25,7 +25,7 @@
 #ifndef INT8_INL
 #define INT8_INL
 
-#include "int8.h"
+#include "plugin_utils/int8.h"
 #include "utils/biginteger.h"
 #include "catalog/pg_type.h"
 #include "vecexecutor/vechashtable.h"
