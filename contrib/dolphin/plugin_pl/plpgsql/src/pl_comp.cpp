@@ -426,6 +426,7 @@ static void initCompileContext(PLpgSQL_compile_context* compile_cxt, MemoryConte
     compile_cxt->plpgsql_Datums = NULL;
     compile_cxt->datum_need_free = NULL;
     compile_cxt->plpgsql_curr_compile = NULL;
+    compile_cxt->plpgsql_conditions = NULL;
     compile_cxt->plpgsql_DumpExecTree = false;
     compile_cxt->plpgsql_pkg_DumpExecTree = false;
     compile_cxt->ns_top = NULL;
@@ -3498,9 +3499,6 @@ PLpgSQL_variable* plpgsql_build_variable(const char* refname, int lineno, PLpgSQ
             var->datatype = dtype;
             var->notnull = (int)notNull;
             var->pkg = NULL;
-            var->customCondition = 0;
-            var->sqlstateCondition = NULL;
-            var->isSqlvalue = false;
             /* other fields might be filled by caller */
 
             /* preset to NULL */
@@ -4331,17 +4329,17 @@ PLpgSQL_condition* plpgsql_parse_err_condition(char* condname)
     }
 
     if (prev == NULL) {
-        PLpgSQL_nsitem* ns = plpgsql_ns_lookup(plpgsql_ns_top(), false, condname, NULL, NULL, NULL);
-        if (ns != NULL) {
-            PLpgSQL_var* var = NULL;
-
-            var = (PLpgSQL_var*)(u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[ns->itemno]);
-            if (var->customCondition != 0) {
+        PLpgSQL_condition* cond = u_sess->plsql_cxt.curr_compile_context->plpgsql_conditions;
+        while (cond) {
+            if (strcmp(cond->condname, condname) == 0) {
                 newm = (PLpgSQL_condition*)palloc(sizeof(PLpgSQL_condition));
-                newm->sqlerrstate = var->customCondition;
+                newm->sqlerrstate = cond->sqlerrstate;
                 newm->condname = condname;
                 newm->next = prev;
                 prev = newm;
+                break;
+            } else {
+                cond = cond->next;
             }
         }
         if (prev == NULL) {
@@ -4371,19 +4369,19 @@ PLpgSQL_condition* plpgsql_parse_err_condition_b_signal(const char* condname)
     PLpgSQL_condition* newm = NULL;
     PLpgSQL_condition* prev = NULL;
 
-    PLpgSQL_nsitem* ns = plpgsql_ns_lookup(plpgsql_ns_top(), false, condname, NULL, NULL, NULL);
-    if (ns != NULL) {
-        PLpgSQL_var* var = NULL;
-
-        var = (PLpgSQL_var*)(u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums[ns->itemno]);
-        if (var->customCondition != 0) {
+    PLpgSQL_condition* cond = u_sess->plsql_cxt.curr_compile_context->plpgsql_conditions;
+    while (cond) {
+        if (strcmp(cond->condname, condname) == 0) {
             newm = (PLpgSQL_condition*)palloc(sizeof(PLpgSQL_condition));
-            newm->sqlerrstate = var->customCondition;
+            newm->sqlerrstate = cond->sqlerrstate;
             newm->condname = pstrdup(condname);
-            newm->sqlstate = var->sqlstateCondition;
+            newm->sqlstate = cond->sqlstate;
             newm->next = prev;
-            newm->isSqlvalue = var->isSqlvalue;
+            newm->isSqlvalue = cond->isSqlvalue;
             prev = newm;
+            break;
+        } else {
+            cond = cond->next;
         }
     }
     if (prev == NULL) {

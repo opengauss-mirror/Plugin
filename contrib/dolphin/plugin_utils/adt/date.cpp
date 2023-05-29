@@ -2426,7 +2426,7 @@ Datum timetz_in(PG_FUNCTION_ARGS)
     TimeTzADT* result = NULL;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
-    int tz;
+    int tz = 0;
     int nf;
     int dterr;
     char workbuf[MAXDATELEN + 1];
