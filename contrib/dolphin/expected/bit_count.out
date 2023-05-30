@@ -64,7 +64,7 @@ select bit_count('18446744073709551615');
 (1 row)
 
 select bit_count('18446744073709551616');
-ERROR:  bigint unsigned out of range
+ERROR:  Incorrect INTEGER value
 CONTEXT:  referenced column: bit_count
 select bit_count('-9223372036854775807');
  bit_count 
@@ -79,8 +79,65 @@ select bit_count('-9223372036854775808');
 (1 row)
 
 select bit_count('-9223372036854775809');
-ERROR:  bigint unsigned out of range
+ERROR:  Incorrect INTEGER value
 CONTEXT:  referenced column: bit_count
+set dolphin.sql_mode = '';
+select bit_count('18446744073709551614');
+ bit_count 
+-----------
+        63
+(1 row)
+
+select bit_count('18446744073709551615');
+ bit_count 
+-----------
+        64
+(1 row)
+
+select bit_count('18446744073709551616');
+WARNING:  Incorrect INTEGER value
+CONTEXT:  referenced column: bit_count
+ bit_count 
+-----------
+        64
+(1 row)
+
+select bit_count('-9223372036854775807');
+ bit_count 
+-----------
+         2
+(1 row)
+
+select bit_count('-9223372036854775808');
+ bit_count 
+-----------
+         1
+(1 row)
+
+select bit_count('-9223372036854775809');
+WARNING:  Incorrect INTEGER value
+CONTEXT:  referenced column: bit_count
+ bit_count 
+-----------
+         1
+(1 row)
+
+select bit_count('1.21');
+WARNING:  Incorrect INTEGER value
+CONTEXT:  referenced column: bit_count
+ bit_count 
+-----------
+         1
+(1 row)
+
+select bit_count('-1.21');
+WARNING:  Incorrect INTEGER value
+CONTEXT:  referenced column: bit_count
+ bit_count 
+-----------
+        64
+(1 row)
+
 -- 测试bit越界（超过64位）
 select bit_count(b'111111111111111111111111111111111111111111111111111111111111111');
  bit_count 
@@ -156,7 +213,7 @@ select bit_count('18446744073709551615');
 (1 row)
 
 select bit_count('18446744073709551616');
-WARNING:  bigint unsigned out of range
+WARNING:  Incorrect INTEGER value
 CONTEXT:  referenced column: bit_count
  bit_count 
 -----------
@@ -176,7 +233,7 @@ select bit_count('-9223372036854775808');
 (1 row)
 
 select bit_count('-9223372036854775809');
-WARNING:  bigint unsigned out of range
+WARNING:  Incorrect INTEGER value
 CONTEXT:  referenced column: bit_count
  bit_count 
 -----------

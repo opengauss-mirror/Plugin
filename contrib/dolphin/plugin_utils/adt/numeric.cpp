@@ -21975,29 +21975,45 @@ Datum bit_count_numeric(PG_FUNCTION_ARGS)
 Datum bit_count_text(PG_FUNCTION_ARGS)
 {
     text* string = PG_GETARG_TEXT_PP(0);
-    int fromBase = 10;
-    char* data = VARDATA_ANY(string);
-    int len = VARSIZE_ANY_EXHDR(string);
-    int128 num = 0;
-    int64 maxNum = 64, minNum = 1;
-    if (len <= 0) {
-        PG_RETURN_NULL();
-    }
-    if (0 != str_to_int64(data, len, &num, &fromBase)) {
-        PG_RETURN_NULL();
-    }
+    char* data = text_to_cstring(string);
+    int base = 10;
+    char c = 0;
+    //remove start and end spaces
+    data = trim(data);
     
-    if (num > PG_UINT64_MAX || num < PG_INT64_MIN) {
-        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            ereport(WARNING, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
-            if (num > 0)
-                PG_RETURN_INT64(maxNum);
-            else
-                PG_RETURN_INT64(minNum);
+    int128 num = 0;
+    bool positive = true;
+    bool error = false;
+    for (int i = 0; i < strlen(data); i++) {
+        c = data[i];
+        if (c >= '0' && c <= '9') {
+            num *= base;
+            num += c - '0';
+        } else if (i == 0 && (c == '+' || c == '-')) {
+            positive = c == '+';
+        } else {
+            error = true;
+            break;
         }
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
+        if (num > PG_UINT64_MAX) {
+            error = true;
+            break;
+        }
     }
+    num *= positive ? 1:-1;
 
+    if ((num > PG_UINT64_MAX || num < PG_INT64_MIN) || error) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT())
+            ereport(WARNING, (errmsg("Incorrect INTEGER value")));
+        else
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrect INTEGER value")));
+
+        if (num > PG_UINT64_MAX) {
+            num = PG_UINT64_MAX;
+        } else if (num < PG_INT64_MIN) {
+            num = PG_INT64_MIN;
+        }
+    }
     PG_RETURN_INT64(getCount(num));
 }
 
