@@ -31,6 +31,14 @@ CONTEXT:  referenced column: sleep
 (1 row)
 
 select sleep('a');
+WARNING:  invalid input syntax for type double precision: "a"
+LINE 1: select sleep('a');
+                     ^
+CONTEXT:  referenced column: sleep
+WARNING:  invalid input syntax for type double precision: "a"
+LINE 1: select sleep('a');
+                     ^
+CONTEXT:  referenced column: sleep
  sleep 
 -------
      0

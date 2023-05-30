@@ -521,6 +521,9 @@ Datum float8in(PG_FUNCTION_ARGS)
     char* orig_num = NULL;
     double val;
     char* endptr = NULL;
+#ifdef DOLPHIN
+    int errlevel = !fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING;
+#endif
 
     /*
      * endptr points to the first character _after_ the sequence we recognized
@@ -536,7 +539,7 @@ Datum float8in(PG_FUNCTION_ARGS)
     if (*num == '\0') {
 
 #ifdef DOLPHIN
-        ereport((!fcinfo->can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
+        ereport(errlevel,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
         PG_RETURN_FLOAT8((float8)0);
@@ -603,10 +606,18 @@ Datum float8in(PG_FUNCTION_ARGS)
                     val = -__DBL_MAX__;
                 }
             }
+#ifdef DOLPHIN
+        } else {
+            ereport(errlevel,
+                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                    errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
+        }
+#else
         } else if (!fcinfo->can_ignore && SQL_MODE_STRICT())
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
+#endif
     }
 #ifdef HAVE_BUGGY_SOLARIS_STRTOD
     else {
@@ -646,12 +657,19 @@ Datum float8in(PG_FUNCTION_ARGS)
         endptr++;
 
     /* if there is any junk left at the end of the string, bail out */
+#ifdef DOLPHIN
+    if (*endptr != '\0') {
+        ereport(errlevel,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
+    }
+#else
     if (!fcinfo->can_ignore && SQL_MODE_STRICT() && (*endptr != '\0')) {
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
     }
-
+#endif
     if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
         if (val > __DBL_MAX__) {
             ereport(WARNING, (errmsg("value out of range: overflow")));
