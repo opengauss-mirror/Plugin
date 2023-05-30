@@ -1,8 +1,8 @@
 create schema db_show_4;
 set current_schema to 'db_show_4';
 show master status;
-      Xlog_File_Name      | Xlog_File_Offset | Xlog_Lsn  
---------------------------+------------------+-----------
+--?Xlog_File_Name      | Xlog_File_Offset |.* 
+--?.* 
 --?.*
 (1 row)
 

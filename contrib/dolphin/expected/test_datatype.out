@@ -17,8 +17,6 @@ select * from bit_test order by 1;
 
 --error, too long
 update bit_test set a = b'00' where a = b'0';
-ERROR:  bit string length 2 does not match type bit(1)
-CONTEXT:  referenced column: a
 delete from bit_test where a=b'0';
 delete from bit_test where a=b'1';
 delete from bit_test where a=b'';

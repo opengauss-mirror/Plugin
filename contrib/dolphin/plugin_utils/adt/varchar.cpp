@@ -1797,6 +1797,83 @@ Datum timestamp_varchar(PG_FUNCTION_ARGS)
     PG_RETURN_DATUM(result);
 }
 
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_bpchar);
+extern "C" DLL_PUBLIC Datum timestamp_bpchar(PG_FUNCTION_ARGS);
+Datum timestamp_bpchar(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(timestamp_out, timestamp));
+
+    result = DirectFunctionCall3(bpcharin, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_varchar);
+extern "C" DLL_PUBLIC Datum timestamptz_varchar(PG_FUNCTION_ARGS);
+Datum timestamptz_varchar(PG_FUNCTION_ARGS)
+{
+    TimestampTz timestamptz = PG_GETARG_TIMESTAMPTZ(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(timestamptz_out, timestamptz));
+
+    result = DirectFunctionCall3(varcharin, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_bpchar);
+extern "C" DLL_PUBLIC Datum timestamptz_bpchar(PG_FUNCTION_ARGS);
+Datum timestamptz_bpchar(PG_FUNCTION_ARGS)
+{
+    TimestampTz timestamptz = PG_GETARG_TIMESTAMPTZ(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(timestamptz_out, timestamptz));
+
+    result = DirectFunctionCall3(bpcharin, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_varchar);
+extern "C" DLL_PUBLIC Datum time_varchar(PG_FUNCTION_ARGS);
+Datum time_varchar(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(time_out, time));
+
+    result = DirectFunctionCall3(varcharin, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_bpchar);
+extern "C" DLL_PUBLIC Datum time_bpchar(PG_FUNCTION_ARGS);
+Datum time_bpchar(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(time_out, time));
+
+    result = DirectFunctionCall3(bpcharin, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+#endif
+
 /*
  * @Description: int1 convert to varchar
  * @in arg1 - tinyint type numeric.
@@ -1884,6 +1961,23 @@ Datum varchar_timestamp(PG_FUNCTION_ARGS)
     PG_RETURN_DATUM(result);
 }
 
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_timestamptz);
+extern "C" DLL_PUBLIC Datum varchar_timestamptz(PG_FUNCTION_ARGS);
+Datum varchar_timestamptz(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
+
+    result = DirectFunctionCall3(timestamptz_in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+#endif
+
 /*
  * @Description: int1 convert to nvarchar2
  * @in arg1 -  tinyint type numeric.
@@ -1918,6 +2012,23 @@ Datum bpchar_timestamp(PG_FUNCTION_ARGS)
 
     PG_RETURN_DATUM(result);
 }
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(bpchar_timestamptz);
+extern "C" DLL_PUBLIC Datum bpchar_timestamptz(PG_FUNCTION_ARGS);
+Datum bpchar_timestamptz(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, txt));
+
+    result = DirectFunctionCall3(timestamptz_in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+#endif
 
 /*
  * vector_bpcharlen

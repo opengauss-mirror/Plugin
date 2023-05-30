@@ -29,7 +29,11 @@
 #include "utils/int8.h"
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
+#ifdef DOLPHIN
+#include "plugin_utils/varbit.h"
+#else
 #include "utils/varbit.h"
+#endif
 
 static void pcb_error_callback(void* arg);
 
@@ -523,8 +527,13 @@ Const* make_const(ParseState* pstate, Value* value, int location)
         case T_BitString:
             /* arrange to report location if bit_in() fails */
             setup_parser_errposition_callback(&pcbstate, pstate, location);
+#ifdef DOLPHIN
+            val = DirectFunctionCall3(
+                bit_bin_in, CStringGetDatum(strVal(value)), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+#else
             val = DirectFunctionCall3(
                 bit_in, CStringGetDatum(strVal(value)), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+#endif
             cancel_parser_errposition_callback(&pcbstate);
             typid = BITOID;
             typelen = -1;

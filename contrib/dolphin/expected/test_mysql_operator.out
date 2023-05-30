@@ -36,14 +36,14 @@ insert into testforfloat values(0.0,0.0);
 insert into testforfloat values(1.27,null);
 insert into testforfloat values(0.0,null);
 insert into testforfloat values(null,null);
-insert into testforbit values('1111','1111');
-insert into testforbit values('1111','0111');
-insert into testforbit values('1111','1011');
-insert into testforbit values('1111','0000');
-insert into testforbit values('0000','1111');
-insert into testforbit values('0000','0000');
-insert into testforbit values('1111',null);
-insert into testforbit values('0000',null);
+insert into testforbit values(b'1111',b'1111');
+insert into testforbit values(b'1111',b'0111');
+insert into testforbit values(b'1111',b'1011');
+insert into testforbit values(b'1111',b'0000');
+insert into testforbit values(b'0000',b'1111');
+insert into testforbit values(b'0000',b'0000');
+insert into testforbit values(b'1111',null);
+insert into testforbit values(b'0000',null);
 insert into testforbit values(null,null);
 insert into testfordate values('2022-08-20','2022-08-20');
 insert into testfordate values('2022-08-20','2022-08-21');
@@ -291,14 +291,14 @@ insert into testforfloat values(0.0,0.0);
 insert into testforfloat values(1.27,null);
 insert into testforfloat values(0.0,null);
 insert into testforfloat values(null,null);
-insert into testforbit values('1111','1111');
-insert into testforbit values('1111','0111');
-insert into testforbit values('1111','1011');
-insert into testforbit values('1111','0000');
-insert into testforbit values('0000','1111');
-insert into testforbit values('0000','0000');
-insert into testforbit values('1111',null);
-insert into testforbit values('0000',null);
+insert into testforbit values(b'1111',b'1111');
+insert into testforbit values(b'1111',b'0111');
+insert into testforbit values(b'1111',b'1011');
+insert into testforbit values(b'1111',b'0000');
+insert into testforbit values(b'0000',b'1111');
+insert into testforbit values(b'0000',b'0000');
+insert into testforbit values(b'1111',null);
+insert into testforbit values(b'0000',null);
 insert into testforbit values(null,null);
 insert into testforboolean_u values(true,true);
 insert into testforboolean_u values(true,false);
@@ -1086,8 +1086,8 @@ select null^1;
 (1 row)
 
 create table testforbit(a bit,b bit);
-insert into testforbit values('1','1');
-insert into testforbit values('1','0');
+insert into testforbit values(b'1',b'1');
+insert into testforbit values(b'1',b'0');
 select a^b from testforbit where (select 0^1);
  ?column? 
 ----------
@@ -1188,8 +1188,8 @@ select a^b from testfordate;
 
 drop table testfordate;
 create table testforbit(a bit,b bit) with (orientation=column);
-insert into testforbit values('1','1');
-insert into testforbit values('1','0');
+insert into testforbit values(b'1',b'1');
+insert into testforbit values(b'1',b'0');
 select a^b from testforbit;
  ?column? 
 ----------
@@ -2250,24 +2250,6 @@ select b'1010' like b'1100';
  f
 (1 row)
 
-select '1010'::bit(4) like '0010'::bit(4);
- ?column? 
-----------
- f
-(1 row)
-
-select '1010'::bit(4) like '0011'::bit(4);
- ?column? 
-----------
- f
-(1 row)
-
-select '1010'::bit(4) like '1100'::bit(4);
- ?column? 
-----------
- f
-(1 row)
-
 select b'1010' not like b'0010';
  ?column? 
 ----------
@@ -2281,24 +2263,6 @@ select b'1010' not like b'0011';
 (1 row)
 
 select b'1010' not like b'1100';
- ?column? 
-----------
- t
-(1 row)
-
-select '1010'::bit(4) not like '0010'::bit(4);
- ?column? 
-----------
- t
-(1 row)
-
-select '1010'::bit(4) not like '0011'::bit(4);
- ?column? 
-----------
- t
-(1 row)
-
-select '1010'::bit(4) not like '1100'::bit(4);
  ?column? 
 ----------
  t

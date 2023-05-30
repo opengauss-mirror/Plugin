@@ -66,8 +66,11 @@
 Datum uint1in(PG_FUNCTION_ARGS)
 {
     char *num = PG_GETARG_CSTRING(0);
-
+#ifdef DOLPHIN
+    PG_RETURN_UINT8(PgStrtouint8Internal(num, SQL_MODE_STRICT(), fcinfo->can_ignore));
+#else
     PG_RETURN_UINT8((uint8)PgAtoiInternal(num, sizeof(uint8), '\0', SQL_MODE_STRICT(), fcinfo->can_ignore, true));
+#endif
 }
 
 /*
@@ -2291,6 +2294,13 @@ bool scanuint8(const char *str, bool errorOK, uint64 *result, bool can_ignore)
     }
 
     if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+#ifdef DOLPHIN
+        if (tmp == PG_UINT64_MAX) {
+            ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+                (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                    errmsg("value \"%s\" is out of range for type %s", str, "bigint unsigned")));
+        }
+#endif
         if (!neg && tmp < PG_UINT64_MAX)
             tmp++;
     }
@@ -4291,6 +4301,29 @@ Datum uint8_sortsupport(PG_FUNCTION_ARGS)
 
 extern Datum int16in(PG_FUNCTION_ARGS);
 
+#ifdef DOLPHIN
+uint64 text_uintInternal(Datum txt, int128 min, int128 max, char* intType, bool canIgnore)
+{
+    char* tmp = NULL;
+    uint64 result;
+    tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
+
+    result = DatumGetUInt64(DirectFunctionCall1(uint8in, CStringGetDatum(tmp)));
+    pfree_ext(tmp);
+
+     /* keyword IGNORE has higher priority than sql mode */
+     if (result < min || result > max) {
+        if (canIgnore || !SQL_MODE_STRICT()) {
+            ereport(WARNING, (errmsg("%s unsigned out of range", intType)));
+            result = result < min ? 0 : max;
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("%s unsigned out of range", intType)));
+        }
+    }
+
+    return result;
+}
+#else
 int128 text_uintInternal(Datum txt, int128 min, int128 max, char* intType, bool canIgnore)
 {
     char* tmp = NULL;
@@ -4312,6 +4345,7 @@ int128 text_uintInternal(Datum txt, int128 min, int128 max, char* intType, bool 
 
     return result;
 }
+#endif
 
 Datum text_uint1(PG_FUNCTION_ARGS)
 {
@@ -4816,5 +4850,167 @@ Datum dolphin_uint4_mul_int4(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
     }
     PG_RETURN_UINT64(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bpchar_uint1);
+extern "C" DLL_PUBLIC Datum bpchar_uint1(PG_FUNCTION_ARGS);
+Datum bpchar_uint1(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, txt));
+
+    result = DirectFunctionCall1(uint1in, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bpchar_uint2);
+extern "C" DLL_PUBLIC Datum bpchar_uint2(PG_FUNCTION_ARGS);
+Datum bpchar_uint2(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, txt));
+
+    result = DirectFunctionCall1(uint2in, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bpchar_uint4);
+extern "C" DLL_PUBLIC Datum bpchar_uint4(PG_FUNCTION_ARGS);
+Datum bpchar_uint4(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, txt));
+
+    result = DirectFunctionCall1(uint4in, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bpchar_uint8);
+extern "C" DLL_PUBLIC Datum bpchar_uint8(PG_FUNCTION_ARGS);
+Datum bpchar_uint8(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, txt));
+
+    result = DirectFunctionCall1(uint8in, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_uint1);
+extern "C" DLL_PUBLIC Datum varchar_uint1(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_uint2);
+extern "C" DLL_PUBLIC Datum varchar_uint2(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_uint4);
+extern "C" DLL_PUBLIC Datum varchar_uint4(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_uint8);
+extern "C" DLL_PUBLIC Datum varchar_uint8(PG_FUNCTION_ARGS);
+
+
+Datum varchar_uint1(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
+
+    result = DirectFunctionCall1(uint1in, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+Datum varchar_uint2(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
+
+    result = DirectFunctionCall1(uint2in, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+Datum varchar_uint4(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
+
+    result = DirectFunctionCall1(uint4in, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+Datum varchar_uint8(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
+
+    result = DirectFunctionCall1(uint8in, CStringGetDatum(tmp));
+    pfree_ext(tmp);
+
+    PG_RETURN_DATUM(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(settoint1);
+extern "C" DLL_PUBLIC Datum settoint1(PG_FUNCTION_ARGS);
+Datum settoint1(PG_FUNCTION_ARGS)
+{
+    Datum val = setint8(fcinfo);
+    return DirectFunctionCall1(i8toi1, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(settouint1);
+extern "C" DLL_PUBLIC Datum settouint1(PG_FUNCTION_ARGS);
+Datum settouint1(PG_FUNCTION_ARGS)
+{
+    Datum val = setint8(fcinfo);
+    return DirectFunctionCall1(i8toui1, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(settouint2);
+extern "C" DLL_PUBLIC Datum settouint2(PG_FUNCTION_ARGS);
+Datum settouint2(PG_FUNCTION_ARGS)
+{
+    Datum val = setint8(fcinfo);
+    return DirectFunctionCall1(i8toui2, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(settouint4);
+extern "C" DLL_PUBLIC Datum settouint4(PG_FUNCTION_ARGS);
+Datum settouint4(PG_FUNCTION_ARGS)
+{
+    Datum val = setint8(fcinfo);
+    return DirectFunctionCall1(i8toui4, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(settouint8);
+extern "C" DLL_PUBLIC Datum settouint8(PG_FUNCTION_ARGS);
+Datum settouint8(PG_FUNCTION_ARGS)
+{
+    Datum val = setint8(fcinfo);
+    return DirectFunctionCall1(i8toui8, val);
 }
 #endif

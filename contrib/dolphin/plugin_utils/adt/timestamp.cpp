@@ -208,6 +208,22 @@ extern "C" DLL_PUBLIC Datum b_db_statement_start_timestamp(PG_FUNCTION_ARGS);
 
 /* b compatibility time function */
 #ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(int16_b_format_timestamp);
+extern "C" DLL_PUBLIC Datum int16_b_format_timestamp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int8_b_format_timestamp);
+extern "C" DLL_PUBLIC Datum int8_b_format_timestamp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int16_b_format_datetime);
+extern "C" DLL_PUBLIC Datum int16_b_format_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int8_b_format_datetime);
+extern "C" DLL_PUBLIC Datum int8_b_format_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_b_format_date);
+extern "C" DLL_PUBLIC Datum float8_b_format_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_b_format_datetime);
+extern "C" DLL_PUBLIC Datum float8_b_format_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_b_format_timestamp);
+extern "C" DLL_PUBLIC Datum float8_b_format_timestamp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_date);
+extern "C" DLL_PUBLIC Datum numeric_b_format_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(subtime);
 extern "C" DLL_PUBLIC Datum subtime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(time_format);
@@ -577,6 +593,40 @@ static void fillZeroBeforeNumericTimestamp(char *str, char *buf)
     securec_check_c(rc, "\0", "\0")
 }
 
+#ifdef DOLPHIN
+Datum float8_b_format_date(PG_FUNCTION_ARGS)
+{
+    float8 n = PG_GETARG_FLOAT8(0);
+    Datum datetime = DirectFunctionCall1(float8_b_format_datetime, Float8GetDatum(n));
+    return DirectFunctionCall1(timestamp_date, datetime);
+}
+
+Datum float8_b_format_datetime(PG_FUNCTION_ARGS)
+{
+    float8 n = PG_GETARG_FLOAT8(0);
+    char *str = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(n)));
+    char buf[MAXDATELEN + 1];
+    fillZeroBeforeNumericTimestamp(str, buf);
+    return DirectFunctionCall3(timestamp_in, CStringGetDatum(buf), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+}
+
+Datum float8_b_format_timestamp(PG_FUNCTION_ARGS)
+{
+    float8 n = PG_GETARG_FLOAT8(0);
+    char *str = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(n)));
+    char buf[MAXDATELEN + 1];
+    fillZeroBeforeNumericTimestamp(str, buf);
+    return DirectFunctionCall3(timestamptz_in, CStringGetDatum(buf), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+}
+
+Datum numeric_b_format_date(PG_FUNCTION_ARGS)
+{
+    Numeric n = PG_GETARG_NUMERIC(0);
+    Datum datetime = DirectFunctionCall1(numeric_b_format_datetime, NumericGetDatum(n));
+    return DirectFunctionCall1(timestamp_date, datetime);
+}
+#endif
+
 Datum numeric_b_format_datetime(PG_FUNCTION_ARGS)
 {
     Numeric n = PG_GETARG_NUMERIC(0);
@@ -747,7 +797,31 @@ static int64 integer_b_format_timestamp(bool hasTz, int64 ts)
     result = int64_b_format_timestamp_internal(hasTz, ts, 0);
     PG_RETURN_TIMESTAMP(result);
 }
+#ifdef DOLPHIN
+Datum int8_b_format_datetime(PG_FUNCTION_ARGS)
+{
+    int64 ts = PG_GETARG_INT64(0);
+    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(false, ts));
+}
 
+Datum int8_b_format_timestamp(PG_FUNCTION_ARGS)
+{
+    int64 ts = PG_GETARG_INT64(0);
+    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(true, ts));
+}
+
+Datum int16_b_format_datetime(PG_FUNCTION_ARGS)
+{
+    int64 ts = PG_GETARG_INT64(0);
+    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(false, ts));
+}
+
+Datum int16_b_format_timestamp(PG_FUNCTION_ARGS)
+{
+    int64 ts = PG_GETARG_INT64(0);
+    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(true, ts));
+}
+#endif
 Datum int32_b_format_datetime(PG_FUNCTION_ARGS) 
 {
     int64 ts = PG_GETARG_INT64(0);

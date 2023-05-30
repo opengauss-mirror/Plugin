@@ -107,4 +107,8 @@ extern Datum bitposition(PG_FUNCTION_ARGS);
 extern Datum bitsetbit(PG_FUNCTION_ARGS);
 extern Datum bitgetbit(PG_FUNCTION_ARGS);
 
+#ifdef DOLPHIN
+extern Datum bit_bin_in(PG_FUNCTION_ARGS);
+#endif
+
 #endif

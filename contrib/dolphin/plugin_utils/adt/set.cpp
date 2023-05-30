@@ -39,9 +39,14 @@
 #include "utils/syscache.h"
 #include "utils/typcache.h"
 #include "utils/varbit.h"
-#include "utils/int8.h"
 #include "utils/sortsupport.h"
 #include "fmgr.h"
+#ifdef DOLPHIN
+#include "plugin_postgres.h"
+#include "plugin_utils/int8.h"
+#else
+#include "utils/int8.h"
+#endif
 
 #define KEY_NUM (2)
 
@@ -907,18 +912,40 @@ Datum i2toset(PG_FUNCTION_ARGS)
 Datum ftoset(PG_FUNCTION_ARGS)
 {
     float4 val = PG_GETARG_FLOAT4(0);
+#ifdef DOLPHIN
+    if (GetSessionContext()->enableBCmptMode) {
+        return int64toset(DirectFunctionCall1(ftoi8_floor, Float4GetDatum(val)), PG_GETARG_OID(1));
+    } else {
+        return int64toset(DirectFunctionCall1(ftoi8, Float4GetDatum(val)), PG_GETARG_OID(1));
+    }
+#endif
     return int64toset(DirectFunctionCall1(ftoi8, Float4GetDatum(val)), PG_GETARG_OID(1));
 }
 
 Datum dtoset(PG_FUNCTION_ARGS)
 {
     float8 val = PG_GETARG_FLOAT8(0);
+#ifdef DOLPHIN
+    if (GetSessionContext()->enableBCmptMode) {
+        return int64toset(DirectFunctionCall1(dtoi8_floor, Float8GetDatum(val)), PG_GETARG_OID(1));
+    } else {
+        return int64toset(DirectFunctionCall1(dtoi8, Float8GetDatum(val)), PG_GETARG_OID(1));
+    }
+#endif
     return int64toset(DirectFunctionCall1(dtoi8, Float8GetDatum(val)), PG_GETARG_OID(1));
 }
 
 Datum numbertoset(PG_FUNCTION_ARGS)
 {
     Numeric val = PG_GETARG_NUMERIC(0);
+#ifdef DOLPHIN
+    if (GetSessionContext()->enableBCmptMode) {
+        Datum num = DirectFunctionCall1(numeric_float8, NumericGetDatum(val));
+        return int64toset(DirectFunctionCall1(dtoi8_floor, num), PG_GETARG_OID(1));
+    } else {
+        return int64toset(DirectFunctionCall1(numeric_int8, NumericGetDatum(val)), PG_GETARG_OID(1));
+    }
+#endif
     return int64toset(DirectFunctionCall1(numeric_int8, NumericGetDatum(val)), PG_GETARG_OID(1));
 }
 
@@ -1161,3 +1188,126 @@ static VarBit* get_set_in_result(Oid settypoid, char *setlabels)
     pfree_ext(labels);
     return result;
 }
+
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(settobit);
+extern "C" DLL_PUBLIC Datum settobit(PG_FUNCTION_ARGS);
+Datum settobit(PG_FUNCTION_ARGS)
+{
+    int64 val = settoint64(PG_GETARG_VARBIT_P(0));
+    int32 atttypmod = PG_GETARG_INT32(1);
+    return DirectFunctionCall2(bitfromint8, Int64GetDatum(val), Int32GetDatum(atttypmod));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(i1toset);
+extern "C" DLL_PUBLIC Datum i1toset(PG_FUNCTION_ARGS);
+Datum i1toset(PG_FUNCTION_ARGS)
+{
+    return int64toset(PG_GETARG_INT8(0), PG_GETARG_OID(1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(ui1toset);
+extern "C" DLL_PUBLIC Datum ui1toset(PG_FUNCTION_ARGS);
+Datum ui1toset(PG_FUNCTION_ARGS)
+{
+    return int64toset(PG_GETARG_UINT8(0), PG_GETARG_OID(1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(ui2toset);
+extern "C" DLL_PUBLIC Datum ui2toset(PG_FUNCTION_ARGS);
+Datum ui2toset(PG_FUNCTION_ARGS)
+{
+    return int64toset(PG_GETARG_UINT16(0), PG_GETARG_OID(1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(ui4toset);
+extern "C" DLL_PUBLIC Datum ui4toset(PG_FUNCTION_ARGS);
+Datum ui4toset(PG_FUNCTION_ARGS)
+{
+    return int64toset(PG_GETARG_UINT32(0), PG_GETARG_OID(1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(ui8toset);
+extern "C" DLL_PUBLIC Datum ui8toset(PG_FUNCTION_ARGS);
+Datum ui8toset(PG_FUNCTION_ARGS)
+{
+    return int64toset(PG_GETARG_UINT64(0), PG_GETARG_OID(1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bittoset);
+extern "C" DLL_PUBLIC Datum bittoset(PG_FUNCTION_ARGS);
+Datum bittoset(PG_FUNCTION_ARGS)
+{
+    Datum num = bittoint8(fcinfo);
+    return int64toset(num, PG_GETARG_OID(1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(datetoset);
+extern "C" DLL_PUBLIC Datum datetoset(PG_FUNCTION_ARGS);
+Datum datetoset(PG_FUNCTION_ARGS)
+{
+    char *setlabels = DatumGetCString(DirectFunctionCall1(date_out, PG_GETARG_DATUM(0)));
+    Datum result = (Datum)get_set_in_result(PG_GETARG_OID(1), setlabels);
+    pfree_ext(setlabels);
+    PG_RETURN_VARBIT_P(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(datetimetoset);
+extern "C" DLL_PUBLIC Datum datetimetoset(PG_FUNCTION_ARGS);
+Datum datetimetoset(PG_FUNCTION_ARGS)
+{
+    char *setlabels = DatumGetCString(DirectFunctionCall1(timestamp_out, PG_GETARG_DATUM(0)));
+    Datum result = (Datum)get_set_in_result(PG_GETARG_OID(1), setlabels);
+    pfree_ext(setlabels);
+    PG_RETURN_VARBIT_P(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptoset);
+extern "C" DLL_PUBLIC Datum timestamptoset(PG_FUNCTION_ARGS);
+Datum timestamptoset(PG_FUNCTION_ARGS)
+{
+    char *setlabels = DatumGetCString(DirectFunctionCall1(timestamptz_out, PG_GETARG_DATUM(0)));
+    Datum result = (Datum)get_set_in_result(PG_GETARG_OID(1), setlabels);
+    pfree_ext(setlabels);
+    PG_RETURN_VARBIT_P(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(timetoset);
+extern "C" DLL_PUBLIC Datum timetoset(PG_FUNCTION_ARGS);
+Datum timetoset(PG_FUNCTION_ARGS)
+{
+    char *setlabels = DatumGetCString(DirectFunctionCall1(time_out, PG_GETARG_DATUM(0)));
+    Datum result = (Datum)get_set_in_result(PG_GETARG_OID(1), setlabels);
+    pfree_ext(setlabels);
+    PG_RETURN_VARBIT_P(result);
+}
+
+extern "C" Datum year_int64(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(yeartoset);
+extern "C" DLL_PUBLIC Datum yeartoset(PG_FUNCTION_ARGS);
+Datum yeartoset(PG_FUNCTION_ARGS)
+{
+    Datum num = year_int64(fcinfo);
+    return int64toset(num, PG_GETARG_OID(1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varlenatoset);
+extern "C" DLL_PUBLIC Datum varlenatoset(PG_FUNCTION_ARGS);
+Datum varlenatoset(PG_FUNCTION_ARGS)
+{
+    char *setlabels = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    Datum result = (Datum)get_set_in_result(PG_GETARG_OID(1), setlabels);
+    pfree_ext(setlabels);
+    PG_RETURN_VARBIT_P(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(enumtoset);
+extern "C" DLL_PUBLIC Datum enumtoset(PG_FUNCTION_ARGS);
+Datum enumtoset(PG_FUNCTION_ARGS)
+{
+    char *setlabels = DatumGetCString(DirectFunctionCall1(enum_out, PG_GETARG_DATUM(0)));
+    Datum result = (Datum)get_set_in_result(PG_GETARG_OID(1), setlabels);
+    pfree_ext(setlabels);
+    PG_RETURN_VARBIT_P(result);
+}
+#endif

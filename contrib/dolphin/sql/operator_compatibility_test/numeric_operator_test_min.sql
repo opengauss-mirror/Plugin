@@ -705,7 +705,7 @@ FROM
 
 INSERT INTO test_numeric_type_min VALUES(null);
 -- min value test
-INSERT INTO test_numeric_table_min VALUES (-128, 0, -32768, 0, -2147483648, 0, -9223372036854775808, 0, -3.402e+38, -1.79e+308, -99999999999999.999999, '0'::bit, repeat('0', 64)::bit(64));
+INSERT INTO test_numeric_table_min VALUES (-128, 0, -32768, 0, -2147483648, 0, -9223372036854775808, 0, -3.402e+38, -1.79e+308, -99999999999999.999999, b'0'::bit, b'0000000000000000000000000000000000000000000000000000000000000000'::bit(64));
 UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1+int1` = test_numeric_table_min.`int1`+test_numeric_table_min.`int1`;
 UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1-int1` = test_numeric_table_min.`int1`-test_numeric_table_min.`int1`;
 UPDATE test_numeric_type_min, test_numeric_table_min SET test_numeric_type_min.`int1*int1` = test_numeric_table_min.`int1`*test_numeric_table_min.`int1`;

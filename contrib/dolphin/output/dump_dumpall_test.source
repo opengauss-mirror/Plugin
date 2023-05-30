@@ -256,6 +256,8 @@ LINE 2: ...                'invalid input', 'invalid input', 'invalid i...
 CONTEXT:  referenced column: c9
 WARNING:  value too long for type character(5)
 CONTEXT:  referenced column: c2
+WARNING:  bit string length 6 does not match type bit(5)
+CONTEXT:  referenced column: c4
 /*
  * test for restore by gs_restore
  */

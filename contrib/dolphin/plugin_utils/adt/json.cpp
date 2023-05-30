@@ -55,6 +55,8 @@ static void depth_array_element(JsonLexContext *lex, JsonSemAction *sem, int &de
 static void depth_object(JsonLexContext *lex, JsonSemAction *sem, int &depth);
 static void depth_array(JsonLexContext *lex, JsonSemAction *sem, int &depth);
 static void sort_json(JsonLexContext *lex, JsonSemAction *sem, int &depth);
+static void getCategory(Oid type, TYPCATEGORY* category);
+static void getCastFunc(Oid val_type, Oid* typoutput, Oid* castfunc);
 static const char *type_case(JsonTokenType tok, bool flag = false);
 
 PG_FUNCTION_INFO_V1_PUBLIC(json_array);
@@ -1322,6 +1324,15 @@ static void array_to_json_internal(Datum array, StringInfo result, bool use_line
     get_type_io_data(element_type, IOFunc_output, &typlen, &typbyval, &typalign, &typdelim, &typioparam,
                      &typoutputfunc);
 
+#ifdef DOLPHIN
+    getCastFunc(element_type, &typoutputfunc, &castfunc);
+
+    deconstruct_array(v, element_type, typlen, typbyval, typalign, &elements, &nulls, &nitems);
+    getCategory(element_type, &tcategory);
+    if (castfunc != InvalidOid) {
+        tcategory = TYPCATEGORY_JSON_CAST;
+    }
+#else
     if (element_type > FirstNormalObjectId) {
         HeapTuple tuple;
         Form_pg_cast castForm;
@@ -1349,6 +1360,7 @@ static void array_to_json_internal(Datum array, StringInfo result, bool use_line
     } else {
         tcategory = TypeCategory(element_type);
     }
+#endif
 
     array_dim_to_json(result, 0, ndim, dim, elements, nulls, &count, tcategory, typoutputfunc, use_line_feeds);
 
@@ -1422,7 +1434,12 @@ static void composite_to_json(Datum composite, StringInfo result, bool use_line_
                 ReleaseSysCache(cast_tuple);
             }
         }
-
+#ifdef DOLPHIN
+        getCategory(tupdesc->attrs[i].atttypid, &tcategory);
+        if (castfunc != InvalidOid) {
+            tcategory = TYPCATEGORY_JSON_CAST;
+        }
+#else
         if (castfunc != InvalidOid) {
             tcategory = TYPCATEGORY_JSON_CAST;
         } else if (tupdesc->attrs[i].atttypid == RECORDARRAYOID) {
@@ -1434,6 +1451,7 @@ static void composite_to_json(Datum composite, StringInfo result, bool use_line_
         } else {
             tcategory = TypeCategory(tupdesc->attrs[i].atttypid);
         }
+#endif
         datum_to_json(val, isnull, result, tcategory, typoutput, false);
     }
     appendStringInfoChar(result, '}');
@@ -1456,6 +1474,13 @@ static void add_json(Datum val, bool is_null, StringInfo result, Oid val_type, b
     }
 
     getTypeOutputInfo(val_type, &typoutput, &typisvarlena);
+#ifdef DOLPHIN
+    getCastFunc(val_type, &typoutput, &castfunc);
+    getCategory(val_type, &tcategory);
+    if (castfunc != InvalidOid) {
+        tcategory = TYPCATEGORY_JSON_CAST;
+    }
+#else
     if (val_type > FirstNormalObjectId) {
         HeapTuple tuple;
         Form_pg_cast castForm;
@@ -1480,7 +1505,7 @@ static void add_json(Datum val, bool is_null, StringInfo result, Oid val_type, b
     } else {
         tcategory = TypeCategory(val_type);
     }
-
+#endif
     if (key_scalar && (tcategory == TYPCATEGORY_ARRAY || tcategory == TYPCATEGORY_COMPOSITE ||
                        tcategory == TYPCATEGORY_JSON || tcategory == TYPCATEGORY_JSON_CAST)) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -1564,6 +1589,13 @@ Datum to_json(PG_FUNCTION_ARGS)
 
     result = makeStringInfo();
     getTypeOutputInfo(val_type, &typoutput, &typisvarlena);
+#ifdef DOLPHIN
+    getCastFunc(val_type, &typoutput, &castfunc);
+    getCategory(val_type, &tcategory);
+    if (castfunc != InvalidOid) {
+        tcategory = TYPCATEGORY_JSON_CAST;
+    }
+#else
     if (val_type > FirstNormalObjectId) {
         HeapTuple tuple;
         Form_pg_cast castForm;
@@ -1588,6 +1620,7 @@ Datum to_json(PG_FUNCTION_ARGS)
     } else {
         tcategory = TypeCategory(val_type);
     }
+#endif
     datum_to_json(val, false, result, tcategory, typoutput, false);
     PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
 }
@@ -1641,6 +1674,13 @@ Datum json_agg_transfn(PG_FUNCTION_ARGS)
 
     val = PG_GETARG_DATUM(1);
     getTypeOutputInfo(val_type, &typoutput, &typisvarlena);
+#ifdef DOLPHIN
+    getCastFunc(val_type, &typoutput, &castfunc);
+    getCategory(val_type, &tcategory);
+    if (castfunc != InvalidOid) {
+        tcategory = TYPCATEGORY_JSON_CAST;
+    }
+#else
     if (val_type > FirstNormalObjectId) {
         HeapTuple tuple;
         Form_pg_cast castForm;
@@ -1666,6 +1706,7 @@ Datum json_agg_transfn(PG_FUNCTION_ARGS)
     } else {
         tcategory = TypeCategory(val_type);
     }
+#endif
     if (!PG_ARGISNULL(0) && (tcategory == TYPCATEGORY_ARRAY || tcategory == TYPCATEGORY_COMPOSITE)) {
         appendStringInfoString(state, "\n ");
     }
@@ -2243,29 +2284,10 @@ Datum json_object_mysql(PG_FUNCTION_ARGS)
                             errmsg("arg %d: could not determine data type", 2 * i + 1)));
         }
         getTypeOutputInfo(val_type, &typoutput, &typisvarlena);
-        if (val_type > FirstNormalObjectId) {
-            HeapTuple tuple;
-            Form_pg_cast castForm;
-
-            tuple = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(val_type), ObjectIdGetDatum(JSONOID));
-            if (HeapTupleIsValid(tuple)) {
-                castForm = (Form_pg_cast)GETSTRUCT(tuple);
-                if (castForm->castmethod == COERCION_METHOD_FUNCTION) {
-                    castfunc = typoutput = castForm->castfunc;
-                }
-                ReleaseSysCache(tuple);
-            }
-        }
+        getCastFunc(val_type, &typoutput, &castfunc);
+        getCategory(val_type, &tcategory);
         if (castfunc != InvalidOid) {
             tcategory = TYPCATEGORY_JSON_CAST;
-        } else if (val_type == RECORDARRAYOID) {
-            tcategory = TYPCATEGORY_ARRAY;
-        } else if (val_type == RECORDOID) {
-            tcategory = TYPCATEGORY_COMPOSITE;
-        } else if (val_type == JSONOID) {
-            tcategory = TYPCATEGORY_JSON;
-        } else {
-            tcategory = TypeCategory(val_type);
         }
         switch (tcategory) {
             case TYPCATEGORY_BOOLEAN:
@@ -2853,5 +2875,71 @@ Datum json_type(PG_FUNCTION_ARGS)
     type = type_case(tok, true);
     pfree(lex);
     PG_RETURN_TEXT_P(cstring_to_text(type));
+}
+
+static void getCategory(Oid type, TYPCATEGORY* category)
+{
+    if (type == RECORDARRAYOID) {
+        *category = TYPCATEGORY_ARRAY;
+    } else if (type == RECORDOID) {
+        *category = TYPCATEGORY_COMPOSITE;
+    } else if (type == JSONOID || type == JSONBOID) {
+        *category = TYPCATEGORY_JSON;
+    } else if (type == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
+                type == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
+                type == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
+                type == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+        *category = TYPCATEGORY_NUMERIC;
+    } else {
+        *category = TypeCategory(type);
+    }
+}
+
+static void getCastFunc(Oid val_type, Oid* typoutput, Oid* castfunc)
+{
+    if (val_type > FirstNormalObjectId &&
+        (val_type != get_typeoid(PG_CATALOG_NAMESPACE, "binary") &&
+        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "varbinary") &&
+        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "tinyblob") &&
+        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "mediumblob") &&
+        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "longblob") &&
+        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "uint1") &&
+        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "uint2") &&
+        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "uint4") &&
+        val_type != get_typeoid(PG_CATALOG_NAMESPACE, "uint8"))) {
+        HeapTuple tuple;
+        Form_pg_cast castForm;
+        tuple = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(val_type), ObjectIdGetDatum(JSONOID));
+        if (HeapTupleIsValid(tuple)) {
+            castForm = (Form_pg_cast)GETSTRUCT(tuple);
+            if (castForm->castmethod == COERCION_METHOD_FUNCTION) {
+                *castfunc = *typoutput = castForm->castfunc;
+            }
+            ReleaseSysCache(tuple);
+        }
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(cast_json);
+extern "C" DLL_PUBLIC Datum cast_json(PG_FUNCTION_ARGS);
+Datum cast_json(PG_FUNCTION_ARGS)
+{
+    Datum val = PG_GETARG_DATUM(0);
+    Oid val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    StringInfo result;
+    TYPCATEGORY tcategory;
+    Oid typoutput;
+    bool typisvarlena = false;
+
+    if (val_type == InvalidOid) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("could not determine input data type")));
+    }
+
+    result = makeStringInfo();
+    getTypeOutputInfo(val_type, &typoutput, &typisvarlena);
+    getCategory(val_type, &tcategory);
+
+    datum_to_json(val, false, result, tcategory, typoutput, false);
+    PG_RETURN_TEXT_P(cstring_to_text_with_len(result->data, result->len));
 }
 #endif

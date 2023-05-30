@@ -25,14 +25,14 @@ select 'a' union all select 1;
 select b'1' union all select '';
  ?column? 
 ----------
- 1
+ \x01
  
 (2 rows)
 
 select b'1' union all select ' ';
  ?column? 
 ----------
- 1
+ \x01
   
 (2 rows)
 

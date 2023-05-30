@@ -41,14 +41,14 @@ insert into testforfloat values(1.27,null);
 insert into testforfloat values(0.0,null);
 insert into testforfloat values(null,null);
 
-insert into testforbit values('1111','1111');
-insert into testforbit values('1111','0111');
-insert into testforbit values('1111','1011');
-insert into testforbit values('1111','0000');
-insert into testforbit values('0000','1111');
-insert into testforbit values('0000','0000');
-insert into testforbit values('1111',null);
-insert into testforbit values('0000',null);
+insert into testforbit values(b'1111',b'1111');
+insert into testforbit values(b'1111',b'0111');
+insert into testforbit values(b'1111',b'1011');
+insert into testforbit values(b'1111',b'0000');
+insert into testforbit values(b'0000',b'1111');
+insert into testforbit values(b'0000',b'0000');
+insert into testforbit values(b'1111',null);
+insert into testforbit values(b'0000',null);
 insert into testforbit values(null,null);
 
 insert into testfordate values('2022-08-20','2022-08-20');
@@ -156,14 +156,14 @@ insert into testforfloat values(1.27,null);
 insert into testforfloat values(0.0,null);
 insert into testforfloat values(null,null);
 
-insert into testforbit values('1111','1111');
-insert into testforbit values('1111','0111');
-insert into testforbit values('1111','1011');
-insert into testforbit values('1111','0000');
-insert into testforbit values('0000','1111');
-insert into testforbit values('0000','0000');
-insert into testforbit values('1111',null);
-insert into testforbit values('0000',null);
+insert into testforbit values(b'1111',b'1111');
+insert into testforbit values(b'1111',b'0111');
+insert into testforbit values(b'1111',b'1011');
+insert into testforbit values(b'1111',b'0000');
+insert into testforbit values(b'0000',b'1111');
+insert into testforbit values(b'0000',b'0000');
+insert into testforbit values(b'1111',null);
+insert into testforbit values(b'0000',null);
 insert into testforbit values(null,null);
 
 insert into testforboolean_u values(true,true);
@@ -390,8 +390,8 @@ set dolphin.b_compatibility_mode = 1;
 select null^1;
 
 create table testforbit(a bit,b bit);
-insert into testforbit values('1','1');
-insert into testforbit values('1','0');
+insert into testforbit values(b'1',b'1');
+insert into testforbit values(b'1',b'0');
 select a^b from testforbit where (select 0^1);
 drop table testforbit;
 
@@ -454,8 +454,8 @@ drop table testfordate;
 
 
 create table testforbit(a bit,b bit) with (orientation=column);
-insert into testforbit values('1','1');
-insert into testforbit values('1','0');
+insert into testforbit values(b'1',b'1');
+insert into testforbit values(b'1',b'0');
 select a^b from testforbit;
 
 
@@ -826,16 +826,10 @@ select * from testlike8 where a like binary 'A%';
 select b'1010' like b'0010';
 select b'1010' like b'0011';
 select b'1010' like b'1100';
-select '1010'::bit(4) like '0010'::bit(4);
-select '1010'::bit(4) like '0011'::bit(4);
-select '1010'::bit(4) like '1100'::bit(4);
 
 select b'1010' not like b'0010';
 select b'1010' not like b'0011';
 select b'1010' not like b'1100';
-select '1010'::bit(4) not like '0010'::bit(4);
-select '1010'::bit(4) not like '0011'::bit(4);
-select '1010'::bit(4) not like '1100'::bit(4);
 
 select 'deadbeef'::blob like 'deadbeef';
 select 'deadbeef'::blob like 'DEADBEEF'::blob;

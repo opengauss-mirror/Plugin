@@ -5188,20 +5188,23 @@ LINE 1: select ifnull(tyint, bt) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
 select ifnull(tyint, dt) from typeset;
-ERROR:  NVL types tinyint and date cannot be matched
-LINE 1: select ifnull(tyint, dt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+   ifnull   
+------------
+ 01-27-2000
+(1 row)
+
 select ifnull(tyint, tmstp) from typeset;
-ERROR:  NVL types tinyint and timestamp with time zone cannot be matched
-LINE 1: select ifnull(tyint, tmstp) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+            ifnull            
+------------------------------
+ Thu Jan 27 00:00:00 2000 PST
+(1 row)
+
 select ifnull(tyint, tm) from typeset;
-ERROR:  NVL types tinyint and time without time zone cannot be matched
-LINE 1: select ifnull(tyint, tm) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+  ifnull  
+----------
+ 00:01:27
+(1 row)
+
 select ifnull(tyint, ch) from typeset;
  ifnull 
 --------
@@ -5261,20 +5264,23 @@ LINE 1: select ifnull(smint, bt) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
 select ifnull(smint, dt) from typeset;
-ERROR:  NVL types smallint and date cannot be matched
-LINE 1: select ifnull(smint, dt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+   ifnull   
+------------
+ 01-27-2000
+(1 row)
+
 select ifnull(smint, tmstp) from typeset;
-ERROR:  NVL types smallint and timestamp with time zone cannot be matched
-LINE 1: select ifnull(smint, tmstp) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+            ifnull            
+------------------------------
+ Thu Jan 27 00:00:00 2000 PST
+(1 row)
+
 select ifnull(smint, tm) from typeset;
-ERROR:  NVL types smallint and time without time zone cannot be matched
-LINE 1: select ifnull(smint, tm) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+  ifnull  
+----------
+ 00:01:27
+(1 row)
+
 select ifnull(smint, ch) from typeset;
  ifnull 
 --------
@@ -5328,9 +5334,9 @@ LINE 1: select ifnull(anint, bt) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
 select ifnull(anint, dt) from typeset;
-   ifnull   
-------------
- 01-27-2000
+ ifnull 
+--------
+    127
 (1 row)
 
 select ifnull(anint, tmstp) from typeset;
@@ -5340,9 +5346,9 @@ select ifnull(anint, tmstp) from typeset;
 (1 row)
 
 select ifnull(anint, tm) from typeset;
-  ifnull  
-----------
- 00:01:27
+ ifnull 
+--------
+    127
 (1 row)
 
 select ifnull(anint, ch) from typeset;
@@ -5392,20 +5398,21 @@ LINE 1: select ifnull(bgint, bt) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
 select ifnull(bgint, dt) from typeset;
-ERROR:  NVL types bigint and date cannot be matched
-LINE 1: select ifnull(bgint, dt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+    127
+(1 row)
+
 select ifnull(bgint, tmstp) from typeset;
-            ifnull            
-------------------------------
- Thu Jan 27 00:00:00 2000 PST
+ ifnull 
+--------
+    127
 (1 row)
 
 select ifnull(bgint, tm) from typeset;
-  ifnull  
-----------
- 00:01:27
+ ifnull 
+--------
+    127
 (1 row)
 
 select ifnull(bgint, ch) from typeset;
@@ -5450,20 +5457,21 @@ select ifnull(dcmal, bt) from typeset;
 (1 row)
 
 select ifnull(dcmal, dt) from typeset;
-ERROR:  NVL types numeric and date cannot be matched
-LINE 1: select ifnull(dcmal, dt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+    127
+(1 row)
+
 select ifnull(dcmal, tmstp) from typeset;
-            ifnull            
-------------------------------
- Thu Jan 27 00:00:00 2000 PST
+ ifnull 
+--------
+    127
 (1 row)
 
 select ifnull(dcmal, tm) from typeset;
-  ifnull  
-----------
- 00:01:27
+ ifnull 
+--------
+    127
 (1 row)
 
 select ifnull(dcmal, ch) from typeset;
@@ -5502,20 +5510,21 @@ select ifnull(nmric, bt) from typeset;
 (1 row)
 
 select ifnull(nmric, dt) from typeset;
-ERROR:  NVL types numeric and date cannot be matched
-LINE 1: select ifnull(nmric, dt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+    127
+(1 row)
+
 select ifnull(nmric, tmstp) from typeset;
-            ifnull            
-------------------------------
- Thu Jan 27 00:00:00 2000 PST
+ ifnull 
+--------
+    127
 (1 row)
 
 select ifnull(nmric, tm) from typeset;
-  ifnull  
-----------
- 00:01:27
+ ifnull 
+--------
+    127
 (1 row)
 
 select ifnull(nmric, ch) from typeset;
@@ -5548,20 +5557,23 @@ select ifnull(flt, bt) from typeset;
 (1 row)
 
 select ifnull(flt, dt) from typeset;
-ERROR:  NVL types real and date cannot be matched
-LINE 1: select ifnull(flt, dt) from typeset;
-                           ^
-CONTEXT:  referenced column: ifnull
+ ifnull  
+---------
+ 127.213
+(1 row)
+
 select ifnull(flt, tmstp) from typeset;
-ERROR:  NVL types real and timestamp with time zone cannot be matched
-LINE 1: select ifnull(flt, tmstp) from typeset;
-                           ^
-CONTEXT:  referenced column: ifnull
+ ifnull  
+---------
+ 127.213
+(1 row)
+
 select ifnull(flt, tm) from typeset;
-ERROR:  NVL types real and time without time zone cannot be matched
-LINE 1: select ifnull(flt, tm) from typeset;
-                           ^
-CONTEXT:  referenced column: ifnull
+ ifnull  
+---------
+ 127.213
+(1 row)
+
 select ifnull(flt, ch) from typeset;
  ifnull  
 ---------
@@ -5660,15 +5672,17 @@ LINE 1: select ifnull(tmstp, tm) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
 select ifnull(tmstp, ch) from typeset;
-ERROR:  NVL types timestamp with time zone and character cannot be matched
-LINE 1: select ifnull(tmstp, ch) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+            ifnull            
+------------------------------
+ Thu Apr 19 00:00:00 2001 PDT
+(1 row)
+
 select ifnull(tmstp, vch) from typeset;
-ERROR:  NVL types timestamp with time zone and character varying cannot be matched
-LINE 1: select ifnull(tmstp, vch) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+            ifnull            
+------------------------------
+ Thu Apr 19 00:00:00 2001 PDT
+(1 row)
+
 select ifnull(tmstp, blb) from typeset;
 ERROR:  NVL types timestamp with time zone and blob cannot be matched
 LINE 1: select ifnull(tmstp, blb) from typeset;
@@ -5681,15 +5695,17 @@ select ifnull(tmstp, txt) from typeset;
 (1 row)
 
 select ifnull(tm, ch) from typeset;
-ERROR:  NVL types time without time zone and character cannot be matched
-LINE 1: select ifnull(tm, ch) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
+  ifnull  
+----------
+ 22:23:44
+(1 row)
+
 select ifnull(tm, vch) from typeset;
-ERROR:  NVL types time without time zone and character varying cannot be matched
-LINE 1: select ifnull(tm, vch) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
+  ifnull  
+----------
+ 22:23:44
+(1 row)
+
 select ifnull(tm, blb) from typeset;
 ERROR:  NVL types time without time zone and blob cannot be matched
 LINE 1: select ifnull(tm, blb) from typeset;

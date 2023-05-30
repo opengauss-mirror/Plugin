@@ -179,11 +179,11 @@ CREATE TABLE test (
 INSERT INTO test (myname) VALUES (1);
 -- insert with index 0 resulting in a null value
 INSERT INTO test (myname) VALUES (0);
+--?.*
+CONTEXT:  referenced column: myname
 -- insert with out-of-range index
 INSERT INTO test (myname) VALUES (4);
 ERROR:  enum order 4 out of the enum value size: 3
-LINE 1: INSERT INTO test (myname) VALUES (4);
-                                          ^
 CONTEXT:  referenced column: myname
 -- query with existing index
 SELECT * FROM test WHERE myname=1;

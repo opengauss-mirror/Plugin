@@ -21,8 +21,10 @@
 #define SQL_MODE_PAD_CHAR_TO_FULL_LENGTH() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_PAD_CHAR_TO_FULL_LENGTH)
 
 extern int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool can_ignore, bool isUnsigned = false);
+extern int8 PgStrtoint8Internal(const char* s, bool sqlModeStrict, bool can_ignore);
 extern int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict, bool can_ignore);
 extern int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict, bool can_ignore);
+extern uint8 PgStrtouint8Internal(const char* s, bool sqlModeStrict, bool can_ignore);
 extern uint16 PgStrtouint16Internal(const char* s, bool sqlModeStrict, bool can_ignore);
 extern uint32 PgStrtouint32Internal(const char* s, bool sqlModeStrict, bool can_ignore);
 extern bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlModeStrict, bool can_ignore);
