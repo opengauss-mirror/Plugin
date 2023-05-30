@@ -80,6 +80,8 @@ extern void adjust_time_range(pg_tm *tm, fsec_t &fsec, bool &warnings);
 extern TimeADT time_in_with_flag(char *str, unsigned int date_flag);
 extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag);
 extern bool date_add_interval(DateADT date, Interval *span, DateADT *result);
+extern "C" DLL_PUBLIC Datum date_enum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum timestamp_enum(PG_FUNCTION_ARGS);
 
 typedef struct DateTimeFormat
 {

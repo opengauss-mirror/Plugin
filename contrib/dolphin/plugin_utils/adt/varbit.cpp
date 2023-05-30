@@ -25,6 +25,14 @@
 #include "utils/varbit.h"
 #include "access/tuptoaster.h"
 #include "plugin_postgres.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/int8.h"
+#include "plugin_utils/year.h"
+#define BYTE_SIZE 8
+#define SMALL_SIZE 8
+#define M_BIT_LEN 64
+#endif
 
 
 #define HEXDIG(z) ((z) < 10 ? ((z) + '0') : ((z)-10 + 'A'))
@@ -32,10 +40,21 @@
 static VarBit* bit_catenate(VarBit* arg1, VarBit* arg2);
 static VarBit* bitsubstring(VarBit* arg, int32 s, int32 l, bool length_not_specified);
 static VarBit* bit_overlay(VarBit* t1, VarBit* t2, int sp, int sl);
+static inline int GetLeadingZeroLen(VarBit* arg);
+#ifdef DOLPHIN
 static int32 bit_cmp(VarBit* arg1, VarBit* arg2, int leadingZeroLen1 = -1, int leadingZeroLen2 = -1);
-extern Datum mp_bit_length_bit(PG_FUNCTION_ARGS); 
-extern Datum mp_bit_length_text(PG_FUNCTION_ARGS);
-extern Datum mp_bit_length_bytea(PG_FUNCTION_ARGS);
+extern "C" Datum ui8toi1(PG_FUNCTION_ARGS);
+extern "C" Datum ui8toi2(PG_FUNCTION_ARGS);
+extern "C" Datum ui8toi4(PG_FUNCTION_ARGS);
+extern "C" Datum date_int8(PG_FUNCTION_ARGS);
+extern "C" Datum datetime_float(PG_FUNCTION_ARGS);
+extern "C" Datum timestamptz_int8(PG_FUNCTION_ARGS);
+extern "C" Datum time_int8(PG_FUNCTION_ARGS);
+extern "C" Datum year_integer(PG_FUNCTION_ARGS);
+extern "C" Datum uint8out(PG_FUNCTION_ARGS);
+extern "C" Datum dolphin_binaryin(PG_FUNCTION_ARGS);
+Datum bittobigint(VarBit* arg, bool isUnsigned);
+#endif
 
 
 PG_FUNCTION_INFO_V1_PUBLIC(c_bitoctetlength);
@@ -115,14 +134,9 @@ static char* anybit_typmodout(int32 typmod)
  *		  The length is determined by the number of bits required plus
  *		  VARHDRSZ bytes or from atttypmod.
  */
-Datum bit_in(PG_FUNCTION_ARGS)
+#ifdef DOLPHIN
+Datum bit_in_internal(char* input_string, int32 atttypmod, bool can_ignore)
 {
-    char* input_string = PG_GETARG_CSTRING(0);
-
-#ifdef NOT_USED
-    Oid typelem = PG_GETARG_OID(1);
-#endif
-    int32 atttypmod = PG_GETARG_INT32(2);
     VarBit* result = NULL;    /* The resulting bit string			  */
     char* sp = NULL;          /* pointer into the character string  */
     bits8* r = NULL;          /* pointer into the result */
@@ -132,7 +146,7 @@ Datum bit_in(PG_FUNCTION_ARGS)
     bool bit_not_hex = false; /* false = hex string  true = bit string */
     int bc;
     bits8 x = 0;
-
+    
     /* Check that the first character is a b or an x */
     if (input_string[0] == 'b' || input_string[0] == 'B') {
         bit_not_hex = true;
@@ -190,7 +204,7 @@ Datum bit_in(PG_FUNCTION_ARGS)
             if (*sp == '1')
                 *r |= x;
             else if (*sp != '0') {
-                ereport(fcinfo->can_ignore ? WARNING : ERROR,
+                ereport(can_ignore ? WARNING : ERROR,
                     (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("\"%c\" is not a valid binary digit", *sp)));
                 /* if invalid input erro is ignorable, report warning and return a empty varbit */
                 PG_RETURN_DATUM((Datum)DirectFunctionCall3(bit_in, CStringGetDatum(""), ObjectIdGetDatum(0), Int32GetDatum(-1)));
@@ -212,7 +226,7 @@ Datum bit_in(PG_FUNCTION_ARGS)
             else if (*sp >= 'a' && *sp <= 'f')
                 x = (bits8)(*sp - 'a') + 10;
             else {
-                ereport(fcinfo->can_ignore ? WARNING : ERROR,
+                ereport(can_ignore ? WARNING : ERROR,
                     (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                         errmsg("\"%c\" is not a valid hexadecimal digit", *sp)));
                 /* if invalid input erro is ignorable, report warning and return a empty varbit */
@@ -230,6 +244,61 @@ Datum bit_in(PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_VARBIT_P(result);
+}
+#endif
+
+Datum bit_in(PG_FUNCTION_ARGS)
+{
+    char* input_string = PG_GETARG_CSTRING(0);
+
+#ifdef NOT_USED
+    Oid typelem = PG_GETARG_OID(1);
+#endif
+    int32 atttypmod = PG_GETARG_INT32(2);
+    bool can_ignore = fcinfo->can_ignore;
+    VarBit* result = NULL;    /* The resulting bit string			  */
+    char* sp = NULL;          /* pointer into the character string  */
+    int len,                  /* Length of the whole data structure */
+        bitlen,               /* Number of bits in the bit string   */
+        slen;                 /* Length of the input string		  */
+
+#ifdef DOLPHIN
+    if (GetSessionContext()->enableBCmptMode) {
+        sp = input_string;
+        slen = strlen(sp);
+        if (slen == 0) {
+            PG_RETURN_DATUM((Datum)DirectFunctionCall3(bit_in, CStringGetDatum(""), ObjectIdGetDatum(0), Int32GetDatum(-1)));
+        }
+        if (slen > VARBITMAXLEN / BYTE_SIZE) {
+            ereport(ERROR,
+                (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                    errmsg("bit string length exceeds the maximum allowed (%d)", VARBITMAXLEN)));
+        }
+        bitlen = slen * BYTE_SIZE;
+
+        if (atttypmod <= 0) {
+            atttypmod = bitlen;
+        } else if (bitlen != atttypmod) {
+            ereport(ERROR,
+                (errcode(ERRCODE_STRING_DATA_LENGTH_MISMATCH),
+                    errmsg("bit string length %d does not match type bit(%d)", bitlen, atttypmod)));
+        }
+
+        len = VARBITTOTALLEN(atttypmod);
+        /* set to 0 so that *r is always initialised and string is zero-padded */
+        result = (VarBit*)palloc0(len);
+        SET_VARSIZE(result, len);
+        VARBITLEN(result) = atttypmod;
+
+        errno_t ss_rc = 0;
+        ss_rc = memcpy_s(VARBITS(result), slen, sp, slen);
+        securec_check(ss_rc, "\0", "\0");
+
+        PG_RETURN_VARBIT_P(result);
+    }
+#endif
+
+    PG_RETURN_VARBIT_P(bit_in_internal(input_string, atttypmod, can_ignore));
 }
 
 Datum bit_out(PG_FUNCTION_ARGS)
@@ -313,7 +382,8 @@ Datum bit_recv(PG_FUNCTION_ARGS)
      */
     ipad = VARBITPAD(result);
     if (ipad > 0) {
-        PG_RETURN_DATUM(DirectFunctionCall2(bitshiftright, VarBitPGetDatum(result), Int32GetDatum(ipad)));
+        PG_RETURN_DATUM(DirectFunctionCall3(bitshiftright, VarBitPGetDatum(result),
+                                            Int32GetDatum(ipad), BoolGetDatum(false)));
     }
 #else
     /* Make sure last byte is zero-padded if needed */
@@ -356,15 +426,28 @@ Datum bit(PG_FUNCTION_ARGS)
     if (len <= 0 || len > VARBITMAXLEN || len == VARBITLEN(arg))
         PG_RETURN_VARBIT_P(arg);
 #ifdef DOLPHIN
-    if (!isExplicit && VARBITLEN(arg) > len && !fcinfo->can_ignore)
+    int errlevel = (!fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING);
+    if (VARBITLEN(arg) - GetLeadingZeroLen(arg) > len) {
+        ereport(errlevel,
+            (errcode(ERRCODE_STRING_DATA_LENGTH_MISMATCH),
+                errmsg("bit string length %d does not match type bit(%d)", VARBITLEN(arg), len)));
+
+        rlen = VARBITTOTALLEN(len);
+        /* set to 0 so that string is zero-padded */
+        result = (VarBit*)palloc0(rlen);
+        SET_VARSIZE(result, rlen);
+        VARBITLEN(result) = len;
+
+        securec_check(memset_s(VARBITS(result), VARBITBYTES(result), __UINT8_MAX__, VARBITBYTES(result)), "\0", "\0");
+        PG_RETURN_VARBIT_P(result);
+    }
 #else
-    if (!isExplicit && !fcinfo->can_ignore)
-#endif
-    {
+    if (!isExplicit && !fcinfo->can_ignore) {
         ereport(ERROR,
             (errcode(ERRCODE_STRING_DATA_LENGTH_MISMATCH),
                 errmsg("bit string length %d does not match type bit(%d)", VARBITLEN(arg), len)));
     }
+#endif
 
     rlen = VARBITTOTALLEN(len);
     /* set to 0 so that string is zero-padded */
@@ -372,21 +455,35 @@ Datum bit(PG_FUNCTION_ARGS)
     SET_VARSIZE(result, rlen);
     VARBITLEN(result) = len;
 
+#ifdef DOLPHIN
+    int shift = VARBITLEN(result) - VARBITLEN(arg);
+    size_t min_size = Min(VARBITBYTES(result), VARBITBYTES(arg));
+    if (shift < 0) {
+        if (min_size > 0) {
+            Datum cpy = DirectFunctionCall3(bitshiftright, VarBitPGetDatum(arg),
+                                            Int32GetDatum(shift), BoolGetDatum(false));
+            ss_rc = memcpy_s(VARBITS(result), min_size, VARBITS((VarBit*)cpy), min_size);
+            securec_check(ss_rc, "\0", "\0");
+            pfree_ext(cpy);
+        }
+    } else {
+        if (min_size > 0) {
+            ss_rc = memcpy_s(VARBITS(result), min_size, VARBITS(arg), min_size);
+            securec_check(ss_rc, "\0", "\0");
+        }
+        /*
+        * do left padding, just call shift right to pad 0
+        */
+        PG_RETURN_DATUM(DirectFunctionCall3(bitshiftright, VarBitPGetDatum(result),
+                                            Int32GetDatum(shift), BoolGetDatum(false)));
+    }
+#else
     size_t min_size = Min(VARBITBYTES(result), VARBITBYTES(arg));
     if (min_size > 0) {
         ss_rc = memcpy_s(VARBITS(result), min_size, VARBITS(arg), min_size);
         securec_check(ss_rc, "\0", "\0");
     }
 
-    /*
-     * do left padding, just call shift right to pad 0
-     */
-#ifdef DOLPHIN
-    int shift = VARBITLEN(result) - VARBITLEN(arg);
-    if (shift > 0) {
-        PG_RETURN_DATUM(DirectFunctionCall2(bitshiftright, VarBitPGetDatum(result), Int32GetDatum(shift)));
-    }
-#else
     /*
      * Make sure last byte is zero-padded if needed.  This is useless but safe
      * if source data was shorter than target length (we assume the last byte
@@ -789,11 +886,13 @@ static int32 bit_cmp(VarBit* arg1, VarBit* arg2, int leadingZeroLen1, int leadin
     /* do shit left to remove leading zero */
     if (leadingZeroLen1 > 0) {
         newArg1 = DatumGetVarBitP(
-            DirectFunctionCall2(bitshiftleft, VarBitPGetDatum(arg1), Int32GetDatum(leadingZeroLen1)));
+            DirectFunctionCall3(bitshiftleft, VarBitPGetDatum(arg1),
+                                Int32GetDatum(leadingZeroLen1), BoolGetDatum(false)));
     }
     if (leadingZeroLen2 > 0) {
         newArg2 = DatumGetVarBitP(
-            DirectFunctionCall2(bitshiftleft, VarBitPGetDatum(arg2), Int32GetDatum(leadingZeroLen2)));
+            DirectFunctionCall3(bitshiftleft, VarBitPGetDatum(arg2),
+                                Int32GetDatum(leadingZeroLen2), BoolGetDatum(false)));
     }
     int bytelen1 = VARBITBYTES(newArg1);
     int bytelen2 = VARBITBYTES(newArg2);
@@ -1332,6 +1431,9 @@ Datum bitshiftleft(PG_FUNCTION_ARGS)
 {
     VarBit* arg = PG_GETARG_VARBIT_P(0);
     int32 shft = PG_GETARG_INT32(1);
+#ifdef DOLPHIN
+    bool shft_more = PG_GETARG_BOOL(2);
+#endif
     VarBit* result = NULL;
     int byte_shift, ishift, len;
     bits8 *p = NULL, *r = NULL;
@@ -1342,7 +1444,12 @@ Datum bitshiftleft(PG_FUNCTION_ARGS)
         /* Prevent integer overflow in negation */
         if (shft < -VARBITMAXLEN)
             shft = -VARBITMAXLEN;
+#ifdef DOLPHIN
+        PG_RETURN_DATUM(DirectFunctionCall3(bitshiftright, VarBitPGetDatum(arg),
+                                            Int32GetDatum(-shft), BoolGetDatum(shft_more)));
+#else
         PG_RETURN_DATUM(DirectFunctionCall2(bitshiftright, VarBitPGetDatum(arg), Int32GetDatum(-shft)));
+#endif
     }
 
     result = (VarBit*)palloc(VARSIZE(arg));
@@ -1391,6 +1498,9 @@ Datum bitshiftright(PG_FUNCTION_ARGS)
 {
     VarBit* arg = PG_GETARG_VARBIT_P(0);
     int32 shft = PG_GETARG_INT32(1);
+#ifdef DOLPHIN
+    bool shft_more = PG_GETARG_BOOL(2);
+#endif
     VarBit* result = NULL;
     int byte_shift, ishift, len;
     bits8 *p = NULL, *r = NULL;
@@ -1401,7 +1511,12 @@ Datum bitshiftright(PG_FUNCTION_ARGS)
         /* Prevent integer overflow in negation */
         if (shft < -VARBITMAXLEN)
             shft = -VARBITMAXLEN;
+#ifdef DOLPHIN
+        PG_RETURN_DATUM(DirectFunctionCall3(bitshiftleft, VarBitPGetDatum(arg),
+                                            Int32GetDatum(-shft), BoolGetDatum(false)));
+#else
         PG_RETURN_DATUM(DirectFunctionCall2(bitshiftleft, VarBitPGetDatum(arg), Int32GetDatum(-shft)));
+#endif
     }
 
     result = (VarBit*)palloc(VARSIZE(arg));
@@ -1410,7 +1525,11 @@ Datum bitshiftright(PG_FUNCTION_ARGS)
     r = VARBITS(result);
 
     /* If we shifted all the bits out, return an all-zero string */
+#ifdef DOLPHIN
+    if (shft >= VARBITLEN(arg) && !shft_more) {
+#else
     if (shft >= VARBITLEN(arg)) {
+#endif
         ss_rc = memset_s(r, VARBITBYTES(arg), 0, VARBITBYTES(arg));
         securec_check(ss_rc, "\0", "\0");
         PG_RETURN_VARBIT_P(result);
@@ -1446,17 +1565,94 @@ Datum bitshiftright(PG_FUNCTION_ARGS)
 }
 
 #ifdef DOLPHIN
+
+Datum bittotinyint(VarBit* arg, bool isUnsigned)
+{
+    uint8 result;
+    bits8* r = NULL;
+    int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
+
+    if (GetSessionContext()->enableBCmptMode) {
+        result = (uint8)DirectFunctionCall1(ui8toi1, Int64GetDatum(bittobigint(arg, true)));
+        PG_RETURN_INT8(result);
+    }
+
+    /* Check that the bit string is not too long */
+    if ((uint32)VARBITLEN(arg) - GetLeadingZeroLen(arg) > sizeof(result) * BITS_PER_BYTE) {
+        if (isUnsigned) {
+            ereport(errlevel, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint unsigned out of range")));
+            PG_RETURN_UINT8(PG_UINT8_MAX);
+        } else {
+            ereport(errlevel, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
+            PG_RETURN_UINT8(PG_INT8_MAX);
+        }
+    }
+
+    result = 0;
+    for (r = VARBITS(arg); r < VARBITEND(arg); r++) {
+        result <<= BITS_PER_BYTE;
+        result |= *r;
+    }
+    /* Now shift the result to take account of the padding at the end */
+    result >>= VARBITPAD(arg);
+    if (isUnsigned)
+        PG_RETURN_UINT8(result);
+    PG_RETURN_INT8(result);
+}
+
+Datum bittosmallint(VarBit* arg, bool isUnsigned)
+{
+    uint16 result;
+    bits8* r = NULL;
+    int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
+
+    if (GetSessionContext()->enableBCmptMode) {
+        result = (uint16)DirectFunctionCall1(ui8toi2, Int64GetDatum(bittobigint(arg, true)));
+        PG_RETURN_INT16(result);
+    }
+
+    /* Check that the bit string is not too long */
+    if ((uint32)VARBITLEN(arg) - GetLeadingZeroLen(arg) > sizeof(result) * BITS_PER_BYTE) {
+        if (isUnsigned) {
+            ereport(errlevel, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint unsigned out of range")));
+            PG_RETURN_UINT16(PG_UINT16_MAX);
+        } else {
+            ereport(errlevel, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+            PG_RETURN_UINT16(PG_INT16_MAX);
+        }
+    }
+
+    result = 0;
+    for (r = VARBITS(arg); r < VARBITEND(arg); r++) {
+        result <<= BITS_PER_BYTE;
+        result |= *r;
+    }
+    /* Now shift the result to take account of the padding at the end */
+    result >>= VARBITPAD(arg);
+    if (isUnsigned)
+        PG_RETURN_UINT16(result);
+    PG_RETURN_INT16(result);
+}
+
 Datum bittoint(VarBit* arg, bool isUnsigned)
 {
     uint32 result;
     bits8* r = NULL;
+    int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
+
+    if (GetSessionContext()->enableBCmptMode) {
+        result = (uint32)DirectFunctionCall1(ui8toi4, Int64GetDatum(bittobigint(arg, true)));
+        PG_RETURN_INT32(result);
+    }
 
     /* Check that the bit string is not too long */
-    if ((uint32)VARBITLEN(arg) > sizeof(result) * BITS_PER_BYTE) {
+    if ((uint32)VARBITLEN(arg) - GetLeadingZeroLen(arg) > sizeof(result) * BITS_PER_BYTE) {
         if (isUnsigned) {
-            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer unsigned out of range")));
+            ereport(errlevel, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer unsigned out of range")));
+            PG_RETURN_UINT32(PG_UINT32_MAX);
         } else {
-            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));            
+            ereport(errlevel, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+            PG_RETURN_UINT32(PG_INT32_MAX);
         }
     }
 
@@ -1476,13 +1672,16 @@ Datum bittobigint(VarBit* arg, bool isUnsigned)
 {
     uint64 result;
     bits8* r = NULL;
+    int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
 
     /* Check that the bit string is not too long */
-    if ((uint32)VARBITLEN(arg) > sizeof(result) * BITS_PER_BYTE) {
+    if ((uint32)VARBITLEN(arg) - GetLeadingZeroLen(arg) > sizeof(result) * BITS_PER_BYTE) {
         if (isUnsigned) {
+            ereport(errlevel, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
             PG_RETURN_UINT64(PG_UINT64_MAX);
         } else {
-            PG_RETURN_INT64(-1);
+            ereport(errlevel, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+            PG_RETURN_INT64(PG_INT64_MAX);
         }
     }
 
@@ -1498,6 +1697,110 @@ Datum bittobigint(VarBit* arg, bool isUnsigned)
     PG_RETURN_INT64(result);
 }
 
+Datum bitfromtinyint(int8 a, int32 typmod)
+{
+    VarBit* result = NULL;
+    bits8* r = NULL;
+    int rlen;
+    int destbitsleft, srcbitsleft;
+
+    if (typmod <= 0 || typmod > VARBITMAXLEN)
+        typmod = 1; /* default bit length */
+
+    if (typmod < M_BIT_LEN && GetSessionContext()->enableBCmptMode) {
+        return DirectFunctionCall2(bit, bitfromtinyint(a, M_BIT_LEN), Int32GetDatum(typmod));
+    }
+
+    rlen = VARBITTOTALLEN(typmod);
+    result = (VarBit*)palloc(rlen);
+    SET_VARSIZE(result, rlen);
+    VARBITLEN(result) = typmod;
+
+    r = VARBITS(result);
+    destbitsleft = typmod;
+    srcbitsleft = BYTE_SIZE;
+    /* drop any input bits that don't fit */
+    srcbitsleft = Min(srcbitsleft, destbitsleft);
+    /* sign-fill any excess bytes in output */
+    while (destbitsleft >= srcbitsleft + 8) {
+        *r++ = (bits8)((a < 0) ? BITMASK : 0);
+        destbitsleft -= 8;
+    }
+    /* store first fractional byte */
+    if (destbitsleft > srcbitsleft) {
+        int val = (int)(a >> (destbitsleft - 8));
+
+        /* Force sign-fill in case the compiler implements >> as zero-fill */
+        if (a < 0)
+            val |= (-1) << (srcbitsleft + 8 - destbitsleft);
+        *r++ = (bits8)(val & BITMASK);
+        destbitsleft -= 8;
+    }
+    /* Now srcbitsleft and destbitsleft are the same, need not track both */
+    /* store whole bytes */
+    while (destbitsleft >= 8) {
+        *r++ = (bits8)((a >> (destbitsleft - 8)) & BITMASK);
+        destbitsleft -= 8;
+    }
+    /* store last fractional byte */
+    if (destbitsleft > 0)
+        *r = (bits8)((a << (8 - destbitsleft)) & BITMASK);
+
+    PG_RETURN_VARBIT_P(result);
+}
+
+Datum bitfromsmallint(int16 a, int32 typmod)
+{
+    VarBit* result = NULL;
+    bits8* r = NULL;
+    int rlen;
+    int destbitsleft, srcbitsleft;
+
+    if (typmod <= 0 || typmod > VARBITMAXLEN)
+        typmod = 1; /* default bit length */
+
+    if (typmod < M_BIT_LEN && GetSessionContext()->enableBCmptMode) {
+        return DirectFunctionCall2(bit, bitfromsmallint(a, M_BIT_LEN), Int32GetDatum(typmod));
+    }
+
+    rlen = VARBITTOTALLEN(typmod);
+    result = (VarBit*)palloc(rlen);
+    SET_VARSIZE(result, rlen);
+    VARBITLEN(result) = typmod;
+
+    r = VARBITS(result);
+    destbitsleft = typmod;
+    srcbitsleft = SMALL_SIZE;
+    /* drop any input bits that don't fit */
+    srcbitsleft = Min(srcbitsleft, destbitsleft);
+    /* sign-fill any excess bytes in output */
+    while (destbitsleft >= srcbitsleft + 8) {
+        *r++ = (bits8)((a < 0) ? BITMASK : 0);
+        destbitsleft -= 8;
+    }
+    /* store first fractional byte */
+    if (destbitsleft > srcbitsleft) {
+        int val = (int)(a >> (destbitsleft - 8));
+
+        /* Force sign-fill in case the compiler implements >> as zero-fill */
+        if (a < 0)
+            val |= (-1) << (srcbitsleft + 8 - destbitsleft);
+        *r++ = (bits8)(val & BITMASK);
+        destbitsleft -= 8;
+    }
+    /* Now srcbitsleft and destbitsleft are the same, need not track both */
+    /* store whole bytes */
+    while (destbitsleft >= 8) {
+        *r++ = (bits8)((a >> (destbitsleft - 8)) & BITMASK);
+        destbitsleft -= 8;
+    }
+    /* store last fractional byte */
+    if (destbitsleft > 0)
+        *r = (bits8)((a << (8 - destbitsleft)) & BITMASK);
+
+    PG_RETURN_VARBIT_P(result);
+}
+
 Datum bitfromint(int64 a, int32 typmod)
 {
     VarBit* result = NULL;
@@ -1507,6 +1810,10 @@ Datum bitfromint(int64 a, int32 typmod)
 
     if (typmod <= 0 || typmod > VARBITMAXLEN)
         typmod = 1; /* default bit length */
+
+    if (typmod < M_BIT_LEN && GetSessionContext()->enableBCmptMode) {
+        return DirectFunctionCall2(bit, bitfromint(a, M_BIT_LEN), Int32GetDatum(typmod));
+    }
 
     rlen = VARBITTOTALLEN(typmod);
     result = (VarBit*)palloc(rlen);
@@ -1555,6 +1862,10 @@ Datum bitfrombigint(int128 a, int32 typmod)
 
     if (typmod <= 0 || typmod > VARBITMAXLEN)
         typmod = 1; /* default bit length */
+    
+    if (typmod < M_BIT_LEN && GetSessionContext()->enableBCmptMode) {
+        return DirectFunctionCall2(bit, bitfrombigint(a, M_BIT_LEN), Int32GetDatum(typmod));
+    }
 
     rlen = VARBITTOTALLEN(typmod);
     result = (VarBit*)palloc(rlen);
@@ -1594,14 +1905,72 @@ Datum bitfrombigint(int128 a, int32 typmod)
     PG_RETURN_VARBIT_P(result);
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromint1);
+PG_FUNCTION_INFO_V1_PUBLIC(bittoint1);
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromint2);
+PG_FUNCTION_INFO_V1_PUBLIC(bittoint2);
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromuint1);
+PG_FUNCTION_INFO_V1_PUBLIC(bittouint1);
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromuint2);
+PG_FUNCTION_INFO_V1_PUBLIC(bittouint2);
 PG_FUNCTION_INFO_V1_PUBLIC(bitfromuint4);
 PG_FUNCTION_INFO_V1_PUBLIC(bittouint4);
 PG_FUNCTION_INFO_V1_PUBLIC(bitfromuint8);
 PG_FUNCTION_INFO_V1_PUBLIC(bittouint8);
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromnumeric);
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromfloat4);
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromfloat8);
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromdate);
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromdatetime);
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromtimestamp);
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromtime);
+PG_FUNCTION_INFO_V1_PUBLIC(bitfromyear);
+extern "C" DLL_PUBLIC Datum bitfromint1(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bittoint1(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bitfromint2(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bittoint2(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bitfromuint1(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bittouint1(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bitfromuint2(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bittouint2(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum bitfromuint4(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum bittouint4(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum bitfromuint8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum bittouint8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bitfromnumeric(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bitfromfloat4(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bitfromfloat8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bitfromdate(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bitfromdatetime(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bitfromtimestamp(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bitfromtime(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bitfromyear(PG_FUNCTION_ARGS);
+
+Datum bitfromuint1(PG_FUNCTION_ARGS)
+{
+    uint8 a = PG_GETARG_UINT8(0);
+    int32 typmod = PG_GETARG_INT32(1);
+    return bitfromtinyint(a, typmod);
+}
+
+Datum bittouint1(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+    return bittotinyint(arg, true);
+}
+
+Datum bitfromuint2(PG_FUNCTION_ARGS)
+{
+    uint16 a = PG_GETARG_UINT16(0);
+    int32 typmod = PG_GETARG_INT32(1);
+    return bitfromsmallint(a, typmod);
+}
+
+Datum bittouint2(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+    return bittosmallint(arg, true);
+}
 
 Datum bitfromuint4(PG_FUNCTION_ARGS)
 {
@@ -1627,6 +1996,91 @@ Datum bittouint8(PG_FUNCTION_ARGS)
 {
     VarBit* arg = PG_GETARG_VARBIT_P(0);
     return bittobigint(arg, true);
+}
+
+Datum bitfromint1(PG_FUNCTION_ARGS)
+{
+    int8 a = PG_GETARG_INT32(0);
+    int32 typmod = PG_GETARG_INT32(1);
+    return bitfromtinyint(a, typmod);
+}
+
+Datum bittoint1(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+    return bittotinyint(arg, false);
+}
+
+Datum bitfromint2(PG_FUNCTION_ARGS)
+{
+    int16 a = PG_GETARG_INT32(0);
+    int32 typmod = PG_GETARG_INT32(1);
+    return bitfromsmallint(a, typmod);
+}
+
+Datum bittoint2(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+    return bittosmallint(arg, false);
+}
+
+Datum bitfromnumeric(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    int32 typmod = PG_GETARG_INT32(1);
+    int64 a = (int64)DirectFunctionCall1(numeric_int8, NumericGetDatum(num));
+    return bitfrombigint(a, typmod);
+}
+
+Datum bitfromfloat4(PG_FUNCTION_ARGS)
+{
+    float4 num = PG_GETARG_FLOAT4(0);
+    int32 typmod = PG_GETARG_INT32(1);
+    int64 a = (int64)DirectFunctionCall1(ftoi8, Float4GetDatum(num));
+    return bitfrombigint(a, typmod);
+}
+
+Datum bitfromfloat8(PG_FUNCTION_ARGS)
+{
+    float8 num = PG_GETARG_FLOAT8(0);
+    int32 typmod = PG_GETARG_INT32(1);
+    int64 a = (int64)DirectFunctionCall1(dtoi8, Float8GetDatum(num));
+    return bitfrombigint(a, typmod);
+}
+
+Datum bitfromdate(PG_FUNCTION_ARGS)
+{
+    int64 a = (int64)DirectFunctionCall1(date_int8, PG_GETARG_DATEADT(0));
+    int32 typmod = PG_GETARG_INT32(1);
+    return bitfrombigint(a, typmod);
+}
+
+Datum bitfromdatetime(PG_FUNCTION_ARGS)
+{
+    int64 a = (int64)DirectFunctionCall1(timestamptz_int8, PG_GETARG_TIMESTAMPTZ(0));
+    int32 typmod = PG_GETARG_INT32(1);
+    return bitfrombigint(a, typmod);
+}
+
+Datum bitfromtimestamp(PG_FUNCTION_ARGS)
+{
+    int64 a = (int64)DirectFunctionCall1(timestamptz_int8, PG_GETARG_TIMESTAMPTZ(0));
+    int32 typmod = PG_GETARG_INT32(1);
+    return bitfrombigint(a, typmod);
+}
+
+Datum bitfromtime(PG_FUNCTION_ARGS)
+{
+    int64 a = (int64)DirectFunctionCall1(time_int8, PG_GETARG_TIMEADT(0));
+    int32 typmod = PG_GETARG_INT32(1);
+    return bitfrombigint(a, typmod);
+}
+
+Datum bitfromyear(PG_FUNCTION_ARGS)
+{
+    int32 a = (int32)DirectFunctionCall1(year_integer, PG_GETARG_YEARADT(0));
+    int32 typmod = PG_GETARG_INT32(1);
+    return bitfromint(a, typmod);
 }
 #endif
 
@@ -2034,5 +2488,83 @@ Datum bitnlike(PG_FUNCTION_ARGS)
     bool result = false;
     result = DatumGetBool(bitne(fcinfo));
     PG_RETURN_BOOL(result);
+}
+
+Datum bittochar(VarBit* arg)
+{
+    int lzero1 = VARBITLEN(arg) % BYTE_SIZE;
+    if (GetLeadingZeroLen(arg) < lzero1) {
+        lzero1 = lzero1 - BYTE_SIZE;
+    }
+    int lbytes = (GetLeadingZeroLen(arg) - lzero1) / BYTE_SIZE;
+    int lzero2 = lbytes * BYTE_SIZE;
+    int len = (VARBITLEN(arg) - lzero1 - lzero2) / BYTE_SIZE;
+    errno_t ss_rc = 0;
+
+    Datum cpy = DirectFunctionCall3(bitshiftleft, VarBitPGetDatum(arg),
+                                    Int32GetDatum(lzero1 + lzero2), BoolGetDatum(true));
+    char* data = (char*)palloc(len + 1);
+    if (len != 0) {
+        ss_rc = memcpy_s(data, len, VARBITS((VarBit*)cpy), len);
+        securec_check(ss_rc, "\0", "\0");
+    }
+    *(data + len) = '\0';
+    PG_RETURN_DATUM((Datum)data);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bittotext);
+extern "C" DLL_PUBLIC Datum bittotext(PG_FUNCTION_ARGS);
+Datum bittotext(PG_FUNCTION_ARGS)
+{
+    Datum data = bittochar(PG_GETARG_VARBIT_P(0));
+    PG_RETURN_DATUM(DirectFunctionCall1(textin, data));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bittobpchar);
+extern "C" DLL_PUBLIC Datum bittobpchar(PG_FUNCTION_ARGS);
+Datum bittobpchar(PG_FUNCTION_ARGS)
+{
+    Datum data = bittochar(PG_GETARG_VARBIT_P(0));
+    int32 typmod = PG_GETARG_INT32(1);
+    PG_RETURN_DATUM(DirectFunctionCall3(bpcharin, data, ObjectIdGetDatum(0), Int32GetDatum(typmod)));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bittovarchar);
+extern "C" DLL_PUBLIC Datum bittovarchar(PG_FUNCTION_ARGS);
+Datum bittovarchar(PG_FUNCTION_ARGS)
+{
+    Datum data = bittochar(PG_GETARG_VARBIT_P(0));
+    int32 typmod = PG_GETARG_INT32(1);
+    PG_RETURN_DATUM(DirectFunctionCall3(varcharin, data, ObjectIdGetDatum(0), Int32GetDatum(typmod)));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bittobinary);
+extern "C" DLL_PUBLIC Datum bittobinary(PG_FUNCTION_ARGS);
+Datum bittobinary(PG_FUNCTION_ARGS)
+{
+    Datum dec = bittobigint(PG_GETARG_VARBIT_P(0), true);
+    Datum str = DirectFunctionCall1(uint8out, dec);
+    PG_RETURN_DATUM(DirectFunctionCall1(dolphin_binaryin, str));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bittovarbinary);
+extern "C" DLL_PUBLIC Datum bittovarbinary(PG_FUNCTION_ARGS);
+Datum bittovarbinary(PG_FUNCTION_ARGS)
+{
+    Datum dec = bittobigint(PG_GETARG_VARBIT_P(0), true);
+    Datum str = DirectFunctionCall1(uint8out, dec);
+    PG_RETURN_DATUM(DirectFunctionCall1(byteain, str));
+}
+
+Datum bit_bin_in(PG_FUNCTION_ARGS)
+{
+    char* input_string = PG_GETARG_CSTRING(0);
+#ifdef NOT_USED
+    Oid typelem = PG_GETARG_OID(1);
+#endif
+    int32 atttypmod = PG_GETARG_INT32(2);
+    bool can_ignore = fcinfo->can_ignore;
+    
+    PG_RETURN_VARBIT_P(bit_in_internal(input_string, atttypmod, can_ignore));
 }
 #endif

@@ -711,7 +711,7 @@ insert into test_numeric_type_max values(null);
 DELETE FROM test_numeric_table_max;
 DELETE FROM test_numeric_type_max;
 INSERT INTO test_numeric_type_max VALUES(null);
-INSERT INTO test_numeric_table_max VALUES (127, 255, 32767, 65535, 2147483647, 4294967295, 9223372036854775807, 18446744073709551615, 3.402e+38, 1.79e+308, 99999999999999.999999, '1'::bit, repeat('1', 64)::bit(64));
+INSERT INTO test_numeric_table_max VALUES (127, 255, 32767, 65535, 2147483647, 4294967295, 9223372036854775807, 18446744073709551615, 3.402e+38, 1.79e+308, 99999999999999.999999, b'1'::bit, b'1111111111111111111111111111111111111111111111111111111111111111'::bit(64));
 UPDATE test_numeric_type_max, test_numeric_table_max SET test_numeric_type_max.`int1+int1` = test_numeric_table_max.`int1`+test_numeric_table_max.`int1`;
 UPDATE test_numeric_type_max, test_numeric_table_max SET test_numeric_type_max.`int1-int1` = test_numeric_table_max.`int1`-test_numeric_table_max.`int1`;
 UPDATE test_numeric_type_max, test_numeric_table_max SET test_numeric_type_max.`int1*int1` = test_numeric_table_max.`int1`*test_numeric_table_max.`int1`;

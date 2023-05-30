@@ -234,6 +234,95 @@ int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool can_igno
  * representation of the most negative number, which can't be represented as a
  * positive number.
  */
+#ifdef DOLPHIN
+int8 PgStrtoint8Internal(const char* s, bool sqlModeStrict, bool can_ignore)
+{
+    const char* ptr = s;
+    int8 tmp = 0;
+    bool neg = false;
+    char digitAfterDot = '\0';
+    int errlevel = (!can_ignore && sqlModeStrict) ? ERROR : WARNING;
+
+    if (*s == 0) {
+        ereport(errlevel,
+            (errmodule(MOD_FUNCTION),
+                errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for tinyint: \"%s\"", s)));
+        return tmp;
+    }
+
+    /* skip leading spaces */
+    while (likely(*ptr) && isspace((unsigned char)*ptr)) {
+        ptr++;
+    }
+
+    /* handle sign */
+    if (*ptr == '-') {
+        ptr++;
+        neg = true;
+    } else if (*ptr == '+')
+        ptr++;
+
+    /* require at least one digit */
+    if (unlikely(!isdigit((unsigned char)*ptr))) {
+        if (can_ignore || !sqlModeStrict)
+            return tmp;
+    }
+
+    /* process digits */
+    while (*ptr && isdigit((unsigned char)*ptr)) {
+        int8 digit = (*ptr++ - '0');
+        int16 result = tmp * 10 - digit;
+
+        if (result < PG_INT8_MIN || result > PG_INT8_MAX) {
+            goto out_of_range;
+        }
+        tmp = result;
+    }
+
+    /* allow trailing whitespace, but not other trailing chars */
+    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+
+    if (!can_ignore && sqlModeStrict && unlikely(*ptr != '\0'))
+        goto invalid_syntax;
+
+    if (!neg) {
+        /* could fail if input is most negative number */
+        if (unlikely(tmp == PG_INT8_MIN))
+            goto out_of_range;
+        tmp = -tmp;
+    }
+
+    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (tmp == PG_INT8_MAX || tmp == PG_INT8_MIN) {
+            ereport(errlevel,
+                (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                    errmsg("value \"%s\" is out of range for type %s", s, "tinyint")));
+        }
+        if (!neg && tmp < PG_INT8_MAX)
+            tmp++;
+        if (neg && tmp > PG_INT8_MIN)
+            tmp--;
+    }
+
+    return tmp;
+
+out_of_range:
+    ereport(errlevel,
+        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+            errmsg("value \"%s\" is out of range for type %s", s, "tinyint")));
+    if (neg) {
+        return PG_INT8_MIN;
+    } else {
+        return PG_INT8_MAX;
+    }
+
+invalid_syntax:
+    ereport(ERROR,
+        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for %s: \"%s\"", "tinyint", s)));
+    return 0;
+}
+#endif
 int16 pg_strtoint16(const char* s, bool can_ignore)
 {
     return PgStrtoint16Internal(s, true, can_ignore);
@@ -297,6 +386,13 @@ int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict, bool can_ignore)
     }
 
     if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+#ifdef DOLPHIN
+        if (tmp == PG_INT16_MAX || tmp == PG_INT16_MIN) {
+            ereport(errlevel,
+                (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                    errmsg("value \"%s\" is out of range for type %s", s, "smallint")));
+        }
+#endif
         if (!neg && tmp < PG_INT16_MAX)
             tmp++;
         if (neg && tmp > PG_INT16_MIN)
@@ -317,7 +413,7 @@ out_of_range:
 
 invalid_syntax:
     ereport(ERROR,
-        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for %s: \"%s\"", "integer", s)));
+        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for %s: \"%s\"", "smallint", s)));
     return 0;
 }
 
@@ -393,6 +489,13 @@ int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict, bool can_ignore)
     }
 
     if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+#ifdef DOLPHIN
+        if (tmp == PG_INT32_MAX || tmp == PG_INT32_MIN) {
+            ereport((!can_ignore && sqlModeStrict) ? ERROR : WARNING,
+                (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                    errmsg("value \"%s\" is out of range for type %s", s, "integer")));
+        }
+#endif
         if (!neg && tmp < PG_INT32_MAX)
             tmp++;
         if (neg && tmp > PG_INT32_MIN)
@@ -723,6 +826,89 @@ uint64 pg_strtouint64(const char* str, char** endptr, int base)
 }
 
 #ifdef DOLPHIN
+uint8 PgStrtouint8Internal(const char* s, bool sqlModeStrict, bool can_ignore)
+{
+    const char* ptr = s;
+    uint8 tmp = 0;
+    bool neg = false;
+    char digitAfterDot = '\0';
+    int errlevel = (!can_ignore && sqlModeStrict) ? ERROR : WARNING;
+
+    /* skip leading spaces */
+    while (likely(*ptr) && isspace((unsigned char)*ptr)) {
+        ptr++;
+    }
+
+    /* handle sign */
+    if (*ptr == '-') {
+        ptr++;
+        neg = true;
+    } else if (*ptr == '+')
+        ptr++;
+
+    /* require at least one digit */
+    if (unlikely(!isdigit((unsigned char)*ptr))) {
+        ereport(errlevel,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for tinyint unsigned: \"%s\"", s)));
+
+        return tmp;
+    }
+
+    /* process digits */
+    while (*ptr && isdigit((unsigned char)*ptr)) {
+        int8 digit = (*ptr++ - '0');
+        uint16 result = tmp * 10 + digit;
+
+        if (result > PG_UINT8_MAX) {
+            goto out_of_range;
+        }
+        tmp = result;
+    }
+
+    /* allow trailing whitespace, but not other trailing chars */
+    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+
+    if (!can_ignore && sqlModeStrict && unlikely(*ptr != '\0'))
+        goto invalid_syntax;
+
+    if (neg) {
+        /* could fail if input is most negative number */
+        if (unlikely(tmp > 0)) {
+            goto out_of_range;
+        }
+    }
+
+    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (tmp == PG_UINT8_MAX) {
+            ereport(errlevel,
+                (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                    errmsg("value \"%s\" is out of range for type %s", s, "tinyint unsigned")));
+        }
+        if (!neg && tmp < PG_UINT8_MAX) {
+            tmp++;
+        }
+    }
+
+    return tmp;
+
+out_of_range:
+    ereport(errlevel,
+        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+            errmsg("value \"%s\" is out of range for type %s", s, "tinyint unsigned")));
+    if (neg) {
+        return 0;
+    } else {
+        return PG_UINT8_MAX;
+    }
+
+invalid_syntax:
+    ereport(ERROR,
+        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+            errmsg("invalid input syntax for %s: \"%s\"", "tinyint unsigned", s)));
+    return 0;
+}
+
 uint16 PgStrtouint16Internal(const char* s, bool sqlModeStrict, bool can_ignore)
 {
     const char* ptr = s;
@@ -778,6 +964,11 @@ uint16 PgStrtouint16Internal(const char* s, bool sqlModeStrict, bool can_ignore)
     }
 
     if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (tmp == USHRT_MAX) {
+            ereport((can_ignore || !sqlModeStrict) ? WARNING : ERROR,
+                (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                    errmsg("value \"%s\" is out of range for type %s", s, "smallint unsigned")));
+        }
         if (!neg && tmp < USHRT_MAX)
             tmp++;
     }
@@ -857,6 +1048,11 @@ uint32 PgStrtouint32Internal(const char* s, bool sqlModeStrict, bool can_ignore)
     }
 
     if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (tmp == UINT_MAX) {
+            ereport((can_ignore || !sqlModeStrict) ? WARNING : ERROR,
+                (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                    errmsg("value \"%s\" is out of range for type %s", s, "int unsigned")));
+        }
         if (!neg && tmp < UINT_MAX)
             tmp++;
     }

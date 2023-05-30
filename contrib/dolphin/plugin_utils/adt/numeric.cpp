@@ -49,7 +49,7 @@
 
 #ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
-
+#include "utils/varbit.h"
 #ifndef CRCMASK
 #define CRCMASK 0xEDB88320
 #define DIG_PER_DEC1 9
@@ -22185,7 +22185,7 @@ Datum bit_count_date(PG_FUNCTION_ARGS)
 
 Datum bit_count_bit(PG_FUNCTION_ARGS)
 {
-    char* num = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    char* num = (char*)varbit_out(fcinfo);
     int len = strlen(num);
     int64 count = 0;
     int64 maxNum = 64;

@@ -2070,7 +2070,7 @@ show columns from test_numeric_type_normal;
 
 insert into test_numeric_type_normal values(null);
 -- normal value
-INSERT INTO test_numeric_table_normal VALUES (55, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 1::bit, 101101::bit);
+INSERT INTO test_numeric_table_normal VALUES (55, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 1::bit, 1::bit);
 UPDATE test_numeric_type_normal, test_numeric_table_normal SET test_numeric_type_normal.`int1+int1` = test_numeric_table_normal.`int1`+test_numeric_table_normal.`int1`;
 UPDATE test_numeric_type_normal, test_numeric_table_normal SET test_numeric_type_normal.`int1-int1` = test_numeric_table_normal.`int1`-test_numeric_table_normal.`int1`;
 UPDATE test_numeric_type_normal, test_numeric_table_normal SET test_numeric_type_normal.`int1*int1` = test_numeric_table_normal.`int1`*test_numeric_table_normal.`int1`;

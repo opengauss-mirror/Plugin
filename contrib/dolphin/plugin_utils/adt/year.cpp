@@ -8,6 +8,9 @@
 #include "utils/builtins.h"
 #include "libpq/pqformat.h"
 #include "plugin_utils/year.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 /*
  * gcc's -ffast-math switch breaks routines that expect exact results from
@@ -248,12 +251,22 @@ Datum yeartypmodout(PG_FUNCTION_ARGS)
 
 static YearADT int32_to_YearADT(int4 year)
 {
+#ifdef DOLPHIN
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
+#endif
+
     if (year) {
         if (YEAR_VALID(year)) {
             if (YEAR2_IN_RANGE(year))
                 year = year + (year >= YEAR2_BOUND_BETWEEN_20C_21C ? 1900 : 2000);
             year = year - MIN_YEAR_NUM + 1;
         } else {
+#ifdef DOLPHIN
+            ereport(errlevel,
+                (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                    errmsg("Out of range value for year data type!")));
+            return 0;
+#endif
             ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Out of range value for year data type!")));
         }
     }
@@ -455,6 +468,12 @@ Datum year_mi(YearADT y1, YearADT y2)
 }
 
 #ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(int8_year);
+extern "C" DLL_PUBLIC Datum int8_year(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int16_year);
+extern "C" DLL_PUBLIC Datum int16_year(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int64_year);
+extern "C" DLL_PUBLIC Datum int64_year(PG_FUNCTION_ARGS);
 ulong convert_period_to_month(ulong period)
 {
     ulong a, b;
@@ -529,12 +548,65 @@ Datum year_xor_transfn(PG_FUNCTION_ARGS)
     PG_RETURN_UINT32(year ^ internal);
 }
 
+Datum int8_year(PG_FUNCTION_ARGS)
+{
+    int8 year = PG_GETARG_INT8(0);
+    PG_RETURN_YEARADT(int32_to_YearADT((int32)year));
+}
+
+Datum int16_year(PG_FUNCTION_ARGS)
+{
+    int16 year = PG_GETARG_INT16(0);
+    PG_RETURN_YEARADT(int32_to_YearADT((int32)year));
+}
+
+Datum int64_year(PG_FUNCTION_ARGS)
+{
+    int64 year = PG_GETARG_INT64(0);
+    PG_RETURN_YEARADT(int32_to_YearADT((int32)year));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(year_int8);
+extern "C" DLL_PUBLIC Datum year_int8(PG_FUNCTION_ARGS);
+Datum year_int8(PG_FUNCTION_ARGS)
+{
+    int32 res = DatumGetInt32(DirectFunctionCall1(year_integer, PG_GETARG_DATUM(0)));
+    if (res == 0) {
+        PG_RETURN_INT8(0);
+    }
+    PG_RETURN_INT8(PG_INT8_MAX);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(year_int16);
+extern "C" DLL_PUBLIC Datum year_int16(PG_FUNCTION_ARGS);
+Datum year_int16(PG_FUNCTION_ARGS)
+{
+    int16 res = DatumGetInt32(DirectFunctionCall1(year_integer, PG_GETARG_DATUM(0)));
+    PG_RETURN_INT16(res);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(year_int64);
+extern "C" DLL_PUBLIC Datum year_int64(PG_FUNCTION_ARGS);
+Datum year_int64(PG_FUNCTION_ARGS)
+{
+    int64 res = DatumGetInt32(DirectFunctionCall1(year_integer, PG_GETARG_DATUM(0)));
+    PG_RETURN_INT64(res);
+}
+
 PG_FUNCTION_INFO_V1_PUBLIC(year_uint8);
 extern "C" DLL_PUBLIC Datum year_uint8(PG_FUNCTION_ARGS);
 Datum year_uint8(PG_FUNCTION_ARGS)
 {
     uint64 res = DatumGetInt32(DirectFunctionCall1(year_integer, PG_GETARG_DATUM(0)));
     PG_RETURN_UINT64(res);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(year_float4);
+extern "C" DLL_PUBLIC Datum year_float4(PG_FUNCTION_ARGS);
+Datum year_float4(PG_FUNCTION_ARGS)
+{
+    float4 res = DatumGetInt32(DirectFunctionCall1(year_integer, PG_GETARG_DATUM(0)));
+    PG_RETURN_FLOAT4(res);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(year_float8);

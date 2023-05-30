@@ -68,6 +68,7 @@
 #define isDigital(_ch) (((_ch) >= '0') && ((_ch) <= '9'))
 #define TinyBlobMaxAllocSize ((Size)255) /* 255B */
 #define MediumBlobMaxAllocSize ((Size)(16 * 1024 * 1024 - 1)) /* 16MB - 1 */
+#define BlobMaxAllocSize ((Size)(1024 * 1024 * 1024 - 8203)) /* 1GB - 8203 */
 #define LongBlobMaxAllocSize (((Size)4 * 1024 * 1024 * 1024 - 1)) /* 4GB - 1 */
 #define SOUND_THRESHOLD 4
 #define ANTI_CODE '7'
@@ -362,6 +363,21 @@ extern "C" DLL_PUBLIC Datum substring_index_text(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(Varlena2Float8);
 extern "C" DLL_PUBLIC Datum Varlena2Float8(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(Varlena2Numeric);
+extern "C" DLL_PUBLIC Datum Varlena2Numeric(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(Varlena2Bpchar);
+extern "C" DLL_PUBLIC Datum Varlena2Bpchar(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(Varlena2Varchar);
+extern "C" DLL_PUBLIC Datum Varlena2Varchar(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(Varlena2Text);
+extern "C" DLL_PUBLIC Datum Varlena2Text(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(Varlena2Bit);
+extern "C" DLL_PUBLIC Datum Varlena2Bit(PG_FUNCTION_ARGS);
 
 #endif
 
@@ -8423,21 +8439,33 @@ Datum bytea2var(PG_FUNCTION_ARGS)
 
 Datum tinyblob_rawin(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    Datum result = dolphin_binaryin(fcinfo);
+#else
     Datum result = byteain(fcinfo);
+#endif
     check_blob_size(result, (int64)TinyBlobMaxAllocSize);
     return result;
 }
 
 Datum mediumblob_rawin(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    Datum result = dolphin_binaryin(fcinfo);
+#else
     Datum result = byteain(fcinfo);
+#endif
     check_blob_size(result, (int64)MediumBlobMaxAllocSize);
     return result;
 }
 
 Datum longblob_rawin(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    Datum result = dolphin_binaryin(fcinfo);
+#else
     Datum result = byteain(fcinfo);
+#endif
     check_blob_size(result, (int64)LongBlobMaxAllocSize);
     return result;
 }
@@ -10112,5 +10140,119 @@ Datum Varlena2Float8(PG_FUNCTION_ARGS)
     }
     pfree_ext(data);
     PG_RETURN_FLOAT8(result);
+}
+
+Datum Varlena2Numeric(PG_FUNCTION_ARGS)
+{
+    char* data = NULL;
+    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    Datum result;
+
+    result = DirectFunctionCall3(numeric_in, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(data);
+
+    PG_RETURN_DATUM(result);
+}
+
+Datum Varlena2Bpchar(PG_FUNCTION_ARGS)
+{
+    char* data = NULL;
+    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    Datum result;
+
+    result = DirectFunctionCall3(bpcharin, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(data);
+
+    PG_RETURN_DATUM(result);
+}
+
+Datum Varlena2Varchar(PG_FUNCTION_ARGS)
+{
+    char* data = NULL;
+    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    Datum result;
+
+    result = DirectFunctionCall3(varcharin, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(data);
+
+    PG_RETURN_DATUM(result);
+}
+
+Datum Varlena2Text(PG_FUNCTION_ARGS)
+{
+    char* data = NULL;
+    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    Datum result;
+
+    result = DirectFunctionCall3(textin, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(data);
+
+    PG_RETURN_DATUM(result);
+}
+
+Datum Varlena2Bit(PG_FUNCTION_ARGS)
+{
+    char* data = NULL;
+    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    int32 typmod = PG_GETARG_INT32(1);
+    Datum bits;
+    Datum result;
+
+    bits = DirectFunctionCall3(bit_in, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    result = DirectFunctionCall2(bit, bits, Int32GetDatum(typmod));
+    pfree_ext(data);
+
+    PG_RETURN_VARBIT_P(result);
+}
+
+Datum bit_blob(VarBit* input)
+{
+    bytea* result = NULL;
+    int len = (VARBITLEN(input) - 1) / 8  + 1;
+    result = (bytea*)palloc0(len + VARHDRSZ);
+    Datum shift = DirectFunctionCall2(bit, VarBitPGetDatum(input), Int32GetDatum(len * 8));
+
+    errno_t ss_rc = 0;
+    ss_rc = memcpy_s(VARDATA(result), len, VARBITS((VarBit*)shift), len);
+    securec_check(ss_rc, "\0", "\0");
+    SET_VARSIZE(result, len + VARHDRSZ);
+
+    PG_RETURN_BYTEA_P(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bittotinyblob);
+extern "C" DLL_PUBLIC Datum bittotinyblob(PG_FUNCTION_ARGS);
+Datum bittotinyblob(PG_FUNCTION_ARGS)
+{
+    Datum result = bit_blob(PG_GETARG_VARBIT_P(0));
+    check_blob_size(result, (int64)TinyBlobMaxAllocSize);
+    PG_RETURN_BYTEA_P(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bittomediumblob);
+extern "C" DLL_PUBLIC Datum bittomediumblob(PG_FUNCTION_ARGS);
+Datum bittomediumblob(PG_FUNCTION_ARGS)
+{
+    Datum result = bit_blob(PG_GETARG_VARBIT_P(0));
+    check_blob_size(result, (int64)MediumBlobMaxAllocSize);
+    PG_RETURN_BYTEA_P(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bittoblob);
+extern "C" DLL_PUBLIC Datum bittoblob(PG_FUNCTION_ARGS);
+Datum bittoblob(PG_FUNCTION_ARGS)
+{
+    Datum result = bit_blob(PG_GETARG_VARBIT_P(0));
+    check_blob_size(result, (int64)BlobMaxAllocSize);
+    PG_RETURN_BYTEA_P(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bittolongblob);
+extern "C" DLL_PUBLIC Datum bittolongblob(PG_FUNCTION_ARGS);
+Datum bittolongblob(PG_FUNCTION_ARGS)
+{
+    Datum result = bit_blob(PG_GETARG_VARBIT_P(0));
+    check_blob_size(result, (int64)LongBlobMaxAllocSize);
+    PG_RETURN_BYTEA_P(result);
 }
 #endif

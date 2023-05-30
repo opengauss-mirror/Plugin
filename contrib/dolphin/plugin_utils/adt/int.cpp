@@ -1228,7 +1228,7 @@ Datum int1in(PG_FUNCTION_ARGS)
 {
     char* num = PG_GETARG_CSTRING(0);
 #ifdef DOLPHIN
-    PG_RETURN_INT8((int8)PgAtoiInternal(num, sizeof(int8), '\0', SQL_MODE_STRICT(), fcinfo->can_ignore));
+    PG_RETURN_INT8(PgStrtoint8Internal(num, SQL_MODE_STRICT(), fcinfo->can_ignore));
 #endif
 }
 

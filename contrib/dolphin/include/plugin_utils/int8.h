@@ -126,6 +126,11 @@ extern Datum bool_int8(PG_FUNCTION_ARGS);
 extern Datum generate_series_int8(PG_FUNCTION_ARGS);
 extern Datum generate_series_step_int8(PG_FUNCTION_ARGS);
 
+#ifdef DOLPHIN
+extern Datum dtoi8_floor(PG_FUNCTION_ARGS);
+extern Datum ftoi8_floor(PG_FUNCTION_ARGS);
+#endif
+
 #ifndef MADLIB
 #include "../plugin_vector/vecprimitive/int4.inl"
 #include "../plugin_vector/vecprimitive/float.inl"

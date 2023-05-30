@@ -1100,7 +1100,7 @@ call test_yearweek(yearweek1, yearweek2);
 call test_adddate(adddate1, adddate2, adddate3, adddate4);
       adddate1       | adddate2 |  adddate3  |      adddate4       
 ---------------------+----------+------------+---------------------
- 2021-11-12 00:00:01 | 36:12:12 | 2021-11-13 | 2036-12-12 00:00:00
+--?2021-11-12 00:00:01 | 36:12:12 | 2021-11-13 |.*12:12:12
 (1 row)
 
 call test_addtime(addtime);
@@ -1895,7 +1895,7 @@ call test_yearweek(yearweek1, yearweek2);
 call test_adddate(adddate1, adddate2, adddate3, adddate4);
       adddate1       | adddate2 |  adddate3  |      adddate4       
 ---------------------+----------+------------+---------------------
- 2021-11-12 00:00:01 | 36:12:12 | 2021-11-13 | 2036-12-12 00:00:00
+--?2021-11-12 00:00:01 | 36:12:12 | 2021-11-13 |.*12:12:12
 (1 row)
 
 call test_addtime(addtime);

@@ -8,19 +8,19 @@ NOTICE:  table "t_tinyint" does not exist, skipping
 create table t_tinyint(c tinyint);
 insert ignore into t_tinyint values('12a34');
 insert ignore into t_tinyint values('12555a34');
-WARNING:  value "12555a34" is out of range for type tinyint. truncated automatically
+WARNING:  value "12555a34" is out of range for type tinyint
 LINE 1: insert ignore into t_tinyint values('12555a34');
                                             ^
 CONTEXT:  referenced column: c
 insert ignore into t_tinyint values('-12555a34');
-WARNING:  value "-12555a34" is out of range for type tinyint. truncated automatically
+WARNING:  value "-12555a34" is out of range for type tinyint
 LINE 1: insert ignore into t_tinyint values('-12555a34');
                                             ^
 CONTEXT:  referenced column: c
 insert ignore into t_tinyint values('aaa123a34');
 insert ignore into t_tinyint values('abcde');
 insert ignore into t_tinyint values('');
-WARNING:  invalid input syntax for integer: ""
+WARNING:  invalid input syntax for tinyint: ""
 LINE 1: insert ignore into t_tinyint values('');
                                             ^
 CONTEXT:  referenced column: c
@@ -42,19 +42,27 @@ NOTICE:  table "t_tinyint_unsigned" does not exist, skipping
 create table t_tinyint_unsigned(c tinyint unsigned);
 insert ignore into t_tinyint_unsigned values('12a34');
 insert ignore into t_tinyint_unsigned values('12555a34');
-WARNING:  value "12555a34" is out of range for type tinyint unsigned. truncated automatically
+WARNING:  value "12555a34" is out of range for type tinyint unsigned
 LINE 1: insert ignore into t_tinyint_unsigned values('12555a34');
                                                      ^
 CONTEXT:  referenced column: c
 insert ignore into t_tinyint_unsigned values('-12555a34');
-WARNING:  value "-12555a34" is out of range for type tinyint unsigned. truncated automatically
+WARNING:  value "-12555a34" is out of range for type tinyint unsigned
 LINE 1: insert ignore into t_tinyint_unsigned values('-12555a34');
                                                      ^
 CONTEXT:  referenced column: c
 insert ignore into t_tinyint_unsigned values('aaa123a34');
+WARNING:  invalid input syntax for tinyint unsigned: "aaa123a34"
+LINE 1: insert ignore into t_tinyint_unsigned values('aaa123a34');
+                                                     ^
+CONTEXT:  referenced column: c
 insert ignore into t_tinyint_unsigned values('abcde');
+WARNING:  invalid input syntax for tinyint unsigned: "abcde"
+LINE 1: insert ignore into t_tinyint_unsigned values('abcde');
+                                                     ^
+CONTEXT:  referenced column: c
 insert ignore into t_tinyint_unsigned values('');
-WARNING:  invalid input syntax for integer: ""
+WARNING:  invalid input syntax for tinyint unsigned: ""
 LINE 1: insert ignore into t_tinyint_unsigned values('');
                                                      ^
 CONTEXT:  referenced column: c

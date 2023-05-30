@@ -196,6 +196,13 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
     }
 
     if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+#ifdef DOLPHIN
+        if (tmp == PG_INT64_MAX || tmp == PG_INT64_MIN) {
+            ereport((!can_ignore && sqlModeStrict) ? ERROR : WARNING,
+                (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                    errmsg("value \"%s\" is out of range for type %s", str, "bigint")));
+        }
+#endif
         if (!neg && tmp < PG_INT64_MAX)
             tmp++;
         if (neg && tmp > PG_INT64_MIN)
@@ -1642,3 +1649,47 @@ Datum bpchar_int8(PG_FUNCTION_ARGS)
 
     PG_RETURN_DATUM(result);
 }
+
+#ifdef DOLPHIN
+Datum ftoi8_floor(PG_FUNCTION_ARGS)
+{
+    float4 num = PG_GETARG_FLOAT4(0);
+    num = floor(num);
+
+    if (isnan(num))
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+
+    /* keyword IGNORE has higher priority than sql mode */
+    if (num < (float4)PG_INT64_MIN || num >= -((float4)PG_INT64_MIN)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            ereport(WARNING, (errmsg("bigint out of range")));
+            PG_RETURN_INT64(num < (float4)PG_INT64_MIN ? LONG_MIN : LONG_MAX);
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+        }
+    }
+
+    PG_RETURN_INT64((int64)num);
+}
+
+Datum dtoi8_floor(PG_FUNCTION_ARGS)
+{
+    float8 num = PG_GETARG_FLOAT8(0);
+    num = floor(num);
+
+    if (isnan(num))
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+
+    /* keyword IGNORE has priority than sql mode */
+    if (num < (float8)PG_INT64_MIN || num >= -((float8)PG_INT64_MIN)) {
+        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
+            ereport(WARNING, (errmsg("bigint out of range")));
+            PG_RETURN_INT64(num < (float8)PG_INT64_MIN ? LONG_MIN : LONG_MAX);
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+        }
+    }
+
+    PG_RETURN_INT64((int64)num);
+}
+#endif

@@ -65,14 +65,27 @@ bool check_pg_tm_time_part(pg_tm *tm, fsec_t fsec);
 extern const char* extract_numericstr(const char* str);
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
 
+PG_FUNCTION_INFO_V1_PUBLIC(int8_b_format_time);
+extern "C" DLL_PUBLIC Datum int8_b_format_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int16_b_format_time);
+extern "C" DLL_PUBLIC Datum int16_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_time);
 extern "C" DLL_PUBLIC Datum int32_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int64_b_format_time);
 extern "C" DLL_PUBLIC Datum int64_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_time);
 extern "C" DLL_PUBLIC Datum numeric_b_format_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_b_format_time);
+extern "C" DLL_PUBLIC Datum float8_b_format_time(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(int8_b_format_date);
+extern "C" DLL_PUBLIC Datum int8_b_format_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int16_b_format_date);
+extern "C" DLL_PUBLIC Datum int16_b_format_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_date);
 extern "C" DLL_PUBLIC Datum int32_b_format_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int64_b_format_date);
+extern "C" DLL_PUBLIC Datum int64_b_format_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(negetive_time);
 extern "C" DLL_PUBLIC Datum negetive_time(PG_FUNCTION_ARGS);
 
@@ -515,6 +528,16 @@ int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit, 
     return dterr;
 }
 
+Datum int8_b_format_date(PG_FUNCTION_ARGS)
+{
+    return DirectFunctionCall1(int32_b_format_date, Int32GetDatum((int32)PG_GETARG_INT8(0)));
+}
+
+Datum int16_b_format_date(PG_FUNCTION_ARGS)
+{
+    return DirectFunctionCall1(int32_b_format_date, Int32GetDatum((int32)PG_GETARG_INT16(0)));
+}
+
 /* int4 to b format date type conversion */
 Datum int32_b_format_date(PG_FUNCTION_ARGS) 
 {
@@ -533,6 +556,17 @@ Datum int32_b_format_date(PG_FUNCTION_ARGS)
     result = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
     PG_RETURN_DATEADT(result);
 }
+
+Datum int64_b_format_date(PG_FUNCTION_ARGS)
+{
+    int64 number = PG_GETARG_INT64(0);
+    if (number >= (int64)pow_of_10[7]) { /* date: 1000-00-00 */
+        Datum datetime = DirectFunctionCall1(int64_b_format_datetime, Int64GetDatum(number));
+        return DirectFunctionCall1(timestamp_date, datetime);
+    }
+    return DirectFunctionCall1(int32_b_format_date, Int32GetDatum((int32)number));
+}
+
 #endif
 /* date_out()
  * Given internal format date, convert to text string.
@@ -1610,6 +1644,23 @@ Datum numeric_b_format_time(PG_FUNCTION_ARGS)
     Numeric n = PG_GETARG_NUMERIC(0);
     char *str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
     return DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+}
+
+Datum float8_b_format_time(PG_FUNCTION_ARGS)
+{
+    float8 n = PG_GETARG_FLOAT8(0);
+    char *str = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(n)));
+    return DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+}
+
+Datum int8_b_format_time(PG_FUNCTION_ARGS)
+{
+    return DirectFunctionCall1(int32_b_format_time, Int32GetDatum((int32)PG_GETARG_INT8(0)));
+}
+
+Datum int16_b_format_time(PG_FUNCTION_ARGS)
+{
+    return DirectFunctionCall1(int32_b_format_time, Int32GetDatum((int32)PG_GETARG_INT16(0)));
 }
 
 /* int4(hhmmss) convert to b format time */
