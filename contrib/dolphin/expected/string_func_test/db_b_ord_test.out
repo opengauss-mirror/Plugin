@@ -72,6 +72,7 @@ select ord('');
    0
 (1 row)
 
+-- test bit
 select ord(b'1');
  ord 
 -----
@@ -82,6 +83,57 @@ select ord(b'1000100110');
  ord 
 -----
    2
+(1 row)
+
+-- test numeric
+select ord(1);
+ ord 
+-----
+  49
+(1 row)
+
+select ord(-9);
+ ord 
+-----
+  45
+(1 row)
+
+select ord(111111111111111111111111111111111111111111111111111111111111111111111111111111111);
+ ord 
+-----
+  49
+(1 row)
+
+select ord(111111111111111111111111111111111111111111111111111111111111111111111111111111111.1);
+ ord 
+-----
+  49
+(1 row)
+
+select ord(1111111111111111111111111111111111111111111111111111111111111111111111111111111111);
+ERROR:  numeric out of range
+CONTEXT:  referenced column: ord
+select ord(1111111111111111111111111111111111111111111111111111111111111111111111111111111111.11);
+ERROR:  numeric out of range
+CONTEXT:  referenced column: ord
+select ord(-1111111111111111111111111111111111111111111111111111111111111111111111111111111111.11);
+ERROR:  numeric out of range
+CONTEXT:  referenced column: ord
+set dolphin.sql_mode = '';
+select ord(1111111111111111111111111111111111111111111111111111111111111111111111111111111111);
+WARNING:  numeric out of range
+CONTEXT:  referenced column: ord
+ ord 
+-----
+  57
+(1 row)
+
+select ord(-1111111111111111111111111111111111111111111111111111111111111111111111111111111111);
+WARNING:  numeric out of range
+CONTEXT:  referenced column: ord
+ ord 
+-----
+  45
 (1 row)
 
 -- test from table
