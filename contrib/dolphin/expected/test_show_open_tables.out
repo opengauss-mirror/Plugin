@@ -1,0 +1,409 @@
+-- init
+create user user1 with sysadmin password 'Show@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+create user user2 password 'Show@456';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+-- B库执行
+drop database if exists show_open_tables_b;
+NOTICE:  database "show_open_tables_b" does not exist, skipping
+create database show_open_tables_b dbcompatibility 'b';
+\c show_open_tables_b
+-- create schema
+create schema show_open_tables_scm;
+set search_path to show_open_tables_scm;
+-- create table
+create table show_open_tables_test_1(id int);
+create table show_open_tables_test_2(id int);
+-- 管理员用户执行
+-- set session authorization user1 password 'Show@123';
+set role user1 password 'Show@123';
+-- no table touched in schema
+SHOW OPEN TABLES IN show_open_tables_scm;
+ Database | Table | In_use | Name_locked 
+----------+-------+--------+-------------
+(0 rows)
+
+SHOW OPEN TABLES FROM show_open_tables_scm;
+ Database | Table | In_use | Name_locked 
+----------+-------+--------+-------------
+(0 rows)
+
+-- 1 and 1+ tables touched
+insert into show_open_tables_test_1 values(1);
+SHOW OPEN TABLES IN show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+(1 row)
+
+SHOW OPEN TABLES FROM show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+(1 row)
+
+insert into show_open_tables_test_2 values(1);
+SHOW OPEN TABLES IN show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+SHOW OPEN TABLES FROM show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+-- 1 and 1+ locks on table
+lock tables show_open_tables_test_1 read;
+select pg_class.relname, pg_locks.mode, pg_locks.granted
+    from pg_locks, pg_class where pg_locks.relation = pg_class.oid and pg_class.relname = 'show_open_tables_test_1';
+         relname         |      mode       | granted 
+-------------------------+-----------------+---------
+ show_open_tables_test_1 | AccessShareLock | t
+(1 row)
+
+SHOW OPEN TABLES IN show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      1 |           0
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+lock tables show_open_tables_test_1 write;
+select pg_class.relname, pg_locks.mode, pg_locks.granted
+    from pg_locks, pg_class where pg_locks.relation = pg_class.oid and pg_class.relname = 'show_open_tables_test_1';
+         relname         |        mode         | granted 
+-------------------------+---------------------+---------
+ show_open_tables_test_1 | AccessShareLock     | t
+ show_open_tables_test_1 | AccessExclusiveLock | t
+(2 rows)
+
+SHOW OPEN TABLES IN show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      2 |           1
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+unlock tables;
+select pg_class.relname, pg_locks.mode, pg_locks.granted
+    from pg_locks, pg_class where pg_locks.relation = pg_class.oid and pg_class.relname = 'show_open_tables_test_1';
+ relname | mode | granted 
+---------+------+---------
+(0 rows)
+
+SHOW OPEN TABLES FROM show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+begin;
+lock table show_open_tables_test_1 in ACCESS EXCLUSIVE mode;
+select pg_class.relname, pg_locks.mode, pg_locks.granted
+    from pg_locks, pg_class where pg_locks.relation = pg_class.oid and pg_class.relname = 'show_open_tables_test_1';
+         relname         |        mode         | granted 
+-------------------------+---------------------+---------
+ show_open_tables_test_1 | AccessExclusiveLock | t
+(1 row)
+
+SHOW OPEN TABLES IN show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      1 |           1
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+lock table show_open_tables_test_1 in EXCLUSIVE mode;
+select pg_class.relname, pg_locks.mode, pg_locks.granted
+    from pg_locks, pg_class where pg_locks.relation = pg_class.oid and pg_class.relname = 'show_open_tables_test_1';
+         relname         |        mode         | granted 
+-------------------------+---------------------+---------
+ show_open_tables_test_1 | ExclusiveLock       | t
+ show_open_tables_test_1 | AccessExclusiveLock | t
+(2 rows)
+
+SHOW OPEN TABLES IN show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      2 |           1
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+lock table show_open_tables_test_1 in  SHARE ROW EXCLUSIVE mode;
+select pg_class.relname, pg_locks.mode, pg_locks.granted
+    from pg_locks, pg_class where pg_locks.relation = pg_class.oid and pg_class.relname = 'show_open_tables_test_1';
+         relname         |         mode          | granted 
+-------------------------+-----------------------+---------
+ show_open_tables_test_1 | ShareRowExclusiveLock | t
+ show_open_tables_test_1 | ExclusiveLock         | t
+ show_open_tables_test_1 | AccessExclusiveLock   | t
+(3 rows)
+
+SHOW OPEN TABLES IN show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      3 |           1
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+lock table show_open_tables_test_1 in SHARE mode;
+select pg_class.relname, pg_locks.mode, pg_locks.granted
+    from pg_locks, pg_class where pg_locks.relation = pg_class.oid and pg_class.relname = 'show_open_tables_test_1';
+         relname         |         mode          | granted 
+-------------------------+-----------------------+---------
+ show_open_tables_test_1 | ShareLock             | t
+ show_open_tables_test_1 | ShareRowExclusiveLock | t
+ show_open_tables_test_1 | ExclusiveLock         | t
+ show_open_tables_test_1 | AccessExclusiveLock   | t
+(4 rows)
+
+SHOW OPEN TABLES IN show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      4 |           1
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+lock table show_open_tables_test_1 in SHARE UPDATE EXCLUSIVE mode;
+select pg_class.relname, pg_locks.mode, pg_locks.granted
+    from pg_locks, pg_class where pg_locks.relation = pg_class.oid and pg_class.relname = 'show_open_tables_test_1';
+         relname         |           mode           | granted 
+-------------------------+--------------------------+---------
+ show_open_tables_test_1 | ShareUpdateExclusiveLock | t
+ show_open_tables_test_1 | ShareLock                | t
+ show_open_tables_test_1 | ShareRowExclusiveLock    | t
+ show_open_tables_test_1 | ExclusiveLock            | t
+ show_open_tables_test_1 | AccessExclusiveLock      | t
+(5 rows)
+
+SHOW OPEN TABLES IN show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      5 |           1
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+lock table show_open_tables_test_1 in ROW EXCLUSIVE mode;
+select pg_class.relname, pg_locks.mode, pg_locks.granted
+    from pg_locks, pg_class where pg_locks.relation = pg_class.oid and pg_class.relname = 'show_open_tables_test_1';
+         relname         |           mode           | granted 
+-------------------------+--------------------------+---------
+ show_open_tables_test_1 | RowExclusiveLock         | t
+ show_open_tables_test_1 | ShareUpdateExclusiveLock | t
+ show_open_tables_test_1 | ShareLock                | t
+ show_open_tables_test_1 | ShareRowExclusiveLock    | t
+ show_open_tables_test_1 | ExclusiveLock            | t
+ show_open_tables_test_1 | AccessExclusiveLock      | t
+(6 rows)
+
+SHOW OPEN TABLES IN show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      6 |           1
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+lock table show_open_tables_test_1 in ROW SHARE mode;
+select pg_class.relname, pg_locks.mode, pg_locks.granted
+    from pg_locks, pg_class where pg_locks.relation = pg_class.oid and pg_class.relname = 'show_open_tables_test_1';
+         relname         |           mode           | granted 
+-------------------------+--------------------------+---------
+ show_open_tables_test_1 | RowShareLock             | t
+ show_open_tables_test_1 | RowExclusiveLock         | t
+ show_open_tables_test_1 | ShareUpdateExclusiveLock | t
+ show_open_tables_test_1 | ShareLock                | t
+ show_open_tables_test_1 | ShareRowExclusiveLock    | t
+ show_open_tables_test_1 | ExclusiveLock            | t
+ show_open_tables_test_1 | AccessExclusiveLock      | t
+(7 rows)
+
+SHOW OPEN TABLES IN show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      7 |           1
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+lock table show_open_tables_test_1 in ACCESS SHARE mode;
+select pg_class.relname, pg_locks.mode, pg_locks.granted
+    from pg_locks, pg_class where pg_locks.relation = pg_class.oid and pg_class.relname = 'show_open_tables_test_1';
+         relname         |           mode           | granted 
+-------------------------+--------------------------+---------
+ show_open_tables_test_1 | AccessShareLock          | t
+ show_open_tables_test_1 | RowShareLock             | t
+ show_open_tables_test_1 | RowExclusiveLock         | t
+ show_open_tables_test_1 | ShareUpdateExclusiveLock | t
+ show_open_tables_test_1 | ShareLock                | t
+ show_open_tables_test_1 | ShareRowExclusiveLock    | t
+ show_open_tables_test_1 | ExclusiveLock            | t
+ show_open_tables_test_1 | AccessExclusiveLock      | t
+(8 rows)
+
+SHOW OPEN TABLES IN show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      8 |           1
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+commit;
+select pg_class.relname, pg_locks.mode, pg_locks.granted
+    from pg_locks, pg_class where pg_locks.relation = pg_class.oid and pg_class.relname = 'show_open_tables_test_1';
+ relname | mode | granted 
+---------+------+---------
+(0 rows)
+
+SHOW OPEN TABLES FROM show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+-- [LIKE 'pattern' | WHERE expr]
+SHOW OPEN TABLES LIKE 'abc%';
+ Database | Table | In_use | Name_locked 
+----------+-------+--------+-------------
+(0 rows)
+
+SHOW OPEN TABLES LIKE 'show%';
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+SHOW OPEN TABLES IN show_open_tables_scm LIKE 'abc%';
+ Database | Table | In_use | Name_locked 
+----------+-------+--------+-------------
+(0 rows)
+
+SHOW OPEN TABLES IN show_open_tables_scm LIKE 'show%';
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+SHOW OPEN TABLES FROM show_open_tables_scm LIKE 'abc%';
+ Database | Table | In_use | Name_locked 
+----------+-------+--------+-------------
+(0 rows)
+
+SHOW OPEN TABLES FROM show_open_tables_scm LIKE 'show%';
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+SHOW OPEN TABLES WHERE "Table" = 'abc';
+ Database | Table | In_use | Name_locked 
+----------+-------+--------+-------------
+(0 rows)
+
+SHOW OPEN TABLES WHERE "Table" = 'show_open_tables_test_1';
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+(1 row)
+
+SHOW OPEN TABLES WHERE Database = 'show_open_tables_scm';
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+SHOW OPEN TABLES WHERE In_use > 0;
+ Database | Table | In_use | Name_locked 
+----------+-------+--------+-------------
+(0 rows)
+
+SHOW OPEN TABLES IN show_open_tables_scm WHERE "Table" = 'abc';
+ Database | Table | In_use | Name_locked 
+----------+-------+--------+-------------
+(0 rows)
+
+SHOW OPEN TABLES IN show_open_tables_scm WHERE "Table" = 'show_open_tables_test_1';
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+(1 row)
+
+SHOW OPEN TABLES IN show_open_tables_scm WHERE Database = 'show_open_tables_scm';
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+SHOW OPEN TABLES IN show_open_tables_scm WHERE In_use > 0;
+ Database | Table | In_use | Name_locked 
+----------+-------+--------+-------------
+(0 rows)
+
+SHOW OPEN TABLES FROM show_open_tables_scm WHERE "Table" = 'abc';
+ Database | Table | In_use | Name_locked 
+----------+-------+--------+-------------
+(0 rows)
+
+SHOW OPEN TABLES FROM show_open_tables_scm WHERE "Table" = 'show_open_tables_test_1';
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+(1 row)
+
+SHOW OPEN TABLES FROM show_open_tables_scm WHERE Database = 'show_open_tables_scm';
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+SHOW OPEN TABLES FROM show_open_tables_scm WHERE In_use > 0;
+ Database | Table | In_use | Name_locked 
+----------+-------+--------+-------------
+(0 rows)
+
+-- 普通用户执行
+-- set session authorization user2 password 'Show@456';
+set role user2 password 'Show@456';
+SHOW OPEN TABLES IN show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+SHOW OPEN TABLES FROM show_open_tables_scm;
+       Database       |          Table          | In_use | Name_locked 
+----------------------+-------------------------+--------+-------------
+ show_open_tables_scm | show_open_tables_test_1 |      0 |           0
+ show_open_tables_scm | show_open_tables_test_2 |      0 |           0
+(2 rows)
+
+-- 非B库执行
+set role user1 password 'Show@123';
+drop database if exists show_open_tables_nb;
+NOTICE:  database "show_open_tables_nb" does not exist, skipping
+create database show_open_tables_nb;
+\c show_open_tables_nb
+SHOW OPEN TABLES;
+ERROR:  syntax error at or near "TABLES"
+LINE 1: SHOW OPEN TABLES;
+                  ^
+SHOW OPEN TABLES IN show_open_tables_scm;
+ERROR:  syntax error at or near "TABLES"
+LINE 1: SHOW OPEN TABLES IN show_open_tables_scm;
+                  ^
+SHOW OPEN TABLES FROM show_open_tables_scm;
+ERROR:  syntax error at or near "TABLES"
+LINE 1: SHOW OPEN TABLES FROM show_open_tables_scm;
+                  ^

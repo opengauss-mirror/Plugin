@@ -1,0 +1,84 @@
+-- init
+create user user1 with sysadmin password 'Show@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+create user user2 password 'Show@456';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+-- B库执行
+drop database if exists show_slave_status_b;
+NOTICE:  database "show_slave_status_b" does not exist, skipping
+create database show_slave_status_b dbcompatibility 'b';
+\c show_slave_status_b
+-- 管理员用户执行
+-- set session authorization user1 password 'Show@123';
+set role user1 password 'Show@123';
+SHOW SLAVE STATUS;
+ pid | sender_pid | local_role | peer_role | peer_state | state | catchup_start | catchup_end | sender_sent_location | sender_write_location | sender_flush_location | sender_replay_location | receiver_received_location | receiver_write_location | receiver_flush_location | receiver_replay_location | sync_percent | sync_state | sync_priority | sync_most_available | channel 
+-----+------------+------------+-----------+------------+-------+---------------+-------------+----------------------+-----------------------+-----------------------+------------------------+----------------------------+-------------------------+-------------------------+--------------------------+--------------+------------+---------------+---------------------+---------
+(0 rows)
+
+SHOW REPLICA STATUS;
+ pid | sender_pid | local_role | peer_role | peer_state | state | catchup_start | catchup_end | sender_sent_location | sender_write_location | sender_flush_location | sender_replay_location | receiver_received_location | receiver_write_location | receiver_flush_location | receiver_replay_location | sync_percent | sync_state | sync_priority | sync_most_available | channel 
+-----+------------+------------+-----------+------------+-------+---------------+-------------+----------------------+-----------------------+-----------------------+------------------------+----------------------------+-------------------------+-------------------------+--------------------------+--------------+------------+---------------+---------------------+---------
+(0 rows)
+
+SHOW SLAVE STATUS FOR CHANNEL 'no_qualified_row';
+ pid | sender_pid | local_role | peer_role | peer_state | state | catchup_start | catchup_end | sender_sent_location | sender_write_location | sender_flush_location | sender_replay_location | receiver_received_location | receiver_write_location | receiver_flush_location | receiver_replay_location | sync_percent | sync_state | sync_priority | sync_most_available | channel 
+-----+------------+------------+-----------+------------+-------+---------------+-------------+----------------------+-----------------------+-----------------------+------------------------+----------------------------+-------------------------+-------------------------+--------------------------+--------------+------------+---------------+---------------------+---------
+(0 rows)
+
+SHOW REPLICA STATUS FOR CHANNEL 'no_qualified_row';
+ pid | sender_pid | local_role | peer_role | peer_state | state | catchup_start | catchup_end | sender_sent_location | sender_write_location | sender_flush_location | sender_replay_location | receiver_received_location | receiver_write_location | receiver_flush_location | receiver_replay_location | sync_percent | sync_state | sync_priority | sync_most_available | channel 
+-----+------------+------------+-----------+------------+-------+---------------+-------------+----------------------+-----------------------+-----------------------+------------------------+----------------------------+-------------------------+-------------------------+--------------------------+--------------+------------+---------------+---------------------+---------
+(0 rows)
+
+-- 普通用户执行
+-- set session authorization user2 password 'Show@456';
+set role user2 password 'Show@456';
+SHOW SLAVE STATUS;
+ pid | sender_pid | local_role | peer_role | peer_state | state | catchup_start | catchup_end | sender_sent_location | sender_write_location | sender_flush_location | sender_replay_location | receiver_received_location | receiver_write_location | receiver_flush_location | receiver_replay_location | sync_percent | sync_state | sync_priority | sync_most_available | channel 
+-----+------------+------------+-----------+------------+-------+---------------+-------------+----------------------+-----------------------+-----------------------+------------------------+----------------------------+-------------------------+-------------------------+--------------------------+--------------+------------+---------------+---------------------+---------
+(0 rows)
+
+SHOW REPLICA STATUS;
+ pid | sender_pid | local_role | peer_role | peer_state | state | catchup_start | catchup_end | sender_sent_location | sender_write_location | sender_flush_location | sender_replay_location | receiver_received_location | receiver_write_location | receiver_flush_location | receiver_replay_location | sync_percent | sync_state | sync_priority | sync_most_available | channel 
+-----+------------+------------+-----------+------------+-------+---------------+-------------+----------------------+-----------------------+-----------------------+------------------------+----------------------------+-------------------------+-------------------------+--------------------------+--------------+------------+---------------+---------------------+---------
+(0 rows)
+
+SHOW SLAVE STATUS FOR CHANNEL 'no_qualified_row';
+ pid | sender_pid | local_role | peer_role | peer_state | state | catchup_start | catchup_end | sender_sent_location | sender_write_location | sender_flush_location | sender_replay_location | receiver_received_location | receiver_write_location | receiver_flush_location | receiver_replay_location | sync_percent | sync_state | sync_priority | sync_most_available | channel 
+-----+------------+------------+-----------+------------+-------+---------------+-------------+----------------------+-----------------------+-----------------------+------------------------+----------------------------+-------------------------+-------------------------+--------------------------+--------------+------------+---------------+---------------------+---------
+(0 rows)
+
+SHOW REPLICA STATUS FOR CHANNEL 'no_qualified_row';
+ pid | sender_pid | local_role | peer_role | peer_state | state | catchup_start | catchup_end | sender_sent_location | sender_write_location | sender_flush_location | sender_replay_location | receiver_received_location | receiver_write_location | receiver_flush_location | receiver_replay_location | sync_percent | sync_state | sync_priority | sync_most_available | channel 
+-----+------------+------------+-----------+------------+-------+---------------+-------------+----------------------+-----------------------+-----------------------+------------------------+----------------------------+-------------------------+-------------------------+--------------------------+--------------+------------+---------------+---------------------+---------
+(0 rows)
+
+-- 非B库执行
+set role user1 password 'Show@123';
+drop database if exists show_slave_status_nb;
+NOTICE:  database "show_slave_status_nb" does not exist, skipping
+create database show_slave_status_nb;
+\c show_slave_status_nb
+SHOW SLAVE STATUS;
+ERROR:  syntax error at or near "STATUS"
+LINE 1: SHOW SLAVE STATUS;
+                   ^
+SHOW REPLICA STATUS;
+ERROR:  syntax error at or near "STATUS"
+LINE 1: SHOW REPLICA STATUS;
+                     ^
+SHOW SLAVE STATUS FOR CHANNEL 'no_qualified_row';
+ERROR:  syntax error at or near "STATUS"
+LINE 1: SHOW SLAVE STATUS FOR CHANNEL 'no_qualified_row';
+                   ^
+SHOW REPLICA STATUS FOR CHANNEL 'no_qualified_row';
+ERROR:  syntax error at or near "STATUS"
+LINE 1: SHOW REPLICA STATUS FOR CHANNEL 'no_qualified_row';
+                     ^
+-- cleanup
+\c contrib_regression
+drop database show_slave_status_b;
+drop database show_slave_status_nb;
+drop user user1;
+drop user user2;

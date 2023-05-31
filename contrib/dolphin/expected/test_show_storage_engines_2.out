@@ -1,0 +1,125 @@
+-- B库执行
+\c show_storage_engines_b
+-- 管理员用户执行
+-- set session authorization user1 password 'Show@123';
+set role user1 password 'Show@123';
+-- ASTORE/USTORE
+-- enable_ustore=off
+show enable_ustore;
+ enable_ustore 
+---------------
+ off
+(1 row)
+
+-- ASTORE DEFAULT, USTORE NO
+set enable_default_ustore_table = on;
+show enable_default_ustore_table;
+ enable_default_ustore_table 
+-----------------------------
+ on
+(1 row)
+
+create table astore_default_tb_3(id int);
+create table astore_tb_3(id int) with (storage_type=astore);
+-- failed
+create table ustore_tb_3(id int) with (storage_type=ustore);
+ERROR:  Ustore is disabled, please set enable_ustore=on.
+SHOW ENGINES;
+ Engine  | Support |                Comment                | Transactions | XA | Savepoints 
+---------+---------+---------------------------------------+--------------+----+------------
+ ASTORE  | DEFAULT | Append Update Storage Engine          | YES          |    | YES
+ USTORE  | NO      | In-place Update Storage Engine        | YES          |    | YES
+ row     | DEFAULT | Row-Oriented Table Storage Engine     | YES          |    | YES
+ column  | YES     | Column-Oriented Table Storage Engine  | YES          |    | YES
+ mot_fdw | YES     | Memory-Optimized Table Storage Engine | YES          |    | NO
+(5 rows)
+
+-- ASTORE DEFAULT, USTORE NO
+set enable_default_ustore_table = off;
+show enable_default_ustore_table;
+ enable_default_ustore_table 
+-----------------------------
+ off
+(1 row)
+
+create table astore_default_tb_4(id int);
+create table astore_tb_4(id int) with (storage_type=astore);
+-- failed
+create table ustore_tb_4(id int) with (storage_type=ustore);
+ERROR:  Ustore is disabled, please set enable_ustore=on.
+SHOW ENGINES;
+ Engine  | Support |                Comment                | Transactions | XA | Savepoints 
+---------+---------+---------------------------------------+--------------+----+------------
+ ASTORE  | DEFAULT | Append Update Storage Engine          | YES          |    | YES
+ USTORE  | NO      | In-place Update Storage Engine        | YES          |    | YES
+ row     | DEFAULT | Row-Oriented Table Storage Engine     | YES          |    | YES
+ column  | YES     | Column-Oriented Table Storage Engine  | YES          |    | YES
+ mot_fdw | YES     | Memory-Optimized Table Storage Engine | YES          |    | NO
+(5 rows)
+
+-- mot_fdw
+-- ENABLE_MOT=on
+-- enable_incremental_checkpoint=off
+show enable_incremental_checkpoint; 
+ enable_incremental_checkpoint 
+-------------------------------
+ off
+(1 row)
+
+grant create any table to user2;
+set role user2 password 'Show@456';
+-- failed
+create foreign table mot_tb_3(id int) server mot_server;
+ERROR:  permission denied for foreign server mot_server
+DETAIL:  N/A
+-- user has no authority: mot_fdw NO
+SHOW ENGINES;
+ Engine  | Support |                Comment                | Transactions | XA | Savepoints 
+---------+---------+---------------------------------------+--------------+----+------------
+ ASTORE  | DEFAULT | Append Update Storage Engine          | YES          |    | YES
+ USTORE  | NO      | In-place Update Storage Engine        | YES          |    | YES
+ row     | DEFAULT | Row-Oriented Table Storage Engine     | YES          |    | YES
+ column  | YES     | Column-Oriented Table Storage Engine  | YES          |    | YES
+ mot_fdw | NO      | Memory-Optimized Table Storage Engine | YES          |    | NO
+(5 rows)
+
+set role user1 password 'Show@123';
+grant usage on foreign server mot_server to user2;
+set role user2 password 'Show@456';
+-- succeed
+create foreign table mot_tb_4(id int) server mot_server;
+-- user has authority: mot_fdw YES
+SHOW ENGINES;
+ Engine  | Support |                Comment                | Transactions | XA | Savepoints 
+---------+---------+---------------------------------------+--------------+----+------------
+ ASTORE  | DEFAULT | Append Update Storage Engine          | YES          |    | YES
+ USTORE  | NO      | In-place Update Storage Engine        | YES          |    | YES
+ row     | DEFAULT | Row-Oriented Table Storage Engine     | YES          |    | YES
+ column  | YES     | Column-Oriented Table Storage Engine  | YES          |    | YES
+ mot_fdw | YES     | Memory-Optimized Table Storage Engine | YES          |    | NO
+(5 rows)
+
+set role user1 password 'Show@123';
+revoke usage on foreign server mot_server from user2;
+set role user2 password 'Show@456';
+-- failed
+create foreign table mot_tb_5(id int) server mot_server;
+ERROR:  permission denied for foreign server mot_server
+DETAIL:  N/A
+-- user has no authority: mot_fdw NO
+SHOW ENGINES;
+ Engine  | Support |                Comment                | Transactions | XA | Savepoints 
+---------+---------+---------------------------------------+--------------+----+------------
+ ASTORE  | DEFAULT | Append Update Storage Engine          | YES          |    | YES
+ USTORE  | NO      | In-place Update Storage Engine        | YES          |    | YES
+ row     | DEFAULT | Row-Oriented Table Storage Engine     | YES          |    | YES
+ column  | YES     | Column-Oriented Table Storage Engine  | YES          |    | YES
+ mot_fdw | NO      | Memory-Optimized Table Storage Engine | YES          |    | NO
+(5 rows)
+
+-- cleanup
+\c contrib_regression
+drop database show_storage_engines_b;
+drop database show_storage_engines_nb;
+drop user user1;
+drop user user2;

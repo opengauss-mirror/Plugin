@@ -77,6 +77,10 @@ SelectStmt *findCreateTrigger(RangeVar *trel);
 
 SelectStmt* makeShowTableStatusQuery(char* schemaName, Node* likeWhereOpt, bool isLikeExpr);
 SelectStmt* makeFlushBinaryLogsQuery(void);
+
+SelectStmt* makeShowOpenTablesQuery(char* schemaName, Node* likeWhereOpt, bool isLikeExpr);
+SelectStmt* makeShowSlaveStatusQuery(char* channel);
+SelectStmt* makeShowEnginesQuery(void);
 #endif
 
 #endif /* PARSER_H */
