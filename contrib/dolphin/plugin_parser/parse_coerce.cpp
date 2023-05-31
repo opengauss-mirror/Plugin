@@ -3161,7 +3161,7 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
                 (TypeCategory(targetTypeId) == TYPCATEGORY_STRING || targetTypeId == BLOBOID)) {
                 result = COERCION_PATH_COERCEVIAIO;
             } else if (ccontext >= COERCION_EXPLICIT &&
-                (TypeCategory(sourceTypeId) == TYPCATEGORY_STRING || targetTypeId == BLOBOID)) {
+                (TypeCategory(sourceTypeId) == TYPCATEGORY_STRING || sourceTypeId == BLOBOID)) {
                 result = COERCION_PATH_COERCEVIAIO;
             }
 #else
