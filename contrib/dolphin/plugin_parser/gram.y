@@ -644,7 +644,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 		CreateFunctionStmt CreateEventStmt CreateProcedureStmt CreatePackageStmt CreatePackageBodyStmt AlterFunctionStmt AlterProcedureStmt ReindexStmt RemoveAggrStmt
 		RemoveFuncStmt RemoveOperStmt RemovePackageStmt RenameStmt RevokeStmt RevokeRoleStmt RevokeDbStmt
 		RuleActionStmt RuleActionStmtOrEmpty RuleStmt
-		SecLabelStmt SelectStmt SelectStmtWithoutWithClause TimeCapsuleStmt TransactionStmt TruncateStmt CallFuncStmt
+		SecLabelStmt SelectStmt SelectStmtWithoutWithClause SignalResignalStmt TimeCapsuleStmt TransactionStmt TruncateStmt CallFuncStmt
 		UnlistenStmt UpdateStmt VacuumStmt
 		VariableResetStmt VariableSetStmt VariableShowStmt VerifyStmt ShutdownStmt VariableMultiSetStmt
 		UseStmt
@@ -1017,7 +1017,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <chr>		OptCompress OptCompress_without_empty generated_column_option
 %type <ival>	KVType
 %type <ival>		ColCmprsMode
-%type <fun_src>		subprogram_body b_proc_body triggerbody_subprogram_or_single dolphin_flow_control flow_control_func_body
+%type <fun_src>		subprogram_body b_proc_body triggerbody_subprogram_or_single dolphin_flow_control flow_control_func_body b_signal_resignal_body
 %type <node>    trigger_body_stmt
 %type <keyword> as_is as_empty
 %type <node>	column_item opt_table_partitioning_clause_without_empty
@@ -1131,6 +1131,10 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <str> normal_ident
 %type <boolean> opt_ignore field_unsigned
 
+/* SIGNAL/RESIGNAL */
+%type <list>	signal_information_item_lists signal_information_item_list
+%type <node>	signal_information_item
+
 /* ALTER TABLESPACE */
 %type <list>	alter_tblspc_option_list
 %type <node>	alter_tblspc_option
@@ -1168,14 +1172,14 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_INTEGER BIT BLANKS
 	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BUCKETS BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
 
-	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CHAIN CHANGE CHAR_P
-	CHARACTER CHARACTERISTICS CHARACTERSET CHARSET CHECK CHECKPOINT CHECKSUM CLASS CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
-	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COLUMNS COMMENT COMMENTS COMMIT
-	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPLETION COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINTS
+	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CATALOG_NAME CHAIN CHANGE CHAR_P
+	CHARACTER CHARACTERISTICS CHARACTERSET CHARSET CHECK CHECKPOINT CHECKSUM CLASS CLASS_ORIGIN CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
+	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMN_NAME COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COLUMNS COMMENT COMMENTS COMMIT
+	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPLETION COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINT_CATALOG CONSTRAINT_NAME CONSTRAINT_SCHEMA CONSTRAINTS
 	CONTAINS CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
 	CROSS CSN CSV CUBE CURRENT_P
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
-	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CYCLE NOW_FUNC
+	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CURSOR_NAME CYCLE NOW_FUNC
 	SHRINK
 
 	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
@@ -1210,9 +1214,9 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LINES LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
 	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOGS LOOP LOW_PRIORITY
-	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAX_ROWS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MEMORY MERGE MICROSECOND_P MID MIN_ROWS MINUS_P MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
+	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAX_ROWS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MEMORY MERGE MESSAGE_TEXT MICROSECOND_P MID MIN_ROWS MINUS_P MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
 	MODEL // DB4AI
-	MODIFIES
+	MODIFIES MYSQL_ERRNO
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NGRAM NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
 	NO_WRITE_TO_BINLOG
@@ -1234,16 +1238,16 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 
 	RANDOMIZED RANGE RATIO RAW READ READS REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
 	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEAT REPEATABLE REPLACE REPLICA REGEXP REORGANIZE REPAIR
-	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
+	RESET RESIGNAL RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
 	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P ROW_FORMAT RULE
 
-	SAMPLE SAVEPOINT SCHEDULE SCHEMA SCHEMAS SCROLL SEARCH SECONDARY_ENGINE_ATTRIBUTE SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
-	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS SIGNED
-	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTS STARTING STARTWITH
-	STATEMENT STATEMENT_ID STATISTICS STATS_AUTO_RECALC STATS_PERSISTENT STATS_SAMPLE_PAGES STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBPARTITIONS SUBSCRIPTION SUBSTR SUBSTRING
+	SAMPLE SAVEPOINT SCHEDULE SCHEMA SCHEMA_NAME SCHEMAS SCROLL SEARCH SECONDARY_ENGINE_ATTRIBUTE SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
+	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS SIGNAL SIGNED
+	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL SQLSTATE STABLE STANDALONE_P START STARTS STARTING STARTWITH
+	STATEMENT STATEMENT_ID STATISTICS STATS_AUTO_RECALC STATS_PERSISTENT STATS_SAMPLE_PAGES STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBCLASS_ORIGIN SUBPARTITION SUBPARTITIONS SUBSCRIPTION SUBSTR SUBSTRING
 	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
 
-	TABLE TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TEMPTABLE TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TINYINT
+	TABLE TABLE_NAME TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TEMPTABLE TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TINYINT
 	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
 	TRUNCATE TRUSTED TSFIELD TSTAG TSTIME TYPE_P TYPES_P
 
@@ -1656,6 +1660,14 @@ stmt :
 			| RuleStmt
 			| SecLabelStmt
 			| SelectStmt
+			| SignalResignalStmt
+			{
+				const char* message = "RESIGNAL/RESIGNAL only support in procedure";
+				InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+				ereport(errstate,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("RESIGNAL/RESIGNAL only support in procedure")));
+			}
 			| ShutdownStmt
 			| TimeCapsuleStmt
 			| SnapshotStmt
@@ -20248,6 +20260,53 @@ SingleLineProcPart:
                                 $$ = strbody;
                         }
 		;
+
+b_signal_resignal_body:
+			{GetSessionContext()->single_line_proc_begin = yylloc;}
+			SignalResignalStmt
+					{
+						char* strbody = NULL;
+						int strbody_len = 0;
+						char* proc_body_str = NULL;
+						int proc_body_len = 0;
+						FunctionSources *funSrc = NULL;
+						char *proc_header_str = NULL;
+						int rc = 0;
+						base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
+						
+						/* Save procedure header str,start with param exclude brackets */
+						proc_header_str = ParseFunctionArgSrc(yyscanner);
+
+						int start_pos = GetSessionContext()->single_line_proc_begin;
+						int end_pos = yylloc;
+						strbody = SingleLineProcedureQueryGet(start_pos, end_pos, yyextra);
+						strbody_len = strlen(strbody);
+						GetSessionContext()->single_line_proc_begin = -1;
+
+						/* get signal/resignal statement */
+						proc_body_str = (char *)palloc0(strbody_len + DECLARE_LEN + BEGIN_LEN + END_LEN + 1);
+						rc = strcpy_s(proc_body_str, strbody_len + DECLARE_LEN + BEGIN_LEN + END_LEN + 1, DECLARE_STR);
+						securec_check(rc, "", "");
+
+						rc = strcpy_s(proc_body_str + DECLARE_LEN, strbody_len + BEGIN_LEN + END_LEN + 1, BEGIN_STR);
+						securec_check(rc, "", "");
+
+						rc = strcpy_s(proc_body_str + DECLARE_LEN + BEGIN_LEN, strbody_len + END_LEN + 1, strbody);
+						securec_check(rc, "", "");
+
+						rc = strcpy_s(proc_body_str + DECLARE_LEN + BEGIN_LEN + strbody_len, END_LEN + 1, END_STR);
+						securec_check(rc, "", "");
+
+						proc_body_len = strbody_len + DECLARE_LEN + BEGIN_LEN + END_LEN;
+						proc_body_str[proc_body_len] = '\0';
+
+						funSrc = makeNode(FunctionSources);
+						funSrc->bodySrc   = proc_body_str;
+						funSrc->headerSrc = proc_header_str;
+
+						$$ = funSrc;
+					}
+
 proc_arg_no_empty:
                         {pg_yyget_extra(yyscanner)->core_yy_extra.func_param_begin = yylloc;}
                         func_args_with_defaults {
@@ -20437,6 +20496,49 @@ CreateProcedureStmt:
 
 						$$ = (Node *)n;
 					}
+			| CREATE opt_or_replace definer_user PROCEDURE func_name_opt_arg proc_arg_no_empty
+			opt_createproc_opt_list {
+				u_sess->parser_cxt.eaten_declare = false;
+				u_sess->parser_cxt.eaten_begin = false;
+				pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+				u_sess->parser_cxt.isCreateFuncOrProc = true;
+			} b_signal_resignal_body
+				{
+					int rc = 0;
+					rc = CompileWhich();
+					if ((rc == PLPGSQL_COMPILE_PROC || rc == PLPGSQL_COMPILE_NULL) && u_sess->cmd_cxt.CurrentExtensionObject == InvalidOid) {
+						u_sess->plsql_cxt.procedure_first_line = GetLineNumber(t_thrd.postgres_cxt.debug_query_string, @8);
+					}
+					rc = CompileWhich();
+					CreateFunctionStmt *n = makeNode(CreateFunctionStmt);
+					FunctionSources *funSource = (FunctionSources *)$9;
+					int count = get_outarg_num($6);
+
+					n->isOraStyle = true;
+					n->isPrivate = false;
+					n->replace = $2;
+					n->definer = $3;
+					if (n->replace && NULL != n->definer) {
+						parser_yyerror("not support DEFINER function");
+					}
+					n->funcname = $5;
+					n->parameters = $6;
+					n->inputHeaderSrc = FormatFuncArgType(yyscanner, funSource->headerSrc, n->parameters);
+					n->returnType = NULL;
+					n->isProcedure = true;
+					if (0 == count)
+					{
+						n->returnType = makeTypeName("void");
+						n->returnType->typmods = NULL;
+						n->returnType->arrayBounds = NULL;
+					}
+					n->options = $7;
+					n->options = lappend(n->options, makeDefElem("as",
+										(Node *)list_make1(makeString(funSource->bodySrc))));
+					n->withClause = NIL;
+					u_sess->parser_cxt.isCreateFuncOrProc = false;
+					$$ = (Node *)n;
+				}
 		;
 
 CreatePackageStmt:
@@ -28474,6 +28576,105 @@ opt_hold: /* EMPTY */						{ $$ = 0; }
 			| WITHOUT HOLD				{ $$ = 0; }
 		;
 
+signal_information_item_lists:
+			/* EMPTY */
+			{
+				$$ = NIL;
+			}
+			| SET signal_information_item_list
+			{
+				$$ = $2;
+			}
+			;
+
+signal_information_item_list:
+			signal_information_item
+			{
+				$$ = NIL;
+			}
+			| signal_information_item_list ',' signal_information_item
+			{
+				$$ = NIL;
+			}
+			;
+
+signal_information_item:
+			CLASS_ORIGIN '=' a_expr
+			{
+				$$ = NULL;
+			} 
+			| SUBCLASS_ORIGIN '=' a_expr
+			{
+				$$ = NULL;
+			}
+			| MESSAGE_TEXT '=' a_expr
+			{
+				$$ = NULL;
+			}
+			| MYSQL_ERRNO '=' a_expr
+			{
+				$$ = NULL;
+			}
+			| CONSTRAINT_CATALOG '=' a_expr
+			{
+				$$ = NULL;
+			}
+			| CONSTRAINT_SCHEMA '=' a_expr
+			{
+				$$ = NULL;
+			}
+			| CONSTRAINT_NAME '=' a_expr
+			{
+				$$ = NULL;
+			}
+			| CATALOG_NAME '=' a_expr
+			{
+				$$ = NULL;
+			}
+			| SCHEMA_NAME '=' a_expr
+			{
+				$$ = NULL;
+			}
+			| TABLE_NAME '=' a_expr
+			{
+				$$ = NULL;
+			}
+			| COLUMN_NAME '=' a_expr
+			{
+				$$ = NULL;
+			}
+			| CURSOR_NAME '=' a_expr
+			{
+				$$ = NULL;
+			}
+			;
+
+SignalResignalStmt:
+			SIGNAL IDENT signal_information_item_lists
+			{
+				$$ = NULL;
+			}
+			| SIGNAL SQLSTATE Sconst signal_information_item_lists
+			{
+				$$ = NULL;
+			}
+			| RESIGNAL signal_information_item_lists
+			{
+				$$ = NULL;
+			}
+			| RESIGNAL IDENT signal_information_item_lists
+			{
+				$$ = NULL;
+			}
+			| RESIGNAL SQLSTATE Sconst signal_information_item_lists
+			{
+				$$ = NULL;
+			}
+
+
+
+
+
 /*****************************************************************************
  *
  *		QUERY:
@@ -35889,6 +36090,7 @@ unreserved_keyword_without_key:
 			| CASCADE
 			| CASCADED
 			| CATALOG_P
+			| CATALOG_NAME
 			| CHAIN
 			| CHANGE
 			| CHARACTERISTICS
@@ -35897,6 +36099,7 @@ unreserved_keyword_without_key:
 			| CHECKPOINT
 			| CHECKSUM
 			| CLASS
+			| CLASS_ORIGIN
 			| CLEAN
 			| CLIENT
             | CLIENT_MASTER_KEY
@@ -35906,6 +36109,7 @@ unreserved_keyword_without_key:
 			| CLUSTER
             | COLUMN_ENCRYPTION_KEY
             | COLUMN_ENCRYPTION_KEYS
+			| COLUMN_NAME
 			| COLUMNS
 			| COMMENT
 			| COMMENTS
@@ -35921,6 +36125,9 @@ unreserved_keyword_without_key:
 			| CONNECT
 			| CONNECTION
 			| CONSTANT
+			| CONSTRAINT_CATALOG
+			| CONSTRAINT_SCHEMA
+			| CONSTRAINT_NAME
 			| CONSTRAINTS
 			| CONTAINS
 			| CONTENT_P
@@ -35935,6 +36142,7 @@ unreserved_keyword_without_key:
 			| CUBE
 			| CURRENT_P
 			| CURSOR
+			| CURSOR_NAME
 			| CYCLE
 			| DATA_P
 			| DATABASE
@@ -36111,6 +36319,7 @@ unreserved_keyword_without_key:
 			| MAXTRANS
 			| MEMORY
 			| MERGE
+			| MESSAGE_TEXT
 			| MICROSECOND_P
 			| MIN_ROWS
 			| MINEXTENTS
@@ -36125,6 +36334,7 @@ unreserved_keyword_without_key:
 			| MONTH_P
 			| MOVE
 			| MOVEMENT
+			| MYSQL_ERRNO
 			| NAME_P
 			| NAMES
 			| NEXT
@@ -36225,6 +36435,7 @@ unreserved_keyword_without_key:
 			| REPLACE
 			| REPLICA
 			| RESET
+			| RESIGNAL
 			| RESIZE
 			| RESOURCE
 			| RESTART
@@ -36246,6 +36457,7 @@ unreserved_keyword_without_key:
 			| SAVEPOINT
 			| SCHEDULE
 			| SCHEMA
+			| SCHEMA_NAME
 			| SCHEMAS
 			| SCROLL
 			| SEARCH
@@ -36266,6 +36478,7 @@ unreserved_keyword_without_key:
 			| SHOW
 			| SHUTDOWN
 			| SIBLINGS
+			| SIGNAL
 			| SIMPLE
 			| SIZE
 			| SKIP
@@ -36278,6 +36491,7 @@ unreserved_keyword_without_key:
 			| SPILL
 			| SPLIT
 			| SQL
+			| SQLSTATE
 			| STABLE
 			| STANDALONE_P
 			| START
@@ -36299,6 +36513,7 @@ unreserved_keyword_without_key:
 			| STREAM
 			| STRICT_P
 			| STRIP_P
+			| SUBCLASS_ORIGIN
 			| SUBPARTITION
 			| SUBPARTITIONS
 			| SUBSCRIPTION
@@ -36306,6 +36521,7 @@ unreserved_keyword_without_key:
 			| SYSID
 			| SYS_REFCURSOR					{ $$ = "refcursor"; }
 			| SYSTEM_P
+			| TABLE_NAME
 			| TABLES
 			| TABLESPACE
 			| TARGET
