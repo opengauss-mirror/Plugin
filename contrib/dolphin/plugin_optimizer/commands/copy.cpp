@@ -172,7 +172,7 @@ extern void DisableDoingCommandRead();
 extern void getOBSOptions(ObsCopyOptions* obs_copy_options, List* options);
 extern int32 get_relation_data_width(Oid relid, Oid partitionid, int32* attr_widths, bool vectorized = false);
 extern int namestrcasecmp(Name name, const char* str);
-
+extern Oid getPartitionIdFromTuple(Relation rel, void *tuple, EState* estate, TupleTableSlot* slot, int *partitionno, bool isDDL, bool canIgnore);
 
 /* DestReceiver for COPY (SELECT) TO */
 typedef struct {
