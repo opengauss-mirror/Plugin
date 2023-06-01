@@ -865,7 +865,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <list>	extract_list timestamp_arg_list overlay_list position_list
 
 %type <list>	substr_list trim_list
-%type <list>	opt_interval interval_second opt_single_interval opt_multipart_interval
+%type <list>	opt_interval interval_second opt_single_interval opt_multipart_interval event_interval_unit opt_evtime_unit
 %type <node>	overlay_placing substr_from substr_for optional_precision get_format_time_type
 
 %type <boolean> opt_instead opt_incremental
@@ -19458,8 +19458,12 @@ definer_opt:
 			| /* EMPTY */                           { $$ = NULL; }
 		;
 
+event_interval_unit: opt_interval			{$$ = $1;}
+					| opt_evtime_unit		{$$ = $1;}
+				;
+
 every_interval:
-                Iconst opt_interval			
+                Iconst event_interval_unit			
 				{
 					TypeName *t;
 					t = SystemTypeName("interval");
@@ -19467,7 +19471,7 @@ every_interval:
 					Node *num = makeIntConst($1, @1);
 		            $$ = makeTypeCast(num, t, -1);	
 				}
-				| Sconst opt_interval
+				| Sconst event_interval_unit
 				{
 					TypeName *t;
 					t = SystemTypeName("interval");
@@ -19475,7 +19479,7 @@ every_interval:
 					Node *num = makeStringConst($1, @1);
 					$$ = makeTypeCast(num, t, -1);
 				}
-				| FCONST opt_interval
+				| FCONST event_interval_unit
 				{
 					TypeName *t;
 					t = SystemTypeName("interval");
@@ -19856,9 +19860,9 @@ preserve_opt:   ON COMPLETION PRESERVE
                                 | /*EMPTY*/                     { $$ = NULL; }
                         ;
 
-rename_opt:		RENAME TO qualified_name
+rename_opt:		RENAME TO name
 				{
-					$$ = makeDefElem("rename", (Node *)$3);
+					$$ = makeDefElem("rename", (Node *)makeString($3));
 				}
 				| /*EMPTY*/			{ $$ = NULL; }
 			;
@@ -31568,6 +31572,47 @@ opt_multipart_interval:
 			| /*EMPTY*/
 				{ $$ = NIL; }
 		;
+
+opt_evtime_unit:
+			DAY_HOUR_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR), @1));
+			}
+			| DAY_MINUTE_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE), @1));
+			}
+			| DAY_SECOND_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND), @1));
+			}
+			| HOUR_MINUTE_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE), @1));
+			}
+			| HOUR_SECOND_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND), @1));
+			}
+			| MINUTE_SECOND_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND), @1));
+			}
+			| YEAR_MONTH_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
+												 INTERVAL_MASK(MONTH), @1));
+			}
 
 opt_interval:
 			YEAR_P
