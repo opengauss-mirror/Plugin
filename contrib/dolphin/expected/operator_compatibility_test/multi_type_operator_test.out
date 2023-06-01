@@ -47,48 +47,64 @@ INSERT INTO test_multi_type_table
 VALUES (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, b'1', b'111', '2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', 'a', 'a,c');
 -- int op string
 SELECT pg_typeof(`int4` + `char`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`int4` - `char`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`int4` * `char`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`int4` / `char`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`int4` + `text`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`int4` - `text`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`int4` * `text`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`int4` / `text`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
@@ -96,48 +112,64 @@ SELECT pg_typeof(`int4` / `text`) FROM test_multi_type_table;
 
 -- float op string
 SELECT pg_typeof(`float8` + `char`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`float8` - `char`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`float8` * `char`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`float8` / `char`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`float8` + `text`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`float8` - `text`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`float8` * `text`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`float8` / `text`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
@@ -145,48 +177,64 @@ SELECT pg_typeof(`float8` / `text`) FROM test_multi_type_table;
 
 -- numeric op string
 SELECT pg_typeof(`numeric` + `char`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`numeric` - `char`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`numeric` * `char`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`numeric` / `char`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`numeric` + `text`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`numeric` - `text`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`numeric` * `text`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`numeric` / `text`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
@@ -554,216 +602,288 @@ SELECT pg_typeof(`numeric` / `year`) FROM test_multi_type_table;
 
 -- string op time
 SELECT pg_typeof(`char` + `date`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` - `date`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` * `date`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` / `date`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` + `time`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` - `time`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` * `time`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` / `time`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` + `datetime`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` - `datetime`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` * `datetime`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` / `datetime`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` + `datetime(4)`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` - `datetime(4)`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` * `datetime(4)`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`char` / `datetime(4)`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` + `date`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` - `date`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` * `date`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` / `date`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` + `time`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` - `time`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` * `time`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` / `time`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` + `datetime`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` - `datetime`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` * `datetime`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` / `datetime`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` + `datetime(4)`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` - `datetime(4)`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` * `datetime(4)`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` / `datetime(4)`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` + `year`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` - `year`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` * `year`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
 (1 row)
 
 SELECT pg_typeof(`text` / `year`) FROM test_multi_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: pg_typeof
     pg_typeof     
 ------------------
  double precision
