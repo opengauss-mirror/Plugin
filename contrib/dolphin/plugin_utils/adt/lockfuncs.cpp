@@ -41,6 +41,8 @@
 #ifdef DOLPHIN
 #include "plugin_postgres.h"
 #include "libpq/md5.h"
+#include "utils/knl_relcache.h"
+#include "plugin_utils/show_common.h"
 
 /*
  * user advisory lock like b_database.
@@ -1724,6 +1726,236 @@ Datum GetAllAdvisoryLock(PG_FUNCTION_ARGS)
 Datum ClearInvalidLockName(PG_FUNCTION_ARGS)
 {
     return ClearInvalidLockNameInner();
+}
+
+typedef struct relidcacheent {
+    Oid reloid;
+    Relation reldesc;
+} RelIdCacheEnt;
+
+typedef struct {
+    PG_Lock_Status* lockStatus;         /* lock state data from lmgr */
+    char* sqlMode;
+} Kept_State_Data;
+
+PG_FUNCTION_INFO_V1_PUBLIC(pg_open_tables);
+extern "C" DLL_PUBLIC Datum pg_open_tables(PG_FUNCTION_ARGS);
+
+#define OPEN_TABLES_COL_NUM 6
+typedef enum {
+    OID_COL = 0,
+    RELNAME_COL,
+    RELNAMESPACE_COL,
+    REFCNT_COL,
+    LOCKCNT_COL,
+    ACCESSEXCLUSIVE_LOCKCNT_COL
+    } OpenTablesColIdxs;
+
+void getLockCnt(PG_Lock_Status* mystatus, Oid rid, Datum* lockCnt, Datum* accessExclusive_LockCnt)
+{
+    *lockCnt = 0;
+    *accessExclusive_LockCnt = 0;
+
+    while (mystatus->currIdx < mystatus->lockData->nelements) {
+        bool granted = false;
+        LOCKMODE mode = 0;
+        LockInstanceData *instance = NULL;
+        instance = &(mystatus->lockData->locks[mystatus->currIdx]);
+
+        if (instance->locktag.locktag_field2 != rid) {
+            mystatus->currIdx++;
+            continue;
+        }
+
+        if (instance->holdMask) {
+            for (mode = 0; mode < MAX_LOCKMODES; mode++) {
+                if (instance->holdMask & LOCKBIT_ON(mode)) {
+                    granted = true;
+                    (*lockCnt)++;
+                    instance->holdMask &= LOCKBIT_OFF(mode);
+                    break;
+                }
+            }
+            if (mode == AccessExclusiveLock) {
+                (*accessExclusive_LockCnt)++;
+            }
+        }
+        /*
+         * If no (more) held modes to report, see if PROC is waiting for a
+         * lock on this lock.
+         */
+        if (!granted) {
+            if (instance->waitLockMode != NoLock) {
+                /* Yes, so report it with proper mode */
+                mode = instance->waitLockMode;
+                (*lockCnt)++;
+                /*
+                 * We are now done with this PROCLOCK, so advance pointer to
+                 * continue with next one on next call.
+                 */
+                mystatus->currIdx++;
+            } else {
+                /*
+                 * Okay, we've displayed all the locks associated with this
+                 * PROCLOCK, proceed to the next one.
+                 */
+                mystatus->currIdx++;
+            }
+        }
+    }
+}
+
+Datum pg_open_tables(PG_FUNCTION_ARGS)
+{
+    char *schemaname = NULL;
+    if (PG_NARGS() == 1 && !PG_ARGISNULL(0))
+        schemaname = text_to_cstring(PG_GETARG_TEXT_P(0));
+
+    TupleDesc tupdesc = NULL;
+    FuncCallContext* funcctx = NULL;
+    Kept_State_Data* kept = NULL;
+    PG_Lock_Status* mystatus = NULL;
+
+    if (SRF_IS_FIRSTCALL()) {
+        MemoryContext oldcontext;
+
+        /* create a function context for cross-call persistence */
+        funcctx = SRF_FIRSTCALL_INIT();
+
+        /*
+         * switch to memory context appropriate for multiple function calls
+         */
+        oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+
+        tupdesc = CreateTemplateTupleDesc(OPEN_TABLES_COL_NUM, false);
+        TupleDescInitEntry(tupdesc, (AttrNumber)OID_COL + 1, "oid", OIDOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber)RELNAME_COL + 1, "relname", TEXTOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber)RELNAMESPACE_COL + 1, "relnamespace", TEXTOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber)REFCNT_COL + 1, "refcnt", INT4OID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber)LOCKCNT_COL + 1, "lockcnt", INT4OID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber)ACCESSEXCLUSIVE_LOCKCNT_COL + 1,
+            "accessexclusive_lockcnt", INT4OID, -1, 0);
+        funcctx->tuple_desc = BlessTupleDesc(tupdesc);
+
+        kept = (Kept_State_Data*)palloc(sizeof(Kept_State_Data));
+        funcctx->user_fctx = (void*)kept;
+
+        /*
+         * Collect all the locking information that we will format and send
+         * out as a result set.
+         */
+        mystatus = (PG_Lock_Status*)palloc(sizeof(PG_Lock_Status));
+        kept->lockStatus = mystatus;
+        mystatus->lockData = GetLockStatusData();
+        mystatus->currIdx = 0;
+        mystatus->predLockData = NULL;
+        mystatus->predLockIdx = 0;
+
+        /* Connect to SPI manager to check any prepared transactions */
+        SPI_STACK_LOG("connect", NULL, NULL);
+        if (SPI_connect() < 0) {
+            ereport(ERROR,
+                (errcode(ERRCODE_CONNECTION_EXCEPTION),
+                errmsg("internal error while showing open tables: SPI_connect failed")));
+        }
+        kept->sqlMode = GetSqlMode();
+        SetSqlMode("ansi_quotes");
+        PG_TRY();
+        {
+            if (schemaname != NULL) {
+                char query[CHAR_BUF_SIZE] = {0};
+                int rc = snprintf_s(query, CHAR_BUF_SIZE, CHAR_BUF_SIZE - 1,
+                    "select c.oid from pg_catalog.pg_class c, pg_catalog.pg_namespace n"
+                    " where c.relnamespace = n.oid"
+                    "   and c.relkind in ('r', 'v')"
+                    "   and c.relpersistence not in ('t', 'g')"
+                    "   and n.nspname = '%s';", schemaname);
+                securec_check_ss(rc, "", "");
+                if (SPI_OK_SELECT != SPI_execute(query, true, 0)) {
+                    ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION),
+                    errmsg("internal error while showing open tables: SPI_execute failed")));
+                }
+            } else {
+                if (SPI_OK_SELECT != SPI_execute("select oid from pg_catalog.pg_class"
+                    " where relkind in ('r', 'v') and relpersistence not in ('t', 'g');", true, 0)) {
+                    ereport(ERROR, (errcode(ERRCODE_DATA_EXCEPTION),
+                    errmsg("internal error while showing open tables: SPI_execute failed")));
+                }
+            }
+        }
+        PG_CATCH();
+        {
+            SetSqlMode((const char*)kept->sqlMode);
+            PG_RE_THROW();
+        }
+        PG_END_TRY();
+        funcctx->max_calls = SPI_processed;
+        funcctx->call_cntr = 0;
+        MemoryContextSwitchTo(oldcontext);
+    }
+
+    funcctx = SRF_PERCALL_SETUP();
+    kept = (Kept_State_Data*)funcctx->user_fctx;
+    mystatus = kept->lockStatus;
+    mystatus->currIdx = 0;
+
+    bool setSqlMode = true;
+    HeapTuple tuple = NULL;
+    Relation rel = NULL;
+    PG_TRY();
+    {
+        if (funcctx->call_cntr < funcctx->max_calls) {
+            Datum values[6];
+            bool nulls[6];
+            /*
+            * Form tuple with appropriate data.
+            */
+            errno_t rc = memset_s(values, sizeof(values), 0, sizeof(values));
+            securec_check(rc, "\0", "\0");
+            rc = memset_s(nulls, sizeof(nulls), false, sizeof(nulls));
+            securec_check(rc, "\0", "\0");
+            bool isNull;
+            Oid rid = SPI_getbinval(SPI_tuptable->vals[funcctx->call_cntr], SPI_tuptable->tupdesc, 1, &isNull);
+            if (!isNull) {
+                RelationIdCacheLookup(rid, rel);
+                if (rel == NULL) {
+                    values[OID_COL] = rid;
+                    nulls[RELNAME_COL] = true;
+                    nulls[RELNAMESPACE_COL] = true;
+                    nulls[REFCNT_COL] = true;
+                    nulls[LOCKCNT_COL] = true;
+                    nulls[ACCESSEXCLUSIVE_LOCKCNT_COL] = true;
+                } else {
+                    values[OID_COL] = ObjectIdGetDatum(rel->rd_id);
+                    values[RELNAME_COL] = CStringGetTextDatum(RelationGetRelationName(rel));
+                    values[RELNAMESPACE_COL] = CStringGetTextDatum(get_namespace_name(RelationGetNamespace(rel)));
+                    values[REFCNT_COL] = rel->rd_refcnt;
+                    getLockCnt(mystatus, rid, &values[LOCKCNT_COL], &values[ACCESSEXCLUSIVE_LOCKCNT_COL]);
+                }
+                tuple = heap_form_tuple(funcctx->tuple_desc, values, nulls);
+                SRF_RETURN_NEXT(funcctx, HeapTupleGetDatum(tuple));
+            }
+        } else {
+            setSqlMode = false;
+            SetSqlMode((const char *)kept->sqlMode);
+            SPI_STACK_LOG("finish", NULL, NULL);
+            if (SPI_finish() != SPI_OK_FINISH) {
+                ereport(ERROR, (errcode(ERRCODE_SPI_FINISH_FAILURE),
+                errmsg("internal error while showing open tables: SPI_finish failed")));
+            }
+            pfree_ext(kept->lockStatus);
+            pfree_ext(funcctx->user_fctx);
+            SRF_RETURN_DONE(funcctx);
+        }
+    }
+    PG_CATCH();
+    {
+        if (setSqlMode) {
+            SetSqlMode((const char *)kept->sqlMode);
+        }
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
 }
 #endif
 

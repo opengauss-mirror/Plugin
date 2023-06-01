@@ -8,6 +8,7 @@
 #include "utils/guc_tables.h"
 #include "plugin_postgres.h"
 #include "plugin_parser/parser.h"
+#include "foreign/foreign.h"
 
 static Node* makeColumnRef(char* colName, int loc = PLPS_LOC_UNKNOWN);
 static Node* makeHostColumn();
@@ -15,7 +16,7 @@ static List* makeStateChangeIntervalFunc();
 static Node* makeTimeColumn();
 static Node* makeInfoColumn(bool isFull);
 static Node* makeRangeSubselect(SelectStmt* stmt);
-static Node* makeMsRangeFunction();
+static Node* makeRangeFunction(char* funcName, List* paramList);
 static Node* makeStarColumn();
 
 static Node* makePluginsStatusColumn(bool smallcase = FALSE);
@@ -185,7 +186,7 @@ SelectStmt* makeShowDatabasesQuery(Node* likeNode, Node* whereExpr)
 SelectStmt* makeShowMasterStatusQuery(void)
 {
     List* tl = (List*)list_make1(makeStarColumn());
-    List* fl = list_make1(makeMsRangeFunction());
+    List* fl = list_make1(makeRangeFunction("gs_master_status", NULL));
 
     SelectStmt* stmt = plpsMakeSelectStmt(tl,  fl, NULL, NULL);
     return stmt;
@@ -351,9 +352,9 @@ static Node* makeStarColumn()
     return (Node*)rt;
 }
 
-static Node* makeMsRangeFunction()
+static Node* makeRangeFunction(char* funcName, List* paramList)
 {
-    Node* func = plpsMakeFunc("gs_master_status", NULL);
+    Node* func = plpsMakeFunc(funcName, paramList);
 
     RangeFunction *n = makeNode(RangeFunction);
     n->funccallnode = func;
@@ -1242,5 +1243,225 @@ SelectStmt* makeShowPrivilegesQuery(void)
     stmt->hintState = NULL;
     stmt->hasPlus = FALSE;
 
+    return stmt;
+}
+
+typedef struct StorageEnginesRow {
+    char *engine_name;
+    char *engine_support;
+    char *engine_comment;
+    char *engine_transactions;
+    char *engine_xa;
+    char *engine_savepoints;
+} StorageEnginesRow;
+
+static StorageEnginesRow storageEngines[] = {
+    {"Engine", "Support", "Comment", "Transactions", "XA", "Savepoints"},
+    {TABLE_ACCESS_METHOD_ASTORE, "", "Append Update Storage Engine", "YES", "", "YES"},
+    {TABLE_ACCESS_METHOD_USTORE, "", "In-place Update Storage Engine", "YES", "", "YES"},
+    {ORIENTATION_ROW, "DEFAULT", "Row-Oriented Table Storage Engine", "YES", "", "YES"},
+    {ORIENTATION_COLUMN, "YES", "Column-Oriented Table Storage Engine", "YES", "", "YES"},
+    {MOT_FDW, "", "Memory-Optimized Table Storage Engine", "YES", "", "NO"}
+};
+
+SelectStmt* makeShowStorageEnginesSubQuery(void)
+{
+    SelectStmt* stmt = makeNode(SelectStmt);
+    List* tl = NULL;
+    List* vl = NULL;
+    List* sub_vl = NULL;
+    int engines_len = sizeof(storageEngines)/sizeof(StorageEnginesRow);
+
+    for (int i = 1; i < engines_len; i++) {
+        sub_vl = list_make1(plpsMakeStringConst(storageEngines[i].engine_name));
+        if (storageEngines[i].engine_name == TABLE_ACCESS_METHOD_ASTORE) {
+            if (g_instance.attr.attr_storage.enable_ustore &&
+               u_sess->attr.attr_sql.enable_default_ustore_table) {
+                sub_vl = lappend(sub_vl, plpsMakeStringConst("YES"));
+            } else {
+                sub_vl = lappend(sub_vl, plpsMakeStringConst("DEFAULT"));
+            }
+        } else if (storageEngines[i].engine_name == TABLE_ACCESS_METHOD_USTORE) {
+            if (!g_instance.attr.attr_storage.enable_ustore) {
+                sub_vl = lappend(sub_vl, plpsMakeStringConst("NO"));
+            } else if (u_sess->attr.attr_sql.enable_default_ustore_table) {
+                sub_vl = lappend(sub_vl, plpsMakeStringConst("DEFAULT"));
+            } else {
+                sub_vl = lappend(sub_vl, plpsMakeStringConst("YES"));
+            }
+        } else if (storageEngines[i].engine_name == MOT_FDW) {
+#ifdef ENABLE_MOT
+            Oid ownerId;
+            ForeignDataWrapper* fdw = NULL;
+            ForeignServer* server = NULL;
+            AclResult aclresult;
+
+            ownerId = GetUserId();
+            server = GetForeignServerByName(MOT_FDW_SERVER, false);
+            aclresult = pg_foreign_server_aclcheck(server->serverid, ownerId, ACL_USAGE);
+            if (aclresult != ACLCHECK_OK) {
+                sub_vl = lappend(sub_vl, plpsMakeStringConst("NO"));
+            } else if (g_instance.attr.attr_storage.enableIncrementalCheckpoint == true) {
+                sub_vl = lappend(sub_vl, plpsMakeStringConst("NO"));
+            } else {
+                sub_vl = lappend(sub_vl, plpsMakeStringConst("YES"));
+            }
+#else
+            sub_vl = lappend(sub_vl, plpsMakeStringConst("NO"));
+#endif
+        } else {
+            sub_vl = lappend(sub_vl, plpsMakeStringConst(storageEngines[i].engine_support));
+        }
+        sub_vl = lappend(sub_vl, plpsMakeStringConst(storageEngines[i].engine_comment));
+        sub_vl = lappend(sub_vl, plpsMakeStringConst(storageEngines[i].engine_transactions));
+        sub_vl = lappend(sub_vl, plpsMakeStringConst(storageEngines[i].engine_xa));
+        sub_vl = lappend(sub_vl, plpsMakeStringConst(storageEngines[i].engine_savepoints));
+        vl = lappend(vl, sub_vl);
+    }
+
+    stmt->distinctClause = NIL;
+    stmt->targetList = NIL;
+    stmt->valuesLists = vl;
+    stmt->fromClause = NIL;
+    stmt->whereClause = NULL;
+    stmt->sortClause = NIL;
+    stmt->groupClause = NIL;
+    stmt->havingClause = NULL;
+    stmt->windowClause = NIL;
+    stmt->hintState = NULL;
+    stmt->hasPlus = false;
+
+    return stmt;
+}
+
+/**
+ * SELECT
+ *    *
+ * FROM
+ *    pg_storage_engines();
+ *
+ * @param void
+ * @return The parsed tree for 'SHOW [STORAGE] ENGINES'.
+ */
+SelectStmt* makeShowEnginesQuery(void)
+{
+    SelectStmt* stmt = makeNode(SelectStmt);
+    Alias* alias = makeNode(Alias);
+    ColumnRef* colRef = makeNode(ColumnRef);
+    ResTarget* rt = makeNode(ResTarget);
+    List* cl = NULL;
+
+    cl = list_make1(makeString(storageEngines[0].engine_name));
+    cl = lappend(cl, makeString(storageEngines[0].engine_support));
+    cl = lappend(cl, makeString(storageEngines[0].engine_comment));
+    cl = lappend(cl, makeString(storageEngines[0].engine_transactions));
+    cl = lappend(cl, makeString(storageEngines[0].engine_xa));
+    cl = lappend(cl, makeString(storageEngines[0].engine_savepoints));
+
+    alias->aliasname = "__unnamed_subquery__";
+    alias->colnames = cl;
+
+    RangeSubselect* rsubselect = makeNode(RangeSubselect);
+    rsubselect->subquery = (Node*)makeShowStorageEnginesSubQuery();
+    rsubselect->alias = alias;
+
+    colRef->fields = list_make1(makeNode(A_Star));
+    colRef->location = PLPS_LOC_UNKNOWN;
+    colRef->indnum = 0;
+
+    rt->val = (Node*)colRef;
+
+    stmt->targetList = list_make1(rt);
+    stmt->fromClause = list_make1(rsubselect);
+    stmt->whereClause = NULL;
+    stmt->sortClause = NIL;
+    stmt->havingClause = NULL;
+    stmt->windowClause = NULL;
+    stmt->hintState = NULL;
+    stmt->hasPlus = FALSE;
+
+    return stmt;
+}
+
+/**
+ * SELECT
+ *    *
+ * FROM
+ *    pg_stat_get_wal_senders()
+ * WHERE
+ *    channel LIKE %fuzzyChannel%;
+ *
+ * @param fuzzyChannel
+ * @return The parsed tree for 'SHOW SLAVE STATUS [FOR CHANNEL fuzzyChannel]'.
+ */
+SelectStmt* makeShowSlaveStatusQuery(char* fuzzyChannel)
+{
+    Node *cond = NULL;
+    char *channel = NULL;
+    int len, rc;
+    if (fuzzyChannel != NULL) {
+        len = strlen("%") + strlen(fuzzyChannel) + strlen("%") + 1; //1 for '\0'
+        channel = (char *)palloc0(len);
+        rc = sprintf_s(channel, len, "%%%s%%", fuzzyChannel);
+        securec_check_ss(rc, "", "");
+
+        cond = (Node*)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, "channel"),
+            plpsMakeStringConst(channel), -1);
+    }
+    List* tl = (List*)list_make1(makeStarColumn());
+    List* fl = list_make1(makeRangeFunction("pg_stat_get_wal_senders", NULL));
+
+    SelectStmt* stmt = plpsMakeSelectStmt(tl, fl, cond, NULL);
+    return stmt;
+}
+
+static Node* makeShowOpenTablesWhereTarget(Node *likeWhereOpt)
+{
+    Node *cond = NULL;
+    cond = (Node*)makeNullTest(IS_NOT_NULL, (Expr*)plpsMakeColumnRef(NULL, "relname"));
+    if (likeWhereOpt != NULL) {
+        cond = (Node*)makeA_Expr(AEXPR_AND, NIL, cond, likeWhereOpt, -1);
+    }
+    return cond;
+}
+
+/**
+ * SELECT o.relnamespace AS Database,
+ *        o.relname AS Table,
+ *        o.lockcnt AS In_use,
+ *        o.accessexclusive_lockcnt AS Name_locked
+ *    FROM pg_open_tables(`null or input schemaname`) o
+ *    WHERE o.relname IS NOT NULL
+ *    AND a_expr // where clause or like 'pattern' converted
+ * 
+ * @param schemaName
+ * @param likeWhereOpt
+ * @param isLikeExpr
+ * @return The parsed tree for 'SHOW OPEN TABLES [{FROM|IN} schemaname] [LIKE 'pattern' | WHERE expr]'
+*/
+SelectStmt* makeShowOpenTablesQuery(char* schemaName, Node* likeWhereOpt, bool isLikeExpr)
+{
+    List* tl = (List*)list_make1(plpsMakeNormalColumn(NULL, "relnamespace", "Database"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "relname", "Table"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "lockcnt", "In_use"));
+    tl = lappend(tl, plpsMakeNormalColumn(NULL, "accessexclusive_lockcnt", "Name_locked"));
+
+    Node* pgOpenTables = NULL;
+    if (schemaName != NULL) {
+        (void)plps_check_schema_or_table_valid(schemaName, NULL, FALSE);
+        pgOpenTables = makeRangeFunction("pg_open_tables", list_make1(plpsMakeStringConst(schemaName)));
+    } else {
+        pgOpenTables = makeRangeFunction("pg_open_tables", NULL);
+    }
+
+    if (isLikeExpr && likeWhereOpt != NULL) {
+        likeWhereOpt = (Node*)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, "relname"), likeWhereOpt, -1);
+    }
+    Node* whereTarget = makeShowOpenTablesWhereTarget(likeWhereOpt);
+
+    List* fl = list_make1(makeRangeFunction("pg_open_tables", NULL));
+
+    SelectStmt* stmt =
+        plpsMakeSelectStmt(tl, list_make1(pgOpenTables), whereTarget, NULL);
     return stmt;
 }

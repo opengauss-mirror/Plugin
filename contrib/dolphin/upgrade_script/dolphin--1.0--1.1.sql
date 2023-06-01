@@ -2698,3 +2698,12 @@ BEGIN
 END;
 $$
 LANGUAGE plpgsql;
+
+DROP FUNCTION IF EXISTS pg_catalog.pg_open_tables() CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.pg_open_tables(TEXT) CASCADE;
+CREATE FUNCTION pg_catalog.pg_open_tables()
+    RETURNS TABLE ("oid" Oid, "relname" TEXT, "relnamespace" TEXT, "refcnt" int4, "lockcnt" int4, "accessexclusive_lockcnt" int4)
+    LANGUAGE C VOLATILE STRICT as '$libdir/dolphin', 'pg_open_tables';
+CREATE FUNCTION pg_catalog.pg_open_tables(TEXT)
+    RETURNS TABLE ("oid" Oid, "relname" TEXT, "relnamespace" TEXT, "refcnt" int4, "lockcnt" int4, "accessexclusive_lockcnt" int4)
+    LANGUAGE C VOLATILE STRICT as '$libdir/dolphin', 'pg_open_tables';

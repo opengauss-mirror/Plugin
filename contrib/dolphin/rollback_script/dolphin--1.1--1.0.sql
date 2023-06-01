@@ -1408,3 +1408,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.export_set (numeric, text, text, text, num
 CREATE OR REPLACE FUNCTION pg_catalog.export_set (numeric, text, text, text) RETURNS text LANGUAGE C STABLE STRICT  as '$libdir/dolphin', 'export_set_4args';
 CREATE OR REPLACE FUNCTION pg_catalog.export_set (numeric, text, text)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'export_set_3args';
 DROP FUNCTION IF EXISTS pg_catalog.sleep(d date) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.pg_open_tables() CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.pg_open_tables(TEXT) CASCADE;

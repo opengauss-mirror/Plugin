@@ -152,3 +152,17 @@ test: lock_tables lock_tables_1
 
 # test user@host
 test: user_host_test sqlmode_having
+
+# show storage engines
+test: test_show_storage_engines_1
+test: disable_ustore_incremental_checkpoint
+test: test_show_storage_engines_2
+test: enable_ustore_incremental_checkpoint
+
+# show slave status
+test: test_show_slave_status
+
+# show open tables
+test: test_show_open_tables
+test: test_show_open_tables_lock_waiting_1 test_show_open_tables_lock_waiting_2
+test: test_show_open_tables_cleanup

@@ -1,0 +1,5 @@
+\! @abs_bindir@/gs_guc set -D @abs_srcdir@/tmp_check/datanode1/ -c "enable_ustore=on" > /dev/null 2>&1
+\! @abs_bindir@/gs_guc set -D @abs_srcdir@/tmp_check/datanode1/ -c "enable_incremental_checkpoint=on" > /dev/null 2>&1
+\! @abs_bindir@/gs_ctl stop -D @abs_srcdir@/tmp_check/datanode1 > /dev/null 2>&1
+\! @abs_bindir@/gs_ctl start -D @abs_srcdir@/tmp_check/datanode1 > /dev/null 2>&1
+\! sleep 5

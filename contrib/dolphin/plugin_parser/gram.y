@@ -1172,7 +1172,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_INTEGER BIT BLANKS
 	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BUCKETS BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
 
-	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CATALOG_NAME CHAIN CHANGE CHAR_P
+	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CATALOG_NAME CHAIN CHANGE CHANNEL CHAR_P
 	CHARACTER CHARACTERISTICS CHARACTERSET CHARSET CHECK CHECKPOINT CHECKSUM CLASS CLASS_ORIGIN CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
 	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMN_NAME COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COLUMNS COMMENT COMMENTS COMMIT
 	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPLETE COMPLETION COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINT_CATALOG CONSTRAINT_NAME CONSTRAINT_SCHEMA CONSTRAINTS
@@ -1189,7 +1189,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 /* PGXC_END */
 	DROP DUPLICATE DISCONNECT DUMPFILE
 
-	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENDS ENFORCED ENGINE_ATTRIBUTE ENGINE_P ENUM_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVENT EVENTS EVERY EXCEPT EXCHANGE
+	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENDS ENFORCED ENGINE_ATTRIBUTE ENGINE_P ENGINES ENUM_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVENT EVENTS EVERY EXCEPT EXCHANGE
 	EXCLUDE EXCLUDED EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPANSION EXPIRED_P EXPLAIN
 	EXTENDED EXTENSION EXTERNAL EXTRACT
 
@@ -1221,7 +1221,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
 	NO_WRITE_TO_BINLOG
 
-	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPERATOR OPTIMIZATION OPTIMIZE OPTION OPTIONALLY OPTIONS OR
+	OBJECT_P OF OFF OFFSET OIDS ON ONLY OPEN OPERATOR OPTIMIZATION OPTIMIZE OPTION OPTIONALLY OPTIONS OR
 	ORDER OUT_P OUTER_P OVER OVERLAPS OVERLAY OWNED OWNER OUTFILE
 
 	PACKAGE PACKAGES PACK_KEYS PARSER PARTIAL PARTITION PARTITIONING PARTITIONS PASSING PASSWORD PCTFREE PER_P PERCENT PERFORMANCE PERM PLACING PLAN PLANS POLICY POSITION
@@ -3831,6 +3831,9 @@ VariableShowStmt:
 					} else if (pg_strcasecmp($2, "privileges") == 0) {
                         SelectStmt *n = makeShowPrivilegesQuery();
                         $$ = (Node *) n;
+					} else if (pg_strcasecmp($2, "engines") == 0) {
+                        SelectStmt *n = makeShowEnginesQuery();
+                        $$ = (Node *) n;
                     } else {
 						VariableShowStmt *n = makeNode(VariableShowStmt);
 						n->name = $2;
@@ -3865,6 +3868,21 @@ VariableShowStmt:
 			| SHOW TABLE STATUS from_in ColId OptLikeOrWhere
 				{
 					SelectStmt *n = makeShowTableStatusQuery($5, $6->like_or_where, $6->is_like);
+					$$ = (Node *) n;
+				}
+			| SHOW OPEN TABLES
+				{
+					SelectStmt *n = makeShowOpenTablesQuery(NULL, NULL, FALSE);
+					$$ = (Node *) n;
+				}
+			| SHOW OPEN TABLES LikeOrWhere
+				{
+					SelectStmt *n = makeShowOpenTablesQuery(NULL, $4->like_or_where, $4->is_like);
+					$$ = (Node *) n;
+				}
+			| SHOW OPEN TABLES from_in ColId OptLikeOrWhere
+				{
+					SelectStmt *n = makeShowOpenTablesQuery($5, $6->like_or_where, $6->is_like);
 					$$ = (Node *) n;
 				}
 			| SHOW opt_full_fields from_in dolphin_qualified_name OptDbName OptLikeOrWhere
@@ -3944,6 +3962,14 @@ VariableShowStmt:
 			| SHOW SLAVE HOSTS
 				{
 					$$ = (Node *)makeShowSlaveHostsQuery();
+				}
+			| SHOW slave_replica STATUS
+				{
+					$$ = (Node *)makeShowSlaveStatusQuery(NULL);
+				}
+			| SHOW slave_replica STATUS FOR CHANNEL Sconst
+				{
+					$$ = (Node *)makeShowSlaveStatusQuery($6);
 				}
 			| SHOW CREATE FUNCTION func_name_opt_arg
 				{
@@ -4062,6 +4088,10 @@ VariableShowStmt:
 			SelectStmt *n = makeShowStatusQuery($2, $4->like_or_where, $4->is_like);
 			$$ = (Node *) n;
 		}
+		| SHOW STORAGE ENGINES
+		{
+			$$ = (Node *)makeShowEnginesQuery();
+		}
 		| SHOW_STATUS OptLikeOrWhere
 		{
 			SelectStmt *n = makeShowStatusQuery(FALSE, $2->like_or_where, $2->is_like);
@@ -4158,6 +4188,11 @@ OptDbName:
 columns_or_fields:
 			COLUMNS
 			| FIELDS
+		;
+
+slave_replica:
+			SLAVE
+			| REPLICA
 		;
 
 /*****************************************************************************
@@ -36138,6 +36173,7 @@ unreserved_keyword_without_key:
 			| CATALOG_NAME
 			| CHAIN
 			| CHANGE
+			| CHANNEL
 			| CHARACTERISTICS
 			| CHARACTERSET
 			| CHARSET
@@ -36244,6 +36280,7 @@ unreserved_keyword_without_key:
 			| ENDS
 			| ENGINE_ATTRIBUTE
 			| ENGINE_P
+			| ENGINES
 			| ENFORCED
 			| EOL
 			| ERRORS
@@ -36401,6 +36438,7 @@ unreserved_keyword_without_key:
 			| OF
 			| OFF
 			| OIDS
+			| OPEN
 			| OPERATOR
 			| OPTIMIZATION
 			| OPTIMIZE
