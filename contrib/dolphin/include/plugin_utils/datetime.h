@@ -30,13 +30,12 @@ extern int ValidateTimeForBDatabase(bool timeIn24, struct pg_tm* tm, fsec_t* fse
 #ifdef DOLPHIN
 extern int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D, unsigned int date_flag = 0);
 extern int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, unsigned int date_flag = 0);
-extern void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str, unsigned int date_flag = 0);
 extern char* AppendFsec(int64 quot, fsec_t fsec);
 #else
 extern int DecodeTimeOnlyForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp, int D);
 extern int DecodeDateTimeForBDatabase(char** field, int* ftype, int nf, int* dtype, struct pg_tm* tm, fsec_t* fsec, int* tzp);
-extern void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str);
 #endif
+extern void EncodeDateOnlyForBDatabase(struct pg_tm* tm, int style, char* str);
 extern void EncodeDateTimeForBDatabase(struct pg_tm* tm, fsec_t fsec, bool print_tz, int tz, const char* tzn, int style, char* str);
 
 extern void Unixtimestamp2tm(double unixtimestamp, struct pg_tm* tm, fsec_t* fsec);

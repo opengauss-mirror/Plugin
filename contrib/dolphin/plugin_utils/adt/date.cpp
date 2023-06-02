@@ -4851,7 +4851,7 @@ static inline void from_days_internal(int64 days, Datum *result)
         date += (days - DAYS_PER_LEAP_YEAR);
         j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
     }
-    EncodeDateOnlyForBDatabase(tm, u_sess->time_cxt.DateStyle, buf, ENABLE_ZERO_MONTH);
+    EncodeDateOnlyForBDatabase(tm, u_sess->time_cxt.DateStyle, buf);
     *result = DirectFunctionCall1(textin, CStringGetDatum(buf));
 }
 

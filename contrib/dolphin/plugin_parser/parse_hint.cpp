@@ -3836,12 +3836,7 @@ bool permit_predpush(PlannerInfo *root)
     return !predpushHint->negative;
 }
 
-#ifdef DOLPHIN
-const unsigned int G_NUM_SET_HINT_WHITE_LIST = 40;
-#else
-const unsigned int G_NUM_SET_HINT_WHITE_LIST = 39;
-#endif
-const char* G_SET_HINT_WHITE_LIST[G_NUM_SET_HINT_WHITE_LIST] = {
+const char* G_SET_HINT_WHITE_LIST[] = {
     /* keep in the ascending alphabetical order of frequency */
     (char*)"best_agg_plan",
     (char*)"cost_weight_index",
@@ -3872,6 +3867,7 @@ const char* G_SET_HINT_WHITE_LIST[G_NUM_SET_HINT_WHITE_LIST] = {
     (char*)"enable_remotesort",
     (char*)"enable_seqscan",
     (char*)"enable_sort",
+    (char*)"enable_sortgroup_agg",
     (char*)"enable_stream_operator",
     (char*)"enable_stream_recursive",
     (char*)"enable_tidscan",
@@ -3885,6 +3881,8 @@ const char* G_SET_HINT_WHITE_LIST[G_NUM_SET_HINT_WHITE_LIST] = {
     (char*)"seq_page_cost",
     (char*)"try_vector_engine_strategy",
     (char*)"var_eq_const_selectivity"};
+
+const unsigned int G_NUM_SET_HINT_WHITE_LIST = sizeof(G_SET_HINT_WHITE_LIST) / sizeof(G_SET_HINT_WHITE_LIST[0]);
 
 static int param_str_cmp(const void *s1, const void *s2)
 {
