@@ -157,6 +157,7 @@ test: user_host_test sqlmode_having
 test: test_show_storage_engines_1
 test: disable_ustore_incremental_checkpoint
 test: test_show_storage_engines_2
+test: perf_schema_test
 test: enable_ustore_incremental_checkpoint
 
 # show slave status

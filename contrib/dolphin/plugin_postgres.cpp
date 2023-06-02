@@ -1180,6 +1180,27 @@ void init_session_vars(void)
 #endif
 
 }
+static void load_dblink_extension()
+{
+    char* dest_str = "create extension if not exists dblink;\n";
+    int rc = 0;
+
+    SPI_STACK_LOG("connect", NULL, NULL);
+    if ((rc = SPI_connect()) != SPI_OK_CONNECT) {
+        ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
+            errmsg("dblink SPI_connect failed: %s", SPI_result_code_string(rc)),
+            errdetail("SPI_connect failed"),
+            errcause("System error."),
+            erraction("Check whether the snapshot retry is successful")));
+    }
+
+    if (SPI_execute(dest_str, false, 0) != SPI_OK_UTILITY) {
+        ereport(WARNING, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("invalid query : %s", dest_str)));
+    }
+    SPI_STACK_LOG("finish", NULL, NULL);
+    SPI_finish();
+}
+
 
 static void execute_sql_file()
 {
@@ -1215,6 +1236,7 @@ void create_dolphin_extension()
     */   
     bool pre_enable_full_encryption = u_sess->attr.attr_common.enable_full_encryption;
     u_sess->attr.attr_common.enable_full_encryption = false;
+    load_dblink_extension();
     execute_sql_file();
     u_sess->attr.attr_common.enable_full_encryption = pre_enable_full_encryption;
     finish_xact_command();
