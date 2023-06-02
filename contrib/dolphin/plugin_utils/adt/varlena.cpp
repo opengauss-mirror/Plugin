@@ -9875,11 +9875,45 @@ Datum ord_text(PG_FUNCTION_ARGS)
  */
 Datum ord_numeric(PG_FUNCTION_ARGS)
 {
-    const char* ptr = numeric_to_cstring(PG_GETARG_NUMERIC(0));
-    if (ptr != NULL)
-        PG_RETURN_INT128((int128)((*ptr) & 0xff));
+    Numeric num = PG_GETARG_NUMERIC(0);
+    char* tmp = NULL;
+    int128 result = 0;
+    int num_digit = 0;
+    int max_digit_num = 81;
+    /* Handle Big Integer */
+    if (NUMERIC_IS_BI(num)) {
+        num = makeNumericNormal(num);
+    }
+
+    int sign = NUMERIC_SIGN(num);
+
+    tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
+    char* ptr = strchr(tmp, '.');
+    if (ptr != NULL) {
+        // position of '.'
+        num_digit = (ptr - tmp) - ((NUMERIC_NEG == sign) ? 1:0);
+    } else {
+        num_digit = strlen(tmp) - ((NUMERIC_NEG == sign) ? 1:0);
+    }
+
+    if (num_digit > max_digit_num) {
+        if (!SQL_MODE_STRICT()) {
+            ereport(WARNING, (errmsg("numeric out of range")));
+            if (NUMERIC_NEG == sign) {
+                PG_RETURN_INT128(int('-'));
+            } else {
+                PG_RETURN_INT128(int('9'));
+            }
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("numeric out of range")));
+        }
+    }
+    if (tmp != NULL)
+        result = ((int128)((*tmp) & 0xff));
     else 
-        PG_RETURN_INT128(0);
+        result = 0;
+    pfree_ext(tmp);
+    PG_RETURN_INT128(result);
 }
 
 Datum ord_bit(PG_FUNCTION_ARGS)
