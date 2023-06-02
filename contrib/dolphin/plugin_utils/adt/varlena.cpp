@@ -10289,4 +10289,28 @@ Datum bittolongblob(PG_FUNCTION_ARGS)
     check_blob_size(result, (int64)LongBlobMaxAllocSize);
     PG_RETURN_BYTEA_P(result);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint8_xor_text);
+extern "C" DLL_PUBLIC Datum uint8_xor_text(PG_FUNCTION_ARGS);
+Datum uint8_xor_text(PG_FUNCTION_ARGS)
+{
+    uint64 arg1 = PG_GETARG_UINT64(0);
+    
+    if (PG_ARGISNULL(1))
+        PG_RETURN_UINT64(arg1);
+
+    text* arg2 = PG_GETARG_TEXT_PP(1);
+    int base = 10;
+    char* tmp = text_to_cstring(arg2);
+    errno = 0;
+    int64 arg2_int = 0;
+    char* endptr = NULL;
+
+    if (strlen(tmp) != 0)
+        arg2_int = (int64) strtoll(tmp, &endptr, base);
+        
+    pfree(tmp);
+
+    PG_RETURN_UINT64(arg1 ^ arg2_int);
+}
 #endif
