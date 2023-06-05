@@ -23,6 +23,7 @@
 #include "utils/array.h"
 #include "utils/builtins.h"
 #include "utils/fmgroids.h"
+#include "utils/lsyscache.h"
 #include "utils/snapmgr.h"
 #include "utils/syscache.h"
 #include "utils/typcache.h"
@@ -687,6 +688,70 @@ static ArrayType* enum_range_internal(Oid enumtypoid, Oid lower, Oid upper)
 }
 
 #ifdef DOLPHIN
+/* GetEnumDefineStr
+ * output the 'enum(\'a\', \'b\', \'c\')' type text by enum type oid
+ */
+Datum GetEnumDefineStr(Oid enumOid)
+{
+    HeapTuple enumTup = nullptr;
+    Form_pg_enum item = nullptr;
+    text* result = nullptr;
+    StringInfoData buf;
+    initStringInfo(&buf);
+
+    Relation enumRel = heap_open(EnumRelationId, AccessShareLock);
+    CatCList* items = SearchSysCacheList1(ENUMTYPOIDNAME, ObjectIdGetDatum(enumOid));
+    const int itemCnt = items->n_members;
+
+    if (itemCnt == 0) {
+        appendStringInfoString(&buf, "enum()");
+    } else {
+        char** labels = (char**)palloc0(sizeof(char*) * itemCnt);
+
+        for (int i = 0; i < itemCnt; ++i) {
+            enumTup = t_thrd.lsc_cxt.FetchTupleFromCatCList(items, i);
+            item = (Form_pg_enum)GETSTRUCT(enumTup);
+            labels[(int)item->enumsortorder -1] = pstrdup(NameStr(item->enumlabel));
+        }
+
+        appendStringInfo(&buf, "enum(\'%s\'", labels[0]);
+        pfree(labels[0]);
+        for (int i = 1; i < itemCnt; ++i) {
+            appendStringInfo(&buf, ", \'%s\'", labels[i]);
+            pfree(labels[i]);
+        }
+        appendStringInfoString(&buf, ")");
+        pfree(labels);
+    }
+
+    result = cstring_to_text_with_len(buf.data, buf.len);
+
+    FreeStringInfo(&buf);
+    ReleaseSysCacheList(items);
+    heap_close(enumRel, AccessShareLock);
+
+    PG_RETURN_TEXT_P(result);
+}
+
+bool IsAnonymousEnum(Oid oid)
+{
+    if (!type_is_enum(oid)) {
+        return false;
+    }
+
+    HeapTuple enumTup = SearchSysCache1(TYPEOID, ObjectIdGetDatum(oid));
+    if (!HeapTupleIsValid(enumTup)) {
+        ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+                errmsg("cache lookup failed for type %u", oid)));
+    }
+
+    Form_pg_type enumForm = (Form_pg_type)GETSTRUCT(enumTup);
+    char* enumName = NameStr(enumForm->typname);
+    bool isAnonymous = strstr(enumName, "anonymous_enum");
+    ReleaseSysCache(enumTup);
+    return isAnonymous;
+}
+
 PG_FUNCTION_INFO_V1_PUBLIC(Enum2Float8);
 extern "C" DLL_PUBLIC Datum Enum2Float8(PG_FUNCTION_ARGS);
 Datum Enum2Float8(PG_FUNCTION_ARGS)

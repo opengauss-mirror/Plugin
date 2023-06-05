@@ -36,6 +36,7 @@
 #include "catalog/namespace.h"
 #include "catalog/pg_collation.h"
 #include "catalog/pg_constraint.h"
+#include "catalog/pg_enum.h"
 #include "catalog/pg_opclass.h"
 #include "catalog/pg_operator.h"
 #include "catalog/pg_partition_fn.h"
@@ -413,6 +414,42 @@ Oid fill_relation_collation(const char* collate, int charset, List** options, Oi
     return coll_oid;
 }
 
+#ifdef DOLPHIN
+static void ConvertAnonymousEnum(TypeName* type)
+{
+    HeapTuple enumTup = nullptr;
+    Form_pg_enum item = nullptr;
+    Relation enumRel = heap_open(EnumRelationId, AccessShareLock);
+    CatCList* items = SearchSysCacheList1(ENUMTYPOIDNAME, ObjectIdGetDatum(type->typeOid));
+    int itemCnt = items->n_members;
+
+    Value* name = makeString(pstrdup("enum"));
+    type->names = lappend(type->names, name);
+    type->typeOid = InvalidOid;
+    type->typemod = -1;
+
+    if (itemCnt > 0) {
+        char** labels = (char**)palloc0(sizeof(char*) * itemCnt);
+        for (int eindex = 0; eindex < itemCnt; ++eindex) {
+            enumTup = t_thrd.lsc_cxt.FetchTupleFromCatCList(items, eindex);
+            item = (Form_pg_enum)GETSTRUCT(enumTup);
+            labels[(int)item->enumsortorder - 1] = pstrdup(NameStr(item->enumlabel));
+        }
+
+        Value* labelVal = nullptr;
+        for (int lblIdx = 0; lblIdx < itemCnt; ++lblIdx) {
+            labelVal = makeString(labels[lblIdx]);
+            type->typmods = lappend(type->typmods, labelVal);
+        }
+
+        pfree(labels);
+    }
+
+    ReleaseSysCacheList(items);
+    heap_close(enumRel, AccessShareLock);
+}
+#endif
+
 List* transformCreateStmt(CreateStmt* stmt, const char* queryString, const List* uuids, bool preCheck,
 Oid *namespaceid, bool isFirstNode)
 {
@@ -649,6 +686,11 @@ Oid *namespaceid, bool isFirstNode)
 
         switch (nodeTag(element)) {
             case T_ColumnDef:
+#ifdef DOLPHIN
+                if (IsAnonymousEnum(((ColumnDef*)element)->typname->typeOid)) {
+                    ConvertAnonymousEnum(((ColumnDef*)element)->typname);
+                }
+#endif
                 if (is_ledger_nsp && strcmp(((ColumnDef*)element)->colname, "hash") == 0 &&
                     !IsA(stmt, CreateForeignTableStmt) && stmt->relation->relpersistence == RELPERSISTENCE_PERMANENT &&
                     is_row_table) {

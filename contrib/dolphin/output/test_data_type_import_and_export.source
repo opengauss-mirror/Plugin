@@ -1124,13 +1124,13 @@ show create table bitstring_type_003;
 (1 row)
 
 show create table enum_type_001;
-     Table     |                     Create Table                      
----------------+-------------------------------------------------------
- enum_type_001 | SET search_path = public;                            +
-               | CREATE TABLE enum_type_001 (                         +
-               |     name character varying(40),                      +
-               |     gender enum_type_001_gender_2200_anonymous_enum_1+
-               | )                                                    +
+     Table     |              Create Table               
+---------------+-----------------------------------------
+ enum_type_001 | SET search_path = public;              +
+               | CREATE TABLE enum_type_001 (           +
+               |     name character varying(40),        +
+               |     gender enum('male', 'female')      +
+               | )                                      +
                | WITH (orientation=row, compression=no);
 (1 row)
 
@@ -2270,13 +2270,13 @@ show create table bitstring_type_003;
 (1 row)
 
 show create table enum_type_001;
-     Table     |                     Create Table                      
----------------+-------------------------------------------------------
- enum_type_001 | SET search_path = public;                            +
-               | CREATE TABLE enum_type_001 (                         +
-               |     name character varying(40),                      +
-               |     gender enum_type_001_gender_2200_anonymous_enum_1+
-               | )                                                    +
+     Table     |              Create Table               
+---------------+-----------------------------------------
+ enum_type_001 | SET search_path = public;              +
+               | CREATE TABLE enum_type_001 (           +
+               |     name character varying(40),        +
+               |     gender enum('male', 'female')      +
+               | )                                      +
                | WITH (orientation=row, compression=no);
 (1 row)
 

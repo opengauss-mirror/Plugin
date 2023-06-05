@@ -220,6 +220,29 @@ create table test_enum_d(ssl_type enum('','any','X509','SPECIFIED') not null def
  
 \d+ test_enum_d
 
+-- test anonymous enum backup
+create table student (
+     id int not null auto_increment,
+     name varchar(100),
+     gender enum('male', 'female'),
+     non_enum enum(),
+     primary key(id)
+);
+insert into student(name,gender) values('bill','male');
+select * from student;
+
+create table student_bak as select * from student;
+select * from student_bak;
+
+alter table student drop column gender;
+select * from student_bak;
+alter table student drop column non_enum;
+select * from student_bak;
+
+select * from pg_get_tabledef('student_bak');
+
+drop table student, student_bak cascade;
+
 drop schema test_enum cascade;
 reset current_schema;
 

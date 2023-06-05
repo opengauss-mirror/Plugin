@@ -38,6 +38,7 @@
 #include "catalog/pg_collation.h"
 #include "catalog/pg_constraint.h"
 #include "catalog/pg_depend.h"
+#include "catalog/pg_enum.h"
 #include "catalog/pg_language.h"
 #include "catalog/pg_opclass.h"
 #include "catalog/pg_operator.h"
@@ -1633,6 +1634,11 @@ static int get_table_attribute(
             if (type_is_set(att_tup->atttypid)) {
                 txt = GetSetDefineStr(att_tup->atttypid);
                 result = TextDatumGetCString(txt);
+#ifdef DOLPHIN
+            } else if (IsAnonymousEnum(att_tup->atttypid)) {
+                txt = GetEnumDefineStr(att_tup->atttypid);
+                result = TextDatumGetCString(txt);
+#endif
             } else {
                 txt = DirectFunctionCall2(
                     format_type, ObjectIdGetDatum(att_tup->atttypid), ObjectIdGetDatum(att_tup->atttypmod));
