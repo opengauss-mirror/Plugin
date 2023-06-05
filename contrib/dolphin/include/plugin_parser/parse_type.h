@@ -48,6 +48,8 @@ extern Datum stringTypeDatum(Type tp, char* string, int32 atttypmod, bool can_ig
 #ifdef DOLPHIN
 char* makeEnumTypeName(const char* relname, const char *colname, const char* schemaname);
 void DefineAnonymousEnum(TypeName * typname);
+extern Datum GetEnumDefineStr(Oid enumOid);
+extern bool IsAnonymousEnum(Oid enumOid);
 #endif
 
 extern Oid typeidTypeRelid(Oid type_id);

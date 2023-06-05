@@ -2973,6 +2973,64 @@ Oid findEnumCastFunction(Oid targetTypeId)
     }
     return funcid;
 }
+
+bool IsEquivalentEnums(Oid enumOid1, Oid enumOid2)
+{
+    if (enumOid1 == enumOid2) {
+        return true;
+    }
+
+    HeapTuple enumTup = nullptr;
+    Form_pg_enum item = nullptr;
+
+    Relation enumRel = heap_open(EnumRelationId, AccessShareLock);
+    CatCList* items1 = SearchSysCacheList1(ENUMTYPOIDNAME, ObjectIdGetDatum(enumOid1));
+    CatCList* items2 = SearchSysCacheList1(ENUMTYPOIDNAME, ObjectIdGetDatum(enumOid2));
+    const int itemCnt = items1->n_members;
+
+    if (itemCnt != items2->n_members) {
+        ReleaseSysCacheList(items1);
+        ReleaseSysCacheList(items2);
+        heap_close(enumRel, AccessShareLock);
+        return false;
+    }
+
+    bool isEquivalent = true;
+    if (itemCnt > 0) {
+        char** labels1 = (char**)palloc0(sizeof(char*) * itemCnt);
+        char** labels2 = (char**)palloc0(sizeof(char*) * itemCnt);
+
+        for (int i = 0; i < itemCnt; ++i) {
+            enumTup = t_thrd.lsc_cxt.FetchTupleFromCatCList(items1, i);
+            item = (Form_pg_enum)GETSTRUCT(enumTup);
+            labels1[(int)item->enumsortorder - 1] = pstrdup(NameStr(item->enumlabel));
+
+            enumTup = t_thrd.lsc_cxt.FetchTupleFromCatCList(items2, i);
+            item = (Form_pg_enum)GETSTRUCT(enumTup);
+            labels2[(int)item->enumsortorder - 1] = pstrdup(NameStr(item->enumlabel));
+        }
+
+        for (int i = 0; i < itemCnt; ++i) {
+            if (strcmp(labels1[i], labels2[i]) != 0) {
+                isEquivalent = false;
+                break;
+            }
+        }
+
+        for (int i = 0; i < itemCnt; ++i) {
+            pfree(labels1[i]);
+            pfree(labels2[i]);
+        }
+
+        pfree(labels1);
+        pfree(labels2);
+    }
+
+    ReleaseSysCacheList(items1);
+    ReleaseSysCacheList(items2);
+    heap_close(enumRel, AccessShareLock);
+    return isEquivalent;
+}
 #endif
 /*
  * find_coercion_pathway
@@ -3031,6 +3089,12 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
     }
 
 #ifdef DOLPHIN
+    if (type_is_enum(sourceTypeId) &&
+        type_is_enum(targetTypeId) &&
+        IsEquivalentEnums(sourceTypeId, targetTypeId)) {
+        return COERCION_PATH_COERCEVIAIO;
+    }
+
     if (sourceTypeId != ANYENUMOID && type_is_enum(sourceTypeId)) {
         sourceTypeId = ANYENUMOID;
     }

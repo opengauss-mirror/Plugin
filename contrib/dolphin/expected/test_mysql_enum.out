@@ -457,6 +457,58 @@ create table test_enum_d(ssl_type enum('','any','X509','SPECIFIED') not null def
 Has OIDs: no
 Options: orientation=row, compression=no
 
+-- test anonymous enum backup
+create table student (
+     id int not null auto_increment,
+     name varchar(100),
+     gender enum('male', 'female'),
+     non_enum enum(),
+     primary key(id)
+);
+--?.*
+--?.*
+insert into student(name,gender) values('bill','male');
+select * from student;
+ id | name | gender | non_enum 
+----+------+--------+----------
+  1 | bill | male   | 
+(1 row)
+
+create table student_bak as select * from student;
+select * from student_bak;
+ id | name | gender | non_enum 
+----+------+--------+----------
+  1 | bill | male   | 
+(1 row)
+
+alter table student drop column gender;
+select * from student_bak;
+ id | name | gender | non_enum 
+----+------+--------+----------
+  1 | bill | male   | 
+(1 row)
+
+alter table student drop column non_enum;
+select * from student_bak;
+ id | name | gender | non_enum 
+----+------+--------+----------
+  1 | bill | male   | 
+(1 row)
+
+select * from pg_get_tabledef('student_bak');
+             pg_get_tabledef             
+-----------------------------------------
+ SET search_path = test_enum;           +
+ CREATE TABLE student_bak (             +
+     id integer,                        +
+     name character varying(100),       +
+     gender enum('male', 'female'),     +
+     non_enum enum()                    +
+ )                                      +
+ WITH (orientation=row, compression=no);
+(1 row)
+
+drop table student, student_bak cascade;
 drop schema test_enum cascade;
 NOTICE:  drop cascades to 12 other objects
 --?.*
