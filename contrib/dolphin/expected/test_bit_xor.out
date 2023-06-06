@@ -365,11 +365,43 @@ SELECT BIT_XOR(a) from bit_xor_text;
  18446744073709551614
 (1 row)
 
+delete from bit_xor_text;
+INSERT INTO bit_xor_text(a) values('1.999');
+SELECT BIT_XOR(a) from bit_xor_text;
+ bit_xor 
+---------
+ 1
+(1 row)
+
 INSERT INTO bit_xor_text(a) values(NULL);
 SELECT BIT_XOR(a) from bit_xor_text;
-       bit_xor        
-----------------------
- 18446744073709551614
+ bit_xor 
+---------
+ 1
+(1 row)
+
+DROP TABLE if exists bit_xor_text;
+CREATE TABLE bit_xor_text(a TEXT);
+INSERT INTO bit_xor_text(a) values('111111111111111111111111111111111111111111111111');
+SELECT BIT_XOR(a) from bit_xor_text;
+       bit_xor       
+---------------------
+ 9223372036854775807
+(1 row)
+
+delete from bit_xor_text;
+INSERT INTO bit_xor_text(a) values('-111111111111111111111111111111111111111111111111');
+SELECT BIT_XOR(a) from bit_xor_text;
+       bit_xor       
+---------------------
+ 9223372036854775808
+(1 row)
+
+INSERT INTO bit_xor_text(a) values(NULL);
+SELECT BIT_XOR(a) from bit_xor_text;
+       bit_xor       
+---------------------
+ 9223372036854775808
 (1 row)
 
 DROP TABLE if exists bit_xor_text;

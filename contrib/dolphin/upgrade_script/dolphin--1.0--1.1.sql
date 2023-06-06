@@ -2707,3 +2707,9 @@ CREATE FUNCTION pg_catalog.pg_open_tables()
 CREATE FUNCTION pg_catalog.pg_open_tables(TEXT)
     RETURNS TABLE ("oid" Oid, "relname" TEXT, "relnamespace" TEXT, "refcnt" int4, "lockcnt" int4, "accessexclusive_lockcnt" int4)
     LANGUAGE C VOLATILE STRICT as '$libdir/dolphin', 'pg_open_tables';
+
+drop aggregate if exists pg_catalog.bit_xor(text);
+DROP FUNCTION IF EXISTS pg_catalog.text_xor(uint8,text) CASCADE;
+
+CREATE FUNCTION pg_catalog.text_xor (t1 uint8,t2 text) RETURNS uint8 LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'uint8_xor_text';
+create aggregate pg_catalog.bit_xor(text) (SFUNC=text_xor, STYPE= uint8);

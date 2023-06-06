@@ -1411,3 +1411,21 @@ DROP FUNCTION IF EXISTS pg_catalog.sleep(d date) CASCADE;
 
 DROP FUNCTION IF EXISTS pg_catalog.pg_open_tables() CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.pg_open_tables(TEXT) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.sleep(d date) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.text_xor(uint8,text) CASCADE;
+CREATE FUNCTION pg_catalog.text_xor (t1 uint8,t2 text) RETURNS uint8 AS
+$$
+DECLARE num NUMBER := to_number(t2);
+BEGIN
+    IF num > 9223372036854775807 then
+        num = 9223372036854775807;
+    ELSEIF num < -9223372036854775808 then
+        num = 9223372036854775808;
+    END IF;
+    RETURN (SELECT uint8_xor(t1, num));
+END;
+$$
+LANGUAGE plpgsql;
+drop aggregate if exists pg_catalog.bit_xor(text);
+create aggregate pg_catalog.bit_xor(text) (SFUNC=text_xor, STYPE= uint8);
