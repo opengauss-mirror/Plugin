@@ -1275,5 +1275,56 @@ CREATE FUNCTION monot_incr(int) RETURNS bool LANGUAGE sql AS ' select $1 > max(a
 CREATE DOMAIN monot_int AS int CHECK (monot_incr(VALUE));
 reset check_function_bodies;
 
+
+--bugfix 
+
+drop table if exists t_t1;
+drop table if exists t_t2;
+create table t_t1(passId int);
+create table t_t2(passId int);
+
+CREATE OR REPLACE FUNCTION tri_func RETURNS pg_catalog.trigger AS $BODY$
+DECLARE
+BEGIN
+INSERT INTO t_t2(PAssID) values (new.PaSSID);RETURN NEW;
+END;
+$BODY$
+LANGUAGE plpgsql VOLATILE;
+
+drop trigger tri1;
+create trigger tri1 after insert on t_t1 FOR each row EXECUTE PROCEDURE tri_func();
+insert into t_t1 values(1);
+select * from t_t2;
+
+CREATE TABLE interval_normal_exchange (loGdate date not null) 
+PARTITION BY RANGE (logdate)
+INTERVAL ('1 month') 
+(
+	PARTITION interval_normal_exchange_p1 VALUES LESS THAN ('2020-03-01'),
+	PARTITION interval_normal_exchange_p2 VALUES LESS THAN ('2020-04-01'),
+	PARTITION interval_normal_exchange_p3 VALUES LESS THAN ('2020-05-01')
+);
+
+CREATE TABLE interval_exchange_test (logdaTE date not null);
+
+ALTER TABLE interval_normal_exchange EXCHANGE PARTITION (interval_normal_exchange_p1)
+        WITH TABLE interval_exchange_test;
+
+drop table if exists t2 cascade;
+drop table if exists t1 cascade;
+create table t2 (iDdD int);
+create table t1 (iddD int);
+
+-- mysql has no create rule grammar not deal yet
+CREATE RULE "_RETURN" AS
+  ON UPDATE TO t1
+  DO INSTEAD
+      UPDATE  t2 set iDdd = 7 returning IdDd;	
+
+CREATE RULE "_RETURN" AS
+  ON UPDATE TO t1
+  DO INSTEAD
+      UPDATE  t2 set "iDdD" = 7 returning "iDdD";	
+
 drop schema column_name_case_test cascade;
 reset current_schema;

@@ -1605,7 +1605,11 @@ Datum GetAttributeByName(HeapTupleHeader tuple, const char* attname, bool* isNul
 
    attrno = InvalidAttrNumber;
    for (i = 0; i < tupDesc->natts; i++) {
-       if (namestrcmp(&(tupDesc->attrs[i].attname), attname) == 0) {
+#ifdef DOLPHIN
+        if (namestrcasecmp(&(tupDesc->attrs[i].attname), attname) == 0) {
+#else
+        if (namestrcmp(&(tupDesc->attrs[i].attname), attname) == 0) {
+#endif
            attrno = tupDesc->attrs[i].attnum;
            break;
        }
