@@ -2,6 +2,13 @@ drop database if exists load;
 create database load dbcompatibility 'B';
 \c load
 
+create table t_load_data_0037(c_id int,c_name varchar(50),c_age int,c_gender varchar(11));
+load data infile '@abs_builddir@/data/load-double_terminated.txt'
+into table t_load_data_0037 character set 'sql_ascii'
+fields terminated by '!' enclosed by '*'
+lines starting by '[' terminated by ')]';
+select * from t_load_data_0037;
+
 create table t1(a int, b int);
 load data infile '@abs_builddir@/data/load1.csv' into table t1;
 select * from t1;
