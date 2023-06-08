@@ -2155,8 +2155,61 @@ SET check_function_bodies=off;
 CREATE FUNCTION monot_incr(int) RETURNS bool LANGUAGE sql AS ' select $1 > max(a) from tst_dom_constr; ';
 CREATE DOMAIN monot_int AS int CHECK (monot_incr(VALUE));
 reset check_function_bodies;
+--bugfix 
+drop table if exists t_t1;
+NOTICE:  table "t_t1" does not exist, skipping
+drop table if exists t_t2;
+NOTICE:  table "t_t2" does not exist, skipping
+create table t_t1(passId int);
+create table t_t2(passId int);
+CREATE OR REPLACE FUNCTION tri_func RETURNS pg_catalog.trigger AS $BODY$
+DECLARE
+BEGIN
+INSERT INTO t_t2(PAssID) values (new.PaSSID);RETURN NEW;
+END;
+$BODY$
+LANGUAGE plpgsql VOLATILE;
+drop trigger tri1;
+ERROR:  trigger "tri1" does not exist
+create trigger tri1 after insert on t_t1 FOR each row EXECUTE PROCEDURE tri_func();
+insert into t_t1 values(1);
+select * from t_t2;
+ passId 
+--------
+      1
+(1 row)
+
+CREATE TABLE interval_normal_exchange (loGdate date not null) 
+PARTITION BY RANGE (logdate)
+INTERVAL ('1 month') 
+(
+	PARTITION interval_normal_exchange_p1 VALUES LESS THAN ('2020-03-01'),
+	PARTITION interval_normal_exchange_p2 VALUES LESS THAN ('2020-04-01'),
+	PARTITION interval_normal_exchange_p3 VALUES LESS THAN ('2020-05-01')
+);
+CREATE TABLE interval_exchange_test (logdaTE date not null);
+ALTER TABLE interval_normal_exchange EXCHANGE PARTITION (interval_normal_exchange_p1)
+        WITH TABLE interval_exchange_test;
+drop table if exists t2 cascade;
+NOTICE:  table "t2" does not exist, skipping
+drop table if exists t1 cascade;
+NOTICE:  table "t1" does not exist, skipping
+create table t2 (iDdD int);
+create table t1 (iddD int);
+-- mysql has no create rule grammar not deal yet
+CREATE RULE "_RETURN" AS
+  ON UPDATE TO t1
+  DO INSTEAD
+      UPDATE  t2 set iDdd = 7 returning IdDd;	
+ERROR:  column "iddd" of relation "t2" does not exist
+LINE 4:       UPDATE  t2 set iDdd = 7 returning IdDd;
+                             ^
+CREATE RULE "_RETURN" AS
+  ON UPDATE TO t1
+  DO INSTEAD
+      UPDATE  t2 set "iDdD" = 7 returning "iDdD";	
 drop schema column_name_case_test cascade;
-NOTICE:  drop cascades to 39 other objects
+NOTICE:  drop cascades to 46 other objects
 DETAIL:  drop cascades to table a1
 drop cascades to table a2
 drop cascades to table warehouse_t22
@@ -2196,4 +2249,11 @@ drop cascades to function tfun3()
 drop cascades to function func8()
 drop cascades to function monot_incr(integer)
 drop cascades to type monot_int
+drop cascades to table t_t1
+drop cascades to table t_t2
+drop cascades to function tri_func()
+drop cascades to table interval_normal_exchange
+drop cascades to table interval_exchange_test
+drop cascades to table t2
+drop cascades to table t1
 reset current_schema;

@@ -1593,27 +1593,31 @@ Datum GetAttributeByName(HeapTupleHeader tuple, const char* attname, bool* isNul
             (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                 errmsg("a NULL isNull pointer was passed when get attribute by name.")));
 
-    if (tuple == NULL) {
-        /* Kinda bogus but compatible with old behavior... */
-        *isNull = true;
-        return (Datum)0;
-    }
+   if (tuple == NULL) {
+       /* Kinda bogus but compatible with old behavior... */
+       *isNull = true;
+       return (Datum)0;
+   }
 
-    tupType = HeapTupleHeaderGetTypeId(tuple);
-    tupTypmod = HeapTupleHeaderGetTypMod(tuple);
-    tupDesc = lookup_rowtype_tupdesc(tupType, tupTypmod);
+   tupType = HeapTupleHeaderGetTypeId(tuple);
+   tupTypmod = HeapTupleHeaderGetTypMod(tuple);
+   tupDesc = lookup_rowtype_tupdesc(tupType, tupTypmod);
 
-    attrno = InvalidAttrNumber;
-    for (i = 0; i < tupDesc->natts; i++) {
+   attrno = InvalidAttrNumber;
+   for (i = 0; i < tupDesc->natts; i++) {
+#ifdef DOLPHIN
+        if (namestrcasecmp(&(tupDesc->attrs[i].attname), attname) == 0) {
+#else
         if (namestrcmp(&(tupDesc->attrs[i].attname), attname) == 0) {
-            attrno = tupDesc->attrs[i].attnum;
-            break;
-        }
-    }
+#endif
+           attrno = tupDesc->attrs[i].attnum;
+           break;
+       }
+   }
 
-    if (attrno == InvalidAttrNumber)
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_ATTRIBUTE),
+   if (attrno == InvalidAttrNumber)
+       ereport(ERROR,
+               (errcode(ERRCODE_INVALID_ATTRIBUTE),
                 errmodule(MOD_EXECUTOR),
                 errmsg("attribute \"%s\" does not exist", attname)));
 
