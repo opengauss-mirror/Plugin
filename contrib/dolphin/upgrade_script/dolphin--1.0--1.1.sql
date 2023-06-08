@@ -32,6 +32,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.from_base64 (text)  RETURNS text LANGUAGE 
 CREATE OR REPLACE FUNCTION pg_catalog.from_base64 (boolean)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'base64_decode_bool';
 CREATE OR REPLACE FUNCTION pg_catalog.from_base64 (bit)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'base64_decode_bit';
 
+DROP FUNCTION IF EXISTS pg_catalog.atan (float8, float8);
+CREATE OR REPLACE FUNCTION pg_catalog.atan (float8, float8)  RETURNS float8 AS $$ SELECT pg_catalog.atan2($1, $2) $$ LANGUAGE SQL;
+
 DROP FUNCTION IF EXISTS pg_catalog.oct(text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.oct(boolean) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.oct(bit) CASCADE;
