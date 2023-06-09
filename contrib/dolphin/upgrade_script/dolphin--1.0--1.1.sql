@@ -1329,14 +1329,14 @@ DROP FUNCTION IF EXISTS pg_catalog.int8_time_xor(
     time
 ) CASCADE;
 
-DROP FUNCTION IF EXISTS pg_catalog.timestamp_int8_xor(
-    timestamp,
+DROP FUNCTION IF EXISTS pg_catalog.datetime_int8_xor(
+    timestamp without time zone,
     uint8
 ) CASCADE;
 
-DROP FUNCTION IF EXISTS pg_catalog.int8_timestamp_xor(
+DROP FUNCTION IF EXISTS pg_catalog.int8_datetime_xor(
     uint8,
-    timestamp
+    timestamp without time zone
 ) CASCADE;
 
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_int8_xor(
@@ -1636,17 +1636,17 @@ create function pg_catalog.int8_time_xor(
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'int8_time_xor';
 create operator pg_catalog.^(leftarg = uint8, rightarg = time, procedure = pg_catalog.int8_time_xor);
 
-create function pg_catalog.timestamp_int8_xor(
-    timestamp,
+create function pg_catalog.datetime_int8_xor(
+    timestamp without time zone,
     uint8
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamp_int8_xor';
-create operator pg_catalog.^(leftarg = timestamp, rightarg = uint8, procedure = pg_catalog.timestamp_int8_xor);
+create operator pg_catalog.^(leftarg = timestamp without time zone, rightarg = uint8, procedure = pg_catalog.datetime_int8_xor);
 
-create function pg_catalog.int8_timestamp_xor(
+create function pg_catalog.int8_datetime_xor(
     uint8,
-    timestamp
+    timestamp without time zone
 ) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'int8_timestamp_xor';
-create operator pg_catalog.^(leftarg = uint8, rightarg = timestamp, procedure = pg_catalog.int8_timestamp_xor);
+create operator pg_catalog.^(leftarg = uint8, rightarg = timestamp without time zone, procedure = pg_catalog.int8_datetime_xor);
 
 create function pg_catalog.timestamptz_int8_xor(
     timestampTz,
