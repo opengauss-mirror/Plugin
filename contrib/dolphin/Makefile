@@ -49,7 +49,8 @@ $(adt)/uuid.o $(adt)/windowfuncs.o $(adt)/extended_statistics.o $(adt)/clientlog
 $(adt)/median_aggs.o $(adt)/expr_distinct.o $(adt)/nlssort.o $(adt)/first_last_agg.o $(adt)/my_locale.o $(adt)/unsigned_int.o $(adt)/year.o\
 $(adt)/vacuumfuncs.o $(adt)/set.o\
 $(adt)/show/show_grants.o $(adt)/show/show_common.o $(adt)/show/show_function.o $(adt)/show/show_trigger.o \
-$(adt)/show/show_charset.o $(adt)/show/show_collation.o
+$(adt)/show/show_charset.o $(adt)/show/show_collation.o \
+$(adt)/compress.o $(adt)/weightstring.o
 
 OBJS += $(vector)/vecfuncache.o
 

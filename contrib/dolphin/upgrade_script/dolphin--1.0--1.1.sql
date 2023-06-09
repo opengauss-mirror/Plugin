@@ -2711,6 +2711,63 @@ CREATE FUNCTION pg_catalog.pg_open_tables(TEXT)
     RETURNS TABLE ("oid" Oid, "relname" TEXT, "relnamespace" TEXT, "refcnt" int4, "lockcnt" int4, "accessexclusive_lockcnt" int4)
     LANGUAGE C VOLATILE STRICT as '$libdir/dolphin', 'pg_open_tables';
 
+DROP FUNCTION IF EXISTS pg_catalog.compress (text) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.compress (text)  RETURNS bytea LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'compress_text';
+
+DROP FUNCTION IF EXISTS pg_catalog.compress (bytea) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.compress (bytea)  RETURNS bytea LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'compress_bytea';
+
+DROP FUNCTION IF EXISTS pg_catalog.compress (boolean) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.compress (boolean) RETURNS bytea LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'compress_boolean';
+
+DROP FUNCTION IF EXISTS pg_catalog.compress (bit) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.compress (bit) RETURNS bytea LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'compress_bit';
+
+DROP FUNCTION IF EXISTS pg_catalog.uncompress (text) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uncompress (text) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uncompress_text';
+
+DROP FUNCTION IF EXISTS pg_catalog.uncompress (bytea) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uncompress (bytea) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uncompress_bytea';
+
+DROP FUNCTION IF EXISTS pg_catalog.uncompress (boolean) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uncompress (boolean) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uncompress_boolean';
+
+DROP FUNCTION IF EXISTS pg_catalog.uncompress (bit) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uncompress (bit) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uncompress_bit';
+
+DROP FUNCTION IF EXISTS pg_catalog.uncompressed_length (text) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uncompressed_length (text) RETURNS uint4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uncompressed_length_text';
+
+DROP FUNCTION IF EXISTS pg_catalog.uncompressed_length (bytea) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uncompressed_length (bytea) RETURNS uint4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uncompressed_length_bytea';
+
+DROP FUNCTION IF EXISTS pg_catalog.uncompressed_length (boolean) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uncompressed_length (boolean) RETURNS uint4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uncompressed_length_boolean';
+
+DROP FUNCTION IF EXISTS pg_catalog.uncompressed_length (bit) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uncompressed_length (bit) RETURNS uint4 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uncompressed_length_bit';
+
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(TEXT, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(TEXT, uint4) RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_single';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(bytea, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(bytea, uint4) RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_bytea';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(boolean, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(boolean, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_boolean';
+
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(TEXT, TEXT, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(TEXT, TEXT, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string';
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (bytea, text, uint4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(bytea, TEXT, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_bytea';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(boolean, TEXT, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(boolean, TEXT, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_boolean';
+
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(TEXT, TEXT, uint4, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(TEXT, TEXT, uint4, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string';
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (bytea, text, uint4, uint4) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(bytea, TEXT, uint4, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_bytea';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(boolean, TEXT, uint4, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(boolean, TEXT, uint4, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_boolean';
+
 drop aggregate if exists pg_catalog.bit_xor(text);
 DROP FUNCTION IF EXISTS pg_catalog.text_xor(uint8,text) CASCADE;
 

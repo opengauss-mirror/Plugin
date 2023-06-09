@@ -1141,6 +1141,8 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 
 %type <dolphinIdent>	DolphinRoleId DolphinRoleIdWithOutCurrentUser DolphinUserId
 
+%type <ival> 	ws_level_flag_desc ws_level_flag_reverse ws_level_flags opt_ws_levels ws_level_list ws_level_list_item ws_level_number ws_level_range ws_level_list_or_range
+
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
  * They must be listed first so that their numeric codes do not depend on
@@ -1267,6 +1269,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 	ZEROFILL ZONE
 
 	AST
+	WEIGHT_STRING REVERSE 
 
 %token ALGORITHM_UNDEFINED ALGORITHM_MERGE ALGORITHM_TEMPTABLE
 
@@ -1315,6 +1318,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %nonassoc	SET				/* see relation_expr_opt_alias */
 %nonassoc	AUTO_INCREMENT
 %right      PRIOR SEPARATOR_P
+%nonassoc   LEVEL
 %right      FEATURES TARGET // DB4AI
 %left		UNION EXCEPT MINUS_P
 %left		INTERSECT
@@ -34470,7 +34474,104 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| WEIGHT_STRING  '(' a_expr opt_ws_levels ')' 
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("weight_string");
+					n->args = list_make2($3, makeIntConst($4, @4));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| WEIGHT_STRING  '(' a_expr AS CHAR_P '(' Iconst ')' opt_ws_levels ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("weight_string");
+					n->args = list_make4($3, makeStringConst("CHAR",-1), makeIntConst($7, @7), makeIntConst($9, @9));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| WEIGHT_STRING  '(' a_expr AS BINARY '(' Iconst ')' ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("weight_string");
+					n->args = list_make3($3, makeStringConst("BINARY", -1), makeIntConst($7, @7));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 		;
+
+
+ws_level_flag_desc:
+      ASC { $$= 0; }
+      | DESC { $$= 1 << 8; }
+    ;
+
+ws_level_flag_reverse:
+      REVERSE { $$= 1 << 16; } ;
+
+ws_level_flags:
+      /* empty */ { $$= 0; }
+      | ws_level_flag_desc { $$= $1; }
+      | ws_level_flag_desc ws_level_flag_reverse { $$= $1 | $2; }
+      | ws_level_flag_reverse { $$= $1 ; }
+    ;
+
+ws_level_number:
+      Iconst
+      {
+        $$= $1 < 1 ? 1 : ($1 > 6 ? 6 : $1);
+        $$--;
+      }
+	  ;
+
+ws_level_list_item:
+      ws_level_number ws_level_flags
+      {
+        $$= (1 | $2) << $1;
+      }
+	  ;
+
+ws_level_list:
+      ws_level_list_item { $$= $1; }
+      | ws_level_list ',' ws_level_list_item { $$|= $3; }
+	  ;
+
+ws_level_range:
+      ws_level_number '-' ws_level_number
+      {
+        uint start= $1;
+        uint end= $3;
+        for ($$= 0; start <= end; start++)
+          $$|= (1 << start);
+      }
+	  ;
+
+ws_level_list_or_range: 
+      ws_level_list { $$= $1; }
+		  | ws_level_range { $$= $1; }
+	  ;
+opt_ws_levels:
+      /* empty*/ { $$= 0; }
+      | LEVEL ws_level_list_or_range { $$= $2; }
+ 	  ;
 
 current_date_func:	CURRENT_DATE
 			| CURRENT_DATE '(' ')'
@@ -36535,6 +36636,7 @@ unreserved_keyword_without_key:
 			| RETURN
 			| RETURNS
 			| REUSE
+			| REVERSE
 			| REVOKE
 			| ROLE
 			| ROLES
@@ -36726,6 +36828,7 @@ col_name_keyword:
 			| TIMESTAMPDIFF
 			| TREAT
 			| TRIM
+			| WEIGHT_STRING
 			| XMLCONCAT
 			| XMLELEMENT
 			| XMLEXISTS

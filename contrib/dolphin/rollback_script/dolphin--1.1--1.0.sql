@@ -1413,6 +1413,31 @@ DROP FUNCTION IF EXISTS pg_catalog.sleep(d date) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.pg_open_tables() CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.pg_open_tables(TEXT) CASCADE;
 
+DROP FUNCTION IF EXISTS pg_catalog.compress (text) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.compress (bytea) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.compress (boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.compress (bit) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.uncompress (text) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uncompress (bytea) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uncompress (boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uncompress (bit) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.uncompressed_length (text) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uncompressed_length (bytea) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uncompressed_length (boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uncompressed_length (bit) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (TEXT, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (TEXT, TEXT, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (TEXT, TEXT, uint4, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (bytea, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (bytea, text, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (bytea, text, uint4, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (boolean, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (boolean, TEXT, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (boolean, TEXT, uint4, uint4) cascade;
+
 DROP FUNCTION IF EXISTS pg_catalog.sleep(d date) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.text_xor(uint8,text) CASCADE;
 CREATE FUNCTION pg_catalog.text_xor (t1 uint8,t2 text) RETURNS uint8 AS
