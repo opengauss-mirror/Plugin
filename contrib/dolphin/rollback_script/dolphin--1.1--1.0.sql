@@ -345,14 +345,14 @@ DROP FUNCTION IF EXISTS pg_catalog.int8_time_xor(
     time
 ) CASCADE;
 
-DROP FUNCTION IF EXISTS pg_catalog.timestamp_int8_xor(
-    timestamp,
+DROP FUNCTION IF EXISTS pg_catalog.datetime_int8_xor(
+    timestamp without time zone,
     uint8
 ) CASCADE;
 
-DROP FUNCTION IF EXISTS pg_catalog.int8_timestamp_xor(
+DROP FUNCTION IF EXISTS pg_catalog.int8_datetime_xor(
     uint8,
-    timestamp
+    timestamp without time zone
 ) CASCADE;
 
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_int8_xor(
