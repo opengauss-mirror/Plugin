@@ -20460,7 +20460,11 @@ static ObjectAddress ATExecAddOf(Relation rel, const TypeName* ofTypename, LOCKM
         table_attname = NameStr(table_attr->attname);
 
         /* Compare name. */
+#ifdef DOLPHIN
+        if (strncasecmp(table_attname, type_attname, NAMEDATALEN) != 0)
+#else
         if (strncmp(table_attname, type_attname, NAMEDATALEN) != 0)
+#endif
             ereport(ERROR,
                 (errcode(ERRCODE_DATATYPE_MISMATCH),
                     errmsg("table has column \"%s\" where type requires \"%s\"", table_attname, type_attname)));
@@ -26830,7 +26834,11 @@ static void checkColumnForExchange(Relation partTableRel, Relation ordTableRel)
         }
 
         // Check column name
+#ifdef DOLPHIN
+        if (strcasecmp(DatumGetName(ordVals[Anum_pg_attribute_attname - 1])->data,
+#else
         if (strcmp(DatumGetName(ordVals[Anum_pg_attribute_attname - 1])->data,
+#endif
             DatumGetName(partVals[Anum_pg_attribute_attname - 1])->data) != 0) {
             ereport(ERROR,
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
