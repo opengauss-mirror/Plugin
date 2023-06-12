@@ -303,7 +303,7 @@ static bool CopyGetInt32(CopyState cstate, int32* val);
 static void CopySendInt16(CopyState cstate, int16 val);
 static bool CopyGetInt16(CopyState cstate, int16* val);
 static void InitCopyMemArg(CopyState cstate, MemInfoArg* CopyMem);
-static bool CheckCopyFileInBlackList(const char* filename);
+static bool CheckCopyFileInBlackList(const char* path);
 static char* FindFileName(const char* path);
 static void TransformColExpr(CopyState cstate);
 static void SetColInFunction(CopyState cstate, int attrno, const TypeName* type);
@@ -7254,24 +7254,26 @@ static bool CopyReadLineTextTemplate(CopyState cstate)
                         }
                     } else if (cstate->eol_type == EOL_UD && c2 == cstate->eol[0]) {
                         /* Process user-define EOL string */
-                        int remainLen = strlen(cstate->eol) - 1;
-                        int pos = 0;
+                        int endStrLen = strlen(cstate->eol);
+                        /* the first char which index is 0 has already been compared above, so start from 1 */
+                        int pos = 1;
 
                         /*
                         *  If the length of EOL string is above one,
                         *  we need to look ahead several characters and check
                         *  if these characters equal remaining EOL string.
                         */
-                        if (remainLen > 0) {
-                            IF_NEED_REFILL_AND_NOT_EOF_CONTINUE(remainLen - 1);
+                        if (endStrLen > 1) {
+                            IF_NEED_REFILL_AND_NOT_EOF_CONTINUE(endStrLen - 1);
 
-                            for (; pos < remainLen; pos++) {
-                                if (copy_raw_buf[raw_buf_ptr + pos] != cstate->eol[pos + 1])
+                            for (; pos < endStrLen; pos++) {
+                                if (copy_raw_buf[raw_buf_ptr + pos] != cstate->eol[pos]) {
                                     break;
+                                }
                             }
                         }
                         /* If reach here, we have found the line terminator */
-                        if (pos == remainLen) {
+                        if (pos == endStrLen) {
                             in_quote = !in_quote;
                         }
                     } else if (cstate->eol_type == EOL_NL && c2 == '\n') {
