@@ -211,7 +211,7 @@ int namestrcmp(Name name, const char* str)
         return 1; /* NULL < anything */
     return strncmp(NameStr(*name), str, NAMEDATALEN);
 }
-#ifdef DOLPHIN
+
 int namestrcasecmp(Name name, const char* str)
 {
     if (name == NULL && str == NULL)
@@ -222,7 +222,6 @@ int namestrcasecmp(Name name, const char* str)
         return 1; /* NULL < anything */
     return strncasecmp(NameStr(*name), str, NAMEDATALEN);
 }
-#endif
 
 /*
  * SQL-functions CURRENT_USER, SESSION_USER
