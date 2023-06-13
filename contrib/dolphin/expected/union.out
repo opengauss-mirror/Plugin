@@ -13497,6 +13497,10 @@ select * from test22 union select * from test31;
 (2 rows)
 
 select * from test22 union select * from test32;
+WARNING:  invalid input syntax for type time: "Thu Jan 01 08:00:00 1970"
+CONTEXT:  referenced column: time_in
+SQL function "smalldatetime_to_time" statement 1
+referenced column: num
    num    
 ----------
  00:00:00
@@ -19741,6 +19745,10 @@ select * from test32 union select * from test21;
 (2 rows)
 
 select * from test32 union select * from test22;
+WARNING:  invalid input syntax for type time: "Thu Jan 01 08:00:00 1970"
+CONTEXT:  referenced column: time_in
+SQL function "smalldatetime_to_time" statement 1
+referenced column: num
    num    
 ----------
  00:00:00

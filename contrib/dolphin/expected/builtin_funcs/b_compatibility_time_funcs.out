@@ -479,6 +479,88 @@ select * from func_test;
  subdate('2022-01-01 01:01:01', interval 1.999 second)                  | 2022-01-01 01:00:59.001
 --?.*
 
+-- hour函数测试
+select hour('-838:59:59');
+ hour 
+------
+ -838
+(1 row)
+
+select hour('838:59:59');
+ hour 
+------
+  838
+(1 row)
+
+select hour('-840:59:59');
+ERROR:  time zone displacement out of range: "-840:59:59"
+CONTEXT:  referenced column: hour
+select hour('840:59:59');
+ERROR:  date/time field value out of range: "840:59:59"
+CONTEXT:  referenced column: hour
+select hour('');
+ERROR:  invalid input syntax for type time: ""
+CONTEXT:  referenced column: hour
+select hour('abc');
+ERROR:  invalid input syntax for type timestamp: "abc"
+CONTEXT:  referenced column: hour
+select hour('1234abc');
+ERROR:  invalid input syntax for type timestamp: "1234abc"
+CONTEXT:  referenced column: hour
+set dolphin.sql_mode = '';
+select hour('-838:59:59');
+ hour 
+------
+ -838
+(1 row)
+
+select hour('838:59:59');
+ hour 
+------
+  838
+(1 row)
+
+select hour('-840:59:59');
+WARNING:  Truncated incorrect time value.
+CONTEXT:  referenced column: hour
+ hour 
+------
+ -838
+(1 row)
+
+select hour('840:59:59');
+WARNING:  Truncated incorrect time value.
+CONTEXT:  referenced column: hour
+ hour 
+------
+  838
+(1 row)
+
+select hour('');
+WARNING:  invalid input syntax for type time: ""
+CONTEXT:  referenced column: hour
+ hour 
+------
+     
+(1 row)
+
+select hour('abc');
+WARNING:  invalid input syntax for type time: "abc"
+CONTEXT:  referenced column: hour
+ hour 
+------
+    0
+(1 row)
+
+select hour('1234abc');
+WARNING:  invalid input syntax for type time: "1234abc"
+CONTEXT:  referenced column: hour
+ hour 
+------
+    0
+(1 row)
+
+reset dolphin.sql_mode;
 drop schema b_time_funcs cascade;
 NOTICE:  drop cascades to table func_test
 reset current_schema;

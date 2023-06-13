@@ -1842,6 +1842,10 @@ drop schema if exists test_schema;
 set dolphin.sql_mode = '';
 CREATE TABLE time_tbl (v time);
 INSERT INTO time_tbl VALUES('20220-01-01');
+WARNING:  invalid input syntax for type time: "20220-01-01"
+LINE 1: INSERT INTO time_tbl VALUES('20220-01-01');
+                                    ^
+CONTEXT:  referenced column: v
 select * from time_tbl;
     v     
 ----------

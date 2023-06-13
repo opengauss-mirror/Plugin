@@ -240,5 +240,27 @@ insert into insert_subdate(date_col, datetime_col) values (subdate('2021-1-1', 1
 drop table insert_subdate;
 
 select * from func_test;
+
+-- hour函数测试
+select hour('-838:59:59');
+select hour('838:59:59');
+select hour('-840:59:59');
+select hour('840:59:59');
+select hour('');
+select hour('abc');
+select hour('1234abc');
+
+set dolphin.sql_mode = '';
+
+select hour('-838:59:59');
+select hour('838:59:59');
+select hour('-840:59:59');
+select hour('840:59:59');
+select hour('');
+select hour('abc');
+select hour('1234abc');
+
+reset dolphin.sql_mode;
+
 drop schema b_time_funcs cascade;
 reset current_schema;
