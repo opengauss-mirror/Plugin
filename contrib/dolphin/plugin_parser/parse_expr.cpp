@@ -1967,6 +1967,78 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
     /* prevent compiler wanring*/
     return NULL;
 }
+
+static char *const_get_cstring(Const *cnst)
+{
+    Datum d = cnst->constvalue;
+    bool is_varlena;
+    Oid type_out = InvalidOid;
+
+    if (cnst->consttype == UNKNOWNOID || cnst->consttype == CSTRINGOID) {
+        return DatumGetCString(d);
+    }
+
+    getTypeOutputInfo(cnst->consttype, &type_out, &is_varlena);
+
+    return (OidOutputFunctionCall(type_out, d));
+}
+
+static float8 datum_get_float8(Oid type, Datum datum)
+{
+    float8 value = 0;
+    switch (type) {
+        case BOOLOID:
+            value = DatumGetBool(datum) ? 1.0 : 0.0;
+            break;
+        case INT1OID:
+            value = DatumGetInt8(datum);
+            break;
+        case INT2OID:
+            value = DatumGetInt16(datum);
+            break;
+        case INT4OID:
+            value = DatumGetInt32(datum);
+            break;
+        case INT8OID:
+            value = DatumGetInt64(datum);
+            break;
+        case FLOAT4OID:
+            value = DatumGetFloat4(datum);
+            break;
+        case FLOAT8OID:
+            value = DatumGetFloat8(datum);
+            break;
+        case NUMERICOID:
+            value = DatumGetFloat8(DirectFunctionCall1(numeric_float8_no_overflow, datum));
+            break;
+        default:
+            break;
+    }
+    return value;
+}
+/*
+ * Interpret FuncExpr as other types.
+ * Note:Returns the original FuncExpr that cannot be interpreted.
+ */
+static Expr *ExplainFuncExpr(FuncExpr *expr)
+{
+    Assert(expr);
+
+    eval_const_expressions_context context;
+    context.boundParams = nullptr;
+    context.root = nullptr;
+    context.active_fns = NIL;
+    context.case_val = NULL;
+    context.estimate = false;
+
+    List *args = expr->args;
+    Expr *simple = simplify_function(expr->funcid, expr->funcresulttype, exprTypmod((const Node *)expr),
+                                     expr->funccollid, expr->inputcollid, &args, true, false, &context);
+    if (simple && IsA(simple, Const)) {
+        return simple;
+    }
+    return ((Expr *)expr);
+}
 #endif
 
 static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
@@ -1995,7 +2067,43 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
             targs = lappend(targs, transformExprRecurse(pstate, arg->node));
         }
     }
+#ifdef DOLPHIN
+    if (strcmp(strVal(linitial(fn->funcname)), "name_const") == 0 && list_length(targs) == 2) {
+        Node *name_arg = (Node *)linitial(targs);
+        Node *const_arg = (Node *)llast(targs);
 
+        /* Certain explicit type conversion statements are converted to FuncExpr, explained here */
+        if (IsA(name_arg, FuncExpr) && ((FuncExpr *)name_arg)->funcformat == COERCE_EXPLICIT_CAST) {
+            name_arg = (Node *)ExplainFuncExpr((FuncExpr *)name_arg);
+        }
+        if (IsA(const_arg, FuncExpr) && ((FuncExpr *)const_arg)->funcformat == COERCE_EXPLICIT_CAST) {
+            const_arg = (Node *)ExplainFuncExpr((FuncExpr *)const_arg);
+        }
+
+        if (IsA(name_arg, Const) && IsA(const_arg, Const)) {
+            if (datum_get_float8(((Const *)name_arg)->consttype, ((Const *)name_arg)->constvalue) >= 0.0) {
+                fn->colname = const_get_cstring((Const *)name_arg);
+                return const_arg;
+            } else {
+                /* The input parameter of NAME does not support negative numbers */
+                ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION), errmsg("Incorrect arguments to NAME_CONST"),
+                                errhint("'NAME_CONST' first argument does not accept negative numbers.")));
+            }
+        } else {
+            /* NAME_CONST does not support user variables, functions and expressions as parameters */
+            char *hint_str = "";
+            if (IsA(name_arg, UserVar) || IsA(const_arg, UserVar)) {
+                hint_str = "UserVar";
+            } else if (IsA(name_arg, FuncExpr) || IsA(const_arg, FuncExpr)) {
+                hint_str = "FuncExpr";
+            } else if (IsA(name_arg, OpExpr) || IsA(const_arg, OpExpr)) {
+                hint_str = "OpExpr";
+            }
+            ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION), errmsg("Incorrect arguments to NAME_CONST"),
+                            errhint("'NAME_CONST' function does not accept input of type %s", hint_str)));
+        }
+    }
+#endif
     /* ... and hand off to ParseFuncOrColumn */
     result = ParseFuncOrColumn(pstate, fn->funcname, targs, last_srf, fn, fn->location, fn->call_func);
 

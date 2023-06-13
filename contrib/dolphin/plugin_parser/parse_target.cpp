@@ -107,7 +107,17 @@ TargetEntry* transformTargetEntry(ParseState* pstate, Node* node, Node* expr, Pa
          */
         colname = FigureColname(node);
     }
-
+#ifdef DOLPHIN
+    if (nodeTag(node) == T_FuncCall && !strcmp(strVal(linitial(((FuncCall *)node)->funcname)), "name_const")) {
+        if (((FuncCall *)node)->colname) {
+            colname = ((FuncCall *)node)->colname;
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION),
+                            errmsg("The 'NAME_CONST' syntax is reserved for purposes internal to the openGauss server"),
+                            errhint("'NAME_CONST' can't have a NULL name.")));
+        }
+    }
+#endif
     return makeTargetEntry((Expr*)expr, (AttrNumber)pstate->p_next_resno++, colname, resjunk);
 }
 
