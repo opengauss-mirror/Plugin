@@ -54,6 +54,7 @@ extern "C" Datum year_integer(PG_FUNCTION_ARGS);
 extern "C" Datum uint8out(PG_FUNCTION_ARGS);
 extern "C" Datum dolphin_binaryin(PG_FUNCTION_ARGS);
 Datum bittobigint(VarBit* arg, bool isUnsigned);
+Datum bit_bin_in(PG_FUNCTION_ARGS);
 #endif
 
 
@@ -267,7 +268,8 @@ Datum bit_in(PG_FUNCTION_ARGS)
         sp = input_string;
         slen = strlen(sp);
         if (slen == 0) {
-            PG_RETURN_DATUM((Datum)DirectFunctionCall3(bit_in, CStringGetDatum(""), ObjectIdGetDatum(0), Int32GetDatum(-1)));
+            PG_RETURN_DATUM((Datum)DirectFunctionCall3(bit_bin_in, CStringGetDatum(""),
+                                                       ObjectIdGetDatum(0), Int32GetDatum(-1)));
         }
         if (slen > VARBITMAXLEN / BYTE_SIZE) {
             ereport(ERROR,
