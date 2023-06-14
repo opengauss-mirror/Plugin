@@ -56,7 +56,7 @@ select count(*) into a1 from language_1093039;
 return a1;
 end;
 /
-ERROR:  wrong language specified
+ERROR:  JAVA UDF is not yet supported in current version.
 --创建存储过程
 create procedure pro_1(id1 int,age1 int,name1 varchar2)
 as
@@ -101,7 +101,7 @@ delete from language_1093039 where id=1;
 select count(*) into a1 from language_1093039;
 end;
 /
-ERROR:  wrong language specified
+ERROR:  JAVA UDF is not yet supported in current version.
 call fun_1(1,2,'a');
  fun_1 
 -------
