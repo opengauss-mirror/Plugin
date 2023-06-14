@@ -1430,3 +1430,5 @@ $$
 LANGUAGE plpgsql;
 drop aggregate if exists pg_catalog.bit_xor(text);
 create aggregate pg_catalog.bit_xor(text) (SFUNC=text_xor, STYPE= uint8);
+drop schema if exists performance_schema CASCADE;
+drop function if exists pg_catalog.get_statement_history();
