@@ -172,7 +172,7 @@ extern void DisableDoingCommandRead();
 extern void getOBSOptions(ObsCopyOptions* obs_copy_options, List* options);
 extern int32 get_relation_data_width(Oid relid, Oid partitionid, int32* attr_widths, bool vectorized = false);
 extern int namestrcasecmp(Name name, const char* str);
-
+extern Oid getPartitionIdFromTuple(Relation rel, void *tuple, EState* estate, TupleTableSlot* slot, int *partitionno, bool isDDL, bool canIgnore);
 
 /* DestReceiver for COPY (SELECT) TO */
 typedef struct {
@@ -4936,7 +4936,7 @@ uint64 CopyFrom(CopyState cstate)
                         if (RelationIsSubPartitioned(resultRelationDesc)) {
                             targetOid = heapTupleGetSubPartitionId(resultRelationDesc, tuple);
                         } else {
-                            targetOid = heapTupleGetPartitionId(resultRelationDesc, tuple, NULL);
+                            targetOid = getPartitionIdFromTuple(resultRelationDesc, tuple, estate, slot, NULL);
                         }
                     } else {
                         targetOid = RelationGetRelid(resultRelationDesc);
@@ -4989,7 +4989,7 @@ uint64 CopyFrom(CopyState cstate)
                         if (RelationIsSubPartitioned(resultRelationDesc)) {
                             targetPartOid = heapTupleGetSubPartitionId(resultRelationDesc, tuple);
                         } else {
-                            targetPartOid = heapTupleGetPartitionId(resultRelationDesc, tuple, NULL);
+                            targetPartOid = getPartitionIdFromTuple(resultRelationDesc, tuple, estate, slot, NULL);
                         }
                         partitionList = list_append_unique_oid(partitionList, targetPartOid);
                     }
@@ -5005,7 +5005,7 @@ uint64 CopyFrom(CopyState cstate)
                     if (isPartitionRel) {
                         /* get partititon oid to insert the record */
                         int partitionno = INVALID_PARTITION_NO;
-                        partitionid = heapTupleGetPartitionId(resultRelationDesc, tuple, &partitionno);
+                        partitionid = getPartitionIdFromTuple(resultRelationDesc, tuple, estate, slot, &partitionno);
                         searchFakeReationForPartitionOid(estate->esfRelations,
                             estate->es_query_cxt,
                             resultRelationDesc,
@@ -5017,7 +5017,7 @@ uint64 CopyFrom(CopyState cstate)
 
                         if (RelationIsSubPartitioned(resultRelationDesc)) {
                             int subpartitionno = INVALID_PARTITION_NO;
-                            partitionid = heapTupleGetPartitionId(heaprel, tuple, &subpartitionno);
+                            partitionid = getPartitionIdFromTuple(heaprel, tuple, estate, slot, &subpartitionno);
                             searchFakeReationForPartitionOid(estate->esfRelations, estate->es_query_cxt, heaprel,
                                 partitionid, subpartitionno, subPartRel, subPart, RowExclusiveLock);
                             heaprel = subPartRel;

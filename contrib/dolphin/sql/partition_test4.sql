@@ -350,5 +350,26 @@ partition p1 values less than(200),
 partition p2 values less than(300),
 partition p3 values less than (maxvalue)
 );
+CREATE TABLE slb_monitor_drop_part (
+ monitor_time timestamp(6) without time zone
+) PARTITION BY RANGE (to_days(monitor_time))
+(PARTITION p20210801 VALUES LESS THAN (738369),
+ PARTITION p20210802 VALUES LESS THAN (738370),
+ PARTITION p20210803 VALUES LESS THAN (738371),
+ PARTITION p20210804 VALUES LESS THAN (738372),
+ PARTITION p20210805 VALUES LESS THAN (738373),
+ PARTITION p20210806 VALUES LESS THAN (738374),
+ PARTITION p20210807 VALUES LESS THAN (738375),
+ PARTITION p20210808 VALUES LESS THAN (738376),
+ PARTITION p20210809 VALUES LESS THAN (738377));
+set enable_opfusion to on;
+set enable_partition_opfusion to on;
+insert into slb_monitor_drop_part values('2021-08-05 11:50:14.000000');
+copy slb_monitor_drop_part from stdin;
+'2021-08-05 11:50:15.000000'
+\.
+select * from slb_monitor_drop_part;
+reset enable_opfusion;
+reset enable_partition_opfusion;
 drop schema partition_test4 cascade;
 reset current_schema;
