@@ -3,10 +3,13 @@ set current_schema to 'db_b_compress_test';
 set dolphin.sql_mode = '';
 -- compress测试用例
 -- 基准测试
-select length(compress('string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa '))<length('string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ');
+select length(compress('string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbb'))<length('string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbb');
 
-create table t1 (a binary(255), b char(4));
-insert into t1 (a,b) values (compress('string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa '),'b ');
+create table t1 (a binary(255), b text(255), c char(255));
+insert into t1 (a,b,c) values (compress('string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbb'),'string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbb', 'string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbb');
+SELECT a FROM t1;
+SELECT HEX(COMPRESS(b)) FROM t1;
+SELECT HEX(COMPRESS(c)) FROM t1;
 
 SELECT HEX(COMPRESS('2022-05-12 10:30:00'));
 SELECT HEX(COMPRESS(E'\\x01020304'));
@@ -63,11 +66,10 @@ SELECT HEX(COMPRESS(CONCAT('my', 'name')));
 
 -- uncompress测试用例
 -- 基准测试
-select uncompress(compress('string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa '));
-
-select uncompress(a) from t1;
-drop table t1;
-
+SELECT UNCOMPRESS(COMPRESS('string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbb'));
+SELECT UNCOMPRESS(a) FROM t1;
+SELECT UNCOMPRESS(COMPRESS(b)) FROM t1;
+SELECT UNCOMPRESS(COMPRESS(c)) FROM t1;
 SELECT UNCOMPRESS(COMPRESS('2022-05-12 10:30:00'));
 SELECT UNCOMPRESS(COMPRESS(E'\\x01020304'));
 SELECT UNCOMPRESS(COMPRESS(true));
@@ -129,6 +131,10 @@ SELECT UNCOMPRESS(CONCAT('my', 'name')); --ERROR
 
 -- uncompressed_length测试用例
 -- 基准测试
+SELECT UNCOMPRESSED_LENGTH(COMPRESS('string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbb'));
+SELECT UNCOMPRESSED_LENGTH(a) FROM t1;
+SELECT UNCOMPRESSED_LENGTH(COMPRESS(b)) FROM t1;
+SELECT UNCOMPRESSED_LENGTH(COMPRESS(c)) FROM t1;
 select UNCOMPRESSED_LENGTH(COMPRESS('string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa '))=length('string for test compress function aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ');
 SELECT UNCOMPRESSED_LENGTH(COMPRESS('2022-05-12 10:30:00'));
 SELECT UNCOMPRESSED_LENGTH(COMPRESS(E'\\x01020304'));
@@ -184,7 +190,9 @@ SELECT UNCOMPRESSED_LENGTH(COMPRESS(RPAD('a', 1025, 'a')));
 SELECT UNCOMPRESSED_LENGTH(UPPER('test')); --ERROR
 SELECT UNCOMPRESSED_LENGTH(CONCAT('my', 'name'));
 
+drop table t1;
 SET enable_set_variable_b_format = default;
 set dolphin.sql_mode = default;
 drop schema db_b_compress_test cascade;
 reset current_schema;
+

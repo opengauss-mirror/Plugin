@@ -297,7 +297,7 @@ err:
 Datum compress_text(PG_FUNCTION_ARGS)
 {
     int err_level = !fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING;
-    text *input_text = PG_GETARG_TEXT_PP(0);
+    text *input_text = PG_GETARG_TEXT_P(0);
     ulong result_len;
 
     bytea *result =
@@ -368,8 +368,8 @@ Datum compress_bit(PG_FUNCTION_ARGS)
 Datum uncompressed_length_text(PG_FUNCTION_ARGS)
 {
     int err_level = !fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING;
-    text *input_text = PG_GETARG_TEXT_PP(0);
-    int input_len = VARSIZE(PG_GETARG_TEXT_PP(0)) - VARHDRSZ;
+    text *input_text = PG_GETARG_TEXT_P(0);
+    int input_len = VARSIZE(PG_GETARG_TEXT_P(0)) - VARHDRSZ;
 
     PG_RETURN_UINT32(uncompressed_length_internal((Bytef *)VARDATA(input_text), input_len, err_level));
 }
@@ -413,9 +413,9 @@ Datum uncompress_text(PG_FUNCTION_ARGS)
 {
     int err_level = !fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING;
     ulong result_len;
-    text *input_text = PG_GETARG_TEXT_PP(0);
+    text *input_text = PG_GETARG_TEXT_P(0);
 
-    text *result = uncompress_internal((Bytef *)VARDATA(input_text), VARSIZE(PG_GETARG_TEXT_PP(0)) - VARHDRSZ,
+    text *result = uncompress_internal((Bytef *)VARDATA(input_text), VARSIZE(PG_GETARG_TEXT_P(0)) - VARHDRSZ,
                                        &result_len, err_level);
 
     if (result_len <= 0) {
