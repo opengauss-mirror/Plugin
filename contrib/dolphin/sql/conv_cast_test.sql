@@ -70,5 +70,17 @@ select cast(b'111111111111111111111111111111111111111111111111111111111111111' a
 select cast(b'11111111111111111111111111111111111111111111111111111111111111111' as unsigned);
 select cast(b'11111111111111111111111111111111111111111111111111111111111111111' as signed);
 
+select 'true'::bool::bit;
+select 'true'::bool::bit(10);
+select 'true'::bool::bit(64);
+select 'true'::bool::float4;
+select 'true'::bool::float8;
+
+select 'false'::bool::bit;
+select 'false'::bool::bit(10);
+select 'false'::bool::bit(64);
+select 'false'::bool::float4;
+select 'false'::bool::float8;
+
 drop schema conv_cast_test cascade;
 reset current_schema;

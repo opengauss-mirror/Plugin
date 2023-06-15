@@ -2567,4 +2567,16 @@ Datum bit_bin_in(PG_FUNCTION_ARGS)
     
     PG_RETURN_VARBIT_P(bit_in_internal(input_string, atttypmod, can_ignore));
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(bool_bit);
+extern "C" DLL_PUBLIC Datum bool_bit(PG_FUNCTION_ARGS);
+Datum bool_bit(PG_FUNCTION_ARGS)
+{
+    int32 atttypmod = PG_GETARG_INT32(1);
+    if (PG_GETARG_BOOL(0) == false) {
+        return DirectFunctionCall2(bitfromint8, Int64GetDatum(0), Int32GetDatum(atttypmod));
+    } else {
+        return DirectFunctionCall2(bitfromint8, Int64GetDatum(1), Int32GetDatum(atttypmod));
+    }
+}
 #endif
