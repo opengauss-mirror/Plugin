@@ -687,7 +687,11 @@ Oid get_column_def_collation_b_format(ColumnDef* coldef, Oid typeOid, Oid typcol
     }
 
     Oid result = InvalidOid;
+#ifdef DOLPHIN
+    if (!OidIsValid(typcollation) && !is_bin_type && !type_is_set(typeOid) && !type_is_enum(typeOid)) {
+#else
     if (!OidIsValid(typcollation) && !is_bin_type && !type_is_set(typeOid)) {
+#endif
         return InvalidOid;
     } else if (OidIsValid(coldef->collOid)) {
         /* Precooked collation spec, use that */
@@ -753,7 +757,12 @@ Oid GetColumnDefCollation(ParseState* pstate, ColumnDef* coldef, Oid typeOid, Oi
         check_binary_collation(result, typeOid);
     }
     /* Complain if COLLATE is applied to an uncollatable type */
+#ifdef DOLPHIN
+    if (OidIsValid(result) && !OidIsValid(typcollation) && !is_bin_type &&
+        !type_is_set(typeOid) && !type_is_enum(typeOid)) {
+#else
     if (OidIsValid(result) && !OidIsValid(typcollation) && !is_bin_type && !type_is_set(typeOid)) {
+#endif
         ereport(ERROR,
             (errcode(ERRCODE_DATATYPE_MISMATCH),
                 errmsg("collations are not supported by type %s", format_type_be(typeOid)),
@@ -1677,7 +1686,7 @@ void check_type_supports_multi_charset(Oid typid, bool allow_array)
  * DefineAnonymousEnum
  *		Registers a new anoymous enum without an array type, using the given name.
  */
-void DefineAnonymousEnum(TypeName * typname)
+void DefineAnonymousEnum(TypeName * typname, Oid collations)
 {
     char* enumName = NULL;
     Oid enumNamespace;
@@ -1757,10 +1766,10 @@ void DefineAnonymousEnum(TypeName * typname)
         -1,                              /* typMod (Domains only) */
         0,                               /* Array dimensions of typbasetype */
         false,                           /* Type NOT NULL */
-        InvalidOid);                     /* type's collation */
+        DEFAULT_COLLATION_OID);          /* type's collation */
 
     /* Enter the enum's values into pg_enum */
-    EnumValuesCreate(enumTypeAddr.objectId, typname->typmods);
+    EnumValuesCreate(enumTypeAddr.objectId, typname->typmods, collations);
     list_free_ext(typname->typmods);
     typname->typmods = NULL;
     /* CommandCounterIncrement here to ensure that preceding changes are all

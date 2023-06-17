@@ -49,7 +49,7 @@ extern Oid typeTypeCollation(Type typ);
 extern Datum stringTypeDatum(Type tp, char* string, int32 atttypmod, bool can_ignore = false);
 #ifdef DOLPHIN
 char* makeEnumTypeName(const char* relname, const char *colname, const char* schemaname);
-void DefineAnonymousEnum(TypeName * typname);
+void DefineAnonymousEnum(TypeName * typname, Oid collations);
 extern Datum GetEnumDefineStr(Oid enumOid);
 extern bool IsAnonymousEnum(Oid enumOid);
 #endif

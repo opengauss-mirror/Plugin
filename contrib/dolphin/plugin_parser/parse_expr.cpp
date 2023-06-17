@@ -4665,7 +4665,7 @@ static Node* transformCollateClause(ParseState* pstate, CollateClause* c)
     */
 #ifdef DOLPHIN
     if (!(IsBinaryType(argtype) || (IsA(newc->arg, Const) && (argtype == BITOID || argtype == VARBITOID)))
-        && !type_is_collatable(argtype) && argtype != UNKNOWNOID) {
+        && !type_is_collatable(argtype) && argtype != UNKNOWNOID&& !type_is_enum(argtype)) {
 #else
     if (!type_is_collatable(argtype) && argtype != UNKNOWNOID &&
         !(DB_IS_CMPT(B_FORMAT) &&

@@ -45,6 +45,7 @@
 #include "utils/typcache.h"
 #include "vecexecutor/vectorbatch.h"
 #include "utils/uuid.h"
+#include "catalog/pg_enum.h"
 #endif
 
 #ifndef ENABLE_MULTIPLE_NODES
@@ -111,6 +112,25 @@ Datum hashoid(PG_FUNCTION_ARGS)
 
 Datum hashenum(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    if (is_b_format_collation(PG_GET_COLLATION())) {
+        Oid enum_id = PG_GETARG_OID(0);
+        HeapTuple tup;
+        Form_pg_enum en;
+        char* en_label = NULL;
+
+        tup = SearchSysCache1(ENUMOID, enum_id);
+        if (!HeapTupleIsValid(tup)) {
+            ereport(ERROR,
+                (errcode(ERRCODE_INVALID_BINARY_REPRESENTATION), errmsg("invalid internal value for enum")));
+        }
+        en = (Form_pg_enum)GETSTRUCT(tup);
+        en_label = pstrdup(NameStr(en->enumlabel));
+        ReleaseSysCache(tup);
+
+        return hash_text_by_builtin_collations((unsigned char*)en_label, strlen(en_label), PG_GET_COLLATION());
+    }
+#endif
     return hash_uint32((uint32)PG_GETARG_OID(0));
 }
 
