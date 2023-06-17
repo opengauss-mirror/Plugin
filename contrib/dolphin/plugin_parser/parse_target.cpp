@@ -520,7 +520,11 @@ Expr* transformAssignedExpr(ParseState* pstate, Expr* expr, ParseExprKind exprKi
             (attrtype == BPCHAROID || attrtype == VARCHAROID) &&
             ((type_mod > 0 && attrtypmod < type_mod) || type_mod < 0);
 
+#ifdef DOLPHIN
+        if (type_is_set(attrtype) || type_is_enum(attrtype)) {
+#else
         if (type_is_set(attrtype)) {
+#endif
             Node* orig_expr = (Node*)expr;
             expr = (Expr*)coerce_to_settype(
                     pstate, orig_expr, type_id, attrtype, attrtypmod, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1, attrcollation);

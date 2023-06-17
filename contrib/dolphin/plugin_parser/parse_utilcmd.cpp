@@ -5764,6 +5764,15 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
      * including any collation spec that might be present.
      */
 #ifdef DOLPHIN
+    if (column->collClause) {
+            column->collOid = LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);
+            if (!OidIsValid(column->collOid)) {
+                column->collOid = DEFAULT_COLLATION_OID;
+                column->collClause->collname = list_make1(makeString("default"));
+                ereport(WARNING, (errmsg("Invalid collation for column %s detected. default value set",
+                    column->colname)));
+            }
+    }
     if (column->typname->names != NULL) {
         if (strstr(strVal(llast(column->typname->names)), "anonymous_enum") != NULL) {
             ereport(ERROR, (errcode(ERRCODE_DUPLICATE_OBJECT), errmsg("anonymous enum type can't be used elsewhere.")));
@@ -5783,10 +5792,11 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
             column->typname->names = lcons(makeString(schemaname), column->typname->names);
             strVal(llast(column->typname->names)) = enumTypeName;
 
-            DefineAnonymousEnum(column->typname);
+            DefineAnonymousEnum(column->typname, column->collOid);
         }
     }
 #endif
+
     Type ctype = typenameType(cxt->pstate, column->typname, NULL);
     Form_pg_type typtup = (Form_pg_type)GETSTRUCT(ctype);
 
@@ -5798,13 +5808,7 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
     }
 #ifdef DOLPHIN
     if (column->collClause) {
-        column->collOid = LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);
-        if (!OidIsValid(column->collOid)) {
-            column->collOid = DEFAULT_COLLATION_OID;
-            column->collClause->collname = list_make1(makeString("default"));
-            ereport(WARNING, (errmsg("Invalid collation for column %s detected. default value set", column->colname)));
-        }
-        if (!IsBinaryType(typeTypeId(ctype)) && !OidIsValid(typtup->typcollation))
+        if (!IsBinaryType(typeTypeId(ctype)) && !OidIsValid(typtup->typcollation) && !type_is_enum(typeTypeId(ctype)))
 #else
     if (!DB_IS_CMPT(B_FORMAT) && column->collClause) {
         LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);

@@ -30,11 +30,14 @@
 #ifdef DOLPHIN
 #include "plugin_postgres.h"
 #include "plugin_commands/mysqlmode.h"
+#include "catalog/gs_collation.h"
 #endif
 
 static Oid enum_endpoint(Oid enumtypoid, ScanDirection direction);
 static ArrayType* enum_range_internal(Oid enumtypoid, Oid lower, Oid upper);
 #ifdef DOLPHIN
+static Oid get_enumid_with_collation(Oid enumtypoid, Oid collation, char* enum_name);
+static int compare_values_of_enum_with_collation(Oid arg1, Oid arg2, Oid collation);
 #define DEC_BASE 10
 static uint64 pg_strntoul(const char *nptr, size_t l, char **endptr, int *err);
 #endif
@@ -53,6 +56,15 @@ Datum enum_in(PG_FUNCTION_ARGS)
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), name)));
+
+#ifdef DOLPHIN
+    Oid collid = PG_GET_COLLATION();
+    if (is_b_format_collation(collid)) {
+        enumoid = get_enumid_with_collation(enumtypoid, collid, name);
+        pfree_ext(name);
+        PG_RETURN_OID(enumoid);
+    }
+#endif
 
     tup = SearchSysCache2(ENUMTYPOIDNAME, ObjectIdGetDatum(enumtypoid), CStringGetDatum(name));
     if (!HeapTupleIsValid(tup)) {
@@ -87,14 +99,82 @@ Datum enum_in(PG_FUNCTION_ARGS)
     }
 
     /*
-     * This comes from pg_enum.oid and stores system oids in user tables. This
-     * oid must be preserved by binary upgrades.
-     */
+    * This comes from pg_enum.oid and stores system oids in user tables. This
+    * oid must be preserved by binary upgrades.
+    */
     enumoid = HeapTupleGetOid(tup);
 
     ReleaseSysCache(tup);
 
     PG_RETURN_OID(enumoid);
+}
+
+static Oid get_enumid_with_collation(Oid enumtypoid, Oid collation, char* enum_name)
+{
+    Oid enumoid;
+    CatCList* list = SearchSysCacheList1(ENUMTYPOIDNAME, ObjectIdGetDatum(enumtypoid));
+    int nelems = list->n_members;
+    HeapTuple enumTup = NULL;
+    Form_pg_enum en = NULL;
+    char *targetEnumLable = NULL;
+
+    if (nelems == 0) {
+        ReleaseSysCacheList(list);
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), enum_name)));
+    }
+
+    int res = 0;
+    bool find = false;
+    for (int i = 0; i < nelems; i++) {
+        enumTup = t_thrd.lsc_cxt.FetchTupleFromCatCList(list, i);
+        en = (Form_pg_enum)GETSTRUCT(enumTup);
+        targetEnumLable = NameStr(en->enumlabel);
+
+        res = varstr_cmp_by_builtin_collations(targetEnumLable, strlen(targetEnumLable),
+                                                    enum_name, strlen(enum_name), collation);
+        if (res == 0) {
+            enumoid = HeapTupleGetOid(enumTup);
+            find = true;
+            break;
+        }
+    }
+    ReleaseSysCacheList(list);
+    if (!find) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), enum_name)));
+    }
+    return enumoid;
+}
+
+static int compare_values_of_enum_with_collation(Oid arg1, Oid arg2, Oid collation)
+{
+    HeapTuple tup1;
+    HeapTuple tup2;
+    Form_pg_enum en1;
+    Form_pg_enum en2;
+    char* en1_label = NULL;
+    char* en2_label = NULL;
+    int res = 0;
+
+    tup1 = SearchSysCache1(ENUMOID, arg1);
+    tup2 = SearchSysCache1(ENUMOID, arg2);
+    if (!HeapTupleIsValid(tup1) || !HeapTupleIsValid(tup2)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_BINARY_REPRESENTATION), errmsg("invalid internal value for enum")));
+    }
+
+    en1 = (Form_pg_enum)GETSTRUCT(tup1);
+    en2 = (Form_pg_enum)GETSTRUCT(tup2);
+    en1_label = pstrdup(NameStr(en1->enumlabel));
+    en2_label = pstrdup(NameStr(en2->enumlabel));
+    ReleaseSysCache(tup1);
+    ReleaseSysCache(tup2);
+
+    res = varstr_cmp_by_builtin_collations(en1_label, strlen(en1_label), en2_label, strlen(en2_label), collation);
+    return res;
 }
 
 Datum enum_out(PG_FUNCTION_ARGS)
@@ -148,6 +228,15 @@ Datum enum_recv(PG_FUNCTION_ARGS)
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), name)));
 
+#ifdef DOLPHIN
+    int collid = PG_GET_COLLATION();
+    if (is_b_format_collation(collid)) {
+        enumoid = get_enumid_with_collation(enumtypoid, collid, name);
+        pfree_ext(name);
+        PG_RETURN_OID(enumoid);
+    }
+#endif
+
     tup = SearchSysCache2(ENUMTYPOIDNAME, ObjectIdGetDatum(enumtypoid), CStringGetDatum(name));
     if (!HeapTupleIsValid(tup))
         ereport(ERROR,
@@ -159,7 +248,6 @@ Datum enum_recv(PG_FUNCTION_ARGS)
     ReleaseSysCache(tup);
 
     pfree_ext(name);
-
     PG_RETURN_OID(enumoid);
 }
 
@@ -198,6 +286,12 @@ static int enum_cmp_internal(Oid arg1, Oid arg2, FunctionCallInfo fcinfo)
     /* Equal OIDs are equal no matter what */
     if (arg1 == arg2)
         return 0;
+
+#ifdef DOLPHIN
+    if (is_b_format_collation(fcinfo->fncollation)) {
+        return compare_values_of_enum_with_collation(arg1, arg2, fcinfo->fncollation);
+    }
+#endif
 
     /* Fast path: even-numbered Oids are known to compare correctly */
     if ((arg1 & 1) == 0 && (arg2 & 1) == 0) {
@@ -252,6 +346,13 @@ Datum enum_eq(PG_FUNCTION_ARGS)
     Oid a = PG_GETARG_OID(0);
     Oid b = PG_GETARG_OID(1);
 
+#ifdef DOLPHIN
+    if (is_b_format_collation(PG_GET_COLLATION())) {
+        bool res = (compare_values_of_enum_with_collation(a, b, PG_GET_COLLATION()) == 0);
+        PG_RETURN_BOOL(res);
+    }
+#endif
+
     PG_RETURN_BOOL(a == b);
 }
 
@@ -259,6 +360,13 @@ Datum enum_ne(PG_FUNCTION_ARGS)
 {
     Oid a = PG_GETARG_OID(0);
     Oid b = PG_GETARG_OID(1);
+
+#ifdef DOLPHIN
+    if (is_b_format_collation(PG_GET_COLLATION())) {
+        bool res = (compare_values_of_enum_with_collation(a, b, PG_GET_COLLATION()) != 0);
+        PG_RETURN_BOOL(res);
+    }
+#endif
 
     PG_RETURN_BOOL(a != b);
 }
@@ -299,6 +407,16 @@ Datum enum_cmp(PG_FUNCTION_ARGS)
 {
     Oid a = PG_GETARG_OID(0);
     Oid b = PG_GETARG_OID(1);
+
+#ifdef DOLPHIN
+    if (is_b_format_collation(PG_GET_COLLATION())) {
+        int res = compare_values_of_enum_with_collation(a, b, PG_GET_COLLATION());
+        if (res != 0) {
+            res = res > 0 ? 1 : -1;
+        }
+        PG_RETURN_INT32(res);
+    }
+#endif
 
     if (a == b)
         PG_RETURN_INT32(0);
@@ -606,7 +724,7 @@ extern "C" DLL_PUBLIC Datum enumtexteq(PG_FUNCTION_ARGS);
 Datum enumtexteq(PG_FUNCTION_ARGS)
 {
     Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(0));
-    return DirectFunctionCall2(texteq, PointerGetDatum(enumDatum), PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(texteq, PG_GET_COLLATION(), PointerGetDatum(enumDatum), PG_GETARG_DATUM(1));
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(enumtextne);
@@ -614,7 +732,7 @@ extern "C" DLL_PUBLIC Datum enumtextne(PG_FUNCTION_ARGS);
 Datum enumtextne(PG_FUNCTION_ARGS)
 {
     Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(0));
-    return DirectFunctionCall2(textne, PointerGetDatum(enumDatum), PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(textne, PG_GET_COLLATION(), PointerGetDatum(enumDatum), PG_GETARG_DATUM(1));
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(enumtextgt);
@@ -655,7 +773,7 @@ extern "C" DLL_PUBLIC Datum textenumeq(PG_FUNCTION_ARGS);
 Datum textenumeq(PG_FUNCTION_ARGS)
 {
     Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(1));
-    return DirectFunctionCall2(texteq, PG_GETARG_DATUM(0), PointerGetDatum(enumDatum));
+    return DirectFunctionCall2Coll(texteq, PG_GET_COLLATION(), PG_GETARG_DATUM(0), PointerGetDatum(enumDatum));
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(textenumne);
@@ -663,7 +781,7 @@ extern "C" DLL_PUBLIC Datum textenumne(PG_FUNCTION_ARGS);
 Datum textenumne(PG_FUNCTION_ARGS)
 {
     Datum enumDatum = DirectFunctionCall1(enumtotext, PG_GETARG_DATUM(1));
-    return DirectFunctionCall2(textne, PG_GETARG_DATUM(0), PointerGetDatum(enumDatum));
+    return DirectFunctionCall2Coll(textne, PG_GET_COLLATION(), PG_GETARG_DATUM(0), PointerGetDatum(enumDatum));
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(textenumgt);
