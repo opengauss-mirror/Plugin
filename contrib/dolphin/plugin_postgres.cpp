@@ -1236,7 +1236,9 @@ void create_dolphin_extension()
     */   
     bool pre_enable_full_encryption = u_sess->attr.attr_common.enable_full_encryption;
     u_sess->attr.attr_common.enable_full_encryption = false;
+#ifndef ENABLE_LITE_MODE
     load_dblink_extension();
+#endif
     execute_sql_file();
     u_sess->attr.attr_common.enable_full_encryption = pre_enable_full_encryption;
     finish_xact_command();

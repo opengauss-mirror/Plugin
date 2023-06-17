@@ -2790,6 +2790,7 @@ DECLARE
   query_str text;
   query_str_nodes text;
   user_name text;
+  dblink_ext int;
   BEGIN
     --check privileges only sysadm or omsysadm can access the dbe_perf.statement table;
     SELECT SESSION_USER INTO user_name;
@@ -2802,6 +2803,14 @@ DECLARE
     THEN 
        RAISE EXCEPTION 'user % has no privilege to access dbe_perf.statement_history',user_name;
     END IF;
+
+    --check if dblink exists, lite mode does not have dblink
+    EXECUTE('SELECT count(*) from pg_extension where extname=''dblink''') into dblink_ext;
+    IF dblink_ext = 0
+    THEN
+        RAISE EXCEPTION 'dblink is needed by this function, please load dblink extension first';
+    END IF;
+
     --get the port number 
     EXECUTE('SELECT setting FROM pg_settings WHERE name = ''port''') into port;
 	
