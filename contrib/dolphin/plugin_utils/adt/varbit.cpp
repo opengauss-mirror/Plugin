@@ -30,7 +30,7 @@
 #include "plugin_utils/int8.h"
 #include "plugin_utils/year.h"
 #define BYTE_SIZE 8
-#define SMALL_SIZE 8
+#define SMALL_SIZE 16
 #define M_BIT_LEN 64
 #endif
 
