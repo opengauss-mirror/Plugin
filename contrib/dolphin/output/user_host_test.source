@@ -100,6 +100,9 @@ insert into test2 values(1);
 grant select on test2 to 'test_user_host'@'127.0.%';
 grant insert on test2 to 'test_user_host'@'127.0.%';
 revoke insert on test2 from 'test_user_host'@'127.0.%';
+create user test1@localhost password 'Test@123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+alter session set session authorization test1@localhost password 'Test@123';
 --?.*
 --?.*
 --?.*
