@@ -2440,6 +2440,22 @@ Datum time_part(PG_FUNCTION_ARGS)
                 result = tm->tm_hour;
                 break;
 
+#ifdef DOLPHIN
+            case DTK_DOW:
+            case DTK_ISODOW:
+                {
+                    int day = tm->tm_hour / 24;
+                    int tz;
+                    if (timestamp2tm(GetCurrentTimestamp(), &tz, tm, &fsec, NULL, NULL) != 0)
+                        ereport(ERROR,
+                            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+                    result = j2day(date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) + day);
+                    if (val == DTK_ISODOW && result == 0)
+                        result = 7;
+                    break;
+                }
+
+#endif
             case DTK_TZ:
             case DTK_TZ_MINUTE:
             case DTK_TZ_HOUR:
