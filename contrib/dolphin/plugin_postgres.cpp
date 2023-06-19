@@ -343,7 +343,7 @@ HeapTuple searchCat(Relation relation, Oid indexoid, int cacheId, int nkeys,
         Oid typeId[2];
         typeId[0] = NAMEOID;
         typeId[1] = NAMEOID;
-        Oid func_oid = LookupFuncName(list_make1(makeString("dolphin_attname_eq")), 2, typeId, false);
+        Oid func_oid = LookupFuncName(list_make1(makeString("dolphin_attname_eq")), 2, typeId, true);
         if (OidIsValid(func_oid)) {
             fmgr_info(func_oid, &cur_skey[1].sk_func);
             *scandesc = systable_beginscan(relation, indexoid, IndexScanOK(cacheId), NULL, 1, cur_skey);
