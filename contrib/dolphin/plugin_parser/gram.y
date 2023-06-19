@@ -2912,13 +2912,13 @@ set_rest_more:  /* Generic SET syntaxes: */
 					n->args = list_make2(makeStringConst($2, @2), makeStringConst($5, @5));
 					$$ = n;
 				}
-			| SESSION AUTHORIZATION ColId_or_Sconst PASSWORD {u_sess->parser_cxt.isForbidTruncate = true;} password_string
+			| SESSION AUTHORIZATION DolphinUserId PASSWORD {u_sess->parser_cxt.isForbidTruncate = true;} password_string
 				{
 					u_sess->parser_cxt.isForbidTruncate = false;
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_ROLEPWD;
 					n->name = "session_authorization";
-					n->args = list_make2(makeStringConst($3, @3), makeStringConst($6,@6));
+					n->args = list_make2(makeStringConst(downcase_str($3->str, $3->is_quoted), @3), makeStringConst($6,@6));
 					$$ = n;
 				}
 			| SESSION AUTHORIZATION DEFAULT
