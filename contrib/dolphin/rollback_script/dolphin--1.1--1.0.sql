@@ -53,27 +53,34 @@ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS pg_catalog.rollback_castcontext(varchar, varchar, varchar) CASCADE;
 
 --dolphin_binary_function.sql rollback
+DROP OPERATOR IF EXISTS pg_catalog.^(blob, date) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(date, blob) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(blob, timestamptz) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(timestamptz, blob) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(time, bit) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(bit, time) CASCADE;
+
 DROP FUNCTION IF EXISTS pg_catalog.blob_date_xor(
     blob,
     date
 ) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.blob_date_xor(
+DROP FUNCTION IF EXISTS pg_catalog.date_blob_xor(
     date,
     blob
 ) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.blob_date_xor(
+DROP FUNCTION IF EXISTS pg_catalog.blob_timestamptz_xor(
     blob,
     timestamptz
 ) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.blob_date_xor(
+DROP FUNCTION IF EXISTS pg_catalog.timestamptz_blob_xor(
     timestamptz,
     blob
 ) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.blob_date_xor(
+DROP FUNCTION IF EXISTS pg_catalog.time_xor_bit(
     time,
     bit
 ) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.blob_date_xor(
+DROP FUNCTION IF EXISTS pg_catalog.bit_xor_time(
     bit,
     time
 ) CASCADE;
@@ -324,6 +331,69 @@ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION pg_catalog.varbinary_in (
 cstring
 ) RETURNS varbinary LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteain';
+
+DROP OPERATOR IF EXISTS pg_catalog.&(uint4, year) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.&(year, uint4) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.&(uint4, nvarchar2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.&(nvarchar2, uint4) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(uint4, year) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(year, uint4) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.|(uint4, year) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.|(year, uint4) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.|(uint4, nvarchar2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.|(nvarchar2, uint4) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.%(uint4, year) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.&(year, int8) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.&(nvarchar2, int8) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.&(int8, year) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.&(int8, nvarchar2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.#(year, int8) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.#(int8, year) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(year, int8) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(int8, year) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.#(nvarchar2, int8) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.#(int8, nvarchar2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.|(year, int8) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.|(nvarchar2, int8) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.|(int8, year) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.|(int8, nvarchar2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.%(int8, year) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(time, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(time, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(date, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(date, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(time, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(time, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(date, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(date, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(time, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(time, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(date, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(date, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(time, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(time, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(date, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(date, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<>(uint2, time) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<>(uint1, time) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<>(uint2, date) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<>(uint1, date) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<>(time, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<>(time, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<>(date, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<>(date, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.=(time, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.=(time, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.=(date, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.=(date, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(timestampTz, uint8) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(uint8, timestampTz) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(timestamp without time zone, uint8) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(uint8, timestamp without time zone) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(time, uint8) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(uint8, time) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(date, uint8) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(uint8, date) CASCADE;
 
 DROP FUNCTION IF EXISTS pg_catalog.date_int8_xor(
     date,
@@ -860,6 +930,22 @@ proargtypes='3500' AND
 prorettype = 701;
 
 --dolphin_time_functions.sql rollback
+DROP OPERATOR IF EXISTS pg_catalog.^(time, timestampTz) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(timestampTz, time) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(boolean, date) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(boolean, timestamptz) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(date, boolean) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.^(timestamptz, boolean) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.-(nvarchar2, time) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.+(nvarchar2, time) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.+(date, numeric) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.-(date, numeric) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.*(time, numeric) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog./(time, numeric) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.*(timestamp without time zone, numeric) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog./(timestamp without time zone, numeric) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.*(timestamp without time zone, int4) CASCADE;
+
 DROP FUNCTION IF EXISTS pg_catalog.b_db_date(date) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.dayname(date) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.b_db_last_day(date) CASCADE;
@@ -1116,7 +1202,7 @@ DROP FUNCTION IF EXISTS pg_catalog.int8_year (int1) CASCADE;
 DROP CAST IF EXISTS (bit AS anyset) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.set(bit, int4) CASCADE; 
 
-DROP CAST IF EXISTS (timestamptz as bit) CASCADE;
+DROP CAST IF EXISTS (time as bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.bitfromtime(time, int4) CASCADE;
 
 DROP CAST IF EXISTS (timestamptz as bit) CASCADE;
@@ -1439,8 +1525,7 @@ DROP FUNCTION IF EXISTS pg_catalog.weight_string (boolean, TEXT, uint4) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.weight_string (boolean, TEXT, uint4, uint4) cascade;
 
 DROP FUNCTION IF EXISTS pg_catalog.sleep(d date) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.text_xor(uint8,text) CASCADE;
-CREATE FUNCTION pg_catalog.text_xor (t1 uint8,t2 text) RETURNS uint8 AS
+CREATE OR REPLACE FUNCTION pg_catalog.text_xor (t1 uint8,t2 text) RETURNS uint8 AS
 $$
 DECLARE num NUMBER := to_number(t2);
 BEGIN
