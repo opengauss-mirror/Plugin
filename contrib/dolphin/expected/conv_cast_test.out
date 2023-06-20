@@ -416,6 +416,56 @@ select ''::bit(64);
 (1 row)
 
 
+select 8385959::char(30)::time;
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select -8385958.999999::char(30)::time(6);
+  ?column?  
+------------
+ -838:59:59
+(1 row)
+
+select -8385959::varchar(30)::time;
+  ?column?  
+------------
+ -838:59:59
+(1 row)
+
+select 8385958.999999::varchar(30)::time(6);
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+
+select '838:59:59'::char(30)::time;
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select '-838:59:58.999999'::char(30)::time(6);
+    time    
+------------
+ -838:59:59
+(1 row)
+
+select '-838:59:59'::varchar(30)::time;
+    time    
+------------
+ -838:59:59
+(1 row)
+
+select '838:59:58.999999'::varchar(30)::time(6);
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+
 select cast(b'1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111' as unsigned);
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
