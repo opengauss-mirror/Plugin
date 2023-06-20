@@ -1,0 +1,104 @@
+drop schema if exists test_timestampn;
+NOTICE:  schema "test_timestampn" does not exist, skipping
+create schema test_timestampn;
+set current_schema = test_timestampn;
+set time zone 'PRC';
+create table t_timestamp(c timestamp);
+create table t_timestamp1(c timestamp(1));
+create table t_timestamp2(c timestamp(2));
+create table t_timestamp3(c timestamp(3));
+create table t_timestamp4(c timestamp(4));
+create table t_timestamp5(c timestamp(5));
+create table t_timestamp6(c timestamp(6));
+insert into t_timestamp values('294277-1-9 4:00:54');
+insert into t_timestamp values('294277-1-9 4:00:54+08');
+insert into t_timestamp1 values('294277-1-9 4:00:54');
+insert into t_timestamp1 values('294277-1-9 4:00:54+08');
+insert into t_timestamp1 values('294277-1-9 4:00:54.4+08');
+insert into t_timestamp2 values('294277-1-9 4:00:54');
+insert into t_timestamp2 values('294277-1-9 4:00:54+08');
+insert into t_timestamp2 values('294277-1-9 4:00:54.08+08');
+insert into t_timestamp3 values('294277-1-9 4:00:54');
+insert into t_timestamp3 values('294277-1-9 4:00:54+08');
+insert into t_timestamp3 values('294277-1-9 4:00:54.08+08');
+insert into t_timestamp3 values('294277-1-9 4:00:54.008+08');
+insert into t_timestamp4 values('294277-1-9 4:00:54');
+insert into t_timestamp4 values('294277-1-9 4:00:54+08');
+insert into t_timestamp4 values('294277-1-9 4:00:54.08+08');
+insert into t_timestamp4 values('294277-1-9 4:00:54.0008+08');
+insert into t_timestamp5 values('294277-1-9 4:00:54');
+insert into t_timestamp5 values('294277-1-9 4:00:54+08');
+insert into t_timestamp5 values('294277-1-9 4:00:54.08+08');
+insert into t_timestamp5 values('294277-1-9 4:00:54.00008+08');
+insert into t_timestamp6 values('294277-1-9 4:00:54');
+insert into t_timestamp6 values('294277-1-9 4:00:54+08');
+insert into t_timestamp6 values('294277-1-9 4:00:54.08+08');
+insert into t_timestamp6 values('294277-1-9 4:00:54.000008+08');
+select * from t_timestamp;
+               c                
+--------------------------------
+ Tue Jan 09 04:00:54 294277 CST
+ Tue Jan 09 04:00:54 294277 CST
+(2 rows)
+
+select * from t_timestamp1;
+                c                 
+----------------------------------
+ Tue Jan 09 04:00:54 294277 CST
+ Tue Jan 09 04:00:54 294277 CST
+ Tue Jan 09 04:00:54.4 294277 CST
+(3 rows)
+
+select * from t_timestamp2;
+                 c                 
+-----------------------------------
+ Tue Jan 09 04:00:54 294277 CST
+ Tue Jan 09 04:00:54 294277 CST
+ Tue Jan 09 04:00:54.08 294277 CST
+(3 rows)
+
+select * from t_timestamp3;
+                 c                  
+------------------------------------
+ Tue Jan 09 04:00:54 294277 CST
+ Tue Jan 09 04:00:54 294277 CST
+ Tue Jan 09 04:00:54.08 294277 CST
+ Tue Jan 09 04:00:54.008 294277 CST
+(4 rows)
+
+select * from t_timestamp4;
+                  c                  
+-------------------------------------
+ Tue Jan 09 04:00:54 294277 CST
+ Tue Jan 09 04:00:54 294277 CST
+ Tue Jan 09 04:00:54.08 294277 CST
+ Tue Jan 09 04:00:54.0008 294277 CST
+(4 rows)
+
+select * from t_timestamp5;
+                  c                   
+--------------------------------------
+ Tue Jan 09 04:00:54 294277 CST
+ Tue Jan 09 04:00:54 294277 CST
+ Tue Jan 09 04:00:54.08 294277 CST
+ Tue Jan 09 04:00:54.00008 294277 CST
+(4 rows)
+
+select * from t_timestamp6;
+                   c                   
+---------------------------------------
+ Tue Jan 09 04:00:54 294277 CST
+ Tue Jan 09 04:00:54 294277 CST
+ Tue Jan 09 04:00:54.08 294277 CST
+ Tue Jan 09 04:00:54.000008 294277 CST
+(4 rows)
+
+drop table t_timestamp;
+drop table t_timestamp1;
+drop table t_timestamp2;
+drop table t_timestamp3;
+drop table t_timestamp4;
+drop table t_timestamp5;
+drop table t_timestamp6;
+reset current_schema;
+drop schema test_timestampn cascade;
