@@ -1396,7 +1396,7 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
             /*
              * if error ignorable, function DateTimeParseError reports warning instead, then return current timestamp.
              */
-            PG_RETURN_TIMESTAMP(GetCurrentTimestamp());
+            PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
         }
         if (dterr == 0) {
             if (nf == 1 && ftype[0] == DTK_NUMBER) {
@@ -1410,7 +1410,7 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
         }
         if (dterr != 0) {
             DateTimeParseError(dterr, str, "timestamp", fcinfo->can_ignore);
-            PG_RETURN_TIMESTAMP(GetCurrentTimestamp());
+            PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
         }
         switch (dtype) {
             case DTK_DATE:
@@ -5068,6 +5068,10 @@ Datum timestamptz_part(PG_FUNCTION_ARGS)
 
             case DTK_DOW:
             case DTK_ISODOW:
+#ifdef DOLPHIN
+                if (timestamp == TIMESTAMP_ZERO)
+                    PG_RETURN_NULL();
+#endif
                 if (timestamp2tm(timestamp, &tz, tm, &fsec, NULL, NULL) != 0)
                     ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
                 result = j2day(date2j(tm->tm_year, tm->tm_mon, tm->tm_mday));

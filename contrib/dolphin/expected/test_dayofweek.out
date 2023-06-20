@@ -1,0 +1,204 @@
+drop schema if exists test_dayofweek;
+NOTICE:  schema "test_dayofweek" does not exist, skipping
+create schema test_dayofweek;
+set current_schema = test_dayofweek;
+set time zone 'PRC';
+show dolphin.sql_mode;
+                                           dolphin.sql_mode                                           
+------------------------------------------------------------------------------------------------------
+ sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length
+(1 row)
+
+select current_timestamp;
+    current_timestamp     
+--------------------------
+--?.*
+(1 row)
+
+select dayofweek('14:14:14');
+ERROR:  invalid input syntax for type timestamp: "14:14:14"
+LINE 1: select dayofweek('14:14:14');
+                         ^
+CONTEXT:  referenced column: dayofweek
+select dayofweek(time'10:10:10');
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+select dayofweek('2022-01-01 00:00:00'::time);
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+select dayofweek('2022-06-28 00:00:00'::time) from dual;
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+select dayofweek(time '2022-06-28 00:00:00');
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+select dayofweek(time'24:00:00');
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+select dayofweek(time'48:00:00');
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+select dayofweek(time'838:59:59');
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+create table t_timestamp(c timestamp);
+create table t_datetime(c datetime);
+insert into t_timestamp values('14:14:14');
+ERROR:  invalid input syntax for type timestamp: "14:14:14"
+LINE 1: insert into t_timestamp values('14:14:14');
+                                       ^
+CONTEXT:  referenced column: c
+insert ignore into t_timestamp values('14:14:14');
+WARNING:  invalid input syntax for type timestamp: "14:14:14"
+LINE 1: insert ignore into t_timestamp values('14:14:14');
+                                              ^
+CONTEXT:  referenced column: c
+insert into t_datetime values('14:14:14');
+ERROR:  invalid input syntax for type timestamp: "14:14:14"
+LINE 1: insert into t_datetime values('14:14:14');
+                                      ^
+CONTEXT:  referenced column: c
+insert ignore into t_datetime values('14:14:14');
+WARNING:  invalid input syntax for type timestamp: "14:14:14"
+LINE 1: insert ignore into t_datetime values('14:14:14');
+                                             ^
+CONTEXT:  referenced column: c
+select * from t_timestamp;
+              c               
+------------------------------
+ 0000-00-00 00:00:00+08:05:43
+(1 row)
+
+select * from t_datetime;
+          c          
+---------------------
+ 0000-00-00 00:00:00
+(1 row)
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
+show dolphin.sql_mode;
+                                   dolphin.sql_mode                                   
+--------------------------------------------------------------------------------------
+ sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length
+(1 row)
+
+select current_timestamp;
+    current_timestamp     
+--------------------------
+--?.*
+(1 row)
+
+select dayofweek('14:14:14');
+WARNING:  invalid input syntax for type timestamp: "14:14:14"
+LINE 1: select dayofweek('14:14:14');
+                         ^
+CONTEXT:  referenced column: dayofweek
+ dayofweek 
+-----------
+          
+(1 row)
+
+select dayofweek(time'10:10:10');
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+select dayofweek('2022-01-01 00:00:00'::time);
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+select dayofweek('2022-06-28 00:00:00'::time) from dual;
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+select dayofweek(time '2022-06-28 00:00:00');
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+select dayofweek(time'24:00:00');
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+select dayofweek(time'48:00:00');
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+select dayofweek(time'838:59:59');
+ dayofweek 
+-----------
+--?.*
+(1 row)
+
+insert into t_timestamp values('14:14:14');
+WARNING:  invalid input syntax for type timestamp: "14:14:14"
+LINE 1: insert into t_timestamp values('14:14:14');
+                                       ^
+CONTEXT:  referenced column: c
+insert ignore into t_timestamp values('14:14:14');
+WARNING:  invalid input syntax for type timestamp: "14:14:14"
+LINE 1: insert ignore into t_timestamp values('14:14:14');
+                                              ^
+CONTEXT:  referenced column: c
+insert into t_datetime values('14:14:14');
+WARNING:  invalid input syntax for type timestamp: "14:14:14"
+LINE 1: insert into t_datetime values('14:14:14');
+                                      ^
+CONTEXT:  referenced column: c
+insert ignore into t_datetime values('14:14:14');
+WARNING:  invalid input syntax for type timestamp: "14:14:14"
+LINE 1: insert ignore into t_datetime values('14:14:14');
+                                             ^
+CONTEXT:  referenced column: c
+select * from t_timestamp;
+              c               
+------------------------------
+ 0000-00-00 00:00:00+08:05:43
+ 0000-00-00 00:00:00+08:05:43
+ 0000-00-00 00:00:00+08:05:43
+(3 rows)
+
+select * from t_datetime;
+          c          
+---------------------
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+(3 rows)
+
+reset current_schema;
+drop schema if exists test_dayofweek cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table test_dayofweek.t_timestamp
+drop cascades to table test_dayofweek.t_datetime

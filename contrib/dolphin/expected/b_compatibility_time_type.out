@@ -1862,49 +1862,49 @@ ERROR:  Out of range value for date
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
-ERROR:  date/time field value out of range: "0000-00-01"
+WARNING:  date/time field value out of range: "0000-00-01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
                                                   ^
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-01-00');
-ERROR:  date/time field value out of range: "0000-01-00"
+WARNING:  date/time field value out of range: "0000-01-00"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-01-00');
                                                   ^
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('2000-00-00');
-ERROR:  date/time field value out of range: "2000-00-00"
+WARNING:  date/time field value out of range: "2000-00-00"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('2000-00-00');
                                                   ^
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-00 10:01');
 INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-01 10:01');
-ERROR:  date/time field value out of range: "0000-00-01 10:01"
+WARNING:  date/time field value out of range: "0000-00-01 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-00-01 10...
                                                       ^
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-01-00 10:01');
-ERROR:  date/time field value out of range: "0000-01-00 10:01"
+WARNING:  date/time field value out of range: "0000-01-00 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('0000-01-00 10...
                                                       ^
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('2000-00-00 10:01');
-ERROR:  date/time field value out of range: "2000-00-00 10:01"
+WARNING:  date/time field value out of range: "2000-00-00 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('2000-00-00 10...
                                                       ^
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-00 10:01');
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-01 10:01');
-ERROR:  date/time field value out of range: "0000-00-01 10:01"
+WARNING:  date/time field value out of range: "0000-00-01 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-01 1...
                                                        ^
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-01-00 10:01');
-ERROR:  date/time field value out of range: "0000-01-00 10:01"
+WARNING:  date/time field value out of range: "0000-01-00 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-01-00 1...
                                                        ^
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 10:01');
-ERROR:  date/time field value out of range: "2000-00-00 10:01"
+WARNING:  date/time field value out of range: "2000-00-00 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 1...
                                                        ^
 CONTEXT:  referenced column: v
@@ -1958,27 +1958,36 @@ ERROR:  date/time field value out of range: "2000-00-00 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 1...
                                                        ^
 CONTEXT:  referenced column: v
-SELECT * FROM t_NO_ZERO_DATE_date;
+SELECT * FROM t_NO_ZERO_DATE_date order by v;
      v      
 ------------
  00-00-0000
  00-00-0000
  00-00-0000
-(3 rows)
+ 00-00-0000
+ 00-00-0000
+ 00-00-0000
+(6 rows)
 
-SELECT * FROM t_NO_ZERO_DATE_datetime;
+SELECT * FROM t_NO_ZERO_DATE_datetime order by v;
           v          
 ---------------------
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
  0000-00-00 10:01:00
  0000-00-00 10:01:00
-(2 rows)
+(5 rows)
 
-SELECT * FROM t_NO_ZERO_DATE_timestamp;
+SELECT * FROM t_NO_ZERO_DATE_timestamp order by v;
               v               
 ------------------------------
+ 0000-00-00 00:00:00+08:05:43
+ 0000-00-00 00:00:00+08:05:43
+ 0000-00-00 00:00:00+08:05:43
  0000-00-00 10:01:00+08:05:43
  0000-00-00 10:01:00+08:05:43
-(2 rows)
+(5 rows)
 
 DROP TABLE t_NO_ZERO_DATE_date;
 DROP TABLE t_NO_ZERO_DATE_datetime;
