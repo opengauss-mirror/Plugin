@@ -376,15 +376,7 @@ WARNING:  invalid input syntax for type double precision: "aaa123.12a45"
 LINE 1: insert ignore into t_float8 values ('aaa123.12a45');
                                             ^
 CONTEXT:  referenced column: c
-WARNING:  invalid input syntax for type double precision: "aaa123.12a45"
-LINE 1: insert ignore into t_float8 values ('aaa123.12a45');
-                                            ^
-CONTEXT:  referenced column: c
 insert ignore into t_float8 values ('abcde');
-WARNING:  invalid input syntax for type double precision: "abcde"
-LINE 1: insert ignore into t_float8 values ('abcde');
-                                            ^
-CONTEXT:  referenced column: c
 WARNING:  invalid input syntax for type double precision: "abcde"
 LINE 1: insert ignore into t_float8 values ('abcde');
                                             ^

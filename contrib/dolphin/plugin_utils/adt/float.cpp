@@ -523,6 +523,7 @@ Datum float8in(PG_FUNCTION_ARGS)
     char* endptr = NULL;
 #ifdef DOLPHIN
     int errlevel = !fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING;
+    bool errcount = false;
 #endif
 
     /*
@@ -611,6 +612,7 @@ Datum float8in(PG_FUNCTION_ARGS)
             ereport(errlevel,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
+            errcount = true;
         }
 #else
         } else if (!fcinfo->can_ignore && SQL_MODE_STRICT())
@@ -658,7 +660,7 @@ Datum float8in(PG_FUNCTION_ARGS)
 
     /* if there is any junk left at the end of the string, bail out */
 #ifdef DOLPHIN
-    if (*endptr != '\0') {
+    if (!errcount && *endptr != '\0') {
         ereport(errlevel,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
