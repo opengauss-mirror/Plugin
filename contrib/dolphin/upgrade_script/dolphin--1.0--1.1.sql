@@ -2545,23 +2545,23 @@ DROP FUNCTION IF EXISTS pg_catalog.blob_date_xor(
     blob,
     date
 ) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.blob_date_xor(
+DROP FUNCTION IF EXISTS pg_catalog.date_blob_xor(
     date,
     blob
 ) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.blob_date_xor(
+DROP FUNCTION IF EXISTS pg_catalog.blob_timestamptz_xor(
     blob,
     timestamptz
 ) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.blob_date_xor(
+DROP FUNCTION IF EXISTS pg_catalog.timestamptz_blob_xor(
     timestamptz,
     blob
 ) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.blob_date_xor(
+DROP FUNCTION IF EXISTS pg_catalog.time_xor_bit(
     time,
     bit
 ) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.blob_date_xor(
+DROP FUNCTION IF EXISTS pg_catalog.bit_xor_time(
     bit,
     time
 ) CASCADE;
