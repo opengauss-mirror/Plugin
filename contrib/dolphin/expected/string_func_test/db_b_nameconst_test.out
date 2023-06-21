@@ -470,7 +470,7 @@ LINE 1: SET INSERT_ID= NAME_CONST(a, a);
                                   ^
 DROP TABLE t1;
 select NAME_CONST('_id',1234) as id;
- _id  
+  id  
 ------
  1234
 (1 row)
