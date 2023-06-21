@@ -110,7 +110,9 @@ TargetEntry* transformTargetEntry(ParseState* pstate, Node* node, Node* expr, Pa
 #ifdef DOLPHIN
     if (nodeTag(node) == T_FuncCall && !strcmp(strVal(linitial(((FuncCall *)node)->funcname)), "name_const")) {
         if (((FuncCall *)node)->colname) {
-            colname = ((FuncCall *)node)->colname;
+            if (strcmp(colname, "name_const") == 0) {
+                colname = ((FuncCall *)node)->colname;
+            }
         } else {
             ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION),
                             errmsg("The 'NAME_CONST' syntax is reserved for purposes internal to the openGauss server"),
