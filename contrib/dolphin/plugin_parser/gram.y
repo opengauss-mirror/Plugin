@@ -329,6 +329,7 @@ typedef struct DolphinString
 	Node* node;
 	char* str;
 	bool is_quoted;
+	bool is_sconst;
 } DolphinString;
 
 /* ConstraintAttributeSpec yields an integer bitmask of these flags: */
@@ -920,7 +921,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <list>	copy_options
 
 %type <typnam>	Typename SimpleTypename ConstTypename
-				GenericType Numeric opt_float dolphin_float
+				GenericType Numeric NumericNoConflict opt_float opt_float_noempty dolphin_float
 				Character ConstCharacter
 				CharacterWithLength CharacterWithoutLength
 				PreciseConstDatetime ConstDatetime ConstSet
@@ -946,7 +947,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <node>	var_value zone_value
 %type <dolphinString>	DolphinColId DolphinColLabel dolphin_indirection_el
 
-%type <keyword> unreserved_keyword type_func_name_keyword unreserved_keyword_without_key unreserved_keyword_without_proxy
+%type <keyword> unreserved_keyword type_func_name_keyword type_func_name_keyword_without_current_schema unreserved_keyword_without_key unreserved_keyword_without_proxy
 %type <keyword> col_name_keyword reserved_keyword col_name_keyword_nonambiguous
 
 %type <node>	TableConstraint TableIndexClause TableLikeClause ForeignTableLikeClause
@@ -1108,7 +1109,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <list>	alter_tblspc_option_list
 %type <node>	alter_tblspc_option
 
-%type <dolphinIdent>	DolphinRoleId DolphinRoleIdWithOutCurrentUser DolphinUserId
+%type <dolphinIdent>	DolphinRoleId DolphinRoleIdWithOutCurrentUser DolphinUserId DOLPHINIDENT
 
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
@@ -1235,7 +1236,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 
 	ZEROFILL ZONE
 
-	AST
+	AST DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ
 
 %token ALGORITHM_UNDEFINED ALGORITHM_MERGE ALGORITHM_TEMPTABLE
 
@@ -1329,7 +1330,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
  * blame any funny behavior of UNBOUNDED on the SQL standard, though.
  */
 %nonassoc	UNBOUNDED		/* ideally should have same precedence as IDENT */
-%nonassoc	IDENT GENERATED NULL_P PARTITION SUBPARTITION RANGE ROWS PRECEDING FOLLOWING CUBE ROLLUP
+%nonassoc	IDENT GENERATED NULL_P PARTITION SUBPARTITION RANGE ROWS PRECEDING FOLLOWING CUBE ROLLUP DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ
 %left		Op OPERATOR '@'		/* multi-character ops and user-defined operators */
 %nonassoc	NOTNULL
 %nonassoc	ISNULL
@@ -1344,6 +1345,8 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %right		UMINUS BY NAME_P PASSING ROW TYPE_P VALUE_P
 %left		'[' ']'
 %left		'(' ')'
+%nonassoc   TEXT_P
+%nonassoc   SCONST
 %left		EMPTY_FROM_CLAUSE
 %right		INTO
 %left		TYPECAST
@@ -1721,7 +1724,7 @@ password_string:
 					t_thrd.postgres_cxt.clear_key_memory = true;
 					$$ = $1;
 				}
-			| IDENT
+			| DOLPHINIDENT
 				{
 					t_thrd.postgres_cxt.clear_key_memory = true;
 					core_yy_extra_type yyextra = pg_yyget_extra(yyscanner)->core_yy_extra;
@@ -1740,7 +1743,7 @@ namedata_string:
                 {
                     $$ = pg_strtolower($1);
                 }
-            | IDENT
+            | DOLPHINIDENT
                 {
                     core_yy_extra_type yyextra = pg_yyget_extra(yyscanner)->core_yy_extra;
                     if (yyextra.ident_quoted)
@@ -3672,7 +3675,7 @@ VariableShowStmt:
 					}
 #endif
 				}
-			| SHOW IDENT '(' '*' ')' WARNINGS
+			| SHOW DOLPHINIDENT '(' '*' ')' WARNINGS
 				{
 #ifdef ENABLE_MULTIPLE_NODES
 					ereport(ERROR,
@@ -3749,7 +3752,7 @@ VariableShowStmt:
 					}
 #endif
 				}
-			| SHOW IDENT '(' '*' ')' ERRORS
+			| SHOW DOLPHINIDENT '(' '*' ')' ERRORS
 				{
 #ifdef ENABLE_MULTIPLE_NODES
 					ereport(ERROR,
@@ -6085,7 +6088,7 @@ table_index_option:
 					n->comment = $3;
 					$$ = (Node*)n;
 			 }
-			 | USING IDENT
+			 | USING DOLPHINIDENT
 			 {
 					BCompatibilityOptionSupportCheck($1);
 					$$ = makeStringConst(downcase_str($2->str, $2->is_quoted), -1);
@@ -9603,7 +9606,7 @@ TypedTableElement:
 			| TableConstraint	 				{ $$ = $1; }
 		;
 
-ColIdForTableElement:	IDENT				{ $$ = $1->str; }
+ColIdForTableElement:	DOLPHINIDENT				{ $$ = $1->str; }
 			| unreserved_keyword_without_key		{ $$ = pstrdup($1); }
 			| col_name_keyword				{ $$ = pstrdup($1); }
 		;
@@ -10483,7 +10486,7 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
-			| UNIQUE USING IDENT '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
+			| UNIQUE USING DOLPHINIDENT '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
@@ -10503,7 +10506,7 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}	
-			| UNIQUE USING IDENT '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
+			| UNIQUE USING DOLPHINIDENT '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
@@ -10605,7 +10608,7 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;	
 				}
-			| UNIQUE index_key_opt USING IDENT '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
+			| UNIQUE index_key_opt USING DOLPHINIDENT '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
@@ -10625,7 +10628,7 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
-			| UNIQUE index_key_opt USING IDENT '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
+			| UNIQUE index_key_opt USING DOLPHINIDENT '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
@@ -10700,7 +10703,7 @@ ConstraintElem:
 					n->constraintOptions = $5;
 					$$ = (Node *)n;
 				}
-			| PRIMARY KEY USING IDENT '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
+			| PRIMARY KEY USING DOLPHINIDENT '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
@@ -10720,7 +10723,7 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
-			| PRIMARY KEY USING IDENT '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
+			| PRIMARY KEY USING DOLPHINIDENT '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
@@ -10876,7 +10879,7 @@ ConstraintElem:
 		;
 
 unique_name:		  
-			IDENT                           			{ $$ = downcase_str($1->str, $1->is_quoted); }
+			DOLPHINIDENT                           			{ $$ = downcase_str($1->str, $1->is_quoted); }
 			| unreserved_keyword_without_key			{ $$ = downcase_str(pstrdup($1), false); }
 			| col_name_keyword              			{ $$ = downcase_str(pstrdup($1), false); }
 			| PROXY                         			{ $$ = downcase_str(pstrdup($1), false); }			
@@ -18655,7 +18658,7 @@ access_method_clause:
 		;
 
 access_method_clause_without_keyword:
-			USING IDENT								{ $$ = downcase_str($2->str, $2->is_quoted); }
+			USING DOLPHINIDENT								{ $$ = downcase_str($2->str, $2->is_quoted); }
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
 
@@ -21410,7 +21413,7 @@ dolphin_flow_control:
 					$3->bodySrc = result;
 					$$ = $3;
 				}
-			| IDENT LABEL_REPEAT flow_control_func_body
+			| DOLPHINIDENT LABEL_REPEAT flow_control_func_body
 				{
 					/* check whether function body has RETURN */
 					if (!$3->hasReturn) {
@@ -21436,7 +21439,7 @@ dolphin_flow_control:
 					$3->bodySrc = result;
 					$$ = $3;
 				}
-			| IDENT LABEL_LOOP flow_control_func_body
+			| DOLPHINIDENT LABEL_LOOP flow_control_func_body
 				{
 					/* check whether function body has RETURN */
 					if (!$3->hasReturn) {
@@ -21462,7 +21465,7 @@ dolphin_flow_control:
 					$3->bodySrc = result;
 					$$ = $3;
 				}
-			| IDENT LABEL_WHILE flow_control_func_body
+			| DOLPHINIDENT LABEL_WHILE flow_control_func_body
 				{
 					/* check whether function body has RETURN */
 					if (!$3->hasReturn) {
@@ -21498,7 +21501,7 @@ dolphin_flow_control:
 				}
 
 opt_label:
-			IDENT ':'
+			DOLPHINIDENT ':'
 			{
 				int rc = EOK;
 				int ident_len = strlen($1->str);
@@ -30451,10 +30454,7 @@ SimpleTypename:
  * reduce/reduce conflicts against function names.
  */
 ConstTypename:
-			Numeric									{ $$ = $1; }
-			| ConstBit								{ $$ = $1; }
-			| ConstCharacter						{ $$ = $1; }
-			| PreciseConstDatetime					{ $$ = $1; }
+			NumericNoConflict						{ $$ = $1; }
 			| ConstSet								{ $$ = $1; }
 		;
 
@@ -30543,30 +30543,12 @@ opt_unsigned:		%prec UMINUS
 		| ZEROFILL
 		;
 
-/*
- * SQL92 numeric data types
- */
-Numeric:	INT_P opt_type_modifiers field_unsigned
-				{
-					if ($3) {
-						$$ = SystemTypeName("uint4");
-						$$->location = @1;
-					} else {
-					$$ = SystemTypeName("int4");
-					$$->location = @1;
-				}
-				}
-			| INTEGER
-				{
-					$$ = SystemTypeName("int4");
-					$$->location = @1;
-				}
-			| INTEGER unsigned_list
+NumericNoConflict:	INT_P unsigned_list
 				{
 					$$ = SystemTypeName("uint4");
 					$$->location = @1;
 				}
-			|  INTEGER '(' expr_list ')' field_unsigned
+			| INT_P '(' expr_list ')' field_unsigned
 				{
 					if ($5) {
 						$$ = SystemTypeName("uint4");
@@ -30576,20 +30558,44 @@ Numeric:	INT_P opt_type_modifiers field_unsigned
 						$$->location = @1;
 					}
 				}
-			| TINYINT opt_type_modifiers field_unsigned 
+			| INTEGER unsigned_list
 				{
-					if ($3) {
-						$$ = SystemTypeName("uint1");
-						$$->location = @2;
-					} else {
-						$$ = SystemTypeName("int1");
+					$$ = SystemTypeName("uint4");
 					$$->location = @1;
 				}
-				}
-
-			| SMALLINT opt_type_modifiers field_unsigned
+			| INTEGER '(' expr_list ')' field_unsigned
 				{
-					if ($3) {
+					if ($5) {
+						$$ = SystemTypeName("uint4");
+						$$->location = @1;
+					} else {
+						$$ = SystemTypeName("int4");
+						$$->location = @1;
+					}
+				}
+			| TINYINT unsigned_list 
+				{
+					$$ = SystemTypeName("uint1");
+					$$->location = @1;
+				}
+			| TINYINT '(' expr_list ')' field_unsigned 
+				{
+					if ($5) {
+						$$ = SystemTypeName("uint1");
+						$$->location = @1;
+					} else {
+						$$ = SystemTypeName("int1");
+						$$->location = @1;
+					}
+				}
+			| SMALLINT unsigned_list
+				{
+					$$ = SystemTypeName("uint2");
+					$$->location = @1;
+				}
+			| SMALLINT '(' expr_list ')' field_unsigned
+				{
+					if ($5) {
 						$$ = SystemTypeName("uint2");
 						$$->location = @1;
 					} else {
@@ -30597,19 +30603,29 @@ Numeric:	INT_P opt_type_modifiers field_unsigned
 						$$->location = @1;
 					}
 				}
-			| MEDIUMINT opt_type_modifiers field_unsigned
+			| MEDIUMINT unsigned_list
 				{
-					if ($3) {
+					$$ = SystemTypeName("uint4");
+					$$->location = @1;
+				}
+			| MEDIUMINT '(' expr_list ')' field_unsigned
+				{
+					if ($5) {
 						$$ = SystemTypeName("uint4");
 						$$->location = @1;
 					} else {
 						$$ = SystemTypeName("int4");
+						$$->location = @1;
+					}
+				}
+			| BIGINT unsigned_list
+				{
+					$$ = SystemTypeName("uint8");
 					$$->location = @1;
 				}
-				}
-			| BIGINT opt_type_modifiers field_unsigned
+			| BIGINT '(' expr_list ')' field_unsigned
 				{
-					if ($3) {
+					if ($5) {
 						$$ = SystemTypeName("uint8");
 						$$->location = @1;
 					} else {
@@ -30617,29 +30633,14 @@ Numeric:	INT_P opt_type_modifiers field_unsigned
 						$$->location = @1;
 					}
 				}
-			| REAL
-				{
-					$$ = SystemTypeName("float4");
-					$$->location = @1;
-				}
 			| REAL dolphin_float
 				{
 					$$ = $2;
 					$$->location = @1;
 				}
-			| FLOAT_P opt_float
+			| FLOAT_P opt_float_noempty
 				{
 					$$ = $2;
-					$$->location = @1;
-				}
-			| BINARY_DOUBLE
-				{
-					$$ = SystemTypeName("float8");
-					$$->location = @1;
-				}
-			| BINARY_INTEGER
-				{
-					$$ = SystemTypeName("int4");
 					$$->location = @1;
 				}
 			| DOUBLE_P PRECISION
@@ -30652,54 +30653,133 @@ Numeric:	INT_P opt_type_modifiers field_unsigned
 					$$ = $3;
 					$$->location = @1;
 				}
-			| DECIMAL_P opt_type_modifiers
+			| DECIMAL_P '(' expr_list ')'
+				{
+					$$ = SystemTypeName("numeric");
+					$$->typmods = $3;
+					$$->location = @1;
+				}
+			| NUMBER_P '(' expr_list ')'
+				{
+					$$ = SystemTypeName("numeric");
+					$$->typmods = $3;
+					$$->location = @1;
+				}
+			| DEC '(' expr_list ')'
+				{
+					$$ = SystemTypeName("numeric");			
+					$$->typmods = $3;
+					$$->location = @1;
+				}
+			| NUMERIC '(' expr_list ')'
+				{
+					$$ = SystemTypeName("numeric");			
+					$$->typmods = $3;
+					$$->location = @1;
+				}
+			| FIXED_P '(' expr_list ')'
+				{
+					$$ = SystemTypeName("numeric");
+					$$->typmods = $3;
+					$$->location = @1;
+				}
+		;
+
+/*
+ * SQL92 numeric data types
+ */
+Numeric:	NumericNoConflict { $$ = $1; }
+			| INT_P
+				{
+					$$ = SystemTypeName("int4");
+					$$->location = @1;
+				}
+			| INTEGER
+				{
+					$$ = SystemTypeName("int4");
+					$$->location = @1;
+				}
+			| TINYINT
+				{
+					$$ = SystemTypeName("int1");
+					$$->location = @1;
+				}
+			| SMALLINT
+				{
+					$$ = SystemTypeName("int2");
+					$$->location = @1;
+				}
+			| MEDIUMINT
+				{
+					$$ = SystemTypeName("int4");
+					$$->location = @1;
+				}
+			| BIGINT
+				{
+					$$ = SystemTypeName("int8");
+					$$->location = @1;
+				}
+			| REAL
+				{
+					$$ = SystemTypeName("float4");
+					$$->location = @1;
+				}
+			| FLOAT_P
+				{
+					/* for B_FORMAT compatibility, float refers to float4 */
+					$$ = SystemTypeName("float4");
+					$$->location = @1;
+				}
+			| BINARY_DOUBLE
+				{
+					$$ = SystemTypeName("float8");
+					$$->location = @1;
+				}
+			| BINARY_INTEGER
+				{
+					$$ = SystemTypeName("int4");
+					$$->location = @1;
+				}
+			| DECIMAL_P
 				{
 					$$ = SystemTypeName("numeric");
 					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
-					if ($2 == NULL) {
-						$2 = list_make1(makeIntConst(10, -1));
-						$2 = lappend($2, makeIntConst(0, -1));  
-					}
-					$$->typmods = $2;
+					List* tmp = list_make1(makeIntConst(10, -1));
+					tmp = lappend(tmp, makeIntConst(0, -1));  
+					$$->typmods = tmp;
 					$$->location = @1;
 				}
-			| NUMBER_P opt_type_modifiers
+			| NUMBER_P
 				{
 					$$ = SystemTypeName("numeric");
-					$$->typmods = $2;
+					$$->typmods = NULL;
 					$$->location = @1;
 				}
-			| DEC opt_type_modifiers
-				{
-					$$ = SystemTypeName("numeric");
-					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
-					if ($2 == NULL) {
-						$2 = list_make1(makeIntConst(10, -1));
-						$2 = lappend($2, makeIntConst(0, -1));  
-					}					
-					$$->typmods = $2;
-					$$->location = @1;
-				}
-			| NUMERIC opt_type_modifiers
+			| DEC
 				{
 					$$ = SystemTypeName("numeric");
 					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
-					if ($2 == NULL) {
-						$2 = list_make1(makeIntConst(10, -1));
-						$2 = lappend($2, makeIntConst(0, -1));  
-					}					
-					$$->typmods = $2;
+					List* tmp = list_make1(makeIntConst(10, -1));
+					tmp = lappend(tmp, makeIntConst(0, -1));  
+					$$->typmods = tmp;
 					$$->location = @1;
 				}
-			| FIXED_P opt_type_modifiers
+			| NUMERIC
 				{
 					$$ = SystemTypeName("numeric");
 					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
-					if ($2 == NULL) {
-						$2 = list_make1(makeIntConst(10, -1));
-						$2 = lappend($2, makeIntConst(0, -1));  
-					}
-					$$->typmods = $2;
+					List* tmp = list_make1(makeIntConst(10, -1));
+					tmp = lappend(tmp, makeIntConst(0, -1));  
+					$$->typmods = tmp;
+					$$->location = @1;
+				}
+			| FIXED_P
+				{
+					$$ = SystemTypeName("numeric");
+					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
+					List* tmp = list_make1(makeIntConst(10, -1));
+					tmp = lappend(tmp, makeIntConst(0, -1));  
+					$$->typmods = tmp;
 					$$->location = @1;
 				}
 			| BOOLEAN_P
@@ -30716,7 +30796,7 @@ dolphin_float: '(' Iconst ',' Iconst ')'
 				}
 		;
 
-opt_float:	'(' Iconst ')'
+opt_float_noempty:	'(' Iconst ')'
 				{
 					/*
 					 * Check FLOAT() precision limits assuming IEEE floating
@@ -30725,6 +30805,9 @@ opt_float:	'(' Iconst ')'
 					$$ = parseFloatTypeByPrecision($2, @2, yyscanner);
 				}
 			| dolphin_float {$$ = $1;}
+		;
+
+opt_float:	opt_float_noempty {$$ = $1;}
 			| /*EMPTY*/
 				{
 					/* for B_FORMAT compatibility, float refers to float4 */
@@ -34984,7 +35067,7 @@ columnref:	DolphinColId
 				{
 					$$ = makeColumnRef($1->str, NIL, @1, yyscanner);
 				}
-			| DolphinColId dolphin_indirection
+			| DolphinColId dolphin_indirection %prec IDENT
 				{
 					List* result = NIL;
 					ListCell* cell = NULL;
@@ -35102,6 +35185,8 @@ dolphin_indirection:
 dolphin_indirection_el:
 			'.' DolphinColLabel
 				{
+					if ($2->is_sconst)
+						ereport(ERROR,(errcode(ERRCODE_SYNTAX_ERROR), errmsg("syntax error at or near \"%s\"", $2->str), parser_errposition(@2)));
 					$$ = $2;
 				}
 			| ORA_JOINOP
@@ -35207,19 +35292,33 @@ target_el:	a_expr AS DolphinColLabel
 			 * as an infix expression, which we accomplish by assigning
 			 * IDENT a precedence higher than POSTFIXOP.
 			 */
-			| a_expr IDENT
+			| a_expr DOLPHINIDENT
 				{
 					$$ = makeNode(ResTarget);
 					$$->name = $2->str;
 					$$->indirection = NIL;
 					$$->val = (Node *)$1;
 					$$->location = @1;
-                                        if (IsConnectByRootIdent($1)) {
-                                           Node* cr = (Node*) makeColumnRef($2->str, NIL, @1, yyscanner);
-                                           Node* n = MakeConnectByRootNode((ColumnRef*) cr, @1);
-                                           $$->name = MakeConnectByRootColName(NULL, $2->str);
-                                           $$->val = (Node*) n;
-                                        }
+					if (IsConnectByRootIdent($1)) {
+						Node* cr = (Node*) makeColumnRef($2->str, NIL, @1, yyscanner);
+						Node* n = MakeConnectByRootNode((ColumnRef*) cr, @1);
+						$$->name = MakeConnectByRootColName(NULL, $2->str);
+						$$->val = (Node*) n;
+					}
+				}
+			| a_expr SCONST
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = $2;
+					$$->indirection = NIL;
+					$$->val = (Node *)$1;
+					$$->location = @1;
+					if (IsConnectByRootIdent($1)) {
+						Node* cr = (Node*) makeColumnRef($2, NIL, @1, yyscanner);
+						Node* n = MakeConnectByRootNode((ColumnRef*) cr, @1);
+						$$->name = MakeConnectByRootColName(NULL, $2);
+						$$->val = (Node*) n;
+					}
 				}
 			| a_expr
 				{
@@ -35491,13 +35590,51 @@ func_name_opt_arg:
 dolphin_func_name_opt_arg:
 						dolphin_func_name
 						/* This rule is never used. */
-						| IDENT BOGUS							{ $$ = NIL; }
+						| DOLPHINIDENT BOGUS							{ $$ = NIL; }
 						/* This rule is never used. */
 						| unreserved_keyword BOGUS				{ $$ = NIL; };
 
 /*
  * Constants
  */
+
+DOLPHINIDENT: IDENT
+				{
+					$$ = $1;
+				}
+			| DB_B_JSON
+				{
+					$$ = CreateDolphinIdent(pstrdup($1), false);
+				}
+			| DB_B_JSONB
+				{
+					$$ = CreateDolphinIdent(pstrdup($1), false);
+				}
+			| DB_B_BOX
+				{
+					$$ = CreateDolphinIdent(pstrdup($1), false);
+				}
+			| DB_B_CIRCLE
+				{
+					$$ = CreateDolphinIdent(pstrdup($1), false);
+				}
+			| DB_B_POLYGON
+				{
+					$$ = CreateDolphinIdent(pstrdup($1), false);
+				}
+			| DB_B_BYTEA
+				{
+					$$ = CreateDolphinIdent(pstrdup($1), false);
+				}
+			| DB_B_TIMETZ
+				{
+					$$ = CreateDolphinIdent(pstrdup($1), false);
+				}
+			| DB_B_TIMESTAMPTZ
+				{
+					$$ = CreateDolphinIdent(pstrdup($1), false);
+				}
+
 AexprConst: Iconst
 				{
 					$$ = makeIntConst($1, @1);
@@ -35523,10 +35660,17 @@ AexprConst: Iconst
 					 */
 					$$ = makeBitStringConst($1, @1);
 				}
-			| dolphin_func_name Sconst
+			| YEAR_P SCONST
 				{
-					/* generic type 'literal' syntax */
-					TypeName *t = makeTypeNameFromNameList($1);
+					char* tmp = downcase_str(pstrdup($1), false);
+					TypeName *t = makeTypeNameFromNameList(list_make1(makeString(tmp)));
+					t->location = @1;
+					$$ = makeStringConstCast($2, @2, t);
+				}
+			| type_func_name_keyword_without_current_schema SCONST
+				{
+					char* tmp = downcase_str(pstrdup($1), false);
+					TypeName *t = makeTypeNameFromNameList(list_make1(makeString(tmp)));
 					t->location = @1;
 					$$ = makeStringConstCast($2, @2, t);
 				}
@@ -35566,6 +35710,418 @@ AexprConst: Iconst
 					t->typmods = $3;
 					t->location = @1;
 					$$ = makeStringConstCast($6, @6, t);
+				}
+			| DB_B_JSON Sconst
+				{
+					TypeName * tmp = SystemTypeName("json");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DB_B_JSONB Sconst
+				{
+					TypeName * tmp = SystemTypeName("jsonb");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DB_B_BOX Sconst
+				{
+					TypeName * tmp = SystemTypeName("box");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DB_B_CIRCLE Sconst
+				{
+					TypeName * tmp = SystemTypeName("circle");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DB_B_POLYGON Sconst
+				{
+					TypeName * tmp = SystemTypeName("polygon");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DB_B_BYTEA Sconst
+				{
+					TypeName * tmp = SystemTypeName("bytea");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DB_B_TIMETZ Sconst
+				{
+					TypeName * tmp = SystemTypeName("timetz");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DB_B_TIMESTAMPTZ Sconst
+				{
+					TypeName * tmp = SystemTypeName("timestamptz");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			/* promote and expand CharacterWithoutLength to AexprConst */
+			| CHARACTER VARYING SCONST
+				{
+					TypeName * tmp = SystemTypeName((char *)("varchar"));
+					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->location = @1;
+					$$ = makeStringConstCast($3, @3, tmp);
+				}
+			| CHARACTER SCONST
+				{
+					TypeName * tmp = SystemTypeName((char *)("bpchar"));
+					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| NVARCHAR SCONST
+				{
+					TypeName * tmp = SystemTypeName((char *)("nvarchar2"));
+					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| NVARCHAR2 SCONST
+				{
+					TypeName * tmp = SystemTypeName((char *)("nvarchar2"));
+					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| NATIONAL VARCHAR SCONST
+				{
+					TypeName * tmp = SystemTypeName((char *)("nvarchar2"));
+					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->location = @1;
+					$$ = makeStringConstCast($3, @3, tmp);
+				}
+			| VARCHAR SCONST
+				{
+					TypeName * tmp = SystemTypeName((char *)("varchar"));
+					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| VARCHAR2 SCONST
+				{
+					TypeName * tmp = SystemTypeName((char *)("varchar"));
+					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| NATIONAL CHARACTER opt_varying SCONST
+				{
+					char* tmp_str = (char *)($3 ? "varchar": "bpchar");
+					TypeName * tmp = SystemTypeName(tmp_str);
+					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->location = @1;
+					$$ = makeStringConstCast($4, @4, tmp);
+				}
+			| NATIONAL CHAR_P opt_varying SCONST
+				{
+					char* tmp_str = (char *)($3 ? "varchar": "bpchar");
+					TypeName * tmp = SystemTypeName(tmp_str);
+					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->location = @1;
+					$$ = makeStringConstCast($4, @4, tmp);
+				}
+			| NCHAR VARYING SCONST
+				{
+					TypeName * tmp = SystemTypeName((char *)("varchar"));
+					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->location = @1;
+					$$ = makeStringConstCast($3, @3, tmp);
+				}
+			| NCHAR SCONST
+				{
+					TypeName * tmp = SystemTypeName((char *)("bpchar"));
+					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| CHAR_P SCONST
+				{
+					TypeName * tmp = SystemTypeName((char *)("bpchar"));
+					/* char defaults to char(1), varchar to no limit */
+					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| CHAR_P VARYING SCONST
+				{
+					TypeName * tmp = SystemTypeName((char *)("varchar"));
+					tmp->location = @1;
+					$$ = makeStringConstCast($3, @3, tmp);
+				}
+			| TEXT_P Sconst
+				{
+					TypeName * tmp = SystemTypeName("text");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			/* promote and expand CharacterWithLength to AexprConst */
+			| character '(' a_expr ')' SCONST
+				{
+					TypeName * tmp = SystemTypeName($1);
+					tmp->typmods = list_make1($3);
+					tmp->location = @1;
+					$$ = makeStringConstCast($5, @5, tmp);
+				}
+			| TEXT_P '(' a_expr ')' SCONST
+				{
+					TypeName * tmp = SystemTypeName("text");
+					tmp->location = @1;
+					$$ = makeStringConstCast($5, @5, tmp);
+				}
+			| CHAR_P '(' a_expr ')' SCONST
+				{
+					// If the type of $3 is not Iconst, an error is reported
+					CheckIconstType($3);
+					TypeName * tmp = SystemTypeName((char *)("bpchar"));
+					tmp->location = @1;
+					tmp->typmods = list_make1($3);
+					$$ = makeStringConstCast($5, @5, tmp);
+				}
+			| CHAR_P VARYING '(' a_expr ')' SCONST
+				{
+					// If the type of $4 is not Iconst, an error is reported
+					CheckIconstType($4);
+					TypeName * tmp = SystemTypeName((char *)("varchar"));
+					tmp->typmods = list_make1($4);
+					tmp->location = @1;
+					$$ = makeStringConstCast($6, @6, tmp);
+				}
+			/* promote and expand PreciseConstDatetime to AexprConst */
+			| TIMESTAMP '(' a_expr ')' SCONST opt_timezone
+				{
+					// If the type of $3 is not Iconst, an error is reported
+					TypeName * tmp = NULL;
+					CheckIconstType($3);
+					if ($6)
+						tmp = SystemTypeName("timestamptz");
+					else
+						tmp = SystemTypeName("timestamp");
+					tmp->typmods = list_make1($3);
+					tmp->location = @1;
+					$$ = makeStringConstCast($5, @5, tmp);
+				}
+			| TIME '(' a_expr ')' SCONST opt_timezone
+				{
+					// If the type of $3 is not Iconst, an error is reported
+					TypeName * tmp = NULL;
+					CheckIconstType($3);
+					if ($6)
+						tmp = SystemTypeName("timetz");
+					else
+						tmp = SystemTypeName("time");
+					tmp->typmods = list_make1($3);
+					tmp->location = @1;
+					$$ = makeStringConstCast($5, @5, tmp);
+				}
+			| TIMESTAMP SCONST
+				{
+					TypeName * tmp = SystemTypeName("timestamp");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| TIMESTAMP WITH_TIME ZONE SCONST
+				{
+					TypeName * tmp = SystemTypeName("timestamptz");
+					tmp->location = @1;
+					$$ = makeStringConstCast($4, @4, tmp);
+				}
+			| TIMESTAMP WITHOUT TIME ZONE SCONST
+				{
+					TypeName * tmp = SystemTypeName("timestamp");
+					tmp->location = @1;
+					$$ = makeStringConstCast($5, @5, tmp);
+				}
+			| TIME SCONST
+				{
+					TypeName * tmp = SystemTypeName("time");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| TIME WITH_TIME ZONE SCONST
+				{
+					TypeName * tmp = SystemTypeName("timetz");
+					tmp->location = @1;
+					$$ = makeStringConstCast($4, @4, tmp);
+				}
+			| TIME WITHOUT TIME ZONE SCONST
+				{
+					TypeName * tmp = SystemTypeName("time");
+					tmp->location = @1;
+					$$ = makeStringConstCast($5, @5, tmp);
+				}
+			| DATE_P SCONST
+				{
+					TypeName * tmp = NULL;
+					if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
+					{
+						tmp = SystemTypeName("timestamp");
+						tmp->typmods = list_make1(makeIntConst(0,-1));
+					}
+					else
+						tmp = SystemTypeName("date");
+					tmp->location = @1;
+					tmp->end_location = @1 + DATE_LEN;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| SMALLDATETIME SCONST
+				{
+					TypeName * tmp = SystemTypeName("smalldatetime");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DATETIME '(' Iconst ')' SCONST
+			    {
+					TypeName * tmp = SystemTypeName("timestamp");
+					tmp->typmods = list_make1(makeIntConst($3,@3));
+					tmp->location = @1;
+					$$ = makeStringConstCast($5, @5, tmp);
+			    }
+			| DATETIME SCONST
+			    {
+					TypeName * tmp = SystemTypeName("timestamp");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+			    }
+			/* promote and expand Numeric to AexprConst */
+			| INT_P SCONST
+				{
+					TypeName * tmp = SystemTypeName("int4");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| INTEGER SCONST
+				{
+					TypeName * tmp = SystemTypeName("int4");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| TINYINT SCONST
+				{
+					TypeName * tmp = SystemTypeName("int1");
+					tmp->location = @2;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| SMALLINT SCONST
+				{
+					TypeName * tmp = SystemTypeName("int2");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| MEDIUMINT SCONST
+				{
+					TypeName * tmp = SystemTypeName("int4");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| BIGINT SCONST
+				{
+					TypeName * tmp = SystemTypeName("int8");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| REAL SCONST
+				{
+					TypeName * tmp = SystemTypeName("float4");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| FLOAT_P SCONST
+				{
+					/* for B_FORMAT compatibility, float refers to float4 */
+					TypeName * tmp = SystemTypeName("float4");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| BINARY_DOUBLE SCONST
+				{
+					TypeName * tmp = SystemTypeName("float8");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| BINARY_INTEGER SCONST
+				{
+					TypeName * tmp = SystemTypeName("int4");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DECIMAL_P SCONST
+				{
+					TypeName * tmp = SystemTypeName("numeric");
+					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
+					List* tmplist = list_make1(makeIntConst(10, -1));
+					tmplist = lappend(tmplist, makeIntConst(0, -1));  
+					tmp->typmods = tmplist;
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| NUMBER_P SCONST
+				{
+					TypeName * tmp = SystemTypeName("numeric");
+					tmp->typmods = NULL;
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DEC SCONST
+				{
+					TypeName * tmp = SystemTypeName("numeric");
+					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
+					List* tmplist = list_make1(makeIntConst(10, -1));
+					tmplist = lappend(tmplist, makeIntConst(0, -1));  
+					tmp->typmods = tmplist;
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| NUMERIC SCONST
+				{
+					TypeName * tmp = SystemTypeName("numeric");
+					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
+					List* tmplist = list_make1(makeIntConst(10, -1));
+					tmplist = lappend(tmplist, makeIntConst(0, -1));  
+					tmp->typmods = tmplist;
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| FIXED_P SCONST
+				{
+					TypeName * tmp = SystemTypeName("numeric");
+					/* for B_FORMAT compatibility, default (p, s) of decimal is (10, 0) */
+					List* tmplist = list_make1(makeIntConst(10, -1));
+					tmplist = lappend(tmplist, makeIntConst(0, -1));  
+					tmp->typmods = tmplist;
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| BOOLEAN_P SCONST
+				{
+					TypeName * tmp = SystemTypeName("bool");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| BIT opt_varying '(' expr_list ')' SCONST
+				{
+					char *typname = (char *)($2 ? "varbit" : "bit");
+					TypeName * tmp = SystemTypeName(typname);
+					tmp->typmods = $4;
+					tmp->location = @1;
+					$$ = makeStringConstCast($6, @6, tmp);
+				}
+			| BIT VARYING SCONST
+				{
+					TypeName * tmp = SystemTypeName("varbit");
+					tmp->location = @1;
+					$$ = makeStringConstCast($3, @3, tmp);
+				}
+			| BIT SCONST
+				{
+					TypeName * tmp = SystemTypeName("bit");
+					tmp->typmods = list_make1(makeIntConst(1, -1));
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
 				}
 			| ConstTypename Sconst
 				{
@@ -35678,7 +36234,7 @@ DolphinRoleId:		DolphinRoleIdWithOutCurrentUser			{ $$ = $1; }
 					| CURRENT_USER  opt_bracket				{ $$ = CreateDolphinIdent(GetUserNameFromId(GetUserId()), false); }
 		;
 
-DolphinRoleIdWithOutCurrentUser:		IDENT						{ $$ = $1; }
+DolphinRoleIdWithOutCurrentUser:		DOLPHINIDENT						{ $$ = $1; }
 										| unreserved_keyword		{ $$ = CreateDolphinIdent(pstrdup($1), false); }
 										| col_name_keyword			{ $$ = CreateDolphinIdent(pstrdup($1), false); }
  		;
@@ -35687,7 +36243,7 @@ RoleId:		RoleIdWithOutCurrentUser			{ $$ = $1; }
 			| CURRENT_USER  opt_bracket			{ $$ = GetUserNameFromId(GetUserId()); }
 		;
 
-RoleIdWithOutCurrentUser:		IDENT						{ $$ = GetDolphinObjName($1->str, $1->is_quoted); }
+RoleIdWithOutCurrentUser:		DOLPHINIDENT						{ $$ = GetDolphinObjName($1->str, $1->is_quoted); }
 								| unreserved_keyword		{ $$ = GetDolphinObjName(pstrdup($1), false); }
 								| col_name_keyword			{ $$ = GetDolphinObjName(pstrdup($1), false); }
 		;
@@ -35710,18 +36266,18 @@ SignedIconst: Iconst								{ $$ = $1; }
 
 /* Column identifier --- names that can be column, table, etc names.
  */
-ColId:		IDENT									{ $$ = downcase_str($1->str, $1->is_quoted); }
+ColId:		DOLPHINIDENT									{ $$ = downcase_str($1->str, $1->is_quoted); }
 			| unreserved_keyword					{ $$ = downcase_str(pstrdup($1), false); }
 			| col_name_keyword						{ $$ = downcase_str(pstrdup($1), false); }
 		;
 
-DolphinColId:		IDENT							{ $$ = MakeDolphinStringByChar($1->str, $1->is_quoted); }
-					| unreserved_keyword			{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
-					| col_name_keyword				{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
+DolphinColId:		DOLPHINIDENT							{ $$ = MakeDolphinStringByChar($1->str, $1->is_quoted); }
+					| unreserved_keyword %prec IDENT { $$ = MakeDolphinStringByChar(pstrdup($1), false); }
+					| col_name_keyword	 			{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
 		;
 
 DolphinColColId:
-			IDENT								{ $$ = $1->str; }
+			DOLPHINIDENT								{ $$ = $1->str; }
 					| unreserved_keyword			{ $$ = pstrdup($1); }
 					| col_name_keyword				{ $$ = pstrdup($1); }
 			;
@@ -35733,9 +36289,9 @@ PrivilegeColId:         normal_ident                                            
 
 /* Type/function identifier --- names that can be type or function names.
  */
-type_function_name:	normal_ident							{ $$ = $1; }
+type_function_name:	normal_ident					{ $$ = $1; }
 			| unreserved_keyword					{ $$ = downcase_str(pstrdup($1), false); }
-			| type_func_name_keyword				{ $$ = downcase_str(pstrdup($1), false); }
+			| type_func_name_keyword            	{ $$ = downcase_str(pstrdup($1), false); }
 		;
 
 /* Column label --- allowed labels in "AS" clauses.
@@ -35801,7 +36357,7 @@ delimiter_str_name: ColId_or_Sconst
 /*
  * Column lable of dolphin type
  */
-DolphinColLabel:	IDENT									{ $$ = MakeDolphinStringByChar($1->str, $1->is_quoted); }
+DolphinColLabel:	DOLPHINIDENT									{ $$ = MakeDolphinStringByChar($1->str, $1->is_quoted); }
 					| unreserved_keyword					{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
 					| col_name_keyword						{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
 					| type_func_name_keyword				{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
@@ -35817,6 +36373,11 @@ DolphinColLabel:	IDENT									{ $$ = MakeDolphinStringByChar($1->str, $1->is_qu
 												parser_errposition(@1)));
 							}
 							$$ = MakeDolphinStringByChar(pstrdup($1), false);
+						}
+					| SCONST
+						{
+							$$ = MakeDolphinStringByChar(pstrdup($1), false);
+							$$->is_sconst = true;
 						}
 		;
 
@@ -36378,7 +36939,7 @@ unreserved_keyword_without_key:
 			| WRITE
 			| XML_P
 			| YEAR_MONTH_P
-			| YEAR_P
+			| YEAR_P %prec IDENT
 			| YES_P
 			| ZEROFILL
 			| ZONE
@@ -36402,10 +36963,10 @@ unreserved_keyword_without_key:
  */
 col_name_keyword:
 			  col_name_keyword_nonambiguous { $$ = $1; }
-			| CHAR_P
+			| CHAR_P %prec IDENT
 			| COALESCE
 			| CONVERT
-			| DATE_P
+			| DATE_P %prec IDENT
 			| DB_B_FORMAT
 			| DB_B_JSOBJ
 			| EXTRACT
@@ -36417,15 +36978,15 @@ col_name_keyword:
 			| LOCATE
 			| MID
 			| NULLIF
-			| NVARCHAR
+			| NVARCHAR %prec IDENT
 			| NVL
 			| OVERLAY
 			| POSITION
 			| SUBSTR
 			| SUBSTRING
 			| TEXT_P
-			| TIME
-			| TIMESTAMP
+			| TIME %prec IDENT
+			| TIMESTAMP %prec IDENT
 			| TIMESTAMPDIFF
 			| TREAT
 			| TRIM
@@ -36447,63 +37008,57 @@ col_name_keyword:
 col_name_keyword_nonambiguous:
 			  AUTHID
 			| BETWEEN
-			| BIGINT
+			| BIGINT %prec IDENT
 			| BINARY
-			| BINARY_DOUBLE
-			| BINARY_INTEGER
-			| BIT
-			| BOOLEAN_P
+			| BINARY_DOUBLE %prec IDENT
+			| BINARY_INTEGER %prec IDENT
+			| BIT %prec IDENT
+			| BOOLEAN_P %prec IDENT
 			| BUCKETCNT
 			| BYTEAWITHOUTORDER
 			| BYTEAWITHOUTORDERWITHEQUAL
-			| CHARACTER
-			| DATETIME
-			| DEC
-			| DECIMAL_P
+			| CHARACTER %prec IDENT
+			| DATETIME %prec IDENT
+			| DEC %prec IDENT
+			| DECIMAL_P %prec IDENT
 			| DECODE
 			| EXISTS
-			| FIXED_P
-			| FLOAT_P
+			| FIXED_P %prec IDENT
+			| FLOAT_P %prec IDENT
 			| GROUPING_P
 			| IF_P
 			| INOUT
-			| INT_P
-			| INTEGER
-			| MEDIUMINT
+			| INT_P %prec IDENT
+			| INTEGER %prec IDENT
+			| MEDIUMINT %prec IDENT
 			| NATIONAL
-			| NCHAR
+			| NCHAR %prec IDENT
 			| NONE
-			| NUMBER_P
-			| NUMERIC
-			| NVARCHAR2
+			| NUMBER_P %prec IDENT
+			| NUMERIC %prec IDENT
+			| NVARCHAR2 %prec IDENT
 			| OUT_P
 			| PRECISION
-			| REAL
+			| REAL %prec IDENT
 			| ROW
 			| SETOF
 			| SIGNED
-			| SMALLDATETIME
-			| SMALLINT
-			| TINYINT
+			| SMALLDATETIME %prec IDENT
+			| SMALLINT %prec IDENT
+			| TINYINT %prec IDENT
 			| UNSIGNED
 			| VALUES
 			| VARBINARY
-			| VARCHAR
-			| VARCHAR2
+			| VARCHAR %prec IDENT
+			| VARCHAR2 %prec IDENT
 			| XMLATTRIBUTES
 		;
 
-/* Type/function identifier --- keywords that can be type or function names.
- *
- * Most of these are keywords that are used as operators in expressions;
- * in general such keywords can't be column names because they would be
- * ambiguous with variables, but they are unambiguous as function identifiers.
- *
- * Do not include POSITION, SUBSTRING, etc here since they have explicit
- * productions in a_expr to support the goofy SQL9x argument syntax.
- * - thomas 2000-11-28
+/* current_schema can't be included in the rule 'type_func_name_keyword_without_current_schema sconst',
+ * because of the reduction/reduction conflict. 
+ * So current_schema will be used only as alias name in the scenario like 'select current_schema 'alias_name';'
  */
-type_func_name_keyword:
+type_func_name_keyword_without_current_schema:
 			 AGAINST
 			| AUTHORIZATION
 			| COLLATION
@@ -36511,7 +37066,6 @@ type_func_name_keyword:
 			| CONCURRENTLY
 			| CROSS
 			| CSN
-			| CURRENT_SCHEMA
 			| DELTAMERGE
 			| DIV
 			| FREEZE
@@ -36537,6 +37091,21 @@ type_func_name_keyword:
 			| TIMECAPSULE
 			| VERBOSE
 			| XOR
+		;
+
+/* Type/function identifier --- keywords that can be type or function names.
+ *
+ * Most of these are keywords that are used as operators in expressions;
+ * in general such keywords can't be column names because they would be
+ * ambiguous with variables, but they are unambiguous as function identifiers.
+ *
+ * Do not include POSITION, SUBSTRING, etc here since they have explicit
+ * productions in a_expr to support the goofy SQL9x argument syntax.
+ * - thomas 2000-11-28
+ */
+type_func_name_keyword:
+			type_func_name_keyword_without_current_schema
+			| CURRENT_SCHEMA
 		;
 
 /* Reserved keyword --- these keywords are usable only as a ColLabel.
@@ -36653,7 +37222,7 @@ reserved_keyword:
 		;
 
 /* normal_ident */
-normal_ident:		IDENT							{ $$ = downcase_str($1->str, $1->is_quoted); };
+normal_ident:		DOLPHINIDENT							{ $$ = downcase_str($1->str, $1->is_quoted); };
 
 %%
 
@@ -39310,7 +39879,7 @@ static char* downcase_str(char* ident, bool is_quoted)
 
 static DolphinString* MakeDolphinString(char* str, Node* node, bool is_quoted)
 {
-	DolphinString* result = (DolphinString*)palloc(sizeof(DolphinString));
+	DolphinString* result = (DolphinString*)palloc0(sizeof(DolphinString));
 	result->str = str;
 	result->node = node;
 	result->is_quoted = is_quoted;

@@ -631,7 +631,7 @@ set dolphin.b_compatibility_mode = 1;
 select 'a' like 'A';
 ---正常报错，like右边缺参数
 select 'a' like; 
----正常报错，like右边参数过多
+---不报错，like右边最后一个字符被当作别名
 select 'a' like 'A' 'a';
 
 
