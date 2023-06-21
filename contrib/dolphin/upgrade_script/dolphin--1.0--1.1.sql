@@ -538,10 +538,10 @@ CREATE CAST(char AS timestamptz) WITH FUNCTION bpchar_timestamptz(char) AS IMPLI
 CREATE OR REPLACE FUNCTION pg_catalog.varchar_timestamptz (varchar) RETURNS timestamptz LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'varchar_timestamptz';
 CREATE CAST(varchar AS timestamptz) WITH FUNCTION varchar_timestamptz(varchar) AS IMPLICIT;
 
-CREATE OR REPLACE FUNCTION pg_catalog.bpchar_time (char) RETURNS time LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as timestamptz) as time)';
+CREATE OR REPLACE FUNCTION pg_catalog.bpchar_time (char) RETURNS time LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as text) as time)';
 CREATE CAST(char as time) WITH FUNCTION bpchar_time(char) AS IMPLICIT;
 
-CREATE OR REPLACE FUNCTION pg_catalog.varchar_time (varchar) RETURNS time LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as timestamptz) as time)';
+CREATE OR REPLACE FUNCTION pg_catalog.varchar_time (varchar) RETURNS time LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as text) as time)';
 CREATE CAST(varchar as time) WITH FUNCTION varchar_time(varchar) AS IMPLICIT;
 
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_bpchar (timestamp without time zone) RETURNS char LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_bpchar';
