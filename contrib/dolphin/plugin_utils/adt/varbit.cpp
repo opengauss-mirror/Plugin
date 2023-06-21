@@ -419,7 +419,6 @@ Datum bit(PG_FUNCTION_ARGS)
 {
     VarBit* arg = PG_GETARG_VARBIT_P(0);
     int32 len = PG_GETARG_INT32(1);
-    bool isExplicit = PG_GETARG_BOOL(2);
     VarBit* result = NULL;
     int rlen;
     errno_t ss_rc = 0;
@@ -444,6 +443,7 @@ Datum bit(PG_FUNCTION_ARGS)
         PG_RETURN_VARBIT_P(result);
     }
 #else
+    bool isExplicit = PG_GETARG_BOOL(2);
     if (!isExplicit && !fcinfo->can_ignore) {
         ereport(ERROR,
             (errcode(ERRCODE_STRING_DATA_LENGTH_MISMATCH),
@@ -466,7 +466,7 @@ Datum bit(PG_FUNCTION_ARGS)
                                             Int32GetDatum(shift), BoolGetDatum(false));
             ss_rc = memcpy_s(VARBITS(result), min_size, VARBITS((VarBit*)cpy), min_size);
             securec_check(ss_rc, "\0", "\0");
-            pfree_ext(cpy);
+            pfree((void*)cpy);
         }
     } else {
         if (min_size > 0) {

@@ -22254,7 +22254,7 @@ Datum bit_count_text(PG_FUNCTION_ARGS)
     int128 num = 0;
     bool positive = true;
     bool error = false;
-    for (int i = 0; i < strlen(data); i++) {
+    for (int i = 0; i < (int)strlen(data); i++) {
         c = data[i];
         if (c >= '0' && c <= '9') {
             num *= base;

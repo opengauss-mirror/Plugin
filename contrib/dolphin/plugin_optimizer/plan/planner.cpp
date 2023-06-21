@@ -327,13 +327,17 @@ static bool walk_plan(Plan* plantree, PlannerInfo* root);
 static bool walk_normal_plan(Plan* plantree, PlannerInfo* root);
 static void walk_set_plan(Plan* plantree, PlannerInfo* root);
 static Plan* insert_gather_node(Plan* child, PlannerInfo* root);
+#ifdef ENABLE_MULTIPLE_NODES
 static bool has_dfs_node(Plan* plantree, PlannerGlobal* glob);
 static Plan* try_accelerate_plan(Plan* plantree, PlannerInfo* root, PlannerGlobal* glob);
+#endif
 static Plan* try_deparse_agg(Plan* plan, PlannerInfo* root, PlannerGlobal* glob);
 static bool dfs_node_exists(Plan* plan);
 static bool is_dfs_node(Plan* plan);
 static void add_metadata(Plan* plan, PlannerInfo* root);
+#ifdef ENABLE_MULTIPLE_NODES
 static bool precheck_before_accelerate();
+#endif
 static bool is_pushdown_node(Plan *plan);
 static bool estimate_acceleration_cost(Plan *plan);
 #ifdef ENABLE_MULTIPLE_NODES
@@ -13961,7 +13965,7 @@ static bool walk_normal_plan(Plan* plan, PlannerInfo* root)
 
     return false;
 }
-
+#ifdef ENABLE_MULTIPLE_NODES
 /*
  * @Description: return true if HDFS/OBS foreign scan node found.
  *
@@ -14158,6 +14162,7 @@ static Plan* try_accelerate_plan(Plan* plan, PlannerInfo* root, PlannerGlobal* g
 
     return plan;
 }
+#endif
 
 bool enable_check_implicit_cast()
 {
