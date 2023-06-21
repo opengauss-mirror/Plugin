@@ -234,5 +234,14 @@ select json_array_insert('[1]', '$[0]', 341522654875451.123456789012345678901234
  [341522654875451.12345678901234567890123456789012345678901234567890, 1]
 (1 row)
 
+create table test_array(v_log_table character varying[]);
+insert into test_array values(ARRAY['log1', 'log2']);
+select * from test_array;
+ v_log_table 
+-------------
+ {log1,log2}
+(1 row)
+
+drop table if exists test_array;
 drop schema test_json_array_insert cascade;
 reset current_schema;
