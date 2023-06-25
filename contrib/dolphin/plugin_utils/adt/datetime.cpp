@@ -5267,6 +5267,10 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type,
                 i++;
                 break;
             }
+#ifdef DOLPHIN
+            else
+                continue;
+#endif
         }
         while (str != end &&
                (ispunct(*str) || isspace(*str))) {

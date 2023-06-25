@@ -150,7 +150,12 @@ Datum year_in(PG_FUNCTION_ARGS)
     if (tmp == 0 && year_len != YEAR4_LEN) {
         tmp = 2000;
     }
-    PG_RETURN_YEARADT(int32_to_YearADT(tmp));
+    YearADT result = int32_to_YearADT(tmp);
+    /* year(2) */
+    if (PG_GETARG_INT32(2) == YEAR2_LEN) {
+        YEAR_CONVERT(result);
+    }
+    PG_RETURN_YEARADT(result);
 }
 
 /* year_out()
