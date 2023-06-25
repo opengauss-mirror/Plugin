@@ -3247,4 +3247,26 @@ Datum dolphin_float4div(PG_FUNCTION_ARGS)
     CHECKFLOATVAL(result, isinf(arg1) || isinf(arg2), arg1 == 0);
     PG_RETURN_FLOAT8(result);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(bool_float4);
+extern "C" DLL_PUBLIC Datum bool_float4(PG_FUNCTION_ARGS);
+Datum bool_float4(PG_FUNCTION_ARGS)
+{
+    if (PG_GETARG_BOOL(0) == false) {
+        PG_RETURN_FLOAT4(0);
+    } else {
+        PG_RETURN_FLOAT4(1);
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bool_float8);
+extern "C" DLL_PUBLIC Datum bool_float8(PG_FUNCTION_ARGS);
+Datum bool_float8(PG_FUNCTION_ARGS)
+{
+    if (PG_GETARG_BOOL(0) == false) {
+        PG_RETURN_FLOAT8(0);
+    } else {
+        PG_RETURN_FLOAT8(1);
+    }
+}
 #endif

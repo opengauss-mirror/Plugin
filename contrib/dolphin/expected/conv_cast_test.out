@@ -503,5 +503,67 @@ select cast(b'11111111111111111111111111111111111111111111111111111111111111111'
 ERROR:  bigint out of range
 CONTEXT:  referenced column: int8
 
+select 'true'::bool::bit;
+ bit 
+-----
+ 1
+(1 row)
+
+select 'true'::bool::bit(10);
+    bit     
+------------
+ 0000000001
+(1 row)
+
+select 'true'::bool::bit(64);
+                               bit                                
+------------------------------------------------------------------
+ 0000000000000000000000000000000000000000000000000000000000000001
+(1 row)
+
+select 'true'::bool::float4;
+ float4 
+--------
+      1
+(1 row)
+
+select 'true'::bool::float8;
+ float8 
+--------
+      1
+(1 row)
+
+
+select 'false'::bool::bit;
+ bit 
+-----
+ 0
+(1 row)
+
+select 'false'::bool::bit(10);
+    bit     
+------------
+ 0000000000
+(1 row)
+
+select 'false'::bool::bit(64);
+                               bit                                
+------------------------------------------------------------------
+ 0000000000000000000000000000000000000000000000000000000000000000
+(1 row)
+
+select 'false'::bool::float4;
+ float4 
+--------
+      0
+(1 row)
+
+select 'false'::bool::float8;
+ float8 
+--------
+      0
+(1 row)
+
+
 drop schema conv_cast_test cascade;
 reset current_schema;
