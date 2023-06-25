@@ -48,6 +48,8 @@ insert into test2 values(1);
 grant select on test2 to 'test_user_host'@'127.0.%';
 grant insert on test2 to 'test_user_host'@'127.0.%';
 revoke insert on test2 from 'test_user_host'@'127.0.%';
+create user test1@localhost password 'Test@123';
+alter session set session authorization test1@localhost password 'Test@123';
 \! echo 'b_compatibility_user_host_auth = on' >> @abs_srcdir@/tmp_check/datanode1/postgresql.conf
 \! sed -i 's#host.*all.*all.*127.0.0.1/32.*#host  all  all  all  sha256#g' @abs_srcdir@/tmp_check/datanode1/pg_hba.conf
 \! @abs_bindir@/gs_ctl restart -D @abs_srcdir@/tmp_check/datanode1  > /dev/null
