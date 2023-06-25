@@ -50,5 +50,10 @@ SELECT JSON_ARRAY_INSERT('{"name": "Tim", "hobby": ["car"]}', '$.hobby', 'food')
 select json_array_insert('1'::json, '$[1]', '["add","s"]');
 select json_array_insert('[1]', '$[0]', 341522654875451.12345678901234567890123456789012345678901234567890);
 
+create table test_array(v_log_table character varying[]);
+insert into test_array values(ARRAY['log1', 'log2']);
+select * from test_array;
+drop table if exists test_array;
+
 drop schema test_json_array_insert cascade;
 reset current_schema;

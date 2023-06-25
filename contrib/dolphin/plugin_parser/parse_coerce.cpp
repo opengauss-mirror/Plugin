@@ -3200,10 +3200,13 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
         if (ccontext >= COERCION_ASSIGNMENT) {
             if (targetTypeId == ANYENUMOID) {
                 *funcid = findCastEnumFunction(sourceTypeId);
+                result = OidIsValid(*funcid) ? COERCION_PATH_FUNC : COERCION_PATH_NONE;
             } else if (sourceTypeId == ANYENUMOID) {
                 *funcid = findEnumCastFunction(targetTypeId);
+                result = OidIsValid(*funcid) ? COERCION_PATH_FUNC : COERCION_PATH_NONE;
+            } else {
+                //do nothing
             }
-            result = OidIsValid(*funcid) ? COERCION_PATH_FUNC : COERCION_PATH_NONE;
         } else if (sourceTypeId == ANYENUMOID && targetTypeId == FLOAT8OID) {
             *funcid = findEnumCastFunction(targetTypeId);
             result = COERCION_PATH_FUNC;
