@@ -1267,21 +1267,20 @@ static StorageEnginesRow storageEngines[] = {
 SelectStmt* makeShowStorageEnginesSubQuery(void)
 {
     SelectStmt* stmt = makeNode(SelectStmt);
-    List* tl = NULL;
     List* vl = NULL;
     List* sub_vl = NULL;
     int engines_len = sizeof(storageEngines)/sizeof(StorageEnginesRow);
 
     for (int i = 1; i < engines_len; i++) {
         sub_vl = list_make1(plpsMakeStringConst(storageEngines[i].engine_name));
-        if (storageEngines[i].engine_name == TABLE_ACCESS_METHOD_ASTORE) {
+        if (strcmp(storageEngines[i].engine_name, TABLE_ACCESS_METHOD_ASTORE) == 0) {
             if (g_instance.attr.attr_storage.enable_ustore &&
                u_sess->attr.attr_sql.enable_default_ustore_table) {
                 sub_vl = lappend(sub_vl, plpsMakeStringConst("YES"));
             } else {
                 sub_vl = lappend(sub_vl, plpsMakeStringConst("DEFAULT"));
             }
-        } else if (storageEngines[i].engine_name == TABLE_ACCESS_METHOD_USTORE) {
+        } else if (strcmp(storageEngines[i].engine_name, TABLE_ACCESS_METHOD_USTORE) == 0) {
             if (!g_instance.attr.attr_storage.enable_ustore) {
                 sub_vl = lappend(sub_vl, plpsMakeStringConst("NO"));
             } else if (u_sess->attr.attr_sql.enable_default_ustore_table) {
@@ -1289,10 +1288,9 @@ SelectStmt* makeShowStorageEnginesSubQuery(void)
             } else {
                 sub_vl = lappend(sub_vl, plpsMakeStringConst("YES"));
             }
-        } else if (storageEngines[i].engine_name == MOT_FDW) {
+        } else if (strcmp(storageEngines[i].engine_name, MOT_FDW) == 0) {
 #ifdef ENABLE_MOT
             Oid ownerId;
-            ForeignDataWrapper* fdw = NULL;
             ForeignServer* server = NULL;
             AclResult aclresult;
 
@@ -1458,8 +1456,6 @@ SelectStmt* makeShowOpenTablesQuery(char* schemaName, Node* likeWhereOpt, bool i
         likeWhereOpt = (Node*)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, "relname"), likeWhereOpt, -1);
     }
     Node* whereTarget = makeShowOpenTablesWhereTarget(likeWhereOpt);
-
-    List* fl = list_make1(makeRangeFunction("pg_open_tables", NULL));
 
     SelectStmt* stmt =
         plpsMakeSelectStmt(tl, list_make1(pgOpenTables), whereTarget, NULL);

@@ -1956,6 +1956,7 @@ Datum pg_open_tables(PG_FUNCTION_ARGS)
         PG_RE_THROW();
     }
     PG_END_TRY();
+    return (Datum)0;
 }
 #endif
 
