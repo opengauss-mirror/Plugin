@@ -47,6 +47,18 @@ SELECT ATAN('42'::bigint, '21'::smallint);
 SELECT ATAN('42':: real, '21.0':: numeric(10,2));
 -- 1.10714871779409
 
+-- boolean类型
+SELECT ATAN(true, false);
+-- 1.5707963267948966
+SELECT ATAN(true, 0.5);
+-- 1.1071487177940904
+SELECT ATAN(0.5, true);
+-- 0.4636476090008061
+SELECT ATAN(2, true);
+-- 1.1071487177940904
+SELECT ATAN(true);
+-- 0.7853981633974483
+
 -- 空值测试
 
 SELECT ATAN(NULL, 1); 
@@ -80,7 +92,7 @@ SELECT ATAN('2'::text, 1);
 SELECT ATAN('a', 1); 
 -- ERROR
 SELECT ATAN(2, '1'::boolean);
--- ERROR
+-- 1.1071487177940904
 SELECT ATAN('2'::interval, 1);
 -- ERROR
 SELECT ATAN('2022-05-12', 1);

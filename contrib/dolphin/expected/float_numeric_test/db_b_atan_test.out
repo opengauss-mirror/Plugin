@@ -133,6 +133,42 @@ SELECT ATAN('42':: real, '21.0':: numeric(10,2));
 (1 row)
 
 -- 1.10714871779409
+-- boolean类型
+SELECT ATAN(true, false);
+      atan       
+-----------------
+ 1.5707963267949
+(1 row)
+
+-- 1.5707963267948966
+SELECT ATAN(true, 0.5);
+       atan       
+------------------
+ 1.10714871779409
+(1 row)
+
+-- 1.1071487177940904
+SELECT ATAN(0.5, true);
+       atan        
+-------------------
+ 0.463647609000806
+(1 row)
+
+-- 0.4636476090008061
+SELECT ATAN(2, true);
+       atan       
+------------------
+ 1.10714871779409
+(1 row)
+
+-- 1.1071487177940904
+SELECT ATAN(true);
+       atan        
+-------------------
+ 0.785398163397448
+(1 row)
+
+-- 0.7853981633974483
 -- 空值测试
 SELECT ATAN(NULL, 1); 
  atan 
@@ -214,12 +250,12 @@ LINE 1: SELECT ATAN('a', 1);
 CONTEXT:  referenced column: atan
 -- ERROR
 SELECT ATAN(2, '1'::boolean);
-ERROR:  function atan(integer, boolean) does not exist
-LINE 1: SELECT ATAN(2, '1'::boolean);
-               ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: atan
--- ERROR
+       atan       
+------------------
+ 1.10714871779409
+(1 row)
+
+-- 1.1071487177940904
 SELECT ATAN('2'::interval, 1);
 ERROR:  function atan(interval, integer) does not exist
 LINE 1: SELECT ATAN('2'::interval, 1);
