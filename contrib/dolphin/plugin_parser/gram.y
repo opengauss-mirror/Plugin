@@ -1043,7 +1043,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <list>	range_slice_definition_list range_slice_less_than_list range_slice_start_end_list
 				list_distribution_rules_list list_distribution_rule_row list_distribution_rule_single
 %type <node>	range_slice_less_than_item range_slice_start_end_item
-				list_dist_state OptListDistribution list_dist_value  interval_intexpr functime_expr initime
+				list_dist_state OptListDistribution list_dist_value interval_intexpr initime
 				interval_list every_interval interval_cell ev_timeexpr 
 
 %type <subclus> OptSubCluster OptSubCluster_without_empty OptSubClusterInternal
@@ -19579,7 +19579,7 @@ interval_cell:  INTERVAL ICONST opt_interval
 			;
 
 initime: 		interval_intexpr			{$$ = $1; }
-				| functime_expr				{$$ = $1; }
+				| func_expr_common_subexpr	{$$ = $1; }
 				| functime_app				{$$ = $1; }
 			;
 
@@ -19603,61 +19603,6 @@ functime_app:			normal_ident '(' ')'
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = list_make1(makeString($1));
 					n->args = $3;
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			;
-
-functime_expr: 
-			CURRENT_TIMESTAMP
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("pg_systimestamp");
-					n->args = NIL;
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| CURRENT_TIMESTAMP '(' Iconst ')'
-				{
-					Node *n;
-					TypeName *d;
-					n = makeStringConstCast("now", -1, SystemTypeName("text"));
-					d = SystemTypeName("timestamptz");
-					d->typmods = list_make1(makeIntConst($3, @3));
-					$$ = makeTypeCast(n, d, @1);
-				}
-			| LOCALTIMESTAMP
-				{
-					Node *n;
-					n = makeStringConstCast("now", -1, SystemTypeName("text"));
-					$$ = makeTypeCast(n, SystemTypeName("timestamp"), @1);
-				}
-			| LOCALTIMESTAMP '(' Iconst ')'
-				{
-					Node *n;
-					TypeName *d;
-					n = makeStringConstCast("now", -1, SystemTypeName("text"));
-					d = SystemTypeName("timestamp");
-					d->typmods = list_make1(makeIntConst($3, @3));
-					$$ = makeTypeCast(n, d, @1);
-				}
-			| SYSDATE
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("sysdate");
-					n->args = NIL;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
 					n->agg_distinct = FALSE;
