@@ -1,4 +1,12 @@
+DROP FUNCTION IF EXISTS pg_catalog.atan2 (boolean, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.atan2 (boolean, float8);
+DROP FUNCTION IF EXISTS pg_catalog.atan2 (float8, boolean);
 DROP FUNCTION IF EXISTS pg_catalog.atan (float8, float8);
+DROP FUNCTION IF EXISTS pg_catalog.atan (boolean, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.atan (boolean, float8);
+DROP FUNCTION IF EXISTS pg_catalog.atan (float8, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.atan (boolean);
+
 DROP FUNCTION IF EXISTS pg_catalog.dolphin_invoke();
 CREATE FUNCTION pg_catalog.dolphin_invoke()
     RETURNS VOID AS '$libdir/dolphin','dolphin_invoke' LANGUAGE C STRICT;
