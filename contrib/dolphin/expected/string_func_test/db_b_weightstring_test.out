@@ -405,17 +405,9 @@ ERROR:  syntax error at or near "1E+309"
 LINE 1: SELECT HEX(WEIGHT_STRING('ab' AS BINARY(1E+309)));
                                                 ^
 select hex(weight_string('a' as char(0)));
- hex 
------
- 
-(1 row)
-
+ERROR:  syntax error at or near 'char(0)'
 select hex(weight_string('a' as binary(0)));
- hex 
------
- 
-(1 row)
-
+ERROR:  syntax error at or near 'binary(0)'
 select hex(weight_string('a' as char(-1)));
 ERROR:  syntax error at or near "-"
 LINE 1: select hex(weight_string('a' as char(-1)));
