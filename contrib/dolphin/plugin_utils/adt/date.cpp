@@ -253,6 +253,65 @@ static int getStartingDigits(char* str)
     return digitnum == 0 ? -1 : trunc_val;
 }
 
+/*****************************************************************************
+ *	 Date ADT
+ *****************************************************************************/
+
+/* DateTypeCheck()
+ * Check date format, and convert to internal date format.
+ */
+static bool DateTypeCheck(char* str, bool can_ignore, struct pg_tm* tm, DateADT &date, fsec_t &fsec, int &dterr)
+{
+    int tzp;
+    int dtype = DTK_NUMBER;
+    int nf;
+    char* field[MAXDATEFIELDS];
+    int ftype[MAXDATEFIELDS];
+    char workbuf[MAXDATELEN + 1];
+    /*
+     * default pg date formatting parsing.
+     */
+    dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
+    if (dterr == 0)
+        dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tzp);
+    if (dterr != 0) {
+        DateTimeParseError(dterr, str, "date", can_ignore);
+        /*
+         * if reporting warning in DateTimeParseError, return 1970-01-01
+         */
+        date = UNIX_EPOCH_JDATE - POSTGRES_EPOCH_JDATE;
+        return true;
+    }
+
+    switch (dtype) {
+        case DTK_DATE:
+            break;
+
+        case DTK_CURRENT:
+            ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                    errmsg("date/time value \"current\" is no longer supported")));
+            GetCurrentDateTime(tm);
+            break;
+
+        case DTK_EPOCH:
+            GetEpochTime(tm);
+            break;
+
+        case DTK_LATE:
+            DATE_NOEND(date);
+            return true;
+
+        case DTK_EARLY:
+            DATE_NOBEGIN(date);
+            return true;
+
+        default:
+            DateTimeParseError(DTERR_BAD_FORMAT, str, "date");
+            break;
+    }
+    return false;
+}
 #ifdef DOLPHIN
 /* curdate()
  * @reruen  current date in b compatibility,    date
@@ -373,12 +432,12 @@ Datum date_in(PG_FUNCTION_ARGS)
 {
     char* str = PG_GETARG_CSTRING(0);
     DateADT date;
+    int dterr;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
     int tzp;
     int dtype = DTK_NUMBER;
     int nf;
-    int dterr;
     char* field[MAXDATEFIELDS];
     int ftype[MAXDATEFIELDS];
     char workbuf[MAXDATELEN + 1];
@@ -400,15 +459,16 @@ Datum date_in(PG_FUNCTION_ARGS)
 
         /* the following logic shared from to_date(). */
         to_timestamp_from_format(tm, &fsec, str, (void*)date_fmt);
+#ifndef DOLPHIN
+    } else if (DateTypeCheck(str, fcinfo->can_ignore, tm, date, fsec, dterr)) {
+        PG_RETURN_DATEADT(date);
+    }
+#else
     } else {
         /*
          * default pg date formatting parsing.
          */
         dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
-#ifndef DOLPHIN
-        if (dterr == 0)
-            dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tzp);
-#else
         if (dterr != 0) {
             DateTimeParseError(dterr, str, "date", fcinfo->can_ignore);
             /*
@@ -424,7 +484,6 @@ Datum date_in(PG_FUNCTION_ARGS)
                 dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tzp);
             }
         }
-#endif
         if (dterr != 0) {
             DateTimeParseError(dterr, str, "date", fcinfo->can_ignore);
             PG_RETURN_DATEADT(DATE_ALL_ZERO_VALUE);
@@ -458,6 +517,7 @@ Datum date_in(PG_FUNCTION_ARGS)
                 break;
         }
     }
+#endif
 
     /*
      * the following logic is unified for date parsing.
@@ -469,6 +529,44 @@ Datum date_in(PG_FUNCTION_ARGS)
 
     PG_RETURN_DATEADT(date);
 }
+
+Datum input_date_in(char* str, bool can_ignore)
+{
+    if (str == NULL) {
+        return (Datum)0;
+    }
+    DateADT date;
+    int dterr;
+    fsec_t fsec;
+    struct pg_tm tt, *tm = &tt;
+
+    if (u_sess->attr.attr_common.enable_iud_fusion) {
+        dterr = ParseIudDateOnly(str, tm);
+        if (dterr == 0) {
+            if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday)) {
+                ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date out of range: \"%s\"", str)));
+            }
+            date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
+
+            PG_RETURN_DATEADT(date);
+        }
+        
+    }
+
+    if (DateTypeCheck(str, can_ignore, tm, date, fsec, dterr)) {
+        PG_RETURN_DATEADT(date);
+    }
+    /*
+     * the following logic is unified for date parsing.
+     */
+    if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday))
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date out of range: \"%s\"", str)));
+
+    date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
+
+    PG_RETURN_DATEADT(date);
+}
+
 #ifdef DOLPHIN
 int NumberDate(char *str, pg_tm *tm, unsigned int date_flag) 
 {
@@ -4909,7 +5007,7 @@ Datum from_days_text(PG_FUNCTION_ARGS)
     const char *str_end = str + strlen(str);
     double tmp = strtod(str, &endptr);
     if (endptr == str || errno == ERANGE) {
-        /* Supposing that we get a "0". LONG_LONG_MAX or LONG_LONG_MIN has the same result —— '0000-00-00'. */
+        /* Supposing that we get a "0". LONG_LONG_MAX or LONG_LONG_MIN has the same result -- '0000-00-00'. */
         days = 0;
     } else {
         days = llround(tmp);

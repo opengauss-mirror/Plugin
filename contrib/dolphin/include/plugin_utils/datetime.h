@@ -113,6 +113,8 @@ static const time_flags TIME_DATETIME_ONLY = 2; /* Set if we only allow full dat
 static const time_flags TIME_NO_NSEC_ROUNDING = 4;
 static const time_flags TIME_NO_DATE_FRAC_WARN = 8;
 static const time_flags TIME_NO_ZERO_IN_DATE = 16; /* Don't allow partial dates */
+extern int ParseIudDateTime(char* str, struct pg_tm* tm, fsec_t* fsec);
+extern int ParseIudDateOnly(char* str, struct pg_tm* tm);
 static const time_flags TIME_NO_ZERO_DATE = 32; /* Don't allow 0000-00-00 date */
 static const time_flags TIME_INVALID_DATES = 64; /* Allow 2000-02-31 */
 

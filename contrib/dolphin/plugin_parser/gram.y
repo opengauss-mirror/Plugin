@@ -101,8 +101,10 @@
 #include "catalog/pg_streaming_fn.h"
 #include "utils/varbit.h"
 #include "mb/pg_wchar.h"
+#include "utils/varbit.h"
 #include "lib/string.h"
 #include "tcop/tcopprot.h"
+
 
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -609,6 +611,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 	struct IndexMethodRelationClause *indexmethodrelationclause;
 	struct DolphinString		*dolphinString;
 	struct DolphinIdent			*dolphinIdent;
+	struct CondInfo*	condinfo;
 }
 %type <singletableoption> CreateOption CreateIfNotExistsOption CreateAsOption
 %type <createtableoptions> CreateOptionList CreateIfNotExistsOptionList CreateAsOptionList
@@ -639,7 +642,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 		DropAssertStmt DropSynonymStmt DropTrigStmt DropRuleStmt DropCastStmt DropRoleStmt DropRlsPolicyStmt
 		DropUserStmt DropdbStmt DropTableSpaceStmt DropDataSourceStmt DropDirectoryStmt DropFdwStmt
 		DropForeignServerStmt DropUserMappingStmt ExplainStmt ExecDirectStmt FetchStmt
-		GrantStmt GrantRoleStmt GrantDbStmt IndexStmt InsertStmt KillStmt ListenStmt LoadStmt
+		GetDiagStmt GrantStmt GrantRoleStmt GrantDbStmt IndexStmt InsertStmt KillStmt ListenStmt LoadStmt
 		LockStmt NotifyStmt ExplainableStmt PreparableStmt
 		CreateFunctionStmt CreateEventStmt CreateProcedureStmt CreatePackageStmt CreatePackageBodyStmt AlterFunctionStmt AlterProcedureStmt ReindexStmt RemoveAggrStmt
 		RemoveFuncStmt RemoveOperStmt RemovePackageStmt RenameStmt RevokeStmt RevokeRoleStmt RevokeDbStmt
@@ -989,7 +992,8 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <boolean> OptRelative
 %type <boolean> OptGPI
 %type <str>		OptTableSpace OptTableSpace_without_empty OptConsTableSpace OptConsTableSpaceWithEmpty OptTableSpaceOwner LoggingStr size_clause OptMaxSize OptDatafileSize OptReuse OptAuto OptNextStr OptDatanodeName
-%type <ival>	opt_check_option view_algo_expr view_algo_shift_expr opt_view_algo idx_algo_expr opt_idx_algo
+%type <ival>	opt_check_option view_security_expression view_security_option 
+%type <ival>    view_algo_expr view_algo_shift_expr opt_view_algo idx_algo_expr opt_idx_algo
 
 %type <str>		opt_provider security_label
 
@@ -1125,6 +1129,12 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <str>  comment_opt opt_label
 %type <trgcharacter> trigger_order
 %type <str> delimiter_str_name delimiter_str_names
+
+%type <ival>	statement_information_item_name condition_information_item_name
+%type <condinfo> statement_information_item condition_information_item
+%type <node>	condition_number
+%type <list>	condition_information statement_information
+
 %type <node>	on_table opt_engine engine_option opt_engine_without_empty opt_compression opt_compression_without_empty set_compress_type opt_row_format row_format_option
 %type <keyword>	into_empty opt_temporary opt_values_in replace_empty
 %type <str>	compression_args
@@ -1187,7 +1197,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 	DATA_P DATABASE DATABASES DATAFILE DATANODE DATANODES DATATYPE_CL DATE_P DATETIME DATE_FORMAT_P DAY_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P DAYOFMONTH DAYOFWEEK DAYOFYEAR DBCOMPATIBILITY_P DB_B_FORMAT DB_B_JSOBJ DEALLOCATE DEC DECIMAL_P DECLARE DECODE DEFAULT DEFAULTS
 	DEFERRABLE DEFERRED DEFINER DELAYED DELAY_KEY_WRITE DELETE_P DELIMITER DELIMITERS DELTA DELTAMERGE DESC DESCRIBE DETERMINISTIC DISK DIV
 /* PGXC_BEGIN */
-	DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P DUAL_P
+	DIAGNOSTICS DICTIONARY DIRECT DIRECTORY DISABLE_P DISCARD DISTINCT DISTINCTROW DISTRIBUTE DISTRIBUTION DO DOCUMENT_P DOMAIN_P DOUBLE_P DUAL_P
 /* PGXC_END */
 	DROP DUPLICATE DISCONNECT DUMPFILE
 
@@ -1199,7 +1209,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 	FEATURES // DB4AI
 	FREEZE FROM FULL FULLTEXT FUNCTION FUNCTIONS
 
-	GENERATED GET_FORMAT GLOBAL GRANT GRANTED GREATEST GROUP_P GROUPING_P GROUPPARENT GRANTS TRIGGERS
+	GENERATED GET GET_FORMAT GLOBAL GRANT GRANTED GREATEST GROUP_P GROUPING_P GROUPPARENT GRANTS TRIGGERS
 
 	HANDLER HAVING HDFSDIRECTORY HEADER_P HOLD HOSTS HOUR_P HOUR_MICROSECOND_P HOUR_MINUTE_P HOUR_SECOND_P
 
@@ -1216,9 +1226,10 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LINES LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
 	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOGS LOOP LOW_PRIORITY
-	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS MAX_ROWS MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MEMORY MERGE MESSAGE_TEXT MICROSECOND_P MID MIN_ROWS MINUS_P MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MOD MODE MODIFY_P MONTH_P MOVE MOVEMENT
-	MODEL // DB4AI
-	MODIFIES MYSQL_ERRNO
+	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS  MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MEMORY MERGE MESSAGE_TEXT MICROSECOND_P MID MIN_ROWS MINUS_P MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MODE
+	MODEL MODIFY_P MONTH_P MOVE MOVEMENT MYSQL_ERRNO
+	MOD MODIFIES MAX_ROWS
+	// DB4AI
 	NAME_P NAMES NATIONAL NATURAL NCHAR NEXT NGRAM NO NOCOMPRESS NOCYCLE NODE NOLOGGING NOMAXVALUE NOMINVALUE NONE
 	NOT NOTHING NOTIFY NOTNULL NOWAIT NULL_P NULLCOLS NULLIF NULLS_P NUMBER_P NUMERIC NUMSTR NVARCHAR NVARCHAR2 NVL
 	NO_WRITE_TO_BINLOG
@@ -1240,14 +1251,14 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 
 	RANDOMIZED RANGE RATIO RAW READ READS REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
 	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEAT REPEATABLE REPLACE REPLICA REGEXP REORGANIZE REPAIR
-	RESET RESIGNAL RESIZE RESOURCE RESTART RESTRICT RETURN RETURNING RETURNS REUSE REVOKE RIGHT RLIKE ROLE ROLES ROLLBACK ROLLUP
-	ROTATION ROUTINE ROW ROWNUM ROWS ROWTYPE_P ROW_FORMAT RULE
-
-	SAMPLE SAVEPOINT SCHEDULE SCHEMA SCHEMA_NAME SCHEMAS SCROLL SEARCH SECONDARY_ENGINE_ATTRIBUTE SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
+	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNED_SQLSTATE RETURNING RETURNS REUSE REVOKE RIGHT ROLE ROLES ROLLBACK ROLLUP
+	ROTATION ROW ROW_COUNT ROWNUM ROWS ROWTYPE_P RULE
+	RESIGNAL RLIKE ROUTINE ROW_FORMAT SCHEMAS
+	SAMPLE SAVEPOINT SCHEDULE SCHEMA SCHEMA_NAME SCROLL SEARCH SECONDARY_ENGINE_ATTRIBUTE SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS SIGNAL SIGNED
-	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL SQLSTATE STABLE STANDALONE_P START STARTS STARTING STARTWITH
+	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL SQLSTATE STABLE STACKED_P STANDALONE_P START STARTS STARTWITH
 	STATEMENT STATEMENT_ID STATISTICS STATS_AUTO_RECALC STATS_PERSISTENT STATS_SAMPLE_PAGES STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBCLASS_ORIGIN SUBPARTITION SUBPARTITIONS SUBSCRIPTION SUBSTR SUBSTRING
-	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
+	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR STARTING SQL_P
 
 	TABLE TABLE_NAME TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TEMPTABLE TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TINYINT
 	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
@@ -1299,7 +1310,8 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 			NOT_IN NOT_BETWEEN NOT_LIKE NOT_ILIKE NOT_SIMILAR
 			DEFAULT_FUNC MATCH_FUNC
 			DO_SCONST DO_LANGUAGE SHOW_STATUS BEGIN_B_BLOCK
-			FORCE_INDEX USE_INDEX LOCK_TABLES
+			FORCE_INDEX USE_INDEX IGNORE_INDEX 
+			LOCK_TABLES
 			LABEL_LOOP LABEL_REPEAT LABEL_WHILE WITH_PARSER
 
 /* Precedence: lowest to highest */
@@ -1637,6 +1649,7 @@ stmt :
 			| ExecDirectStmt
 			| ExplainStmt
 			| FetchStmt
+			| GetDiagStmt
 			| GrantStmt
 			| GrantRoleStmt
 			| GrantDbStmt
@@ -4179,6 +4192,138 @@ constraints_set_mode:
 			| IMMEDIATE								{ $$ = FALSE; }
 		;
 
+/*****************************************************************************
+ *
+ * GET DIAGNOSTICS STATEMENT
+ *
+ *****************************************************************************/
+
+GetDiagStmt: 	GET getdiag_area_opt DIAGNOSTICS statement_information
+					{
+						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+							ereport(errstate, (errmodule(MOD_PARSER),
+								errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("Un-support feature"),
+								errdetail("get diagitem syntax is supported only in B compatibility")));
+						}
+						GetDiagStmt *n = makeNode(GetDiagStmt);
+						n->condInfo = $4;
+						n->hasCondNum = false;
+						n->condNum = NULL;
+
+						$$ = (Node *)n;
+					}
+				| GET getdiag_area_opt DIAGNOSTICS CONDITION condition_number condition_information
+					{
+						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
+							ereport(errstate, (errmodule(MOD_PARSER),
+								errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("Un-support feature"),
+								errdetail("get diagitem syntax is supported only in B compatibility")));
+						}
+						GetDiagStmt *n = makeNode(GetDiagStmt);
+						n->condInfo = $6;
+						n->hasCondNum = true;
+						n->condNum = list_make1($5);
+
+						$$ = (Node *)n;
+					}
+				;
+
+getdiag_area_opt:
+				| CURRENT_P
+				| STACKED_P
+					{
+						const char* message = "GET STACKED DIAGNOSTICS when handler not active.";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(ERROR,
+						(errcode(ERRCODE_STACKED_DIAGNOSTICS_ACCESSED_WITHOUT_ACTIVE_HANDLER),
+							errmsg("GET STACKED DIAGNOSTICS when handler not active.")));
+					}
+				;
+
+statement_information:
+				statement_information_item
+					{
+						$$ = list_make1($1);
+					}
+				| statement_information ',' statement_information_item
+					{
+						$$ = lappend($1, $3);
+					}
+				;
+
+statement_information_item:
+				uservar_name '=' statement_information_item_name
+					{
+						CondInfo* n = (CondInfo *)palloc(sizeof(CondInfo));
+
+						n->target = list_make1($1);
+						n->kind = $3;
+
+						$$ = n;
+					}
+				;
+
+statement_information_item_name:
+				NUMBER_P					{ $$ = COND_INFO_NUMBER; }
+				| ROW_COUNT				{ $$ = COND_INFO_ROW_COUNT; }
+				;
+
+condition_number:
+				ICONST						{ $$ = makeIntConst($1, @1); }
+				| FCONST					{ $$ = makeIntConst((atof($1) + 0.5), @1); }
+				| SCONST					{ $$ = makeIntConst((atof($1) + 0.5), @1); }
+				| BCONST					
+					{
+						Datum val = DirectFunctionCall1(bittoint4, DirectFunctionCall3(bit_in, CStringGetDatum($1), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+						$$ = makeIntConst(DatumGetInt32(val), @1);
+					}
+				| TRUE_P					{ $$ = makeIntConst(TRUE, @1); }
+				| FALSE_P					{ $$ = makeIntConst(FALSE, @1); }
+				| NULL_P					{ $$ = makeIntConst(FALSE, @1); }
+				| uservar_name				{ $$ = $1; }
+				| IDENT						{ $$ = makeIntConst((atof(downcase_str($1->str, $1->is_quoted)) + 0.5), @1); }
+				;
+
+condition_information:
+				condition_information_item
+					{
+						$$ = list_make1($1);
+					}
+				| condition_information ',' condition_information_item
+					{
+						$$ = lappend($1, $3);
+					}
+				;
+
+condition_information_item:
+				uservar_name '=' condition_information_item_name
+					{
+						CondInfo* n = (CondInfo *)palloc(sizeof(CondInfo));
+
+						n->target = list_make1($1);
+						n->kind = $3;
+
+						$$ = n;
+					}
+				;
+
+condition_information_item_name:
+				CLASS_ORIGIN				{ $$ = COND_INFO_CLASS_ORIGIN; }
+				| SUBCLASS_ORIGIN			{ $$ = COND_INFO_SUBCLASS_ORIGIN; }
+				| CONSTRAINT_CATALOG		{ $$ = COND_INFO_CONSTRAINT_CATALOG; }
+				| CONSTRAINT_SCHEMA			{ $$ = COND_INFO_CONSTRAINT_SCHEMA; }
+				| CONSTRAINT_NAME			{ $$ = COND_INFO_CONSTRAINT_NAME; }
+				| CATALOG_NAME				{ $$ = COND_INFO_CATALOG_NAME; }
+				| SCHEMA_NAME				{ $$ = COND_INFO_SCHEMA_NAME; }
+				| TABLE_NAME				{ $$ = COND_INFO_TABLE_NAME; }
+				| COLUMN_NAME				{ $$ = COND_INFO_COLUMN_NAME; }
+				| CURSOR_NAME				{ $$ = COND_INFO_CURSOR_NAME; }
+				| MESSAGE_TEXT				{ $$ = COND_INFO_MESSAGE_TEXT; }
+				| MYSQL_ERRNO				{ $$ = COND_INFO_MYSQL_ERRNO; }
+				| RETURNED_SQLSTATE			{ $$ = COND_INFO_RETURNED_SQLSTATE; }
+				;
 opt_full_fields:
 			FULL columns_or_fields					{ $$ = TRUE; }
 			| columns_or_fields					{ $$ = FALSE; }
@@ -18722,6 +18867,13 @@ index_hint_definition:
 				n->indexnames = $3;
 				$$ = (Node*)n;
 			}
+			| IGNORE_INDEX '(' key_usage_list ')'
+			{
+				IndexHintDefinition* n = makeNode(IndexHintDefinition);
+				n->index_type = INDEX_HINT_IGNORE;
+				n->indexnames = $3;
+				$$ = (Node*)n;
+			}
 		;
 
 index_hint_list:
@@ -20707,6 +20859,24 @@ invoker_rights:	 AUTHID DEFINER
                     } else {
                         $$ = false;
                     }
+				}
+			;
+view_security_option: DEFINER
+				{
+					$$ = VIEW_SQL_SECURITY_DEFINER;
+				}
+				| INVOKER
+				{
+					$$ = VIEW_SQL_SECURITY_INVOKER;
+				}
+			;
+view_security_expression: SQL_P SECURITY view_security_option
+				{
+					if (u_sess->attr.attr_sql.sql_compatibility ==  B_FORMAT) {
+						$$ = $3;
+					} else {
+						parser_yyerror("not support SQL SECURITY EXPRESSION");
+					}
 				}
 			;
 
@@ -22708,6 +22878,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->sql_statement = NULL;
 					n->is_alter = true;
 					n->withCheckOption = (ViewCheckOption)$8;
+					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node *) n;
 				}
 			| ALTER definer_expression VIEW dolphin_qualified_name opt_column_list AS SelectStmt opt_check_option
@@ -22728,7 +22899,51 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->replace = true;
 					n->sql_statement = NULL;
 					n->is_alter = true;
+					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					n->withCheckOption = (ViewCheckOption)$8;
+					$$ = (Node *) n;
+				}
+			| ALTER view_security_expression VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
+				{
+#ifndef ENABLE_MULTIPLE_NODES
+					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
+#endif
+					{
+						ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("ALTER VIEW AS is not supported.")));
+					}
+					ViewStmt *n = makeNode(ViewStmt);
+					n->view = $4;
+					n->aliases = $5;
+					n->query = $7;
+					n->replace = true;
+					n->sql_statement = NULL;
+					n->is_alter = true;
+					n->viewSecurityOption = (ViewSecurityOption)$2;
+					n->withCheckOption = (ViewCheckOption)$8;
+					$$ = (Node *) n;
+				}
+			| ALTER definer_expression view_security_expression VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
+				{
+#ifndef ENABLE_MULTIPLE_NODES
+					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
+#endif
+					{
+						ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("ALTER VIEW AS is not supported.")));
+					}
+					ViewStmt *n = makeNode(ViewStmt);
+					n->definer = $2;
+					n->view = $5;
+					n->aliases = $6;
+					n->query = $8;
+					n->replace = true;
+					n->sql_statement = NULL;
+					n->is_alter = true;
+					n->viewSecurityOption = (ViewSecurityOption)$3;
+					n->withCheckOption = (ViewCheckOption)$9;
 					$$ = (Node *) n;
 				}
 			| ALTER view_algo_shift_expr definer_expression VIEW dolphin_qualified_name opt_column_list AS SelectStmt opt_check_option
@@ -24229,6 +24444,7 @@ ViewStmt: CREATE OptTemp ViewStmtBaseBody
 				{
 					ViewStmt *n = (ViewStmt*) $3;
 					n->view->relpersistence = $2;
+					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node*) n;
 				}
 		| CREATE OR REPLACE OptTemp ViewStmtBaseBody
@@ -24236,6 +24452,7 @@ ViewStmt: CREATE OptTemp ViewStmtBaseBody
 					ViewStmt *n = (ViewStmt*) $5;
 					n->view->relpersistence = $4;
 					n->replace = true;
+					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node*) n;
 				}
 		| CREATE opt_or_replace definer_expression OptTemp ViewStmtBaseBody
@@ -24244,6 +24461,7 @@ ViewStmt: CREATE OptTemp ViewStmtBaseBody
 					n->view->relpersistence = $4;
 					n->definer = $3;
 					n->replace = $2;
+					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node*) n;
 				}
 		| CREATE opt_or_replace view_algo_expr OptTemp ViewStmtBaseBody
@@ -24251,6 +24469,7 @@ ViewStmt: CREATE OptTemp ViewStmtBaseBody
 					ViewStmt *n = (ViewStmt*) $5;
 					n->view->relpersistence = $4;
 					n->replace = $2;
+					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node*) n;
 				}
 		| CREATE opt_or_replace view_algo_expr definer_expression OptTemp ViewStmtBaseBody
@@ -24261,6 +24480,52 @@ ViewStmt: CREATE OptTemp ViewStmtBaseBody
 					n->replace = $2;
 					$$ = (Node*) n;
 				}
+		| CREATE view_security_expression OptTemp VIEW qualified_name opt_column_list opt_reloptions
+				AS SelectStmt opt_check_option
+				{
+					ViewStmt *n = makeNode(ViewStmt);
+					n->view = $5;
+					n->view->relpersistence = $3;
+					n->aliases = $6;
+					n->query = $9;
+					n->replace = false;
+					n->options = $7;
+					n->sql_statement = NULL;
+					n->withCheckOption = (ViewCheckOption)$10;
+					n->viewSecurityOption = (ViewSecurityOption)$2;
+					$$ = (Node *) n;
+				}
+		| CREATE OR REPLACE view_security_expression OptTemp VIEW qualified_name opt_column_list opt_reloptions
+				AS SelectStmt opt_check_option
+				{
+					ViewStmt *n = makeNode(ViewStmt);
+					n->view = $7;
+					n->view->relpersistence = $5;
+					n->aliases = $8;
+					n->query = $11;
+					n->replace = true;
+					n->options = $9;
+					n->sql_statement = NULL;
+					n->withCheckOption = (ViewCheckOption)$12;
+					n->viewSecurityOption = (ViewSecurityOption)$4;
+					$$ = (Node *) n;
+				}
+		| CREATE opt_or_replace definer_expression view_security_expression OptTemp VIEW qualified_name opt_column_list opt_reloptions
+				AS SelectStmt opt_check_option
+				{
+					ViewStmt *n = makeNode(ViewStmt);
+					n->definer = $3;
+					n->view = $7;
+					n->view->relpersistence = $5;
+					n->aliases = $8;
+					n->query = $11;
+					n->replace = $2;
+					n->options = $9;
+					n->sql_statement = NULL;
+					n->withCheckOption = (ViewCheckOption)$12;
+					n->viewSecurityOption = (ViewSecurityOption)$4;
+ 					$$ = (Node *) n;
+ 				}
 		;
 
 ViewStmtBaseBody: VIEW dolphin_qualified_name opt_column_list opt_reloptions AS SelectStmt opt_check_option
@@ -36306,6 +36571,7 @@ unreserved_keyword_without_key:
 			| DELTA
 			| DESCRIBE
 			| DETERMINISTIC
+			| DIAGNOSTICS
 			| DICTIONARY
 			| DIRECT
 			| DIRECTORY
@@ -36375,6 +36641,7 @@ unreserved_keyword_without_key:
 			| FUNCTION
 			| FUNCTIONS
 			| GENERATED
+			| GET
 			| GLOBAL
 			| GRANTED
 			| GRANTS
@@ -36579,6 +36846,7 @@ unreserved_keyword_without_key:
 			| RESTART
 			| RESTRICT
 			| RETURN
+			| RETURNED_SQLSTATE
 			| RETURNS
 			| REUSE
 			| REVERSE
@@ -36588,6 +36856,7 @@ unreserved_keyword_without_key:
 			| ROLLBACK
 			| ROLLUP
 			| ROTATION
+			| ROW_COUNT
 			| ROUTINE
 			| ROWS
 			| RULE
@@ -36630,8 +36899,10 @@ unreserved_keyword_without_key:
 			| SPILL
 			| SPLIT
 			| SQL
+			| SQL_P
 			| SQLSTATE
 			| STABLE
+			| STACKED_P
 			| STANDALONE_P
 			| START
 			| STARTING
@@ -38328,6 +38599,20 @@ check_outarg_info(const bool *have_assigend, const char *argmodes,const int proa
 	}
 }
 
+static bool HasVariadic(int nargs, const char* argmodes)
+{
+	if (!argmodes) {
+		return false;
+	}
+
+	for (int i = nargs - 1; i >= 0; --i) {
+		if (argmodes[i] == FUNC_PARAM_VARIADIC) {
+			return true;
+		}
+	}
+	return false;
+}
+
 // Added CALL for procedure and function
 static Node *
 makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
@@ -38402,15 +38687,16 @@ makeCallFuncStmt(List* funcname,List* parameters, bool is_call)
 		return NULL;
 	}
 
+	/* get the all args informations, only "in" parameters if p_argmodes is null */
+	narg = get_func_arg_info(proctup, &p_argtypes, &p_argnames, &p_argmodes);
+	bool hasVariadic = HasVariadic(narg, p_argmodes);
+
 #ifndef ENABLE_MULTIPLE_NODES
-	if (!has_overload_func && !enable_out_param_override())
+	if (!hasVariadic && !has_overload_func && !enable_out_param_override())
 #else
-        if (!has_overload_func)
+        if (!hasVariadic && !has_overload_func)
 #endif
 	{
-		/* get the all args informations, only "in" parameters if p_argmodes is null */
-		narg = get_func_arg_info(proctup,&p_argtypes,&p_argnames,&p_argmodes);
-
 		/* get the all "in" parameters, except "out" or "table_colums" parameters */
 		ntable_colums = get_table_modes(narg, p_argmodes);
 		narg -= ntable_colums;
