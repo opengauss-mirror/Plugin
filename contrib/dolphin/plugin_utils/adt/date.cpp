@@ -5577,7 +5577,11 @@ Datum time_float(PG_FUNCTION_ARGS)
 
     float8 res = tmfsec2float(tm, fsec);
 
-    PG_RETURN_FLOAT8(res);
+    if (sig) {
+        PG_RETURN_FLOAT8(-res);
+    } else {
+        PG_RETURN_FLOAT8(res);
+    }
 }
 
 Datum date_int(PG_FUNCTION_ARGS)
