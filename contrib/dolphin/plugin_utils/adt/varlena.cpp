@@ -5770,8 +5770,8 @@ Datum text_to_hex(PG_FUNCTION_ARGS)
 
     unsigned char* str_val = (unsigned char*) text_to_cstring(str);
     unsigned char* str_val_ptr = str_val + len - 1;
-    char buf[2 * len + 1];
-    char* result_ptr = buf + sizeof(buf) - 1;
+    char* buf = (char*)palloc(2 * len + 1);
+    char* result_ptr = buf + 2 * len;
     *result_ptr = '\0';
 
     do {
@@ -5795,8 +5795,8 @@ Datum bytea_to_hex(PG_FUNCTION_ARGS)
 
     unsigned char* str_ptr = unsigned_str + len - 1;
 
-    char buf[2 * len + 1];
-    char* result_ptr = buf + sizeof(buf) - 1;
+    char* buf = (char*)palloc(2 * len + 1);
+    char* result_ptr = buf + 2 * len;
     *result_ptr = '\0';
 
     do {
