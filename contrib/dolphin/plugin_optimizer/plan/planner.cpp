@@ -90,6 +90,7 @@
 #include "executor/node/nodeModifyTable.h"
 #include "optimizer/gplanmgr.h"
 #include "instruments/instr_statement.h"
+#include "replication/libpqsw.h"
 
 /* Hook for plugins to get control in planner() */
 THR_LOCAL ndp_pushdown_hook_type ndp_pushdown_hook = NULL;
@@ -327,10 +328,8 @@ static bool walk_plan(Plan* plantree, PlannerInfo* root);
 static bool walk_normal_plan(Plan* plantree, PlannerInfo* root);
 static void walk_set_plan(Plan* plantree, PlannerInfo* root);
 static Plan* insert_gather_node(Plan* child, PlannerInfo* root);
-#ifdef ENABLE_MULTIPLE_NODES
-static bool has_dfs_node(Plan* plantree, PlannerGlobal* glob);
-static Plan* try_accelerate_plan(Plan* plantree, PlannerInfo* root, PlannerGlobal* glob);
-#endif
+static bool has_dfs_node(Plan* plantree, PlannerGlobal* glob) __attribute__((unused));
+static Plan* try_accelerate_plan(Plan* plantree, PlannerInfo* root, PlannerGlobal* glob) __attribute__((unused));
 static Plan* try_deparse_agg(Plan* plan, PlannerInfo* root, PlannerGlobal* glob);
 static bool dfs_node_exists(Plan* plan);
 static bool is_dfs_node(Plan* plan);
@@ -430,7 +429,11 @@ bool queryIsReadOnly(Query* query)
             case CMD_UPDATE:
             case CMD_INSERT:
             case CMD_DELETE:
-            case CMD_MERGE:
+            case CMD_MERGE: {
+                if (SS_STANDBY_MODE && get_redirect_manager()->state.transaction) {
+                    get_redirect_manager()->ss_standby_state |= SS_STANDBY_REQ_WRITE_REDIRECT;
+                }
+            }
                 return false;
             default: {
                 ereport(ERROR,

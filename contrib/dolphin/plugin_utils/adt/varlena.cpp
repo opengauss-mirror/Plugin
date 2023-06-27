@@ -10314,3 +10314,25 @@ Datum uint8_xor_text(PG_FUNCTION_ARGS)
     PG_RETURN_UINT64(arg1 ^ arg2_int);
 }
 #endif
+
+Datum btvarstrequalimage(PG_FUNCTION_ARGS)
+{
+    Assert(PG_NARGS() != 0);
+
+    Oid opcintype = PG_GETARG_OID(0);
+    Oid collid = PG_GET_COLLATION();
+
+    if (opcintype == InvalidOid || !OidIsValid(collid)) {
+        PG_RETURN_BOOL(false);
+    }
+
+    if (opcintype != BPCHAROID && opcintype != NAMEOID && opcintype != TEXTOID) {
+        PG_RETURN_BOOL(false);
+    }
+
+    if (lc_collate_is_c(collid) || collid == DEFAULT_COLLATION_OID)
+        PG_RETURN_BOOL(true);
+    else
+        PG_RETURN_BOOL(false);
+}
+

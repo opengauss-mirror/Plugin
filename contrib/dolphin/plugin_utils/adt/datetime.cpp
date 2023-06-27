@@ -4731,6 +4731,82 @@ Interval *char_to_interval(char *str, int32 typmod, bool can_ignore) {
     check_dtype (dtype, tm, fsec, result, str);
     return result;
 }
+
+static int DateFormatCheck(int &tmType, char* cp, char key)
+{
+    const char *begin = 0;
+    if (isdigit((unsigned char)*cp)) {
+        begin = cp;
+        tmType = strtoi(begin, &cp, 10);
+        if (begin == cp || tmType < 0 || *cp != key) {
+            return DTERR_FIELD_OVERFLOW;
+        }
+        cp++;
+    } else {
+        return DTERR_BAD_FORMAT;
+    }
+    return 0;
+}
+
+int ParseIudDateOnly(char* str, struct pg_tm* tm)
+{
+    char* cp = str;
+    int check = 0;
+    //year
+    check = DateFormatCheck(tm->tm_year, cp, '-');
+    // DTERR_FIELD_OVERFLOW and DTERR_BAD_FORMAT less than 0
+    if (check < 0) {
+        return check;
+    }
+    //month
+    check = DateFormatCheck(tm->tm_mon, cp, '-');
+    if (check < 0) {
+        return check;
+    }
+    //day
+    return DateFormatCheck(tm->tm_mday, cp, ' ');
+}
+
+int ParseIudDateTime(char* str, struct pg_tm* tm, fsec_t* fsec)
+{
+    char* cp = str;
+    //Decode date
+    *fsec = 0;
+    unsigned int fmask = 0,tmask;
+    int check = 0;
+    //year
+    check = DateFormatCheck(tm->tm_year, cp, '-');
+    // DTERR_FIELD_OVERFLOW and DTERR_BAD_FORMAT less than 0
+    if (check < 0) {
+        return check;
+    }
+    //month
+    check = DateFormatCheck(tm->tm_mon, cp, '-');
+    if (check < 0) {
+        return check;
+    }
+    //day
+    check = DateFormatCheck(tm->tm_mon, cp, ' ');
+    if (check < 0) {
+        return check;
+    }
+    //Decode time
+    int dterr = DecodeTime(cp, fmask, INTERVAL_FULL_RANGE, &tmask, tm, fsec);
+    if (dterr) {
+        return dterr;
+    }
+    /* do final checking/adjustment of Y/M/D fields */
+#ifdef DOLPHIN
+    dterr = ValidateDate(fmask, false, false, false, false, tm, 0);
+#else
+    dterr = ValidateDate(fmask, false, false, false, tm);
+#endif
+    if (dterr) {
+        return dterr;
+    }
+    return 0;
+}
+
 #ifdef DOLPHIN
 /* Convert a double value into pg_tm based on 1970-01-01 00:00:00 UTC, in timezone 0.
  * Therefore, you may need to add the timezone offset outside.
@@ -4823,7 +4899,7 @@ bool numeric_to_lldiv_t(NumericVar *from, lldiv_t *to)
 }
 
 // extract integer part and fractional part from numeric
-// attention： to->rem must be divided by (long long)pow_of_10[8] to get a correct fractional part
+// attention: to->rem must be divided by (long long)pow_of_10[8] to get a correct fractional part
 void NumericVar2lldiv(NumericVar *from, lldiv_t *to)
 {
     if (!from->ndigits  || from->weight < -2) {

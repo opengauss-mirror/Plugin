@@ -677,8 +677,8 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
 #endif
         case USE:
         /*
-        * USE INDEX \USE KEY must be reduced to one token,to allow KEY\USE as table / column alias.
-        */
+         * USE INDEX \USE KEY must be reduced to one token,to allow KEY\USE as table / column alias.
+         */
             GET_NEXT_TOKEN();
 
             switch (next_token) {
@@ -699,8 +699,8 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
             break;
         case FORCE:
         /*
-        * FORCE INDEX \FORCE KEY must be reduced to one token,to allow KEY\FORCE as table / column alias.
-        */
+         * FORCE INDEX \FORCE KEY must be reduced to one token,to allow KEY\FORCE as table / column alias.
+         */
             GET_NEXT_TOKEN();
 
             switch (next_token) {
@@ -719,7 +719,26 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                     break;
             }
             break;
+        case IGNORE:
+        /*
+         * IGNORE INDEX \IGNORE KEY must be reduced to one token,to allow KEY\IGNORE as table / column alias.
+         */
+            GET_NEXT_TOKEN();
 
+            switch (next_token) {
+                case KEY:
+                case INDEX:
+                    cur_token = IGNORE_INDEX;
+                    break;
+                default:
+                    /* save the lookahead token for next time */
+                    SET_LOOKAHEAD_TOKEN();
+                    /* and back up the output info to cur_token */
+                    lvalp->core_yystype = cur_yylval;
+                    *llocp = cur_yylloc;
+                    break;
+            }
+            break;
 #ifdef DOLPHIN
 
         case EXPLAIN:

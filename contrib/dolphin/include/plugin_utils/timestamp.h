@@ -125,6 +125,7 @@ extern void datetime_in_with_flag_internal(const char *str, struct pg_tm *tm, fs
 extern bool MaybeRound(struct pg_tm *tm, fsec_t *fsec);
 extern bool datetime_add_interval(Timestamp datetime, Interval *span, Timestamp *result);
 extern void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime);
+extern Datum input_timestamp_in(char* str, Oid typioparam, int32 typmod, bool can_ignore);
 extern int64 b_db_weekmode(int64 mode);
 extern int b_db_cal_week(struct pg_tm* tm, int64 mode, uint* year);
 extern bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag);

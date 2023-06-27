@@ -40,11 +40,14 @@
 #endif
 #include "utils/array.h"
 #include "utils/builtins.h"
+#include "utils/date.h"
 #include "utils/datum.h"
 #ifdef DOLPHIN
 #include "utils/fmgroids.h"
 #endif
+#include "utils/fmgrtab.h"
 #include "utils/lsyscache.h"
+#include "utils/timestamp.h"
 #include "utils/syscache.h"
 #include "utils/pl_package.h"
 #include "catalog/gs_utf8_collation.h"
@@ -842,9 +845,26 @@ Datum stringTypeDatum(Type tp, char* string, int32 atttypmod, bool can_ignore)
     Oid typinput = typform->typinput;
     Oid typioparam = getTypeIOParam(tp);
     Datum result;
-
+#ifndef DOLPHIN
+    switch (typinput) {
+    case F_DATE_IN:
+        result = input_date_in(string, can_ignore);
+        break;
+    case F_BPCHARIN:
+        result = input_bpcharin(string, typioparam, atttypmod);
+        break;
+    case F_VARCHARIN:
+        result = input_varcharin(string, typioparam, atttypmod);
+        break;
+    case F_TIMESTAMP_IN:
+        result = input_timestamp_in(string, typioparam, atttypmod, can_ignore);
+        break;
+    default:
+        result = OidInputFunctionCall(typinput, string, typioparam, atttypmod, can_ignore);
+    }
+#else
     result = OidInputFunctionCall(typinput, string, typioparam, atttypmod, can_ignore);
-
+#endif
 #ifdef RANDOMIZE_ALLOCATED_MEMORY
 
     /*

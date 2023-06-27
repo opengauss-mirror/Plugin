@@ -65,6 +65,7 @@ extern void str_to_pg_tm(char *str, pg_tm &tt, fsec_t &fsec, int &timeSign);
 extern bool time_in_range(TimeADT &time);
 extern bool time_in_no_ereport(const char *str, TimeADT *time);
 extern bool is_date_format(const char *str);
+extern Datum input_date_in(char* str, bool can_ignore);
 extern bool date_in_no_ereport(const char *str, DateADT *date);
 extern bool date_sub_interval(DateADT date, Interval *span, DateADT *result, bool is_add_func = false);
 extern void convert_to_time(Datum value, Oid valuetypid, TimeADT *time);
