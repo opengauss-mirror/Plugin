@@ -7,6 +7,7 @@
 #include "utils/builtins.h"
 #include "utils/typcache.h"
 #include "utils/lsyscache.h"
+#include "utils/date.h"
 #include "plugin_commands/mysqlmode.h"
 
 #ifdef DOLPHIN
@@ -32,6 +33,16 @@ PG_FUNCTION_INFO_V1_PUBLIC(weight_string_bytea);
 extern "C" DLL_PUBLIC Datum weight_string_bytea(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(weight_string_boolean);
 extern "C" DLL_PUBLIC Datum weight_string_boolean(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(weight_string_date);
+extern "C" DLL_PUBLIC Datum weight_string_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(weight_string_time);
+extern "C" DLL_PUBLIC Datum weight_string_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(weight_string_timestamp);
+extern "C" DLL_PUBLIC Datum weight_string_timestamp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(weight_string_timestamptz);
+extern "C" DLL_PUBLIC Datum weight_string_timestamptz(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(weight_string_interval);
+extern "C" DLL_PUBLIC Datum weight_string_interval(PG_FUNCTION_ARGS);
 
 static void store16be(pg_wchar u, char *res)
 {
@@ -192,7 +203,7 @@ Datum weight_string_single(PG_FUNCTION_ARGS)
     if (encoding < 0) {
         encoding = PG_SQL_ASCII;
     }
-
+    end = start + retlen;
     retlen = char_to_unicode(value, data_len, result_string, INVALID_LEN, encoding);
 
     if (flag_dsc || flag_rev) {
@@ -296,4 +307,104 @@ Datum weight_string_boolean(PG_FUNCTION_ARGS)
     }
 }
 
+static text* date_for_binary(char *value, size_t value_len, size_t data_len)
+{
+    if (value_len > data_len)
+        value_len = data_len;
+    text *result = (text *)palloc0(VARHDRSZ + data_len + SINGLE_BYTE_LENGTH);
+    error_t rc = strncpy_s((char *)VARDATA(result), value_len + SINGLE_BYTE_LENGTH, (char *)value, value_len);
+    securec_check(rc, "\0", "\0");
+    SET_VARSIZE(result, VARHDRSZ + data_len);
+    return result;
+}
+
+static text* date_for_char(char *value, size_t value_len, size_t data_len, size_t flags)
+{
+    if (value_len > data_len)
+        value_len = data_len;
+
+    uint flag_dsc = flags & WEIGHTSTRING_DESC_LEVEL1;
+    uint flag_rev = flags & WEIGHTSTRING_REVERSE_LEVEL1;
+
+    text *result = (text *)palloc(VARHDRSZ + data_len + SINGLE_BYTE_LENGTH);
+    size_t i = 0;
+    char *result_string = (char *)VARDATA(result);
+    for (; i < value_len; i++) {
+        result_string[i] = value[i];
+    }
+    while (data_len > value_len) {
+        result_string[value_len] = ' ';
+        value_len++;
+    }
+    result_string[value_len] = '\0';
+
+    if (flag_dsc || flag_rev) {
+        char *start = result_string;
+        char *end = start + data_len;
+        reverse_and_transform(start, end, flag_dsc, flag_rev);
+    }
+    SET_VARSIZE(result, VARHDRSZ + data_len);
+    return result;
+}
+
+Datum weight_string_date_common(char* value, FunctionCallInfoData *fcinfo)
+{
+    if (fcinfo->nargs == TWO_NUM_ARGS) {
+        PG_RETURN_TEXT_P(cstring_to_text(value));
+    } else if (fcinfo->nargs == THREE_NUM_ARGS) {
+        size_t value_len = strlen(value);
+        size_t data_len = PG_GETARG_UINT32(2);
+        text* result = date_for_binary(value, value_len, data_len);
+        PG_RETURN_TEXT_P(result);
+    } else {
+        size_t value_len = strlen(value);
+        size_t data_len = PG_GETARG_UINT32(2);
+        size_t flags = PG_GETARG_UINT32(3);
+        text* result = date_for_char(value, value_len, data_len, flags);
+        PG_RETURN_TEXT_P(result);
+    }
+}
+
+Datum weight_string_date(PG_FUNCTION_ARGS)
+{
+    char* value = NULL;
+    DateADT dateVal = PG_GETARG_DATEADT(0);
+    value = DatumGetCString(DirectFunctionCall1(date_out, dateVal));
+    return weight_string_date_common(value, fcinfo);
+}
+
+
+Datum weight_string_time(PG_FUNCTION_ARGS)
+{
+    char* value = NULL;
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    value = DatumGetCString(DirectFunctionCall1(time_out, time));
+    return weight_string_date_common(value, fcinfo);
+}
+
+Datum weight_string_timestamp(PG_FUNCTION_ARGS)
+{
+    char* value = NULL;
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    value = DatumGetCString(DirectFunctionCall1(timestamp_out, timestamp));
+    return weight_string_date_common(value, fcinfo);
+}
+
+Datum weight_string_timestamptz(PG_FUNCTION_ARGS)
+{
+    char* value = NULL;
+    TimestampTz timestamptz = PG_GETARG_TIMESTAMPTZ(0);
+    value = DatumGetCString(DirectFunctionCall1(timestamptz_out, timestamptz));
+    return weight_string_date_common(value, fcinfo);
+}
+
+Datum weight_string_interval(PG_FUNCTION_ARGS)
+{
+    char* value = NULL;
+    Interval* span = PG_GETARG_INTERVAL_P(0);
+    value = DatumGetCString(DirectFunctionCall1(interval_out, PointerGetDatum(span)));
+    return weight_string_date_common(value, fcinfo);
+}
+
 #endif
+

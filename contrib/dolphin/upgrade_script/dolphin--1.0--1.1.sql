@@ -2753,6 +2753,24 @@ DROP FUNCTION IF EXISTS  pg_catalog.weight_string(bytea, uint4) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.weight_string(bytea, uint4) RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_bytea';
 DROP FUNCTION IF EXISTS  pg_catalog.weight_string(boolean, uint4) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.weight_string(boolean, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_boolean';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(numeric, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(numeric, uint4) RETURNS text AS
+$$
+BEGIN
+    RETURN NULL;
+END;
+$$
+LANGUAGE plpgsql;
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(date, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(date, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_date';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(time, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(time, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_time';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(timestamp, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(timestamp, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_timestamp';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(timestamptz, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(timestamptz, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_timestamptz';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(interval, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(interval, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_interval';
 
 DROP FUNCTION IF EXISTS  pg_catalog.weight_string(TEXT, TEXT, uint4) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.weight_string(TEXT, TEXT, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string';
@@ -2760,6 +2778,24 @@ DROP FUNCTION IF EXISTS pg_catalog.weight_string (bytea, text, uint4) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.weight_string(bytea, TEXT, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_bytea';
 DROP FUNCTION IF EXISTS  pg_catalog.weight_string(boolean, TEXT, uint4) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.weight_string(boolean, TEXT, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_boolean';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(numeric, TEXT, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(numeric, TEXT, uint4) RETURNS text AS
+$$
+BEGIN
+    RETURN NULL;
+END;
+$$
+LANGUAGE plpgsql;
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(date, TEXT, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(date, TEXT, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_date';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(time, TEXT, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(time, TEXT, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_time';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(timestamp, TEXT, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(timestamp, TEXT, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_timestamp';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(timestamptz, TEXT, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(timestamptz, TEXT, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_timestamptz';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(interval, TEXT, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(interval, TEXT, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_interval';
 
 DROP FUNCTION IF EXISTS  pg_catalog.weight_string(TEXT, TEXT, uint4, uint4) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.weight_string(TEXT, TEXT, uint4, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string';
@@ -2767,6 +2803,24 @@ DROP FUNCTION IF EXISTS pg_catalog.weight_string (bytea, text, uint4, uint4) CAS
 CREATE OR REPLACE FUNCTION pg_catalog.weight_string(bytea, TEXT, uint4, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_bytea';
 DROP FUNCTION IF EXISTS  pg_catalog.weight_string(boolean, TEXT, uint4, uint4) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.weight_string(boolean, TEXT, uint4, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_boolean';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(numeric, TEXT, uint4, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(numeric, TEXT, TEXT, uint4) RETURNS text AS
+$$
+BEGIN
+    RETURN NULL;
+END;
+$$
+LANGUAGE plpgsql;
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(date, TEXT, uint4, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(date, TEXT, uint4, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_date';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(time, TEXT, uint4, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(time, TEXT, uint4, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_time';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(timestamp, TEXT, uint4, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(timestamp, TEXT, uint4, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_timestamp';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(timestamptz, TEXT, uint4, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(timestamptz, TEXT, uint4, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_timestamptz';
+DROP FUNCTION IF EXISTS  pg_catalog.weight_string(interval, TEXT, uint4, uint4) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(interval, TEXT, uint4, uint4)  RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'weight_string_interval';
 
 drop aggregate if exists pg_catalog.bit_xor(text);
 DROP FUNCTION IF EXISTS pg_catalog.text_xor(uint8,text) CASCADE;
