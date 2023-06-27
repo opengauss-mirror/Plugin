@@ -264,6 +264,55 @@ select conv('0',10,8);
  0
 (1 row)
 
+select time'-2 34:25:59'::float4;
+ float4  
+---------
+ -822559
+(1 row)
+
+select time'-838:59:59'::float4;
+    float4    
+--------------
+ -8.38596e+06
+(1 row)
+
+select time'0'::float4;
+ float4 
+--------
+      0
+(1 row)
+
+select time'-0'::float4;
+ float4 
+--------
+      0
+(1 row)
+
+select time'-2 34:25:59'::float8;
+ float8  
+---------
+ -822559
+(1 row)
+
+select time'-838:59:59'::float8;
+  float8  
+----------
+ -8385959
+(1 row)
+
+select time'0'::float8;
+ float8 
+--------
+      0
+(1 row)
+
+select time'-0'::float8;
+ float8 
+--------
+      0
+(1 row)
+
+
 select conv('211111111111111111111111111111111111111111111111111111111177777',10,8);
           conv          
 ------------------------

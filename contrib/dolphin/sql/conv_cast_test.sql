@@ -31,6 +31,15 @@ select conv(9223372036854775807,10,8);
 select conv(123456,10,8);
 select conv(1,10,8);
 
+select time'-2 34:25:59'::float4;
+select time'-838:59:59'::float4;
+select time'0'::float4;
+select time'-0'::float4;
+select time'-2 34:25:59'::float8;
+select time'-838:59:59'::float8;
+select time'0'::float8;
+select time'-0'::float8;
+
 select conv('-211111111111111111111111111111111111111111111111111111111177777',10,8);
 select conv('-366666666666666666666666666666666666666', 10, 8);
 select conv('-266666666666666666666666666666666666666', 10, 8);
