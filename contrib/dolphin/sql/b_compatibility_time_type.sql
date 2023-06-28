@@ -380,6 +380,11 @@ select year ' 1997  89';
 select year ' 1997  #@#';
 select year '&%2122';
 select year '中文2122';
+select year '98.3';
+select year '98.5';
+select year '00001';
+select year '-0.2';
+select year '-000';
 
 -- test partition key
 CREATE TABLESPACE b_time_type_example RELATIVE LOCATION 'tablespace1/tablespace_1';
