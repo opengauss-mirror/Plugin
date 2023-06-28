@@ -64,6 +64,7 @@ static int getStartingDigits(char* str);
 bool check_pg_tm_time_part(pg_tm *tm, fsec_t fsec);
 extern const char* extract_numericstr(const char* str);
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
+int DatetimeDate(char *str, pg_tm *tm);
 
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_time);
 extern "C" DLL_PUBLIC Datum int32_b_format_time(PG_FUNCTION_ARGS);
@@ -405,7 +406,7 @@ Datum date_in(PG_FUNCTION_ARGS)
         }
         if (dterr == 0) {
             if (ftype[0] == DTK_NUMBER && nf == 1) {
-                dterr = NumberDate(field[0], tm);
+                dterr = DatetimeDate(field[0], tm);
                 dtype = DTK_DATE;
             } else {
                 dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tzp);
@@ -457,6 +458,17 @@ Datum date_in(PG_FUNCTION_ARGS)
     PG_RETURN_DATEADT(date);
 }
 #ifdef DOLPHIN
+int DatetimeDate(char *str, pg_tm *tm)
+{
+    fsec_t fsec;
+    Datum datetime = DirectFunctionCall3(timestamp_in, CStringGetDatum(str),
+                                         ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    if (timestamp2tm(datetime, NULL, tm, &fsec, NULL, NULL) != 0) {
+        return ERRCODE_DATETIME_VALUE_OUT_OF_RANGE;
+    }
+    return 0;
+}
+
 int NumberDate(char *str, pg_tm *tm, unsigned int date_flag) 
 {
     int len = 0;

@@ -87,62 +87,44 @@ extern "C" DLL_PUBLIC Datum year_xor_transfn(PG_FUNCTION_ARGS);
  */
 Datum year_in(PG_FUNCTION_ARGS)
 {
+    Datum number = float8in(fcinfo);
+    int32 tmp = (int32)DirectFunctionCall1(dtoi4, number);
     char *str_in = PG_GETARG_CSTRING(0);
     /*
-     * parse str_in
-     * status flag's meaning :
-     * 1: begin field  : only allow for space
-     * 2: number field : only allow for numbers
-     * 4: end field    : only allow for space
-     * for example     : ' 1997  '
+     * after float8in(), string can already convert to number
+     * we just need to know string length, without space
+     * 
+     * case1: space, first sign or number
+     * case2: number or dot
      */
     int len = strlen(str_in);
     int status = 1;
-    int32 tmp = 0;
     int year_len = 0;
     for (int i = 0; i < len; ++i) {
         switch (status)
         {
         case 1:
-            if (isdigit(str_in[i])) {
+            if (isdigit(str_in[i]) || str_in[i] == '-' || str_in[i] == '+') {
                 status <<= 1;
                 ++year_len;
-                tmp = str_in[i] - '0';
-            } else if (str_in[i] != ' ') {
-                ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Invalid integer value: \"%s\"", str_in)));
             }
             break;
         case 2:
-            if (isdigit(str_in[i])) {
+            if (isdigit(str_in[i]) || str_in[i] == '.') {
                 ++year_len;
-                if (year_len > YEAR4_LEN) {
-                    ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Incorrect integer value: \"%s\"", str_in)));
-                }
-                tmp = tmp * 10 + str_in[i] - '0';
             } else if (str_in[i] == ' ') {
                 status <<= 1;
-            } else {
-                ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Incorrect integer value: \"%s\"", str_in)));
-            }
-            break;
-        case 4:
-            if (str_in[i] != ' ') {
-                ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Incorrect integer value: \"%s\"", str_in)));
             }
             break;
         default:
             break;
         }
     }
-    /* empty str_in */
-    if (status == 1) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Incorrect integer value: \"%s\"", str_in)));
-    }
     /* 
-     * "0000" -> 0 
-     * "000"  -> 2000
-     * "00"   -> 2000
-     * "0"    -> 2000
+     * number equals 0, and string length is 4, the result is 0
+     * number equals 0, string length is NOT 4, the result is 2000
+     * '0000', '+0000', '00.1', '-0.2' -- 0
+     * '  000 ', '00000', '0.1' --2000
      */
     if (tmp == 0 && year_len != YEAR4_LEN) {
         tmp = 2000;

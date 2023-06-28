@@ -191,7 +191,7 @@ SELECT date'99991231';
 (1 row)
 
 SELECT date'100000101';
-WARNING:  invalid input syntax for type date: "100000101"
+WARNING:  date/time field value out of range: "100000101"
 LINE 1: SELECT date'100000101';
                    ^
 CONTEXT:  referenced column: date
@@ -207,10 +207,6 @@ SELECT date'10000101';
 (1 row)
 
 SELECT date'9990101';
-WARNING:  Incorrect date value: "9990101". "YYYYMMDD" or "YYMMDD" format is recommended.
-LINE 1: SELECT date'9990101';
-                   ^
-CONTEXT:  referenced column: date
 WARNING:  date/time field value out of range: "9990101"
 LINE 1: SELECT date'9990101';
                    ^
@@ -1217,7 +1213,7 @@ INSERT INTO year_tbl VALUES (-1, -1, -1);
 ERROR:  Out of range value for year data type!
 CONTEXT:  referenced column: y
 INSERT INTO year_tbl VALUES ('-1', '-1', '-1');
-ERROR:  Invalid integer value: "-1"
+ERROR:  Out of range value for year data type!
 LINE 1: INSERT INTO year_tbl VALUES ('-1', '-1', '-1');
                                      ^
 CONTEXT:  referenced column: y
@@ -1485,12 +1481,12 @@ select integer'-2147481651' - year'1997';
 
 -- test year input
 select year '20$#12';
-ERROR:  Incorrect integer value: "20$#12"
+ERROR:  invalid input syntax for type double precision: "20$#12"
 LINE 1: select year '20$#12';
                     ^
 CONTEXT:  referenced column: year
 select year '20中文12';
-ERROR:  Incorrect integer value: "20中文12"
+ERROR:  invalid input syntax for type double precision: "20中文12"
 LINE 1: select year '20中文12';
                     ^
 CONTEXT:  referenced column: year
@@ -1513,25 +1509,55 @@ select year '1997  ';
 (1 row)
 
 select year ' 1997  89';
-ERROR:  Incorrect integer value: " 1997  89"
+ERROR:  invalid input syntax for type double precision: " 1997  89"
 LINE 1: select year ' 1997  89';
                     ^
 CONTEXT:  referenced column: year
 select year ' 1997  #@#';
-ERROR:  Incorrect integer value: " 1997  #@#"
+ERROR:  invalid input syntax for type double precision: " 1997  #@#"
 LINE 1: select year ' 1997  #@#';
                     ^
 CONTEXT:  referenced column: year
 select year '&%2122';
-ERROR:  Invalid integer value: "&%2122"
+ERROR:  invalid input syntax for type double precision: "&%2122"
 LINE 1: select year '&%2122';
                     ^
 CONTEXT:  referenced column: year
 select year '中文2122';
-ERROR:  Invalid integer value: "中文2122"
+ERROR:  invalid input syntax for type double precision: "中文2122"
 LINE 1: select year '中文2122';
                     ^
 CONTEXT:  referenced column: year
+select year '98.3';
+ year 
+------
+ 1998
+(1 row)
+
+select year '98.5';
+ year 
+------
+ 1999
+(1 row)
+
+select year '00001';
+ year 
+------
+ 2001
+(1 row)
+
+select year '-0.2';
+ year 
+------
+ 0
+(1 row)
+
+select year '-000';
+ year 
+------
+ 0
+(1 row)
+
 -- test partition key
 CREATE TABLESPACE b_time_type_example RELATIVE LOCATION 'tablespace1/tablespace_1';
 -- year range key
