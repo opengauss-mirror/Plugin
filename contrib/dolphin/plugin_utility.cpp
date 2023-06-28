@@ -2709,6 +2709,13 @@ void standard_ProcessUtility(processutility_context* processutility_cxt,
                         }
                     }
                     FreeSavepointList();
+
+                    if (SS_STANDBY_MODE_WITH_REMOTE_EXECUTE) {
+                        ClearTxnInfoForSSLibpqsw();
+                        if (libpqsw_get_transaction()) {
+                            libpqsw_set_transaction(false);
+                        }
+                    }
                     break;
 
                 case TRANS_STMT_PREPARE:
@@ -4044,9 +4051,9 @@ void standard_ProcessUtility(processutility_context* processutility_cxt,
              * Since the lock would just get dropped immediately, LOCK TABLE
              * outside a transaction block is presumed to be user error.
              */
-            #ifdef DOLPHIN
+#ifdef DOLPHIN
             if (!((LockStmt*)parse_tree)->isLockTables)
-            #endif
+#endif
                 RequireTransactionChain(is_top_level, "LOCK TABLE");
 #ifdef PGXC
             /* only lock local table if cm_agent do Lock Stmt */
@@ -5070,6 +5077,10 @@ void standard_ProcessUtility(processutility_context* processutility_cxt,
 
             break;
         }
+        case T_GetDiagStmt: {
+            GetDiagStmt *n = (GetDiagStmt *)parse_tree;
+            getDiagnosticsInfo(n->condInfo, n->hasCondNum, n->condNum);
+        } break;
         default: {
             ProcessUtilitySlow(parse_tree, query_string, params, dest, 
 #ifdef PGXC
@@ -7718,6 +7729,7 @@ static bool is_stmt_allowed_in_locked_mode(Node* parse_tree, const char* query_s
         case T_AlterEventStmt:
         case T_DropEventStmt:
         case T_ShowEventStmt:
+        case T_GetDiagStmt:
             return ALLOW;
 
         default:
@@ -9546,6 +9558,9 @@ const char* CreateCommandTag(Node* parse_tree)
         case T_ShrinkStmt:
             tag = "SHRINK";
             break;
+        case T_GetDiagStmt:
+            tag = "GET DIAGNOSTICS";
+            break;
         default:
             elog(WARNING, "unrecognized node type: %d", (int)nodeTag(parse_tree));
             tag = "?\?\?";
@@ -9804,11 +9819,11 @@ const char* CreateAlterTableCommandTag(const AlterTableType subtype)
         case AT_SplitPartition:
             tag = "SPLIT PARTITION";
             break;
-        #ifdef DOLPHIN
+#ifdef DOLPHIN
         case AT_ReorganizePartition:
             tag = "REORGANIZE PARTITION";
             break;
-        #endif
+#endif
         case AT_ReAddConstraint:
             tag = "RE ADD CONSTRAINT";
             break;
@@ -10391,6 +10406,9 @@ LogStmtLevel GetCommandLogLevel(Node* parse_tree)
             lev = LOGSTMT_ALL;
             break;
         case T_CreateModelStmt: // DB4AI
+            lev = LOGSTMT_ALL;
+            break;
+        case T_GetDiagStmt:
             lev = LOGSTMT_ALL;
             break;
 
