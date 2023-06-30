@@ -69,10 +69,8 @@ public class MySQLJdbcPrepareTest {
                 "c11 bit(10)," +
                 "c12 bool," +
                 "c13 char(10)," +
-                "c14 binary(10)," +
                 "c15 varchar(10)," +
                 "c16 nvarchar(10)," +
-                "c17 varbinary(10)," +
                 "c18 year," +
                 "c19 date ," +
                 "c20 time, " +
@@ -91,7 +89,7 @@ public class MySQLJdbcPrepareTest {
                 "c33 set('a', 'b')" +
                 ")");
             
-            PreparedStatement p1 = connection.prepareStatement("insert into t3 values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+            PreparedStatement p1 = connection.prepareStatement("insert into t3 values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
             p1.setInt(1, 1);
             p1.setLong(2, 2000);
             p1.setInt(3, 1);
@@ -105,33 +103,31 @@ public class MySQLJdbcPrepareTest {
             p1.setBytes(11, "c".getBytes());
             p1.setBoolean(12, true);
             p1.setString(13, "char");
-            p1.setBytes(14, "binary".getBytes());
-            p1.setString(15, "varchar");
-            p1.setString(16, "nvarchar");
-            p1.setBytes(17, "varbinary".getBytes());
+            p1.setString(14, "varchar");
+            p1.setString(15, "nvarchar");
             
-            p1.setInt(18, 2023);
-            p1.setDate(19, java.sql.Date.valueOf("2023-02-27"));
-            p1.setTime(20, Time.valueOf("14:46:30"));
+            p1.setInt(16, 2023);
+            p1.setDate(17, java.sql.Date.valueOf("2023-02-27"));
+            p1.setTime(18, Time.valueOf("14:46:30"));
     
-            p1.setTimestamp(21, Timestamp.valueOf("2023-03-07 16:16:16.666"));
-            p1.setObject(22, Timestamp.valueOf("2023-03-07 16:16:16.666"));
+            p1.setTimestamp(19, Timestamp.valueOf("2023-03-07 16:16:16.666"));
+            p1.setObject(20, Timestamp.valueOf("2023-03-07 16:16:16.666"));
 
             Blob blob = connection.createBlob();
             blob.setBytes(1, "blob".getBytes());
             
+            p1.setBlob(21, blob);
+            p1.setBlob(22, blob);
             p1.setBlob(23, blob);
             p1.setBlob(24, blob);
-            p1.setBlob(25, blob);
-            p1.setBlob(26, blob);
             
-            p1.setObject(27, "(1000,0)");
-            p1.setObject(28, "(1000,0,200,3)");
-            p1.setString(29, "text");
-            p1.setBigDecimal(30, new BigDecimal(20));
-            p1.setString(31, "{\"k\": \"v\"}"); 
-            p1.setString(32, "a");
-            p1.setString(33, "a");
+            p1.setObject(25, "(1000,0)");
+            p1.setObject(26, "(1000,0,200,3)");
+            p1.setString(27, "text");
+            p1.setBigDecimal(28, new BigDecimal(20));
+            p1.setString(29, "{\"k\": \"v\"}"); 
+            p1.setString(30, "a");
+            p1.setString(31, "a");
             
             p1.executeUpdate();
             

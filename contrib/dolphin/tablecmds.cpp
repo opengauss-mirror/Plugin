@@ -176,7 +176,7 @@
 #include "fmgr.h"
 #include "pgstat.h"
 #include "postmaster/rbcleaner.h"
-#include "catalog/gs_utf8_collation.h"
+#include "catalog/gs_collation.h"
 #ifdef ENABLE_MULTIPLE_NODES
 #include "tsdb/utils/ts_relcache.h"
 #include "tsdb/common/ts_tablecmds.h"
@@ -8868,7 +8868,7 @@ static void sqlcmd_alter_prep_convert_charset(AlteredTableInfo* tab, Relation re
                                format_type_be(targettypid))));
         }
 
-        transform = coerce_to_target_charset(transform, cc->charset, targettypid);
+        transform = coerce_to_target_charset(transform, cc->charset, targettypid, attTup->atttypmod, targetcollid);
 
         exprSetCollation(transform, targetcollid);
 
@@ -15966,7 +15966,7 @@ static void ATPrepAlterColumnType(List** wqueue, AlteredTableInfo* tab, Relation
                         "column \"%s\" cannot be cast automatically to type %s", colName, format_type_be(targettype)),
                     errhint("Specify a USING expression to perform the conversion.")));
 #ifndef ENABLE_MULTIPLE_NODES
-        transform = coerce_to_target_charset(transform, target_charset, attTup->atttypid);
+        transform = coerce_to_target_charset(transform, target_charset, attTup->atttypid, attTup->atttypmod, targetcollid);
 #endif
         /* Fix collations after all else */
         assign_expr_collations(pstate, transform);
@@ -16954,8 +16954,8 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
             RangeTblEntry*  rte = addRangeTableEntryForRelation(pstate, rel, NULL, false, true);
             addRTEtoQuery(pstate, rte, true, true, true);
             pstate->p_rawdefaultlist = NULL;
-            update_expr = cookDefault(pstate, update_expr, attTup->atttypid, attTup->atttypmod, NameStr(attTup->attname),
-                def->generatedCol);
+            update_expr = cookDefault(pstate, update_expr, attTup->atttypid, attTup->atttypmod,
+                attTup->attcollation, NameStr(attTup->attname), def->generatedCol);
         }
 
         StoreAttrDefault(rel, attnum, defaultexpr, generatedCol, update_expr);
@@ -32619,7 +32619,7 @@ static Node* RebuildGeneratedColumnExpr(Relation rel, AttrNumber gen_attnum)
 {
     ParseState* pstate = NULL;
     RangeTblEntry *rte = NULL;
-    FormData_pg_attribute pgattr = rel->rd_att->attrs[gen_attnum - 1];
+    Form_pg_attribute pgattr = &rel->rd_att->attrs[gen_attnum - 1];
     Node* gen_expr = build_column_default(rel, gen_attnum);
 
     Assert(gen_expr);
@@ -32629,8 +32629,8 @@ static Node* RebuildGeneratedColumnExpr(Relation rel, AttrNumber gen_attnum)
     pstate = make_parsestate(NULL);
     rte = addRangeTableEntryForRelation(pstate, rel, NULL, false, true);
     addRTEtoQuery(pstate, rte, false, true, true);
-    gen_expr = cookDefault(
-        pstate, gen_expr, pgattr.atttypid, pgattr.atttypmod, NameStr(pgattr.attname), ATTRIBUTE_GENERATED_STORED);
+    gen_expr = cookDefault(pstate, gen_expr, pgattr->atttypid, pgattr->atttypmod, pgattr->attcollation,
+        NameStr(pgattr->attname), ATTRIBUTE_GENERATED_STORED);
     /* readd pg_attrdef */
     RemoveAttrDefault(RelationGetRelid(rel), gen_attnum, DROP_RESTRICT, true, true);
     StoreAttrDefault(rel, gen_attnum, gen_expr, ATTRIBUTE_GENERATED_STORED, NULL, true);

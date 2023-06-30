@@ -531,7 +531,7 @@ void spi_sql_proc_dest_printtup(TupleTableSlot *slot, DestReceiver *self)
              * attr had been converted to CSTRING type previously by using anyarray_out.
              * just send over the DataRow message as we received it.
              */
-            pq_sendcountedtext_printtup(buf, (char *)attr, strlen((char *)attr));
+            pq_sendcountedtext_printtup(buf, (char *)attr, strlen((char *)attr), thisState->encoding, (void*)&thisState->convert_finfo);
         } else {
             if (thisState->format == 0) {
                 /* Text output */
@@ -573,7 +573,7 @@ void spi_sql_proc_dest_printtup(TupleTableSlot *slot, DestReceiver *self)
 #ifndef ENABLE_MULTIPLE_NODES
                 t_thrd.xact_cxt.callPrint = false;
 #endif
-                pq_sendcountedtext_printtup(buf, outputstr, strlen(outputstr));
+                pq_sendcountedtext_printtup(buf, outputstr, strlen(outputstr), thisState->encoding, (void*)&thisState->convert_finfo);
                 if (needFree) {
                     pfree(outputstr);
                 }

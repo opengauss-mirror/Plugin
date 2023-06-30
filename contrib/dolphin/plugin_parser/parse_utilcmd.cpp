@@ -97,8 +97,8 @@
 #include "client_logic/client_logic.h"
 #include "client_logic/client_logic_enums.h"
 #include "storage/checksum_impl.h"
+#include "catalog/gs_collation.h"
 
-#include "catalog/gs_utf8_collation.h"
 /* State shared by transformCreateSchemaStmt and its subroutines */
 typedef struct {
     const char* stmtType; /* "CREATE SCHEMA" or "ALTER SCHEMA" */
@@ -240,66 +240,7 @@ static void checkPartitionConstraintWithExpr(Constraint* con)
     }
 }
 
-int get_charset_by_collation(Oid coll_oid)
-{
-    HeapTuple tp = NULL;
-    int result = PG_INVALID_ENCODING;
-
-    /* The collation OID in B format has a rule, through which we can quickly get the charset from the OID. */
-    if (COLLATION_IN_B_FORMAT(coll_oid)) {
-        return FAST_GET_CHARSET_BY_COLL(coll_oid);
-    }
-    
-    if (COLLATION_HAS_INVALID_ENCODING(coll_oid)) {
-        return result;
-    }
-
-    tp = SearchSysCache1(COLLOID, ObjectIdGetDatum(coll_oid));
-    if (!HeapTupleIsValid(tp)) {
-        return result;
-    }
-    Form_pg_collation coll_tup = (Form_pg_collation)GETSTRUCT(tp);
-    result = coll_tup->collencoding;
-    ReleaseSysCache(tp);
-    return result;
-}
-
-Oid get_default_collation_by_charset(int charset)
-{
-    Oid coll_oid = InvalidOid;
-    Relation rel;
-    ScanKeyData key[2];
-    SysScanDesc scan = NULL;
-    HeapTuple tup = NULL;
-
-    rel = heap_open(CollationRelationId, AccessShareLock);
-    ScanKeyInit(&key[0], Anum_pg_collation_collencoding, BTEqualStrategyNumber, F_INT4EQ, Int32GetDatum(charset));
-    ScanKeyInit(&key[1], Anum_pg_collation_collisdef, BTEqualStrategyNumber, F_BOOLEQ, BoolGetDatum(true));
-
-    scan = systable_beginscan(rel, CollationEncDefIndexId, true, NULL, 2, key);
-
-    while (HeapTupleIsValid(tup = systable_getnext(scan))) {
-        coll_oid = HeapTupleGetOid(tup);
-        break;
-    }
-    systable_endscan(scan);
-    heap_close(rel, AccessShareLock);
-
-    if (coll_oid == InvalidOid) {
-#ifdef DOLPHIN
-        ereport(WARNING, (errmsg("default collation for encoding \"%s\" does not exist. default value set",
-            pg_encoding_to_char(charset))));
-        coll_oid = DEFAULT_COLLATION_OID;
-#else
-        ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
-                errmsg("default collation for encoding \"%s\" does not exist",
-                    pg_encoding_to_char(charset))));
-#endif
-    }
-    return coll_oid;
-}
-
-static Oid check_collation_by_charset(const char* collate, int charset)
+Oid check_collation_by_charset(const char* collate, int charset, bool ignore_check)
 {
     Oid coll_oid = InvalidOid;
     coll_oid = GetSysCacheOid3(COLLNAMEENCNSP, PointerGetDatum(collate),
@@ -309,8 +250,10 @@ static Oid check_collation_by_charset(const char* collate, int charset)
         coll_oid = get_collation_oid_with_lower_name(collate, charset);
         if (coll_oid == InvalidOid) {
 #ifdef DOLPHIN
+        if (ignore_check) {
             ereport(WARNING, (errmsg("Invalid collation detected. default value set")));
             coll_oid = DEFAULT_COLLATION_OID;
+        }
 #else
             ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
                     errmsg("collation \"%s\" for encoding \"%s\" does not exist",
@@ -325,13 +268,17 @@ static Oid check_collation_by_charset(const char* collate, int charset)
  * transform_default_collation -
  *      Returns the processed collation oid of schema, relation or attribute level.
  */
+#ifdef DOLPHIN
+Oid transform_default_collation(const char* collate, int charset, Oid def_coll_oid, bool is_attr, bool ignore_check)
+#else
 Oid transform_default_collation(const char* collate, int charset, Oid def_coll_oid, bool is_attr)
+#endif
 {
     Oid coll_oid = InvalidOid;
     HeapTuple coll_tup;
     
     if (collate != NULL && charset != PG_INVALID_ENCODING) {
-        coll_oid = check_collation_by_charset(collate, charset);
+        coll_oid = check_collation_by_charset(collate, charset, ignore_check);
     } else if (collate != NULL) {
         CatCList* list = NULL;
         list = SearchSysCacheList1(COLLNAMEENCNSP, PointerGetDatum(collate));
@@ -340,8 +287,10 @@ Oid transform_default_collation(const char* collate, int charset, Oid def_coll_o
             coll_oid = get_collation_oid_with_lower_name(collate, charset);
             if (coll_oid == InvalidOid) {
 #ifdef DOLPHIN
+            if (ignore_check) {
                 coll_oid = DEFAULT_COLLATION_OID;
                 ereport(WARNING, (errmsg("Invalid collation detected. default value set")));
+            }
 #else
                 ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
                         errmsg("collation \"%s\" does not exist", collate)));
@@ -384,7 +333,8 @@ Oid transform_default_collation(const char* collate, int charset, Oid def_coll_o
                 errmsg("this collation only cannot be specified here")));
     }
 #endif
-    if (charset != PG_INVALID_ENCODING && charset != PG_SQL_ASCII && charset != GetDatabaseEncoding()) {
+    if ((!ENABLE_MULTI_CHARSET || t_thrd.proc->workingVersionNum < MULTI_CHARSET_VERSION_NUM) &&
+        charset != PG_INVALID_ENCODING && charset != PG_SQL_ASCII && charset != GetDatabaseEncoding()) {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("difference between the charset and the database encoding has not supported")));
     }
@@ -674,6 +624,20 @@ Oid *namespaceid, bool isFirstNode)
             break;
         }
     }
+
+    Oid rel_coll_oid = DEFAULT_COLLATION_OID;
+    if (DB_CMPT_B) {
+        Oid nspdefcoll = get_nsp_default_collation(*namespaceid);
+        if (stmt->collate || stmt->charset != PG_INVALID_ENCODING || nspdefcoll != InvalidOid) {
+#ifdef DOLPHIN
+            rel_coll_oid = transform_default_collation(stmt->collate, stmt->charset, nspdefcoll, false, false);
+#else
+            rel_coll_oid = transform_default_collation(stmt->collate, stmt->charset, nspdefcoll);
+#endif
+        }
+    }
+    cxt.rel_coll_id = rel_coll_oid;
+
     /*
      * Run through each primary element in the table creation clause. Separate
      * column defs from constraints, and do preliminary analysis.
@@ -1005,6 +969,16 @@ static List* GetAutoIncSeqOptions(CreateStmtContext* cxt)
     return list_make1(option);
 }
 
+inline Oid get_rel_colaltion(Relation rel)
+{
+    if (rel == NULL || rel->rd_options == NULL) {
+        return InvalidOid;
+    }
+
+    StdRdOptions *opt = (StdRdOptions*)(rel->rd_options);
+    return opt->collate;
+}
+
 /*
  * createSetOwnedByTable -
  *		create a set owned by table, need to add record to pg_depend.
@@ -1047,6 +1021,12 @@ static void CreateSetOwnedByTable(CreateStmtContext* cxt, ColumnDef* column, cha
      */
     setstmt = makeNode(CreateSetStmt);
     setstmt->typname = column->typname;
+
+    /* get collation oid in alter table syntax */
+    Oid rel_coll_oid = cxt->rel_coll_id;
+    Oid coll_oid = get_rel_colaltion(cxt->rel);
+    coll_oid = (coll_oid == InvalidOid) ? rel_coll_oid : coll_oid;
+    setstmt->set_collation = get_column_def_collation_b_format(column, ANYSETOID, 100, false, coll_oid);
 
     cxt->blist = lappend(cxt->blist, setstmt);
 
@@ -5181,6 +5161,7 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
     cxt.alist = NIL;
     cxt.pkey = NULL;
     cxt.ispartitioned = RelationIsPartitioned(rel);
+    cxt.rel_coll_id = InvalidOid;
 
 #ifdef PGXC
     cxt.fallback_dist_col = NULL;
@@ -8919,6 +8900,7 @@ static void TransformModifyColumnDatatype(CreateStmtContext* cxt, AlterTableCmd*
                 PrecheckColumnTypeForSet(cxt, def->typname);
                 new_set = true;
                 def->typname->typeOid = InvalidOid; // pg_attribute.atttypid
+                cxt->rel_coll_id = InvalidOid;
                 CreateSetOwnedByTable(cxt, def, def->colname);
             }
         } else if (strcmp(tname, "smallserial") == 0 || strcmp(tname, "serial2") == 0 || strcmp(tname, "serial") == 0 ||

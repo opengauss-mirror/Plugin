@@ -155,11 +155,9 @@ static void assign_default_week_format(int newval, void* extra);
 static bool check_lc_time_names(char** newval, void** extra, GucSource source);
 static bool check_auto_increment_increment(int* newval, void** extra, GucSource source);
 static bool check_character_set_client(char** newval, void** extra, GucSource source);
-static bool check_character_set_connection(char** newval, void** extra, GucSource source);
 static bool check_character_set_results(char** newval, void** extra, GucSource source);
 static bool check_character_set_server(char** newval, void** extra, GucSource source);
 static bool check_collation_server(char** newval, void** extra, GucSource source);
-static bool check_collation_connection(char** newval, void** extra, GucSource source);
 static bool check_init_connect(char** newval, void** extra, GucSource source);
 static bool check_interactive_timeout(int* newval, void** extra, GucSource source);
 static bool check_license(char** newval, void** extra, GucSource source);
@@ -636,14 +634,6 @@ static bool check_character_set_client(char** newval, void** extra, GucSource so
     return true;
 }
 
-static bool check_character_set_connection(char** newval, void** extra, GucSource source)
-{
-    if (source == PGC_S_SESSION) {
-        ereport(WARNING, (errmsg("Variable 'character_set_connection' has no actual meaning.")));
-    }
-    return true;
-}
-
 static bool check_character_set_results(char** newval, void** extra, GucSource source)
 {
     if (source == PGC_S_SESSION) {
@@ -663,14 +653,6 @@ static bool check_collation_server(char** newval, void** extra, GucSource source
 {
     if (source == PGC_S_SESSION) {
         ereport(WARNING, (errmsg("Variable 'collation_server' has no actual meaning.")));
-    }
-    return true;
-}
-
-static bool check_collation_connection(char** newval, void** extra, GucSource source)
-{
-    if (source == PGC_S_SESSION) {
-        ereport(WARNING, (errmsg("Variable 'collation_connection' has no actual meaning.")));
     }
     return true;
 }
@@ -1058,16 +1040,6 @@ void init_session_vars(void)
                                check_character_set_client,
                                NULL,
                                NULL);
-    DefineCustomStringVariable("character_set_connection",
-                               gettext_noop("When there is no character set introducer, this character set is used."),
-                               NULL,
-                               &GetSessionContext()->character_set_connection,
-                               "utf8",
-                               PGC_USERSET,
-                               0,
-                               check_character_set_connection,
-                               NULL,
-                               NULL);
     DefineCustomStringVariable("character_set_results",
                                gettext_noop("The server uses this character set "
                                "to return the query results to the client"),
@@ -1097,16 +1069,6 @@ void init_session_vars(void)
                                PGC_USERSET,
                                0,
                                check_collation_server,
-                               NULL,
-                               NULL);
-    DefineCustomStringVariable("collation_connection",
-                               gettext_noop("The connection character set uses this collation."),
-                               NULL,
-                               &GetSessionContext()->collation_connection,
-                               "",
-                               PGC_USERSET,
-                               0,
-                               check_collation_connection,
                                NULL,
                                NULL);
     DefineCustomStringVariable("init_connect",

@@ -24,7 +24,7 @@
 #include "catalog/pg_proc.h"
 #include "catalog/gs_package.h"
 #include "catalog/gs_package_fn.h"
-#include "catalog/gs_utf8_collation.h"
+#include "catalog/gs_collation.h"
 #include "commands/dbcommands.h"
 #include "commands/sequence.h"
 #include "db4ai/predict_by.h"
@@ -47,6 +47,7 @@
 #include "plugin_parser/parse_target.h"
 #include "plugin_parser/parse_type.h"
 #include "plugin_parser/parse_agg.h"
+#include "parser/parse_utilcmd.h"
 #include "rewrite/rewriteManip.h"
 #include "utils/builtins.h"
 #include "utils/fmgroids.h"
@@ -56,6 +57,7 @@
 #include "funcapi.h"
 #include "utils/guc.h"
 #include "utils/guc_tables.h"
+#include "utils/varbit.h"
 #include "plugin_parser/parse_utilcmd.h"
 
 extern Node* build_column_default(Relation rel, int attrno, bool isInsertCmd = false, bool needOnUpdate = false);
@@ -90,6 +92,7 @@ static Node* transformPredictByFunction(ParseState* pstate, PredictByFunction* c
 static Node* transformWholeRowRef(ParseState* pstate, RangeTblEntry* rte, int location);
 static Node* transformIndirection(ParseState* pstate, A_Indirection* ind);
 static Node* transformTypeCast(ParseState* pstate, TypeCast* tc);
+static Node* transformCharsetClause(ParseState* pstate, CharsetClause* c);
 static Node* transformCollateClause(ParseState* pstate, CollateClause* c);
 static Node* make_row_comparison_op(ParseState* pstate, List* opname, List* largs, List* rargs, int location);
 static Node* make_row_distinct_op(ParseState* pstate, List* opname, RowExpr* lrow, RowExpr* rrow, int location);
@@ -549,6 +552,10 @@ Node *transformExprRecurse(ParseState *pstate, Node *expr)
 
         case T_SetVariableExpr:
             result = transformSetVariableExpr((SetVariableExpr*)expr);
+            break;
+
+        case T_CharsetClause:
+            result = transformCharsetClause(pstate, (CharsetClause*)expr);
             break;
 
             /*********************************************
@@ -1752,6 +1759,7 @@ static Node* transformUserSetElem(ParseState* pstate, UserSetElem *elem)
     UserSetElem *result = makeNode(UserSetElem);
     result->name = elem->name;
     Node *value = transformExprRecurse(pstate, (Node*)elem->val);
+    assign_expr_collations(pstate, value);
 
     if (IsA(elem->val, UserSetElem)) {
         result->name = list_concat(result->name, ((UserSetElem *)value)->name);
@@ -3270,6 +3278,63 @@ static Node* transformTypeCast(ParseState* pstate, TypeCast* tc)
 }
 
 /*
+ * Handle an _charset clause.
+ *
+ * Transform the argument, and set charset's default collation.
+ * Only B-compatibility database.
+ */
+static Node* transformCharsetClause(ParseState* pstate, CharsetClause* c)
+{
+    Node *result = NULL;
+    Const *con = NULL;
+
+    Assert(DB_IS_CMPT(B_FORMAT));
+    result = transformExprRecurse(pstate, c->arg);
+    Assert(IsA(result, Const));
+    con = (Const*)result;
+    /* T_BitString */
+    if (con->consttype == BITOID) {
+        /* transform bit to binary type */
+        VarBit* vb = DatumGetVarBitP(con->constvalue);
+        Datum bit_binary = CStringGetByteaDatum((const char*)VARBITS(vb), VARBITBYTES(vb));
+#ifdef DOLPHIN
+        if (c->is_binary) {
+            result = (Node *)makeConst(VARBINARYOID, -1, InvalidOid, -1, bit_binary, false, false);
+        } else {
+            /* varbinary datum can be a varchar datum */
+            result = (Node *)makeConst(VARCHAROID, -1, InvalidOid, -1, bit_binary, false, false);
+        }
+#else
+        if (c->is_binary) {
+            result = (Node *)makeConst(BYTEAOID, -1, InvalidOid, -1, bit_binary, false, false);
+        } else {
+            /* bytea datum can be a text datum */
+            result = (Node *)makeConst(TEXTOID, -1, InvalidOid, -1, bit_binary, false, false);
+        }
+#endif
+    } else {
+#ifdef DOLPHIN
+        /* treate string as binary datatype: varbinary */
+        if (c->is_binary) {
+            result = coerce_type(pstate, result, exprType(result), VARBINARYOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, c->location);
+        } else {
+            result = coerce_type(pstate, result, exprType(result), VARCHAROID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, c->location);
+        }
+#else
+        /* treate string as binary datatype: bytea */
+        if (c->is_binary) {
+            result = coerce_type(pstate, result, exprType(result), BYTEAOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, c->location);
+        } else {
+            result = coerce_type(pstate, result, exprType(result), TEXTOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, c->location);
+        }
+#endif
+    }
+
+    exprSetCollation(result, get_default_collation_by_charset(c->charset));
+    return result;
+}
+
+/*
  * Handle an explicit COLLATE clause.
  *
  * Transform the argument, and look up the collation name.
@@ -3283,15 +3348,18 @@ static Node* transformCollateClause(ParseState* pstate, CollateClause* c)
     newc->arg = (Expr*)transformExprRecurse(pstate, c->arg);
 
     argtype = exprType((Node*)newc->arg);
-
     /*
-     * The unknown type is not collatable, but coerce_type() takes care of it
-     * separately, so we'll let it go here.
-     */
+    * The unknown type is not collatable, but coerce_type() takes care of it
+    * separately, so we'll let it go here.
+    */
 #ifdef DOLPHIN
-    if (!IsBinaryType(argtype) && !type_is_collatable(argtype) && argtype != UNKNOWNOID) {
+    if (!(IsBinaryType(argtype) || (IsA(newc->arg, Const) && (argtype == BITOID || argtype == VARBITOID)))
+        && !type_is_collatable(argtype) && argtype != UNKNOWNOID) {
 #else
-    if (!type_is_collatable(argtype) && argtype != UNKNOWNOID) {
+    if (!type_is_collatable(argtype) && argtype != UNKNOWNOID &&
+        !(DB_IS_CMPT(B_FORMAT) &&
+            (IsBinaryType(argtype) ||
+                (IsA(newc->arg, Const) && (argtype == BITOID || argtype == VARBITOID))))) {
 #endif
         ereport(ERROR,
             (errcode(ERRCODE_DATATYPE_MISMATCH),
@@ -3307,6 +3375,30 @@ static Node* transformCollateClause(ParseState* pstate, CollateClause* c)
 #endif
     newc->collOid = collation;
     newc->location = c->location;
+    if (!DB_IS_CMPT(B_FORMAT)) {
+        return (Node*)newc;
+    }
+
+    /* 
+     * In B compatibility, binary type expression is collatable.
+     * The collation of binary type expression can only be "binary".
+     */
+    if (argtype == BITOID || argtype == VARBITOID || IsBinaryType(argtype)) {
+        if (newc->collOid != BINARY_COLLATION_OID) {
+            const char* coll_name = get_collation_name(newc->collOid);
+            ereport(ERROR,
+                (errcode(ERRCODE_COLLATION_MISMATCH),
+                    errmsg("COLLATION \"%s\" is not valid for binary type", coll_name ? coll_name : "NULL"),
+                    parser_errposition(pstate, c->location)));
+        }
+        /* "X'..' COLLATE binary" and "B'..' COLLATE binary" should be treated as binary type. */
+        if (IsA(newc->arg, Const) && (argtype == BITOID || argtype == VARBITOID)) {
+            /* transform bit to bytea */
+            VarBit* vb = DatumGetVarBitP(((Const*)newc->arg)->constvalue);
+            Datum bit_binary = CStringGetByteaDatum((const char*)VARBITS(vb), VARBITBYTES(vb));
+            newc->arg = (Expr*)makeConst(BYTEAOID, -1, InvalidOid, -1, bit_binary, false, false);
+        }
+    }
 
     return (Node*)newc;
 }

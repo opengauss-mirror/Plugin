@@ -22,7 +22,7 @@ show character_set_client;
 show character_set_connection;
  character_set_connection 
 --------------------------
- utf8
+ UTF8
 (1 row)
 
 show character_set_results;
@@ -135,9 +135,9 @@ SELECT * FROM pg_settings WHERE NAME='character_set_client';
 (1 row)
 
 SELECT * FROM pg_settings WHERE NAME='character_set_connection';
-           name           | setting | unit |      category      |                               short_desc                               | extra_desc | context | vartype | source  | min_val | max_val | enumvals | boot_val | reset_val | sourcefile | sourceline 
---------------------------+---------+------+--------------------+------------------------------------------------------------------------+------------+---------+---------+---------+---------+---------+----------+----------+-----------+------------+------------
- character_set_connection | utf8    |      | Customized Options | When there is no character set introducer, this character set is used. |            | user    | string  | default |         |         |          | utf8     | utf8      |            |           
+           name           | setting | unit |                      category                      |          short_desc           | extra_desc | context | vartype | source  | min_val | max_val | enumvals | boot_val | reset_val | sourcefile | sourceline 
+--------------------------+---------+------+----------------------------------------------------+-------------------------------+------------+---------+---------+---------+---------+---------+----------+----------+-----------+------------+------------
+ character_set_connection | UTF8    |      | Client Connection Defaults / Locale and Formatting | Set character_set_connection. |            | user    | string  | default |         |         |          |          | UTF8      |            |           
 (1 row)
 
 SELECT * FROM pg_settings WHERE NAME='character_set_results';
@@ -159,9 +159,9 @@ SELECT * FROM pg_settings WHERE NAME='collation_server';
 (1 row)
 
 SELECT * FROM pg_settings WHERE NAME='collation_connection';
-         name         | setting | unit |      category      |                    short_desc                     | extra_desc | context | vartype | source  | min_val | max_val | enumvals | boot_val | reset_val | sourcefile | sourceline 
-----------------------+---------+------+--------------------+---------------------------------------------------+------------+---------+---------+---------+---------+---------+----------+----------+-----------+------------+------------
- collation_connection |         |      | Customized Options | The connection character set uses this collation. |            | user    | string  | default |         |         |          |          |           |            |           
+         name         | setting | unit |                      category                      |        short_desc         | extra_desc | context | vartype | source  | min_val | max_val | enumvals | boot_val | reset_val | sourcefile | sourceline 
+----------------------+---------+------+----------------------------------------------------+---------------------------+------------+---------+---------+---------+---------+---------+----------+----------+-----------+------------+------------
+ collation_connection |         |      | Client Connection Defaults / Locale and Formatting | Set collation_connection. |            | user    | string  | default |         |         |          |          |           |            |           
 (1 row)
 
 SELECT * FROM pg_settings WHERE NAME='init_connect';

@@ -55,6 +55,7 @@ typedef struct {
 #ifdef DOLPHIN
     List* tableindex;            /* index-creating */
 #endif
+    Oid rel_coll_id;    /* relation collation oid */
 } CreateStmtContext;
 
 typedef enum TransformTableType { TRANSFORM_INVALID = 0, TRANSFORM_TO_HASHBUCKET, TRANSFORM_TO_NONHASHBUCKET} TransformTableType;
@@ -98,10 +99,15 @@ extern char* getTmptableIndexName(const char* srcSchema, const char* srcIndex);
 extern IndexStmt* generateClonedIndexStmt(
     CreateStmtContext* cxt, Relation source_idx, const AttrNumber* attmap, int attmap_length, Relation rel,
     TransformTableType transformType);
-extern int get_charset_by_collation(Oid colloid);
-extern Oid get_default_collation_by_charset(int charset);
+#ifdef DOLPHIN
+extern Oid transform_default_collation(const char* collate, int charset, Oid def_coll_oid = InvalidOid,
+    bool is_attr = false, bool ignore_check = true);
+#else
 extern Oid transform_default_collation(const char* collate, int charset, Oid def_coll_oid = InvalidOid,
     bool is_attr = false);
+#endif
+extern Oid check_collation_by_charset(const char* collate, int charset, bool ignore_check = true);
+
 #ifdef DOLPHIN
 extern char* transformIndexOptions(List* list);
 extern void TransformIndexName(IndexStmt* index, Oid nsp_oid, char* rel_name);
