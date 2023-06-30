@@ -34700,6 +34700,11 @@ func_expr_common_subexpr:
 				}
 			| WEIGHT_STRING  '(' a_expr AS CHAR_P '(' Iconst ')' opt_ws_levels ')'
 				{
+					if ($7 == 0) {
+						ereport(ERROR,
+							(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("syntax error at or near 'char(0)'")));
+					}
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("weight_string");
 					n->args = list_make4($3, makeStringConst("CHAR",-1), makeIntConst($7, @7), makeIntConst($9, @9));
@@ -34714,6 +34719,11 @@ func_expr_common_subexpr:
 				}
 			| WEIGHT_STRING  '(' a_expr AS BINARY '(' Iconst ')' ')'
 				{
+					if ($7 == 0) {
+						ereport(ERROR,
+							(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("syntax error at or near 'binary(0)'")));
+					}
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("weight_string");
 					n->args = list_make3($3, makeStringConst("BINARY", -1), makeIntConst($7, @7));
