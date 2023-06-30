@@ -5081,6 +5081,11 @@ void standard_ProcessUtility(processutility_context* processutility_cxt,
             GetDiagStmt *n = (GetDiagStmt *)parse_tree;
             getDiagnosticsInfo(n->condInfo, n->hasCondNum, n->condNum);
         } break;
+#ifdef DOLPHIN
+        case T_DolphinCallStmt: {
+                ExecuteCallStmt(castNode(DolphinCallStmt, parse_tree), params, false);
+        } break;
+#endif
         default: {
             ProcessUtilitySlow(parse_tree, query_string, params, dest, 
 #ifdef PGXC
@@ -9561,6 +9566,11 @@ const char* CreateCommandTag(Node* parse_tree)
         case T_GetDiagStmt:
             tag = "GET DIAGNOSTICS";
             break;
+#ifdef DOLPHIN
+        case T_DolphinCallStmt:
+            tag = "CALL";
+            break;
+#endif
         default:
             elog(WARNING, "unrecognized node type: %d", (int)nodeTag(parse_tree));
             tag = "?\?\?";

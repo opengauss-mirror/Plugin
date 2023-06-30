@@ -37,6 +37,8 @@
 #ifdef DOLPHIN
 #include "plugin_nodes/parsenodes_common.h"
 #include "plugin_nodes/parsenodes.h"
+#include "nodes/makefuncs.h"
+#include "utils/typcache.h"
 #endif
 #include "access/genam.h"
 #include "access/heapam.h"
@@ -92,6 +94,9 @@
 #include "tcop/utility.h"
 #include "tsearch/ts_type.h"
 #include "commands/comment.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 #ifdef ENABLE_MOT
 #include "storage/mot/jit_exec.h"
@@ -3332,3 +3337,238 @@ IsThereFunctionInNamespace(const char *proname, int pronargs,
                                                     NIL, proargtypes->values),
                         get_namespace_name(nspOid))));
 }
+
+#ifdef DOLPHIN
+/*
+    transform out value into ConstType
+*/
+Const* processOutResToConst(char* value, Oid atttypid)
+{
+    Const *con = NULL;
+    uint len = strlen(value);
+    char *str_value = (char *)palloc(len + 1);
+    errno_t rc = strncpy_s(str_value, len + 1, value, len + 1);
+    securec_check(rc, "\0", "\0");
+    str_value[len] = '\0';
+    Datum str_datum = CStringGetDatum(str_value);
+
+    /* convert value to const expression. */
+    if (atttypid == BOOLOID) {
+        if (strcmp(str_value, "t") == 0) {
+            con = makeConst(BOOLOID, -1, InvalidOid, sizeof(bool), BoolGetDatum(true), false, true);
+        } else {
+            con = makeConst(BOOLOID, -1, InvalidOid, sizeof(bool), BoolGetDatum(false), false, true);
+        }
+    } else {
+        con = makeConst(UNKNOWNOID, -1, InvalidOid, -2, str_datum, false, false);
+    }
+    return con;
+}
+
+/*
+ * Execute call procedure statememt here
+ */
+void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic)
+{
+    ListCell   *lc;
+    FuncExpr   *fexpr;
+    int         nargs;
+    int         i;
+    AclResult   aclresult;
+    FmgrInfo    flinfo;
+    CallContext *callcontext;
+    EState     *estate;
+    ExprContext *econtext;
+    HeapTuple   tp;
+    PgStat_FunctionCallUsage fcusage;
+    Datum       retval;
+    FunctionCallInfoData fcinfo;
+    fexpr = stmt->funcexpr;
+    Assert(fexpr);
+    Assert(IsA(fexpr, FuncExpr));
+    
+    Oid definer = GetUserId();
+    Form_pg_proc procStruct;
+    bool topCall = false;
+    /* Get function's pg_proc entry */
+    tp = SearchSysCache1(PROCOID, ObjectIdGetDatum(fexpr->funcid));
+    if (!HeapTupleIsValid(tp)) {
+        ereport(ERROR, (errcode(ERRCODE_CACHE_LOOKUP_FAILED),
+            errmsg("cache lookup failed for function %u", fexpr->funcid)));
+    }
+    procStruct = (Form_pg_proc)GETSTRUCT(tp);
+    /* in b format database , we shoule check definer operation */
+    if (procStruct->prosecdef) {
+        definer = procStruct->proowner;
+    }
+
+    aclresult = pg_proc_aclcheck(fexpr->funcid, definer, ACL_EXECUTE);
+    if (aclresult != ACLCHECK_OK)
+        aclcheck_error(aclresult, ACL_KIND_PROC, get_func_name(fexpr->funcid));
+
+    /* ensure it is a procedure and language is plogsql */
+    char prokind = get_func_prokind(fexpr->funcid);
+    if (!PROC_IS_PRO(prokind)) {
+        ereport(ERROR, (errcode(ERRCODE_PLPGSQL_ERROR),
+            errmsg("Only support procedure in muiti result call statement")));
+    }
+    Oid prolang = procStruct->prolang;
+    if (strcasecmp(get_language_name((Oid)prolang), "plpgsql") != 0) {
+        ereport(ERROR, (errcode(ERRCODE_PLPGSQL_ERROR),
+            errmsg("Only support procedure with language plpgsql in muiti result call statement")));
+    }
+
+    /* Prep the context object we'll pass to the procedure */
+    callcontext = makeNode(CallContext);
+    callcontext->atomic = atomic;
+
+    if (!heap_attisnull(tp, Anum_pg_proc_proconfig, NULL))
+        callcontext->atomic = true;
+
+    ReleaseSysCache(tp);
+
+    /* safety check; see ExecInitFunc() */
+    nargs = list_length(fexpr->args);
+    if (nargs > FUNC_MAX_ARGS)
+        ereport(ERROR, (errcode(ERRCODE_TOO_MANY_ARGUMENTS),
+            errmsg_plural("cannot pass more than %d argument to a procedure",
+            "cannot pass more than %d arguments to a procedure",
+            FUNC_MAX_ARGS,
+            FUNC_MAX_ARGS)));
+
+    /* Initialize function call structure */
+    fmgr_info(fexpr->funcid, &flinfo);
+    fmgr_info_set_expr((Node *) fexpr, &flinfo);
+    InitFunctionCallInfoData(fcinfo, &flinfo, nargs, fexpr->inputcollid,
+        (Node *) callcontext, NULL);
+
+    /*
+    * Evaluate procedure arguments inside a suitable execution context.  Note
+    * we can't free this context till the procedure returns.
+    */
+    estate = CreateExecutorState();
+    estate->es_param_list_info = params;
+    econtext = CreateExprContext(estate);
+
+    /*
+    * If we're called in non-atomic context, we also have to ensure that the
+    * argument expressions run with an up-to-date snapshot.  Our caller will
+    * have provided a current snapshot in atomic contexts, but not in
+    * non-atomic contexts, because the possibility of a COMMIT/ROLLBACK
+    * destroying the snapshot makes higher-level management too complicated.
+    */
+    if (!atomic)
+        PushActiveSnapshot(GetTransactionSnapshot());
+
+    i = 0;
+    foreach(lc, fexpr->args)
+    {
+        ExprState  *exprstate;
+        Datum       val;
+        bool        isnull;
+        exprstate = ExecPrepareExpr((Expr*)lfirst(lc), estate);
+        val = ExecEvalExprSwitchContext(exprstate, econtext, &isnull, NULL);
+
+        fcinfo.arg[i] = val;
+        fcinfo.argnull[i] = isnull;
+        i++;
+    }
+
+    /* Get rid of temporary snapshot for arguments, if we made one */
+    if (!atomic)
+        PopActiveSnapshot();
+
+    /* Here we actually call the procedure */
+    pgstat_init_function_usage(&fcinfo, &fcusage);
+    PG_TRY();
+    {
+        if (!GetSessionContext()->is_dolphin_call_stmt)
+            topCall = true;
+        GetSessionContext()->is_dolphin_call_stmt = true;
+        retval = FunctionCallInvoke(&fcinfo);
+    }
+    PG_CATCH();
+    {
+        if (topCall)
+            GetSessionContext()->is_dolphin_call_stmt = false;
+        PG_RE_THROW();
+    }
+    PG_END_TRY();
+    if (topCall)
+        GetSessionContext()->is_dolphin_call_stmt = false;
+    pgstat_end_function_usage(&fcusage, true);
+
+    /* Handle the procedure's outputs */
+    if (fexpr->funcresulttype == RECORDOID) {
+        /* send tuple to UserVar */
+        HeapTupleHeader td;
+        Oid			tupType;
+        int32		tupTypmod;
+        TupleDesc	retdesc;
+        HeapTupleData rettupdata;
+        TupleTableSlot *slot;
+
+        if (fcinfo.isnull)
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("procedure out parameters shoule be saved")));
+
+        /* make a tupletableslot and save uservar here */
+        td = DatumGetHeapTupleHeader(retval);
+        tupType = HeapTupleHeaderGetTypeId(td);
+        tupTypmod = HeapTupleHeaderGetTypMod(td);
+        retdesc = lookup_rowtype_tupdesc(tupType, tupTypmod);
+        slot = MakeSingleTupleTableSlot(retdesc);
+
+        rettupdata.t_len = HeapTupleHeaderGetDatumLength(td);
+        ItemPointerSetInvalid(&(rettupdata.t_self));
+        rettupdata.t_tableOid = InvalidOid;
+        rettupdata.t_data = td;
+
+        slot = ExecStoreTuple(&rettupdata, slot, InvalidBuffer, false);
+        tableam_tslot_getallattrs(slot);
+        uint i = 0;
+        ListCell* lc;
+        /* set uservar value */
+        foreach (lc, stmt->outargs) {
+            Oid out_func_oid = InvalidOid;
+            bool isvarlena = false;
+            FmgrInfo* finfo = (FmgrInfo*)palloc(1 * sizeof(FmgrInfo));
+            Oid atttypid = ((UserVar*)lfirst(lc))->value ? ((Const*)((UserVar*)lfirst(lc))->value)->consttype :
+                slot->tts_tupleDescriptor->attrs[i].atttypid;
+            getTypeOutputInfo(atttypid, &out_func_oid, &isvarlena);
+            fmgr_info(out_func_oid, finfo);
+            if (slot->tts_values[i] != 0) {
+                char* ovalue = OutputFunctionCall(finfo, slot->tts_values[i]);
+                Const *con = processOutResToConst(ovalue, atttypid);
+                Node* rnode  = atttypid == BOOLOID ? (Node*)con : type_transfer((Node*)con, atttypid, true);
+                Expr *var_expr = (Expr *)const_expression_to_const(rnode);
+                check_variable_value_info(((UserVar *)lfirst(lc))->name, var_expr);
+                pfree(ovalue);
+            }
+            pfree(finfo);
+            ++i;
+        }
+        ExecDropSingleTupleTableSlot(slot);
+        ReleaseTupleDesc(retdesc);
+    } else if (fexpr->funcresulttype != VOIDOID) {
+        Assert(list_length(stmt->outargs) == 1);
+        Oid out_func_oid = InvalidOid;
+        bool isvarlena = false;
+        UserVar* var = (UserVar*)linitial(stmt->outargs);
+        Oid atttypid = var->value ? ((Const*)var->value)->consttype :fexpr->funcresulttype;
+        FmgrInfo* finfo = (FmgrInfo*)palloc(1 * sizeof(FmgrInfo));
+        getTypeOutputInfo(atttypid, &out_func_oid, &isvarlena);
+        fmgr_info(out_func_oid, finfo);
+        if (PointerIsValid(retval)) {
+            char* ovalue = OutputFunctionCall(finfo, retval);
+            Const *con = processOutResToConst(ovalue, atttypid);
+            Node* rnode  = atttypid == BOOLOID ? (Node*)con : type_transfer((Node*)con, atttypid, true);
+            Expr *var_expr = (Expr *)const_expression_to_const(rnode);
+            check_variable_value_info(((UserVar *)lfirst(lc))->name, var_expr);
+            pfree(ovalue);
+        }
+        pfree(finfo);
+    }
+    FreeExecutorState(estate);
+}
+#endif

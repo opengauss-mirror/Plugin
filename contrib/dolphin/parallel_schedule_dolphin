@@ -70,7 +70,7 @@ test: create_function_test/deterministic create_function_test/language_sql creat
 
 test: b_do_statment revoke option test_table_index test_float_double_real_double_precision_MD single_line_trigger prefixkey_index invisible_index
 
-test: alter_function_test/alter_function  alter_function_test/alter_procedure alter_function_test/language_sql replace_test/replace
+test: alter_function_test/alter_function  alter_function_test/alter_procedure alter_function_test/language_sql replace_test/replace multi_select_in_proc
 
 test: network2 use_dbname show_create view_definer_test insert_set show_create_database show_variables b_auto_increment
 

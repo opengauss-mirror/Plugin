@@ -109,6 +109,7 @@
 #include "utils/jsonb.h"
 #include "utils/xml.h"
 #include "utils/typcache.h"
+#include "parser/parse_func.h"
 /* Hook for plugins to get control at end of parse analysis */
 THR_LOCAL post_parse_analyze_hook_type post_parse_analyze_hook = NULL;
 static const int MILLISECONDS_PER_SECONDS = 1000;
@@ -168,6 +169,7 @@ static Node* makeConstByType(Form_pg_attribute att_tup);
 static Node* makeTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval);
 static Node* makeNotTimetypeConst(Oid targetType, int32 targetTypmod, Oid targetCollation, int16 targetLen, bool targetByval);
 static List* makeValueLists(ParseState* pstate);
+static Query* transformCallStmt(ParseState *pstate, DolphinCallStmt *stmt);
 #endif
 
 /*
@@ -620,6 +622,10 @@ Query* transformStmt(ParseState* pstate, Node* parseTree, bool isFirstNode, bool
             result = makeNode(Query);
             result->commandType = CMD_UTILITY;
             result->utilityStmt = (Node*)parseTree;
+            break;
+
+        case T_DolphinCallStmt:
+            result = transformCallStmt(pstate, (DolphinCallStmt *) parseTree);
             break;
 #endif
         default:
@@ -5005,6 +5011,55 @@ static Query* transformCreateTableAsStmt(ParseState* pstate, CreateTableAsStmt* 
 
     return result;
 }
+
+#ifdef DOLPHIN
+/*
+ * transformCallStmt -
+ * transform a call xxx() Statement in B format;
+ *.
+ */
+
+static Query* transformCallStmt(ParseState *pstate, DolphinCallStmt *stmt)
+{
+    List	   *targs;
+    ListCell   *lc;
+    Node	   *node;
+    FuncExpr   *fexpr;
+    HeapTuple	proctup;
+    Query	   *result;
+
+    targs = NIL;
+    /* transform all args to expr */
+    foreach(lc, stmt->funccall->args)
+    {
+        targs = lappend(targs, transformExprRecurse(pstate, (Node *) lfirst(lc)));
+    }
+
+    /* parse the function/procedure use function name */
+    node = ParseFuncOrColumn(pstate, stmt->funccall->funcname, targs, pstate->p_last_srf,
+        stmt->funccall, stmt->funccall->location, true);
+
+    assign_expr_collations(pstate, node);
+
+    fexpr = castNode(FuncExpr, node);
+    
+    /* find procedure object in systemtable */
+    proctup = SearchSysCache1(PROCOID, ObjectIdGetDatum(fexpr->funcid));
+    if (!HeapTupleIsValid(proctup))
+        ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT), errmsg("could not find procedure %u", fexpr->funcid)));
+
+    stmt->funcexpr = fexpr;
+
+    ReleaseSysCache(proctup);
+
+    /* set as as a utility Query */
+    result = makeNode(Query);
+    result->commandType = CMD_UTILITY;
+    result->utilityStmt = (Node *) stmt;
+
+    return result;
+}
+#endif
 
 #ifdef PGXC
 #ifdef ENABLE_DISTRIBUTE_TEST

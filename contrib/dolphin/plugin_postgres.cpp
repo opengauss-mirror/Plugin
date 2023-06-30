@@ -74,6 +74,9 @@
 #include "replication/archive_walreceiver.h"
 #include "plugin_commands/mysqlmode.h"
 #include "plugin_protocol/startup.h"
+#include "libpq/libpq.h"
+#include "plugin_protocol/printtup.h"
+#include "plugin_protocol/dqformat.h"
 #ifdef DOLPHIN
 #include "plugin_utils/my_locale.h"
 #endif
@@ -95,7 +98,8 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
     {"pipes_as_concat", OPT_SQL_MODE_PIPES_AS_CONCAT},
     {"ansi_quotes", OPT_SQL_MODE_ANSI_QUOTES},
     {"no_zero_date", OPT_SQL_MODE_NO_ZERO_DATE},
-    {"pad_char_to_full_length", OPT_SQL_MODE_PAD_CHAR_TO_FULL_LENGTH}
+    {"pad_char_to_full_length", OPT_SQL_MODE_PAD_CHAR_TO_FULL_LENGTH},
+    {"block_return_multi_results", OPT_SQL_MODE_BLOCK_RETURN_MULTI_RESULTS}
 };
 
 #define DOLPHIN_TYPES_NUM 12
@@ -167,6 +171,9 @@ static bool check_query_cache_type(int* newval, void** extra, GucSource source);
 static bool check_system_time_zone(char** newval, void** extra, GucSource source);
 static bool check_time_zone(char** newval, void** extra, GucSource source);
 static bool check_wait_timeout(int* newval, void** extra, GucSource source);
+static int SpiIsExecMultiSelect(PLpgSQL_execstate* estate, PLpgSQL_expr* expr,
+    PLpgSQL_stmt_execsql* pl_stmt, ParamListInfo paramLI, long tcount, bool* multi_res);
+static void SpiMultiSelectException();
 #endif
 static const int LOADER_COL_BUF_CNT = 5;
 static uint32 dolphin_index;
@@ -291,6 +298,10 @@ void init_plugin_object()
     u_sess->hook_cxt.pluginCCHashEqFuncs = (void*)ccHashEqFuncs;
     u_sess->hook_cxt.plpgsqlParserSetHook = (void*)b_plpgsql_parser_setup;
     u_sess->hook_cxt.coreYYlexHook = (void*)core_yylex;
+    u_sess->hook_cxt.pluginProcDestReciverHook = (void*)CreateSqlProcSpiDestReciver;
+    u_sess->hook_cxt.pluginSpiReciverParamHook = (void*)SetSqlProcSpiStmtParams;
+    u_sess->hook_cxt.pluginSpiExecuteMultiResHook =(void*)SpiIsExecMultiSelect;
+    u_sess->hook_cxt.pluginMultiResExceptionHook =(void*)SpiMultiSelectException;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
@@ -397,6 +408,76 @@ bool ccHashEqFuncs(Oid keytype, CCHashFN *hashfunc, RegProcedure *eqfunc, CCFast
     return false;
 }
 
+#define IS_CLIENT_CONN_VALID_PROC_SPI(port) \
+    (((port) == NULL)                       \
+    ? false                                 \
+    : (((port)->is_logic_conn) ? ((port)->gs_sock.type != GSOCK_INVALID) : ((port)->sock != NO_SOCKET)))
+
+static int SpiIsExecMultiSelect(PLpgSQL_execstate* estate, PLpgSQL_expr* expr, PLpgSQL_stmt_execsql* pl_stmt,
+    ParamListInfo param_li, long tcount, bool* multi_res)
+{
+    bool outPutSelRes = false;
+    Port* MyProcPort = u_sess->proc_cxt.MyProcPort;
+    int tmpPos = t_thrd.libpq_cxt.PqSendPointer;
+    int rc;
+    if (SQL_MODE_AllOW_PROCEDURE_WITH_SELECT() && GetSessionContext()->is_dolphin_call_stmt) {
+        CachedPlan* cplan = SPI_plan_get_cached_plan(expr->plan);
+        List *stmt_list = NULL;
+        if (cplan)
+            stmt_list = cplan->stmt_list;
+        if (stmt_list) {
+            Node *stmt = (Node *)linitial(stmt_list);
+            if (IsA(stmt, PlannedStmt) && ((PlannedStmt *)stmt)->commandType == CMD_SELECT &&
+                !pl_stmt->into) {
+                t_thrd.libpq_cxt.PqSendStart += t_thrd.libpq_cxt.PqSendPointer;
+                u_sess->SPI_cxt._current->dest = DestSqlProcSPI;
+                outPutSelRes = true;
+            }
+        }
+        if (cplan)
+            ReleaseCachedPlan(cplan, true);
+    }
+    rc = SPI_execute_plan_with_paramlist(expr->plan, param_li, estate->readonly_func, tcount);
+    if (outPutSelRes) {
+        if (MyProcPort && MyProcPort->protocol_config->fn_printtup_create_DR &&
+            MyProcPort->protocol_config->fn_printtup_create_DR == dophin_printtup_create_DR) {
+            StringInfo buf = makeStringInfo();
+            send_network_fetch_packet(buf);
+            DestroyStringInfo(buf);
+        } else {
+            const char* strs = "CALL";
+            EndCommand(strs, DestRemote);
+        }
+        if (IS_CLIENT_CONN_VALID_PROC_SPI(MyProcPort) && (!t_thrd.int_cxt.ClientConnectionLost)) {
+            CHECK_FOR_INTERRUPTS();
+            pq_flush();
+            t_thrd.libpq_cxt.PqSendPointer = tmpPos;
+        }
+    }
+    *multi_res = outPutSelRes;
+    return rc;
+}
+
+
+static void SpiMultiSelectException()
+{
+    Port* MyProcPort = u_sess->proc_cxt.MyProcPort;
+    if (u_sess->SPI_cxt._current->dest == DestSqlProcSPI) {
+        if (MyProcPort && MyProcPort->protocol_config->fn_printtup_create_DR &&
+            MyProcPort->protocol_config->fn_printtup_create_DR == dophin_printtup_create_DR) {
+            StringInfo buf = makeStringInfo();
+            send_network_fetch_packet(buf);
+            DestroyStringInfo(buf);
+        } else {
+            const char* strs = "CALL";
+            EndCommand(strs, DestRemote);
+        }
+        if (IS_CLIENT_CONN_VALID_PROC_SPI(MyProcPort) && (!t_thrd.int_cxt.ClientConnectionLost)) {
+            CHECK_FOR_INTERRUPTS();
+            pq_flush();
+        }
+    }
+}
 /*
  * check_behavior_compat_options: GUC check_hook for behavior compat options
  */
@@ -848,6 +929,7 @@ void init_session_vars(void)
     cxt->is_schema_name = false;
     cxt->b_stmtInputTypeHash = NULL;
     cxt->b_sendBlobHash = NULL;
+    cxt->is_dolphin_call_stmt = false;
 
     DefineCustomBoolVariable("dolphin.b_compatibility_mode",
                              "Enable mysql behavior override opengauss's when collision happens.",

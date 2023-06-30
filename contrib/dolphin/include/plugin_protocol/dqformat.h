@@ -140,6 +140,8 @@ void send_network_ok_packet(StringInfo buf, network_mysqld_ok_packet_t *ok_packe
 void send_general_ok_packet();
 
 void send_network_eof_packet(StringInfo buf);
+void send_network_fetch_packet(StringInfo buf);
+
 
 void send_network_err_packet(StringInfo buf, network_mysqld_err_packet_t *err_packet);
 
