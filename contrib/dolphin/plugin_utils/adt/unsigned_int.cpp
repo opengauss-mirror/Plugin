@@ -51,7 +51,11 @@
 #include "workload/cpwlm.h"
 #include "utils/varbit.h"
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/date.h"
 #include "plugin_utils/unsigned_int.h"
+
+extern Datum bpchar_float8(PG_FUNCTION_ARGS);
+extern Datum varchar_float8(PG_FUNCTION_ARGS);
 
 #define INTEGER_DIV_INTEGER(arg1, arg2)   \
     float8 result;                        \
@@ -5012,5 +5016,198 @@ Datum settouint8(PG_FUNCTION_ARGS)
 {
     Datum val = setint8(fcinfo);
     return DirectFunctionCall1(i8toui8, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(time2uint1);
+extern "C" DLL_PUBLIC Datum time2uint1(PG_FUNCTION_ARGS);
+Datum time2uint1(PG_FUNCTION_ARGS)
+{
+    Datum val = time_float(fcinfo);
+    return DirectFunctionCall1(f8toui1, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(time2uint2);
+extern "C" DLL_PUBLIC Datum time2uint2(PG_FUNCTION_ARGS);
+Datum time2uint2(PG_FUNCTION_ARGS)
+{
+    Datum val = time_float(fcinfo);
+    return DirectFunctionCall1(f8toui2, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(time2uint4);
+extern "C" DLL_PUBLIC Datum time2uint4(PG_FUNCTION_ARGS);
+Datum time2uint4(PG_FUNCTION_ARGS)
+{
+    Datum val = time_float(fcinfo);
+    return DirectFunctionCall1(f8toui4, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(time2uint8);
+extern "C" DLL_PUBLIC Datum time2uint8(PG_FUNCTION_ARGS);
+Datum time2uint8(PG_FUNCTION_ARGS)
+{
+    Datum val = time_float(fcinfo);
+    return DirectFunctionCall1(f8toui8, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_cast_ui1);
+extern "C" DLL_PUBLIC Datum time_cast_ui1(PG_FUNCTION_ARGS);
+Datum time_cast_ui1(PG_FUNCTION_ARGS)
+{
+    Datum val = time_float(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui1, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_cast_ui2);
+extern "C" DLL_PUBLIC Datum time_cast_ui2(PG_FUNCTION_ARGS);
+Datum time_cast_ui2(PG_FUNCTION_ARGS)
+{
+    Datum val = time_float(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui2, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_cast_ui4);
+extern "C" DLL_PUBLIC Datum time_cast_ui4(PG_FUNCTION_ARGS);
+Datum time_cast_ui4(PG_FUNCTION_ARGS)
+{
+    Datum val = time_float(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui4, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_cast_ui8);
+extern "C" DLL_PUBLIC Datum time_cast_ui8(PG_FUNCTION_ARGS);
+Datum time_cast_ui8(PG_FUNCTION_ARGS)
+{
+    Datum val = time_float(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui8, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(char_cast_ui1);
+extern "C" DLL_PUBLIC Datum char_cast_ui1(PG_FUNCTION_ARGS);
+Datum char_cast_ui1(PG_FUNCTION_ARGS)
+{
+    Datum val = bpchar_float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui1, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(char_cast_ui2);
+extern "C" DLL_PUBLIC Datum char_cast_ui2(PG_FUNCTION_ARGS);
+Datum char_cast_ui2(PG_FUNCTION_ARGS)
+{
+    Datum val = bpchar_float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui2, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(char_cast_ui4);
+extern "C" DLL_PUBLIC Datum char_cast_ui4(PG_FUNCTION_ARGS);
+Datum char_cast_ui4(PG_FUNCTION_ARGS)
+{
+    Datum val = bpchar_float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui4, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(char_cast_ui8);
+extern "C" DLL_PUBLIC Datum char_cast_ui8(PG_FUNCTION_ARGS);
+Datum char_cast_ui8(PG_FUNCTION_ARGS)
+{
+    Datum val = bpchar_float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui8, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_cast_ui1);
+extern "C" DLL_PUBLIC Datum varchar_cast_ui1(PG_FUNCTION_ARGS);
+Datum varchar_cast_ui1(PG_FUNCTION_ARGS)
+{
+    Datum val = varchar_float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui1, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_cast_ui2);
+extern "C" DLL_PUBLIC Datum varchar_cast_ui2(PG_FUNCTION_ARGS);
+Datum varchar_cast_ui2(PG_FUNCTION_ARGS)
+{
+    Datum val = varchar_float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui2, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_cast_ui4);
+extern "C" DLL_PUBLIC Datum varchar_cast_ui4(PG_FUNCTION_ARGS);
+Datum varchar_cast_ui4(PG_FUNCTION_ARGS)
+{
+    Datum val = varchar_float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui4, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_cast_ui8);
+extern "C" DLL_PUBLIC Datum varchar_cast_ui8(PG_FUNCTION_ARGS);
+Datum varchar_cast_ui8(PG_FUNCTION_ARGS)
+{
+    Datum val = varchar_float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui8, val);
+}
+
+extern "C" Datum Varlena2Float8(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(varlena2ui1);
+extern "C" DLL_PUBLIC Datum varlena2ui1(PG_FUNCTION_ARGS);
+Datum varlena2ui1(PG_FUNCTION_ARGS)
+{
+    Datum val = Varlena2Float8(fcinfo);
+    return DirectFunctionCall1(f8toui1, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varlena2ui2);
+extern "C" DLL_PUBLIC Datum varlena2ui2(PG_FUNCTION_ARGS);
+Datum varlena2ui2(PG_FUNCTION_ARGS)
+{
+    Datum val = Varlena2Float8(fcinfo);
+    return DirectFunctionCall1(f8toui2, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varlena2ui4);
+extern "C" DLL_PUBLIC Datum varlena2ui4(PG_FUNCTION_ARGS);
+Datum varlena2ui4(PG_FUNCTION_ARGS)
+{
+    Datum val = Varlena2Float8(fcinfo);
+    return DirectFunctionCall1(f8toui4, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varlena2ui8);
+extern "C" DLL_PUBLIC Datum varlena2ui8(PG_FUNCTION_ARGS);
+Datum varlena2ui8(PG_FUNCTION_ARGS)
+{
+    Datum val = Varlena2Float8(fcinfo);
+    return DirectFunctionCall1(f8toui8, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui1);
+extern "C" DLL_PUBLIC Datum varlena_cast_ui1(PG_FUNCTION_ARGS);
+Datum varlena_cast_ui1(PG_FUNCTION_ARGS)
+{
+    Datum val = Varlena2Float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui1, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui2);
+extern "C" DLL_PUBLIC Datum varlena_cast_ui2(PG_FUNCTION_ARGS);
+Datum varlena_cast_ui2(PG_FUNCTION_ARGS)
+{
+    Datum val = Varlena2Float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui2, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui4);
+extern "C" DLL_PUBLIC Datum varlena_cast_ui4(PG_FUNCTION_ARGS);
+Datum varlena_cast_ui4(PG_FUNCTION_ARGS)
+{
+    Datum val = Varlena2Float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui4, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui8);
+extern "C" DLL_PUBLIC Datum varlena_cast_ui8(PG_FUNCTION_ARGS);
+Datum varlena_cast_ui8(PG_FUNCTION_ARGS)
+{
+    Datum val = Varlena2Float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui8, val);
 }
 #endif

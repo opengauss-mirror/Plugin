@@ -36,6 +36,7 @@
 #include "utils/sortsupport.h"
 #ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/int8.h"
 #endif
 
 /*
@@ -63,6 +64,7 @@ static int getStartingDigits(char* str);
 #ifdef DOLPHIN
 bool check_pg_tm_time_part(pg_tm *tm, fsec_t fsec);
 extern const char* extract_numericstr(const char* str);
+extern "C" DLL_PUBLIC Datum uint8out(PG_FUNCTION_ARGS);
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
 
 PG_FUNCTION_INFO_V1_PUBLIC(int8_b_format_time);
@@ -73,6 +75,14 @@ PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_time);
 extern "C" DLL_PUBLIC Datum int32_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int64_b_format_time);
 extern "C" DLL_PUBLIC Datum int64_b_format_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint8_b_format_time);
+extern "C" DLL_PUBLIC Datum uint8_b_format_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint16_b_format_time);
+extern "C" DLL_PUBLIC Datum uint16_b_format_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint32_b_format_time);
+extern "C" DLL_PUBLIC Datum uint32_b_format_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint64_b_format_time);
+extern "C" DLL_PUBLIC Datum uint64_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_time);
 extern "C" DLL_PUBLIC Datum numeric_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(float8_b_format_time);
@@ -1777,6 +1787,28 @@ Datum float8_b_format_time(PG_FUNCTION_ARGS)
     return DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
 }
 
+Datum uint8_b_format_time(PG_FUNCTION_ARGS)
+{
+    return DirectFunctionCall1(uint64_b_format_time, UInt64GetDatum((uint64)PG_GETARG_UINT8(0)));
+}
+
+Datum uint16_b_format_time(PG_FUNCTION_ARGS)
+{
+    return DirectFunctionCall1(uint64_b_format_time, UInt64GetDatum((uint64)PG_GETARG_UINT16(0)));
+}
+
+Datum uint32_b_format_time(PG_FUNCTION_ARGS)
+{
+    return DirectFunctionCall1(uint64_b_format_time, UInt64GetDatum((uint64)PG_GETARG_UINT32(0)));
+}
+
+Datum uint64_b_format_time(PG_FUNCTION_ARGS)
+{
+    uint64 number = PG_GETARG_UINT64(0);
+    char *str = DatumGetCString(DirectFunctionCall1(uint8out, UInt64GetDatum(number)));
+    return DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+}
+
 Datum int8_b_format_time(PG_FUNCTION_ARGS)
 {
     return DirectFunctionCall1(int32_b_format_time, Int32GetDatum((int32)PG_GETARG_INT8(0)));
@@ -1807,13 +1839,15 @@ Datum int32_b_format_time(PG_FUNCTION_ARGS)
 }
 
 /* int8(hhmmss) convert to b format time */
-Datum int64_b_format_time(PG_FUNCTION_ARGS) {
+Datum int64_b_format_time(PG_FUNCTION_ARGS)
+{
     int64 number = PG_GETARG_INT64(0);
     if (number >= (int64)pow_of_10[10]) { /* datetime: 0001-00-00 00-00-00 */
         Datum datetime = DirectFunctionCall1(int64_b_format_datetime, Int64GetDatum(number));
         return DirectFunctionCall1(timestamp_time, datetime);
     }
-    return DirectFunctionCall1(int32_b_format_time, Int32GetDatum((int32)number));
+    char *str = DatumGetCString(DirectFunctionCall1(int8out, UInt64GetDatum(number)));
+    return DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
 }
 
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD)
@@ -5675,7 +5709,11 @@ Datum time_float(PG_FUNCTION_ARGS)
 
     float8 res = tmfsec2float(tm, fsec);
 
-    PG_RETURN_FLOAT8(res);
+    if (sig) {
+        PG_RETURN_FLOAT8(-res);
+    } else {
+        PG_RETURN_FLOAT8(res);
+    }
 }
 
 Datum date_int(PG_FUNCTION_ARGS)

@@ -81,7 +81,7 @@ static bool Numeric2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCA
 
 static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others, &Date2Others, &Numeric2Others};
 
-#define CAST_FUNCTION_ROW 8
+#define CAST_FUNCTION_ROW 12
 #define CAST_FUNCTION_COLUMN 4
 #define CAST_ENUM_IDX 22
 #define ENUM_CAST_IDX 19
@@ -93,7 +93,11 @@ static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1
                                                                             {"f4_cast_ui1", "f4_cast_ui2", "f4_cast_ui4", "f4_cast_ui8"},
                                                                             {"f8_cast_ui1", "f8_cast_ui2", "f8_cast_ui4", "f8_cast_ui8"},
                                                                             {"numeric_cast_uint1", "numeric_cast_uint2", "numeric_cast_uint4", "numeric_cast_uint8"},
-                                                                            {"text_cast_uint1", "text_cast_uint2", "text_cast_uint4", "text_cast_uint8"}};
+                                                                            {"text_cast_uint1", "text_cast_uint2", "text_cast_uint4", "text_cast_uint8"},
+                                                                            {"time_cast_ui1", "time_cast_ui2", "time_cast_ui4", "time_cast_ui8"},
+                                                                            {"char_cast_ui1", "char_cast_ui2", "char_cast_ui4", "char_cast_ui8"},
+                                                                            {"varchar_cast_ui1", "varchar_cast_ui2", "varchar_cast_ui4", "varchar_cast_ui8"},
+                                                                            {"varlena_cast_ui1", "varlena_cast_ui2", "varlena_cast_ui4", "varlena_cast_ui8"}};
 
 static const char* castEnumFunction[CAST_ENUM_IDX] = {"bit_enum", "int1_enum", "int2_enum", "int4_enum",
                                                       "int8_enum", "float4_enum", "float8_enum", "numeric_enum",
@@ -125,7 +129,11 @@ typedef enum {
     FLOAT4,
     FLOAT8,
     NUMERIC,
-    TEXT
+    TEXT,
+    TIME,
+    BPCHAR,
+    VARCHAR,
+    VARLENA
 } CastRow;
 
 typedef enum {
@@ -2932,9 +2940,32 @@ Oid findUnsignedImplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid fun
         case TEXTOID:
             row = TEXT;
             break;
+        case TIMEOID:
+            row = TIME;
+            break;
+        case BPCHAROID:
+            row = BPCHAR;
+            break;
+        case VARCHAROID:
+            row = VARCHAR;
+            break;
+        case BLOBOID:
+            row = VARLENA;
+            break;
+        case JSONOID:
+            row = VARLENA;
+            break;
         default:
             break;
     }
+    if (row == INVALID_ROW && (sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "binary") ||
+        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "varbinary") ||
+        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "tinyblob") ||
+        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "mediumblob") ||
+        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "longblob"))) {
+        row = VARLENA;
+    }
+
     if (row != INVALID_ROW && col != INVALID_COLUMN) {
         return get_func_oid(castFunction[row][col], PG_CATALOG_NAMESPACE, NULL);
     }

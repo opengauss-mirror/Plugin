@@ -201,6 +201,61 @@ select 9223372036854775807::bigint::bit(64)::bigint;
 (1 row)
 
 
+select '255'::uint1::time;
+   time   
+----------
+ 00:02:55
+(1 row)
+
+select '65535'::uint2::time;
+   time   
+----------
+ 06:55:35
+(1 row)
+
+select '4294967295'::uint4::time;
+ERROR:  invalid input syntax for type time: "4294967295"
+CONTEXT:  referenced column: time
+select '18446744073709551615'::uint8::time;
+ERROR:  invalid input syntax for type time: "18446744073709551615"
+CONTEXT:  referenced column: time
+
+select '4294967295'::uint1::time;
+ERROR:  value "4294967295" is out of range for type tinyint unsigned
+LINE 1: select '4294967295'::uint1::time;
+               ^
+CONTEXT:  referenced column: time
+select '4294967295'::uint2::time;
+ERROR:  value "4294967295" is out of range for type smallint unsigned
+LINE 1: select '4294967295'::uint2::time;
+               ^
+CONTEXT:  referenced column: time
+select '4294967295'::uint4::time;
+ERROR:  invalid input syntax for type time: "4294967295"
+CONTEXT:  referenced column: time
+select '4294967295'::uint8::time;
+ERROR:  invalid input syntax for type time: "4294967295"
+CONTEXT:  referenced column: time
+
+select '4294967295'::int1::time;
+ERROR:  value "4294967295" is out of range for type tinyint
+LINE 1: select '4294967295'::int1::time;
+               ^
+CONTEXT:  referenced column: time
+select '4294967295'::int2::time;
+ERROR:  value "4294967295" is out of range for type smallint
+LINE 1: select '4294967295'::int2::time;
+               ^
+CONTEXT:  referenced column: time
+select '4294967295'::int4::time;
+ERROR:  value "4294967295" is out of range for type integer
+LINE 1: select '4294967295'::int4::time;
+               ^
+CONTEXT:  referenced column: time
+select '4294967295'::int8::time;
+ERROR:  invalid input syntax for type time: "4294967295"
+CONTEXT:  referenced column: time
+
 select conv('-211111111111111111111111111111111111111111111111111111111177777',10,8);
           conv          
 ------------------------

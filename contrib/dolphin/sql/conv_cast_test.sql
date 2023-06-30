@@ -36,6 +36,21 @@ select 32767::smallint::bit(64)::smallint;
 select 2147483647::int::bit(64)::int;
 select 9223372036854775807::bigint::bit(64)::bigint;
 
+select '255'::uint1::time;
+select '65535'::uint2::time;
+select '4294967295'::uint4::time;
+select '18446744073709551615'::uint8::time;
+
+select '4294967295'::uint1::time;
+select '4294967295'::uint2::time;
+select '4294967295'::uint4::time;
+select '4294967295'::uint8::time;
+
+select '4294967295'::int1::time;
+select '4294967295'::int2::time;
+select '4294967295'::int4::time;
+select '4294967295'::int8::time;
+
 select conv('-211111111111111111111111111111111111111111111111111111111177777',10,8);
 select conv('-366666666666666666666666666666666666666', 10, 8);
 select conv('-266666666666666666666666666666666666666', 10, 8);
