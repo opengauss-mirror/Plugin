@@ -515,6 +515,19 @@ select '838:59:58.999999'::varchar(30)::time(6);
 (1 row)
 
 
+SELECT '20220101121212'::date;
+    date    
+------------
+ 01-01-2022
+(1 row)
+
+SELECT '20220101121212.5'::date;
+    date    
+------------
+ 01-01-2022
+(1 row)
+
+
 select cast(b'1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111' as unsigned);
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
