@@ -1111,9 +1111,6 @@ void CreateFunction(CreateFunctionStmt* stmt, const char* queryString, Oid pkg_o
     if(proIsProcedure || stmt->isOtypeFunction){
         if (strcmp(language,"sql") == 0 )
             language = "plpgsql";
-        else if (strcmp(language,"plpgsql") != 0 ){
-            ereport(ERROR, (errcode(ERRCODE_INVALID_FUNCTION_DEFINITION), errmsg("wrong language specified")));
-        }
     }
 #endif
     /* Look up the language and validate permissions */
