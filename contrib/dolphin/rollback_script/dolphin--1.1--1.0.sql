@@ -1539,6 +1539,24 @@ DROP FUNCTION IF EXISTS pg_catalog.weight_string (bytea, text, uint4, uint4) CAS
 DROP FUNCTION IF EXISTS pg_catalog.weight_string (boolean, uint4) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.weight_string (boolean, TEXT, uint4) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.weight_string (boolean, TEXT, uint4, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (numeric, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (numeric, TEXT, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (numeric, TEXT, uint4, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (date, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (date, TEXT, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (date, TEXT, uint4, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (time, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (time, TEXT, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (time, TEXT, uint4, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (timestamp, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (timestamp, TEXT, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (timestamp, TEXT, uint4, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (timestamptz, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (timestamptz, TEXT, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (timestamptz, TEXT, uint4, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (interval, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (interval, TEXT, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (interval, TEXT, uint4, uint4) cascade;
 
 DROP FUNCTION IF EXISTS pg_catalog.sleep(d date) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.text_xor (t1 uint8,t2 text) RETURNS uint8 AS
