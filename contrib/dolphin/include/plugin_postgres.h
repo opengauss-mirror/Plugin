@@ -132,11 +132,9 @@ typedef struct BSqlPluginContext {
     char* version_comment;
     int auto_increment_increment;
     char* character_set_client;
-    char* character_set_connection;
     char* character_set_results;
     char* character_set_server;
     char* collation_server;
-    char* collation_connection;
     char* init_connect;
     int interactive_timeout;
     char* license;

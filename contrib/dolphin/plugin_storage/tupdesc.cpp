@@ -25,7 +25,7 @@
 #include "catalog/dependency.h"
 #include "catalog/pg_type.h"
 #include "miscadmin.h"
-#include "plugin_parser/parse_type.h"
+#include "parser/parse_type.h"
 #include "utils/acl.h"
 #include "utils/builtins.h"
 #include "utils/rel.h"
@@ -35,8 +35,8 @@
 #include "pgxc/pgxc.h"
 #include "utils/lsyscache.h"
 #include "mb/pg_wchar.h"
-#include "plugin_parser/parse_utilcmd.h"
-#include "catalog/gs_utf8_collation.h"
+#include "parser/parse_utilcmd.h"
+#include "catalog/gs_collation.h"
 
 /*
  * CreateTemplateTupleDesc

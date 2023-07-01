@@ -25,7 +25,7 @@
 #include "miscadmin.h"
 #include "utils/builtins.h"
 #include "utils/pg_locale.h"
-#include "catalog/gs_utf8_collation.h"
+#include "catalog/gs_collation.h"
 
 #include "funcapi.h"
 #include "plugin_postgres.h"
@@ -186,8 +186,8 @@ int GenericMatchText(char* s, int slen, char* p, int plen)
 
 int generic_match_text_with_collation(char* s, int slen, char* p, int plen, Oid collation)
 {
-    if (IS_UTF8_GENERAL_COLLATION(collation)) {
-        return matchtext_utf8mb4((unsigned char*)s, slen, (unsigned char*)p, plen);
+    if (is_b_format_collation(collation)) {
+        return match_text_by_builtin_collations((unsigned char*)s, slen, (unsigned char*)p, plen, collation);
     }
 
     return GenericMatchText(s, slen, p, plen);
@@ -620,7 +620,7 @@ Datum booltextlike(PG_FUNCTION_ARGS)
     p = VARDATA_ANY(pat);
     plen = VARSIZE_ANY_EXHDR(pat);
 
-    result = (generic_match_text_with_collation(s, slen, p, plen, PG_GET_COLLATION()) == LIKE_TRUE);
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_TRUE);
 
     PG_RETURN_BOOL(result);
 }
@@ -638,7 +638,7 @@ Datum booltextnlike(PG_FUNCTION_ARGS)
     p = VARDATA_ANY(pat);
     plen = VARSIZE_ANY_EXHDR(pat);
 
-    result = (generic_match_text_with_collation(s, slen, p, plen, PG_GET_COLLATION()) == LIKE_FALSE);
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_FALSE);
 
     PG_RETURN_BOOL(result);
 }
@@ -658,7 +658,7 @@ Datum textboollike(PG_FUNCTION_ARGS)
     p = boolright ? (char*)"1" : (char*)"0";
     plen = 1;
 
-    result = (generic_match_text_with_collation(s, slen, p, plen, PG_GET_COLLATION()) == LIKE_TRUE);
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_TRUE);
 
     PG_RETURN_BOOL(result);
 }
@@ -677,7 +677,7 @@ Datum textboolnlike(PG_FUNCTION_ARGS)
     p = boolright ? (char*)"1" : (char*)"0";
     plen = 1;
 
-    result = (generic_match_text_with_collation(s, slen, p, plen, PG_GET_COLLATION()) == LIKE_FALSE);
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_FALSE);
 
     PG_RETURN_BOOL(result);
 }
@@ -695,7 +695,8 @@ Datum boolboollike(PG_FUNCTION_ARGS)
     slen = 1;
     p = boolright ? (char*)"1" : (char*)"0";
     plen = 1;
-    result = (generic_match_text_with_collation(s, slen, p, plen, PG_GET_COLLATION()) == LIKE_TRUE);
+
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_TRUE);
 
     PG_RETURN_BOOL(result);
 
@@ -714,7 +715,8 @@ Datum boolboolnlike(PG_FUNCTION_ARGS)
     slen = 1;
     p = boolright ? (char*)"1" : (char*)"0";
     plen = 1;
-    result = (generic_match_text_with_collation(s, slen, p, plen, PG_GET_COLLATION()) == LIKE_FALSE);
+
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_FALSE);
 
     PG_RETURN_BOOL(result);
 
