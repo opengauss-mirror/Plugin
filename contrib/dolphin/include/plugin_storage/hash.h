@@ -416,9 +416,10 @@ extern void hashbucketcleanup(Relation rel, Bucket cur_bucket,
                               IndexBulkDeleteCallback callback, void *callback_state);
 
 #ifdef PGXC
-extern Datum compute_hash(Oid type, Datum value, char locator);
+extern Datum compute_hash(Oid type, Datum value, char locator, Oid collation = InvalidOid);
 extern Datum compute_hash_default(Oid type, Datum value, char locator);
-extern uint32 hashValueCombination(uint32 hashValue, Oid colType, Datum val, bool allIsNull, char locatorType = 'H');
+extern uint32 hashValueCombination(uint32 hashValue, Oid colType, Datum val, bool allIsNull, char locatorType = 'H',
+    Oid collation = InvalidOid);
 extern char* get_compute_hash_function(Oid type, char locator);
 extern Datum getbucket(PG_FUNCTION_ARGS);
 extern Datum getbucketbycnt(PG_FUNCTION_ARGS);
