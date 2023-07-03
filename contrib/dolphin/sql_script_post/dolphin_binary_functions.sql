@@ -1,6 +1,6 @@
 /* binary */
 DROP TYPE IF EXISTS pg_catalog.binary CASCADE;
-DROP TYPE IF EXISTS pg_catalog._binary CASCADE;
+DROP TYPE IF EXISTS pg_catalog."_binary" CASCADE;
 
 CREATE TYPE pg_catalog.binary;
 
