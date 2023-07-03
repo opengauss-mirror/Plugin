@@ -2249,18 +2249,17 @@ SELECT CONCAT(@var_num, fgbk_bin) result, collation for(result) FROM t_diff_char
 (1 row)
 
 -- -- -- varbinary var
-set @var_binary = _binary'高斯DB'; -- not support yet
-ERROR:  failed to find conversion function from varbinary to text
+set @var_binary = _binary'高斯DB';
 SELECT CONCAT(futf8_bin, @var_binary) result, collation for(result) FROM t_diff_charset_columns;
- result | pg_collation_for 
---------+------------------
-        | utf8mb4_bin
+    result    |  pg_collation_for  
+--------------+--------------------
+ 高斯DB高斯DB | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT(@var_binary, fgbk_bin) result, collation for(result) FROM t_diff_charset_columns;
- result | pg_collation_for 
---------+------------------
-        | gbk_bin
+  result   |  pg_collation_for  
+-----------+--------------------
+ 高斯DB˹DB | utf8mb4_general_ci
 (1 row)
 
 -- -- concat column and bind parameter
