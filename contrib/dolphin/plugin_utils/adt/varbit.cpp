@@ -2059,9 +2059,8 @@ Datum bitfromdate(PG_FUNCTION_ARGS)
 
 Datum bitfromdatetime(PG_FUNCTION_ARGS)
 {
-    int64 a = (int64)DirectFunctionCall1(timestamptz_int8, PG_GETARG_TIMESTAMPTZ(0));
-    int32 typmod = PG_GETARG_INT32(1);
-    return bitfrombigint(a, typmod);
+    Datum a = DirectFunctionCall1(datetime_float, PG_GETARG_TIMESTAMP(0));
+    return DirectFunctionCall2(bitfromfloat8, a, PG_GETARG_INT32(1));
 }
 
 Datum bitfromtimestamp(PG_FUNCTION_ARGS)

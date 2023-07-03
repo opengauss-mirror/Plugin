@@ -565,6 +565,19 @@ select cast(b'11111111111111111111111111111111111111111111111111111111111111111'
 ERROR:  bigint out of range
 CONTEXT:  referenced column: int8
 
+select hex('9999-12-31 23:59:59'::datetime::bit(64));
+       hex        
+------------------
+ 00005af105d18777
+(1 row)
+
+select hex('99991231235959'::datetime::bit(64));
+       hex        
+------------------
+ 00005af105d18777
+(1 row)
+
+
 select 'true'::bool::bit;
  bit 
 -----
