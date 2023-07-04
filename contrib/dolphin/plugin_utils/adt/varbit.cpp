@@ -1699,7 +1699,7 @@ Datum bittobigint(VarBit* arg, bool isUnsigned)
     PG_RETURN_INT64(result);
 }
 
-Datum bitfromtinyint(int8 a, int32 typmod)
+Datum bitfromtinyint(int16 a, int32 typmod)
 {
     VarBit* result = NULL;
     bits8* r = NULL;
@@ -1751,7 +1751,7 @@ Datum bitfromtinyint(int8 a, int32 typmod)
     PG_RETURN_VARBIT_P(result);
 }
 
-Datum bitfromsmallint(int16 a, int32 typmod)
+Datum bitfromsmallint(int32 a, int32 typmod)
 {
     VarBit* result = NULL;
     bits8* r = NULL;

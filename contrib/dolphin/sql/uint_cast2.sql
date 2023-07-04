@@ -1,5 +1,6 @@
 create schema uint_cast2;
 set current_schema to 'uint_cast2';
+set dolphin.b_compatibility_mode to on;
 
 drop table if exists t1 ;
 create table t1(a uint8);
@@ -71,6 +72,17 @@ insert into t1 values(0::uint1);
 insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
+
+insert into t1 values('-1'::time);
+insert into t1 values('-1'::char(10));
+insert into t1 values('-1'::varchar(10));
+insert into t1 values('-1'::binary(10));
+insert into t1 values('-1'::varbinary(10));
+insert into t1 values('-1'::tinyblob);
+insert into t1 values('-1'::blob);
+insert into t1 values('-1'::mediumblob);
+insert into t1 values('-1'::longblob);
+insert into t1 values('-1'::json);
 
 drop table if exists t1 ;
 
@@ -146,6 +158,17 @@ insert into t1 values(0::uint1);
 insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
+
+insert into t1 values('-1'::time);
+insert into t1 values('-1'::char(10));
+insert into t1 values('-1'::varchar(10));
+insert into t1 values('-1'::binary(10));
+insert into t1 values('-1'::varbinary(10));
+insert into t1 values('-1'::tinyblob);
+insert into t1 values('-1'::blob);
+insert into t1 values('-1'::mediumblob);
+insert into t1 values('-1'::longblob);
+insert into t1 values('-1'::json);
 
 drop table if exists t1 ;
 
@@ -230,6 +253,16 @@ insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 
+insert into t1 values('-1'::time);
+insert into t1 values('-1'::char(10));
+insert into t1 values('-1'::varchar(10));
+insert into t1 values('-1'::binary(10));
+insert into t1 values('-1'::varbinary(10));
+insert into t1 values('-1'::tinyblob);
+insert into t1 values('-1'::blob);
+insert into t1 values('-1'::mediumblob);
+insert into t1 values('-1'::longblob);
+insert into t1 values('-1'::json);
 drop table if exists t1 ;
 
 create table t1(a uint1);
@@ -311,6 +344,17 @@ insert into t1 values(0::uint1);
 insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
+
+insert into t1 values('-1'::time);
+insert into t1 values('-1'::char(10));
+insert into t1 values('-1'::varchar(10));
+insert into t1 values('-1'::binary(10));
+insert into t1 values('-1'::varbinary(10));
+insert into t1 values('-1'::tinyblob);
+insert into t1 values('-1'::blob);
+insert into t1 values('-1'::mediumblob);
+insert into t1 values('-1'::longblob);
+insert into t1 values('-1'::json);
 
 drop schema uint_cast2 cascade;
 reset current_schema;

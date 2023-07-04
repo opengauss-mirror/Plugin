@@ -1,5 +1,6 @@
 create schema uint_cast2;
 set current_schema to 'uint_cast2';
+set dolphin.b_compatibility_mode to on;
 drop table if exists t1 ;
 NOTICE:  table "t1" does not exist, skipping
 create table t1(a uint8);
@@ -94,6 +95,36 @@ insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::time);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::char(10));
+ERROR:  value "-1" is out of range for type bigint unsigned
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varchar(10));
+ERROR:  value "-1" is out of range for type bigint unsigned
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::binary(10));
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varbinary(10));
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::tinyblob);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::blob);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::mediumblob);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::longblob);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::json);
+ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: a
 drop table if exists t1 ;
 create table t1(a uint4);
@@ -198,6 +229,36 @@ insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::time);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::char(10));
+ERROR:  value "-1" is out of range for type int unsigned
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varchar(10));
+ERROR:  value "-1" is out of range for type int unsigned
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::binary(10));
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varbinary(10));
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::tinyblob);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::blob);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::mediumblob);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::longblob);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::json);
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 drop table if exists t1 ;
 create table t1(a uint2);
@@ -320,6 +381,36 @@ insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::time);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::char(10));
+ERROR:  value "-1" is out of range for type smallint unsigned
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varchar(10));
+ERROR:  value "-1" is out of range for type smallint unsigned
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::binary(10));
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varbinary(10));
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::tinyblob);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::blob);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::mediumblob);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::longblob);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::json);
+ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: a
 drop table if exists t1 ;
 create table t1(a uint1);
@@ -447,6 +538,36 @@ insert into t1 values(0::uint1);
 insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::time);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::char(10));
+ERROR:  value "-1" is out of range for type tinyint unsigned
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varchar(10));
+ERROR:  value "-1" is out of range for type tinyint unsigned
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::binary(10));
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varbinary(10));
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::tinyblob);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::blob);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::mediumblob);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::longblob);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::json);
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 drop schema uint_cast2 cascade;
