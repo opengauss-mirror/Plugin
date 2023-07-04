@@ -1574,5 +1574,14 @@ $$
 LANGUAGE plpgsql;
 drop aggregate if exists pg_catalog.bit_xor(text);
 create aggregate pg_catalog.bit_xor(text) (SFUNC=text_xor, STYPE= uint8);
+drop view performance_schema.events_statements_current;
+drop view performance_schema.events_statements_history;
+drop view performance_schema.events_statements_summary_by_digest;
+drop view performance_schema.statement_history;
+drop view performance_schema.events_waits_current;
+drop view performance_schema.events_waits_summary_global_by_event_name;
+drop view performance_schema.file_summary_by_instance;
+drop view performance_schema.table_io_waits_summary_by_table;
+drop view performance_schema.table_io_waits_summary_by_index_usage;
 drop schema if exists performance_schema CASCADE;
 drop function if exists pg_catalog.get_statement_history();
