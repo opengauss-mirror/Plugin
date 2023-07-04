@@ -144,6 +144,21 @@ select proc9();
 select proc10();
 select proc11();
 
+set dolphin.sql_mode = 'block_return_multi_results'; 
+call proc1();
+call proc2();
+call proc3();
+call proc4();
+call proc5();
+call proc5(1);
+call proc6();
+call proc7();
+call proc8();
+call proc9();
+call proc10();
+call proc11();
+set dolphin.sql_mode = default;
+
 --error now check function 
 create procedure proc33 () select z from tz;
 
@@ -169,8 +184,9 @@ end;
 //
 delimiter ;
 
-
+set dolphin.sql_mode = 'block_return_multi_results'; 
 call test91();
+set dolphin.sql_mode = default;
 
 delimiter //
 
@@ -189,8 +205,9 @@ end;
 
 delimiter ;
 
-
+set dolphin.sql_mode = 'block_return_multi_results'; 
 call test92();
+set dolphin.sql_mode = default;
 
 -- test deterministic error
 
@@ -203,9 +220,10 @@ begin
 return a1;
 end;
 /
-
+set dolphin.sql_mode = 'block_return_multi_results'; 
 select fun2(1);
 
+call fun2(1);
 -- test create procedure select error 
 create table t1_t (a int);
 
@@ -219,7 +237,12 @@ create procedure pro_test_t2() select a as b from t1_t;
 
 select  pro_test_t();
 
+call pro_test_t;
+
 select  pro_test_t2();
+
+call pro_test_t2;
+set dolphin.sql_mode = default;
 
 drop schema db_func_call_2 cascade;
 reset current_schema;

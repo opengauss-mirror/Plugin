@@ -339,16 +339,15 @@ show create procedure create_procedure_010;
 (1 row)
 
 show create procedure create_procedure_011;
-      Procedure       |                                Create Procedure                                |                                               sql_mode                                               | character_set_client | collation_connection | Database Collation 
-----------------------+--------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+----------------------+----------------------+--------------------
- create_procedure_011 | CREATE DEFINER = test_procedure_definer FUNCTION public.create_procedure_011()+| sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length | UTF8                 | C                    | C
-                      |  RETURNS SETOF record                                                         +|                                                                                                      |                      |                      | 
-                      |  LANGUAGE sql                                                                 +|                                                                                                      |                      |                      | 
-                      |  NOT FENCED NOT SHIPPABLE                                                     +|                                                                                                      |                      |                      | 
-                      | AS $function$                                                                 +|                                                                                                      |                      |                      | 
-                      |  select c from t_create_procedure_select order by c;                          +|                                                                                                      |                      |                      | 
-                      | $function$;                                                                   +|                                                                                                      |                      |                      | 
-                      |                                                                                |                                                                                                      |                      |                      | 
+      Procedure       |                                Create Procedure                                 |                                               sql_mode                                               | character_set_client | collation_connection | Database Collation 
+----------------------+---------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+----------------------+----------------------+--------------------
+ create_procedure_011 | CREATE DEFINER = test_procedure_definer PROCEDURE public.create_procedure_011()+| sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length | UTF8                 | C                    | C
+                      | AS  DECLARE BEGIN                                                              +|                                                                                                      |                      |                      | 
+                      |  select c from t_create_procedure_select order by c;                           +|                                                                                                      |                      |                      | 
+                      | END                                                                            +|                                                                                                      |                      |                      | 
+                      | ;                                                                              +|                                                                                                      |                      |                      | 
+                      | /                                                                              +|                                                                                                      |                      |                      | 
+                      |                                                                                 |                                                                                                      |                      |                      | 
 (1 row)
 
 show create procedure create_procedure_012;
@@ -597,13 +596,10 @@ call create_procedure_010();
 (1 row)
 
 select create_procedure_011();
- create_procedure_011 
-----------------------
- (1)
- (2)
- (3)
-(3 rows)
-
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function create_procedure_011() line 2 at SQL statement
+referenced column: create_procedure_011
 call create_procedure_012(10);
  create_procedure_012 
 ----------------------
@@ -931,16 +927,15 @@ show create procedure create_procedure_010;
 (1 row)
 
 show create procedure create_procedure_011;
-      Procedure       |                                Create Procedure                                |                                               sql_mode                                               | character_set_client | collation_connection | Database Collation 
-----------------------+--------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+----------------------+----------------------+--------------------
- create_procedure_011 | CREATE DEFINER = test_procedure_definer FUNCTION public.create_procedure_011()+| sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length | UTF8                 | C                    | C
-                      |  RETURNS SETOF record                                                         +|                                                                                                      |                      |                      | 
-                      |  LANGUAGE sql                                                                 +|                                                                                                      |                      |                      | 
-                      |  NOT FENCED NOT SHIPPABLE                                                     +|                                                                                                      |                      |                      | 
-                      | AS $function$                                                                 +|                                                                                                      |                      |                      | 
-                      |  select c from t_create_procedure_select order by c;                          +|                                                                                                      |                      |                      | 
-                      | $function$;                                                                   +|                                                                                                      |                      |                      | 
-                      |                                                                                |                                                                                                      |                      |                      | 
+      Procedure       |                                Create Procedure                                 |                                               sql_mode                                               | character_set_client | collation_connection | Database Collation 
+----------------------+---------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+----------------------+----------------------+--------------------
+ create_procedure_011 | CREATE DEFINER = test_procedure_definer PROCEDURE public.create_procedure_011()+| sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length | UTF8                 | C                    | C
+                      | AS DECLARE BEGIN                                                               +|                                                                                                      |                      |                      | 
+                      |  select c from t_create_procedure_select order by c;                           +|                                                                                                      |                      |                      | 
+                      | END                                                                            +|                                                                                                      |                      |                      | 
+                      | ;                                                                              +|                                                                                                      |                      |                      | 
+                      | /                                                                              +|                                                                                                      |                      |                      | 
+                      |                                                                                 |                                                                                                      |                      |                      | 
 (1 row)
 
 show create procedure create_procedure_012;
@@ -1189,13 +1184,10 @@ call create_procedure_010();
 (1 row)
 
 select create_procedure_011();
- create_procedure_011 
-----------------------
- (1)
- (2)
- (3)
-(3 rows)
-
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function create_procedure_011() line 2 at SQL statement
+referenced column: create_procedure_011
 call create_procedure_012(10);
  create_procedure_012 
 ----------------------

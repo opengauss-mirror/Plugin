@@ -536,7 +536,8 @@ static List* GetNameListFromDolphinString(List* dolphinStringList);
 static char* GetDolphinObjName(char* string, bool is_quoted);
 static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted);
 static char* GetDolphinSchemaName(char* string, bool is_quoted);
-static char* SingleLineProcedureQueryGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra);
+static char* SingleLineProcedureQueryGet
+	(int& start_pos, int& end_pos, base_yy_extra_type* yyextra, bool add_prefix);
 static void setAccessMethod(Constraint *n);
 static SelectStmt *MakeFunctionSelect(char *funcCall, List* args, core_yyscan_t yyscanner);
 static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yyscanner);
@@ -20413,7 +20414,7 @@ SingleLineProcPart:
                                 base_yy_extra_type *yyextra = pg_yyget_extra(yyscanner);
                                 int start_pos = GetSessionContext()->single_line_proc_begin;
                                 int end_pos = yylloc;
-                                strbody = SingleLineProcedureQueryGet(start_pos, end_pos, yyextra);
+                                strbody = SingleLineProcedureQueryGet(start_pos, end_pos, yyextra, true);
                                 GetSessionContext()->single_line_proc_begin = -1;
                                 $$ = strbody;
                         }
@@ -20437,7 +20438,7 @@ b_signal_resignal_body:
 
 						int start_pos = GetSessionContext()->single_line_proc_begin;
 						int end_pos = yylloc;
-						strbody = SingleLineProcedureQueryGet(start_pos, end_pos, yyextra);
+						strbody = SingleLineProcedureQueryGet(start_pos, end_pos, yyextra, false);
 						strbody_len = strlen(strbody);
 						GetSessionContext()->single_line_proc_begin = -1;
 
@@ -20634,7 +20635,7 @@ CreateProcedureStmt:
 						n->parameters = $6;
 						n->inputHeaderSrc = FormatFuncArgType(yyscanner, NULL, n->parameters);
 						n->returnType = NULL;
-						n->isProcedure = false;
+						n->isProcedure = true;
 						if (0 == count)
 						{
 							n->returnType = makeTypeName("void");
@@ -20647,10 +20648,6 @@ CreateProcedureStmt:
 						n->withClause = NIL;
 						u_sess->parser_cxt.isCreateFuncOrProc = false;
 
-						TypeName* type =  makeTypeName("record");
-						type->setof = TRUE;
-						type->arrayBounds = NIL;
-						n->returnType = type;
 
 						$$ = (Node *)n;
 					}
@@ -40261,19 +40258,23 @@ static bool DolphinObjNameCmp(const char* s1, const char* s2, bool is_quoted)
 	return true;
 }
 
-static char* SingleLineProcedureQueryGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra)
+static char* SingleLineProcedureQueryGet(int& start_pos, int& end_pos, base_yy_extra_type* yyextra,bool add_prefix)
 {
 	char* delimiter_str = u_sess->attr.attr_common.delimiter_name;
 	StringInfoData select_query;
 	initStringInfo(&select_query);
-	appendStringInfo(&select_query, "\n");
+	if (add_prefix) {
+		appendStringInfo(&select_query, DECLARE_STR);
+		appendStringInfo(&select_query, BEGIN_STR);
+	}
 	appendBinaryStringInfo(&select_query, yyextra->core_yy_extra.scanbuf + start_pos - 1, end_pos - start_pos + 1);
 	if (delimiter_str == NULL)
 		appendStringInfo(&select_query, ";");
 	else
 		appendStringInfoString(&select_query, delimiter_str);
-	appendStringInfo(&select_query, "\n");
-
+	if (add_prefix) {	
+		appendStringInfo(&select_query, END_STR);
+	}
 	return select_query.data;
 }
 
