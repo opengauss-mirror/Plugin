@@ -118,7 +118,13 @@ SELECT SUBSTRING_INDEX('www.opengauss.com','.',-9223372036854775808);
 (1 row)
 
 SELECT SUBSTRING_INDEX('www.opengauss.com','.',10000000000000000000);
-ERROR:  bigint out of range
+  substring_index  
+-------------------
+ www.opengauss.com
+(1 row)
+
+SELECT SUBSTRING_INDEX('www.opengauss.com','.',20000000000000000000);
+ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: substring_index
 SELECT SUBSTRING_INDEX('www.opengauss.com','.',-10000000000000000000);
 ERROR:  bigint out of range
