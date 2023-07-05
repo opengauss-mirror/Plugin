@@ -992,12 +992,12 @@ CREATE CAST ("date" as uint8) with function pg_catalog.date2uint8("date") AS ASS
 
 CREATE OR REPLACE FUNCTION pg_catalog.int8_b_format_time (
 uint1
-) RETURNS time LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int8_b_format_time';
+) RETURNS time LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint8_b_format_time';
 CREATE CAST (uint1 AS time) WITH FUNCTION int8_b_format_time(uint1) AS ASSIGNMENT;
 
 CREATE OR REPLACE FUNCTION pg_catalog.int16_b_format_time (
 uint2
-) RETURNS time LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int16_b_format_time';
+) RETURNS time LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint16_b_format_time';
 CREATE CAST (uint2 AS time) WITH FUNCTION int16_b_format_time(uint2) AS ASSIGNMENT;
 
 
@@ -1019,19 +1019,23 @@ DROP CAST IF EXISTS (uint2 AS timestamp(0) without time zone) CASCADE;
 
 CREATE OR REPLACE FUNCTION pg_catalog.int64_b_format_time (
 uint8
-) RETURNS time LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int64_b_format_time';
+) RETURNS time LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint64_b_format_time';
 CREATE CAST (uint8 AS time) WITH FUNCTION int64_b_format_time(uint8) AS ASSIGNMENT;
 
-CREATE OR REPLACE FUNCTION pg_catalog.time_uint1 (time) RETURNS uint1 LANGUAGE SQL STABLE STRICT as 'select cast(pg_catalog.time_float($1) as uint1)';
+CREATE OR REPLACE FUNCTION pg_catalog.int32_b_format_time (
+uint4
+) RETURNS time LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint32_b_format_time';
+
+CREATE OR REPLACE FUNCTION pg_catalog.time_uint1 (time) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'time2uint1';
 CREATE CAST(time AS uint1) WITH FUNCTION time_uint1(time) AS ASSIGNMENT;
 
-CREATE OR REPLACE FUNCTION pg_catalog.time_uint2 (time) RETURNS uint2 LANGUAGE SQL STABLE STRICT as 'select cast(pg_catalog.time_float($1) as uint2)';
+CREATE OR REPLACE FUNCTION pg_catalog.time_uint2 (time) RETURNS uint2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'time2uint2';
 CREATE CAST(time AS uint2) WITH FUNCTION time_uint2(time) AS ASSIGNMENT;
 
-CREATE OR REPLACE FUNCTION pg_catalog.time_uint4 (time) RETURNS uint4 LANGUAGE SQL STABLE STRICT as 'select cast(pg_catalog.time_float($1) as uint4)';
+CREATE OR REPLACE FUNCTION pg_catalog.time_uint4 (time) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'time2uint4';
 CREATE CAST(time AS uint4) WITH FUNCTION time_uint4(time) AS ASSIGNMENT;
 
-CREATE OR REPLACE FUNCTION pg_catalog.time_uint8 (time) RETURNS uint8 LANGUAGE SQL STABLE STRICT as 'select cast(pg_catalog.time_float($1) as uint8)';
+CREATE OR REPLACE FUNCTION pg_catalog.time_uint8 (time) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'time2uint8';
 CREATE CAST(time AS uint8) WITH FUNCTION time_uint8(time) AS ASSIGNMENT;
 
 CREATE OR REPLACE FUNCTION pg_catalog.int8_b_format_datetime (
@@ -2039,10 +2043,6 @@ DROP FUNCTION IF EXISTS pg_catalog.varlena2int4(anyelement) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.varlena2int8(anyelement) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.varlena2float4(anyelement) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.varlena2numeric(anyelement) cascade;
-DROP FUNCTION IF EXISTS pg_catalog.varlena2uint1(anyelement) cascade;
-DROP FUNCTION IF EXISTS pg_catalog.varlena2uint2(anyelement) cascade;
-DROP FUNCTION IF EXISTS pg_catalog.varlena2uint4(anyelement) cascade;
-DROP FUNCTION IF EXISTS pg_catalog.varlena2uint8(anyelement) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.Varlena2Bpchar(anyelement) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.Varlena2Varchar(anyelement) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.Varlena2Text(anyelement) cascade;
@@ -2096,34 +2096,6 @@ DROP CAST IF EXISTS (tinyblob AS numeric) CASCADE;
 DROP CAST IF EXISTS (mediumblob AS numeric) CASCADE;
 DROP CAST IF EXISTS (longblob AS numeric) CASCADE;
 DROP CAST IF EXISTS (json AS numeric) CASCADE;
-DROP CAST IF EXISTS ("binary" AS uint1) CASCADE;
-DROP CAST IF EXISTS ("varbinary" AS uint1) CASCADE;
-DROP CAST IF EXISTS (blob AS uint1) CASCADE;
-DROP CAST IF EXISTS (tinyblob AS uint1) CASCADE;
-DROP CAST IF EXISTS (mediumblob AS uint1) CASCADE;
-DROP CAST IF EXISTS (longblob AS uint1) CASCADE;
-DROP CAST IF EXISTS (json AS uint1) CASCADE;
-DROP CAST IF EXISTS ("binary" AS uint2) CASCADE;
-DROP CAST IF EXISTS ("varbinary" AS uint2) CASCADE;
-DROP CAST IF EXISTS (blob AS uint2) CASCADE;
-DROP CAST IF EXISTS (tinyblob AS uint2) CASCADE;
-DROP CAST IF EXISTS (mediumblob AS uint2) CASCADE;
-DROP CAST IF EXISTS (longblob AS uint2) CASCADE;
-DROP CAST IF EXISTS (json AS uint2) CASCADE;
-DROP CAST IF EXISTS ("binary" AS uint4) CASCADE;
-DROP CAST IF EXISTS ("varbinary" AS uint4) CASCADE;
-DROP CAST IF EXISTS (blob AS uint4) CASCADE;
-DROP CAST IF EXISTS (tinyblob AS uint4) CASCADE;
-DROP CAST IF EXISTS (mediumblob AS uint4) CASCADE;
-DROP CAST IF EXISTS (longblob AS uint4) CASCADE;
-DROP CAST IF EXISTS (json AS uint4) CASCADE;
-DROP CAST IF EXISTS ("binary" AS uint8) CASCADE;
-DROP CAST IF EXISTS ("varbinary" AS uint8) CASCADE;
-DROP CAST IF EXISTS (blob AS uint8) CASCADE;
-DROP CAST IF EXISTS (tinyblob AS uint8) CASCADE;
-DROP CAST IF EXISTS (mediumblob AS uint8) CASCADE;
-DROP CAST IF EXISTS (longblob AS uint8) CASCADE;
-DROP CAST IF EXISTS (json AS uint8) CASCADE;
 DROP CAST IF EXISTS ("binary" AS char) CASCADE;
 DROP CAST IF EXISTS ("varbinary" AS char) CASCADE;
 DROP CAST IF EXISTS (blob AS char) CASCADE;
@@ -2259,50 +2231,6 @@ CREATE CAST (tinyblob AS numeric) WITH FUNCTION pg_catalog.varlena2numeric(anyel
 CREATE CAST (mediumblob AS numeric) WITH FUNCTION pg_catalog.varlena2numeric(anyelement) AS ASSIGNMENT;
 CREATE CAST (longblob AS numeric) WITH FUNCTION pg_catalog.varlena2numeric(anyelement) AS ASSIGNMENT;
 CREATE CAST (json AS numeric) WITH FUNCTION pg_catalog.varlena2numeric(anyelement) AS ASSIGNMENT;
-
-
-CREATE OR REPLACE FUNCTION pg_catalog.varlena2uint1(anyelement) RETURNS uint1 LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as float8) as uint1)';
-
-CREATE CAST ("binary" AS uint1) WITH FUNCTION pg_catalog.varlena2uint1(anyelement) AS ASSIGNMENT;
-CREATE CAST ("varbinary" AS uint1) WITH FUNCTION pg_catalog.varlena2uint1(anyelement) AS ASSIGNMENT;
-CREATE CAST (blob AS uint1) WITH FUNCTION pg_catalog.varlena2uint1(anyelement) AS ASSIGNMENT;
-CREATE CAST (tinyblob AS uint1) WITH FUNCTION pg_catalog.varlena2uint1(anyelement) AS ASSIGNMENT;
-CREATE CAST (mediumblob AS uint1) WITH FUNCTION pg_catalog.varlena2uint1(anyelement) AS ASSIGNMENT;
-CREATE CAST (longblob AS uint1) WITH FUNCTION pg_catalog.varlena2uint1(anyelement) AS ASSIGNMENT;
-CREATE CAST (json AS uint1) WITH FUNCTION pg_catalog.varlena2uint1(anyelement) AS ASSIGNMENT;
-
-
-CREATE OR REPLACE FUNCTION pg_catalog.varlena2uint2(anyelement) RETURNS uint2 LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as float8) as uint2)';
-
-CREATE CAST ("binary" AS uint2) WITH FUNCTION pg_catalog.varlena2uint2(anyelement) AS ASSIGNMENT;
-CREATE CAST ("varbinary" AS uint2) WITH FUNCTION pg_catalog.varlena2uint2(anyelement) AS ASSIGNMENT;
-CREATE CAST (blob AS uint2) WITH FUNCTION pg_catalog.varlena2uint2(anyelement) AS ASSIGNMENT;
-CREATE CAST (tinyblob AS uint2) WITH FUNCTION pg_catalog.varlena2uint2(anyelement) AS ASSIGNMENT;
-CREATE CAST (mediumblob AS uint2) WITH FUNCTION pg_catalog.varlena2uint2(anyelement) AS ASSIGNMENT;
-CREATE CAST (longblob AS uint2) WITH FUNCTION pg_catalog.varlena2uint2(anyelement) AS ASSIGNMENT;
-CREATE CAST (json AS uint2) WITH FUNCTION pg_catalog.varlena2uint2(anyelement) AS ASSIGNMENT;
-
-
-CREATE OR REPLACE FUNCTION pg_catalog.varlena2uint4(anyelement) RETURNS uint4 LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as float8) as uint4)';
-
-CREATE CAST ("binary" AS uint4) WITH FUNCTION pg_catalog.varlena2uint4(anyelement) AS ASSIGNMENT;
-CREATE CAST ("varbinary" AS uint4) WITH FUNCTION pg_catalog.varlena2uint4(anyelement) AS ASSIGNMENT;
-CREATE CAST (blob AS uint4) WITH FUNCTION pg_catalog.varlena2uint4(anyelement) AS ASSIGNMENT;
-CREATE CAST (tinyblob AS uint4) WITH FUNCTION pg_catalog.varlena2uint4(anyelement) AS ASSIGNMENT;
-CREATE CAST (mediumblob AS uint4) WITH FUNCTION pg_catalog.varlena2uint4(anyelement) AS ASSIGNMENT;
-CREATE CAST (longblob AS uint4) WITH FUNCTION pg_catalog.varlena2uint4(anyelement) AS ASSIGNMENT;
-CREATE CAST (json AS uint4) WITH FUNCTION pg_catalog.varlena2uint4(anyelement) AS ASSIGNMENT;
-
-
-CREATE OR REPLACE FUNCTION pg_catalog.varlena2uint8(anyelement) RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as float8) as uint8)';
-
-CREATE CAST ("binary" AS uint8) WITH FUNCTION pg_catalog.varlena2uint8(anyelement) AS ASSIGNMENT;
-CREATE CAST ("varbinary" AS uint8) WITH FUNCTION pg_catalog.varlena2uint8(anyelement) AS ASSIGNMENT;
-CREATE CAST (blob AS uint8) WITH FUNCTION pg_catalog.varlena2uint8(anyelement) AS ASSIGNMENT;
-CREATE CAST (tinyblob AS uint8) WITH FUNCTION pg_catalog.varlena2uint8(anyelement) AS ASSIGNMENT;
-CREATE CAST (mediumblob AS uint8) WITH FUNCTION pg_catalog.varlena2uint8(anyelement) AS ASSIGNMENT;
-CREATE CAST (longblob AS uint8) WITH FUNCTION pg_catalog.varlena2uint8(anyelement) AS ASSIGNMENT;
-CREATE CAST (json AS uint8) WITH FUNCTION pg_catalog.varlena2uint8(anyelement) AS ASSIGNMENT;
 
 
 CREATE OR REPLACE FUNCTION pg_catalog.Varlena2Bpchar(anyelement) RETURNS char LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'Varlena2Bpchar';
@@ -3718,3 +3646,166 @@ binary,
 uint8
 ) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8ge($1::float8, $2::float8) $$;
 CREATE OPERATOR pg_catalog.>=(leftarg = binary, rightarg = uint8, procedure = pg_catalog.binary_uint8_ge);
+-- uint explicit cast
+-- time
+DROP FUNCTION IF EXISTS pg_catalog.time_cast_ui1(time) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.time_cast_ui1 (
+time
+) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'time_cast_ui1';
+
+DROP FUNCTION IF EXISTS pg_catalog.time_cast_ui2(time) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.time_cast_ui2 (
+time
+) RETURNS uint2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'time_cast_ui2';
+
+DROP FUNCTION IF EXISTS pg_catalog.time_cast_ui4(time) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.time_cast_ui4 (
+time
+) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'time_cast_ui4';
+
+DROP FUNCTION IF EXISTS pg_catalog.time_cast_ui8(time) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.time_cast_ui8 (
+time
+) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'time_cast_ui8';
+-- char
+DROP FUNCTION IF EXISTS pg_catalog.char_cast_ui1(char) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.char_cast_ui1 (
+char
+) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'char_cast_ui1';
+
+DROP FUNCTION IF EXISTS pg_catalog.char_cast_ui2(char) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.char_cast_ui2 (
+char
+) RETURNS uint2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'char_cast_ui2';
+
+DROP FUNCTION IF EXISTS pg_catalog.char_cast_ui4(char) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.char_cast_ui4 (
+char
+) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'char_cast_ui4';
+
+DROP FUNCTION IF EXISTS pg_catalog.char_cast_ui8(char) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.char_cast_ui8 (
+char
+) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'char_cast_ui8';
+-- varchar
+DROP FUNCTION IF EXISTS pg_catalog.varchar_cast_ui1(varchar) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.varchar_cast_ui1 (
+char
+) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varchar_cast_ui1';
+
+DROP FUNCTION IF EXISTS pg_catalog.varchar_cast_ui2(varchar) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.varchar_cast_ui2 (
+char
+) RETURNS uint2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varchar_cast_ui2';
+
+DROP FUNCTION IF EXISTS pg_catalog.varchar_cast_ui4(varchar) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.varchar_cast_ui4 (
+char
+) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varchar_cast_ui4';
+
+DROP FUNCTION IF EXISTS pg_catalog.varchar_cast_ui8(varchar) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.varchar_cast_ui8 (
+char
+) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varchar_cast_ui8';
+--varlena
+DROP FUNCTION IF EXISTS pg_catalog.varlena2ui1(anyelement) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.varlena2ui2(anyelement) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.varlena2ui4(anyelement) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.varlena2ui8(anyelement) cascade;
+
+DROP CAST IF EXISTS ("binary" AS uint1) CASCADE;
+DROP CAST IF EXISTS ("varbinary" AS uint1) CASCADE;
+DROP CAST IF EXISTS (blob AS uint1) CASCADE;
+DROP CAST IF EXISTS (tinyblob AS uint1) CASCADE;
+DROP CAST IF EXISTS (mediumblob AS uint1) CASCADE;
+DROP CAST IF EXISTS (longblob AS uint1) CASCADE;
+DROP CAST IF EXISTS (json AS uint1) CASCADE;
+DROP CAST IF EXISTS ("binary" AS uint2) CASCADE;
+DROP CAST IF EXISTS ("varbinary" AS uint2) CASCADE;
+DROP CAST IF EXISTS (blob AS uint2) CASCADE;
+DROP CAST IF EXISTS (tinyblob AS uint2) CASCADE;
+DROP CAST IF EXISTS (mediumblob AS uint2) CASCADE;
+DROP CAST IF EXISTS (longblob AS uint2) CASCADE;
+DROP CAST IF EXISTS (json AS uint2) CASCADE;
+DROP CAST IF EXISTS ("binary" AS uint4) CASCADE;
+DROP CAST IF EXISTS ("varbinary" AS uint4) CASCADE;
+DROP CAST IF EXISTS (blob AS uint4) CASCADE;
+DROP CAST IF EXISTS (tinyblob AS uint4) CASCADE;
+DROP CAST IF EXISTS (mediumblob AS uint4) CASCADE;
+DROP CAST IF EXISTS (longblob AS uint4) CASCADE;
+DROP CAST IF EXISTS (json AS uint4) CASCADE;
+DROP CAST IF EXISTS ("binary" AS uint8) CASCADE;
+DROP CAST IF EXISTS ("varbinary" AS uint8) CASCADE;
+DROP CAST IF EXISTS (blob AS uint8) CASCADE;
+DROP CAST IF EXISTS (tinyblob AS uint8) CASCADE;
+DROP CAST IF EXISTS (mediumblob AS uint8) CASCADE;
+DROP CAST IF EXISTS (longblob AS uint8) CASCADE;
+DROP CAST IF EXISTS (json AS uint8) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.varlena2ui1 (
+anyelement
+) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varlena2ui1';
+
+CREATE OR REPLACE FUNCTION pg_catalog.varlena2ui2 (
+anyelement
+) RETURNS uint2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varlena2ui2';
+
+CREATE OR REPLACE FUNCTION pg_catalog.varlena2ui4 (
+anyelement
+) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varlena2ui4';
+
+CREATE OR REPLACE FUNCTION pg_catalog.varlena2ui8 (
+anyelement
+) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varlena2ui8';
+
+CREATE CAST ("binary" AS uint1) WITH FUNCTION pg_catalog.varlena2ui1(anyelement) AS ASSIGNMENT;
+CREATE CAST ("varbinary" AS uint1) WITH FUNCTION pg_catalog.varlena2ui1(anyelement) AS ASSIGNMENT;
+CREATE CAST (blob AS uint1) WITH FUNCTION pg_catalog.varlena2ui1(anyelement) AS ASSIGNMENT;
+CREATE CAST (tinyblob AS uint1) WITH FUNCTION pg_catalog.varlena2ui1(anyelement) AS ASSIGNMENT;
+CREATE CAST (mediumblob AS uint1) WITH FUNCTION pg_catalog.varlena2ui1(anyelement) AS ASSIGNMENT;
+CREATE CAST (longblob AS uint1) WITH FUNCTION pg_catalog.varlena2ui1(anyelement) AS ASSIGNMENT;
+CREATE CAST (json AS uint1) WITH FUNCTION pg_catalog.varlena2ui1(anyelement) AS ASSIGNMENT;
+
+CREATE CAST ("binary" AS uint2) WITH FUNCTION pg_catalog.varlena2ui2(anyelement) AS ASSIGNMENT;
+CREATE CAST ("varbinary" AS uint2) WITH FUNCTION pg_catalog.varlena2ui2(anyelement) AS ASSIGNMENT;
+CREATE CAST (blob AS uint2) WITH FUNCTION pg_catalog.varlena2ui2(anyelement) AS ASSIGNMENT;
+CREATE CAST (tinyblob AS uint2) WITH FUNCTION pg_catalog.varlena2ui2(anyelement) AS ASSIGNMENT;
+CREATE CAST (mediumblob AS uint2) WITH FUNCTION pg_catalog.varlena2ui2(anyelement) AS ASSIGNMENT;
+CREATE CAST (longblob AS uint2) WITH FUNCTION pg_catalog.varlena2ui2(anyelement) AS ASSIGNMENT;
+CREATE CAST (json AS uint2) WITH FUNCTION pg_catalog.varlena2ui2(anyelement) AS ASSIGNMENT;
+
+CREATE CAST ("binary" AS uint4) WITH FUNCTION pg_catalog.varlena2ui4(anyelement) AS ASSIGNMENT;
+CREATE CAST ("varbinary" AS uint4) WITH FUNCTION pg_catalog.varlena2ui4(anyelement) AS ASSIGNMENT;
+CREATE CAST (blob AS uint4) WITH FUNCTION pg_catalog.varlena2ui4(anyelement) AS ASSIGNMENT;
+CREATE CAST (tinyblob AS uint4) WITH FUNCTION pg_catalog.varlena2ui4(anyelement) AS ASSIGNMENT;
+CREATE CAST (mediumblob AS uint4) WITH FUNCTION pg_catalog.varlena2ui4(anyelement) AS ASSIGNMENT;
+CREATE CAST (longblob AS uint4) WITH FUNCTION pg_catalog.varlena2ui4(anyelement) AS ASSIGNMENT;
+CREATE CAST (json AS uint4) WITH FUNCTION pg_catalog.varlena2ui4(anyelement) AS ASSIGNMENT;
+
+CREATE CAST ("binary" AS uint8) WITH FUNCTION pg_catalog.varlena2ui8(anyelement) AS ASSIGNMENT;
+CREATE CAST ("varbinary" AS uint8) WITH FUNCTION pg_catalog.varlena2ui8(anyelement) AS ASSIGNMENT;
+CREATE CAST (blob AS uint8) WITH FUNCTION pg_catalog.varlena2ui8(anyelement) AS ASSIGNMENT;
+CREATE CAST (tinyblob AS uint8) WITH FUNCTION pg_catalog.varlena2ui8(anyelement) AS ASSIGNMENT;
+CREATE CAST (mediumblob AS uint8) WITH FUNCTION pg_catalog.varlena2ui8(anyelement) AS ASSIGNMENT;
+CREATE CAST (longblob AS uint8) WITH FUNCTION pg_catalog.varlena2ui8(anyelement) AS ASSIGNMENT;
+CREATE CAST (json AS uint8) WITH FUNCTION pg_catalog.varlena2ui8(anyelement) AS ASSIGNMENT;
+
+DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_ui1(varchar) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_ui1 (
+anyelement
+) RETURNS uint1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varlena_cast_ui1';
+
+DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_ui2(varchar) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_ui2 (
+anyelement
+) RETURNS uint2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varlena_cast_ui2';
+
+DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_ui4(varchar) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_ui4 (
+anyelement
+) RETURNS uint4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varlena_cast_ui4';
+
+DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_ui8(varchar) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_ui8 (
+anyelement
+) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varlena_cast_ui8';
