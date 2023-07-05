@@ -1524,6 +1524,11 @@ BEGIN
 END;
 $$
 LANGUAGE plpgsql;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (bit, "any", "any") CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (bit, "any", "any", "any") CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any", "any", bit) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (bit, "any", "any", "any", int8) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (bit, "any", "any", "any", bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any", "any", int8) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any", "any") CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any") CASCADE;
