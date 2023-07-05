@@ -2308,7 +2308,7 @@ bool scanuint8(const char *str, bool errorOK, uint64 *result, bool can_ignore)
         if (!neg && tmp < PG_UINT64_MAX)
             tmp++;
     }
-    *result = tmp;
+    *result = neg ? 0 : tmp;
 
     return true;
 }
@@ -4305,29 +4305,6 @@ Datum uint8_sortsupport(PG_FUNCTION_ARGS)
 
 extern Datum int16in(PG_FUNCTION_ARGS);
 
-#ifdef DOLPHIN
-uint64 text_uintInternal(Datum txt, int128 min, int128 max, char* intType, bool canIgnore)
-{
-    char* tmp = NULL;
-    uint64 result;
-    tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
-
-    result = DatumGetUInt64(DirectFunctionCall1(uint8in, CStringGetDatum(tmp)));
-    pfree_ext(tmp);
-
-     /* keyword IGNORE has higher priority than sql mode */
-     if (result < min || result > max) {
-        if (canIgnore || !SQL_MODE_STRICT()) {
-            ereport(WARNING, (errmsg("%s unsigned out of range", intType)));
-            result = result < min ? 0 : max;
-        } else {
-            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("%s unsigned out of range", intType)));
-        }
-    }
-
-    return result;
-}
-#else
 int128 text_uintInternal(Datum txt, int128 min, int128 max, char* intType, bool canIgnore)
 {
     char* tmp = NULL;
@@ -4349,7 +4326,6 @@ int128 text_uintInternal(Datum txt, int128 min, int128 max, char* intType, bool 
 
     return result;
 }
-#endif
 
 Datum text_uint1(PG_FUNCTION_ARGS)
 {

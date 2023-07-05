@@ -7,7 +7,7 @@ create table t1(a uint8);
 insert into t1 values(1::text);
 insert into t1 values(0::text);
 insert into t1 values((-1)::text);
-ERROR:  value "-1" is out of range for type bigint unsigned
+ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(1::bool);
 insert into t1 values(0::bool);
@@ -96,7 +96,15 @@ insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
+insert into t1 values('-1');
+ERROR:  value "-1" is out of range for type bigint unsigned
+LINE 1: insert into t1 values('-1');
+                              ^
+CONTEXT:  referenced column: a
 insert into t1 values('-1'::time);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::text);
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::char(10));
@@ -126,12 +134,70 @@ CONTEXT:  referenced column: a
 insert into t1 values('-1'::json);
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: a
+set dolphin.sql_mode = '';
+delete from t1;
+insert into t1 values('-1');
+WARNING:  value "-1" is out of range for type bigint unsigned
+LINE 1: insert into t1 values('-1');
+                              ^
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::time);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::text);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::char(10));
+WARNING:  value "-1" is out of range for type bigint unsigned
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varchar(10));
+WARNING:  value "-1" is out of range for type bigint unsigned
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::binary(10));
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varbinary(10));
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::tinyblob);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::blob);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::mediumblob);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::longblob);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::json);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+select * from t1;
+ a 
+---
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+(12 rows)
+
+reset dolphin.sql_mode;
 drop table if exists t1 ;
 create table t1(a uint4);
 insert into t1 values(1::text);
 insert into t1 values(0::text);
 insert into t1 values((-1)::text);
-ERROR:  value "-1" is out of range for type bigint unsigned
+ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(1::bool);
 insert into t1 values(0::bool);
@@ -230,7 +296,15 @@ insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
+insert into t1 values('-1');
+ERROR:  value "-1" is out of range for type int unsigned
+LINE 1: insert into t1 values('-1');
+                              ^
+CONTEXT:  referenced column: a
 insert into t1 values('-1'::time);
+ERROR:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::text);
 ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::char(10));
@@ -260,12 +334,62 @@ CONTEXT:  referenced column: a
 insert into t1 values('-1'::json);
 ERROR:  int unsigned out of range
 CONTEXT:  referenced column: a
+set dolphin.sql_mode = '';
+delete from t1;
+insert into t1 values('-1');
+insert into t1 values('-1'::time);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::text);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::char(10));
+insert into t1 values('-1'::varchar(10));
+insert into t1 values('-1'::binary(10));
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varbinary(10));
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::tinyblob);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::blob);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::mediumblob);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::longblob);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::json);
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: a
+select * from t1;
+ a 
+---
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+(12 rows)
+
+reset dolphin.sql_mode;
 drop table if exists t1 ;
 create table t1(a uint2);
 insert into t1 values(1::text);
 insert into t1 values(0::text);
 insert into t1 values((-1)::text);
-ERROR:  value "-1" is out of range for type bigint unsigned
+ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(1::bool);
 insert into t1 values(0::bool);
@@ -382,7 +506,15 @@ insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
+insert into t1 values('-1');
+ERROR:  value "-1" is out of range for type smallint unsigned
+LINE 1: insert into t1 values('-1');
+                              ^
+CONTEXT:  referenced column: a
 insert into t1 values('-1'::time);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::text);
 ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::char(10));
@@ -412,12 +544,62 @@ CONTEXT:  referenced column: a
 insert into t1 values('-1'::json);
 ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: a
+set dolphin.sql_mode = '';
+delete from t1;
+insert into t1 values('-1');
+insert into t1 values('-1'::time);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::text);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::char(10));
+insert into t1 values('-1'::varchar(10));
+insert into t1 values('-1'::binary(10));
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varbinary(10));
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::tinyblob);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::blob);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::mediumblob);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::longblob);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::json);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: a
+select * from t1;
+ a 
+---
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+(12 rows)
+
+reset dolphin.sql_mode;
 drop table if exists t1 ;
 create table t1(a uint1);
 insert into t1 values(1::text);
 insert into t1 values(0::text);
 insert into t1 values((-1)::text);
-ERROR:  value "-1" is out of range for type bigint unsigned
+ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values(1::int8);
 insert into t1 values(0::int8);
@@ -540,7 +722,15 @@ insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
+insert into t1 values('-1');
+ERROR:  value "-1" is out of range for type tinyint unsigned
+LINE 1: insert into t1 values('-1');
+                              ^
+CONTEXT:  referenced column: a
 insert into t1 values('-1'::time);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::text);
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::char(10));
@@ -570,6 +760,64 @@ CONTEXT:  referenced column: a
 insert into t1 values('-1'::json);
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
+set dolphin.sql_mode = '';
+delete from t1;
+insert into t1 values('-1');
+WARNING:  value "-1" is out of range for type tinyint unsigned
+LINE 1: insert into t1 values('-1');
+                              ^
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::time);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::text);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::char(10));
+WARNING:  value "-1" is out of range for type tinyint unsigned
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varchar(10));
+WARNING:  value "-1" is out of range for type tinyint unsigned
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::binary(10));
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::varbinary(10));
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::tinyblob);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::blob);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::mediumblob);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::longblob);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+insert into t1 values('-1'::json);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: a
+select * from t1;
+ a 
+---
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+(12 rows)
+
+reset dolphin.sql_mode;
+drop table if exists t1;
 drop schema uint_cast2 cascade;
-NOTICE:  drop cascades to table t1
 reset current_schema;

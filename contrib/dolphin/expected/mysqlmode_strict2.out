@@ -221,7 +221,7 @@ select * from test_bint;
  0
  0
  18446744073709551615
- 88
+ 0
  18446744073709551615
  13
  0
@@ -355,7 +355,7 @@ select * from test_tint1;
  0
  0
  255
- 88
+ 0
  255
  13
  0
@@ -490,7 +490,7 @@ select * from test_sint1;
  0
  0
  65535
- 88
+ 0
  65535
  13
  0
@@ -611,7 +611,7 @@ select * from test_int1;
  0
  0
  4294967295
- 88
+ 0
  4294967295
  13
  0
@@ -766,10 +766,10 @@ CONTEXT:  referenced column: a
 WARNING:  value "-123499" is out of range for type bigint unsigned
 CONTEXT:  referenced column: a
 select * from test_bint1;
-   a    
---------
+   a   
+-------
  0
- 123499
+ 0
  13435
  13435
 (4 rows)
@@ -861,7 +861,7 @@ select * from test_char1;
  0
  0
  1
- 8
+ 0
  1
  1
  0
@@ -951,7 +951,7 @@ select * from test_varchar7_1;
  0
  0
  1844674
- 88
+ 0
  1844674
  13
  0
