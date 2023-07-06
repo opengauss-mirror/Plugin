@@ -1407,6 +1407,15 @@ END;
 $$
 LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS pg_catalog.conv(date, int4, int4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.conv(timestamp without time zone, int4, int4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.conv(timestamptz, int4, int4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.conv(time, int4, int4) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.oct(date) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.oct(timestamp without time zone) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.oct(timestamptz) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.oct(time) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.oct(text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.oct(boolean) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.oct(bit) CASCADE;
