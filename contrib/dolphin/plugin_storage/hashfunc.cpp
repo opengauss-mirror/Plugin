@@ -640,13 +640,13 @@ Datum compute_hash_default(Oid type, Datum value, char locator)
 }
 #endif
 
-uint32 hashValueCombination(uint32 hashValue, Oid colType, Datum val, bool allIsNull, char locatorType)
+uint32 hashValueCombination(uint32 hashValue, Oid colType, Datum val, bool allIsNull, char locatorType, Oid collation)
 {
     if (!allIsNull) {
         hashValue = (hashValue << 1) | ((hashValue & 0x80000000) ? 1 : 0);
-        hashValue ^= (uint32)compute_hash(colType, val, locatorType);
+        hashValue ^= (uint32)compute_hash(colType, val, locatorType, collation);
     } else {
-        hashValue = (uint32)compute_hash(colType, val, locatorType);
+        hashValue = (uint32)compute_hash(colType, val, locatorType, collation);
     }
     return hashValue;
 }
@@ -842,11 +842,12 @@ Datum bucketbpchar(PG_FUNCTION_ARGS)
     Datum value = PG_GETARG_DATUM(0);
     int flag = PG_GETARG_INT32(1);
     long hashValue;
+    int collation = is_b_format_collation(PG_GET_COLLATION()) ? PG_GET_COLLATION() : InvalidOid;
 
     if (flag == 0) { /* hash */
-        hashValue = (long)compute_hash(BPCHAROID, value, LOCATOR_TYPE_HASH);
+        hashValue = (long)compute_hash(BPCHAROID, value, LOCATOR_TYPE_HASH, collation);
     } else {
-        hashValue = (long)compute_hash(BPCHAROID, value, LOCATOR_TYPE_MODULO);
+        hashValue = (long)compute_hash(BPCHAROID, value, LOCATOR_TYPE_MODULO, collation);
     }
     bucket = compute_modulo(abs(hashValue), BUCKETDATALEN);
     result = Int32GetDatum(bucket);
@@ -889,11 +890,12 @@ Datum bucketvarchar(PG_FUNCTION_ARGS)
     Datum value = PG_GETARG_DATUM(0);
     int flag = PG_GETARG_INT32(1);
     long hashValue;
+    int collation = is_b_format_collation(PG_GET_COLLATION()) ? PG_GET_COLLATION() : InvalidOid;
 
     if (flag == 0) { /* hash */
-        hashValue = (long)compute_hash(VARCHAROID, value, LOCATOR_TYPE_HASH);
+        hashValue = (long)compute_hash(VARCHAROID, value, LOCATOR_TYPE_HASH, collation);
     } else {
-        hashValue = (long)compute_hash(VARCHAROID, value, LOCATOR_TYPE_MODULO);
+        hashValue = (long)compute_hash(VARCHAROID, value, LOCATOR_TYPE_MODULO, collation);
     }
     bucket = compute_modulo(abs(hashValue), BUCKETDATALEN);
     result = Int32GetDatum(bucket);
@@ -913,11 +915,12 @@ Datum bucketnvarchar2(PG_FUNCTION_ARGS)
     Datum value = PG_GETARG_DATUM(0);
     int flag = PG_GETARG_INT32(1);
     long hashValue;
+    int collation = is_b_format_collation(PG_GET_COLLATION()) ? PG_GET_COLLATION() : InvalidOid;
 
     if (flag == 0) { /* hash */
-        hashValue = (long)compute_hash(NVARCHAR2OID, value, LOCATOR_TYPE_HASH);
+        hashValue = (long)compute_hash(NVARCHAR2OID, value, LOCATOR_TYPE_HASH, collation);
     } else {
-        hashValue = (long)compute_hash(NVARCHAR2OID, value, LOCATOR_TYPE_MODULO);
+        hashValue = (long)compute_hash(NVARCHAR2OID, value, LOCATOR_TYPE_MODULO, collation);
     }
     bucket = compute_modulo(abs(hashValue), BUCKETDATALEN);
     result = Int32GetDatum(bucket);
@@ -1345,11 +1348,12 @@ Datum buckettext(PG_FUNCTION_ARGS)
     Datum value = PG_GETARG_DATUM(0);
     int flag = PG_GETARG_INT32(1);
     long hashValue;
+    int collation = is_b_format_collation(PG_GET_COLLATION()) ? PG_GET_COLLATION() : InvalidOid;
 
     if (flag == 0) { /* hash */
-        hashValue = (long)compute_hash(TEXTOID, value, LOCATOR_TYPE_HASH);
+        hashValue = (long)compute_hash(TEXTOID, value, LOCATOR_TYPE_HASH, collation);
     } else {
-        hashValue = (long)compute_hash(TEXTOID, value, LOCATOR_TYPE_MODULO);
+        hashValue = (long)compute_hash(TEXTOID, value, LOCATOR_TYPE_MODULO, collation);
     }
     bucket = compute_modulo(abs(hashValue), BUCKETDATALEN);
     result = Int32GetDatum(bucket);

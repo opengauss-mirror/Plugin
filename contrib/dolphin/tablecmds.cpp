@@ -821,6 +821,7 @@ static void ATAlterCheckModifiyColumnRepeatedly(const AlterTableCmd* cmd, const 
 static int128 EvaluateAutoIncrement(Relation rel, TupleDesc desc, AttrNumber attnum, Datum* value, bool* is_null);
 static void SetRelAutoIncrement(Relation rel, TupleDesc desc, int128 autoinc);
 static Node* RecookAutoincAttrDefault(Relation rel, int attrno, Oid targettype, int targettypmod);
+static void check_unsupported_charset_for_column(Oid collation, const char* col_name);
 
 #ifdef DOLPHIN
 static List* ATGetNonUniqueKeyList(Relation rel);
@@ -1974,6 +1975,15 @@ static void CheckPartitionKeyForCreateTable(PartitionState *partTableState, List
     else if (partTableState->partitionStrategy == PART_STRATEGY_LIST)
         CompareListValue(pos, descriptor->attrs, partTableState->partitionList, partkeyIsFunc);
 
+    /* charset of partkey columns cannot be different from server_encoding */
+    if (DB_IS_CMPT(B_FORMAT)) {
+        foreach_cell (cell, pos) {
+            int attidx = lfirst_int(cell);
+            check_unsupported_charset_for_column(
+                descriptor->attrs[attidx].attcollation, NameStr(descriptor->attrs[attidx].attname));
+        }
+    }
+
     list_free_ext(pos);
 }
 
@@ -2664,6 +2674,15 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
     /* Must specify at least one column when creating a table. */
     if (descriptor->natts == 0 && relkind != RELKIND_COMPOSITE_TYPE) {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("must have at least one column")));
+    }
+
+    /* check column charset */
+    if (DB_IS_CMPT(B_FORMAT) &&
+        (0 == pg_strcasecmp(storeChar, ORIENTATION_COLUMN) || 0 == pg_strcasecmp(storeChar, ORIENTATION_TIMESERIES))) {
+        for (int attidx = 0; attidx < descriptor->natts; attidx++) {
+            check_unsupported_charset_for_column(
+                descriptor->attrs[attidx].attcollation, NameStr(descriptor->attrs[attidx].attname));
+        }
     }
 
     if (stmt->partTableState) {
@@ -12314,6 +12333,9 @@ static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relat
     collOid = GetColumnDefCollation(NULL, colDef, typeOid, rel_coll_oid);
     if (DB_IS_CMPT(B_FORMAT)) {
         typeOid = binary_need_transform_typeid(typeOid, &collOid);
+        if (RelationIsColStore(rel) || RelationIsTsStore(rel)) {
+            check_unsupported_charset_for_column(collOid, colDef->colname);
+        }
     }
 
     aclresult = pg_type_aclcheck(typeOid, GetUserId(), ACL_USAGE);
@@ -16609,6 +16631,9 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
     targetcollid = GetColumnDefCollation(NULL, def, targettype, rel_coll_oid);
     if (DB_IS_CMPT(B_FORMAT)) {
         targettype = binary_need_transform_typeid(targettype, &targetcollid);
+        if (RelationIsColStore(rel) || RelationIsTsStore(rel)) {
+            check_unsupported_charset_for_column(targetcollid, colName);
+        }
     }
     if (attnum == RelAutoIncAttrNum(rel)) {
         CheckAutoIncrementDatatype(targettype, colName);
@@ -23134,6 +23159,30 @@ Node* GetTargetValue(Form_pg_attribute attrs, Const* src, bool isinterval, bool 
         return NULL;
     }
 
+    /* convert source const's charset to target partkey's charset */
+    if (!partkeyIsFunc && DB_IS_CMPT(B_FORMAT) && OidIsValid(attrs->attcollation)) {
+        assign_expr_collations(NULL, expr);
+        if (attrs->attcollation != exprCollation(expr)) {
+            int attcharset = get_valid_charset_by_collation(attrs->attcollation);
+            expr = coerce_to_target_charset(expr, attcharset, target_oid, target_mod, attrs->attcollation);
+
+            Assert(expr != NULL);
+            if (!IsA(expr, Const)) {
+                expr = (Node*)evaluate_expr((Expr*)expr, target_oid, target_mod, attrs->attcollation);
+            } else if (attrs->attcollation != exprCollation(expr)) {
+                if (expr == (Node*)src) {
+                    /* We are not sure where src comes from, avoid set src->constcollid directly. */
+                    expr = (Node*)copyObject((void*)src);
+                }
+                /*
+                 * The expr is used to compute hash or compare it with the partition boundary.
+                 * Set the correct collation to ensure the correctness of the partition pruning and routing.
+                 */
+                exprSetCollation(expr, attrs->attcollation);
+            }
+        }
+    }
+
     switch (nodeTag(expr)) {
         /* do nothing for Const */
         case T_Const:
@@ -23317,7 +23366,7 @@ static void sqlcmd_check_list_partition_have_duplicate_values(List** key_values_
     ListCell* c2 = NULL;
     for (int k = 0; k < bound_idx; ++k) {
         forboth (c1, key_values_array[part_idx][bound_idx], c2, key_values_array[part_idx][k]) {
-            if (ConstCompareWithNull((Const*)lfirst(c1), (Const*)lfirst(c2)) != 0) {
+            if (ConstCompareWithNull((Const*)lfirst(c1), (Const*)lfirst(c2), ((Const*)lfirst(c2))->constcollid) != 0) {
                 break;
             }
         }
@@ -23343,7 +23392,7 @@ static void sqlcmd_check_two_list_partition_values_overlapped(List** key_values_
             Assert(!(con1->ismaxvalue && con2->ismaxvalue));
             break;
         }
-        if (ConstCompareWithNull(con1, con2) != 0) {
+        if (ConstCompareWithNull(con1, con2, con2->constcollid) != 0) {
             break;
         }
     }
@@ -23920,7 +23969,7 @@ static void CheckPartitionValueConflictForAddPartition(Relation rel, Node *partD
         RangePartitionMap *partMap = (RangePartitionMap *)rel->partMap;
         Const *curBound = (Const *)copyObject(partMap->rangeElements[partNum - 1].boundary[0]);
         Const *val = partDef->curStartVal;
-        if (!curBound->ismaxvalue && val != NULL && partitonKeyCompare(&val, &curBound, 1) != 0) {
+        if (!curBound->ismaxvalue && val != NULL && partitonKeyCompare(&curBound, &val, 1) != 0) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_TABLE_DEFINITION),
                 errmsg("start value of partition \"%s\" NOT EQUAL up-boundary of last partition.",
                 partDef->partitionInitName ? partDef->partitionInitName : partDef->partitionName)));
@@ -28717,14 +28766,14 @@ static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd)
         // check the first dest partition boundary
         if (srcPartIndex != 0) {
             if (!partMap->rangeElements[srcPartIndex].isInterval) {
-                compare = comparePartitionKey(partMap, partMap->rangeElements[srcPartIndex - 1].boundary,
-                                              (Const**)lfirst(list_head(destPartBoundaryList)), partKeyNum);
+                compare = comparePartitionKey(partMap, (Const**)lfirst(list_head(destPartBoundaryList)),
+                    partMap->rangeElements[srcPartIndex - 1].boundary, partKeyNum);
             } else {
                 Const** partKeyValue = (Const**)lfirst(list_head(destPartBoundaryList));
                 RangeElement& srcPartition = partMap->rangeElements[srcPartIndex];
-                compare = -ValueCmpLowBoudary(partKeyValue, &srcPartition, partMap->intervalValue);
+                compare = ValueCmpLowBoudary(partKeyValue, &srcPartition, partMap->intervalValue);
             }
-            if (compare >= 0) {
+            if (compare <= 0) {
                 ereport(ERROR,
                     (errcode(ERRCODE_INVALID_OPERATION),
                         errmsg("the bound of the first resulting partition is too low")));
@@ -33390,6 +33439,20 @@ void RebuildDependViewForProc(Oid proc_oid)
         list_free(raw_parsetree_list);
     }
     list_free_ext(oid_list);
+}
+
+static void check_unsupported_charset_for_column(Oid collation, const char* col_name)
+{
+    if (!OidIsValid(collation)) {
+        return;
+    }
+
+    int attcharset = get_valid_charset_by_collation(collation);
+    if (attcharset != PG_SQL_ASCII && attcharset != GetDatabaseEncoding()) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+            errmsg("difference between the charset of column %s and the database encoding has not supported",
+                col_name)));
+    }
 }
 
 #ifdef DOLPHIN
