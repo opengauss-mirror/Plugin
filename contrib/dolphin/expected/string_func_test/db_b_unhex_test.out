@@ -27,6 +27,12 @@ SELECT UNHEX(HEX('测试'));
  测试
 (1 row)
 
+SELECT UNHEX('');
+ unhex 
+-------
+ 
+(1 row)
+
 --测试非十六进制符号和二进制类型作为输入，返回NULL
 SELECT UNHEX('GG');
 WARNING:  Incorrect string value: "GG" for function unhex 
