@@ -361,7 +361,6 @@ ts_decompress_chunk_generate_paths(PlannerInfo *root, RelOptInfo *chunk_rel, Hyp
 	decompress_chunk_add_plannerinfo(root, info, chunk, chunk_rel, sort_info.needs_sequence_num);
 	compressed_rel = info->compressed_rel;
 
-	compressed_rel->consider_parallel = chunk_rel->consider_parallel;
 	/* translate chunk_rel->baserestrictinfo */
 	pushdown_quals(root, chunk_rel, compressed_rel, info->hypertable_compression_info);
 	set_baserel_size_estimates(root, compressed_rel);
@@ -371,7 +370,7 @@ ts_decompress_chunk_generate_paths(PlannerInfo *root, RelOptInfo *chunk_rel, Hyp
 	chunk_rel->rows = new_row_estimate;
 	create_compressed_scan_paths(root,
 								 compressed_rel,
-								 compressed_rel->consider_parallel ? parallel_workers : 0,
+								 false ? parallel_workers : 0,
 								 info,
 								 &sort_info);
 
@@ -419,7 +418,7 @@ ts_decompress_chunk_generate_paths(PlannerInfo *root, RelOptInfo *chunk_rel, Hyp
 						  dcpath->compressed_pathkeys,
 						  child_path->total_cost,
 						  child_path->rows,
-						  child_path->pathtarget->width,
+						  0,
 						  0.0,
 						  u_sess->attr.attr_memory.work_mem,
 						  -1);
@@ -436,7 +435,7 @@ ts_decompress_chunk_generate_paths(PlannerInfo *root, RelOptInfo *chunk_rel, Hyp
 	 * if it's planned */
 	compressed_rel->pathlist = NIL;
 	/* create parallel paths */
-	if (compressed_rel->consider_parallel)
+	if (false)
 	{
 		foreach (lc, compressed_rel->partial_pathlist)
 		{
@@ -950,18 +949,13 @@ decompress_chunk_path_create(PlannerInfo *root, CompressionInfo *info, int paral
 
 	path->cpath.path.pathtype = T_ExtensiblePlan;
 	path->cpath.path.parent = info->chunk_rel;
-	path->cpath.path.pathtarget = info->chunk_rel->reltarget;
 
 	path->cpath.path.param_info = compressed_path->param_info;
 
 	path->cpath.flags = 0;
 	path->cpath.methods = &decompress_chunk_path_methods;
 
-	Assert(parallel_workers == 0 || compressed_path->parallel_safe);
-
-	path->cpath.path.parallel_aware = false;
-	path->cpath.path.parallel_safe = compressed_path->parallel_safe;
-	path->cpath.path.parallel_workers = parallel_workers;
+	Assert(parallel_workers == 0);
 
 	path->cpath.extensible_paths = list_make1(compressed_path);
 	path->reverse = false;
@@ -986,10 +980,9 @@ create_compressed_scan_paths(PlannerInfo *root, RelOptInfo *compressed_rel, int 
 	add_path(compressed_rel, compressed_path);
 
 	/* create parallel scan path */
-	if (compressed_rel->consider_parallel && parallel_workers > 0)
+	if (false && parallel_workers > 0)
 	{
 		compressed_path = create_seqscan_path(root, compressed_rel, NULL, parallel_workers);
-		Assert(compressed_path->parallel_aware);
 		add_partial_path(compressed_rel, compressed_path);
 	}
 

@@ -521,7 +521,7 @@ ts_lookup_proc_filtered(const char *schema, const char *funcname, Oid *rettype, 
 
 	for (i = 0; i < catlist->n_members; i++)
 	{
-		HeapTuple proctup = &catlist->members[i]->tuple;
+		HeapTuple proctup = &catlist->systups[i]->tuple;
 		Form_pg_proc procform = (Form_pg_proc) GETSTRUCT(proctup);
 
 		if (procform->pronamespace == namespace_oid &&

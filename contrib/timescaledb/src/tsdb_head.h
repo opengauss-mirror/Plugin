@@ -77,7 +77,7 @@ extern PGDLLIMPORT double parallel_tuple_cost;
 
 extern PGDLLIMPORT int old_snapshot_threshold;
 
-extern PGDLLIMPORT BackgroundWorker *MyBgworkerEntry;
+
 
 
 
@@ -427,6 +427,9 @@ typedef void (*PG_init_t) (void);
 typedef struct Compressor Compressor;
 typedef ArrayType Acl;
 
+#define PVC_INCLUDE_WINDOWFUNCS 0x0004	/* include WindowFuncs in output list */
+#define PVC_RECURSE_WINDOWFUNCS 0x0008	/* recurse into WindowFunc arguments */
+
 
 
 typedef uint32 dsm_handle; 
@@ -667,6 +670,9 @@ extern void RunObjectPostAlterHook(Oid classId, Oid objectId, int subId,
 #define PROGRESS_VACUUM_PHASE					0
 #define PROGRESS_VACUUM_PHASE_FINAL_CLEANUP		6
 
+
+
+ 
 
 struct BackgroundWorkerHandle
 {
@@ -2526,4 +2532,28 @@ typedef struct OldSnapshotControlData
 	int			count_used;		/* how many slots are in use */
 	TransactionId xid_by_minute[FLEXIBLE_ARRAY_MEMBER];
 } OldSnapshotControlData;
+
+
+typedef struct BackgroundWorker_TS {
+    SHM_QUEUE           links; /* list link if process is in a list */
+    uint64              bgw_id;
+    ThreadId            bgw_notify_pid;    /* SIGUSR1 this backend on start/stop */
+    BgwHandleStatus     bgw_status;        /* Status of this bgworker */
+    uint64              bgw_status_dur;    /* duration in this status */
+    BgWorkerErrorData   bgw_edata;         /* error information of a bgworker */
+    pg_atomic_uint32    disable_count;     /* indicate whether the bgworker is disabled */
+    slist_node          rw_lnode;          /* list link */
+    char  bgw_name[64];
+    char  bgw_extra[128];
+    Datum bgw_main_arg;
+    int	bgw_flags;
+    int bgw_start_time;/* in seconds, or BGW_NEVER_RESTART */
+    int	bgw_restart_time;
+    char bgw_library_name[64];/* only if bgw_main is NULL */
+    char bgw_function_name[64];/* in seconds, or BGW_NEVER_RESTART */
+} BackgroundWorker_TS;
+
+#define BackgroundWorker BackgroundWorker_TS 
+
+extern PGDLLIMPORT BackgroundWorker *MyBgworkerEntry;
 #endif

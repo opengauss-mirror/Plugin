@@ -680,7 +680,7 @@ cagg_agg_validate(Node *node, void *context)
 		Aggref *agg = (Aggref *) node;
 		HeapTuple aggtuple;
 		Form_pg_aggregate aggform;
-		if (agg->aggorder || agg->aggdistinct || agg->aggfilter)
+		if (agg->aggorder || agg->aggdistinct)
 		{
 			ereport(ERROR,
 					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -962,7 +962,6 @@ get_finalize_aggref(Aggref *inp, Var *partial_state_var)
 	aggref->aggdirectargs = NULL; /*relevant for hypothetical set aggs*/
 	aggref->aggorder = NULL;
 	aggref->aggdistinct = NULL;
-	aggref->aggfilter = NULL;
 	aggref->aggstar = false;
 	aggref->aggvariadic = false;
 	aggref->aggkind = AGGKIND_NORMAL;

@@ -262,7 +262,6 @@ ca_append_begin(ExtensiblePlanState *node, EState *estate, int eflags)
 		switch (nodeTag(plan))
 		{
 			case T_SeqScan:
-			case T_SampleScan:
 			case T_IndexScan:
 			case T_IndexOnlyScan:
 			case T_BitmapIndexScan:
@@ -511,7 +510,6 @@ constraint_aware_append_plan_create(PlannerInfo *root, RelOptInfo *rel, Extensib
 		switch (nodeTag(plan))
 		{
 			case T_SeqScan:
-			case T_SampleScan:
 			case T_IndexScan:
 			case T_IndexOnlyScan:
 			case T_BitmapIndexScan:
@@ -574,11 +572,7 @@ ts_constraint_aware_append_path_create(PlannerInfo *root, Hypertable *ht, Path *
 	path->cpath.path.parent = subpath->parent;
 	path->cpath.path.pathkeys = subpath->pathkeys;
 	path->cpath.path.param_info = subpath->param_info;
-	path->cpath.path.pathtarget =(PathTarget *)subpath->pathtarget;
 
-	path->cpath.path.parallel_aware = false;
-	path->cpath.path.parallel_safe = subpath->parallel_safe;
-	path->cpath.path.parallel_workers = subpath->parallel_workers;
 
 	/*
 	 * Set flags. We can set CUSTOMPATH_SUPPORT_BACKWARD_SCAN and

@@ -91,7 +91,7 @@ plan_add_parallel_hashagg(PlannerInfo *root, RelOptInfo *input_rel, RelOptInfo *
 
 	partial_path = (Path *) linitial(output_rel->partial_pathlist);
 
-	total_groups = partial_path->rows * partial_path->parallel_workers;
+	total_groups = partial_path->rows;
 
 	partial_path = (Path *) create_gather_path(root,
 											   output_rel,
@@ -151,7 +151,7 @@ ts_plan_add_hashagg(PlannerInfo *root, RelOptInfo *input_rel, RelOptInfo *output
 	if (hashaggtablesize >= u_sess->attr.attr_memory.work_mem * UINT64CONST(1024))
 		return;
 
-	if (!output_rel->consider_parallel)
+	if (1)
 	{
 		/* Not even parallel-safe. */
 		try_parallel_aggregation = false;
@@ -161,11 +161,7 @@ ts_plan_add_hashagg(PlannerInfo *root, RelOptInfo *input_rel, RelOptInfo *output
 		/* Nothing to use as input for partial aggregate. */
 		try_parallel_aggregation = false;
 	}
-	else if (agg_costs.hasNonPartial || agg_costs.hasNonSerial)
-	{
-		/* Insufficient support for partial mode. */
-		try_parallel_aggregation = false;
-	}
+	
 	else
 	{
 		/* Everything looks good. */

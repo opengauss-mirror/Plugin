@@ -135,9 +135,7 @@ replace_aggref_in_tlist(MinMaxAggPath *minmaxagg_path)
 
 	context.mm_path = minmaxagg_path;
 
-	((Path *) minmaxagg_path)->pathtarget->exprs =
-		(List *) mutate_aggref_node((Node *) ((Path *) minmaxagg_path)->pathtarget->exprs,
-									(MutatorContext*) &context);
+	
 }
 
 /* Stores function id (FIRST/LAST) with proper comparison strategy */
@@ -277,7 +275,7 @@ find_first_last_aggs_walker(Node *node, List **context)
 		 * by adding the filter to the quals of the generated subquery.  For
 		 * now, just punt.
 		 */
-		if (aggref->aggfilter != NULL)
+		if (false)
 			return true;
 
 		/* We sort by second argument (eg. time) */
@@ -388,7 +386,6 @@ build_first_last_path(PlannerInfo *root, FirstLastAggInfo *fl_info, Oid eqop, Oi
 	subroot->parent_root = root;
 	/* reset subplan-related stuff */
 	subroot->plan_params = NIL;
-	subroot->outer_params = NULL;
 	subroot->init_plans = NIL;
 	/* reset EquivalenceClass since we will create it later on */
 	subroot->eq_classes = NIL;
@@ -440,7 +437,6 @@ build_first_last_path(PlannerInfo *root, FirstLastAggInfo *fl_info, Oid eqop, Oi
 	ntest->arg =(Expr *) copyObject(fl_info->sort);
 	/* we checked it wasn't a rowtype in find_minmax_aggs_walker */
 	ntest->argisrow = false;
-	ntest->location = -1;
 
 	/* User might have had that in WHERE already */
 	if (!list_member((List *) parse->jointree->quals, ntest))

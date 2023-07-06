@@ -123,7 +123,7 @@ set_plain_rel_pathlist(PlannerInfo *root, RelOptInfo *rel, RangeTblEntry *rte)
 	add_path(rel, create_seqscan_path(root, rel, required_outer, 0));
 
 	/* If appropriate, consider parallel sequential scan */
-	if (rel->consider_parallel && required_outer == NULL)
+	if (required_outer == NULL)
 		create_plain_partial_paths(root, rel);
 
 	/* Consider index scans */
@@ -167,8 +167,7 @@ ts_set_append_rel_pathlist(PlannerInfo *root, RelOptInfo *rel, Index rti, RangeT
 		 * need to propagate the unsafety marking down to the child, so that
 		 * we don't generate useless partial paths for it.
 		 */
-		if (!rel->consider_parallel)
-			childrel->consider_parallel = false;
+
 
 		/*
 		 * Compute the child's access paths.
@@ -320,7 +319,6 @@ set_rel_consider_parallel(PlannerInfo *root, RelOptInfo *rel, RangeTblEntry *rte
 	 * The flag has previously been initialized to false, so we can just
 	 * return if it becomes clear that we can't safely set it.
 	 */
-	Assert(!rel->consider_parallel);
 
 	/* Don't call this if parallelism is disallowed for the entire query. */
 	Assert(root->glob->parallelModeOK);
@@ -481,7 +479,6 @@ set_rel_consider_parallel(PlannerInfo *root, RelOptInfo *rel, RangeTblEntry *rte
 		return;
 
 	/* We have a winner. */
-	rel->consider_parallel = true;
 }
 
 /* copied from allpaths.c */
@@ -643,7 +640,7 @@ set_append_rel_size(PlannerInfo *root, RelOptInfo *rel, Index rti, RangeTblEntry
 		 * there's no point in considering parallelism for this child.  For
 		 * consistency, do this before calling set_rel_size() for the child.
 		 */
-		if (root->glob->parallelModeOK && rel->consider_parallel)
+		if (root->glob->parallelModeOK)
 			set_rel_consider_parallel(root, childrel, childRTE);
 
 		/*
@@ -671,8 +668,7 @@ set_append_rel_size(PlannerInfo *root, RelOptInfo *rel, Index rti, RangeTblEntry
 		 * (Child rels visited before this one will be unmarked in
 		 * set_append_rel_pathlist().)
 		 */
-		if (!childrel->consider_parallel)
-			rel->consider_parallel = false;
+
 
 		/*
 		 * Accumulate size information from each live child.

@@ -170,7 +170,7 @@ ts_estimate_hashagg_tablesize(struct Path *path, const struct AggClauseCosts *ag
 	size_t hashentrysize;
 
 	/* Estimate per-hash-entry space at tuple width... */
-	hashentrysize = MAXALIGN(path->pathtarget->width) + MAXALIGN(SizeofMinimalTupleHeader);
+	hashentrysize =  MAXALIGN(SizeofMinimalTupleHeader);
 
 	/* plus space for pass-by-ref transition values... */
 	hashentrysize += agg_costs->transitionSpace;
@@ -1011,31 +1011,11 @@ List *
 ts_build_path_tlist(PlannerInfo *root, Path *path)
 {
 	List *tlist = NIL;
-	Index *sortgrouprefs = path->pathtarget->sortgrouprefs;
+	Index *sortgrouprefs = 0;
 	int resno = 1;
 	ListCell *v;
 
-	foreach (v, path->pathtarget->exprs)
-	{
-		Node *node = (Node *) lfirst(v);
-		TargetEntry *tle;
-
-		/*
-		 * If it's a parameterized path, there might be lateral references in
-		 * the tlist, which need to be replaced with Params.  There's no need
-		 * to remake the TargetEntry nodes, so apply this to each list item
-		 * separately.
-		 */
-		if (path->param_info)
-			node = replace_nestloop_params(root, node);
-
-		tle = makeTargetEntry((Expr *) node, resno, NULL, false);
-		if (sortgrouprefs)
-			tle->ressortgroupref = sortgrouprefs[resno - 1];
-
-		tlist = lappend(tlist, tle);
-		resno++;
-	}
+	
 	return tlist;
 }
 
@@ -1202,20 +1182,6 @@ ts_ExecSetTupleBound(int64 tuples_needed, PlanState *child_node)
 
 		if (subqueryState->ss.ps.qual == NULL)
 			ExecSetTupleBound(tuples_needed, subqueryState->subplan);
-	}
-	else if (IsA(child_node, GatherState))
-	{
-		/*
-		 * A Gather node can propagate the bound to its workers.  As with
-		 * MergeAppend, no one worker could possibly need to return more
-		 * tuples than the Gather itself needs to.
-		 *
-		 * Note: As with Sort, the Gather node is responsible for reacting
-		 * properly to changes to this parameter.
-		 */
-
-		/* Also pass down the bound to our own copy of the child plan */
-		ExecSetTupleBound(tuples_needed, outerPlanState(child_node));
 	}
 #if PG10
 	else if (IsA(child_node, GatherMergeState))

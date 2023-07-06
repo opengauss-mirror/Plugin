@@ -1317,9 +1317,7 @@ hypertable_create_schema(const char *schema_name)
 		.hasBlockChain = false,
 		.schemaElts = NIL,
 		.temptype = {},
-		.uuids = NULL,
-		.authrole = 0,
-		.if_not_exists = true,
+		.uuids = NULL
 	};
 	CreateSchemaCommand(&stmt,
 						"(generated CREATE SCHEMA command)",

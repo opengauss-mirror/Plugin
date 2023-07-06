@@ -116,8 +116,8 @@ create_chunk_result_relation_info(ChunkDispatch *dispatch, Relation rel)
 	rri->ri_junkFilter = rri_orig->ri_junkFilter;
 	rri->ri_projectReturning = rri_orig->ri_projectReturning;
 #if PG11_LT
-	rri->ri_onConflictSetProj = rri_orig->ri_onConflictSetProj;
-	rri->ri_onConflictSetWhere = rri_orig->ri_onConflictSetWhere;
+	rri->ri_updateProj = rri_orig->ri_updateProj;
+	rri->ri_updateWhere = rri_orig->ri_updateWhere;
 #endif
 
 	create_chunk_rri_constraint_expr(rri, rel);
@@ -348,19 +348,22 @@ get_default_confl_tupdesc(ChunkInsertState *state, ChunkDispatch *dispatch)
 static TupleTableSlot *
 get_default_confl_slot(ChunkInsertState *state, ChunkDispatch *dispatch)
 {
-	return dispatch->dispatch_state->mtstate->mt_conflproj;
+	TupleTableSlot* a;
+	return a;
 }
 
 static TupleTableSlot *
 get_confl_slot(ChunkInsertState *state, ChunkDispatch *dispatch, TupleDesc projtupdesc)
 {
-	return dispatch->dispatch_state->mtstate->mt_conflproj;
+	TupleTableSlot* a;
+	return a;
 }
 
 static TupleTableSlot *
 get_default_existing_slot(ChunkInsertState *state, ChunkDispatch *dispatch)
 {
-	return dispatch->dispatch_state->mtstate->mt_existing;
+	TupleTableSlot* a;
+	return a;
 }
 #endif /* PG12_GE */
 

@@ -324,9 +324,9 @@ WaitForBackgroundWorkerStartup(BackgroundWorkerHandle *handle, pid_t *pidp)
 		    CHECK_FOR_INTERRUPTS();
 
 		    status = GetBackgroundWorkerPid(handle, &pid);
-		    if (status == BGWH_STARTED)
+		    if (status == BGW_STARTED)
       *pidp = pid;
-		    if (status != BGWH_NOT_YET_STARTED)
+		    if (status != BGW_NOT_YET_STARTED)
       break;
 
 		    rc = WaitLatch(&t_thrd.proc->procLatch,
@@ -335,7 +335,6 @@ WaitForBackgroundWorkerStartup(BackgroundWorkerHandle *handle, pid_t *pidp)
 		    if (rc & WL_POSTMASTER_DEATH)
    
 		{
-			      status = BGWH_POSTMASTER_DIED;
 			      break;
 			   
 		}
@@ -457,12 +456,9 @@ create_agg_path(PlannerInfo *root, RelOptInfo *rel, Path *subpath, PathTarget *t
 
 	pathnode->path.pathtype = T_Agg;
 	pathnode->path.parent = rel;
-	pathnode->path.pathtarget = target;
 	/* For now, assume we are above any joins, so no parameterization */
 	pathnode->path.param_info = NULL;
-	pathnode->path.parallel_aware = false;
-	pathnode->path.parallel_safe = rel->consider_parallel && subpath->parallel_safe;
-	pathnode->path.parallel_workers = subpath->parallel_workers;
+	
 	if (aggstrategy == AGG_SORTED)
 		pathnode->path.pathkeys = subpath->pathkeys; /* preserves order */
 	else
@@ -639,21 +635,16 @@ create_gather_path(PlannerInfo *root, RelOptInfo *rel, Path *subpath,
 {
 	  GatherPath *pathnode = makeNode(GatherPath);
 
-	  Assert(subpath->parallel_safe);
 
 	  pathnode->path.pathtype = T_Gather;
 	  pathnode->path.parent = rel;
-	  pathnode->path.pathtarget = target;
 	  pathnode->path.param_info = get_baserel_parampathinfo(root, rel,
                              required_outer);
-	  pathnode->path.parallel_aware = false;
-	  pathnode->path.parallel_safe = false;
-	  pathnode->path.parallel_workers = 0;
+	  
 	  pathnode->path.pathkeys = NIL;
 	  /* Gather has unordered result */
 
-  pathnode->subpath = subpath;
-	  pathnode->num_workers = subpath->parallel_workers;
+ 	  pathnode->subpath = subpath;
 	  pathnode->single_copy = false;
 
 	  if (pathnode->num_workers == 0)
@@ -763,8 +754,7 @@ add_path(RelOptInfo *parent_rel, Path *new_path)
 					{
 						              if ((outercmp == BMS_EQUAL ||
                 outercmp == BMS_SUBSET1) &&
-                new_path->rows <= old_path->rows &&
-                new_path->parallel_safe >= old_path->parallel_safe)
+                new_path->rows <= old_path->rows)
                 remove_old = true;
 						  /* new dominates old */
            
@@ -774,8 +764,7 @@ add_path(RelOptInfo *parent_rel, Path *new_path)
 					{
 						              if ((outercmp == BMS_EQUAL ||
                 outercmp == BMS_SUBSET2) &&
-                new_path->rows >= old_path->rows &&
-                new_path->parallel_safe <= old_path->parallel_safe)
+                new_path->rows >= old_path->rows)
                 accept_new = false;
 						  /* old dominates new */
            
@@ -802,12 +791,10 @@ add_path(RelOptInfo *parent_rel, Path *new_path)
 							     * less-fuzzy comparison decides the startup         
 							       * and total costs compare differently.         
 							       */
-                if (new_path->parallel_safe >
-                  old_path->parallel_safe)
+                if (0)
                   remove_old = true;
 							/* new dominates old */
-                else if (new_path->parallel_safe <
-                    old_path->parallel_safe)
+                else if (0)
                   accept_new = false;	/* old dominates new */
 							                else if (new_path->rows <
 																	 old_path->rows)
@@ -827,13 +814,11 @@ add_path(RelOptInfo *parent_rel, Path *new_path)
 							             
 						}
 						              else if (outercmp == BMS_SUBSET1 &&
-                  new_path->rows <= old_path->rows &&
-                  new_path->parallel_safe >= old_path->parallel_safe)
+                  new_path->rows <= old_path->rows)
                 remove_old = true;
 						  /* new dominates old */
               else if (outercmp == BMS_SUBSET2 &&
-                  new_path->rows >= old_path->rows &&
-                  new_path->parallel_safe <= old_path->parallel_safe)
+                  new_path->rows >= old_path->rows)
                 accept_new = false;
 						  /* old dominates new */
               /* else different parameterizations, keep both */
@@ -849,8 +834,7 @@ add_path(RelOptInfo *parent_rel, Path *new_path)
                          PATH_REQ_OUTER(old_path));
 						              if ((outercmp == BMS_EQUAL ||
                 outercmp == BMS_SUBSET1) &&
-                new_path->rows <= old_path->rows &&
-                new_path->parallel_safe >= old_path->parallel_safe)
+                new_path->rows <= old_path->rows)
                 remove_old = true;
 						  /* new dominates old */
            
@@ -865,8 +849,7 @@ add_path(RelOptInfo *parent_rel, Path *new_path)
                          PATH_REQ_OUTER(old_path));
 						              if ((outercmp == BMS_EQUAL ||
                 outercmp == BMS_SUBSET2) &&
-                new_path->rows >= old_path->rows &&
-                new_path->parallel_safe <= old_path->parallel_safe)
+                new_path->rows >= old_path->rows)
                 accept_new = false;
 						  /* old dominates new */
            
@@ -962,8 +945,7 @@ apply_projection_to_path(PlannerInfo *root,
 	  * We can just jam the desired tlist into the existing path, being sure to
 	  * update its cost estimates appropriately.
 	  */
-  oldcost = path->pathtarget->cost;
-	  path->pathtarget = target;
+  	//oldcost = target;
 
 	  path->startup_cost += target->cost.startup - oldcost.startup;
 	  path->total_cost += target->cost.startup - oldcost.startup +
@@ -998,8 +980,7 @@ apply_projection_to_path(PlannerInfo *root,
                  target);
 		 
 	}
-	  else if (path->parallel_safe &&
-      has_parallel_hazard((Node *) target->exprs, false))
+	  else if (has_parallel_hazard((Node *) target->exprs, false))
  
 	{
 		    /*
@@ -1007,7 +988,6 @@ apply_projection_to_path(PlannerInfo *root,
 		    * currently marked parallel-safe, so we have to mark it as no longer
 		    * safe.
 		    */
-    path->parallel_safe = false;
 		 
 	}
 
@@ -1043,11 +1023,8 @@ fetch_upper_rel(PlannerInfo *root, UpperRelationKind kind, Relids relids)
 	  upperrel->relids = bms_copy(relids);
 
 	  /* cheap startup cost is interesting iff not all tuples to be retrieved */
-      upperrel->consider_startup = (root->tuple_fraction > 0);
-	  upperrel->consider_param_startup = false;
-	  upperrel->consider_parallel = false;
 	   /* might get changed later */
-  upperrel->reltarget = create_empty_pathtarget();
+ 	  upperrel->reltarget = create_empty_pathtarget();
 	  upperrel->pathlist = NIL;
 	  upperrel->cheapest_startup_path = NULL;
 	  upperrel->cheapest_total_path = NULL;
@@ -1072,17 +1049,13 @@ create_minmaxagg_path(PlannerInfo *root,
 	  ListCell  *lc;
 
 	  /* The topmost generated Plan node will be a Result */
-  	pathnode->path.pathtype = T_BaseResult;
+  	  pathnode->path.pathtype = T_BaseResult;
 	  pathnode->path.parent = rel;
-	  pathnode->path.pathtarget = target;
 	  /* For now, assume we are above any joins, so no parameterization */
-  pathnode->path.param_info = NULL;
-	  pathnode->path.parallel_aware = false;
-	  /* A MinMaxAggPath implies use of subplans, so cannot be parallel-safe */
-  pathnode->path.parallel_safe = false;
-	  pathnode->path.parallel_workers = 0;
+      pathnode->path.param_info = NULL;
+	  
 	  /* Result is one unordered row */
-  pathnode->path.rows = 1;
+      pathnode->path.rows = 1;
 	  pathnode->path.pathkeys = NIL;
 
 	  pathnode->mmaggregates = mmaggregates;
@@ -1269,7 +1242,6 @@ SS_identify_outer_params(PlannerInfo *root)
       outer_params = bms_add_member(outer_params, proot->wt_param_id);
 		 
 	}
-	  root->outer_params = outer_params;
 }
 
 void
@@ -1308,7 +1280,6 @@ SS_charge_for_initplans(PlannerInfo *root, RelOptInfo *final_rel)
 
 		    path->startup_cost += initplan_cost;
 		    path->total_cost += initplan_cost;
-		    path->parallel_safe = false;
 		 
 	}
 
@@ -1400,8 +1371,7 @@ get_rolespec_oid(const Node *node, bool missing_ok)
 	  RoleSpec  *role;
 	  Oid     oid;
 
-	  if (!IsA(node, RoleSpec))
-    elog(ERROR, "invalid node type %d", node->type);
+	  
 
 	  role = (RoleSpec *) node;
 	  switch (role->roletype)
@@ -2232,11 +2202,11 @@ GetBackgroundWorkerPid(BackgroundWorkerHandle *handle, pid_t *pidp)
   LWLockRelease(BackgroundWorkerLock);
 
 	  if (pid == 0)
-    return BGWH_STOPPED;
+    return BGW_STOPPED;
 	  else if (pid == InvalidPid)
-    return BGWH_NOT_YET_STARTED;
+    return BGW_NOT_YET_STARTED;
 	  *pidp = pid;
-	  return BGWH_STARTED;
+	  return BGW_STARTED;
 }
 
 BgwHandleStatus
@@ -2253,7 +2223,7 @@ WaitForBackgroundWorkerShutdown(BackgroundWorkerHandle *handle)
 		    CHECK_FOR_INTERRUPTS();
 
 		    status = GetBackgroundWorkerPid(handle, &pid);
-		    if (status == BGWH_STOPPED)
+		    if (status == BGW_STOPPED)
       break;
 
 		    rc = WaitLatch(&t_thrd.proc->procLatch,
@@ -2262,7 +2232,6 @@ WaitForBackgroundWorkerShutdown(BackgroundWorkerHandle *handle)
 		    if (rc & WL_POSTMASTER_DEATH)
    
 		{
-			      status = BGWH_POSTMASTER_DIED;
 			      break;
 			   
 		}
@@ -2881,7 +2850,6 @@ initArrayResultArr(Oid array_type, Oid element_type, MemoryContext rcontext, boo
 	/* Note we initialize all fields to zero */
 	astate = (ArrayBuildStateArr *) MemoryContextAllocZero(arr_context, sizeof(ArrayBuildStateArr));
 	astate->mcontext = arr_context;
-	astate->private_cxt = subcontext;
 
 	/* Save relevant datatype information */
 	astate->array_type = array_type;
@@ -2902,7 +2870,6 @@ initArrayResult(Oid element_type, MemoryContext rcontext, bool subcontext)
 
 	astate = (ArrayBuildState *) MemoryContextAlloc(arr_context, sizeof(ArrayBuildState));
 	astate->mcontext = arr_context;
-	astate->private_cxt = subcontext;
 	astate->alen = (subcontext ? 64 : 8); /* arbitrary starting array
 										   * size */
 	astate->dvalues = (Datum *) MemoryContextAlloc(arr_context, astate->alen * sizeof(Datum));
@@ -3127,7 +3094,6 @@ makeArrayResultArr(ArrayBuildStateArr *astate, MemoryContext rcontext, bool rele
 	/* Clean up all the junk */
 	if (release)
 	{
-		Assert(astate->private_cxt);
 		MemoryContextDelete(astate->mcontext);
 	}
 
@@ -3386,12 +3352,9 @@ create_sort_path(PlannerInfo *root, RelOptInfo *rel, Path *subpath, List *pathke
 	pathnode->path.pathtype = T_Sort;
 	pathnode->path.parent = rel;
 	/* Sort doesn't project, so use source path's pathtarget */
-	pathnode->path.pathtarget = subpath->pathtarget;
 	/* For now, assume we are above any joins, so no parameterization */
 	pathnode->path.param_info = NULL;
-	pathnode->path.parallel_aware = false;
-	pathnode->path.parallel_safe = rel->consider_parallel && subpath->parallel_safe;
-	pathnode->path.parallel_workers = subpath->parallel_workers;
+	
 	pathnode->path.pathkeys = pathkeys;
 
 	pathnode->subpath = subpath;
@@ -3401,7 +3364,7 @@ create_sort_path(PlannerInfo *root, RelOptInfo *rel, Path *subpath, List *pathke
 			  pathkeys,
 			  subpath->total_cost,
 			  subpath->rows,
-			  subpath->pathtarget->width,
+			  0,
 			  0.0, /* XXX comparison_cost shouldn't be 0? */
 			  u_sess->attr.attr_memory.work_mem,
 			  limit_tuples);

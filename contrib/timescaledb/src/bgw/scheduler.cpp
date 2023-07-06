@@ -159,7 +159,7 @@ assert_that_worker_has_stopped(ScheduledBgwJob *sjob)
 
 	Assert(sjob->reserved_worker);
 	status = GetBackgroundWorkerPid(sjob->handle, &pid);
-	Assert(BGWH_STOPPED == status);
+	Assert(BGW_STOPPED == status);
 }
 #endif
 
@@ -409,19 +409,16 @@ scheduled_ts_bgw_job_start(ScheduledBgwJob *sjob,
 	status = WaitForBackgroundWorkerStartup(sjob->handle, &pid);
 	switch (status)
 	{
-		case BGWH_POSTMASTER_DIED:
-			bgw_scheduler_on_postmaster_death();
-			break;
-		case BGWH_STARTED:
+		case BGW_STARTED:
 			/* all good */
 			break;
-		case BGWH_STOPPED:
+		case BGW_STOPPED:
 			StartTransactionCommand();
 			scheduled_bgw_job_transition_state_to(sjob, JOB_STATE_SCHEDULED);
 			CommitTransactionCommand();
 			MemoryContextSwitchTo(scratch_mctx);
 			break;
-		case BGWH_NOT_YET_STARTED:
+		case BGW_NOT_YET_STARTED:
 			/* should not be possible */
 			elog(ERROR, "unexpected bgworker state %d", status);
 			break;
@@ -681,13 +678,10 @@ check_for_stopped_and_timed_out_jobs()
 
 		switch (status)
 		{
-			case BGWH_POSTMASTER_DIED:
-				bgw_scheduler_on_postmaster_death();
-				break;
-			case BGWH_NOT_YET_STARTED:
+			case BGW_NOT_YET_STARTED:
 				elog(ERROR, "unexpected bgworker state %d", status);
 				break;
-			case BGWH_STARTED:
+			case BGW_STARTED:
 				/* still running */
 				if (sjob->state == JOB_STATE_STARTED && now >= sjob->timeout_at)
 				{
@@ -698,7 +692,7 @@ check_for_stopped_and_timed_out_jobs()
 					Assert(sjob->state != JOB_STATE_STARTED);
 				}
 				break;
-			case BGWH_STOPPED:
+			case BGW_STOPPED:
 				StartTransactionCommand();
 				scheduled_bgw_job_transition_state_to(sjob, JOB_STATE_SCHEDULED);
 				CommitTransactionCommand();

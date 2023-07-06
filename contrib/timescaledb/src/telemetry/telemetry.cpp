@@ -438,7 +438,7 @@ build_version_body(void)
 	result = pushJsonbValue(&parseState, WJB_END_OBJECT, NULL);
 	jb = JsonbValueToJsonb(result);
 	jtext = makeStringInfo();
-	JsonbToCString(jtext,(JsonbSuperHeader) &jb->root, VARSIZE(jb));
+	JsonbToCString(jtext,VARDATA(jb), VARSIZE(jb));
 
 	return jtext;
 }

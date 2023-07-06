@@ -122,7 +122,6 @@ hypertable_insert_state_create(ExtensiblePlan *cscan)
 	state = (HypertableInsertState *) newNode(sizeof(HypertableInsertState), T_ExtensiblePlanState);
 	state->cscan_state.methods = &hypertable_insert_state_methods;
 	state->mt = mt;
-	state->mt->arbiterIndexes =(List*) linitial(cscan->extensible_private);
 
 	return (Node *) state;
 }
@@ -266,7 +265,6 @@ hypertable_insert_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath
 	 * we still need the original list in case that plan
 	 * gets reused
 	 */
-	cscan->extensible_private = list_make1(mt->arbiterIndexes);
 
 	return &cscan->scan.plan;
 }
@@ -295,18 +293,9 @@ ts_hypertable_insert_path_create(PlannerInfo *root, ModifyTablePath *mtpath)
 		RangeTblEntry *rte = planner_rt_fetch(rti, root);
 
 		ht = ts_hypertable_cache_get_entry(hcache, rte->relid, CACHE_FLAG_MISSING_OK);
-
-		OnConflictExpr * root_parse_onconflict_constraint = (OnConflictExpr * )root->parse->onConflict;
 		
 		if (ht != NULL)
 		{
-			if (root->parse->onConflict != NULL &&
-				root_parse_onconflict_constraint->constraint != InvalidOid)
-				ereport(ERROR,
-						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-						 errmsg("hypertables do not support ON CONFLICT statements that reference "
-								"constraints"),
-						 errhint("Use column names to infer indexes instead.")));
 
 			/*
 			 * We replace the plan with our custom chunk dispatch plan.
