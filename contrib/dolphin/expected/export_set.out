@@ -19,6 +19,37 @@ SELECT EXPORT_SET(5,'Y','N');
  Y,N,Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
 (1 row)
 
+-- 测试bit
+SELECT EXPORT_SET(b'0101','Y','N',',',b'0101');
+ export_set 
+------------
+ Y,N,Y,N,N
+(1 row)
+
+SELECT EXPORT_SET(b'0101','Y','N',',',5);
+ export_set 
+------------
+ Y,N,Y,N,N
+(1 row)
+
+SELECT EXPORT_SET(5,'Y','N',',',b'0101');
+ export_set 
+------------
+ Y,N,Y,N,N
+(1 row)
+
+SELECT EXPORT_SET(b'0101','Y','N',',');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+(1 row)
+
+SELECT EXPORT_SET(b'0101','Y','N');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+(1 row)
+
 -- 测试上界
 SELECT EXPORT_SET(9223372036854775807,'Y','N',',',64);
                                                            export_set                                                            

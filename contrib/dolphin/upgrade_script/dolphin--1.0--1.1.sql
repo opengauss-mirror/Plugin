@@ -2634,6 +2634,22 @@ CREATE OR REPLACE FUNCTION pg_catalog.export_set (int8, "any", "any", "any") RET
 
 DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any") CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.export_set (int8, "any", "any")  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'export_set_3args_any';
+
+DROP FUNCTION IF EXISTS pg_catalog.export_set (bit, "any", "any", "any", bit) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.export_set (bit, "any", "any", "any", bit) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'export_set_5args_bits';
+
+DROP FUNCTION IF EXISTS pg_catalog.export_set (bit, "any", "any", "any", int8) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.export_set (bit, "any", "any", "any", int8) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'export_set_5args_bit_1';
+
+DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any", "any", bit) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.export_set (int8, "any", "any", "any", bit) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'export_set_5args_bit_5';
+
+DROP FUNCTION IF EXISTS pg_catalog.export_set (bit, "any", "any", "any") CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.export_set (bit, "any", "any", "any") RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'export_set_4args_bit';
+
+DROP FUNCTION IF EXISTS pg_catalog.export_set (bit, "any", "any") CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.export_set (bit, "any", "any") RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'export_set_3args_bit';
+
 DROP FUNCTION IF EXISTS pg_catalog.sleep(d date) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.sleep(d date)
 RETURNS int AS

@@ -22186,6 +22186,47 @@ Datum export_set_3args_any(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(TextExportSet(value, on, off, ",", 64));
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(export_set_5args_bits);
+extern "C" DLL_PUBLIC Datum export_set_5args_bits(PG_FUNCTION_ARGS);
+Datum export_set_5args_bits(PG_FUNCTION_ARGS)
+{
+    fcinfo->arg[0] = DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0));
+    fcinfo->arg[4] = DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(4));
+    return export_set_5args_any(fcinfo);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(export_set_5args_bit_1);
+extern "C" DLL_PUBLIC Datum export_set_5args_bit_1(PG_FUNCTION_ARGS);
+Datum export_set_5args_bit_1(PG_FUNCTION_ARGS)
+{
+    fcinfo->arg[0] = DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0));
+    return export_set_5args_any(fcinfo);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(export_set_5args_bit_5);
+extern "C" DLL_PUBLIC Datum export_set_5args_bit_5(PG_FUNCTION_ARGS);
+Datum export_set_5args_bit_5(PG_FUNCTION_ARGS)
+{
+    fcinfo->arg[4] = DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(4));
+    return export_set_5args_any(fcinfo);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(export_set_4args_bit);
+extern "C" DLL_PUBLIC Datum export_set_4args_bit(PG_FUNCTION_ARGS);
+Datum export_set_4args_bit(PG_FUNCTION_ARGS)
+{
+    fcinfo->arg[0] = DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0));
+    return export_set_4args_any(fcinfo);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(export_set_3args_bit);
+extern "C" DLL_PUBLIC Datum export_set_3args_bit(PG_FUNCTION_ARGS);
+Datum export_set_3args_bit(PG_FUNCTION_ARGS)
+{
+    fcinfo->arg[0] = DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0));
+    return export_set_3args_any(fcinfo);
+}
+
 int getCount(uint64 num)
 {
     int count = 0;
