@@ -73,7 +73,9 @@ insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 
+insert into t1 values('-1');
 insert into t1 values('-1'::time);
+insert into t1 values('-1'::text);
 insert into t1 values('-1'::char(10));
 insert into t1 values('-1'::varchar(10));
 insert into t1 values('-1'::binary(10));
@@ -83,6 +85,23 @@ insert into t1 values('-1'::blob);
 insert into t1 values('-1'::mediumblob);
 insert into t1 values('-1'::longblob);
 insert into t1 values('-1'::json);
+
+set dolphin.sql_mode = '';
+delete from t1;
+insert into t1 values('-1');
+insert into t1 values('-1'::time);
+insert into t1 values('-1'::text);
+insert into t1 values('-1'::char(10));
+insert into t1 values('-1'::varchar(10));
+insert into t1 values('-1'::binary(10));
+insert into t1 values('-1'::varbinary(10));
+insert into t1 values('-1'::tinyblob);
+insert into t1 values('-1'::blob);
+insert into t1 values('-1'::mediumblob);
+insert into t1 values('-1'::longblob);
+insert into t1 values('-1'::json);
+select * from t1;
+reset dolphin.sql_mode;
 
 drop table if exists t1 ;
 
@@ -159,7 +178,9 @@ insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 
+insert into t1 values('-1');
 insert into t1 values('-1'::time);
+insert into t1 values('-1'::text);
 insert into t1 values('-1'::char(10));
 insert into t1 values('-1'::varchar(10));
 insert into t1 values('-1'::binary(10));
@@ -169,6 +190,23 @@ insert into t1 values('-1'::blob);
 insert into t1 values('-1'::mediumblob);
 insert into t1 values('-1'::longblob);
 insert into t1 values('-1'::json);
+
+set dolphin.sql_mode = '';
+delete from t1;
+insert into t1 values('-1');
+insert into t1 values('-1'::time);
+insert into t1 values('-1'::text);
+insert into t1 values('-1'::char(10));
+insert into t1 values('-1'::varchar(10));
+insert into t1 values('-1'::binary(10));
+insert into t1 values('-1'::varbinary(10));
+insert into t1 values('-1'::tinyblob);
+insert into t1 values('-1'::blob);
+insert into t1 values('-1'::mediumblob);
+insert into t1 values('-1'::longblob);
+insert into t1 values('-1'::json);
+select * from t1;
+reset dolphin.sql_mode;
 
 drop table if exists t1 ;
 
@@ -253,7 +291,9 @@ insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 
+insert into t1 values('-1');
 insert into t1 values('-1'::time);
+insert into t1 values('-1'::text);
 insert into t1 values('-1'::char(10));
 insert into t1 values('-1'::varchar(10));
 insert into t1 values('-1'::binary(10));
@@ -263,6 +303,24 @@ insert into t1 values('-1'::blob);
 insert into t1 values('-1'::mediumblob);
 insert into t1 values('-1'::longblob);
 insert into t1 values('-1'::json);
+
+set dolphin.sql_mode = '';
+delete from t1;
+insert into t1 values('-1');
+insert into t1 values('-1'::time);
+insert into t1 values('-1'::text);
+insert into t1 values('-1'::char(10));
+insert into t1 values('-1'::varchar(10));
+insert into t1 values('-1'::binary(10));
+insert into t1 values('-1'::varbinary(10));
+insert into t1 values('-1'::tinyblob);
+insert into t1 values('-1'::blob);
+insert into t1 values('-1'::mediumblob);
+insert into t1 values('-1'::longblob);
+insert into t1 values('-1'::json);
+select * from t1;
+reset dolphin.sql_mode;
+
 drop table if exists t1 ;
 
 create table t1(a uint1);
@@ -345,7 +403,9 @@ insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 
+insert into t1 values('-1');
 insert into t1 values('-1'::time);
+insert into t1 values('-1'::text);
 insert into t1 values('-1'::char(10));
 insert into t1 values('-1'::varchar(10));
 insert into t1 values('-1'::binary(10));
@@ -355,6 +415,25 @@ insert into t1 values('-1'::blob);
 insert into t1 values('-1'::mediumblob);
 insert into t1 values('-1'::longblob);
 insert into t1 values('-1'::json);
+
+set dolphin.sql_mode = '';
+delete from t1;
+insert into t1 values('-1');
+insert into t1 values('-1'::time);
+insert into t1 values('-1'::text);
+insert into t1 values('-1'::char(10));
+insert into t1 values('-1'::varchar(10));
+insert into t1 values('-1'::binary(10));
+insert into t1 values('-1'::varbinary(10));
+insert into t1 values('-1'::tinyblob);
+insert into t1 values('-1'::blob);
+insert into t1 values('-1'::mediumblob);
+insert into t1 values('-1'::longblob);
+insert into t1 values('-1'::json);
+select * from t1;
+reset dolphin.sql_mode;
+
+drop table if exists t1;
 
 drop schema uint_cast2 cascade;
 reset current_schema;
