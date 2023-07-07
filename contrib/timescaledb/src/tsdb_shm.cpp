@@ -1037,7 +1037,7 @@ shm_mq_counterparty_gone(volatile shm_mq *mq, BackgroundWorkerHandle *handle)
 
 		/* Check for unexpected worker death. */
 		status = GetBackgroundWorkerPid(handle, &pid);
-		if (status != BGWH_STARTED && status != BGWH_NOT_YET_STARTED)
+		if (status != BGW_STARTED && status != BGW_NOT_YET_STARTED)
 		{
 			/* Mark it detached, just to make it official. */
 			SpinLockAcquire(&mq->mq_mutex);
@@ -1093,7 +1093,7 @@ shm_mq_wait_internal(volatile shm_mq *mq, PGPROC *volatile * ptr,
 		{
 			/* Check for unexpected worker death. */
 			status = GetBackgroundWorkerPid(handle, &pid);
-			if (status != BGWH_STARTED && status != BGWH_NOT_YET_STARTED)
+			if (status != BGW_STARTED && status != BGW_NOT_YET_STARTED)
 			{
 				result = false;
 				break;

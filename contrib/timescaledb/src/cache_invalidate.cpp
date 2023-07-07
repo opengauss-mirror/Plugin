@@ -110,16 +110,6 @@ cache_invalidate_xact_end(XactEvent event, void *arg)
 	switch (event)
 	{
 		case XACT_EVENT_ABORT:
-		case XACT_EVENT_PARALLEL_ABORT:
-
-			/*
-			 * Invalidate caches on aborted transactions to purge entries that
-			 * have been added during the transaction and are now no longer
-			 * valid. Note that we need not signal other backends of this
-			 * change since the transaction hasn't been committed and other
-			 * backends cannot have the invalid state.
-			 */
-			cache_invalidate_all();
 		default:
 			break;
 	}

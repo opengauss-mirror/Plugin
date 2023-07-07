@@ -147,8 +147,6 @@ check_chunk_alter_table_operation_allowed(Oid relid, AlterTableStmt *stmt)
 				case AT_SetStorage:
 				case AT_DropCluster:
 				case AT_ClusterOn:
-				case AT_EnableRowSecurity:
-				case AT_DisableRowSecurity:
 				case AT_SetTableSpace:
 					/* allowed on chunks */
 					break;
@@ -239,10 +237,6 @@ check_alter_table_allowed_on_ht_with_compression(Hypertable *ht, AlterTableStmt 
 			case AT_DropOids:
 			case AT_AddOidsRecurse:
 #endif
-			case AT_EnableRowSecurity:
-			case AT_DisableRowSecurity:
-			case AT_ForceRowSecurity:
-			case AT_NoForceRowSecurity:
 			default:
 				ereport(ERROR,
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -1119,7 +1113,8 @@ reindex_chunk(Hypertable *ht, Oid chunk_relid, void *arg)
 			stmt->relation->relname = NameStr(chunk->fd.table_name);
 			stmt->relation->schemaname = NameStr(chunk->fd.schema_name);
 			ReindexTable(stmt->relation,
-						 stmt->options
+						 (const char*)stmt->name,
+						 &stmt->memUsage
 #if PG12_GE
 						 ,
 						 stmt->concurrent /* TODO test */
@@ -1432,9 +1427,6 @@ process_rename(ProcessUtilityArgs *args)
 		case OBJECT_INDEX:
 			process_rename_index(args, hcache, relid, stmt);
 			break;
-		case OBJECT_TABCONSTRAINT:
-			process_rename_constraint(args, hcache, relid, stmt);
-			break;
 		case OBJECT_VIEW:
 			process_rename_view(relid, stmt);
 			break;
@@ -1453,7 +1445,7 @@ static void
 process_altertable_change_owner_chunk(Hypertable *ht, Oid chunk_relid, void *arg)
 {
 	AlterTableCmd *cmd =(AlterTableCmd *) arg;
-	Oid roleid = get_rolespec_oid(cmd->newowner, false);
+	Oid roleid = get_role_oid(cmd->name, false);
 
 	ATExecChangeOwner(chunk_relid, roleid, false, AccessExclusiveLock);
 }
@@ -1461,7 +1453,7 @@ process_altertable_change_owner_chunk(Hypertable *ht, Oid chunk_relid, void *arg
 static void
 process_altertable_change_owner(Hypertable *ht, AlterTableCmd *cmd)
 {
-	Assert(IsA(cmd->newowner, RoleSpec));
+	Assert(cmd->name && cmd->name[0] != '\0');
 
 	foreach_chunk(ht, process_altertable_change_owner_chunk, cmd);
 
@@ -1950,7 +1942,7 @@ process_index_start(ProcessUtilityArgs *args)
 	/* root_table_index will have 0 objectId if the index already exists
 	 * and if_not_exists is true. In that case there is nothing else
 	 * to do here. */
-	if (!OidIsValid(root_table_index.objectId) && stmt->if_not_exists)
+	if (!OidIsValid(root_table_index.objectId))
 	{
 		ts_cache_release(hcache);
 		return true;
@@ -2323,7 +2315,7 @@ static void
 process_alter_column_type_end(Hypertable *ht, AlterTableCmd *cmd)
 {
 	ColumnDef *coldef = (ColumnDef *) cmd->def;
-	Oid new_type = TypenameGetTypid(typename_get_unqual_name(coldef->typeName));
+	Oid new_type = TypenameGetTypid(typename_get_unqual_name(coldef->typname));
 	Dimension *dim = ts_hyperspace_get_dimension_by_name(ht->space, DIMENSION_TYPE_ANY, cmd->name);
 
 	if (NULL == dim)
@@ -2766,11 +2758,6 @@ process_altertable_end_subcmd(Hypertable *ht, Node *parsetree, ObjectAddress *ob
 		case AT_ClusterOn:
 			process_altertable_clusteron_end(ht, cmd);
 			break;
-		case AT_SetUnLogged:
-			ereport(ERROR,
-					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-					 errmsg("logging cannot be turned off for hypertables")));
-			break;
 		case AT_ReplicaIdentity:
 			ereport(ERROR,
 					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -2784,9 +2771,6 @@ process_altertable_end_subcmd(Hypertable *ht, Node *parsetree, ObjectAddress *ob
 			ereport(ERROR,
 					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 					 errmsg("hypertables do not support rules")));
-			break;
-		case AT_AlterConstraint:
-			process_altertable_alter_constraint_end(ht, cmd);
 			break;
 		case AT_ValidateConstraint:
 		case AT_ValidateConstraintRecurse:
@@ -2813,7 +2797,6 @@ process_altertable_end_subcmd(Hypertable *ht, Node *parsetree, ObjectAddress *ob
 					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 					 errmsg("hypertables do not support inheritance")));
 		case AT_SetStatistics:
-		case AT_SetLogged:
 		case AT_SetStorage:
 		case AT_ColumnDefault:
 		case AT_SetNotNull:
@@ -2829,12 +2812,6 @@ process_altertable_end_subcmd(Hypertable *ht, Node *parsetree, ObjectAddress *ob
 		case AT_DropIdentity:
 #endif
 			/* all of the above are handled by default recursion */
-			break;
-		case AT_EnableRowSecurity:
-		case AT_DisableRowSecurity:
-		case AT_ForceRowSecurity:
-		case AT_NoForceRowSecurity:
-			/* RLS commands should not recurse to chunks */
 			break;
 		case AT_ReAddConstraint:
 		case AT_ReAddIndex:
@@ -2864,8 +2841,6 @@ process_altertable_end_subcmd(Hypertable *ht, Node *parsetree, ObjectAddress *ob
 		case AT_ProcessedConstraint:	   /* internal command never hit in our
 											* test code, so don't know how to
 											* handle */
-		case AT_ReAddComment:			   /* internal command never hit in our test
-											* code, so don't know how to handle */
 		case AT_AddColumnToView:		   /* only used with views */
 		case AT_AlterColumnGenericOptions: /* only used with foreign tables */
 		case AT_GenericOptions:			   /* only used with foreign tables */
@@ -3578,15 +3553,6 @@ process_utility_xact_abort(XactEvent event, void *arg)
 	switch (event)
 	{
 		case XACT_EVENT_ABORT:
-		case XACT_EVENT_PARALLEL_ABORT:
-
-			/*
-			 * Reset the expect_chunk_modification flag because it this is an
-			 * internal safety flag that is set to true only temporarily
-			 * during chunk operations. It should never remain true across
-			 * transactions.
-			 */
-			expect_chunk_modification = false;
 		default:
 			break;
 	}

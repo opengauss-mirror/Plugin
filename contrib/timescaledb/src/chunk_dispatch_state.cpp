@@ -69,30 +69,9 @@ on_chunk_insert_state_changed(ChunkInsertState *cis, void *data)
 	 * match the chunk. In PG12, every result relation has its own arbiter
 	 * index list, so no update is needed here.
 	 */
-	if (cis->arbiter_indexes != NIL)
-	{
-#if PG11
-		/*
-		 * In PG11 several fields were removed from the
-		 * ModifyTableState node and ExecInsert function nodes, as
-		 * they were redundant.
-		 */
-		mtplan->arbiterIndexes = cis->arbiter_indexes;
-#else
-		mtstate->mt_arbiterindexes = cis->arbiter_indexes;
-#endif
-	}
+	
 
-	/* Update slot tuple descriptors to handle ON CONFLICT DO UPDATE for the
-	 * new chunk. */
-	if (mtplan->onConflictAction == ONCONFLICT_UPDATE)
-	{
-		Assert(NULL != mtstate->mt_existing);
-		Assert(NULL != mtstate->mt_conflproj);
-		Assert(NULL != cis->conflproj_tupdesc);
-		ExecSetSlotDescriptor(mtstate->mt_existing, RelationGetDescr(cis->rel));
-		ExecSetSlotDescriptor(mtstate->mt_conflproj, cis->conflproj_tupdesc);
-	}
+	
 }
 #endif /* PG12_GE */
 
@@ -222,24 +201,6 @@ setup_tuple_slots_for_on_conflict_handling(ChunkDispatchState *state)
 	{
 		TupleDesc tupdesc;
 
-		Assert(mtstate->mt_existing != NULL);
-		Assert(mtstate->mt_conflproj != NULL);
-
-		tupdesc = mtstate->mt_existing->tts_tupleDescriptor;
-		mtstate->mt_existing = ExecInitExtraTupleSlot(mtstate->ps.state, NULL);
-		ExecSetSlotDescriptor(mtstate->mt_existing, tupdesc);
-
-		/*
-		 * in this case we must overwrite mt_conflproj because there are
-		 * several pointers to it throughout expressions and other
-		 * evaluations, and the original tuple will otherwise be stored to the
-		 * old slot, whose pointer is saved there.
-		 */
-		tupdesc = mtstate->mt_conflproj->tts_tupleDescriptor;
-		mtstate->mt_conflproj = ExecInitExtraTupleSlot(mtstate->ps.state, NULL);
-		ExecSetSlotDescriptor(mtstate->mt_conflproj, tupdesc);
-		mtstate->resultRelInfo->ri_onConflict->oc_ProjInfo->pi_state.resultslot =
-			mtstate->mt_conflproj;
 	}
 }
 #elif PG11_LT
@@ -248,12 +209,6 @@ setup_tuple_slots_for_on_conflict_handling(ChunkDispatchState *state)
 {
 	ModifyTableState *mtstate = state->mtstate;
 	ModifyTable *mtplan = castNode(ModifyTable, mtstate->ps.plan);
-
-	if (mtplan->onConflictAction == ONCONFLICT_UPDATE)
-	{
-		Assert(mtstate->mt_conflproj != NULL);
-		state->conflproj_tupdesc = mtstate->mt_conflproj->tts_tupleDescriptor;
-	}
 }
 #endif
 
@@ -275,5 +230,4 @@ ts_chunk_dispatch_state_set_parent(ChunkDispatchState *state, ModifyTableState *
 	Assert(mtstate->mt_nplans == 1);
 	state->mtstate = mtstate;
 	setup_tuple_slots_for_on_conflict_handling(state);
-	state->arbiter_indexes = mt_plan->arbiterIndexes;
 }

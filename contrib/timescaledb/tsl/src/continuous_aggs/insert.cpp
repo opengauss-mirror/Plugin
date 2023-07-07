@@ -330,14 +330,7 @@ continuous_agg_xact_invalidation_callback(XactEvent event, void *arg)
 
 	switch (event)
 	{
-		case XACT_EVENT_PRE_COMMIT:
-			cache_inval_htab_write();
-			cache_inval_cleanup();
-			break;
 		case XACT_EVENT_ABORT:
-		case XACT_EVENT_PARALLEL_ABORT:
-			cache_inval_cleanup();
-			break;
 		default:
 			break;
 	}

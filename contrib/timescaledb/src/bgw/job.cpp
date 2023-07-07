@@ -379,7 +379,7 @@ get_job_lock_for_delete(int32 job_id)
 		if (VirtualTransactionIdIsValid(*vxid))
 		{
 			proc = BackendIdGetProc(vxid->backendId);
-			if (proc != NULL && proc->isBackgroundWorker)
+			if (proc != NULL && (t_thrd.role != STREAM_WORKER))
 			{
 				elog(NOTICE,
 					 "cancelling the background worker for job %d (pid %d)",

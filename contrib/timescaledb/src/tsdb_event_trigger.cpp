@@ -762,7 +762,6 @@ EventTriggerCommonSetup(Node *parsetree,
 	if (runlist == NIL)
 		return NIL;
 
-	trigdata->type = T_EventTriggerData;
 	trigdata->event = eventstr;
 	trigdata->parsetree = parsetree;
 	trigdata->tag = tag;
@@ -1096,7 +1095,6 @@ EventTriggerSupportsObjectType(ObjectType obtype)
 		case OBJECT_RULE:
 		case OBJECT_SCHEMA:
 		case OBJECT_SEQUENCE:
-		case OBJECT_TABCONSTRAINT:
 		case OBJECT_TABLE:
 		case OBJECT_TRIGGER:
 		case OBJECT_TSCONFIGURATION:

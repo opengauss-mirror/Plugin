@@ -324,7 +324,6 @@ ts_chunk_append_get_scan_plan(Plan *plan)
 		case T_FunctionScan:
 		case T_IndexOnlyScan:
 		case T_IndexScan:
-		case T_SampleScan:
 		case T_SeqScan:
 		case T_SubqueryScan:
 		case T_TidScan:

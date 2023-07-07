@@ -309,13 +309,6 @@ const static InternalFunctionDef internal_function_definitions[_MAX_INTERNAL_FUN
 /* Names for proxy tables used for cache invalidation. Must match names in
  * sql/cache.sql */
 static const char *cache_proxy_table_names[_MAX_CACHE_TYPES] = {
-	[0] = "",
-	[1] ="",
-	[2] ="",
-	[3] ="",
-	[4] ="",
-	[5] ="",
-	[6] ="",
 	[CACHE_TYPE_HYPERTABLE] = "cache_inval_hypertable",
 	[CACHE_TYPE_BGW_JOB] = "cache_inval_bgw_job",
 	
@@ -568,7 +561,7 @@ ts_catalog_table_next_seq_id(Catalog *catalog, CatalogTable table)
 }
 
 Oid
-ts_catalog_get_cache_proxy_id(Catalog *catalog, CacheType type)
+ts_catalog_get_cache_proxy_id(Catalog *catalog, CacheTypeTS type)
 {
 	if (!catalog_is_valid(catalog))
 	{

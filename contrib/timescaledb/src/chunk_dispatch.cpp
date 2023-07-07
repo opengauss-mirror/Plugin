@@ -71,19 +71,19 @@ ts_chunk_dispatch_get_on_conflict_action(const ChunkDispatch *dispatch)
 {
 	if (NULL == dispatch->dispatch_state)
 		return ONCONFLICT_NONE;
-	return (OnConflictAction)get_modifytable(dispatch)->onConflictAction;
+	return ONCONFLICT_NONE;
 }
 
 List *
 ts_chunk_dispatch_get_on_conflict_set(const ChunkDispatch *dispatch)
 {
-	return get_modifytable(dispatch)->onConflictSet;
+	return NIL;
 }
 
 Node *
 ts_chunk_dispatch_get_on_conflict_where(const ChunkDispatch *dispatch)
 {
-	return get_modifytable(dispatch)->onConflictWhere;
+	return NULL;
 }
 
 CmdType

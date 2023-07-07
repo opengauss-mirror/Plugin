@@ -192,7 +192,6 @@ dsm_postmaster_startup(PGShmemHeader *shim)
 	elog(DEBUG2,
 		 "created dynamic shared memory control segment %u (%zu bytes)",
 		 dsm_control_handle, segsize);
-	shim->dsm_control = dsm_control_handle;
 
 	/* Initialize control segment. */
 	dsm_control->magic = PG_DYNSHMEM_CONTROL_MAGIC;
@@ -392,7 +391,6 @@ dsm_postmaster_shutdown(int code, Datum arg)
 				&dsm_control_impl_private, &dsm_control_address,
 				&dsm_control_mapped_size, LOG);
 	dsm_control =(dsm_control_header *) dsm_control_address;
-	shim->dsm_control = 0;
 }
 
 /*

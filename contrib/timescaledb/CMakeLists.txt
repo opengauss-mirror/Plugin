@@ -160,7 +160,7 @@ if(WIN32)
 elseif(UNIX)
   find_path(PG_PATH
     guassdb
-    PATHS /home/lhy/og/install
+    PATHS $ENV{GAUSSHOME}
     PATH_SUFFIXES bin 
     DOC "The path to a PostgreSQL installation")
 endif()

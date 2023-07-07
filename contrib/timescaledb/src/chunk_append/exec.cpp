@@ -877,7 +877,6 @@ ca_get_relation_constraints(Oid relationObjectId, Index varno, bool include_notn
 					 * NULL test in such a case, just IS DISTINCT FROM NULL.
 					 */
 					ntest->argisrow = false;
-					ntest->location = -1;
 					result = lappend(result, ntest);
 				}
 			}

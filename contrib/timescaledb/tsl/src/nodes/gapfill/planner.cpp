@@ -335,18 +335,16 @@ gapfill_path_create(PlannerInfo *root, Path *subpath, FuncExpr *func)
 	 * parallel_safe must be false because it is not safe to execute this node
 	 * in parallel, but it is safe for child nodes to be parallel
 	 */
-	Assert(!path->cpath.path.parallel_safe);
 	path->cpath.path.rows = subpath->rows;
 	path->cpath.path.parent = subpath->parent;
 	path->cpath.path.param_info = subpath->param_info;
 	path->cpath.flags = 0;
 	path->cpath.path.pathkeys = subpath->pathkeys;
 
-	path->cpath.path.pathtarget = create_empty_pathtarget();
-	subpath->pathtarget = create_empty_pathtarget();
+	PathTarget *pat = create_empty_pathtarget();
 	gapfill_build_pathtarget(root->upper_targets[UPPERREL_FINAL],
-							 path->cpath.path.pathtarget,
-							 subpath->pathtarget);
+							 pat,
+							 pat);
 
 	if (!gapfill_correct_order(root, subpath, func))
 	{
@@ -510,7 +508,7 @@ gapfill_adjust_window_targetlist(PlannerInfo *root, RelOptInfo *input_rel, RelOp
 			for (path = (WindowAggPath *) toppath->subpath; IsA(path, WindowAggPath);
 				 path = (WindowAggPath *) path->subpath)
 			{
-				PathTarget *pt_top = toppath->path.pathtarget;
+				PathTarget *pt_top = create_empty_pathtarget();
 				PathTarget *pt;
 				ListCell *lc_expr;
 				int i = -1;
@@ -568,7 +566,6 @@ gapfill_adjust_window_targetlist(PlannerInfo *root, RelOptInfo *input_rel, RelOp
 					else
 						add_column_to_pathtarget(pt, (Expr*)lfirst(lc_expr), pt_top->sortgrouprefs[i]);
 				}
-				path->path.pathtarget = pt;
 			}
 		}
 	}

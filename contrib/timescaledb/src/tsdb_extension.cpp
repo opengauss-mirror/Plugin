@@ -149,18 +149,12 @@ create_projection_path(PlannerInfo *root,
 					   PathTarget *target)
 {
 	ProjectionPath *pathnode = makeNode(ProjectionPath);
-	PathTarget *oldtarget = subpath->pathtarget;
 
 	pathnode->path.pathtype = T_BaseResult;
 	pathnode->path.parent = rel;
-	pathnode->path.pathtarget = target;
 	/* For now, assume we are above any joins, so no parameterization */
 	pathnode->path.param_info = NULL;
-	pathnode->path.parallel_aware = false;
-	pathnode->path.parallel_safe = rel->consider_parallel &&
-		subpath->parallel_safe &&
-		!has_parallel_hazard((Node *) target->exprs, false);
-	pathnode->path.parallel_workers = subpath->parallel_workers;
+
 	/* Projection does not change the sort order */
 	pathnode->path.pathkeys = subpath->pathkeys;
 
@@ -175,8 +169,7 @@ create_projection_path(PlannerInfo *root,
 	 * Note: in the latter case, create_projection_plan has to recheck our
 	 * conclusion; see comments therein.
 	 */
-	if (is_projection_capable_path(subpath) ||
-		equal(oldtarget->exprs, target->exprs))
+	if (is_projection_capable_path(subpath))
 	{
 		/* No separate Result node needed */
 		pathnode->dummypp = true;
@@ -186,10 +179,10 @@ create_projection_path(PlannerInfo *root,
 		 */
 		pathnode->path.rows = subpath->rows;
 		pathnode->path.startup_cost = subpath->startup_cost +
-			(target->cost.startup - oldtarget->cost.startup);
+			(target->cost.startup);
 		pathnode->path.total_cost = subpath->total_cost +
-			(target->cost.startup - oldtarget->cost.startup) +
-			(target->cost.per_tuple - oldtarget->cost.per_tuple) * subpath->rows;
+			(target->cost.startup) +
+			(target->cost.per_tuple) * subpath->rows;
 	}
 	else
 	{

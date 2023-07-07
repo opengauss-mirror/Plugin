@@ -543,7 +543,7 @@ static const struct object_type_map
 	},
 	/* OCLASS_CONSTRAINT */
 	{
-		"table constraint", OBJECT_TABCONSTRAINT
+		"table constraint", (ObjectType)12
 	},
 	{
 		"domain constraint",(ObjectType) 13

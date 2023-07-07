@@ -181,7 +181,7 @@ get_background_worker_pid(BackgroundWorkerHandle *handle, pid_t *pidp)
 	pid_t pid;
 
 	if (handle == NULL)
-		status = BGWH_STOPPED;
+		status = BGW_STOPPED;
 	else
 	{
 		status = GetBackgroundWorkerPid(handle, &pid);
@@ -189,8 +189,6 @@ get_background_worker_pid(BackgroundWorkerHandle *handle, pid_t *pidp)
 			*pidp = pid;
 	}
 
-	if (status == BGWH_POSTMASTER_DIED)
-		bgw_on_postmaster_death();
 	return status;
 }
 
@@ -200,21 +198,19 @@ wait_for_background_worker_startup(BackgroundWorkerHandle *handle, pid_t *pidp)
 	BgwHandleStatus status;
 
 	if (handle == NULL)
-		status = BGWH_STOPPED;
+		status = BGW_STOPPED;
 	else
 		status = WaitForBackgroundWorkerStartup(handle, pidp);
 
 	/*
-	 * We don't care whether we get BGWH_STOPPED or BGWH_STARTED here, because
+	 * We don't care whether we get BGW_STOPPED or BGW_STARTED here, because
 	 * the worker could have started and stopped very quickly before we read
-	 * it. We can't get BGWH_NOT_YET_STARTED as that's what we're waiting for.
+	 * it. We can't get BGW_NOT_YET_STARTED as that's what we're waiting for.
 	 * We do care if the Postmaster died however.
 	 */
 
-	if (status == BGWH_POSTMASTER_DIED)
-		bgw_on_postmaster_death();
 
-	Assert(status == BGWH_STOPPED || status == BGWH_STARTED);
+	Assert(status == BGW_STOPPED || status == BGW_STARTED);
 	return;
 }
 
@@ -224,15 +220,13 @@ wait_for_background_worker_shutdown(BackgroundWorkerHandle *handle)
 	BgwHandleStatus status;
 
 	if (handle == NULL)
-		status = BGWH_STOPPED;
+		status = BGW_STOPPED;
 	else
 		status = WaitForBackgroundWorkerShutdown(handle);
 
-	/* We can only ever get BGWH_STOPPED stopped unless the Postmaster died. */
-	if (status == BGWH_POSTMASTER_DIED)
-		bgw_on_postmaster_death();
+	/* We can only ever get BGW_STOPPED stopped unless the Postmaster died. */
 
-	Assert(status == BGWH_STOPPED);
+	Assert(status == BGW_STOPPED);
 	return;
 }
 
@@ -425,7 +419,7 @@ static void
 scheduler_state_trans_started_to_allocated(DbHashEntry *entry)
 {
 	Assert(entry->state == STARTED);
-	Assert(get_background_worker_pid(entry->db_scheduler_handle, NULL) == BGWH_STOPPED);
+	Assert(get_background_worker_pid(entry->db_scheduler_handle, NULL) == BGW_STOPPED);
 	if (entry->db_scheduler_handle != NULL)
 	{
 		pfree(entry->db_scheduler_handle);
@@ -478,7 +472,7 @@ static void
 scheduler_state_trans_started_to_disabled(DbHashEntry *entry)
 {
 	Assert(entry->state == STARTED);
-	Assert(get_background_worker_pid(entry->db_scheduler_handle, NULL) == BGWH_STOPPED);
+	Assert(get_background_worker_pid(entry->db_scheduler_handle, NULL) == BGW_STOPPED);
 
 	ts_bgw_total_workers_decrement();
 	if (entry->db_scheduler_handle != NULL)
@@ -503,7 +497,7 @@ scheduler_state_trans_automatic(DbHashEntry *entry)
 			scheduler_state_trans_allocated_to_started(entry);
 			break;
 		case STARTED:
-			if (get_background_worker_pid(entry->db_scheduler_handle, NULL) == BGWH_STOPPED)
+			if (get_background_worker_pid(entry->db_scheduler_handle, NULL) == BGW_STOPPED)
 				scheduler_state_trans_started_to_disabled(entry);
 			break;
 		case DISABLED:
@@ -881,7 +875,6 @@ process_settings(Oid databaseid)
 
 	/* Later settings are ignored if set earlier. */
 	ApplySetting(snapshot, databaseid, InvalidOid, relsetting, PGC_S_DATABASE);
-	ApplySetting(snapshot, InvalidOid, InvalidOid, relsetting, PGC_S_GLOBAL);
 
 	UnregisterSnapshot(snapshot);
 	heap_close(relsetting, AccessShareLock);

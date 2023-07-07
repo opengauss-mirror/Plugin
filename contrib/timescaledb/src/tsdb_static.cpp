@@ -231,30 +231,6 @@ get_agg_clause_costs_walker(Node *node, get_agg_clause_costs_context *context)
 		if (aggref->aggorder != NIL || aggref->aggdistinct != NIL)
 		{
 			costs->numOrderedAggs++;
-			costs->hasNonPartial = true;
-		}
-
-		/*
-		 * Check whether partial aggregation is feasible, unless we already
-		 * found out that we can't do it.
-		 */
-		if (!costs->hasNonPartial)
-		{
-			/*
-			 * If there is no combine function, then partial aggregation is
-			 * not possible.
-			 */
-			if (!OidIsValid(aggcombinefn))
-				costs->hasNonPartial = true;
-
-			/*
-			 * If we have any aggs with transtype INTERNAL then we must check
-			 * whether they have serialization/deserialization functions; if
-			 * not, we can't serialize partial-aggregation results.
-			 */
-			else if (aggtranstype == INTERNALOID &&
-					 (!OidIsValid(aggserialfn) || !OidIsValid(aggdeserialfn)))
-				costs->hasNonSerial = true;
 		}
 
 		/*
@@ -296,10 +272,8 @@ get_agg_clause_costs_walker(Node *node, get_agg_clause_costs_context *context)
 			 * to filter selectivity, but it's not clear it's worth the
 			 * trouble.
 			 */
-			if (aggref->aggfilter)
+			if (false)
 			{
-				cost_qual_eval_node(&argcosts, (Node *) aggref->aggfilter,
-									context->root);
 				costs->transCost.startup += argcosts.startup;
 				costs->transCost.per_tuple += argcosts.per_tuple;
 			}
@@ -927,16 +901,15 @@ retry:
 		if (TransactionIdIsValid(xwait) &&
 			(waitMode == CEOUC_WAIT ||
 			 (waitMode == CEOUC_LIVELOCK_PREVENTING_WAIT &&
-			  DirtySnapshot.speculativeToken &&
 			  TransactionIdPrecedes(GetCurrentTransactionId(), xwait))))
 		{
 			ctid_wait = tup->t_data->t_ctid;
 			reason_wait = indexInfo->ii_ExclusionOps ?
 				XLTW_RecheckExclusionConstr : XLTW_InsertIndex;
 			index_endscan(index_scan);
-			if (DirtySnapshot.speculativeToken)
+			if (0)
 				SpeculativeInsertionWait(DirtySnapshot.xmin,
-										 DirtySnapshot.speculativeToken);
+										 0);
 			else
 				XactLockTableWait(xwait, heap,reason_wait);
 			goto retry;
