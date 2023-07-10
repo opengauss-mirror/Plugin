@@ -3956,6 +3956,9 @@ DROP FUNCTION IF EXISTS pg_catalog.weight_string (timestamptz, TEXT, uint4, uint
 DROP FUNCTION IF EXISTS pg_catalog.weight_string (interval, uint4) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.weight_string (interval, TEXT, uint4) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.weight_string (interval, TEXT, uint4, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (bit, uint4) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (bit, text, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string (bit, text, uint4, uint4) CASCADE;
 
 DROP FUNCTION IF EXISTS pg_catalog.sleep(d date) CASCADE;
 

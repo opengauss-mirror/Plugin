@@ -320,6 +320,36 @@ SELECT HEX(WEIGHT_STRING(date '2021-12-31' as binary (10)));
  31322d33312d32303231
 (1 row)
 
+select HEX(WEIGHT_STRING(b'101'));
+ hex 
+-----
+ 05
+(1 row)
+
+select HEX(WEIGHT_STRING(b'101' as char(10)));
+         hex          
+----------------------
+ 05000000000000000000
+(1 row)
+
+select HEX(WEIGHT_STRING(b'101' as char(10) level 1 desc));
+         hex          
+----------------------
+ faffffffffffffffffff
+(1 row)
+
+select HEX(WEIGHT_STRING(b'101' as char(10) level 1 desc reverse));
+         hex          
+----------------------
+ fffffffffffffffffffa
+(1 row)
+
+select HEX(WEIGHT_STRING(b'101' as binary(10)));
+         hex          
+----------------------
+ 05000000000000000000
+(1 row)
+
 -- 变量测试
 SET enable_set_variable_b_format = 1;
 SET @var1 = 100;
