@@ -91,6 +91,7 @@
 #include "executor/node/nodeModifyTable.h"
 #include "optimizer/gplanmgr.h"
 #include "instruments/instr_statement.h"
+#include "catalog/gs_collation.h"
 #include "replication/libpqsw.h"
 
 /* Hook for plugins to get control in planner() */
@@ -14008,7 +14009,7 @@ static bool walk_normal_plan(Plan* plan, PlannerInfo* root)
 
     return false;
 }
-#ifdef ENABLE_MULTIPLE_NODES
+
 /*
  * @Description: return true if HDFS/OBS foreign scan node found.
  *
@@ -14205,7 +14206,6 @@ static Plan* try_accelerate_plan(Plan* plan, PlannerInfo* root, PlannerGlobal* g
 
     return plan;
 }
-#endif
 
 bool enable_check_implicit_cast()
 {

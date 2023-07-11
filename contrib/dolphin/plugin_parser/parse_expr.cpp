@@ -23,7 +23,6 @@
 #include "catalog/pg_type.h"
 #include "catalog/pg_proc.h"
 #include "catalog/gs_package.h"
-#include "catalog/gs_package_fn.h"
 #include "catalog/gs_collation.h"
 #include "commands/dbcommands.h"
 #include "commands/sequence.h"
@@ -553,7 +552,6 @@ Node *transformExprRecurse(ParseState *pstate, Node *expr)
         case T_SetVariableExpr:
             result = transformSetVariableExpr((SetVariableExpr*)expr);
             break;
-
         case T_CharsetClause:
             result = transformCharsetClause(pstate, (CharsetClause*)expr);
             break;

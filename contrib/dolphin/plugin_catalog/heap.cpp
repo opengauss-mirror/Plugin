@@ -4667,7 +4667,6 @@ Node *cookDefault(ParseState *pstate, Node *raw_default, Oid atttypid, int32 att
      */
     if (OidIsValid(atttypid)) {
         Oid type_id = exprType(expr);
-
         if (type_is_set(atttypid)) {
             expr = coerce_to_settype(
                     pstate, expr, type_id, atttypid, atttypmod, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1, attcollation);

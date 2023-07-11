@@ -487,6 +487,7 @@ extern char* try_fast_encoding_conversion(
 
 extern char* pg_client_to_server(const char* s, int len);
 extern char* pg_server_to_client(const char* s, int len);
+extern char* pg_any_to_server(const char* s, int len, int encoding);
 extern char* pg_server_to_any(const char* s, int len, int encoding, void* convert_finfo = NULL);
 extern char* pg_any_to_client(const char* s, int len, int encoding, void* convert_finfo = NULL);
 extern bool WillTranscodingBePerformed(int encoding);

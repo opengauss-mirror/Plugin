@@ -2169,7 +2169,6 @@ Datum InputFunctionCall(FmgrInfo* flinfo, char* str, Oid typioparam, int32 typmo
     fcinfo.argnull[2] = false;
     fcinfo.can_ignore = can_ignore;
     fcinfo.fncollation = collation;
-
     result = FunctionCallInvoke(&fcinfo);
 
     /* Should get null result if and only if str is NULL */
@@ -2372,7 +2371,6 @@ Datum OidInputFunctionCallColl(Oid functionId, char* str, Oid typioparam, int32 
     FmgrInfo flinfo;
 
     fmgr_info(functionId, &flinfo);
-
     return InputFunctionCall(&flinfo, str, typioparam, typmod, false, collation);
 }
 /*
