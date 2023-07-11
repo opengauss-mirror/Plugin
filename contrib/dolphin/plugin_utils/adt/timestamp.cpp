@@ -795,7 +795,15 @@ int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec)
     /* two characters are grouped together and 3 = TIMESTAMP_YYMMDD_LEN / 2 */
     int cnt = 3;
     /* extract time field first: '101' -> '1001' */
+#ifdef DOLPHIN
+    while (!(*cp == '\0' || (*cp == '.' && cnt == 0))) {
+        if (*cp == '.') {
+            ++cp;
+            continue;
+        }
+#else
     while (!(*cp == '\0' || *cp == '.')) {
+#endif
         char next = *(cp + 1);
         if (next == '\0' || next == '.') {
             *tcp = '0';
