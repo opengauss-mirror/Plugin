@@ -1,0 +1,109 @@
+drop schema if exists test_default;
+NOTICE:  schema "test_default" does not exist, skipping
+create schema test_default;
+set current_schema = test_default;
+create table t1(a timestamp default pg_systimestamp()::timestamp(0));
+\d t1;
+                                    Table "test_default.t1"
+ Column |            Type             |                       Modifiers                        
+--------+-----------------------------+--------------------------------------------------------
+ a      | timestamp(0) with time zone | default pg_systimestamp()::timestamp(0) with time zone
+
+show create table t1;
+ Table |                                       Create Table                                       
+-------+------------------------------------------------------------------------------------------
+ t1    | SET search_path = test_default;                                                         +
+       | CREATE TABLE t1 (                                                                       +
+       |     a timestamp(0) with time zone DEFAULT pg_systimestamp()::timestamp(0) with time zone+
+       | )                                                                                       +
+       | WITH (orientation=row, compression=no);
+(1 row)
+
+create table t2(a int, b int GENERATED ALWAYS AS (length((a)::text)) STORED);
+\d t2;
+                      Table "test_default.t2"
+ Column |  Type   |                   Modifiers                    
+--------+---------+------------------------------------------------
+ a      | integer | 
+ b      | integer | generated always as (length((a)::text)) stored
+
+show create table t2;
+ Table |                         Create Table                         
+-------+--------------------------------------------------------------
+ t2    | SET search_path = test_default;                             +
+       | CREATE TABLE t2 (                                           +
+       |     a integer,                                              +
+       |     b integer GENERATED ALWAYS AS (length((a)::text)) STORED+
+       | )                                                           +
+       | WITH (orientation=row, compression=no);
+(1 row)
+
+create table t3(a timestamp default pg_systimestamp()::timestamp(0), b int GENERATED ALWAYS AS (length((a)::text)) STORED);
+\d t3
+                                    Table "test_default.t3"
+ Column |            Type             |                       Modifiers                        
+--------+-----------------------------+--------------------------------------------------------
+ a      | timestamp(0) with time zone | default pg_systimestamp()::timestamp(0) with time zone
+ b      | integer                     | generated always as (length((a)::text)) stored
+
+show create table t3;
+ Table |                                       Create Table                                        
+-------+-------------------------------------------------------------------------------------------
+ t3    | SET search_path = test_default;                                                          +
+       | CREATE TABLE t3 (                                                                        +
+       |     a timestamp(0) with time zone DEFAULT pg_systimestamp()::timestamp(0) with time zone,+
+       |     b integer GENERATED ALWAYS AS (length((a)::text)) STORED                             +
+       | )                                                                                        +
+       | WITH (orientation=row, compression=no);
+(1 row)
+
+create table t4(a timestamp default pg_systimestamp()::timestamp(0) on update current_timestamp);
+\d t4
+                                                          Table "test_default.t4"
+ Column |            Type             |                                             Modifiers                                              
+--------+-----------------------------+----------------------------------------------------------------------------------------------------
+ a      | timestamp(0) with time zone | default pg_systimestamp()::timestamp(0) with time zone on update b_db_statement_start_timestamp(0)
+
+show create table t4;
+ Table |                                                      Create Table                                                       
+-------+-------------------------------------------------------------------------------------------------------------------------
+ t4    | SET search_path = test_default;                                                                                        +
+       | CREATE TABLE t4 (                                                                                                      +
+       |     a timestamp(0) with time zone DEFAULT pg_systimestamp()::timestamp(0) with time zone ON UPDATE CURRENT_TIMESTAMP(0)+
+       | )                                                                                                                      +
+       | WITH (orientation=row, compression=no);
+(1 row)
+
+create table t5(id int, role varchar(100), data varchar(100));
+ALTER TABLE t5 ENABLE ROW LEVEL SECURITY;
+CREATE ROW LEVEL SECURITY POLICY t5_rls ON t5 USING(role = CURRENT_USER);
+select pg_catalog.pg_get_expr(r.polqual, r.polrelid) from pg_catalog.pg_rlspolicy r left join pg_catalog.pg_class c on c.oid = r.polrelid where c.relname = 't5';
+            pg_get_expr            
+-----------------------------------
+ ((role)::name = "current_user"())
+(1 row)
+
+create table t6(a timestamp, b time);
+create index idx_t6 on t6(a) where a > b::timestamp;
+select pg_catalog.pg_get_expr(i.indpred, i.indrelid) from pg_catalog.pg_index i left join pg_catalog.pg_class c on c.oid = i.indrelid where c.relname = 't6';
+              pg_get_expr               
+----------------------------------------
+ (a > (b)::timestamp(0) with time zone)
+(1 row)
+
+create table t7(a timestamp check(a > pg_systimestamp()::timestamp(0)));
+select pg_catalog.pg_get_expr(co.conbin, co.conrelid) from pg_catalog.pg_constraint co left join pg_catalog.pg_class cl on cl.oid = co.conrelid where cl.relname = 't7';
+                      pg_get_expr                       
+--------------------------------------------------------
+ (a > (pg_systimestamp())::timestamp(0) with time zone)
+(1 row)
+
+drop table t1;
+drop table t2;
+drop table t3;
+drop table t4;
+drop table t5;
+drop table t6;
+drop table t7;
+reset current_schema;
+drop schema test_default cascade;
