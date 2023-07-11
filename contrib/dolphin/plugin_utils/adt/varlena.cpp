@@ -1064,7 +1064,7 @@ Oid binary_need_transform_typeid(Oid typeoid, Oid* collation)
         switch (typeoid) {
             /* binary type no need to transform */
             case BLOBOID:
-            case BYTEAOID
+            case BYTEAOID:
                 break;
             /* string type need to transform to binary type */
             case TEXTOID:
@@ -2769,6 +2769,7 @@ Datum text_le(PG_FUNCTION_ARGS)
     FUNC_CHECK_HUGE_POINTER(false, arg1, "text_le()");
 
     bool result = false;
+
     result = (text_cmp(arg1, arg2, PG_GET_COLLATION()) <= 0);
 
     PG_FREE_IF_COPY(arg1, 0);
@@ -2799,7 +2800,6 @@ Datum text_ge(PG_FUNCTION_ARGS)
     FUNC_CHECK_HUGE_POINTER(false, arg1, "text_ge()");
 
     bool result = false;
-
     result = (text_cmp(arg1, arg2, PG_GET_COLLATION()) >= 0);
 
     PG_FREE_IF_COPY(arg1, 0);

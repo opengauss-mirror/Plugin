@@ -2418,6 +2418,7 @@ restart:
 
                fcinfo->isnull = false;
                rsinfo.isDone = ExprSingleResult;
+
                if (func_encoding != db_encoding) {
                     DB_ENCODING_SWITCH_TO(func_encoding);
                     result = FunctionCallInvoke(fcinfo);
@@ -5791,6 +5792,13 @@ ExprState* ExecInitExpr(Expr* node, PlanState* parent){
 }
 ExprState* ExecInitExprByRecursion(Expr* node, PlanState* parent)
 {
+#ifndef DOLPHIN
+   if (u_sess->hook_cxt.execInitExprHook != NULL) {
+        ExprState* expr = ((execInitExprFunc)(u_sess->hook_cxt.execInitExprHook))(node, parent);
+        if (expr != NULL)
+            return expr;
+    }
+#endif
     ExprState* state = NULL;
 
    gstrace_entry(GS_TRC_ID_ExecInitExpr);
@@ -6500,6 +6508,7 @@ ExprState* ExecInitExprByRecursion(Expr* node, PlanState* parent)
                 pstate->encoding = get_valid_charset_by_collation(argcollation);
             }
             pstate->arg = ExecInitExpr(pkey->arg, parent);
+            
             state = (ExprState*)pstate;
         } break;
         case T_UserSetElem: {

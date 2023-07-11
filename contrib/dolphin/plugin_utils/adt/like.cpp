@@ -216,7 +216,7 @@ static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation,bool 
             slen = bcTruelen(str);
         else
 #endif
-            slen = (VARSIZE(str) - VARHDRSZ);
+        slen = (VARSIZE(str) - VARHDRSZ);
         return generic_match_text_with_collation(s, slen, p, plen, collation);
     } else {
         /*

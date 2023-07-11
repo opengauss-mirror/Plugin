@@ -63,6 +63,7 @@ extern int parser_coercion_errposition(ParseState* pstate, int coerce_location, 
 extern Oid select_common_type(ParseState* pstate, List* exprs, const char* context, Node** which_expr);
 extern bool check_all_in_whitelist(List* resultexprs);
 extern Node* coerce_to_common_type(ParseState* pstate, Node* node, Oid targetTypeId, const char* context);
+
 extern Node* coerce_to_settype(ParseState* pstate, Node* expr, Oid exprtype, Oid targettype, int32 targettypmod,
     CoercionContext ccontext, CoercionForm cformat, int location, Oid collation);
 

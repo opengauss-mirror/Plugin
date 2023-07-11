@@ -613,7 +613,6 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
 
         newcon->consttype = baseTypeId;
         newcon->consttypmod = inputTypeMod;
-        //  collation_connection here
         if (OidIsValid(GetCollationConnection()) &&
             IsSupportCharsetType(baseTypeId)) {
             newcon->constcollid = GetCollationConnection();

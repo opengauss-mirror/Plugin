@@ -1071,11 +1071,17 @@ template<bool calCharLength> int MbCharClipLen(const char* mbstr, int len, int l
 }
 
 /*
- * limit parameter specifies the character length.
+ * Similar to pg_mbcliplen except the limit parameter specifies the
+ * byte length, not the character length.
  */
 int pg_mbcharcliplen(const char* mbstr, int len, int limit)
 {
-    return MbCharClipLen<true>(mbstr, len, limit);
+    bool calCharLength = DB_IS_CMPT(PG_FORMAT | B_FORMAT);
+    if (calCharLength) {
+        return MbCharClipLen<true>(mbstr, len, limit);
+    } else {
+        return MbCharClipLen<false>(mbstr, len, limit);
+    }
 }
 /*
  * Description	: Similar to pg_mbcliplen except the limit parameter specifies

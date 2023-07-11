@@ -260,7 +260,6 @@ void assign_expr_collations(ParseState* pstate, Node* expr)
     context.derivation = DERIVATION_IGNORABLE;
     context.charset_status = UNKNONWN_CHARSET;
 
-
     /* and away we go */
     (void)assign_collations_walker(expr, &context);
 }
@@ -457,7 +456,6 @@ static bool assign_collations_walker(Node* node, assign_collations_context* cont
                 colls = lappend_oid(colls, coll);
             }
             expr->inputcollids = colls;
-
             merge_rowcompareexpr_arg_charsets(expr);
             /*
              * Since the result is always boolean and therefore never has
@@ -477,7 +475,6 @@ static bool assign_collations_walker(Node* node, assign_collations_context* cont
              */
             CoerceToDomain* expr = (CoerceToDomain*)node;
             Oid typcollation = get_typcollation(expr->resulttype);
-
             if (ENABLE_MULTI_CHARSET && IsBinaryType(expr->resulttype)) {
                 typcollation = BINARY_COLLATION_OID;
             }
@@ -824,7 +821,7 @@ static void merge_collation_state(Oid collation, CollateStrength strength, int l
                     return merge_diff_charset_collation(
                         collation, strength, location, derivation, charset, context_charset, context);
                 }
-
+                
                 if (collation != context->collation) {
                     /*
                      * Non-default implicit collation always beats default.

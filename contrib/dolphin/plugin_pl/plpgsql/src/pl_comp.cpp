@@ -23,7 +23,6 @@
 #include "catalog/pg_proc.h"
 #include "catalog/pg_proc_fn.h"
 #include "catalog/gs_package.h"
-#include "catalog/gs_package_fn.h"
 #include "catalog/pg_type.h"
 #include "commands/sqladvisor.h"
 #include "executor/spi.h"
