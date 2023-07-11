@@ -69,8 +69,11 @@
 
 #define ESTIMATE_SUBPARTITION_NUMBER 100
 
+#ifndef DOLPHIN
+/* dolphin plugin should not declare get_relation_info_hook, it should use the kernel one */
 /* Hook for plugins to get control in get_relation_info() */
 THR_LOCAL get_relation_info_hook_type get_relation_info_hook = NULL;
+#endif
 
 extern void AcceptInvalidationMessages(void);
 extern bool check_relation_analyzed(Oid relid);
