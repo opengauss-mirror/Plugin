@@ -951,6 +951,7 @@ Datum hex_decode_text(PG_FUNCTION_ARGS)
 {
     text* data = PG_GETARG_TEXT_P(0);
     int dataLength = VARSIZE(data) - VARHDRSZ;
+    if (dataLength == 0) PG_RETURN_TEXT_P(data);
     bytea* result = hex_decode_internal(VARDATA(data), dataLength);
     int resultLength = VARSIZE(result) - VARHDRSZ;
     if (dataLength != 0 && resultLength == 0) PG_RETURN_NULL();
