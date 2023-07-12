@@ -182,6 +182,17 @@ DROP FUNCTION IF EXISTS pg_catalog.time_cast_ui8(time) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.time_cast_ui4(time) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.time_cast_ui2(time) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.time_cast_ui1(time) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.-(timestamptz, int4) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.+(timestamptz, int4) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.-(timestamp without time zone, int4) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.+(timestamp without time zone, int4) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_add (text, timestamptz, "any") CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.time_format(timestamp without time zone, text) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_mi_int4(timestamptz, int4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_pl_int4(timestamptz, int4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.datetime_mi_int4(timestamp without time zone, int4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.datetime_pl_int4(timestamp without time zone, int4) CASCADE;
 
 DROP FUNCTION IF EXISTS pg_catalog.atan2 (boolean, boolean);
 DROP FUNCTION IF EXISTS pg_catalog.atan2 (boolean, float8);

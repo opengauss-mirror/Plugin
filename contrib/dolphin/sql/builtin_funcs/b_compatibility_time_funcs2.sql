@@ -288,6 +288,7 @@ insert into func_test2(functionName, result) values(' TIME_FORMAT(B''1'', ''%T|%
 insert into func_test2(functionName, result) values(' TIME_FORMAT(false, ''%T|%r||%f'')    ', TIME_FORMAT(false, '%T|%r||%f'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(date''5874897-12-31'', ''%t|%r|%h|%h'')', TIME_FORMAT(date'5874897-12-31', '%t|%r|%h|%h'));
 insert into func_test2(functionName, result) values(' TIME_FORMAT(date''10000-1-1'', date''9999-12-31'')', TIME_FORMAT(date'10000-1-1', date'9999-12-31'));
+insert into func_test2(functionName, result) values(' TIME_FORMAT(datetime''294277-1-9 4:00:54.775806'', ''%T|%r|%h|%h'')', TIME_FORMAT(datetime'294277-1-9 4:00:54.775806', '%T|%r|%h|%h'));
 
 -- TIMESTAMP(expr)
 -- 特异参数
@@ -451,6 +452,7 @@ insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,9999999999
 insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,-1000000000000000000000000000000,''2022-06-07'')', TIMESTAMPADD(DAY,-1000000000000000000000000000000,'2022-06-07'));
 insert into func_test2(functionName, result) values('TIMESTAMPADD(HOUR,1000000000000000000000000000000,''2022-11-21'')', TIMESTAMPADD(HOUR,1000000000000000000000000000000,'2022-11-21'));
 insert into func_test2(functionName, result) values('TIMESTAMPADD(HOUR,-10000000000000000000000000000,''2022-04-05'')', TIMESTAMPADD(HOUR,-10000000000000000000000000000,'2022-04-05'));
+insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,timestamptz''2000-1-1 1:1:1+05'',''2022-07-01'')', TIMESTAMPADD(DAY,timestamptz'2000-1-1 1:1:1+05','2022-07-01'));
 -- 布尔类型参数
 insert into func_test2(functionName, result) values('TIMESTAMPADD(HOUR,true,''2022-04-05'')', TIMESTAMPADD(HOUR,true,'2022-04-05'));
 -- 比特类型参数
