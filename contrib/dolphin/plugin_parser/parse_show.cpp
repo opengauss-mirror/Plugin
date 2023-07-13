@@ -193,7 +193,7 @@ SelectStmt* makeShowMasterStatusQuery(void)
 }
 
 /**
- * Build a parsed tree for 'SHOW SLAVE HOSTS'.
+ * Build a parsed tree for 'SHOW SLAVE HOSTS | SHOW REPLICAS'.
  * This is actually a parse of the following statement:
  *
  * SELECT
@@ -202,7 +202,7 @@ SelectStmt* makeShowMasterStatusQuery(void)
  *    pg_stat_replication;
  *
  * @param void
- * @return The parsed tree for 'SHOW SLAVE HOSTS'.
+ * @return The parsed tree for 'SHOW SLAVE HOSTS | SHOW REPLICAS'.
  */
 SelectStmt* makeShowSlaveHostsQuery(void)
 {

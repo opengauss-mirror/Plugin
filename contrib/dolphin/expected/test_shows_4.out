@@ -11,5 +11,10 @@ show slave hosts;
 -----+----------+---------+------------------+-------------+-----------------+-------------+---------------+-------+----------------------+-------------------------+-------------------------+--------------------------+---------------+------------
 (0 rows)
 
+show replicas;
+ pid | usesysid | usename | application_name | client_addr | client_hostname | client_port | backend_start | state | sender_sent_location | receiver_write_location | receiver_flush_location | receiver_replay_location | sync_priority | sync_state 
+-----+----------+---------+------------------+-------------+-----------------+-------------+---------------+-------+----------------------+-------------------------+-------------------------+--------------------------+---------------+------------
+(0 rows)
+
 drop schema db_show_4 cascade;
 reset current_schema;
