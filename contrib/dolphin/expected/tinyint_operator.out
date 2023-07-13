@@ -49,27 +49,27 @@ ERROR:  tinyint out of range
 select (-128)::int1 * (-128)::int1;
 ERROR:  tinyint out of range
 select 1::int1 / 1::int1;
- ?column? 
-----------
-        1
+        ?column?        
+------------------------
+ 1.00000000000000000000
 (1 row)
 
 select (-1)::int1 / (-1)::int1;
- ?column? 
-----------
-        1
+        ?column?        
+------------------------
+ 1.00000000000000000000
 (1 row)
 
 select 127::int1 / 127::int1;
- ?column? 
-----------
-        1
+        ?column?        
+------------------------
+ 1.00000000000000000000
 (1 row)
 
 select (-128)::int1 / (-128)::int1;
- ?column? 
-----------
-        1
+        ?column?        
+------------------------
+ 1.00000000000000000000
 (1 row)
 
 select 1::int1 % 1::int1;
@@ -195,23 +195,27 @@ select ~(-128)::int1;
 select -1::int1;
  ?column? 
 ----------
- -1
+       -1
 (1 row)
 
 select -(-1)::int1;
  ?column? 
 ----------
- 1
+        1
 (1 row)
 
 select -127::int1;
  ?column? 
 ----------
- -127
+     -127
 (1 row)
 
 select -(-128)::int1;
-ERROR:  tinyint out of range
+ ?column? 
+----------
+      128
+(1 row)
+
 select +1::int1;
  ?column? 
 ----------

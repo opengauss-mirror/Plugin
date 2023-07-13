@@ -3992,3 +3992,16 @@ drop view performance_schema.table_io_waits_summary_by_table;
 drop view performance_schema.table_io_waits_summary_by_index_usage;
 drop schema if exists performance_schema CASCADE;
 drop function if exists pg_catalog.get_statement_history();
+
+drop operator IF EXISTS pg_catalog./(int1, int1);
+drop operator IF EXISTS pg_catalog.-(NONE, int1);
+DO $for_og_310$
+BEGIN
+    if working_version_num() > 92780 then
+        create operator pg_catalog./(leftarg = int1, rightarg = int1, procedure = pg_catalog.int1div);
+        COMMENT ON OPERATOR pg_catalog./(int1, int1) IS 'int1div';
+
+        CREATE OPERATOR pg_catalog.-(rightarg = int1, procedure = pg_catalog.int1um);
+    end if;
+END
+$for_og_310$;

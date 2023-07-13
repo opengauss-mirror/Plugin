@@ -75,6 +75,9 @@ int1
 ) RETURNS numeric LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'dolphin_int1div';
 create operator dolphin_catalog./(leftarg = int1, rightarg = int1, procedure = dolphin_catalog.dolphin_int1div);
 
+CREATE OPERATOR pg_catalog./(leftarg = int1, rightarg = int1, procedure = dolphin_catalog.dolphin_int1div);
+COMMENT ON OPERATOR pg_catalog./(int1, int1) IS 'dolphin_int1div';
+
 /* int8 */
 create function dolphin_catalog.dolphin_int8pl (
 int8,
