@@ -81,7 +81,7 @@ CREATE VIEW test as select -(1::tinyint) as "arg1", (1::tinyint)~ as "arg2";
 SELECT * FROM test;
  arg1 | arg2 
 ------+------
- -1   | 1
+   -1 | 1
 (1 row)
 
 RESET current_schema;
