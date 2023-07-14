@@ -7839,3 +7839,193 @@ DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int8(anyelement) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_int8 (
 anyelement
 ) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varlena_cast_int8';
+
+-- left operator
+DROP FUNCTION IF EXISTS dolphin_catalog.json_uplus(json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_uplus(json) RETURNS json LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_uplus';
+CREATE OPERATOR dolphin_catalog.+(rightarg = json, procedure = dolphin_catalog.json_uplus);
+
+-- binary cmp operator
+DROP FUNCTION IF EXISTS dolphin_catalog.json_null_save_eq(json, "any");
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_null_save_eq(json, "any") RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_null_save_eq';
+CREATE OPERATOR dolphin_catalog.<=>(leftarg = json, rightarg = "any", procedure = dolphin_catalog.json_null_save_eq);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_null_save_eq(text, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_null_save_eq(text, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_null_save_eq';
+CREATE OPERATOR dolphin_catalog.<=>(leftarg = text, rightarg = json, procedure = dolphin_catalog.json_null_save_eq);
+
+DROP FUNCTION IF EXISTS dolphin_catalog.json_eq(json, "any");
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_eq(json, "any") RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_eq';
+CREATE OPERATOR dolphin_catalog.=(leftarg = json, rightarg = "any", procedure = dolphin_catalog.json_eq);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_eq(text, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_eq(text, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_eq';
+CREATE OPERATOR dolphin_catalog.=(leftarg = text, rightarg = json, procedure = dolphin_catalog.json_eq);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_eq(bit, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_eq(bit, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_eq';
+CREATE OPERATOR dolphin_catalog.=(leftarg = bit, rightarg = json, procedure = dolphin_catalog.json_eq);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_eq(year, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_eq(year, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_eq';
+CREATE OPERATOR dolphin_catalog.=(leftarg = year, rightarg = json, procedure = dolphin_catalog.json_eq);
+
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ne(json, "any");
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_ne(json, "any") RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ne';
+CREATE OPERATOR dolphin_catalog.!=(leftarg = json, rightarg = "any", procedure = dolphin_catalog.json_ne);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ne(text, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_ne(text, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ne';
+CREATE OPERATOR dolphin_catalog.!=(leftarg = text, rightarg = json, procedure = dolphin_catalog.json_ne);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ne(bit, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_ne(bit, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ne';
+CREATE OPERATOR dolphin_catalog.!=(leftarg = bit, rightarg = json, procedure = dolphin_catalog.json_ne);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ne(year, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_ne(year, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ne';
+CREATE OPERATOR dolphin_catalog.!=(leftarg = year, rightarg = json, procedure = dolphin_catalog.json_ne);
+
+DROP FUNCTION IF EXISTS dolphin_catalog.json_gt(json, "any");
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_gt(json, "any") RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_gt';
+CREATE OPERATOR dolphin_catalog.>(leftarg = json, rightarg = "any", procedure = dolphin_catalog.json_gt);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_gt(text, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_gt(text, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_gt';
+CREATE OPERATOR dolphin_catalog.>(leftarg = text, rightarg = json, procedure = dolphin_catalog.json_gt);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_gt(bit, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_gt(bit, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_gt';
+CREATE OPERATOR dolphin_catalog.>(leftarg = bit, rightarg = json, procedure = dolphin_catalog.json_gt);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_gt(year, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_gt(year, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_gt';
+CREATE OPERATOR dolphin_catalog.>(leftarg = year, rightarg = json, procedure = dolphin_catalog.json_gt);
+
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ge(json, "any");
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_ge(json, "any") RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ge';
+CREATE OPERATOR dolphin_catalog.>=(leftarg = json, rightarg = "any", procedure = dolphin_catalog.json_ge);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ge(text, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_ge(text, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ge';
+CREATE OPERATOR dolphin_catalog.>=(leftarg = text, rightarg = json, procedure = dolphin_catalog.json_ge);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ge(bit, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_ge(bit, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ge';
+CREATE OPERATOR dolphin_catalog.>=(leftarg = bit, rightarg = json, procedure = dolphin_catalog.json_ge);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ge(year, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_ge(year, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ge';
+CREATE OPERATOR dolphin_catalog.>=(leftarg = year, rightarg = json, procedure = dolphin_catalog.json_ge);
+
+DROP FUNCTION IF EXISTS dolphin_catalog.json_lt(json, "any");
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_lt(json, "any") RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_lt';
+CREATE OPERATOR dolphin_catalog.<(leftarg = json, rightarg = "any", procedure = dolphin_catalog.json_lt);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_lt(text, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_lt(text, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_lt';
+CREATE OPERATOR dolphin_catalog.<(leftarg = text, rightarg = json, procedure = dolphin_catalog.json_lt);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_lt(bit, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_lt(bit, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_lt';
+CREATE OPERATOR dolphin_catalog.<(leftarg = bit, rightarg = json, procedure = dolphin_catalog.json_lt);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_lt(year, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_lt(year, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_lt';
+CREATE OPERATOR dolphin_catalog.<(leftarg = year, rightarg = json, procedure = dolphin_catalog.json_lt);
+
+DROP FUNCTION IF EXISTS dolphin_catalog.json_le(json, "any");
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_le(json, "any") RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_le';
+CREATE OPERATOR dolphin_catalog.<=(leftarg = json, rightarg = "any", procedure = dolphin_catalog.json_le);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_le(text, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_le(text, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_le';
+CREATE OPERATOR dolphin_catalog.<=(leftarg = text, rightarg = json, procedure = dolphin_catalog.json_le);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_le(bit, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_le(bit, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_le';
+CREATE OPERATOR dolphin_catalog.<=(leftarg = bit, rightarg = json, procedure = dolphin_catalog.json_le);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_le(year, json);
+CREATE OR REPLACE FUNCTION dolphin_catalog.json_le(year, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_le';
+CREATE OPERATOR dolphin_catalog.<=(leftarg = year, rightarg = json, procedure = dolphin_catalog.json_le);
+
+DROP FUNCTION IF EXISTS pg_catalog.b_mod(json, anyelement);
+CREATE OR REPLACE FUNCTION pg_catalog.b_mod(json, anyelement)
+returns numeric
+as
+$$
+begin
+    return 0;
+end;
+$$
+language plpgsql;
+
+DROP FUNCTION IF EXISTS pg_catalog.b_mod(anyelement, json);
+CREATE OR REPLACE FUNCTION pg_catalog.b_mod(anyelement, json)
+returns numeric
+as
+$$
+begin
+    return null;
+end;
+$$
+language plpgsql;
+
+DROP FUNCTION IF EXISTS pg_catalog.b_mod(json, json);
+CREATE OR REPLACE FUNCTION pg_catalog.b_mod(json, json)
+returns numeric
+as
+$$
+begin
+    return null;
+end;
+$$
+language plpgsql;
+
+DROP FUNCTION IF EXISTS pg_catalog.div(json, anyelement);
+CREATE OR REPLACE FUNCTION pg_catalog.div(json, anyelement)
+returns numeric
+as
+$$
+begin
+    return 0;
+end;
+$$
+language plpgsql;
+
+DROP FUNCTION IF EXISTS pg_catalog.div(anyelement, json);
+CREATE OR REPLACE FUNCTION pg_catalog.div(anyelement, json)
+returns numeric
+as
+$$
+begin
+    return null;
+end;
+$$
+language plpgsql;
+
+DROP FUNCTION IF EXISTS pg_catalog.div(json, json);
+CREATE OR REPLACE FUNCTION pg_catalog.div(json, json)
+returns numeric
+as
+$$
+begin
+    return null;
+end;
+$$
+language plpgsql;
+
+DROP FUNCTION IF EXISTS pg_catalog.xor(a json, b anyelement);
+CREATE OR REPLACE FUNCTION pg_catalog.xor(a json, b anyelement)
+returns integer
+as
+$$
+begin
+    return (select a ^ b);
+end;
+$$
+language plpgsql;
+
+DROP FUNCTION IF EXISTS pg_catalog.xor(a anyelement, b json);
+CREATE OR REPLACE FUNCTION pg_catalog.xor(a anyelement, b json)
+returns integer
+as
+$$
+begin
+    return (select a ^ b);
+end;
+$$
+language plpgsql;
+
+DROP FUNCTION IF EXISTS pg_catalog.xor(a json, b json);
+CREATE OR REPLACE FUNCTION pg_catalog.xor(a json, b json)
+returns integer
+as
+$$
+begin
+    return (select a ^ b);
+end;
+$$
+language plpgsql;

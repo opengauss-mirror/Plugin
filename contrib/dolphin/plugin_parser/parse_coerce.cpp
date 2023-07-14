@@ -1051,6 +1051,12 @@ bool can_coerce_type(int nargs, Oid* input_typeids, Oid* target_typeids, Coercio
         if (type_is_enum(targetTypeId) && inputTypeId == INT4OID) {
             continue;
         }
+        /*
+         * if input is json and target type is boolean, accept
+         */
+        if (targetTypeId == BOOLOID && inputTypeId == JSONOID) {
+            continue;
+        }
 #endif
         /*
          * If input or target type is a actual set type, accept if the other is of number or char type value.
@@ -3474,6 +3480,10 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
     if (targetTypeId != ANYENUMOID && type_is_enum(targetTypeId)) {
         targetTypeId = ANYENUMOID;
     }
+
+    if (sourceTypeId == JSONOID && targetTypeId == BOOLOID) {
+        sourceTypeId = TEXTOID;
+    }
 #endif
 
     /* Look in pg_cast */
@@ -3583,7 +3593,11 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
             } else {
                 //do nothing
             }
-        } else if (sourceTypeId == ANYENUMOID && targetTypeId == FLOAT8OID) {
+        } else if (sourceTypeId == ANYENUMOID &&
+                    (targetTypeId == FLOAT8OID ||
+                     targetTypeId == INT4OID ||
+                     targetTypeId == INT8OID ||
+                     targetTypeId == NUMERICOID)) {
             *funcid = findEnumCastFunction(targetTypeId);
             result = COERCION_PATH_FUNC;
         }

@@ -4023,3 +4023,79 @@ BEGIN
     end if;
 END
 $for_og_310$;
+
+-- left operator
+DROP FUNCTION IF EXISTS dolphin_catalog.json_uplus(json);
+DROP OPERATOR IF EXISTS dolphin_catalog.-(json);
+
+-- binary cmp operator
+DROP FUNCTION IF EXISTS dolphin_catalog.json_null_save_eq(json, "any");
+DROP OPERATOR IF EXISTS dolphin_catalog.<=>(json, "any");
+DROP FUNCTION IF EXISTS dolphin_catalog.json_null_save_eq(text, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.<=>(text, json);
+
+DROP FUNCTION IF EXISTS dolphin_catalog.json_eq(json, "any");
+DROP OPERATOR IF EXISTS dolphin_catalog.=(json, "any");
+DROP FUNCTION IF EXISTS dolphin_catalog.json_eq(text, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.=(text, json);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_eq(bit, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.=(bit, json);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_eq(year, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.=(year, json);
+
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ne(json, "any");
+DROP OPERATOR IF EXISTS dolphin_catalog.!=(json, "any");
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ne(text, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.!=(text, json);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ne(bit, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.!=(bit, json);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ne(year, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.!=(year, json);
+
+DROP FUNCTION IF EXISTS dolphin_catalog.json_gt(json, "any");
+DROP OPERATOR IF EXISTS dolphin_catalog.>(json, "any");
+DROP FUNCTION IF EXISTS dolphin_catalog.json_gt(text, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.>(text, json);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_gt(bit, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.>(bit, json);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_gt(year, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.>(year, json);
+
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ge(json, "any");
+DROP OPERATOR IF EXISTS dolphin_catalog.>=(json, "any");
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ge(text, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.>=(text, json);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ge(bit, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.>=(bit, json);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_ge(year, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.>=(year, json);
+
+DROP FUNCTION IF EXISTS dolphin_catalog.json_lt(json, "any");
+DROP OPERATOR IF EXISTS dolphin_catalog.<(json, "any");
+DROP FUNCTION IF EXISTS dolphin_catalog.json_lt(text, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.<(text, json);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_lt(bit, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.<(bit, json);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_lt(year, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.<(year, json);
+
+DROP FUNCTION IF EXISTS dolphin_catalog.json_le(json, "any");
+DROP OPERATOR IF EXISTS dolphin_catalog.<=(json, "any");
+DROP FUNCTION IF EXISTS dolphin_catalog.json_le(text, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.<=(text, json);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_le(bit, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.<=(bit, json);
+DROP FUNCTION IF EXISTS dolphin_catalog.json_le(year, json);
+DROP OPERATOR IF EXISTS dolphin_catalog.<=(year, json);
+
+DROP FUNCTION IF EXISTS pg_catalog.b_mod(json, anyelement);
+DROP FUNCTION IF EXISTS pg_catalog.b_mod(anyelement, json);
+DROP FUNCTION IF EXISTS pg_catalog.b_mod(json, json);
+
+DROP FUNCTION IF EXISTS pg_catalog.div(json, anyelement);
+DROP FUNCTION IF EXISTS pg_catalog.div(anyelement, json);
+DROP FUNCTION IF EXISTS pg_catalog.div(json, json);
+
+DROP FUNCTION IF EXISTS pg_catalog.xor(json, anyelement);
+DROP FUNCTION IF EXISTS pg_catalog.xor(anyelement, json);
+DROP FUNCTION IF EXISTS pg_catalog.xor(json, json);
