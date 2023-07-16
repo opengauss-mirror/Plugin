@@ -30991,9 +30991,6 @@ GenericType:
 					} else if (($1 != NULL) && ((strcmp($1, "real") == 0 || strcmp($1, "double") == 0))) {
 						$$ = makeTypeName("float8");
 					$$->typmods = $2;
-					} else if ($1 != NULL && (strcmp($1, "mediumtext") == 0)) {
-						$$ = SystemTypeName("text");
-					$$->location = @1;
 					} else {
 						$$ = makeTypeName($1);
 						$$->typmods = $2;
