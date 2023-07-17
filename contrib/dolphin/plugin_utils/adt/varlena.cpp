@@ -9960,10 +9960,16 @@ Datum ord_bit(PG_FUNCTION_ARGS)
     PG_RETURN_INT128(result);
 }
 
-static int64 StringToLongNoOverflow(char* str, bool can_ignore)
+static int128 StringToLongNoOverflow(char* str, bool can_ignore)
 {
     char* endptr = NULL;
-    long val = strtol(str, &endptr, 10);
+    int128 val = 0;
+    int base = 10;
+    if ((str != NULL && *str != '\0') && str[0] == '-') {
+        val = strtol(str, &endptr, base);
+    } else {
+        val = strtoul(str, &endptr, base);
+    }
     int level = (can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
     if (*endptr != '\0') {
         ereport(level,
@@ -9973,22 +9979,22 @@ static int64 StringToLongNoOverflow(char* str, bool can_ignore)
     return val;
 }
 
-static text* SubstringIndexReally(text* textStr, text* textStrToSearch, int64 count64)
+static text* SubstringIndexReally(text* textStr, text* textStrToSearch, int128 count128)
 {
     text* result = NULL;
     int position = 0;
 
-    if (TEXTISORANULL(textStr) || TEXTISORANULL(textStrToSearch) || (0 == count64)) {
+    if (TEXTISORANULL(textStr) || TEXTISORANULL(textStrToSearch) || (0 == count128)) {
         result = cstring_to_text("");
         return result;
     }
 
     int count32 = 0;
-    if (count64 > PG_INT32_MAX || count64 <= PG_INT32_MIN) { /* PG_INT32_MIN is a special one during the longlong conversion int, so exclude it */
+    if (count128 > PG_INT32_MAX || count128 <= PG_INT32_MIN) { /* PG_INT32_MIN is a special one during the longlong conversion int, so exclude it */
         result = textStr;
         return result;
     } else {
-        count32 = count64;
+        count32 = count128;
     }
 
     if (count32 > 0) {
@@ -10086,7 +10092,7 @@ Datum substring_index_numeric(PG_FUNCTION_ARGS)
     Oid valtype = 0;
     text* textStr = NULL;
     text* textStrToSearch = NULL;
-    int64 count64 = 0;
+    int128 count128 = 0;
     text* result = NULL;
 
     dt = PG_GETARG_DATUM(0);
@@ -10115,9 +10121,22 @@ Datum substring_index_numeric(PG_FUNCTION_ARGS)
         textStrToSearch = cstring_to_text(OidOutputFunctionCall(typOutput, dt));
     }
 
-    Datum count_dt = PG_GETARG_DATUM(2);
-    count64 = (int64)DirectFunctionCall1(numeric_int8, count_dt);
-    result = SubstringIndexReally(textStr, textStrToSearch, count64);
+    Numeric count = PG_GETARG_NUMERIC(2);
+    count128 = numeric_int16_internal(count);
+    if (count128 > PG_UINT64_MAX) {
+        int level = (fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
+        ereport(level,
+                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                 errmsg("bigint unsigned out of range")));
+        count128 = PG_UINT64_MAX;
+    } else if (count128 < PG_INT64_MIN) {
+        int level = (fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
+        ereport(level,
+                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                 errmsg("bigint out of range")));
+        count128 = PG_INT64_MIN;
+    }
+    result = SubstringIndexReally(textStr, textStrToSearch, count128);
 
     PG_RETURN_TEXT_P(result);
 }
@@ -10133,7 +10152,7 @@ Datum substring_index_text(PG_FUNCTION_ARGS)
     Oid valtype = 0;
     text* textStr = NULL;
     text* textStrToSearch = NULL;
-    int64 count64 = 0;
+    int128 count128 = 0;
     text* result = NULL;
 
     dt = PG_GETARG_DATUM(0);
@@ -10163,8 +10182,21 @@ Datum substring_index_text(PG_FUNCTION_ARGS)
     }
 
     char* count = text_to_cstring(PG_GETARG_TEXT_P(2));
-    count64 = StringToLongNoOverflow(count, fcinfo->can_ignore);
-    result = SubstringIndexReally(textStr, textStrToSearch, count64);
+    count128 = StringToLongNoOverflow(count, fcinfo->can_ignore);
+    if (count128 > PG_UINT64_MAX) {
+        int level = (fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
+        ereport(level,
+                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                 errmsg("bigint unsigned out of range")));
+        count128 = PG_UINT64_MAX;
+    } else if (count128 < PG_INT64_MIN) {
+        int level = (fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
+        ereport(level,
+                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                 errmsg("bigint out of range")));
+        count128 = PG_INT64_MIN;
+    }
+    result = SubstringIndexReally(textStr, textStrToSearch, count128);
 
     PG_RETURN_TEXT_P(result);
 }
