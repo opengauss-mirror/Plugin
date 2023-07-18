@@ -1,3 +1,136 @@
+--rollback binary/varbinary -> text implicit
+DROP OPERATOR IF EXISTS pg_catalog.>=(binary, time) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(binary, numeric) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(binary, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(binary, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(binary, uint4) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(binary, uint8) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.binary_time_ge(binary, time) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_numeric_ge(binary, numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint1_ge(binary, uint1) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint2_ge(binary, uint2) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint4_ge(binary, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint8_ge(binary, uint8) CASCADE;
+
+DROP OPERATOR IF EXISTS pg_catalog.>=(time, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(numeric, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(uint1, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(uint2, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(uint4, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>=(uint8, binary) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.time_binary_ge(time, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.numeric_binary_ge(numeric, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint1_binary_ge(uint1, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint2_binary_ge(uint2, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_binary_ge(uint4, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8_binary_ge(uint8, binary) CASCADE;
+
+DROP OPERATOR IF EXISTS pg_catalog.<=(binary, time) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(binary, numeric) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(binary, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(binary, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(binary, uint4) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(binary, uint8) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.binary_time_le(binary, time) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_numeric_le(binary, numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint1_le(binary, uint1) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint2_le(binary, uint2) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint4_le(binary, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint8_le(binary, uint8) CASCADE;
+
+DROP OPERATOR IF EXISTS pg_catalog.<=(time, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(numeric, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(uint1, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(uint2, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(uint4, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<=(uint8, binary) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.time_binary_le(time, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.numeric_binary_le(numeric, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint1_binary_le(uint1, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint2_binary_le(uint2, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_binary_le(uint4, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8_binary_le(uint8, binary) CASCADE;
+
+DROP OPERATOR IF EXISTS pg_catalog.>(binary, time) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(binary, numeric) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(binary, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(binary, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(binary, uint4) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(binary, uint8) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.binary_time_gt(binary, time) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_numeric_gt(binary, numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint1_gt(binary, uint1) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint2_gt(binary, uint2) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint4_gt(binary, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint8_gt(binary, uint8) CASCADE;
+
+DROP OPERATOR IF EXISTS pg_catalog.>(time, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(numeric, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(uint1, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(uint2, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(uint4, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.>(uint8, binary) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.time_binary_gt(time, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.numeric_binary_gt(numeric, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint1_binary_gt(uint1, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint2_binary_gt(uint2, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_binary_gt(uint4, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8_binary_gt(uint8, binary) CASCADE;
+
+DROP OPERATOR IF EXISTS pg_catalog.<(binary, time) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(binary, numeric) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(binary, uint1) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(binary, uint2) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(binary, uint4) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(binary, uint8) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.binary_time_lt(binary, time) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_numeric_lt(binary, numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint1_lt(binary, uint1) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint2_lt(binary, uint2) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint4_lt(binary, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint8_lt(binary, uint8) CASCADE;
+
+DROP OPERATOR IF EXISTS pg_catalog.<(time, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(numeric, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(uint1, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(uint2, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(uint4, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.<(uint8, binary) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.time_binary_lt(time, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.numeric_binary_lt(numeric, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint1_binary_lt(uint1, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint2_binary_lt(uint2, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_binary_lt(uint4, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8_binary_lt(uint8, binary) CASCADE;
+
+DROP OPERATOR IF EXISTS pg_catalog.!~~(binary, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.!~~*(binary, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.~~(binary, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.~~*(binary, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.!~~(name, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.!~~*(name, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.~~(name, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.~~*(name, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.!~~(char, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.!~~*(char, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.~~(char, binary) CASCADE;
+DROP OPERATOR IF EXISTS pg_catalog.~~*(char, binary) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.bpcharbinarylike(char, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.bpcharbinarynlike(char, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.namebinarylike(name, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.namebinarynlike(name, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binarylike(binary, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binarynlike(binary, binary) CASCADE;
+
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_ui8(varchar) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_ui4(varchar) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_ui2(varchar) CASCADE;

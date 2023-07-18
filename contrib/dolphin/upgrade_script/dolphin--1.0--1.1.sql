@@ -2288,8 +2288,8 @@ CREATE CAST (json AS varchar) WITH FUNCTION pg_catalog.Varlena2Varchar(anyelemen
 CREATE OR REPLACE FUNCTION pg_catalog.Varlena2Text(anyelement) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'Varlena2Text';
 
 DROP CAST IF EXISTS (raw AS text);
-CREATE CAST ("binary" AS text) WITH FUNCTION pg_catalog.Varlena2Text(anyelement) AS ASSIGNMENT;
-CREATE CAST ("varbinary" AS text) WITH FUNCTION pg_catalog.Varlena2Text(anyelement) AS ASSIGNMENT;
+CREATE CAST ("binary" AS text) WITH FUNCTION pg_catalog.Varlena2Text(anyelement) AS IMPLICIT;
+CREATE CAST ("varbinary" AS text) WITH FUNCTION pg_catalog.Varlena2Text(anyelement) AS IMPLICIT;
 CREATE CAST (raw AS text) WITH FUNCTION pg_catalog.Varlena2Text(anyelement) AS IMPLICIT;
 CREATE CAST (blob AS text) WITH FUNCTION pg_catalog.Varlena2Text(anyelement) AS ASSIGNMENT;
 CREATE CAST (tinyblob AS text) WITH FUNCTION pg_catalog.Varlena2Text(anyelement) AS ASSIGNMENT;
@@ -3258,6 +3258,440 @@ CREATE CAST (bool AS float4) WITH FUNCTION pg_catalog.booltofloat4(bool) AS ASSI
 CREATE OR REPLACE FUNCTION pg_catalog.booltofloat8(bool) RETURNS float8 LANGUAGE C STRICT AS  '$libdir/dolphin',  'bool_float8';
 CREATE CAST (bool AS float8) WITH FUNCTION pg_catalog.booltofloat8(bool) AS ASSIGNMENT;
 
+-- binary/varbinary -> text implicit
+DROP FUNCTION IF EXISTS pg_catalog.hex(binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.hex(varbinary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uncompress(binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uncompress(varbinary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uncompressed_length(binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uncompressed_length(varbinary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string(binary, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string(varbinary, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string(binary, text, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string(varbinary, text, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string(binary, text, uint4, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.weight_string(varbinary, text, uint4, uint4) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.hex(binary) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.hex($1::bytea) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.hex(varbinary) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.hex($1::bytea) $$;
+
+CREATE OR REPLACE FUNCTION pg_catalog.uncompress(binary) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.uncompress($1::bytea) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.uncompress(varbinary) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.uncompress($1::bytea) $$;
+
+CREATE OR REPLACE FUNCTION pg_catalog.uncompressed_length(binary) RETURNS uint4 LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.uncompressed_length($1::bytea) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.uncompressed_length(varbinary) RETURNS uint4 LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.uncompressed_length($1::bytea) $$;
+
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(binary, uint4) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.weight_string($1::bytea, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(varbinary, uint4) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.weight_string($1::bytea, $2) $$;
+
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(binary, text, uint4) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.weight_string($1::bytea, $2, $3) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(varbinary, text, uint4) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.weight_string($1::bytea, $2, $3) $$;
+
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(binary, text, uint4, uint4) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.weight_string($1::bytea, $2, $3, $4) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.weight_string(varbinary, text, uint4, uint4) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.weight_string($1::bytea, $2, $3, $4) $$;
+
+DROP FUNCTION IF EXISTS pg_catalog.bpcharbinarylike(char, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.bpcharbinarynlike(char, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.namebinarylike(name, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.namebinarynlike(name, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binarylike(binary, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binarynlike(binary, binary) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.bpcharbinarylike(
+char,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.textbinarylike($1::text, $2) $$;
+
+CREATE OPERATOR pg_catalog.~~(leftarg = char, rightarg = binary, procedure = pg_catalog.bpcharbinarylike);
+CREATE OPERATOR pg_catalog.~~*(leftarg = char, rightarg = binary, procedure = pg_catalog.bpcharbinarylike);
+
+CREATE OR REPLACE FUNCTION pg_catalog.bpcharbinarynlike(
+char,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.textbinarynlike($1::text, $2) $$;
+
+CREATE OPERATOR pg_catalog.!~~(leftarg = char, rightarg = binary, procedure = pg_catalog.bpcharbinarynlike);
+CREATE OPERATOR pg_catalog.!~~*(leftarg = char, rightarg = binary, procedure = pg_catalog.bpcharbinarynlike);
+
+CREATE OR REPLACE FUNCTION pg_catalog.namebinarylike(
+name,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.textbinarylike($1::text, $2) $$;
+
+CREATE OPERATOR pg_catalog.~~(leftarg = name, rightarg = binary, procedure = pg_catalog.namebinarylike);
+CREATE OPERATOR pg_catalog.~~*(leftarg = name, rightarg = binary, procedure = pg_catalog.namebinarylike);
+
+CREATE OR REPLACE FUNCTION pg_catalog.namebinarynlike(
+name,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.textbinarynlike($1::text, $2) $$;
+
+CREATE OPERATOR pg_catalog.!~~(leftarg = name, rightarg = binary, procedure = pg_catalog.namebinarynlike);
+CREATE OPERATOR pg_catalog.!~~*(leftarg = name, rightarg = binary, procedure = pg_catalog.namebinarynlike);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binarylike(
+binary,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.bytealike($1::bytea, $2::bytea) $$;
+
+CREATE OPERATOR pg_catalog.~~(leftarg = binary, rightarg = binary, procedure = pg_catalog.binarylike);
+CREATE OPERATOR pg_catalog.~~*(leftarg = binary, rightarg = binary, procedure = pg_catalog.binarylike);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binarynlike(
+binary,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.byteanlike($1::bytea, $2::bytea) $$;
+
+CREATE OPERATOR pg_catalog.!~~(leftarg = binary, rightarg = binary, procedure = pg_catalog.binarynlike);
+CREATE OPERATOR pg_catalog.!~~*(leftarg = binary, rightarg = binary, procedure = pg_catalog.binarynlike);
+
+-- lt
+DROP FUNCTION IF EXISTS pg_catalog.time_binary_lt(time, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.numeric_binary_lt(numeric, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint1_binary_lt(uint1, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint2_binary_lt(uint2, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_binary_lt(uint4, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8_binary_lt(uint8, binary) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.time_binary_lt(
+time,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8lt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<(leftarg = time, rightarg = binary, procedure = pg_catalog.time_binary_lt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_binary_lt(
+numeric,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8lt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<(leftarg = numeric, rightarg = binary, procedure = pg_catalog.numeric_binary_lt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint1_binary_lt(
+uint1,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8lt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<(leftarg = uint1, rightarg = binary, procedure = pg_catalog.uint1_binary_lt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint2_binary_lt(
+uint2,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8lt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<(leftarg = uint2, rightarg = binary, procedure = pg_catalog.uint2_binary_lt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint4_binary_lt(
+uint4,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8lt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<(leftarg = uint4, rightarg = binary, procedure = pg_catalog.uint4_binary_lt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_binary_lt(
+uint8,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8lt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<(leftarg = uint8, rightarg = binary, procedure = pg_catalog.uint8_binary_lt);
+
+DROP FUNCTION IF EXISTS pg_catalog.binary_time_lt(binary, time) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_numeric_lt(binary, numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint1_lt(binary, uint1) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint2_lt(binary, uint2) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint4_lt(binary, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint8_lt(binary, uint8) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_time_lt(
+binary,
+time
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8lt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<(leftarg = binary, rightarg = time, procedure = pg_catalog.binary_time_lt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_numeric_lt(
+binary,
+numeric
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8lt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<(leftarg = binary, rightarg = numeric, procedure = pg_catalog.binary_numeric_lt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint1_lt(
+binary,
+uint1
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8lt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<(leftarg = binary, rightarg = uint1, procedure = pg_catalog.binary_uint1_lt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint2_lt(
+binary,
+uint2
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8lt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<(leftarg = binary, rightarg = uint2, procedure = pg_catalog.binary_uint2_lt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint4_lt(
+binary,
+uint4
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8lt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<(leftarg = binary, rightarg = uint4, procedure = pg_catalog.binary_uint4_lt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint8_lt(
+binary,
+uint8
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8lt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<(leftarg = binary, rightarg = uint8, procedure = pg_catalog.binary_uint8_lt);
+
+-- gt
+DROP FUNCTION IF EXISTS pg_catalog.time_binary_gt(time, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.numeric_binary_gt(numeric, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint1_binary_gt(uint1, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint2_binary_gt(uint2, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_binary_gt(uint4, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8_binary_gt(uint8, binary) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.time_binary_gt(
+time,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8gt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>(leftarg = time, rightarg = binary, procedure = pg_catalog.time_binary_gt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_binary_gt(
+numeric,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8gt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>(leftarg = numeric, rightarg = binary, procedure = pg_catalog.numeric_binary_gt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint1_binary_gt(
+uint1,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8gt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>(leftarg = uint1, rightarg = binary, procedure = pg_catalog.uint1_binary_gt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint2_binary_gt(
+uint2,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8gt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>(leftarg = uint2, rightarg = binary, procedure = pg_catalog.uint2_binary_gt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint4_binary_gt(
+uint4,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8gt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>(leftarg = uint4, rightarg = binary, procedure = pg_catalog.uint4_binary_gt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_binary_gt(
+uint8,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8gt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>(leftarg = uint8, rightarg = binary, procedure = pg_catalog.uint8_binary_gt);
+
+DROP FUNCTION IF EXISTS pg_catalog.binary_time_gt(binary, time) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_numeric_gt(binary, numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint1_gt(binary, uint1) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint2_gt(binary, uint2) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint4_gt(binary, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint8_gt(binary, uint8) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_time_gt(
+binary,
+time
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8gt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>(leftarg = binary, rightarg = time, procedure = pg_catalog.binary_time_gt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_numeric_gt(
+binary,
+numeric
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8gt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>(leftarg = binary, rightarg = numeric, procedure = pg_catalog.binary_numeric_gt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint1_gt(
+binary,
+uint1
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8gt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>(leftarg = binary, rightarg = uint1, procedure = pg_catalog.binary_uint1_gt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint2_gt(
+binary,
+uint2
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8gt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>(leftarg = binary, rightarg = uint2, procedure = pg_catalog.binary_uint2_gt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint4_gt(
+binary,
+uint4
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8gt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>(leftarg = binary, rightarg = uint4, procedure = pg_catalog.binary_uint4_gt);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint8_gt(
+binary,
+uint8
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8gt($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>(leftarg = binary, rightarg = uint8, procedure = pg_catalog.binary_uint8_gt);
+
+-- le
+DROP FUNCTION IF EXISTS pg_catalog.time_binary_le(time, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.numeric_binary_le(numeric, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint1_binary_le(uint1, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint2_binary_le(uint2, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_binary_le(uint4, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8_binary_le(uint8, binary) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.time_binary_le(
+time,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8le($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<=(leftarg = time, rightarg = binary, procedure = pg_catalog.time_binary_le);
+
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_binary_le(
+numeric,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8le($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<=(leftarg = numeric, rightarg = binary, procedure = pg_catalog.numeric_binary_le);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint1_binary_le(
+uint1,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8le($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<=(leftarg = uint1, rightarg = binary, procedure = pg_catalog.uint1_binary_le);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint2_binary_le(
+uint2,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8le($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<=(leftarg = uint2, rightarg = binary, procedure = pg_catalog.uint2_binary_le);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint4_binary_le(
+uint4,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8le($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<=(leftarg = uint4, rightarg = binary, procedure = pg_catalog.uint4_binary_le);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_binary_le(
+uint8,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8le($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<=(leftarg = uint8, rightarg = binary, procedure = pg_catalog.uint8_binary_le);
+
+DROP FUNCTION IF EXISTS pg_catalog.binary_time_le(binary, time) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_numeric_le(binary, numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint1_le(binary, uint1) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint2_le(binary, uint2) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint4_le(binary, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint8_le(binary, uint8) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_time_le(
+binary,
+time
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8le($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<=(leftarg = binary, rightarg = time, procedure = pg_catalog.binary_time_le);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_numeric_le(
+binary,
+numeric
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8le($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<=(leftarg = binary, rightarg = numeric, procedure = pg_catalog.binary_numeric_le);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint1_le(
+binary,
+uint1
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8le($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<=(leftarg = binary, rightarg = uint1, procedure = pg_catalog.binary_uint1_le);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint2_le(
+binary,
+uint2
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8le($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<=(leftarg = binary, rightarg = uint2, procedure = pg_catalog.binary_uint2_le);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint4_le(
+binary,
+uint4
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8le($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<=(leftarg = binary, rightarg = uint4, procedure = pg_catalog.binary_uint4_le);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint8_le(
+binary,
+uint8
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8le($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.<=(leftarg = binary, rightarg = uint8, procedure = pg_catalog.binary_uint8_le);
+
+-- ge
+DROP FUNCTION IF EXISTS pg_catalog.time_binary_ge(time, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.numeric_binary_ge(numeric, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint1_binary_ge(uint1, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint2_binary_ge(uint2, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_binary_ge(uint4, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8_binary_ge(uint8, binary) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.time_binary_ge(
+time,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8ge($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>=(leftarg = time, rightarg = binary, procedure = pg_catalog.time_binary_ge);
+
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_binary_ge(
+numeric,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8ge($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>=(leftarg = numeric, rightarg = binary, procedure = pg_catalog.numeric_binary_ge);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint1_binary_ge(
+uint1,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8ge($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>=(leftarg = uint1, rightarg = binary, procedure = pg_catalog.uint1_binary_ge);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint2_binary_ge(
+uint2,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8ge($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>=(leftarg = uint2, rightarg = binary, procedure = pg_catalog.uint2_binary_ge);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint4_binary_ge(
+uint4,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8ge($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>=(leftarg = uint4, rightarg = binary, procedure = pg_catalog.uint4_binary_ge);
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_binary_ge(
+uint8,
+binary
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8ge($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>=(leftarg = uint8, rightarg = binary, procedure = pg_catalog.uint8_binary_ge);
+
+DROP FUNCTION IF EXISTS pg_catalog.binary_time_ge(binary, time) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_numeric_ge(binary, numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint1_ge(binary, uint1) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint2_ge(binary, uint2) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint4_ge(binary, uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary_uint8_ge(binary, uint8) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_time_ge(
+binary,
+time
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8ge($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>=(leftarg = binary, rightarg = time, procedure = pg_catalog.binary_time_ge);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_numeric_ge(
+binary,
+numeric
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8ge($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>=(leftarg = binary, rightarg = numeric, procedure = pg_catalog.binary_numeric_ge);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint1_ge(
+binary,
+uint1
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8ge($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>=(leftarg = binary, rightarg = uint1, procedure = pg_catalog.binary_uint1_ge);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint2_ge(
+binary,
+uint2
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8ge($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>=(leftarg = binary, rightarg = uint2, procedure = pg_catalog.binary_uint2_ge);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint4_ge(
+binary,
+uint4
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8ge($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>=(leftarg = binary, rightarg = uint4, procedure = pg_catalog.binary_uint4_ge);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_uint8_ge(
+binary,
+uint8
+) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.float8ge($1::float8, $2::float8) $$;
+CREATE OPERATOR pg_catalog.>=(leftarg = binary, rightarg = uint8, procedure = pg_catalog.binary_uint8_ge);
 -- uint explicit cast
 -- time
 DROP FUNCTION IF EXISTS pg_catalog.time_cast_ui1(time) CASCADE;

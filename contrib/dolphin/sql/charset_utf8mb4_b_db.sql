@@ -527,7 +527,7 @@ set @var_num = 5.0;
 SELECT CONCAT(futf8_bin, @var_num) result, collation for(result) FROM t_diff_charset_columns; -- futf8_bin
 SELECT CONCAT(@var_num, fgbk_bin) result, collation for(result) FROM t_diff_charset_columns; -- fgbk_bin
 -- -- -- varbinary var
-set @var_binary = _binary'高斯DB'; -- not support yet
+set @var_binary = _binary'高斯DB';
 SELECT CONCAT(futf8_bin, @var_binary) result, collation for(result) FROM t_diff_charset_columns;
 SELECT CONCAT(@var_binary, fgbk_bin) result, collation for(result) FROM t_diff_charset_columns;
 

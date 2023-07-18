@@ -823,6 +823,53 @@ SELECT 'ab'::varbinary(2) <> 'ab'::binary;
  f
 (1 row)
 
+set dolphin.b_compatibility_mode to on;
+create table binary_operator(c1 binary(10), c2 numeric(10, 2), c3 time(6), c4 uint1, c5 uint2, c6 uint4, c7 uint8);
+insert into binary_operator values('34', '234.5', '234.5', 234, 234, 234, 234), ('1234', '234.5', '234.5', 234, 234, 234, 234);
+select c1 < c2, c1 > c2, c1 <= c2, c1 >= c2 from binary_operator;
+ ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------
+ t        | f        | t        | f
+ f        | t        | f        | t
+(2 rows)
+
+select c1 < c3, c1 > c3, c1 <= c3, c1 >= c3 from binary_operator;
+ ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------
+ t        | f        | t        | f
+ f        | t        | f        | t
+(2 rows)
+
+select c1 < c4, c1 > c4, c1 <= c4, c1 >= c4 from binary_operator;
+ ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------
+ t        | f        | t        | f
+ f        | t        | f        | t
+(2 rows)
+
+select c1 < c5, c1 > c5, c1 <= c5, c1 >= c5 from binary_operator;
+ ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------
+ t        | f        | t        | f
+ f        | t        | f        | t
+(2 rows)
+
+select c1 < c6, c1 > c6, c1 <= c6, c1 >= c6 from binary_operator;
+ ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------
+ t        | f        | t        | f
+ f        | t        | f        | t
+(2 rows)
+
+select c1 < c7, c1 > c7, c1 <= c7, c1 >= c7 from binary_operator;
+ ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------
+ t        | f        | t        | f
+ f        | t        | f        | t
+(2 rows)
+
+drop table if exists binary_operator;
+reset dolphin.b_compatibility_mode;
 drop schema test_binary cascade;
 NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to table test_bytea
