@@ -53,8 +53,38 @@ DROP FUNCTION IF EXISTS pg_catalog.oct(text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.oct(boolean) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.oct(bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.oct(numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.oct(date) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.oct(timestamp without time zone) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.oct(timestamptz) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.oct(time) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.oct(text) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'oct_str';
 CREATE OR REPLACE FUNCTION pg_catalog.oct(numeric) RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'oct_num';
+
+CREATE OR REPLACE FUNCTION pg_catalog.oct(date) RETURNS text AS $$ SELECT pg_catalog.oct($1::text) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.oct(timestamp without time zone) RETURNS text AS $$ SELECT pg_catalog.oct($1::text) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.oct(timestamptz) RETURNS text AS $$ SELECT pg_catalog.oct($1::text) $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.oct(time) RETURNS text AS $$ SELECT pg_catalog.oct($1::text) $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.conv(date, int4, int4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.conv(timestamp without time zone, int4, int4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.conv(timestamptz, int4, int4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.conv(time, int4, int4) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.conv (
+date, int4, int4
+) RETURNS text AS $$ SELECT pg_catalog.conv($1::text, $2, $3) $$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION pg_catalog.conv (
+timestamp without time zone, int4, int4
+) RETURNS text AS $$ SELECT pg_catalog.conv($1::text, $2, $3) $$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION pg_catalog.conv (
+timestamptz, int4, int4
+) RETURNS text AS $$ SELECT pg_catalog.conv($1::text, $2, $3) $$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION pg_catalog.conv (
+time, int4, int4
+) RETURNS text AS $$ SELECT pg_catalog.conv($1::text, $2, $3) $$ LANGUAGE SQL;
 
 DROP FUNCTION IF EXISTS pg_catalog.to_base64 (bytea) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.to_base64 (numeric) CASCADE;

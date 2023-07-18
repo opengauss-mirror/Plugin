@@ -27,6 +27,19 @@ SELECT OCT('-18446744073709551617');
 SELECT OCT(True);
 SELECT OCT(False);
 
+-- 测试输入日期类型
+set datestyle = 'ISO, MDY';
+SELECT OCT('2023-12-31'::date);
+SELECT OCT('2023-12-31'::datetime);
+SELECT OCT('2023-12-31'::timestamp);
+SELECT OCT('12:34:56'::time);
+
+SELECT CONV('2023-12-31'::date, 10, 8);
+SELECT CONV('2023-12-31'::datetime, 10, 8);
+SELECT CONV('2023-12-31'::timestamp, 10, 8);
+SELECT CONV('12:34:56'::time, 10, 8);
+reset datestyle;
+
 -- 测试处理表格
 drop table if exists test_oct;
 create table test_oct (name text);
