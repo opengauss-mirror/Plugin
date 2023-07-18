@@ -20787,7 +20787,7 @@ static int str_to_int64(char *str, int len, int128 *result, int *from_base_s)
         return -1;
     }
 
-    for (i = 0; i < len; i++) {
+    for (i = (str[i] == '+' || str[i] == '-') ? 1 : 0; i < len; i++) {
         if ((str[i] >= '0') && (str[i] <= '9')) {
             num = str[i] - '0';
         } else if ((str[i] >= 'a') && (str[i] <= 'z')) {
@@ -20795,9 +20795,7 @@ static int str_to_int64(char *str, int len, int128 *result, int *from_base_s)
         } else if ((str[i] >= 'A') && (str[i] <= 'Z')) {
             num = str[i] - 'A' + 10;
         } else {
-            if (i != 0) {
-                break;  /*illegal character*/
-            }
+            break;  /*illegal character*/
         }
         if ((num > 9) && (from_base <= num)) {
             break;   /*param error*/
@@ -20889,7 +20887,12 @@ int128 conv_numeric_int128(Numeric num)
 
     /* Convert to variable format and thence to int8 */
     init_var_from_num(num, &x);
-    floor_var(&x, &x);
+    int sign = (int)DirectFunctionCall1(numeric_int4, DirectFunctionCall1(numeric_sign, NumericGetDatum(num)));
+    if (sign == 1) {
+        floor_var(&x, &x);
+    } else {
+        ceil_var(&x, &x);
+    }
     /* if int128 out of range , returns int128_max */
     if (!numericvar_to_int128(&x, &result))
         result = PG_INT128_MAX;
