@@ -116,35 +116,25 @@ WHERE
 GROUP BY member_code, org_code) a
 LEFT JOIN base_info_pbu_org b ON a.org_code = b.org_code  order by org_code;
 select proc1();
- proc1 
--------
- (1)
- (2)
- (3)
-(3 rows)
-
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function proc1() line 2 at SQL statement
+referenced column: proc1
 select proc2();
- proc2 
--------
- (4)
- (5)
- (6)
-(3 rows)
-
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function proc2() line 2 at SQL statement
+referenced column: proc2
 select proc3();
- proc3 
--------
- (4)
- (5)
- (6)
-(3 rows)
-
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function proc3() line 2 at SQL statement
+referenced column: proc3
 select proc4();
- proc4 
--------
- (4)
-(1 row)
-
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function proc4() line 2 at SQL statement
+referenced column: proc4
 select proc5();
 ERROR:  function proc5() does not exist
 LINE 1: select proc5();
@@ -152,83 +142,146 @@ LINE 1: select proc5();
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: proc5
 select proc5(1);
- proc5 
--------
- (4,1)
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function proc5(integer) line 2 at SQL statement
+referenced column: proc5
+select proc6();
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function proc6() line 2 at SQL statement
+referenced column: proc6
+select proc7();
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function proc7() line 2 at SQL statement
+referenced column: proc7
+select proc8();
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function proc8() line 2 at SQL statement
+referenced column: proc8
+select proc9();
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function proc9() line 2 at SQL statement
+referenced column: proc9
+select proc10();
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function proc10() line 3 at SQL statement
+referenced column: proc10
+select proc11();
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function proc11() line 3 at SQL statement
+referenced column: proc11
+set dolphin.sql_mode = 'block_return_multi_results'; 
+call proc1();
+ a 
+---
+ 1
+ 2
+ 3
+(3 rows)
+
+call proc2();
+ a 
+---
+ 4
+ 5
+ 6
+(3 rows)
+
+call proc3();
+ a 
+---
+ 4
+ 5
+ 6
+(3 rows)
+
+call proc4();
+ a 
+---
+ 4
 (1 row)
 
-select proc6();
- proc6 
--------
- (4)
- (4)
- (4)
- (5)
- (5)
- (5)
- (6)
- (6)
- (6)
+call proc5();
+ERROR:  function "proc5" with 0 parameters doesn't exist 
+call proc5(1);
+ a | x 
+---+---
+ 4 | 1
+(1 row)
+
+call proc6();
+ a 
+---
+ 4
+ 4
+ 4
+ 5
+ 5
+ 5
+ 6
+ 6
+ 6
 (9 rows)
 
-select proc7();
- proc7 
--------
- (4)
+call proc7();
+ a 
+---
+ 4
 (1 row)
 
-select proc8();
- proc8 
--------
- (4)
+call proc8();
+ a 
+---
+ 4
 (1 row)
 
-select proc9();
- proc9 
--------
- (4)
+call proc9();
+ a 
+---
+ 4
 (1 row)
 
-select proc10();
-                      proc10                       
----------------------------------------------------
- (06-30-2022,00395,ABETF,2022-06,19332245263.44,,)
- (06-30-2022,00395,01,2022-06,19332245263.44,,)
- (06-30-2022,00395,AETF,2022-06,19332245263.44,,)
- (06-30-2022,00129,AETF,2022-06,23636305947.68,,)
- (06-30-2022,00129,01,2022-06,23636305947.68,,)
- (06-30-2022,00129,ABETF,2022-06,23636305947.68,,)
- (06-30-2022,00015,01,2022-06,23862755529.64,,)
- (06-30-2022,00015,AETF,2022-06,23862755529.64,,)
- (06-30-2022,00015,ABETF,2022-06,23862755529.64,,)
- (06-30-2022,00558,ABETF,2022-06,24208138747.60,,)
- (06-30-2022,00558,AETF,2022-06,24208138747.60,,)
- (06-30-2022,00558,01,2022-06,24208138747.60,,)
- (06-30-2022,00701,AETF,2022-06,26630727808.08,,)
- (06-30-2022,00701,01,2022-06,26630727808.08,,)
- (06-30-2022,00701,ABETF,2022-06,26630727808.08,,)
- (06-30-2022,00030,AETF,2022-06,33694248540.86,,)
- (06-30-2022,00030,ABETF,2022-06,33694248540.86,,)
- (06-30-2022,00030,01,2022-06,33694248540.86,,)
+call proc10();
+  biz_date  | member_code | breed_scope | collect_des |   trade_amt    | last_trade_amt | yoy 
+------------+-------------+-------------+-------------+----------------+----------------+-----
+ 06-30-2022 | 00395       | ABETF       | 2022-06     | 19332245263.44 |                |    
+ 06-30-2022 | 00395       | 01          | 2022-06     | 19332245263.44 |                |    
+ 06-30-2022 | 00395       | AETF        | 2022-06     | 19332245263.44 |                |    
+ 06-30-2022 | 00129       | AETF        | 2022-06     | 23636305947.68 |                |    
+ 06-30-2022 | 00129       | 01          | 2022-06     | 23636305947.68 |                |    
+ 06-30-2022 | 00129       | ABETF       | 2022-06     | 23636305947.68 |                |    
+ 06-30-2022 | 00015       | 01          | 2022-06     | 23862755529.64 |                |    
+ 06-30-2022 | 00015       | AETF        | 2022-06     | 23862755529.64 |                |    
+ 06-30-2022 | 00015       | ABETF       | 2022-06     | 23862755529.64 |                |    
+ 06-30-2022 | 00558       | ABETF       | 2022-06     | 24208138747.60 |                |    
+ 06-30-2022 | 00558       | AETF        | 2022-06     | 24208138747.60 |                |    
+ 06-30-2022 | 00558       | 01          | 2022-06     | 24208138747.60 |                |    
+ 06-30-2022 | 00701       | AETF        | 2022-06     | 26630727808.08 |                |    
+ 06-30-2022 | 00701       | 01          | 2022-06     | 26630727808.08 |                |    
+ 06-30-2022 | 00701       | ABETF       | 2022-06     | 26630727808.08 |                |    
+ 06-30-2022 | 00030       | AETF        | 2022-06     | 33694248540.86 |                |    
+ 06-30-2022 | 00030       | ABETF       | 2022-06     | 33694248540.86 |                |    
+ 06-30-2022 | 00030       | 01          | 2022-06     | 33694248540.86 |                |    
 (18 rows)
 
-select proc11();
-                    proc11                    
-----------------------------------------------
- (00683,"CH1BJST 004",,04,WEEK,1,1,0.00,0.00)
- (00683,"CH1BJST 004",,05,WEEK,1,1,0.00,0.00)
- (00683,"CH1BJST 004",,07,WEEK,1,1,0.00,0.00)
- (00683,"CH1BJST 004",,AL,WEEK,1,1,0.00,0.00)
+call proc11();
+ member_code |  org_code   | org_name | breed_scope | ?column? | mbr_org_pbunum | allmbr_org_pbunum | mbr_org_amt | allmbr_org_amt 
+-------------+-------------+----------+-------------+----------+----------------+-------------------+-------------+----------------
+ 00683       | CH1BJST 004 |          | 04          | WEEK     |              1 |                 1 |        0.00 |           0.00
+ 00683       | CH1BJST 004 |          | 05          | WEEK     |              1 |                 1 |        0.00 |           0.00
+ 00683       | CH1BJST 004 |          | 07          | WEEK     |              1 |                 1 |        0.00 |           0.00
+ 00683       | CH1BJST 004 |          | AL          | WEEK     |              1 |                 1 |        0.00 |           0.00
 (4 rows)
 
+set dolphin.sql_mode = default;
 --error now check function 
 create procedure proc33 () select z from tz;
-ERROR:  relation "tz" does not exist on datanode1
-LINE 2:  select z from tz;
-                       ^
-QUERY:  
- select z from tz;
-
 -- test delimiter use in create procedure situation
 -- report gram error in server ,not subprogram end error, success in plugin 
 create table test_table (dot_no int);
@@ -248,12 +301,9 @@ begin
 end;
 //
 delimiter ;
+set dolphin.sql_mode = 'block_return_multi_results'; 
 call test91();
- test91 
---------
- 
-(1 row)
-
+set dolphin.sql_mode = default;
 delimiter //
 create procedure test92()
 begin
@@ -268,12 +318,9 @@ begin
 end;
 //
 delimiter ;
+set dolphin.sql_mode = 'block_return_multi_results'; 
 call test92();
- test92 
---------
- 
-(1 row)
-
+set dolphin.sql_mode = default;
 -- test deterministic error
 create function fun2(age1 int)return int DETERMINISTIC 
 NOT SHIPPABLE NOT FENCED EXTERNAL SECURITY INVOKER  
@@ -284,12 +331,15 @@ begin
 return a1;
 end;
 /
+set dolphin.sql_mode = 'block_return_multi_results'; 
 select fun2(1);
  fun2 
 ------
      
 (1 row)
 
+call fun2(1);
+ERROR:  Only support procedure in muiti result call statement
 -- test create procedure select error 
 create table t1_t (a int);
 insert into t1_t values (1),(2);
@@ -298,21 +348,32 @@ create procedure pro_test_t() select a from t1_t;
 -- server should has gram error, plugin pass;
 create procedure pro_test_t2() select a as b from t1_t;
 select  pro_test_t();
- pro_test_t 
-------------
- (1)
- (2)
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function pro_test_t() line 2 at SQL statement
+referenced column: pro_test_t
+call pro_test_t;
+ a 
+---
+ 1
+ 2
 (2 rows)
 
 select  pro_test_t2();
- pro_test_t2 
--------------
- (1)
- (2)
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a SELECT, use PERFORM instead.
+CONTEXT:  PL/pgSQL function pro_test_t2() line 2 at SQL statement
+referenced column: pro_test_t2
+call pro_test_t2;
+ b 
+---
+ 1
+ 2
 (2 rows)
 
+set dolphin.sql_mode = default;
 drop schema db_func_call_2 cascade;
-NOTICE:  drop cascades to 23 other objects
+NOTICE:  drop cascades to 24 other objects
 DETAIL:  drop cascades to table t1
 drop cascades to table t2
 drop cascades to function proc1()
@@ -329,6 +390,7 @@ drop cascades to function proc10()
 drop cascades to table base_info_pbu_trade
 drop cascades to table base_info_pbu_org
 drop cascades to function proc11()
+drop cascades to function proc33()
 drop cascades to table test_table
 drop cascades to function test91()
 drop cascades to function test92()
