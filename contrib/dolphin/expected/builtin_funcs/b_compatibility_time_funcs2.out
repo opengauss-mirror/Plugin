@@ -412,6 +412,11 @@ CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values(' TIME_FORMAT(date''10000-1-1'', date''9999-12-31'')', TIME_FORMAT(date'10000-1-1', date'9999-12-31'));
 ERROR:  date field value out of range
 CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values(' TIME_FORMAT(datetime''294277-1-9 4:00:54.775806'', ''%T|%r|%h|%h'')', TIME_FORMAT(datetime'294277-1-9 4:00:54.775806', '%T|%r|%h|%h'));
+ERROR:  date/time field value out of range: "294277-01-09 04:00:54.775806"
+CONTEXT:  referenced column: time_format
+SQL function "time_format" statement 1
+referenced column: result
 -- TIMESTAMP(expr)
 -- 特异参数
 insert into func_test2(functionName, result) values('TIMESTAMP(null)', TIMESTAMP(null)); 
@@ -665,6 +670,7 @@ CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(HOUR,-10000000000000000000000000000,''2022-04-05'')', TIMESTAMPADD(HOUR,-10000000000000000000000000000,'2022-04-05'));
 ERROR:  interval out of range
 CONTEXT:  referenced column: result
+insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,timestamptz''2000-1-1 1:1:1+05'',''2022-07-01'')', TIMESTAMPADD(DAY,timestamptz'2000-1-1 1:1:1+05','2022-07-01'));
 -- 布尔类型参数
 insert into func_test2(functionName, result) values('TIMESTAMPADD(HOUR,true,''2022-04-05'')', TIMESTAMPADD(HOUR,true,'2022-04-05'));
 -- 比特类型参数
@@ -1010,6 +1016,7 @@ select * from func_test2;
  TIMESTAMPADD(HOUR,1,'2022-07-27 -12:30:00')                                                 | 2022-07-27 13:30:00
  TIMESTAMPADD(MINUTE,-1,'2022-07-27 08:-59:00')                                              | 2022-07-27 08:58:00
  TIMESTAMPADD(SECOND,-1,'2022-07-27 08:30:-01')                                              | 2022-07-27 08:30:00
+ TIMESTAMPADD(DAY,timestamptz'2000-1-1 1:1:1+05','2022-07-01')                               | 2027-12-22
  TIMESTAMPADD(HOUR,true,'2022-04-05')                                                        | 2022-04-05 01:00:00
  TIMESTAMPADD(HOUR,B'11','2022-04-05')                                                       | 2022-04-05 03:00:00
  TIMESTAMPADD(HOUR,1,date'2022-04-05')                                                       | 2022-04-05 01:00:00

@@ -240,6 +240,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(timestamp_add_numeric);
 extern "C" DLL_PUBLIC Datum timestamp_add_numeric(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(timestamp_add_text);
 extern "C" DLL_PUBLIC Datum timestamp_add_text(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_add_timestamptz);
+extern "C" DLL_PUBLIC Datum timestamp_add_timestamptz(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(to_seconds);
 extern "C" DLL_PUBLIC Datum to_seconds(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(unix_timestamp_no_args);
@@ -7621,13 +7623,10 @@ Datum timestamp_add_numeric(PG_FUNCTION_ARGS) {
  * This function receives 'interval' parameter of string type.
  * @return: a date or a datetime value (text type).
  */
-Datum timestamp_add_text(PG_FUNCTION_ARGS)
+Datum timestamp_add_string(text* units, text* num_txt, Oid expr_type, Datum expr)
 {
-    text* units = PG_GETARG_TEXT_PP(0);
-    text *num_txt = PG_GETARG_TEXT_PP(1);
     char* lowunits = NULL;
     lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
-    Oid expr_type = get_fn_expr_argtype(fcinfo->flinfo, 2);
 
     Interval sp, *span = &sp;
     span->time = span->day = span->month = 0;
@@ -7658,7 +7657,26 @@ Datum timestamp_add_text(PG_FUNCTION_ARGS)
         num = DatumGetNumeric(DirectFunctionCall1(int8_numeric, Int64GetDatum(ret)));
     }
 
-    return timestamp_add_internal(lowunits, unit, unit_type, num, PG_GETARG_DATUM(2), expr_type);
+    return timestamp_add_internal(lowunits, unit, unit_type, num, expr, expr_type);
+}
+
+Datum timestamp_add_text(PG_FUNCTION_ARGS)
+{
+    text* units = PG_GETARG_TEXT_PP(0);
+    text* num_txt = PG_GETARG_TEXT_PP(1);
+    Oid expr_type = get_fn_expr_argtype(fcinfo->flinfo, 2);
+    Datum expr = PG_GETARG_DATUM(2);
+
+    return timestamp_add_string(units, num_txt, expr_type, expr);
+}
+
+Datum timestamp_add_timestamptz(PG_FUNCTION_ARGS)
+{
+    text* units = PG_GETARG_TEXT_PP(0);
+    text* num_txt = (text*)DirectFunctionCall1(textin, DirectFunctionCall1(timestamptz_out, PG_GETARG_TIMESTAMPTZ(1)));
+    Oid expr_type = get_fn_expr_argtype(fcinfo->flinfo, 2);
+    Datum expr = PG_GETARG_DATUM(2);
+    return timestamp_add_string(units, num_txt, expr_type, expr);
 }
 
 /*

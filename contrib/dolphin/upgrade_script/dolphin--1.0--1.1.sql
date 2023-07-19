@@ -618,7 +618,7 @@ CREATE CAST(anyset as timestamptz) WITH FUNCTION set_timestamp(anyset) AS ASSIGN
 CREATE OR REPLACE FUNCTION pg_catalog.set_time (anyset) RETURNS time LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as text) as time)';
 CREATE CAST(anyset as time) WITH FUNCTION set_time(anyset) AS ASSIGNMENT;
 
-CREATE OR REPLACE FUNCTION pg_catalog.set_year (anyset) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as text) as year)';
+CREATE OR REPLACE FUNCTION pg_catalog.set_year (anyset) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
 CREATE CAST(anyset as year) WITH FUNCTION set_year(anyset) AS ASSIGNMENT;
 
 CREATE OR REPLACE FUNCTION pg_catalog.set (date, int4) RETURNS anyset LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'datetoset';
@@ -840,7 +840,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.enum_timestamptz(anyenum) RETURNS timestam
 
 CREATE OR REPLACE FUNCTION pg_catalog.enum_time(anyenum) RETURNS time LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as text) as time)';
 
-CREATE OR REPLACE FUNCTION pg_catalog.enum_year(anyenum) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as text) as year)';
+CREATE OR REPLACE FUNCTION pg_catalog.enum_year(anyenum) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
 
 CREATE OR REPLACE FUNCTION pg_catalog.enum_set(anyenum, int4) RETURNS anyset LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'enumtoset';
 
@@ -3855,3 +3855,32 @@ DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_ui8(varchar) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_ui8 (
 anyelement
 ) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varlena_cast_ui8';
+DROP FUNCTION IF EXISTS pg_catalog.time_format(timestamp without time zone, text) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.time_format (timestamp without time zone, text) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.time_format($1::text, $2) $$;
+
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_add (text, timestamptz, "any") CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_add (text, timestamptz, "any") RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_add_timestamptz';
+
+create function pg_catalog.timestamp_pl_int4(
+    timestamptz,
+    int4
+) RETURNS timestamptz LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.timestamptz_pl_interval($1, $2::interval) $$;
+create operator pg_catalog.+(leftarg = timestamptz, rightarg = int4, procedure = pg_catalog.timestamp_pl_int4);
+
+create function pg_catalog.timestamp_mi_int4(
+    timestamptz,
+    int4
+) RETURNS timestamptz LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.timestamptz_mi_interval($1, $2::interval) $$;
+create operator pg_catalog.-(leftarg = timestamptz, rightarg = int4, procedure = pg_catalog.timestamp_mi_int4);
+
+create function pg_catalog.datetime_pl_int4(
+    timestamp without time zone,
+    int4
+) RETURNS float8 LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.datetime_pl_float($1, $2::float8) $$;
+create operator pg_catalog.+(leftarg = timestamp without time zone, rightarg = int4, procedure = pg_catalog.datetime_pl_int4);
+
+create function pg_catalog.datetime_mi_int4(
+    timestamp without time zone,
+    int4
+) RETURNS float8 LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.datetime_mi_float($1, $2::float8) $$;
+create operator pg_catalog.-(leftarg = timestamp without time zone, rightarg = int4, procedure = pg_catalog.datetime_mi_int4);
