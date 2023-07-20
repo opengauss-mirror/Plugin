@@ -131,7 +131,9 @@ clean: extra_clean
 
 dolphin--1.0.sql: sql_script/* sql_script_post/*
 	cat $^ > $@
-DATA_built = dolphin--1.0.sql openGauss_expr_dolphin.ir
+dolphin--1.1.sql: dolphin--1.0.sql upgrade_script/dolphin--1.0--1.1.sql
+	cat $^ > $@
+DATA_built = dolphin--1.0.sql dolphin--1.1.sql upgrade_script/dolphin--1.0--1.1.sql rollback_script/dolphin--1.1--1.0.sql openGauss_expr_dolphin.ir
 
 OBJS += plugin_postgres.o 
 plugin_postgres.o: plugin_postgres.cpp
