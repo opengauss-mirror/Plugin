@@ -71,21 +71,21 @@ select count(*) from table_NAME_test_DB.pg_cATAloG.pg_class where relname='pg_cl
 (1 row)
 
 select PG_cataLOG.TIMESTAMPTZ_out('2022-12-31 23:11:11');
-       timestamptz_out        
-------------------------------
- Sat Dec 31 23:11:11 2022 PST
+    timestamptz_out     
+------------------------
+ 2022-12-31 23:11:11-08
 (1 row)
 
 select table_NAME_TEST_DB.PG_CATALOg.TIMESTAMptz_OUT('2022-12-31 23:11:11');
-       timestamptz_out        
-------------------------------
- Sat Dec 31 23:11:11 2022 PST
+    timestamptz_out     
+------------------------
+ 2022-12-31 23:11:11-08
 (1 row)
 
 select '2022-12-31 23:59:59'::timestamp::smalldatetime;
-      smalldatetime       
---------------------------
- Sun Jan 01 00:00:00 2023
+    smalldatetime    
+---------------------
+ 2023-01-01 00:00:00
 (1 row)
 
 set dolphin.lower_case_table_names = 1;
@@ -102,20 +102,20 @@ select count(*) from table_NAME_test_DB.pg_cATAloG.PG_ClaSS where relname='pg_cl
 (1 row)
 
 select PG_cataLOG.TIMESTAMPTZ_out('2022-12-31 23:11:11');
-       timestamptz_out        
-------------------------------
- Sat Dec 31 23:11:11 2022 PST
+    timestamptz_out     
+------------------------
+ 2022-12-31 23:11:11-08
 (1 row)
 
 select table_NAME_TEST_DB.PG_CATALOg.TIMESTAMptz_OUT('2022-12-31 23:11:11');
-       timestamptz_out        
-------------------------------
- Sat Dec 31 23:11:11 2022 PST
+    timestamptz_out     
+------------------------
+ 2022-12-31 23:11:11-08
 (1 row)
 
 select '2022-12-31 23:59:59'::timestamp::smalldatetime;
-      smalldatetime       
---------------------------
- Sun Jan 01 00:00:00 2023
+    smalldatetime    
+---------------------
+ 2023-01-01 00:00:00
 (1 row)
 

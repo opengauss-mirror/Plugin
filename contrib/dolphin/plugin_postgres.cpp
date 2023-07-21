@@ -199,6 +199,7 @@ void set_default_guc()
     DestroyStringInfo(extra_option);
 
     set_config_option("enable_custom_parser", "true", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
+    set_config_option("datestyle", "ISO, YMD", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
 }
 
 static void init_dolphin_proto()

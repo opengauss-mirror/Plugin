@@ -326,9 +326,9 @@ select *from test22;
 
 insert into test23 values();
 select *from test23;
-             num              
-------------------------------
- Wed Dec 31 16:00:00 1969 PST
+          num           
+------------------------
+ 1969-12-31 16:00:00-08
 (1 row)
 
 insert into test24 values();
@@ -340,9 +340,9 @@ select *from test24;
 
 insert into test25 values();
 select *from test25;
-                               num                               
------------------------------------------------------------------
- ["Thu Jan 01 00:00:00 1970 PST" "Thu Jan 01 00:00:00 1970 PST"]
+                         num                         
+-----------------------------------------------------
+ ["1970-01-01 00:00:00-08" "1970-01-01 00:00:00-08"]
 (1 row)
 
 insert into test26 values();
@@ -384,7 +384,7 @@ insert into test31 values();
 select *from test31;
     num     
 ------------
- 01-01-1970
+ 1970-01-01
 (1 row)
 
 insert into test32 values();
@@ -462,9 +462,9 @@ select *from test40;
 
 insert into test41 values();
 select *from test41;
-           num            
---------------------------
- Thu Jan 01 08:00:00 1970
+         num         
+---------------------
+ 1970-01-01 08:00:00
 (1 row)
 
 --multiple type test
@@ -481,9 +481,9 @@ select * from m1;
 
 insert into m2 values();
 select * from m2;
-     a      | b |            c             |            d             
-------------+---+--------------------------+--------------------------
- 01-01-1970 |   | Wed Jan 01 00:00:00 2020 | Wed Jan 01 00:00:00 2020
+     a      | b |          c          |          d          
+------------+---+---------------------+---------------------
+ 1970-01-01 |   | 2020-01-01 00:00:00 | 2020-01-01 00:00:00
 (1 row)
 
 insert into m3 values();

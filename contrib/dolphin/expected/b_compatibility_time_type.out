@@ -9,39 +9,39 @@ create database b_time_type dbcompatibility 'b';
 -- when b_compatibility_mode = true
 set dolphin.b_compatibility_mode = true;
 SELECT '1997-12-31 23:59:59' + INTERVAL 1 SECOND;
-         ?column?         
---------------------------
- Thu Jan 01 00:00:00 1998
+      ?column?       
+---------------------
+ 1998-01-01 00:00:00
 (1 row)
 
 SELECT datetime'1997-12-31 23:59:59' + INTERVAL 1 SECOND;
-         ?column?         
---------------------------
- Thu Jan 01 00:00:00 1998
+      ?column?       
+---------------------
+ 1998-01-01 00:00:00
 (1 row)
 
 SELECT '1997-12-31 23:59:59' - INTERVAL 1 SECOND;
-         ?column?         
---------------------------
- Wed Dec 31 23:59:58 1997
+      ?column?       
+---------------------
+ 1997-12-31 23:59:58
 (1 row)
 
 SELECT datetime'1997-12-31 23:59:59' - INTERVAL 1 SECOND;
-         ?column?         
---------------------------
- Wed Dec 31 23:59:58 1997
+      ?column?       
+---------------------
+ 1997-12-31 23:59:58
 (1 row)
 
 SELECT INTERVAL 1 SECOND + '1997-12-31 23:59:59';
-         ?column?         
---------------------------
- Thu Jan 01 00:00:00 1998
+      ?column?       
+---------------------
+ 1998-01-01 00:00:00
 (1 row)
 
 SELECT INTERVAL 1 SECOND + datetime'1997-12-31 23:59:59';
-         ?column?         
---------------------------
- Thu Jan 01 00:00:00 1998
+      ?column?       
+---------------------
+ 1998-01-01 00:00:00
 (1 row)
 
 -- when b_compatibility_mode = false;
@@ -51,9 +51,9 @@ ERROR:  interval field value out of range: "1997-12-31 23:59:59"
 LINE 1: SELECT '1997-12-31 23:59:59' + INTERVAL 1 SECOND;
                ^
 SELECT datetime'1997-12-31 23:59:59' + INTERVAL 1 SECOND;
-         ?column?         
---------------------------
- Thu Jan 01 00:00:00 1998
+      ?column?       
+---------------------
+ 1998-01-01 00:00:00
 (1 row)
 
 SELECT '1997-12-31 23:59:59' - INTERVAL 1 SECOND;
@@ -61,9 +61,9 @@ ERROR:  interval field value out of range: "1997-12-31 23:59:59"
 LINE 1: SELECT '1997-12-31 23:59:59' - INTERVAL 1 SECOND;
                ^
 SELECT datetime'1997-12-31 23:59:59' - INTERVAL 1 SECOND;
-         ?column?         
---------------------------
- Wed Dec 31 23:59:58 1997
+      ?column?       
+---------------------
+ 1997-12-31 23:59:58
 (1 row)
 
 SELECT INTERVAL 1 SECOND + '1997-12-31 23:59:59';
@@ -71,9 +71,9 @@ ERROR:  interval field value out of range: "1997-12-31 23:59:59"
 LINE 1: SELECT INTERVAL 1 SECOND + '1997-12-31 23:59:59';
                                    ^
 SELECT INTERVAL 1 SECOND + datetime'1997-12-31 23:59:59';
-         ?column?         
---------------------------
- Thu Jan 01 00:00:00 1998
+      ?column?       
+---------------------
+ 1998-01-01 00:00:00
 (1 row)
 
 -- test date
@@ -81,31 +81,31 @@ SELECT INTERVAL 1 SECOND + datetime'1997-12-31 23:59:59';
 SELECT date'2001-01-01';
     date    
 ------------
- 01-01-2001
+ 2001-01-01
 (1 row)
 
 SELECT date'999-01-01';
     date    
 ------------
- 01-01-0999
+ 0999-01-01
 (1 row)
 
 SELECT date'1-01-01';
     date    
 ------------
- 01-01-0001
+ 0001-01-01
 (1 row)
 
 SELECT date'10120-01-01';
     date     
 -------------
- 01-01-10120
+ 10120-01-01
 (1 row)
 
 SELECT date'2000-2-29';
     date    
 ------------
- 02-29-2000
+ 2000-02-29
 (1 row)
 
 SELECT date'2001-2-29';
@@ -121,7 +121,7 @@ CONTEXT:  referenced column: date
 SELECT date'0000-1-1';
     date    
 ------------
- 01-01-0000
+ 0000-01-01
 (1 row)
 
 SELECT date'01-01';
@@ -132,32 +132,32 @@ CONTEXT:  referenced column: date
 SELECT date'9-01-01';
     date    
 ------------
- 01-01-0009
+ 0009-01-01
 (1 row)
 
 SELECT date'99-01-01';
     date    
 ------------
- 01-01-1999
+ 1999-01-01
 (1 row)
 
 SELECT date'999-01-01';
     date    
 ------------
- 01-01-0999
+ 0999-01-01
 (1 row)
 
 SELECT date'1000-01-1';
     date    
 ------------
- 01-01-1000
+ 1000-01-01
 (1 row)
 
 -- 'YYYYMMDD' or 'YYMMDD'
 SELECT date'99991231';
     date    
 ------------
- 12-31-9999
+ 9999-12-31
 (1 row)
 
 SELECT date'100000101';
@@ -168,7 +168,7 @@ CONTEXT:  referenced column: date
 SELECT date'10000101';
     date    
 ------------
- 01-01-1000
+ 1000-01-01
 (1 row)
 
 SELECT date'9990101';
@@ -184,13 +184,13 @@ CONTEXT:  referenced column: date
 SELECT date'701010';
     date    
 ------------
- 10-10-1970
+ 1970-10-10
 (1 row)
 
 SELECT date'691010';
     date    
 ------------
- 10-10-2069
+ 2069-10-10
 (1 row)
 
 SELECT date'691310';
@@ -207,7 +207,7 @@ CONTEXT:  referenced column: date
 SELECT date'10101';
     date    
 ------------
- 10-01-2010
+ 2010-10-01
 (1 row)
 
 SELECT date'10130';
@@ -219,20 +219,20 @@ CONTEXT:  referenced column: date
 SELECT date'00120101';
     date    
 ------------
- 01-01-0012
+ 0012-01-01
 (1 row)
 
 -- YYYYMMDD or YYYYMMDD
 SELECT 99990101::date;
     date    
 ------------
- 01-01-9999
+ 9999-01-01
 (1 row)
 
 SELECT 990101::date;
     date    
 ------------
- 01-01-1999
+ 1999-01-01
 (1 row)
 
 SELECT 100::date;
@@ -241,13 +241,13 @@ CONTEXT:  referenced column: date
 SELECT 101::date;
     date    
 ------------
- 01-01-2000
+ 2000-01-01
 (1 row)
 
 SELECT 10228::date;
     date    
 ------------
- 02-28-2001
+ 2001-02-28
 (1 row)
 
 SELECT 10229::date;
@@ -256,19 +256,19 @@ CONTEXT:  referenced column: date
 SELECT 991231::date;
     date    
 ------------
- 12-31-1999
+ 1999-12-31
 (1 row)
 
 SELECT 99991231::date;
     date    
 ------------
- 12-31-9999
+ 9999-12-31
 (1 row)
 
 SELECT 21000228::date;
     date    
 ------------
- 02-28-2100
+ 2100-02-28
 (1 row)
 
 SELECT 21000229::date;
@@ -599,14 +599,14 @@ ALTER TABLE time_tbl ADD COLUMN dt datetime;
 ALTER TABLE time_tbl ADD ts timestamp;
 INSERT INTO time_tbl VALUES(232323.555, 20201212101010.555, 20201212101010.555);
 SELECT * FROM time_tbl;
-     v      |            dt            |              ts              
-------------+--------------------------+------------------------------
- -56:12:34  |                          | 
- -120:23:34 |                          | 
- 23:59:59   |                          | 
- 24:00:00   |                          | 
- 23:23:23   |                          | 
- 23:23:24   | Sat Dec 12 10:10:11 2020 | Sat Dec 12 10:10:11 2020 PST
+     v      |         dt          |           ts           
+------------+---------------------+------------------------
+ -56:12:34  |                     | 
+ -120:23:34 |                     | 
+ 23:59:59   |                     | 
+ 24:00:00   |                     | 
+ 23:23:23   |                     | 
+ 23:23:24   | 2020-12-12 10:10:11 | 2020-12-12 10:10:11-08
 (6 rows)
 
 DROP TABLE time_tbl;
@@ -673,100 +673,100 @@ SELECT time '1:00:00' - interval '3 hours';
 -- test datetime
 -- 'YYYY-MM-DD hh:mm:ss.fsec' or 'YY-MM-DD hh:mm:ss.fsec'
 SELECT datetime(2)'2001-01-01  23:59:59.999999';
-        timestamp         
---------------------------
- Tue Jan 02 00:00:00 2001
+      timestamp      
+---------------------
+ 2001-01-02 00:00:00
 (1 row)
 
 SELECT datetime(3)'2001-01-01  23:59:59.9999999';
-        timestamp         
---------------------------
- Tue Jan 02 00:00:00 2001
+      timestamp      
+---------------------
+ 2001-01-02 00:00:00
 (1 row)
 
 SELECT datetime(4)'9999-12-31  23:59:59.9999999';
-         timestamp         
----------------------------
- Sat Jan 01 00:00:00 10000
+      timestamp       
+----------------------
+ 10000-01-01 00:00:00
 (1 row)
 
 SELECT datetime(5)'999-12-31  23:59:59.9999999';
-        timestamp         
---------------------------
- Wed Jan 01 00:00:00 1000
+      timestamp      
+---------------------
+ 1000-01-01 00:00:00
 (1 row)
 
 SELECT datetime'99-01-01  23:59:59.123';
-          timestamp           
-------------------------------
- Fri Jan 01 23:59:59.123 1999
+        timestamp        
+-------------------------
+ 1999-01-01 23:59:59.123
 (1 row)
 
 SELECT datetime'2001-2-28  23:59:59.123';
-          timestamp           
-------------------------------
- Wed Feb 28 23:59:59.123 2001
+        timestamp        
+-------------------------
+ 2001-02-28 23:59:59.123
 (1 row)
 
 SELECT datetime'2000-2-28  23:59:59.123';
-          timestamp           
-------------------------------
- Mon Feb 28 23:59:59.123 2000
+        timestamp        
+-------------------------
+ 2000-02-28 23:59:59.123
 (1 row)
 
 SELECT datetime'2000-2-28  12:23:34.5678';
-           timestamp           
--------------------------------
- Mon Feb 28 12:23:34.5678 2000
+        timestamp         
+--------------------------
+ 2000-02-28 12:23:34.5678
 (1 row)
 
 -- 'YYYYMMDDhhmmss.fsec' or 'YYMMDDhhmmss.fsec'
 SELECT datetime(1)'20010101010101.1278';
-         timestamp          
-----------------------------
- Mon Jan 01 01:01:01.1 2001
+       timestamp       
+-----------------------
+ 2001-01-01 01:01:01.1
 (1 row)
 
 SELECT datetime(1)'010101010101.1234';
-         timestamp          
-----------------------------
- Mon Jan 01 01:01:01.1 2001
+       timestamp       
+-----------------------
+ 2001-01-01 01:01:01.1
 (1 row)
 
 SELECT datetime(2)'0101010101';
-        timestamp         
---------------------------
- Mon Jan 01 01:01:00 2001
+      timestamp      
+---------------------
+ 2001-01-01 01:01:00
 (1 row)
 
 SELECT datetime(1)'01010101';
-        timestamp         
---------------------------
- Sat Jan 01 00:00:00 0101
+      timestamp      
+---------------------
+ 0101-01-01 00:00:00
 (1 row)
 
 SELECT datetime(3)'0101017';
-        timestamp         
---------------------------
- Mon Jan 01 07:00:00 2001
+      timestamp      
+---------------------
+ 2001-01-01 07:00:00
 (1 row)
 
 SELECT datetime(1)'010101';
-        timestamp         
---------------------------
- Mon Jan 01 00:00:00 2001
+      timestamp      
+---------------------
+ 2001-01-01 00:00:00
 (1 row)
 
 SELECT datetime(1)'10101';
-        timestamp         
---------------------------
- Fri Oct 01 00:00:00 2010
+      timestamp      
+---------------------
+ 2010-10-01 00:00:00
 (1 row)
 
 SELECT datetime(1)'71101';
-        timestamp         
---------------------------
- Fri Oct 01 00:00:00 1971
+      timestamp      
+---------------------
+ 1971-10-01 00:00:00
 (1 row)
 
 SELECT datetime(1)'0101';
@@ -779,75 +779,75 @@ SELECT 11::datetime;
 ERROR:  timestamp out of range
 CONTEXT:  referenced column: timestamp
 SELECT 111::datetime;
-        timestamp         
---------------------------
- Tue Jan 11 00:00:00 2000
+      timestamp      
+---------------------
+ 2000-01-11 00:00:00
 (1 row)
 
 SELECT 1111::datetime;
-        timestamp         
---------------------------
- Sat Nov 11 00:00:00 2000
+      timestamp      
+---------------------
+ 2000-11-11 00:00:00
 (1 row)
 
 SELECT 11111::datetime;
-        timestamp         
---------------------------
- Sun Nov 11 00:00:00 2001
+      timestamp      
+---------------------
+ 2001-11-11 00:00:00
 (1 row)
 
 SELECT 111111::datetime;
-        timestamp         
---------------------------
- Fri Nov 11 00:00:00 2011
+      timestamp      
+---------------------
+ 2011-11-11 00:00:00
 (1 row)
 
 SELECT 1111111::datetime;
-        timestamp         
---------------------------
- Wed Nov 11 00:00:00 0111
+      timestamp      
+---------------------
+ 0111-11-11 00:00:00
 (1 row)
 
 SELECT 11111111::datetime;
-        timestamp         
---------------------------
- Sat Nov 11 00:00:00 1111
+      timestamp      
+---------------------
+ 1111-11-11 00:00:00
 (1 row)
 
 SELECT 111111111::datetime;
-        timestamp         
---------------------------
- Tue Jan 11 11:11:11 2000
+      timestamp      
+---------------------
+ 2000-01-11 11:11:11
 (1 row)
 
 SELECT 1111111111::datetime;
-        timestamp         
---------------------------
- Sat Nov 11 11:11:11 2000
+      timestamp      
+---------------------
+ 2000-11-11 11:11:11
 (1 row)
 
 SELECT 11111111111::datetime;
-        timestamp         
---------------------------
- Sun Nov 11 11:11:11 2001
+      timestamp      
+---------------------
+ 2001-11-11 11:11:11
 (1 row)
 
 SELECT 111111111111::datetime;
-        timestamp         
---------------------------
- Fri Nov 11 11:11:11 2011
+      timestamp      
+---------------------
+ 2011-11-11 11:11:11
 (1 row)
 
 SELECT 1111111111111::datetime;
-        timestamp         
---------------------------
- Wed Nov 11 11:11:11 0111
+      timestamp      
+---------------------
+ 0111-11-11 11:11:11
 (1 row)
 
 SELECT 11111111111111::datetime;
-        timestamp         
---------------------------
- Sat Nov 11 11:11:11 1111
+      timestamp      
+---------------------
+ 1111-11-11 11:11:11
 (1 row)
 
 -- test datetime operation
@@ -859,57 +859,57 @@ insert into test_dt values('2012-11-10');
 insert into test_dt values('2008-11-10');
 insert into test_dt values('1994-11-10');
 select max(dt) from test_dt;
-           max            
---------------------------
- Sat Nov 10 00:00:00 2012
+         max         
+---------------------
+ 2012-11-10 00:00:00
 (1 row)
 
 select min(dt) from test_dt;
-           min            
---------------------------
- Thu Nov 10 00:00:00 1994
+         min         
+---------------------
+ 1994-11-10 00:00:00
 (1 row)
 
 select distinct(dt) from test_dt;
-            dt            
---------------------------
- Fri Nov 10 00:00:00 2000
- Mon Nov 10 00:00:00 2008
- Thu Nov 10 00:00:00 1994
- Mon Nov 10 00:00:00 1997
- Sat Nov 10 00:00:00 2012
+         dt          
+---------------------
+ 2000-11-10 00:00:00
+ 2008-11-10 00:00:00
+ 1994-11-10 00:00:00
+ 1997-11-10 00:00:00
+ 2012-11-10 00:00:00
 (5 rows)
 
 select * from test_dt;
-            dt            
---------------------------
- Mon Nov 10 00:00:00 1997
- Fri Nov 10 00:00:00 2000
- Mon Nov 10 00:00:00 1997
- Sat Nov 10 00:00:00 2012
- Mon Nov 10 00:00:00 2008
- Thu Nov 10 00:00:00 1994
+         dt          
+---------------------
+ 1997-11-10 00:00:00
+ 2000-11-10 00:00:00
+ 1997-11-10 00:00:00
+ 2012-11-10 00:00:00
+ 2008-11-10 00:00:00
+ 1994-11-10 00:00:00
 (6 rows)
 
 create index on test_dt(dt);
 select * from test_dt where dt > '2007-01-01';
-            dt            
---------------------------
- Sat Nov 10 00:00:00 2012
- Mon Nov 10 00:00:00 2008
+         dt          
+---------------------
+ 2012-11-10 00:00:00
+ 2008-11-10 00:00:00
 (2 rows)
 
 select * from test_dt where dt = '1997-11-10';
-            dt            
---------------------------
- Mon Nov 10 00:00:00 1997
- Mon Nov 10 00:00:00 1997
+         dt          
+---------------------
+ 1997-11-10 00:00:00
+ 1997-11-10 00:00:00
 (2 rows)
 
 select * from test_dt where dt < '1997-11-10';
-            dt            
---------------------------
- Thu Nov 10 00:00:00 1994
+         dt          
+---------------------
+ 1994-11-10 00:00:00
 (1 row)
 
 -- test now() and current_timestamp
@@ -919,21 +919,21 @@ insert into test_datetime values(current_timestamp);
 drop table test_datetime;
 -- test timestamp with[out] timezone
 select timestamp with time zone'1994-11-10 23:12:34.5678';
-            timestamptz            
------------------------------------
- Thu Nov 10 23:12:34.5678 1994 PST
+         timestamptz         
+-----------------------------
+ 1994-11-10 23:12:34.5678-08
 (1 row)
 
 select timestamp without time zone'1994-11-10 23:12:34.5678';
-           timestamp           
--------------------------------
- Thu Nov 10 23:12:34.5678 1994
+        timestamp         
+--------------------------
+ 1994-11-10 23:12:34.5678
 (1 row)
 
 select timestamp'1994-11-10 23:12:34.5678';
-           timestamp           
--------------------------------
- Thu Nov 10 23:12:34.5678 1994
+        timestamp         
+--------------------------
+ 1994-11-10 23:12:34.5678
 (1 row)
 
 -- test timestamp
@@ -976,64 +976,64 @@ INSERT INTO timestamp_tbl VALUES (111111111111);
 INSERT INTO timestamp_tbl VALUES (1111111111111);
 INSERT INTO timestamp_tbl VALUES (11111111111111);
 SELECT * FROM timestamp_tbl;
-                v                
----------------------------------
- Tue Jan 02 00:00:00 2001 CST
- Tue Jan 02 00:00:00 2001 CST
- Sat Jan 01 00:00:00 10000 CST
- Wed Jan 01 00:00:00 1000 LMT
- Fri Jan 01 23:59:59.12 1999 CST
- Wed Feb 28 23:59:59.12 2001 CST
- Mon Feb 28 23:59:59.12 2000 CST
- Mon Jan 01 01:01:01.13 2001 CST
- Mon Jan 01 01:01:01.12 2001 CST
- Mon Jan 01 01:01:00 2001 CST
- Sat Jan 01 00:00:00 0101 LMT
- Mon Jan 01 07:00:00 2001 CST
- Mon Jan 01 00:00:00 2001 CST
- Tue Jan 11 00:00:00 2000 CST
- Sat Nov 11 00:00:00 2000 CST
- Sun Nov 11 00:00:00 2001 CST
- Fri Nov 11 00:00:00 2011 CST
- Wed Nov 11 00:00:00 0111 LMT
- Sat Nov 11 00:00:00 1111 LMT
- Tue Jan 11 11:11:11 2000 CST
- Sat Nov 11 11:11:11 2000 CST
- Sun Nov 11 11:11:11 2001 CST
- Fri Nov 11 11:11:11 2011 CST
- Wed Nov 11 11:11:11 0111 LMT
- Sat Nov 11 11:11:11 1111 LMT
+              v               
+------------------------------
+ 2001-01-02 00:00:00+08
+ 2001-01-02 00:00:00+08
+ 10000-01-01 00:00:00+08
+ 1000-01-01 00:00:00+08:05:43
+ 1999-01-01 23:59:59.12+08
+ 2001-02-28 23:59:59.12+08
+ 2000-02-28 23:59:59.12+08
+ 2001-01-01 01:01:01.13+08
+ 2001-01-01 01:01:01.12+08
+ 2001-01-01 01:01:00+08
+ 0101-01-01 00:00:00+08:05:43
+ 2001-01-01 07:00:00+08
+ 2001-01-01 00:00:00+08
+ 2000-01-11 00:00:00+08
+ 2000-11-11 00:00:00+08
+ 2001-11-11 00:00:00+08
+ 2011-11-11 00:00:00+08
+ 0111-11-11 00:00:00+08:05:43
+ 1111-11-11 00:00:00+08:05:43
+ 2000-01-11 11:11:11+08
+ 2000-11-11 11:11:11+08
+ 2001-11-11 11:11:11+08
+ 2011-11-11 11:11:11+08
+ 0111-11-11 11:11:11+08:05:43
+ 1111-11-11 11:11:11+08:05:43
 (25 rows)
 
 set time zone 'UTC';
 SELECT * FROM timestamp_tbl;
-                v                
----------------------------------
- Mon Jan 01 16:00:00 2001 UTC
- Mon Jan 01 16:00:00 2001 UTC
- Fri Dec 31 16:00:00 9999 UTC
- Tue Dec 31 15:54:17 0999 UTC
- Fri Jan 01 15:59:59.12 1999 UTC
- Wed Feb 28 15:59:59.12 2001 UTC
- Mon Feb 28 15:59:59.12 2000 UTC
- Sun Dec 31 17:01:01.13 2000 UTC
- Sun Dec 31 17:01:01.12 2000 UTC
- Sun Dec 31 17:01:00 2000 UTC
- Fri Dec 31 15:54:17 0100 UTC
- Sun Dec 31 23:00:00 2000 UTC
- Sun Dec 31 16:00:00 2000 UTC
- Mon Jan 10 16:00:00 2000 UTC
- Fri Nov 10 16:00:00 2000 UTC
- Sat Nov 10 16:00:00 2001 UTC
- Thu Nov 10 16:00:00 2011 UTC
- Tue Nov 10 15:54:17 0111 UTC
- Fri Nov 10 15:54:17 1111 UTC
- Tue Jan 11 03:11:11 2000 UTC
- Sat Nov 11 03:11:11 2000 UTC
- Sun Nov 11 03:11:11 2001 UTC
- Fri Nov 11 03:11:11 2011 UTC
- Wed Nov 11 03:05:28 0111 UTC
- Sat Nov 11 03:05:28 1111 UTC
+             v             
+---------------------------
+ 2001-01-01 16:00:00+00
+ 2001-01-01 16:00:00+00
+ 9999-12-31 16:00:00+00
+ 0999-12-31 15:54:17+00
+ 1999-01-01 15:59:59.12+00
+ 2001-02-28 15:59:59.12+00
+ 2000-02-28 15:59:59.12+00
+ 2000-12-31 17:01:01.13+00
+ 2000-12-31 17:01:01.12+00
+ 2000-12-31 17:01:00+00
+ 0100-12-31 15:54:17+00
+ 2000-12-31 23:00:00+00
+ 2000-12-31 16:00:00+00
+ 2000-01-10 16:00:00+00
+ 2000-11-10 16:00:00+00
+ 2001-11-10 16:00:00+00
+ 2011-11-10 16:00:00+00
+ 0111-11-10 15:54:17+00
+ 1111-11-10 15:54:17+00
+ 2000-01-11 03:11:11+00
+ 2000-11-11 03:11:11+00
+ 2001-11-11 03:11:11+00
+ 2011-11-11 03:11:11+00
+ 0111-11-11 03:05:28+00
+ 1111-11-11 03:05:28+00
 (25 rows)
 
 set time zone 'PRC';
@@ -1701,9 +1701,9 @@ SELECT cast(-232323.555 as time);
 (1 row)
 
 SELECT cast('20121010101010.555' as datetime);
-        timestamp         
---------------------------
- Wed Oct 10 10:10:11 2012
+      timestamp      
+---------------------
+ 2012-10-10 10:10:11
 (1 row)
 
 select cast(('2001-10-10 11:11:59.123456'::time(6)) as int);
@@ -1961,12 +1961,12 @@ CONTEXT:  referenced column: v
 SELECT * FROM t_NO_ZERO_DATE_date order by v;
      v      
 ------------
- 00-00-0000
- 00-00-0000
- 00-00-0000
- 00-00-0000
- 00-00-0000
- 00-00-0000
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
 (6 rows)
 
 SELECT * FROM t_NO_ZERO_DATE_datetime order by v;
@@ -2027,7 +2027,7 @@ CONTEXT:  referenced column: a
 select * from t_date;
      a      
 ------------
- 00-00-0000
+ 0000-00-00
 (1 row)
 
 select * from t_datetime;
@@ -2060,9 +2060,9 @@ CONTEXT:  referenced column: a
 select * from t_date;
      a      
 ------------
- 00-00-0000
- 00-00-0000
- 00-00-0000
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
 (3 rows)
 
 select * from t_datetime;
@@ -2081,11 +2081,11 @@ insert ignore into t_datetime values('0000-00-00');
 select * from t_date;
      a      
 ------------
- 00-00-0000
- 00-00-0000
- 00-00-0000
- 00-00-0000
- 00-00-0000
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
 (5 rows)
 
 select * from t_datetime;
@@ -2106,13 +2106,13 @@ insert ignore into t_datetime values('0000-00-00');
 select * from t_date;
      a      
 ------------
- 00-00-0000
- 00-00-0000
- 00-00-0000
- 00-00-0000
- 00-00-0000
- 00-00-0000
- 00-00-0000
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
 (7 rows)
 
 select * from t_datetime;

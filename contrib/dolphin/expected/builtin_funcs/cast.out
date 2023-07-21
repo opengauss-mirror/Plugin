@@ -13,8 +13,8 @@ select cast(cast('$2'::money as unsigned) as money);
 (1 row)
 
 select current_timestamp;
-    current_timestamp     
---------------------------
+  current_timestamp  
+---------------------
 --?.*
 (1 row)
 
@@ -31,9 +31,9 @@ select cast(current_timestamp::timestamp as unsigned);
 (1 row)
 
 select cast(cast('2022-11-10 18:03:20'::timestamp as unsigned) as timestamp);
-         timestamptz          
-------------------------------
- Fri Nov 11 02:03:20 2022 PST
+      timestamptz       
+------------------------
+ 2022-11-11 02:03:20-08
 (1 row)
 
 SELECT CAST('test' AS CHAR CHARACTER SET utf8);
