@@ -2574,11 +2574,6 @@ static int DecodeNumber(int flen, char* str, bool haveTextMonth, unsigned int fm
     /* Switch based on what we have so far */
     switch (fmask & DTK_DATE_M) {
         case 0:
-#ifdef DOLPHIN
-            /* b format date: default format is YMD */
-            *tmask = DTK_M(YEAR);
-            tm->tm_year = val;
-#else
             /*
              * Nothing so far; make a decision about what we think the input
              * is.	There used to be lots of heuristics here, but the
@@ -2596,7 +2591,6 @@ static int DecodeNumber(int flen, char* str, bool haveTextMonth, unsigned int fm
                 *tmask = DTK_M(MONTH);
                 tm->tm_mon = val;
             }
-#endif
             break;
 
         case (DTK_M(YEAR)):

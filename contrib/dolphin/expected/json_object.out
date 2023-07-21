@@ -81,7 +81,7 @@ select json_object(json_object('name', 'Jim', 'age', 20), 'MyContex');
 select json_object('2022-09-26'::date,20221001::date);
          json_object          
 ------------------------------
- {"09-26-2022": "10-01-2022"}
+ {"2022-09-26": "2022-10-01"}
 (1 row)
 
 select json_object('12:12:58'::time,'24:00:00'::time);

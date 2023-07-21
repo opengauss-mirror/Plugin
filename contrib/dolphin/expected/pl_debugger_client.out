@@ -24,32 +24,32 @@ select dbe_pldebugger.attach(nodename, port) from debug_info;
 (1 row)
 
 select * from dbe_pldebugger.info_locals();
-  varname  |   vartype   |            value             | package_name | isconst 
------------+-------------+------------------------------+--------------+---------
- x         | int4        | 4                            |              | f
- sql_stmt  | varchar     | <UNKNOWN>                    |              | f
- test.a    | int4        | 0                            |              | f
- test.b    | varchar     | <UNKNOWN>                    |              | f
+  varname  |   vartype   |           value            | package_name | isconst 
+-----------+-------------+----------------------------+--------------+---------
+ x         | int4        | 4                          |              | f
+ sql_stmt  | varchar     | <UNKNOWN>                  |              | f
+ test.a    | int4        | 0                          |              | f
+ test.b    | varchar     | <UNKNOWN>                  |              | f
 --? test.c    | timestamptz | .* |              | f
- r         | Row         | [ (null), (null), (null),]   |              | f
- rec       | Rec         | <UNKNOWN>                    |              | f
- b_tmp     | text        | <UNKNOWN>                    |              | f
- cnt       | int4        | 0                            |              | f
- a_tmp     | int4        | 0                            |              | f
- cur       | refcursor   | {name:                      +|              | f
-           |             | is_open:        f           +|              | 
-           |             | found:  f                   +|              | 
-           |             | not_found:      f           +|              | 
-           |             | row_count:      0}           |              | 
- n_tmp     | numeric     | <UNKNOWN>                    |              | f
- t_tmp     | tsquery     | <UNKNOWN>                    |              | f
- criterion | int4        | 0                            |              | f
- cur_arg   | refcursor   | {name:                      +|              | f
-           |             | is_open:        f           +|              | 
-           |             | found:  f                   +|              | 
-           |             | not_found:      f           +|              | 
-           |             | row_count:      0}           |              | 
- index_1   | int4        | 0                            |              | f
+ r         | Row         | [ (null), (null), (null),] |              | f
+ rec       | Rec         | <UNKNOWN>                  |              | f
+ b_tmp     | text        | <UNKNOWN>                  |              | f
+ cnt       | int4        | 0                          |              | f
+ a_tmp     | int4        | 0                          |              | f
+ cur       | refcursor   | {name:                    +|              | f
+           |             | is_open:        f         +|              | 
+           |             | found:  f                 +|              | 
+           |             | not_found:      f         +|              | 
+           |             | row_count:      0}         |              | 
+ n_tmp     | numeric     | <UNKNOWN>                  |              | f
+ t_tmp     | tsquery     | <UNKNOWN>                  |              | f
+ criterion | int4        | 0                          |              | f
+ cur_arg   | refcursor   | {name:                    +|              | f
+           |             | is_open:        f         +|              | 
+           |             | found:  f                 +|              | 
+           |             | not_found:      f         +|              | 
+           |             | row_count:      0}         |              | 
+ index_1   | int4        | 0                          |              | f
 (16 rows)
 
 create table tmp_holder (res text);
@@ -121,8 +121,8 @@ select * from tmp_holder;
 (22 rows)
 
 select * from dbe_pldebugger.print_var('test.c');
- varname |   vartype   |            value             | package_name | isconst 
----------+-------------+------------------------------+--------------+---------
+ varname |   vartype   |         value          | package_name | isconst 
+---------+-------------+------------------------+--------------+---------
 --? test.c  | timestamptz | .* |              | f
 (1 row)
 
@@ -156,32 +156,32 @@ select funcname, lineno, query from dbe_pldebugger.next();
 (1 row)
 
 select * from dbe_pldebugger.info_locals();
-  varname  |   vartype   |                          value                           | package_name | isconst 
------------+-------------+----------------------------------------------------------+--------------+---------
- x         | int4        | 4                                                        |              | f
- sql_stmt  | varchar     | <UNKNOWN>                                                |              | f
- test.a    | int4        | 7                                                        |              | f
- test.b    | varchar     | Treasures in Heaven                                      |              | f
+  varname  |   vartype   |                       value                        | package_name | isconst 
+-----------+-------------+----------------------------------------------------+--------------+---------
+ x         | int4        | 4                                                  |              | f
+ sql_stmt  | varchar     | <UNKNOWN>                                          |              | f
+ test.a    | int4        | 7                                                  |              | f
+ test.b    | varchar     | Treasures in Heaven                                |              | f
 --? test.c    | timestamptz | .*                             |              | f
 --? r         | Row         | [ 7, .*,] |              | f
- rec       | Rec         | <UNKNOWN>                                                |              | f
- b_tmp     | text        | <UNKNOWN>                                                |              | f
- cnt       | int4        | 0                                                        |              | f
- a_tmp     | int4        | 0                                                        |              | f
- cur       | refcursor   | {name:                                                  +|              | f
-           |             | is_open:        f                                       +|              | 
-           |             | found:  f                                               +|              | 
-           |             | not_found:      f                                       +|              | 
-           |             | row_count:      0}                                       |              | 
- n_tmp     | numeric     | <UNKNOWN>                                                |              | f
- t_tmp     | tsquery     | <UNKNOWN>                                                |              | f
- criterion | int4        | 0                                                        |              | f
- cur_arg   | refcursor   | {name:                                                  +|              | f
-           |             | is_open:        f                                       +|              | 
-           |             | found:  f                                               +|              | 
-           |             | not_found:      f                                       +|              | 
-           |             | row_count:      0}                                       |              | 
- index_1   | int4        | 0                                                        |              | f
+ rec       | Rec         | <UNKNOWN>                                          |              | f
+ b_tmp     | text        | <UNKNOWN>                                          |              | f
+ cnt       | int4        | 0                                                  |              | f
+ a_tmp     | int4        | 0                                                  |              | f
+ cur       | refcursor   | {name:                                            +|              | f
+           |             | is_open:        f                                 +|              | 
+           |             | found:  f                                         +|              | 
+           |             | not_found:      f                                 +|              | 
+           |             | row_count:      0}                                 |              | 
+ n_tmp     | numeric     | <UNKNOWN>                                          |              | f
+ t_tmp     | tsquery     | <UNKNOWN>                                          |              | f
+ criterion | int4        | 0                                                  |              | f
+ cur_arg   | refcursor   | {name:                                            +|              | f
+           |             | is_open:        f                                 +|              | 
+           |             | found:  f                                         +|              | 
+           |             | not_found:      f                                 +|              | 
+           |             | row_count:      0}                                 |              | 
+ index_1   | int4        | 0                                                  |              | f
 (16 rows)
 
 select * from dbe_pldebugger.print_var('cur');
@@ -219,37 +219,37 @@ select funcname, lineno, query from dbe_pldebugger.next();
 (1 row)
 
 select * from dbe_pldebugger.info_locals();
-  varname  |   vartype   |                          value                           | package_name | isconst 
------------+-------------+----------------------------------------------------------+--------------+---------
- x         | int4        | 4                                                        |              | f
- sql_stmt  | varchar     | <UNKNOWN>                                                |              | f
- test.a    | int4        | 7                                                        |              | f
- test.b    | varchar     | Treasures in Heaven                                      |              | f
+  varname  |   vartype   |                       value                        | package_name | isconst 
+-----------+-------------+----------------------------------------------------+--------------+---------
+ x         | int4        | 4                                                  |              | f
+ sql_stmt  | varchar     | <UNKNOWN>                                          |              | f
+ test.a    | int4        | 7                                                  |              | f
+ test.b    | varchar     | Treasures in Heaven                                |              | f
 --? test.c    | timestamptz | .*                             |              | f
 --? r         | Row         | [ 7, Treasures in Heaven, .*,] |              | f
 --? rec       | Rec         | [ 3, Prayer, .*,]              |              | f
- b_tmp     | text        | <UNKNOWN>                                                |              | f
- cnt       | int4        | 0                                                        |              | f
- a_tmp     | int4        | 0                                                        |              | f
- cur       | refcursor   | {name:                                                  +|              | f
-           |             | is_open:        f                                       +|              | 
-           |             | found:  f                                               +|              | 
-           |             | not_found:      f                                       +|              | 
-           |             | row_count:      0}                                       |              | 
- n_tmp     | numeric     | <UNKNOWN>                                                |              | f
- t_tmp     | tsquery     | <UNKNOWN>                                                |              | f
- criterion | int4        | 0                                                        |              | f
- cur_arg   | refcursor   | {name:                                                  +|              | f
-           |             | is_open:        f                                       +|              | 
-           |             | found:  f                                               +|              | 
-           |             | not_found:      f                                       +|              | 
-           |             | row_count:      0}                                       |              | 
- index_1   | int4        | 0                                                        |              | f
+ b_tmp     | text        | <UNKNOWN>                                          |              | f
+ cnt       | int4        | 0                                                  |              | f
+ a_tmp     | int4        | 0                                                  |              | f
+ cur       | refcursor   | {name:                                            +|              | f
+           |             | is_open:        f                                 +|              | 
+           |             | found:  f                                         +|              | 
+           |             | not_found:      f                                 +|              | 
+           |             | row_count:      0}                                 |              | 
+ n_tmp     | numeric     | <UNKNOWN>                                          |              | f
+ t_tmp     | tsquery     | <UNKNOWN>                                          |              | f
+ criterion | int4        | 0                                                  |              | f
+ cur_arg   | refcursor   | {name:                                            +|              | f
+           |             | is_open:        f                                 +|              | 
+           |             | found:  f                                         +|              | 
+           |             | not_found:      f                                 +|              | 
+           |             | row_count:      0}                                 |              | 
+ index_1   | int4        | 0                                                  |              | f
 (16 rows)
 
 select * from dbe_pldebugger.print_var('rec');
- varname | vartype |                    value                    | package_name | isconst 
----------+---------+---------------------------------------------+--------------+---------
+ varname | vartype |                 value                 | package_name | isconst 
+---------+---------+---------------------------------------+--------------+---------
 --? rec     | Rec     | [ 3, Prayer, .*,] |              | f
 (1 row)
 
@@ -278,32 +278,32 @@ select funcname, lineno, query from dbe_pldebugger.next();
 (1 row)
 
 select * from dbe_pldebugger.info_locals();
-  varname  |   vartype   |                          value                           | package_name | isconst 
------------+-------------+----------------------------------------------------------+--------------+---------
- x         | int4        | 4                                                        |              | f
- sql_stmt  | varchar     | select a from test where b = :1;                         |              | f
- test.a    | int4        | 7                                                        |              | f
- test.b    | varchar     | Treasures in Heaven                                      |              | f
+  varname  |   vartype   |                       value                        | package_name | isconst 
+-----------+-------------+----------------------------------------------------+--------------+---------
+ x         | int4        | 4                                                  |              | f
+ sql_stmt  | varchar     | select a from test where b = :1;                   |              | f
+ test.a    | int4        | 7                                                  |              | f
+ test.b    | varchar     | Treasures in Heaven                                |              | f
 --? test.c    | timestamptz | .*                             |              | f
 --? r         | Row         | [ 7, Treasures in Heaven, .*,] |              | f
 --? rec       | Rec         | [ 3, Prayer, .*,]              |              | f
- b_tmp     | text        | Treasures in Heaven                                      |              | f
- cnt       | int4        | 0                                                        |              | f
- a_tmp     | int4        | 0                                                        |              | f
- cur       | refcursor   | {name:                                                  +|              | f
-           |             | is_open:        f                                       +|              | 
-           |             | found:  f                                               +|              | 
-           |             | not_found:      f                                       +|              | 
-           |             | row_count:      0}                                       |              | 
- n_tmp     | numeric     | <UNKNOWN>                                                |              | f
- t_tmp     | tsquery     | <UNKNOWN>                                                |              | f
- criterion | int4        | 0                                                        |              | f
- cur_arg   | refcursor   | {name:                                                  +|              | f
-           |             | is_open:        f                                       +|              | 
-           |             | found:  f                                               +|              | 
-           |             | not_found:      f                                       +|              | 
-           |             | row_count:      0}                                       |              | 
- index_1   | int4        | 1                                                        |              | f
+ b_tmp     | text        | Treasures in Heaven                                |              | f
+ cnt       | int4        | 0                                                  |              | f
+ a_tmp     | int4        | 0                                                  |              | f
+ cur       | refcursor   | {name:                                            +|              | f
+           |             | is_open:        f                                 +|              | 
+           |             | found:  f                                         +|              | 
+           |             | not_found:      f                                 +|              | 
+           |             | row_count:      0}                                 |              | 
+ n_tmp     | numeric     | <UNKNOWN>                                          |              | f
+ t_tmp     | tsquery     | <UNKNOWN>                                          |              | f
+ criterion | int4        | 0                                                  |              | f
+ cur_arg   | refcursor   | {name:                                            +|              | f
+           |             | is_open:        f                                 +|              | 
+           |             | found:  f                                         +|              | 
+           |             | not_found:      f                                 +|              | 
+           |             | row_count:      0}                                 |              | 
+ index_1   | int4        | 1                                                  |              | f
 (16 rows)
 
 select * from dbe_pldebugger.print_var('row');
@@ -336,32 +336,32 @@ select funcname, lineno, query from dbe_pldebugger.next();
 (1 row)
 
 select * from dbe_pldebugger.info_locals();
-  varname  |   vartype   |                          value                           | package_name | isconst 
------------+-------------+----------------------------------------------------------+--------------+---------
- x         | int4        | 4                                                        |              | f
- sql_stmt  | varchar     | select a from test where b = :1;                         |              | f
- test.a    | int4        | 7                                                        |              | f
- test.b    | varchar     | Treasures in Heaven                                      |              | f
+  varname  |   vartype   |                       value                        | package_name | isconst 
+-----------+-------------+----------------------------------------------------+--------------+---------
+ x         | int4        | 4                                                  |              | f
+ sql_stmt  | varchar     | select a from test where b = :1;                   |              | f
+ test.a    | int4        | 7                                                  |              | f
+ test.b    | varchar     | Treasures in Heaven                                |              | f
 --? test.c    | timestamptz | .*                             |              | f
 --? r         | Row         | [ 7, Treasures in Heaven, .*,] |              | f
 --? rec       | Rec         | [ 3, Prayer, .*,]              |              | f
- b_tmp     | text        | Treasures in Heaven                                      |              | f
- cnt       | int4        | 0                                                        |              | f
- a_tmp     | int4        | 7                                                        |              | f
- cur       | refcursor   | {name:  <unnamed portal 3>                              +|              | f
-           |             | is_open:        t                                       +|              | 
-           |             | found:  t                                               +|              | 
-           |             | not_found:      f                                       +|              | 
-           |             | row_count:      1}                                       |              | 
- n_tmp     | numeric     | <UNKNOWN>                                                |              | f
- t_tmp     | tsquery     | <UNKNOWN>                                                |              | f
- criterion | int4        | 0                                                        |              | f
- cur_arg   | refcursor   | {name:                                                  +|              | f
-           |             | is_open:        f                                       +|              | 
-           |             | found:  f                                               +|              | 
-           |             | not_found:      f                                       +|              | 
-           |             | row_count:      0}                                       |              | 
- index_1   | int4        | 1                                                        |              | f
+ b_tmp     | text        | Treasures in Heaven                                |              | f
+ cnt       | int4        | 0                                                  |              | f
+ a_tmp     | int4        | 7                                                  |              | f
+ cur       | refcursor   | {name:  <unnamed portal 3>                        +|              | f
+           |             | is_open:        t                                 +|              | 
+           |             | found:  t                                         +|              | 
+           |             | not_found:      f                                 +|              | 
+           |             | row_count:      1}                                 |              | 
+ n_tmp     | numeric     | <UNKNOWN>                                          |              | f
+ t_tmp     | tsquery     | <UNKNOWN>                                          |              | f
+ criterion | int4        | 0                                                  |              | f
+ cur_arg   | refcursor   | {name:                                            +|              | f
+           |             | is_open:        f                                 +|              | 
+           |             | found:  f                                         +|              | 
+           |             | not_found:      f                                 +|              | 
+           |             | row_count:      0}                                 |              | 
+ index_1   | int4        | 1                                                  |              | f
 (16 rows)
 
 select * from dbe_pldebugger.print_var('b_tmp');
@@ -671,32 +671,32 @@ select funcname, lineno, query from dbe_pldebugger.continue();
 (1 row)
 
 select * from dbe_pldebugger.info_locals();
-  varname  |   vartype   |            value             | package_name | isconst 
------------+-------------+------------------------------+--------------+---------
- x         | int4        | 1                            |              | f
- sql_stmt  | varchar     | <UNKNOWN>                    |              | f
- test.a    | int4        | 0                            |              | f
- test.b    | varchar     | <UNKNOWN>                    |              | f
+  varname  |   vartype   |           value            | package_name | isconst 
+-----------+-------------+----------------------------+--------------+---------
+ x         | int4        | 1                          |              | f
+ sql_stmt  | varchar     | <UNKNOWN>                  |              | f
+ test.a    | int4        | 0                          |              | f
+ test.b    | varchar     | <UNKNOWN>                  |              | f
 --? test.c    | timestamptz | .* |              | f
- r         | Row         | [ (null), (null), (null),]   |              | f
- rec       | Rec         | <UNKNOWN>                    |              | f
- b_tmp     | text        | <UNKNOWN>                    |              | f
- cnt       | int4        | 0                            |              | f
- a_tmp     | int4        | 0                            |              | f
- cur       | refcursor   | {name:                      +|              | f
-           |             | is_open:        f           +|              | 
-           |             | found:  f                   +|              | 
-           |             | not_found:      f           +|              | 
-           |             | row_count:      0}           |              | 
- n_tmp     | numeric     | <UNKNOWN>                    |              | f
- t_tmp     | tsquery     | <UNKNOWN>                    |              | f
- criterion | int4        | 0                            |              | f
- cur_arg   | refcursor   | {name:                      +|              | f
-           |             | is_open:        f           +|              | 
-           |             | found:  f                   +|              | 
-           |             | not_found:      f           +|              | 
-           |             | row_count:      0}           |              | 
- index_1   | int4        | 0                            |              | f
+ r         | Row         | [ (null), (null), (null),] |              | f
+ rec       | Rec         | <UNKNOWN>                  |              | f
+ b_tmp     | text        | <UNKNOWN>                  |              | f
+ cnt       | int4        | 0                          |              | f
+ a_tmp     | int4        | 0                          |              | f
+ cur       | refcursor   | {name:                    +|              | f
+           |             | is_open:        f         +|              | 
+           |             | found:  f                 +|              | 
+           |             | not_found:      f         +|              | 
+           |             | row_count:      0}         |              | 
+ n_tmp     | numeric     | <UNKNOWN>                  |              | f
+ t_tmp     | tsquery     | <UNKNOWN>                  |              | f
+ criterion | int4        | 0                          |              | f
+ cur_arg   | refcursor   | {name:                    +|              | f
+           |             | is_open:        f         +|              | 
+           |             | found:  f                 +|              | 
+           |             | not_found:      f         +|              | 
+           |             | row_count:      0}         |              | 
+ index_1   | int4        | 0                          |              | f
 (16 rows)
 
 select funcname, lineno, query from dbe_pldebugger.continue();
@@ -713,32 +713,32 @@ select frameno, funcname, lineno, query from dbe_pldebugger.backtrace();
 (2 rows)
 
 select * from dbe_pldebugger.info_locals();
-  varname  |   vartype   |                           value                            | package_name | isconst 
------------+-------------+------------------------------------------------------------+--------------+---------
- x         | int4        | 1                                                          |              | f
- sql_stmt  | varchar     | <UNKNOWN>                                                  |              | f
- test.a    | int4        | 7                                                          |              | f
- test.b    | varchar     | Treasures in Heaven                                        |              | f
+  varname  |   vartype   |                        value                         | package_name | isconst 
+-----------+-------------+------------------------------------------------------+--------------+---------
+ x         | int4        | 1                                                    |              | f
+ sql_stmt  | varchar     | <UNKNOWN>                                            |              | f
+ test.a    | int4        | 7                                                    |              | f
+ test.b    | varchar     | Treasures in Heaven                                  |              | f
 --? test.c    | timestamptz | .*                               |              | f
- r         | Row         | [ 7, Treasures in Heaven, Mon Apr 02 00:00:00 2040 PDT,]   |              | f
- rec       | Rec         | [ 0, Happy Children's Day!, Tue Jun 01 00:00:00 2021 PDT,] |              | f
- b_tmp     | text        | <UNKNOWN>                                                  |              | f
- cnt       | int4        | 0                                                          |              | f
- a_tmp     | int4        | 0                                                          |              | f
- cur       | refcursor   | {name:                                                    +|              | f
-           |             | is_open:        f                                         +|              | 
-           |             | found:  f                                                 +|              | 
-           |             | not_found:      f                                         +|              | 
-           |             | row_count:      0}                                         |              | 
- n_tmp     | numeric     | <UNKNOWN>                                                  |              | f
- t_tmp     | tsquery     | <UNKNOWN>                                                  |              | f
- criterion | int4        | 0                                                          |              | f
- cur_arg   | refcursor   | {name:                                                    +|              | f
-           |             | is_open:        f                                         +|              | 
-           |             | found:  f                                                 +|              | 
-           |             | not_found:      f                                         +|              | 
-           |             | row_count:      0}                                         |              | 
- index_1   | int4        | 1                                                          |              | f
+ r         | Row         | [ 7, Treasures in Heaven, 2040-04-02 00:00:00-07,]   |              | f
+ rec       | Rec         | [ 0, Happy Children's Day!, 2021-06-01 00:00:00-07,] |              | f
+ b_tmp     | text        | <UNKNOWN>                                            |              | f
+ cnt       | int4        | 0                                                    |              | f
+ a_tmp     | int4        | 0                                                    |              | f
+ cur       | refcursor   | {name:                                              +|              | f
+           |             | is_open:        f                                   +|              | 
+           |             | found:  f                                           +|              | 
+           |             | not_found:      f                                   +|              | 
+           |             | row_count:      0}                                   |              | 
+ n_tmp     | numeric     | <UNKNOWN>                                            |              | f
+ t_tmp     | tsquery     | <UNKNOWN>                                            |              | f
+ criterion | int4        | 0                                                    |              | f
+ cur_arg   | refcursor   | {name:                                              +|              | f
+           |             | is_open:        f                                   +|              | 
+           |             | found:  f                                           +|              | 
+           |             | not_found:      f                                   +|              | 
+           |             | row_count:      0}                                   |              | 
+ index_1   | int4        | 1                                                    |              | f
 (16 rows)
 
 select funcname, lineno, query from dbe_pldebugger.continue();
@@ -755,32 +755,32 @@ select frameno, funcname, lineno, query from dbe_pldebugger.backtrace();
 (2 rows)
 
 select * from dbe_pldebugger.info_locals();
-  varname  |   vartype   |                           value                            | package_name | isconst 
------------+-------------+------------------------------------------------------------+--------------+---------
- x         | int4        | 1                                                          |              | f
- sql_stmt  | varchar     | select a from test where b = :1;                           |              | f
- test.a    | int4        | 7                                                          |              | f
- test.b    | varchar     | Treasures in Heaven                                        |              | f
+  varname  |   vartype   |                        value                         | package_name | isconst 
+-----------+-------------+------------------------------------------------------+--------------+---------
+ x         | int4        | 1                                                    |              | f
+ sql_stmt  | varchar     | select a from test where b = :1;                     |              | f
+ test.a    | int4        | 7                                                    |              | f
+ test.b    | varchar     | Treasures in Heaven                                  |              | f
 --? test.c    | timestamptz | .*                               |              | f
 --? r         | Row         | [ 7, Treasures in Heaven, .*,]   |              | f
 --? rec       | Rec         | [ 0, Happy Children's Day!, .*,] |              | f
- b_tmp     | text        | Treasures in Heaven                                        |              | f
- cnt       | int4        | 3                                                          |              | f
- a_tmp     | int4        | 7                                                          |              | f
- cur       | refcursor   | {name:  <unnamed portal 10>                               +|              | f
-           |             | is_open:        f                                         +|              | 
-           |             | found:  f                                                 +|              | 
-           |             | not_found:      f                                         +|              | 
-           |             | row_count:      0}                                         |              | 
- n_tmp     | numeric     | <UNKNOWN>                                                  |              | f
- t_tmp     | tsquery     | <UNKNOWN>                                                  |              | f
- criterion | int4        | 0                                                          |              | f
- cur_arg   | refcursor   | {name:                                                    +|              | f
-           |             | is_open:        f                                         +|              | 
-           |             | found:  f                                                 +|              | 
-           |             | not_found:      f                                         +|              | 
-           |             | row_count:      0}                                         |              | 
- index_1   | int4        | 1                                                          |              | f
+ b_tmp     | text        | Treasures in Heaven                                  |              | f
+ cnt       | int4        | 3                                                    |              | f
+ a_tmp     | int4        | 7                                                    |              | f
+ cur       | refcursor   | {name:  <unnamed portal 10>                         +|              | f
+           |             | is_open:        f                                   +|              | 
+           |             | found:  f                                           +|              | 
+           |             | not_found:      f                                   +|              | 
+           |             | row_count:      0}                                   |              | 
+ n_tmp     | numeric     | <UNKNOWN>                                            |              | f
+ t_tmp     | tsquery     | <UNKNOWN>                                            |              | f
+ criterion | int4        | 0                                                    |              | f
+ cur_arg   | refcursor   | {name:                                              +|              | f
+           |             | is_open:        f                                   +|              | 
+           |             | found:  f                                           +|              | 
+           |             | not_found:      f                                   +|              | 
+           |             | row_count:      0}                                   |              | 
+ index_1   | int4        | 1                                                    |              | f
 (16 rows)
 
 select funcname, lineno, query from dbe_pldebugger.continue();
@@ -1146,26 +1146,26 @@ select dbe_pldebugger.attach(nodename, port) from debug_info;
 (1 row)
 
 select * from dbe_pldebugger.info_locals();
-  varname   |   vartype   |            value             | package_name | isconst 
-------------+-------------+------------------------------+--------------+---------
- x          | int4        | 0                            |              | f
- vint       | int8        | 0                            |              | f
- vnum       | numeric     | <UNKNOWN>                    |              | f
- vfloat     | float4      | 0                            |              | f
- vtext      | text        | <UNKNOWN>                    |              | f
- vvarchar   | varchar     | <UNKNOWN>                    |              | f
- test.a     | int4        | 0                            |              | f
- test.b     | varchar     | <UNKNOWN>                    |              | f
+  varname   |   vartype   |           value            | package_name | isconst 
+------------+-------------+----------------------------+--------------+---------
+ x          | int4        | 0                          |              | f
+ vint       | int8        | 0                          |              | f
+ vnum       | numeric     | <UNKNOWN>                  |              | f
+ vfloat     | float4      | 0                          |              | f
+ vtext      | text        | <UNKNOWN>                  |              | f
+ vvarchar   | varchar     | <UNKNOWN>                  |              | f
+ test.a     | int4        | 0                          |              | f
+ test.b     | varchar     | <UNKNOWN>                  |              | f
 --? test.c     | timestamptz | .* |              | f
- vrow       | Row         | [ (null), (null), (null),]   |              | f
- vrec       | Rec         | <UNKNOWN>                    |              | f
- vrefcursor | refcursor   | {name:                      +|              | f
-            |             | is_open:        f           +|              | 
-            |             | found:  f                   +|              | 
-            |             | not_found:      f           +|              | 
-            |             | row_count:      0}           |              | 
- vconst     | int2        | 0                            |              | t
- vpoint     | point       | <UNKNOWN>                    |              | f
+ vrow       | Row         | [ (null), (null), (null),] |              | f
+ vrec       | Rec         | <UNKNOWN>                  |              | f
+ vrefcursor | refcursor   | {name:                    +|              | f
+            |             | is_open:        f         +|              | 
+            |             | found:  f                 +|              | 
+            |             | not_found:      f         +|              | 
+            |             | row_count:      0}         |              | 
+ vconst     | int2        | 0                          |              | t
+ vpoint     | point       | <UNKNOWN>                  |              | f
 (14 rows)
 
 select funcname, lineno, query from dbe_pldebugger.next();
@@ -1326,26 +1326,26 @@ WARNING:  Exception occurs when trying to set variable: syntax error at or near 
 (1 row)
 
 select * from dbe_pldebugger.info_locals();
-  varname   |   vartype   |                  value                   | package_name | isconst 
-------------+-------------+------------------------------------------+--------------+---------
- x          | int4        | 1                                        |              | f
- vint       | int8        | 2                                        |              | f
- vnum       | numeric     | 1.000000                                 |              | f
- vfloat     | float4      | 1                                        |              | f
- vtext      | text        | Why oh why didnt I take the blue pill?   |              | f
- vvarchar   | varchar     | there is no spoon                        |              | f
- test.a     | int4        | 1                                        |              | f
- test.b     | varchar     | now                                      |              | f
+  varname   |   vartype   |                 value                  | package_name | isconst 
+------------+-------------+----------------------------------------+--------------+---------
+ x          | int4        | 1                                      |              | f
+ vint       | int8        | 2                                      |              | f
+ vnum       | numeric     | 1.000000                               |              | f
+ vfloat     | float4      | 1                                      |              | f
+ vtext      | text        | Why oh why didnt I take the blue pill? |              | f
+ vvarchar   | varchar     | there is no spoon                      |              | f
+ test.a     | int4        | 1                                      |              | f
+ test.b     | varchar     | now                                    |              | f
 --? test.c     | timestamptz | .*             |              | f
 --? vrow       | Row         | [ 1, now, .*,] |              | f
- vrec       | Rec         | [ 1, 1, 1,]                              |              | f
- vrefcursor | refcursor   | {name:                                  +|              | f
-            |             | is_open:        f                       +|              | 
-            |             | found:  f                               +|              | 
-            |             | not_found:      f                       +|              | 
-            |             | row_count:      0}                       |              | 
- vconst     | int2        | 0                                        |              | t
- vpoint     | point       | <UNKNOWN>                                |              | f
+ vrec       | Rec         | [ 1, 1, 1,]                            |              | f
+ vrefcursor | refcursor   | {name:                                +|              | f
+            |             | is_open:        f                     +|              | 
+            |             | found:  f                             +|              | 
+            |             | not_found:      f                     +|              | 
+            |             | row_count:      0}                     |              | 
+ vconst     | int2        | 0                                      |              | t
+ vpoint     | point       | <UNKNOWN>                              |              | f
 (14 rows)
 
 select funcname, lineno, query from dbe_pldebugger.next();
@@ -1361,26 +1361,26 @@ select funcname, lineno, query from dbe_pldebugger.next();
 (1 row)
 
 select * from dbe_pldebugger.info_locals();
-  varname   |   vartype   |                           value                            | package_name | isconst 
-------------+-------------+------------------------------------------------------------+--------------+---------
- x          | int4        | 1                                                          |              | f
- vint       | int8        | 2                                                          |              | f
- vnum       | numeric     | 1.000000                                                   |              | f
- vfloat     | float4      | 1                                                          |              | f
- vtext      | text        | Why oh why didnt I take the blue pill?                     |              | f
- vvarchar   | varchar     | there is no spoon                                          |              | f
- test.a     | int4        | 0                                                          |              | f
- test.b     | varchar     | Happy Children's Day!                                      |              | f
+  varname   |   vartype   |                        value                         | package_name | isconst 
+------------+-------------+------------------------------------------------------+--------------+---------
+ x          | int4        | 1                                                    |              | f
+ vint       | int8        | 2                                                    |              | f
+ vnum       | numeric     | 1.000000                                             |              | f
+ vfloat     | float4      | 1                                                    |              | f
+ vtext      | text        | Why oh why didnt I take the blue pill?               |              | f
+ vvarchar   | varchar     | there is no spoon                                    |              | f
+ test.a     | int4        | 0                                                    |              | f
+ test.b     | varchar     | Happy Children's Day!                                |              | f
 --? test.c     | timestamptz | .*                               |              | f
 --? vrow       | Row         | [ 0, Happy Children's Day!, .*,] |              | f
- vrec       | Rec         | [ 1, 1, 1,]                                                |              | f
- vrefcursor | refcursor   | {name:                                                    +|              | f
-            |             | is_open:        f                                         +|              | 
-            |             | found:  f                                                 +|              | 
-            |             | not_found:      f                                         +|              | 
-            |             | row_count:      0}                                         |              | 
- vconst     | int2        | 0                                                          |              | t
- vpoint     | point       | <UNKNOWN>                                                  |              | f
+ vrec       | Rec         | [ 1, 1, 1,]                                          |              | f
+ vrefcursor | refcursor   | {name:                                              +|              | f
+            |             | is_open:        f                                   +|              | 
+            |             | found:  f                                           +|              | 
+            |             | not_found:      f                                   +|              | 
+            |             | row_count:      0}                                   |              | 
+ vconst     | int2        | 0                                                    |              | t
+ vpoint     | point       | <UNKNOWN>                                            |              | f
 (14 rows)
 
 select funcname, lineno, query from dbe_pldebugger.next();
@@ -1390,26 +1390,26 @@ select funcname, lineno, query from dbe_pldebugger.next();
 (1 row)
 
 select * from dbe_pldebugger.info_locals();
-  varname   |   vartype   |                           value                            | package_name | isconst 
-------------+-------------+------------------------------------------------------------+--------------+---------
- x          | int4        | 1                                                          |              | f
- vint       | int8        | 2                                                          |              | f
- vnum       | numeric     | 1.000000                                                   |              | f
- vfloat     | float4      | 1                                                          |              | f
- vtext      | text        | Why oh why didnt I take the blue pill?                     |              | f
- vvarchar   | varchar     | there is no spoon                                          |              | f
- test.a     | int4        | 0                                                          |              | f
- test.b     | varchar     | Happy Children's Day!                                      |              | f
+  varname   |   vartype   |                        value                         | package_name | isconst 
+------------+-------------+------------------------------------------------------+--------------+---------
+ x          | int4        | 1                                                    |              | f
+ vint       | int8        | 2                                                    |              | f
+ vnum       | numeric     | 1.000000                                             |              | f
+ vfloat     | float4      | 1                                                    |              | f
+ vtext      | text        | Why oh why didnt I take the blue pill?               |              | f
+ vvarchar   | varchar     | there is no spoon                                    |              | f
+ test.a     | int4        | 0                                                    |              | f
+ test.b     | varchar     | Happy Children's Day!                                |              | f
 --? test.c     | timestamptz | .*                               |              | f
 --? vrow       | Row         | [ 0, Happy Children's Day!, .*,] |              | f
- vrec       | Rec         | [ 1, 1, 1,]                                                |              | f
- vrefcursor | refcursor   | {name:                                                    +|              | f
-            |             | is_open:        f                                         +|              | 
-            |             | found:  f                                                 +|              | 
-            |             | not_found:      f                                         +|              | 
-            |             | row_count:      0}                                         |              | 
- vconst     | int2        | 0                                                          |              | t
- vpoint     | point       | <UNKNOWN>                                                  |              | f
+ vrec       | Rec         | [ 1, 1, 1,]                                          |              | f
+ vrefcursor | refcursor   | {name:                                              +|              | f
+            |             | is_open:        f                                   +|              | 
+            |             | found:  f                                           +|              | 
+            |             | not_found:      f                                   +|              | 
+            |             | row_count:      0}                                   |              | 
+ vconst     | int2        | 0                                                    |              | t
+ vpoint     | point       | <UNKNOWN>                                            |              | f
 (14 rows)
 
 select funcname, lineno, query from dbe_pldebugger.next();

@@ -135,7 +135,7 @@ SELECT HEX(COMPRESS('string for test compress function '::varchar(10)));
 SELECT HEX(COMPRESS('2023-06-01 00:23:59'::date));
                      hex                      
 ----------------------------------------------
- 0a000000789c3330d33530d43532303206000a7e01e9
+ 0a000000789c33323032d63530d3353004000a9101e9
 (1 row)
 
 SELECT HEX(COMPRESS('2023-06-01 00:23:59'::time));
@@ -145,9 +145,9 @@ SELECT HEX(COMPRESS('2023-06-01 00:23:59'::time));
 (1 row)
 
 SELECT HEX(COMPRESS('2023-06-01 00:23:59'::timestamp));
-                                       hex                                        
-----------------------------------------------------------------------------------
- 1c000000789c0bc92855f02acd533030543030b03232b632b55430323032560870090100690906b6
+                                 hex                                  
+----------------------------------------------------------------------
+ 16000000789c33323032d63530d33530543030b03232b632b5d43530070030530444
 (1 row)
 
 SELECT HEX(COMPRESS('23:25:38.691729-07'::timetz));
@@ -171,7 +171,7 @@ SELECT HEX(COMPRESS('59 second'::reltime));
 SELECT HEX(COMPRESS(date '2021-12-31'));
                      hex                      
 ----------------------------------------------
- 0a000000789c3334d23536d43532303204000a7701e7
+ 0a000000789c33323032d43534d2353604000a7e01e7
 (1 row)
 
 SELECT COMPRESS(E'\x74\x65\x73\x74') = COMPRESS(U&'\0074\0065\0073\0074');
@@ -206,7 +206,7 @@ SELECT HEX(COMPRESS(@var2));
 SELECT HEX(COMPRESS(@var3));
                      hex                      
 ----------------------------------------------
- 0a000000789c3334d23536d43532303204000a7701e7
+ 0a000000789c33323032d43534d2353604000a7e01e7
 (1 row)
 
 -- 空值测试
@@ -415,7 +415,7 @@ SELECT UNCOMPRESS(COMPRESS('string for test compress function '::varchar(10)));
 SELECT UNCOMPRESS(COMPRESS('2023-06-01 00:23:59'::date));
  uncompress 
 ------------
- 06-01-2023
+ 2023-06-01
 (1 row)
 
 SELECT UNCOMPRESS(COMPRESS('2023-06-01 00:23:59'::time));
@@ -425,9 +425,9 @@ SELECT UNCOMPRESS(COMPRESS('2023-06-01 00:23:59'::time));
 (1 row)
 
 SELECT UNCOMPRESS(COMPRESS('2023-06-01 00:23:59'::timestamp));
-          uncompress          
-------------------------------
- Thu Jun 01 00:23:59 2023 PDT
+       uncompress       
+------------------------
+ 2023-06-01 00:23:59-07
 (1 row)
 
 SELECT UNCOMPRESS(COMPRESS('59 minute'::interval));
@@ -439,7 +439,7 @@ SELECT UNCOMPRESS(COMPRESS('59 minute'::interval));
 SELECT UNCOMPRESS(COMPRESS(date '2021-12-31'));
  uncompress 
 ------------
- 12-31-2021
+ 2021-12-31
 (1 row)
 
 SELECT UNCOMPRESS('123456789'::integer); --ERROR
@@ -761,7 +761,7 @@ SELECT UNCOMPRESSED_LENGTH(COMPRESS('2023-06-01 00:23:59'::time));
 SELECT UNCOMPRESSED_LENGTH(COMPRESS('2023-06-01 00:23:59'::timestamp));
  uncompressed_length 
 ---------------------
- 28
+ 22
 (1 row)
 
 SELECT UNCOMPRESSED_LENGTH(COMPRESS('59 minute'::interval));
@@ -779,7 +779,7 @@ SELECT UNCOMPRESSED_LENGTH(COMPRESS(date '2021-12-31'));
 SELECT UNCOMPRESSED_LENGTH(COMPRESS(DATETIME '2022-05-12 10:30:00'));
  uncompressed_length 
 ---------------------
- 24
+ 19
 (1 row)
 
 SELECT UNCOMPRESSED_LENGTH('123456789'::integer); --ERROR
@@ -825,7 +825,7 @@ SELECT UNCOMPRESSED_LENGTH('123456789'::bytea); --ERROR
 SELECT UNCOMPRESSED_LENGTH('2023-06-01 00:23:59'::date); --ERROR
  uncompressed_length 
 ---------------------
- 808269360
+ 858927154
 (1 row)
 
 -- 空值测试

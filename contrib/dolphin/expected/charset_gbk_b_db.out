@@ -1015,13 +1015,13 @@ SELECT CONCAT(123, '高斯DB') result, collation for(result);
 SELECT CONCAT('高斯DB', DATE '2023-05-01') result, collation for(result);
        result       | pg_collation_for 
 --------------------+------------------
- 高斯DB05-01-2023 | gbk_chinese_ci
+ 高斯DB2023-05-01 | gbk_chinese_ci
 (1 row)
 
 SELECT CONCAT(DATE '2023-05-01', '高斯DB') result, collation for(result);
        result       | pg_collation_for 
 --------------------+------------------
- 05-01-2023高斯DB | gbk_chinese_ci
+ 2023-05-01高斯DB | gbk_chinese_ci
 (1 row)
 
 SELECT CONCAT('高斯DB', NULL) result, collation for(result);
@@ -1064,13 +1064,13 @@ SELECT CONCAT(123, _utf8mb4'高斯DB') result, collation for(result);
 SELECT CONCAT(_utf8mb4'高斯DB', DATE '2023-05-01') result, collation for(result);
       result      |  pg_collation_for  
 ------------------+--------------------
- ��˹DB05-01-2023 | utf8mb4_general_ci
+ ��˹DB2023-05-01 | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT(DATE '2023-05-01', _utf8mb4'高斯DB') result, collation for(result);
       result      |  pg_collation_for  
 ------------------+--------------------
- 05-01-2023��˹DB | utf8mb4_general_ci
+ 2023-05-01��˹DB | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB', NULL) result, collation for(result);
@@ -1114,13 +1114,13 @@ SELECT CONCAT(123, CONCAT('高斯DB')) result, collation for(result);
 SELECT CONCAT(CONCAT('高斯DB'), DATE '2023-05-01') result, collation for(result);
        result       | pg_collation_for 
 --------------------+------------------
- 高斯DB05-01-2023 | gbk_chinese_ci
+ 高斯DB2023-05-01 | gbk_chinese_ci
 (1 row)
 
 SELECT CONCAT(DATE '2023-05-01', CONCAT('高斯DB')) result, collation for(result);
        result       | pg_collation_for 
 --------------------+------------------
- 05-01-2023高斯DB | gbk_chinese_ci
+ 2023-05-01高斯DB | gbk_chinese_ci
 (1 row)
 
 SELECT CONCAT(CONCAT('高斯DB'), NULL) result, collation for(result);
@@ -1163,13 +1163,13 @@ SELECT CONCAT(123, CONCAT(_utf8mb4'高斯DB')) result, collation for(result);
 SELECT CONCAT(CONCAT(_utf8mb4'高斯DB'), DATE '2023-05-01') result, collation for(result);
       result      |  pg_collation_for  
 ------------------+--------------------
- ��˹DB05-01-2023 | utf8mb4_general_ci
+ ��˹DB2023-05-01 | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT(DATE '2023-05-01', CONCAT(_utf8mb4'高斯DB')) result, collation for(result);
       result      |  pg_collation_for  
 ------------------+--------------------
- 05-01-2023��˹DB | utf8mb4_general_ci
+ 2023-05-01��˹DB | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT(CONCAT(_utf8mb4'高斯DB'), NULL) result, collation for(result);
@@ -1194,7 +1194,7 @@ SELECT CONCAT('100', 200) result, collation for(result);
 SELECT CONCAT('100', date'2021-01-01') result, collation for(result);
     result     | pg_collation_for 
 ---------------+------------------
- 10001-01-2021 | gbk_chinese_ci
+ 1002021-01-01 | gbk_chinese_ci
 (1 row)
 
 SELECT CONCAT('100', NULL) result, collation for(result);
@@ -1224,7 +1224,7 @@ SELECT CONCAT(100, 200) result, collation for(result);
 SELECT CONCAT(100, date'2021-01-01') result, collation for(result);
     result     | pg_collation_for 
 ---------------+------------------
- 10001-01-2021 | gbk_chinese_ci
+ 1002021-01-01 | gbk_chinese_ci
 (1 row)
 
 SELECT CONCAT(100, NULL) result, collation for(result);
@@ -1954,13 +1954,13 @@ SELECT CONCAT(123, futf8_uni) result, collation for(result) FROM t_diff_charset_
 SELECT CONCAT(futf8_uni, DATE '2023-05-01') result, collation for(result) FROM t_diff_charset_columns;
        result       |  pg_collation_for  
 --------------------+--------------------
- 高斯db05-01-2023 | utf8mb4_unicode_ci
+ 高斯db2023-05-01 | utf8mb4_unicode_ci
 (1 row)
 
 SELECT CONCAT(DATE '2023-05-01', futf8_uni) result, collation for(result) FROM t_diff_charset_columns;
        result       |  pg_collation_for  
 --------------------+--------------------
- 05-01-2023高斯db | utf8mb4_unicode_ci
+ 2023-05-01高斯db | utf8mb4_unicode_ci
 (1 row)
 
 SELECT CONCAT(futf8_uni, NULL) result, collation for(result) FROM t_diff_charset_columns;
@@ -2047,13 +2047,13 @@ SELECT CONCAT(123, fgbk_bin) result, collation for(result) FROM t_diff_charset_c
 SELECT CONCAT(fgbk_chi, DATE '2023-05-01') result, collation for(result) FROM t_diff_charset_columns;
        result       | pg_collation_for 
 --------------------+------------------
- 高斯db05-01-2023 | gbk_chinese_ci
+ 高斯db2023-05-01 | gbk_chinese_ci
 (1 row)
 
 SELECT CONCAT(DATE '2023-05-01', fgbk_bin) result, collation for(result) FROM t_diff_charset_columns;
        result       | pg_collation_for 
 --------------------+------------------
- 05-01-2023高斯DB | gbk_bin
+ 2023-05-01高斯DB | gbk_bin
 (1 row)
 
 SELECT CONCAT(fgbk_chi, NULL) result, collation for(result) FROM t_diff_charset_columns;

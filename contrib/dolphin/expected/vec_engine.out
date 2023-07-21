@@ -101,8 +101,8 @@ explain (costs off) select
                 n_name
         order by
                 revenue desc;
-                                                                     QUERY PLAN                                                                      
------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                   QUERY PLAN                                                                   
+------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
          Sort Key: (sum((lineitem.l_extendedprice * (1::numeric - lineitem.l_discount)))) DESC
@@ -111,7 +111,7 @@ explain (costs off) select
                ->  Vector Sonic Hash Join
                      Hash Cond: ((orders.o_custkey = customer.c_custkey) AND (orders.o_orderkey = lineitem.l_orderkey))
                      ->  CStore Scan on orders
-                           Filter: ((o_orderdate >= '01-01-1994'::date) AND (o_orderdate < 'Sun Jan 01 00:00:00 1995'::timestamp without time zone))
+                           Filter: ((o_orderdate >= '1994-01-01'::date) AND (o_orderdate < '1995-01-01 00:00:00'::timestamp without time zone))
                      ->  Vector Sonic Hash Join
                            Hash Cond: (lineitem.l_suppkey = supplier.s_suppkey)
                            ->  CStore Scan on lineitem
