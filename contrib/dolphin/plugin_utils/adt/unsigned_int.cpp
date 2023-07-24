@@ -2279,7 +2279,7 @@ bool scanuint8(const char *str, bool errorOK, uint64 *result, bool can_ignore)
 
     /* allow trailing whitespace and dot, but not other trailing chars */
     char digitAfterDot = '\0';
-    CheckSpaceAndDotInternal(errorOK, '\0', &digitAfterDot, &ptr);
+    CheckSpaceAndDotInternal(digitAfterDot, &ptr, !errorOK);
 
     if (unlikely(*ptr != '\0')) {
         if (errorOK)

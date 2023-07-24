@@ -39,7 +39,8 @@ extern int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict, bool can_ig
 extern uint16 PgStrtouint16Internal(const char* s, bool sqlModeStrict, bool can_ignore);
 extern uint32 PgStrtouint32Internal(const char* s, bool sqlModeStrict, bool can_ignore);
 extern bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlModeStrict, bool can_ignore);
-extern void CheckSpaceAndDotInternal(bool errorOK, int c, char* digitAfterDot, const char** ptr);
+extern void CheckSpaceAndDotInternal(char& digitAfterDot, const char** ptr,
+                                     bool checkDecimal = true, int endChar = '\0');
 extern uint64 pg_getmsguint64(StringInfo msg);
 extern void pg_ctoa(int8 i, char* a);
 extern int get_step_len(unsigned char ch);

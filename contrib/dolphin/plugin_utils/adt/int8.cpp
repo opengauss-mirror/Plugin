@@ -34,23 +34,23 @@ typedef struct {
     int64 step;
 } generate_series_fctx;
 #ifdef DOLPHIN
-void CheckSpaceAndDotInternal(bool errorOK, int c, char* digitAfterDot, const char** ptr)
+void CheckSpaceAndDotInternal(char& digitAfterDot, const char** ptr, bool checkDecimal, int endChar)
 {
-    bool isFirstDot = true;
-    if (!errorOK) {
-        while (*(*ptr) && *(*ptr) != c && ((*(*ptr) == '.' && isFirstDot) || (isdigit((unsigned char)*(*ptr))))) {
-            if (*(*ptr) == '.') {
-                isFirstDot = false;
-                *digitAfterDot = *((*ptr) + 1);
+    if (checkDecimal && **ptr == '.') {
+        (*ptr)++;
+        while (**ptr != '\0' && **ptr != endChar && isdigit(**ptr)) {
+            if (digitAfterDot == '\0') {
+                digitAfterDot = **ptr;
             }
             (*ptr)++;
         }
-        if (!isFirstDot && *digitAfterDot == '\0')
-            (*ptr)--;
-    } else {
-        while (*(*ptr) != '\0' && (isspace((unsigned char)*(*ptr)))) {
-            (*ptr)++;
+    }
+
+    while (**ptr != '\0' && **ptr != endChar) {
+        if (!isspace(**ptr)) {
+            return;
         }
+        (*ptr)++;
     }
 }
 #endif
@@ -156,8 +156,16 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
     }
 
     /* allow trailing whitespace and dot, but not other trailing chars */
+#ifdef DOLPHIN
     char digitAfterDot = '\0';
-    CheckSpaceAndDotInternal(errorOK, '\0', &digitAfterDot, &ptr);
+    /* for errorOK scenarios, donot check decimal part so ptr doesnt pornt to the end if the value has decimal part. */
+    const bool checkDecimal = !errorOK;
+    CheckSpaceAndDotInternal(digitAfterDot, &ptr, checkDecimal);
+#else
+    while (*ptr != '\0' && isspace((unsigned char)*ptr)) {
+        ptr++;
+    }
+#endif
 
     if (unlikely(*ptr != '\0')) {
         if (errorOK) {
@@ -195,12 +203,14 @@ bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlMode
         }
     }
 
+#ifdef DOLPHIN
     if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
         if (!neg && tmp < PG_INT64_MAX)
             tmp++;
         if (neg && tmp > PG_INT64_MIN)
             tmp--;
     }
+#endif
 
     *result = tmp;
     return true;

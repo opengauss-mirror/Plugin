@@ -15,6 +15,59 @@ select * from t_load_data_0037;
     3 | 小明   |    16 | 
 (3 rows)
 
+-- test tail space
+create table t_load_tailspace(c_01 int primary key,c_02 int,c_03 text);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_load_tailspace_pkey" for table "t_load_tailspace"
+load data infile '@abs_builddir@/data/load-tailspace.txt'
+    into table t_load_tailspace
+    fields terminated by ',' enclosed by ''''
+    lines starting by '*' terminated by ';';
+select * from t_load_tailspace;
+ c_01 |  c_02  |  c_03   
+------+--------+---------
+ 1001 | 123456 | fsdsgf
+ 1002 | 456789 | 出发点
+ 1003 | 174852 | fdas153
+(3 rows)
+
+-- test float point to int
+create table t_load_float(c_01 int primary key,c_02 int,c_03 text);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_load_float_pkey" for table "t_load_float"
+load data infile '@abs_builddir@/data/load-float.txt'
+    into table t_load_float
+    fields terminated by ','
+    enclosed by ''''
+    lines starting by '*'
+    terminated by ';';
+select * from t_load_float;
+ c_01 |  c_02  |  c_03  
+------+--------+--------
+ 1001 |    123 | fsdsgf
+ 1002 | 456789 | 出发点
+(2 rows)
+
+-- test basic insert
+create table t_space_float(n int, c1 int, c2 bigint, c3 uint4, c4 uint8);
+insert into t_space_float values(1, ' 1  ', '  2  ', ' 3  ', ' 4   ');
+insert into t_space_float values(2, ' 1.  ', '  2.  ', ' 3.  ', ' 4.   ');
+insert into t_space_float values(3, ' 1.12  ', '  2.17  ', ' 3.19  ', ' 4.12   ');
+insert into t_space_float values(4, ' -1.12  ', '  -2.12  ', ' 3.12  ', ' 4.12   ');
+insert into t_space_float values(5, ' 1.5  ', '  2.6  ', ' 3.9  ', ' 4.9   '); -- should carry
+insert into t_space_float values(5, ' 1.5. ', '  2.6  ', ' 3.9  ', ' 4.9   '); -- should error
+ERROR:  invalid input syntax for integer: " 1.5. "
+LINE 1: insert into t_space_float values(5, ' 1.5. ', '  2.6  ', ' 3...
+                                            ^
+CONTEXT:  referenced column: c1
+select * from t_space_float order by n;
+ n | c1 | c2 | c3 | c4 
+---+----+----+----+----
+ 1 |  1 |  2 | 3  | 4
+ 2 |  1 |  2 | 3  | 4
+ 3 |  1 |  2 | 3  | 4
+ 4 | -1 | -2 | 3  | 4
+ 5 |  2 |  3 | 4  | 5
+(5 rows)
+
 -- test ignore
 create  table t_load_ignore(c_01 int primary key,c_02 int default 18,c_03 char(5) default '女',c_04 varchar(15));
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_load_ignore_pkey" for table "t_load_ignore"
