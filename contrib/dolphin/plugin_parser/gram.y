@@ -965,7 +965,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 
 %type <keyword> character_set
 %type <ival>	charset opt_charset convert_charset default_charset
-%type <str>		collate opt_collate default_collate
+%type <str>		collate opt_collate default_collate set_names_collate
 %type <charsetcollateopt> CharsetCollate charset_collate optCharsetCollate
 
 %type <boolean> opt_varying opt_timezone opt_no_inherit
@@ -2915,7 +2915,7 @@ set_rest_more:  /* Generic SET syntaxes: */
 					n->args = list_make1(makeStringConst($2, @2));
 					$$ = n;
 				}
-			| NAMES opt_encoding opt_collate
+			| NAMES opt_encoding set_names_collate
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_VALUE;
@@ -19197,6 +19197,11 @@ collate:
 			}
 		;
 
+set_names_collate:    COLLATE charset_collate_name		{ $$ = $2; }
+					| COLLATE DEFAULT					{ $$ = NULL; }
+					| /*EMPTY*/							{ $$ = NULL; }
+			;
+
 opt_collate:
 				collate								{ $$ = $1; }
 				| /*EMPTY*/							{ $$ = NULL; }
@@ -24251,6 +24256,15 @@ TransactionStmt:
 				}
 			| START TRANSACTION WITH CONSISTENT SNAPSHOT
 				{
+					if (!DB_IS_CMPT(B_FORMAT)) {
+						const char* message = "WITH CONSISTENT SNAPSHOT is supported only in B-format database.";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(errstate,
+							(errmodule(MOD_PARSER),
+								errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("WITH CONSISTENT SNAPSHOT is supported only in B-format database."),
+								parser_errposition(@3)));
+					}
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_START;
 					n->options = NIL;
@@ -37460,7 +37474,7 @@ makeStringConst(char *str, int location)
 
 	if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
 	{
-		if (NULL == str || 0 == strlen(str))
+		if (NULL == str || (0 == strlen(str) && !ACCEPT_EMPTY_STR))
 		{
 			n->val.type = T_Null;
 			n->val.val.str = str;
