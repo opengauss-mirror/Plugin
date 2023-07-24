@@ -131,17 +131,19 @@ int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool can_igno
         }
     }
 
+#ifdef DOLPHIN
     /*
      * Skip any trailing whitespace; if anything but whitespace remains before
      * the terminating character, bail out
      */
     const char* ptr = badp;
-    CheckSpaceAndDotInternal(false, c, &digitAfterDot, &ptr);
+    CheckSpaceAndDotInternal(digitAfterDot, &ptr, true, c);
     badp = const_cast<char*>(ptr);
 
     if ((!can_ignore && sqlModeStrict) && *badp && *badp != c)
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for integer: \"%s\"", s)));
+#endif
 
     switch (size) {
         case sizeof(int32):
@@ -281,7 +283,7 @@ int8 PgStrtoint8Internal(const char* s, bool sqlModeStrict, bool can_ignore)
     }
 
     /* allow trailing whitespace, but not other trailing chars */
-    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+    CheckSpaceAndDotInternal(digitAfterDot, &ptr);
 
     if (!can_ignore && sqlModeStrict && unlikely(*ptr != '\0'))
         goto invalid_syntax;
@@ -372,11 +374,13 @@ int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict, bool can_ignore)
             goto out_of_range;
     }
 
+#ifdef DOLPHIN
     /* allow trailing whitespace, but not other trailing chars */
-    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+    CheckSpaceAndDotInternal(digitAfterDot, &ptr);
 
     if (!can_ignore && sqlModeStrict && unlikely(*ptr != '\0'))
         goto invalid_syntax;
+#endif
 
     if (!neg) {
         /* could fail if input is most negative number */
@@ -475,8 +479,9 @@ int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict, bool can_ignore)
             goto out_of_range;
     }
 
+#ifdef DOLPHIN
     /* allow trailing whitespace, but not other trailing chars */
-    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+    CheckSpaceAndDotInternal(digitAfterDot, &ptr);
 
     if (!can_ignore && sqlModeStrict && unlikely(*ptr != '\0'))
         goto invalid_syntax;
@@ -489,18 +494,32 @@ int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict, bool can_ignore)
     }
 
     if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
-#ifdef DOLPHIN
         if (tmp == PG_INT32_MAX || tmp == PG_INT32_MIN) {
             ereport((!can_ignore && sqlModeStrict) ? ERROR : WARNING,
                 (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                     errmsg("value \"%s\" is out of range for type %s", s, "integer")));
         }
-#endif
         if (!neg && tmp < PG_INT32_MAX)
             tmp++;
         if (neg && tmp > PG_INT32_MIN)
             tmp--;
     }
+#else
+    /* allow trailing whitespace, but not other trailing chars */
+    while (*ptr != '\0' && isspace((unsigned char)*ptr)) {
+        ptr++;
+    }
+
+    if (unlikely(*ptr != '\0') && u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
+        goto invalid_syntax;
+
+    if (!neg) {
+        /* could fail if input is most negative number */
+        if (unlikely(tmp == PG_INT32_MIN))
+            goto out_of_range;
+        tmp = -tmp;
+    }
+#endif
 
     return tmp;
 
@@ -914,7 +933,7 @@ uint8 PgStrtouint8Internal(const char* s, bool sqlModeStrict, bool can_ignore)
     }
 
     /* allow trailing whitespace, but not other trailing chars */
-    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+    CheckSpaceAndDotInternal(digitAfterDot, &ptr);
 
     if (!can_ignore && sqlModeStrict && unlikely(*ptr != '\0'))
         goto invalid_syntax;
@@ -999,7 +1018,7 @@ uint16 PgStrtouint16Internal(const char* s, bool sqlModeStrict, bool can_ignore)
     }
 
     /* allow trailing whitespace, but not other trailing chars */
-    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+    CheckSpaceAndDotInternal(digitAfterDot, &ptr);
 
     if (!can_ignore && sqlModeStrict && unlikely(*ptr != '\0'))
         goto invalid_syntax;
@@ -1083,7 +1102,7 @@ uint32 PgStrtouint32Internal(const char* s, bool sqlModeStrict, bool can_ignore)
     }
 
     /* allow trailing whitespace, but not other trailing chars */
-    CheckSpaceAndDotInternal(false, '\0', &digitAfterDot, &ptr);
+    CheckSpaceAndDotInternal(digitAfterDot, &ptr);
 
     if (!can_ignore && sqlModeStrict && unlikely(*ptr != '\0'))
         goto invalid_syntax;

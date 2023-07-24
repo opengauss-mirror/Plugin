@@ -9,6 +9,34 @@ fields terminated by '!' enclosed by '*'
 lines starting by '[' terminated by ')]';
 select * from t_load_data_0037;
 
+-- test tail space
+create table t_load_tailspace(c_01 int primary key,c_02 int,c_03 text);
+load data infile '@abs_builddir@/data/load-tailspace.txt'
+    into table t_load_tailspace
+    fields terminated by ',' enclosed by ''''
+    lines starting by '*' terminated by ';';
+select * from t_load_tailspace;
+
+-- test float point to int
+create table t_load_float(c_01 int primary key,c_02 int,c_03 text);
+load data infile '@abs_builddir@/data/load-float.txt'
+    into table t_load_float
+    fields terminated by ','
+    enclosed by ''''
+    lines starting by '*'
+    terminated by ';';
+select * from t_load_float;
+
+-- test basic insert
+create table t_space_float(n int, c1 int, c2 bigint, c3 uint4, c4 uint8);
+insert into t_space_float values(1, ' 1  ', '  2  ', ' 3  ', ' 4   ');
+insert into t_space_float values(2, ' 1.  ', '  2.  ', ' 3.  ', ' 4.   ');
+insert into t_space_float values(3, ' 1.12  ', '  2.17  ', ' 3.19  ', ' 4.12   ');
+insert into t_space_float values(4, ' -1.12  ', '  -2.12  ', ' 3.12  ', ' 4.12   ');
+insert into t_space_float values(5, ' 1.5  ', '  2.6  ', ' 3.9  ', ' 4.9   '); -- should carry
+insert into t_space_float values(5, ' 1.5. ', '  2.6  ', ' 3.9  ', ' 4.9   '); -- should error
+select * from t_space_float order by n;
+
 create table t1(a int, b int);
 load data infile '@abs_builddir@/data/load1.csv' into table t1;
 select * from t1;
