@@ -160,19 +160,28 @@ set_target_properties(dolphin PROPERTIES PREFIX "")
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin.control
     DESTINATION share/postgresql/extension/
 )
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--1.1.sql
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--2.0.sql
     DESTINATION share/postgresql/extension/
 )
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--1.0.sql
     DESTINATION share/postgresql/extension/
 )
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/upgrade_script/dolphin--1.0--1.1.sql
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--1.0--2.0.sql
     DESTINATION share/postgresql/extension/
 )
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/rollback_script/dolphin--1.1--1.0.sql
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/dolphin--2.0--1.0.sql
     DESTINATION share/postgresql/extension/
 )
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/openGauss_expr_dolphin.ir
+    DESTINATION share/postgresql/extension/
+)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/openGauss_expr_dolphin.ir
+    DESTINATION share/postgresql/extension/
+)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/upgrade_script/dolphin--1.1--2.0.sql
+    DESTINATION share/postgresql/extension/
+)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/rollback_script/dolphin--2.0--1.1.sql
     DESTINATION share/postgresql/extension/
 )
 install(TARGETS dolphin DESTINATION lib/postgresql)

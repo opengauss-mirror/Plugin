@@ -5,10 +5,15 @@ rm -f dolphin--1.0.sql
 touch dolphin--1.0.sql
 for i in `ls sql_script`; do cat sql_script/$i >> dolphin--1.0.sql; done
 for i in `ls sql_script_post`; do cat sql_script_post/$i >> dolphin--1.0.sql; done
-rm -f dolphin--1.1.sql
-touch dolphin--1.1.sql
-cat dolphin--1.0.sql >> dolphin--1.1.sql
-cat upgrade_script/dolphin--1.0--1.1.sql >> dolphin--1.1.sql
+rm -f dolphin--2.0.sql
+touch dolphin--2.0.sql
+cat dolphin--1.0.sql upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql >> dolphin--2.0.sql
+rm -f dolphin--1.0--2.0.sql
+touch dolphin--1.0--2.0.sql
+cat upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql >> dolphin--1.0--2.0.sql
+rm -f dolphin--2.0--1.0.sql
+touch dolphin--2.0--1.0.sql
+cat rollback_script/dolphin--2.0--1.1.sql rollback_script/dolphin--1.1--1.0.sql >> dolphin--2.0--1.0.sql
 cp llvmir/openGauss_expr_dolphin_${BUILD_TUPLE}.ir openGauss_expr_dolphin.ir
 DOLPHIN_CMAKE_BUILD_DIR=`pwd`/tmp_build
 [ -d "${DOLPHIN_CMAKE_BUILD_DIR}" ] && rm -rf ${DOLPHIN_CMAKE_BUILD_DIR}
