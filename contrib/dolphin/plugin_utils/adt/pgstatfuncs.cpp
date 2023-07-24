@@ -719,6 +719,9 @@ void pg_stat_get_stat_list(List** stat_list, uint32* statFlag_ref, Oid relid)
     } else if (isPartitionedObject(relid, RELKIND_INDEX, true)) {
         *statFlag_ref = relid;
         *stat_list = getPartitionObjectIdList(relid, PART_OBJ_TYPE_INDEX_PARTITION);
+    } else if (isPartitionObject(relid, PART_OBJ_TYPE_TABLE_PARTITION, true)) {
+        *statFlag_ref = partid_get_parentid(relid);
+        *stat_list = list_make1_oid(relid);
     } else {
         *statFlag_ref = InvalidOid;
         *stat_list = list_make1_oid(relid);
@@ -1823,9 +1826,14 @@ static void pgOutputRemainInfoToFile(RemainSegsCtx* remainSegsCtx)
 
 Datum pg_free_remain_segment(PG_FUNCTION_ARGS)
 {
-    Oid spaceId = PG_GETARG_OID(0);
-    Oid dbId = PG_GETARG_OID(1);
-    Oid segmentId = PG_GETARG_OID(2);
+    int32 spaceId = PG_GETARG_INT32(0);
+    int32 dbId = PG_GETARG_INT32(1);
+    int32 segmentId = PG_GETARG_INT32(2);
+
+    if (spaceId < 0 || dbId < 0 || segmentId < 0) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Input segment [%d, %d, %d] is not valid segment!", spaceId, dbId, segmentId)));
+    }
 
     RemainSegsCtx* remainSegsCtx = (RemainSegsCtx *)palloc(sizeof(RemainSegsCtx));
     remainSegsCtx->remainSegsBuf = NULL;
@@ -1833,7 +1841,7 @@ Datum pg_free_remain_segment(PG_FUNCTION_ARGS)
     
     ReadRemainSegsFileForFunc(remainSegsCtx);
 
-    int segIdx = pgCheckRemainSegment(remainSegsCtx, spaceId, dbId, segmentId);
+    int segIdx = pgCheckRemainSegment(remainSegsCtx, (Oid)spaceId, (Oid)dbId, (Oid)segmentId);
     if (segIdx >= 0 && (uint32)segIdx < remainSegsCtx->remainSegsNum) {
         pgDoFreeRemainSegment(remainSegsCtx, segIdx);
 
@@ -1841,7 +1849,7 @@ Datum pg_free_remain_segment(PG_FUNCTION_ARGS)
 
         pgOutputRemainInfoToFile(remainSegsCtx);
     } else {
-        ereport(ERROR, (errmsg("Input segment [%u, %u, %u] is not remained segment!", spaceId, dbId, segmentId)));
+        ereport(ERROR, (errmsg("Input segment [%d, %d, %d] is not remained segment!", spaceId, dbId, segmentId)));
      }
 
     if (remainSegsCtx->remainSegsBuf != NULL) {
