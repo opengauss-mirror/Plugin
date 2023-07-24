@@ -165,4 +165,6 @@ void sendRowDescriptionPacket(StringInfo buf, SPITupleTable  *SPI_tuptable);
 
 void send_text_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tuptable);
 
+void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf);
+
 #endif /* DQ_FORMAT_H */

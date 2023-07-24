@@ -227,8 +227,13 @@ void set_default_guc()
     set_config_option("datestyle", "ISO, YMD", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
 }
 
-static void init_dolphin_proto()
+void init_dolphin_proto(char* database_name)
 {
+    if (g_proto_ctx.database_name.data[0] == '\0') {
+        int ret = strcpy_s(g_proto_ctx.database_name.data, NAMEDATALEN, database_name);
+        securec_check(ret, "\0", "\0");
+    }
+    
     if (protocol_inited) {
         define_dolphin_server_guc();
         return;
@@ -246,10 +251,6 @@ static void init_dolphin_proto()
     /* use try-catch to unlock if error happend */
     PG_TRY();
     {
-        int ret = strcpy_s(g_proto_ctx.database_name.data, NAMEDATALEN,
-            u_sess->proc_cxt.MyProcPort->database_name);
-        securec_check(ret, "\0", "\0");
-
         define_dolphin_server_guc();
         server_listen_init();
         protocol_inited = true;
@@ -305,7 +306,7 @@ void init_plugin_object()
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
         u_sess->proc_cxt.MyProcPort->database_name) {
-        init_dolphin_proto();
+        init_dolphin_proto(u_sess->proc_cxt.MyProcPort->database_name);
     }
 
     /* init types and operators */
@@ -913,6 +914,7 @@ void init_session_vars(void)
     cxt->b_stmtInputTypeHash = NULL;
     cxt->b_sendBlobHash = NULL;
     cxt->is_dolphin_call_stmt = false;
+    cxt->is_binary_proto = false;
 
     DefineCustomBoolVariable("dolphin.b_compatibility_mode",
                              "Enable mysql behavior override opengauss's when collision happens.",
