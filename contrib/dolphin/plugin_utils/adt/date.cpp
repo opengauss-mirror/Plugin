@@ -52,10 +52,10 @@
  */
 
 static void EncodeSpecialDate(DateADT dt, char* str, int strlen);
-static int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 #ifndef DOLPHIN
 static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
 static int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec);
+static int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 #endif
 static int tm2timetz(struct pg_tm* tm, fsec_t fsec, int tz, TimeTzADT* result);
 static void AdjustTimeForTypmod(TimeADT* time, int32 typmod);
@@ -2792,7 +2792,11 @@ Datum timetztypmodout(PG_FUNCTION_ARGS)
 /* timetz2tm()
  * Convert TIME WITH TIME ZONE data type to POSIX time structure.
  */
+#ifdef DOLPHIN
+int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp)
+#else
 static int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp)
+#endif
 {
     TimeOffset trem = time->time;
 

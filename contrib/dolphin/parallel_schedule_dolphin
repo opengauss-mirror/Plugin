@@ -40,7 +40,7 @@ test: builtin_funcs/db_b_hex builtin_funcs/db_b_if builtin_funcs/elt builtin_fun
 
 test: uint_agg uint_and uint_cast uint_cast2 uint_div uint_mi uint_mod uint_mod2 uint_mul uint_numeric uint_operator uint_or uint_partition uint_pl uint_xor 
 
-test: uint_procedure_col_bypass uint_smp uint_index uint_sql_mode uint_ignore uint_join signed_unsigned_cast uint_in implicit_cast uint_auto_increment
+test: uint_procedure_col_bypass uint_smp uint_index uint_sql_mode uint_ignore uint_join signed_unsigned_cast uint_in implicit_cast uint_auto_increment signed_cast
 
 test: tinyint_agg tinyint_cast tinyint_index tinyint_operator tinyint_partition tinyint_smp_join_procedure algorithm_opt
 

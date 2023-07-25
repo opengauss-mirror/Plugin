@@ -133,6 +133,8 @@ extern void add_currentdate_to_time(TimeADT time, Timestamp *result);
 extern bool datetime_in_with_sql_mode_internal(char *str, struct pg_tm *tm, fsec_t *fsec, int &tm_type,
     unsigned int date_flag);
 extern bool datetime_in_range(Timestamp datetime);
+extern int128 timestamp_int128(Timestamp timestamp);
+extern int128 timestamptz_int128(TimestampTz timestampTz);
 
 extern "C" DLL_PUBLIC Datum int64_b_format_datetime(PG_FUNCTION_ARGS);
 #endif

@@ -270,14 +270,10 @@ ERROR:  invalid input syntax for type time: "18446744073709551615"
 CONTEXT:  referenced column: time
 
 select '4294967295'::uint1::time;
-ERROR:  value "4294967295" is out of range for type tinyint unsigned
-LINE 1: select '4294967295'::uint1::time;
-               ^
+ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: time
 select '4294967295'::uint2::time;
-ERROR:  value "4294967295" is out of range for type smallint unsigned
-LINE 1: select '4294967295'::uint2::time;
-               ^
+ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: time
 select '4294967295'::uint4::time;
 ERROR:  invalid input syntax for type time: "4294967295"
@@ -596,11 +592,8 @@ select cast(b'1111111111111111111111111111111111111111111111111111111111111111' 
 (1 row)
 
 select cast(b'1111111111111111111111111111111111111111111111111111111111111111' as signed);
- int8 
-------
-   -1
-(1 row)
-
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
 select cast(b'111111111111111111111111111111111111111111111111111111111111111' as unsigned);
         uint8        
 ---------------------

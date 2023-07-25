@@ -25,6 +25,47 @@
 #include "utils/int8.h"
 #include "utils/builtins.h"
 #include "plugin_commands/mysqlmode.h"
+#ifdef DOLPHIN
+#include "plugin_utils/varbit.h"
+#include "utils/int16.h"
+#include "plugin_utils/date.h"
+#include "plugin_utils/datetime.h"
+#include "plugin_utils/timestamp.h"
+#include "plugin_utils/year.h"
+#include "utils/lsyscache.h"
+
+PG_FUNCTION_INFO_V1_PUBLIC(bit_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(float4_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(date_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(time_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(timetz_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(set_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(uint8_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(year_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(bpchar_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(text_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_int8);
+
+extern "C" DLL_PUBLIC Datum bit_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum float4_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum float8_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum date_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum timestamp_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum timestamptz_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum time_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum timetz_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum set_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum uint8_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum year_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bpchar_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum varchar_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum text_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum varlena_cast_int8(PG_FUNCTION_ARGS);
+#endif
 
 #define MAXINT8LEN 25
 
@@ -75,7 +116,7 @@ void CheckSpaceAndDotInternal(char& digitAfterDot, const char** ptr, bool checkD
  */
 bool scanint8(const char* str, bool errorOK, int64* result, bool can_ignore)
 {
-    return Scanint8Internal(str, errorOK, result, true, can_ignore);
+    return Scanint8Internal(str, errorOK, result, SQL_MODE_STRICT(), can_ignore);
 }
 
 bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlModeStrict, bool can_ignore)
@@ -1699,5 +1740,199 @@ Datum dtoi8_floor(PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_INT64((int64)num);
+}
+
+Datum checkSignedRange(int128 result, PG_FUNCTION_ARGS)
+{
+    //To keep consistency with MySQL
+    if (result > (int128)INT64_MAX || result < (int128)INT64_MIN) {
+        if (result > (int128)UINT64_MAX) {
+            result = -1;
+        } else {
+            result = result > 0 ? (int64)result : INT64_MIN;
+        }
+        ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("bigint out of range")));
+    }
+    PG_RETURN_INT64((int64)result);
+}
+
+Datum bit_cast_int8(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+    uint128 result;
+    bits8* r = NULL;
+    /* Check that the bit string is not too long */
+    if ((uint32)VARBITLEN(arg) - GetLeadingZeroLen(arg) > sizeof(uint64) * BITS_PER_BYTE) {
+        ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("bigint out of range")));
+    }
+    result = 0;
+    for (r = VARBITS(arg); r < VARBITEND(arg); r++) {
+        result <<= BITS_PER_BYTE;
+        result |= *r;
+    }
+    /* Now shift the result to take account of the padding at the end */
+    result >>= VARBITPAD(arg);
+    PG_RETURN_INT64(checkSignedRange(result, fcinfo));
+}
+
+Datum float4_cast_int8(PG_FUNCTION_ARGS)
+{
+    float4 result = PG_GETARG_FLOAT4(0);
+    if (isnan(result)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+    }
+    //To keep consistency with MySQL
+    if (result >= (float4)((int128)INT64_MAX) || result <= (float4)INT64_MIN) {
+        result = result > 0 ? INT64_MAX : INT64_MIN;
+        ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("bigint out of range")));
+    }
+    PG_RETURN_INT64((int128)round(result));
+}
+
+Datum float8_cast_int8(PG_FUNCTION_ARGS)
+{
+    float8 result = PG_GETARG_FLOAT8(0);
+    if (isnan(result)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+    }
+    //To keep consistency with MySQL
+    if (result >= (float8)((int128)INT64_MAX) || result <= (float8)INT64_MIN) {
+        ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("bigint out of range")));
+        PG_RETURN_INT64((result > 0 ? INT64_MAX : INT64_MIN));
+    }
+    PG_RETURN_INT64((int128)round(result));
+}
+
+Datum date_cast_int8(PG_FUNCTION_ARGS)
+{
+    DateADT date = PG_GETARG_DATEADT(0);
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    if (unlikely(date > 0 && (INT_MAX - date < POSTGRES_EPOCH_JDATE))) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("input julian date is overflow")));
+    }
+    j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+    int128 result = date2int(tm);
+    PG_RETURN_INT64(checkSignedRange(result, fcinfo));
+}
+
+Datum timestamp_cast_int8(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    int128 result = timestamp_int128(timestamp);
+    PG_RETURN_INT64(checkSignedRange(result, fcinfo));
+}
+
+Datum timestamptz_cast_int8(PG_FUNCTION_ARGS)
+{
+    TimestampTz timestampTz = PG_GETARG_TIMESTAMPTZ(0);
+    int128 result = timestamptz_int128(timestampTz);
+    PG_RETURN_INT64(checkSignedRange(result, fcinfo));
+}
+
+Datum time_cast_int8(PG_FUNCTION_ARGS)
+{
+    TimeADT time = PG_GETARG_TIMEADT(0);
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    time2tm(time, tm, &fsec);
+    int128 result = tmfsec2uint(tm);
+    PG_RETURN_INT64(checkSignedRange(result, fcinfo));
+}
+
+Datum timetz_cast_int8(PG_FUNCTION_ARGS)
+{
+    TimeTzADT* time = PG_GETARG_TIMETZADT_P(0);
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    int tz;
+    timetz2tm(time, tm, &fsec, &tz);
+    int128 result = tmfsec2uint(tm);
+    PG_RETURN_INT64(checkSignedRange(result, fcinfo));
+}
+
+Datum set_cast_int8(PG_FUNCTION_ARGS)
+{
+    VarBit *bitmap = PG_GETARG_VARBIT_P(0);
+    int128 result = 0;
+    int typmod = VARBITLEN(bitmap);
+    bits8 *base = (bits8*)VARBITS(bitmap) + sizeof(Oid);
+    int1 bitlen = typmod - sizeof(Oid) * BITS_PER_BYTE;
+    /* bitlen can up to max 64 */
+    for (int1 order = 0; order < bitlen; order++) {
+        bits8 *r = base + order / BITS_PER_BYTE;
+        bool bitset = (*r) & (1 << (order % BITS_PER_BYTE));
+        if (bitset) {
+            result |= (1UL << order);
+        }
+    }
+    PG_RETURN_INT64(checkSignedRange(result, fcinfo));
+}
+
+Datum uint8_cast_int8(PG_FUNCTION_ARGS)
+{
+    uint64 result = PG_GETARG_UINT64(0);
+    PG_RETURN_INT64((int64)result);
+}
+
+Datum year_cast_int8(PG_FUNCTION_ARGS) {
+    YearADT year = PG_GETARG_YEARADT(0);
+    if (IS_YEAR2(year))
+        YEAR_CONVERT(year);
+    year = YearADT_to_Year(year);
+    PG_RETURN_INT64(year);
+}
+
+Datum bpchar_cast_int8(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    int128 result;
+    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, txt));
+    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
+    pfree_ext(tmp);
+    PG_RETURN_INT64(checkSignedRange(result, fcinfo));
+}
+
+Datum varchar_cast_int8(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    int128 result;
+    tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
+    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
+    pfree_ext(tmp);
+    PG_RETURN_INT64(checkSignedRange(result, fcinfo));
+}
+
+Datum text_cast_int8(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    int128 result;
+    Oid typeOutput;
+    bool typIsVarlena;
+    getTypeOutputInfo(fcinfo->argTypes[0], &typeOutput, &typIsVarlena);
+    tmp = DatumGetCString(OidOutputFunctionCall(typeOutput, txt));
+    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
+    pfree_ext(tmp);
+    PG_RETURN_INT64(checkSignedRange(result, fcinfo));
+}
+
+Datum varlena_cast_int8(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_INT64(text_cast_int8(fcinfo));
 }
 #endif

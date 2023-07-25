@@ -283,5 +283,16 @@ select (1)::uint4::bool;
 select (0)::uint8::bool;
 select (1)::uint8::bool;
 
+select cast('-1' as uint1);
+select cast('-1' as uint2);
+select cast('-1' as uint4);
+select cast('-1' as uint8);
+select cast('-1' as unsigned);
+select '-1'::uint8;
+select cast('-128' as uint1);
+select cast('-129' as uint1);
+select cast('255' as uint1);
+select cast('256' as uint1);
+
 drop schema uint_cast cascade;
 reset current_schema;
