@@ -1666,6 +1666,60 @@ select (1)::uint8::bool;
  t
 (1 row)
 
+select cast('-1' as uint1);
+ uint1 
+-------
+ 255
+(1 row)
+
+select cast('-1' as uint2);
+ uint2 
+-------
+ 65535
+(1 row)
+
+select cast('-1' as uint4);
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select cast('-1' as uint8);
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select cast('-1' as unsigned);
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select '-1'::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select cast('-128' as uint1);
+ uint1 
+-------
+ 128
+(1 row)
+
+select cast('-129' as uint1);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+select cast('255' as uint1);
+ uint1 
+-------
+ 255
+(1 row)
+
+select cast('256' as uint1);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
 -- 严格模式
 drop table if exists t_longtext;
 NOTICE:  table "t_longtext" does not exist, skipping

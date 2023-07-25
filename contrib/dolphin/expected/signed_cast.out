@@ -1,0 +1,2480 @@
+create schema signed_cast;
+set current_schema to 'signed_cast';
+-- when b_compatibility_mode = false;
+set dolphin.b_compatibility_mode = false;
+--- strict mode
+SET dolphin.sql_mode = 'sql_mode_strict';
+---- numeric_cast_int8
+select cast(123::numeric as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast(1e30 as int8);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(1e30 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(18446744073709551615 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(18446744073709551616 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(9223372036854775807 as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(9223372036854775808 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(-9223372036854775808 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast(-9223372036854775809 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+---- uint8_cast_int8
+select cast(123::uint8 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast(1e30::uint8 as int8);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+select cast(1e30::uint8 as signed);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+select cast(18446744073709551615::uint8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(18446744073709551616::uint8 as signed);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+select cast(9223372036854775807::uint8 as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(9223372036854775808::uint8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(-9223372036854775808::uint8 as signed);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+select cast(-9223372036854775809::uint8 as signed);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+---- text_cast_int8
+select cast('123'::text as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('18446744073709551615'::text as signed);
+ERROR:  value "18446744073709551615" is out of range for type bigint
+CONTEXT:  referenced column: int8
+select cast('18446744073709551616'::text as signed);
+ERROR:  value "18446744073709551616" is out of range for type bigint
+CONTEXT:  referenced column: int8
+select cast('9223372036854775807'::text as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775808'::text as signed);
+ERROR:  value "9223372036854775808" is out of range for type bigint
+CONTEXT:  referenced column: int8
+select cast('-9223372036854775808'::text as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809'::text as signed);
+ERROR:  value "-9223372036854775809" is out of range for type bigint
+CONTEXT:  referenced column: int8
+---- timestamp_cast_int8
+select cast('2023-01-01 00:00:00'::timestamp as signed);
+      int8      
+----------------
+ 20230101000000
+(1 row)
+
+---- time_cast_int8
+select cast('23:01:01'::time as signed);
+  int8  
+--------
+ 230101
+(1 row)
+
+---- bit_cast_int8
+select cast(b'1111' as signed);
+ int8 
+------
+   15
+(1 row)
+
+---- unknown_cast_int8
+select cast('123' as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('18446744073709551615' as signed);
+ERROR:  value "18446744073709551615" is out of range for type bigint
+LINE 1: select cast('18446744073709551615' as signed);
+                    ^
+CONTEXT:  referenced column: int8
+select cast('18446744073709551616' as signed);
+ERROR:  value "18446744073709551616" is out of range for type bigint
+LINE 1: select cast('18446744073709551616' as signed);
+                    ^
+CONTEXT:  referenced column: int8
+select cast('9223372036854775807'as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775808'as signed);
+ERROR:  value "9223372036854775808" is out of range for type bigint
+LINE 1: select cast('9223372036854775808'as signed);
+                    ^
+CONTEXT:  referenced column: int8
+select cast('-9223372036854775808' as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809' as signed);
+ERROR:  value "-9223372036854775809" is out of range for type bigint
+LINE 1: select cast('-9223372036854775809' as signed);
+                    ^
+CONTEXT:  referenced column: int8
+---- float4_cast_int8
+select cast('123.4'::float4 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('123.6'::float4 as signed);
+ int8 
+------
+  124
+(1 row)
+
+select cast('123'::float4 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('1e30'::float4 as int8);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('1e30'::float4 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('18446744073709551615'::float4 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('18446744073709551616'::float4 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('9223372036854775807'::float4 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('9223372036854775808'::float4 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('-9223372036854775808'::float4 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809'::float4 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+---- float8_cast_int8
+select cast('123.4'::float8 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('123.6'::float8 as signed);
+ int8 
+------
+  124
+(1 row)
+
+select cast('123'::float8 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('1e30'::float8 as int8);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('1e30'::float8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('18446744073709551615'::float8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('18446744073709551616'::float8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('9223372036854775807'::float8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('9223372036854775808'::float8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('-9223372036854775808'::float8 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809'::float8 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+---- table test
+----- numeric
+drop table if exists test_numeric;
+NOTICE:  table "test_numeric" does not exist, skipping
+create table test_numeric(a numeric(20,0));
+insert into test_numeric values(9223372036854775807),
+                                (9223372036854775808),
+                                (-9223372036854775808),
+                                (-9223372036854775809),
+                                (18446744073709551615),
+                                (18446744073709551616);
+select * from test_numeric;
+          a           
+----------------------
+  9223372036854775807
+  9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_numeric;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: a
+----- float4
+drop table if exists test_float;
+NOTICE:  table "test_float" does not exist, skipping
+create table test_float(a FLOAT4);
+insert into test_float values(9223372036854775807),
+                               (9223372036854775808),
+                               (-9223372036854775808),
+                               (-9223372036854775809),
+                               (18446744073709551615),
+                               (18446744073709551616);
+select * from test_float;
+      a       
+--------------
+  9.22337e+18
+  9.22337e+18
+ -9.22337e+18
+ -9.22337e+18
+  1.84467e+19
+  1.84467e+19
+(6 rows)
+
+select cast(a as signed) from test_float;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: a
+----- float8
+drop table if exists test_double;
+NOTICE:  table "test_double" does not exist, skipping
+create table test_double(a FLOAT8);
+insert into test_double values(9223372036854775807),
+                               (9223372036854775808),
+                               (-9223372036854775808),
+                               (-9223372036854775809),
+                               (18446744073709551615),
+                               (18446744073709551616);
+select * from test_double;
+           a           
+-----------------------
+  9.22337203685478e+18
+  9.22337203685478e+18
+ -9.22337203685478e+18
+ -9.22337203685478e+18
+  1.84467440737096e+19
+  1.84467440737096e+19
+(6 rows)
+
+select cast(a as signed) from test_double;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: a
+----- VARCHAR
+drop table if exists test_varchar;
+NOTICE:  table "test_varchar" does not exist, skipping
+create table test_varchar(a VARCHAR(20));
+insert into test_varchar values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_varchar;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_varchar;
+ERROR:  value "9223372036854775808" is out of range for type bigint
+CONTEXT:  referenced column: a
+----- TEXT
+drop table if exists test_text;
+NOTICE:  table "test_text" does not exist, skipping
+create table test_text(a VARCHAR(20));
+insert into test_text values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_text;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_text;
+ERROR:  value "9223372036854775808" is out of range for type bigint
+CONTEXT:  referenced column: a
+----- bpchar
+drop table if exists test_bpchar;
+NOTICE:  table "test_bpchar" does not exist, skipping
+create table test_bpchar(a CHAR(20));
+insert into test_bpchar values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_bpchar;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_bpchar;
+ERROR:  value "9223372036854775808" is out of range for type bigint
+CONTEXT:  referenced column: a
+----- uint8
+drop table if exists test_uint8;
+NOTICE:  table "test_uint8" does not exist, skipping
+create table test_uint8(a bigint unsigned);
+insert into test_uint8 values(9223372036854775807),
+                               (9223372036854775808),
+                               (18446744073709551615);														 
+insert into test_uint8 values(18446744073709551616);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_uint8 values(-9223372036854775809);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_uint8 values(-9223372036854775808);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_uint8;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ 18446744073709551615
+(3 rows)
+
+select cast(a as signed) from test_uint8;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: a
+----- bit
+drop table if exists test_bit;
+NOTICE:  table "test_bit" does not exist, skipping
+create table test_bit(a bit(64));
+insert into test_bit values(b'111111111111111111111111111111111111111111111111111111111111111'),
+                           (b'1000000000000000000000000000000000000000000000000000000000000000'),
+						   (b'1111111111111111111111111111111111111111111111111111111111111110'),
+                           (b'1111111111111111111111111111111111111111111111111111111111111111');
+select * from test_bit;
+                                a                                 
+------------------------------------------------------------------
+ 0111111111111111111111111111111111111111111111111111111111111111
+ 1000000000000000000000000000000000000000000000000000000000000000
+ 1111111111111111111111111111111111111111111111111111111111111110
+ 1111111111111111111111111111111111111111111111111111111111111111
+(4 rows)
+
+select cast(a as signed) from test_bit;
+          a           
+----------------------
+  9223372036854775807
+ -9223372036854775808
+                   -2
+                   -1
+(4 rows)
+
+select cast(b'111111111111111111111111111111111111111111111111111111111111111' as signed);--9223372036854775807
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(b'1000000000000000000000000000000000000000000000000000000000000000' as signed);--9223372036854775808
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast(b'1111111111111111111111111111111111111111111111111111111111111110' as signed);--18446744073709551614
+ int8 
+------
+   -2
+(1 row)
+
+select cast(b'1111111111111111111111111111111111111111111111111111111111111111' as signed);--18446744073709551615
+ int8 
+------
+   -1
+(1 row)
+
+select cast(b'10000000000000000000000000000000000000000000000000000000000000000' as signed);--18446744073709551616
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+--- no strict mode
+set dolphin.sql_mode = '';
+---- numeric_cast_int8
+select cast(123::numeric as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast(1e30 as int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(1e30 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(18446744073709551615 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(18446744073709551616 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(9223372036854775807 as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(9223372036854775808 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(-9223372036854775808 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast(-9223372036854775809 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+---- uint8_cast_int8
+select cast(123::uint8 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast(1e30::uint8 as int8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(1e30::uint8 as signed);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(18446744073709551615::uint8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(18446744073709551616::uint8 as signed);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(9223372036854775807::uint8 as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(9223372036854775808::uint8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(-9223372036854775808::uint8 as signed);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+select cast(-9223372036854775809::uint8 as signed);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+---- text_cast_int8
+select cast('123'::text as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('18446744073709551615'::text as signed);
+WARNING:  value "18446744073709551615" is out of range for type bigint
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('18446744073709551616'::text as signed);
+WARNING:  value "18446744073709551616" is out of range for type bigint
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775807'::text as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775808'::text as signed);
+WARNING:  value "9223372036854775808" is out of range for type bigint
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('-9223372036854775808'::text as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809'::text as signed);
+WARNING:  value "-9223372036854775809" is out of range for type bigint
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+---- timestamp_cast_int8
+select cast('2023-01-01 00:00:00'::timestamp as signed);
+      int8      
+----------------
+ 20230101000000
+(1 row)
+
+---- time_cast_int8
+select cast('23:01:01'::time as signed);
+  int8  
+--------
+ 230101
+(1 row)
+
+---- bit_cast_int8
+select cast(b'1111' as signed);
+ int8 
+------
+   15
+(1 row)
+
+---- unknown_cast_int8
+select cast('123' as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('18446744073709551615' as signed);
+WARNING:  value "18446744073709551615" is out of range for type bigint
+LINE 1: select cast('18446744073709551615' as signed);
+                    ^
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('18446744073709551616' as signed);
+WARNING:  value "18446744073709551616" is out of range for type bigint
+LINE 1: select cast('18446744073709551616' as signed);
+                    ^
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775807'as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775808'as signed);
+WARNING:  value "9223372036854775808" is out of range for type bigint
+LINE 1: select cast('9223372036854775808'as signed);
+                    ^
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('-9223372036854775808' as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809' as signed);
+WARNING:  value "-9223372036854775809" is out of range for type bigint
+LINE 1: select cast('-9223372036854775809' as signed);
+                    ^
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+---- float4_cast_int8
+select cast('123.4'::float4 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('123.6'::float4 as signed);
+ int8 
+------
+  124
+(1 row)
+
+select cast('123'::float4 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('1e30'::float4 as int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('1e30'::float4 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('18446744073709551615'::float4 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('18446744073709551616'::float4 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775807'::float4 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775808'::float4 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('-9223372036854775808'::float4 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809'::float4 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+---- float8_cast_int8
+select cast('123.4'::float8 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('123.6'::float8 as signed);
+ int8 
+------
+  124
+(1 row)
+
+select cast('123'::float8 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('1e30'::float8 as int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('1e30'::float8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('18446744073709551615'::float8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('18446744073709551616'::float8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775807'::float8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775808'::float8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('-9223372036854775808'::float8 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809'::float8 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+---- table test
+----- numeric
+drop table if exists test_numeric;
+create table test_numeric(a numeric(20,0));
+insert into test_numeric values(9223372036854775807),
+                                (9223372036854775808),
+                                (-9223372036854775808),
+                                (-9223372036854775809),
+                                (18446744073709551615),
+                                (18446744073709551616);
+select * from test_numeric;
+          a           
+----------------------
+  9223372036854775807
+  9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_numeric;
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
+  9223372036854775807
+  9223372036854775807
+(6 rows)
+
+----- float4
+drop table if exists test_float;
+create table test_float(a FLOAT4);
+insert into test_float values(9223372036854775807),
+                               (9223372036854775808),
+                               (-9223372036854775808),
+                               (-9223372036854775809),
+                               (18446744073709551615),
+                               (18446744073709551616);
+select * from test_float;
+      a       
+--------------
+  9.22337e+18
+  9.22337e+18
+ -9.22337e+18
+ -9.22337e+18
+  1.84467e+19
+  1.84467e+19
+(6 rows)
+
+select cast(a as signed) from test_float;
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
+  9223372036854775807
+  9223372036854775807
+(6 rows)
+
+----- float8
+drop table if exists test_double;
+create table test_double(a FLOAT8);
+insert into test_double values(9223372036854775807),
+                               (9223372036854775808),
+                               (-9223372036854775808),
+                               (-9223372036854775809),
+                               (18446744073709551615),
+                               (18446744073709551616);
+select * from test_double;
+           a           
+-----------------------
+  9.22337203685478e+18
+  9.22337203685478e+18
+ -9.22337203685478e+18
+ -9.22337203685478e+18
+  1.84467440737096e+19
+  1.84467440737096e+19
+(6 rows)
+
+select cast(a as signed) from test_double;
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
+  9223372036854775807
+  9223372036854775807
+(6 rows)
+
+----- VARCHAR
+drop table if exists test_varchar;
+create table test_varchar(a VARCHAR(20));
+insert into test_varchar values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_varchar;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_varchar;
+WARNING:  value "9223372036854775808" is out of range for type bigint
+CONTEXT:  referenced column: a
+WARNING:  value "-9223372036854775809" is out of range for type bigint
+CONTEXT:  referenced column: a
+WARNING:  value "18446744073709551615" is out of range for type bigint
+CONTEXT:  referenced column: a
+WARNING:  value "18446744073709551616" is out of range for type bigint
+CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
+  9223372036854775807
+  9223372036854775807
+(6 rows)
+
+----- TEXT
+drop table if exists test_text;
+create table test_text(a VARCHAR(20));
+insert into test_text values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_text;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_text;
+WARNING:  value "9223372036854775808" is out of range for type bigint
+CONTEXT:  referenced column: a
+WARNING:  value "-9223372036854775809" is out of range for type bigint
+CONTEXT:  referenced column: a
+WARNING:  value "18446744073709551615" is out of range for type bigint
+CONTEXT:  referenced column: a
+WARNING:  value "18446744073709551616" is out of range for type bigint
+CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
+  9223372036854775807
+  9223372036854775807
+(6 rows)
+
+----- bpchar
+drop table if exists test_bpchar;
+create table test_bpchar(a CHAR(20));
+insert into test_bpchar values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_bpchar;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_bpchar;
+WARNING:  value "9223372036854775808" is out of range for type bigint
+CONTEXT:  referenced column: a
+WARNING:  value "-9223372036854775809" is out of range for type bigint
+CONTEXT:  referenced column: a
+WARNING:  value "18446744073709551615" is out of range for type bigint
+CONTEXT:  referenced column: a
+WARNING:  value "18446744073709551616" is out of range for type bigint
+CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
+  9223372036854775807
+  9223372036854775807
+(6 rows)
+
+----- uint8
+drop table if exists test_uint8;
+create table test_uint8(a bigint unsigned);
+insert into test_uint8 values(9223372036854775807),
+                               (9223372036854775808),
+                               (18446744073709551615);														 
+insert into test_uint8 values(18446744073709551616);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_uint8 values(-9223372036854775809);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_uint8 values(-9223372036854775808);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_uint8;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ 18446744073709551615
+ 18446744073709551615
+ 0
+ 0
+(6 rows)
+
+select cast(a as signed) from test_uint8;
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+          a          
+---------------------
+ 9223372036854775807
+ 9223372036854775807
+ 9223372036854775807
+ 9223372036854775807
+                   0
+                   0
+(6 rows)
+
+----- bit
+drop table if exists test_bit;
+create table test_bit(a bit(64));
+insert into test_bit values(b'111111111111111111111111111111111111111111111111111111111111111'),
+                           (b'1000000000000000000000000000000000000000000000000000000000000000'),
+						   (b'1111111111111111111111111111111111111111111111111111111111111110'),
+                           (b'1111111111111111111111111111111111111111111111111111111111111111');
+select * from test_bit;
+                                a                                 
+------------------------------------------------------------------
+ 0111111111111111111111111111111111111111111111111111111111111111
+ 1000000000000000000000000000000000000000000000000000000000000000
+ 1111111111111111111111111111111111111111111111111111111111111110
+ 1111111111111111111111111111111111111111111111111111111111111111
+(4 rows)
+
+select cast(a as signed) from test_bit;
+          a           
+----------------------
+  9223372036854775807
+ -9223372036854775808
+                   -2
+                   -1
+(4 rows)
+
+select cast(b'111111111111111111111111111111111111111111111111111111111111111' as signed);--9223372036854775807
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(b'1000000000000000000000000000000000000000000000000000000000000000' as signed);--9223372036854775808
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast(b'1111111111111111111111111111111111111111111111111111111111111110' as signed);--18446744073709551614
+ int8 
+------
+   -2
+(1 row)
+
+select cast(b'1111111111111111111111111111111111111111111111111111111111111111' as signed);--18446744073709551615
+ int8 
+------
+   -1
+(1 row)
+
+select cast(b'10000000000000000000000000000000000000000000000000000000000000000' as signed);--18446744073709551616
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+-- when b_compatibility_mode = true
+set dolphin.b_compatibility_mode = true;
+--- strict mode
+SET dolphin.sql_mode = 'sql_mode_strict';
+---- numeric_cast_int8
+select cast(123::numeric as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast(1e30 as int8);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(1e30 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(18446744073709551615 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(18446744073709551616 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(9223372036854775807 as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(9223372036854775808 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(-9223372036854775808 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast(-9223372036854775809 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+---- uint8_cast_int8
+select cast(123::uint8 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast(1e30::uint8 as int8);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+select cast(1e30::uint8 as signed);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+select cast(18446744073709551615::uint8 as signed);
+ int8 
+------
+   -1
+(1 row)
+
+select cast(18446744073709551616::uint8 as signed);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+select cast(9223372036854775807::uint8 as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(9223372036854775808::uint8 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast(-9223372036854775808::uint8 as signed);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+select cast(-9223372036854775809::uint8 as signed);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+---- text_cast_int8
+select cast('123'::text as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('18446744073709551615'::text as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('18446744073709551616'::text as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('9223372036854775807'::text as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775808'::text as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('-9223372036854775808'::text as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809'::text as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+---- timestamp_cast_int8
+select cast('2023-01-01 00:00:00'::timestamp as signed);
+      int8      
+----------------
+ 20230101000000
+(1 row)
+
+---- time_cast_int8
+select cast('23:01:01'::time as signed);
+  int8  
+--------
+ 230101
+(1 row)
+
+---- bit_cast_int8
+select cast(b'1111' as signed);
+ int8 
+------
+   15
+(1 row)
+
+---- unknown_cast_int8
+select cast('123' as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('18446744073709551615' as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('18446744073709551616' as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('9223372036854775807'as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775808'as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('-9223372036854775808' as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809' as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+---- float4_cast_int8
+select cast('123.4'::float4 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('123.6'::float4 as signed);
+ int8 
+------
+  124
+(1 row)
+
+select cast('123'::float4 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('1e30'::float4 as int8);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('1e30'::float4 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('18446744073709551615'::float4 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('18446744073709551616'::float4 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('9223372036854775807'::float4 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('9223372036854775808'::float4 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('-9223372036854775808'::float4 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('-9223372036854775809'::float4 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+---- float8_cast_int8
+select cast('123.4'::float8 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('123.6'::float8 as signed);
+ int8 
+------
+  124
+(1 row)
+
+select cast('123'::float8 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('1e30'::float8 as int8);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('1e30'::float8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('18446744073709551615'::float8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('18446744073709551616'::float8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('9223372036854775807'::float8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('9223372036854775808'::float8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('-9223372036854775808'::float8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast('-9223372036854775809'::float8 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+---- table test
+----- numeric
+drop table if exists test_numeric;
+create table test_numeric(a numeric(20,0));
+insert into test_numeric values(9223372036854775807),
+                                (9223372036854775808),
+                                (-9223372036854775808),
+                                (-9223372036854775809),
+                                (18446744073709551615),
+                                (18446744073709551616);
+select * from test_numeric;
+          a           
+----------------------
+  9223372036854775807
+  9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_numeric;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: a
+----- float4
+drop table if exists test_float;
+create table test_float(a FLOAT4);
+insert into test_float values(9223372036854775807),
+                               (9223372036854775808),
+                               (-9223372036854775808),
+                               (-9223372036854775809),
+                               (18446744073709551615),
+                               (18446744073709551616);
+select * from test_float;
+      a       
+--------------
+  9.22337e+18
+  9.22337e+18
+ -9.22337e+18
+ -9.22337e+18
+  1.84467e+19
+  1.84467e+19
+(6 rows)
+
+select cast(a as signed) from test_float;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: a
+----- float8
+drop table if exists test_double;
+create table test_double(a FLOAT8);
+insert into test_double values(9223372036854775807),
+                               (9223372036854775808),
+                               (-9223372036854775808),
+                               (-9223372036854775809),
+                               (18446744073709551615),
+                               (18446744073709551616);
+select * from test_double;
+           a           
+-----------------------
+  9.22337203685478e+18
+  9.22337203685478e+18
+ -9.22337203685478e+18
+ -9.22337203685478e+18
+  1.84467440737096e+19
+  1.84467440737096e+19
+(6 rows)
+
+select cast(a as signed) from test_double;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: a
+----- VARCHAR
+drop table if exists test_varchar;
+create table test_varchar(a VARCHAR(20));
+insert into test_varchar values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_varchar;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_varchar;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: a
+----- TEXT
+drop table if exists test_text;
+create table test_text(a VARCHAR(20));
+insert into test_text values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_text;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_text;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: a
+----- bpchar
+drop table if exists test_bpchar;
+create table test_bpchar(a CHAR(20));
+insert into test_bpchar values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_bpchar;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_bpchar;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: a
+----- uint8
+drop table if exists test_uint8;
+create table test_uint8(a bigint unsigned);
+insert into test_uint8 values(9223372036854775807),
+                               (9223372036854775808),
+                               (18446744073709551615);														 
+insert into test_uint8 values(18446744073709551616);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_uint8 values(-9223372036854775809);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_uint8 values(-9223372036854775808);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_uint8;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ 18446744073709551615
+(3 rows)
+
+select cast(a as signed) from test_uint8;
+          a           
+----------------------
+  9223372036854775807
+ -9223372036854775808
+                   -1
+(3 rows)
+
+----- bit
+drop table if exists test_bit;
+create table test_bit(a bit(64));
+insert into test_bit values(b'111111111111111111111111111111111111111111111111111111111111111'),
+                           (b'1000000000000000000000000000000000000000000000000000000000000000'),
+						   (b'1111111111111111111111111111111111111111111111111111111111111110'),
+                           (b'1111111111111111111111111111111111111111111111111111111111111111');
+select * from test_bit;
+                                a                                 
+------------------------------------------------------------------
+ 0111111111111111111111111111111111111111111111111111111111111111
+ 1000000000000000000000000000000000000000000000000000000000000000
+ 1111111111111111111111111111111111111111111111111111111111111110
+ 1111111111111111111111111111111111111111111111111111111111111111
+(4 rows)
+
+select cast(a as signed) from test_bit;
+ERROR:  bigint out of range
+CONTEXT:  referenced column: a
+select cast(b'111111111111111111111111111111111111111111111111111111111111111' as signed);--9223372036854775807
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(b'1000000000000000000000000000000000000000000000000000000000000000' as signed);--9223372036854775808
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(b'1111111111111111111111111111111111111111111111111111111111111110' as signed);--18446744073709551614
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(b'1111111111111111111111111111111111111111111111111111111111111111' as signed);--18446744073709551615
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+select cast(b'10000000000000000000000000000000000000000000000000000000000000000' as signed);--18446744073709551616
+ERROR:  bigint out of range
+CONTEXT:  referenced column: int8
+--- no strict mode
+set dolphin.sql_mode = '';
+---- numeric_cast_int8
+select cast(123::numeric as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast(1e30 as int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(1e30 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(18446744073709551615 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(18446744073709551616 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(9223372036854775807 as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(9223372036854775808 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(-9223372036854775808 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast(-9223372036854775809 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+---- uint8_cast_int8
+select cast(123::uint8 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast(1e30::uint8 as int8);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
+select cast(1e30::uint8 as signed);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
+select cast(18446744073709551615::uint8 as signed);
+ int8 
+------
+   -1
+(1 row)
+
+select cast(18446744073709551616::uint8 as signed);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
+select cast(9223372036854775807::uint8 as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(9223372036854775808::uint8 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast(-9223372036854775808::uint8 as signed);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+select cast(-9223372036854775809::uint8 as signed);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: int8
+---- text_cast_int8
+select cast('123'::text as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('18446744073709551615'::text as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
+select cast('18446744073709551616'::text as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
+select cast('9223372036854775807'::text as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775808'::text as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775808'::text as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809'::text as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+---- timestamp_cast_int8
+select cast('2023-01-01 00:00:00'::timestamp as signed);
+      int8      
+----------------
+ 20230101000000
+(1 row)
+
+---- time_cast_int8
+select cast('23:01:01'::time as signed);
+  int8  
+--------
+ 230101
+(1 row)
+
+---- bit_cast_int8
+select cast(b'1111' as signed);
+ int8 
+------
+   15
+(1 row)
+
+---- unknown_cast_int8
+select cast('123' as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('18446744073709551615' as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
+select cast('18446744073709551616' as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
+select cast('9223372036854775807'as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775808'as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775808' as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809' as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+---- float4_cast_int8
+select cast('123.4'::float4 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('123.6'::float4 as signed);
+ int8 
+------
+  124
+(1 row)
+
+select cast('123'::float4 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('1e30'::float4 as int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('1e30'::float4 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('18446744073709551615'::float4 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('18446744073709551616'::float4 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('9223372036854775807'::float4 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('9223372036854775808'::float4 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775808'::float4 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809'::float4 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+---- float8_cast_int8
+select cast('123.4'::float8 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('123.6'::float8 as signed);
+ int8 
+------
+  124
+(1 row)
+
+select cast('123'::float8 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('1e30'::float8 as int8);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('1e30'::float8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('18446744073709551615'::float8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('18446744073709551616'::float8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775807'::float8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775808'::float8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('-9223372036854775808'::float8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809'::float8 as signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+---- table test
+----- numeric
+drop table if exists test_numeric;
+create table test_numeric(a numeric(20,0));
+insert into test_numeric values(9223372036854775807),
+                                (9223372036854775808),
+                                (-9223372036854775808),
+                                (-9223372036854775809),
+                                (18446744073709551615),
+                                (18446744073709551616);
+select * from test_numeric;
+          a           
+----------------------
+  9223372036854775807
+  9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_numeric;
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
+  9223372036854775807
+  9223372036854775807
+(6 rows)
+
+----- float4
+drop table if exists test_float;
+create table test_float(a FLOAT4);
+insert into test_float values(9223372036854775807),
+                               (9223372036854775808),
+                               (-9223372036854775808),
+                               (-9223372036854775809),
+                               (18446744073709551615),
+                               (18446744073709551616);
+select * from test_float;
+      a       
+--------------
+  9.22337e+18
+  9.22337e+18
+ -9.22337e+18
+ -9.22337e+18
+  1.84467e+19
+  1.84467e+19
+(6 rows)
+
+select cast(a as signed) from test_float;
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+          a           
+----------------------
+ -9223372036854775808
+ -9223372036854775808
+ -9223372036854775808
+ -9223372036854775808
+ -9223372036854775808
+ -9223372036854775808
+(6 rows)
+
+----- float8
+drop table if exists test_double;
+create table test_double(a FLOAT8);
+insert into test_double values(9223372036854775807),
+                               (9223372036854775808),
+                               (-9223372036854775808),
+                               (-9223372036854775809),
+                               (18446744073709551615),
+                               (18446744073709551616);
+select * from test_double;
+           a           
+-----------------------
+  9.22337203685478e+18
+  9.22337203685478e+18
+ -9.22337203685478e+18
+ -9.22337203685478e+18
+  1.84467440737096e+19
+  1.84467440737096e+19
+(6 rows)
+
+select cast(a as signed) from test_double;
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
+  9223372036854775807
+  9223372036854775807
+(6 rows)
+
+----- VARCHAR
+drop table if exists test_varchar;
+create table test_varchar(a VARCHAR(20));
+insert into test_varchar values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_varchar;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_varchar;
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
+ -9223372036854775808
+                   -1
+                   -1
+(6 rows)
+
+----- TEXT
+drop table if exists test_text;
+create table test_text(a VARCHAR(20));
+insert into test_text values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_text;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_text;
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
+ -9223372036854775808
+                   -1
+                   -1
+(6 rows)
+
+----- bpchar
+drop table if exists test_bpchar;
+create table test_bpchar(a CHAR(20));
+insert into test_bpchar values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_bpchar;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_bpchar;
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
+ -9223372036854775808
+                   -1
+                   -1
+(6 rows)
+
+----- uint8
+drop table if exists test_uint8;
+create table test_uint8(a bigint unsigned);
+insert into test_uint8 values(9223372036854775807),
+                               (9223372036854775808),
+                               (18446744073709551615);														 
+insert into test_uint8 values(18446744073709551616);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_uint8 values(-9223372036854775809);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+insert into test_uint8 values(-9223372036854775808);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: a
+select * from test_uint8;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ 18446744073709551615
+ 18446744073709551615
+ 0
+ 0
+(6 rows)
+
+select cast(a as signed) from test_uint8;
+          a           
+----------------------
+  9223372036854775807
+ -9223372036854775808
+                   -1
+                   -1
+                    0
+                    0
+(6 rows)
+
+----- bit
+drop table if exists test_bit;
+create table test_bit(a bit(64));
+insert into test_bit values(b'111111111111111111111111111111111111111111111111111111111111111'),
+                           (b'1000000000000000000000000000000000000000000000000000000000000000'),
+						   (b'1111111111111111111111111111111111111111111111111111111111111110'),
+                           (b'1111111111111111111111111111111111111111111111111111111111111111');
+select * from test_bit;
+                                a                                 
+------------------------------------------------------------------
+ 0111111111111111111111111111111111111111111111111111111111111111
+ 1000000000000000000000000000000000000000000000000000000000000000
+ 1111111111111111111111111111111111111111111111111111111111111110
+ 1111111111111111111111111111111111111111111111111111111111111111
+(4 rows)
+
+select cast(a as signed) from test_bit;
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+WARNING:  bigint out of range
+CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+ -9223372036854775808
+                   -2
+                   -1
+(4 rows)
+
+select cast(b'111111111111111111111111111111111111111111111111111111111111111' as signed);--9223372036854775807
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast(b'1000000000000000000000000000000000000000000000000000000000000000' as signed);--9223372036854775808
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast(b'1111111111111111111111111111111111111111111111111111111111111110' as signed);--18446744073709551614
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -2
+(1 row)
+
+select cast(b'1111111111111111111111111111111111111111111111111111111111111111' as signed);--18446744073709551615
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
+select cast(b'10000000000000000000000000000000000000000000000000000000000000000' as signed);--18446744073709551616
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
+drop table if exists test_numeric;
+drop table if exists test_float;
+drop table if exists test_double;
+drop table if exists test_varchar;
+drop table if exists test_text;
+drop table if exists test_bpchar;
+drop table if exists test_bit;
+drop schema signed_cast cascade;
+NOTICE:  drop cascades to table test_uint8
+reset current_schema;

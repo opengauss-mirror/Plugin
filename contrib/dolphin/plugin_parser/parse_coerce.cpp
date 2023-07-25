@@ -84,6 +84,7 @@ static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others
 
 #define CAST_FUNCTION_ROW 8
 #define CAST_FUNCTION_COLUMN 4
+#define CAST_SIGNED_IDX 16
 
 static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1_cast_ui1", "i1_cast_ui2", "i1_cast_ui4", "i1_cast_ui8"},
                                                                             {"i2_cast_ui1", "i2_cast_ui2", "i2_cast_ui4", "i2_cast_ui8"},
@@ -93,6 +94,12 @@ static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1
                                                                             {"f8_cast_ui1", "f8_cast_ui2", "f8_cast_ui4", "f8_cast_ui8"},
                                                                             {"numeric_cast_uint1", "numeric_cast_uint2", "numeric_cast_uint4", "numeric_cast_uint8"},
                                                                             {"text_cast_uint1", "text_cast_uint2", "text_cast_uint4", "text_cast_uint8"}};
+
+static const char* enumCastFunction[ENUM_CAST_IDX] = {"enum_bit", "enum_int1", "enum_int2", "enum_int4",
+                                                      "enum_int8", "enum_float4", "enum_float8", "enum_numeric",
+                                                      "enum_date", "enum_timestamp", "enum_timestamptz", "enum_time",
+                                                      "enum_set", "enum_uint1", "enum_uint2", "enum_uint4",
+                                                      "enum_uint8", "enum_year", "enum_varlena"};
 
 typedef enum {
     INVALID_COLUMN = -1,
@@ -113,6 +120,32 @@ typedef enum {
     NUMERIC,
     TEXT
 } CastRow;
+
+typedef enum {
+    INVALID_IDX = -1,
+    E_BIT,
+    E_INT1,
+    E_INT2,
+    E_INT4,
+    E_INT8,
+    E_FLOAT4,
+    E_FLOAT8,
+    E_NUMERIC,
+    E_DATE,
+    E_TIMESTAMP,
+    E_TIMESTAMPTZ,
+    E_TIME,
+    E_ANYSET,
+    E_UINT1,
+    E_UINT2,
+    E_UINT4,
+    E_UINT8,
+    E_YEAR,
+    E_VARLENA,
+    E_BPCHAR,
+    E_VARCHAR,
+    E_TEXT
+} CastIdx;
 #endif
 /*
  * @Description: same as get_element_type() except this reports error
@@ -392,7 +425,8 @@ static Datum stringTypeDatum_with_collation(Type tp, char* string, int32 atttypm
 static bool hasTextCoercePath(Oid* srcoid, Oid destoid, CoercionContext ccontext, bool* changed)
 {
     if (ccontext == COERCION_EXPLICIT &&
-        (destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
+        ((ENABLE_B_CMPT_MODE && destoid == INT8OID) ||
+        destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
         destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
         destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
         destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8"))) {
@@ -3001,7 +3035,7 @@ bool IsBinaryCoercible(Oid srctype, Oid targettype)
     return result;
 }
 #ifdef DOLPHIN
-Oid findUnsignedImplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid funcid)
+Oid findUnsignedExplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid funcid)
 {
     int row = INVALID_ROW;
     int col = INVALID_COLUMN;
@@ -3039,11 +3073,96 @@ Oid findUnsignedImplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid fun
         case TEXTOID:
             row = TEXT;
             break;
+        case TIMEOID:
+            row = TIME;
+            break;
+        case BPCHAROID:
+            row = BPCHAR;
+            break;
+        case VARCHAROID:
+            row = VARCHAR;
+            break;
+        case BLOBOID:
+            row = VARLENA;
+            break;
+        case JSONOID:
+            row = VARLENA;
+            break;
+        default:
+            break;
     }
+    if (row == INVALID_ROW && (sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "binary") ||
+        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "varbinary") ||
+        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "tinyblob") ||
+        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "mediumblob") ||
+        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "longblob"))) {
+        row = VARLENA;
+    }
+
     if (row != INVALID_ROW && col != INVALID_COLUMN) {
         return get_func_oid(castFunction[row][col], PG_CATALOG_NAMESPACE, NULL);
     }
     return funcid;
+}
+
+int findSignedFunctionIdx(Oid typeId)
+{
+    switch (typeId) {
+        case BITOID:
+            return S_BIT;
+        case FLOAT4OID:
+            return S_FLOAT4;
+        case FLOAT8OID:
+            return S_FLOAT8;
+        case NUMERICOID:
+            return S_NUMERIC;
+        case DATEOID:
+            return S_DATE;
+        case TIMESTAMPOID:
+            return S_TIMESTAMP;
+        case TIMESTAMPTZOID:
+           return S_TIMESTAMPTZ;
+        case TIMEOID:
+            return S_TIME;
+        case TIMETZOID:
+            return S_TIMETZ;
+        case ANYSETOID:
+            return S_SET;
+        case BPCHAROID:
+            return S_BPCHAR;
+        case VARCHAROID:
+            return S_VARCHAR;
+        case TEXTOID:
+            return S_TEXT;
+        case BYTEAOID:
+        case BLOBOID:
+        case JSONOID:
+            return S_VARLENA;
+        default:
+            break;
+    }
+    if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+        return S_UINT8;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
+        return S_YEAR;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "binary")) {
+        return S_VARLENA;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "varbinary")) {
+        return S_VARLENA;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "tinyblob")) {
+        return S_VARLENA;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "mediumblob")) {
+        return S_VARLENA;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "longblob")) {
+        return S_VARLENA;
+    }
+    return S_INVALID_IDX;
+}
+
+Oid findSignedExplicitCastFunction(Oid sourceTypeId, Oid funcid)
+{
+    int idx = findSignedFunctionIdx(sourceTypeId);
+    return (idx == INVALID_IDX) ? funcid : get_func_oid(castSignedFunction[idx], PG_CATALOG_NAMESPACE, NULL);
 }
 
 bool IsEquivalentEnums(Oid enumOid1, Oid enumOid2)
@@ -3209,7 +3328,11 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
                     result = COERCION_PATH_FUNC;
 #ifdef DOLPHIN
                     if (ccontext == COERCION_EXPLICIT) {
-                        *funcid = findUnsignedImplicitCastFunction(targetTypeId, sourceTypeId, castForm->castfunc);
+                        if (ENABLE_B_CMPT_MODE && targetTypeId == INT8OID) {
+                            *funcid = findSignedExplicitCastFunction(sourceTypeId, castForm->castfunc);
+                        } else {
+                            *funcid = findUnsignedExplicitCastFunction(targetTypeId, sourceTypeId, castForm->castfunc);
+                        }
                     } else
 #endif
                     {
