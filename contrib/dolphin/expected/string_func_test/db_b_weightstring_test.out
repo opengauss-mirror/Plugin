@@ -179,13 +179,13 @@ SELECT HEX(WEIGHT_STRING('123456789'::bytea as char(20)));
 SELECT HEX(WEIGHT_STRING('2023-06-01 00:23:59'::date as char(20)));
                    hex                    
 ------------------------------------------
- 30362d30312d3230323320202020202020202020
+ 323032332d30362d303120202020202020202020
 (1 row)
 
 SELECT HEX(WEIGHT_STRING('2023-06-01 00:23:59'::datetime as char(20)));
                    hex                    
 ------------------------------------------
- 546875204a756e2030312030303a32333a353920
+ 323032332d30362d30312030303a32333a353920
 (1 row)
 
 SELECT HEX(WEIGHT_STRING('2023-06-01 00:23:59'::time as char(20)));
@@ -197,13 +197,13 @@ SELECT HEX(WEIGHT_STRING('2023-06-01 00:23:59'::time as char(20)));
 SELECT HEX(WEIGHT_STRING('2023-06-01 00:23:59'::timestamp as char(20)));
                    hex                    
 ------------------------------------------
- 546875204a756e2030312030303a32333a353920
+ 323032332d30362d30312030303a32333a35392d
 (1 row)
 
 SELECT HEX(WEIGHT_STRING('2021-11-4 16:30:44.3411'::timestamptz as char(20)));
                    hex                    
 ------------------------------------------
- 546875204e6f762030342031363a33303a34342e
+ 323032312d31312d30342031363a33303a34342e
 (1 row)
 
 SELECT HEX(WEIGHT_STRING('59 minute'::interval as char(20)));
@@ -215,7 +215,7 @@ SELECT HEX(WEIGHT_STRING('59 minute'::interval as char(20)));
 SELECT HEX(WEIGHT_STRING(date '2021-12-31' as char(10)));
          hex          
 ----------------------
- 31322d33312d32303231
+ 323032312d31322d3331
 (1 row)
 
 SELECT HEX(WEIGHT_STRING(E'\x74\x65\x73\x74' as char(10)));
@@ -281,13 +281,13 @@ SELECT HEX(WEIGHT_STRING('123456789'::bytea as binary (20)));
 SELECT HEX(WEIGHT_STRING('2023-06-01 00:23:59'::date as binary (20)));
                    hex                    
 ------------------------------------------
- 30362d30312d3230323300000000000000000000
+ 323032332d30362d303100000000000000000000
 (1 row)
 
 SELECT HEX(WEIGHT_STRING('2023-06-01 00:23:59'::datetime as binary (20)));
                    hex                    
 ------------------------------------------
- 546875204a756e2030312030303a32333a353920
+ 323032332d30362d30312030303a32333a353900
 (1 row)
 
 SELECT HEX(WEIGHT_STRING('2023-06-01 00:23:59'::time as binary (20)));
@@ -299,13 +299,13 @@ SELECT HEX(WEIGHT_STRING('2023-06-01 00:23:59'::time as binary (20)));
 SELECT HEX(WEIGHT_STRING('2023-06-01 00:23:59'::timestamp as binary (20)));
                    hex                    
 ------------------------------------------
- 546875204a756e2030312030303a32333a353920
+ 323032332d30362d30312030303a32333a35392d
 (1 row)
 
 SELECT HEX(WEIGHT_STRING('2021-11-4 16:30:44.3411'::timestamptz as binary (20)));
                    hex                    
 ------------------------------------------
- 546875204e6f762030342031363a33303a34342e
+ 323032312d31312d30342031363a33303a34342e
 (1 row)
 
 SELECT HEX(WEIGHT_STRING('59 minute'::interval as binary (20)));
@@ -317,7 +317,7 @@ SELECT HEX(WEIGHT_STRING('59 minute'::interval as binary (20)));
 SELECT HEX(WEIGHT_STRING(date '2021-12-31' as binary (10)));
          hex          
 ----------------------
- 31322d33312d32303231
+ 323032312d31322d3331
 (1 row)
 
 -- 变量测试
@@ -340,7 +340,7 @@ SELECT HEX(WEIGHT_STRING(@var2 as char(10)));
 SELECT HEX(WEIGHT_STRING(@var3 as char(10)));
                    hex                    
 ------------------------------------------
- 00310032002d00330031002d0032003000320031
+ 0032003000320031002d00310032002d00330031
 (1 row)
 
 SELECT HEX(WEIGHT_STRING(@var1 as BINARY (10))); 
@@ -358,7 +358,7 @@ SELECT HEX(WEIGHT_STRING(@var2 as BINARY (10)));
 SELECT HEX(WEIGHT_STRING(@var3 as BINARY (10)));
          hex          
 ----------------------
- 31322d33312d32303231
+ 323032312d31322d3331
 (1 row)
 
 SET @var4 = WEIGHT_STRING('test' AS BINARY(10));

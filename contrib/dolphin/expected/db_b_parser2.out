@@ -128,14 +128,14 @@ SELECT weekofyear('2022-10-09 09:55:28.12345');
 (1 row)
 
 select now(),dayofmonth(now()),dayofmonth('2022-06-13');
-          now()           | dayofmonth | dayofmonth 
---------------------------+------------+------------
+        now()        | dayofmonth | dayofmonth 
+---------------------+------------+------------
 --?13.*
 (1 row)
 
 select now(),dayofyear(now()),dayofyear('2022-06-13');
-          now()           | dayofyear | dayofyear 
---------------------------+-----------+-----------
+        now()        | dayofyear | dayofyear 
+---------------------+-----------+-----------
 --?164.*
 (1 row)
 

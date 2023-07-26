@@ -126,13 +126,13 @@ select coalesce(null, null,null,'100.001'::numeric,134);
 select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
   coalesce  
 ------------
- 01-01-2001
+ 2001-01-01
 (1 row)
 
 select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
-           coalesce           
-------------------------------
- Mon Jan 01 01:01:01 2001 PST
+        coalesce        
+------------------------
+ 2001-01-01 01:01:01-08
 (1 row)
 
 select coalesce(null, null);
@@ -198,13 +198,13 @@ select coalesce(123::float8,null, null,321::float8);
 select coalesce(null, null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
   coalesce  
 ------------
- 01-01-2001
+ 2001-01-01
 (1 row)
 
 select coalesce('2001-01-01 01:01:01.3654'::timestamp,null, null,'2012-08-02 15:57:54.6365'::timestamp);
-           coalesce           
-------------------------------
- Mon Jan 01 01:01:01 2001 PST
+        coalesce        
+------------------------
+ 2001-01-01 01:01:01-08
 (1 row)
 
 SELECT coalesce(null,1, 'k');
@@ -625,13 +625,13 @@ select ifnull(123::float8,321::float8);
 select ifnull('2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
    ifnull   
 ------------
- 01-01-2001
+ 2001-01-01
 (1 row)
 
 select ifnull('2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
-            ifnull            
-------------------------------
- Mon Jan 01 01:01:01 2001 PST
+         ifnull         
+------------------------
+ 2001-01-01 01:01:01-08
 (1 row)
 
 --ifnull(unknown, int)
@@ -2113,7 +2113,7 @@ select interval('2001-01-01 01:01:01.3654'::date, '1999-01-01 01:01:01.3654'::da
 select interval('2022-12-12'::timestamp,123);
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval('2022-12-12'::timestamp,'2022-12-12'::timestamp);
@@ -2125,7 +2125,7 @@ select interval('2022-12-12'::timestamp,'2022-12-12'::timestamp);
 select interval(123,'2022-12-12'::timestamp);
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(1,' ');
@@ -2408,13 +2408,13 @@ select coalesce(null, null,null,'100.001'::numeric,134);
 select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
   coalesce  
 ------------
- 01-01-2001
+ 2001-01-01
 (1 row)
 
 select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
-           coalesce           
-------------------------------
- Mon Jan 01 01:01:01 2001 PST
+        coalesce        
+------------------------
+ 2001-01-01 01:01:01-08
 (1 row)
 
 select coalesce(null, null);
@@ -2480,13 +2480,13 @@ select coalesce(123::float8,null, null,321::float8);
 select coalesce(null, null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
   coalesce  
 ------------
- 01-01-2001
+ 2001-01-01
 (1 row)
 
 select coalesce('2001-01-01 01:01:01.3654'::timestamp,null, null,'2012-08-02 15:57:54.6365'::timestamp);
-           coalesce           
-------------------------------
- Mon Jan 01 01:01:01 2001 PST
+        coalesce        
+------------------------
+ 2001-01-01 01:01:01-08
 (1 row)
 
 SELECT coalesce(null,1, 'k');
@@ -2907,13 +2907,13 @@ select ifnull(123::float8,321::float8);
 select ifnull('2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
    ifnull   
 ------------
- 01-01-2001
+ 2001-01-01
 (1 row)
 
 select ifnull('2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
-            ifnull            
-------------------------------
- Mon Jan 01 01:01:01 2001 PST
+         ifnull         
+------------------------
+ 2001-01-01 01:01:01-08
 (1 row)
 
 --ifnull(unknown, int)
@@ -4395,7 +4395,7 @@ select interval('2001-01-01 01:01:01.3654'::date, '1999-01-01 01:01:01.3654'::da
 select interval('2022-12-12'::timestamp,123);
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval('2022-12-12'::timestamp,'2022-12-12'::timestamp);
@@ -4407,7 +4407,7 @@ select interval('2022-12-12'::timestamp,'2022-12-12'::timestamp);
 select interval(123,'2022-12-12'::timestamp);
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(1,' ');
@@ -5038,9 +5038,9 @@ LINE 1: select coalesce(bt, txt) from typeset;
                             ^
 CONTEXT:  referenced column: coalesce
 select coalesce(dt, tmstp) from typeset;
-           coalesce           
-------------------------------
- Thu Apr 19 00:00:00 2001 PDT
+        coalesce        
+------------------------
+ 2001-04-19 00:00:00-07
 (1 row)
 
 select coalesce(dt, tm) from typeset;
@@ -5190,13 +5190,13 @@ CONTEXT:  referenced column: ifnull
 select ifnull(tyint, dt) from typeset;
    ifnull   
 ------------
- 01-27-2000
+ 2000-01-27
 (1 row)
 
 select ifnull(tyint, tmstp) from typeset;
-            ifnull            
-------------------------------
- Thu Jan 27 00:00:00 2000 PST
+         ifnull         
+------------------------
+ 2000-01-27 00:00:00-08
 (1 row)
 
 select ifnull(tyint, tm) from typeset;
@@ -5266,13 +5266,13 @@ CONTEXT:  referenced column: ifnull
 select ifnull(smint, dt) from typeset;
    ifnull   
 ------------
- 01-27-2000
+ 2000-01-27
 (1 row)
 
 select ifnull(smint, tmstp) from typeset;
-            ifnull            
-------------------------------
- Thu Jan 27 00:00:00 2000 PST
+         ifnull         
+------------------------
+ 2000-01-27 00:00:00-08
 (1 row)
 
 select ifnull(smint, tm) from typeset;
@@ -5340,9 +5340,9 @@ select ifnull(anint, dt) from typeset;
 (1 row)
 
 select ifnull(anint, tmstp) from typeset;
-            ifnull            
-------------------------------
- Thu Jan 27 00:00:00 2000 PST
+         ifnull         
+------------------------
+ 2000-01-27 00:00:00-08
 (1 row)
 
 select ifnull(anint, tm) from typeset;
@@ -5633,9 +5633,9 @@ LINE 1: select ifnull(bt, txt) from typeset;
                           ^
 CONTEXT:  referenced column: ifnull
 select ifnull(dt, tmstp) from typeset;
-            ifnull            
-------------------------------
- Thu Apr 19 00:00:00 2001 PDT
+         ifnull         
+------------------------
+ 2001-04-19 00:00:00-07
 (1 row)
 
 select ifnull(dt, tm) from typeset;
@@ -5646,13 +5646,13 @@ CONTEXT:  referenced column: ifnull
 select ifnull(dt, ch) from typeset;
    ifnull   
 ------------
- 04-19-2001
+ 2001-04-19
 (1 row)
 
 select ifnull(dt, vch) from typeset;
    ifnull   
 ------------
- 04-19-2001
+ 2001-04-19
 (1 row)
 
 select ifnull(dt, blb) from typeset;
@@ -5663,7 +5663,7 @@ CONTEXT:  referenced column: ifnull
 select ifnull(dt, txt) from typeset;
    ifnull   
 ------------
- 04-19-2001
+ 2001-04-19
 (1 row)
 
 select ifnull(tmstp, tm) from typeset;
@@ -5672,15 +5672,15 @@ LINE 1: select ifnull(tmstp, tm) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
 select ifnull(tmstp, ch) from typeset;
-            ifnull            
-------------------------------
- Thu Apr 19 00:00:00 2001 PDT
+         ifnull         
+------------------------
+ 2001-04-19 00:00:00-07
 (1 row)
 
 select ifnull(tmstp, vch) from typeset;
-            ifnull            
-------------------------------
- Thu Apr 19 00:00:00 2001 PDT
+         ifnull         
+------------------------
+ 2001-04-19 00:00:00-07
 (1 row)
 
 select ifnull(tmstp, blb) from typeset;
@@ -5689,9 +5689,9 @@ LINE 1: select ifnull(tmstp, blb) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
 select ifnull(tmstp, txt) from typeset;
-            ifnull            
-------------------------------
- Thu Apr 19 00:00:00 2001 PDT
+         ifnull         
+------------------------
+ 2001-04-19 00:00:00-07
 (1 row)
 
 select ifnull(tm, ch) from typeset;
@@ -5795,13 +5795,13 @@ select interval(tyint, bt) from typeset;
 select interval(tyint, dt) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(tyint, tmstp) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(tyint, tm) from typeset;
@@ -5873,13 +5873,13 @@ select interval(smint, bt) from typeset;
 select interval(smint, dt) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(smint, tmstp) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(smint, tm) from typeset;
@@ -5945,13 +5945,13 @@ select interval(anint, bt) from typeset;
 select interval(anint, dt) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(anint, tmstp) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(anint, tm) from typeset;
@@ -6011,13 +6011,13 @@ select interval(bgint, bt) from typeset;
 select interval(bgint, dt) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bgint, tmstp) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bgint, tm) from typeset;
@@ -6071,13 +6071,13 @@ select interval(dcmal, bt) from typeset;
 select interval(dcmal, dt) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(dcmal, tmstp) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(dcmal, tm) from typeset;
@@ -6125,13 +6125,13 @@ select interval(nmric, bt) from typeset;
 select interval(nmric, dt) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(nmric, tmstp) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(nmric, tm) from typeset;
@@ -6173,13 +6173,13 @@ select interval(flt, bt) from typeset;
 select interval(flt, dt) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(flt, tmstp) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(flt, tm) from typeset;
@@ -6263,19 +6263,19 @@ select interval(dt, tmstp) from typeset;
 select interval(dt, tm) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(dt, ch) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(dt, vch) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(dt, blb) from typeset;
@@ -6287,25 +6287,25 @@ select interval(dt, blb) from typeset;
 select interval(dt, txt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(tmstp, tm) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(tmstp, ch) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(tmstp, vch) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(tmstp, blb) from typeset;
@@ -6317,7 +6317,7 @@ select interval(tmstp, blb) from typeset;
 select interval(tmstp, txt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(tm, ch) from typeset;
@@ -6425,7 +6425,7 @@ select strcmp(tyint, bt) from typeset;
 select strcmp(tyint, dt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(tyint, tmstp) from typeset;
@@ -6503,7 +6503,7 @@ select strcmp(smint, bt) from typeset;
 select strcmp(smint, dt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(smint, tmstp) from typeset;
@@ -6575,7 +6575,7 @@ select strcmp(anint, bt) from typeset;
 select strcmp(anint, dt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(anint, tmstp) from typeset;
@@ -6641,7 +6641,7 @@ select strcmp(bgint, bt) from typeset;
 select strcmp(bgint, dt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(bgint, tmstp) from typeset;
@@ -6701,7 +6701,7 @@ select strcmp(dcmal, bt) from typeset;
 select strcmp(dcmal, dt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(dcmal, tmstp) from typeset;
@@ -6755,7 +6755,7 @@ select strcmp(nmric, bt) from typeset;
 select strcmp(nmric, dt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(nmric, tmstp) from typeset;
@@ -6803,7 +6803,7 @@ select strcmp(flt, bt) from typeset;
 select strcmp(flt, dt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(flt, tmstp) from typeset;
@@ -6911,7 +6911,7 @@ select strcmp(dt, vch) from typeset;
 select strcmp(dt, blb) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(dt, txt) from typeset;
@@ -6923,19 +6923,19 @@ select strcmp(dt, txt) from typeset;
 select strcmp(tmstp, tm) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(tmstp, ch) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(tmstp, vch) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(tmstp, blb) from typeset;
@@ -6947,7 +6947,7 @@ select strcmp(tmstp, blb) from typeset;
 select strcmp(tmstp, txt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(tm, ch) from typeset;

@@ -232,12 +232,12 @@ select * from debug_info;
 -- start debug - 1st run
 select * from test_debug(4);
 INFO:  cnt is 3
- a |          b          |              c               
----+---------------------+------------------------------
- 5 | Fasting             | Sat Mar 02 00:00:00 2030 PST
- 7 | Treasures in Heaven | Mon Apr 02 00:00:00 2040 PDT
- 2 | Giving to the Needy | Sun Feb 02 00:00:00 2020 PST
- 3 | Prayer              | Thu Dec 02 00:00:00 2021 PST
+ a |          b          |           c            
+---+---------------------+------------------------
+ 5 | Fasting             | 2030-03-02 00:00:00-08
+ 7 | Treasures in Heaven | 2040-04-02 00:00:00-07
+ 2 | Giving to the Needy | 2020-02-02 00:00:00-08
+ 3 | Prayer              | 2021-12-02 00:00:00-08
 (4 rows)
 
 -- start debug - 2nd run - to be aborted
@@ -552,14 +552,14 @@ vnum:1.000000
 vfloat:1
 vtext:Why oh why didnt I take the blue pill?
 vvarchar:there is no spoon
-vrow:(0,"Happy Children's Day!","Tue Jun 01 00:00:00 2021 PDT")
+vrow:(0,"Happy Children's Day!","2021-06-01 00:00:00-07")
 vrefcursor:<NULL>
 INFO:  vint:2
 vnum:1.000000
 vfloat:1
 vtext:Why oh why didnt I take the blue pill?
 vvarchar:there is no spoon
-vrow:(0,"Happy Children's Day!","Tue Jun 01 00:00:00 2021 PDT")
+vrow:(0,"Happy Children's Day!","2021-06-01 00:00:00-07")
 vrefcursor:<NULL>
  test_setvar 
 -------------

@@ -136,26 +136,26 @@ insert into test_date values('2022-11-08',1),('2022-11-09',1),('2022-11-10',2),(
 select any_value(a),b from test_date group by b;
  any_value  | b 
 ------------+---
- 11-08-2022 | 1
- 11-10-2022 | 2
+ 2022-11-08 | 1
+ 2022-11-10 | 2
 (2 rows)
 
 create table test_datetime(a datetime, b int);
 insert into test_datetime values('2022-11-08',1),('2022-11-09',1),('2022-11-10',2),('2022-11-11',2);
 select any_value(a),b from test_datetime group by b;
-        any_value         | b 
---------------------------+---
- Tue Nov 08 00:00:00 2022 | 1
- Thu Nov 10 00:00:00 2022 | 2
+      any_value      | b 
+---------------------+---
+ 2022-11-08 00:00:00 | 1
+ 2022-11-10 00:00:00 | 2
 (2 rows)
 
 create table test_timestamp(a timestamp, b int);
 insert into test_timestamp values('2022-11-08',1),('2022-11-09',1),('2022-11-10',2),('2022-11-11',2);
 select any_value(a),b from test_timestamp group by b;
-          any_value           | b 
-------------------------------+---
- Tue Nov 08 00:00:00 2022 PST | 1
- Thu Nov 10 00:00:00 2022 PST | 2
+       any_value        | b 
+------------------------+---
+ 2022-11-08 00:00:00-08 | 1
+ 2022-11-10 00:00:00-08 | 2
 (2 rows)
 
 create table test_time(a time, b int);

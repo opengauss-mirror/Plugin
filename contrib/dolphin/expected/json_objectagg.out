@@ -60,7 +60,7 @@ insert into time_table values(20221204, 3);
 select json_objectagg(b, a) from time_table;
                       json_objectagg                       
 -----------------------------------------------------------
- {"1": "08-22-2020", "2": "10-01-2021", "3": "12-04-2022"}
+ {"1": "2020-08-22", "2": "2021-10-01", "3": "2022-12-04"}
 (1 row)
 
 CREATE TEMP TABLE null_value (a int, b int);
