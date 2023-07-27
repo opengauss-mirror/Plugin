@@ -221,5 +221,150 @@ select * from memos;
 copy memos(CONTEXt,tSColA) from '@abs_builddir@/data/column_copy.csv'DELIMITERS ',';
 select * from memos;
 
+
+-- test continuous escapes
+create table t_load_continuous_escape(c1 varchar(11),c2 text,c3 text);
+truncate table t_load_continuous_escape;
+load data infile '@abs_builddir@/data/load-continuous_escape.txt'
+    into table t_load_continuous_escape
+    fields terminated by '***'
+    enclosed by ''''
+    escaped by e'\\';
+select * from t_load_continuous_escape;
+
+-- test escaped char is the same as enclosed char
+create table t_load_same(c1 varchar(11),c2 text);
+load data infile '@abs_builddir@/data/load-same_escape_enclosed.txt'
+    into table t_load_same character set 'sql_ascii'
+    fields terminated by e',' enclosed by '\' escaped by '\'
+    lines starting by '测试' terminated by ';';
+select * from t_load_same;
+
+-- test enclosed equals escape: multiple enclosed chars, end with field terminator
+create table t_load_same_quote_escape(a char(20), b char(20));
+load data infile '@abs_builddir@/data/load-same_escape_enclosed2.txt'
+    into table t_load_same_quote_escape
+    fields terminated by ',' enclosed by '"' escaped by '"'
+    lines terminated by '#';
+select * from t_load_same_quote_escape;
+
+-- test enclosed equals escape: multiple enclosed chars, hit end of line
+truncate t_load_same_quote_escape;
+load data infile '@abs_builddir@/data/load-same_escape_enclosed3.txt'
+    into table t_load_same_quote_escape
+    fields terminated by ',' enclosed by '"' escaped by '"'
+    lines terminated by '#';
+select * from t_load_same_quote_escape;
+
+-- test enclosed equals escape: multiple enclosed chars, end with line terminator but not enclosed correct
+truncate t_load_same_quote_escape;
+load data infile '@abs_builddir@/data/load-same_escape_enclosed4.txt'
+    into table t_load_same_quote_escape
+    fields terminated by ',' enclosed by '"' escaped by '"'
+    lines terminated by '#';
+select * from t_load_same_quote_escape;
+
+-- test enclosed equals escape: multiple enclosed chars, end with line terminator and enclosed correct
+truncate t_load_same_quote_escape;
+load data infile '@abs_builddir@/data/load-same_escape_enclosed5.txt'
+    into table t_load_same_quote_escape
+    fields terminated by ',' enclosed by '\' escaped by '\'
+    lines terminated by '#';
+select * from t_load_same_quote_escape;
+
+-- test enclosed char should escapes itself in quoted fields
+create table t_load_escape_itself(c1 varchar(11),c2 text);
+load data infile '@abs_builddir@/data/load-escape_itself.txt'
+    replace into table t_load_escape_itself
+    fields terminated by ',' enclosed by '?'
+    escaped by '$'
+    lines starting by '测试' terminated by ';';
+select * from t_load_escape_itself;
+
+-- test escape of delimiter
+create table t_load_escape_delimiter(c2 text);
+load data infile '@abs_builddir@/data/load-escape_delimiter.txt'
+    replace into table t_load_escape_delimiter
+    fields terminated by ',' enclosed by '?'
+    escaped by '@'
+    lines terminated by ';';
+select * from t_load_escape_delimiter;
+
+-- test export & import on sql_ascii encoding
+create database db_ascii dbcompatibility = 'b' encoding 'sql_ascii';
+\c db_ascii
+set datestyle to 'ISO, YMD';
+create  table t_load_export_import(
+    col1 money,
+    col2 boolean,
+    col3 CHAR(4),
+    col4 CHARACTER(4),
+    col5 NCHAR(4),
+    col6 VARCHAR(10),
+    col7 CHARACTER VARYING(10),
+    col8 VARCHAR2(10),
+    col9 NVARCHAR2(10),
+    col10 TEXT,
+    col11 CLOB,
+    col12 BLOB,
+    col13 RAW,
+    col14 BYTEA,
+    col15 DATE,
+    col16 TIME,
+    col17 time with time zone,
+    col18 timestamp,
+    col19 timestamp with time zone,
+    col20 SMALLDATETIME,
+    col21 abstime,
+    col22 cidr,
+    col23 inet,
+    col24 macaddr,
+    col25 BIT(3),
+    col26 BIT VARYING(5),
+    col27 UUID,
+    col28 tsvector,
+    col29 tsquery,
+    col30 json,
+    col31 jsonb,
+    set hll(14),
+    col33 int4range,
+    col34 int8range,
+    col35 numrange,
+    col36 tsrange,
+    col37 tstzrange,
+    col38 daterange,
+    col39 HASH16,
+    col40 HASH32
+);
+
+insert into t_load_export_import
+values ('52093.89'::money, true, 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', empty_blob(), HEXTORAW('DEADBEEF'),
+        E'\xDEADBEEF', '1900-01-01 00:00:00', '1900-01-01 00:00:00 pst', '1900-01-01 00:00:00', '1900-01-01 00:00:00 pst',
+        '1900-01-01 00:00:00', '1900-01-01 00:00:00', '1910-01-01 00:00:00', '10.10.10.10', '10.10.10.10', '08002b010203',
+        B'10'::bit(3), B'00', 'a0eebc999c0b4ef8bb6d6bb9bd380a11', 'test', 'test', '{"aa":1}'::json, '{"bb":2}'::jsonb,
+        hll_empty(14,-1), '[1,10]', '[1,10]', '[0.00, 10.00]', '[1900-01-01 00:00:00, 2020-01-01 00:00:00]',
+        '[1900-01-01 00:00:00 pst, 2020-01-01 00:00:00 pst]', '(1900-01-01, 2020-01-01)','ffff', 'ffffffffffffffffffffffffffffffff');
+insert into t_load_export_import
+values ('52093.89'::money, true, 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', empty_blob(), HEXTORAW('DEADBEEF'),
+        E'\xDEADBEEF', '1900-01-01 00:00:00', '1900-01-01 00:00:00 pst', '1900-01-01 00:00:00', '1900-01-01 00:00:00 pst',
+        '1900-01-01 00:00:00', '1900-01-01 00:00:00', '1910-01-01 00:00:00', '10.10.10.10', '10.10.10.10', '08002b010203',
+        B'10'::bit(3), B'00', 'a0eebc999c0b4ef8bb6d6bb9bd380a11', 'test', 'test', '{"aa":1}'::json, '{"bb":2}'::jsonb,
+        hll_empty(14,-1), '[1,10]', '[1,10]', '[0.00, 10.00]', '[1900-01-01 00:00:00, 2020-01-01 00:00:00]',
+        '[1900-01-01 00:00:00 pst, 2020-01-01 00:00:00 pst]', '(1900-01-01, 2020-01-01)','ffff', 'ffffffffffffffffffffffffffffffff');
+insert into t_load_export_import
+values ('52093.89'::money, true, 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', 'aa', empty_blob(), HEXTORAW('DEADBEEF'),
+        E'\xDEADBEEF', '1900-01-01 00:00:00', '1900-01-01 00:00:00 pst', '1900-01-01 00:00:00', '1900-01-01 00:00:00 pst',
+        '1900-01-01 00:00:00', '1900-01-01 00:00:00', '1910-01-01 00:00:00', '10.10.10.10', '10.10.10.10', '08002b010203',
+        B'10'::bit(3), B'00', 'a0eebc999c0b4ef8bb6d6bb9bd380a11', 'test', 'test', '{"aa":1}'::json, '{"bb":2}'::jsonb,
+        hll_empty(14,-1), '[1,10]', '[1,10]', '[0.00, 10.00]', '[1900-01-01 00:00:00, 2020-01-01 00:00:00]',
+        '[1900-01-01 00:00:00 pst, 2020-01-01 00:00:00 pst]', '(1900-01-01, 2020-01-01)','ffff', 'ffffffffffffffffffffffffffffffff');
+copy (select * from t_load_export_import) to '@abs_builddir@/data/load-export_import.txt';
+
+truncate table t_load_export_import;
+load data infile '@abs_builddir@/data/load-export_import.txt' into table t_load_export_import;
+
+select * from t_load_export_import;
+
 \c postgres
 drop database if exists load;
+drop database if exists db_ascii;
