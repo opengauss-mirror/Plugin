@@ -562,6 +562,7 @@ SELECT coalesce(null,t2,t1) from test_bccf;
 (48 rows)
 
 ----------------IfNULL function------------------------
+set dolphin.b_compatibility_mode to on;
 select ifnull(null, null);
  ifnull 
 --------
@@ -589,7 +590,7 @@ select ifnull(null,321);
 select ifnull(123,'321');
  ifnull 
 --------
-    123
+ 123
 (1 row)
 
 select ifnull(123::int2,321::int2);
@@ -634,6 +635,78 @@ select ifnull('2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::
  2001-01-01 01:01:01-08
 (1 row)
 
+select pg_typeof(ifnull(null, null));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(null, 'other'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('something','other'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(null,321));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(123,'321'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(123::int2,321::int2));
+ pg_typeof 
+-----------
+ smallint
+(1 row)
+
+select pg_typeof(ifnull(123::int4,321::int4));
+ pg_typeof 
+-----------
+ integer
+(1 row)
+
+select pg_typeof(ifnull(123::int8,321::int8));
+ pg_typeof 
+-----------
+ bigint
+(1 row)
+
+select pg_typeof(ifnull(123::float4,321::float4));
+ pg_typeof 
+-----------
+ real
+(1 row)
+
+select pg_typeof(ifnull(123::float8,321::float8));
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select pg_typeof(ifnull('2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date));
+ pg_typeof 
+-----------
+ date
+(1 row)
+
+select pg_typeof(ifnull('2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp));
+        pg_typeof         
+--------------------------
+ timestamp with time zone
+(1 row)
+
 --ifnull(unknown, int)
 SELECT ifnull('j', 1);
  ifnull 
@@ -645,13 +718,13 @@ SELECT ifnull('j', 1);
 SELECT ifnull(1, 'k');
  ifnull 
 --------
-      1
+ 1
 (1 row)
 
 SELECT ifnull(1, '6');
  ifnull 
 --------
-      1
+ 1
 (1 row)
 
 --ifnull(char, int)
@@ -665,7 +738,7 @@ SELECT ifnull('o'::char, 1);
 SELECT ifnull(1, 'o'::char);
  ifnull 
 --------
-      1
+ 1
 (1 row)
 
 --ifnull(text, int2)
@@ -678,7 +751,7 @@ SELECT ifnull('hello!'::text, '100'::int2);
 SELECT ifnull('100'::int2, 'hello!'::text);
  ifnull 
 --------
-    100
+ 100
 (1 row)
 
 --ifnull(text, int4)
@@ -691,7 +764,7 @@ SELECT ifnull('hello!'::text, '100'::int4);
 SELECT ifnull('100'::int4, 'hello!'::text);
  ifnull 
 --------
-    100
+ 100
 (1 row)
 
 --ifnull(text, int8)
@@ -704,7 +777,7 @@ SELECT ifnull('hello!'::text, '100'::int8);
 SELECT ifnull('100'::int8, 'hello!'::text);
  ifnull 
 --------
-    100
+ 100
 (1 row)
 
 --ifnull(text, float4)
@@ -743,7 +816,109 @@ SELECT ifnull('hello!'::text, '100.001'::numeric);
 SELECT ifnull('100.001'::numeric, 'hello!'::text);
  ifnull 
 --------
-    100
+ 100
+(1 row)
+
+select pg_typeof(ifnull('j', 1));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(1, 'k'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(1, '6'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('o'::char, 1));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(1, 'o'::char));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('hello!'::text, '100'::int2));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('100'::int2, 'hello!'::text));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('hello!'::text, '100'::int4));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('100'::int4, 'hello!'::text));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('hello!'::text, '100'::int8));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('100'::int8, 'hello!'::text));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('hello!'::text, '100.001'::float4));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('100.001'::float4, 'hello!'::text));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('hello!'::text, '100.001'::float8));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('100.001'::float8, 'hello!'::text));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('hello!'::text, '100.001'::numeric));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('100.001'::numeric, 'hello!'::text));
+ pg_typeof 
+-----------
+ text
 (1 row)
 
 --null
@@ -777,13 +952,13 @@ SELECT ifnull(''::text, '100'::int2);
  
 (1 row)
 
-SELECT ifnull(''::int2, 'hello!'::text)L;
+SELECT ifnull(''::int2, 'hello!'::text);
 WARNING:  invalid input syntax for smallint: ""
-LINE 1: SELECT ifnull(''::int2, 'hello!'::text)L;
+LINE 1: SELECT ifnull(''::int2, 'hello!'::text);
                       ^
-CONTEXT:  referenced column: L
- L 
----
+CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
  0
 (1 row)
 
@@ -800,7 +975,7 @@ CONTEXT:  referenced column: ifnull
 SELECT ifnull('100'::int2, ''::text);
  ifnull 
 --------
-    100
+ 100
 (1 row)
 
 SELECT ifnull(''::text, '100.001'::float8);
@@ -828,7 +1003,7 @@ LINE 1: SELECT ifnull(''::numeric, 'hello!'::text);
 CONTEXT:  referenced column: ifnull
  ifnull 
 --------
-      0
+ 0
 (1 row)
 
 SELECT ifnull('hello!'::text, ''::numeric);
@@ -844,7 +1019,7 @@ CONTEXT:  referenced column: ifnull
 SELECT ifnull('100.001'::numeric, ''::text);
  ifnull 
 --------
-    100
+ 100
 (1 row)
 
 select ifnull(t1,t2) from test_bccf;
@@ -903,107 +1078,107 @@ select ifnull(t1,t2) from test_bccf;
 select ifnull(t1,t3) from test_bccf;
  ifnull 
 --------
-      1
-      0
-      1
-      3
-      4
-      0
-      5
-      6
-      7
-      0
-      1
-      1
-      1
-      0
-     11
-     10
-     11
-      0
-     13
-     12
-      9
-      0
-      8
-      7
-    123
-      0
-     51
-     73
-     84
-      0
-      5
-      6
-      7
-      0
-      1
-      2
-      1
-      0
-     13
-     10
-     11
-      0
-     13
-     12
-      9
-      0
-      8
-      7
+ 1
+ c
+ 1
+ 3
+ 4
+ c
+ 5
+ 6
+ 7
+ c
+ 1
+ 1
+ 1
+ c
+ 11
+ 10
+ 11
+ c
+ 13
+ 12
+ 9
+ c
+ 8
+ 7
+ 123
+ c
+ 51
+ 73
+ 84
+ c
+ 5
+ 6
+ 7
+ c
+ 1
+ 2
+ 1
+ c
+ 13
+ 10
+ 11
+ c
+ 13
+ 12
+ 9
+ c
+ 8
+ 7
 (48 rows)
 
 select ifnull(t1,t4) from test_bccf;
  ifnull 
 --------
-      1
-       
-      1
-      3
-      4
-       
-      5
-      6
-      7
-       
-      1
-      1
-      1
-       
-     11
-     10
-     11
-       
-     13
-     12
-      9
-       
-      8
-      7
-    123
-       
-     51
-     73
-     84
-       
-      5
-      6
-      7
-       
-      1
-      2
-      1
-       
-     13
-     10
-     11
-       
-     13
-     12
-      9
-       
-      8
-      7
+ 1
+ 
+ 1
+ 3
+ 4
+ 
+ 5
+ 6
+ 7
+ 
+ 1
+ 1
+ 1
+ 
+ 11
+ 10
+ 11
+ 
+ 13
+ 12
+ 9
+ 
+ 8
+ 7
+ 123
+ 
+ 51
+ 73
+ 84
+ 
+ 5
+ 6
+ 7
+ 
+ 1
+ 2
+ 1
+ 
+ 13
+ 10
+ 11
+ 
+ 13
+ 12
+ 9
+ 
+ 8
+ 7
 (48 rows)
 
 select ifnull(t3,t4) from test_bccf;
@@ -1059,6 +1234,352 @@ select ifnull(t3,t4) from test_bccf;
  b
 (48 rows)
 
+select pg_typeof(ifnull('j', ''));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('j', null));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('', 'k'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(null, 'k'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(''::text, '100'::int2));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(''::int2, 'hello!'::text));
+WARNING:  invalid input syntax for smallint: ""
+LINE 1: select pg_typeof(ifnull(''::int2, 'hello!'::text));
+                                ^
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('hello!'::text, ''::int2));
+WARNING:  invalid input syntax for smallint: ""
+LINE 1: select pg_typeof(ifnull('hello!'::text, ''::int2));
+                                                ^
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('100'::int2, ''::text));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(''::text, '100.001'::float8));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('100.001'::float8, ''::text));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(''::text, '100.001'::numeric));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(''::numeric, 'hello!'::text));
+WARNING:  invalid input syntax for numeric: ""
+LINE 1: select pg_typeof(ifnull(''::numeric, 'hello!'::text));
+                                ^
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('hello!'::text, ''::numeric));
+WARNING:  invalid input syntax for numeric: ""
+LINE 1: select pg_typeof(ifnull('hello!'::text, ''::numeric));
+                                                ^
+CONTEXT:  referenced column: pg_typeof
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('100.001'::numeric, ''::text));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(t1,t2)) from test_bccf;
+    pg_typeof     
+------------------
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+ double precision
+(48 rows)
+
+select pg_typeof(ifnull(t1,t3)) from test_bccf;
+ pg_typeof 
+-----------
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+(48 rows)
+
+select pg_typeof(ifnull(t1,t4)) from test_bccf;
+ pg_typeof 
+-----------
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+(48 rows)
+
+select pg_typeof(ifnull(t3,t4)) from test_bccf;
+ pg_typeof 
+-----------
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+(48 rows)
+
+select pg_typeof(ifnull('2022-1-1 11:11:11'::datetime, 'text'::text));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+create table test_bool1(c1 boolean);
+insert into test_bool1 values(1);
+select ifnull(test_bool1.c1,'') from test_bool1;
+ ifnull 
+--------
+ 1
+(1 row)
+
+select ifnull('',test_bool1.c1) from test_bool1;
+ ifnull 
+--------
+ 
+(1 row)
+
+select pg_typeof(ifnull(test_bool1.c1,'')) from test_bool1;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull('',test_bool1.c1)) from test_bool1;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+drop table test_bool1;
+reset dolphin.b_compatibility_mode;
 ----------------ISNULL expression------------------------
 --null
 SELECT isnull(null);
@@ -2844,6 +3365,7 @@ SELECT coalesce(null,t2,t1) from test_bccf;
 (48 rows)
 
 ----------------IfNULL function------------------------
+set dolphin.b_compatibility_mode to on;
 select ifnull(null, null);
  ifnull 
 --------
@@ -2871,7 +3393,7 @@ select ifnull(null,321);
 select ifnull(123,'321');
  ifnull 
 --------
-    123
+ 123
 (1 row)
 
 select ifnull(123::int2,321::int2);
@@ -2927,13 +3449,13 @@ SELECT ifnull('j', 1);
 SELECT ifnull(1, 'k');
  ifnull 
 --------
-      1
+ 1
 (1 row)
 
 SELECT ifnull(1, '6');
  ifnull 
 --------
-      1
+ 1
 (1 row)
 
 --ifnull(char, int)
@@ -2947,7 +3469,7 @@ SELECT ifnull('o'::char, 1);
 SELECT ifnull(1, 'o'::char);
  ifnull 
 --------
-      1
+ 1
 (1 row)
 
 --ifnull(text, int2)
@@ -2960,7 +3482,7 @@ SELECT ifnull('hello!'::text, '100'::int2);
 SELECT ifnull('100'::int2, 'hello!'::text);
  ifnull 
 --------
-    100
+ 100
 (1 row)
 
 --ifnull(text, int4)
@@ -2973,7 +3495,7 @@ SELECT ifnull('hello!'::text, '100'::int4);
 SELECT ifnull('100'::int4, 'hello!'::text);
  ifnull 
 --------
-    100
+ 100
 (1 row)
 
 --ifnull(text, int8)
@@ -2986,7 +3508,7 @@ SELECT ifnull('hello!'::text, '100'::int8);
 SELECT ifnull('100'::int8, 'hello!'::text);
  ifnull 
 --------
-    100
+ 100
 (1 row)
 
 --ifnull(text, float4)
@@ -3025,7 +3547,7 @@ SELECT ifnull('hello!'::text, '100.001'::numeric);
 SELECT ifnull('100.001'::numeric, 'hello!'::text);
  ifnull 
 --------
-    100
+ 100
 (1 row)
 
 --null
@@ -3059,13 +3581,13 @@ SELECT ifnull(''::text, '100'::int2);
  
 (1 row)
 
-SELECT ifnull(''::int2, 'hello!'::text)L;
+SELECT ifnull(''::int2, 'hello!'::text);
 WARNING:  invalid input syntax for smallint: ""
-LINE 1: SELECT ifnull(''::int2, 'hello!'::text)L;
+LINE 1: SELECT ifnull(''::int2, 'hello!'::text);
                       ^
-CONTEXT:  referenced column: L
- L 
----
+CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
  0
 (1 row)
 
@@ -3082,7 +3604,7 @@ CONTEXT:  referenced column: ifnull
 SELECT ifnull('100'::int2, ''::text);
  ifnull 
 --------
-    100
+ 100
 (1 row)
 
 SELECT ifnull(''::text, '100.001'::float8);
@@ -3110,7 +3632,7 @@ LINE 1: SELECT ifnull(''::numeric, 'hello!'::text);
 CONTEXT:  referenced column: ifnull
  ifnull 
 --------
-      0
+ 0
 (1 row)
 
 SELECT ifnull('hello!'::text, ''::numeric);
@@ -3126,7 +3648,7 @@ CONTEXT:  referenced column: ifnull
 SELECT ifnull('100.001'::numeric, ''::text);
  ifnull 
 --------
-    100
+ 100
 (1 row)
 
 select ifnull(t1,t2) from test_bccf;
@@ -3185,107 +3707,107 @@ select ifnull(t1,t2) from test_bccf;
 select ifnull(t1,t3) from test_bccf;
  ifnull 
 --------
-      1
-      0
-      1
-      3
-      4
-      0
-      5
-      6
-      7
-      0
-      1
-      1
-      1
-      0
-     11
-     10
-     11
-      0
-     13
-     12
-      9
-      0
-      8
-      7
-    123
-      0
-     51
-     73
-     84
-      0
-      5
-      6
-      7
-      0
-      1
-      2
-      1
-      0
-     13
-     10
-     11
-      0
-     13
-     12
-      9
-      0
-      8
-      7
+ 1
+ c
+ 1
+ 3
+ 4
+ c
+ 5
+ 6
+ 7
+ c
+ 1
+ 1
+ 1
+ c
+ 11
+ 10
+ 11
+ c
+ 13
+ 12
+ 9
+ c
+ 8
+ 7
+ 123
+ c
+ 51
+ 73
+ 84
+ c
+ 5
+ 6
+ 7
+ c
+ 1
+ 2
+ 1
+ c
+ 13
+ 10
+ 11
+ c
+ 13
+ 12
+ 9
+ c
+ 8
+ 7
 (48 rows)
 
 select ifnull(t1,t4) from test_bccf;
  ifnull 
 --------
-      1
-       
-      1
-      3
-      4
-       
-      5
-      6
-      7
-       
-      1
-      1
-      1
-       
-     11
-     10
-     11
-       
-     13
-     12
-      9
-       
-      8
-      7
-    123
-       
-     51
-     73
-     84
-       
-      5
-      6
-      7
-       
-      1
-      2
-      1
-       
-     13
-     10
-     11
-       
-     13
-     12
-      9
-       
-      8
-      7
+ 1
+ 
+ 1
+ 3
+ 4
+ 
+ 5
+ 6
+ 7
+ 
+ 1
+ 1
+ 1
+ 
+ 11
+ 10
+ 11
+ 
+ 13
+ 12
+ 9
+ 
+ 8
+ 7
+ 123
+ 
+ 51
+ 73
+ 84
+ 
+ 5
+ 6
+ 7
+ 
+ 1
+ 2
+ 1
+ 
+ 13
+ 10
+ 11
+ 
+ 13
+ 12
+ 9
+ 
+ 8
+ 7
 (48 rows)
 
 select ifnull(t3,t4) from test_bccf;
@@ -3341,6 +3863,7 @@ select ifnull(t3,t4) from test_bccf;
  b
 (48 rows)
 
+reset dolphin.b_compatibility_mode;
 ----------------ISNULL expression------------------------
 --null
 SELECT isnull(null);
@@ -4583,18 +5106,20 @@ create table typeset (
 	ch    CHAR(30) not null,
 	vch   VARCHAR(30) not null,
 	blb   BLOB not null,
-	txt   TEXT not null
+	txt   TEXT not null,
+	bin   binary,
+	vbin  varbinary(50)
 );
 insert into typeset (
 tyint,smint,anint,bgint,dcmal,nmric,flt,
 bt,dt,tmstp,tm,
 ch,vch,blb,
-txt 
+txt,bin,vbin
 ) values (
 127, 127, 127, 127, 127.234, 127.32, 127.213,
 b'01111111', '2001-04-19','2001-04-19', '22:23:44',
 '2001-04-19 22:23:44', '2001-04-19 22:23:44', '1233454212',
-'2001-04-19 22:23:44'
+'2001-04-19 22:23:44', '1', '2001-04-19 22:23:44'
 );
 select coalesce(tyint, smint) from typeset;
  coalesce 
@@ -5146,6 +5671,7 @@ ERROR:  COALESCE types blob and text cannot be matched
 LINE 1: select coalesce(blb, txt) from typeset;
                              ^
 CONTEXT:  referenced column: coalesce
+set dolphin.b_compatibility_mode to on;
 select ifnull(tyint, smint) from typeset;
  ifnull 
 --------
@@ -5183,25 +5709,29 @@ select ifnull(tyint, flt) from typeset;
 (1 row)
 
 select ifnull(tyint, bt) from typeset;
-ERROR:  NVL types tinyint and bit cannot be matched
-LINE 1: select ifnull(tyint, bt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+    127
+(1 row)
+
 select ifnull(tyint, dt) from typeset;
-ERROR:  NVL types tinyint and date cannot be matched
-LINE 1: select ifnull(tyint, dt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ 127
+(1 row)
+
 select ifnull(tyint, tmstp) from typeset;
-ERROR:  NVL types tinyint and timestamp with time zone cannot be matched
-LINE 1: select ifnull(tyint, tmstp) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ 127
+(1 row)
+
 select ifnull(tyint, tm) from typeset;
-ERROR:  NVL types tinyint and time without time zone cannot be matched
-LINE 1: select ifnull(tyint, tm) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ 127
+(1 row)
+
 select ifnull(tyint, ch) from typeset;
  ifnull 
 --------
@@ -5215,10 +5745,11 @@ select ifnull(tyint, vch) from typeset;
 (1 row)
 
 select ifnull(tyint, blb) from typeset;
-ERROR:  NVL types tinyint and blob cannot be matched
-LINE 1: select ifnull(tyint, blb) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+  ifnull  
+----------
+ \x313237
+(1 row)
+
 select ifnull(tyint, txt) from typeset;
  ifnull 
 --------
@@ -5256,46 +5787,50 @@ select ifnull(smint, flt) from typeset;
 (1 row)
 
 select ifnull(smint, bt) from typeset;
-ERROR:  NVL types smallint and bit cannot be matched
-LINE 1: select ifnull(smint, bt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+--------
+    127
+(1 row)
+
 select ifnull(smint, dt) from typeset;
-ERROR:  NVL types smallint and date cannot be matched
-LINE 1: select ifnull(smint, dt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ 127
+(1 row)
+
 select ifnull(smint, tmstp) from typeset;
-ERROR:  NVL types smallint and timestamp with time zone cannot be matched
-LINE 1: select ifnull(smint, tmstp) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ 127
+(1 row)
+
 select ifnull(smint, tm) from typeset;
-ERROR:  NVL types smallint and time without time zone cannot be matched
-LINE 1: select ifnull(smint, tm) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ 127
+(1 row)
+
 select ifnull(smint, ch) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(smint, vch) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(smint, blb) from typeset;
-ERROR:  NVL types smallint and blob cannot be matched
-LINE 1: select ifnull(smint, blb) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+  ifnull  
+----------
+ \x313237
+(1 row)
+
 select ifnull(smint, txt) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(anint, bgint) from typeset;
@@ -5323,49 +5858,49 @@ select ifnull(anint, flt) from typeset;
 (1 row)
 
 select ifnull(anint, bt) from typeset;
-ERROR:  NVL types integer and bit cannot be matched
-LINE 1: select ifnull(anint, bt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+    127
+(1 row)
+
 select ifnull(anint, dt) from typeset;
-   ifnull   
-------------
- 2000-01-27
+ ifnull 
+--------
+ 127
 (1 row)
 
 select ifnull(anint, tmstp) from typeset;
-         ifnull         
-------------------------
- 2000-01-27 00:00:00-08
+ ifnull 
+--------
+ 127
 (1 row)
 
 select ifnull(anint, tm) from typeset;
-  ifnull  
-----------
- 00:01:27
+ 127
 (1 row)
 
 select ifnull(anint, ch) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(anint, vch) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(anint, blb) from typeset;
-ERROR:  NVL types integer and blob cannot be matched
-LINE 1: select ifnull(anint, blb) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+  ifnull  
+----------
+ \x313237
+(1 row)
+
 select ifnull(anint, txt) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(bgint, dcmal) from typeset;
@@ -5387,48 +5922,51 @@ select ifnull(bgint, flt) from typeset;
 (1 row)
 
 select ifnull(bgint, bt) from typeset;
-ERROR:  NVL types bigint and bit cannot be matched
-LINE 1: select ifnull(bgint, bt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+    127
+(1 row)
+
 select ifnull(bgint, dt) from typeset;
-ERROR:  NVL types bigint and date cannot be matched
-LINE 1: select ifnull(bgint, dt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ 127
+(1 row)
+
 select ifnull(bgint, tmstp) from typeset;
-         ifnull         
-------------------------
- 2000-01-27 00:00:00-08
+ ifnull 
+--------
+ 127
 (1 row)
 
 select ifnull(bgint, tm) from typeset;
-  ifnull  
-----------
- 00:01:27
+ ifnull 
+--------
+ 127
 (1 row)
 
 select ifnull(bgint, ch) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(bgint, vch) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(bgint, blb) from typeset;
-ERROR:  NVL types bigint and blob cannot be matched
-LINE 1: select ifnull(bgint, blb) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+  ifnull  
+----------
+ \x313237
+(1 row)
+
 select ifnull(bgint, txt) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(dcmal, nmric) from typeset;
@@ -5450,43 +5988,45 @@ select ifnull(dcmal, bt) from typeset;
 (1 row)
 
 select ifnull(dcmal, dt) from typeset;
-ERROR:  NVL types numeric and date cannot be matched
-LINE 1: select ifnull(dcmal, dt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ 127
+(1 row)
+
 select ifnull(dcmal, tmstp) from typeset;
-         ifnull         
-------------------------
- 2000-01-27 00:00:00-08
+ ifnull 
+--------
+ 127
 (1 row)
 
 select ifnull(dcmal, tm) from typeset;
-  ifnull  
-----------
- 00:01:27
+ ifnull 
+--------
+ 127
 (1 row)
 
 select ifnull(dcmal, ch) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(dcmal, vch) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(dcmal, blb) from typeset;
-ERROR:  NVL types numeric and blob cannot be matched
-LINE 1: select ifnull(dcmal, blb) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+  ifnull  
+----------
+ \x313237
+(1 row)
+
 select ifnull(dcmal, txt) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(nmric, flt) from typeset;
@@ -5502,49 +6042,51 @@ select ifnull(nmric, bt) from typeset;
 (1 row)
 
 select ifnull(nmric, dt) from typeset;
-ERROR:  NVL types numeric and date cannot be matched
-LINE 1: select ifnull(nmric, dt) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ 127
+(1 row)
+
 select ifnull(nmric, tmstp) from typeset;
-         ifnull         
-------------------------
- 2000-01-27 00:00:00-08
+ ifnull 
+--------
+ 127
 (1 row)
 
 select ifnull(nmric, tm) from typeset;
-  ifnull  
-----------
- 00:01:27
+ ifnull 
+--------
+ 127
 (1 row)
 
 select ifnull(nmric, ch) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(nmric, vch) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(nmric, blb) from typeset;
-ERROR:  NVL types numeric and blob cannot be matched
-LINE 1: select ifnull(nmric, blb) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+  ifnull  
+----------
+ \x313237
+(1 row)
+
 select ifnull(nmric, txt) from typeset;
  ifnull 
 --------
-    127
+ 127
 (1 row)
 
 select ifnull(flt, bt) from typeset;
- ifnull  
----------
- 127.213
+      ifnull      
+------------------
+ 127.212997436523
 (1 row)
 
 select ifnull(flt, dt) from typeset;
@@ -5575,10 +6117,11 @@ select ifnull(flt, vch) from typeset;
 (1 row)
 
 select ifnull(flt, blb) from typeset;
-ERROR:  NVL types real and blob cannot be matched
-LINE 1: select ifnull(flt, blb) from typeset;
-                           ^
-CONTEXT:  referenced column: ifnull
+      ifnull      
+------------------
+ \x3132372e323133
+(1 row)
+
 select ifnull(flt, txt) from typeset;
  ifnull  
 ---------
@@ -5586,51 +6129,59 @@ select ifnull(flt, txt) from typeset;
 (1 row)
 
 select ifnull(bt, dt) from typeset;
-ERROR:  NVL types bit and date cannot be matched
-LINE 1: select ifnull(bt, dt) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ \x7f
+(1 row)
+
 select ifnull(bt, tmstp) from typeset;
-ERROR:  NVL types bit and timestamp with time zone cannot be matched
-LINE 1: select ifnull(bt, tmstp) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ \x7f
+(1 row)
+
 select ifnull(bt, tm) from typeset;
-ERROR:  NVL types bit and time without time zone cannot be matched
-LINE 1: select ifnull(bt, tm) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ \x7f
+(1 row)
+
 select ifnull(bt, ch) from typeset;
-ERROR:  NVL types bit and character cannot be matched
-LINE 1: select ifnull(bt, ch) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ \x7f
+(1 row)
+
 select ifnull(bt, vch) from typeset;
-ERROR:  NVL types bit and character varying cannot be matched
-LINE 1: select ifnull(bt, vch) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ \x7f
+(1 row)
+
 select ifnull(bt, blb) from typeset;
-ERROR:  NVL types bit and blob cannot be matched
-LINE 1: select ifnull(bt, blb) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ \x7f
+(1 row)
+
 select ifnull(bt, txt) from typeset;
-ERROR:  NVL types bit and text cannot be matched
-LINE 1: select ifnull(bt, txt) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
+ ifnull 
+--------
+ \x7f
+(1 row)
+
 select ifnull(dt, tmstp) from typeset;
-         ifnull         
-------------------------
- 2001-04-19 00:00:00-07
+       ifnull        
+---------------------
+ 2001-04-19 00:00:00
 (1 row)
 
 select ifnull(dt, tm) from typeset;
-ERROR:  COALESCE could not convert type time without time zone to date
-LINE 1: select ifnull(dt, tm) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
+       ifnull        
+---------------------
+ 2001-04-19 00:00:00
+(1 row)
+
 select ifnull(dt, ch) from typeset;
    ifnull   
 ------------
@@ -5644,10 +6195,11 @@ select ifnull(dt, vch) from typeset;
 (1 row)
 
 select ifnull(dt, blb) from typeset;
-ERROR:  NVL types date and blob cannot be matched
-LINE 1: select ifnull(dt, blb) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
+         ifnull         
+------------------------
+ \x323030312d30342d3139
+(1 row)
+
 select ifnull(dt, txt) from typeset;
    ifnull   
 ------------
@@ -5655,10 +6207,11 @@ select ifnull(dt, txt) from typeset;
 (1 row)
 
 select ifnull(tmstp, tm) from typeset;
-ERROR:  COALESCE could not convert type time without time zone to timestamp with time zone
-LINE 1: select ifnull(tmstp, tm) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+       ifnull        
+---------------------
+ 2001-04-19 00:00:00
+(1 row)
+
 select ifnull(tmstp, ch) from typeset;
 ERROR:  NVL types timestamp with time zone and character cannot be matched
 LINE 1: select ifnull(tmstp, ch) from typeset;
@@ -5670,10 +6223,11 @@ LINE 1: select ifnull(tmstp, vch) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
 select ifnull(tmstp, blb) from typeset;
-ERROR:  NVL types timestamp with time zone and blob cannot be matched
-LINE 1: select ifnull(tmstp, blb) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
+                     ifnull                     
+------------------------------------------------
+ \x323030312d30342d31392030303a30303a30302d3037
+(1 row)
+
 select ifnull(tmstp, txt) from typeset;
          ifnull         
 ------------------------
@@ -5691,10 +6245,11 @@ LINE 1: select ifnull(tm, vch) from typeset;
                           ^
 CONTEXT:  referenced column: ifnull
 select ifnull(tm, blb) from typeset;
-ERROR:  NVL types time without time zone and blob cannot be matched
-LINE 1: select ifnull(tm, blb) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
+       ifnull       
+--------------------
+ \x32323a32333a3434
+(1 row)
+
 select ifnull(tm, txt) from typeset;
   ifnull  
 ----------
@@ -5708,10 +6263,11 @@ select ifnull(ch, vch) from typeset;
 (1 row)
 
 select ifnull(ch, blb) from typeset;
-ERROR:  NVL types character and blob cannot be matched
-LINE 1: select ifnull(ch, blb) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
+                             ifnull                             
+----------------------------------------------------------------
+ \x323030312d30342d31392032323a32333a34342020202020202020202020
+(1 row)
+
 select ifnull(ch, txt) from typeset;
              ifnull             
 --------------------------------
@@ -5719,10 +6275,11 @@ select ifnull(ch, txt) from typeset;
 (1 row)
 
 select ifnull(vch, blb) from typeset;
-ERROR:  NVL types character varying and blob cannot be matched
-LINE 1: select ifnull(vch, blb) from typeset;
-                           ^
-CONTEXT:  referenced column: ifnull
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
 select ifnull(vch, txt) from typeset;
        ifnull        
 ---------------------
@@ -5730,10 +6287,978 @@ select ifnull(vch, txt) from typeset;
 (1 row)
 
 select ifnull(blb, txt) from typeset;
-ERROR:  NVL types blob and text cannot be matched
-LINE 1: select ifnull(blb, txt) from typeset;
-                           ^
-CONTEXT:  referenced column: ifnull
+    ifnull    
+--------------
+ \x1233454212
+(1 row)
+
+select ifnull(bin, smint) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(bin, anint) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(bin, bgint) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(bin, dcmal) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(bin, nmric) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(bin, flt) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(bin, bt) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(bin, dt) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(bin, tmstp) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(bin, tm) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(bin, ch) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(bin, vch) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(bin, blb) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(bin, txt) from typeset;
+ ifnull 
+--------
+ \x31
+(1 row)
+
+select ifnull(vbin, smint) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select ifnull(vbin, anint) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select ifnull(vbin, bgint) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select ifnull(vbin, dcmal) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select ifnull(vbin, nmric) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select ifnull(vbin, flt) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select ifnull(vbin, bt) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select ifnull(vbin, dt) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select ifnull(vbin, tmstp) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select ifnull(vbin, tm) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select ifnull(vbin, ch) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select ifnull(vbin, vch) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select ifnull(vbin, blb) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select ifnull(vbin, txt) from typeset;
+                  ifnull                  
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
+select pg_typeof(ifnull(tyint, smint)) from typeset;
+ pg_typeof 
+-----------
+ smallint
+(1 row)
+
+select pg_typeof(ifnull(tyint, anint)) from typeset;
+ pg_typeof 
+-----------
+ integer
+(1 row)
+
+select pg_typeof(ifnull(tyint, bgint)) from typeset;
+ pg_typeof 
+-----------
+ bigint
+(1 row)
+
+select pg_typeof(ifnull(tyint, dcmal)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(tyint, nmric)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(tyint, flt)) from typeset;
+ pg_typeof 
+-----------
+ real
+(1 row)
+
+select pg_typeof(ifnull(tyint, bt)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(tyint, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(tyint, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(tyint, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(tyint, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(tyint, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(tyint, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(tyint, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(smint, anint)) from typeset;
+ pg_typeof 
+-----------
+ integer
+(1 row)
+
+select pg_typeof(ifnull(smint, bgint)) from typeset;
+ pg_typeof 
+-----------
+ bigint
+(1 row)
+
+select pg_typeof(ifnull(smint, dcmal)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(smint, nmric)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(smint, flt)) from typeset;
+ pg_typeof 
+-----------
+ real
+(1 row)
+
+select pg_typeof(ifnull(smint, bt)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(smint, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(smint, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(smint, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(smint, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(smint, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(smint, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(smint, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(anint, bgint)) from typeset;
+ pg_typeof 
+-----------
+ bigint
+(1 row)
+
+select pg_typeof(ifnull(anint, dcmal)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(anint, nmric)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(anint, flt)) from typeset;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select pg_typeof(ifnull(anint, bt)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(anint, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(anint, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(anint, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(anint, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(anint, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(anint, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(anint, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(bgint, dcmal)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(bgint, nmric)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(bgint, flt)) from typeset;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select pg_typeof(ifnull(bgint, bt)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(bgint, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(bgint, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(bgint, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(bgint, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(bgint, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(bgint, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(bgint, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(dcmal, nmric)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(dcmal, flt)) from typeset;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select pg_typeof(ifnull(dcmal, bt)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(dcmal, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(dcmal, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(dcmal, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(dcmal, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(dcmal, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(dcmal, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(dcmal, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(nmric, flt)) from typeset;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select pg_typeof(ifnull(nmric, bt)) from typeset;
+ pg_typeof 
+-----------
+ numeric
+(1 row)
+
+select pg_typeof(ifnull(nmric, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(nmric, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(nmric, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(nmric, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(nmric, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(nmric, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(nmric, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(flt, bt)) from typeset;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select pg_typeof(ifnull(flt, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(flt, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(flt, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(flt, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(flt, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(flt, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(flt, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(bt, dt)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(bt, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(bt, tm)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(bt, ch)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(bt, vch)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(bt, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(bt, txt)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(dt, tmstp)) from typeset;
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select pg_typeof(ifnull(dt, tm)) from typeset;
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select pg_typeof(ifnull(dt, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(dt, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(dt, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(dt, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(tmstp, tm)) from typeset;
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select pg_typeof(ifnull(tmstp, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(tmstp, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(tmstp, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(tmstp, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(tm, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(tm, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(tm, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(tm, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(ch, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(ch, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(ch, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(vch, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(vch, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(ifnull(blb, txt)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(bin, smint)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(bin, anint)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(bin, bgint)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(bin, dcmal)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(bin, nmric)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(bin, flt)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(bin, bt)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(bin, dt)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(bin, tmstp)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(bin, tm)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(bin, ch)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(bin, vch)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(bin, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(bin, txt)) from typeset;
+ pg_typeof 
+-----------
+ longblob
+(1 row)
+
+select pg_typeof(ifnull(vbin, smint)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(vbin, anint)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(vbin, bgint)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(vbin, dcmal)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(vbin, nmric)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(vbin, flt)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(vbin, bt)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(vbin, dt)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(vbin, tmstp)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(vbin, tm)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(vbin, ch)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(vbin, vch)) from typeset;
+  pg_typeof  
+-------------
+ "varbinary"
+(1 row)
+
+select pg_typeof(ifnull(vbin, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(ifnull(vbin, txt)) from typeset;
+ pg_typeof 
+-----------
+ longblob
+(1 row)
+
+reset dolphin.b_compatibility_mode;
 select interval(tyint, smint) from typeset;
  interval 
 ----------
