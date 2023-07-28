@@ -2818,12 +2818,6 @@ BEGIN
         );
         COMMENT ON OPERATOR pg_catalog.*(int1, int1) IS 'int1mul';
 
-        CREATE OPERATOR pg_catalog./(
-        leftarg = int1, rightarg = int1, procedure = int1div,
-        commutator=operator(pg_catalog./)
-        );
-        COMMENT ON OPERATOR pg_catalog./(int1, int1) IS 'int1div';
-
         CREATE OPERATOR pg_catalog.%(
         leftarg = int1, rightarg = int1, procedure = int1mod,
         commutator=operator(pg_catalog.%)
@@ -3303,6 +3297,9 @@ BEGIN
         int1
         ) RETURNS numeric LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'dolphin_int1div';
         create operator dolphin_catalog./(leftarg = int1, rightarg = int1, procedure = dolphin_catalog.dolphin_int1div);
+
+        CREATE OPERATOR pg_catalog./(leftarg = int1, rightarg = int1, procedure = dolphin_catalog.dolphin_int1div);
+        COMMENT ON OPERATOR pg_catalog./(int1, int1) IS 'dolphin_int1div';
 
         /* int8 */
         create function dolphin_catalog.dolphin_int8pl (
@@ -7715,6 +7712,24 @@ DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_ui8(anyelement) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_ui8 (
 anyelement
 ) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varlena_cast_ui8';
+
+DO $for_upgrade_only$
+DECLARE
+  ans boolean;
+BEGIN
+    select case when count(*)=1 then true else false end as ans from (select setting from pg_settings where name = 'upgrade_mode' and setting != '0') into ans;
+    -- we can do drop operator only during upgrade
+    if ans = true then
+        drop operator IF EXISTS pg_catalog./(int1, int1);
+        create operator pg_catalog./(leftarg = int1, rightarg = int1, procedure = dolphin_catalog.dolphin_int1div);
+        COMMENT ON OPERATOR pg_catalog./(int1, int1) IS 'dolphin_int1div';
+
+        drop operator IF EXISTS pg_catalog.-(NONE, int1);
+        CREATE OPERATOR pg_catalog.-(rightarg = int1, procedure = pg_catalog.int1um);
+    end if;
+END
+$for_upgrade_only$;
+
 DROP FUNCTION IF EXISTS pg_catalog.time_format(timestamp without time zone, text) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.time_format (timestamp without time zone, text) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.time_format($1::text, $2) $$;
 

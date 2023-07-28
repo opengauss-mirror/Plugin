@@ -1868,9 +1868,7 @@ Datum int1um(PG_FUNCTION_ARGS)
 {
 #ifdef DOLPHIN
     int8 result = PG_GETARG_INT8(0);
-    if (unlikely(result == PG_INT8_MIN))
-        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("tinyint out of range")));
-    PG_RETURN_INT8(0 - result);
+    PG_RETURN_INT16(0 - result);
 #else
     uint16 result = PG_GETARG_UINT8(0);
 
