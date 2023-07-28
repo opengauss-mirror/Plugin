@@ -2368,6 +2368,8 @@ Node* coerce_to_common_type(ParseState* pstate, Node* node, Oid targetTypeId, co
 #ifdef DOLPHIN
     } else if (strcmp(context, "UNION") == 0 && can_coerce_type(1, &inputTypeId, &targetTypeId, COERCION_EXPLICIT)) {
         node = coerce_type(pstate, node, inputTypeId, targetTypeId, -1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+    } else if (strcmp(context, "NVL") == 0 && can_coerce_type(1, &inputTypeId, &targetTypeId, COERCION_EXPLICIT)) {
+        node = coerce_type(pstate, node, inputTypeId, targetTypeId, -1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
 #endif
     } else {
         ereport(ERROR,
