@@ -5873,4 +5873,115 @@ Datum timetz_any_value(PG_FUNCTION_ARGS)
     TimeTzADT* time = PG_GETARG_TIMETZADT_P(0);
     PG_RETURN_TIMETZADT_P(time);
 }
+
+/*
+ * these code are useless actually, remain here to compat with 3.1.0 version, we can't delete it.
+ *  datediff
+ *  adddate_datetime_interval_text
+ *  adddate_datetime_days_text
+ */
+/**
+ * true if datetime in [0000-01-01 00:00:00.000000, 9999-12-31 23:59:59.999999]
+*/
+bool datetime_in_range(Timestamp datetime)
+{
+    bool ret = true;
+#ifdef HAVE_INT64_TIMESTAMP
+    if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE)
+        ret = false;
+#else
+    if (datetime < (double)B_FORMAT_TIMESTAMP_MIN_VALUE / USECS_PER_SEC || 
+        datetime > (double)B_FORMAT_TIMESTAMP_MAX_VALUE / USECS_PER_SEC)
+        ret = false;
+#endif
+    return ret;
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(adddate_datetime_days_text);
+extern "C" DLL_PUBLIC Datum adddate_datetime_days_text(PG_FUNCTION_ARGS);
+/**
+ * adddate(date/datetime, days)
+*/
+Datum adddate_datetime_days_text(PG_FUNCTION_ARGS)
+{
+    text* tmp = PG_GETARG_TEXT_PP(0);
+    int64 days = PG_GETARG_INT64(1);
+    char *expr;
+
+    expr = text_to_cstring(tmp);
+    if (is_date_format(expr)) {
+        DateADT date, result;
+        date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(expr)));
+        if (date_sub_days(date, -days, &result, true)) {
+            /* The variable datetime or result does not exceed the specified range*/
+            return DirectFunctionCall1(date_text, result);
+        }
+    } else {
+        Timestamp datetime, result;
+        datetime = DatumGetTimestamp(
+            DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+        if (datetime_sub_days(datetime, -days, &result)) {
+            /* The variable datetime or result does not exceed the specified range*/
+            return DirectFunctionCall1(datetime_text, result);
+        }
+    }
+    ereport(ERROR,
+        (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+            errmsg("date/time field value out of range")));
+    PG_RETURN_NULL();
+}
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(datediff);
+extern "C" DLL_PUBLIC Datum datediff(PG_FUNCTION_ARGS);
+Datum datediff(PG_FUNCTION_ARGS)
+{
+    text* expr1 = PG_GETARG_TEXT_PP(0);
+    text* expr2 = PG_GETARG_TEXT_PP(1);
+    char *str1 = text_to_cstring(expr1);
+    char *str2 = text_to_cstring(expr2);
+
+    Timestamp datetime1, datetime2;
+    DateADT dt1, dt2;
+
+    if (!datetime_in_no_ereport(str1, &datetime1) || !datetime_in_no_ereport(str2, &datetime2) || 
+        !datetime_in_range(datetime1) || !datetime_in_range(datetime2)) {
+        PG_RETURN_NULL();
+    }
+    dt1 = DatumGetDateADT(timestamp2date(datetime1));
+    dt2 = DatumGetDateADT(timestamp2date(datetime2));
+    PG_RETURN_INT32(dt1 - dt2);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(adddate_datetime_interval_text);
+extern "C" DLL_PUBLIC Datum adddate_datetime_interval_text(PG_FUNCTION_ARGS);
+/**
+ * adddate(date/datetime, INTERVAL expr UNIT)
+*/
+Datum adddate_datetime_interval_text(PG_FUNCTION_ARGS)
+{
+    text* tmp = PG_GETARG_TEXT_PP(0);
+    Interval *span = PG_GETARG_INTERVAL_P(1);
+    char *expr;
+
+    expr = text_to_cstring(tmp);
+    if (is_date_format(expr) && span->time == 0) {
+        DateADT date, result;
+        date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(expr)));
+        if (date_add_interval(date, span, &result))
+            return DirectFunctionCall1(date_text, result);
+    } else {
+        Timestamp datetime, result;
+        datetime = DatumGetTimestamp(
+            DirectFunctionCall3(timestamp_in, CStringGetDatum(expr), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+        if (datetime_add_interval(datetime, span, &result))
+            /* The variable datetime or result does not exceed the specified range*/
+            return DirectFunctionCall1(datetime_text, result);
+    }
+    ereport(ERROR,
+            (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                errmsg("date/time field value out of range")));
+    PG_RETURN_NULL();
+}
+
 #endif
