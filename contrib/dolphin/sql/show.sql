@@ -14,7 +14,7 @@ create table test2(id1 int,id2 int, id3 int);
 grant comment(id1, id2) on test2 to 'test_grant'@'127.0.0.1' ;
 grant comment(id3) on test2 to 'test_grant'@'127.0.0.1' with grant option;
 /* encrypt key */
-CREATE CLIENT MASTER KEY proc_cmk2 WITH ( KEY_STORE = localkms , KEY_PATH = "gs_ktool" , ALGORITHM = RSA_2048);
+CREATE CLIENT MASTER KEY proc_cmk2 WITH ( KEY_STORE = localkms , KEY_PATH = "gs_ktool" , ALGORITHM = RSA_3072);
 CREATE COLUMN ENCRYPTION KEY proc_cek2 WITH VALUES (CLIENT_MASTER_KEY = proc_cmk2, ALGORITHM = AEAD_AES_256_CBC_HMAC_SHA256);
 grant usage on column_encryption_key proc_cek2 to 'test_grant'@'127.0.0.1' with grant option;
 grant usage on client_master_key  proc_cmk2 to 'test_grant'@'127.0.0.1';
