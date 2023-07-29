@@ -16,12 +16,6 @@ commutator=operator(pg_catalog.*)
 );
 COMMENT ON OPERATOR pg_catalog.*(int1, int1) IS 'int1mul';
 
-CREATE OPERATOR pg_catalog./(
-leftarg = int1, rightarg = int1, procedure = int1div,
-commutator=operator(pg_catalog./)
-);
-COMMENT ON OPERATOR pg_catalog./(int1, int1) IS 'int1div';
-
 CREATE OPERATOR pg_catalog.%(
 leftarg = int1, rightarg = int1, procedure = int1mod,
 commutator=operator(pg_catalog.%)

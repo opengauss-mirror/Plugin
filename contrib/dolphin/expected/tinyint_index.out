@@ -214,13 +214,13 @@ select * from t1 where a > 1::int8 and a < 3::int8;
 (10 rows)
 
 explain(costs off, verbose)select * from t1 where a >= -2::int1 and a <= -1::int1;
-                                QUERY PLAN                                 
----------------------------------------------------------------------------
+                                 QUERY PLAN                                  
+-----------------------------------------------------------------------------
  Bitmap Heap Scan on tinyint_index.t1
    Output: a
-   Recheck Cond: ((t1.a >= '-2'::tinyint) AND (t1.a <= '-1'::tinyint))
+   Recheck Cond: ((t1.a >= (-2)::smallint) AND (t1.a <= (-1)::smallint))
    ->  Bitmap Index Scan on idx1
-         Index Cond: ((t1.a >= '-2'::tinyint) AND (t1.a <= '-1'::tinyint))
+         Index Cond: ((t1.a >= (-2)::smallint) AND (t1.a <= (-1)::smallint))
 (5 rows)
 
 explain(costs off, verbose)select * from t1 where a >= -2::int2 and a <= -1::int2;
@@ -464,13 +464,13 @@ insert into t1 select a % 128 from t2;
 create index idx1 on t1 using btree (a);
 analyze t1;
 explain(costs off, verbose)select * from t1 where a >= -1::int1 and a <= 0::int1;
-                              QUERY PLAN                              
-----------------------------------------------------------------------
+                              QUERY PLAN                               
+-----------------------------------------------------------------------
  Row Adapter
    Output: a
    ->  CStore Scan on tinyint_index.t1
          Output: a
-         Filter: ((t1.a >= '-1'::tinyint) AND (t1.a <= '0'::tinyint))
+         Filter: ((t1.a >= (-1)::smallint) AND (t1.a <= '0'::tinyint))
 (5 rows)
 
 explain(costs off, verbose)select * from t1 where a >= -1::int2 and a <= 0::int2;
