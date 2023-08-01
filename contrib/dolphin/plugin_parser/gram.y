@@ -1252,7 +1252,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 	QUARTER QUERY QUICK QUOTE
 
 	RANDOMIZED RANGE RATIO RAW READ READS REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
-	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEAT REPEATABLE REPLACE REPLICA REGEXP REORGANIZE REPAIR
+	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEAT REPEATABLE REPLACE REPLICA REPLICAS REGEXP REORGANIZE REPAIR
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNED_SQLSTATE RETURNING RETURNS REUSE REVOKE RIGHT ROLE ROLES ROLLBACK ROLLUP
 	ROTATION ROW ROW_COUNT ROWNUM ROWS ROWTYPE_P RULE
 	RESIGNAL RLIKE ROUTINE ROW_FORMAT SCHEMAS
@@ -3869,6 +3869,9 @@ VariableShowStmt:
                         $$ = (Node *) n;
 					} else if (pg_strcasecmp($2, "engines") == 0) {
                         SelectStmt *n = makeShowEnginesQuery();
+                        $$ = (Node *) n;
+					} else if (pg_strcasecmp($2, "replicas") == 0) {
+                        SelectStmt *n = makeShowSlaveHostsQuery();
                         $$ = (Node *) n;
                     } else {
 						VariableShowStmt *n = makeNode(VariableShowStmt);
@@ -36921,6 +36924,7 @@ unreserved_keyword_without_key:
 			| REPEATABLE
 			| REPLACE
 			| REPLICA
+			| REPLICAS
 			| RESET
 			| RESIGNAL
 			| RESIZE
