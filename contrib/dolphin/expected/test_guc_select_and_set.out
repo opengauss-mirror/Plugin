@@ -52,6 +52,38 @@ set @@character_set_results = utf8;
 WARNING:  Variable 'character_set_results' has no actual meaning.
 set @@session.character_set_results = utf8;
 WARNING:  Variable 'character_set_results' has no actual meaning.
+set character_set_results = null;
+WARNING:  Variable 'character_set_results' has no actual meaning.
+show character_set_results;
+ character_set_results 
+-----------------------
+ 
+(1 row)
+
+set @@character_set_results = null;
+WARNING:  Variable 'character_set_results' has no actual meaning.
+show character_set_results;
+ character_set_results 
+-----------------------
+ 
+(1 row)
+
+set @@session.character_set_results = null;
+WARNING:  Variable 'character_set_results' has no actual meaning.
+show character_set_results;
+ character_set_results 
+-----------------------
+ 
+(1 row)
+
+set session character_set_results = null;
+WARNING:  Variable 'character_set_results' has no actual meaning.
+show character_set_results;
+ character_set_results 
+-----------------------
+ 
+(1 row)
+
 set character_set_server = latin1;
 WARNING:  Variable 'character_set_server' has no actual meaning.
 set @@character_set_server = latin1;

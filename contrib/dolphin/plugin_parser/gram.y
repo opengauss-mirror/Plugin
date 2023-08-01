@@ -2841,6 +2841,14 @@ generic_set:
 					n->name = $1;
 					$$ = n;
 				}
+			| dolphin_var_name assign_operator NULL_P
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = $1;
+					n->args = list_make1(makeStringConst("", @3));
+					$$ = n;
+				}
 			| CURRENT_SCHEMA TO schema_var_list
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
@@ -3161,6 +3169,22 @@ set_session_extension:
 					pfree(name);
 					$$ = n;
 				}
+			| SET_IDENT assign_operator NULL_P
+				{
+					int len = strlen($1);
+					errno_t rc = EOK;
+ 
+					char *name = (char *)palloc(len - 1);
+					rc = strncpy_s(name, len - 1, $1 + 2, len-2);
+					securec_check(rc, "\0", "\0");
+
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = pstrdup(name);
+					n->args = list_make1(makeStringConst("", @3));
+					pfree(name);
+					$$ = n;
+				}
 			;
  
 set_global_extension:
@@ -3206,6 +3230,14 @@ guc_variable_set:
 					n->kind = VAR_SET_DEFAULT;
 					n->name = $1;
 					n->is_multiset = true;
+					$$ = n;
+				}
+			| dolphin_var_name assign_operator NULL_P
+				{
+					VariableSetStmt *n = makeNode(VariableSetStmt);
+					n->kind = VAR_SET_VALUE;
+					n->name = $1;
+					n->args = list_make1(makeStringConst("", @3));
 					$$ = n;
 				}
 			| CURRENT_SCHEMA assign_operator set_expr

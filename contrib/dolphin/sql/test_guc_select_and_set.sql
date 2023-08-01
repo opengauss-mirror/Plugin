@@ -39,6 +39,15 @@ set character_set_results = utf8;
 set @@character_set_results = utf8;
 set @@session.character_set_results = utf8;
 
+set character_set_results = null;
+show character_set_results;
+set @@character_set_results = null;
+show character_set_results;
+set @@session.character_set_results = null;
+show character_set_results;
+set session character_set_results = null;
+show character_set_results;
+
 set character_set_server = latin1;
 set @@character_set_server = latin1;
 set @@session.character_set_server = latin1;
