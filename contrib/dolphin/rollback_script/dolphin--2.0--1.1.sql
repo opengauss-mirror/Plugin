@@ -2339,6 +2339,24 @@ DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_ui4(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_ui2(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_ui1(anyelement) CASCADE;
 
+DROP FUNCTION IF EXISTS pg_catalog.bit_cast_int8(bit) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.float4_cast_int8(float4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.float8_cast_int8(float8) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_int8(numeric) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.date_cast_int8(date) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_cast_int8(timestamp without time zone) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.timestamptz_cast_int8(timestamptz) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.time_cast_date(time) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.timetz_cast_date(timetz) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.set_cast_int8(anyset) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8_cast_int8(uint8) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.year_cast_int8(year) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.bpchar_cast_int8(char) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varchar_cast_int8(varchar) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.text_cast_int8(text) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int8(anyelement) CASCADE;
+
+
 DROP CAST IF EXISTS ("binary" AS uint1) CASCADE;
 DROP CAST IF EXISTS ("varbinary" AS uint1) CASCADE;
 DROP CAST IF EXISTS (blob AS uint1) CASCADE;

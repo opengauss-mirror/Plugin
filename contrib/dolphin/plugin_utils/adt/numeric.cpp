@@ -352,6 +352,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint1);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint2);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint4);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint8);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_int8);
 
 PG_FUNCTION_INFO_V1_PUBLIC(conv_str);
 PG_FUNCTION_INFO_V1_PUBLIC(conv_num);
@@ -387,6 +388,7 @@ extern "C" DLL_PUBLIC Datum numeric_cast_uint1(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint2(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint4(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum numeric_cast_int8(PG_FUNCTION_ARGS);
 
 extern "C" DLL_PUBLIC Datum conv_str(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum conv_num(PG_FUNCTION_ARGS);
@@ -22856,5 +22858,37 @@ Datum dolphin_uint8div(PG_FUNCTION_ARGS)
     Numeric result = numeric_div_internal(arg1_var, arg2_var);
 
     PG_RETURN_NUMERIC(result);
+}
+
+Datum numeric_cast_int8(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    NumericVar x;
+    int128 result;
+    uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
+    if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
+        /* Handle Big Integer */
+        if (NUMERIC_FLAG_IS_BI(numFlags))
+            num = makeNumericNormal(num);
+        /* XXX would it be better to return NULL? */
+        else
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert NaN to bigint")));
+    }
+    /* Convert to variable format and thence to int8 */
+    init_var_from_num(num, &x);
+    if (!numericvar_to_int128(&x, &result)) {
+        result = (NUMERIC_POS == x.sign) ? INT64_MAX : INT64_MIN;
+        ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("bigint out of range")));
+    }
+    //To keep consistency with MySQL
+    if (result > (int128)INT64_MAX || result < (int128)INT64_MIN) {
+        result = (NUMERIC_POS == x.sign) ? INT64_MAX : INT64_MIN;
+        ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("bigint out of range")));
+    }
+    PG_RETURN_INT64((int64)result);
 }
 #endif

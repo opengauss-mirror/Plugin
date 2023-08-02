@@ -40,8 +40,9 @@
 static VarBit* bit_catenate(VarBit* arg1, VarBit* arg2);
 static VarBit* bitsubstring(VarBit* arg, int32 s, int32 l, bool length_not_specified);
 static VarBit* bit_overlay(VarBit* t1, VarBit* t2, int sp, int sl);
-static inline int GetLeadingZeroLen(VarBit* arg);
+
 #ifdef DOLPHIN
+extern int GetLeadingZeroLen(VarBit* arg);
 static int32 bit_cmp(VarBit* arg1, VarBit* arg2, int leadingZeroLen1 = -1, int leadingZeroLen2 = -1);
 extern "C" Datum ui8toi1(PG_FUNCTION_ARGS);
 extern "C" Datum ui8toi2(PG_FUNCTION_ARGS);
@@ -846,7 +847,7 @@ Datum varbittypmodout(PG_FUNCTION_ARGS)
  */
 #ifdef DOLPHIN
 /* Get leading zero length of a varbit */
-static inline int GetLeadingZeroLen(VarBit* arg)
+int GetLeadingZeroLen(VarBit* arg)
 {
     int leadingZeroLen = 0;
     int i;
