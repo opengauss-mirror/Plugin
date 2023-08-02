@@ -3122,6 +3122,17 @@ Datum float8_interval(PG_FUNCTION_ARGS)
     Datum val = PG_GETARG_DATUM(0);
     return DirectFunctionCall1(numeric_interval, DirectFunctionCall1(float8_numeric, val));
 }
+
+/*convert from float8 to interval*/
+Datum float8_to_interval(PG_FUNCTION_ARGS)
+{
+    Datum val = PG_GETARG_DATUM(0);
+    int32 typmod = PG_GETARG_INT32(1);
+    return DirectFunctionCall2(numeric_to_interval,
+                                DirectFunctionCall1(float8_numeric, val),
+                                Int32GetDatum(typmod));
+}
+
 #ifdef DOLPHIN
 PG_FUNCTION_INFO_V1_PUBLIC(float8_bool);
 extern "C" DLL_PUBLIC Datum float8_bool(PG_FUNCTION_ARGS);

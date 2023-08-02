@@ -1543,6 +1543,48 @@ Node* coerce_to_boolean(ParseState* pstate, Node* node, const char* constructNam
     return node;
 }
 
+/*
+ * coerce_to_specific_type()
+ *		Coerce an argument of a construct that requires a specific data type.
+ *		Also check that input is not a set.
+ *
+ * Returns the possibly-transformed node tree.
+ *
+ * As with coerce_type, pstate may be NULL if no special unknown-Param
+ * processing is wanted.
+ */
+Node* coerce_to_specific_type(ParseState* pstate, Node* node, Oid targetTypeId, const char* constructName)
+{
+    Oid inputTypeId = exprType(node);
+
+    if (inputTypeId != targetTypeId) {
+        Node* newnode = NULL;
+
+        newnode = coerce_to_target_type(
+            pstate, node, inputTypeId, targetTypeId, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
+        if (newnode == NULL) {
+            ereport(ERROR,
+                (errcode(ERRCODE_DATATYPE_MISMATCH),
+                    /* translator: first %s is name of a SQL construct, eg LIMIT */
+                    errmsg("argument of %s must be type %s, not type %s",
+                        constructName,
+                        format_type_be(targetTypeId),
+                        format_type_be(inputTypeId)),
+                    parser_errposition(pstate, exprLocation(node))));
+        }
+        node = newnode;
+    }
+
+    if (expression_returns_set(node)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_DATATYPE_MISMATCH),
+                /* translator: %s is name of a SQL construct, eg LIMIT */
+                errmsg("argument of %s must not return a set", constructName),
+                parser_errposition(pstate, exprLocation(node))));
+    }
+    return node;
+}
+
 Node* coerce_to_settype(ParseState* pstate, Node* expr, Oid exprtype, Oid targettype, int32 targettypmod,
 CoercionContext ccontext, CoercionForm cformat, int location, Oid collation)
 {
@@ -1655,48 +1697,6 @@ CoercionContext ccontext, CoercionForm cformat, int location, Oid collation)
                 format_type_be(exprtype),
                 format_type_be(targettype))));
     return NULL;
-}
-
-/*
- * coerce_to_specific_type()
- *		Coerce an argument of a construct that requires a specific data type.
- *		Also check that input is not a set.
- *
- * Returns the possibly-transformed node tree.
- *
- * As with coerce_type, pstate may be NULL if no special unknown-Param
- * processing is wanted.
- */
-Node* coerce_to_specific_type(ParseState* pstate, Node* node, Oid targetTypeId, const char* constructName)
-{
-    Oid inputTypeId = exprType(node);
-
-    if (inputTypeId != targetTypeId) {
-        Node* newnode = NULL;
-
-        newnode = coerce_to_target_type(
-            pstate, node, inputTypeId, targetTypeId, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
-        if (newnode == NULL) {
-            ereport(ERROR,
-                (errcode(ERRCODE_DATATYPE_MISMATCH),
-                    /* translator: first %s is name of a SQL construct, eg LIMIT */
-                    errmsg("argument of %s must be type %s, not type %s",
-                        constructName,
-                        format_type_be(targetTypeId),
-                        format_type_be(inputTypeId)),
-                    parser_errposition(pstate, exprLocation(node))));
-        }
-        node = newnode;
-    }
-
-    if (expression_returns_set(node)) {
-        ereport(ERROR,
-            (errcode(ERRCODE_DATATYPE_MISMATCH),
-                /* translator: %s is name of a SQL construct, eg LIMIT */
-                errmsg("argument of %s must not return a set", constructName),
-                parser_errposition(pstate, exprLocation(node))));
-    }
-    return node;
 }
 
 /*
@@ -3836,7 +3836,7 @@ Const* setValueToConstExpr(SetVariableExpr* set)
         case PGC_BOOL:
             {
                 bool variable_bool = false;
-                if (strcmp(variable_str,"true") || strcmp(variable_str,"on")) {
+                if (strcmp(variable_str, "true") == 0 || strcmp(variable_str,"on") == 0) {
                     variable_bool = true;
                 }
                 val = BoolGetDatum(variable_bool);
