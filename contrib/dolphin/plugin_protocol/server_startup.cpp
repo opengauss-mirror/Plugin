@@ -112,6 +112,7 @@ static ProtocolExtensionConfig dolphin_protocol_config = {
     NULL,
     dophin_send_ready_for_query, /* fn_send_ready_for_query */
     dophin_read_command, /* fn_read_command*/
+    NULL,
     dophin_printtup_create_DR, /* fn_printtup_create_DR */
     dolphin_set_DR_params,
     dolphin_process_command, /* fn_process_command */

@@ -3029,7 +3029,7 @@ static bool shouldTransformStartWithStmt(ParseState* pstate, SelectStmt* stmt, Q
      * Back up the current select statement to be restored after query re-writing
      * for cases of START WITH CONNNECT BY under CREATE TABLE AS.
      */
-    selectQuery->sql_statement = fetchSelectStmtFromCTAS((char*)pstate->p_sourcetext);
+    selectQuery->sql_statement = fetchSelectStmtFromCTAS((char*)pstrdup(pstate->p_sourcetext));
 
     return true;
 }
@@ -5757,12 +5757,6 @@ static void transformLockingClause(ParseState* pstate, Query* qry, LockingClause
                             (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                                 errmsg("SELECT FOR UPDATE/SHARE/NO KEY UPDATE/KEY SHARE cannot be used with "
                                        "column table \"%s\"", rte->eref->aliasname)));
-                    } else if (RelationIsView(rel) && CheckViewBasedOnCstore(rel)) {
-                        heap_close(rel, AccessShareLock);
-                        ereport(ERROR,
-                            (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                                errmsg("SELECT FOR UPDATE/SHARE/NO KEY UPDATE/KEY SHARE cannot be used with "
-                                       "view \"%s\" based on column table", rte->eref->aliasname)));
                     } else if (RelationIsView(rel) && CheckViewBasedOnCstore(rel)) {
                         heap_close(rel, AccessShareLock);
                         ereport(ERROR,

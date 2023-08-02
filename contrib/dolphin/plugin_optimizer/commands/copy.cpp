@@ -3614,6 +3614,7 @@ void BulkloadErrorCallback(void* arg)
                 cstate->cur_lineno,
                 cstate->cur_attname,
                 lineval);
+            pfree_ext(lineval);
         } else {
             /* error is relevant to a particular line */
             if (cstate->line_buf_converted || !cstate->need_transcoding) {
