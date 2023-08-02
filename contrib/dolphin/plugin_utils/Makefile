@@ -36,5 +36,5 @@ fmgroids.h: fmgrtab.cpp
   pg_builtin_proc.h: $(top_builddir)/src/common/backend/utils/Gen_fmgrtab.pl  $(top_builddir)/$(subdir)/../include/builtin_funcs.ini
 	  $(PERL)  $< $(top_builddir)/$(subdir)/../include/builtin_funcs.ini
 
-maintainer-clean: clean
+clean maintainer-clean:
 	rm -f fmgroids.h fmgrtab.cpp pg_builtin_proc.h

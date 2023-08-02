@@ -20988,13 +20988,28 @@ int conv_n(char *result, int128 data, int from_base_s, int to_base_s)
 static int str_to_int64(char *str, int len, int128 *result, int *from_base_s)
 {
     int128 sum_128 = 0;
-    int i, num = 0;
+    int num = 0;
+    int i = 0;
+    bool neg = false;
     int from_base = abs(*from_base_s);
     if ((from_base < MINBASE) || (from_base > MAXBASE)) {	/*minimum base is 2, maximum base is 36*/
         return -1;
     }
 
-    for (i = (str[i] == '+' || str[i] == '-') ? 1 : 0; i < len; i++) {
+    /* skip leading spaces */
+    while (i < len && isspace(str[i])) {
+        i++;
+    }
+
+    /* handle sign */
+    if (str[i] == '-') {
+        i++;
+        neg = true;
+    } else if (str[i] == '+') {
+        i++;
+    }
+
+    for (; i < len; i++) {
         if ((str[i] >= '0') && (str[i] <= '9')) {
             num = str[i] - '0';
         } else if ((str[i] >= 'a') && (str[i] <= 'z')) {
@@ -21013,8 +21028,8 @@ static int str_to_int64(char *str, int len, int128 *result, int *from_base_s)
         }
     }
 
-    if (str[0] == '-') {
-            sum_128 *= -1;
+    if (neg) {
+        sum_128 *= -1;
     }
 
     if (*from_base_s > 0) {
