@@ -8934,7 +8934,7 @@ static inline bool date_format_internal(char *str, char *buf, char *format, int 
                 if (locale == NULL) {
                     locale = MyLocaleSearch(GetSessionContext()->lc_time_names);
                 }
-                char *weekname = locale->ab_day_names[weekday - 1];
+                char *weekname = locale->ab_day_names[(weekday + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK];
                 insert_len = sprintf_s(buf, MAXDATELEN, "%s", weekname);
                 securec_check_ss(insert_len, "", "");
                 rc = strcat_s(str, remain, buf);
@@ -9050,7 +9050,7 @@ static inline bool date_format_internal(char *str, char *buf, char *format, int 
                 if (locale == NULL) {
                     locale = MyLocaleSearch(GetSessionContext()->lc_time_names);
                 }
-                char *weekname = locale->day_names[weekday - 1];
+                char *weekname = locale->day_names[(weekday + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK];
                 insert_len = sprintf_s(buf, MAXDATELEN, "%s", weekname);
                 securec_check_ss(insert_len, "", "");
                 rc = strcat_s(str, remain, buf);
