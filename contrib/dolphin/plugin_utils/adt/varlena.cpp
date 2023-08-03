@@ -8195,6 +8195,36 @@ Datum float8_text(PG_FUNCTION_ARGS)
     PG_RETURN_DATUM(result);
 }
 
+Datum btvarstrequalimage(PG_FUNCTION_ARGS)
+{
+    Assert(PG_NARGS() != 0);
+
+    Oid opcintype = PG_GETARG_OID(0);
+    Oid collid = PG_GET_COLLATION();
+
+    if (opcintype == InvalidOid || !OidIsValid(collid)) {
+        PG_RETURN_BOOL(false);
+    }
+
+    if (opcintype != BPCHAROID && opcintype != NAMEOID && opcintype != TEXTOID) {
+        PG_RETURN_BOOL(false);
+    }
+
+    if (lc_collate_is_c(collid) || collid == DEFAULT_COLLATION_OID)
+        PG_RETURN_BOOL(true);
+    else
+        PG_RETURN_BOOL(false);
+}
+
+Datum text_interval(PG_FUNCTION_ARGS)
+{
+    char* input = TextDatumGetCString(PG_GETARG_TEXT_P(0));
+    int32 typmod = PG_GETARG_INT32(1);
+    return DirectFunctionCall3(interval_in, CStringGetDatum(input), ObjectIdGetDatum(InvalidOid),
+                                Int32GetDatum(typmod));
+}
+
+#ifdef DOLPHIN
 static Datum copy_binary(Datum source, int typmod, bool target_is_var)
 {
     int maxlen = typmod - (int32)VARHDRSZ;
@@ -9027,40 +9057,79 @@ Datum field(PG_FUNCTION_ARGS)
     PG_RETURN_INT64(result);
 }
 
+static int64 find_in_set_internal(char* target, char* full_str, Oid coll_oid)
+{
+    const char seq = ',';
+    char* begin = full_str; /* begin of str try to match the target, left pointer */
+    char* cur_end = full_str; /* end of str try to match the target, right pointer */
+    char* real_end = begin + strlen(full_str); /* real end of the full str */
+    int target_len = strlen(target);
+    int64 res = 0;
+
+    /* if the target include ',', we can't find it, return 0 */
+    if (strchr(target, seq) != NULL) {
+        return 0;
+    }
+
+    while (real_end > cur_end) {
+        char* substr_end = cur_end + 1;
+        bool is_last_item = (substr_end == real_end);
+        bool is_sep = (*cur_end == seq);
+        if (is_sep || is_last_item) {
+            /* meet ',' or at end of string */
+            res++;
+            if (is_last_item && !is_sep) {
+                /* if is last item and not sep, move the right pointer to do the last try */
+                cur_end = substr_end;
+            }
+
+            /* try to match the str, use varstr_cmp to support locale */
+            if (cur_end - begin == target_len &&
+                (target_len == 0 || varstr_cmp(begin, cur_end - begin, target, target_len, coll_oid) == 0)) {
+                return res;
+            }
+
+            /* start a new string, move left pointer */
+            begin = substr_end;
+        }
+        /* move the right pointer */
+        cur_end = substr_end;
+    }
+
+    /* last char is seq and the target is empty, find it in the last one */
+    if (cur_end - begin == 0 && target_len == 0 && *(real_end - 1) == seq) {
+        return ++res;
+    }
+
+    /* not found */
+    return 0;
+}
+
 Datum find_in_set_integer(PG_FUNCTION_ARGS)
 {
-    text* first_txt_arg = cstring_to_text(numeric_to_cstring(PG_GETARG_NUMERIC(0)));
-    char* second_str_arg = text_to_cstring(PG_GETARG_TEXT_PP(1));
-    const char* split = ",";
-    text* _result = NULL;
-    int64 result = 0;
-    char* p = strtok(second_str_arg, split);
-    while (p)
-    {
-        ++result;
-        _result = cstring_to_text(p);
-        if (0 == internal_text_pattern_compare(first_txt_arg, _result)) {
-            PG_RETURN_INT64(result);
-        }
-        p = strtok(NULL, split);
+    char* arg1 = numeric_to_cstring(PG_GETARG_NUMERIC(0));
+    Datum arg2 = PG_GETARG_DATUM(1);
+    Size len1 = strlen(arg1);
+    Size len2 = toast_raw_datum_size(arg2);
+    if (len1 > len2) {
+        PG_RETURN_INT64(0);
     }
-    PG_RETURN_INT64(0);
+
+    PG_RETURN_INT64(find_in_set_internal(arg1, text_to_cstring(PG_GETARG_TEXT_P(1)), PG_GET_COLLATION()));
 }
 
 Datum find_in_set_string(PG_FUNCTION_ARGS)
 {
-    const char* split = ",";
-    int64 result = 0;
-    char* p = strtok(text_to_cstring(PG_GETARG_TEXT_PP(1)), split);
-    while (p)
-    {
-        ++result;
-        if (0 == internal_text_pattern_compare(PG_GETARG_TEXT_PP(0), cstring_to_text(p))) {
-            PG_RETURN_INT64(result);
-        }
-        p = strtok(NULL, split);
+    Datum arg1 = PG_GETARG_DATUM(0);
+    Datum arg2 = PG_GETARG_DATUM(1);
+    Size len1 = toast_raw_datum_size(arg1);
+    Size len2 = toast_raw_datum_size(arg2);
+    if (len1 > len2) {
+        PG_RETURN_INT64(0);
     }
-    PG_RETURN_INT64(0);
+
+    PG_RETURN_INT64(find_in_set_internal(text_to_cstring(PG_GETARG_TEXT_P(0)),
+        text_to_cstring(PG_GETARG_TEXT_P(1)), PG_GET_COLLATION()));
 }
 
 /*
@@ -9256,7 +9325,6 @@ Datum soundex_difference(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(1);
 }
 
-#ifdef DOLPHIN
 extern "C" Datum uint8in(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum bittouint8(PG_FUNCTION_ARGS);
 
@@ -9692,7 +9760,6 @@ Datum make_set(PG_FUNCTION_ARGS)
     pfree_ext(buf.data);
     PG_RETURN_TEXT_P(result);
 }
-#endif
 
 Datum uint1_list_agg_transfn(PG_FUNCTION_ARGS)
 {
@@ -9917,9 +9984,6 @@ Datum textxor(PG_FUNCTION_ARGS)
     pfree_ext(str1);
     PG_RETURN_INT32(ret);
 }
-
-
-#ifdef DOLPHIN
 
 PG_FUNCTION_INFO_V1_PUBLIC(blobxor);
 extern "C" DLL_PUBLIC Datum blobxor(PG_FUNCTION_ARGS);

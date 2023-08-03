@@ -15,5 +15,10 @@ select find_in_set('1','1,1.2,c,qwee,1212,1.1,12,qw');
 select find_in_set(1,'1,1.2,c,qwee,1212,1.1,12,qw');
 select find_in_set(1,'1.1,1.2,c,qwee,1212,1.1,12,1');
 select find_in_set(1.1,'a,1.2,c,qwee,1212,1.1');
+select find_in_set('','a,b,c,,dx');
+select find_in_set('','');
+select find_in_set('a','a');
+select find_in_set(1,'1');
+
 drop schema db_find_in_set cascade;
 reset current_schema;
