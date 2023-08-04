@@ -1,194 +1,194 @@
 create schema db_between;
 set current_schema to 'db_between';
 select 2 between 2 and 23;
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 2.1 between 2.1 and 12.3;
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select true between false and true;
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 'abc' between 'abc' and 'deg';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 11 between 1.1 and 12.5;
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select true between 0 and 12;
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select true between 0.9 and 12.6;
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select true between '0.5' and '12.3';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select true between 'a0.5' and '12.3aa';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 1 between 'a0.5' and '12.3aa';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 1 between '0.5' and '12.3';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 1 between 0 and '12.3';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 1.1 between 0 and '12.3';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 1.1 between 0.3 and '12.3a';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select '1a' between 'B' and '12.3b';
- ?column? 
-----------
+ b_between_and 
+---------------
  f
 (1 row)
 
 select 'a2.2a' between 2.1 and '4';
- ?column? 
-----------
+ b_between_and 
+---------------
  f
 (1 row)
 
 select 12.7 between '11@#&%*' and '19.9hd';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 'a2.2a' between 0 and B'101';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 'a2.2a' between 1 and B'101';
- ?column? 
-----------
+ b_between_and 
+---------------
  f
 (1 row)
 
 select '2.2' between 1 and B'101';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 2.2 between 1 and B'101';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select B'001' between 1 and B'101';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select '©12gdja12' between '©11.1a' and 15.4;
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select B'001' between 0.1 and true;
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 2022-06-07 between 2022-06-06 and 2022-06-10;
- ?column? 
-----------
+ b_between_and 
+---------------
  f
 (1 row)
 
 select b'1111111111111111111111111' between 0 and 999999999;
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 0 between '测' and '15.2';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 1 between '测1' and '1';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 1 between '1测' and '1';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 'xyzhi'::text between 'xyzhi'::text and 'xyzhi'::text;
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 'xyzhi'::text between 'xyzhi'::text and 'xyzhi';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select 'xyzhi'::text between 'xyzhi' and 'xyzhi'::text;
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
@@ -211,21 +211,117 @@ select lpad('hi', 5, 'xyza') between 'xyzhi' and 10;
 (1 row)
 
 select 11 between '' and 0;
- ?column? 
-----------
+ b_between_and 
+---------------
  f
 (1 row)
 
 select '' between 34 and 110;
- ?column? 
-----------
+ b_between_and 
+---------------
  f
 (1 row)
 
 select 11 between 66 and '';
- ?column? 
-----------
+ b_between_and 
+---------------
  f
+(1 row)
+
+select '2023-01-01 12:30:00'::datetime between '2023-06-28 11:30:30'::datetime and '2023-07-28 17:30:30'::datetime;
+ b_between_and 
+---------------
+ f
+(1 row)
+
+select '2023-01-01 00:00:00' between date_add(now(),interval-30 minute) and now();
+ b_between_and 
+---------------
+ f
+(1 row)
+
+select '2023-01-01 12:30:00'::time between '2023-06-28 11:30:30'::time and '2023-07-28 17:30:30'::time;
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select '12:30:00'::time between '11:30:30'::time and '2023-07-28 17:30:30'::time;
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select '12:30:00' between '12:30:30' and '17:30:30';
+ b_between_and 
+---------------
+ f
+(1 row)
+
+select 1 between 0 and cast(18446744073709551615 as unsigned);
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select cast(0 as unsigned) between -1 and 1;
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select cast(0 as unsigned) between 0 and -1;
+ b_between_and 
+---------------
+ f
+(1 row)
+
+select 1.5::numeric between 0::numeric and 2::numeric;
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select 0.5::float between 0::float and 2::float;
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select b'11' between 1::float and 2.5::decimal;
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select 100 between '-Inf'::float and '+Inf'::float;
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select 2 between symmetric 23 and 2;
+ b_sym_between_and 
+-------------------
+ t
+(1 row)
+
+select 2.1 between symmetric 12.3 and 2.0;
+ b_sym_between_and 
+-------------------
+ t
+(1 row)
+
+select true between symmetric true and false;
+ b_sym_between_and 
+-------------------
+ t
+(1 row)
+
+select 'abc' between symmetric 'deg' and 'abc';
+ b_sym_between_and 
+-------------------
+ t
 (1 row)
 
 select (sqrt(81) between log10(100) and 20)+('2' between log2(4) and sqrt(4));
@@ -396,26 +492,58 @@ select * from t_between_and_0023;
    11 | mr      | richard   | neill   | 42 thatched way  | winersby   | wb3 6gq    | 505 6482
 (11 rows)
 
-select distinct c_town from t_between_and_0023 where c_town between 'b' and 'n';
+select distinct c_town from t_between_and_0023 where c_town between 'b' and 'n' order by c_town;
    c_town   
 ------------
- lowc_town
- histon
- highc_town
  bingham
+ highc_town
+ histon
+ lowc_town
 (4 rows)
 
-select distinct c_town from t_between_and_0023 where c_town between 'b' and 'nz';
+select distinct c_town from t_between_and_0023 where c_town between 'b' and 'nz' order by c_town;
    c_town   
 ------------
- lowc_town
- histon
- highc_town
  bingham
+ highc_town
+ histon
+ lowc_town
  nicec_town
 (5 rows)
 
 drop table t_between_and_0023;
+drop table if exists test_collate;
+NOTICE:  table "test_collate" does not exist, skipping
+create table test_collate(c1 text, c2 text, c3 text)charset 'utf8' collate 'utf8_unicode_ci';
+insert into test_collate values
+('t','T','T'),
+('T','t','t'),
+('TT','tT','Tt');
+select c1 between c2 and c3 from test_collate ;
+ b_between_and 
+---------------
+ t
+ t
+ t
+(3 rows)
+
+drop table test_collate;
+drop table if exists test_nocollate;
+NOTICE:  table "test_nocollate" does not exist, skipping
+create table test_nocollate(c1 text, c2 text, c3 text);
+insert into test_nocollate values
+('t','T','T'),
+('T','t','t'),
+('TT','tT','Tt');
+select c1 between c2 and c3 from test_nocollate ;
+ b_between_and 
+---------------
+ f
+ f
+ f
+(3 rows)
+
+drop table test_nocollate;
 drop schema db_between cascade;
 NOTICE:  drop cascades to table t_between_and_0007
 reset current_schema;
