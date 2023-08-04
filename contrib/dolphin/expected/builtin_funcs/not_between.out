@@ -1,178 +1,306 @@
 create schema db_not_between;
 set current_schema to 'db_not_between';
 select 2 not between 2 and 23;
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 2.1 not between 2.1 and 12.3;
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select true not between false and true;
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 'abc' not between 'abc' and 'deg';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 11 not between 1.1 and 12.5;
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select true not between 0 and 12;
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select true not between 0.9 and 12.6;
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select true between '0.5' and '12.3';
- ?column? 
-----------
+ b_between_and 
+---------------
  t
 (1 row)
 
 select true not between 'a0.5' and '12.3aa';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 1 not between 'a0.5' and '12.3aa';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 1 not between '0.5' and '12.3';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 1 not between 0 and '12.3';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 1.1 not between 0 and '12.3';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 1.1 not between 0.3 and '12.3a';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select '1a' not between 'B' and '12.3b';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  t
 (1 row)
 
 select 'a2.2a' not between 2.1 and '4';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  t
 (1 row)
 
 select 12.7 not between '11@#&%*' and '19.9hd';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 'a2.2a' not between 0 and B'101';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 'a2.2a' not between 1 and B'101';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  t
 (1 row)
 
 select '2.2' not between 1 and B'101';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 2.2 not between 1 and B'101';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select B'001' not between 1 and B'101';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select '©12gdja12' not between '©11.1a' and 15.4;
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select B'001' not between 0.1 and true;
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 2022-06-07 not between 2022-06-06 and 2022-06-10;
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  t
 (1 row)
 
 select b'1111111111111111111111111' not between 0 and 999999999;
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 0 not between '测' and '15.2';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 1 not between '测1' and '1';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
 select 1 not between '1测' and '1';
- ?column? 
-----------
+ b_not_between_and 
+-------------------
  f
 (1 row)
 
+select '2023-01-01 12:30:00'::datetime not between '2023-06-28 11:30:30'::datetime and '2023-07-28 17:30:30'::datetime;
+ b_not_between_and 
+-------------------
+ t
+(1 row)
+
+select '2023-01-01 00:00:00' not between date_add(now(),interval-30 minute) and now();
+ b_not_between_and 
+-------------------
+ t
+(1 row)
+
+select '2023-01-01 12:30:00'::time not between '2023-06-28 11:30:30'::time and '2023-07-28 17:30:30'::time;
+ b_not_between_and 
+-------------------
+ f
+(1 row)
+
+select '12:30:00'::time not between '11:30:30'::time and '2023-07-28 17:30:30'::time;
+ b_not_between_and 
+-------------------
+ f
+(1 row)
+
+select '12:30:00' not between '12:30:30' and '17:30:30';
+ b_not_between_and 
+-------------------
+ t
+(1 row)
+
+select 1 not between 0 and cast(18446744073709551615 as unsigned);
+ b_not_between_and 
+-------------------
+ f
+(1 row)
+
+select cast(0 as unsigned) not between -1 and 1;
+ b_not_between_and 
+-------------------
+ f
+(1 row)
+
+select cast(0 as unsigned) not between 0 and -1;
+ b_not_between_and 
+-------------------
+ t
+(1 row)
+
+select 1.5::numeric not between 0::numeric and 2::numeric;
+ b_not_between_and 
+-------------------
+ f
+(1 row)
+
+select 0.5::float not between 0::float and 2::float;
+ b_not_between_and 
+-------------------
+ f
+(1 row)
+
+select b'11' not between 1::float and 2.5::decimal;
+ b_not_between_and 
+-------------------
+ f
+(1 row)
+
+select 100 not between '-Inf'::float and '+Inf'::float;
+ b_not_between_and 
+-------------------
+ f
+(1 row)
+
+select 2 not between symmetric 23 and 2;
+ b_not_sym_between_and 
+-----------------------
+ f
+(1 row)
+
+select 2.1 not between symmetric 12.3 and 2.0;
+ b_not_sym_between_and 
+-----------------------
+ f
+(1 row)
+
+select true not between symmetric true and false;
+ b_not_sym_between_and 
+-----------------------
+ f
+(1 row)
+
+select 'abc' not between symmetric 'deg' and 'abc';
+ b_not_sym_between_and 
+-----------------------
+ f
+(1 row)
+
+drop table if exists test_collate;
+NOTICE:  table "test_collate" does not exist, skipping
+create table test_collate(c1 text, c2 text, c3 text)charset 'utf8' collate 'utf8_unicode_ci';
+insert into test_collate values
+('t','T','T'),
+('T','t','t'),
+('TT','tT','Tt');
+select c1 not between c2 and c3 from test_collate ;
+ b_not_between_and 
+-------------------
+ f
+ f
+ f
+(3 rows)
+
+drop table test_collate;
+drop table if exists test_nocollate;
+NOTICE:  table "test_nocollate" does not exist, skipping
+create table test_nocollate(c1 text, c2 text, c3 text);
+insert into test_nocollate values
+('t','T','T'),
+('T','t','t'),
+('TT','tT','Tt');
+select c1 not between c2 and c3 from test_nocollate ;
+ b_not_between_and 
+-------------------
+ t
+ t
+ t
+(3 rows)
+
+drop table test_nocollate;
 drop schema db_not_between cascade;
 reset current_schema;
