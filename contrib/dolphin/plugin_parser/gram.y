@@ -888,7 +888,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <node>	columnDef columnOptions columnDefForTableElement
 %type <defelt>	def_elem tsconf_def_elem reloption_elem tblspc_option_elem old_aggr_elem cfoption_elem
 %type <node>	def_arg columnElem where_clause where_or_current_clause start_with_expr connect_by_expr
-                                a_expr b_expr c_expr c_expr_noparen AexprConst indirection_el siblings_clause
+                                a_expr a_expr_without_sconst b_expr c_expr c_expr_noparen c_expr_without_sconst AexprConst AexprConst_without_Sconst indirection_el siblings_clause
                                 columnref in_expr start_with_clause having_clause func_table array_expr set_ident_expr set_expr set_expr_extension
 				ExclusionWhereClause fulltext_match_params
 %type <list>	ExclusionConstraintList ExclusionConstraintElem
@@ -1749,7 +1749,7 @@ AlterOptRoleList:
 		;
 
 password_string:
-			Sconst
+			SCONST
 				{
 					t_thrd.postgres_cxt.clear_key_memory = true;
 					$$ = $1;
@@ -1769,7 +1769,7 @@ password_string:
 					}
 				}
 namedata_string:
-            Sconst
+            SCONST
                 {
                     $$ = pg_strtolower($1);
                 }
@@ -1890,24 +1890,24 @@ AlterOptRoleElem:
 				{
 					$$ = makeDefElem("parent_default", NULL);
 				}
-			| PERM SPACE Sconst
+			| PERM SPACE SCONST
 				{
 					$$ = makeDefElem("space_limit", (Node *)makeString($3));
 				}
-			| TEMP SPACE Sconst
+			| TEMP SPACE SCONST
 				{
 					$$ = makeDefElem("temp_space_limit", (Node *)makeString($3));
 				}
-			| SPILL SPACE Sconst
+			| SPILL SPACE SCONST
 				{
 					$$ = makeDefElem("spill_space_limit", (Node *)makeString($3));
 				}
 			/* VALID and BEGIN is treated as a token to avoid confilict with BEGIN TRANSACTIOn and BEGIN ANONYMOUD BLOCK */
-			| VALID_BEGIN Sconst
+			| VALID_BEGIN SCONST
 				{
 					$$ = makeDefElem("validBegin", (Node *)makeString($2));
 				}
-			| VALID UNTIL Sconst
+			| VALID UNTIL SCONST
 				{
 					$$ = makeDefElem("validUntil", (Node *)makeString($3));
 				}
@@ -2334,7 +2334,7 @@ AlterSessionStmt:
  *****************************************************************************/
 
 AlterSystemStmt:
-			ALTER SYSTEM_P KILL SESSION Sconst altersys_option
+			ALTER SYSTEM_P KILL SESSION SCONST altersys_option
 				{
 					SelectStmt *n = NULL;
 					List *pid = NULL;
@@ -2353,7 +2353,7 @@ AlterSystemStmt:
 					$$ = (Node *)n;
 				}
 
-			| ALTER SYSTEM_P DISCONNECT SESSION Sconst altersys_option
+			| ALTER SYSTEM_P DISCONNECT SESSION SCONST altersys_option
 				{
             		const char* message = "unsupported action \"DISCONNECT\" for statement \" alter system ";
             		InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -2882,7 +2882,7 @@ set_rest_more:  /* Generic SET syntaxes: */
 						n->kind = VAR_SET_DEFAULT;
 					$$ = n;
 				}
-			| CATALOG_P Sconst
+			| CATALOG_P SCONST
 				{
             		const char* message = "current database cannot be changed";
             		InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -2892,7 +2892,7 @@ set_rest_more:  /* Generic SET syntaxes: */
 							 parser_errposition(@2)));
 					$$ = NULL; /*not reached*/
 				}
-			| SCHEMA Sconst
+			| SCHEMA SCONST
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_VALUE;
@@ -2969,7 +2969,7 @@ set_rest_more:  /* Generic SET syntaxes: */
 					$$ = n;
 				}
 			/* Special syntaxes invented by PostgreSQL: */
-			| TRANSACTION SNAPSHOT Sconst
+			| TRANSACTION SNAPSHOT SCONST
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_MULTI;
@@ -3491,7 +3491,7 @@ schema_var_list:	schema_var										{ $$ = list_make1(makeStringConst($1, @1));
 					| schema_var_list ',' schema_var				{ $$ = lappend($1, makeStringConst($3, @3)); }
 schema_var:
 			DolphinColId							{ $$ = GetDolphinSchemaName($1->str, $1->is_quoted); }
-			| Sconst								{ $$ = $1; }
+			| SCONST								{ $$ = $1; }
 		;
 
 var_value:	opt_boolean_or_string
@@ -3527,7 +3527,7 @@ opt_boolean_or_string:
  * so use IDENT (meaning we reject anything that is a key word).
  */
 zone_value:
-			Sconst
+			SCONST
 				{
 					$$ = makeStringConst($1, @1);
 				}
@@ -3535,7 +3535,7 @@ zone_value:
 				{
 					$$ = makeStringConst($1, @1);
 				}
-			| INTERVAL Sconst opt_interval
+			| INTERVAL SCONST opt_interval
 				{
 					TypeName *t = SystemTypeName("interval");
 					t->location = @1;
@@ -3554,7 +3554,7 @@ zone_value:
 					t->typmods = $3;
 					$$ = makeStringConstCast($2, @2, t);
 				}
-			| INTERVAL '(' Iconst ')' Sconst opt_interval
+			| INTERVAL '(' Iconst ')' SCONST opt_interval
 				{
 					TypeName *t = SystemTypeName("interval");
 					t->location = @1;
@@ -3590,7 +3590,7 @@ zone_value:
 		;
 
 opt_encoding:
-			Sconst									{ $$ = $1; }
+			SCONST									{ $$ = $1; }
 			| BINARY								{ $$ = (char*)$1; }
 			| normal_ident							{ $$ = $1; }
 			| DEFAULT								{ $$ = NULL; }
@@ -3599,7 +3599,7 @@ opt_encoding:
 
 ColId_or_Sconst:
 			ColId									{ $$ = $1; }
-			| Sconst								{ $$ = $1; }
+			| SCONST								{ $$ = $1; }
 		;
 
 Dolphin_ColId_or_Sconst:
@@ -3611,7 +3611,7 @@ Dolphin_ColId_or_Sconst:
 						$$ = downcase_str($1->str, $1->is_quoted);
 					}
 				}
-			| Sconst								{ $$ = $1; }
+			| SCONST								{ $$ = $1; }
 		;
 
 VariableResetStmt:
@@ -4023,7 +4023,7 @@ VariableShowStmt:
 				{
 					$$ = (Node *)makeShowSlaveStatusQuery(NULL);
 				}
-			| SHOW slave_replica STATUS FOR CHANNEL Sconst
+			| SHOW slave_replica STATUS FOR CHANNEL SCONST
 				{
 					$$ = (Node *)makeShowSlaveStatusQuery($6);
 				}
@@ -4217,7 +4217,7 @@ LikeOrWhere:
                                         n->like_or_where = $2;
                                         $$ = n;
                                 }
-                        | LIKE Sconst
+                        | LIKE SCONST
                                 {
                                         OptLikeWhere *n = (OptLikeWhere *)palloc(sizeof(OptLikeWhere));
                                         n->is_like = TRUE;
@@ -4332,7 +4332,7 @@ statement_information_item_name:
 condition_number:
 				ICONST						{ $$ = makeIntConst($1, @1); }
 				| FCONST					{ $$ = makeIntConst((atof($1) + 0.5), @1); }
-				| SCONST					{ $$ = makeIntConst((atof($1) + 0.5), @1); }
+				| Sconst					{ $$ = makeIntConst((atof($1) + 0.5), @1); }
 				| BCONST					
 					{
 						Datum val = DirectFunctionCall1(bittoint4, DirectFunctionCall3(bit_in, CStringGetDatum($1), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
@@ -5959,7 +5959,7 @@ alter_table_cmd:
 					n->subtype = AT_CHECKSUM;
 					$$ = (Node *) n;
 				}
-			| CONNECTION opt_equal Sconst
+			| CONNECTION opt_equal SCONST
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_CONNECTION;
@@ -5977,13 +5977,13 @@ alter_table_cmd:
 					n->subtype = AT_DELAY_KEY_WRITE;
 					$$ = (Node *) n;
 				}
-			| ENCRYPTION opt_equal Sconst
+			| ENCRYPTION opt_equal SCONST
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_ENCRYPTION;
 					$$ = (Node *) n;
 				}
-			| ENGINE_ATTRIBUTE opt_equal Sconst
+			| ENGINE_ATTRIBUTE opt_equal SCONST
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_ENGINE_ATTRIBUTE;
@@ -6019,7 +6019,7 @@ alter_table_cmd:
 					n->subtype = AT_PACK_KEYS;
 					$$ = (Node *) n;
 				}
-			| PASSWORD opt_equal Sconst
+			| PASSWORD opt_equal SCONST
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_PASSWORD;
@@ -6031,7 +6031,7 @@ alter_table_cmd:
 					n->subtype = AT_START_TRANSACTION;
 					$$ = (Node *) n;
 				}
-			| SECONDARY_ENGINE_ATTRIBUTE opt_equal Sconst
+			| SECONDARY_ENGINE_ATTRIBUTE opt_equal SCONST
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_SECONDARY_ENGINE_ATTRIBUTE;
@@ -6188,7 +6188,7 @@ alter_table_cmd:
 				}
 /* PGXC_END */
 /* table comments start */
-            | COMMENT opt_equal Sconst
+            | COMMENT opt_equal SCONST
             {
                     BCompatibilityOptionSupportCheck($1);
                     AlterTableCmd *n = makeNode(AlterTableCmd);
@@ -6290,7 +6290,7 @@ index_options:
 			 }
 			 ;
 index_option:
-			 COMMENT opt_equal Sconst
+			 COMMENT opt_equal SCONST
 			 {
 					BCompatibilityOptionSupportCheck($1);
 					CommentStmt *n = makeNode(CommentStmt);
@@ -6317,7 +6317,7 @@ table_index_options:
 			 }
 			 ;
 table_index_option:
-			 COMMENT opt_equal Sconst
+			 COMMENT opt_equal SCONST
 			 {
 					BCompatibilityOptionSupportCheck($1);
 					CommentStmt *n = makeNode(CommentStmt);
@@ -6368,7 +6368,7 @@ table_options:
 			 ;
 
 table_option:
-			 COMMENT opt_equal Sconst
+			 COMMENT opt_equal SCONST
 			 {
 				BCompatibilityOptionSupportCheck($1);
 				CommentStmt *n = makeNode(CommentStmt);
@@ -6425,7 +6425,7 @@ column_options:
 			 }
 			 ;
 column_option:
-			 COMMENT Sconst
+			 COMMENT SCONST
 			 {
 					BCompatibilityOptionSupportCheck($1);
 					CommentStmt *n = makeNode(CommentStmt);
@@ -6453,7 +6453,7 @@ part_options:
 			 }
 			 ;
 part_option:
-			 COMMENT opt_equal Sconst
+			 COMMENT opt_equal SCONST
 			 {
 					BCompatibilityOptionSupportCheck($1);
 					u_sess->parser_cxt.hasPartitionComment = true;
@@ -7446,7 +7446,7 @@ copy_from:
  * stdout. We silently correct the "typo".)		 - AY 9/94
  */
 copy_file_name:
-			Sconst									{ $$ = $1; }
+			SCONST									{ $$ = $1; }
 			| STDIN									{ $$ = NULL; }
 			| STDOUT								{ $$ = NULL; }
 			| REDISANYVALUE                              { $$ = NULL; }
@@ -7475,11 +7475,11 @@ copy_opt_item:
 				{
 					$$ = makeDefElem("freeze", (Node *)makeInteger(TRUE));
 				}
-			| DELIMITER opt_as Sconst
+			| DELIMITER opt_as SCONST
 				{
 					$$ = makeDefElem("delimiter", (Node *)makeString($3));
 				}
-			| NULL_P opt_as Sconst
+			| NULL_P opt_as SCONST
 				{
 					$$ = makeDefElem("null", (Node *)makeString($3));
 				}
@@ -7495,11 +7495,11 @@ copy_opt_item:
 				{
 					$$ = makeDefElem("header", (Node *)makeInteger(TRUE));
 				}
-			| QUOTE opt_as Sconst
+			| QUOTE opt_as SCONST
 				{
 					$$ = makeDefElem("quote", (Node *)makeString($3));
 				}
-			| ESCAPE opt_as Sconst
+			| ESCAPE opt_as SCONST
 				{
 					$$ = makeDefElem("escape", (Node *)makeString($3));
 				}
@@ -7515,15 +7515,15 @@ copy_opt_item:
 				{
 					$$ = makeDefElem("force_not_null", (Node *)$4);
 				}
-			| ENCODING Sconst
+			| ENCODING SCONST
 				{
 					$$ = makeDefElem("encoding", (Node *)makeString($2));
 				}
-			| EOL Sconst
+			| EOL SCONST
 				{
 					$$ = makeDefElem("eol", (Node*)makeString($2));
 				}
-			| FILEHEADER_P Sconst
+			| FILEHEADER_P SCONST
 				{
 					$$ = makeDefElem("fileheader", (Node*)makeString($2));
 				}
@@ -7535,19 +7535,19 @@ copy_opt_item:
 				{
 					$$ = makeDefElem("ignore_extra_data", (Node *)makeInteger(TRUE));
 				}
-			| DATE_FORMAT_P Sconst
+			| DATE_FORMAT_P SCONST
 				{
 					$$ = makeDefElem("date_format", (Node *)makeString($2));
 				}
-			| TIME_FORMAT_P Sconst
+			| TIME_FORMAT_P SCONST
 				{
 					$$ = makeDefElem("time_format", (Node *)makeString($2));
 				}
-			| TIMESTAMP_FORMAT_P Sconst
+			| TIMESTAMP_FORMAT_P SCONST
 				{
 					$$ = makeDefElem("timestamp_format", (Node *)makeString($2));
 				}
-			| SMALLDATETIME_FORMAT_P Sconst
+			| SMALLDATETIME_FORMAT_P SCONST
 				{
 					$$ = makeDefElem("smalldatetime_format", (Node *)makeString($2));
 				}
@@ -7559,7 +7559,7 @@ copy_opt_item:
 				{
 					$$ = makeDefElem("fill_missing_fields", (Node *)makeString("one"));
 				}
-			| FILL_MISSING_FIELDS Sconst
+			| FILL_MISSING_FIELDS SCONST
 				{
 #ifdef ENABLE_MULTIPLE_NODES
 					const char* message = "FILL_MISSING_FIELDS is not supported";
@@ -7629,7 +7629,7 @@ opt_oids:
 		;
 
 copy_delimiter:
-			opt_using DELIMITERS Sconst
+			opt_using DELIMITERS SCONST
 				{
 					$$ = makeDefElem("delimiter", (Node *)makeString($3));
 				}
@@ -7662,7 +7662,7 @@ OptCopyLogError:
 		;
 
 OptCopyRejectLimit:
-			REJECT_P LIMIT Sconst
+			REJECT_P LIMIT SCONST
 				{
 					$$ = makeDefElem("reject_limit", (Node*)makeString($3));
 				}
@@ -7832,7 +7832,7 @@ copy_column_constant_list:
 				}
 		;
 copy_column_constant_item:
-			ColId Sconst
+			ColId SCONST
 				{
 					SqlLoadConsInfo* n = makeNode(SqlLoadConsInfo);
 					n->colname = $1;
@@ -8083,7 +8083,7 @@ CreateIfNotExistsOption:
 						n->option.autoIncStart = $1;
 						$$ = n;
 				}
-			| COMMENT opt_equal Sconst
+			| COMMENT opt_equal SCONST
 				{
 						SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
 						n->option_type = OPT_COMMENT_TAB;
@@ -8198,7 +8198,7 @@ CreateAsOption:
 				{
 					$$ = CreateSingleTableOption(OPT_CHECKSUM);
 				}
-			| CONNECTION opt_equal Sconst
+			| CONNECTION opt_equal SCONST
 				{
 					$$ = CreateSingleTableOption(OPT_CONNECTION);
 				}
@@ -8210,11 +8210,11 @@ CreateAsOption:
 				{
 					$$ = CreateSingleTableOption(OPT_DELAY_KEY_WRITE);
 				}
-			| ENCRYPTION opt_equal Sconst
+			| ENCRYPTION opt_equal SCONST
 				{
 					$$ = CreateSingleTableOption(OPT_ENCRYPTION);
 				}
-			| ENGINE_ATTRIBUTE opt_equal Sconst
+			| ENGINE_ATTRIBUTE opt_equal SCONST
 				{
 					$$ = CreateSingleTableOption(OPT_ENGINE_ATTRIBUTE);
 				}
@@ -8238,7 +8238,7 @@ CreateAsOption:
 				{
 					$$ = CreateSingleTableOption(OPT_PACK_KEYS);
 				}
-			| PASSWORD opt_equal Sconst
+			| PASSWORD opt_equal SCONST
 				{
 					$$ = CreateSingleTableOption(OPT_PASSWORD);
 				}
@@ -8246,7 +8246,7 @@ CreateAsOption:
 				{
 					$$ = CreateSingleTableOption(OPT_START_TRANSACTION);
 				}
-			| SECONDARY_ENGINE_ATTRIBUTE opt_equal Sconst
+			| SECONDARY_ENGINE_ATTRIBUTE opt_equal SCONST
 				{
 					$$ = CreateSingleTableOption(OPT_SECONDARY_ENGINE_ATTRIBUTE);
 				}
@@ -8292,8 +8292,8 @@ checksum_option:
 		;
 
 directory_option:
-		DATA_P DIRECTORY opt_equal Sconst	{}
-		| INDEX DIRECTORY opt_equal Sconst	{}
+		DATA_P DIRECTORY opt_equal SCONST	{}
+		| INDEX DIRECTORY opt_equal SCONST	{}
 		;
 
 delay_key_write_option:
@@ -8606,7 +8606,7 @@ engine_option:
 		{
 			$$ = NULL;
 		}
-	| ENGINE_P opt_equal Sconst
+	| ENGINE_P opt_equal SCONST
 		{
 			$$ = NULL;
 		}
@@ -8627,7 +8627,7 @@ row_format_option:
 		{
 			$$ = NULL;
 		}
-	| ROW_FORMAT opt_equal Sconst
+	| ROW_FORMAT opt_equal SCONST
 		{
 			$$ = NULL;
 		}
@@ -8661,14 +8661,14 @@ opt_engine_without_empty:
 		{
 			$$ = NULL;
 		}
-	| ENGINE_P opt_equal Sconst
+	| ENGINE_P opt_equal SCONST
 		{
 			$$ = NULL;
 		}
 	;
 
 compression_args:	normal_ident		{ $$ = $1; }
-					| Sconst	{ $$ = $1; }
+					| SCONST	{ $$ = $1; }
 					| NONE		{ $$ = "none"; }
 		;
 
@@ -10187,7 +10187,7 @@ column_key_elem:
             n->qualname = NIL;
             $$ = (Node*) n;
         }
-        | ENCRYPTED_VALUE '=' Sconst
+        | ENCRYPTED_VALUE '=' SCONST
         {
             ClientLogicColumnParam *n = makeNode (ClientLogicColumnParam);
             n->key = ClientLogicColumnProperty::CEK_EXPECTED_VALUE;
@@ -12754,7 +12754,7 @@ tblspc_option_list:
 		;
 
 tblspc_option_elem:
-			ColLabel '=' Sconst
+			ColLabel '=' SCONST
 			{
 				$$ = makeDefElem($1, (Node *) makeString($3));
 			}
@@ -12782,7 +12782,7 @@ tblspc_option_elem:
  *
  *****************************************************************************/
 
-CreateTableSpaceStmt: CREATE TABLESPACE name OptTableSpaceOwner OptRelative LOCATION Sconst OptMaxSize opt_tblspc_options opt_engine
+CreateTableSpaceStmt: CREATE TABLESPACE name OptTableSpaceOwner OptRelative LOCATION SCONST OptMaxSize opt_tblspc_options opt_engine
 				{
 					CreateTableSpaceStmt *n = makeNode(CreateTableSpaceStmt);
 					n->tablespacename = $3;
@@ -12793,7 +12793,7 @@ CreateTableSpaceStmt: CREATE TABLESPACE name OptTableSpaceOwner OptRelative LOCA
 					n->relative = $5;
 					$$ = (Node *) n;
 				}
-				| CREATE TABLESPACE name LoggingStr DATAFILE Sconst OptDatafileSize OptReuse OptAuto opt_engine
+				| CREATE TABLESPACE name LoggingStr DATAFILE SCONST OptDatafileSize OptReuse OptAuto opt_engine
 				{
 					CreateTableSpaceStmt *n = makeNode(CreateTableSpaceStmt);
 					n->tablespacename = $3;
@@ -12802,7 +12802,7 @@ CreateTableSpaceStmt: CREATE TABLESPACE name OptTableSpaceOwner OptRelative LOCA
 					n->maxsize = $7;
 					$$ = (Node *) n;
 				}
-				| CREATE TABLESPACE name DATAFILE Sconst OptDatafileSize OptReuse OptAuto LoggingStr opt_engine
+				| CREATE TABLESPACE name DATAFILE SCONST OptDatafileSize OptReuse OptAuto LoggingStr opt_engine
 				{
 					CreateTableSpaceStmt *n = makeNode(CreateTableSpaceStmt);
 					n->tablespacename = $3;
@@ -12811,7 +12811,7 @@ CreateTableSpaceStmt: CREATE TABLESPACE name OptTableSpaceOwner OptRelative LOCA
 					n->maxsize = $6;
 					$$ = (Node *) n;
 				}
-				| CREATE TABLESPACE name DATAFILE Sconst OptDatafileSize OptReuse OptAuto opt_engine
+				| CREATE TABLESPACE name DATAFILE SCONST OptDatafileSize OptReuse OptAuto opt_engine
 				{
 					CreateTableSpaceStmt *n = makeNode(CreateTableSpaceStmt);
 					n->tablespacename = $3;
@@ -12820,7 +12820,7 @@ CreateTableSpaceStmt: CREATE TABLESPACE name OptTableSpaceOwner OptRelative LOCA
 					n->maxsize = $6;
 					$$ = (Node *) n;
 				}
-				| CREATE TABLESPACE name ADD_P DATAFILE Sconst opt_engine
+				| CREATE TABLESPACE name ADD_P DATAFILE SCONST opt_engine
 				{
 					CreateTableSpaceStmt *n = makeNode(CreateTableSpaceStmt);
 					n->tablespacename = $3;
@@ -12868,11 +12868,11 @@ OptNextStr:
 		;
 
 OptMaxSize:
-			MAXSIZE Sconst								{ $$ = $2; }
+			MAXSIZE SCONST								{ $$ = $2; }
  			| /*EMPTY */								{  $$ = NULL;}
 		;
 size_clause:
-			Sconst						        		{ $$ = $1; }
+			SCONST						        		{ $$ = $1; }
 			| UNLIMITED                                 { $$ = "unlimited"; }
 			;
 
@@ -12965,7 +12965,7 @@ create_extension_opt_item:
  *
  *****************************************************************************/
 
-CreateDirectoryStmt:  CREATE opt_or_replace DIRECTORY name AS Sconst
+CreateDirectoryStmt:  CREATE opt_or_replace DIRECTORY name AS SCONST
 				{
 					CreateDirectoryStmt *n = makeNode(CreateDirectoryStmt);
 					n->replace = $2;
@@ -13467,7 +13467,7 @@ generic_option_name:
 
 /* We could use def_arg here, but the spec only requires string literals */
 generic_option_arg:
-				Sconst				{ $$ = (Node *) makeString($1); }
+				SCONST				{ $$ = (Node *) makeString($1); }
 				| Iconst
 					{
 						char buf[64];
@@ -13499,13 +13499,13 @@ CreateForeignServerStmt: CREATE SERVER name opt_type opt_foreign_server_version
 		;
 
 opt_type:
-			TYPE_P Sconst			{ $$ = $2; }
+			TYPE_P SCONST			{ $$ = $2; }
 			| /*EMPTY*/				{ $$ = NULL; }
 		;
 
 
 foreign_server_version:
-			VERSION_P Sconst		{ $$ = $2; }
+			VERSION_P SCONST		{ $$ = $2; }
 		|	VERSION_P NULL_P		{ $$ = NULL; }
 		;
 
@@ -13821,7 +13821,7 @@ OptForeignTableLogError:
 		;
 
 OptForeignTableLogRemote:
-			REMOTE_P LOG_P Sconst
+			REMOTE_P LOG_P SCONST
 				{
 					$$ = (Node*)makeDefElem("log_remote", (Node *)makeString($3));
 				}
@@ -13833,7 +13833,7 @@ OptForeignTableLogRemote:
 		;
 
 OptPerNodeRejectLimit:
-			PER_P NODE REJECT_P LIMIT Sconst
+			PER_P NODE REJECT_P LIMIT SCONST
 				{
 					$$ = (Node*)makeDefElem("reject_limit", (Node*)makeString($5));
 				}
@@ -14341,7 +14341,7 @@ CreateDataSourceStmt: CREATE DATA_P SOURCE_P name opt_data_source_type
 		;
 
 data_source_type:
-			TYPE_P Sconst			{ $$ = $2; }
+			TYPE_P SCONST			{ $$ = $2; }
 		;
 
 opt_data_source_type:
@@ -14350,7 +14350,7 @@ opt_data_source_type:
 		;
 
 data_source_version:
-			VERSION_P Sconst		{ $$ = $2; }
+			VERSION_P SCONST		{ $$ = $2; }
 			| VERSION_P NULL_P		{ $$ = NULL; }
 		;
 
@@ -14765,7 +14765,7 @@ TriggerFuncArg:
 					$$ = makeString(pstrdup(buf));
 				}
 			| FCONST								{ $$ = makeString($1); }
-			| Sconst								{ $$ = makeString($1); }
+			| SCONST								{ $$ = makeString($1); }
 			| ColLabel								{ $$ = makeString($1); }
 		;
 
@@ -15269,7 +15269,7 @@ def_arg:	func_type						{ $$ = (Node *)$1; }
 			| reserved_keyword				{ $$ = (Node *)makeString(downcase_str(pstrdup($1), false)); }
 			| qual_all_Op					{ $$ = (Node *)$1; }
 			| NumericOnly					{ $$ = (Node *)$1; }
-			| Sconst						{ $$ = (Node *)makeString($1); }
+			| SCONST						{ $$ = (Node *)makeString($1); }
 		;
 
 /*
@@ -15310,9 +15310,9 @@ opt_enum_val_list:
 		| /*EMPTY*/								{ $$ = NIL; }
 		;
 
-enum_val_list:	Sconst
+enum_val_list:	SCONST
 				{ $$ = list_make1(makeString($1)); }
-			| enum_val_list ',' Sconst
+			| enum_val_list ',' SCONST
 				{ $$ = lappend($1, makeString($3)); }
 		;
 
@@ -15323,7 +15323,7 @@ enum_val_list:	Sconst
  *****************************************************************************/
 
 AlterEnumStmt:
-		ALTER TYPE_P any_name ADD_P VALUE_P opt_if_not_exists Sconst
+		ALTER TYPE_P any_name ADD_P VALUE_P opt_if_not_exists SCONST
 			{
 				AlterEnumStmt *n = makeNode(AlterEnumStmt);
 				n->typname = $3;
@@ -15334,7 +15334,7 @@ AlterEnumStmt:
 				n->skipIfNewValExists = $6;
 				$$ = (Node *) n;
 			}
-		 | ALTER TYPE_P any_name ADD_P VALUE_P opt_if_not_exists Sconst BEFORE Sconst
+		 | ALTER TYPE_P any_name ADD_P VALUE_P opt_if_not_exists SCONST BEFORE SCONST
 			{
 				AlterEnumStmt *n = makeNode(AlterEnumStmt);
 				n->typname = $3;
@@ -15345,7 +15345,7 @@ AlterEnumStmt:
 				n->skipIfNewValExists = $6;
 				$$ = (Node *) n;
 			}
-		 | ALTER TYPE_P any_name ADD_P VALUE_P opt_if_not_exists Sconst AFTER Sconst
+		 | ALTER TYPE_P any_name ADD_P VALUE_P opt_if_not_exists SCONST AFTER SCONST
 			{
 				AlterEnumStmt *n = makeNode(AlterEnumStmt);
 				n->typname = $3;
@@ -15356,7 +15356,7 @@ AlterEnumStmt:
 				n->skipIfNewValExists = $6;
 				$$ = (Node *) n;
 			}
-		 | ALTER TYPE_P any_name RENAME VALUE_P Sconst TO Sconst
+		 | ALTER TYPE_P any_name RENAME VALUE_P SCONST TO SCONST
 			{
 				AlterEnumStmt *n = makeNode(AlterEnumStmt);
 				n->typname = $3;
@@ -15854,7 +15854,7 @@ rename_user_clause:
                        UserId TO UserId                                        {$$ = list_make2($1, $3); }
 
 collate_name:	any_name					{ $$ = $1; }
-				| Sconst					{ $$ = list_make1(makeString($1)); }
+				| SCONST					{ $$ = list_make1(makeString($1)); }
 		;
 
 type_name_list:
@@ -15877,7 +15877,7 @@ any_name:	ColId						{ $$ = list_make1(makeString($1)); }
 
 any_name_or_sconst:
 		any_name					{ $$ = $1; }
-		| Sconst					{ $$ = list_make1(makeString($1)); }
+		| SCONST					{ $$ = list_make1(makeString($1)); }
 
 dolphin_any_name:	DolphinColId						{ $$ = list_make1(makeString(GetDolphinObjName($1->str, $1->is_quoted))); }
 			| DolphinColId dolphin_attrs
@@ -16201,7 +16201,7 @@ dolphin_comment_type:
 		;
 
 comment_text:
-			Sconst								{ $$ = $1; }
+			SCONST								{ $$ = $1; }
 			| NULL_P							{ $$ = NULL; }
 		;
 
@@ -16319,7 +16319,7 @@ dolphin_security_label_type:
 			| USER								{ $$ = OBJECT_USER; }
 		;
 
-security_label:	Sconst				{ $$ = $1; }
+security_label:	SCONST				{ $$ = $1; }
 				| NULL_P			{ $$ = NULL; }
 		;
 
@@ -18800,7 +18800,7 @@ PartitionTableIndexOption:
 					n->option.char_content = $1;
 					$$ = n;
 				}
-			| COMMENT opt_equal Sconst
+			| COMMENT opt_equal SCONST
 				{
 					CommentStmt *node = makeNode(CommentStmt);
 					node->objtype = OBJECT_INDEX;
@@ -19726,7 +19726,7 @@ every_interval:
 					Node *num = makeIntConst($1, @1);
 		            $$ = makeTypeCast(num, t, -1);	
 				}
-				| Sconst event_interval_unit
+				| SCONST event_interval_unit
 				{
 					TypeName *t;
 					t = SystemTypeName("interval");
@@ -19780,7 +19780,7 @@ interval_cell:  INTERVAL ICONST opt_interval
 					t->typmods = $3;
 					$$ = makeStringConstCast(a, @2, t);
 				}
-				| INTERVAL Sconst opt_interval
+				| INTERVAL SCONST opt_interval
 				{
 					TypeName *t = SystemTypeName("interval");
 					t->location = @1;
@@ -19831,7 +19831,7 @@ functime_app:			normal_ident '(' ')'
 			;
 
 interval_intexpr:
-		 Sconst
+		 SCONST
 		{
 			$$ = makeStringConstCast($1, @1, SystemTypeName("timestamp"));
 		}
@@ -20072,7 +20072,7 @@ status_opt:		ENABLE_P			{$$ = makeDefElem("enabled", (Node *)makeInteger(0));}
 				| /*EMPTY*/			{ $$ = NULL; }
 			;
 
-comments_opt:	COMMENT Sconst					{$$ = makeDefElem("comments", (Node *)makeString($2));}
+comments_opt:	COMMENT SCONST					{$$ = makeDefElem("comments", (Node *)makeString($2));}
 				| /*EMPTY*/			{ $$ = NULL; }
 			;
 
@@ -20230,7 +20230,7 @@ event_where_clause:
 			{
 				$$ = $2;
 			}
-			| LIKE Sconst
+			| LIKE SCONST
 			{
 				errno_t	rc = EOK;
 				char* event_where_str;
@@ -21564,7 +21564,7 @@ common_func_opt_item:
 				{
 					$$ = makeDefElem("language", (Node *)makeString($2));
 			    }
-			| COMMENT Sconst
+			| COMMENT SCONST
 				{
 					BCompatibilityOptionSupportCheck($1);
 					$$ = makeDefElem("comment", (Node *)makeString($2));
@@ -21594,8 +21594,8 @@ createproc_opt_item:
 				}
 		;
 
-func_as:	Sconst						{ $$ = list_make1(makeString($1)); }
-			| Sconst ',' Sconst
+func_as:	SCONST						{ $$ = list_make1(makeString($1)); }
+			| SCONST ',' SCONST
 				{
 					$$ = list_make2(makeString($1), makeString($3));
 				}
@@ -22378,7 +22378,7 @@ DoStmt:
                                                 lappend(n->args, $3);
                                         $$ = (Node *)n;
                                 }
-                	| DO_LANGUAGE ColId_or_Sconst Sconst
+                       | DO_LANGUAGE ColId_or_Sconst SCONST
                                 {
                                         DoStmt *n = makeNode(DoStmt);
                                         n->args = list_make2(makeDefElem("as", (Node *)makeString($3)),
@@ -22418,7 +22418,7 @@ dostmt_opt_list:
 		;
 
 dostmt_opt_item:
-			Sconst
+			SCONST
 				{
 					$$ = makeDefElem("as", (Node *)makeString($1));
 				}
@@ -24006,7 +24006,7 @@ AlterPublicationStmt:
  *****************************************************************************/
 
 CreateSubscriptionStmt:
-			CREATE SUBSCRIPTION name CONNECTION Sconst PUBLICATION publication_name_list opt_definition
+			CREATE SUBSCRIPTION name CONNECTION SCONST PUBLICATION publication_name_list opt_definition
 				{
 					CreateSubscriptionStmt *n =
 						makeNode(CreateSubscriptionStmt);
@@ -24048,7 +24048,7 @@ AlterSubscriptionStmt:
 					n->options = $5;
 					$$ = (Node *)n;
 				}
-			| ALTER SUBSCRIPTION name CONNECTION Sconst
+			| ALTER SUBSCRIPTION name CONNECTION SCONST
 				{
 					AlterSubscriptionStmt *n =
 						makeNode(AlterSubscriptionStmt);
@@ -24242,7 +24242,7 @@ NotifyStmt: NOTIFY ColId notify_payload
 		;
 
 notify_payload:
-			',' Sconst							{ $$ = $2; }
+			',' SCONST							{ $$ = $2; }
 			| /*EMPTY*/							{ $$ = NULL; }
 		;
 
@@ -24386,14 +24386,14 @@ TransactionStmt:
 														(Node *)makeString($4)));
 					$$ = (Node *)n;
 				}
-			| PREPARE TRANSACTION Sconst
+			| PREPARE TRANSACTION SCONST
 				{   
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_PREPARE;
 					n->gid = $3;
 					$$ = (Node *)n;
 				}
-			| COMMIT PREPARED Sconst
+			| COMMIT PREPARED SCONST
 				{   
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_COMMIT_PREPARED;
@@ -24401,7 +24401,7 @@ TransactionStmt:
 					n->csn = InvalidCommitSeqNo;
 					$$ = (Node *)n;
 				}
-			| COMMIT PREPARED Sconst WITH Sconst
+			| COMMIT PREPARED SCONST WITH SCONST
 				{   
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_COMMIT_PREPARED;
@@ -24409,7 +24409,7 @@ TransactionStmt:
 					n->csn = strtoull($5, NULL, 10);
 					$$ = (Node *)n;
 				}
-			| ROLLBACK PREPARED Sconst
+			| ROLLBACK PREPARED SCONST
 				{   
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_ROLLBACK_PREPARED;
@@ -24677,7 +24677,7 @@ LoadStmt:	LOAD file_name
                     n->is_load_data = false;
 					$$ = (Node *)n;
 				}
-		| LoadAct DATA_P INFILE Sconst conflict_option INTO TABLE dolphin_qualified_name opt_character opt_fields_options 
+		| LoadAct DATA_P INFILE SCONST conflict_option INTO TABLE dolphin_qualified_name opt_character opt_fields_options 
 		opt_lines_options opt_ignore_number opt_column_list
 				{
 					CopyStmt *n = makeNode(CopyStmt);
@@ -24759,19 +24759,19 @@ fields_list:
 	;
 
 fields_option:
-		TERMINATED BY Sconst
+		TERMINATED BY SCONST
 			{
 				$$ = makeDefElem("delimiter", (Node *)makeString($3));
 			}
-		| OPTIONALLY ENCLOSED BY Sconst
+		| OPTIONALLY ENCLOSED BY SCONST
 			{
 				$$ = makeDefElem("quote", (Node *)makeString($4));
 			}
-		| ENCLOSED BY Sconst
+		| ENCLOSED BY SCONST
 			{
 				$$ = makeDefElem("quote", (Node *)makeString($3));
 			}
-		| ESCAPED BY Sconst
+		| ESCAPED BY SCONST
 			{
 				$$ = makeDefElem("escape", (Node *)makeString($3));
 			}
@@ -24795,11 +24795,11 @@ lines_list:
 	;
 
 lines_option:
-		TERMINATED BY Sconst
+		TERMINATED BY SCONST
 			{
 				$$ = makeDefElem("eol", (Node *)makeString($3));
 			}
-		| STARTING BY Sconst
+		| STARTING BY SCONST
 			{
 				$$ = makeDefElem("prefix", (Node *)makeString($3));
 			}
@@ -24811,7 +24811,7 @@ opt_lines_options:
 	;
 
 opt_character:
-		CHARACTER SET Sconst		{ $$ = makeDefElem("encoding", (Node *)makeString($3));}
+		CHARACTER SET SCONST		{ $$ = makeDefElem("encoding", (Node *)makeString($3));}
 		| /* EMPTY */		{ $$ = NULL; }
 	;
 
@@ -25081,7 +25081,7 @@ load_when_option_item:
 */
 load_quote_str:
 		normal_ident			{ $$ = $1; }
-		| Sconst                { $$ = $1; }
+		| SCONST                { $$ = $1; }
 
 /*****************************************************************************
  *
@@ -25194,7 +25194,7 @@ createdb_opt_item:
 				{
 					$$ = makeDefElem("tablespace", NULL);
 				}
-			| LOCATION opt_equal Sconst
+			| LOCATION opt_equal SCONST
 				{
 					$$ = makeDefElem("location", (Node *)makeString($3));
 				}
@@ -25210,7 +25210,7 @@ createdb_opt_item:
 				{
 					$$ = makeDefElem("template", NULL);
 				}
-			| ENCODING opt_equal Sconst
+			| ENCODING opt_equal SCONST
 				{
 					$$ = makeDefElem("encoding", (Node *)makeString($3));
 				}
@@ -25222,7 +25222,7 @@ createdb_opt_item:
 				{
 					$$ = makeDefElem("encoding", NULL);
 				}
-			| LC_COLLATE_P opt_equal Sconst
+			| LC_COLLATE_P opt_equal SCONST
 				{
 					$$ = makeDefElem("lc_collate", (Node *)makeString($3));
 				}
@@ -25230,7 +25230,7 @@ createdb_opt_item:
 				{
 					$$ = makeDefElem("lc_collate", NULL);
 				}
-			| DBCOMPATIBILITY_P opt_equal Sconst
+			| DBCOMPATIBILITY_P opt_equal SCONST
 				{
 					if (checkCompArgs($3) == false)
 					{
@@ -25246,7 +25246,7 @@ createdb_opt_item:
 				{
 					$$ = makeDefElem("dbcompatibility", NULL);
 				}
-			| LC_CTYPE_P opt_equal Sconst
+			| LC_CTYPE_P opt_equal SCONST
 				{
 					$$ = makeDefElem("lc_ctype", (Node *)makeString($3));
 				}
@@ -25617,8 +25617,8 @@ AlterTSConfigurationStmt:
  *****************************************************************************/
 
 CreateConversionStmt:
-			CREATE opt_default CONVERSION_P any_name FOR Sconst
-			TO Sconst FROM any_name
+			CREATE opt_default CONVERSION_P any_name FOR SCONST
+			TO SCONST FROM any_name
 			{
 				CreateConversionStmt *n = makeNode(CreateConversionStmt);
 				n->conversion_name = $4;
@@ -26125,7 +26125,7 @@ BarrierStmt: CREATE BARRIER opt_barrier_id
 			;
 
 opt_barrier_id:
-				Sconst
+				SCONST
 				{
 					$$ = pstrdup($1);
 				}
@@ -26830,7 +26830,7 @@ policy_status_alter_clause:
         ;
 
 policy_comments_alter_clause:
-        COMMENTS Sconst   { $$ = $2; }
+        COMMENTS SCONST   { $$ = $2; }
         ;
     
     
@@ -26938,7 +26938,7 @@ masking_func_param:
                 $$ = makeDefElem("i"/*int*/, (Node *)makeString(pstrdup(buf)));
             }
         | FCONST         { $$ = makeDefElem("f" /*float*/, (Node *)makeString($1)); }
-        | Sconst         { $$ = makeDefElem("s" /*string*/, (Node *)makeString($1)); }
+        | SCONST         { $$ = makeDefElem("s" /*string*/, (Node *)makeString($1)); }
         | ColLabel       { $$ = makeDefElem("q" /*fqdn*/, (Node *)makeString($1)); }
         ;
 
@@ -27653,7 +27653,7 @@ ExplainStmt:
 
 					$$ = (Node*)stmt;					
 				}
-		| EXPLAIN PLAN SET STATEMENT_ID '=' Sconst FOR ExplainableStmt
+		| EXPLAIN PLAN SET STATEMENT_ID '=' SCONST FOR ExplainableStmt
 				{
 					ExplainStmt *n = makeNode(ExplainStmt);
 					n->statement = makeStringConst($6, @6);
@@ -27781,7 +27781,7 @@ ExecDirectStmt:
 		;
 
 DirectStmt:
-			Sconst					/* by default all are $$=$1 */
+			SCONST					/* by default all are $$=$1 */
 		;
 
 /*****************************************************************************
@@ -28988,7 +28988,7 @@ SignalResignalStmt:
 			{
 				$$ = NULL;
 			}
-			| SIGNAL SQLSTATE Sconst signal_information_item_lists
+			| SIGNAL SQLSTATE SCONST signal_information_item_lists
 			{
 				$$ = NULL;
 			}
@@ -29000,7 +29000,7 @@ SignalResignalStmt:
 			{
 				$$ = NULL;
 			}
-			| RESIGNAL SQLSTATE Sconst signal_information_item_lists
+			| RESIGNAL SQLSTATE SCONST signal_information_item_lists
 			{
 				$$ = NULL;
 			}
@@ -29439,7 +29439,7 @@ into_clause:
 					$$->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
 					$$->userVarList = $2;
 				}
-			| INTO OUTFILE Sconst characterset_option fields_options_fin lines_options_fin
+			| INTO OUTFILE SCONST characterset_option fields_options_fin lines_options_fin
 				{
 #ifdef ENABLE_MULTIPLE_NODES
 					const char* message = "SELECT INTO OUTFILE is not yet supported in distributed database.";
@@ -29471,7 +29471,7 @@ into_clause:
 					n->relkind = INTO_CLAUSE_RELKIND_DEFAULT;
 					$$ = n;
 				}
-			| INTO DUMPFILE Sconst
+			| INTO DUMPFILE SCONST
 				{
 #ifdef ENABLE_MULTIPLE_NODES
 					const char* message = "SELECT INTO DUMPFILE is not yet supported in distributed database.";
@@ -29491,7 +29491,7 @@ into_clause:
 				}
 		;
 characterset_option:
-			CHARACTER SET Sconst
+			CHARACTER SET SCONST
 				{
 					$$ = makeDefElem("encoding", (Node *)makeString($3));
 				}
@@ -29506,19 +29506,19 @@ fields_options_list:
 			| /*EMPTY*/			{ $$ = NIL; }
 		;
 fields_options_item:
-			TERMINATED BY Sconst
+			TERMINATED BY SCONST
 				{
 					$$ = makeDefElem("delimiter", (Node *)makeString($3));
 				}
-			| OPTIONALLY ENCLOSED BY Sconst
+			| OPTIONALLY ENCLOSED BY SCONST
 				{
 					$$ = makeDefElem("o_enclosed", (Node *)makeString($4));
 				}
-			| ENCLOSED BY Sconst
+			| ENCLOSED BY SCONST
 				{
 					$$ = makeDefElem("enclosed", (Node *)makeString($3));
 				}
-			| ESCAPED BY Sconst
+			| ESCAPED BY SCONST
 				{
 					$$ = makeDefElem("escape", (Node *)makeString($3));
 				}
@@ -29532,11 +29532,11 @@ lines_options_list:
 			| /*EMPTY*/			{ $$ = NIL; }
 		;
 lines_option_item:
-			STARTING BY Sconst
+			STARTING BY SCONST
 				{
 					$$ = makeDefElem("line_start", (Node *)makeString($3));
 				}
-			| TERMINATED BY Sconst
+			| TERMINATED BY SCONST
 				{
 					$$ = makeDefElem("eol", (Node *)makeString($3));
 				}
@@ -31562,7 +31562,7 @@ character_set:
 
 charset_collate_name:
 			ColId									{ $$ = $1; }
-			| Sconst								{ $$ = $1; }
+			| SCONST								{ $$ = $1; }
 		;
 
 charset:
@@ -32189,7 +32189,12 @@ client_logic_type:
  * c_expr is all the productions that are common to a_expr and b_expr;
  * it's factored out just to eliminate redundant coding.
  */
-a_expr:		c_expr									{ $$ = $1; }
+a_expr:		a_expr_without_sconst 	{ $$ = $1; }
+			/* Sconst precedence should lower than SCONST, so when we meet SCONST, we will try to do shift, to read more SCONST as possible */
+			|	Sconst %prec TEXT_P { $$ = makeStringConst($1, @1); }
+		;
+
+a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 			| PRIOR '(' a_expr ')'
                                 {
                                     List *argList = list_make1($3);
@@ -32892,7 +32897,7 @@ a_expr:		c_expr									{ $$ = $1; }
 					c->fields = lcons((Node *)makeString("excluded"), c->fields);
 					$$ = (Node *) $3;
 				}
-			| MATCH_FUNC fulltext_match_params ')' AGAINST '(' Sconst search_modifier ')'
+			| MATCH_FUNC fulltext_match_params ')' AGAINST '(' SCONST search_modifier ')'
 				{
 					FuncCall *lexpr_func = makeNode(FuncCall);
 					lexpr_func->funcname = SystemFuncName("to_tsvector");
@@ -33015,8 +33020,14 @@ b_expr:		c_expr
  * inside parentheses, such as function arguments; that cannot introduce
  * ambiguity to the b_expr syntax.
  */
-c_expr:		columnref %prec UMINUS						        { $$ = $1; }
-			| AexprConst							{ $$ = $1; }
+c_expr:		c_expr_without_sconst { $$ = $1; }
+			/* Sconst precedence should lower than SCONST, so when we meet SCONST, we will try to do shift, to read more SCONST as possible */
+			| Sconst %prec TEXT_P { $$ = makeStringConst($1, @1); }
+		;
+
+c_expr_without_sconst:
+			columnref %prec UMINUS						        { $$ = $1; }
+			| AexprConst_without_Sconst							{ $$ = $1; }
                         | PRIOR '(' columnref ')'
                                 {
                                     ColumnRef *col = (ColumnRef *)$3;
@@ -33589,7 +33600,7 @@ func_application_special:	dolphin_func_name '(' ')'
  * Function with SEPARATOR keword arguments;
  */
 func_with_separator:
-		dolphin_func_name '(' func_arg_list opt_sort_clause SEPARATOR_P Sconst ')'
+		dolphin_func_name '(' func_arg_list opt_sort_clause SEPARATOR_P SCONST ')'
 			{
 				if (pg_strcasecmp(strVal(linitial($1)), "group_concat") != 0)
 				{
@@ -33613,7 +33624,7 @@ func_with_separator:
 					$$ = (Node *)n;
 				}
 			}
-		| dolphin_func_name '(' DISTINCT func_arg_list opt_sort_clause SEPARATOR_P Sconst ')'
+		| dolphin_func_name '(' DISTINCT func_arg_list opt_sort_clause SEPARATOR_P SCONST ')'
 			{
 				if (pg_strcasecmp(strVal(linitial($1)), "group_concat") != 0)
 				{
@@ -33732,7 +33743,7 @@ func_expr_common_subexpr:
 				}
 
 			}
-			| CONVERT '(' a_expr USING Sconst ')'
+			| CONVERT '(' a_expr USING SCONST ')'
 			{
 			        FuncCall *n = makeNode(FuncCall);
 				n->funcname = SystemFuncName("convert");
@@ -35428,7 +35439,7 @@ extract_list:
 			| /*EMPTY*/								{ $$ = NIL; }
 		;
 
-/* Allow delimited string Sconst in extract_arg as an SQL extension.
+/* Allow delimited string SCONST in extract_arg as an SQL extension.
  * - thomas 2001-04-12
  */
 extract_arg:
@@ -35442,7 +35453,7 @@ extract_arg:
 			| SECOND_P								{ $$ = "second"; }
 			| QUARTER								{ $$ = "quarter"; }
 			| MICROSECOND_P							{ $$ = "microsecond"; }
-			| Sconst								{ $$ = $1; }
+			| SCONST								{ $$ = $1; }
 		;
 
 msq_extract_arg:
@@ -35477,7 +35488,7 @@ timestamp_units:
 			| SECOND_P								{ $$ = "second"; }
 			| QUARTER								{ $$ = "quarter"; }
 			| MICROSECOND_P							{ $$ = "microsecond"; }
-			| Sconst								{ $$ = $1; }
+			| SCONST								{ $$ = $1; }
 		;
 
 optional_precision:
@@ -35942,7 +35953,7 @@ target_el:	a_expr AS DolphinColLabel
 						$$->val = (Node*) n;
 					}
 				}
-			| a_expr SCONST
+			| a_expr_without_sconst SCONST
 				{
 					$$ = makeNode(ResTarget);
 					$$->name = $2;
@@ -35956,7 +35967,15 @@ target_el:	a_expr AS DolphinColLabel
 						$$->val = (Node*) n;
 					}
 				}
-			| a_expr
+			| Sconst
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = NULL;
+					$$->indirection = NIL;
+					$$->val = (Node *)makeStringConst($1, @1);
+					$$->location = @1;
+				}
+			| a_expr_without_sconst
 				{
 					$$ = makeNode(ResTarget);
 					$$->name = NULL;
@@ -35986,7 +36005,7 @@ target_el:	a_expr AS DolphinColLabel
 					$$->val = (Node *)n;
 					$$->location = @1;
 				}
-			| c_expr VALUE_P
+			| c_expr_without_sconst VALUE_P
 				{
 					$$ = makeNode(ResTarget);
 					$$->name = pstrdup($2);
@@ -35994,7 +36013,7 @@ target_el:	a_expr AS DolphinColLabel
 					$$->val = (Node *)$1;
 					$$->location = @1;
 				}
-			| c_expr NAME_P
+			| c_expr_without_sconst NAME_P
 				{
 					$$ = makeNode(ResTarget);
 					$$->name = pstrdup($2);
@@ -36002,12 +36021,36 @@ target_el:	a_expr AS DolphinColLabel
 					$$->val = (Node *)$1;
 					$$->location = @1;
 				}
-			| c_expr TYPE_P
+			| c_expr_without_sconst TYPE_P
 				{
 					$$ = makeNode(ResTarget);
 					$$->name = pstrdup($2);
 					$$->indirection = NIL;
 					$$->val = (Node *)$1;
+					$$->location = @1;
+				}
+			| Sconst VALUE_P
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = pstrdup($2);
+					$$->indirection = NIL;
+					$$->val = (Node *)makeStringConst($1, @1);
+					$$->location = @1;
+				}
+			| Sconst NAME_P
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = pstrdup($2);
+					$$->indirection = NIL;
+					$$->val = (Node *)makeStringConst($1, @1);
+					$$->location = @1;
+				}
+			| Sconst TYPE_P
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = pstrdup($2);
+					$$->indirection = NIL;
+					$$->val = (Node *)makeStringConst($1, @1);
 					$$->location = @1;
 				}
                         | connect_by_root_expr
@@ -36174,12 +36217,12 @@ index_name: ColId									{ $$ = $1; };
 
 dolphin_index_name: DolphinColId					{ $$ = downcase_str($1->str, $1->is_quoted); };
 
-file_name:	Sconst									{ $$ = $1; };
+file_name:	SCONST									{ $$ = $1; };
 
 /*
  * The production for a qualified func_name has to exactly match the
  * production for a qualified columnref, because we cannot tell which we
- * are parsing until we see what comes after it ('(' or Sconst for a func_name,
+ * are parsing until we see what comes after it ('(' or SCONST for a func_name,
  * anything else for a columnref).  Therefore we allow 'indirection' which
  * may contain subscripts, and reject that case in the C code.  (If we
  * ever implement SQL99-like methods, such syntax may actually become legal!)
@@ -36266,17 +36309,21 @@ DOLPHINIDENT: IDENT
 					$$ = CreateDolphinIdent(pstrdup($1), false);
 				}
 
-AexprConst: Iconst
+AexprConst:
+			AexprConst_without_Sconst	{ $$ = $1; }
+			| Sconst /* special case, allow SCONST SCONST, means concat the string */
+				{
+					$$ = makeStringConst($1, @1);
+				}
+			;
+
+AexprConst_without_Sconst: Iconst
 				{
 					$$ = makeIntConst($1, @1);
 				}
 			| FCONST
 				{
 					$$ = makeFloatConst($1, @1);
-				}
-			| Sconst
-				{
-					$$ = makeStringConst($1, @1);
 				}
 			| BCONST
 				{
@@ -36291,7 +36338,7 @@ AexprConst: Iconst
 					 */
 					$$ = makeBitStringConst($1, @1);
 				}
-			| UNDERSCORE_CHARSET Sconst
+			| UNDERSCORE_CHARSET SCONST
 				{
 					const char* encoding_name = $1;
 					char *original_str = pg_server_to_client($2, strlen($2));
@@ -36350,86 +36397,102 @@ AexprConst: Iconst
 					t->location = @1;
 					$$ = makeStringConstCast($2, @2, t);
 				}
-			| dolphin_func_name '(' func_arg_list opt_sort_clause ')' Sconst
+			| dolphin_func_name '(' func_arg_list opt_sort_clause ')' SCONST
 				{
-					/* generic syntax with a type modifier */
 					TypeName *t = makeTypeNameFromNameList($1);
-					ListCell *lc;
+					Type typtup = LookupTypeName(NULL, t, NULL, false);
+					if (typtup) {
+						/* generic syntax with a type modifier, if the type exists */
+						ListCell* lc = NULL;
+						ReleaseSysCache(typtup);
+						/*
+						 * We must use func_arg_list and opt_sort_clause in the production to avoid
+						 * reduce/reduce conflicts, but we don't actually wish
+						 * to allow NamedArgExpr in this context, nor ORDER BY.
+						 */
+						foreach(lc, $3) {
+							NamedArgExpr *arg = (NamedArgExpr *) lfirst(lc);
 
-					/*
-					 * We must use func_arg_list and opt_sort_clause in the production to avoid
-					 * reduce/reduce conflicts, but we don't actually wish
-					 * to allow NamedArgExpr in this context, nor ORDER BY.
-					 */
-					foreach(lc, $3)
-					{
-						NamedArgExpr *arg = (NamedArgExpr *) lfirst(lc);
-
-						if (IsA(arg, NamedArgExpr)) {
-							const char* message = "type modifier cannot have parameter name";
-							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-							ereport(errstate,
-									(errcode(ERRCODE_SYNTAX_ERROR),
-									 errmsg("type modifier cannot have parameter name"),
-									 parser_errposition(arg->location)));
+							if (IsA(arg, NamedArgExpr)) {
+								const char* message = "type modifier cannot have parameter name";
+								InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+								ereport(errstate,
+										(errcode(ERRCODE_SYNTAX_ERROR),
+										 errmsg("type modifier cannot have parameter name"),
+										 parser_errposition(arg->location)));
+							}
 						}
-					}
 
-					if ($4 != NIL) {
-							const char* message = "type modifier cannot have ORDER BY";
-							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-							ereport(errstate,
-									(errcode(ERRCODE_SYNTAX_ERROR),
-									 errmsg("type modifier cannot have ORDER BY"),
-									 parser_errposition(@4)));
+						if ($4 != NIL) {
+								const char* message = "type modifier cannot have ORDER BY";
+								InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+								ereport(errstate,
+										(errcode(ERRCODE_SYNTAX_ERROR),
+										 errmsg("type modifier cannot have ORDER BY"),
+										 parser_errposition(@4)));
+						}
+						t->typmods = $3;
+						t->location = @1;
+						$$ = makeStringConstCast($6, @6, t);
+					} else {
+						/* otherwise, treat sconst as alias of funcion() */
+						FuncCall *n = makeNode(FuncCall);
+						n->funcname = $1;
+						n->colname = $6;
+						n->args = $3;
+						n->agg_order = $4;
+						n->agg_star = FALSE;
+						n->agg_distinct = FALSE;
+						n->func_variadic = FALSE;
+						n->over = NULL;
+						n->location = @1;
+						n->call_func = false;
+						$$ = (Node *)n;
 					}
-					t->typmods = $3;
-					t->location = @1;
-					$$ = makeStringConstCast($6, @6, t);
 				}
-			| DB_B_JSON Sconst
+			| DB_B_JSON SCONST
 				{
 					TypeName * tmp = SystemTypeName("json");
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
-			| DB_B_JSONB Sconst
+			| DB_B_JSONB SCONST
 				{
 					TypeName * tmp = SystemTypeName("jsonb");
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
-			| DB_B_BOX Sconst
+			| DB_B_BOX SCONST
 				{
 					TypeName * tmp = SystemTypeName("box");
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
-			| DB_B_CIRCLE Sconst
+			| DB_B_CIRCLE SCONST
 				{
 					TypeName * tmp = SystemTypeName("circle");
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
-			| DB_B_POLYGON Sconst
+			| DB_B_POLYGON SCONST
 				{
 					TypeName * tmp = SystemTypeName("polygon");
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
-			| DB_B_BYTEA Sconst
+			| DB_B_BYTEA SCONST
 				{
 					TypeName * tmp = SystemTypeName("bytea");
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
-			| DB_B_TIMETZ Sconst
+			| DB_B_TIMETZ SCONST
 				{
 					TypeName * tmp = SystemTypeName("timetz");
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
-			| DB_B_TIMESTAMPTZ Sconst
+			| DB_B_TIMESTAMPTZ SCONST
 				{
 					TypeName * tmp = SystemTypeName("timestamptz");
 					tmp->location = @1;
@@ -36529,7 +36592,7 @@ AexprConst: Iconst
 					tmp->location = @1;
 					$$ = makeStringConstCast($3, @3, tmp);
 				}
-			| TEXT_P Sconst
+			| TEXT_P SCONST
 				{
 					TypeName * tmp = SystemTypeName("text");
 					tmp->location = @1;
@@ -36799,11 +36862,11 @@ AexprConst: Iconst
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
-			| ConstTypename Sconst
+			| ConstTypename SCONST
 				{
 					$$ = makeStringConstCast($2, @2, $1);
 				}
-			| INTERVAL Sconst opt_interval
+			| INTERVAL SCONST opt_interval
 				{
 					TypeName *t = SystemTypeName("interval");
 					t->location = @1;
@@ -36846,7 +36909,7 @@ AexprConst: Iconst
 						$$ = makeStringConstCast($2->val.str, @2, t);
 					}
 				}
-			| INTERVAL '(' Iconst ')' Sconst opt_interval
+			| INTERVAL '(' Iconst ')' SCONST opt_interval
 				{
 					TypeName *t = SystemTypeName("interval");
 					t->location = @1;
@@ -36882,7 +36945,20 @@ AexprConst: Iconst
 		;
 
 Iconst:		ICONST									{ $$ = $1; };
-Sconst:		SCONST									{ $$ = $1; };
+/*
+ * SCONST is a single string, like 'a', while Sconst can be multiple string, like 'a' 'b' 'c'.
+ * In most cases we should use SCONST, please make sure it is what you want when you use Sconst.
+ */
+Sconst:		SCONST 									{ $$ = $1; }
+			| Sconst SCONST
+				{
+					Size len = strlen($1) + strlen($2) + 1;
+					$$ = (char *)palloc(len);
+					int rc = sprintf_s($$, len, "%s%s", $1, $2);
+					securec_check_ss(rc, "", "");
+				}
+		;
+
 
 DolphinUserId:		DolphinRoleId					{ $$ = $1; }
 					| SCONST SET_USER_IDENT

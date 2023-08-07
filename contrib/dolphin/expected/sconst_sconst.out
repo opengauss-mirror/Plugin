@@ -1,0 +1,72 @@
+select 'a';
+ ?column? 
+----------
+ a
+(1 row)
+
+select 'a' 'b';
+ ?column? 
+----------
+ ab
+(1 row)
+
+select 'ca' between 'b' and 'c' 'd'; -- same as select 'ca' between 'b' and 'cd';
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select 'ca' between 'b' and 'cd';
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select hex('1') 'a';
+ a  
+----
+ 31
+(1 row)
+
+select current_schema() 'a';
+   a    
+--------
+ public
+(1 row)
+
+select current_schema 'a';
+   a    
+--------
+ public
+(1 row)
+
+select 'a' 'a' like 'a' 'a'; -- same as select 'aa' like 'aa';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'aa' like 'a' 'a';
+ ?column? 
+----------
+ t
+(1 row)
+
+select '3' mod '2' '3';
+ b_mod 
+-------
+     3
+(1 row)
+
+select '3' mod '23';
+ b_mod 
+-------
+     3
+(1 row)
+
+select '1' + '2' '3';
+ ?column? 
+----------
+       24
+(1 row)
+
