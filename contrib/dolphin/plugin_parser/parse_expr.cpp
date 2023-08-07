@@ -23,7 +23,6 @@
 #include "catalog/pg_type.h"
 #include "catalog/pg_proc.h"
 #include "catalog/gs_package.h"
-#include "catalog/gs_package_fn.h"
 #include "catalog/gs_utf8_collation.h"
 #include "commands/dbcommands.h"
 #include "commands/sequence.h"
@@ -1255,7 +1254,7 @@ static bool isCol2Function(List* fields)
         char **p_argnames = NULL;
         char *p_argmodes = NULL;
         int allArgs = get_func_arg_info(proctup, &p_argtypes, &p_argnames, &p_argmodes);
-        if (allArgs > 0 || !OidIsValid(procform->prorettype)) {
+        if ((allArgs > 0 && allArgs != procform->pronargdefaults) || !OidIsValid(procform->prorettype)) {
             continue;
         }
 
@@ -3797,8 +3796,14 @@ static char *ColumnRefFindRelname(ParseState *pstate, const char *colname)
                     if (strcmp(colname, strVal(col)) == 0) {
 #endif
                         if (rte->rtekind == RTE_RELATION) {
-                            relname = (rte->alias && rte->alias->aliasname) ?
-                                       rte->alias->aliasname : rte->relname;
+                            if (rte->alias && rte->alias->aliasname) {
+                                relname = rte->alias->aliasname;
+                            } else if (rte->eref && rte->eref->aliasname) {
+                                /* should use eref->aliasname for SYNONYM*/
+                                relname = rte->eref->aliasname;
+                            } else {
+                                relname = rte->relname;
+                            }
                         } else if (rte->rtekind == RTE_SUBQUERY) {
                             relname = rte->alias->aliasname;
                         } else if (rte->rtekind == RTE_CTE) {

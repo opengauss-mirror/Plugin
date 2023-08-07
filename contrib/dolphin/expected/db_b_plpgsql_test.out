@@ -78,7 +78,7 @@ end;
 /
 ERROR:  unrecognized configuration parameter "j"
 CONTEXT:  SQL statement "set j=1"
-PL/pgSQL function inline_code_block line 4 at SQL statement
+PL/pgSQL function inline_code_block line 3 at SQL statement
 declare
 i int;
 begin
@@ -88,7 +88,7 @@ end;
 /
 ERROR:  unrecognized configuration parameter "j"
 CONTEXT:  SQL statement "set j=1"
-PL/pgSQL function inline_code_block line 4 at SQL statement
+PL/pgSQL function inline_code_block line 3 at SQL statement
 begin
 set enable_set_variable_b_format = on;
 end;
