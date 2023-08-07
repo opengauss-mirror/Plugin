@@ -132,7 +132,7 @@ test: string_func_test/db_b_to_base64_test string_func_test/db_b_unhex_test bit_
 
 test: test_schema connection_id test_system_user test_bit_xor union column_quote_alias
 
-test: builtin_funcs/cast any_value_test default_function get_b_database union2
+test: builtin_funcs/cast any_value_test default_function get_b_database union2 sconst_sconst
 
 test: json_type json_pretty json_valid json_length json_objectagg json_arrayagg json_operator json_storage_size
 

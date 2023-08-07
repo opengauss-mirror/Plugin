@@ -1569,11 +1569,11 @@ select 'a' like;
 ERROR:  syntax error at or near ";"
 LINE 1: select 'a' like;
                        ^
----不报错，like右边最后一个字符被当作别名
+---不报错，'A' 'a' 被当成'Aa'处理
 select 'a' like 'A' 'a';
- a 
----
- t
+ ?column? 
+----------
+ f
 (1 row)
 
 select 100 like 100;
