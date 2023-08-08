@@ -128,5 +128,11 @@ insert into test_nocollate values
 ('TT','tT','Tt');
 select c1 between c2 and c3 from test_nocollate ;
 drop table test_nocollate;
+-- test with openGauss unique datatype
+select '2'::money between '1' and '5'::money;
+select '2' not between '1'::money and '5'::money;
+select '2' between SYMMETRIC '5' and '1'::money;
+select '2'::money not between SYMMETRIC '5' and '1';
+
 drop schema db_between cascade;
 reset current_schema;

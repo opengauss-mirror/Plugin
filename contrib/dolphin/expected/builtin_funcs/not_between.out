@@ -210,6 +210,9 @@ select 1 not between 0 and cast(18446744073709551615 as unsigned);
  f
 (1 row)
 
+select 1 not between 0 and cast(18446744073709551615 as signed);
+ERROR:  bigint out of range
+CONTEXT:  referenced column: b_not_between_and
 select cast(0 as unsigned) not between -1 and 1;
  b_not_between_and 
 -------------------

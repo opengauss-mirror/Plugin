@@ -544,6 +544,31 @@ select c1 between c2 and c3 from test_nocollate ;
 (3 rows)
 
 drop table test_nocollate;
+-- test with openGauss unique datatype
+select '2'::money between '1' and '5'::money;
+ b_between_and 
+---------------
+ t
+(1 row)
+
+select '2' not between '1'::money and '5'::money;
+ b_not_between_and 
+-------------------
+ f
+(1 row)
+
+select '2' between SYMMETRIC '5' and '1'::money;
+ b_sym_between_and 
+-------------------
+ t
+(1 row)
+
+select '2'::money not between SYMMETRIC '5' and '1';
+ b_not_sym_between_and 
+-----------------------
+ f
+(1 row)
+
 drop schema db_between cascade;
 NOTICE:  drop cascades to table t_between_and_0007
 reset current_schema;
