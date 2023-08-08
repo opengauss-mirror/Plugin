@@ -12,10 +12,10 @@ show dolphin.sql_mode;
 (1 row)
 
 insert into test values('294277-1-9 4:00:54.775807');
-ERROR:  timestamp out of range: "Tue Jan 09 04:00:55 294277 CST"
+ERROR:  timestamp out of range: "294277-01-09 04:00:55+08"
 CONTEXT:  referenced column: c
 insert into test values('294277-1-9 4:00:54.5');
-ERROR:  timestamp out of range: "Tue Jan 09 04:00:55 294277 CST"
+ERROR:  timestamp out of range: "294277-01-09 04:00:55+08"
 CONTEXT:  referenced column: c
 insert into test values('294277-1-9 4:00:54.4');
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
@@ -26,10 +26,10 @@ show dolphin.sql_mode;
 (1 row)
 
 insert into test values('294277-1-9 4:00:54.775807');
-WARNING:  timestamp out of range: "Tue Jan 09 04:00:55 294277 CST"
+WARNING:  timestamp out of range: "294277-01-09 04:00:55+08"
 CONTEXT:  referenced column: c
 insert into test values('294277-1-9 4:00:54.5');
-WARNING:  timestamp out of range: "Tue Jan 09 04:00:55 294277 CST"
+WARNING:  timestamp out of range: "294277-01-09 04:00:55+08"
 CONTEXT:  referenced column: c
 insert into test values('294277-1-9 4:00:54.4');
 --test zero date
@@ -44,15 +44,15 @@ insert into test values('0000-00-00 01:00:00');
 insert into test values('0000-00-00 11:00:00');
 insert into test values('0000-00-00 00:00:00');
 select c from test order by c;
-               c                
---------------------------------
+              c               
+------------------------------
  0000-00-00 00:00:00+08:05:43
  0000-00-00 00:00:00+08:05:43
  0000-00-00 00:00:00+08:05:43
  0000-00-00 01:00:00+08:05:43
  0000-00-00 11:00:00+08:05:43
- Tue Jan 09 04:00:54 294277 CST
- Tue Jan 09 04:00:54 294277 CST
+ 294277-01-09 04:00:54+08
+ 294277-01-09 04:00:54+08
 (7 rows)
 
 drop table test;

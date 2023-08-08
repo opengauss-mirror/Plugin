@@ -5330,7 +5330,7 @@ CONTEXT:  referenced column: ifnull
 select ifnull(anint, dt) from typeset;
    ifnull   
 ------------
- 01-27-2000
+ 2000-01-27
 (1 row)
 
 select ifnull(anint, tmstp) from typeset;
@@ -5397,9 +5397,9 @@ LINE 1: select ifnull(bgint, dt) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
 select ifnull(bgint, tmstp) from typeset;
-            ifnull            
-------------------------------
- Thu Jan 27 00:00:00 2000 PST
+         ifnull         
+------------------------
+ 2000-01-27 00:00:00-08
 (1 row)
 
 select ifnull(bgint, tm) from typeset;
@@ -5455,9 +5455,9 @@ LINE 1: select ifnull(dcmal, dt) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
 select ifnull(dcmal, tmstp) from typeset;
-            ifnull            
-------------------------------
- Thu Jan 27 00:00:00 2000 PST
+         ifnull         
+------------------------
+ 2000-01-27 00:00:00-08
 (1 row)
 
 select ifnull(dcmal, tm) from typeset;
@@ -5507,9 +5507,9 @@ LINE 1: select ifnull(nmric, dt) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
 select ifnull(nmric, tmstp) from typeset;
-            ifnull            
-------------------------------
- Thu Jan 27 00:00:00 2000 PST
+         ifnull         
+------------------------
+ 2000-01-27 00:00:00-08
 (1 row)
 
 select ifnull(nmric, tm) from typeset;

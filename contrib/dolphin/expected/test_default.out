@@ -85,11 +85,13 @@ select pg_catalog.pg_get_expr(r.polqual, r.polrelid) from pg_catalog.pg_rlspolic
 
 create table t6(a timestamp, b time);
 create index idx_t6 on t6(a) where a > b::timestamp;
+ERROR:  cannot cast type time without time zone to timestamp with time zone
+LINE 1: create index idx_t6 on t6(a) where a > b::timestamp;
+                                                ^
 select pg_catalog.pg_get_expr(i.indpred, i.indrelid) from pg_catalog.pg_index i left join pg_catalog.pg_class c on c.oid = i.indrelid where c.relname = 't6';
-              pg_get_expr               
-----------------------------------------
- (a > (b)::timestamp(0) with time zone)
-(1 row)
+ pg_get_expr 
+-------------
+(0 rows)
 
 create table t7(a timestamp check(a > pg_systimestamp()::timestamp(0)));
 select pg_catalog.pg_get_expr(co.conbin, co.conrelid) from pg_catalog.pg_constraint co left join pg_catalog.pg_class cl on cl.oid = co.conrelid where cl.relname = 't7';
