@@ -4708,6 +4708,10 @@ Datum to_days(PG_FUNCTION_ARGS) {
     Timestamp datetime = PG_GETARG_TIMESTAMP(0);
     int64 days;
 
+    if (datetime == TIMESTAMP_ZERO) {
+        PG_RETURN_NULL();
+    }
+
     if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE) {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
                         errmsg("datetime value out of range")));

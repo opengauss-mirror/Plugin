@@ -313,8 +313,8 @@ extern "C" DLL_PUBLIC Datum timestamp_cast(PG_FUNCTION_ARGS);
 #endif
 
 /* b format datetime and timestamp type */
-static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec);
-static int64 integer_b_format_timestamp(bool hasTz, int64 ts);
+static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec, bool can_ignore);
+static int64 integer_b_format_timestamp(bool hasTz, int64 ts, bool can_ignore);
 static void fillZeroBeforeNumericTimestamp(char *str, char *buf);
 
 /* common code for timestamptypmodin and timestamptztypmodin */
@@ -718,14 +718,16 @@ int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec)
     return dterr;
 }
 
-static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec)
+static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec, bool can_ignore)
 {
     Timestamp result;
     struct pg_tm tt, *tm = &tt;
     int tz;
+    int level = can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
     if (ts < B_FORMAT_DATE_INT_MIN) {
-        ereport(ERROR,
+        ereport(level,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+        return TIMESTAMP_ZERO;
     }
     /* find out how many digits in ts */
     int cnt = 0;                                                                                                                                                        
@@ -737,8 +739,9 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
         tmp /= 10;
     }
     if (cnt > TIMESTAMP_YYYYMMDDhhmmss_LEN) {
-        ereport(ERROR,
+        ereport(level,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+        return TIMESTAMP_ZERO;
     }
     /* has time field : YYYYMMDDhhmmss or YYMMDDhhmmss */
     if (cnt > TIMESTAMP_YYYYMMDD_LEN) {
@@ -746,55 +749,58 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
         date = ts / 1000000; /* extract date: YYMMDD or YYYYMMDD */
     } 
     if (int32_b_format_time_internal(tm, true, time, &fsec) || int32_b_format_date_internal(tm, date, true)){
-        ereport(ERROR,
+        ereport(level,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+        return TIMESTAMP_ZERO;
     }
 
     if (hasTz) {
         /* b format timestamp type */
         tz = DetermineTimeZoneOffset(tm, session_timezone);
         if (tm2timestamp(tm, fsec, &tz, &result) != 0) {
-            ereport(ERROR,
+            ereport(level,
                 (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+            return TIMESTAMP_ZERO;
         }  
     } else {
         if (tm2timestamp(tm, fsec, NULL, &result) != 0) {
-            ereport(ERROR,
+            ereport(level,
                 (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+            return TIMESTAMP_ZERO;
         }  
     }
     return result;
 }
 
-static int64 integer_b_format_timestamp(bool hasTz, int64 ts)
+static int64 integer_b_format_timestamp(bool hasTz, int64 ts, bool can_ignore)
 {
     TimestampTz result;
-    result = int64_b_format_timestamp_internal(hasTz, ts, 0);
+    result = int64_b_format_timestamp_internal(hasTz, ts, 0, can_ignore);
     PG_RETURN_TIMESTAMP(result);
 }
 
 Datum int32_b_format_datetime(PG_FUNCTION_ARGS) 
 {
     int64 ts = PG_GETARG_INT64(0);
-    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(false, ts));
+    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(false, ts, fcinfo->can_ignore));
 }
 
 Datum int32_b_format_timestamp(PG_FUNCTION_ARGS)
 {
     int64 ts = PG_GETARG_INT64(0);
-    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(true, ts));
+    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(true, ts, fcinfo->can_ignore));
 }
 
 Datum int64_b_format_datetime(PG_FUNCTION_ARGS)
 {
     int64 ts = PG_GETARG_INT64(0);
-    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(false, ts));
+    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(false, ts, fcinfo->can_ignore));
 }
 
 Datum int64_b_format_timestamp(PG_FUNCTION_ARGS)
 {
     int64 ts = PG_GETARG_INT64(0);
-    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(true, ts));
+    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(true, ts, fcinfo->can_ignore));
 }
 
 /* timestamp_out()
