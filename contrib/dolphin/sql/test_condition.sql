@@ -92,6 +92,7 @@ SELECT coalesce(null,t1,t2) from test_bccf;
 SELECT coalesce(null,t2,t1) from test_bccf;
 
 ----------------IfNULL function------------------------
+set dolphin.b_compatibility_mode to on;
 select ifnull(null, null);
 select ifnull(null, 'other');
 select ifnull('something','other');
@@ -105,6 +106,18 @@ select ifnull(123::float8,321::float8);
 select ifnull('2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
 select ifnull('2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp);
 
+select pg_typeof(ifnull(null, null));
+select pg_typeof(ifnull(null, 'other'));
+select pg_typeof(ifnull('something','other'));
+select pg_typeof(ifnull(null,321));
+select pg_typeof(ifnull(123,'321'));
+select pg_typeof(ifnull(123::int2,321::int2));
+select pg_typeof(ifnull(123::int4,321::int4));
+select pg_typeof(ifnull(123::int8,321::int8));
+select pg_typeof(ifnull(123::float4,321::float4));
+select pg_typeof(ifnull(123::float8,321::float8));
+select pg_typeof(ifnull('2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date));
+select pg_typeof(ifnull('2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp));
 
 --ifnull(unknown, int)
 SELECT ifnull('j', 1);
@@ -134,13 +147,31 @@ SELECT ifnull('100.001'::float8, 'hello!'::text);
 SELECT ifnull('hello!'::text, '100.001'::numeric);
 SELECT ifnull('100.001'::numeric, 'hello!'::text);
 
+select pg_typeof(ifnull('j', 1));
+select pg_typeof(ifnull(1, 'k'));
+select pg_typeof(ifnull(1, '6'));
+select pg_typeof(ifnull('o'::char, 1));
+select pg_typeof(ifnull(1, 'o'::char));
+select pg_typeof(ifnull('hello!'::text, '100'::int2));
+select pg_typeof(ifnull('100'::int2, 'hello!'::text));
+select pg_typeof(ifnull('hello!'::text, '100'::int4));
+select pg_typeof(ifnull('100'::int4, 'hello!'::text));
+select pg_typeof(ifnull('hello!'::text, '100'::int8));
+select pg_typeof(ifnull('100'::int8, 'hello!'::text));
+select pg_typeof(ifnull('hello!'::text, '100.001'::float4));
+select pg_typeof(ifnull('100.001'::float4, 'hello!'::text));
+select pg_typeof(ifnull('hello!'::text, '100.001'::float8));
+select pg_typeof(ifnull('100.001'::float8, 'hello!'::text));
+select pg_typeof(ifnull('hello!'::text, '100.001'::numeric));
+select pg_typeof(ifnull('100.001'::numeric, 'hello!'::text));
+
 --null
 SELECT ifnull('j', '');
 SELECT ifnull('j', null);
 SELECT ifnull('', 'k');
 SELECT ifnull(null, 'k');
 SELECT ifnull(''::text, '100'::int2);
-SELECT ifnull(''::int2, 'hello!'::text)L;
+SELECT ifnull(''::int2, 'hello!'::text);
 SELECT ifnull('hello!'::text, ''::int2);
 SELECT ifnull('100'::int2, ''::text);
 SELECT ifnull(''::text, '100.001'::float8);
@@ -155,6 +186,34 @@ select ifnull(t1,t3) from test_bccf;
 select ifnull(t1,t4) from test_bccf;
 select ifnull(t3,t4) from test_bccf;
 
+select pg_typeof(ifnull('j', ''));
+select pg_typeof(ifnull('j', null));
+select pg_typeof(ifnull('', 'k'));
+select pg_typeof(ifnull(null, 'k'));
+select pg_typeof(ifnull(''::text, '100'::int2));
+select pg_typeof(ifnull(''::int2, 'hello!'::text));
+select pg_typeof(ifnull('hello!'::text, ''::int2));
+select pg_typeof(ifnull('100'::int2, ''::text));
+select pg_typeof(ifnull(''::text, '100.001'::float8));
+select pg_typeof(ifnull('100.001'::float8, ''::text));
+select pg_typeof(ifnull(''::text, '100.001'::numeric));
+select pg_typeof(ifnull(''::numeric, 'hello!'::text));
+select pg_typeof(ifnull('hello!'::text, ''::numeric));
+select pg_typeof(ifnull('100.001'::numeric, ''::text));
+select pg_typeof(ifnull(t1,t2)) from test_bccf;
+select pg_typeof(ifnull(t1,t3)) from test_bccf;
+select pg_typeof(ifnull(t1,t4)) from test_bccf;
+select pg_typeof(ifnull(t3,t4)) from test_bccf;
+
+select pg_typeof(ifnull('2022-1-1 11:11:11'::datetime, 'text'::text));
+create table test_bool1(c1 boolean);
+insert into test_bool1 values(1);
+select ifnull(test_bool1.c1,'') from test_bool1;
+select ifnull('',test_bool1.c1) from test_bool1;
+select pg_typeof(ifnull(test_bool1.c1,'')) from test_bool1;
+select pg_typeof(ifnull('',test_bool1.c1)) from test_bool1;
+drop table test_bool1;
+reset dolphin.b_compatibility_mode;
 ----------------ISNULL expression------------------------
 
 --null
@@ -393,6 +452,7 @@ SELECT coalesce(null,t1,t2) from test_bccf;
 SELECT coalesce(null,t2,t1) from test_bccf;
 
 ----------------IfNULL function------------------------
+set dolphin.b_compatibility_mode to on;
 select ifnull(null, null);
 select ifnull(null, 'other');
 select ifnull('something','other');
@@ -441,7 +501,7 @@ SELECT ifnull('j', null);
 SELECT ifnull('', 'k');
 SELECT ifnull(null, 'k');
 SELECT ifnull(''::text, '100'::int2);
-SELECT ifnull(''::int2, 'hello!'::text)L;
+SELECT ifnull(''::int2, 'hello!'::text);
 SELECT ifnull('hello!'::text, ''::int2);
 SELECT ifnull('100'::int2, ''::text);
 SELECT ifnull(''::text, '100.001'::float8);
@@ -455,7 +515,7 @@ select ifnull(t1,t2) from test_bccf;
 select ifnull(t1,t3) from test_bccf;
 select ifnull(t1,t4) from test_bccf;
 select ifnull(t3,t4) from test_bccf;
-
+reset dolphin.b_compatibility_mode;
 ----------------ISNULL expression------------------------
 
 --null
@@ -615,19 +675,21 @@ create table typeset (
 	ch    CHAR(30) not null,
 	vch   VARCHAR(30) not null,
 	blb   BLOB not null,
-	txt   TEXT not null
+	txt   TEXT not null,
+	bin   binary,
+	vbin  varbinary(50)
 );
 
 insert into typeset (
 tyint,smint,anint,bgint,dcmal,nmric,flt,
 bt,dt,tmstp,tm,
 ch,vch,blb,
-txt 
+txt,bin,vbin
 ) values (
 127, 127, 127, 127, 127.234, 127.32, 127.213,
 b'01111111', '2001-04-19','2001-04-19', '22:23:44',
 '2001-04-19 22:23:44', '2001-04-19 22:23:44', '1233454212',
-'2001-04-19 22:23:44'
+'2001-04-19 22:23:44', '1', '2001-04-19 22:23:44'
 );
 
 
@@ -737,7 +799,7 @@ select coalesce(vch, blb) from typeset;
 select coalesce(vch, txt) from typeset;
 select coalesce(blb, txt) from typeset;
 
-
+set dolphin.b_compatibility_mode to on;
 select ifnull(tyint, smint) from typeset;
 select ifnull(tyint, anint) from typeset;
 select ifnull(tyint, bgint) from typeset;
@@ -844,7 +906,170 @@ select ifnull(vch, blb) from typeset;
 select ifnull(vch, txt) from typeset;
 select ifnull(blb, txt) from typeset;
 
+select ifnull(bin, smint) from typeset;
+select ifnull(bin, anint) from typeset;
+select ifnull(bin, bgint) from typeset;
+select ifnull(bin, dcmal) from typeset;
+select ifnull(bin, nmric) from typeset;
+select ifnull(bin, flt) from typeset;
+select ifnull(bin, bt) from typeset;
+select ifnull(bin, dt) from typeset;
+select ifnull(bin, tmstp) from typeset;
+select ifnull(bin, tm) from typeset;
+select ifnull(bin, ch) from typeset;
+select ifnull(bin, vch) from typeset;
+select ifnull(bin, blb) from typeset;
+select ifnull(bin, txt) from typeset;
 
+select ifnull(vbin, smint) from typeset;
+select ifnull(vbin, anint) from typeset;
+select ifnull(vbin, bgint) from typeset;
+select ifnull(vbin, dcmal) from typeset;
+select ifnull(vbin, nmric) from typeset;
+select ifnull(vbin, flt) from typeset;
+select ifnull(vbin, bt) from typeset;
+select ifnull(vbin, dt) from typeset;
+select ifnull(vbin, tmstp) from typeset;
+select ifnull(vbin, tm) from typeset;
+select ifnull(vbin, ch) from typeset;
+select ifnull(vbin, vch) from typeset;
+select ifnull(vbin, blb) from typeset;
+select ifnull(vbin, txt) from typeset;
+
+select pg_typeof(ifnull(tyint, smint)) from typeset;
+select pg_typeof(ifnull(tyint, anint)) from typeset;
+select pg_typeof(ifnull(tyint, bgint)) from typeset;
+select pg_typeof(ifnull(tyint, dcmal)) from typeset;
+select pg_typeof(ifnull(tyint, nmric)) from typeset;
+select pg_typeof(ifnull(tyint, flt)) from typeset;
+select pg_typeof(ifnull(tyint, bt)) from typeset;
+select pg_typeof(ifnull(tyint, dt)) from typeset;
+select pg_typeof(ifnull(tyint, tmstp)) from typeset;
+select pg_typeof(ifnull(tyint, tm)) from typeset;
+select pg_typeof(ifnull(tyint, ch)) from typeset;
+select pg_typeof(ifnull(tyint, vch)) from typeset;
+select pg_typeof(ifnull(tyint, blb)) from typeset;
+select pg_typeof(ifnull(tyint, txt)) from typeset;
+select pg_typeof(ifnull(smint, anint)) from typeset;
+select pg_typeof(ifnull(smint, bgint)) from typeset;
+select pg_typeof(ifnull(smint, dcmal)) from typeset;
+select pg_typeof(ifnull(smint, nmric)) from typeset;
+select pg_typeof(ifnull(smint, flt)) from typeset;
+select pg_typeof(ifnull(smint, bt)) from typeset;
+select pg_typeof(ifnull(smint, dt)) from typeset;
+select pg_typeof(ifnull(smint, tmstp)) from typeset;
+select pg_typeof(ifnull(smint, tm)) from typeset;
+select pg_typeof(ifnull(smint, ch)) from typeset;
+select pg_typeof(ifnull(smint, vch)) from typeset;
+select pg_typeof(ifnull(smint, blb)) from typeset;
+select pg_typeof(ifnull(smint, txt)) from typeset;
+select pg_typeof(ifnull(anint, bgint)) from typeset;
+select pg_typeof(ifnull(anint, dcmal)) from typeset;
+select pg_typeof(ifnull(anint, nmric)) from typeset;
+select pg_typeof(ifnull(anint, flt)) from typeset;
+select pg_typeof(ifnull(anint, bt)) from typeset;
+select pg_typeof(ifnull(anint, dt)) from typeset;
+select pg_typeof(ifnull(anint, tmstp)) from typeset;
+select pg_typeof(ifnull(anint, tm)) from typeset;
+select pg_typeof(ifnull(anint, ch)) from typeset;
+select pg_typeof(ifnull(anint, vch)) from typeset;
+select pg_typeof(ifnull(anint, blb)) from typeset;
+select pg_typeof(ifnull(anint, txt)) from typeset;
+select pg_typeof(ifnull(bgint, dcmal)) from typeset;
+select pg_typeof(ifnull(bgint, nmric)) from typeset;
+select pg_typeof(ifnull(bgint, flt)) from typeset;
+select pg_typeof(ifnull(bgint, bt)) from typeset;
+select pg_typeof(ifnull(bgint, dt)) from typeset;
+select pg_typeof(ifnull(bgint, tmstp)) from typeset;
+select pg_typeof(ifnull(bgint, tm)) from typeset;
+select pg_typeof(ifnull(bgint, ch)) from typeset;
+select pg_typeof(ifnull(bgint, vch)) from typeset;
+select pg_typeof(ifnull(bgint, blb)) from typeset;
+select pg_typeof(ifnull(bgint, txt)) from typeset;
+select pg_typeof(ifnull(dcmal, nmric)) from typeset;
+select pg_typeof(ifnull(dcmal, flt)) from typeset;
+select pg_typeof(ifnull(dcmal, bt)) from typeset;
+select pg_typeof(ifnull(dcmal, dt)) from typeset;
+select pg_typeof(ifnull(dcmal, tmstp)) from typeset;
+select pg_typeof(ifnull(dcmal, tm)) from typeset;
+select pg_typeof(ifnull(dcmal, ch)) from typeset;
+select pg_typeof(ifnull(dcmal, vch)) from typeset;
+select pg_typeof(ifnull(dcmal, blb)) from typeset;
+select pg_typeof(ifnull(dcmal, txt)) from typeset;
+select pg_typeof(ifnull(nmric, flt)) from typeset;
+select pg_typeof(ifnull(nmric, bt)) from typeset;
+select pg_typeof(ifnull(nmric, dt)) from typeset;
+select pg_typeof(ifnull(nmric, tmstp)) from typeset;
+select pg_typeof(ifnull(nmric, tm)) from typeset;
+select pg_typeof(ifnull(nmric, ch)) from typeset;
+select pg_typeof(ifnull(nmric, vch)) from typeset;
+select pg_typeof(ifnull(nmric, blb)) from typeset;
+select pg_typeof(ifnull(nmric, txt)) from typeset;
+select pg_typeof(ifnull(flt, bt)) from typeset;
+select pg_typeof(ifnull(flt, dt)) from typeset;
+select pg_typeof(ifnull(flt, tmstp)) from typeset;
+select pg_typeof(ifnull(flt, tm)) from typeset;
+select pg_typeof(ifnull(flt, ch)) from typeset;
+select pg_typeof(ifnull(flt, vch)) from typeset;
+select pg_typeof(ifnull(flt, blb)) from typeset;
+select pg_typeof(ifnull(flt, txt)) from typeset;
+select pg_typeof(ifnull(bt, dt)) from typeset;
+select pg_typeof(ifnull(bt, tmstp)) from typeset;
+select pg_typeof(ifnull(bt, tm)) from typeset;
+select pg_typeof(ifnull(bt, ch)) from typeset;
+select pg_typeof(ifnull(bt, vch)) from typeset;
+select pg_typeof(ifnull(bt, blb)) from typeset;
+select pg_typeof(ifnull(bt, txt)) from typeset;
+select pg_typeof(ifnull(dt, tmstp)) from typeset;
+select pg_typeof(ifnull(dt, tm)) from typeset;
+select pg_typeof(ifnull(dt, ch)) from typeset;
+select pg_typeof(ifnull(dt, vch)) from typeset;
+select pg_typeof(ifnull(dt, blb)) from typeset;
+select pg_typeof(ifnull(dt, txt)) from typeset;
+select pg_typeof(ifnull(tmstp, tm)) from typeset;
+select pg_typeof(ifnull(tmstp, ch)) from typeset;
+select pg_typeof(ifnull(tmstp, vch)) from typeset;
+select pg_typeof(ifnull(tmstp, blb)) from typeset;
+select pg_typeof(ifnull(tmstp, txt)) from typeset;
+select pg_typeof(ifnull(tm, ch)) from typeset;
+select pg_typeof(ifnull(tm, vch)) from typeset;
+select pg_typeof(ifnull(tm, blb)) from typeset;
+select pg_typeof(ifnull(tm, txt)) from typeset;
+select pg_typeof(ifnull(ch, vch)) from typeset;
+select pg_typeof(ifnull(ch, blb)) from typeset;
+select pg_typeof(ifnull(ch, txt)) from typeset;
+select pg_typeof(ifnull(vch, blb)) from typeset;
+select pg_typeof(ifnull(vch, txt)) from typeset;
+select pg_typeof(ifnull(blb, txt)) from typeset;
+select pg_typeof(ifnull(bin, smint)) from typeset;
+select pg_typeof(ifnull(bin, anint)) from typeset;
+select pg_typeof(ifnull(bin, bgint)) from typeset;
+select pg_typeof(ifnull(bin, dcmal)) from typeset;
+select pg_typeof(ifnull(bin, nmric)) from typeset;
+select pg_typeof(ifnull(bin, flt)) from typeset;
+select pg_typeof(ifnull(bin, bt)) from typeset;
+select pg_typeof(ifnull(bin, dt)) from typeset;
+select pg_typeof(ifnull(bin, tmstp)) from typeset;
+select pg_typeof(ifnull(bin, tm)) from typeset;
+select pg_typeof(ifnull(bin, ch)) from typeset;
+select pg_typeof(ifnull(bin, vch)) from typeset;
+select pg_typeof(ifnull(bin, blb)) from typeset;
+select pg_typeof(ifnull(bin, txt)) from typeset;
+select pg_typeof(ifnull(vbin, smint)) from typeset;
+select pg_typeof(ifnull(vbin, anint)) from typeset;
+select pg_typeof(ifnull(vbin, bgint)) from typeset;
+select pg_typeof(ifnull(vbin, dcmal)) from typeset;
+select pg_typeof(ifnull(vbin, nmric)) from typeset;
+select pg_typeof(ifnull(vbin, flt)) from typeset;
+select pg_typeof(ifnull(vbin, bt)) from typeset;
+select pg_typeof(ifnull(vbin, dt)) from typeset;
+select pg_typeof(ifnull(vbin, tmstp)) from typeset;
+select pg_typeof(ifnull(vbin, tm)) from typeset;
+select pg_typeof(ifnull(vbin, ch)) from typeset;
+select pg_typeof(ifnull(vbin, vch)) from typeset;
+select pg_typeof(ifnull(vbin, blb)) from typeset;
+select pg_typeof(ifnull(vbin, txt)) from typeset;
+reset dolphin.b_compatibility_mode;
 
 select interval(tyint, smint) from typeset;
 select interval(tyint, anint) from typeset;
