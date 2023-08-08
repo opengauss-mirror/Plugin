@@ -104,6 +104,27 @@ static void SubCheckOutParam(List* exprtargs, Oid funcid);
 static Node* transformPrefixKey(ParseState* pstate, PrefixKey* pkey);
 
 #ifdef DOLPHIN
+/* MySQL field type, all types can classify into these type */
+enum FieldType {
+    FIELD_TYPE_INVALID = -1,
+    FIELD_TYPE_DECIMAL, FIELD_TYPE_TINY,
+    FIELD_TYPE_SHORT,  FIELD_TYPE_LONG,
+    FIELD_TYPE_FLOAT,  FIELD_TYPE_DOUBLE,
+    FIELD_TYPE_NULL,   FIELD_TYPE_TIMESTAMP,
+    FIELD_TYPE_LONGLONG, FIELD_TYPE_INT16,
+    FIELD_TYPE_DATE,   FIELD_TYPE_TIME,
+    FIELD_TYPE_DATETIME, FIELD_TYPE_YEAR,
+    FIELD_TYPE_VARCHAR, FIELD_TYPE_BIT,
+    FIELD_TYPE_JSON, FIELD_TYPE_ENUM,
+    FIELD_TYPE_SET, FIELD_TYPE_TINY_BLOB,
+    FIELD_TYPE_MEDIUM_BLOB, FIELD_TYPE_LONG_BLOB,
+    FIELD_TYPE_BLOB, FIELD_TYPE_VAR_STRING,
+    FIELD_TYPE_STRING, FIELD_TYPE_BIN_STRING,
+    FIELD_TYPE_NUM
+};
+
+static FieldType type_to_index(Oid oid);
+
 typedef struct DefaultFuncType {
     Oid tableOid = InvalidOid;
     int colNumber = 0;
@@ -1964,6 +1985,85 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
     /* prevent compiler wanring*/
     return NULL;
 }
+
+/*
+ * handle between and case, we have two cases:
+ * 1. some arg's type is for openGauss only(like money), we should use openGauss original routinue, then we do what gram.y do,
+ *      make aexpr and do transform, return the result.
+ * 2. otherwise, all arg's type is common, use logical in between_and function, just like MySQL. return NULL in this case
+ */
+static Node* HandleBetweenAnd(ParseState* pstate, FuncCall* fn, List* targs)
+{
+    /* sanity check, between args muse be 3 */
+    if (list_length(fn->funcname) > 2 || list_length(targs) != 3) {
+        return NULL;
+    }
+
+    const char* funcname = list_length(fn->funcname) == 1 ? strVal(linitial(fn->funcname)) : strVal(lsecond(fn->funcname));
+    bool b_a = strcmp(funcname, "b_between_and") == 0;
+    bool b_n_a = strcmp(funcname, "b_not_between_and") == 0;
+    bool b_s_a = strcmp(funcname, "b_sym_between_and") == 0;
+    bool b_n_s_a = strcmp(funcname, "b_not_sym_between_and") == 0;
+    if (!b_a && !b_n_a && !b_s_a && !b_n_s_a) {
+        return NULL;
+    }
+
+    bool all_type_is_common = true;
+    ListCell* args = NULL;
+    foreach (args, targs) {
+        Node* arg = (Node*)lfirst(args);
+        /* If some arg type is for openGauss only(like money, hash, etc..), try to use openGauss original routinue */
+        if (type_to_index(exprType(arg)) == FIELD_TYPE_INVALID) {
+            all_type_is_common = false;
+            break;
+        }
+    }
+
+    /* return NULL is all type is common, means we will use b_between_and function */
+    if (all_type_is_common) {
+        return NULL;
+    }
+
+    /*
+     * fallback to original openGauss logical, use aexpr and do transform,
+     * here we don't have location info anymore, so use -1 instead.
+     */
+    Node *node = NULL;
+    if (b_a) {
+        node = (Node*)makeA_Expr(AEXPR_AND, NIL,
+            (Node*)makeSimpleA_Expr(AEXPR_OP, ">=", (Node*)list_nth(fn->args, 0), (Node*)list_nth(fn->args, 1), -1),
+                (Node*)makeSimpleA_Expr(AEXPR_OP, "<=", (Node*)list_nth(fn->args, 0), (Node*)list_nth(fn->args, 2), -1), -1);
+    } else if (b_n_a) {
+        node = (Node*)makeA_Expr(AEXPR_OR, NIL,
+            (Node*)makeSimpleA_Expr(AEXPR_OP, "<", (Node*)list_nth(fn->args, 0), (Node*)list_nth(fn->args, 1), -1),
+                (Node*)makeSimpleA_Expr(AEXPR_OP, ">", (Node*)list_nth(fn->args, 0), (Node*)list_nth(fn->args, 2), -1), -1);
+    } else if (b_s_a) {
+        node = (Node*) makeA_Expr(AEXPR_OR, NIL,
+                (Node*) makeA_Expr(AEXPR_AND, NIL,
+                        (Node*) makeSimpleA_Expr(AEXPR_OP, ">=", (Node*)list_nth(fn->args, 0), (Node*)list_nth(fn->args, 1), -1),
+                        (Node*) makeSimpleA_Expr(AEXPR_OP, "<=", (Node*)list_nth(fn->args, 0), (Node*)list_nth(fn->args, 2), -1),
+                        -1),
+                (Node*) makeA_Expr(AEXPR_AND, NIL,
+                        (Node*) makeSimpleA_Expr(AEXPR_OP, ">=", (Node*)list_nth(fn->args, 0), (Node*)list_nth(fn->args, 2), -1),
+                        (Node*) makeSimpleA_Expr(AEXPR_OP, "<=", (Node*)list_nth(fn->args, 0), (Node*)list_nth(fn->args, 1), -1),
+                        -1),
+                    -1);
+    } else {
+        Assert(b_n_s_a);
+        node = (Node*) makeA_Expr(AEXPR_AND, NIL,
+                (Node*) makeA_Expr(AEXPR_OR, NIL,
+                        (Node*) makeSimpleA_Expr(AEXPR_OP, "<", (Node*)list_nth(fn->args, 0), (Node*)list_nth(fn->args, 1), -1),
+                        (Node*) makeSimpleA_Expr(AEXPR_OP, ">", (Node*)list_nth(fn->args, 0), (Node*)list_nth(fn->args, 2), -1),
+                        -1),
+                (Node*) makeA_Expr(AEXPR_OR, NIL,
+                        (Node*) makeSimpleA_Expr(AEXPR_OP, "<", (Node*)list_nth(fn->args, 0), (Node*)list_nth(fn->args, 2), -1),
+                        (Node*) makeSimpleA_Expr(AEXPR_OP, ">", (Node*)list_nth(fn->args, 0), (Node*)list_nth(fn->args, 1), -1),
+                        -1),
+                    -1);
+    }
+
+    return transformExprRecurse(pstate, node);
+}
 #endif
 
 static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
@@ -1992,6 +2092,13 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
             targs = lappend(targs, transformExprRecurse(pstate, arg->node));
         }
     }
+
+#ifdef DOLPHIN
+    result = HandleBetweenAnd(pstate, fn, targs);
+    if (PointerIsValid(result)) {
+        return result;
+    }
+#endif
 
     /* ... and hand off to ParseFuncOrColumn */
     result = ParseFuncOrColumn(pstate, fn->funcname, targs, last_srf, fn, fn->location, fn->call_func);
@@ -2655,27 +2762,6 @@ static Node* transformRowExpr(ParseState* pstate, RowExpr* r)
 }
 
 #ifdef DOLPHIN
-enum CmpType {CMP_STRING_TYPE, CMP_REAL_TYPE, CMP_INT_TYPE, CMP_DECIMAL_TYPE, CMP_UNKNOWN_TYPE};
-
-/* MySQL field type, all types can classify into these type */
-enum FieldType {
-    FIELD_TYPE_INVALID = -1,
-    FIELD_TYPE_DECIMAL, FIELD_TYPE_TINY,
-    FIELD_TYPE_SHORT,  FIELD_TYPE_LONG,
-    FIELD_TYPE_FLOAT,  FIELD_TYPE_DOUBLE,
-    FIELD_TYPE_NULL,   FIELD_TYPE_TIMESTAMP,
-    FIELD_TYPE_LONGLONG, FIELD_TYPE_INT16,
-    FIELD_TYPE_DATE,   FIELD_TYPE_TIME,
-    FIELD_TYPE_DATETIME, FIELD_TYPE_YEAR,
-    FIELD_TYPE_VARCHAR, FIELD_TYPE_BIT,
-    FIELD_TYPE_JSON, FIELD_TYPE_ENUM,
-    FIELD_TYPE_SET, FIELD_TYPE_TINY_BLOB,
-    FIELD_TYPE_MEDIUM_BLOB, FIELD_TYPE_LONG_BLOB,
-    FIELD_TYPE_BLOB, FIELD_TYPE_VAR_STRING,
-    FIELD_TYPE_STRING, FIELD_TYPE_BIN_STRING,
-    FIELD_TYPE_NUM
-};
-
 /* for two kinds of field, the result field type of them in some function, like ifnull */
 static FieldType field_types_merge_rules[FIELD_TYPE_NUM][FIELD_TYPE_NUM] = {
     /* FIELD_TYPE_DECIMAL -> */
@@ -3655,7 +3741,7 @@ static FieldType agg_field_type(List *args)
 }
 
 /* classify all MySQL type into 4 compare result type: CmpType, and set unsigned_flag to true if the type is unsigned */
-static CmpType map_oid_to_cmp_type(Oid oid, bool *unsigned_flag)
+CmpType map_oid_to_cmp_type(Oid oid, bool *unsigned_flag)
 {
     *unsigned_flag = false;
     if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||

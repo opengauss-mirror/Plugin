@@ -5745,11 +5745,10 @@ select ifnull(tyint, vch) from typeset;
 (1 row)
 
 select ifnull(tyint, blb) from typeset;
-  ifnull  
-----------
- \x313237
-(1 row)
-
+ERROR:  NVL could not convert type tinyint to blob
+LINE 1: select ifnull(tyint, blb) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(tyint, txt) from typeset;
  ifnull 
 --------
@@ -5787,6 +5786,7 @@ select ifnull(smint, flt) from typeset;
 (1 row)
 
 select ifnull(smint, bt) from typeset;
+ ifnull 
 --------
     127
 (1 row)
@@ -5822,11 +5822,10 @@ select ifnull(smint, vch) from typeset;
 (1 row)
 
 select ifnull(smint, blb) from typeset;
-  ifnull  
-----------
- \x313237
-(1 row)
-
+ERROR:  NVL could not convert type smallint to blob
+LINE 1: select ifnull(smint, blb) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(smint, txt) from typeset;
  ifnull 
 --------
@@ -5876,6 +5875,8 @@ select ifnull(anint, tmstp) from typeset;
 (1 row)
 
 select ifnull(anint, tm) from typeset;
+ ifnull 
+--------
  127
 (1 row)
 
@@ -5892,11 +5893,10 @@ select ifnull(anint, vch) from typeset;
 (1 row)
 
 select ifnull(anint, blb) from typeset;
-  ifnull  
-----------
- \x313237
-(1 row)
-
+ERROR:  NVL could not convert type integer to blob
+LINE 1: select ifnull(anint, blb) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(anint, txt) from typeset;
  ifnull 
 --------
@@ -5958,11 +5958,10 @@ select ifnull(bgint, vch) from typeset;
 (1 row)
 
 select ifnull(bgint, blb) from typeset;
-  ifnull  
-----------
- \x313237
-(1 row)
-
+ERROR:  NVL could not convert type bigint to blob
+LINE 1: select ifnull(bgint, blb) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(bgint, txt) from typeset;
  ifnull 
 --------
@@ -6018,11 +6017,10 @@ select ifnull(dcmal, vch) from typeset;
 (1 row)
 
 select ifnull(dcmal, blb) from typeset;
-  ifnull  
-----------
- \x313237
-(1 row)
-
+ERROR:  NVL could not convert type numeric to blob
+LINE 1: select ifnull(dcmal, blb) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(dcmal, txt) from typeset;
  ifnull 
 --------
@@ -6072,11 +6070,10 @@ select ifnull(nmric, vch) from typeset;
 (1 row)
 
 select ifnull(nmric, blb) from typeset;
-  ifnull  
-----------
- \x313237
-(1 row)
-
+ERROR:  NVL could not convert type numeric to blob
+LINE 1: select ifnull(nmric, blb) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(nmric, txt) from typeset;
  ifnull 
 --------
@@ -6090,20 +6087,23 @@ select ifnull(flt, bt) from typeset;
 (1 row)
 
 select ifnull(flt, dt) from typeset;
-ERROR:  NVL types real and date cannot be matched
-LINE 1: select ifnull(flt, dt) from typeset;
-                           ^
-CONTEXT:  referenced column: ifnull
+ ifnull  
+---------
+ 127.213
+(1 row)
+
 select ifnull(flt, tmstp) from typeset;
-ERROR:  NVL types real and timestamp with time zone cannot be matched
-LINE 1: select ifnull(flt, tmstp) from typeset;
-                           ^
-CONTEXT:  referenced column: ifnull
+ ifnull  
+---------
+ 127.213
+(1 row)
+
 select ifnull(flt, tm) from typeset;
-ERROR:  NVL types real and time without time zone cannot be matched
-LINE 1: select ifnull(flt, tm) from typeset;
-                           ^
-CONTEXT:  referenced column: ifnull
+ ifnull  
+---------
+ 127.213
+(1 row)
+
 select ifnull(flt, ch) from typeset;
  ifnull  
 ---------
@@ -6117,11 +6117,10 @@ select ifnull(flt, vch) from typeset;
 (1 row)
 
 select ifnull(flt, blb) from typeset;
-      ifnull      
-------------------
- \x3132372e323133
-(1 row)
-
+ERROR:  NVL could not convert type real to blob
+LINE 1: select ifnull(flt, blb) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(flt, txt) from typeset;
  ifnull  
 ---------
@@ -6129,47 +6128,40 @@ select ifnull(flt, txt) from typeset;
 (1 row)
 
 select ifnull(bt, dt) from typeset;
- ifnull 
---------
- \x7f
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select ifnull(bt, dt) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(bt, tmstp) from typeset;
- ifnull 
---------
- \x7f
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select ifnull(bt, tmstp) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(bt, tm) from typeset;
- ifnull 
---------
- \x7f
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select ifnull(bt, tm) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(bt, ch) from typeset;
- ifnull 
---------
- \x7f
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select ifnull(bt, ch) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(bt, vch) from typeset;
- ifnull 
---------
- \x7f
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select ifnull(bt, vch) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(bt, blb) from typeset;
- ifnull 
---------
- \x7f
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select ifnull(bt, blb) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(bt, txt) from typeset;
- ifnull 
---------
- \x7f
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select ifnull(bt, txt) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(dt, tmstp) from typeset;
        ifnull        
 ---------------------
@@ -6177,11 +6169,10 @@ select ifnull(dt, tmstp) from typeset;
 (1 row)
 
 select ifnull(dt, tm) from typeset;
-       ifnull        
----------------------
- 2001-04-19 00:00:00
-(1 row)
-
+ERROR:  NVL could not convert type time without time zone to timestamp without time zone
+LINE 1: select ifnull(dt, tm) from typeset;
+                          ^
+CONTEXT:  referenced column: ifnull
 select ifnull(dt, ch) from typeset;
    ifnull   
 ------------
@@ -6195,11 +6186,10 @@ select ifnull(dt, vch) from typeset;
 (1 row)
 
 select ifnull(dt, blb) from typeset;
-         ifnull         
-------------------------
- \x323030312d30342d3139
-(1 row)
-
+ERROR:  NVL could not convert type date to blob
+LINE 1: select ifnull(dt, blb) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(dt, txt) from typeset;
    ifnull   
 ------------
@@ -6207,27 +6197,27 @@ select ifnull(dt, txt) from typeset;
 (1 row)
 
 select ifnull(tmstp, tm) from typeset;
-       ifnull        
----------------------
- 2001-04-19 00:00:00
-(1 row)
-
+ERROR:  NVL could not convert type time without time zone to timestamp without time zone
+LINE 1: select ifnull(tmstp, tm) from typeset;
+                             ^
+CONTEXT:  referenced column: ifnull
 select ifnull(tmstp, ch) from typeset;
-ERROR:  NVL types timestamp with time zone and character cannot be matched
-LINE 1: select ifnull(tmstp, ch) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
-select ifnull(tmstp, vch) from typeset;
-ERROR:  NVL types timestamp with time zone and character varying cannot be matched
-LINE 1: select ifnull(tmstp, vch) from typeset;
-                             ^
-CONTEXT:  referenced column: ifnull
-select ifnull(tmstp, blb) from typeset;
-                     ifnull                     
-------------------------------------------------
- \x323030312d30342d31392030303a30303a30302d3037
+         ifnull         
+------------------------
+ 2001-04-19 00:00:00-07
 (1 row)
 
+select ifnull(tmstp, vch) from typeset;
+         ifnull         
+------------------------
+ 2001-04-19 00:00:00-07
+(1 row)
+
+select ifnull(tmstp, blb) from typeset;
+ERROR:  NVL could not convert type timestamp with time zone to blob
+LINE 1: select ifnull(tmstp, blb) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(tmstp, txt) from typeset;
          ifnull         
 ------------------------
@@ -6235,21 +6225,22 @@ select ifnull(tmstp, txt) from typeset;
 (1 row)
 
 select ifnull(tm, ch) from typeset;
-ERROR:  NVL types time without time zone and character cannot be matched
-LINE 1: select ifnull(tm, ch) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
-select ifnull(tm, vch) from typeset;
-ERROR:  NVL types time without time zone and character varying cannot be matched
-LINE 1: select ifnull(tm, vch) from typeset;
-                          ^
-CONTEXT:  referenced column: ifnull
-select ifnull(tm, blb) from typeset;
-       ifnull       
---------------------
- \x32323a32333a3434
+  ifnull  
+----------
+ 22:23:44
 (1 row)
 
+select ifnull(tm, vch) from typeset;
+  ifnull  
+----------
+ 22:23:44
+(1 row)
+
+select ifnull(tm, blb) from typeset;
+ERROR:  NVL could not convert type time without time zone to blob
+LINE 1: select ifnull(tm, blb) from typeset;
+                      ^
+CONTEXT:  referenced column: ifnull
 select ifnull(tm, txt) from typeset;
   ifnull  
 ----------
@@ -6533,11 +6524,10 @@ select pg_typeof(ifnull(tyint, vch)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(tyint, blb)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type tinyint to blob
+LINE 1: select pg_typeof(ifnull(tyint, blb)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(tyint, txt)) from typeset;
  pg_typeof 
 -----------
@@ -6611,11 +6601,10 @@ select pg_typeof(ifnull(smint, vch)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(smint, blb)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type smallint to blob
+LINE 1: select pg_typeof(ifnull(smint, blb)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(smint, txt)) from typeset;
  pg_typeof 
 -----------
@@ -6683,11 +6672,10 @@ select pg_typeof(ifnull(anint, vch)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(anint, blb)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type integer to blob
+LINE 1: select pg_typeof(ifnull(anint, blb)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(anint, txt)) from typeset;
  pg_typeof 
 -----------
@@ -6749,11 +6737,10 @@ select pg_typeof(ifnull(bgint, vch)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(bgint, blb)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type bigint to blob
+LINE 1: select pg_typeof(ifnull(bgint, blb)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(bgint, txt)) from typeset;
  pg_typeof 
 -----------
@@ -6809,11 +6796,10 @@ select pg_typeof(ifnull(dcmal, vch)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(dcmal, blb)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type numeric to blob
+LINE 1: select pg_typeof(ifnull(dcmal, blb)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(dcmal, txt)) from typeset;
  pg_typeof 
 -----------
@@ -6863,11 +6849,10 @@ select pg_typeof(ifnull(nmric, vch)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(nmric, blb)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type numeric to blob
+LINE 1: select pg_typeof(ifnull(nmric, blb)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(nmric, txt)) from typeset;
  pg_typeof 
 -----------
@@ -6911,11 +6896,10 @@ select pg_typeof(ifnull(flt, vch)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(flt, blb)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type real to blob
+LINE 1: select pg_typeof(ifnull(flt, blb)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(flt, txt)) from typeset;
  pg_typeof 
 -----------
@@ -6923,47 +6907,40 @@ select pg_typeof(ifnull(flt, txt)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(bt, dt)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select pg_typeof(ifnull(bt, dt)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(bt, tmstp)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select pg_typeof(ifnull(bt, tmstp)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(bt, tm)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select pg_typeof(ifnull(bt, tm)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(bt, ch)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select pg_typeof(ifnull(bt, ch)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(bt, vch)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select pg_typeof(ifnull(bt, vch)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(bt, blb)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select pg_typeof(ifnull(bt, blb)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(bt, txt)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type bit to blob
+LINE 1: select pg_typeof(ifnull(bt, txt)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(dt, tmstp)) from typeset;
           pg_typeof          
 -----------------------------
@@ -6971,11 +6948,10 @@ select pg_typeof(ifnull(dt, tmstp)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(dt, tm)) from typeset;
-          pg_typeof          
------------------------------
- timestamp without time zone
-(1 row)
-
+ERROR:  NVL could not convert type time without time zone to timestamp without time zone
+LINE 1: select pg_typeof(ifnull(dt, tm)) from typeset;
+                                    ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(dt, ch)) from typeset;
  pg_typeof 
 -----------
@@ -6989,11 +6965,10 @@ select pg_typeof(ifnull(dt, vch)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(dt, blb)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type date to blob
+LINE 1: select pg_typeof(ifnull(dt, blb)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(dt, txt)) from typeset;
  pg_typeof 
 -----------
@@ -7001,11 +6976,10 @@ select pg_typeof(ifnull(dt, txt)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(tmstp, tm)) from typeset;
-          pg_typeof          
------------------------------
- timestamp without time zone
-(1 row)
-
+ERROR:  NVL could not convert type time without time zone to timestamp without time zone
+LINE 1: select pg_typeof(ifnull(tmstp, tm)) from typeset;
+                                       ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(tmstp, ch)) from typeset;
  pg_typeof 
 -----------
@@ -7019,11 +6993,10 @@ select pg_typeof(ifnull(tmstp, vch)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(tmstp, blb)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type timestamp with time zone to blob
+LINE 1: select pg_typeof(ifnull(tmstp, blb)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(tmstp, txt)) from typeset;
  pg_typeof 
 -----------
@@ -7043,11 +7016,10 @@ select pg_typeof(ifnull(tm, vch)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(tm, blb)) from typeset;
- pg_typeof 
------------
- blob
-(1 row)
-
+ERROR:  NVL could not convert type time without time zone to blob
+LINE 1: select pg_typeof(ifnull(tm, blb)) from typeset;
+                                ^
+CONTEXT:  referenced column: pg_typeof
 select pg_typeof(ifnull(tm, txt)) from typeset;
  pg_typeof 
 -----------

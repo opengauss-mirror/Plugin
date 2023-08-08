@@ -48,6 +48,8 @@ extern char** get_next_snippet(
 
 extern void fixResTargetNameWithAlias(List* clause_list, const char* aliasname);
 #ifdef DOLPHIN
+enum CmpType {CMP_STRING_TYPE, CMP_REAL_TYPE, CMP_INT_TYPE, CMP_DECIMAL_TYPE, CMP_UNKNOWN_TYPE};
+CmpType map_oid_to_cmp_type(Oid oid, bool *unsigned_flag);
 SelectStmt *checkTableExistence(RangeVar *classrel);
 SelectStmt* makeShowProcesslistQuery(bool isFull);
 SelectStmt* makeShowColumnsDirectQuery(char* schemaname, char* tablename,

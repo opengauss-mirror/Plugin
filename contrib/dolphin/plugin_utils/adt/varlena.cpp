@@ -54,7 +54,6 @@
 #include "workload/cpwlm.h"
 #include "utils/varbit.h"
 #include "plugin_commands/mysqlmode.h"
-#include "plugin_utils/varbit.h"
 
 #define BETWEEN_AND_ARGC 3
 #define SUBSTR_WITH_LEN_OFFSET 2
@@ -9263,63 +9262,6 @@ extern "C" DLL_PUBLIC Datum bittouint8(PG_FUNCTION_ARGS);
 
 enum CmpMode {BETWEEN_AND, SYMMETRIC_BETWEEN_AND, NOT_BETWEEN_AND, NOT_SYMMETRIC_BETWEEN_AND};
 
-enum CmpType {CMP_STRING_TYPE, CMP_REAL_TYPE, CMP_INT_TYPE, CMP_DECIMAL_TYPE};
-
-CmpType map_oid_to_cmp_type(Oid oid)
-{
-    if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
-        oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
-        oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
-        oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8") ||
-        oid == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
-        return CMP_INT_TYPE;
-    }
-    switch (oid) {
-        case FLOAT4OID:
-        case FLOAT8OID:
-            return CMP_REAL_TYPE;
-        case NUMERICOID:
-            return CMP_DECIMAL_TYPE;
-        case INT1OID:
-        case INT2OID:
-        case INT4OID:
-        case INT8OID:
-        case INT16OID:
-        case BITOID:
-        case VARBITOID:
-        case BOOLOID:
-        case OIDOID:
-        case CIDOID:
-        case XIDOID:
-        case SHORTXIDOID:
-        case REGCONFIGOID:
-        case REGDICTIONARYOID:
-        case REGOPEROID:
-        case REGOPERATOROID:
-        case REGPROCOID:
-        case REGPROCEDUREOID:
-        case REGCLASSOID:
-        case REGTYPEOID:
-        case HASH16OID:
-        case CASHOID:
-        case TSQUERYOID:
-            return CMP_INT_TYPE;
-        default:
-        /** OID of
-         * Character type: CHAR,BPCHAR,VARCHAR,NVARCHAR2,CLOB,TEXT,NAME,UNKNOWN
-         * Binary type: BLOB,TINYBLOB,MEDIUMBLOB,LONGBLOB,RAW,BYTEA,BINARY,VARBINARY
-         * Date/Time Type: DATE,SMALLDATETIME,TIME,TIMETZ,TIMESTAMP,TIMESTAMPTZ,INTERVAL,ABSTIME,RELTIME,TINTERVAL
-         * Geometric type: LSEG,BOX,PATH,CIRCLE
-         * Network Address Type: CIDR,INET,MACADDR
-         * Text search type: TSVECTOR,TSQUERY
-         * Range Type: INT4RANGE,INT8RANGE,NUMRANGE,TSRANGE,TSTZRANGE,DATERANGE
-         * Other type: TID,UUID
-         * report error: XML,VOID,CSTRING,POINT,POLYGON,HASH32 and UDT
-         */
-            return CMP_STRING_TYPE;
-    }
-}
-
 static bool is_unsigned_intType(Oid oid)
 {
     if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
@@ -9327,7 +9269,7 @@ static bool is_unsigned_intType(Oid oid)
         oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
         oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8") ||
         oid == get_typeoid(PG_CATALOG_NAMESPACE, "year") ||
-        oid == BITOID || oid == VARBITOID ||oid == BOOLOID) {
+        oid == BITOID || oid == BOOLOID) {
         return true;
     }
     return false;
@@ -9350,9 +9292,10 @@ static CmpType get_cmp_type(CmpType a, CmpType b)
 
 static CmpType agg_cmp_type(FunctionCallInfo fcinfo, int argc)
 {
-    CmpType agg_type = map_oid_to_cmp_type(fcinfo->argTypes[0]);
+    bool unsigned_flag = false;
+    CmpType agg_type = map_oid_to_cmp_type(fcinfo->argTypes[0], &unsigned_flag);
     for (int i = 1; i < argc; i++) {
-        agg_type = get_cmp_type(agg_type, map_oid_to_cmp_type(fcinfo->argTypes[i]));
+        agg_type = get_cmp_type(agg_type, map_oid_to_cmp_type(fcinfo->argTypes[i], &unsigned_flag));
     }
     return agg_type;
 }
@@ -9361,13 +9304,8 @@ static bool is_temporal_type(Oid type)
 {
     switch (type) {
         case DATEOID:
-        case SMALLDATETIMEOID:
         case TIMESTAMPOID:
         case TIMESTAMPTZOID:
-        case ABSTIMEOID: 
-        case RELTIMEOID:
-        case INTERVALOID:
-        case TINTERVALOID:
         case TIMEOID:
         case TIMETZOID:
             return true;
@@ -9382,8 +9320,6 @@ static bool is_type_with_date(Oid type)
         case DATEOID:
         case TIMESTAMPOID:
         case TIMESTAMPTZOID:
-        case SMALLDATETIMEOID:
-        case ABSTIMEOID:
             return true;
         default:
             return false;
@@ -9475,10 +9411,6 @@ static uint64 parse_unsigned_val(Oid typeoid, char* str_val)
         Datum bit_reps = DirectFunctionCall3(bit_in, CStringGetDatum(str_val),
                                              ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
         result = DatumGetUInt64(DirectFunctionCall1(bittouint8, bit_reps));
-    } else if (typeoid == VARBITOID) {
-        Datum bit_reps = DirectFunctionCall3(varbit_in, CStringGetDatum(str_val),
-                                             ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
-        result = DatumGetUInt64(DirectFunctionCall1(bittouint8, bit_reps));
     } else {
         result = DatumGetUInt64(DirectFunctionCall1(uint8in, CStringGetDatum(str_val)));
     }
@@ -9512,8 +9444,7 @@ static bool cmp_between_unsigned_type(PG_FUNCTION_ARGS, CmpMode mode)
         rewritten to
         1 BETWEEN <some number> AND 0
     */
-    if (!is_unsigned_intType(fcinfo->argTypes[ARG_2]) && static_cast<int64>(cmp_args[ARG_2]) < 0)
-    {
+    if (!is_unsigned_intType(fcinfo->argTypes[ARG_2]) && static_cast<int64>(cmp_args[ARG_2]) < 0) {
         cmp_args[ARG_2] = 0;
         cmp_args[ARG_0] = 1;
     }
@@ -9604,23 +9535,19 @@ static bool handle_comparision(CmpType type, CmpMode mode, bool compare_as_ts_wi
         }
         return_val = cmp_result_for_expr<TimestampTz>(cmp_args[ARG_0], cmp_args[ARG_1], cmp_args[ARG_2], mode);
     } else if (type == CMP_STRING_TYPE) {
-        text* cmp_args[BETWEEN_AND_ARGC];
+        char* cmp_args[BETWEEN_AND_ARGC];
         Oid typeOutput;
         bool typIsVarlena;
         int res_arg1_2 = 0;
         int res_arg1_3 = 0;
         for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
             getTypeOutputInfo(fcinfo->argTypes[i], &typeOutput, &typIsVarlena);
-            char* str_val = OidOutputFunctionCall(typeOutput, fcinfo->arg[i]);
-            cmp_args[i] = cstring_to_text(str_val);
+            cmp_args[i] = OidOutputFunctionCall(typeOutput, fcinfo->arg[i]);
         }
-        // if (is_b_format_collation(PG_GET_COLLATION())) {
-            res_arg1_2 = text_cmp(cmp_args[ARG_0], cmp_args[ARG_1], PG_GET_COLLATION());
-            res_arg1_3 = text_cmp(cmp_args[ARG_0], cmp_args[ARG_2], PG_GET_COLLATION());
-        // } else {
-        //     res_arg1_2 = internal_text_pattern_compare(cmp_args[ARG_0], cmp_args[ARG_1]);
-        //     res_arg1_3 = internal_text_pattern_compare(cmp_args[ARG_0], cmp_args[ARG_2]);
-        // }
+        res_arg1_2 = varstr_cmp(cmp_args[ARG_0], strlen(cmp_args[ARG_0]), cmp_args[ARG_1], strlen(cmp_args[ARG_1]),
+            PG_GET_COLLATION() == InvalidOid ? DEFAULT_COLLATION_OID : PG_GET_COLLATION());
+        res_arg1_3 = varstr_cmp(cmp_args[ARG_0], strlen(cmp_args[ARG_0]), cmp_args[ARG_2], strlen(cmp_args[ARG_2]),
+            PG_GET_COLLATION() == InvalidOid ? DEFAULT_COLLATION_OID : PG_GET_COLLATION());
         if (res_arg1_2 != 0) {
             res_arg1_2 = res_arg1_2 > 0 ? 1 : -1;
         }
@@ -9656,6 +9583,9 @@ static bool handle_comparision(CmpType type, CmpMode mode, bool compare_as_ts_wi
         }
         return_val = cmp_result_for_func(cmp_numerics(cmp_args[ARG_0], cmp_args[ARG_1]),
                                          cmp_numerics(cmp_args[ARG_0], cmp_args[ARG_2]), mode);
+        for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
+            pfree_ext(cmp_args[i]);
+        }
     } else if (type == CMP_REAL_TYPE) {
         float8 cmp_args[BETWEEN_AND_ARGC];
         char* str_val = NULL;
@@ -9667,9 +9597,9 @@ static bool handle_comparision(CmpType type, CmpMode mode, bool compare_as_ts_wi
                 cmp_args[i] = PG_GETARG_FLOAT8(i);
             } else if (typeoid == FLOAT4OID) {
                 cmp_args[i] = PG_GETARG_FLOAT4(i);
-            } else if (is_unsigned_intType(typeoid)) { //bool, bit or varbit type
+            } else if (is_unsigned_intType(typeoid)) { //bool, bit, year
                 cmp_args[i] = DatumGetFloat8(DirectFunctionCall1(i8tod, (int64)parse_unsigned_val(typeoid, str_val)));
-            }  else {
+            } else {
                 cmp_args[i] = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str_val)));
             }
         }
