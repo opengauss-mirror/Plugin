@@ -83,17 +83,17 @@ SHOW CREATE TABLE "TESTSHOW_TEST_TABLE"; --success
 (1 row)
 
 SHOW CREATE VIEW "TESTSHOW_TEST_VIEW";  --success
-        View        |                           Create View                            | character_set_client | collation_connection 
---------------------+------------------------------------------------------------------+----------------------+----------------------
- TESTSHOW_TEST_VIEW | CREATE OR REPLACE VIEW show_createdatabase.TESTSHOW_TEST_VIEW AS+| UTF8                 | en_US.UTF-8
-                    | SELECT  * FROM "TESTSHOW_TEST_TABLE";                            |                      | 
+        View        |                                             Create View                                             | character_set_client | collation_connection 
+--------------------+-----------------------------------------------------------------------------------------------------+----------------------+----------------------
+ TESTSHOW_TEST_VIEW | CREATE OR REPLACE DEFINER = test_showcreate_database VIEW show_createdatabase.TESTSHOW_TEST_VIEW AS+| UTF8                 | en_US.UTF-8
+                    | SELECT  * FROM "TESTSHOW_TEST_TABLE";                                                               |                      | 
 (1 row)
 
 SHOW CREATE TABLE "TESTSHOW_TEST_VIEW"; --success
-        View        |                           Create View                            | character_set_client | collation_connection 
---------------------+------------------------------------------------------------------+----------------------+----------------------
- TESTSHOW_TEST_VIEW | CREATE OR REPLACE VIEW show_createdatabase.TESTSHOW_TEST_VIEW AS+| UTF8                 | en_US.UTF-8
-                    | SELECT  * FROM "TESTSHOW_TEST_TABLE";                            |                      | 
+        View        |                                             Create View                                             | character_set_client | collation_connection 
+--------------------+-----------------------------------------------------------------------------------------------------+----------------------+----------------------
+ TESTSHOW_TEST_VIEW | CREATE OR REPLACE DEFINER = test_showcreate_database VIEW show_createdatabase.TESTSHOW_TEST_VIEW AS+| UTF8                 | en_US.UTF-8
+                    | SELECT  * FROM "TESTSHOW_TEST_TABLE";                                                               |                      | 
 (1 row)
 
 SHOW CREATE VIEW "TESTSHOW_TEST_TABLE"; --fail

@@ -32,8 +32,8 @@ select func('me');
 drop function if exists func(char(20));
 create function func(s date) returns timestamp return current_timestamp;
 select func('2023-01-28'::date);
-             func             
-------------------------------
+          func          
+------------------------
 --?.*
 (1 row)
 

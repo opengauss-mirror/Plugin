@@ -323,9 +323,9 @@ INSERT INTO Tmp (a, b, c, d, e, f, g, H, i, j, K, l, m, n, p, q, r, s, t, u,
 	'(0,2,4.1,4.1,3.1,3.1)', '(4.1,4.1,3.1,3.1)', '["epoch" "infinity"]',
 	'epoch', '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
 SELECT * FROM Tmp;
- inItIal | A |  B   |  c   |  d  |  e  | f |           g           |              h               | i |                                               j                                                |   k    |   l   |  M  |        n        |       p       |     q     |           r           |              S              |          t          |                      u                      |              v               |        w         |     X     |     Y     |     z     
----------+---+------+------+-----+-----+---+-----------------------+------------------------------+---+------------------------------------------------------------------------------------------------+--------+-------+-----+-----------------+---------------+-----------+-----------------------+-----------------------------+---------------------+---------------------------------------------+------------------------------+------------------+-----------+-----------+-----------
-         | 4 | name | text | 4.1 | 4.1 | 2 | ((4.1,4.1),(3.1,3.1)) | Mon May 01 00:30:30 1995 PDT | c | {"Mon May 01 00:30:30 1995 PDT","Mon Aug 24 14:43:07 1992 PDT","Wed Dec 31 16:00:00 1969 PST"} | 314159 | (1,1) | 512 | 1 2 3 4 5 6 7 8 | magnetic disk | (1.1,1.1) | [(4.1,4.1),(3.1,3.1)] | ((0,2),(4.1,4.1),(3.1,3.1)) | (4.1,4.1),(3.1,3.1) | ["Wed Dec 31 16:00:00 1969 PST" "infinity"] | Wed Dec 31 16:00:00 1969 PST | @ 1 hour 10 secs | {1,2,3,4} | {1,2,3,4} | {1,2,3,4}
+ inItIal | A |  B   |  c   |  d  |  e  | f |           g           |           h            | i |                                      j                                       |   k    |   l   |  M  |        n        |       p       |     q     |           r           |              S              |          t          |                   u                   |           v            |        w         |     X     |     Y     |     z     
+---------+---+------+------+-----+-----+---+-----------------------+------------------------+---+------------------------------------------------------------------------------+--------+-------+-----+-----------------+---------------+-----------+-----------------------+-----------------------------+---------------------+---------------------------------------+------------------------+------------------+-----------+-----------+-----------
+         | 4 | name | text | 4.1 | 4.1 | 2 | ((4.1,4.1),(3.1,3.1)) | 1995-05-01 00:30:30-07 | c | {"1995-05-01 00:30:30-07","1992-08-24 14:43:07-07","1969-12-31 16:00:00-08"} | 314159 | (1,1) | 512 | 1 2 3 4 5 6 7 8 | magnetic disk | (1.1,1.1) | [(4.1,4.1),(3.1,3.1)] | ((0,2),(4.1,4.1),(3.1,3.1)) | (4.1,4.1),(3.1,3.1) | ["1969-12-31 16:00:00-08" "infinity"] | 1969-12-31 16:00:00-08 | @ 1 hour 10 secs | {1,2,3,4} | {1,2,3,4} | {1,2,3,4}
 (1 row)
 
 DROP TABLE Tmp;
@@ -368,9 +368,9 @@ INSERT INTO Tmp (A, b, c, d, e, f, g, h, i, J, k, l, m, n, p, q, r, s, t, u,
 	'(0,2,4.1,4.1,3.1,3.1)', '(4.1,4.1,3.1,3.1)', '["epoch" "infinity"]',
 	'epoch', '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
 SELECT * FROM Tmp;
- inItial | a |  b   |  c   |  d  |  e  | f |           g           |              h               | i |                                               J                                                |   K    |   L   |  m  |        n        |       p       |     q     |           r           |              s              |          t          |                      u                      |              v               |        w         |     x     |     y     |     z     
----------+---+------+------+-----+-----+---+-----------------------+------------------------------+---+------------------------------------------------------------------------------------------------+--------+-------+-----+-----------------+---------------+-----------+-----------------------+-----------------------------+---------------------+---------------------------------------------+------------------------------+------------------+-----------+-----------+-----------
-         | 4 | name | text | 4.1 | 4.1 | 2 | ((4.1,4.1),(3.1,3.1)) | Mon May 01 00:30:30 1995 PDT | c | {"Mon May 01 00:30:30 1995 PDT","Mon Aug 24 14:43:07 1992 PDT","Wed Dec 31 16:00:00 1969 PST"} | 314159 | (1,1) | 512 | 1 2 3 4 5 6 7 8 | magnetic disk | (1.1,1.1) | [(4.1,4.1),(3.1,3.1)] | ((0,2),(4.1,4.1),(3.1,3.1)) | (4.1,4.1),(3.1,3.1) | ["Wed Dec 31 16:00:00 1969 PST" "infinity"] | Wed Dec 31 16:00:00 1969 PST | @ 1 hour 10 secs | {1,2,3,4} | {1,2,3,4} | {1,2,3,4}
+ inItial | a |  b   |  c   |  d  |  e  | f |           g           |           h            | i |                                      J                                       |   K    |   L   |  m  |        n        |       p       |     q     |           r           |              s              |          t          |                   u                   |           v            |        w         |     x     |     y     |     z     
+---------+---+------+------+-----+-----+---+-----------------------+------------------------+---+------------------------------------------------------------------------------+--------+-------+-----+-----------------+---------------+-----------+-----------------------+-----------------------------+---------------------+---------------------------------------+------------------------+------------------+-----------+-----------+-----------
+         | 4 | name | text | 4.1 | 4.1 | 2 | ((4.1,4.1),(3.1,3.1)) | 1995-05-01 00:30:30-07 | c | {"1995-05-01 00:30:30-07","1992-08-24 14:43:07-07","1969-12-31 16:00:00-08"} | 314159 | (1,1) | 512 | 1 2 3 4 5 6 7 8 | magnetic disk | (1.1,1.1) | [(4.1,4.1),(3.1,3.1)] | ((0,2),(4.1,4.1),(3.1,3.1)) | (4.1,4.1),(3.1,3.1) | ["1969-12-31 16:00:00-08" "infinity"] | 1969-12-31 16:00:00-08 | @ 1 hour 10 secs | {1,2,3,4} | {1,2,3,4} | {1,2,3,4}
 (1 row)
 
 DROP TABLE Tmp;
@@ -698,21 +698,21 @@ select count(*) from pg_cATAloG.pg_class where relname='pg_class';
 (1 row)
 
 select PG_cataLOG.TIMESTAMPTZ_out('2022-12-31 23:11:11');
-       timestamptz_out        
-------------------------------
- Sat Dec 31 23:11:11 2022 PST
+    timestamptz_out     
+------------------------
+ 2022-12-31 23:11:11-08
 (1 row)
 
 select PG_CATALOg.TIMESTAMptz_OUT('2022-12-31 23:11:11');
-       timestamptz_out        
-------------------------------
- Sat Dec 31 23:11:11 2022 PST
+    timestamptz_out     
+------------------------
+ 2022-12-31 23:11:11-08
 (1 row)
 
 select '2022-12-31 23:59:59'::timestamp::smalldatetime;
-      smalldatetime       
---------------------------
- Sun Jan 01 00:00:00 2023
+    smalldatetime    
+---------------------
+ 2023-01-01 00:00:00
 (1 row)
 
 select count(*) from pg_cATAlog.PG_Class where relname='pg_class';
@@ -728,21 +728,21 @@ select count(*) from pg_cATAloG.PG_ClaSS where relname='pg_class';
 (1 row)
 
 select PG_cataLOG.TIMESTAMPTZ_out('2022-12-31 23:11:11');
-       timestamptz_out        
-------------------------------
- Sat Dec 31 23:11:11 2022 PST
+    timestamptz_out     
+------------------------
+ 2022-12-31 23:11:11-08
 (1 row)
 
 select PG_CATALOg.TIMESTAMptz_OUT('2022-12-31 23:11:11');
-       timestamptz_out        
-------------------------------
- Sat Dec 31 23:11:11 2022 PST
+    timestamptz_out     
+------------------------
+ 2022-12-31 23:11:11-08
 (1 row)
 
 select '2022-12-31 23:59:59'::timestamp::smalldatetime;
-      smalldatetime       
---------------------------
- Sun Jan 01 00:00:00 2023
+    smalldatetime    
+---------------------
+ 2023-01-01 00:00:00
 (1 row)
 
 drop schema column_name_case_test cascade;
@@ -1099,9 +1099,9 @@ INSERT INTO Tmp (a, b, c, d, e, f, g, H, i, j, K, l, m, n, p, q, r, s, t, u,
 	'(0,2,4.1,4.1,3.1,3.1)', '(4.1,4.1,3.1,3.1)', '["epoch" "infinity"]',
 	'epoch', '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
 SELECT * FROM Tmp;
- inItIal | A |  B   |  c   |  d  |  e  | f |           g           |              h               | i |                                               j                                                |   k    |   l   |  M  |        n        |       p       |     q     |           r           |              S              |          t          |                      u                      |              v               |        w         |     X     |     Y     |     z     
----------+---+------+------+-----+-----+---+-----------------------+------------------------------+---+------------------------------------------------------------------------------------------------+--------+-------+-----+-----------------+---------------+-----------+-----------------------+-----------------------------+---------------------+---------------------------------------------+------------------------------+------------------+-----------+-----------+-----------
-         | 4 | name | text | 4.1 | 4.1 | 2 | ((4.1,4.1),(3.1,3.1)) | Mon May 01 00:30:30 1995 PDT | c | {"Mon May 01 00:30:30 1995 PDT","Mon Aug 24 14:43:07 1992 PDT","Wed Dec 31 16:00:00 1969 PST"} | 314159 | (1,1) | 512 | 1 2 3 4 5 6 7 8 | magnetic disk | (1.1,1.1) | [(4.1,4.1),(3.1,3.1)] | ((0,2),(4.1,4.1),(3.1,3.1)) | (4.1,4.1),(3.1,3.1) | ["Wed Dec 31 16:00:00 1969 PST" "infinity"] | Wed Dec 31 16:00:00 1969 PST | @ 1 hour 10 secs | {1,2,3,4} | {1,2,3,4} | {1,2,3,4}
+ inItIal | A |  B   |  c   |  d  |  e  | f |           g           |           h            | i |                                      j                                       |   k    |   l   |  M  |        n        |       p       |     q     |           r           |              S              |          t          |                   u                   |           v            |        w         |     X     |     Y     |     z     
+---------+---+------+------+-----+-----+---+-----------------------+------------------------+---+------------------------------------------------------------------------------+--------+-------+-----+-----------------+---------------+-----------+-----------------------+-----------------------------+---------------------+---------------------------------------+------------------------+------------------+-----------+-----------+-----------
+         | 4 | name | text | 4.1 | 4.1 | 2 | ((4.1,4.1),(3.1,3.1)) | 1995-05-01 00:30:30-07 | c | {"1995-05-01 00:30:30-07","1992-08-24 14:43:07-07","1969-12-31 16:00:00-08"} | 314159 | (1,1) | 512 | 1 2 3 4 5 6 7 8 | magnetic disk | (1.1,1.1) | [(4.1,4.1),(3.1,3.1)] | ((0,2),(4.1,4.1),(3.1,3.1)) | (4.1,4.1),(3.1,3.1) | ["1969-12-31 16:00:00-08" "infinity"] | 1969-12-31 16:00:00-08 | @ 1 hour 10 secs | {1,2,3,4} | {1,2,3,4} | {1,2,3,4}
 (1 row)
 
 DROP TABLE Tmp;
@@ -1144,9 +1144,9 @@ INSERT INTO Tmp (A, b, c, d, e, f, g, h, i, J, k, l, m, n, p, q, r, s, t, u,
 	'(0,2,4.1,4.1,3.1,3.1)', '(4.1,4.1,3.1,3.1)', '["epoch" "infinity"]',
 	'epoch', '01:00:10', '{1.0,2.0,3.0,4.0}', '{1.0,2.0,3.0,4.0}', '{1,2,3,4}');
 SELECT * FROM Tmp;
- inItial | a |  b   |  c   |  d  |  e  | f |           g           |              h               | i |                                               J                                                |   K    |   L   |  m  |        n        |       p       |     q     |           r           |              s              |          t          |                      u                      |              v               |        w         |     x     |     y     |     z     
----------+---+------+------+-----+-----+---+-----------------------+------------------------------+---+------------------------------------------------------------------------------------------------+--------+-------+-----+-----------------+---------------+-----------+-----------------------+-----------------------------+---------------------+---------------------------------------------+------------------------------+------------------+-----------+-----------+-----------
-         | 4 | name | text | 4.1 | 4.1 | 2 | ((4.1,4.1),(3.1,3.1)) | Mon May 01 00:30:30 1995 PDT | c | {"Mon May 01 00:30:30 1995 PDT","Mon Aug 24 14:43:07 1992 PDT","Wed Dec 31 16:00:00 1969 PST"} | 314159 | (1,1) | 512 | 1 2 3 4 5 6 7 8 | magnetic disk | (1.1,1.1) | [(4.1,4.1),(3.1,3.1)] | ((0,2),(4.1,4.1),(3.1,3.1)) | (4.1,4.1),(3.1,3.1) | ["Wed Dec 31 16:00:00 1969 PST" "infinity"] | Wed Dec 31 16:00:00 1969 PST | @ 1 hour 10 secs | {1,2,3,4} | {1,2,3,4} | {1,2,3,4}
+ inItial | a |  b   |  c   |  d  |  e  | f |           g           |           h            | i |                                      J                                       |   K    |   L   |  m  |        n        |       p       |     q     |           r           |              s              |          t          |                   u                   |           v            |        w         |     x     |     y     |     z     
+---------+---+------+------+-----+-----+---+-----------------------+------------------------+---+------------------------------------------------------------------------------+--------+-------+-----+-----------------+---------------+-----------+-----------------------+-----------------------------+---------------------+---------------------------------------+------------------------+------------------+-----------+-----------+-----------
+         | 4 | name | text | 4.1 | 4.1 | 2 | ((4.1,4.1),(3.1,3.1)) | 1995-05-01 00:30:30-07 | c | {"1995-05-01 00:30:30-07","1992-08-24 14:43:07-07","1969-12-31 16:00:00-08"} | 314159 | (1,1) | 512 | 1 2 3 4 5 6 7 8 | magnetic disk | (1.1,1.1) | [(4.1,4.1),(3.1,3.1)] | ((0,2),(4.1,4.1),(3.1,3.1)) | (4.1,4.1),(3.1,3.1) | ["1969-12-31 16:00:00-08" "infinity"] | 1969-12-31 16:00:00-08 | @ 1 hour 10 secs | {1,2,3,4} | {1,2,3,4} | {1,2,3,4}
 (1 row)
 
 DROP TABLE Tmp;
@@ -1470,21 +1470,21 @@ select count(*) from pg_cATAloG.pg_class where relname='pg_class';
 (1 row)
 
 select PG_cataLOG.TIMESTAMPTZ_out('2022-12-31 23:11:11');
-       timestamptz_out        
-------------------------------
- Sat Dec 31 23:11:11 2022 PST
+    timestamptz_out     
+------------------------
+ 2022-12-31 23:11:11-08
 (1 row)
 
 select PG_CATALOg.TIMESTAMptz_OUT('2022-12-31 23:11:11');
-       timestamptz_out        
-------------------------------
- Sat Dec 31 23:11:11 2022 PST
+    timestamptz_out     
+------------------------
+ 2022-12-31 23:11:11-08
 (1 row)
 
 select '2022-12-31 23:59:59'::timestamp::smalldatetime;
-      smalldatetime       
---------------------------
- Sun Jan 01 00:00:00 2023
+    smalldatetime    
+---------------------
+ 2023-01-01 00:00:00
 (1 row)
 
 select count(*) from pg_cATAlog.PG_Class where relname='pg_class';
@@ -1496,21 +1496,21 @@ ERROR:  relation "pg_catalog.PG_ClaSS" does not exist on datanode1
 LINE 1: select count(*) from pg_cATAloG.PG_ClaSS where relname='pg_c...
                              ^
 select PG_cataLOG.TIMESTAMPTZ_out('2022-12-31 23:11:11');
-       timestamptz_out        
-------------------------------
- Sat Dec 31 23:11:11 2022 PST
+    timestamptz_out     
+------------------------
+ 2022-12-31 23:11:11-08
 (1 row)
 
 select PG_CATALOg.TIMESTAMptz_OUT('2022-12-31 23:11:11');
-       timestamptz_out        
-------------------------------
- Sat Dec 31 23:11:11 2022 PST
+    timestamptz_out     
+------------------------
+ 2022-12-31 23:11:11-08
 (1 row)
 
 select '2022-12-31 23:59:59'::timestamp::smalldatetime;
-      smalldatetime       
---------------------------
- Sun Jan 01 00:00:00 2023
+    smalldatetime    
+---------------------
+ 2023-01-01 00:00:00
 (1 row)
 
 set dolphin.lower_case_table_names = 1;
@@ -2155,8 +2155,61 @@ SET check_function_bodies=off;
 CREATE FUNCTION monot_incr(int) RETURNS bool LANGUAGE sql AS ' select $1 > max(a) from tst_dom_constr; ';
 CREATE DOMAIN monot_int AS int CHECK (monot_incr(VALUE));
 reset check_function_bodies;
+--bugfix 
+drop table if exists t_t1;
+NOTICE:  table "t_t1" does not exist, skipping
+drop table if exists t_t2;
+NOTICE:  table "t_t2" does not exist, skipping
+create table t_t1(passId int);
+create table t_t2(passId int);
+CREATE OR REPLACE FUNCTION tri_func RETURNS pg_catalog.trigger AS $BODY$
+DECLARE
+BEGIN
+INSERT INTO t_t2(PAssID) values (new.PaSSID);RETURN NEW;
+END;
+$BODY$
+LANGUAGE plpgsql VOLATILE;
+drop trigger tri1;
+ERROR:  trigger "tri1" does not exist
+create trigger tri1 after insert on t_t1 FOR each row EXECUTE PROCEDURE tri_func();
+insert into t_t1 values(1);
+select * from t_t2;
+ passId 
+--------
+      1
+(1 row)
+
+CREATE TABLE interval_normal_exchange (loGdate date not null) 
+PARTITION BY RANGE (logdate)
+INTERVAL ('1 month') 
+(
+	PARTITION interval_normal_exchange_p1 VALUES LESS THAN ('2020-03-01'),
+	PARTITION interval_normal_exchange_p2 VALUES LESS THAN ('2020-04-01'),
+	PARTITION interval_normal_exchange_p3 VALUES LESS THAN ('2020-05-01')
+);
+CREATE TABLE interval_exchange_test (logdaTE date not null);
+ALTER TABLE interval_normal_exchange EXCHANGE PARTITION (interval_normal_exchange_p1)
+        WITH TABLE interval_exchange_test;
+drop table if exists t2 cascade;
+NOTICE:  table "t2" does not exist, skipping
+drop table if exists t1 cascade;
+NOTICE:  table "t1" does not exist, skipping
+create table t2 (iDdD int);
+create table t1 (iddD int);
+-- mysql has no create rule grammar not deal yet
+CREATE RULE "_RETURN" AS
+  ON UPDATE TO t1
+  DO INSTEAD
+      UPDATE  t2 set iDdd = 7 returning IdDd;	
+ERROR:  column "iddd" of relation "t2" does not exist
+LINE 4:       UPDATE  t2 set iDdd = 7 returning IdDd;
+                             ^
+CREATE RULE "_RETURN" AS
+  ON UPDATE TO t1
+  DO INSTEAD
+      UPDATE  t2 set "iDdD" = 7 returning "iDdD";	
 drop schema column_name_case_test cascade;
-NOTICE:  drop cascades to 39 other objects
+NOTICE:  drop cascades to 46 other objects
 DETAIL:  drop cascades to table a1
 drop cascades to table a2
 drop cascades to table warehouse_t22
@@ -2196,4 +2249,11 @@ drop cascades to function tfun3()
 drop cascades to function func8()
 drop cascades to function monot_incr(integer)
 drop cascades to type monot_int
+drop cascades to table t_t1
+drop cascades to table t_t2
+drop cascades to function tri_func()
+drop cascades to table interval_normal_exchange
+drop cascades to table interval_exchange_test
+drop cascades to table t2
+drop cascades to table t1
 reset current_schema;

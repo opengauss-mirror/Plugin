@@ -239,7 +239,7 @@ SELECT SUBSTRING_INDEX(myBool,'1',1) FROM myTable;
 SELECT SUBSTRING_INDEX(myDate,'-',1) FROM myTable;
  substring_index 
 -----------------
- 10
+ 2022
 (1 row)
 
 drop table myTable;

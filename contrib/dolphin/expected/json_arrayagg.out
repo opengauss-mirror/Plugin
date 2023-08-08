@@ -80,7 +80,7 @@ select json_arrayagg(b) from time_table;
 select json_arrayagg(a) from time_table;
                json_arrayagg                
 --------------------------------------------
- ["08-22-2020", "10-01-2021", "12-04-2022"]
+ ["2020-08-22", "2021-10-01", "2022-12-04"]
 (1 row)
 
 select json_arrayagg(341522654875451.12345678901234567890123456789012345678901234567890);

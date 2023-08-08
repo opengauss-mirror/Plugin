@@ -38,6 +38,7 @@
 #include "catalog/pg_collation.h"
 #include "catalog/pg_constraint.h"
 #include "catalog/pg_depend.h"
+#include "catalog/pg_enum.h"
 #include "catalog/pg_language.h"
 #include "catalog/pg_opclass.h"
 #include "catalog/pg_operator.h"
@@ -139,6 +140,8 @@
 #define  BEGIN_P_STR      " BEGIN_B_PROC " /* used in dolphin type proc body*/
 #define  BEGIN_P_LEN      14
 #define  BEGIN_N_STR      "    BEGIN     " /* BEGIN_P_STR to same length*/
+#define  ARRAY_CONTAIN_FUNC_OID 2748
+#define  ARRAY_REMOVE_FUNC_OID 6555
 #endif
 /* ----------
  * Local data types
@@ -327,6 +330,9 @@ static void get_opclass_name(Oid opclass, Oid actual_datatype, StringInfo buf);
 static Node* processIndirection(Node* node, deparse_context* context, bool printit);
 static void printSubscripts(ArrayRef* aref, deparse_context* context);
 static char* get_relation_name(Oid relid);
+#ifdef DOLPHIN
+static bool getHasDefault(char* exprstr, TupleDesc tupdesc, AttrDefault* defval);
+#endif
 static char* generate_relation_name(Oid relid, List* namespaces);
 static char* generate_function_name(
     Oid funcid, int nargs, List* argnames, Oid* argtypes, bool was_variadic, bool* use_variadic_p);
@@ -1633,6 +1639,11 @@ static int get_table_attribute(
             if (type_is_set(att_tup->atttypid)) {
                 txt = GetSetDefineStr(att_tup->atttypid);
                 result = TextDatumGetCString(txt);
+#ifdef DOLPHIN
+            } else if (IsAnonymousEnum(att_tup->atttypid)) {
+                txt = GetEnumDefineStr(att_tup->atttypid);
+                result = TextDatumGetCString(txt);
+#endif
             } else {
                 txt = DirectFunctionCall2(
                     format_type, ObjectIdGetDatum(att_tup->atttypid), ObjectIdGetDatum(att_tup->atttypmod));
@@ -4253,8 +4264,45 @@ Datum pg_get_expr(PG_FUNCTION_ARGS)
     } else
         relname = NULL;
 
+#ifdef DOLPHIN
+    char* exprstr = NULL;
+    Relation rel = NULL;
+    TupleDesc tupdesc = NULL;
+    AttrDefault* defval = NULL;
+    bool hasDefault = false;
+
+    if (OidIsValid(relid)) {
+        exprstr = text_to_cstring(expr);
+        rel = heap_open(relid, AccessShareLock);
+        tupdesc = RelationGetDescr(rel);
+        if (tupdesc->constr != NULL && tupdesc->constr->defval != NULL) {
+            defval = tupdesc->constr->defval;
+            hasDefault = getHasDefault(exprstr, tupdesc, defval);
+        }
+        pfree_ext(exprstr);
+        heap_close(rel, AccessShareLock);
+    }
+    PG_RETURN_TEXT_P(pg_get_expr_worker(expr, relid, relname, hasDefault ? 1 : 0));
+#else
     PG_RETURN_TEXT_P(pg_get_expr_worker(expr, relid, relname, 0));
+#endif
 }
+
+#ifdef DOLPHIN
+static bool getHasDefault(char* exprstr, TupleDesc tupdesc, AttrDefault* defval)
+{
+    for (size_t i = 0; i < tupdesc->constr->num_defval; i++) {
+        /* Determine whether the column is a generated column */
+        if (defval[i].adbin != NULL && defval[i].generatedCol != ATTRIBUTE_GENERATED_STORED &&
+                /* Determine whether the default value expression of the table is the same as the expr */
+                strcmp(defval[i].adbin, exprstr) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+#endif
 
 Datum pg_get_expr_ext(PG_FUNCTION_ARGS)
 {
@@ -12912,6 +12960,14 @@ static void get_viewdefinfo_oid(Oid viewOid, StringInfoData *buf)
     bool isnull = false;
     char *viewoption = NULL;
     char *viewdef = NULL;
+    Datum sqlinvoker = CStringGetTextDatum("view_sql_security=invoker");
+    Datum sqldefiner =  CStringGetTextDatum("view_sql_security=definer");
+    Datum checklocal = CStringGetTextDatum("check_option=local");
+    Datum checkcascade = CStringGetTextDatum("check_option=cascaded");
+
+    Datum arrinvoker = CStringGetDatum("{view_sql_security=invoker}");
+    Datum arrlocal = CStringGetDatum("{check_option=local}");
+    Datum arrcascade = CStringGetDatum("{check_option=cascaded}");
 
     tuple = SearchSysCache1(RELOID, ObjectIdGetDatum(viewOid));
     if (!HeapTupleIsValid(tuple)) {
@@ -12919,6 +12975,17 @@ static void get_viewdefinfo_oid(Oid viewOid, StringInfoData *buf)
     }
     classForm = (Form_pg_class)GETSTRUCT(tuple);
     appendStringInfo(buf, "CREATE OR REPLACE ");
+    appendStringInfo(buf, "DEFINER = %s ", GetUserNameFromId(classForm->relowner));
+    Datum reloptions = SysCacheGetAttr(RELOID, tuple, Anum_pg_class_reloptions, &isnull);
+    if (isnull == false) {
+        Datum isinvoker =  OidFunctionCall2(ARRAY_CONTAIN_FUNC_OID, reloptions,
+            OidFunctionCall3(ANYARRAYINFUNCOID, arrinvoker, TEXTOID, 0));
+        if (DatumGetBool(isinvoker)) {
+            appendStringInfo(buf, "SQL SECUIRTY INVOKER ");
+        } else {
+            appendStringInfo(buf, "SQL SECUIRTY DEFINER ");
+        }
+    }
     if (classForm->relpersistence != RELPERSISTENCE_PERMANENT) {
         appendStringInfo(buf, "TEMP ");
     }
@@ -12929,10 +12996,14 @@ static void get_viewdefinfo_oid(Oid viewOid, StringInfoData *buf)
     }
     appendStringInfo(buf, "%s ", NameStr(classForm->relname));
 
-    Datum reloptions = SysCacheGetAttr(RELOID, tuple, Anum_pg_class_reloptions, &isnull);
+
     if (isnull == false) {
         Datum sep = CStringGetTextDatum(", ");
-        Datum txt = OidFunctionCall2(F_ARRAY_TO_TEXT, reloptions, sep);
+        Datum except = OidFunctionCall2(ARRAY_REMOVE_FUNC_OID, reloptions, sqlinvoker);
+        except = OidFunctionCall2(ARRAY_REMOVE_FUNC_OID, except, sqldefiner);
+        except = OidFunctionCall2(ARRAY_REMOVE_FUNC_OID, except, checklocal);
+        except = OidFunctionCall2(ARRAY_REMOVE_FUNC_OID, except, checkcascade);
+        Datum txt = OidFunctionCall2(F_ARRAY_TO_TEXT, except, sep);
         viewoption = TextDatumGetCString(txt);
         if (viewoption && strlen(viewoption) > 0) {
             appendStringInfo(buf, "\n WITH (%s) ", viewoption);
@@ -12941,6 +13012,20 @@ static void get_viewdefinfo_oid(Oid viewOid, StringInfoData *buf)
     viewdef = pg_get_viewdef_worker(viewOid, 0, -1);
     appendStringInfo(buf, "AS\n%s", viewdef);
 
+    /* with local check option OR with cascade check option OR empty */
+    if (isnull == false) {
+        Datum checkopt =  OidFunctionCall2(ARRAY_CONTAIN_FUNC_OID, reloptions,
+            OidFunctionCall3(ANYARRAYINFUNCOID, arrlocal, TEXTOID, 0));
+        if (DatumGetBool(checkopt) && buf->len > 1) {
+            appendStringInfo(buf - 1, " WITH LOCAL CHECK OPTION;");
+        } else {
+            checkopt =  OidFunctionCall2(ARRAY_CONTAIN_FUNC_OID, reloptions,
+                OidFunctionCall3(ANYARRAYINFUNCOID, arrcascade, TEXTOID, 0));
+            if (DatumGetBool(checkopt) && buf->len > 1) {
+                appendStringInfo(buf - 1, " WITH CASCADED CHECK OPTION;");
+            }
+        }
+    }
     ReleaseSysCache(tuple);
     pfree_ext(viewdef);
 }

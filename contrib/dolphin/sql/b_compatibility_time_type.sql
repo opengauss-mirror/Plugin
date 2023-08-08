@@ -594,9 +594,9 @@ INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-01 10:01');
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-01-00 10:01');
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 10:01');
 
-SELECT * FROM t_NO_ZERO_DATE_date;
-SELECT * FROM t_NO_ZERO_DATE_datetime;
-SELECT * FROM t_NO_ZERO_DATE_timestamp;
+SELECT * FROM t_NO_ZERO_DATE_date order by v;
+SELECT * FROM t_NO_ZERO_DATE_datetime order by v;
+SELECT * FROM t_NO_ZERO_DATE_timestamp order by v;
 
 DROP TABLE t_NO_ZERO_DATE_date;
 DROP TABLE t_NO_ZERO_DATE_datetime;

@@ -1,0 +1,17 @@
+create schema test_mediumtext;
+set current_schema to 'test_mediumtext';
+SELECT mediumtext 'test';
+DROP TABLE IF EXISTS t_medium_text_1;
+CREATE TABLE t_medium_text_1 (content mediumtext DEFAULT 'This is a default text.');
+DROP TABLE IF EXISTS t_medium_text_1;
+DROP TABLE IF EXISTS t_medium_text_2;
+create table t_medium_text_2(a text(10),b mediumtext(10),c mediumtext);
+DROP TABLE IF EXISTS t_medium_text_2;
+DROP TABLE IF EXISTS t_medium_text_3;
+CREATE TABLE t_medium_text_3 (t text, mt mediumtext);
+INSERT INTO t_medium_text_3 VALUES ('1.01', '1.01');
+SELECT t::DECIMAL, mt::DECIMAL from t_medium_text_3;
+SELECT t::FLOAT, mt::FLOAT from t_medium_text_3;
+DROP TABLE IF EXISTS t_medium_text_3;
+drop schema test_mediumtext cascade;
+reset current_schema;

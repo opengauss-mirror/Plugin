@@ -7,14 +7,15 @@ create user 'test_user_host%' password 'test123@';
 create user 'test_user_host'@'127.0.0.1' password 'test123@';
 create database user_host_db dbcompatibility 'B';
 \c user_host_db;
-set test_user_host = off;
+set b_compatibility_user_host_auth = off;
 create user 'test_user_host'@'%' password 'test123@';
 create user 'test_user_host'@'127.%' password 'test123@';
 create user 'test_user_host'@'127.0.0.%' password 'test123@';
 create user 'test_user_host'@'127.0.%' password 'test123@';
 create user 'test_user_host%' password 'test123@';
 create user 'test_user_host'@'127.0.0.1' password 'test123@';
-set test_user_host = on;
+set b_compatibility_user_host_auth = on;
+CREATE USER 'da@localhost'@'%' PASSWORD 'test123@';
 create user if not exists 'test_user_host'@'%' password 'test123@';
 alter user 'test_user_host'@'%' with account lock;
 alter user 'test_user_host'@'%' password 'test1234@';
@@ -47,7 +48,9 @@ insert into test2 values(1);
 grant select on test2 to 'test_user_host'@'127.0.%';
 grant insert on test2 to 'test_user_host'@'127.0.%';
 revoke insert on test2 from 'test_user_host'@'127.0.%';
-\! echo 'test_user_host = on' >> @abs_srcdir@/tmp_check/datanode1/postgresql.conf
+create user test1@localhost password 'Test@123';
+alter session set session authorization test1@localhost password 'Test@123';
+\! echo 'b_compatibility_user_host_auth = on' >> @abs_srcdir@/tmp_check/datanode1/postgresql.conf
 \! sed -i 's#host.*all.*all.*127.0.0.1/32.*#host  all  all  all  sha256#g' @abs_srcdir@/tmp_check/datanode1/pg_hba.conf
 \! @abs_bindir@/gs_ctl restart -D @abs_srcdir@/tmp_check/datanode1  > /dev/null
 \! sleep 5

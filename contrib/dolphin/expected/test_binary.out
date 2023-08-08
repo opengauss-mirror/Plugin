@@ -341,7 +341,7 @@ select 123.456::binary;
 select '2020-01-01'::date::binary;
          binary         
 ------------------------
- \x30312d30312d32303230
+ \x323032302d30312d3031
 (1 row)
 
 select '12:13:13'::time::binary;

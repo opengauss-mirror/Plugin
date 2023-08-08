@@ -199,6 +199,7 @@ void set_default_guc()
     DestroyStringInfo(extra_option);
 
     set_config_option("enable_custom_parser", "true", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
+    set_config_option("datestyle", "ISO, YMD", PGC_USERSET, PGC_S_SESSION, GUC_ACTION_SET, true, 0, false);
 }
 
 static void init_dolphin_proto()
@@ -270,6 +271,7 @@ void init_plugin_object()
     u_sess->hook_cxt.pluginSearchCatHook = (void*)searchCat;
     u_sess->hook_cxt.pluginCCHashEqFuncs = (void*)ccHashEqFuncs;
     u_sess->hook_cxt.plpgsqlParserSetHook = (void*)b_plpgsql_parser_setup;
+    u_sess->hook_cxt.coreYYlexHook = (void*)core_yylex;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&

@@ -2580,11 +2580,6 @@ static int DecodeNumber(int flen, char* str, bool haveTextMonth, unsigned int fm
     /* Switch based on what we have so far */
     switch (fmask & DTK_DATE_M) {
         case 0:
-#ifdef DOLPHIN
-            /* b format date: default format is YMD */
-            *tmask = DTK_M(YEAR);
-            tm->tm_year = val;
-#else
             /*
              * Nothing so far; make a decision about what we think the input
              * is.	There used to be lots of heuristics here, but the
@@ -2602,7 +2597,6 @@ static int DecodeNumber(int flen, char* str, bool haveTextMonth, unsigned int fm
                 *tmask = DTK_M(MONTH);
                 tm->tm_mon = val;
             }
-#endif
             break;
 
         case (DTK_M(YEAR)):
@@ -3559,7 +3553,7 @@ int DecodeUnits(int field, const char* lowtoken, int* val)
  */
 void DateTimeParseError(int dterr, const char* str, const char* datatype, bool can_ignore)
 {
-    int level = can_ignore ? WARNING : ERROR;
+    int level = can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
     switch (dterr) {
         case DTERR_FIELD_OVERFLOW:
             ereport(level,
@@ -5278,6 +5272,10 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type,
                 i++;
                 break;
             }
+#ifdef DOLPHIN
+            else
+                continue;
+#endif
         }
         while (str != end &&
                (ispunct(*str) || isspace(*str))) {

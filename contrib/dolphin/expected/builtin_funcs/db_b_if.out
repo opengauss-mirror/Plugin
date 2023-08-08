@@ -27,13 +27,13 @@ CREATE VIEW test_view as select '2022-01-30' as text_type, date '2022-01-30' as 
  text_type | text |           | extended | 
  date_type | date |           | plain    | 
 View definition:
- SELECT '2022-01-30'::text AS text_type, '01-30-2022'::date AS date_type;
+ SELECT '2022-01-30'::text AS text_type, '2022-01-30'::date AS date_type;
 
 -- string to date
 select if (true, '2022-01-30', date '2022-01-30') as a, if (false, '2022-01-30', date '2022-01-30') as b;
      a      |     b      
 ------------+------------
- 2022-01-30 | 01-30-2022
+ 2022-01-30 | 2022-01-30
 (1 row)
 
 -- string to numeric
@@ -61,21 +61,21 @@ select if (true, '2022-01-30', 1::int4) as a, if (false, '2022-01-30', 1::int4) 
 select if (true, date '2022-01-30', 1.1::numeric(10, 2)) as a, if (false, date '2022-01-30', 1.1::numeric(10, 2)) as b;
      a      |  b   
 ------------+------
- 01-30-2022 | 1.10
+ 2022-01-30 | 1.10
 (1 row)
 
 -- date to float
 select if (true, date '2022-01-30', 1.1::float8) as a, if (false, date '2022-01-30', 1.1::float8) as b;
      a      |  b  
 ------------+-----
- 01-30-2022 | 1.1
+ 2022-01-30 | 1.1
 (1 row)
 
 -- date to integer
 select if (true, date '2022-01-30', 1::int4) as a, if (false, date '2022-01-30', 1::int4) as b;
      a      | b 
 ------------+---
- 01-30-2022 | 1
+ 2022-01-30 | 1
 (1 row)
 
 -- numeric to float

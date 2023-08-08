@@ -2912,13 +2912,13 @@ set_rest_more:  /* Generic SET syntaxes: */
 					n->args = list_make2(makeStringConst($2, @2), makeStringConst($5, @5));
 					$$ = n;
 				}
-			| SESSION AUTHORIZATION ColId_or_Sconst PASSWORD {u_sess->parser_cxt.isForbidTruncate = true;} password_string
+			| SESSION AUTHORIZATION DolphinUserId PASSWORD {u_sess->parser_cxt.isForbidTruncate = true;} password_string
 				{
 					u_sess->parser_cxt.isForbidTruncate = false;
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_ROLEPWD;
 					n->name = "session_authorization";
-					n->args = list_make2(makeStringConst($3, @3), makeStringConst($6,@6));
+					n->args = list_make2(makeStringConst(downcase_str($3->str, $3->is_quoted), @3), makeStringConst($6,@6));
 					$$ = n;
 				}
 			| SESSION AUTHORIZATION DEFAULT
@@ -4002,7 +4002,7 @@ VariableShowStmt:
 					SelectStmt *n = makeShowCreateDatabaseQuery(TRUE,$7);
 					$$ = (Node *) n;
 				}
-            | SHOW GRANTS FOR user 
+            | SHOW GRANTS FOR UserId
                   {
                       $$ = (Node *)MakeShowGrantStmt($4, @4, yyscanner);
                   }
@@ -30408,9 +30408,6 @@ GenericType:
 					} else if (($1 != NULL) && ((strcmp($1, "real") == 0 || strcmp($1, "double") == 0))) {
 						$$ = makeTypeName("float8");
 					$$->typmods = $2;
-					} else if ($1 != NULL && (strcmp($1, "mediumtext") == 0)) {
-						$$ = SystemTypeName("text");
-					$$->location = @1;
 					} else {
 						$$ = makeTypeName($1);
 						$$->typmods = $2;
@@ -30856,7 +30853,7 @@ charset:
 				int encoding = pg_valid_server_encoding($2);
 				if (encoding < 0) {
 					ereport(WARNING, (errmsg("%s is not a valid encoding name. default value set", $2)));
-					$$ = GetDatabaseEncoding();
+					$$ = PG_INVALID_ENCODING;
 				} else {
 					$$ = encoding;
 				}
@@ -30901,7 +30898,7 @@ default_charset:
 				int encoding = pg_valid_server_encoding($4);
 				if (encoding < 0) {		
 					ereport(WARNING, (errmsg("%s is not a valid encoding name. default value set", $4)));
-					$$ = GetDatabaseEncoding();
+					$$ = PG_INVALID_ENCODING;
 				} else {
 					$$ = encoding;
 				}
@@ -30911,7 +30908,7 @@ default_charset:
 				int encoding = pg_valid_server_encoding($3);
 				if (encoding < 0) {
 					ereport(WARNING, (errmsg("%s is not a valid encoding name. default value set", $3)));
-					$$ = GetDatabaseEncoding();
+					$$ = PG_INVALID_ENCODING;
 				} else {
 					$$ = encoding;
 				}
@@ -35765,7 +35762,9 @@ unreserved_keyword_without_key:
 			| AUDIT
 			| AUTOEXTEND
 			| AUTOMAPPED
+			| AUTOEXTEND_SIZE
 			| AUTO_INCREMENT
+			| AVG_ROW_LENGTH
 			| BACKWARD
 /* PGXC_BEGIN */
 			| BARRIER
@@ -35850,6 +35849,7 @@ unreserved_keyword_without_key:
 			| DEFAULTS
 			| DEFERRED
 			| DEFINER
+			| DELAY_KEY_WRITE
 			| DELETE_P
 			| DELIMITER
 			| DELIMITERS
@@ -35862,6 +35862,7 @@ unreserved_keyword_without_key:
 			| DISABLE_P
 			| DISCARD
 			| DISCONNECT
+			| DISK
 /* PGXC_BEGIN */
 			| DISTRIBUTE
 			| DISTRIBUTION
@@ -35882,6 +35883,7 @@ unreserved_keyword_without_key:
 			| ENCRYPTION
             | ENCRYPTION_TYPE
 			| ENDS
+			| ENGINE_ATTRIBUTE
 			| ENGINE_P
 			| ENFORCED
 			| EOL
@@ -35954,6 +35956,7 @@ unreserved_keyword_without_key:
 			| INPUT_P
 			| INSENSITIVE
 			| INSERT
+			| INSERT_METHOD
 			| INSTEAD
 			| INTERNAL
 			| INVISIBLE
@@ -35962,6 +35965,7 @@ unreserved_keyword_without_key:
 			| ISNULL
 			| ISOLATION
 			| KEYS
+			| KEY_BLOCK_SIZE
 			| KEY_PATH
 			| KEY_STORE
 			| KILL
@@ -35995,12 +35999,14 @@ unreserved_keyword_without_key:
 			| MATCH
 			| MATCHED
 			| MATERIALIZED
+			| MAX_ROWS
 			| MAXEXTENTS
 			| MAXSIZE
 			| MAXTRANS
 			| MEMORY
 			| MERGE
 			| MICROSECOND_P
+			| MIN_ROWS
 			| MINEXTENTS
 			| MINUTE_MICROSECOND_P
 			| MINUTE_P
@@ -36044,6 +36050,7 @@ unreserved_keyword_without_key:
 			| OUTFILE
 			| OWNED
 			| OWNER
+			| PACK_KEYS
 			| PACKAGE
 			| PACKAGES
 			| PARSER
@@ -36138,6 +36145,7 @@ unreserved_keyword_without_key:
 			| SEARCH
 			| SECOND_MICROSECOND_P
 			| SECOND_P
+			| SECONDARY_ENGINE_ATTRIBUTE
 			| SECURITY
 			| SEPARATOR_P
 			| SEQUENCE
@@ -36172,6 +36180,9 @@ unreserved_keyword_without_key:
 			| STATEMENT
 			| STATEMENT_ID
 			| STATISTICS
+			| STATS_AUTO_RECALC
+			| STATS_PERSISTENT
+			| STATS_SAMPLE_PAGES
 			| STATUS
 			| STDIN
 			| STDOUT
@@ -39589,7 +39600,7 @@ static char* GetValidUserHostId(char* userName, char* hostId)
 	if (strchr(userName,'@'))
 		ereport(ERROR,(errcode(ERRCODE_INVALID_NAME),errmsg("@ can't be allowed in username")));
 	char* userHostId = NULL;
-	if (*hostId == '\'') {
+	if (*hostId == '\'' || *hostId == '`') {
 		userHostId = hostId + 1;
 		hostId[strlen(hostId)-1] = '\0';
 	} else {

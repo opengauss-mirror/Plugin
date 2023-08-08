@@ -20,6 +20,7 @@ typedef struct {
 typedef struct {
     Datum aclDatum;
     int aclIndex;
+    Oid itemOid;
     char scanSQL[SCAN_SQL_LEN];
 } AclSanStatus;
 
@@ -47,7 +48,7 @@ typedef struct {
 bool PgClassFilter(HeapTuple heapTuple);
 void CallSPIAndCheck(char *query);
 char *GetSqlMode();
-void SetSqlMode(const char *sqlMode);
+void SetSqlMode(const char *sqlMode, bool raiseError = true);
 bool PgProcProcedureFilter(HeapTuple heapTuple);
 bool PgProcFunctionFilter(HeapTuple heapTuple);
 bool PgAttributeFilter(HeapTuple heapTuple);

@@ -36,13 +36,14 @@
 #include "catalog/namespace.h"
 #include "catalog/pg_collation.h"
 #include "catalog/pg_constraint.h"
+#include "catalog/pg_enum.h"
 #include "catalog/pg_opclass.h"
 #include "catalog/pg_operator.h"
 #include "catalog/pg_partition_fn.h"
 #include "catalog/pg_type.h"
 #include "catalog/pg_proc.h"
 #include "commands/comment.h"
-#include "commands/defrem.h"
+#include "plugin_commands/defrem.h"
 #include "commands/sequence.h"
 #include "commands/tablecmds.h"
 #include "commands/tablespace.h"
@@ -413,6 +414,42 @@ Oid fill_relation_collation(const char* collate, int charset, List** options, Oi
     return coll_oid;
 }
 
+#ifdef DOLPHIN
+static void ConvertAnonymousEnum(TypeName* type)
+{
+    HeapTuple enumTup = nullptr;
+    Form_pg_enum item = nullptr;
+    Relation enumRel = heap_open(EnumRelationId, AccessShareLock);
+    CatCList* items = SearchSysCacheList1(ENUMTYPOIDNAME, ObjectIdGetDatum(type->typeOid));
+    int itemCnt = items->n_members;
+
+    Value* name = makeString(pstrdup("enum"));
+    type->names = lappend(type->names, name);
+    type->typeOid = InvalidOid;
+    type->typemod = -1;
+
+    if (itemCnt > 0) {
+        char** labels = (char**)palloc0(sizeof(char*) * itemCnt);
+        for (int eindex = 0; eindex < itemCnt; ++eindex) {
+            enumTup = t_thrd.lsc_cxt.FetchTupleFromCatCList(items, eindex);
+            item = (Form_pg_enum)GETSTRUCT(enumTup);
+            labels[(int)item->enumsortorder - 1] = pstrdup(NameStr(item->enumlabel));
+        }
+
+        Value* labelVal = nullptr;
+        for (int lblIdx = 0; lblIdx < itemCnt; ++lblIdx) {
+            labelVal = makeString(labels[lblIdx]);
+            type->typmods = lappend(type->typmods, labelVal);
+        }
+
+        pfree(labels);
+    }
+
+    ReleaseSysCacheList(items);
+    heap_close(enumRel, AccessShareLock);
+}
+#endif
+
 List* transformCreateStmt(CreateStmt* stmt, const char* queryString, const List* uuids, bool preCheck,
 Oid *namespaceid, bool isFirstNode)
 {
@@ -649,6 +686,11 @@ Oid *namespaceid, bool isFirstNode)
 
         switch (nodeTag(element)) {
             case T_ColumnDef:
+#ifdef DOLPHIN
+                if (IsAnonymousEnum(((ColumnDef*)element)->typname->typeOid)) {
+                    ConvertAnonymousEnum(((ColumnDef*)element)->typname);
+                }
+#endif
                 if (is_ledger_nsp && strcmp(((ColumnDef*)element)->colname, "hash") == 0 &&
                     !IsA(stmt, CreateForeignTableStmt) && stmt->relation->relpersistence == RELPERSISTENCE_PERMANENT &&
                     is_row_table) {
@@ -3366,7 +3408,64 @@ static bool IsPartitionKeyAllInParmaryKeyAndUniqueKey(const List *partitionKey, 
     return found;
 }
 
-#ifdef DOLPHIN
+#ifdef DOLPHIN /* ChooseIndexNameAddition and ChooseIndexName are copy from indexcmds.cpp */
+/*
+ * Generate "name2" for a new index given the list of column names for it
+ * (as produced by ChooseIndexColumnNames).  This will be passed to
+ * ChooseRelationName along with the parent table name and a suitable label.
+ *
+ * We know that less than NAMEDATALEN characters will actually be used,
+ * so we can truncate the result once we've generated that many.
+ */
+static char* ChooseIndexNameAddition(const List* colnames)
+{
+    char buf[NAMEDATALEN * 2];
+    int buflen = 0;
+    ListCell* lc = NULL;
+
+    buf[0] = '\0';
+    foreach (lc, colnames) {
+        const char* name = (const char*)lfirst(lc);
+
+        if (buflen > 0)
+            buf[buflen++] = '_'; /* insert _ between names */
+
+        /*
+         * At this point we have buflen <= NAMEDATALEN.  name should be less
+         * than NAMEDATALEN already, but use strlcpy for paranoia.
+         */
+        strlcpy(buf + buflen, name, NAMEDATALEN);
+        buflen += strlen(buf + buflen);
+        if (buflen >= NAMEDATALEN)
+            break;
+    }
+    return pstrdup(buf);
+}
+
+/*
+ * Select the name to be used for an index.
+ *
+ * The argument list is pretty ad-hoc :-(
+ */
+static char* ChooseIndexName(const char* tabname, Oid namespaceId, const List* colnames, const List* exclusionOpNames,
+    bool primary, bool isconstraint)
+{
+    char* indexname = NULL;
+
+    if (primary) {
+        /* the primary key's name does not depend on the specific column(s) */
+        indexname = ChooseRelationName(tabname, NULL, "pkey", strlen("pkey"), namespaceId);
+    } else if (exclusionOpNames != NIL) {
+        indexname = ChooseRelationName(tabname, ChooseIndexNameAddition(colnames), "excl", strlen("excl"), namespaceId);
+    } else if (isconstraint) {
+        indexname = ChooseRelationName(tabname, ChooseIndexNameAddition(colnames), "key", strlen("key"), namespaceId);
+    } else {
+        indexname = ChooseRelationName(tabname, ChooseIndexNameAddition(colnames), "idx", strlen("idx"), namespaceId);
+    }
+
+    return indexname;
+}
+
 /*
 * For create index in CREATE TABLE/ ALTER TABLE stmt, we just have a list of column names and expressions.
 *
@@ -3390,11 +3489,34 @@ static void transformTableIndex(CreateStmtContext* cxt)
             */
             bool mustGlobal = false;
             transformIndexNode(index, cxt, mustGlobal);
-	    if (index != NULL) {
-            	cxt->alist = lappend(cxt->alist, index);
+            if (index != NULL) {
+                cxt->alist = lappend(cxt->alist, index);
             }
         }
     }
+}
+
+void TransformIndexName(IndexStmt* index, Oid nsp_oid, char* rel_name)
+{
+    if (!ENABLE_B_CMPT_MODE || index->idxname == NULL || index->missing_ok ||
+        !OidIsValid(get_relname_relid(index->idxname, nsp_oid))) {
+        return;
+    }
+    List* allIndexParams = list_concat(list_copy(index->indexParams), list_copy(index->indexIncludingParams));
+    List* indexColNames = ChooseIndexColumnNames(allIndexParams);
+    char* indexRelationName = ChooseIndexName(rel_name,
+        nsp_oid,
+        indexColNames,
+        index->excludeOpNames,
+        index->primary,
+        index->isconstraint);
+
+    list_free(allIndexParams);
+    list_free(indexColNames);
+    ereport(WARNING, (errmsg("index \"%s\" already exists, change index name to \"%s\"",
+        index->idxname, indexRelationName)));
+    pfree(index->idxname);
+    index->idxname = indexRelationName;
 }
 
 static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mustGlobal)
@@ -3403,10 +3525,11 @@ static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mu
     List* indexElementsColumn = NIL;
     List* indexElementsExpr = NIL;
 
-    /* DefineIndex will choose name */
-    if (index->idxname != NULL) {
-        index->idxname = pstrdup(index->idxname);
-    }
+    /*
+     * if the index already exists, generate a new unique index name for it.
+     * if specfic missing_ok, skip this.
+     */
+    TransformIndexName(index, RangeVarGetCreationNamespace(cxt->relation), cxt->relation->relname);
 
     index->relation = cxt->relation;
     index->idxcomment = NULL;

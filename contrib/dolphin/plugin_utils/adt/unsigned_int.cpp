@@ -4206,7 +4206,13 @@ static int uint1_fastcmp(Datum x, Datum y, SortSupport ssup)
     uint8 a = DatumGetUInt8(x);
     uint8 b = DatumGetUInt8(y);
 
-    return (int)a - (int)b;
+    if (a > b) {
+        return 1;
+    } else if (a == b) {
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 Datum uint1_sortsupport(PG_FUNCTION_ARGS)
@@ -4222,7 +4228,13 @@ static int uint2_fastcmp(Datum x, Datum y, SortSupport ssup)
     uint16 a = DatumGetUInt16(x);
     uint16 b = DatumGetUInt16(y);
 
-    return (int)a - (int)b;
+    if (a > b) {
+        return 1;
+    } else if (a == b) {
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 Datum uint2_sortsupport(PG_FUNCTION_ARGS)
@@ -4238,7 +4250,13 @@ static int uint4_fastcmp(Datum x, Datum y, SortSupport ssup)
     uint32 a = DatumGetUInt32(x);
     uint32 b = DatumGetUInt32(y);
 
-    return (int64)a - (int64)b;
+    if (a > b) {
+        return 1;
+    } else if (a == b) {
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 Datum uint4_sortsupport(PG_FUNCTION_ARGS)
@@ -4254,7 +4272,13 @@ static int uint8_fastcmp(Datum x, Datum y, SortSupport ssup)
     uint64 a = DatumGetUInt64(x);
     uint64 b = DatumGetUInt64(y);
 
-    return (int128)a - (int128)b;
+    if (a > b) {
+        return 1;
+    } else if (a == b) {
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 Datum uint8_sortsupport(PG_FUNCTION_ARGS)

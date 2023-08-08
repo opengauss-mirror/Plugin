@@ -1,0 +1,34 @@
+select '101111101'::datetime;
+      timestamp      
+---------------------
+ 2010-11-11 10:01:00
+(1 row)
+
+select '2010117.5678'::datetime;
+ERROR:  timestamp out of range: "2010117.5678"
+LINE 1: select '2010117.5678'::datetime;
+               ^
+CONTEXT:  referenced column: timestamp
+select '2010117.1234'::datetime;
+      timestamp      
+---------------------
+ 2020-10-11 07:12:34
+(1 row)
+
+select '101111101'::timestamp;
+      timestamptz       
+------------------------
+ 2010-11-11 10:01:00-08
+(1 row)
+
+select '2010117.5678'::timestamp;
+ERROR:  timestamp out of range: "2010117.5678"
+LINE 1: select '2010117.5678'::timestamp;
+               ^
+CONTEXT:  referenced column: timestamptz
+select '2010117.1234'::timestamp;
+      timestamptz       
+------------------------
+ 2020-10-11 07:12:34-07
+(1 row)
+

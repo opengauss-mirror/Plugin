@@ -1,0 +1,20 @@
+drop schema if exists test_copy_year2;
+NOTICE:  schema "test_copy_year2" does not exist, skipping
+create schema test_copy_year2;
+set current_schema = test_copy_year2;
+create table t_year2(c year(2));
+copy t_year2(c) from stdin;
+select * from t_year2 order by c;
+ c  
+----
+ 70
+ 70
+ 55
+ 55
+ 69
+ 55
+(6 rows)
+
+drop table t_year2;
+reset current_schema;
+drop schema test_copy_year2 cascade;

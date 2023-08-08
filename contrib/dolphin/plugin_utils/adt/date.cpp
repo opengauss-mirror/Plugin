@@ -1496,6 +1496,7 @@ Datum time_in(PG_FUNCTION_ARGS)
                     }
                     PG_RETURN_TIMEADT(trunc_val * 1000 * 1000);
                 } else {
+                    DateTimeParseError(dterr, str, "time", !SQL_MODE_STRICT());
                     tm = &tt; // switch to M*'s parsing result
                 }
             }
@@ -2359,6 +2360,22 @@ Datum time_part(PG_FUNCTION_ARGS)
                 result = tm->tm_hour;
                 break;
 
+#ifdef DOLPHIN
+            case DTK_DOW:
+            case DTK_ISODOW:
+                {
+                    int day = tm->tm_hour / 24;
+                    int tz;
+                    if (timestamp2tm(GetCurrentTimestamp(), &tz, tm, &fsec, NULL, NULL) != 0)
+                        ereport(ERROR,
+                            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+                    result = j2day(date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) + day);
+                    if (val == DTK_ISODOW && result == 0)
+                        result = 7;
+                    break;
+                }
+
+#endif
             case DTK_TZ:
             case DTK_TZ_MINUTE:
             case DTK_TZ_HOUR:
@@ -5051,6 +5068,13 @@ Datum adddate_time_interval(PG_FUNCTION_ARGS)
 static inline Datum GetSepecificPartOfTime(PG_FUNCTION_ARGS, const char *part)
 {
     char *tString = text_to_cstring(PG_GETARG_TEXT_PP(0));
+    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
+    if (*tString == '\0') {
+        ereport(errlevel,
+                (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+                    errmsg("invalid input syntax for type time: \"%s\"", tString)));
+        PG_RETURN_NULL();
+    }
     TimeADT tm;
     if (time_in_no_ereport(tString, &tm)) {
         return DirectFunctionCall2(time_part, CStringGetTextDatum(part), TimeADTGetDatum(tm));

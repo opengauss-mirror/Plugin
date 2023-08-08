@@ -1,4 +1,4 @@
-\c table_name_test_db;te_test
+\c table_name_test_db;
 SET dolphin.lower_case_table_names TO 0;
 --
 -- insert with DEFAULT in the target_list
@@ -66,3 +66,8 @@ drop table `Test_roundrobin`;
 
 --insert into pg_auth_history
 insert into `pg_auth_history` values(10, '2015-110-10 08:00:00.57603+08', 'sha256232f8630ce6af1095f6db3ed4c05a48747038936d42176e1103594d43c7d1adc4aca54361a23e51c6cd9371ccc95776450219376e45bcca01e27a7f06bf8088a8b1a9e280cdcc315c8134879818442bc3e92064a70e27b2ea83fcf6990a607d0');
+
+CREATE TABLE double_quote_tbl(`t""t` INT );
+INSERT INTO double_quote_tbl SET `t""t` =1 ;
+INSERT INTO double_quote_tbl SET `t""t` =1 ;
+drop table double_quote_tbl;

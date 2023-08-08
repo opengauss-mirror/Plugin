@@ -1,16 +1,15 @@
 test: float_numeric_test/db_b_log_test float_numeric_test/db_b_sqrt_test
-
 test: keyword_ignore_test/ignore_no_matched_partition keyword_ignore_test/ignore_not_null_constraints keyword_ignore_test/ignore_type_transform keyword_ignore_test/ignore_unique_constraints keyword_ignore_test/ignore_invalid_input
 
 test: string_func_test/db_b_ascii_test string_func_test/db_b_left_right_test string_func_test/db_b_quote_test string_func_test/db_b_string_length_test string_func_test/db_b_substr_test string_func_test/db_b_trim_test string_func_test/db_b_insert_test
 
 test: ast b_compatibility_time_type db_b_new_gram_test group_concat_test test_condition vec_engine test_uncommon_table_option
 
-test: db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4 second_microsecond test_set_password_for_user
+test: db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4 second_microsecond test_set_password_for_user test_timestamp_overflow
 
-test: db_b_plpgsql_test default_guc describe explain_desc kill set_password network
+test: db_b_plpgsql_test default_guc describe explain_desc kill set_password network test_dayofweek
 
-test: empty_value_list empty_value_lists empty_value_support_value create_index
+test: empty_value_list empty_value_lists empty_value_support_value create_index test_default
 
 test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict mysqlmode_strict2 none_strict_warning test_alter_table
 
@@ -141,7 +140,10 @@ test: test_uuid_short test_sleep distinct dual_test fulltext_index
 
 test: operator_compatibility_test/numeric_operator_test_normal operator_compatibility_test/numeric_operator_test_min operator_compatibility_test/numeric_operator_test_max operator_compatibility_test/time_operator_test operator_compatibility_test/string_operator_test operator_compatibility_test/multi_type_operator_test
 
-test: test_show_status pad_char_to_full_length ai
+test: test_show_status pad_char_to_full_length timestamp_test test_mediumtext ai
 
 # lock tables
 test: lock_tables lock_tables_1
+
+# test user@host
+test: user_host_test sqlmode_having
