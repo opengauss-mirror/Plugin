@@ -38,6 +38,22 @@ select lpad('hi', 5, 'xyza') between 'xyzhi' and 10;
 select 11 between '' and 0;
 select '' between 34 and 110;
 select 11 between 66 and '';
+select '2023-01-01 12:30:00'::datetime between '2023-06-28 11:30:30'::datetime and '2023-07-28 17:30:30'::datetime;
+select '2023-01-01 00:00:00' between date_add(now(),interval-30 minute) and now();
+select '2023-01-01 12:30:00'::time between '2023-06-28 11:30:30'::time and '2023-07-28 17:30:30'::time;
+select '12:30:00'::time between '11:30:30'::time and '2023-07-28 17:30:30'::time;
+select '12:30:00' between '12:30:30' and '17:30:30';
+select 1 between 0 and cast(18446744073709551615 as unsigned);
+select cast(0 as unsigned) between -1 and 1;
+select cast(0 as unsigned) between 0 and -1;
+select 1.5::numeric between 0::numeric and 2::numeric;
+select 0.5::float between 0::float and 2::float;
+select b'11' between 1::float and 2.5::decimal;
+select 100 between '-Inf'::float and '+Inf'::float;
+select 2 between symmetric 23 and 2;
+select 2.1 between symmetric 12.3 and 2.0;
+select true between symmetric true and false;
+select 'abc' between symmetric 'deg' and 'abc';
 select (sqrt(81) between log10(100) and 20)+('2' between log2(4) and sqrt(4));
 select (sqrt(81) between log10(100) and 20)-('22' between log2(4) and sqrt(4));
 select sqrt(1000) > 3.14 and sqrt(2000) <= 4 between sqrt(1212) <= 3 and sqrt(5757) = sqrt(5757);
@@ -93,8 +109,30 @@ insert into t_between_and_0023(c_title, c_fname, c_lname, c_addressline, c_town,
 ('mr','dave','jones','54 vale rise','bingham','bg3 8gd','342 8264'),
 ('mr','richard','neill','42 thatched way','winersby','wb3 6gq','505 6482');
 select * from t_between_and_0023;
-select distinct c_town from t_between_and_0023 where c_town between 'b' and 'n';
-select distinct c_town from t_between_and_0023 where c_town between 'b' and 'nz';
+select distinct c_town from t_between_and_0023 where c_town between 'b' and 'n' order by c_town;
+select distinct c_town from t_between_and_0023 where c_town between 'b' and 'nz' order by c_town;
 drop table t_between_and_0023;
+drop table if exists test_collate;
+create table test_collate(c1 text, c2 text, c3 text)charset 'utf8' collate 'utf8_unicode_ci';
+insert into test_collate values
+('t','T','T'),
+('T','t','t'),
+('TT','tT','Tt');
+select c1 between c2 and c3 from test_collate ;
+drop table test_collate;
+drop table if exists test_nocollate;
+create table test_nocollate(c1 text, c2 text, c3 text);
+insert into test_nocollate values
+('t','T','T'),
+('T','t','t'),
+('TT','tT','Tt');
+select c1 between c2 and c3 from test_nocollate ;
+drop table test_nocollate;
+-- test with openGauss unique datatype
+select '2'::money between '1' and '5'::money;
+select '2' not between '1'::money and '5'::money;
+select '2' between SYMMETRIC '5' and '1'::money;
+select '2'::money not between SYMMETRIC '5' and '1';
+
 drop schema db_between cascade;
 reset current_schema;

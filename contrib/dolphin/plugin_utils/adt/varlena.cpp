@@ -54,7 +54,9 @@
 #include "workload/cpwlm.h"
 #include "utils/varbit.h"
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/varbit.h"
 
+#define BETWEEN_AND_ARGC 3
 #define SUBSTR_WITH_LEN_OFFSET 2
 #define SUBSTR_A_CMPT_OFFSET 4
 #define JUDGE_INPUT_VALID(X, Y) ((NULL == (X)) || (NULL == (Y)))
@@ -7787,7 +7789,11 @@ static char* db_b_format_get_cstring(Datum param, Oid param_oid)
             ch_value = "0";
         }
     } else {
-        ch_value = "0";
+        if (param_oid == BOOLOID) {
+            ch_value = const_cast<char *>(param ? "1" : "0");
+        } else {
+            ch_value = "0";
+        }
     }
     if (ch_value[0] == ASCII_ADD) {
         ch_value = ch_value + 1;
@@ -9428,176 +9434,387 @@ Datum soundex_difference(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(1);
 }
 
-const char* build_pure_num(Oid type, int index, bool* is_contain_num, PG_FUNCTION_ARGS)
-{
-    Oid typeOutput;
-    bool typIsVarlena;
-    const char* result = NULL;
+#ifdef DOLPHIN
+extern "C" Datum uint8in(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum bittouint8(PG_FUNCTION_ARGS);
 
+enum CmpMode {BETWEEN_AND, SYMMETRIC_BETWEEN_AND, NOT_BETWEEN_AND, NOT_SYMMETRIC_BETWEEN_AND};
+
+static bool is_unsigned_intType(Oid oid)
+{
+    if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
+        oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
+        oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
+        oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8") ||
+        oid == get_typeoid(PG_CATALOG_NAMESPACE, "year") ||
+        oid == BITOID || oid == BOOLOID) {
+        return true;
+    }
+    return false;
+}
+
+static CmpType get_cmp_type(CmpType a, CmpType b)
+{
+    if (a == CMP_STRING_TYPE && b == CMP_STRING_TYPE) {
+        return CMP_STRING_TYPE;
+    }
+    if (a == CMP_INT_TYPE && b == CMP_INT_TYPE) {
+        return CMP_INT_TYPE;
+    }
+    if ((a == CMP_INT_TYPE || a == CMP_DECIMAL_TYPE) &&
+        (b == CMP_INT_TYPE || b == CMP_DECIMAL_TYPE)) {
+        return CMP_DECIMAL_TYPE;
+    }
+    return CMP_REAL_TYPE;
+}
+
+static CmpType agg_cmp_type(FunctionCallInfo fcinfo, int argc)
+{
+    bool unsigned_flag = false;
+    CmpType agg_type = map_oid_to_cmp_type(fcinfo->argTypes[0], &unsigned_flag);
+    for (int i = 1; i < argc; i++) {
+        agg_type = get_cmp_type(agg_type, map_oid_to_cmp_type(fcinfo->argTypes[i], &unsigned_flag));
+    }
+    return agg_type;
+}
+
+static bool is_temporal_type(Oid type)
+{
     switch (type) {
-        case INT4OID:
-        case INT8OID:
-        case NUMERICOID:
-        case FLOAT8OID:
-        case BOOLOID:
-            *is_contain_num = true;
-        case BITOID:
         case DATEOID:
         case TIMESTAMPOID:
         case TIMESTAMPTZOID:
-        case ABSTIMEOID:
-        case INTERVALOID:
-        case RELTIMEOID:
-        case TINTERVALOID:
         case TIMEOID:
         case TIMETZOID:
-            result = db_b_format_get_cstring(PG_GETARG_DATUM(index), type);
-            break;
-        case TEXTOID:
+            return true;
         default:
-            getTypeOutputInfo(fcinfo->argTypes[index], &typeOutput, &typIsVarlena);
-            result = extract_numericstr(OidOutputFunctionCall(typeOutput, fcinfo->arg[index]));
+            return false;
+    }
+}
+
+static bool is_type_with_date(Oid type)
+{
+    switch (type) {
+        case DATEOID:
+        case TIMESTAMPOID:
+        case TIMESTAMPTZOID:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static TimestampTz nontemporal_to_timestamptz(Oid type, Datum param)
+{
+    Oid typeOutput;
+    bool typIsVarlena = false;
+    TimestampTz timestamptz;
+    char* str_val = NULL;
+    getTypeOutputInfo(type, &typeOutput, &typIsVarlena);
+    str_val = OidOutputFunctionCall(typeOutput, param);
+    //Convert string to the TIMESTAMPTZ representation.
+    timestamptz = DatumGetTimestampTz(DirectFunctionCall3(timestamptz_in, CStringGetDatum(str_val),
+                                                          ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+    pfree_ext(str_val);
+    return timestamptz;
+}
+
+static TimestampTz temporal_to_timestamptz(Oid type, int index, PG_FUNCTION_ARGS)
+{
+    TimestampTz timestamptz;
+    switch (type) {
+        case DATEOID:
+            timestamptz = DatumGetTimestampTz(DirectFunctionCall1(date_timestamptz, PG_GETARG_DATEADT(index)));
+            break;
+        case SMALLDATETIMEOID:
+        case TIMESTAMPOID:
+            timestamptz = timestamp2timestamptz(PG_GETARG_TIMESTAMP(index));
+            break;
+        case TIMESTAMPTZOID:
+            timestamptz = PG_GETARG_TIMESTAMPTZ(index);
+            break;
+        default:
+            timestamptz = nontemporal_to_timestamptz(fcinfo->argTypes[index], fcinfo->arg[index]);
             break;
     }
+    return timestamptz;
+}
 
+static bool cmp_result_for_func(int res_arg1_2, int res_arg1_3, CmpMode mode)
+{
+    bool return_val = false;
+    switch (mode) {
+        case BETWEEN_AND:
+            return_val = (res_arg1_2 == 0 || res_arg1_2 == 1) && (res_arg1_3 == 0 || res_arg1_3 == -1);
+            break;
+        case SYMMETRIC_BETWEEN_AND:
+            return_val = ((res_arg1_2 == 0 || res_arg1_2 == 1) && (res_arg1_3 == 0 || res_arg1_3 == -1)) ||
+                        ((res_arg1_3 == 0 || res_arg1_3 == 1) && (res_arg1_2 == 0 || res_arg1_2 == -1));
+            break;
+        case NOT_BETWEEN_AND:
+            return_val = (res_arg1_2 == -1) || (res_arg1_3 == 1);
+            break;
+        case NOT_SYMMETRIC_BETWEEN_AND:
+            return_val = ((res_arg1_2 == -1) || (res_arg1_3 == 1)) && ((res_arg1_3 == -1) || (res_arg1_2 == 1));
+            break;
+    }
+    return return_val;
+}
+
+template<typename ExprType>
+static bool cmp_result_for_expr(ExprType arg_1, ExprType arg_2, ExprType arg_3, CmpMode mode)
+{
+    bool return_val = false;
+    switch (mode) {
+        case BETWEEN_AND:
+            return_val = (arg_1 >= arg_2) && (arg_1 <= arg_3);
+            break;
+        case SYMMETRIC_BETWEEN_AND:
+            return_val = ((arg_1 >= arg_2) && (arg_1 <= arg_3)) || ((arg_1 >= arg_3) && (arg_1 <= arg_2));
+            break;
+        case NOT_BETWEEN_AND:
+            return_val = (arg_1 < arg_2) || (arg_1 > arg_3);
+            break;
+        case NOT_SYMMETRIC_BETWEEN_AND:
+            return_val = ((arg_1 < arg_2) || (arg_1 > arg_3)) && ((arg_1 < arg_3) || (arg_1 > arg_2));
+            break;
+    }
+    return return_val;
+}
+
+static uint64 parse_unsigned_val(Oid typeoid, char* str_val)
+{
+    uint64 result = 0;
+    if (typeoid == BITOID) {
+        Datum bit_reps = DirectFunctionCall3(bit_in, CStringGetDatum(str_val),
+                                             ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+        result = DatumGetUInt64(DirectFunctionCall1(bittouint8, bit_reps));
+    } else {
+        result = DatumGetUInt64(DirectFunctionCall1(uint8in, CStringGetDatum(str_val)));
+    }
     return result;
+}
+
+static bool cmp_between_unsigned_type(PG_FUNCTION_ARGS, CmpMode mode)
+{
+    char* str_val = NULL;
+    Oid typeoid = InvalidOid;
+    uint64 cmp_args[BETWEEN_AND_ARGC];
+    for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
+        typeoid = fcinfo->argTypes[i];
+        str_val = db_b_format_get_cstring(PG_GETARG_DATUM(i), fcinfo->argTypes[i]);
+        if (is_unsigned_intType(typeoid)) {
+            cmp_args[i] = parse_unsigned_val(typeoid, str_val);
+        } else {
+            cmp_args[i] = DatumGetInt64(DirectFunctionCall1(int8in, CStringGetDatum(str_val)));
+        }
+    }
+    /*
+        case: unsigned value BETWEEN <some negative number> AND <some number>
+        rewritten to
+        value BETWEEN 0 AND <some number>
+    */
+    if (!is_unsigned_intType(fcinfo->argTypes[ARG_1]) && static_cast<int64>(cmp_args[ARG_1]) < 0) {
+        cmp_args[ARG_1] = 0;
+    }
+    /*
+        case: unsigned value BETWEEN <some number> AND <some negative number>
+        rewritten to
+        1 BETWEEN <some number> AND 0
+    */
+    if (!is_unsigned_intType(fcinfo->argTypes[ARG_2]) && static_cast<int64>(cmp_args[ARG_2]) < 0) {
+        cmp_args[ARG_2] = 0;
+        cmp_args[ARG_0] = 1;
+    }
+    return cmp_result_for_expr<uint64>(cmp_args[ARG_0], cmp_args[ARG_1], cmp_args[ARG_2], mode);
+}
+
+static bool cmp_between_signed_type(PG_FUNCTION_ARGS, CmpMode mode)
+{
+    char* str_val = NULL;
+    Oid typeoid = InvalidOid;
+    int64 cmp_args[BETWEEN_AND_ARGC];
+    for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
+        typeoid = fcinfo->argTypes[i];
+        str_val = db_b_format_get_cstring(PG_GETARG_DATUM(i), fcinfo->argTypes[i]);
+        if (is_unsigned_intType(typeoid)) {
+            cmp_args[i] = parse_unsigned_val(typeoid, str_val);
+        } else {
+            cmp_args[i] = DatumGetInt64(DirectFunctionCall1(int8in, CStringGetDatum(str_val)));
+        }
+    }
+    // cmp_args[ARG_2] is unsigned, and really large
+    if (is_unsigned_intType(fcinfo->argTypes[ARG_2]) && (int64) cmp_args[ARG_2] < 0) {
+        cmp_args[ARG_2] = INT64_MAX;
+    }
+    return cmp_result_for_expr<int64>(cmp_args[ARG_0], cmp_args[ARG_1], cmp_args[ARG_2], mode);
+}
+
+static CmpType handle_types_map(bool& cmp_as_ts_strings, bool& cmp_as_times, bool& cmp_as_ts, PG_FUNCTION_ARGS)
+{
+    int args_date_cnt = 0;
+    int args_time_cnt = 0;
+    CmpType type = agg_cmp_type(fcinfo, BETWEEN_AND_ARGC);
+    if (type == CMP_STRING_TYPE) {
+        for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
+            if (is_type_with_date(fcinfo->argTypes[i])) {
+                args_date_cnt++;
+            } else if (fcinfo->argTypes[i] == TIMEOID || fcinfo->argTypes[i] == TIMETZOID) {
+                args_time_cnt++;
+            }
+        }
+    }
+    if (args_date_cnt + args_time_cnt == BETWEEN_AND_ARGC) {
+        if (args_time_cnt == BETWEEN_AND_ARGC) {
+            // All are TIME_TYPE
+            cmp_as_times = true;
+        }
+        else {
+            // There is at least one TIMESTAMP/DATE_TYPE, all other are DATE, TIMESTAMP or TIME.
+            cmp_as_ts = true;
+        }
+    } else if (args_date_cnt > 0) {
+        // There is at least one TIMESTAMP/DATE, all other are DATE, TIMESTAMP, TIME or strings.
+        cmp_as_ts_strings = true;
+    }
+    return type;
+}
+
+static bool handle_comparision(CmpType type, CmpMode mode, bool compare_as_ts_with_strings,
+    bool compare_as_times, bool compare_as_ts, PG_FUNCTION_ARGS)
+{
+    bool return_val = false;
+    if (compare_as_times) {
+        Datum cmp_args[BETWEEN_AND_ARGC];
+        for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
+            if (fcinfo->argTypes[i] == TIMEOID) {
+                TimeADT time_val = PG_GETARG_TIMEADT(i);
+                cmp_args[i] = DirectFunctionCall1(time_timetz, time_val);
+            } else {
+                cmp_args[i] = PG_GETARG_DATUM(i);
+            }
+        }
+        return_val = cmp_result_for_func(DirectFunctionCall2(timetz_cmp, cmp_args[ARG_0], cmp_args[ARG_1]),
+                                         DirectFunctionCall2(timetz_cmp, cmp_args[ARG_0], cmp_args[ARG_2]), mode);
+    } else if (compare_as_ts) {
+        TimestampTz cmp_args[BETWEEN_AND_ARGC];
+        for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
+            cmp_args[i] = temporal_to_timestamptz(fcinfo->argTypes[i], i, fcinfo);
+        }
+        return_val = cmp_result_for_expr<TimestampTz>(cmp_args[ARG_0], cmp_args[ARG_1], cmp_args[ARG_2], mode);
+    } else if (compare_as_ts_with_strings) {
+        TimestampTz cmp_args[BETWEEN_AND_ARGC];
+        for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
+            if (is_temporal_type(fcinfo->argTypes[i])) {
+                cmp_args[i] = temporal_to_timestamptz(fcinfo->argTypes[i], i, fcinfo);
+            } else { //string type
+                cmp_args[i] = nontemporal_to_timestamptz(fcinfo->argTypes[i], fcinfo->arg[i]);
+            }
+        }
+        return_val = cmp_result_for_expr<TimestampTz>(cmp_args[ARG_0], cmp_args[ARG_1], cmp_args[ARG_2], mode);
+    } else if (type == CMP_STRING_TYPE) {
+        char* cmp_args[BETWEEN_AND_ARGC];
+        Oid typeOutput;
+        bool typIsVarlena;
+        int res_arg1_2 = 0;
+        int res_arg1_3 = 0;
+        for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
+            getTypeOutputInfo(fcinfo->argTypes[i], &typeOutput, &typIsVarlena);
+            cmp_args[i] = OidOutputFunctionCall(typeOutput, fcinfo->arg[i]);
+        }
+        res_arg1_2 = varstr_cmp(cmp_args[ARG_0], strlen(cmp_args[ARG_0]),
+            cmp_args[ARG_1], strlen(cmp_args[ARG_1]), PG_GET_COLLATION());
+        res_arg1_3 = varstr_cmp(cmp_args[ARG_0], strlen(cmp_args[ARG_0]),
+            cmp_args[ARG_2], strlen(cmp_args[ARG_2]), PG_GET_COLLATION());
+        if (res_arg1_2 != 0) {
+            res_arg1_2 = res_arg1_2 > 0 ? 1 : -1;
+        }
+        if (res_arg1_3 != 0) {
+            res_arg1_3 = res_arg1_3 > 0 ? 1 : -1;
+        }
+        for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
+            pfree_ext(cmp_args[i]);
+        }
+        return_val = cmp_result_for_func(res_arg1_2, res_arg1_3, mode);
+    } else if (type == CMP_INT_TYPE) {
+        if (is_unsigned_intType(fcinfo->argTypes[ARG_0])) {// Comparing as unsigned.
+            return_val = cmp_between_unsigned_type(fcinfo, mode);
+        } else {
+            return_val = cmp_between_signed_type(fcinfo, mode);
+        }
+    } else if (type == CMP_DECIMAL_TYPE) {
+        Numeric cmp_args[BETWEEN_AND_ARGC];
+        char* str_val = NULL;
+        Oid typeoid = InvalidOid;
+        for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
+            typeoid = fcinfo->argTypes[i];
+            str_val = db_b_format_get_cstring(PG_GETARG_DATUM(i), fcinfo->argTypes[i]);
+            if (typeoid == NUMERICOID) {
+                cmp_args[i] = PG_GETARG_NUMERIC(i);
+            } else if (is_unsigned_intType(typeoid)) { //bool, bit or varbit type
+                cmp_args[i] = DatumGetNumeric(DirectFunctionCall1(int8_numeric, 
+                                                                  (int64)parse_unsigned_val(typeoid, str_val)));
+            } else {
+                cmp_args[i] = DatumGetNumeric(DirectFunctionCall3(numeric_in, CStringGetDatum(str_val),
+                                                                  ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+            }
+        }
+        return_val = cmp_result_for_func(cmp_numerics(cmp_args[ARG_0], cmp_args[ARG_1]),
+                                         cmp_numerics(cmp_args[ARG_0], cmp_args[ARG_2]), mode);
+        for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
+            pfree_ext(cmp_args[i]);
+        }
+    } else if (type == CMP_REAL_TYPE) {
+        float8 cmp_args[BETWEEN_AND_ARGC];
+        char* str_val = NULL;
+        Oid typeoid = InvalidOid;
+        for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
+            typeoid = fcinfo->argTypes[i];
+            str_val = db_b_format_get_cstring(PG_GETARG_DATUM(i), fcinfo->argTypes[i]);
+            if (typeoid == FLOAT8OID) {
+                cmp_args[i] = PG_GETARG_FLOAT8(i);
+            } else if (typeoid == FLOAT4OID) {
+                cmp_args[i] = PG_GETARG_FLOAT4(i);
+            } else if (is_unsigned_intType(typeoid)) { //bool, bit, year
+                cmp_args[i] = DatumGetFloat8(DirectFunctionCall1(i8tod, (int64)parse_unsigned_val(typeoid, str_val)));
+            } else {
+                cmp_args[i] = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str_val)));
+            }
+        }
+        return_val = cmp_result_for_expr<float8>(cmp_args[ARG_0], cmp_args[ARG_1], cmp_args[ARG_2], mode);
+    }
+    return return_val;
+}
+
+static bool handle_bw_mode(CmpMode mode, PG_FUNCTION_ARGS)
+{
+    bool compare_as_ts_strings = false;
+    bool compare_as_times = false;
+    bool compare_as_ts = false;
+    CmpType type = handle_types_map(compare_as_ts_strings, compare_as_times, compare_as_ts, fcinfo);
+    return handle_comparision(type, mode, compare_as_ts_strings, compare_as_times, compare_as_ts, fcinfo);
 }
 
 Datum between_and(PG_FUNCTION_ARGS)
 {
-    bool is_contain_num = false;
-    const char* s_arg1 = build_pure_num(fcinfo->argTypes[0], 0, &is_contain_num, fcinfo);
-    const char* s_arg2 = build_pure_num(fcinfo->argTypes[1], 1, &is_contain_num, fcinfo);
-    const char* s_arg3 = build_pure_num(fcinfo->argTypes[2], 2, &is_contain_num, fcinfo);
-    text* t_arg1 = NULL;
-    text* t_arg2 = NULL;
-    text* t_arg3 = NULL;
-
-    if (is_contain_num) {
-        if ((strtod(s_arg1, NULL) >= strtod(s_arg2, NULL)) &&
-            (strtod(s_arg1, NULL) <= strtod(s_arg3, NULL))) {
-            PG_RETURN_BOOL(1);
-        } else {
-            PG_RETURN_BOOL(0);
-        }
-    } else {
-        t_arg1 = cstring_to_text(s_arg1);
-        t_arg2 = cstring_to_text(s_arg2);
-        t_arg3 = cstring_to_text(s_arg3);
-        if ((internal_text_pattern_compare(t_arg1, t_arg2) == 0 ||
-            internal_text_pattern_compare(t_arg1, t_arg2) == 1) &&
-            (internal_text_pattern_compare(t_arg1, t_arg3) == 0 ||
-            internal_text_pattern_compare(t_arg1, t_arg3) == -1)) {
-            PG_RETURN_BOOL(1);
-        }
-        else {
-            PG_RETURN_BOOL(0);
-        }
-    }
-
+    PG_RETURN_BOOL(handle_bw_mode(BETWEEN_AND, fcinfo));
 }
 
 Datum sym_between_and(PG_FUNCTION_ARGS)
 {
-    bool is_contain_num = false;
-    const char* s_arg1 = build_pure_num(fcinfo->argTypes[0], 0, &is_contain_num, fcinfo);
-    const char* s_arg2 = build_pure_num(fcinfo->argTypes[1], 1, &is_contain_num, fcinfo);
-    const char* s_arg3 = build_pure_num(fcinfo->argTypes[2], 2, &is_contain_num, fcinfo);
-    text* t_arg1 = NULL;
-    text* t_arg2 = NULL;
-    text* t_arg3 = NULL;
-
-    if (is_contain_num) {
-        if (((strtod(s_arg1, NULL) >= strtod(s_arg2, NULL)) && (strtod(s_arg1, NULL) <= strtod(s_arg3, NULL))) ||
-            ((strtod(s_arg1, NULL) >= strtod(s_arg3, NULL)) && (strtod(s_arg1, NULL) <= strtod(s_arg2, NULL)))) {
-            PG_RETURN_BOOL(1);
-        } else {
-            PG_RETURN_BOOL(0);
-        }
-    } else {
-        t_arg1 = cstring_to_text(s_arg1);
-        t_arg2 = cstring_to_text(s_arg2);
-        t_arg3 = cstring_to_text(s_arg3);
-        if (((internal_text_pattern_compare(t_arg1, t_arg2) == 0 ||
-            internal_text_pattern_compare(t_arg1, t_arg2) == 1) &&
-            (internal_text_pattern_compare(t_arg1, t_arg3) == 0 ||
-            internal_text_pattern_compare(t_arg1, t_arg3) == -1))||
-            ((internal_text_pattern_compare(t_arg1, t_arg3) == 0 ||
-            internal_text_pattern_compare(t_arg1, t_arg3) == 1) &&
-            (internal_text_pattern_compare(t_arg1, t_arg2) == 0 ||
-            internal_text_pattern_compare(t_arg1, t_arg2) == -1))) {
-            PG_RETURN_BOOL(1);
-        }
-        else {
-            PG_RETURN_BOOL(0);
-        }
-    }
+    PG_RETURN_BOOL(handle_bw_mode(SYMMETRIC_BETWEEN_AND, fcinfo));
 }
 
 Datum not_between_and(PG_FUNCTION_ARGS)
 {
-    bool is_contain_num = false;
-    const char* s_arg1 = build_pure_num(fcinfo->argTypes[0], 0, &is_contain_num, fcinfo);
-    const char* s_arg2 = build_pure_num(fcinfo->argTypes[1], 1, &is_contain_num, fcinfo);
-    const char* s_arg3 = build_pure_num(fcinfo->argTypes[2], 2, &is_contain_num, fcinfo);
-    text* t_arg1 = NULL;
-    text* t_arg2 = NULL;
-    text* t_arg3 = NULL;
-
-    if (is_contain_num) {
-        if ((strtod(s_arg1, NULL) < strtod(s_arg2, NULL)) ||
-            (strtod(s_arg1, NULL) > strtod(s_arg3, NULL))) {
-            PG_RETURN_BOOL(1);
-        } else {
-            PG_RETURN_BOOL(0);
-        }
-    } else {
-        t_arg1 = cstring_to_text(s_arg1);
-        t_arg2 = cstring_to_text(s_arg2);
-        t_arg3 = cstring_to_text(s_arg3);
-        if (internal_text_pattern_compare(t_arg1, t_arg2) == -1 || internal_text_pattern_compare(t_arg1, t_arg3) == 1) {
-            PG_RETURN_BOOL(1);
-        }
-        else {
-            PG_RETURN_BOOL(0);
-        }
-    }
+    PG_RETURN_BOOL(handle_bw_mode(NOT_BETWEEN_AND, fcinfo));
 }
 
 Datum not_sym_between_and(PG_FUNCTION_ARGS)
 {
-    bool is_contain_num = false;
-    const char* s_arg1 = build_pure_num(fcinfo->argTypes[0], 0, &is_contain_num, fcinfo);
-    const char* s_arg2 = build_pure_num(fcinfo->argTypes[1], 1, &is_contain_num, fcinfo);
-    const char* s_arg3 = build_pure_num(fcinfo->argTypes[2], 2, &is_contain_num, fcinfo);
-    text* t_arg1 = NULL;
-    text* t_arg2 = NULL;
-    text* t_arg3 = NULL;
-
-    if (is_contain_num) {
-        if ((strtod(s_arg1, NULL) < strtod(s_arg2, NULL)) || (strtod(s_arg1, NULL) > strtod(s_arg3, NULL)) ||
-            (strtod(s_arg1, NULL) < strtod(s_arg3, NULL)) || (strtod(s_arg1, NULL) > strtod(s_arg2, NULL))) {
-            PG_RETURN_BOOL(1);
-        } else {
-            PG_RETURN_BOOL(0);
-        }
-    } else {
-        t_arg1 = cstring_to_text(s_arg1);
-        t_arg2 = cstring_to_text(s_arg2);
-        t_arg3 = cstring_to_text(s_arg3);
-        if ((internal_text_pattern_compare(t_arg1, t_arg2) == -1 ||
-            internal_text_pattern_compare(t_arg1, t_arg3) == 1) ||
-            (internal_text_pattern_compare(t_arg1, t_arg3) == -1 ||
-            internal_text_pattern_compare(t_arg1, t_arg2) == 1)) {
-            PG_RETURN_BOOL(1);
-        }
-        else {
-            PG_RETURN_BOOL(0);
-        }
-    }
+    PG_RETURN_BOOL(handle_bw_mode(NOT_SYMMETRIC_BETWEEN_AND, fcinfo));
 }
 
-#ifdef DOLPHIN
 Datum make_set(PG_FUNCTION_ARGS)
 {
     int64 num = PG_GETARG_INT64(0);
@@ -10428,10 +10645,3 @@ Datum btvarstrequalimage(PG_FUNCTION_ARGS)
         PG_RETURN_BOOL(false);
 }
 
-Datum text_interval(PG_FUNCTION_ARGS)
-{
-    char* input = TextDatumGetCString(PG_GETARG_TEXT_P(0));
-    int32 typmod = PG_GETARG_INT32(1);
-    return DirectFunctionCall3(interval_in, CStringGetDatum(input), ObjectIdGetDatum(InvalidOid),
-                                Int32GetDatum(typmod));
-}
