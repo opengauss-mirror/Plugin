@@ -320,7 +320,7 @@ select `date`, `json`,
        `date` = `json` as `date=json`, `date` <=> `json` as `date<=>json` from test_json_table;
     date    |       json       | date>json | date>=json | date<json | date<=json | date!=json | date<>json | date=json | date<=>json 
 ------------+------------------+-----------+------------+-----------+------------+------------+------------+-----------+-------------
- 02-05-2023 | {"a": 1, "b": 2} | f         | f          | t         | t          | t          | t          | f         | f
+ 2023-02-05 | {"a": 1, "b": 2} | f         | f          | t         | t          | t          | t          | f         | f
 (1 row)
 
 select `date`, `json`,
@@ -330,7 +330,7 @@ select `date`, `json`,
        `json` = `date` as `json=date`, `json` <=> `date` as `json<=>date` from test_json_table;
     date    |       json       | json>date | json>=date | json<date | json<=date | json!=date | json<>date | json=date | json<=>date 
 ------------+------------------+-----------+------------+-----------+------------+------------+------------+-----------+-------------
- 02-05-2023 | {"a": 1, "b": 2} | t         | t          | f         | f          | t          | t          | f         | f
+ 2023-02-05 | {"a": 1, "b": 2} | t         | t          | f         | f          | t          | t          | f         | f
 (1 row)
 
 select `time`, `json`,
@@ -378,9 +378,9 @@ select `datetime`, `json`,
        `datetime` < `json` as `datetime<json`, `datetime` <= `json` as `datetime<=json`,
        `datetime` != `json` as `datetime!=json`, `datetime` <> `json` as `datetime<>json`,
        `datetime` = `json` as `datetime=json`, `datetime` <=> `json` as `datetime<=>json` from test_json_table;
-         datetime         |       json       | datetime>json | datetime>=json | datetime<json | datetime<=json | datetime!=json | datetime<>json | datetime=json | datetime<=>json 
---------------------------+------------------+---------------+----------------+---------------+----------------+----------------+----------------+---------------+-----------------
- Sun Feb 05 19:10:50 2023 | {"a": 1, "b": 2} | f             | f              | t             | t              | t              | t              | f             | f
+      datetime       |       json       | datetime>json | datetime>=json | datetime<json | datetime<=json | datetime!=json | datetime<>json | datetime=json | datetime<=>json 
+---------------------+------------------+---------------+----------------+---------------+----------------+----------------+----------------+---------------+-----------------
+ 2023-02-05 19:10:50 | {"a": 1, "b": 2} | f             | f              | t             | t              | t              | t              | f             | f
 (1 row)
 
 select `datetime`, `json`,
@@ -388,9 +388,9 @@ select `datetime`, `json`,
        `json` < `datetime` as `json<datetime`, `json` <= `datetime` as `json<=datetime`,
        `json` != `datetime` as `json!=datetime`, `json` <> `datetime` as `json<>datetime`,
        `json` = `datetime` as `json=datetime`, `json` <=> `datetime` as `json<=>datetime` from test_json_table;
-         datetime         |       json       | json>datetime | json>=datetime | json<datetime | json<=datetime | json!=datetime | json<>datetime | json=datetime | json<=>datetime 
---------------------------+------------------+---------------+----------------+---------------+----------------+----------------+----------------+---------------+-----------------
- Sun Feb 05 19:10:50 2023 | {"a": 1, "b": 2} | t             | t              | f             | f              | t              | t              | f             | f
+      datetime       |       json       | json>datetime | json>=datetime | json<datetime | json<=datetime | json!=datetime | json<>datetime | json=datetime | json<=>datetime 
+---------------------+------------------+---------------+----------------+---------------+----------------+----------------+----------------+---------------+-----------------
+ 2023-02-05 19:10:50 | {"a": 1, "b": 2} | t             | t              | f             | f              | t              | t              | f             | f
 (1 row)
 
 select `datetime(4)`, `json`,
@@ -398,9 +398,9 @@ select `datetime(4)`, `json`,
        `datetime(4)` < `json` as `datetime(4)<json`, `datetime(4)` <= `json` as `datetime(4)<=json`,
        `datetime(4)` != `json` as `datetime(4)!=json`, `datetime(4)` <> `json` as `datetime(4)<>json`,
        `datetime(4)` = `json` as `datetime(4)=json`, `datetime(4)` <=> `json` as `datetime(4)<=>json` from test_json_table;
-         datetime(4)          |       json       | datetime(4)>json | datetime(4)>=json | datetime(4)<json | datetime(4)<=json | datetime(4)!=json | datetime(4)<>json | datetime(4)=json | datetime(4)<=>json 
-------------------------------+------------------+------------------+-------------------+------------------+-------------------+-------------------+-------------------+------------------+--------------------
- Sun Feb 05 19:10:50.456 2023 | {"a": 1, "b": 2} | f                | f                 | t                | t                 | t                 | t                 | f                | f
+       datetime(4)       |       json       | datetime(4)>json | datetime(4)>=json | datetime(4)<json | datetime(4)<=json | datetime(4)!=json | datetime(4)<>json | datetime(4)=json | datetime(4)<=>json 
+-------------------------+------------------+------------------+-------------------+------------------+-------------------+-------------------+-------------------+------------------+--------------------
+ 2023-02-05 19:10:50.456 | {"a": 1, "b": 2} | f                | f                 | t                | t                 | t                 | t                 | f                | f
 (1 row)
 
 select `datetime(4)`, `json`,
@@ -408,9 +408,9 @@ select `datetime(4)`, `json`,
        `json` < `datetime(4)` as `json<datetime(4)`, `json` <= `datetime(4)` as `json<=datetime(4)`,
        `json` != `datetime(4)` as `json!=datetime(4)`, `json` <> `datetime(4)` as `json<>datetime(4)`,
        `json` = `datetime(4)` as `json=datetime(4)`, `json` <=> `datetime(4)` as `json<=>datetime(4)` from test_json_table;
-         datetime(4)          |       json       | json>datetime(4) | json>=datetime(4) | json<datetime(4) | json<=datetime(4) | json!=datetime(4) | json<>datetime(4) | json=datetime(4) | json<=>datetime(4) 
-------------------------------+------------------+------------------+-------------------+------------------+-------------------+-------------------+-------------------+------------------+--------------------
- Sun Feb 05 19:10:50.456 2023 | {"a": 1, "b": 2} | t                | t                 | f                | f                 | t                 | t                 | f                | f
+       datetime(4)       |       json       | json>datetime(4) | json>=datetime(4) | json<datetime(4) | json<=datetime(4) | json!=datetime(4) | json<>datetime(4) | json=datetime(4) | json<=>datetime(4) 
+-------------------------+------------------+------------------+-------------------+------------------+-------------------+-------------------+-------------------+------------------+--------------------
+ 2023-02-05 19:10:50.456 | {"a": 1, "b": 2} | t                | t                 | f                | f                 | t                 | t                 | f                | f
 (1 row)
 
 select `timestamp`, `json`,
@@ -418,9 +418,9 @@ select `timestamp`, `json`,
        `timestamp` < `json` as `timestamp<json`, `timestamp` <= `json` as `timestamp<=json`,
        `timestamp` != `json` as `timestamp!=json`, `timestamp` <> `json` as `timestamp<>json`,
        `timestamp` = `json` as `timestamp=json`, `timestamp` <=> `json` as `timestamp<=>json` from test_json_table;
-          timestamp           |       json       | timestamp>json | timestamp>=json | timestamp<json | timestamp<=json | timestamp!=json | timestamp<>json | timestamp=json | timestamp<=>json 
-------------------------------+------------------+----------------+-----------------+----------------+-----------------+-----------------+-----------------+----------------+------------------
- Sun Feb 05 19:10:50 2023 PST | {"a": 1, "b": 2} | f              | f               | t              | t               | t               | t               | f              | f
+       timestamp        |       json       | timestamp>json | timestamp>=json | timestamp<json | timestamp<=json | timestamp!=json | timestamp<>json | timestamp=json | timestamp<=>json 
+------------------------+------------------+----------------+-----------------+----------------+-----------------+-----------------+-----------------+----------------+------------------
+ 2023-02-05 19:10:50-08 | {"a": 1, "b": 2} | f              | f               | t              | t               | t               | t               | f              | f
 (1 row)
 
 select `timestamp`, `json`,
@@ -428,9 +428,9 @@ select `timestamp`, `json`,
        `json` < `timestamp` as `json<timestamp`, `json` <= `timestamp` as `json<=timestamp`,
        `json` != `timestamp` as `json!=timestamp`, `json` <> `timestamp` as `json<>timestamp`,
        `json` = `timestamp` as `json=timestamp`, `json` <=> `timestamp` as `json<=>timestamp` from test_json_table;
-          timestamp           |       json       | json>timestamp | json>=timestamp | json<timestamp | json<=timestamp | json!=timestamp | json<>timestamp | json=timestamp | json<=>timestamp 
-------------------------------+------------------+----------------+-----------------+----------------+-----------------+-----------------+-----------------+----------------+------------------
- Sun Feb 05 19:10:50 2023 PST | {"a": 1, "b": 2} | t              | t               | f              | f               | t               | t               | f              | f
+       timestamp        |       json       | json>timestamp | json>=timestamp | json<timestamp | json<=timestamp | json!=timestamp | json<>timestamp | json=timestamp | json<=>timestamp 
+------------------------+------------------+----------------+-----------------+----------------+-----------------+-----------------+-----------------+----------------+------------------
+ 2023-02-05 19:10:50-08 | {"a": 1, "b": 2} | t              | t               | f              | f               | t               | t               | f              | f
 (1 row)
 
 select `timestamp(4)`, `json`,
@@ -438,9 +438,9 @@ select `timestamp(4)`, `json`,
        `timestamp(4)` < `json` as `timestamp(4)<json`, `timestamp(4)` <= `json` as `timestamp(4)<=json`,
        `timestamp(4)` != `json` as `timestamp(4)!=json`, `timestamp(4)` <> `json` as `timestamp(4)<>json`,
        `timestamp(4)` = `json` as `timestamp(4)=json`, `timestamp(4)` <=> `json` as `timestamp(4)<=>json` from test_json_table;
-           timestamp(4)           |       json       | timestamp(4)>json | timestamp(4)>=json | timestamp(4)<json | timestamp(4)<=json | timestamp(4)!=json | timestamp(4)<>json | timestamp(4)=json | timestamp(4)<=>json 
-----------------------------------+------------------+-------------------+--------------------+-------------------+--------------------+--------------------+--------------------+-------------------+---------------------
- Sun Feb 05 19:10:50.456 2023 PST | {"a": 1, "b": 2} | f                 | f                  | t                 | t                  | t                  | t                  | f                 | f
+        timestamp(4)        |       json       | timestamp(4)>json | timestamp(4)>=json | timestamp(4)<json | timestamp(4)<=json | timestamp(4)!=json | timestamp(4)<>json | timestamp(4)=json | timestamp(4)<=>json 
+----------------------------+------------------+-------------------+--------------------+-------------------+--------------------+--------------------+--------------------+-------------------+---------------------
+ 2023-02-05 19:10:50.456-08 | {"a": 1, "b": 2} | f                 | f                  | t                 | t                  | t                  | t                  | f                 | f
 (1 row)
 
 select `timestamp(4)`, `json`,
@@ -448,9 +448,9 @@ select `timestamp(4)`, `json`,
        `json` < `timestamp(4)` as `json<timestamp(4)`, `json` <= `timestamp(4)` as `json<=timestamp(4)`,
        `json` != `timestamp(4)` as `json!=timestamp(4)`, `json` <> `timestamp(4)` as `json<>timestamp(4)`,
        `json` = `timestamp(4)` as `json=timestamp(4)`, `json` <=> `timestamp(4)` as `json<=>timestamp(4)` from test_json_table;
-           timestamp(4)           |       json       | json>timestamp(4) | json>=timestamp(4) | json<timestamp(4) | json<=timestamp(4) | json!=timestamp(4) | json<>timestamp(4) | json=timestamp(4) | json<=>timestamp(4) 
-----------------------------------+------------------+-------------------+--------------------+-------------------+--------------------+--------------------+--------------------+-------------------+---------------------
- Sun Feb 05 19:10:50.456 2023 PST | {"a": 1, "b": 2} | t                 | t                  | f                 | f                  | t                  | t                  | f                 | f
+        timestamp(4)        |       json       | json>timestamp(4) | json>=timestamp(4) | json<timestamp(4) | json<=timestamp(4) | json!=timestamp(4) | json<>timestamp(4) | json=timestamp(4) | json<=>timestamp(4) 
+----------------------------+------------------+-------------------+--------------------+-------------------+--------------------+--------------------+--------------------+-------------------+---------------------
+ 2023-02-05 19:10:50.456-08 | {"a": 1, "b": 2} | t                 | t                  | f                 | f                  | t                  | t                  | f                 | f
 (1 row)
 
 select `year`, `json`,
