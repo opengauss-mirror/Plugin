@@ -51,7 +51,10 @@ Datum set_native_password(PG_FUNCTION_ARGS)
     text *password = PG_GETARG_TEXT_PP(ARG_1);
 
     char *sha1_password = TextDatumGetCString(DirectFunctionCall1(sha1, PointerGetDatum(password)));
-    Datum double_sha1_password = DirectFunctionCall1(sha1, CStringGetTextDatum(sha1_hex_to_bytes(sha1_password)));
+    char sha1_password_byte[SHA_DIGEST_LENGTH + 1];
+    sha1_hex_to_bytes(sha1_password, sha1_password_byte);
+
+    Datum double_sha1_password = DirectFunctionCall1(sha1, CStringGetByteaDatum(sha1_password_byte, SHA_DIGEST_LENGTH));
 
     /*
     * Open pg_authid with RowExclusiveLock, do not release it until the end of the transaction.
@@ -97,18 +100,15 @@ Datum set_native_password(PG_FUNCTION_ARGS)
 }
 
 /* Tranform string(40Bytes) to binary(20Bytes) */
-char* sha1_hex_to_bytes(const char b[SHA_DIGEST_LENGTH * 2])
+void sha1_hex_to_bytes(const char b[SHA_DIGEST_LENGTH * 2], char t[SHA_DIGEST_LENGTH + 1])
 {
     int i = 0;
     uint8 v1, v2;
 
-    char *to = (char*)palloc0(SHA_DIGEST_LENGTH + 1);
     for (i = 0; i < SHA_DIGEST_LENGTH * 2; i += 2) {
         v1 = (b[i] >= 'a') ? (b[i] - 'a' + 10) : (b[i] - '0');
         v2 = (*((b + i) + 1)) >= 'a' ? (*((b + i) + 1)) - 'a' + 10 : (*((b + i) + 1)) - '0';
-        to[i / 2] = (v1 << 4) + v2;
+        t[i / 2] = (v1 << 4) + v2;
     }
-    to[SHA_DIGEST_LENGTH] = 0x00;
-
-    return to;
+    t[SHA_DIGEST_LENGTH] = 0x00;
 }
