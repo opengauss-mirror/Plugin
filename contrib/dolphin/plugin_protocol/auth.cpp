@@ -320,22 +320,27 @@ bool exec_native_password_auth(Port *port)
     }
 
     stored_password = TextDatumGetCString(datum); 
+    char stored_password_bytes[SHA_DIGEST_LENGTH + 1];
+    sha1_hex_to_bytes(stored_password, stored_password_bytes);
 
     // 2. compute SHA1(scramble + rolpasswordext) as PASSWORD
     rc = memcpy_s(scramble_password, AUTH_PLUGIN_DATA_LEN, scramble, AUTH_PLUGIN_DATA_LEN);
     securec_check(rc, "", "");
-    rc = memcpy_s(scramble_password + AUTH_PLUGIN_DATA_LEN, SHA_DIGEST_LENGTH, sha1_hex_to_bytes(stored_password), AUTH_PLUGIN_DATA_LEN);
+    rc = memcpy_s(scramble_password + AUTH_PLUGIN_DATA_LEN, SHA_DIGEST_LENGTH, stored_password_bytes, AUTH_PLUGIN_DATA_LEN);
     securec_check(rc, "", "");
     scramble_password[AUTH_PLUGIN_DATA_LEN + SHA_DIGEST_LENGTH] = 0x00; 
 
-    sha1_scramble_password = TextDatumGetCString(DirectFunctionCall1(sha1, CStringGetTextDatum(scramble_password)));
+    sha1_scramble_password = TextDatumGetCString(
+        DirectFunctionCall1(sha1, CStringGetByteaDatum(scramble_password, AUTH_PLUGIN_DATA_LEN + SHA_DIGEST_LENGTH)));
 
     // 3. compute token XOR PASSWORD as stage1_hash
-    XOR_between_password(token, sha1_hex_to_bytes(sha1_scramble_password), stage1_hash, SHA_DIGEST_LENGTH);
+    char sha1_scramble_password_bytes[SHA_DIGEST_LENGTH + 1];
+    sha1_hex_to_bytes(sha1_scramble_password, sha1_scramble_password_bytes);
+    XOR_between_password(token, sha1_scramble_password_bytes, stage1_hash, SHA_DIGEST_LENGTH);
     stage1_hash[SHA_DIGEST_LENGTH] = 0x00;
 
     // 4. compare SHA1(statge1_hash) and rolpasswordext
-    stage2_hash = TextDatumGetCString(DirectFunctionCall1(sha1, CStringGetTextDatum(stage1_hash)));
+    stage2_hash = TextDatumGetCString(DirectFunctionCall1(sha1, CStringGetByteaDatum(stage1_hash, SHA_DIGEST_LENGTH)));
     if (!strcasecmp(stored_password, stage2_hash)) {
         ret = true;
     } else {
