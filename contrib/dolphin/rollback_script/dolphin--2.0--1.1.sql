@@ -4029,11 +4029,6 @@ DROP FUNCTION IF EXISTS dolphin_catalog.json_uplus(json);
 DROP OPERATOR IF EXISTS dolphin_catalog.-(json);
 
 -- binary cmp operator
-DROP FUNCTION IF EXISTS dolphin_catalog.json_null_save_eq(json, "any");
-DROP OPERATOR IF EXISTS dolphin_catalog.<=>(json, "any");
-DROP FUNCTION IF EXISTS dolphin_catalog.json_null_save_eq(text, json);
-DROP OPERATOR IF EXISTS dolphin_catalog.<=>(text, json);
-
 DROP FUNCTION IF EXISTS dolphin_catalog.json_eq(json, "any");
 DROP OPERATOR IF EXISTS dolphin_catalog.=(json, "any");
 DROP FUNCTION IF EXISTS dolphin_catalog.json_eq(text, json);

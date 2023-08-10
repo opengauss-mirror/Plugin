@@ -796,33 +796,6 @@ select `id`, `json1`, '{"num": 1, "name": "edf"}' as `jsonc`,
  id  |           json1           |           jsonc           | json1>jsonc | json1>=jsonc | json1<jsonc | json1<=jsonc | json1!=jsonc | json1<>jsonc | json1=jsonc | json1<=>jsonc 
 -----+---------------------------+---------------------------+-------------+--------------+-------------+--------------+--------------+--------------+-------------+---------------
    1 |                           | {"num": 1, "name": "edf"} |             |              |             |              |              |              |             | f
-   2 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
-   3 |                           | {"num": 1, "name": "edf"} |             |              |             |              |              |              |             | f
-  41 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
-  42 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
- 501 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
- 502 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
- 503 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
- 504 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
- 504 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
- 505 | {"nam": 2, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
- 506 | {"num": 1, "name": "edf"} | {"num": 1, "name": "edf"} | f           | t            | f           | t            | f            | f            | t           | t
- 507 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
- 508 | ["a","b","c"]             | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
- 509 | [1,2,"a"]                 | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
- 510 | [1,2,3]                   | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
- 511 | [1,2,3]                   | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
- 512 | [1,2,3]                   | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
-(18 rows)
-
-select `id`, `json1`, '{"num": 1, "name": "edf"}' as `jsonc`,
-       `jsonc` > `json1` as `jsonc>json1`, `jsonc` >= `json1` as `jsonc>=json1`,
-       `jsonc` < `json1` as `jsonc<json1`, `jsonc` <= `json1` as `jsonc<=json1`,
-       `jsonc` != `json1` as `jsonc!=json1`, `jsonc` <> `json1` as `jsonc<>json1`,
-       `jsonc` = `json1` as `jsonc=json1`, `jsonc` <=> `json1` as `jsonc<=>json1` from test_json_cmp_table;
- id  |           json1           |           jsonc           | jsonc>json1 | jsonc>=json1 | jsonc<json1 | jsonc<=json1 | jsonc!=json1 | jsonc<>json1 | jsonc=json1 | jsonc<=>json1 
------+---------------------------+---------------------------+-------------+--------------+-------------+--------------+--------------+--------------+-------------+---------------
-   1 |                           | {"num": 1, "name": "edf"} |             |              |             |              |              |              |             | f
    2 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | t           | t            | f           | f            | t            | t            | f           | f
    3 |                           | {"num": 1, "name": "edf"} |             |              |             |              |              |              |             | f
   41 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | t           | t            | f           | f            | t            | t            | f           | f
@@ -833,13 +806,40 @@ select `id`, `json1`, '{"num": 1, "name": "edf"}' as `jsonc`,
  504 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | t           | t            | f           | f            | t            | t            | f           | f
  504 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | t           | t            | f           | f            | t            | t            | f           | f
  505 | {"nam": 2, "name": "abc"} | {"num": 1, "name": "edf"} | t           | t            | f           | f            | t            | t            | f           | f
- 506 | {"num": 1, "name": "edf"} | {"num": 1, "name": "edf"} | f           | t            | f           | t            | f            | f            | t           | t
+ 506 | {"num": 1, "name": "edf"} | {"num": 1, "name": "edf"} | t           | t            | f           | f            | t            | t            | f           | f
  507 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | t           | t            | f           | f            | t            | t            | f           | f
  508 | ["a","b","c"]             | {"num": 1, "name": "edf"} | t           | t            | f           | f            | t            | t            | f           | f
  509 | [1,2,"a"]                 | {"num": 1, "name": "edf"} | t           | t            | f           | f            | t            | t            | f           | f
  510 | [1,2,3]                   | {"num": 1, "name": "edf"} | t           | t            | f           | f            | t            | t            | f           | f
  511 | [1,2,3]                   | {"num": 1, "name": "edf"} | t           | t            | f           | f            | t            | t            | f           | f
  512 | [1,2,3]                   | {"num": 1, "name": "edf"} | t           | t            | f           | f            | t            | t            | f           | f
+(18 rows)
+
+select `id`, `json1`, '{"num": 1, "name": "edf"}' as `jsonc`,
+       `jsonc` > `json1` as `jsonc>json1`, `jsonc` >= `json1` as `jsonc>=json1`,
+       `jsonc` < `json1` as `jsonc<json1`, `jsonc` <= `json1` as `jsonc<=json1`,
+       `jsonc` != `json1` as `jsonc!=json1`, `jsonc` <> `json1` as `jsonc<>json1`,
+       `jsonc` = `json1` as `jsonc=json1`, `jsonc` <=> `json1` as `jsonc<=>json1` from test_json_cmp_table;
+ id  |           json1           |           jsonc           | jsonc>json1 | jsonc>=json1 | jsonc<json1 | jsonc<=json1 | jsonc!=json1 | jsonc<>json1 | jsonc=json1 | jsonc<=>json1 
+-----+---------------------------+---------------------------+-------------+--------------+-------------+--------------+--------------+--------------+-------------+---------------
+   1 |                           | {"num": 1, "name": "edf"} |             |              |             |              |              |              |             | f
+   2 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+   3 |                           | {"num": 1, "name": "edf"} |             |              |             |              |              |              |             | f
+  41 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+  42 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+ 501 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+ 502 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+ 503 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+ 504 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+ 504 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+ 505 | {"nam": 2, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+ 506 | {"num": 1, "name": "edf"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+ 507 | {"num": 1, "name": "abc"} | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+ 508 | ["a","b","c"]             | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+ 509 | [1,2,"a"]                 | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+ 510 | [1,2,3]                   | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+ 511 | [1,2,3]                   | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
+ 512 | [1,2,3]                   | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
 (18 rows)
 
 ---------- tail ----------

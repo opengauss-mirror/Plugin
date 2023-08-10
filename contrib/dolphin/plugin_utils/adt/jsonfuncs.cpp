@@ -6288,14 +6288,11 @@ static int json_compare(FunctionCallInfo fcinfo, const char *funcName, bool null
     valtype[0] = get_fn_expr_argtype(fcinfo->flinfo, 0);
     valtype[1] = get_fn_expr_argtype(fcinfo->flinfo, 1);
 
-    if (VALTYPE_IS_JSON(valtype[0])) {
-        if (!VALTYPE_IS_JSON(valtype[1])) {
-            return JSON_GT;
-        }
-    } else {
-        if (VALTYPE_IS_JSON(valtype[1])) {
-            return JSON_LT;
-        }
+    // TODO: add param to determine if string can be compared with json
+    if (valtype[0] == JSONOID && valtype[1] != JSONOID) {
+        return JSON_GT;
+    } else if (valtype[0] != JSONOID && valtype[1] == JSONOID) {
+        return JSON_LT;
     }
 
     cJSON **jsondoc = (cJSON **)palloc(json_num * sizeof(cJSON *));
@@ -6389,23 +6386,6 @@ Datum json_uplus(PG_FUNCTION_ARGS)
     cJSON_free(r);
     cJSON_Delete(root);
     PG_RETURN_TEXT_P(result);
-}
-
-Datum json_add(PG_FUNCTION_ARGS)
-{
-    PG_RETURN_TEXT_P(json_merge_preserve(fcinfo));
-}
-
-Datum json_null_save_eq(PG_FUNCTION_ARGS)
-{
-    int result = 0;
-    bool null_save_eq = true;
-    result = json_compare(fcinfo, "json_null_save_eq", null_save_eq);
-    if (result == JSON_EQ) {
-        PG_RETURN_BOOL(true);
-    } else {
-        PG_RETURN_BOOL(false);
-    }
 }
 
 Datum json_eq(PG_FUNCTION_ARGS)

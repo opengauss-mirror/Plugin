@@ -7846,13 +7846,6 @@ CREATE OR REPLACE FUNCTION dolphin_catalog.json_uplus(json) RETURNS json LANGUAG
 CREATE OPERATOR dolphin_catalog.+(rightarg = json, procedure = dolphin_catalog.json_uplus);
 
 -- binary cmp operator
-DROP FUNCTION IF EXISTS dolphin_catalog.json_null_save_eq(json, "any");
-CREATE OR REPLACE FUNCTION dolphin_catalog.json_null_save_eq(json, "any") RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_null_save_eq';
-CREATE OPERATOR dolphin_catalog.<=>(leftarg = json, rightarg = "any", procedure = dolphin_catalog.json_null_save_eq);
-DROP FUNCTION IF EXISTS dolphin_catalog.json_null_save_eq(text, json);
-CREATE OR REPLACE FUNCTION dolphin_catalog.json_null_save_eq(text, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_null_save_eq';
-CREATE OPERATOR dolphin_catalog.<=>(leftarg = text, rightarg = json, procedure = dolphin_catalog.json_null_save_eq);
-
 DROP FUNCTION IF EXISTS dolphin_catalog.json_eq(json, "any");
 CREATE OR REPLACE FUNCTION dolphin_catalog.json_eq(json, "any") RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_eq';
 CREATE OPERATOR dolphin_catalog.=(leftarg = json, rightarg = "any", procedure = dolphin_catalog.json_eq);
