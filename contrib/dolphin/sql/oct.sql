@@ -29,6 +29,11 @@ SELECT OCT('+19.6');
 SELECT OCT('a9');
 SELECT OCT('!9');
 SELECT OCT('@#9');
+SELECT OCT('  +123');
+SELECT OCT('  -123');
+SELECT OCT('  +1+23');
+SELECT OCT('  -1+23');
+
 
 -- 测试正常数字十进制转八进制
 SELECT OCT('10');
