@@ -90,5 +90,29 @@ select find_in_set(1.1,'a,1.2,c,qwee,1212,1.1');
            6
 (1 row)
 
+select find_in_set('','a,b,c,,dx');
+ find_in_set 
+-------------
+           4
+(1 row)
+
+select find_in_set('','');
+ find_in_set 
+-------------
+           0
+(1 row)
+
+select find_in_set('a','a');
+ find_in_set 
+-------------
+           1
+(1 row)
+
+select find_in_set(1,'1');
+ find_in_set 
+-------------
+           1
+(1 row)
+
 drop schema db_find_in_set cascade;
 reset current_schema;

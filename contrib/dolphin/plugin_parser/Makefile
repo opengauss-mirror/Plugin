@@ -107,8 +107,9 @@ hint_gram.o: hint_gram.hpp
 # are not cleaned here.
 clean distclean maintainer-clean:
 	rm -f lex.backup
-	rm -f gram.cpp gram.hpp scan.inc hint_gram.hpp hint_gram.cpp
+	rm -f gram.cpp gram.hpp scan.inc hint_gram.hpp hint_gram.cpp hint_scan.inc
 	rm -f kwlist_d.h
+	rm -f $(top_builddir)/$(base_dir)/include/plugin_parser/kwlist_d.h
 
 maintainer-check:
 	$(PERL) $(top_srcdir)/src/tools/check_keywords.pl $(top_srcdir)

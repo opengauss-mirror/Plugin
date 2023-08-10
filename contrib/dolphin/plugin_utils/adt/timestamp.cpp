@@ -146,7 +146,11 @@ typedef struct {
 static TimeOffset time2t(const int hour, const int min, const int sec, const fsec_t fsec);
 static void EncodeSpecialTimestamp(Timestamp dt, char* str);
 static Timestamp dt2local(Timestamp dt, int timezone);
+#ifdef DOLPHIN
+static void AdjustTimestampForTypmod(Timestamp* time, int32 typmod, bool isWithTz = false);
+#else
 static void AdjustTimestampForTypmod(Timestamp* time, int32 typmod);
+#endif
 static void AdjustIntervalForTypmod(Interval* interval, int32 typmod);
 static void interval_format_adjust(Interval* interval, char type_mode);
 static void interval_result_adjust(Interval* result);
@@ -174,7 +178,7 @@ static int cal_weekday_interval(struct pg_tm* tm, bool sunday_is_first_day);
 static int b_db_sumdays(int year, int month, int day);
 static bool timestampdiff_datetime_internal(int64 *result,  text *units, Timestamp dt1, Timestamp dt2);
 static inline long long str2ll_with_endptr(char *start, int tmp_len, int *true_len, int *error);
-static void check_timestamp_overflow(Timestamp* time);
+static void check_timestamp_overflow(Timestamp* time, bool isWithTz);
 #endif
 
 void timestamp_FilpSign(pg_tm* tm);
@@ -1178,7 +1182,14 @@ Datum timestamp_scale(PG_FUNCTION_ARGS)
     PG_RETURN_TIMESTAMP(result);
 }
 
+#ifdef DOLPHIN
+/*
+ * @param[in] isWithTz if timestamp has a time zone
+ */
+static void AdjustTimestampForTypmod(Timestamp* time, int32 typmod, bool isWithTz)
+#else
 static void AdjustTimestampForTypmod(Timestamp* time, int32 typmod)
+#endif
 {
 #ifdef HAVE_INT64_TIMESTAMP
     static const int64 TimestampScales[MAX_TIMESTAMP_PRECISION + 1] = {INT64CONST(1000000),
@@ -1215,21 +1226,31 @@ static void AdjustTimestampForTypmod(Timestamp* time, int32 typmod)
              */
 #ifdef HAVE_INT64_TIMESTAMP
         if (*time >= INT64CONST(0)) {
+    #ifdef DOLPHIN
+            *time = (*time / TimestampScales[typmod] + ((*time % TimestampScales[typmod]) +
+                TimestampOffsets[typmod]) / TimestampScales[typmod]) * TimestampScales[typmod];
+    #else
             *time = ((*time + TimestampOffsets[typmod]) / TimestampScales[typmod]) * TimestampScales[typmod];
+    #endif
         } else {
+    #ifdef DOLPHIN
+            *time = -(((-*time) / TimestampScales[typmod] + (((-*time) % TimestampScales[typmod]) +
+                TimestampOffsets[typmod]) / TimestampScales[typmod]) * TimestampScales[typmod]);
+    #else
             *time = -((((-*time) + TimestampOffsets[typmod]) / TimestampScales[typmod]) * TimestampScales[typmod]);
+    #endif
         }
 #else
         *time = rint((double)*time * TimestampScales[typmod]) / TimestampScales[typmod];
 #endif
 #ifdef DOLPHIN
-        check_timestamp_overflow(time);
+        check_timestamp_overflow(time, isWithTz);
 #endif
     }
 }
 
 #ifdef DOLPHIN
-static void check_timestamp_overflow(Timestamp* time)
+static void check_timestamp_overflow(Timestamp* time, bool isWithTz)
 {
     int tz;
     struct pg_tm tt, *tm = &tt;
@@ -1239,8 +1260,9 @@ static void check_timestamp_overflow(Timestamp* time)
 
     if (TIMESTAMP_NOT_FINITE(*time))
         EncodeSpecialTimestamp(*time, buf);
-    else if (timestamp2tm(*time, &tz, tm, &fsec, &tzn, NULL) == 0)
-        EncodeDateTimeForBDatabase(tm, fsec, true, tz, tzn, u_sess->time_cxt.DateStyle, buf);
+    else if (timestamp2tm(*time, isWithTz ? &tz : NULL, tm, &fsec, isWithTz ? &tzn : NULL, NULL) == 0)
+        EncodeDateTimeForBDatabase(tm, fsec, true,
+            isWithTz ? tz : 0, isWithTz ? tzn : NULL, u_sess->time_cxt.DateStyle, buf);
     else {
         ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
@@ -1250,12 +1272,12 @@ static void check_timestamp_overflow(Timestamp* time)
         tm->tm_hour = 0;
         tm->tm_min = 0;
         tm->tm_sec = 0;
-        tz = 0;
-        tm2timestamp(tm, fsec, &tz, time);
+        fsec = 0;
+        tm2timestamp(tm, fsec, isWithTz ? &tz : NULL, time);
         return;
     }
 
-    if (tm2timestamp(tm, fsec, &tz, time) != 0) {
+    if (tm2timestamp(tm, fsec, isWithTz ? &tz : NULL, time) != 0) {
         ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", buf)));
         tm->tm_year = 0;
@@ -1264,7 +1286,8 @@ static void check_timestamp_overflow(Timestamp* time)
         tm->tm_hour = 0;
         tm->tm_min = 0;
         tm->tm_sec = 0;
-        tm2timestamp(tm, fsec, &tz, time);
+        fsec = 0;
+        tm2timestamp(tm, fsec, isWithTz ? &tz : NULL, time);
     }
 }
 #endif
@@ -1355,7 +1378,11 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
         }
     }
 
+#ifdef DOLPHIN
+    AdjustTimestampForTypmod(&result, typmod, true);
+#else
     AdjustTimestampForTypmod(&result, typmod);
+#endif
 
     PG_RETURN_TIMESTAMPTZ(result);
 }
@@ -1415,7 +1442,11 @@ Datum timestamptz_recv(PG_FUNCTION_ARGS)
     else if (timestamp2tm(timestamp, &tz, tm, &fsec, NULL, NULL) != 0)
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
 
+#ifdef DOLPHIN
+    AdjustTimestampForTypmod(&timestamp, typmod, true);
+#else
     AdjustTimestampForTypmod(&timestamp, typmod);
+#endif
 
     PG_RETURN_TIMESTAMPTZ(timestamp);
 }
@@ -1463,7 +1494,11 @@ Datum timestamptz_scale(PG_FUNCTION_ARGS)
 
     result = timestamp;
 
+#ifdef DOLPHIN
+    AdjustTimestampForTypmod(&result, typmod, true);
+#else
     AdjustTimestampForTypmod(&result, typmod);
+#endif
 
     PG_RETURN_TIMESTAMPTZ(result);
 }
@@ -8899,7 +8934,7 @@ static inline bool date_format_internal(char *str, char *buf, char *format, int 
                 if (locale == NULL) {
                     locale = MyLocaleSearch(GetSessionContext()->lc_time_names);
                 }
-                char *weekname = locale->ab_day_names[weekday - 1];
+                char *weekname = locale->ab_day_names[(weekday + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK];
                 insert_len = sprintf_s(buf, MAXDATELEN, "%s", weekname);
                 securec_check_ss(insert_len, "", "");
                 rc = strcat_s(str, remain, buf);
@@ -9015,7 +9050,7 @@ static inline bool date_format_internal(char *str, char *buf, char *format, int 
                 if (locale == NULL) {
                     locale = MyLocaleSearch(GetSessionContext()->lc_time_names);
                 }
-                char *weekname = locale->day_names[weekday - 1];
+                char *weekname = locale->day_names[(weekday + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK];
                 insert_len = sprintf_s(buf, MAXDATELEN, "%s", weekname);
                 securec_check_ss(insert_len, "", "");
                 rc = strcat_s(str, remain, buf);

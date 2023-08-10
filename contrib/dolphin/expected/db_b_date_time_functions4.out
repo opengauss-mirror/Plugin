@@ -875,5 +875,53 @@ select DATE_add(CONtext,INTERVAL 31 DAY) from memos;
 (2 rows)
 
 drop table if exists memos;
+select date_format('2009-10-04','%W%w%a');
+ date_format 
+-------------
+ Sunday0Sun
+(1 row)
+
+select date_format('2009-10-05','%W%w%a');
+ date_format 
+-------------
+ Monday1Mon
+(1 row)
+
+select date_format('2009-10-06','%W%w%a');
+ date_format 
+-------------
+ Tuesday2Tue
+(1 row)
+
+select date_format('2009-10-07','%W%w%a');
+  date_format  
+---------------
+ Wednesday3Wed
+(1 row)
+
+select date_format('2009-10-08','%W%w%a');
+ date_format  
+--------------
+ Thursday4Thu
+(1 row)
+
+select date_format('2009-10-09','%W%w%a');
+ date_format 
+-------------
+ Friday5Fri
+(1 row)
+
+select date_format('2009-10-10','%W%w%a');
+ date_format  
+--------------
+ Saturday6Sat
+(1 row)
+
+select date_format('2009-10-11','%W%w%a');
+ date_format 
+-------------
+ Sunday0Sun
+(1 row)
+
 drop schema b_datetime_func_test4 cascade;
 reset current_schema;

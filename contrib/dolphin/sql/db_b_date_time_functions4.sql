@@ -410,5 +410,14 @@ insert into memos values(2,'2022/05/27 20:30');
 select DATE_add(CONtext,INTERVAL 31 DAY) from memos;
 drop table if exists memos;
 
+select date_format('2009-10-04','%W%w%a');
+select date_format('2009-10-05','%W%w%a');
+select date_format('2009-10-06','%W%w%a');
+select date_format('2009-10-07','%W%w%a');
+select date_format('2009-10-08','%W%w%a');
+select date_format('2009-10-09','%W%w%a');
+select date_format('2009-10-10','%W%w%a');
+select date_format('2009-10-11','%W%w%a');
+
 drop schema b_datetime_func_test4 cascade;
 reset current_schema;

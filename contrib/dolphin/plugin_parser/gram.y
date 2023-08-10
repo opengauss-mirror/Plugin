@@ -131,28 +131,6 @@ IntervalStylePack g_interStyleVal = {"a"};
 			(Current) = (Rhs)[0]; \
 	} while (0)
 
-#define RESET_ACONST_STRING(Arg, T) \
-	if (T == T_String && NULL != extract_numericstr(((A_Const*)Arg)->val.val.str)) { \
-		((A_Const*)Arg)->val.val.str = extract_numericstr(((A_Const*)Arg)->val.val.str); \
-	}
-
-#define RESET_ACONST_INTEGER(Arg, T) \
-	if (T == T_BitString) { \
-		((A_Const*)Arg)->val.type = T_Integer; \
-		((A_Const*)Arg)->val.val.ival = conv_bit_to_int((A_Const*)Arg); \
-    }
-
-#define RESET_BOOL(Arg, T) \
-	if (T == T_TypeCast) { \
-		if (0 == strcmp(((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str, "t")) { \
-			Arg = makeIntConst(1,-1); \
-		} else if (0 == strcmp(((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str, "f")) { \
-			Arg = makeIntConst(0,-1); \
-		} else if (NULL != extract_numericstr(((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str)) { \
-			((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str = extract_numericstr(((A_Const *)(((TypeCast*)(Arg))->arg))->val.val.str); \
-		} \
-	}
-
 /*
  * Bison doesn't allocate anything that needs to live across parser calls,
  * so we can easily have it use palloc instead of malloc.  This prevents
@@ -389,11 +367,6 @@ static const char* sys_schemas[SYS_SCHEMA_COUNT] = {
 	"information_schema",
 	"db4ai"
 };
-
-static long conv_bit_to_int(A_Const* bitStr);
-static void fix_bw_type(Node* bw_arg1, Node* bw_arg2, Node* bw_arg3);
-static void fix_bw_bool(Node** bw_arg1, Node** bw_arg2, Node** bw_arg3);
-static char* extract_numericstr(const char* str);
 
 static void base_yyerror(YYLTYPE *yylloc, core_yyscan_t yyscanner,
 						 const char *msg);
@@ -9877,7 +9850,7 @@ master_key_elem:
             // len is not filled on purpose ??
             $$ = (Node*) n;
         }
-        | KEY_PATH '=' ColId
+        | KEY_PATH '=' ColId_or_Sconst
         {
             ClientLogicGlobalParam *n = makeNode (ClientLogicGlobalParam);
             n->key = ClientLogicGlobalProperty::CMK_KEY_PATH;
@@ -31931,119 +31904,59 @@ a_expr:		c_expr									{ $$ = $1; }
 			 */
 			| a_expr BETWEEN opt_asymmetric b_expr AND b_expr       %prec BETWEEN
 				{
-					if ((($1)->type != T_ColumnRef) && (($4)->type != T_ColumnRef) && (($6)->type != T_ColumnRef)) {
-						fix_bw_bool(&($1), &($4), &($6));
-						fix_bw_type($1, $4, $6);
-					}
-
-					if ((($1)->type == T_FuncCall) || (($4)->type == T_FuncCall) || (($6)->type == T_FuncCall)) {
-						FuncCall *n = makeNode(FuncCall);
-						n->funcname = SystemFuncName("b_between_and");
-						n->args = list_make3($1, $4, $6);
-						n->agg_order = NIL;
-						n->agg_star = FALSE;
-						n->agg_distinct = FALSE;
-						n->func_variadic = FALSE;
-						n->over = NULL;
-						n->location = @1;
-						n->call_func = false;
-						$$ = (Node *)n;
-					} else {
-						$$ = (Node *) makeA_Expr(AEXPR_AND, NIL,
-							(Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $4, @2),
-							(Node *) makeSimpleA_Expr(AEXPR_OP, "<=", $1, $6, @2),
-							@2);
-					}
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_between_and");
+					n->args = list_make3($1, $4, $6);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
 			| a_expr NOT_BETWEEN opt_asymmetric b_expr AND b_expr   %prec NOT_BETWEEN
 				{
-					if ((($1)->type != T_ColumnRef) && (($4)->type != T_ColumnRef) && (($6)->type != T_ColumnRef)) {
-						fix_bw_bool(&($1), &($4), &($6));
-						fix_bw_type($1, $4, $6);
-					}
-
-					if ((($1)->type == T_FuncCall) || (($4)->type == T_FuncCall) || (($6)->type == T_FuncCall)) {
-						FuncCall *n = makeNode(FuncCall);
-						n->funcname = SystemFuncName("b_not_between_and");
-						n->args = list_make3($1, $4, $6);
-						n->agg_order = NIL;
-						n->agg_star = FALSE;
-						n->agg_distinct = FALSE;
-						n->func_variadic = FALSE;
-						n->over = NULL;
-						n->location = @1;
-						n->call_func = false;
-						$$ = (Node *)n;
-					} else {
-						$$ = (Node *) makeA_Expr(AEXPR_OR, NIL,
-							(Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $4, @2),
-							(Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $6, @2),
-							@2);
-					}
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_not_between_and");
+					n->args = list_make3($1, $4, $6);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
 			| a_expr BETWEEN SYMMETRIC b_expr AND b_expr            %prec BETWEEN
 				{
-					if ((($1)->type != T_ColumnRef) && (($4)->type != T_ColumnRef) && (($6)->type != T_ColumnRef)) {
-						fix_bw_bool(&($1), &($4), &($6));
-						fix_bw_type($1, $4, $6);
-					}
-
-					if ((($1)->type == T_FuncCall) || (($4)->type == T_FuncCall) || (($6)->type == T_FuncCall)) {
-						FuncCall *n = makeNode(FuncCall);
-						n->funcname = SystemFuncName("b_sym_between_and");
-						n->args = list_make3($1, $4, $6);
-						n->agg_order = NIL;
-						n->agg_star = FALSE;
-						n->agg_distinct = FALSE;
-						n->func_variadic = FALSE;
-						n->over = NULL;
-						n->location = @1;
-						n->call_func = false;
-						$$ = (Node *)n;
-					} else {
-						$$ = (Node *) makeA_Expr(AEXPR_OR, NIL,
-						(Node *) makeA_Expr(AEXPR_AND, NIL,
-							(Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $4, @2),
-							(Node *) makeSimpleA_Expr(AEXPR_OP, "<=", $1, $6, @2),
-							@2),
-						(Node *) makeA_Expr(AEXPR_AND, NIL,
-							(Node *) makeSimpleA_Expr(AEXPR_OP, ">=", $1, $6, @2),
-							(Node *) makeSimpleA_Expr(AEXPR_OP, "<=", $1, $4, @2),
-							@2),
-						@2);
-					}
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_sym_between_and");
+					n->args = list_make3($1, $4, $6);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
 			| a_expr NOT_BETWEEN SYMMETRIC b_expr AND b_expr        %prec NOT_BETWEEN
 				{
-					if ((($1)->type != T_ColumnRef) && (($4)->type != T_ColumnRef) && (($6)->type != T_ColumnRef)) {
-						fix_bw_bool(&($1), &($4), &($6));
-						fix_bw_type($1, $4, $6);
-					}
-	
-					if ((($1)->type == T_FuncCall) || (($4)->type == T_FuncCall) || (($6)->type == T_FuncCall)) {
-						FuncCall *n = makeNode(FuncCall);
-						n->funcname = SystemFuncName("b_not_sym_between_and");
-						n->args = list_make3($1, $4, $6);
-						n->agg_order = NIL;
-						n->agg_star = FALSE;
-						n->agg_distinct = FALSE;
-						n->func_variadic = FALSE;
-						n->over = NULL;
-						n->location = @1;
-						n->call_func = false;
-						$$ = (Node *)n;
-					} else {
-						$$ = (Node *) makeA_Expr(AEXPR_AND, NIL,
-						(Node *) makeA_Expr(AEXPR_OR, NIL,
-							(Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $4, @2),
-							(Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $6, @2),
-							@2),
-						(Node *) makeA_Expr(AEXPR_OR, NIL,
-							(Node *) makeSimpleA_Expr(AEXPR_OP, "<", $1, $6, @2),
-							(Node *) makeSimpleA_Expr(AEXPR_OP, ">", $1, $4, @2),
-							@2),
-						@2);
-					}
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("b_not_sym_between_and");
+					n->args = list_make3($1, $4, $6);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
 			| a_expr IN_P in_expr
 				{
@@ -39066,92 +38979,6 @@ static Node* MakeSetPasswdStmt(char* user, char* passwd, char* replace_passwd)
 	n->options = list_make1(makeDefElem("password", (Node *)list));
 	n->lockstatus = DO_NOTHING;
 	return (Node *)n;
-}
-
-static void fix_bw_bool(Node** bw_arg1, Node** bw_arg2, Node** bw_arg3)
-{
-    int t1 = (*bw_arg1)->type;
-    int t2 = (*bw_arg2)->type;
-    int t3 = (*bw_arg3)->type;
-    
-    if (((t1 == T_TypeCast) ^ (t2 == T_TypeCast)) ||  ((t1 == T_TypeCast) ^ (t3 == T_TypeCast))) {
-        RESET_BOOL(*bw_arg1, t1);
-        RESET_BOOL(*bw_arg2, t2);
-        RESET_BOOL(*bw_arg3, t3);
-    }
-}
-
-static void fix_bw_type(Node* bw_arg1, Node* bw_arg2, Node* bw_arg3)
-{
-    int t1 = ((A_Const*)bw_arg1)->val.type;
-    int t2 = ((A_Const*)bw_arg2)->val.type;
-    int t3 = ((A_Const*)bw_arg3)->val.type;
-
-    if (((t1 == T_String) ^ (t2 == T_String)) ||  ((t1 == T_String) ^ (t3 == T_String))) {
-        RESET_ACONST_STRING(bw_arg1, t1);
-        RESET_ACONST_STRING(bw_arg2, t2);
-        RESET_ACONST_STRING(bw_arg3, t3);
-    }
-
-    if (((t1 == T_BitString) ^ (t2 == T_BitString)) ||  ((t1 == T_BitString) ^ (t3 == T_BitString))) {
-        RESET_ACONST_INTEGER(bw_arg1, t1);
-        RESET_ACONST_INTEGER(bw_arg2, t2);
-        RESET_ACONST_INTEGER(bw_arg3, t3);
-    }
-}
-
-static long conv_bit_to_int(A_Const* bitStr)
-{
-    long result = 0;	/* The resulting bit string	 */
-    long bitOneMask = 0x01;
-    
-    char* sp = bitStr->val.val.str + strlen(bitStr->val.val.str) - 1;
-    for (; *sp != 'B' && *sp != 'b'; sp--) {
-	if (*sp == '1') {
-	    result |= bitOneMask;
-	} else if (*sp != '0')
-	    ereport(ERROR,
-	            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("\"%c\" is not a valid binary digit", *sp)));
-	
-	bitOneMask <<= 1;
-	if (bitOneMask == 0) {
-	    ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("bit length too large")));
-	}
-    }
-    return result;
-}
-
-static char* extract_numericstr(const char* str)
-{
-    const char* cp = NULL;
-    bool haveDigit = false;
-    bool havePostChar = false;
-    char* dest = NULL;
-    int lenOfNumericstr = 0;
-    int digitBeginIndex = 0;
-    
-    cp = str;
-    if ((*cp == '\0') || (!isdigit((unsigned char)*cp) && *cp != '.')) {
-        return "0";
-    }
-
-    while (*cp) {
-        if (isdigit((unsigned char)*cp)) {
-            haveDigit = true;
-        } else if (haveDigit && *cp != '.') {
-            havePostChar = true;
-            break;
-        }
-        cp++;
-        lenOfNumericstr++;
-    }
-    if (haveDigit && havePostChar){
-        dest = (char*)palloc0((lenOfNumericstr+1)*sizeof(char));
-        errno_t rc = strncpy_s(dest, lenOfNumericstr + 1, str + digitBeginIndex, lenOfNumericstr);
-        securec_check(rc, "\0", "\0");
-        return dest;
-    }
-    return NULL;
 }
 
 /*
