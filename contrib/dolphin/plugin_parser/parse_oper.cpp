@@ -1654,7 +1654,7 @@ static bool TransformJsonDolphinType(char* oprname, Oid& ltypeId, Oid& rtypeId)
         } else {
             return transformed;
         }
-        return transformed;
     }
+    return transformed;
 }
 #endif
