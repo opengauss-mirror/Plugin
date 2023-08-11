@@ -645,6 +645,30 @@ void PreventCommandDuringRecovery(const char* cmd_name)
                 errmsg("cannot execute %s during recovery", cmd_name)));
 }
 
+void PreventCommandDuringSSOndemandRecovery(Node* parseTree)
+{
+    switch(nodeTag(parseTree)) {
+        case T_InsertStmt:
+        case T_DeleteStmt:
+        case T_UpdateStmt:
+        case T_SelectStmt:
+        case T_TransactionStmt:
+        case T_VariableSetStmt:
+        case T_VariableShowStmt:
+            break;
+        default:
+            if (SS_IN_ONDEMAND_RECOVERY) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_RUN_TRANSACTION_DURING_RECOVERY),
+                        errmsg("only support INSERT/UPDATE/DELETE/SELECT/SET/SHOW during SS on-demand recovery, "
+                               "command %d", nodeTag(parseTree))));
+            }
+            break;
+    }
+
+    return;
+}
+
 /*
  * CheckRestrictedOperation: throw error for hazardous command if we're
  * inside a security restriction context.
@@ -6257,7 +6281,7 @@ ProcessUtilitySlow(Node *parse_tree,
                 break;
 
             case T_CreatePLangStmt:
-                if (!IsInitdb && strncmp(((CreatePLangStmt*)parse_tree)->plname, "plpython", strlen("plpython")) != 0)
+                if (!IsInitdb)
                     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("new language is not yet supported.")));
                 address = CreateProceduralLanguage((CreatePLangStmt*)parse_tree);
 #ifdef PGXC
