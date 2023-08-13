@@ -6313,6 +6313,7 @@ static int json_compare(FunctionCallInfo fcinfo, const char *funcName, bool null
             for (jsondoc_iter = 0; jsondoc_iter < json_num; jsondoc_iter++) {
                 cJSON_Delete(jsondoc[jsondoc_iter]);
             }
+            pfree(jsondoc);
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                 errmsg("Invalid data type for JSON data in arguments to function %s", funcName)));
         }
@@ -6346,7 +6347,7 @@ static int json_compare(FunctionCallInfo fcinfo, const char *funcName, bool null
     for (jsondoc_iter = 0; jsondoc_iter < json_num; jsondoc_iter++) {
         cJSON_Delete(jsondoc[jsondoc_iter]);
     }
-
+   pfree(jsondoc);
     return result;
 }
 
@@ -6395,8 +6396,7 @@ Datum json_eq(PG_FUNCTION_ARGS)
     result = json_compare(fcinfo, "json_eq", null_save_eq);
     if (result == JSON_NULL) {
         PG_RETURN_NULL();
-    }
-    else if (result == JSON_EQ) {
+    } else if (result == JSON_EQ) {
         PG_RETURN_BOOL(true);
     } else {
         PG_RETURN_BOOL(false);
@@ -6410,8 +6410,7 @@ Datum json_ne(PG_FUNCTION_ARGS)
     result = json_compare(fcinfo, "json_ne", null_save_eq);
     if (result == JSON_NULL) {
         PG_RETURN_NULL();
-    }
-    else if (result != JSON_EQ) {
+    } else if (result != JSON_EQ) {
         PG_RETURN_BOOL(true);
     } else {
         PG_RETURN_BOOL(false);
@@ -6425,8 +6424,7 @@ Datum json_gt(PG_FUNCTION_ARGS)
     result = json_compare(fcinfo, "json_gt", null_save_eq);
     if (result == JSON_NULL) {
         PG_RETURN_NULL();
-    }
-    else if (result == JSON_GT) {
+    } else if (result == JSON_GT) {
         PG_RETURN_BOOL(true);
     } else {
         PG_RETURN_BOOL(false);
@@ -6440,8 +6438,7 @@ Datum json_ge(PG_FUNCTION_ARGS)
     result = json_compare(fcinfo, "json_ge", null_save_eq);
     if (result == JSON_NULL) {
         PG_RETURN_NULL();
-    }
-    else if (result != JSON_LT) {
+    } else if (result != JSON_LT) {
         PG_RETURN_BOOL(true);
     } else {
         PG_RETURN_BOOL(false);
@@ -6455,8 +6452,7 @@ Datum json_lt(PG_FUNCTION_ARGS)
     result = json_compare(fcinfo, "json_lt", null_save_eq);
     if (result == JSON_NULL) {
         PG_RETURN_NULL();
-    }
-    else if (result == JSON_LT) {
+    } else if (result == JSON_LT) {
         PG_RETURN_BOOL(true);
     } else {
         PG_RETURN_BOOL(false);
@@ -6470,8 +6466,7 @@ Datum json_le(PG_FUNCTION_ARGS)
     result = json_compare(fcinfo, "json_le", null_save_eq);
     if (result == JSON_NULL) {
         PG_RETURN_NULL();
-    }
-    else if (result != JSON_GT) {
+    } else if (result != JSON_GT) {
         PG_RETURN_BOOL(true);
     } else {
         PG_RETURN_BOOL(false);

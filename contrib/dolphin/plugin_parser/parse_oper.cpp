@@ -99,8 +99,6 @@ static int32 GetTypmod(Oid typeoid, Node* node);
 static Oid TransformDolphinOperator(TransformOperatorInformation* info);
 static Node* CreateCastForType(
     ParseState *pstate, Oid sourceType, Node *node, HeapTuple tup, int location, bool isLeft);
-static Operator GetJsonDolphinOperatorTup(
-    ParseState* pstate, List* opername, Oid ltypeId, Oid rtypeId, int location, bool inNumeric);
 static bool TransformJsonDolphinType(char* oprname, Oid& ltypeId, Oid& rtypeId);
 #endif
 
@@ -942,14 +940,10 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
         info.inNumeric = inNumeric;
         if (IsJsonType(ltypeId) && GetSessionContext()->enableBCmptMode) {
             DeconstructQualifiedName(opname, &schemaname, &opername);
-            List *newOpList = list_make2(makeString("dolphin_catalog"), makeString(opername));
-            tup = GetJsonDolphinOperatorTup(pstate, newOpList, ltypeId, rtypeId, location, inNumeric);
-            if (!HeapTupleIsValid(tup)) {
-                jsonTransfored = TransformJsonDolphinType(opername, ltypeId, rtypeId);
-                tup = right_oper(pstate, opname, ltypeId, false, location);
-                if (jsonTransfored && HeapTupleIsValid(tup))
-                    newLeftTree = CreateCastForType(pstate, info.ltypeId, ltree, tup, location, true);
-            }
+            jsonTransfored = TransformJsonDolphinType(opername, ltypeId, rtypeId);
+            tup = right_oper(pstate, opname, ltypeId, false, location);
+            if (jsonTransfored && HeapTupleIsValid(tup))
+                newLeftTree = CreateCastForType(pstate, info.ltypeId, ltree, tup, location, true);
         } else {
             tup = right_oper(pstate, opname, ltypeId, false, location);
         }
@@ -971,14 +965,10 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
         info.inNumeric = inNumeric;
         if (IsJsonType(rtypeId) && GetSessionContext()->enableBCmptMode) {
             DeconstructQualifiedName(opname, &schemaname, &opername);
-            List *newOpList = list_make2(makeString("dolphin_catalog"), makeString(opername));
-            tup = GetJsonDolphinOperatorTup(pstate, newOpList, ltypeId, rtypeId, location, inNumeric);
-            if (!HeapTupleIsValid(tup)) {
-                jsonTransfored = TransformJsonDolphinType(opername, ltypeId, rtypeId);
-                tup = left_oper(pstate, opname, rtypeId, false, location);
-                if (jsonTransfored && HeapTupleIsValid(tup))
-                    newRightTree = CreateCastForType(pstate, info.rtypeId, rtree, tup, location, false);
-            } 
+            jsonTransfored = TransformJsonDolphinType(opername, ltypeId, rtypeId);
+            tup = left_oper(pstate, opname, rtypeId, false, location);
+            if (jsonTransfored && HeapTupleIsValid(tup))
+                newRightTree = CreateCastForType(pstate, info.rtypeId, rtree, tup, location, false);
         } else {
             tup = left_oper(pstate, opname, rtypeId, false, location);
         }
@@ -1421,12 +1411,6 @@ static Operator GetDolphinOperatorTup(GetDolphinOperatorTupInfo* info)
             return tup;
         }
     }
-    if (IsJsonType(leftType) || IsJsonType(rightType)) {
-        tup = GetJsonDolphinOperatorTup(pstate, newOpList, leftType, rightType, location, inNumeric);
-        if (tup != NULL) {
-            return tup;
-        }
-    }
 
     /*
      * Converts a non-numeric type to a numeric type
@@ -1591,21 +1575,6 @@ static Node* CreateCastForType(
     return cast;
 }
 
-static Operator GetJsonDolphinOperatorTup(
-    ParseState* pstate, List* opername, Oid ltypeId, Oid rtypeId, int location, bool inNumeric)
-{
-    Operator tup = NULL;
-    if (!OidIsValid(ltypeId)) { // left
-        tup = left_oper(pstate, opername, rtypeId, true, location);
-    } else if(!OidIsValid(rtypeId)) { // right
-        tup = right_oper(pstate, opername, ltypeId, true, location);
-    } else { // binary
-        tup = oper(pstate, opername, ltypeId, rtypeId, true, location, inNumeric);
-    }
-    
-    return (Operator)tup;
-}
-
 static bool TransformJsonDolphinType(char* oprname, Oid& ltypeId, Oid& rtypeId)
 {
     bool transformed = false;
@@ -1644,10 +1613,10 @@ static bool TransformJsonDolphinType(char* oprname, Oid& ltypeId, Oid& rtypeId)
             // or, and
             strcmp(">>", oprname) == 0 || strcmp("<<", oprname) == 0) {
             // shr, shl
-            if(!IsNumericCatalogByOid(ltypeId)) {
+            if (!IsNumericCatalogByOid(ltypeId)) {
                 ltypeId = FLOAT8OID;
             }
-            if(!IsNumericCatalogByOid(rtypeId)) {
+            if (!IsNumericCatalogByOid(rtypeId)) {
                 rtypeId = FLOAT8OID;
             }
             transformed = true;
