@@ -99,6 +99,7 @@ static int32 GetTypmod(Oid typeoid, Node* node);
 static Oid TransformDolphinOperator(TransformOperatorInformation* info);
 static Node* CreateCastForType(
     ParseState *pstate, Oid sourceType, Node *node, HeapTuple tup, int location, bool isLeft);
+static bool TransformJsonDolphinType(char* oprname, Oid& ltypeId, Oid& rtypeId);
 #endif
 
 static Oid binary_oper_exact(List* opname, Oid arg1, Oid arg2, bool use_a_style_coercion);
@@ -469,6 +470,11 @@ bool IsDolphinStringType(Oid typeoid)
 bool IsNumericType(Oid typeoid)
 {
     return typeoid == NUMERICOID;
+}
+
+bool IsJsonType(Oid typeoid)
+{
+    return typeoid == JSONOID;
 }
 
 bool IsDatetimeType(Oid typeoid)
@@ -913,18 +919,62 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
 #ifdef DOLPHIN
     Node* newLeftTree = NULL;
     Node* newRightTree = NULL;
+    char* schemaname = NULL;
+    char* opername = NULL;
+    bool jsonTransfored = false;
+    GetDolphinOperatorTupInfo info;
 #endif
     /* Select the operator */
     if (rtree == NULL) {
         /* right operator */
         ltypeId = exprType(ltree);
         rtypeId = InvalidOid;
+#ifdef DOLPHIN
+        info.pstate = pstate;
+        info.opname = opname;
+        info.ltypeId = ltypeId;
+        info.rtypeId = rtypeId;
+        info.ltree = ltree;
+        info.rtree = rtree;
+        info.location = location;
+        info.inNumeric = inNumeric;
+        if (IsJsonType(ltypeId) && GetSessionContext()->enableBCmptMode) {
+            DeconstructQualifiedName(opname, &schemaname, &opername);
+            jsonTransfored = TransformJsonDolphinType(opername, ltypeId, rtypeId);
+            tup = right_oper(pstate, opname, ltypeId, false, location);
+            if (jsonTransfored && HeapTupleIsValid(tup))
+                newLeftTree = CreateCastForType(pstate, info.ltypeId, ltree, tup, location, true);
+        } else {
+            tup = right_oper(pstate, opname, ltypeId, false, location);
+        }
+#else
         tup = right_oper(pstate, opname, ltypeId, false, location);
+#endif
     } else if (ltree == NULL) {
         /* left operator */
         rtypeId = exprType(rtree);
         ltypeId = InvalidOid;
+#ifdef DOLPHIN
+        info.pstate = pstate;
+        info.opname = opname;
+        info.ltypeId = ltypeId;
+        info.rtypeId = rtypeId;
+        info.ltree = ltree;
+        info.rtree = rtree;
+        info.location = location;
+        info.inNumeric = inNumeric;
+        if (IsJsonType(rtypeId) && GetSessionContext()->enableBCmptMode) {
+            DeconstructQualifiedName(opname, &schemaname, &opername);
+            jsonTransfored = TransformJsonDolphinType(opername, ltypeId, rtypeId);
+            tup = left_oper(pstate, opname, rtypeId, false, location);
+            if (jsonTransfored && HeapTupleIsValid(tup))
+                newRightTree = CreateCastForType(pstate, info.rtypeId, rtree, tup, location, false);
+        } else {
+            tup = left_oper(pstate, opname, rtypeId, false, location);
+        }
+#else
         tup = left_oper(pstate, opname, rtypeId, false, location);
+#endif  
     } else {
         /* otherwise, binary operator */
         ltypeId = exprType(ltree);
@@ -936,7 +986,6 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
             }
         }
 #ifdef DOLPHIN
-        GetDolphinOperatorTupInfo info;
         info.pstate = pstate;
         info.opname = opname;
         info.ltypeId = ltypeId;
@@ -947,7 +996,15 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
         info.inNumeric = inNumeric;
         tup = GetDolphinOperatorTup(&info);
         if (!HeapTupleIsValid(tup)) {
+            if ((IsJsonType(ltypeId) || IsJsonType(rtypeId)) && GetSessionContext()->enableBCmptMode) {
+                DeconstructQualifiedName(opname, &schemaname, &opername);
+                jsonTransfored = TransformJsonDolphinType(opername, ltypeId, rtypeId);
+            }
             tup = oper(pstate, opname, ltypeId, rtypeId, false, location, inNumeric);
+            if (jsonTransfored && HeapTupleIsValid(tup)) {
+                newLeftTree = CreateCastForType(pstate, info.ltypeId, info.ltree, tup, location, true);
+                newRightTree = CreateCastForType(pstate, info.rtypeId, info.rtree, tup, location, false);
+            }
         } else {
             newLeftTree = CreateCastForType(pstate, ltypeId, ltree, tup, location, true);
             newRightTree = CreateCastForType(pstate, rtypeId, rtree, tup, location, false);
@@ -962,14 +1019,34 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
     /* Do typecasting and build the expression tree */
     if (rtree == NULL) {
         /* right operator */
+#ifndef DOLPHIN
         args = list_make1(ltree);
         actual_arg_types[0] = ltypeId;
+#else
+        if (newLeftTree != NULL) {
+            args = list_make1(newLeftTree);
+            actual_arg_types[0] = exprType(newLeftTree);
+        } else {
+            args = list_make1(ltree);
+            actual_arg_types[0] = ltypeId;
+        }
+#endif
         declared_arg_types[0] = opform->oprleft;
         nargs = 1;
     } else if (ltree == NULL) {
         /* left operator */
+#ifndef DOLPHIN
         args = list_make1(rtree);
         actual_arg_types[0] = rtypeId;
+#else
+        if (newRightTree != NULL) {
+            args = list_make1(newRightTree);
+            actual_arg_types[0] = exprType(newRightTree);
+        } else {
+            args = list_make1(rtree);
+            actual_arg_types[0] = rtypeId;
+        }
+#endif
         declared_arg_types[0] = opform->oprright;
         nargs = 1;
     } else {
@@ -1325,10 +1402,11 @@ static Operator GetDolphinOperatorTup(GetDolphinOperatorTupInfo* info)
     int32 rightTypmod = GetTypmod(rightType, info->rtree);
     char* schemaname = NULL;
     char* opername = NULL;
+    Operator tup = NULL;
     DeconstructQualifiedName(opname, &schemaname, &opername);
     List *newOpList = list_make2(makeString("dolphin_catalog"), makeString(opername));
     if (IsNumericCatalogByOid(leftType) && IsNumericCatalogByOid(rightType) && schemaname == NULL) {
-        Operator tup = GetNumericDolphinOperatorTup(pstate, newOpList, leftType, rightType, location, inNumeric);
+        tup = GetNumericDolphinOperatorTup(pstate, newOpList, leftType, rightType, location, inNumeric);
         if (tup != NULL) {
             return tup;
         }
@@ -1495,5 +1573,57 @@ static Node* CreateCastForType(
         COERCE_EXPLICIT_CAST,
         location);
     return cast;
+}
+
+static bool TransformJsonDolphinType(char* oprname, Oid& ltypeId, Oid& rtypeId)
+{
+    bool transformed = false;
+    if (!OidIsValid(ltypeId) && !OidIsValid(rtypeId)) {
+        return transformed;
+    } else if (!OidIsValid(ltypeId)) {
+        /* transfrom for left operator */
+        if (strcmp("+", oprname) == 0) {
+            // uplus
+            return transformed;
+        } else if (strcmp("~", oprname) == 0) {
+            // inversion
+            rtypeId = UINT8OID;
+            transformed = true;
+        } else if (strcmp("-", oprname) == 0 || strcmp("@", oprname) == 0) {
+            // uminus, abs
+            rtypeId = FLOAT8OID;
+            transformed = true;
+        } else {
+            return transformed;
+        }
+    } else if (!OidIsValid(rtypeId)) {
+        /* transfrom for right operator */
+        if (strcmp("!", oprname) == 0) {
+            // factorial: but blocked earlier in gram.y
+            ltypeId = FLOAT8OID;
+            transformed = true;
+        } else {
+            return transformed;
+        }
+    } else {
+        /* transfrom for binary operator */
+        if (strcmp("%", oprname) == 0 || strcmp("^", oprname) == 0 ||
+            // mod, xor
+            strcmp("|", oprname) == 0 || strcmp("&", oprname) == 0 ||
+            // or, and
+            strcmp(">>", oprname) == 0 || strcmp("<<", oprname) == 0) {
+            // shr, shl
+            if (!IsNumericCatalogByOid(ltypeId)) {
+                ltypeId = FLOAT8OID;
+            }
+            if (!IsNumericCatalogByOid(rtypeId)) {
+                rtypeId = FLOAT8OID;
+            }
+            transformed = true;
+        } else {
+            return transformed;
+        }
+    }
+    return transformed;
 }
 #endif

@@ -4069,6 +4069,7 @@ PLpgSQL_type* build_datatype(HeapTuple type_tup, int32 typmod, Oid collation)
         case TYPTYPE_DOMAIN:
         case TYPTYPE_ENUM:
         case TYPTYPE_RANGE:
+        case TYPTYPE_SET:
             typ->ttype = PLPGSQL_TTYPE_SCALAR;
             break;
         case TYPTYPE_COMPOSITE:

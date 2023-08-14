@@ -130,6 +130,14 @@ typedef struct LinkNode {
     struct LinkNode *next;
 } * search_LinkStack;
 
+typedef enum {
+    JSON_GT,
+    JSON_LT,
+    JSON_EQ,
+    JSON_NULL,
+    JSON_INVALID,
+} Json_Compare_Result;
+
 static cJSON *input_to_cjson(Oid valtype, const char *funcName, int pos, Datum arg);
 
 /* funcstions for creating wrapper to restore cJsonPath*/
@@ -216,6 +224,10 @@ static text *prettyJsondoc(char *str);
 /* functions for json_object_field_text*/
 static void delchar_oper(char *inStr, char *outStr, int &a, int &b);
 static void checksign_oper(char *inStr, int &x);
+
+/* function for json compare */
+static int json_compare(FunctionCallInfo fcinfo, const char *funcName, bool null_save_eq);
+static cJSON *input_to_cjson_cmp(Oid valtype, Datum arg, bool& jsontype);
 #endif
 
 /* semantic action functions for json_object_keys */
@@ -461,6 +473,26 @@ extern "C" DLL_PUBLIC Datum json_storage_size(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(json_pretty);
 extern "C" DLL_PUBLIC Datum json_pretty(PG_FUNCTION_ARGS);
+
+// left operator
+PG_FUNCTION_INFO_V1_PUBLIC(json_uplus);
+extern "C" DLL_PUBLIC Datum json_uplus(PG_FUNCTION_ARGS);
+
+// cmp operator
+PG_FUNCTION_INFO_V1_PUBLIC(json_null_save_eq);
+extern "C" DLL_PUBLIC Datum json_null_save_eq(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(json_eq);
+extern "C" DLL_PUBLIC Datum json_eq(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(json_ne);
+extern "C" DLL_PUBLIC Datum json_ne(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(json_gt);
+extern "C" DLL_PUBLIC Datum json_gt(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(json_ge);
+extern "C" DLL_PUBLIC Datum json_ge(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(json_lt);
+extern "C" DLL_PUBLIC Datum json_lt(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(json_le);
+extern "C" DLL_PUBLIC Datum json_le(PG_FUNCTION_ARGS);
 #endif
 
 /*
@@ -6226,5 +6258,218 @@ Datum json_pretty(PG_FUNCTION_ARGS)
     cJSON_free(unformattedJson);
     cJSON_Delete(root);
     PG_RETURN_TEXT_P(res);
+}
+
+static int json_compare(FunctionCallInfo fcinfo, const char *funcName, bool null_save_eq)
+{
+    int json_num = PG_NARGS();
+    if (json_num != 2)
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Incorrect parameter count")));
+
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1)) {
+        if (null_save_eq) {
+            if (!PG_ARGISNULL(1)) {
+                return JSON_LT;
+            } else if (!PG_ARGISNULL(0)) {
+                return JSON_GT;
+            } else {
+                return JSON_EQ;
+            }
+        } else {
+            return JSON_NULL;
+        }
+    }
+
+    int jsondoc_iter;
+    Oid valtype[2];
+    bool jsontype[2];
+    Datum arg = 0;
+
+    valtype[0] = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    valtype[1] = get_fn_expr_argtype(fcinfo->flinfo, 1);
+
+    // TODO: add param to determine if string can be compared with json
+    if (valtype[0] == JSONOID && valtype[1] != JSONOID) {
+        return JSON_GT;
+    } else if (valtype[0] != JSONOID && valtype[1] == JSONOID) {
+        return JSON_LT;
+    }
+
+    cJSON **jsondoc = (cJSON **)palloc(json_num * sizeof(cJSON *));
+    int result = JSON_INVALID;
+    for (jsondoc_iter = 0; jsondoc_iter < json_num; jsondoc_iter++) {
+        arg = PG_GETARG_DATUM(jsondoc_iter);
+        jsondoc[jsondoc_iter] = input_to_cjson_cmp(valtype[jsondoc_iter],  arg, jsontype[jsondoc_iter]);
+    }
+
+    if (jsontype[0]) {
+        if (!jsontype[1]) {
+            result = JSON_GT;
+        }
+    } else {
+        if (jsontype[1]) {
+            result = JSON_LT;
+        } else {
+            for (jsondoc_iter = 0; jsondoc_iter < json_num; jsondoc_iter++) {
+                cJSON_Delete(jsondoc[jsondoc_iter]);
+            }
+            pfree(jsondoc);
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("Invalid data type for JSON data in arguments to function %s", funcName)));
+        }
+    }
+
+    if (result == JSON_INVALID) {
+        cJSON_SortObject(jsondoc[0]);
+        cJSON_SortObject(jsondoc[1]);
+        char *sorted_json1 = cJSON_PrintUnformatted(jsondoc[0]);
+        char *sorted_json2 = cJSON_PrintUnformatted(jsondoc[1]);
+
+        Jsonb *jsonb1 = DatumGetJsonb((Datum)DirectFunctionCall1(jsonb_in,
+            CStringGetDatum(sorted_json1)));
+        Jsonb *jsonb2 = DatumGetJsonb((Datum)DirectFunctionCall1(jsonb_in,
+            CStringGetDatum(sorted_json2)));
+        int jsonb_res = compareJsonbSuperHeaderValue(VARDATA(jsonb1), VARDATA(jsonb2));
+
+        pfree(jsonb1);
+        pfree(jsonb2);
+        cJSON_free(sorted_json1);
+        cJSON_free(sorted_json2);
+    
+        if (jsonb_res == 0)
+            result = JSON_EQ;
+        else if (jsonb_res > 0)
+            result = JSON_GT;
+        else
+            result = JSON_LT;
+    }
+
+    for (jsondoc_iter = 0; jsondoc_iter < json_num; jsondoc_iter++) {
+        cJSON_Delete(jsondoc[jsondoc_iter]);
+    }
+   pfree(jsondoc);
+    return result;
+}
+
+static cJSON *input_to_cjson_cmp(Oid valtype, Datum arg, bool& jsontype) {
+    Oid typOutput;
+    bool typIsVarlena = false;
+    char *data = NULL;
+    cJSON *root = NULL;
+    jsontype = true;
+
+    if (VALTYPE_IS_JSON(valtype)) {
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        data = OidOutputFunctionCall(typOutput, arg);
+        root = cJSON_ParseWithOpts(data, 0, 1);
+        if (!root) {
+            jsontype = false;
+        }
+    } else {
+        jsontype = false;
+    }
+    return root;
+}
+
+Datum json_uplus(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
+    Oid valtype;
+    Datum arg = 0;
+    cJSON *root = NULL;
+    arg = PG_GETARG_DATUM(0);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    root = input_to_cjson(valtype, "json_uplus", 1, arg);
+    cJSON_SortObject(root);
+    char *r = cJSON_PrintUnformatted(root);
+    text *result = formatJsondoc(r);
+    cJSON_free(r);
+    cJSON_Delete(root);
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum json_eq(PG_FUNCTION_ARGS)
+{
+    int result = 0;
+    bool null_save_eq = false;
+    result = json_compare(fcinfo, "json_eq", null_save_eq);
+    if (result == JSON_NULL) {
+        PG_RETURN_NULL();
+    } else if (result == JSON_EQ) {
+        PG_RETURN_BOOL(true);
+    } else {
+        PG_RETURN_BOOL(false);
+    }
+}
+
+Datum json_ne(PG_FUNCTION_ARGS)
+{
+    int result = 0;
+    bool null_save_eq = false;
+    result = json_compare(fcinfo, "json_ne", null_save_eq);
+    if (result == JSON_NULL) {
+        PG_RETURN_NULL();
+    } else if (result != JSON_EQ) {
+        PG_RETURN_BOOL(true);
+    } else {
+        PG_RETURN_BOOL(false);
+    }
+}
+
+Datum json_gt(PG_FUNCTION_ARGS)
+{
+    int result = 0;
+    bool null_save_eq = false;
+    result = json_compare(fcinfo, "json_gt", null_save_eq);
+    if (result == JSON_NULL) {
+        PG_RETURN_NULL();
+    } else if (result == JSON_GT) {
+        PG_RETURN_BOOL(true);
+    } else {
+        PG_RETURN_BOOL(false);
+    }
+}
+
+Datum json_ge(PG_FUNCTION_ARGS)
+{
+    int result = 0;
+    bool null_save_eq = false;
+    result = json_compare(fcinfo, "json_ge", null_save_eq);
+    if (result == JSON_NULL) {
+        PG_RETURN_NULL();
+    } else if (result != JSON_LT) {
+        PG_RETURN_BOOL(true);
+    } else {
+        PG_RETURN_BOOL(false);
+    }
+}
+
+Datum json_lt(PG_FUNCTION_ARGS)
+{
+    int result = 0;
+    bool null_save_eq = false;
+    result = json_compare(fcinfo, "json_lt", null_save_eq);
+    if (result == JSON_NULL) {
+        PG_RETURN_NULL();
+    } else if (result == JSON_LT) {
+        PG_RETURN_BOOL(true);
+    } else {
+        PG_RETURN_BOOL(false);
+    }
+}
+
+Datum json_le(PG_FUNCTION_ARGS)
+{
+    int result = 0;
+    bool null_save_eq = false;
+    result = json_compare(fcinfo, "json_le", null_save_eq);
+    if (result == JSON_NULL) {
+        PG_RETURN_NULL();
+    } else if (result != JSON_GT) {
+        PG_RETURN_BOOL(true);
+    } else {
+        PG_RETURN_BOOL(false);
+    }
 }
 #endif
