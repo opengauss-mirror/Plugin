@@ -26,6 +26,7 @@
 #include "utils/lsyscache.h"
 #include "libpq/libpq.h"
 #include "executor/executor.h"
+#include "storage/ipc.h"
 
 #include "plugin_protocol/proto_com.h"
 #include "plugin_protocol/handler.h"
@@ -112,7 +113,7 @@ static ProtocolExtensionConfig dolphin_protocol_config = {
     NULL,
     dophin_send_ready_for_query, /* fn_send_ready_for_query */
     dophin_read_command, /* fn_read_command*/
-    NULL,
+    dolphin_end_command,               /* fn_end_command */
     dophin_printtup_create_DR, /* fn_printtup_create_DR */
     dolphin_set_DR_params,
     dolphin_process_command, /* fn_process_command */
@@ -124,6 +125,11 @@ static ProtocolExtensionConfig dolphin_protocol_config = {
  */
 void define_dolphin_server_guc()
 {
+    if (!u_sess->attr.attr_common.extension_session_vars_array) {
+        int initExtArraySize = 10;
+        u_sess->attr.attr_common.extension_session_vars_array =
+        (void**)MemoryContextAllocZero(u_sess->self_mem_cxt, (Size)(initExtArraySize * sizeof(void*)));
+    }
     DefineCustomStringVariable(
                 "dolphin.default_database_name",
                 gettext_noop("Predefined dolphin database name"),
@@ -152,12 +158,20 @@ static bool isNotWildcard(void *val1, void *val2)
     return strcmp(curhost, nodename) != 0;
 }
 
+#ifdef HAVE_UNIX_SOCKETS
+static void StreamDoUnlink(int code, Datum arg)
+{
+    Assert(g_proto_ctx.sock_path[0]);
+    unlink(g_proto_ctx.sock_path);
+}
+#endif /* HAVE_UNIX_SOCKETS */
+
 /*
  * server_listen_init - Create the TCP server socket(s)
  */
 void server_listen_init(void)
 {
-    int     status;
+    int status;
 
     if (u_sess->attr.attr_network.ListenAddresses && !dummyStandbyMode) {
         char* rawstring = NULL;
@@ -234,6 +248,43 @@ void server_listen_init(void)
         list_free_ext(elemlist);
         pfree(rawstring);
     }
+#ifdef HAVE_UNIX_SOCKETS
+    if (!dummyStandbyMode) {
+        char gs_sock[MAXPGPATH];
+
+        // backup gauss sock path
+        int ret = strcpy_s(gs_sock, MAXPGPATH, t_thrd.libpq_cxt.sock_path);
+        securec_check(ret, "\0", "\0");
+
+        /* unix socket for dolphin port */
+        status = StreamServerPort(AF_UNIX,
+            NULL,
+            (unsigned short)g_instance.attr.attr_network.dolphin_server_port,
+            g_instance.attr.attr_network.UnixSocketDir,
+            g_instance.listen_cxt.ListenSocket,
+            MAXLISTEN,
+            false,
+            true,
+            false,
+            DOLPHIN_LISTEN_CHANEL,
+            &dolphin_protocol_config);
+        if (status != STATUS_OK)
+            ereport(FATAL,
+                (errmsg("could not create Unix-domain socket for \"%s:%d\"",
+                    g_instance.attr.attr_network.UnixSocketDir,
+                    g_instance.attr.attr_network.dolphin_server_port)));
+        
+        // save dolphin sock path
+        ret = strcpy_s(g_proto_ctx.sock_path, MAXPGPATH, t_thrd.libpq_cxt.sock_path);
+        securec_check(ret, "\0", "\0");
+
+        // restore gauss sock path
+        ret = strcpy_s(t_thrd.libpq_cxt.sock_path, MAXPGPATH, gs_sock);
+        securec_check(ret, "\0", "\0");
+
+        on_proc_exit(StreamDoUnlink, 0);
+    }
+#endif
 }
 
 void InitTypoid2DolphinMacroHtab()

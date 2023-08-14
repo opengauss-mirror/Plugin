@@ -56,6 +56,7 @@ extern "C" DLL_PUBLIC void init_plugin_object();
 extern "C" DLL_PUBLIC void init_session_vars(void);
 extern "C" DLL_PUBLIC void create_dolphin_extension();
 extern "C" DLL_PUBLIC void set_extension_index(uint32 index);
+extern "C" DLL_PUBLIC void init_dolphin_proto(char *database_name);
 
 #define FLOAT8PLOID 591
 #define FLOAT8MIOID 592
@@ -161,6 +162,7 @@ typedef struct BSqlPluginContext {
     char* useless_sql_mode;
     int useless_lower_case_table_names;
     bool is_dolphin_call_stmt;
+    bool is_binary_proto;
 #endif
 } bSqlPluginContext;
 

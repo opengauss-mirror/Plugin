@@ -36,6 +36,7 @@
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/printtup.h"
 #include "plugin_protocol/proto_com.h"
+#include "plugin_postgres.h"
 
 #define DOLPHIN_BLOB_LENGTH 65535
 
@@ -200,37 +201,18 @@ inline MemoryContext changeToTmpContext(DestReceiver *self)
     return old_context;
 }
 
-void printtup(TupleTableSlot *slot, DestReceiver *self)
+static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts, StringInfo buf)
 {
-
-    TupleDesc typeinfo = slot->tts_tupleDescriptor;
-    DR_printtup *myState = (DR_printtup *)self;
-    StringInfo buf = &myState->buf;
-    int natts = typeinfo->natts;
-    int i;
-
-    /* Set or update my derived attribute info, if needed */
-    if (myState->attrinfo != typeinfo || myState->nattrs != natts) {
-        printtup_prepare_info(myState, typeinfo, natts);
-    }
-
-    /* Make sure the tuple is fully deconstructed */
-    tableam_tslot_getallattrs(slot);
-
-    MemoryContext old_context = changeToTmpContext(self);
-
-    resetStringInfo(buf);
-
-    /*
+     /*
      * send the attributes of this tuple
      */
-    for (i = 0; i < natts; ++i) {
+    for (int i = 0; i < natts; ++i) {
         PrinttupAttrInfo *thisState = myState->myinfo + i;
         Datum origattr = slot->tts_values[i];
         Datum attr = static_cast<uintptr_t>(0);
         char *outputstr = NULL;
 
-        if (slot->tts_isnull[i]) {
+        if (slot->tts_isnull[i] || slot->tts_tupleDescriptor->attrs[i].attisdropped) {
             dq_append_string_lenenc(buf, "");
             continue;
         }
@@ -250,6 +232,65 @@ void printtup(TupleTableSlot *slot, DestReceiver *self)
         if (DatumGetPointer(attr) != DatumGetPointer(origattr)) {
             pfree(DatumGetPointer(attr));
         }
+    }
+}
+
+static void send_binaryproto(TupleTableSlot *slot, int natts, StringInfo buf)
+{
+    TupleDesc desc = slot->tts_tupleDescriptor;
+
+    // [0x00] packet header
+    dq_append_int1(buf, 0x00);
+
+    // NULL bitmap, length= (column_count + 7 + 2) / 8
+    int len = (natts + 7 + 2) / 8;
+    bits8 null_bitmap[len] = {0x00};
+    for (int j = 0; j < natts; j++) {
+        if (slot->tts_isnull[j] || desc->attrs[j].attisdropped) {
+            int byte_pos = (j + 2) / 8;
+            int bit_pos = (j + 2) % 8;
+            null_bitmap[byte_pos] |= 1 << bit_pos;
+        }
+    }
+
+    for (int k = 0; k < len; k++) {
+        dq_append_int1(buf, null_bitmap[k]);
+    }
+
+    // values for non-null columns
+    for (int i = 0; i < natts; i++) {
+        if (slot->tts_isnull[i] || desc->attrs[i].attisdropped) {
+            continue;
+        }
+        Datum binval = slot->tts_values[i];
+        const TypeItem *item = GetItemByTypeOid(desc->attrs[i].atttypid);
+        append_data_by_dolphin_type(item, binval, buf);
+    }
+}
+
+void printtup(TupleTableSlot *slot, DestReceiver *self)
+{
+    TupleDesc typeinfo = slot->tts_tupleDescriptor;
+    DR_printtup *myState = (DR_printtup *)self;
+    StringInfo buf = &myState->buf;
+    int natts = typeinfo->natts;
+
+    /* Set or update my derived attribute info, if needed */
+    if (myState->attrinfo != typeinfo || myState->nattrs != natts) {
+        printtup_prepare_info(myState, typeinfo, natts);
+    }
+
+    /* Make sure the tuple is fully deconstructed */
+    tableam_tslot_getallattrs(slot);
+
+    MemoryContext old_context = changeToTmpContext(self);
+
+    resetStringInfo(buf);
+
+    if (!GetSessionContext()->is_binary_proto) {
+        send_textproto(slot, myState, natts, buf);
+    } else {
+        send_binaryproto(slot, natts, buf);
     }
 
     (void)MemoryContextSwitchTo(old_context);

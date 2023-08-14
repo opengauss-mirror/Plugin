@@ -64,9 +64,11 @@ int dophin_conn_handshake(Port* port)
     // support database.schema format later
     port->database_name = pstrdup(g_proto_ctx.database_name.data);
 
-    int rc = memcpy_s(token, CLIENT_PASSWORD_TOKEN_LEN + 1, authreq->auth_response, CLIENT_PASSWORD_TOKEN_LEN);
-    securec_check(rc, "\0", "\0");
-    token[CLIENT_PASSWORD_TOKEN_LEN] = 0x00; 
+    if (authreq->auth_response) {
+        int rc = memcpy_s(token, CLIENT_PASSWORD_TOKEN_LEN + 1, authreq->auth_response, CLIENT_PASSWORD_TOKEN_LEN);
+        securec_check(rc, "\0", "\0");
+        token[CLIENT_PASSWORD_TOKEN_LEN] = 0x00;
+    } 
 
     if (authreq->schema) {
         StringInfo search_path = makeStringInfo();

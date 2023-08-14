@@ -52,7 +52,6 @@
 static com_stmt_param* make_stmt_parameters_bytype(int param_count, PreparedStatement *pstmt,
                                                    com_stmt_exec_request *req, StringInfo buf);
 static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *null_bitmap);
-static void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf);
 
 static char PRINTABLE_CHARS[PRINTABLE_CHARS_COUNT + 1] =
                                 "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -533,7 +532,7 @@ static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *
     }    
 }
 
-static void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf)
+void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf)
 {
     switch (item->dolphin_type_id) {
         case DOLPHIN_TYPE_LONG:
