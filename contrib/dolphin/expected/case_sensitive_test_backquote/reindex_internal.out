@@ -7,6 +7,7 @@ NOTICE:  schema "reindexinternal" does not exist, skipping
 create schema `reindexinternal`;
 set current_schema = `reindexinternal`;
 set max_query_retry_times = 3;
+ERROR:  unrecognized configuration parameter "max_query_retry_times"
 --case1 reindex internal table col_tb;
 drop table if exists `T1`;
 NOTICE:  table "T1" does not exist, skipping
