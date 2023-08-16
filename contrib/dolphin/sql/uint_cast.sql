@@ -283,5 +283,40 @@ select (1)::uint4::bool;
 select (0)::uint8::bool;
 select (1)::uint8::bool;
 
+-- 严格模式
+drop table if exists t_longtext;
+create table t_longtext(a longtext);
+insert into t_longtext select '-1'::uint8;
+insert into t_longtext select cast('-1' as uint1);
+insert into t_longtext select cast('-1' as uint2);
+insert into t_longtext select cast('-1' as uint4);
+insert into t_longtext select cast('-1' as uint8);
+insert into t_longtext select cast('-1' as unsigned);
+insert into t_longtext select cast('0' as unsigned);
+insert into t_longtext select cast('-9223372036854775808' as unsigned);
+insert into t_longtext select cast('-9223372036854775809' as unsigned);
+insert into t_longtext select cast('18446744073709551615' as unsigned);
+insert into t_longtext select cast('18446744073709551616' as unsigned);
+select * from t_longtext;
+drop table if exists t_longtext;
+-- 非严格模式
+set dolphin.sql_mode = '';
+drop table if exists t_longtext;
+create table t_longtext(a longtext);
+insert into t_longtext select '-1'::uint8;
+insert into t_longtext select cast('-1' as uint1);
+insert into t_longtext select cast('-1' as uint2);
+insert into t_longtext select cast('-1' as uint4);
+insert into t_longtext select cast('-1' as uint8);
+insert into t_longtext select cast('-1' as unsigned);
+insert into t_longtext select cast('0' as unsigned);
+insert into t_longtext select cast('-9223372036854775808' as unsigned);
+insert into t_longtext select cast('-9223372036854775809' as unsigned);
+insert into t_longtext select cast('18446744073709551615' as unsigned);
+insert into t_longtext select cast('18446744073709551616' as unsigned);
+select * from t_longtext;
+drop table if exists t_longtext;
+reset dolphin.sql_mode;
+
 drop schema uint_cast cascade;
 reset current_schema;

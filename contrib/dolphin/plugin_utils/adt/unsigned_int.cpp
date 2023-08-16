@@ -4295,6 +4295,30 @@ int128 text_uintInternal(Datum txt, int128 min, int128 max, char* intType, bool 
     return result;
 }
 
+static int128 UnknownUintInternal(Datum txt, int128 min, int128 max, char* intType, bool canIgnore, Oid oid)
+{
+    char* tmp = NULL;
+    int128 result;
+    Oid typeOutput;
+    bool typIsVarlena;
+    getTypeOutputInfo(oid, &typeOutput, &typIsVarlena);
+    tmp = DatumGetCString(OidOutputFunctionCall(typeOutput, txt));
+    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
+    pfree_ext(tmp);
+    if (result < 0 && result >= min) {
+        ereport(WARNING,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("Cast to %s unsigned converted negative integer to it's positive complement", intType)));
+    }
+    if (result < min || result > max) {
+        result = result < min ? min : max;
+        ereport((canIgnore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("%s unsigned out of range", intType)));
+    }
+    return result;
+}
+
 Datum text_uint1(PG_FUNCTION_ARGS)
 {
     Datum txt = PG_GETARG_DATUM(0);
@@ -4322,25 +4346,29 @@ Datum text_uint8(PG_FUNCTION_ARGS)
 Datum text_cast_uint1(PG_FUNCTION_ARGS)
 {
     Datum txt = PG_GETARG_DATUM(0);
-    PG_RETURN_UINT8(text_uintInternal(txt, SCHAR_MIN, UCHAR_MAX, "tinyint", fcinfo->can_ignore));
+    Oid typeoid = fcinfo->argTypes[0];
+    PG_RETURN_UINT8(UnknownUintInternal(txt, SCHAR_MIN, UCHAR_MAX, "tinyint", fcinfo->can_ignore, typeoid));
 }
 
 Datum text_cast_uint2(PG_FUNCTION_ARGS)
 {
     Datum txt = PG_GETARG_DATUM(0);
-    PG_RETURN_UINT16(text_uintInternal(txt, SHRT_MIN, USHRT_MAX, "smallint", fcinfo->can_ignore));
+    Oid typeoid = fcinfo->argTypes[0];
+    PG_RETURN_UINT16(UnknownUintInternal(txt, SHRT_MIN, USHRT_MAX, "smallint", fcinfo->can_ignore, typeoid));
 }
 
 Datum text_cast_uint4(PG_FUNCTION_ARGS)
 {
     Datum txt = PG_GETARG_DATUM(0);
-    PG_RETURN_UINT32(text_uintInternal(txt, INT_MIN, UINT_MAX, "int", fcinfo->can_ignore));
+    Oid typeoid = fcinfo->argTypes[0];
+    PG_RETURN_UINT32(UnknownUintInternal(txt, INT_MIN, UINT_MAX, "int", fcinfo->can_ignore, typeoid));
 }
 
 Datum text_cast_uint8(PG_FUNCTION_ARGS)
 {
     Datum txt = PG_GETARG_DATUM(0);
-    PG_RETURN_UINT64(text_uintInternal(txt, LONG_MIN, ULONG_MAX, "bigint", fcinfo->can_ignore));
+    Oid typeoid = fcinfo->argTypes[0];
+    PG_RETURN_UINT64(UnknownUintInternal(txt, LONG_MIN, ULONG_MAX, "bigint", fcinfo->can_ignore, typeoid));
 }
 
 #ifdef DOLPHIN
