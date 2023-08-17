@@ -23,13 +23,13 @@ set(TGT_assessment_INC
         # psqlscan.h
         ${PROJECT_SRC_DIR}/bin/psql
         )
-# assessment_database
+# gs_assessment
 set(assessment_database_LINK_LIBS libpgcommon.a libpgport.a libsecurec.a -lpq -lgssapi_krb5_gauss -lgssrpc_gauss -lkrb5_gauss -lkrb5support_gauss -lk5crypto_gauss -lcom_err_gauss)
 set(assessment_LINK_DIRS ${SECURE_LIB_PATH} ${CMAKE_BINARY_DIR}/lib ${KERBEROS_LIB_PATH})
 set(assessment_DEF_OPTIONS ${MACRO_OPTIONS} -DFRONTEND)
 set(assessment_COMPILE_OPTIONS ${OS_OPTIONS} ${PROTECT_OPTIONS} ${WARNING_OPTIONS} ${CHECK_OPTIONS} ${BIN_SECURE_OPTIONS} ${OPTIMIZE_OPTIONS})
 set(TGT_assessment_database_SRC main.cpp OpenGaussConnection.cpp Scan.cpp Report.cpp)
-add_bintarget(assessment_database TGT_assessment_database_SRC TGT_assessment_INC "${assessment_DEF_OPTIONS}" "${assessment_COMPILE_OPTIONS}" "${assessment_LINK_OPTIONS}" "${assessment_database_LINK_LIBS}")
-add_dependencies(assessment_database gsql)
-target_link_directories(assessment_database PUBLIC ${assessment_LINK_DIRS})
-install(TARGETS assessment_database RUNTIME DESTINATION bin)
+add_bintarget(gs_assessment TGT_assessment_database_SRC TGT_assessment_INC "${assessment_DEF_OPTIONS}" "${assessment_COMPILE_OPTIONS}" "${assessment_LINK_OPTIONS}" "${assessment_database_LINK_LIBS}")
+add_dependencies(gs_assessment gsql)
+target_link_directories(gs_assessment PUBLIC ${assessment_LINK_DIRS})
+install(TARGETS gs_assessment RUNTIME DESTINATION bin)

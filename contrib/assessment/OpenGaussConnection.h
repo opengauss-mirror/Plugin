@@ -69,7 +69,7 @@ private:
     char* username = nullptr;
     char* password = nullptr;
     char* dbname = nullptr;
-    const char* applicationName = "assessment_database";
+    const char* applicationName = "gs_assessment";
     const char* clientEncoding = "auto";
     const char* connectTimeout = "300";
 
