@@ -13,7 +13,7 @@ top_builddir = ../..
 subdir = contrib/assessment
 
 override CPPFLAGS :=$(filter-out -fPIE,  $(CPPFLAGS)) -fPIC
-TARGET_NAME=assessment_database
+TARGET_NAME=gs_assessment
 EXTRA_CLEAN=$(TARGET_NAME)
 # make clean if change EXEC_OBJS
 EXEC_OBJS = main.cpp OpenGaussConnection.cpp Scan.cpp Report.cpp \

@@ -148,7 +148,7 @@ void PSqlPostInit(void)
 {
     pset.cur_cmd_interactive = false;
     pset.db = nullptr;
-    pset.progname = "assessment_database";
+    pset.progname = "gs_assessment";
     pset.encoding = 0;
 }
 
