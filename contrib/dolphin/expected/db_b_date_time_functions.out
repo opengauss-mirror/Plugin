@@ -417,9 +417,11 @@ CONTEXT:  referenced column: now(7)
 set dolphin.b_db_timestamp = 0.0;
 -- test sysdate(precision)
 select sysdate;
-ERROR:  syntax error at or near ";"
-LINE 1: select sysdate;
-                      ^
+       sysdate       
+---------------------
+--?.*
+(1 row)
+
 select sysdate();
       sysdate()      
 ---------------------

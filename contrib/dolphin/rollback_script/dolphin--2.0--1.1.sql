@@ -4094,3 +4094,5 @@ DROP FUNCTION IF EXISTS pg_catalog.div(json, json);
 DROP FUNCTION IF EXISTS pg_catalog.xor(json, anyelement);
 DROP FUNCTION IF EXISTS pg_catalog.xor(anyelement, json);
 DROP FUNCTION IF EXISTS pg_catalog.xor(json, json);
+
+DROP FUNCTION IF EXISTS pg_catalog.a_sysdate();

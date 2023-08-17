@@ -8022,3 +8022,8 @@ begin
 end;
 $$
 language plpgsql;
+
+DROP FUNCTION IF EXISTS pg_catalog.a_sysdate();
+CREATE OR REPLACE FUNCTION pg_catalog.a_sysdate()
+returns timestamp without time zone LANGUAGE SQL
+VOLATILE as $$ SELECT CURRENT_TIMESTAMP::timestamp(0) without time zone$$;

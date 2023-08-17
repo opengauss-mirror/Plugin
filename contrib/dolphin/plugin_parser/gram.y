@@ -33936,6 +33936,21 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| SYSDATE
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("a_sysdate");
+					n->colname = pstrdup("sysdate");
+					n->args = NIL;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 			| SYSDATE '(' optional_precision ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
