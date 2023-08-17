@@ -1,0 +1,98 @@
+create schema test_to_days;
+set current_schema = test_to_days;
+set dolphin.sql_mode = default;
+select to_days(100);
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: to_days
+select to_days(-1);
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: to_days
+select to_days(1000000000000000000);
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: to_days
+select to_days(20221111);
+ to_days 
+---------
+  738835
+(1 row)
+
+select to_days(20001111100000);
+ to_days 
+---------
+  730800
+(1 row)
+
+select to_days(20001111250000);
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: to_days
+create table t1(c datetime);
+create table t2(c timestamp);
+insert into t1 values(to_days(100));
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into t2 values(to_days(100));
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: c
+insert ignore into t1 values(to_days(100));
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+insert ignore into t2 values(to_days(100));
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
+select to_days(100);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: to_days
+ to_days 
+---------
+        
+(1 row)
+
+select to_days(-1);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: to_days
+ to_days 
+---------
+        
+(1 row)
+
+select to_days(1000000000000000000);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: to_days
+ to_days 
+---------
+        
+(1 row)
+
+select to_days(20221111);
+ to_days 
+---------
+  738835
+(1 row)
+
+select to_days(20001111100000);
+ to_days 
+---------
+  730800
+(1 row)
+
+select to_days(20001111250000);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: to_days
+ to_days 
+---------
+        
+(1 row)
+
+insert into t1 values(to_days(100));
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into t2 values(to_days(100));
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+set dolphin.sql_mode = default;
+reset current_schema;
+drop schema test_to_days cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table test_to_days.t1
+drop cascades to table test_to_days.t2
