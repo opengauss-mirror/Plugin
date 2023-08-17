@@ -1905,15 +1905,10 @@ static inline Datum populate_record_worker(FunctionCallInfo fcinfo, bool have_re
      * calls, assuming the record type doesn't change underneath us.
      */
     my_extra = (RecordIOData *) fcinfo->flinfo->fn_extra;
-    if (my_extra == NULL ||
-        my_extra->ncolumns != ncolumns) {
-        fcinfo->flinfo->fn_extra =
-            MemoryContextAlloc(fcinfo->flinfo->fn_mcxt,
-                               sizeof(RecordIOData) - sizeof(ColumnIOData)
-                               + ncolumns * sizeof(ColumnIOData));
+    if (my_extra == NULL || my_extra->ncolumns != ncolumns) {
+        fcinfo->flinfo->fn_extra = MemoryContextAllocZero(
+            fcinfo->flinfo->fn_mcxt, sizeof(RecordIOData) - sizeof(ColumnIOData) + ncolumns * sizeof(ColumnIOData));
         my_extra = (RecordIOData *) fcinfo->flinfo->fn_extra;
-        my_extra->record_type = InvalidOid;
-        my_extra->record_typmod = 0;
     }
 
     if (have_record_arg && (my_extra->record_type != tupType ||
@@ -1941,13 +1936,13 @@ static inline Datum populate_record_worker(FunctionCallInfo fcinfo, bool have_re
 
     for (i = 0; i < ncolumns; ++i) {
         ColumnIOData *column_info = &my_extra->columns[i];
-        Oid         column_type = tupdesc->attrs[i]->atttypid;
+        Oid         column_type = tupdesc->attrs[i].atttypid;
         JsonbValue *v = NULL;
         char        fname[NAMEDATALEN];
         JsonHashEntry *hashentry = NULL;
 
         /* Ignore dropped columns in datatype */
-        if (tupdesc->attrs[i]->attisdropped) {
+        if (tupdesc->attrs[i].attisdropped) {
             nulls[i] = true;
             continue;
         }
@@ -1955,11 +1950,11 @@ static inline Datum populate_record_worker(FunctionCallInfo fcinfo, bool have_re
         if (jtype == JSONOID) {
             rc = memset_s(fname, NAMEDATALEN, 0, NAMEDATALEN);
             securec_check(rc, "\0", "\0");
-            rc = strncpy_s(fname, NAMEDATALEN, NameStr(tupdesc->attrs[i]->attname), NAMEDATALEN - 1);
+            rc = strncpy_s(fname, NAMEDATALEN, NameStr(tupdesc->attrs[i].attname), NAMEDATALEN - 1);
             securec_check(rc, "\0", "\0");
             hashentry = (JsonHashEntry *)hash_search(json_hash, fname, HASH_FIND, NULL);
         } else {
-            char       *key = NameStr(tupdesc->attrs[i]->attname);
+            char       *key = NameStr(tupdesc->attrs[i].attname);
             v = findJsonbValueFromSuperHeaderLen(VARDATA(jb), JB_FOBJECT, key, strlen(key));
         }
 
@@ -1991,7 +1986,7 @@ static inline Datum populate_record_worker(FunctionCallInfo fcinfo, bool have_re
              * checks are done
              */
             values[i] = InputFunctionCall(&column_info->proc, NULL, column_info->typioparam,
-                                          tupdesc->attrs[i]->atttypmod);
+                                          tupdesc->attrs[i].atttypmod);
             nulls[i] = true;
         } else {
             char       *s = NULL;
@@ -2018,7 +2013,7 @@ static inline Datum populate_record_worker(FunctionCallInfo fcinfo, bool have_re
             }
 
             values[i] = InputFunctionCall(&column_info->proc, s,
-                                          column_info->typioparam, tupdesc->attrs[i]->atttypmod);
+                                          column_info->typioparam, tupdesc->attrs[i].atttypmod);
             nulls[i] = false;
         }
     }
@@ -2212,16 +2207,16 @@ static void make_row_from_rec_and_jsonb(Jsonb *element, PopulateRecordsetState *
 
     for (i = 0; i < ncolumns; ++i) {
         ColumnIOData *column_info = &my_extra->columns[i];
-        Oid           column_type = tupdesc->attrs[i]->atttypid;
+        Oid           column_type = tupdesc->attrs[i].atttypid;
         JsonbValue   *v = NULL;
         char         *key = NULL;
 
         /* Ignore dropped columns in datatype */
-        if (tupdesc->attrs[i]->attisdropped) {
+        if (tupdesc->attrs[i].attisdropped) {
             nulls[i] = true;
             continue;
         }
-        key = NameStr(tupdesc->attrs[i]->attname);
+        key = NameStr(tupdesc->attrs[i].attname);
         v = findJsonbValueFromSuperHeaderLen(VARDATA(element), JB_FOBJECT, key, strlen(key));
 
         /*
@@ -2250,7 +2245,7 @@ static void make_row_from_rec_and_jsonb(Jsonb *element, PopulateRecordsetState *
              * checks are done
              */
             values[i] = InputFunctionCall(&column_info->proc, NULL, column_info->typioparam,
-                                          tupdesc->attrs[i]->atttypmod);
+                                          tupdesc->attrs[i].atttypmod);
             nulls[i] = true;
         } else {
             char *s = NULL;
@@ -2271,7 +2266,7 @@ static void make_row_from_rec_and_jsonb(Jsonb *element, PopulateRecordsetState *
                 elog(ERROR, "invalid jsonb type");
             }
 
-            values[i] = InputFunctionCall(&column_info->proc, s, column_info->typioparam, tupdesc->attrs[i]->atttypmod);
+            values[i] = InputFunctionCall(&column_info->proc, s, column_info->typioparam, tupdesc->attrs[i].atttypmod);
             nulls[i] = false;
         }
     }
@@ -2304,6 +2299,7 @@ static inline Datum populate_recordset_worker(FunctionCallInfo fcinfo, bool have
     int32          tupTypmod;
     HeapTupleHeader rec;
     TupleDesc      tupdesc;
+    bool           needforget = false;
     RecordIOData  *my_extra = NULL;
     int            ncolumns;
     PopulateRecordsetState *state = NULL;
@@ -2351,7 +2347,10 @@ static inline Datum populate_recordset_worker(FunctionCallInfo fcinfo, bool have
         if (PG_ARGISNULL(0)) {
             rec = NULL;
         } else {
+            /* using the arg tupdesc, because it may not be the same as the result tupdesc. */
             rec = PG_GETARG_HEAPTUPLEHEADER(0);
+            tupdesc = lookup_rowtype_tupdesc(HeapTupleHeaderGetTypeId(rec), HeapTupleHeaderGetTypMod(rec));
+            needforget = true;
         }
     } else {
         if (PG_ARGISNULL(1)) {
@@ -2359,6 +2358,7 @@ static inline Datum populate_recordset_worker(FunctionCallInfo fcinfo, bool have
         }
         rec = NULL;
     }
+
     tupType = tupdesc->tdtypeid;
     tupTypmod = tupdesc->tdtypmod;
     ncolumns = tupdesc->natts;
@@ -2388,6 +2388,9 @@ static inline Datum populate_recordset_worker(FunctionCallInfo fcinfo, bool have
     /* make these in a sufficiently long-lived memory context */
     old_cxt = MemoryContextSwitchTo(rsi->econtext->ecxt_per_query_memory);
     state->ret_tdesc = CreateTupleDescCopy(tupdesc);
+    if (needforget) {
+        DecrTupleDescRefCount(tupdesc);
+    }
     BlessTupleDesc(state->ret_tdesc);
     state->tuple_store = tuplestore_begin_heap((uint32)rsi->allowedModes & SFRM_Materialize_Random,
                                                false, u_sess->attr.attr_memory.work_mem);
@@ -2512,18 +2515,18 @@ static void populate_recordset_object_end(void *state)
 
     for (i = 0; i < ncolumns; ++i) {
         ColumnIOData *column_info = &my_extra->columns[i];
-        Oid           column_type = tupdesc->attrs[i]->atttypid;
+        Oid           column_type = tupdesc->attrs[i].atttypid;
         char         *value = NULL;
 
         /* Ignore dropped columns in datatype */
-        if (tupdesc->attrs[i]->attisdropped) {
+        if (tupdesc->attrs[i].attisdropped) {
             nulls[i] = true;
             continue;
         }
 
         errno_t rc = memset_s(fname, NAMEDATALEN, 0, NAMEDATALEN);
         securec_check(rc, "\0", "\0");
-        rc = strncpy_s(fname, NAMEDATALEN, NameStr(tupdesc->attrs[i]->attname), NAMEDATALEN - 1);
+        rc = strncpy_s(fname, NAMEDATALEN, NameStr(tupdesc->attrs[i].attname), NAMEDATALEN - 1);
         securec_check(rc, "\0", "\0");
         hashentry = (JsonHashEntry *)hash_search(json_hash, fname, HASH_FIND, NULL);
 
@@ -2553,12 +2556,12 @@ static void populate_recordset_object_end(void *state)
              * checks are done
              */
             values[i] = InputFunctionCall(&column_info->proc, NULL, column_info->typioparam,
-                                          tupdesc->attrs[i]->atttypmod);
+                                          tupdesc->attrs[i].atttypmod);
             nulls[i] = true;
         } else {
             value = hashentry->val;
             values[i] = InputFunctionCall(&column_info->proc, value, column_info->typioparam,
-                                          tupdesc->attrs[i]->atttypmod);
+                                          tupdesc->attrs[i].atttypmod);
             nulls[i] = false;
         }
     }

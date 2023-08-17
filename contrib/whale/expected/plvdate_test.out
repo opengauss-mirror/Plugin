@@ -1,0 +1,304 @@
+select plvdate.add_bizdays('2022-11-11', 3);
+ add_bizdays 
+-------------
+ 11-16-2022
+(1 row)
+
+select plvdate.add_bizdays('2022-11-11', 5);
+ add_bizdays 
+-------------
+ 11-18-2022
+(1 row)
+
+select plvdate.add_bizdays('2022-11-11', 10);
+ add_bizdays 
+-------------
+ 11-25-2022
+(1 row)
+
+select plvdate.nearest_bizday('2022-11-11');
+ nearest_bizday 
+----------------
+ 11-10-2022
+(1 row)
+
+select plvdate.nearest_bizday('2022-11-15');
+ nearest_bizday 
+----------------
+ 11-14-2022
+(1 row)
+
+select plvdate.nearest_bizday('2022-11-17');
+ nearest_bizday 
+----------------
+ 11-16-2022
+(1 row)
+
+select plvdate.nearest_bizday('2022-12-17');
+ nearest_bizday 
+----------------
+ 12-16-2022
+(1 row)
+
+select plvdate.next_bizday('2022-11-11');
+ next_bizday 
+-------------
+ 11-14-2022
+(1 row)
+
+select plvdate.next_bizday('2022-11-15');
+ next_bizday 
+-------------
+ 11-16-2022
+(1 row)
+
+select plvdate.next_bizday('2022-11-17');
+ next_bizday 
+-------------
+ 11-18-2022
+(1 row)
+
+select plvdate.next_bizday('2022-12-17');
+ next_bizday 
+-------------
+ 12-19-2022
+(1 row)
+
+select plvdate.bizdays_between('2022-11-11', '2022-12-17');
+ bizdays_between 
+-----------------
+              26
+(1 row)
+
+select plvdate.prev_bizday('2022-11-11');
+ prev_bizday 
+-------------
+ 11-10-2022
+(1 row)
+
+select plvdate.prev_bizday('2022-11-15');
+ prev_bizday 
+-------------
+ 11-14-2022
+(1 row)
+
+select plvdate.prev_bizday('2022-11-17');
+ prev_bizday 
+-------------
+ 11-16-2022
+(1 row)
+
+select plvdate.prev_bizday('2022-12-17');
+ prev_bizday 
+-------------
+ 12-16-2022
+(1 row)
+
+select plvdate.isbizday('2022-11-11');
+ isbizday 
+----------
+ t
+(1 row)
+
+select plvdate.isbizday('2022-11-15');
+ isbizday 
+----------
+ t
+(1 row)
+
+select plvdate.isbizday('2022-11-17');
+ isbizday 
+----------
+ t
+(1 row)
+
+select plvdate.isbizday('2022-12-17');
+ isbizday 
+----------
+ f
+(1 row)
+
+select plvdate.isbizday('2022-11-14');
+ isbizday 
+----------
+ t
+(1 row)
+
+select plvdate.isbizday('2022-11-16');
+ isbizday 
+----------
+ t
+(1 row)
+
+select plvdate.isbizday('2022-11-21');
+ isbizday 
+----------
+ t
+(1 row)
+
+select plvdate.set_nonbizday('Sunday');
+ set_nonbizday 
+---------------
+ 
+(1 row)
+
+select plvdate.set_nonbizday('Monday');
+ set_nonbizday 
+---------------
+ 
+(1 row)
+
+select plvdate.unset_nonbizday('Sunday');
+ unset_nonbizday 
+-----------------
+ 
+(1 row)
+
+select plvdate.unset_nonbizday('Monday');
+ unset_nonbizday 
+-----------------
+ 
+(1 row)
+
+select plvdate.set_nonbizday('2022-12-11'::"date");
+ set_nonbizday 
+---------------
+ 
+(1 row)
+
+select plvdate.set_nonbizday('2022-12-12'::"date");
+ set_nonbizday 
+---------------
+ 
+(1 row)
+
+select plvdate.set_nonbizday('2022-12-13'::"date", false);
+ set_nonbizday 
+---------------
+ 
+(1 row)
+
+select plvdate.set_nonbizday('2022-12-14'::"date", true);
+ set_nonbizday 
+---------------
+ 
+(1 row)
+
+select plvdate.unset_nonbizday('2022-12-11'::"date");
+ unset_nonbizday 
+-----------------
+ 
+(1 row)
+
+select plvdate.unset_nonbizday('2022-12-14'::"date", false);
+ERROR:  nonbizday unregistration error
+DETAIL:  Nonbizday not found.
+CONTEXT:  referenced column: unset_nonbizday
+select plvdate.unset_nonbizday('2022-12-14'::"date", true);
+ unset_nonbizday 
+-----------------
+ 
+(1 row)
+
+select plvdate.add_bizdays('2022-12-12'::"date");
+ERROR:  function plvdate.add_bizdays(date) does not exist
+LINE 1: select plvdate.add_bizdays('2022-12-12'::"date");
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: add_bizdays
+select plvdate.use_easter();
+ use_easter 
+------------
+ 
+(1 row)
+
+select plvdate.using_easter();
+ using_easter 
+--------------
+ t
+(1 row)
+
+select plvdate.use_easter(true);
+ use_easter 
+------------
+ 
+(1 row)
+
+select plvdate.using_easter();
+ using_easter 
+--------------
+ t
+(1 row)
+
+select plvdate.use_easter(false);
+ use_easter 
+------------
+ 
+(1 row)
+
+select plvdate.using_easter();
+ using_easter 
+--------------
+ f
+(1 row)
+
+select plvdate.unuse_easter();
+ unuse_easter 
+--------------
+ 
+(1 row)
+
+select plvdate.using_easter();
+ using_easter 
+--------------
+ f
+(1 row)
+
+select plvdate.use_great_friday();
+ use_great_friday 
+------------------
+ 
+(1 row)
+
+select plvdate.using_great_friday();
+ using_great_friday 
+--------------------
+ t
+(1 row)
+
+select plvdate.use_great_friday(true);
+ use_great_friday 
+------------------
+ 
+(1 row)
+
+select plvdate.using_great_friday();
+ using_great_friday 
+--------------------
+ t
+(1 row)
+
+select plvdate.use_great_friday(false);
+ use_great_friday 
+------------------
+ 
+(1 row)
+
+select plvdate.using_great_friday();
+ using_great_friday 
+--------------------
+ f
+(1 row)
+
+select plvdate.unuse_great_friday();
+ unuse_great_friday 
+--------------------
+ 
+(1 row)
+
+select plvdate.using_great_friday();
+ using_great_friday 
+--------------------
+ f
+(1 row)
+

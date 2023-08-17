@@ -6,13 +6,13 @@
 
 subdir = contrib/whale/plugin_utils/adt
 top_builddir = ../../../../
-base_dir = contrib/whale
 include $(top_builddir)/src/Makefile.global
+base_dir = contrib/whale
 include $(top_builddir)/$(base_dir)/configure.mk
 # seems to be required for some date/time stuff 1999/07/22 bjm
 ifeq "$(findstring alpha,$(host_cpu))" "alpha"
 ifeq "$(GCC)" "yes"
-override CFLAGS+= -mieee -fPIC -I$(top_builddir)/$(subdir)/../include -fvisibility=hidden
+override CFLAGS+= -mieee -I$(top_builddir)/$(subdir)/../include -fvisibility=hidden -fPIC
 endif
 endif
 

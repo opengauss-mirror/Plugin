@@ -45,7 +45,7 @@
 #include "utils/builtins.h"
 #include "utils/globalplancache.h"
 #include "utils/inet.h"
-#include "utils/timestamp.h"
+#include "plugin_utils/timestamp.h"
 #include "utils/lsyscache.h"
 #include "utils/memutils.h"
 #include "utils/memprot.h"
@@ -77,6 +77,7 @@
 #include "replication/rto_statistic.h"
 #include "storage/lock/lock.h"
 #include "nodes/makefuncs.h"
+#include "ddes/dms/ss_dms_bufmgr.h"
 
 #define UINT32_ACCESS_ONCE(var) ((uint32)(*((volatile uint32*)&(var))))
 #define NUM_PG_LOCKTAG_ID 12
@@ -261,6 +262,8 @@ extern Datum pv_session_memctx_detail(PG_FUNCTION_ARGS);
 extern Datum pv_total_memory_detail(PG_FUNCTION_ARGS);
 extern Datum mot_global_memory_detail(PG_FUNCTION_ARGS);
 extern Datum mot_local_memory_detail(PG_FUNCTION_ARGS);
+extern Datum mot_jit_detail(PG_FUNCTION_ARGS);
+extern Datum mot_jit_profile(PG_FUNCTION_ARGS);
 extern Datum gs_total_nodegroup_memory_detail(PG_FUNCTION_ARGS);
 
 
@@ -286,7 +289,6 @@ extern Datum pg_autovac_timeout(PG_FUNCTION_ARGS);
 static int64 pgxc_exec_autoanalyze_timeout(Oid relOid, int32 coordnum, char* funcname);
 extern bool allow_autoanalyze(HeapTuple tuple);
 
-int g_stat_file_id = -1;
 
 /* the size of GaussDB_expr.ir */
 #define IR_FILE_SIZE 29800
@@ -394,7 +396,9 @@ static const char* WaitStateDesc[] = {
     "wait sync consumer next step",  // STATE_WAIT_SYNC_CONSUMER_NEXT_STEP
     "wait sync producer next step",  // STATE_WAIT_SYNC_PRODUCER_NEXT_STEP
     "gtm set consistency point",     // STATE_GTM_SET_CONSISTENCY_POINT
-    "wait sync bgworkers"            // STATE_WAIT_SYNC_BGWORKERS
+    "wait sync bgworkers",           // STATE_WAIT_SYNC_BGWORKERS
+    "stanby read recovery conflict", // STATE_STANDBY_READ_RECOVERY_CONFLICT
+    "standby get snapshot"           // STATE_STANDBY_GET_SNAPSHOT
 };
 
 // description for WaitStatePhase enums.
@@ -707,6 +711,9 @@ void pg_stat_get_stat_list(List** stat_list, uint32* statFlag_ref, Oid relid)
     } else if (isPartitionedObject(relid, RELKIND_INDEX, true)) {
         *statFlag_ref = relid;
         *stat_list = getPartitionObjectIdList(relid, PART_OBJ_TYPE_INDEX_PARTITION);
+    } else if (isPartitionObject(relid, PART_OBJ_TYPE_TABLE_PARTITION, true)) {
+        *statFlag_ref = partid_get_parentid(relid);
+        *stat_list = list_make1_oid(relid);
     } else {
         *statFlag_ref = InvalidOid;
         *stat_list = list_make1_oid(relid);
@@ -1450,11 +1457,16 @@ Datum pg_stat_segment_extent_usage(PG_FUNCTION_ARGS)
     ForkNumber forknum = PG_GETARG_INT32(3);
     if (!ExtentTypeIsValid(extent_type)) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmodule(MOD_SEGMENT_PAGE),
-                        errmsg("The parameter extent_type is not valid"), errhint("extent_type should be in [1, 4]")));
+                        errmsg("The parameter extent_type is not valid"), errhint("extent_type should be in [1, 5]")));
     }
     if (forknum < 0 || forknum > MAX_FORKNUM) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmodule(MOD_SEGMENT_PAGE),
                         errmsg("The forknumber is invalid"), errdetail("forknum should be in [0, %d]", MAX_FORKNUM)));
+    }
+    if (forknum == BCM_FORKNUM || forknum == INIT_FORKNUM) {
+        ereport(ERROR, (errmodule(MOD_SEGMENT_PAGE), errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("We do not support BCM_FORKNUM and INIT_FORKNUM yet."),
+                        errdetail("BCM_FORKNUM is 3, INIT_FORKNUM is 4.")));
     }
     FuncCallContext *funcctx = NULL;
 
@@ -3663,7 +3675,7 @@ Datum pg_stat_get_sql_count(PG_FUNCTION_ARGS)
         i = 0;
 
         /* init the tuple description */
-        tupdesc = CreateTemplateTupleDesc(SQL_COUNT_ATTR, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(SQL_COUNT_ATTR, false);
 
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "node_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "user_name", TEXTOID, -1, 0);
@@ -3930,10 +3942,10 @@ void get_network_info(char** node_host, int* node_port)
     *node_host = get_pgxc_nodehost(node_oid);
     *node_port = get_pgxc_nodeport(node_oid);
 #else
-    if (strcmp("*", g_instance.attr.attr_network.ListenAddresses) == 0) {
+    if (strcmp("*", u_sess->attr.attr_network.ListenAddresses) == 0) {
         *node_host = "localhost";
     } else {
-        *node_host = g_instance.attr.attr_network.ListenAddresses;
+        *node_host = u_sess->attr.attr_network.ListenAddresses;
     }
     *node_port = g_instance.attr.attr_network.PostPortNumber;
 #endif
@@ -3959,7 +3971,7 @@ Datum pg_stat_get_env(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(7, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(7, false);
         /* This should have been called 'pid';  can't change it. 2011-06-11 */
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "node_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "host", TEXTOID, -1, 0);
@@ -4758,7 +4770,7 @@ Datum pg_stat_get_mem_mbytes_reserved(PG_FUNCTION_ARGS)
 
     StringInfoData buf;
 
-    if (pid <= 0)
+    if (pid == 0)
         PG_RETURN_TEXT_P(cstring_to_text(result));
 
     initStringInfo(&buf);
@@ -4878,7 +4890,7 @@ Datum pg_stat_get_wlm_realtime_session_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(WLM_REALTIME_SESSION_INFO_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(WLM_REALTIME_SESSION_INFO_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "nodename", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "threadid", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "block_time", INT8OID, -1, 0);
@@ -5094,7 +5106,7 @@ Datum pg_stat_get_wlm_realtime_ec_operator_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(OPERATOR_REALTIME_SESSION_EC_INFO_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(OPERATOR_REALTIME_SESSION_EC_INFO_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "queryid", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "plan_node_id", INT4OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "plan_node_name", TEXTOID, -1, 0);
@@ -5241,7 +5253,7 @@ Datum pg_stat_get_wlm_realtime_operator_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(OPERATOR_REALTIME_SESSION_INFO_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(OPERATOR_REALTIME_SESSION_INFO_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "queryid", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "pid", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "plan_node_id", INT4OID, -1, 0);
@@ -5364,7 +5376,7 @@ Datum pg_stat_get_wlm_statistics(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(WLM_STATISTICS_NUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(WLM_STATISTICS_NUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "statement", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "block_time", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "elapsed_time", INT8OID, -1, 0);
@@ -5753,7 +5765,7 @@ Datum pg_stat_get_wlm_io_wait_status(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(io_wait_status_attrnum, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(io_wait_status_attrnum, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "node_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "device_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "read_per_second", FLOAT8OID, -1, 0);
@@ -5854,7 +5866,7 @@ Datum pg_stat_get_wlm_user_iostat_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(WLM_USER_IO_RESOURCE_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(WLM_USER_IO_RESOURCE_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "user_id", OIDOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "mincurr_iops", INT4OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "maxcurr_iops", INT4OID, -1, 0);
@@ -5930,7 +5942,7 @@ Datum pg_stat_get_wlm_session_iostat_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(WLM_SESSION_IOSTAT_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(WLM_SESSION_IOSTAT_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "threadid", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "maxcurr_iops", INT4OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "mincurr_iops", INT4OID, -1, 0);
@@ -6019,7 +6031,7 @@ Datum pg_stat_get_wlm_node_resource_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(WLM_NODE_RESOURCE_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(WLM_NODE_RESOURCE_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "min_mem_util", INT4OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "max_mem_util", INT4OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "min_cpu_util", INT4OID, -1, 0);
@@ -6105,7 +6117,7 @@ Datum pg_stat_get_wlm_session_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(WLM_SESSION_INFO_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(WLM_SESSION_INFO_ATTRNUM, false);
 
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "datid", OIDOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "dbname", TEXTOID, -1, 0);
@@ -6466,7 +6478,7 @@ Datum pg_stat_get_wlm_ec_operator_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(OPERATOR_SESSION_EC_INFO_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(OPERATOR_SESSION_EC_INFO_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "queryid", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "plan_node_id", INT4OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "plan_node_name", TEXTOID, -1, 0);
@@ -6736,7 +6748,7 @@ Datum pg_stat_get_wlm_operator_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(OPERATOR_SESSION_INFO_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(OPERATOR_SESSION_INFO_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "queryid", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "pid", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "plan_node_id", INT4OID, -1, 0);
@@ -6854,7 +6866,7 @@ Datum pg_stat_get_wlm_instance_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(WLM_INSTANCE_INFO_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(WLM_INSTANCE_INFO_ATTRNUM, false);
 
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "instancename", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "timestamp", TIMESTAMPTZOID, -1, 0);
@@ -6951,7 +6963,7 @@ Datum pg_stat_get_wlm_instance_info_with_cleanup(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(WLM_INSTANCE_INFO_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(WLM_INSTANCE_INFO_ATTRNUM, false);
 
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "instancename", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "timestamp", TIMESTAMPTZOID, -1, 0);
@@ -7054,7 +7066,7 @@ Datum pg_stat_get_wlm_user_resource_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(WLM_USER_RESOURCE_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(WLM_USER_RESOURCE_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "user_id", OIDOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "used_memory", INT4OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "total_memory", INT4OID, -1, 0);
@@ -7152,7 +7164,7 @@ Datum pg_stat_get_resource_pool_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(WLM_RESOURCE_POOL_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(WLM_RESOURCE_POOL_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "respool_oid", OIDOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "ref_count", INT4OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "active_points", INT4OID, -1, 0);
@@ -7228,7 +7240,7 @@ Datum pg_stat_get_wlm_user_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(WLM_USER_INFO_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(WLM_USER_INFO_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "userid", OIDOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "sysadmin", BOOLOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "rpoid", OIDOID, -1, 0);
@@ -7308,7 +7320,7 @@ Datum pg_stat_get_cgroup_info(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(WLM_CGROUP_INFO_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(WLM_CGROUP_INFO_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "cgroup_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "percent", INT4OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "usagepct", INT4OID, -1, 0);
@@ -7419,7 +7431,7 @@ Datum pg_stat_get_workload_records(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(WLM_WORKLOAD_RECORDS_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(WLM_WORKLOAD_RECORDS_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "node_idx", OIDOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "query_pid", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "start_time", INT8OID, -1, 0);
@@ -8013,7 +8025,7 @@ Datum pv_os_run_info(PG_FUNCTION_ARGS)
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* need a tuple descriptor representing 3 columns */
-        tupdesc = CreateTemplateTupleDesc(5, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(5, false);
 
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "id", INT4OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "name", TEXTOID, -1, 0);
@@ -8087,7 +8099,7 @@ Datum pv_session_memory_detail(PG_FUNCTION_ARGS)
     oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
 
     /* need a tuple descriptor representing 9 columns */
-    tupdesc = CreateTemplateTupleDesc(NUM_SESSION_MEMORY_DETAIL_ELEM, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(NUM_SESSION_MEMORY_DETAIL_ELEM, false);
 
     TupleDescInitEntry(tupdesc, (AttrNumber)1, "sessid", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)2, "threadid", INT8OID, -1, 0);
@@ -8269,6 +8281,190 @@ Datum mot_global_memory_detail(PG_FUNCTION_ARGS)
 }
 
 /*
+ * Description: Produce a view to show all JIT compilation information
+ */
+Datum mot_jit_detail(PG_FUNCTION_ARGS)
+{
+#ifndef ENABLE_MOT
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("This function is not supported in cluster mode.")));
+    PG_RETURN_NULL();
+#else
+    FuncCallContext* funcctx = NULL;
+    MotJitDetail* entry = NULL;
+    MemoryContext oldcontext;
+
+    if (SRF_IS_FIRSTCALL()) {
+        TupleDesc tupdesc;
+
+        /* create a function context for cross-call persistence */
+        funcctx = SRF_FIRSTCALL_INIT();
+
+        /*
+         * Switch to memory context appropriate for multiple function calls
+         */
+        oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+
+        /* build tupdesc for result tuples */
+        tupdesc = CreateTemplateTupleDesc(NUM_MOT_JIT_DETAIL_ELEM, false);
+
+        TupleDescInitEntry(tupdesc, (AttrNumber) 1, "proc_oid", OIDOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 2, "query", TEXTOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 3, "namespace", TEXTOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 4, "jittable_status", TEXTOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 5, "valid_status", TEXTOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 6, "last_updated", TIMESTAMPTZOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 7, "plan_type", TEXTOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 8, "codegen_time", INT8OID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 9, "verify_time", INT8OID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 10, "finalize_time", INT8OID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 11, "compile_time", INT8OID, -1, 0);
+
+        /* complete descriptor of the tupledesc */
+        funcctx->tuple_desc = BlessTupleDesc(tupdesc);
+
+        /* total number of tuples to be returned */
+        funcctx->user_fctx = (void *)GetMotJitDetail(&(funcctx->max_calls));
+
+        (void)MemoryContextSwitchTo(oldcontext);
+    }
+
+    /* stuff done on every call of the function */
+    funcctx = SRF_PERCALL_SETUP();
+    entry = (MotJitDetail *)funcctx->user_fctx;
+
+    if (funcctx->call_cntr < funcctx->max_calls) {
+        Datum values[NUM_MOT_JIT_DETAIL_ELEM];
+        bool nulls[NUM_MOT_JIT_DETAIL_ELEM] = {false};
+        HeapTuple tuple = NULL;
+
+        /*
+         * Form tuple with appropriate data.
+         */
+        errno_t rc = 0;
+        rc = memset_s(values, sizeof(values), 0, sizeof(values));
+        securec_check(rc, "\0", "\0");
+        rc = memset_s(nulls, sizeof(nulls), 0, sizeof(nulls));
+        securec_check(rc, "\0", "\0");
+
+        entry += funcctx->call_cntr;
+
+        /* Locking is probably not really necessary */
+        values[0] = ObjectIdGetDatum(entry->procOid);
+        values[1] = CStringGetTextDatum(entry->query);
+        values[2] = CStringGetTextDatum(entry->nameSpace);
+        values[3] = CStringGetTextDatum(entry->jittableStatus);
+        values[4] = CStringGetTextDatum(entry->validStatus);
+        values[5] = TimestampTzGetDatum(entry->lastUpdatedTimestamp);
+        values[6] = CStringGetTextDatum(entry->planType);
+        values[7] = Int64GetDatum(entry->codegenTime);
+        values[8] = Int64GetDatum(entry->verifyTime);
+        values[9] = Int64GetDatum(entry->finalizeTime);
+        values[10] = Int64GetDatum(entry->compileTime);
+
+        tuple = heap_form_tuple(funcctx->tuple_desc, values, nulls);
+
+        SRF_RETURN_NEXT(funcctx, HeapTupleGetDatum(tuple));
+    } else {
+        /* do when there is no more left */
+        SRF_RETURN_DONE(funcctx);
+    }
+#endif
+}
+
+/*
+ * Description: Produce a view to show profile data of MOT jitted functions and queries
+ */
+Datum mot_jit_profile(PG_FUNCTION_ARGS)
+{
+#ifndef ENABLE_MOT
+    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("This function is not supported in cluster mode.")));
+    PG_RETURN_NULL();
+#else
+    FuncCallContext* funcctx = NULL;
+    MotJitProfile* entry = NULL;
+    MemoryContext oldcontext;
+
+    if (SRF_IS_FIRSTCALL()) {
+        TupleDesc tupdesc;
+
+        /* create a function context for cross-call persistence */
+        funcctx = SRF_FIRSTCALL_INIT();
+
+        /*
+         * Switch to memory context appropriate for multiple function calls
+         */
+        oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+
+        /* build tupdesc for result tuples */
+        tupdesc = CreateTemplateTupleDesc(NUM_MOT_JIT_PROFILE_ELEM, false);
+
+        TupleDescInitEntry(tupdesc, (AttrNumber) 1, "proc_oid", OIDOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 2, "id", INT4OID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 3, "parent_id", INT4OID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 4, "query", TEXTOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 5, "namespace", TEXTOID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 6, "weight", FLOAT4OID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 7, "total", INT8OID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 8, "self", INT8OID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 9, "child_gross", INT8OID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 10, "child_net", INT8OID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 11, "def_vars", INT8OID, -1, 0);
+        TupleDescInitEntry(tupdesc, (AttrNumber) 12, "init_vars", INT8OID, -1, 0);
+
+        /* complete descriptor of the tupledesc */
+        funcctx->tuple_desc = BlessTupleDesc(tupdesc);
+
+        /* total number of tuples to be returned */
+        funcctx->user_fctx = (void *)GetMotJitProfile(&(funcctx->max_calls));
+
+        (void)MemoryContextSwitchTo(oldcontext);
+    }
+
+    /* stuff done on every call of the function */
+    funcctx = SRF_PERCALL_SETUP();
+    entry = (MotJitProfile *)funcctx->user_fctx;
+
+    if (funcctx->call_cntr < funcctx->max_calls) {
+        Datum values[NUM_MOT_JIT_PROFILE_ELEM];
+        bool nulls[NUM_MOT_JIT_PROFILE_ELEM] = {false};
+        HeapTuple tuple = NULL;
+
+        /*
+         * Form tuple with appropriate data.
+         */
+        errno_t rc = 0;
+        rc = memset_s(values, sizeof(values), 0, sizeof(values));
+        securec_check(rc, "\0", "\0");
+        rc = memset_s(nulls, sizeof(nulls), 0, sizeof(nulls));
+        securec_check(rc, "\0", "\0");
+
+        entry += funcctx->call_cntr;
+
+        /* Locking is probably not really necessary */
+        values[0] = ObjectIdGetDatum(entry->procOid);
+        values[1] = Int32GetDatum(entry->id);
+        values[2] = Int32GetDatum(entry->parentId);
+        values[3] = CStringGetTextDatum(entry->query);
+        values[4] = CStringGetTextDatum(entry->nameSpace);
+        values[5] = Float4GetDatum(entry->weight);
+        values[6] = Int64GetDatum(entry->totalTime);
+        values[7] = Int64GetDatum(entry->selfTime);
+        values[8] = Int64GetDatum(entry->childGrossTime);
+        values[9] = Int64GetDatum(entry->childNetTime);
+        values[10] = Int64GetDatum(entry->defVarsTime);
+        values[11] = Int64GetDatum(entry->initVarsTime);
+
+        tuple = heap_form_tuple(funcctx->tuple_desc, values, nulls);
+
+        SRF_RETURN_NEXT(funcctx, HeapTupleGetDatum(tuple));
+    } else {
+        /* do when there is no more left */
+        SRF_RETURN_DONE(funcctx);
+    }
+#endif
+}
+
+/*
  * Description: Produce a view to show all local memory usage on node
  */
 Datum mot_local_memory_detail(PG_FUNCTION_ARGS)
@@ -8361,7 +8557,7 @@ Datum pv_thread_memory_detail(PG_FUNCTION_ARGS)
     oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
 
     /* need a tuple descriptor representing 9 columns */
-    tupdesc = CreateTemplateTupleDesc(NUM_THREAD_MEMORY_DETAIL_ELEM, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(NUM_THREAD_MEMORY_DETAIL_ELEM, false);
 
     TupleDescInitEntry(tupdesc, (AttrNumber)1, "threadid", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)2, "tid", INT8OID, -1, 0);
@@ -8404,7 +8600,7 @@ Datum pg_shared_memory_detail(PG_FUNCTION_ARGS)
     oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
 
     /* need a tuple descriptor representing 9 columns */
-    tupdesc = CreateTemplateTupleDesc(NUM_SHARED_MEMORY_DETAIL_ELEM, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(NUM_SHARED_MEMORY_DETAIL_ELEM, false);
 
     TupleDescInitEntry(tupdesc, (AttrNumber)1, "contextname", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)2, "level", INT2OID, -1, 0);
@@ -8453,7 +8649,7 @@ Datum pg_buffercache_pages(PG_FUNCTION_ARGS)
         fctx = (BufferCachePagesContext*)palloc(sizeof(BufferCachePagesContext));
 
         /* Construct a tuple descriptor for the result rows. */
-        tupledesc = CreateTemplateTupleDesc(NUM_BUFFERCACHE_PAGES_ELEM, false, TAM_HEAP);
+        tupledesc = CreateTemplateTupleDesc(NUM_BUFFERCACHE_PAGES_ELEM, false);
         TupleDescInitEntry(tupledesc, (AttrNumber)1, "bufferid", INT4OID, -1, 0);
         TupleDescInitEntry(tupledesc, (AttrNumber)2, "relfilenode", OIDOID, -1, 0);
         TupleDescInitEntry(tupledesc, (AttrNumber)3, "bucketid", INT4OID, -1, 0);
@@ -8603,6 +8799,124 @@ Datum pg_buffercache_pages(PG_FUNCTION_ARGS)
     }
 }
 
+#define NUM_SS_BUFFER_CTRL_ELEM 13
+Datum ss_buffer_ctrl(PG_FUNCTION_ARGS)
+{
+    FuncCallContext* funcctx = NULL;
+    Datum result;
+    MemoryContext oldcontext;
+    SSBufferCtrlContext* fctx = NULL; /* User function context. */
+    TupleDesc tupledesc;
+    HeapTuple tuple;
+
+    if (!ENABLE_DMS) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+            errmsg("This function is not supported while DMS and DSS disable")));
+    }
+
+    if (SRF_IS_FIRSTCALL()) {
+        int i;
+        BufferDesc* bufHdr = NULL;
+        dms_buf_ctrl_t *buf_ctrl = NULL;
+
+        funcctx = SRF_FIRSTCALL_INIT();
+
+        /* Switch context when allocating stuff to be used in later calls */
+        oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
+
+        /* Create a user function context for cross-call persistence */
+        fctx = (SSBufferCtrlContext*)palloc(sizeof(SSBufferCtrlContext));
+
+        /* Construct a tuple descriptor for the result rows. */
+        tupledesc = CreateTemplateTupleDesc(NUM_SS_BUFFER_CTRL_ELEM, false);
+        TupleDescInitEntry(tupledesc, (AttrNumber)1, "bufferid", INT4OID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)2, "is_remote_dirty", INT1OID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)3, "lock_mode", INT1OID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)4, "is_edp", INT1OID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)5, "force_request", INT1OID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)6, "need_flush", INT1OID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)7, "buf_id", INT4OID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)8, "state", OIDOID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)9, "pblk_relno", OIDOID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)10, "pblk_blkno", OIDOID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)11, "pblk_lsn", INT8OID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)12, "seg_fileno", INT1OID, -1, 0);
+        TupleDescInitEntry(tupledesc, (AttrNumber)13, "seg_blockno", OIDOID, -1, 0);
+        fctx->tupdesc = BlessTupleDesc(tupledesc);
+
+        fctx->record =
+            (SSBufferCtrlRec*)palloc_huge(CurrentMemoryContext,
+            sizeof(SSBufferCtrlRec) * g_instance.attr.attr_storage.NBuffers);
+
+        /* Set max calls and remember the user function context. */
+        funcctx->max_calls = g_instance.attr.attr_storage.NBuffers;
+        funcctx->user_fctx = fctx;
+
+        /* Return to original context when allocating transient memory */
+        MemoryContextSwitchTo(oldcontext);
+
+        for (i = 0; i < NUM_BUFFER_PARTITIONS; i++)
+            LWLockAcquire(GetMainLWLockByIndex(FirstBufMappingLock + i), LW_SHARED);
+
+        /*
+         * Scan though all the buffers, saving the relevant fields in the
+         * fctx->record structure.
+         */
+        for (i = 0; i < g_instance.attr.attr_storage.NBuffers; i++) {
+            bufHdr = GetBufferDescriptor(i);
+            buf_ctrl = GetDmsBufCtrl(bufHdr->buf_id);
+            fctx->record[i].bufferid = i + 1;
+            fctx->record[i].is_remote_dirty = buf_ctrl->is_remote_dirty;
+            fctx->record[i].lock_mode = buf_ctrl->lock_mode;
+            fctx->record[i].is_edp = buf_ctrl->is_edp;
+            fctx->record[i].force_request = buf_ctrl->force_request;
+            fctx->record[i].need_flush = buf_ctrl->need_flush;
+            fctx->record[i].buf_id = buf_ctrl->buf_id;
+            fctx->record[i].state = buf_ctrl->state;
+            fctx->record[i].pblk_relno = buf_ctrl->pblk_relno;
+            fctx->record[i].pblk_blkno = buf_ctrl->pblk_blkno;
+            fctx->record[i].pblk_lsn = buf_ctrl->pblk_lsn;
+            fctx->record[i].seg_fileno = buf_ctrl->seg_fileno;
+            fctx->record[i].seg_blockno = buf_ctrl->seg_blockno;
+        }
+
+        for (i = NUM_BUFFER_PARTITIONS; --i >= 0;)
+            LWLockRelease(GetMainLWLockByIndex(FirstBufMappingLock + i));
+    }
+
+    funcctx = SRF_PERCALL_SETUP();
+
+    /* Get the saved state */
+    fctx = (SSBufferCtrlContext*)funcctx->user_fctx;
+
+    if (funcctx->call_cntr < funcctx->max_calls) {
+        uint32 i = funcctx->call_cntr;
+        Datum values[NUM_SS_BUFFER_CTRL_ELEM];
+        bool nulls[NUM_SS_BUFFER_CTRL_ELEM] = {false};
+
+        values[0] = Int32GetDatum(fctx->record[i].bufferid);
+        values[1] = UInt8GetDatum(fctx->record[i].is_remote_dirty);
+        values[2] = UInt8GetDatum(fctx->record[i].lock_mode);
+        values[3] = UInt8GetDatum(fctx->record[i].is_edp);
+        values[4] = UInt8GetDatum(fctx->record[i].force_request);
+        values[5] = UInt8GetDatum(fctx->record[i].need_flush);
+        values[6] = Int32GetDatum(fctx->record[i].buf_id);
+        values[7] = UInt32GetDatum(fctx->record[i].state);
+        values[8] = UInt32GetDatum(fctx->record[i].pblk_relno);
+        values[9] = UInt32GetDatum(fctx->record[i].pblk_blkno);
+        values[10] = UInt64GetDatum(fctx->record[i].pblk_lsn);
+        values[11] = UInt8GetDatum(fctx->record[i].seg_fileno);
+        values[12] = UInt32GetDatum(fctx->record[i].seg_blockno);
+        
+        /* Build and return the tuple. */
+        tuple = heap_form_tuple(fctx->tupdesc, values, nulls);
+        result = HeapTupleGetDatum(tuple);
+
+        SRF_RETURN_NEXT(funcctx, result);
+    } else {
+        SRF_RETURN_DONE(funcctx);
+    }
+}
 
 Datum pv_session_time(PG_FUNCTION_ARGS)
 {
@@ -8682,7 +8996,7 @@ Datum pv_instance_time(PG_FUNCTION_ARGS)
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* need a tuple descriptor representing 4 columns */
-        tupdesc = CreateTemplateTupleDesc(3, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(3, false);
 
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "stat_id", INT4OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "stat_name", TEXTOID, -1, 0);
@@ -8741,7 +9055,7 @@ Datum pg_stat_get_redo_stat(PG_FUNCTION_ARGS)
 
         /* build tupdesc for result tuples */
         /* this had better match pv_plan view in system_views.sql */
-        tupdesc = CreateTemplateTupleDesc(7, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(7, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "phywrts", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "phyblkwrt", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)3, "writetim", INT8OID, -1, 0);
@@ -8964,7 +9278,7 @@ Datum pg_stat_get_file_stat(PG_FUNCTION_ARGS)
 
         /* build tupdesc for result tuples */
         /* this had better match pv_plan view in system_views.sql */
-        tupdesc = CreateTemplateTupleDesc(13, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(13, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "filenum", OIDOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "dbid", OIDOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)3, "spcid", OIDOID, -1, 0);
@@ -9053,7 +9367,7 @@ Datum get_local_rel_iostat(PG_FUNCTION_ARGS)
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples */
-        tupdesc = CreateTemplateTupleDesc(4, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(4, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "phyrds", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "phywrts", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)3, "phyblkrd", INT8OID, -1, 0);
@@ -9545,7 +9859,7 @@ Datum gs_total_nodegroup_memory_detail(PG_FUNCTION_ARGS)
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples */
-        tupdesc = CreateTemplateTupleDesc(3, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(3, false);
 
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "ngname", TEXTOID, -1, 0);
 
@@ -9711,7 +10025,7 @@ Datum pv_total_memory_detail(PG_FUNCTION_ARGS)
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples */
-        tupdesc = CreateTemplateTupleDesc(3, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(3, false);
 
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "nodename", TEXTOID, -1, 0);
 
@@ -9867,7 +10181,7 @@ Datum pg_stat_get_pooler_status(PG_FUNCTION_ARGS)
 
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(ARG_NUMS, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(ARG_NUMS, false);
         TupleDescInitEntry(tupdesc, (AttrNumber) ARG_1, "database_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber) ARG_2, "user_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber) ARG_3, "threadid", INT8OID, -1, 0);
@@ -9975,7 +10289,7 @@ void init_pgxc_comm_get_recv_stream(PG_FUNCTION_ARGS, FuncCallContext *funcctx, 
     TupleDesc    tupdesc;
 
     /* build tupdesc for result tuples */
-    tupdesc = CreateTemplateTupleDesc(argNums, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(argNums, false);
     TupleDescInitEntry(tupdesc, (AttrNumber) ARG_1, "node_name", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber) ARG_2, "local_tid", INT8OID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber) ARG_3, "remote_name", TEXTOID, -1, 0);
@@ -10086,7 +10400,7 @@ Datum pg_comm_recv_stream(PG_FUNCTION_ARGS)
 
         /* build tupdesc for result tuples */
         ii = 1;
-        tupdesc = CreateTemplateTupleDesc(RECV_STREAM_TUPLE_NATTS, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(RECV_STREAM_TUPLE_NATTS, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)ii++, "node_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)ii++, "local_tid", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)ii++, "remote_name", TEXTOID, -1, 0);
@@ -10185,7 +10499,7 @@ Datum pg_comm_send_stream(PG_FUNCTION_ARGS)
 
         /* build tupdesc for result tuples */
         ii = 1;
-        tupdesc = CreateTemplateTupleDesc(SEND_STREAM_TUPLE_NATTS, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(SEND_STREAM_TUPLE_NATTS, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)ii++, "node_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)ii++, "local_tid", INT8OID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)ii++, "remote_name", TEXTOID, -1, 0);
@@ -10266,7 +10580,7 @@ void init_pgxc_comm_get_send_stream(PG_FUNCTION_ARGS, FuncCallContext *funcctx, 
     TupleDesc    tupdesc;
     
     /* build tupdesc for result tuples */
-    tupdesc = CreateTemplateTupleDesc(argNums, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(argNums, false);
     TupleDescInitEntry(tupdesc, (AttrNumber) ARG_1, "node_name", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber) ARG_2, "local_tid", INT8OID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber) ARG_3, "remote_name", TEXTOID, -1, 0);
@@ -10373,7 +10687,7 @@ Datum pg_tde_info(PG_FUNCTION_ARGS)
     int i = 0;
     errno_t rc = 0;
 
-    TupleDesc tupdesc = CreateTemplateTupleDesc(3, false, TAM_HEAP);
+    TupleDesc tupdesc = CreateTemplateTupleDesc(3, false);
     TupleDescInitEntry(tupdesc, (AttrNumber)++i, "is_encrypt", BOOLOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)++i, "g_tde_algo", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)++i, "remain", TEXTOID, -1, 0);
@@ -10413,7 +10727,7 @@ void init_pg_comm_status(PG_FUNCTION_ARGS, FuncCallContext *funcctx, const int a
     oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
     /* build tupdesc for result tuples */
-    tupdesc = CreateTemplateTupleDesc(argNums, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(argNums, false);
 
     TupleDescInitEntry(tupdesc, (AttrNumber) ARG_1, "node_name", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber) ARG_2, "rxpck_rate", INT4OID, -1, 0);
@@ -10502,7 +10816,7 @@ void init_pgxc_comm_get_status(PG_FUNCTION_ARGS, FuncCallContext *funcctx, const
     TupleDesc tupdesc;
 
     /* build tupdesc for result tuples */
-    tupdesc = CreateTemplateTupleDesc(argNums, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(argNums, false);
     TupleDescInitEntry(tupdesc, (AttrNumber) ARG_1, "node_name", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber) ARG_2, "rxpck_rate", INT4OID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber) ARG_3, "txpck_rate", INT4OID, -1, 0);
@@ -10796,7 +11110,7 @@ Datum global_comm_get_client_info(PG_FUNCTION_ARGS)
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples */
-        tupdesc = CreateTemplateTupleDesc(CLIENT_INFO_TUPLE_NATTS, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(CLIENT_INFO_TUPLE_NATTS, false);
         TupleDescInitEntry(tupdesc, (AttrNumber) ARG_1, "node_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber) ARG_2, "app", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber) ARG_3, "tid", INT8OID, -1, 0);
@@ -10867,7 +11181,7 @@ Datum pg_comm_delay(PG_FUNCTION_ARGS)
 
         /* build tupdesc for result tuples */
         ii = 1;
-        tupdesc = CreateTemplateTupleDesc(DELAY_INFO_TUPLE_NATTS, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(DELAY_INFO_TUPLE_NATTS, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)ii++, "node_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)ii++, "remote_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)ii++, "remote_host", TEXTOID, -1, 0);
@@ -11084,7 +11398,7 @@ Datum gs_control_group_info(PG_FUNCTION_ARGS)
 
         /* build tupdesc for result tuples */
         /* this had better match pv_plan view in system_views.sql */
-        tupdesc = CreateTemplateTupleDesc(9, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(9, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "class", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)3, "workload", TEXTOID, -1, 0);
@@ -11206,7 +11520,7 @@ Datum gs_respool_exception_info(PG_FUNCTION_ARGS)
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples */
-        tupdesc = CreateTemplateTupleDesc(6, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(6, false);
 
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "class", TEXTOID, -1, 0);
@@ -11335,7 +11649,7 @@ Datum gs_all_control_group_info(PG_FUNCTION_ARGS)
 
         /* build tupdesc for result tuples */
         /* this had better match pv_plan view in system_views.sql */
-        tupdesc = CreateTemplateTupleDesc(10, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(10, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "type", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)3, "gid", INT8OID, -1, 0);
@@ -11464,7 +11778,7 @@ Datum gs_all_nodegroup_control_group_info(PG_FUNCTION_ARGS)
 
         /* build tupdesc for result tuples */
         /* this had better match pv_plan view in system_views.sql */
-        tupdesc = CreateTemplateTupleDesc(NODEGROUP_CONTROL_GROUP_INFO_ATTRNUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(NODEGROUP_CONTROL_GROUP_INFO_ATTRNUM, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "type", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)++i, "gid", INT8OID, -1, 0);
@@ -11584,7 +11898,7 @@ Datum pv_compute_pool_workload(PG_FUNCTION_ARGS)
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* need a tuple descriptor representing 3 columns */
-        tupdesc = CreateTemplateTupleDesc(NUM_COMPUTE_POOL_WORKLOAD_ELEM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(NUM_COMPUTE_POOL_WORKLOAD_ELEM, false);
 
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "nodename", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "rpinuse", INT4OID, -1, 0);
@@ -12147,7 +12461,7 @@ Datum pg_total_autovac_tuples(PG_FUNCTION_ARGS)
 
     per_query_ctx = rsinfo->econtext->ecxt_per_query_memory;
     oldcontext = MemoryContextSwitchTo(per_query_ctx);
-    tupdesc = CreateTemplateTupleDesc(AUTOVAC_TUPLES_ATTR_NUM, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(AUTOVAC_TUPLES_ATTR_NUM, false);
     TupleDescInitEntry(tupdesc, (AttrNumber)1, "nodename", NAMEOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)2, "nspname", NAMEOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)3, "relname", NAMEOID, -1, 0);
@@ -12349,7 +12663,7 @@ Datum pg_autovac_status(PG_FUNCTION_ARGS)
     rc = memset_s(nulls, sizeof(nulls), 0, sizeof(nulls));
     securec_check(rc, "\0", "\0");
 
-    tupdesc = CreateTemplateTupleDesc(STATUS_ATTR_NUM, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(STATUS_ATTR_NUM, false);
     TupleDescInitEntry(tupdesc, (AttrNumber)1, "nspname", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)2, "relname", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)3, "nodename", TEXTOID, -1, 0);
@@ -12499,7 +12813,7 @@ void check_dirty_percent_and_tuples(int dirty_pecent, int n_tuples)
 
 void dirty_table_init_tupdesc(TupleDesc* tupdesc)
 {
-    *tupdesc = CreateTemplateTupleDesc(7, false, TAM_HEAP);
+    *tupdesc = CreateTemplateTupleDesc(7, false);
     TupleDescInitEntry(*tupdesc, (AttrNumber)1, "relname", NAMEOID, -1, 0);
     TupleDescInitEntry(*tupdesc, (AttrNumber)2, "schemaname", NAMEOID, -1, 0);
     TupleDescInitEntry(*tupdesc, (AttrNumber)3, "n_tup_ins", INT8OID, -1, 0);
@@ -12668,7 +12982,7 @@ Datum all_table_distribution(PG_FUNCTION_ARGS)
         MemoryContext oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples. */
-        TupleDesc tupdesc = CreateTemplateTupleDesc(4, false, TAM_HEAP);
+        TupleDesc tupdesc = CreateTemplateTupleDesc(4, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "schemaname", NAMEOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "tablename", NAMEOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)3, "nodename", NAMEOID, -1, 0);
@@ -12765,7 +13079,7 @@ Datum single_table_distribution(PG_FUNCTION_ARGS)
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples. */
-        tupdesc = CreateTemplateTupleDesc(4, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(4, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "schemaname", NAMEOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "tablename", NAMEOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)3, "nodename", NAMEOID, -1, 0);
@@ -12835,7 +13149,7 @@ Datum pg_stat_bad_block(PG_FUNCTION_ARGS)
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples */
-        tupdesc = CreateTemplateTupleDesc(BAD_BLOCK_STAT_NATTS, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(BAD_BLOCK_STAT_NATTS, false);
 
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "nodename", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "databaseid", INT4OID, -1, 0);
@@ -12936,7 +13250,7 @@ HeapTuple form_function_tuple(int col_num, FuncName name)
     rc = memset_s(nulls, sizeof(nulls), 1, sizeof(nulls));
     securec_check(rc, "\0", "\0");
 
-    tupdesc = CreateTemplateTupleDesc(col_num, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(col_num, false);
 
     switch (name) {
         case PAGEWRITER_FUNC:
@@ -13035,7 +13349,7 @@ void xc_stat_view(FuncCallContext* funcctx, int col_num, FuncName name)
     oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
     /* build tupdesc for result tuples. */
-    tupdesc = CreateTemplateTupleDesc(col_num, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(col_num, false);
     switch (name) {
         case PAGEWRITER_FUNC:
             for (i = 0; i < col_num; i++) {
@@ -13340,7 +13654,7 @@ Datum remote_single_flush_dw_stat(PG_FUNCTION_ARGS)
         MemoryContext oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples. */
-        TupleDesc tupdesc = CreateTemplateTupleDesc(DW_SINGLE_VIEW_COL_NUM, false, TAM_HEAP);
+        TupleDesc tupdesc = CreateTemplateTupleDesc(DW_SINGLE_VIEW_COL_NUM, false);
         for (uint32 i = 0; i < DW_SINGLE_VIEW_COL_NUM; i++) {
             TupleDescInitEntry(
                 tupdesc, (AttrNumber)(i + 1), g_dw_single_view[i].name, g_dw_single_view[i].data_type, -1, 0);
@@ -13397,7 +13711,7 @@ static void gs_stat_read_dw_batch(Tuplestorestate *tupStore, TupleDesc tupDesc)
     bool nulls[col_num];
 
     for (i = 0; i < row_num; i++) {
-        g_stat_file_id = i;
+        u_sess->stat_cxt.stat_file_id = i;
 	
         rc = memset_s(values, sizeof(values), 0, sizeof(values));
         securec_check(rc, "\0", "\0");
@@ -13411,8 +13725,7 @@ static void gs_stat_read_dw_batch(Tuplestorestate *tupStore, TupleDesc tupDesc)
 		
         tuplestore_putvalues(tupStore, tupDesc, values, nulls);
     }
-	
-    g_stat_file_id = -1;
+    u_sess->stat_cxt.stat_file_id = -1;
 }
 
 Datum local_double_write_stat(PG_FUNCTION_ARGS)
@@ -13425,7 +13738,7 @@ Datum local_double_write_stat(PG_FUNCTION_ARGS)
 	
     MemoryContext oldcontext = MemoryContextSwitchTo(rsinfo->econtext->ecxt_per_query_memory);
 	
-    tupdesc = CreateTemplateTupleDesc(DW_VIEW_COL_NUM, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(DW_VIEW_COL_NUM, false);
 
     for (i = 0; i < col_num; i++) {
         TupleDescInitEntry(tupdesc, (AttrNumber)(i + 1),
@@ -13462,7 +13775,7 @@ Datum remote_double_write_stat(PG_FUNCTION_ARGS)
         MemoryContext oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples. */
-        TupleDesc tupdesc = CreateTemplateTupleDesc(DW_VIEW_COL_NUM, false, TAM_HEAP);
+        TupleDesc tupdesc = CreateTemplateTupleDesc(DW_VIEW_COL_NUM, false);
         for (uint32 i = 0; i < DW_VIEW_COL_NUM; i++) {
             TupleDescInitEntry(
                 tupdesc, (AttrNumber)(i + 1), g_dw_view_col_arr[i].name, g_dw_view_col_arr[i].data_type, -1, 0);
@@ -13582,7 +13895,7 @@ Datum local_redo_stat(PG_FUNCTION_ARGS)
     uint32 i;
 
     redo_fill_redo_event();
-    tupdesc = CreateTemplateTupleDesc(REDO_VIEW_COL_SIZE, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(REDO_VIEW_COL_SIZE, false);
     for (i = 0; i < REDO_VIEW_COL_SIZE; i++) {
         TupleDescInitEntry(tupdesc, (AttrNumber)(i + 1), g_redoViewArr[i].name, g_redoViewArr[i].data_type, -1, 0);
         values[i] = g_redoViewArr[i].get_data();
@@ -13611,7 +13924,7 @@ Datum remote_redo_stat(PG_FUNCTION_ARGS)
         MemoryContext oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples. */
-        TupleDesc tupdesc = CreateTemplateTupleDesc(REDO_VIEW_COL_SIZE, false, TAM_HEAP);
+        TupleDesc tupdesc = CreateTemplateTupleDesc(REDO_VIEW_COL_SIZE, false);
         for (uint32 i = 0; i < REDO_VIEW_COL_SIZE; i++) {
             TupleDescInitEntry(tupdesc, (AttrNumber)(i + 1), g_redoViewArr[i].name, g_redoViewArr[i].data_type, -1, 0);
             nulls[i] = false;
@@ -13681,7 +13994,7 @@ Datum gs_threadpool_status(PG_FUNCTION_ARGS)
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* need a tuple descriptor representing 10 columns */
-        tupdesc = CreateTemplateTupleDesc(NUM_THREADPOOL_STATUS_ELEM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(NUM_THREADPOOL_STATUS_ELEM, false);
 
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "nodename", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "groupid", INT4OID, -1, 0);
@@ -13765,7 +14078,7 @@ Datum gs_globalplancache_status(PG_FUNCTION_ARGS)
 #define GPC_TUPLES_ATTR_NUM 8
 
         /* need a tuple descriptor representing 12 columns */
-        tupdesc = CreateTemplateTupleDesc(GPC_TUPLES_ATTR_NUM, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(GPC_TUPLES_ATTR_NUM, false);
 
         TupleDescInitEntry(tupdesc, (AttrNumber) 1, "nodename",
                            TEXTOID, -1, 0);
@@ -13905,7 +14218,7 @@ Datum local_rto_stat(PG_FUNCTION_ARGS)
     bool nulls[RTO_VIEW_COL_SIZE] = {false};
     uint32 i;
 
-    tupdesc = CreateTemplateTupleDesc(RTO_VIEW_COL_SIZE, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(RTO_VIEW_COL_SIZE, false);
     for (i = 0; i < RTO_VIEW_COL_SIZE; i++) {
         TupleDescInitEntry(tupdesc, (AttrNumber)(i + 1), g_rtoViewArr[i].name, g_rtoViewArr[i].data_type, -1, 0);
         values[i] = g_rtoViewArr[i].get_data();
@@ -13935,7 +14248,7 @@ Datum remote_rto_stat(PG_FUNCTION_ARGS)
         MemoryContext oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples. */
-        TupleDesc tupdesc = CreateTemplateTupleDesc(RTO_VIEW_COL_SIZE, false, TAM_HEAP);
+        TupleDesc tupdesc = CreateTemplateTupleDesc(RTO_VIEW_COL_SIZE, false);
         for (i = 0; i < RTO_VIEW_COL_SIZE; i++) {
             TupleDescInitEntry(tupdesc, (AttrNumber)(i + 1), g_rtoViewArr[i].name, g_rtoViewArr[i].data_type, -1, 0);
             nulls[i] = false;
@@ -14076,7 +14389,7 @@ Datum remote_recovery_status(PG_FUNCTION_ARGS)
         MemoryContext oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples. */
-        TupleDesc tupdesc = CreateTemplateTupleDesc(RECOVERY_RTO_VIEW_COL, false, TAM_HEAP);
+        TupleDesc tupdesc = CreateTemplateTupleDesc(RECOVERY_RTO_VIEW_COL, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "node_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "standby_node_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)3, "source_ip", TEXTOID, -1, 0);
@@ -14223,7 +14536,7 @@ Datum gs_hadr_remote_rto_and_rpo_stat(PG_FUNCTION_ARGS)
         MemoryContext oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
         /* build tupdesc for result tuples. */
-        TupleDesc tupdesc = CreateTemplateTupleDesc(HADR_RTO_RPO_VIEW_COL, false, TAM_HEAP);
+        TupleDesc tupdesc = CreateTemplateTupleDesc(HADR_RTO_RPO_VIEW_COL, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "hadr_sender_node_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "hadr_receiver_node_name", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)3, "source_ip", TEXTOID, -1, 0);
@@ -14343,7 +14656,7 @@ Datum track_memory_context_detail(PG_FUNCTION_ARGS)
 TupleDesc get_index_status_view_frist_row()
 {
     TupleDesc tupdesc = NULL;
-    tupdesc = CreateTemplateTupleDesc(INDEX_STATUS_VIEW_COL_NUM, false, TAM_HEAP);
+    tupdesc = CreateTemplateTupleDesc(INDEX_STATUS_VIEW_COL_NUM, false);
     TupleDescInitEntry(tupdesc, (AttrNumber)1, "node_name", TEXTOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)2, "indisready", BOOLOID, -1, 0);
     TupleDescInitEntry(tupdesc, (AttrNumber)3, "indisvalid", BOOLOID, -1, 0);

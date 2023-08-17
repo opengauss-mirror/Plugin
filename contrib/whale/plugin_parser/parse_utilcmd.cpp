@@ -11,10 +11,6 @@
  * Hence these functions are now called at the start of execution of their
  * respective utility commands.
  *
- * NOTE: in general we must avoid scribbling on the passed-in raw parse
- * tree, since it might be in a plan cache.  The simplest solution is
- * a quick copyObject() call before manipulating the query tree.
- *
  *
  * Portions Copyright (c) 1996-2012, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
@@ -98,6 +94,7 @@
 #include "client_logic/client_logic.h"
 #include "client_logic/client_logic_enums.h"
 #include "storage/checksum_impl.h"
+#include "catalog/gs_collation.h"
 
 /* State shared by transformCreateSchemaStmt and its subroutines */
 typedef struct {
@@ -157,7 +154,6 @@ static void transformFKConstraints(CreateStmtContext* cxt, bool skipValidation, 
 static void transformConstraintAttrs(CreateStmtContext* cxt, List* constraintList);
 static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column);
 static void setSchemaName(char* context_schema, char** stmt_schema_name);
-static void TrySetAutoIncNotNullConstraint(ColumnDef* column);
 static void TransformTempAutoIncrement(ColumnDef* column, CreateStmt* stmt);
 static int128 TransformAutoIncStart(CreateStmt* stmt);
 
@@ -171,11 +167,11 @@ static void checkConstraint(CreateStmtContext* cxt, Node* node);
 static void setMemCheckFlagForIdx(List* IndexList);
 
 /* check partition name */
-static void check_partition_name_less_than(List* partitionList, bool isPartition);
+static void check_partition_name_internal(List* partitionList, bool isPartition);
 static void check_partition_name_start_end(List* partitionList, bool isPartition);
 
 /* for range partition: start/end syntax */
-static void precheck_start_end_defstate(List* pos, Form_pg_attribute* attrs,
+static void precheck_start_end_defstate(List* pos, FormData_pg_attribute* attrs,
     RangePartitionStartEndDefState* defState, bool isPartition);
 static Datum get_partition_arg_value(Node* node, bool* isnull);
 static Datum evaluate_opexpr(
@@ -197,6 +193,11 @@ extern Node* makeAConst(Value* v, int location);
 static bool IsElementExisted(List* indexElements, IndexElem* ielem);
 static char* CreatestmtGetOrientation(CreateStmt *stmt);
 static void CheckAutoIncrementIndex(CreateStmtContext *cxt);
+static List* semtc_generate_hash_partition_defs(CreateStmt* stmt, const char* prefix_name, int part_count);
+static void TransformModifyColumndef(CreateStmtContext* cxt, AlterTableCmd* cmd);
+static void TransformColumnDefinitionOptions(CreateStmtContext* cxt, ColumnDef* column);
+static void TransformColumnDefinitionConstraints(
+    CreateStmtContext* cxt, ColumnDef* column, bool preCheck, bool is_modify);
 #define REDIS_SCHEMA "data_redis"
 
 /*
@@ -231,6 +232,108 @@ static void checkPartitionConstraintWithExpr(Constraint* con)
     }
 }
 
+Oid check_collation_by_charset(const char* collate, int charset)
+{
+    Oid coll_oid = InvalidOid;
+    coll_oid = GetSysCacheOid3(COLLNAMEENCNSP, PointerGetDatum(collate),
+                               Int32GetDatum(charset),
+                               ObjectIdGetDatum(PG_CATALOG_NAMESPACE));
+    if (coll_oid == InvalidOid) {
+        coll_oid = get_collation_oid_with_lower_name(collate, charset);
+        if (coll_oid == InvalidOid) {
+            ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
+                    errmsg("collation \"%s\" for encoding \"%s\" does not exist",
+                        collate, pg_encoding_to_char(charset))));
+        }
+    }
+    return coll_oid;
+}
+
+/*
+ * transform_default_collation -
+ *      Returns the processed collation oid of schema、relation or attribute level.
+ */
+Oid transform_default_collation(const char* collate, int charset, Oid def_coll_oid, bool is_attr)
+{
+    Oid coll_oid = InvalidOid;
+    HeapTuple coll_tup;
+    
+    if (collate != NULL && charset != PG_INVALID_ENCODING) {
+        coll_oid = check_collation_by_charset(collate, charset);
+    } else if (collate != NULL) {
+        CatCList* list = NULL;
+        list = SearchSysCacheList1(COLLNAMEENCNSP, PointerGetDatum(collate));
+        if (list->n_members == 0) {
+            /* If the collate string is in uppercase, change to lowercase and search it again */
+            coll_oid = get_collation_oid_with_lower_name(collate, charset);
+            if (coll_oid == InvalidOid) {
+                ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
+                        errmsg("collation \"%s\" does not exist", collate)));
+            }
+        } else if (list->n_members > 1) {
+            /*
+             * opengauss may have collation with same name. When specifying the collation in attribute,
+             * you can specify these collation for forward compatibility.
+             */
+            if (is_attr) {
+                charset = GetDatabaseEncoding();
+                coll_oid = check_collation_by_charset(collate, charset);
+            } else {
+                ereport(ERROR, (errcode(ERRCODE_DUPLICATE_OBJECT),
+                        errmsg("there is more than one collation \"%s\" with the same name", collate)));
+            }
+        } else {
+            coll_tup = t_thrd.lsc_cxt.FetchTupleFromCatCList(list, 0);
+            charset = ((Form_pg_collation)GETSTRUCT(coll_tup))->collencoding;
+            if (!is_attr && charset == PG_INVALID_ENCODING) {
+                ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
+                        errmsg("collation \"%s\" have no corresponding encoding", collate)));
+            }
+            coll_oid = HeapTupleGetOid(coll_tup);
+        }
+
+        ReleaseSysCacheList(list);
+    } else if (charset != PG_INVALID_ENCODING) {
+        coll_oid = get_default_collation_by_charset(charset);
+    } else {
+        coll_oid = def_coll_oid;
+    }
+
+    if (!is_attr && OidIsValid(coll_oid) && !COLLATION_IN_B_FORMAT(coll_oid)) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("this collation only cannot be specified here")));
+    }
+    if ((!ENABLE_MULTI_CHARSET || t_thrd.proc->workingVersionNum < MULTI_CHARSET_VERSION_NUM) &&
+        charset != PG_INVALID_ENCODING && charset != PG_SQL_ASCII && charset != GetDatabaseEncoding()) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("difference between the charset and the database encoding has not supported")));
+    }
+    return coll_oid;
+}
+
+Oid fill_relation_collation(const char* collate, int charset, List** options, Oid nsp_coll_oid)
+{
+    if (!OidIsValid(nsp_coll_oid) && USE_DEFAULT_COLLATION) {
+        nsp_coll_oid = get_default_collation_by_charset(GetDatabaseEncoding());
+    }
+    Oid coll_oid = transform_default_collation(collate, charset, nsp_coll_oid);
+    ListCell* cell = NULL;
+    DefElem* opt = NULL;
+    
+    if (coll_oid == InvalidOid) {
+        return coll_oid;
+    }
+    /* If specified by reloption, this is the case. */
+    foreach(cell, *options) {
+        opt = (DefElem*)lfirst(cell);
+        if (strncmp(opt->defname, "collate", strlen("collate")) == 0) {
+            return coll_oid;
+        }
+    }
+    *options = lappend(*options, makeDefElem("collate", (Node*)makeInteger(coll_oid)));
+    return coll_oid;
+}
+
 List* transformCreateStmt(CreateStmt* stmt, const char* queryString, const List* uuids, bool preCheck,
 Oid *namespaceid, bool isFirstNode)
 {
@@ -242,11 +345,6 @@ Oid *namespaceid, bool isFirstNode)
     Oid existing_relid;
     bool is_ledger_nsp = false;
     bool is_row_table = is_ledger_rowstore(stmt->options);
-    /*
-     * We must not scribble on the passed-in CreateStmt, so copy it.  (This is
-     * overkill, but easy.)
-     */
-    stmt = (CreateStmt*)copyObject(stmt);
     
     if (uuids != NIL) {
         list_free_deep(stmt->uuids);
@@ -291,6 +389,16 @@ Oid *namespaceid, bool isFirstNode)
      */
     if (stmt->if_not_exists && OidIsValid(existing_relid)) {
         bool exists_ok = true;
+
+        /*
+         * If we are in an extension script, insist that the pre-existing
+         * object be a member of the extension, to avoid security risks.
+         */
+        ObjectAddress address;
+
+        ObjectAddressSet(address, RelationRelationId, existing_relid);
+        checkMembershipInCurrentExtension(&address);
+
         /* 
          * Emit the right error or warning message for a "CREATE" command issued on a exist relation.
          * remote node : should have relation if recieve "IF NOT EXISTS" stmt.
@@ -447,6 +555,16 @@ Oid *namespaceid, bool isFirstNode)
             break;
         }
     }
+
+    Oid rel_coll_oid = DEFAULT_COLLATION_OID;
+    if (DB_CMPT_B) {
+        Oid nspdefcoll = get_nsp_default_collation(*namespaceid);
+        if (stmt->collate || stmt->charset != PG_INVALID_ENCODING || nspdefcoll != InvalidOid) {
+            rel_coll_oid = transform_default_collation(stmt->collate, stmt->charset, nspdefcoll);
+        }
+    }
+    cxt.rel_coll_id = rel_coll_oid;
+
     /*
      * Run through each primary element in the table creation clause. Separate
      * column defs from constraints, and do preliminary analysis.
@@ -648,6 +766,7 @@ Oid *namespaceid, bool isFirstNode)
 #else
         checkPartitionName(stmt->partTableState->partitionList);
 #endif
+        SetPartitionnoForPartitionState(stmt->partTableState);
     }
 
     /* like clause-including reloptions: cxt.reloptions is produced by like including reloptions clause */
@@ -765,6 +884,16 @@ static List* GetAutoIncSeqOptions(CreateStmtContext* cxt)
     return list_make1(option);
 }
 
+inline Oid get_rel_colaltion(Relation rel)
+{
+    if (rel == NULL || rel->rd_options == NULL) {
+        return InvalidOid;
+    }
+
+    StdRdOptions *opt = (StdRdOptions*)(rel->rd_options);
+    return opt->collate;
+}
+
 /*
  * createSetOwnedByTable -
  *		create a set owned by table, need to add record to pg_depend.
@@ -808,6 +937,12 @@ static void CreateSetOwnedByTable(CreateStmtContext* cxt, ColumnDef* column, cha
     setstmt = makeNode(CreateSetStmt);
     setstmt->typname = column->typname;
 
+    /* get collation oid in alter table syntax */
+    Oid rel_coll_oid = cxt->rel_coll_id;
+    Oid coll_oid = get_rel_colaltion(cxt->rel);
+    coll_oid = (coll_oid == InvalidOid) ? rel_coll_oid : coll_oid;
+    setstmt->set_collation = get_column_def_collation_b_format(column, ANYSETOID, 100, false, coll_oid);
+
     cxt->blist = lappend(cxt->blist, setstmt);
 
     /* replace the set column type namespace and name for CreateStmt */
@@ -835,7 +970,7 @@ static bool DropSetOwnedByTable(CreateStmtContext* cxt, char *colname)
 
         DropStmt *stmt = makeNode(DropStmt);
         stmt->removeType = OBJECT_TYPE;
-        stmt->objects = list_make1(list_make2(makeString(nspace), makeString(typname)));
+        stmt->objects = list_make1(list_make1(makeTypeNameFromNameList(list_make2(makeString(nspace), makeString(typname)))));
         stmt->behavior = DROP_CASCADE;
         stmt->arguments = NIL;
         stmt->missing_ok = true;
@@ -1000,9 +1135,7 @@ static void createSeqOwnedByTable(CreateStmtContext* cxt, ColumnDef* column, boo
     column->constraints = lappend(column->constraints, constraint);
     column->raw_default = constraint->raw_expr;
 
-    if (is_autoinc) {
-        TrySetAutoIncNotNullConstraint(column);
-    } else {
+    if (!is_autoinc) {
         constraint = makeNode(Constraint);
         constraint->contype = CONSTR_NOTNULL;
         constraint->location = -1;
@@ -1065,11 +1198,6 @@ static void transformColumnDefinition(CreateStmtContext* cxt, ColumnDef* column,
     bool is_serial = false;
     bool is_set = false;
     bool large = false;
-    bool saw_nullable = false;
-    bool saw_default = false;
-    bool saw_generated = false;
-    Constraint* constraint = NULL;
-    ListCell* clist = NULL;
     ClientLogicColumnRef* clientLogicColumnRef = NULL;
 
     /* Check the constraint type.*/
@@ -1166,8 +1294,82 @@ static void transformColumnDefinition(CreateStmtContext* cxt, ColumnDef* column,
     /* Process column constraints, if any... */
     transformConstraintAttrs(cxt, column->constraints);
 
-    saw_nullable = false;
-    saw_default = false;
+    TransformColumnDefinitionConstraints(cxt, column, preCheck, false);
+    if (column->clientLogicColumnRef != NULL) {
+#ifdef ENABLE_MULTIPLE_NODES
+        if (IS_MAIN_COORDINATOR && !u_sess->attr.attr_common.enable_full_encryption) {
+#else
+        if (!u_sess->attr.attr_common.enable_full_encryption) {
+#endif
+            ereport(ERROR,
+                (errcode(ERRCODE_OPERATE_NOT_SUPPORTED),
+                    errmsg("Un-support to define encrypted column when client encryption is disabled.")));
+        }
+        if (isColumnEncryptionAllowed(cxt, column)) {
+            clientLogicColumnRef = (ClientLogicColumnRef*)column->clientLogicColumnRef;
+            clientLogicColumnRef->orig_typname = column->typname;
+            typenameTypeIdAndMod(NULL, clientLogicColumnRef->orig_typname, &clientLogicColumnRef->orig_typname->typeOid, &clientLogicColumnRef->orig_typname->typemod);
+                if (clientLogicColumnRef->dest_typname) {
+                    typenameTypeIdAndMod(NULL, clientLogicColumnRef->dest_typname, &clientLogicColumnRef->dest_typname->typeOid, &clientLogicColumnRef->dest_typname->typemod);
+                    column->typname =   makeTypeNameFromOid(clientLogicColumnRef->dest_typname->typeOid, clientLogicColumnRef->orig_typname->typeOid);
+                }
+            transformColumnType(cxt, column);
+        }
+    }
+ 
+    /*
+     * Generate ALTER FOREIGN TABLE ALTER COLUMN statement which adds
+     * per-column foreign data wrapper options for this column.
+     */
+    if (column->fdwoptions != NIL) {
+        AlterTableStmt* stmt = NULL;
+        AlterTableCmd* cmd = NULL;
+
+        cmd = makeNode(AlterTableCmd);
+        cmd->subtype = AT_AlterColumnGenericOptions;
+        cmd->name = column->colname;
+        cmd->def = (Node*)column->fdwoptions;
+        cmd->behavior = DROP_RESTRICT;
+        cmd->missing_ok = false;
+
+        stmt = makeNode(AlterTableStmt);
+        stmt->relation = cxt->relation;
+        stmt->cmds = NIL;
+        stmt->relkind = OBJECT_FOREIGN_TABLE;
+        stmt->cmds = lappend(stmt->cmds, cmd);
+
+        cxt->alist = lappend(cxt->alist, stmt);
+    }
+
+    TransformColumnDefinitionOptions(cxt, column);
+}
+
+static void TransformColumnDefinitionOptions(CreateStmtContext* cxt, ColumnDef* column)
+{
+    ListCell *columnOption = NULL;
+    foreach (columnOption, column->columnOptions) {
+        void *pointer = lfirst(columnOption);
+        if (IsA(pointer, CommentStmt)) {
+            CommentStmt *commentStmt = (CommentStmt *)pointer;
+            commentStmt->objtype = OBJECT_COLUMN;
+            commentStmt->objname = list_make2(makeString(cxt->relation->relname), makeString(column->colname));
+            if (cxt->relation->schemaname) {
+                commentStmt->objname = lcons(makeString(cxt->relation->schemaname) , commentStmt->objname);
+            }
+            cxt->alist = lappend(cxt->alist, commentStmt);
+            break;
+        }
+    }
+}
+
+static void TransformColumnDefinitionConstraints(CreateStmtContext* cxt, ColumnDef* column,
+    bool preCheck, bool is_modify)
+{
+    bool saw_nullable = false;
+    bool saw_default = false;
+    bool saw_generated = false;
+    Constraint* constraint = NULL;
+    ListCell* clist = NULL;
 
     foreach (clist, column->constraints) {
         constraint = (Constraint*)lfirst(clist);
@@ -1259,13 +1461,18 @@ static void transformColumnDefinition(CreateStmtContext* cxt, ColumnDef* column,
                 break;
 
             case CONSTR_FOREIGN:
-
-                /*
-                 * Fill in the current attribute's name and throw it into the
-                 * list of FK constraints to be processed later.
-                 */
-                constraint->fk_attrs = list_make1(makeString(column->colname));
-                cxt->fkconstraints = lappend(cxt->fkconstraints, constraint);
+                if (!is_modify) {
+                    /*
+                     * Fill in the current attribute's name and throw it into the
+                     * list of FK constraints to be processed later.
+                     */
+                    constraint->fk_attrs = list_make1(makeString(column->colname));
+                    cxt->fkconstraints = lappend(cxt->fkconstraints, constraint);
+                } else {
+                    ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                        errmsg("Invalid modify column operation"),
+                        errdetail("modify or change column REFERENCES constraint is not supported")));
+                }
                 break;
 
             case CONSTR_ATTR_DEFERRABLE:
@@ -1275,6 +1482,12 @@ static void transformColumnDefinition(CreateStmtContext* cxt, ColumnDef* column,
                 /* transformConstraintAttrs took care of these */
                 break;
             case CONSTR_AUTO_INCREMENT:
+                if (IsA(cxt->node, CreateForeignTableStmt) ||
+                    (cxt->rel != NULL && (IS_FOREIGNTABLE(cxt->rel) || IS_STREAM_TABLE(cxt->rel)))) {
+                    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("Un-support feature"),
+                        errdetail("auto_increment column is not supported in foreign table")));
+                }
                 if (column->is_serial) {
                     ereport(ERROR, (errcode(ERRCODE_OPERATE_NOT_SUPPORTED),
                         errmsg("The datatype of column '%s' does not support auto_increment", column->colname)));
@@ -1294,6 +1507,7 @@ static void transformColumnDefinition(CreateStmtContext* cxt, ColumnDef* column,
                     createSeqOwnedByTable(cxt, column, preCheck, true, true);
                     column->is_serial = true;
                 }
+                column->is_not_null = true;
                 break;
             default:
                 ereport(ERROR,
@@ -1302,74 +1516,13 @@ static void transformColumnDefinition(CreateStmtContext* cxt, ColumnDef* column,
                 break;
         }
     }
-    if (column->clientLogicColumnRef != NULL) {
-#ifdef ENABLE_MULTIPLE_NODES
-        if (IS_MAIN_COORDINATOR && !u_sess->attr.attr_common.enable_full_encryption) {
-#else
-        if (!u_sess->attr.attr_common.enable_full_encryption) {
-#endif
-            ereport(ERROR,
-                (errcode(ERRCODE_OPERATE_NOT_SUPPORTED),
-                    errmsg("Un-support to define encrypted column when client encryption is disabled.")));
-        }
-        if (isColumnEncryptionAllowed(cxt, column)) {
-            clientLogicColumnRef = (ClientLogicColumnRef*)column->clientLogicColumnRef;
-            clientLogicColumnRef->orig_typname = column->typname;
-            typenameTypeIdAndMod(NULL, clientLogicColumnRef->orig_typname, &clientLogicColumnRef->orig_typname->typeOid, &clientLogicColumnRef->orig_typname->typemod);
-                if (clientLogicColumnRef->dest_typname) {
-                    typenameTypeIdAndMod(NULL, clientLogicColumnRef->dest_typname, &clientLogicColumnRef->dest_typname->typeOid, &clientLogicColumnRef->dest_typname->typemod);
-                    column->typname =   makeTypeNameFromOid(clientLogicColumnRef->dest_typname->typeOid, clientLogicColumnRef->orig_typname->typeOid);
-                }
-            transformColumnType(cxt, column);
-        }
-    }
 
     if (saw_default && saw_generated)
             ereport(ERROR,
                     (errcode(ERRCODE_SYNTAX_ERROR),
                      errmsg("both default and generation expression specified for column \"%s\" of table \"%s\"",
                             column->colname, cxt->relation->relname),
-                     parser_errposition(cxt->pstate,
-                                        constraint->location)));
-
-    /*
-     * Generate ALTER FOREIGN TABLE ALTER COLUMN statement which adds
-     * per-column foreign data wrapper options for this column.
-     */
-    if (column->fdwoptions != NIL) {
-        AlterTableStmt* stmt = NULL;
-        AlterTableCmd* cmd = NULL;
-
-        cmd = makeNode(AlterTableCmd);
-        cmd->subtype = AT_AlterColumnGenericOptions;
-        cmd->name = column->colname;
-        cmd->def = (Node*)column->fdwoptions;
-        cmd->behavior = DROP_RESTRICT;
-        cmd->missing_ok = false;
-
-        stmt = makeNode(AlterTableStmt);
-        stmt->relation = cxt->relation;
-        stmt->cmds = NIL;
-        stmt->relkind = OBJECT_FOREIGN_TABLE;
-        stmt->cmds = lappend(stmt->cmds, cmd);
-
-        cxt->alist = lappend(cxt->alist, stmt);
-    }
-
-    ListCell *columnOption = NULL;
-    foreach (columnOption, column->columnOptions) {
-        void *pointer = lfirst(columnOption);
-        if (IsA(pointer, CommentStmt)) {
-            CommentStmt *commentStmt = (CommentStmt *)pointer;
-            commentStmt->objtype = OBJECT_COLUMN;
-            commentStmt->objname = list_make2(makeString(cxt->relation->relname), makeString(column->colname));
-            if (cxt->relation->schemaname) {
-                commentStmt->objname = lcons(makeString(cxt->relation->schemaname) , commentStmt->objname);
-            }
-            cxt->alist = lappend(cxt->alist, commentStmt);
-            break;
-        }
-    }
+                     parser_errposition(cxt->pstate, constraint->location)));
 }
 
 /*
@@ -1533,7 +1686,7 @@ static DistributeBy* GetHideTagDistribution(TupleDesc tupleDesc)
     DistributeBy* distributeby = makeNode(DistributeBy);
     distributeby->disttype = DISTTYPE_HASH;
     for (int attno = 1; attno <= tupleDesc->natts; attno++) {
-        Form_pg_attribute attribute = tupleDesc->attrs[attno - 1];
+        Form_pg_attribute attribute = &tupleDesc->attrs[attno - 1];
         char* attributeName = NameStr(attribute->attname);
         if (attribute->attkvtype == ATT_KV_TAG) {
             distributeby->colname = lappend(distributeby->colname, makeString(attributeName));
@@ -1805,13 +1958,24 @@ static void transformTableLikeClause(
      * table can have different column numbers.
      */
     attmap = (AttrNumber*)palloc0(sizeof(AttrNumber) * tupleDesc->natts);
+    int colCount = list_length(cxt->columns);
+    for (parent_attno = 1; parent_attno <= tupleDesc->natts; parent_attno++) {
+        Form_pg_attribute attribute = &tupleDesc->attrs[parent_attno - 1];
+        if (attribute->attisdropped && (!u_sess->attr.attr_sql.enable_cluster_resize || RelationIsTsStore(relation)))
+            continue;
+        if (attribute->attkvtype == ATT_KV_HIDE && table_like_clause->options != CREATE_TABLE_LIKE_ALL) {
+            continue;
+        }
+        colCount++;
+        attmap[parent_attno - 1] = colCount;
+    }
 
     /*
      * Insert the copied attributes into the cxt for the new table definition.
      */
     bool hideTag = false;
     for (parent_attno = 1; parent_attno <= tupleDesc->natts; parent_attno++) {
-        Form_pg_attribute attribute = tupleDesc->attrs[parent_attno - 1];
+        Form_pg_attribute attribute = &tupleDesc->attrs[parent_attno - 1];
         char* attributeName = NameStr(attribute->attname);
         ColumnDef* def = NULL;
 
@@ -1875,11 +2039,10 @@ static void transformTableLikeClause(
                                 list_make1(makeString(NameStr(column_settings_rel_data->column_key_name)));
                         def->clientLogicColumnRef->columnEncryptionAlgorithmType = static_cast<EncryptionType>(columns_rel_data->encryption_type);
                         def->clientLogicColumnRef->orig_typname = makeTypeNameFromOid(columns_rel_data->data_type_original_oid,
-                                                columns_rel_data->data_type_original_mod);;
+                                                columns_rel_data->data_type_original_mod);
                         def->clientLogicColumnRef->dest_typname =
                             makeTypeNameFromOid(attribute->atttypid, attribute->atttypmod);
-                        def->typname = makeTypeNameFromOid(columns_rel_data->data_type_original_oid,
-                            columns_rel_data->data_type_original_mod);
+                        def->typname = makeTypeNameFromOid(attribute->atttypid, attribute->atttypmod);
                         ReleaseSysCache(col_tup);
                         ReleaseSysCache(col_setting_tup);
                     }
@@ -1916,8 +2079,6 @@ static void transformTableLikeClause(
          * Add to column list
          */
         cxt->columns = lappend(cxt->columns, def);
-
-        attmap[parent_attno - 1] = list_length(cxt->columns);
 
         /*
          * Copy default, if present and the default has been requested
@@ -2117,7 +2278,7 @@ static void transformTableLikeClause(
 
             for (pckNum = 0; pckNum < tupleDesc->constr->clusterKeyNum; pckNum++) {
                 AttrNumber attrNum = tupleDesc->constr->clusterKeys[pckNum];
-                Form_pg_attribute attribute = tupleDesc->attrs[attrNum - 1];
+                Form_pg_attribute attribute = &tupleDesc->attrs[attrNum - 1];
                 char* attrName = NameStr(attribute->attname);
 
                 n->contype = CONSTR_CLUSTER;
@@ -2382,7 +2543,7 @@ static void transformTableLikePartitionKeys(
     ColumnRef* c = NULL;
     Relation partitionRel = NULL;
     TupleDesc relationTupleDesc = NULL;
-    Form_pg_attribute* relationAtts = NULL;
+    FormData_pg_attribute* relationAtts = NULL;
     int relationAttNumber = 0;
     Datum partkey_raw = (Datum)0;
     ArrayType* partkey_columns = NULL;
@@ -2433,7 +2594,7 @@ static void transformTableLikePartitionKeys(
         int attnum = (int)(attnums[i]);
         if (attnum >= 1 && attnum <= relationAttNumber) {
             c = makeNode(ColumnRef);
-            c->fields = list_make1(makeString(pstrdup(NameStr(relationAtts[attnum - 1]->attname))));
+            c->fields = list_make1(makeString(pstrdup(NameStr(relationAtts[attnum - 1].attname))));
             *partKeyColumns = lappend(*partKeyColumns, c);
             *partKeyPosList = lappend_int(*partKeyPosList, attnum - 1);
         } else {
@@ -2524,7 +2685,7 @@ static void transformTableLikePartitionBoundaries(
             Value* boundaryValue = NULL;
             Datum boundaryDatum = (Datum)0;
             Node* boundaryNode = NULL;
-            Form_pg_attribute* relation_atts = NULL;
+            FormData_pg_attribute* relation_atts = NULL;
             Form_pg_attribute att = NULL;
             int partKeyPos = 0;
             int16 typlen = 0;
@@ -2549,7 +2710,7 @@ static void transformTableLikePartitionBoundaries(
             {
                 boundaryValue = (Value*)lfirst(boundaryCell);
                 partKeyPos = (int)lfirst_int(partKeyCell);
-                att = relation_atts[partKeyPos];
+                att = &relation_atts[partKeyPos];
 
                 /* get the oid/mod/collation/ of partition key */
                 typid = att->atttypid;
@@ -2607,7 +2768,7 @@ static void transformOfType(CreateStmtContext* cxt, TypeName* ofTypename)
 
     tupdesc = lookup_rowtype_tupdesc(ofTypeId, -1);
     for (i = 0; i < tupdesc->natts; i++) {
-        Form_pg_attribute attr = tupdesc->attrs[i];
+        Form_pg_attribute attr = &tupdesc->attrs[i];
         ColumnDef* n = NULL;
 
         if (attr->attisdropped)
@@ -2719,7 +2880,7 @@ IndexStmt* generateClonedIndexStmt(
     CreateStmtContext* cxt, Relation source_idx, const AttrNumber* attmap, int attmap_length, Relation rel, TransformTableType transformType)
 {
     Oid source_relid = RelationGetRelid(source_idx);
-    Form_pg_attribute* attrs = RelationGetDescr(source_idx)->attrs;
+    FormData_pg_attribute* attrs = RelationGetDescr(source_idx)->attrs;
     HeapTuple ht_idxrel;
     HeapTuple ht_idx;
     Form_pg_class idxrelrec;
@@ -2931,7 +3092,7 @@ IndexStmt* generateClonedIndexStmt(
         }
 
         /* Copy the original index column name */
-        iparam->indexcolname = pstrdup(NameStr(attrs[keyno]->attname));
+        iparam->indexcolname = pstrdup(NameStr(attrs[keyno].attname));
 
         /* Add the collation name, if non-default */
         iparam->collation = get_collation(indcollation->values[keyno], keycoltype);
@@ -3533,7 +3694,7 @@ static IndexStmt* transformIndexConstraint(Constraint* constraint, CreateStmtCon
                 if (attnum > 0) {
                     // simple index column
                     AssertEreport(attnum <= heap_rel->rd_att->natts, MOD_OPT, "");
-                    attform = heap_rel->rd_att->attrs[attnum - 1];
+                    attform = &heap_rel->rd_att->attrs[attnum - 1];
                     
                     idxElem->name = pstrdup(NameStr(attform->attname));
                     idxElem->expr = NULL;
@@ -3617,7 +3778,7 @@ static IndexStmt* transformIndexConstraint(Constraint* constraint, CreateStmtCon
                  */
                 if (attnum > 0) {
                     AssertEreport(attnum <= heap_rel->rd_att->natts, MOD_OPT, "");
-                    attform = heap_rel->rd_att->attrs[attnum - 1];
+                    attform = &heap_rel->rd_att->attrs[attnum - 1];
                 } else {
                     attform = SystemAttributeDefinition(attnum, heap_rel->rd_rel->relhasoids,
                         RELATION_HAS_BUCKET(heap_rel), RELATION_HAS_UIDS(heap_rel));
@@ -3709,7 +3870,7 @@ static IndexStmt* transformIndexConstraint(Constraint* constraint, CreateStmtCon
                                 (errcode(ERRCODE_WRONG_OBJECT_TYPE),
                                     errmsg("inherited relation \"%s\" is not a table", inh->relname)));
                         for (count = 0; count < rel->rd_att->natts; count++) {
-                            Form_pg_attribute inhattr = rel->rd_att->attrs[count];
+                            Form_pg_attribute inhattr = &rel->rd_att->attrs[count];
                             char* inhname = NameStr(inhattr->attname);
 
                             if (inhattr->attisdropped)
@@ -3855,7 +4016,7 @@ static IndexStmt* transformIndexConstraint(Constraint* constraint, CreateStmtCon
                                 errmsg("inherited relation \"%s\" is not a table or foreign table", inh->relname)));
                     }
                     for (count = 0; count < rel->rd_att->natts; count++) {
-                        Form_pg_attribute inhattr = rel->rd_att->attrs[count];
+                        Form_pg_attribute inhattr = &rel->rd_att->attrs[count];
                         char* inhname = NameStr(inhattr->attname);
 
                         if (inhattr->attisdropped)
@@ -4030,12 +4191,6 @@ IndexStmt* transformIndexStmt(Oid relid, IndexStmt* stmt, const char* queryStrin
     ListCell* l = NULL;
     int crossbucketopt = -1; /* -1 means the SQL statement doesn't contain crossbucket option */
 
-    /*
-     * We must not scribble on the passed-in IndexStmt, so copy it.  (This is
-     * overkill, but easy.)
-     */
-    stmt = (IndexStmt*)copyObject(stmt);
-
     /* Set up pstate */
     pstate = make_parsestate(NULL);
     pstate->p_sourcetext = queryString;
@@ -4172,7 +4327,7 @@ IndexStmt* transformIndexStmt(Oid relid, IndexStmt* stmt, const char* queryStrin
 
     /* take care of the where clause */
     if (stmt->whereClause) {
-        stmt->whereClause = transformWhereClause(pstate, stmt->whereClause, "WHERE");
+        stmt->whereClause = transformWhereClause(pstate, stmt->whereClause, EXPR_KIND_INDEX_PREDICATE, "WHERE");
         /* we have to fix its collations too */
         assign_expr_collations(pstate, stmt->whereClause);
     }
@@ -4187,7 +4342,7 @@ IndexStmt* transformIndexStmt(Oid relid, IndexStmt* stmt, const char* queryStrin
                 ielem->indexcolname = FigureIndexColname(ielem->expr);
 
             /* Now do parse transformation of the expression */
-            ielem->expr = transformExpr(pstate, ielem->expr);
+            ielem->expr = transformExpr(pstate, ielem->expr, EXPR_KIND_INDEX_EXPRESSION);
 
             /* We have to fix its collations too */
             assign_expr_collations(pstate, ielem->expr);
@@ -4200,8 +4355,10 @@ IndexStmt* transformIndexStmt(Oid relid, IndexStmt* stmt, const char* queryStrin
 #ifndef ENABLE_MULTIPLE_NODES
             ExcludeRownumExpr(pstate, (Node*)ielem->expr);
 #endif
-            if (expression_returns_set(ielem->expr))
-                ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("index expression cannot return a set")));
+            if (!pstate->p_is_flt_frame) {
+                if (expression_returns_set(ielem->expr))
+                    ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("index expression cannot return a set")));
+            }
             if (IsA(ielem->expr, PrefixKey) &&
                 (0 != pg_strcasecmp(stmt->accessMethod, DEFAULT_INDEX_TYPE)) &&
                 (0 != pg_strcasecmp(stmt->accessMethod, DEFAULT_USTORE_INDEX_TYPE))) {
@@ -4269,9 +4426,6 @@ static bool IsElementExisted(List* indexElements, IndexElem* ielem)
  *
  * actions and whereClause are output parameters that receive the
  * transformed results.
- *
- * Note that we must not scribble on the passed-in RuleStmt, so we do
- * copyObject() on the actions and WHERE clause.
  */
 void transformRuleStmt(RuleStmt* stmt, const char* queryString, List** actions, Node** whereClause)
 {
@@ -4347,7 +4501,7 @@ void transformRuleStmt(RuleStmt* stmt, const char* queryString, List** actions, 
     }
 
     /* take care of the where clause */
-    *whereClause = transformWhereClause(pstate, (Node*)copyObject(stmt->whereClause), "WHERE");
+    *whereClause = transformWhereClause(pstate, stmt->whereClause, EXPR_KIND_WHERE, "WHERE");
     /* we have to fix its collations too */
     assign_expr_collations(pstate, *whereClause);
 
@@ -4418,7 +4572,7 @@ void transformRuleStmt(RuleStmt* stmt, const char* queryString, List** actions, 
             addRTEtoQuery(sub_pstate, newrte, false, true, false);
 
             /* Transform the rule action statement */
-            top_subqry = transformStmt(sub_pstate, (Node*)copyObject(action));
+            top_subqry = transformStmt(sub_pstate, action);
             /*
              * We cannot support utility-statement actions (eg NOTIFY) with
              * nonempty rule WHERE conditions, because there's no way to make
@@ -4581,11 +4735,6 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
     SplitPartitionState* splitDefState = NULL;
     ListCell* cell = NULL;
 
-    /*
-     * We must not scribble on the passed-in AlterTableStmt, so copy it. (This
-     * is overkill, but easy.)
-     */
-    stmt = (AlterTableStmt*)copyObject(stmt);
     /* Caller is responsible for locking the relation */
     rel = relation_open(relid, NoLock);
     if (IS_FOREIGNTABLE(rel) || IS_STREAM_TABLE(rel)) {
@@ -4626,6 +4775,7 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
     cxt.alist = NIL;
     cxt.pkey = NULL;
     cxt.ispartitioned = RelationIsPartitioned(rel);
+    cxt.rel_coll_id = InvalidOid;
 
 #ifdef PGXC
     cxt.fallback_dist_col = NULL;
@@ -4884,8 +5034,14 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
                 Value *v = (Value *)linitial(def->typname->names);
                 if (strcmp(v->val.str, "set") == 0) {
                     if (oldIsSet) {
-                        ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
-                            errmsg("can not alter column type to another set")));
+                        if (cmd->is_first || cmd->after_name != NULL) {
+                            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                errmsg("Un-supported feature"),
+                                    errdetail("set column is not supported for modify column first|after colname")));
+                        } else {
+                            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                                errmsg("can not alter column type to another set")));
+                        }
                     } else {
                         PrecheckColumnTypeForSet(&cxt, def->typname);
                         CreateSetOwnedByTable(&cxt, def, cmd->name);
@@ -4910,6 +5066,11 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
             {
                 /* if the dropped column type is an set, should drop it after */
                 DropSetOwnedByTable(&cxt, cmd->name);
+                newcmds = lappend(newcmds, cmd);
+                break;
+            }
+            case AT_ModifyColumn: {
+                TransformModifyColumndef(&cxt, cmd);
                 newcmds = lappend(newcmds, cmd);
                 break;
             }
@@ -5141,7 +5302,7 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
                 parser_errposition(cxt->pstate, column->typname->location)));
     }
 
-    if (column->collClause) {
+    if (!DB_IS_CMPT(B_FORMAT) && column->collClause) {
         LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);
         /* Complain if COLLATE is applied to an uncollatable type */
         if (!OidIsValid(typtup->typcollation))
@@ -5313,42 +5474,101 @@ NodeTag GetPartitionStateType(char type)
 
 char* GetPartitionDefStateName(Node *partitionDefState)
 {
-    char* partitionName = NULL;
-    switch (nodeTag(partitionDefState)) {
-        case T_RangePartitionDefState:
-            partitionName = ((RangePartitionDefState *)partitionDefState)->partitionName;
-            break;
-        case T_ListPartitionDefState:
-            partitionName = ((ListPartitionDefState *)partitionDefState)->partitionName;
-            break;
-        case T_HashPartitionDefState:
-            partitionName = ((HashPartitionDefState *)partitionDefState)->partitionName;
-            break;
-        default:
-            ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION), errmsg("unsupported subpartition type")));
-            break;
-    }
-    return partitionName;
+    return ((PartitionDefState *)partitionDefState)->partitionName;
 }
 
 List* GetSubPartitionDefStateList(Node *partitionDefState)
 {
-    List* subPartitionList = NIL;
-    switch (nodeTag(partitionDefState)) {
+    if (IsA(partitionDefState, RangePartitionStartEndDefState)) {
+        return NIL;
+    }
+    return ((PartitionDefState *)partitionDefState)->subPartitionDefState;
+}
+
+static void semtc_check_partitions_clause(CreateStmt *stmt)
+{
+    int part_num = stmt->partTableState->partitionsNum;
+    List* part_list = stmt->partTableState->partitionList;
+
+    if (part_num > MAX_PARTITION_NUM) {
+        ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+            errmsg("Invalid number of partitions"),
+            errdetail("partitions number '%d' cannot be greater than %d",
+                part_num, MAX_PARTITION_NUM)));
+    }
+    /* have PARTITIONS num clause  */
+    if (part_num > 0) {
+        if (part_list != NIL) {
+            if (list_length(part_list) != part_num) {
+                ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+                    errmsg("Invalid number of partitions"),
+                    errdetail("the number of defined partitions does not match the partitions number '%d'",
+                        part_num)));
+            }
+            return;
+        }
+        /* only hash partition can omit partition definition */
+        if (stmt->partTableState->partitionStrategy != 'h') {
+            ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+                errmsg("Invalid number of partitions"),
+                errdetail("Partitions number is specified but partition definition is missing")));
+        }
+        stmt->partTableState->partitionList = semtc_generate_hash_partition_defs(stmt, NULL, part_num);
+        return;
+    }
+    /* have no PARTITIONS num clause  */
+    if (part_list == NIL) {
+        /* only hash partition can omit partition definition */
+        if (stmt->partTableState->partitionStrategy != 'h') {
+            ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+                errmsg("Missing partition definition when partitions number is not specified")));
+        }
+        stmt->partTableState->partitionList = semtc_generate_hash_partition_defs(stmt, NULL, 1);
+    }
+}
+
+static List *semtc_check_subpartitions_clause(CreateStmt *stmt, Node *partition_def_state,
+    List *sub_partition_list)
+{
+    char* partName = GetPartitionDefStateName(partition_def_state);
+    int subpart_num = stmt->partTableState->subPartitionState->partitionsNum;
+    if (subpart_num == 0) {
+        return sub_partition_list;
+    }
+    /* have SUBPARTITIONS num clause  */
+    if (sub_partition_list != NIL) {
+        if (sub_partition_list->length != subpart_num) {
+            ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+                errmsg("Invalid number of partitions"),
+                errdetail("The number of defined subpartitions in partition \"%s\" "
+                    "does not match the subpartitions number: %d", partName, subpart_num)));
+        }
+        return sub_partition_list;
+    }
+    /* only hash partition can omit partition definition */
+    if (stmt->partTableState->subPartitionState->partitionStrategy != 'h') {
+        ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+            errmsg("Invalid number of partitions"),
+            errdetail("Partitions number is specified but partition definition is missing")));
+    }
+    /* generate subpartitionDefStates */
+    switch (nodeTag(partition_def_state)) {
         case T_RangePartitionDefState:
-            subPartitionList = ((RangePartitionDefState *)partitionDefState)->subPartitionDefState;
+            ((RangePartitionDefState *)partition_def_state)->subPartitionDefState =
+                semtc_generate_hash_partition_defs(stmt, partName, subpart_num);
             break;
         case T_ListPartitionDefState:
-            subPartitionList = ((ListPartitionDefState *)partitionDefState)->subPartitionDefState;
+            ((ListPartitionDefState *)partition_def_state)->subPartitionDefState =
+                semtc_generate_hash_partition_defs(stmt, partName, subpart_num);
             break;
         case T_HashPartitionDefState:
-            subPartitionList = ((HashPartitionDefState *)partitionDefState)->subPartitionDefState;
+            ((HashPartitionDefState *)partition_def_state)->subPartitionDefState =
+                semtc_generate_hash_partition_defs(stmt, partName, subpart_num);
             break;
         default:
-            subPartitionList = NIL;
             break;
     }
-    return subPartitionList;
+    return GetSubPartitionDefStateList(partition_def_state);
 }
 
 /*
@@ -5457,12 +5677,15 @@ void checkPartitionSynax(CreateStmt* stmt)
     }
 
     /* check partition key number for none value-partition table */
-    if (!value_partition && stmt->partTableState->partitionKey->length > MAX_PARTITIONKEY_NUM) {
+    if (!value_partition && stmt->partTableState->partitionKey->length > PARTITION_PARTKEYMAXNUM) {
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TABLE_DEFINITION),
                 errmsg("too many partition keys for partitioned table"),
-                errhint("Partittion key columns can not be more than %d", MAX_PARTITIONKEY_NUM)));
+                errhint("Partittion key columns can not be more than %d", PARTITION_PARTKEYMAXNUM)));
     }
+
+    /* check PARTITIONS clause */
+    semtc_check_partitions_clause(stmt);
 
     /* check range partition number for none value-partition table */
     if (!value_partition && stmt->partTableState->partitionList->length > MAX_PARTITION_NUM) {
@@ -5472,7 +5695,7 @@ void checkPartitionSynax(CreateStmt* stmt)
                 errhint("Number of partitions can not be more than %d", MAX_PARTITION_NUM)));
     }
 
-    /* check interval synax */
+    /* check interval sytnax */
     if (stmt->partTableState->intervalPartDef) {
 #ifdef ENABLE_MULTIPLE_NODES
         ereport(ERROR,
@@ -5499,15 +5722,22 @@ void checkPartitionSynax(CreateStmt* stmt)
 #endif
     }
 
-    /* check subpartition synax */
+    /* check subpartition sytnax */
     if (stmt->partTableState->subPartitionState != NULL) {
         NodeTag subPartitionType = GetPartitionStateType(stmt->partTableState->subPartitionState->partitionStrategy);
         List* partitionList = stmt->partTableState->partitionList;
         ListCell* lc1 = NULL;
         ListCell* lc2 = NULL;
+        if (stmt->partTableState->subPartitionState->partitionsNum > MAX_PARTITION_NUM) {
+            ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
+                errmsg("Invalid number of partitions"),
+                errdetail("subpartitions number '%d' cannot be greater than %d",
+                    stmt->partTableState->subPartitionState->partitionsNum, MAX_PARTITION_NUM)));
+        }
         foreach (lc1, partitionList) {
             Node* partitionDefState = (Node*)lfirst(lc1);
             List* subPartitionList = GetSubPartitionDefStateList(partitionDefState);
+            subPartitionList = semtc_check_subpartitions_clause(stmt, partitionDefState, subPartitionList);
             foreach (lc2, subPartitionList) {
                 Node *subPartitionDefState = (Node *)lfirst(lc2);
                 if ((nodeTag(subPartitionDefState) != subPartitionType)) {
@@ -5567,14 +5797,14 @@ static void checkPartitionValue(CreateStmtContext* cxt, CreateStmt* stmt)
 }
 
 /*
- * check_partition_name_less_than
+ * check_partition_name_internal
  *  check partition name with less/than stmt.
  *
  * [IN] partitionList: partition list
  *
  * RETURN: void
  */
-static void check_partition_name_less_than(List* partitionList, bool isPartition)
+static void check_partition_name_internal(List* partitionList, bool isPartition)
 {
     ListCell* cell = NULL;
     ListCell* lc = NULL;
@@ -5583,10 +5813,10 @@ static void check_partition_name_less_than(List* partitionList, bool isPartition
 
     foreach (cell, partitionList) {
         lc = cell;
-        ref_partname = ((RangePartitionDefState*)lfirst(cell))->partitionName;
+        ref_partname = ((PartitionDefState*)lfirst(cell))->partitionName;
 
         while (NULL != (lc = lnext(lc))) {
-            cur_partname = ((RangePartitionDefState*)lfirst(lc))->partitionName;
+            cur_partname = ((PartitionDefState*)lfirst(lc))->partitionName;
 
             if (!strcmp(ref_partname, cur_partname)) {
                 ereport(ERROR,
@@ -5644,46 +5874,28 @@ void checkPartitionName(List* partitionList, bool isPartition)
     if (cell != NULL) {
         Node* state = (Node*)lfirst(cell);
 
-        if (IsA(state, RangePartitionDefState))
-            check_partition_name_less_than(partitionList, isPartition);
-        else
+        if (IsA(state, RangePartitionStartEndDefState)) {
             check_partition_name_start_end(partitionList, isPartition);
+        } else {
+            check_partition_name_internal(partitionList, isPartition);
+        }
     }
 }
 
-List* GetPartitionNameList(List* partitionList)
+List* GetPartitionNameList(List *partitionList)
 {
-    ListCell* cell = NULL;
-    ListCell* lc = NULL;
-    List* subPartitionDefStateList = NIL;
-    List* partitionNameList = NIL;
+    ListCell *cell = NULL;
+    ListCell *lc = NULL;
+    List *subPartitionDefStateList = NIL;
+    List *partitionNameList = NIL;
 
     foreach (cell, partitionList) {
-        if (IsA((Node*)lfirst(cell), RangePartitionDefState)) {
-            RangePartitionDefState* partitionDefState = (RangePartitionDefState*)lfirst(cell);
-            subPartitionDefStateList = partitionDefState->subPartitionDefState;
-            partitionNameList = lappend(partitionNameList, partitionDefState->partitionName);
-        } else if (IsA((Node*)lfirst(cell), ListPartitionDefState)) {
-            ListPartitionDefState* partitionDefState = (ListPartitionDefState*)lfirst(cell);
-            subPartitionDefStateList = partitionDefState->subPartitionDefState;
-            partitionNameList = lappend(partitionNameList, partitionDefState->partitionName);
-        } else {
-            HashPartitionDefState* partitionDefState = (HashPartitionDefState*)lfirst(cell);
-            subPartitionDefStateList = partitionDefState->subPartitionDefState;
-            partitionNameList = lappend(partitionNameList, partitionDefState->partitionName);
-        }
-
+        PartitionDefState *partitionDefState = (PartitionDefState *)lfirst(cell);
+        subPartitionDefStateList = partitionDefState->subPartitionDefState;
+        partitionNameList = lappend(partitionNameList, partitionDefState->partitionName);
         foreach (lc, subPartitionDefStateList) {
-            if (IsA((Node *)lfirst(lc), RangePartitionDefState)) {
-                RangePartitionDefState *partitionDefState = (RangePartitionDefState *)lfirst(lc);
-                partitionNameList = lappend(partitionNameList, partitionDefState->partitionName);
-            } else if (IsA((Node *)lfirst(lc), ListPartitionDefState)) {
-                ListPartitionDefState *partitionDefState = (ListPartitionDefState *)lfirst(lc);
-                partitionNameList = lappend(partitionNameList, partitionDefState->partitionName);
-            } else {
-                HashPartitionDefState *partitionDefState = (HashPartitionDefState *)lfirst(lc);
-                partitionNameList = lappend(partitionNameList, partitionDefState->partitionName);
-            }
+            PartitionDefState *subpartitionDefState = (PartitionDefState *)lfirst(lc);
+            partitionNameList = lappend(partitionNameList, subpartitionDefState->partitionName);
         }
     }
 
@@ -6057,6 +6269,23 @@ static void checkCGinBtreeIndexCompatible(IndexStmt* stmt)
         }
     }
 }
+    
+static Node* transformListPartitionRowExpr(ParseState* pstate, RowExpr* rowexpr)
+{
+    Node* con = NULL;
+    RowExpr* result = makeNode(RowExpr);
+
+    result->row_typeid = rowexpr->row_typeid;
+    result->row_format = rowexpr->row_format;
+    result->location = rowexpr->location;
+    result->colnames = NIL;
+
+    foreach_cell (cell, rowexpr->args) {
+        con = transformIntoConst(pstate, EXPR_KIND_PARTITION_BOUND, (Node*)lfirst(cell));
+        result->args = lappend(result->args, con);
+    }
+    return (Node*)result;
+}
 
 List* transformListPartitionValue(ParseState* pstate, List* boundary, bool needCheck, bool needFree)
 {
@@ -6068,13 +6297,18 @@ List* transformListPartitionValue(ParseState* pstate, List* boundary, bool needC
     /* scan value of partition key of per partition */
     foreach (valueCell, boundary) {
         elem = (Node*)lfirst(valueCell);
-        result = transformIntoConst(pstate, elem);
+        if (IsA(elem, RowExpr)) { /* for multi-keys list partition boundary */
+            result = transformListPartitionRowExpr(pstate, (RowExpr*)elem);
+            newValueList = lappend(newValueList, result);
+            continue;
+        }
+        result = transformIntoConst(pstate, EXPR_KIND_PARTITION_BOUND, elem);
         if (PointerIsValid(result) && needCheck && ((Const*)result)->constisnull && !((Const*)result)->ismaxvalue) {
             ereport(ERROR,
                 (errcode(ERRCODE_SYNTAX_ERROR),
                     errmsg("Partition key value can not be null"),
                     errdetail("partition bound element must be one of: string, datetime or interval literal, number, "
-                              "or MAXVALUE, and not null")));
+                              "or MAXVALUE(for range partition)/DEFAULT(for list partition), and not null")));
         }
         newValueList = lappend(newValueList, result);
     }
@@ -6085,7 +6319,7 @@ List* transformListPartitionValue(ParseState* pstate, List* boundary, bool needC
     return newValueList;
 }
 
-void transformRangeSubPartitionValue(ParseState* pstate, List* subPartitionDefStateList)
+void transformSubPartitionValue(ParseState* pstate, List* subPartitionDefStateList)
 {
     if (subPartitionDefStateList == NIL) {
         return;
@@ -6106,7 +6340,7 @@ void transformPartitionValue(ParseState* pstate, Node* rangePartDef, bool needCh
             RangePartitionDefState* state = (RangePartitionDefState*)rangePartDef;
             /* only one boundary need transform */
             state->boundary = transformRangePartitionValueInternal(pstate, state->boundary, needCheck, true);
-            transformRangeSubPartitionValue(pstate, state->subPartitionDefState);
+            transformSubPartitionValue(pstate, state->subPartitionDefState);
             break;
         }
         case T_RangePartitionStartEndDefState: {
@@ -6121,14 +6355,14 @@ void transformPartitionValue(ParseState* pstate, Node* rangePartDef, bool needCh
         case T_ListPartitionDefState: {
             ListPartitionDefState* state = (ListPartitionDefState*)rangePartDef;
             state->boundary = transformListPartitionValue(pstate, state->boundary, needCheck, true);
-            transformRangeSubPartitionValue(pstate, state->subPartitionDefState);
+            transformSubPartitionValue(pstate, state->subPartitionDefState);
             break;
         }
         case T_HashPartitionDefState: {
             HashPartitionDefState* state = (HashPartitionDefState*)rangePartDef;
             /* only one boundary need transform */
             state->boundary = transformListPartitionValue(pstate, state->boundary, needCheck, true);
-            transformRangeSubPartitionValue(pstate, state->subPartitionDefState);
+            transformSubPartitionValue(pstate, state->subPartitionDefState);
             break;
         }
 
@@ -6148,7 +6382,7 @@ List* transformRangePartitionValueInternal(ParseState* pstate, List* boundary, b
     /* scan max value of partition key of per partition */
     foreach (valueCell, boundary) {
         maxElem = (Node*)lfirst(valueCell);
-        result = transformIntoConst(pstate, maxElem, isPartition);
+        result = transformIntoConst(pstate, EXPR_KIND_PARTITION_BOUND, maxElem, isPartition);
         if (PointerIsValid(result) && needCheck && ((Const*)result)->constisnull && !((Const*)result)->ismaxvalue) {
             ereport(ERROR,
                 (errcode(ERRCODE_SYNTAX_ERROR),
@@ -6175,12 +6409,12 @@ List* transformRangePartitionValueInternal(ParseState* pstate, List* boundary, b
  * Return		:
  * Notes		:
  */
-Node* transformIntoConst(ParseState* pstate, Node* maxElem, bool isPartition)
+Node* transformIntoConst(ParseState* pstate, ParseExprKind exprKind, Node* maxElem, bool isPartition)
 {
     Node* result = NULL;
     FuncExpr* funcexpr = NULL;
     /* transform expression first */
-    maxElem = transformExpr(pstate, maxElem);
+    maxElem = transformExpr(pstate, maxElem, exprKind);
 
     /* then, evaluate expression */
     switch (nodeTag(maxElem)) {
@@ -6231,7 +6465,7 @@ Oid generateClonedIndex(Relation source_idx, Relation source_relation, char* tem
     Relation heap_rel;
     TupleDesc tupleDesc;
     Oid source_relid = RelationGetRelid(source_idx);
-    Oid ret;
+    ObjectAddress ret;
 
     /* get the relation that the index is created on */
     heap_relid = IndexGetRelation(source_relid, false);
@@ -6277,17 +6511,17 @@ Oid generateClonedIndex(Relation source_idx, Relation source_relation, char* tem
     ret = DefineIndex(RelationGetRelid(source_relation),
         index_stmt,
         InvalidOid, /* no predefined OID */
-        false,      /* is_alter_table */
+        true,      /* is_alter_table */
         true,       /* check_rights */
         skip_build, /* skip_build */
-        false);     /* quiet */
+        true);     /* quiet */
     (void)pgstat_report_waitstatus(oldStatus);
 
     /* clean up */
     pfree_ext(attmap);
     relation_close(heap_rel, AccessShareLock);
 
-    return ret;
+    return ret.objectId;
 }
 
 /*
@@ -6577,11 +6811,11 @@ static Oid get_split_partition_oid(Relation partTableRel, SplitPartitionState* s
     partMap = (RangePartitionMap*)partTableRel->partMap;
 
     if (PointerIsValid(splitState->src_partition_name)) {
-        srcPartOid = partitionNameGetPartitionOid(RelationGetRelid(partTableRel),
+        srcPartOid = PartitionNameGetPartitionOid(RelationGetRelid(partTableRel),
             splitState->src_partition_name,
             PART_OBJ_TYPE_TABLE_PARTITION,
             AccessExclusiveLock,
-            true,
+            false,
             false,
             NULL,
             NULL,
@@ -6590,9 +6824,8 @@ static Oid get_split_partition_oid(Relation partTableRel, SplitPartitionState* s
         Assert(PointerIsValid(splitState->partition_for_values));
         splitState->partition_for_values = transformConstIntoTargetType(
             partTableRel->rd_att->attrs, partMap->partitionKey, splitState->partition_for_values);
-        srcPartOid = partitionValuesGetPartitionOid(
-            partTableRel, splitState->partition_for_values, AccessExclusiveLock, true, true, false);
-    }
+        srcPartOid = PartitionValuesGetPartitionOid(
+            partTableRel, splitState->partition_for_values, AccessExclusiveLock, true, false, false);    }
 
     return srcPartOid;
 }
@@ -6615,7 +6848,7 @@ static Oid get_split_partition_oid(Relation partTableRel, SplitPartitionState* s
  * precheck_start_end_defstate
  *    precheck start/end value of a range partition defstate
  */
-static void precheck_start_end_defstate(List* pos, Form_pg_attribute* attrs,
+static void precheck_start_end_defstate(List* pos, FormData_pg_attribute* attrs,
     RangePartitionStartEndDefState* defState, bool isPartition)
 {
     ListCell* cell = NULL;
@@ -6630,7 +6863,7 @@ static void precheck_start_end_defstate(List* pos, Form_pg_attribute* attrs,
     foreach (cell, pos) {
         int i = lfirst_int(cell);
 
-        switch (attrs[i]->atttypid) {
+        switch (attrs[i].atttypid) {
             case INT2OID:
             case INT4OID:
             case INT8OID:
@@ -6734,7 +6967,7 @@ static Datum evaluate_opexpr(
     Type typ;
     bool isnull = false;
 
-    opexpr = (OpExpr*)make_op(pstate, oprname, leftarg, rightarg, location);
+    opexpr = (OpExpr*)make_op(pstate, oprname, leftarg, rightarg, pstate->p_last_srf, location);
 
     oprcode = get_opcode(opexpr->opno);
     if (oprcode == InvalidOid) /* should not fail */
@@ -7319,7 +7552,7 @@ static List* DividePartitionStartEndInterval(ParseState* pstate, Form_pg_attribu
  *
  * RETURN: a new partition list (wrote by "less/than" syntax).
  */
-List* transformRangePartStartEndStmt(ParseState* pstate, List* partitionList, List* pos, Form_pg_attribute* attrs,
+List* transformRangePartStartEndStmt(ParseState* pstate, List* partitionList, List* pos, FormData_pg_attribute* attrs,
     int32 existPartNum, Const* lowBound, Const* upBound, bool needFree, bool isPartition)
 {
     ListCell* cell = NULL;
@@ -7393,7 +7626,7 @@ List* transformRangePartStartEndStmt(ParseState* pstate, List* partitionList, Li
     /* check: datatype of partition key */
     foreach (cell, pos) {
         i = lfirst_int(cell);
-        attr = attrs[i];
+        attr = &attrs[i];
         target_type = attr->atttypid;
 
         switch (target_type) {
@@ -7416,7 +7649,7 @@ List* transformRangePartStartEndStmt(ParseState* pstate, List* partitionList, Li
                 ereport(ERROR,
                     (errcode(ERRCODE_DATATYPE_MISMATCH),
                         errmsg("datatype of column \"%s\" is unsupported for %s key in start/end clause.",
-                            NameStr(attrs[i]->attname), (isPartition ? "partition" : "distribution")),
+                            NameStr(attrs[i].attname), (isPartition ? "partition" : "distribution")),
                         errhint("Valid datatypes are: smallint, int, bigint, float4/real, float8/double, numeric, date "
                                 "and timestamp [with time zone].")));
                 break;
@@ -8007,8 +8240,8 @@ static void CheckAutoIncrementIndex(CreateStmtContext *cxt)
                 continue;
             }
             Assert(cons->keys->length > 0);
-            Value *name = (Value *)lfirst(cons->keys->head);
-            if (strcasecmp(name->val.str, column->colname) == 0) {
+            IndexElem *elem = (IndexElem *)lfirst(cons->keys->head);
+            if (elem->name != NULL && strcasecmp(elem->name, column->colname) == 0) {
                 has_found = true;
                 break;
             }
@@ -8025,13 +8258,17 @@ static void CheckAutoIncrementIndex(CreateStmtContext *cxt)
             }
             Assert(index->indexParams->length > 0);
             IndexElem *elem = (IndexElem *)lfirst(index->indexParams->head);
-            if (strcasecmp(elem->name, column->colname) == 0) {
+            if (elem->name != NULL && strcasecmp(elem->name, column->colname) == 0) {
                 has_found = true;
                 break;
             }
         }
 
         if (!has_found) {
+            /* AUTO_INCREMENT will be checked in CheckRelAutoIncrementIndex after executing alter table. */
+            if (cxt->node != NULL && IsA(cxt->node, AlterTableStmt)) {
+                continue;
+            }
             ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 (errmsg("Incorrect table definition, auto_increment column must be defined as a key"))));
         }
@@ -8057,26 +8294,6 @@ static int128 TransformAutoIncStart(CreateStmt* stmt)
     return autoinc;
 }
 
-static void TrySetAutoIncNotNullConstraint(ColumnDef* column)
-{
-    Constraint* constraint = NULL;
-    bool has_nullcons = false;
-
-    foreach_cell (clist, column->constraints) {
-        if (((Constraint*)lfirst(clist))->contype == CONSTR_NULL) {
-            has_nullcons = true;
-            break;
-        }
-    }
-    /* If nullable constraint is specified, no need to set NOT-NULL constraint. */
-    if (!has_nullcons) {
-        constraint = makeNode(Constraint);
-        constraint->contype = CONSTR_NOTNULL;
-        constraint->location = -1;
-        column->constraints = lappend(column->constraints, constraint);
-    }
-}
-
 static void TransformTempAutoIncrement(ColumnDef* column, CreateStmt* stmt)
 {
     int128 autoinc;
@@ -8100,6 +8317,160 @@ static void TransformTempAutoIncrement(ColumnDef* column, CreateStmt* stmt)
     constraint->cooked_expr = NULL;
     column->constraints = lappend(column->constraints, constraint);
     column->raw_default = constraint->raw_expr;
+}
 
-    TrySetAutoIncNotNullConstraint(column);
+/*
+ * semtc_generate_hash_partition_defs
+ *     Generate a specified number of partition definitions.
+ * prefix_name: parent partition name for subpartition, used as a prefix for subpartition names to be generated
+ * part_count: number of partitions to be generated
+ */
+static List* semtc_generate_hash_partition_defs(CreateStmt* stmt, const char* prefix_name, int part_count)
+{
+    char namebuf[NAMEDATALEN] = {0};
+    List* result = NULL;
+    HashPartitionDefState *def = NULL;
+    A_Const *con = NULL;
+    uint32 prefix_len = prefix_name ? (uint32)strlen(prefix_name) : 0;
+    uint32 len;
+    errno_t rc = EOK;
+
+    for (int i = 0; i < part_count; i++) {
+        def = makeNode(HashPartitionDefState);
+        if (prefix_name) {
+            rc = snprintf_s(namebuf, sizeof(namebuf), sizeof(namebuf) - 1, "sp%d", i);
+        } else {
+            rc = snprintf_s(namebuf, sizeof(namebuf), sizeof(namebuf) - 1, "p%d", i);
+        }
+        securec_check_ss(rc, "", "");
+
+        len = (uint32)strlen(namebuf) + prefix_len;
+        def->partitionName = (char*)palloc0(len + 1);
+        if (prefix_name) {
+            rc = memcpy_s(def->partitionName, len + 1, prefix_name, prefix_len);
+            securec_check(rc, "\0", "\0");
+        }
+        rc = strncpy_s(def->partitionName + prefix_len, len + 1 - prefix_len, namebuf, len - prefix_len);
+        securec_check(rc, "\0", "\0");
+        if (len >= NAMEDATALEN) {
+            ereport(ERROR, (errcode(ERRCODE_NAME_TOO_LONG),
+                errmsg("identifier too long"),
+                errdetail("The %s name \"%s\" is too long",
+                    prefix_name ? "subpartition" : "partition", def->partitionName)));
+        }
+        con = makeNode(A_Const);
+        con->val.type = T_Integer;
+        con->val.val.ival = i;
+        con->location = -1;
+        def->boundary = list_make1(con);
+        def->tablespacename = stmt->tablespacename;
+        def->subPartitionDefState = NULL;
+        result = lappend(result, def);
+    }
+    return result;
+}
+
+static void TransformModifyColumnDatatype(CreateStmtContext* cxt, AlterTableCmd* cmd)
+{
+    ColumnDef *def = (ColumnDef *)cmd->def;
+    bool new_set = false;
+    /* pre-alter column type is an set, should drop it after */
+    bool old_set = DropSetOwnedByTable(cxt, cmd->name);
+ 
+    if (def->typname && list_length(def->typname->names) == 1 && !def->typname->pct_type) {
+        char* tname = strVal(linitial(def->typname->names));
+        if (strcmp(tname, "set") == 0) {
+            if (old_set) {
+                ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                    errmsg("can not alter column type to another set")));
+            } else { /* alter the column to a new set type, should create it before */
+                PrecheckColumnTypeForSet(cxt, def->typname);
+                new_set = true;
+                def->typname->typeOid = InvalidOid; // pg_attribute.atttypid
+                cxt->rel_coll_id = InvalidOid;
+                CreateSetOwnedByTable(cxt, def, def->colname);
+            }
+        } else if (strcmp(tname, "smallserial") == 0 || strcmp(tname, "serial2") == 0 || strcmp(tname, "serial") == 0 ||
+            strcmp(tname, "serial4") == 0 || strcmp(tname, "bigserial") == 0 || strcmp(tname, "serial8") == 0 ||
+            strcmp(tname, "largeserial") == 0 || strcmp(tname, "serial16") == 0) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("Invalid modify column operation"),
+                errdetail("cannot modify or change column to type '%s'", tname)));
+        }
+    }
+ 
+    /* can NOT change column to an existed set data type */
+    Type tup = LookupTypeName(cxt->pstate, def->typname, NULL);
+    if (HeapTupleIsValid(tup)) {
+        Form_pg_type typform = (Form_pg_type)GETSTRUCT(tup);
+        if (typform->typtype == TYPTYPE_SET) {
+            ereport(ERROR,
+                (errcode(ERRCODE_DATATYPE_MISMATCH),
+                errmsg("can not use existed set type %s for column definition",
+                    format_type_be(HeapTupleGetOid(tup)))));
+        }
+        ReleaseSysCache(tup);
+    }
+ 
+    /* Do necessary work on the column type declaration. But for set type,
+     * no need to check before because the type has not created yet.
+     */
+    if (!new_set && def->typname) {
+        transformColumnType(cxt, def);
+    }
+}
+ 
+static void DropModifyColumnAutoIncrement(CreateStmtContext* cxt, Relation rel, const char* colname)
+{
+    AttrNumber attnum = get_attnum(rel->rd_id, colname);
+    if (attnum <= 0 || attnum != RelAutoIncAttrNum(rel)) {
+        return;
+    }
+    char* seqname = get_rel_name(RelAutoIncSeqOid(rel));
+    if (!seqname) { /* shouldn't happen */
+        return;
+    }
+    DropStmt *drop = makeNode(DropStmt);
+    drop->removeType = OBJECT_LARGE_SEQUENCE;
+    drop->missing_ok = true;
+    drop->objects = list_make1(list_make1(makeString(seqname)));
+    drop->arguments = NIL;
+    drop->behavior = DROP_RESTRICT;
+    drop->concurrent = false;
+    drop->purge = false;
+ 
+    cxt->alist = lappend(cxt->alist, drop);
+}
+ 
+static void TransformModifyColumndef(CreateStmtContext* cxt, AlterTableCmd* cmd)
+{
+    ColumnDef *def = (ColumnDef *)cmd->def;
+    /* check constraints type */
+    checkConstraint(cxt, (Node*)def);
+    // check datatype
+    TransformModifyColumnDatatype(cxt, cmd);
+    // check attr constraints
+    transformConstraintAttrs(cxt, def->constraints);
+    cxt->columns = lappend(cxt->columns, (Node*)def);
+    TransformColumnDefinitionConstraints(cxt, def, false, true);
+    if (def->clientLogicColumnRef != NULL) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_OPERATION),
+            errmsg("Invalid modify column operation"),
+            errdetail("modify or change column to encrypted column is not supported")));
+    }
+    /* for column options like comment clause */
+    TransformColumnDefinitionOptions(cxt, def);
+    // drop old auto_increment
+    DropModifyColumnAutoIncrement(cxt, cxt->rel, cmd->name);
+    /* for CHANGE column */
+    if (strcmp(cmd->name, def->colname) != 0) {
+        RenameStmt *rename = makeNode(RenameStmt);
+        rename->renameType = OBJECT_COLUMN;
+        rename->relationType = OBJECT_TABLE;
+        rename->relation = cxt->relation;
+        rename->subname = cmd->name;
+        rename->newname = def->colname;
+        rename->missing_ok = false;
+        cxt->blist = lappend(cxt->blist, rename);
+    }
 }

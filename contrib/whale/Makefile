@@ -1,30 +1,36 @@
 # contrib/whale/Makefile
-commands = plugin_optimizer/commands
 parser = plugin_parser
 utils = plugin_utils
+executor = plugin_executor
+commands = plugin_optimizer/commands
+plan = plugin_optimizer/plan
+pl = plugin_pl/plpgsql/src
 adt = $(utils)/adt
 mb = $(utils)/mb
-optimizer = plugin_optimizer
+fmgr = $(utils)/fmgr
+storage = plugin_storage
+orafce = plugin_orafce
 subdir = contrib/whale
 top_builddir = ../..
 base_dir = contrib/whale
 MODULE_big = whale
 p=25432
+PART=
+git_repo_path=
+git_commit = $(shell if test -d $(git_repo_path); then cd $(git_repo_path) && git log 2>/dev/null | grep commit | head -1 | awk '{print $$2}' | cut -b 1-8; fi)
 
-
-OBJS = $(parser)/analyze.o $(parser)/gram.o $(parser)/hint_gram.o $(parser)/keywords.o $(parser)/kwlookup.o $(parser)/parser.o \
+OBJS += $(parser)/analyze.o $(parser)/gram.o $(parser)/hint_gram.o $(parser)/keywords.o $(parser)/kwlookup.o $(parser)/parser.o \
 $(parser)/parse_agg.o $(parser)/parse_clause.o $(parser)/parse_coerce.o $(parser)/parse_collate.o $(parser)/parse_cte.o \
 $(parser)/parse_expr.o $(parser)/parse_func.o $(parser)/parse_hint.o $(parser)/parse_merge.o $(parser)/parse_node.o $(parser)/parse_oper.o $(parser)/parse_param.o \
 $(parser)/parse_relation.o $(parser)/parse_target.o $(parser)/parse_type.o $(parser)/parse_utilcmd.o $(parser)/scansup.o $(parser)/parse_compatibility.o \
-
-OBJS += $(commands)/tablecmds.o
+$(parser)/parse_startwith.o
 
 OBJS += $(adt)/acl.o $(adt)/arrayfuncs.o $(adt)/array_selfuncs.o $(adt)/array_typanalyze.o\
 $(adt)/array_userfuncs.o $(adt)/arrayutils.o $(adt)/bool.o\
 $(adt)/cash.o $(adt)/char.o $(adt)/date.o $(adt)/datetime.o $(adt)/datum.o $(adt)/domains.o\
 $(adt)/enum.o $(adt)/float.o $(adt)/format_type.o\
 $(adt)/int.o $(adt)/int8.o $(adt)/int16.o\
-$(adt)/json.o $(adt)/jsonb.o $(adt)/jsonb_gin.o $(adt)/jsonb_op.o $(adt)/jsonb_util.o $(adt)/jsonfuncs.o $(adt)/like.o $(adt)/lockfuncs.o\
+$(adt)/json.o $(adt)/jsonfuncs.o $(adt)/like.o $(adt)/lockfuncs.o\
 $(adt)/misc.o $(adt)/nabstime.o $(adt)/name.o $(adt)/numeric.o $(adt)/numutils.o\
 $(adt)/a_compat.o $(adt)/orderedsetaggs.o $(adt)/pseudotypes.o $(adt)/rangetypes.o $(adt)/rangetypes_gist.o\
 $(adt)/rowtypes.o $(adt)/regexp.o $(adt)/regproc.o $(adt)/ruleutils.o $(adt)/selfuncs.o\
@@ -32,13 +38,26 @@ $(adt)/timestamp.o $(adt)/varbit.o $(adt)/varchar.o $(adt)/varlena.o $(adt)/vers
 $(adt)/network.o $(adt)/mac.o $(adt)/inet_cidr_ntop.o $(adt)/inet_net_pton.o\
 $(adt)/ri_triggers.o $(adt)/pg_locale.o $(adt)/formatting.o\
 $(adt)/ascii.o $(adt)/quote.o $(adt)/pgstatfuncs.o $(adt)/encode.o $(adt)/dbsize.o $(adt)/trigfuncs.o\
-$(adt)/uuid.o $(adt)/windowfuncs.o $(adt)/xml.o $(adt)/extended_statistics.o $(adt)/clientlogic_bytea.o $(adt)/clientlogicsettings.o\
+$(adt)/uuid.o $(adt)/windowfuncs.o $(adt)/extended_statistics.o $(adt)/clientlogic_bytea.o $(adt)/clientlogicsettings.o\
 $(adt)/median_aggs.o $(adt)/expr_distinct.o $(adt)/nlssort.o $(adt)/first_last_agg.o
 
 OBJS += $(mb)/mbutils.o
 
-all $(OBJS): parser utils
-	make -C $(optimizer)
+
+OBJS += $(executor)/execQual.o
+
+OBJS += $(storage)/hashfunc.o
+
+OBJS += $(plan)/streamwalker.o
+
+OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o $(pl)/pl_comp.o $(pl)/pl_handler.o
+
+OBJS += $(orafce)/alert.o $(orafce)/assert.o $(orafce)/pipe.o $(orafce)/putline.o $(orafce)/shmmc.o \
+$(orafce)/utility.o $(orafce)/random.o $(orafce)/datefce.o $(orafce)/convert.o $(orafce)/others.o \
+$(orafce)/aggregate.o $(orafce)/charlen.o $(orafce)/charpad.o $(orafce)/plvstr.o $(orafce)/replace_empty_string.o \
+$(orafce)/varchar2.o $(orafce)/file.o $(orafce)/plvdate.o $(orafce)/plvsubst.o $(orafce)/plunit.o 
+
+all $(OBJS): write_git_commit parser utils executor plan commands storage pl orafce;
 
 parser:
 	make -C $(parser)
@@ -46,11 +65,39 @@ parser:
 utils:
 	make -C $(utils)
 
-REGRESS:=$(shell find ./sql -maxdepth 2 -type f)
-REGRESS:=$(basename $(patsubst ./sql/%,%,$(REGRESS)) .sql)
+executor:
+	make -C $(executor)
 
-REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p}
-whale--1.0.sql: sql_script/*
+storage:
+	make -C $(storage)
+
+plan:
+	make -C $(plan)
+
+commands:
+	make -C $(commands)
+
+pl:
+	make -C $(pl)
+
+orafce:
+	make -C $(orafce)
+
+write_git_commit:
+	if [ x$(git_commit) != x'' ]; then sed -i 's/#define WHALE_VERSION_STR.*/#define WHALE_VERSION_STR "whale build ${git_commit}"/g' ./include/plugin_config.h; fi
+
+extra_clean:
+	make clean -C $(parser)
+	make clean -C $(utils)
+	make clean -C $(executor)
+	make clean -C $(storage)
+	make clean -C $(plan)
+	make clean -C $(commands)
+	make clean -C $(pl)
+	make clean -C $(orafce)
+clean: extra_clean
+
+whale--1.0.sql: sql_script/* sql_script_post/*
 	cat $^ > $@
 DATA_built = whale--1.0.sql
 
@@ -59,11 +106,30 @@ plugin_postgres.o: plugin_postgres.cpp
 
 OBJS += pg_builtin_proc.o
 pg_builtin_proc.o: pg_builtin_proc.cpp utils
-EXTENSION = whale
-REGRESS:=$(shell find ./sql -maxdepth 2 -type f)
-REGRESS:=$(basename $(patsubst ./sql/%,%,$(REGRESS)) .sql)
 
-REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p}
+OBJS += plugin_utility.o
+plugin_utility.o: plugin_utility.cpp
+
+OBJS += tablecmds.o
+tablecmds.o: tablecmds.cpp
+
+EXTENSION = whale
+#a dummy testcase to let 'make check' can run, currently I have no idea how to fix this...
+REGRESS:=dummy
+
+ifdef MJDBC_TEST
+	REGRESS+=b_proto_jdbc
+endif
+
+REGRESS_OPTS = --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node -p ${p} --schedule=./parallel_schedule_whale${PART} --regconf=regress.conf -r 1 -n \
+--keep_last_data=false --temp-config=./make_check_postgresql.conf --load-extension=whale --dbcmpt=A
+export dp = $(shell expr $(p) + 3)
+
+export THIRD_PARTY_LIBS = $(with_3rd)
+
+plugin_check:
+	sed -i 's/whale\_server\_port=.*/whale\_server\_port=${dp}/g' ./make_check_postgresql.conf
+	make check
 
 include $(top_builddir)/$(base_dir)/configure.mk
 ifdef USE_PGXS

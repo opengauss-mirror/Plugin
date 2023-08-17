@@ -25,6 +25,8 @@
     errcontext.previous = t_thrd.log_cxt.error_context_stack; \
     t_thrd.log_cxt.error_context_stack = &errcontext;
 
+#define ELOG_FIELD_NAME_UPDATE(fieldname) t_thrd.log_cxt.error_context_stack->arg = (void*)(fieldname);
+
 #define ELOG_FIELD_NAME_END t_thrd.log_cxt.error_context_stack = errcontext.previous;
 
 /* Type categories (see TYPCATEGORY_xxx symbols in catalog/pg_type.h) */
@@ -62,6 +64,9 @@ extern Oid select_common_type(ParseState* pstate, List* exprs, const char* conte
 extern bool check_all_in_whitelist(List* resultexprs);
 extern Node* coerce_to_common_type(ParseState* pstate, Node* node, Oid targetTypeId, const char* context);
 
+extern Node* coerce_to_settype(ParseState* pstate, Node* expr, Oid exprtype, Oid targettype, int32 targettypmod,
+    CoercionContext ccontext, CoercionForm cformat, int location, Oid collation);
+
 extern bool check_generic_type_consistency(Oid* actual_arg_types, Oid* declared_arg_types, int nargs);
 extern Oid enforce_generic_type_consistency(
     Oid* actual_arg_types, Oid* declared_arg_types, int nargs, Oid rettype, bool allow_poly);
@@ -72,6 +77,8 @@ extern CoercionPathType find_coercion_pathway(
 extern CoercionPathType find_typmod_coercion_function(Oid typeId, Oid* funcid);
 
 extern void expression_error_callback(void* arg);
+extern Node* coerce_to_target_charset(
+    Node* expr, int target_charset, Oid target_type, int32 target_typmod, Oid target_collation);
 
 extern Node *transferConstToAconst(Node *node);
 

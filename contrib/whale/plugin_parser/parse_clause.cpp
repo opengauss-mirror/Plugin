@@ -73,8 +73,8 @@ static TimeCapsuleClause* transformRangeTimeCapsule(ParseState* pstate, RangeTim
 static void setNamespaceLateralState(List *l_namespace, bool lateral_only, bool lateral_ok);
 static Node* buildMergedJoinVar(ParseState* pstate, JoinType jointype, Var* l_colvar, Var* r_colvar);
 static void checkExprIsVarFree(ParseState* pstate, Node* n, const char* constructName);
-static TargetEntry* findTargetlistEntrySQL92(ParseState* pstate, Node* node, List** tlist, int clause);
-static TargetEntry* findTargetlistEntrySQL99(ParseState* pstate, Node* node, List** tlist);
+static TargetEntry* findTargetlistEntrySQL92(ParseState* pstate, Node* node, List** tlist, int clause, ParseExprKind exprKind);
+static TargetEntry* findTargetlistEntrySQL99(ParseState* pstate, Node* node, List** tlist, ParseExprKind exprKind);
 static int get_matching_location(int sortgroupref, List* sortgrouprefs, List* exprs);
 static List* addTargetToGroupList(
     ParseState* pstate, TargetEntry* tle, List* grouplist, List* targetlist, int location, bool resolveUnknown);
@@ -82,10 +82,11 @@ static WindowClause* findWindowClause(List* wclist, const char* name);
 static Node* transformFrameOffset(ParseState* pstate, int frameOptions, Node* clause);
 static Node* flatten_grouping_sets(Node* expr, bool toplevel, bool* hasGroupingSets);
 static Node* transformGroupingSet(List** flatresult, ParseState* pstate, GroupingSet* gset, List** targetlist,
-    List* sortClause, bool useSQL99, bool toplevel);
+    List* sortClause, ParseExprKind exprKind, bool useSQL99, bool toplevel);
 
 static Index transformGroupClauseExpr(List** flatresult, Bitmapset* seen_local, ParseState* pstate, Node* gexpr,
-    List** targetlist, List* sortClause, bool useSQL99, bool toplevel);
+    List** targetlist, List* sortClause, ParseExprKind exprKind, bool useSQL99, bool toplevel);
+static void CheckOrderbyColumns(ParseState* pstate, List* targetList, bool isAggregate);
 
 /*
  * @Description: append from clause item to the left tree
@@ -208,6 +209,37 @@ int setTargetTable(ParseState* pstate, RangeVar* relRv, bool inh, bool alsoSourc
      * for DELETE and UPDATE, maybe target table has been added to rtable before.
      * if that, no need to do that again, just set resultRelation to the existed rtindex.
      */
+    if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+        if (multiModify && (requiredPerms & ACL_UPDATE)) {
+            relation = parserOpenTable(pstate, relRv, RowExclusiveLock, true, false, true);
+            /* When update multiple relations, rte has been just now added to p_rtable in transformFromClauseItem. */
+            rte = (RangeTblEntry *)llast(pstate->p_rtable);
+            index = list_length(pstate->p_rtable);
+        } else if (requiredPerms & ACL_DELETE) {
+            int rtindex = 1;
+            /* for sql_compatibility B, relation may has been added in p_rtable by usingClause. */
+            foreach_cell (l, pstate->p_rtable) {
+                RangeTblEntry *rte1 = (RangeTblEntry *)lfirst(l);
+                if (relRv->alias != NULL && strcmp(rte1->eref->aliasname, relRv->alias->aliasname) == 0) {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_DUPLICATE_ALIAS), errmsg("table name \"%s\" specified more than once",
+                            relRv->alias->aliasname)));
+                } else if (relRv->alias == NULL && strcmp(rte1->eref->aliasname, relRv->relname) == 0) {
+                    if (list_member_ptr(pstate->p_target_rangetblentry, rte1)) {
+                        ereport(ERROR,
+                            (errcode(ERRCODE_DUPLICATE_ALIAS), errmsg("table name \"%s\" specified more than once",
+                                relRv->relname)));
+                    }
+                    rte = rte1;
+                    index = rtindex;
+                    relRv->relname = rte1->relname;
+                    relation = parserOpenTable(pstate, relRv, RowExclusiveLock, true, false, true);
+                    break;
+                }
+                rtindex++;
+            }
+        }
+    }
 
     if (index == 0) {
         relation = parserOpenTable(pstate, relRv, RowExclusiveLock, true, false, true);
@@ -300,8 +332,8 @@ int setTargetTable(ParseState* pstate, RangeVar* relRv, bool inh, bool alsoSourc
          */
         if (alsoSource) {
             addRTEtoQuery(pstate, rte, true, true, true);
-        addRTEtoQuery(pstate, rte, true, true, true);    
-            addRTEtoQuery(pstate, rte, true, true, true);
+        } else if (IS_SUPPORT_RIGHT_REF(pstate->rightRefState)) {
+            addRTEtoQuery(pstate, rte, false, false, true);
         }
     }
     return index;
@@ -473,7 +505,7 @@ static Node* transformJoinUsingClause(
      * transformJoinOnClause() does.  Just invoke transformExpr() to fix up
      * the operators, and we're done.
      */
-    result = transformExpr(pstate, result);
+    result = transformExpr(pstate, result, EXPR_KIND_JOIN_USING);
 
     result = coerce_to_boolean(pstate, result, "JOIN/USING");
 
@@ -508,7 +540,7 @@ Node* transformJoinOnClause(ParseState* pstate, JoinExpr* j, RangeTblEntry* l_rt
     pstate->p_varnamespace = list_make2(makeNamespaceItem(l_rte, false, true),
                                         makeNamespaceItem(r_rte, false, true));
 
-    result = transformWhereClause(pstate, j->quals, "JOIN/ON");
+    result = transformWhereClause(pstate, j->quals, EXPR_KIND_JOIN_ON, "JOIN/ON");
 
     pstate->p_relnamespace = save_relnamespace;
     pstate->p_varnamespace = save_varnamespace;
@@ -611,6 +643,7 @@ static RangeTblEntry* transformRangeFunction(ParseState* pstate, RangeFunction* 
     Node* funcexpr = NULL;
     char* funcname = NULL;
     RangeTblEntry* rte = NULL;
+    Node *last_srf;
 
     /*
      * Get function name for possible use as alias.  We use the same
@@ -631,7 +664,16 @@ static RangeTblEntry* transformRangeFunction(ParseState* pstate, RangeFunction* 
     /*
      * Transform the raw expression.
      */
-    funcexpr = transformExpr(pstate, r->funccallnode);
+    last_srf = pstate->p_last_srf;
+    funcexpr = transformExpr(pstate, r->funccallnode, EXPR_KIND_FROM_FUNCTION);
+
+    if (pstate->p_is_flt_frame) {
+        /* nodeFunctionscan.c requires SRFs to be at top level */
+        if (pstate->p_last_srf != last_srf && pstate->p_last_srf != funcexpr)
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                            errmsg("set-returning functions must appear at top level of FROM"),
+                            parser_errposition(pstate, exprLocation(pstate->p_last_srf))));
+    }
 
     pstate->p_lateral_active = false;
 
@@ -737,7 +779,7 @@ static TableSampleClause* transformRangeTableSample(ParseState* pstate, RangeTab
     foreach (larg, rts->args) {
         Node* arg = (Node*)lfirst(larg);
 
-        arg = transformExpr(pstate, arg);
+        arg = transformExpr(pstate, arg, EXPR_KIND_FROM_FUNCTION);
         arg = coerce_to_specific_type(pstate, arg, FLOAT4OID, "TABLESAMPLE");
         assign_expr_collations(pstate, arg);
         fargs = lappend(fargs, arg);
@@ -748,7 +790,7 @@ static TableSampleClause* transformRangeTableSample(ParseState* pstate, RangeTab
     if (rts->repeatable != NULL) {
         Node* arg = NULL;
 
-        arg = transformExpr(pstate, rts->repeatable);
+        arg = transformExpr(pstate, rts->repeatable, EXPR_KIND_FROM_FUNCTION);
         arg = coerce_to_specific_type(pstate, arg, FLOAT8OID, "REPEATABLE");
         assign_expr_collations(pstate, arg);
         tablesample->repeatable = (Expr*)arg;
@@ -1428,7 +1470,7 @@ static Node* buildMergedJoinVar(ParseState* pstate, JoinType jointype, Var* l_co
  *
  * constructName does not affect the semantics, but is used in error messages
  */
-Node* transformWhereClause(ParseState* pstate, Node* clause, const char* constructName)
+Node* transformWhereClause(ParseState* pstate, Node* clause, ParseExprKind exprKind, const char* constructName)
 {
     Node* qual = NULL;
 
@@ -1436,7 +1478,7 @@ Node* transformWhereClause(ParseState* pstate, Node* clause, const char* constru
         return NULL;
     }
 
-    qual = transformExpr(pstate, clause);
+    qual = transformExpr(pstate, clause, exprKind);
 
     qual = coerce_to_boolean(pstate, qual, constructName);
 
@@ -1453,14 +1495,14 @@ Node* transformWhereClause(ParseState* pstate, Node* clause, const char* constru
  *
  * constructName does not affect the semantics, but is used in error messages
  */
-Node* transformLimitClause(ParseState* pstate, Node* clause, const char* constructName)
+Node* transformLimitClause(ParseState* pstate, Node* clause, ParseExprKind exprKind, const char* constructName)
 {
     Node* qual = NULL;
 
     if (clause == NULL) {
         return NULL;
     }
-    qual = transformExpr(pstate, clause);
+    qual = transformExpr(pstate, clause, exprKind);
 
     qual = coerce_to_specific_type(pstate, qual, INT8OID, constructName);
 
@@ -1524,7 +1566,7 @@ static void checkExprIsVarFree(ParseState* pstate, Node* n, const char* construc
  * tlist	the target list (passed by reference so we can append to it)
  * clause	identifies clause type being processed
  */
-static TargetEntry* findTargetlistEntrySQL92(ParseState* pstate, Node* node, List** tlist, int clause)
+static TargetEntry* findTargetlistEntrySQL92(ParseState* pstate, Node* node, List** tlist, int clause, ParseExprKind exprKind)
 {
     ListCell* tl = NULL;
 
@@ -1652,7 +1694,7 @@ static TargetEntry* findTargetlistEntrySQL92(ParseState* pstate, Node* node, Lis
     /*
      * Otherwise, we have an expression, so process it per SQL99 rules.
      */
-    return findTargetlistEntrySQL99(pstate, node, tlist);
+    return findTargetlistEntrySQL99(pstate, node, tlist, exprKind);
 }
 
 /*
@@ -1667,7 +1709,7 @@ static TargetEntry* findTargetlistEntrySQL92(ParseState* pstate, Node* node, Lis
  * node		the ORDER BY, GROUP BY, etc expression to be matched
  * tlist	the target list (passed by reference so we can append to it)
  */
-static TargetEntry* findTargetlistEntrySQL99(ParseState* pstate, Node* node, List** tlist)
+static TargetEntry* findTargetlistEntrySQL99(ParseState* pstate, Node* node, List** tlist, ParseExprKind exprKind)
 {
     TargetEntry* target_result = NULL;
     ListCell* tl = NULL;
@@ -1680,7 +1722,7 @@ static TargetEntry* findTargetlistEntrySQL99(ParseState* pstate, Node* node, Lis
      * resjunk target here, though the SQL92 cases above must ignore resjunk
      * targets.
      */
-    expr = transformExpr(pstate, node);
+    expr = transformExpr(pstate, node, exprKind);
 
     foreach (tl, *tlist) {
         TargetEntry* tle = (TargetEntry*)lfirst(tl);
@@ -1706,7 +1748,7 @@ static TargetEntry* findTargetlistEntrySQL99(ParseState* pstate, Node* node, Lis
      * end of the target list.	This target is given resjunk = TRUE so that it
      * will not be projected into the final tuple.
      */
-    target_result = transformTargetEntry(pstate, node, expr, NULL, true);
+    target_result = transformTargetEntry(pstate, node, expr, exprKind, NULL, true);
 
     *tlist = lappend(*tlist, target_result);
 
@@ -1848,15 +1890,15 @@ static Node* flatten_grouping_sets(Node* expr, bool toplevel, bool* hasGroupingS
  * toplevel		false if within any grouping set
  */
 static Index transformGroupClauseExpr(List** flatresult, Bitmapset* seen_local, ParseState* pstate, Node* gexpr,
-    List** targetlist, List* sortClause, bool useSQL99, bool toplevel)
+    List** targetlist, List* sortClause, ParseExprKind exprKind, bool useSQL99, bool toplevel)
 {
     TargetEntry* tle = NULL;
     bool found = false;
 
     if (useSQL99) {
-        tle = findTargetlistEntrySQL99(pstate, gexpr, targetlist);
+        tle = findTargetlistEntrySQL99(pstate, gexpr, targetlist, exprKind);
     } else {
-        tle = findTargetlistEntrySQL92(pstate, gexpr, targetlist, GROUP_CLAUSE);
+        tle = findTargetlistEntrySQL92(pstate, gexpr, targetlist, GROUP_CLAUSE, exprKind);
     }
     
     if (tle->ressortgroupref > 0) {
@@ -1946,7 +1988,7 @@ static Index transformGroupClauseExpr(List** flatresult, Bitmapset* seen_local, 
  * toplevel		false if within any grouping set
  */
 static List* transformGroupClauseList(List** flatresult, ParseState* pstate, List* list, List** targetlist,
-    List* sortClause, bool useSQL99, bool toplevel)
+    List* sortClause, ParseExprKind exprKind, bool useSQL99, bool toplevel)
 {
     Bitmapset* seen_local = NULL;
     List* result = NIL;
@@ -1956,7 +1998,7 @@ static List* transformGroupClauseList(List** flatresult, ParseState* pstate, Lis
         Node* gexpr = (Node*)lfirst(gl);
 
         Index ref =
-            transformGroupClauseExpr(flatresult, seen_local, pstate, gexpr, targetlist, sortClause, useSQL99, toplevel);
+            transformGroupClauseExpr(flatresult, seen_local, pstate, gexpr, targetlist, sortClause, exprKind, useSQL99, toplevel);
         if (ref > 0) {
             seen_local = bms_add_member(seen_local, ref);
             result = lappend_int(result, ref);
@@ -1986,7 +2028,7 @@ static List* transformGroupClauseList(List** flatresult, ParseState* pstate, Lis
  * toplevel		false if within any grouping set
  */
 static Node* transformGroupingSet(List** flatresult, ParseState* pstate, GroupingSet* gset, List** targetlist,
-    List* sortClause, bool useSQL99, bool toplevel)
+    List* sortClause, ParseExprKind exprKind, bool useSQL99, bool toplevel)
 {
     ListCell* gl = NULL;
     List* content = NIL;
@@ -1997,16 +2039,16 @@ static Node* transformGroupingSet(List** flatresult, ParseState* pstate, Groupin
         Node* n = (Node*)lfirst(gl);
 
         if (IsA(n, List)) {
-            List* l = transformGroupClauseList(flatresult, pstate, (List*)n, targetlist, sortClause, useSQL99, false);
+            List* l = transformGroupClauseList(flatresult, pstate, (List*)n, targetlist, sortClause, exprKind, useSQL99, false);
 
             content = lappend(content, makeGroupingSet(GROUPING_SET_SIMPLE, l, exprLocation(n)));
         } else if (IsA(n, GroupingSet)) {
             GroupingSet* gset2 = (GroupingSet*)lfirst(gl);
 
             content = lappend(
-                content, transformGroupingSet(flatresult, pstate, gset2, targetlist, sortClause, useSQL99, false));
+                content, transformGroupingSet(flatresult, pstate, gset2, targetlist, sortClause, exprKind, useSQL99, false));
         } else {
-            Index ref = transformGroupClauseExpr(flatresult, NULL, pstate, n, targetlist, sortClause, useSQL99, false);
+            Index ref = transformGroupClauseExpr(flatresult, NULL, pstate, n, targetlist, sortClause, exprKind, useSQL99, false);
 
             content = lappend(content, makeGroupingSet(GROUPING_SET_SIMPLE, list_make1_int(ref), exprLocation(n)));
         }
@@ -2063,7 +2105,7 @@ static Node* transformGroupingSet(List** flatresult, ParseState* pstate, Groupin
  * useSQL99		SQL99 rather than SQL92 syntax
  */
 List* transformGroupClause(
-    ParseState* pstate, List* grouplist, List** groupingSets, List** targetlist, List* sortClause, bool useSQL99)
+    ParseState* pstate, List* grouplist, List** groupingSets, List** targetlist, List* sortClause, ParseExprKind exprKind, bool useSQL99)
 {
     List* result = NIL;
     List* flat_grouplist = NIL;
@@ -2106,14 +2148,14 @@ List* transformGroupClause(
                 case GROUPING_SET_CUBE:
                 case GROUPING_SET_ROLLUP:
                     gsets = lappend(
-                        gsets, transformGroupingSet(&result, pstate, gset, targetlist, sortClause, useSQL99, true));
+                        gsets, transformGroupingSet(&result, pstate, gset, targetlist, sortClause, exprKind, useSQL99, true));
                     break;
                 default:
                     break;
             }
         } else {
             Index ref =
-                transformGroupClauseExpr(&result, seen_local, pstate, gexpr, targetlist, sortClause, useSQL99, true);
+                transformGroupClauseExpr(&result, seen_local, pstate, gexpr, targetlist, sortClause, exprKind, useSQL99, true);
             if (ref > 0) {
                 seen_local = bms_add_member(seen_local, ref);
                 if (hasGroupingSets) {
@@ -2142,7 +2184,7 @@ List* transformGroupClause(
  * This is also used for window and aggregate ORDER BY clauses (which act
  * almost the same, but are always interpreted per SQL99 rules).
  */
-List* transformSortClause(ParseState* pstate, List* orderlist, List** targetlist, bool resolveUnknown, bool useSQL99)
+List* transformSortClause(ParseState* pstate, List* orderlist, List** targetlist, ParseExprKind exprKind, bool resolveUnknown, bool useSQL99)
 {
     List* sortlist = NIL;
     ListCell* olitem = NULL;
@@ -2152,9 +2194,9 @@ List* transformSortClause(ParseState* pstate, List* orderlist, List** targetlist
         TargetEntry* tle = NULL;
 
         if (useSQL99) {
-            tle = findTargetlistEntrySQL99(pstate, sortby->node, targetlist);
+            tle = findTargetlistEntrySQL99(pstate, sortby->node, targetlist, exprKind);
         } else {
-            tle = findTargetlistEntrySQL92(pstate, sortby->node, targetlist, ORDER_CLAUSE);
+            tle = findTargetlistEntrySQL92(pstate, sortby->node, targetlist, ORDER_CLAUSE, exprKind);
         }
         sortlist = addTargetToSortList(pstate, tle, sortlist, *targetlist, sortby, resolveUnknown);
     }
@@ -2209,9 +2251,9 @@ List* transformWindowDefinitions(ParseState* pstate, List* windowdefs, List** ta
          * including the special handling of nondefault operator semantics.
          */
         orderClause = transformSortClause(
-            pstate, windef->orderClause, targetlist, true /* fix unknowns */, true /* force SQL99 rules */);
+            pstate, windef->orderClause, targetlist, EXPR_KIND_WINDOW_ORDER, true /* fix unknowns */, true /* force SQL99 rules */);
         partitionClause = transformGroupClause(
-            pstate, windef->partitionClause, NULL, targetlist, orderClause, true /* force SQL99 rules */);
+            pstate, windef->partitionClause, NULL, targetlist, orderClause, EXPR_KIND_WINDOW_PARTITION, true /* force SQL99 rules */);
 
         /*
          * And prepare the new WindowClause.
@@ -2298,6 +2340,11 @@ List* transformDistinctClause(ParseState* pstate, List** targetlist, List* sortC
     List* result = NIL;
     ListCell* slitem = NULL;
     ListCell* tlitem = NULL;
+    bool allowOrderbyExpr = !IsInitdb && DB_IS_CMPT(B_FORMAT);
+
+    if (pstate->orderbyCols) {
+        CheckOrderbyColumns(pstate, *targetlist, is_agg);
+    }
 
     /*
      * The distinctClause should consist of all ORDER BY items followed by all
@@ -2319,11 +2366,16 @@ List* transformDistinctClause(ParseState* pstate, List** targetlist, List* sortC
         TargetEntry* tle = get_sortgroupclause_tle(scl, *targetlist);
 
         if (tle != NULL && tle->resjunk) {
-            ereport(ERROR,
-                (errcode(ERRCODE_INVALID_COLUMN_REFERENCE),
-                    is_agg ? errmsg("in an aggregate with DISTINCT, ORDER BY expressions must appear in argument list")
+            if (allowOrderbyExpr) {
+                continue;
+            } else {
+                ereport(
+                    ERROR,
+                    (errcode(ERRCODE_INVALID_COLUMN_REFERENCE),
+                     is_agg ? errmsg("in an aggregate with DISTINCT, ORDER BY expressions must appear in argument list")
                             : errmsg("for SELECT DISTINCT, ORDER BY expressions must appear in select list"),
-                    parser_errposition(pstate, exprLocation((Node*)tle->expr))));
+                     parser_errposition(pstate, exprLocation((Node *)tle->expr))));
+            }
         }
         result = lappend(result, copyObject(scl));
     }
@@ -2341,14 +2393,65 @@ List* transformDistinctClause(ParseState* pstate, List** targetlist, List* sortC
 
         if (tle != NULL) {
             result = addTargetToGroupList(pstate, tle, result, *targetlist, exprLocation((Node*)tle->expr), true);
-        }
-        else{
+        } else {
             ereport(ERROR,
                 (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("invalid tle value")));
         }
     }
 
     return result;
+}
+
+/*
+ * CheckOrderbyColumns -
+ *	  check ORDER BY column references if the statement has DISTINCT clause.
+ */
+static void CheckOrderbyColumns(ParseState* pstate, List* targetList, bool isAggregate)
+{
+    ListCell* colRefCell = nullptr;
+
+    foreach(colRefCell, pstate->orderbyCols) {
+        ColumnRef* colRef = (ColumnRef*)lfirst(colRefCell);
+        bool isFound = false;
+
+        if (!isAggregate && list_length(colRef->fields) == 1 &&
+            IsA(linitial((colRef)->fields), String)) {
+            char* refName = strVal(linitial(colRef->fields));
+
+            ListCell* tcell = nullptr;
+            foreach(tcell, targetList) {
+                TargetEntry* entry = (TargetEntry*)lfirst(tcell);
+                if (!entry->resjunk && entry->resname && strcmp(entry->resname, refName) == 0) {
+                    isFound = true;
+                    break;
+                }
+            }
+        }
+
+        if (!isFound) {
+            Node* refExpr = transformExpr(pstate, (Node*)colRef, EXPR_KIND_ORDER_BY);
+            ListCell* tcell = nullptr;
+            foreach(tcell, targetList) {
+                TargetEntry* entry = (TargetEntry*)lfirst(tcell);
+                Node* texpr = strip_implicit_coercions((Node*)entry->expr);
+                if (!entry->resjunk && equal(refExpr, texpr)) {
+                    isFound = true;
+                    break;
+                }
+            }
+        }
+
+        if (!isFound) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_COLUMN_REFERENCE),
+                     isAggregate
+                         ? errmsg("in an aggregate with DISTINCT, ORDER BY expressions must appear in argument list")
+                         : errmsg("for SELECT DISTINCT, ORDER BY expressions must appear in select list"),
+                     parser_errposition(pstate, colRef->location)));
+        }
+    }
+
+    list_free_ext(pstate->orderbyCols);
 }
 
 /*
@@ -2385,7 +2488,7 @@ List* transformDistinctOnClause(ParseState* pstate, List* distinctlist, List** t
         int sortgroupref;
         TargetEntry* tle = NULL;
 
-        tle = findTargetlistEntrySQL92(pstate, dexpr, targetlist, DISTINCT_ON_CLAUSE);
+        tle = findTargetlistEntrySQL92(pstate, dexpr, targetlist, DISTINCT_ON_CLAUSE, EXPR_KIND_DISTINCT_ON);
         sortgroupref = assignSortGroupRef(tle, *targetlist);
         sortgrouprefs = lappend_int(sortgrouprefs, sortgroupref);
     }
@@ -2810,17 +2913,19 @@ static Node* transformFrameOffset(ParseState* pstate, int frameOptions, Node* cl
     /* Quick exit if no offset expression */
     if (clause == NULL) {
         return NULL;
-    }
-    /* Transform the raw expression tree */
-    node = transformExpr(pstate, clause);
+    }    
 
     if (frameOptions & FRAMEOPTION_ROWS) {
+        /* Transform the raw expression tree */
+        node = transformExpr(pstate, clause, EXPR_KIND_WINDOW_FRAME_ROWS);
         /*
          * Like LIMIT clause, simply coerce to int8
          */
         constructName = "ROWS";
         node = coerce_to_specific_type(pstate, node, INT8OID, constructName);
     } else if (frameOptions & FRAMEOPTION_RANGE) {
+        /* Transform the raw expression tree */
+        node = transformExpr(pstate, clause, EXPR_KIND_WINDOW_FRAME_RANGE);
         /*
          * this needs a lot of thought to decide how to support in the context
          * of Postgres' extensible datatype framework

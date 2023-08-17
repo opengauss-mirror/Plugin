@@ -11,8 +11,9 @@
 #ifndef USER_H
 #define USER_H
 
+#include "catalog/objectaddress.h"
 #include "nodes/parsenodes.h"
-#include "utils/timestamp.h"
+#include "plugin_utils/timestamp.h"
 
 /* Hook to check passwords in CreateRole() and AlterRole() */
 #define PASSWORD_TYPE_PLAINTEXT 0
@@ -45,12 +46,13 @@ typedef void (*check_password_hook_type)(
 
 extern THR_LOCAL PGDLLIMPORT check_password_hook_type check_password_hook;
 
-extern void CreateRole(CreateRoleStmt* stmt);
-extern void AlterRole(AlterRoleStmt* stmt);
-extern void AlterRoleSet(AlterRoleSetStmt* stmt);
+extern bool isStrHasInvalidCharacter(const char* str);
+extern Oid CreateRole(CreateRoleStmt* stmt);
+extern Oid AlterRole(AlterRoleStmt* stmt);
+extern Oid AlterRoleSet(AlterRoleSetStmt* stmt);
 extern void DropRole(DropRoleStmt* stmt);
 extern void GrantRole(GrantRoleStmt* stmt);
-extern void RenameRole(const char* oldname, const char* newname);
+extern ObjectAddress RenameRole(const char* oldname, const char* newname);
 extern void DropOwnedObjects(DropOwnedStmt* stmt);
 extern void ReassignOwnedObjects(ReassignOwnedStmt* stmt);
 extern void TryLockAccount(Oid roleID, int extrafails, bool superlock);
@@ -78,6 +80,10 @@ int64 SearchAllAccounts();
 void InitAccountLockHashTable();
 extern USER_STATUS GetAccountLockedStatusFromHashTable(Oid roleid);
 extern void UpdateAccountInfoFromHashTable();
+extern bool have_createrole_privilege(void);
+extern bool IsReservedRoleName(const char* name);
+extern char* MatchOtherUserHostName(const char* rolname, char* userHostName);
+extern HeapTuple SearchUserHostName(const char* userName, Oid* oid);
 
 extern inline void str_reset(char* str)
 {

@@ -71,6 +71,7 @@
 #include "storage/cstore/cstore_compress.h"
 #include "storage/page_compression.h"
 #include "vecexecutor/vecnodes.h"
+#include "storage/file/fio_device.h"
 
 #ifdef PGXC
 static Datum pgxc_database_size(Oid dbOid);
@@ -159,6 +160,7 @@ static int64 calculate_database_size(Oid dbOid)
 {
     int64 totalsize;
     DIR* dirdesc = NULL;
+    char* dssdir = NULL;
     struct dirent* direntry = NULL;
     char dirpath[MAXPGPATH] = {'\0'};
     char pathname[MAXPGPATH] = {'\0'};
@@ -170,16 +172,30 @@ static int64 calculate_database_size(Oid dbOid)
     if (aclresult != ACLCHECK_OK)
         aclcheck_error(aclresult, ACL_KIND_DATABASE, get_and_check_db_name(dbOid));
 
+    /* Get the vgname in DSS mode */
+    if (ENABLE_DSS)
+        dssdir = g_instance.attr.attr_storage.dss_attr.ss_dss_vg_name;
+
     /* Shared storage in pg_global is not counted */
 
     /* Include pg_default storage */
-    rc = snprintf_s(pathname, MAXPGPATH, MAXPGPATH - 1, "base/%u", dbOid);
-    securec_check_ss(rc, "\0", "\0");
+    if (ENABLE_DSS && dbOid != 1) {
+        rc = snprintf_s(pathname, MAXPGPATH, MAXPGPATH - 1, "%s/base/%u", dssdir, dbOid);
+        securec_check_ss(rc, "", "");
+    } else {
+        rc = snprintf_s(pathname, MAXPGPATH, MAXPGPATH - 1, "base/%u", dbOid);
+        securec_check_ss(rc, "\0", "\0");
+    }
     totalsize = db_dir_size(pathname);
 
     /* Scan the non-default tablespaces */
-    rc = snprintf_s(dirpath, MAXPGPATH, MAXPGPATH - 1, "pg_tblspc");
-    securec_check_ss(rc, "\0", "\0");
+    if (ENABLE_DSS) {
+        rc = snprintf_s(dirpath, MAXPGPATH, MAXPGPATH - 1, "%s/pg_tblspc", dssdir);
+        securec_check_ss(rc, "", "");
+    } else {
+        rc = snprintf_s(dirpath, MAXPGPATH, MAXPGPATH - 1, "pg_tblspc");
+        securec_check_ss(rc, "\0", "\0");
+    }
     dirdesc = AllocateDir(dirpath);
     if (NULL == dirdesc)
         ereport(ERROR, (errcode_for_file_access(), errmsg("could not open tablespace directory \"%s\": %m", dirpath)));
@@ -192,16 +208,26 @@ static int64 calculate_database_size(Oid dbOid)
 
 #ifdef PGXC
         /* openGauss tablespaces include node name in path */
-        rc = snprintf_s(pathname,
-            MAXPGPATH,
-            MAXPGPATH - 1,
-            "pg_tblspc/%s/%s_%s/%u",
-            direntry->d_name,
-            TABLESPACE_VERSION_DIRECTORY,
-            g_instance.attr.attr_common.PGXCNodeName,
-            dbOid);
-        securec_check_ss(rc, "\0", "\0");
-
+        if (ENABLE_DSS) {
+            rc = snprintf_s(pathname,
+                MAXPGPATH,
+                MAXPGPATH - 1,
+                "pg_tblspc/%s/%s/%u",
+                direntry->d_name,
+                TABLESPACE_VERSION_DIRECTORY,
+                dbOid);
+            securec_check_ss(rc, "\0", "\0");
+        } else {
+            rc = snprintf_s(pathname,
+                MAXPGPATH,
+                MAXPGPATH - 1,
+                "pg_tblspc/%s/%s_%s/%u",
+                direntry->d_name,
+                TABLESPACE_VERSION_DIRECTORY,
+                g_instance.attr.attr_common.PGXCNodeName,
+                dbOid);
+            securec_check_ss(rc, "\0", "\0");
+        }
 #else
         rc = snprintf_s(pathname,
             MAXPGPATH,
@@ -212,12 +238,24 @@ static int64 calculate_database_size(Oid dbOid)
             dbOid);
         securec_check_ss(rc, "\0", "\0");
 #endif
+        /*  Get the path in DSS mode */
+        if (ENABLE_DSS) {
+            char temp_path[MAXPGPATH];
+            rc = snprintf_s(temp_path, MAXPGPATH, MAXPGPATH - 1, "%s", pathname);
+            rc = snprintf_s(pathname, MAXPGPATH, MAXPGPATH - 1, "%s/%s", dssdir, temp_path);
+            securec_check_ss(rc, "", "");
+        }
         totalsize += db_dir_size(pathname);
     }
 
     FreeDir(dirdesc);
 
     return totalsize;
+}
+
+int64 pg_cal_database_size_oid(Oid dbOid)
+{
+    return (int64)(calculate_database_size(dbOid));
 }
 
 /*
@@ -230,7 +268,7 @@ static double calculate_coltable_compress_ratio(Relation onerel)
     CStoreScanDesc cstoreScanDesc = NULL;
     TupleDesc tupdesc = onerel->rd_att;
     int attrNum = tupdesc->natts;
-    Form_pg_attribute* attrs = tupdesc->attrs;
+    FormData_pg_attribute* attrs = tupdesc->attrs;
     CUDesc cuDesc;
     CU* cuPtr = NULL;
     double total_source_size = 0;
@@ -245,7 +283,7 @@ static double calculate_coltable_compress_ratio(Relation onerel)
     double numericDataSize = 0;
 
     for (int i = 0; i < attrNum; i++) {
-        colIdx[i] = attrs[i]->attnum;
+        colIdx[i] = attrs[i].attnum;
         slotIdList[i] = CACHE_BLOCK_INVALID_IDX;
     }
 
@@ -263,13 +301,13 @@ static double calculate_coltable_compress_ratio(Relation onerel)
     /*sample the first CU of each column, and calculate the compression ratio of this table.*/
     for (int col = 0; col < attrNum; col++) {
         // skip dropped column
-        if (attrs[col]->attisdropped) {
+        if (attrs[col].attisdropped) {
             continue;
         }
 
         bool found = cstore->GetCUDesc(col, targetblock, &cuDesc, SnapshotNow);
         if (found && cuDesc.cu_size != 0) {
-            cuPtr = cstore->GetCUData(&cuDesc, col, attrs[col]->attlen, slotIdList[col]);
+            cuPtr = cstore->GetCUData(&cuDesc, col, attrs[col].attlen, slotIdList[col]);
             if ((cuPtr->m_infoMode & CU_IntLikeCompressed) && ATT_IS_NUMERIC_TYPE(cuPtr->m_atttypid)) {
                 numericExpandRatio = 1.5; /* default expand ratio */
                 numericDataSize = 0;
@@ -592,21 +630,37 @@ static int64 calculate_tablespace_size(Oid tblspcOid)
                 errdetail("Please calculate size of DFS tablespace \"%s\" on coordinator node.",
                     get_tablespace_name(tblspcOid))));
     }
-    if (tblspcOid == DEFAULTTABLESPACE_OID)
-        rc = snprintf_s(tblspcPath, MAXPGPATH, MAXPGPATH - 1, "base");
-
-    else if (tblspcOid == GLOBALTABLESPACE_OID)
-        rc = snprintf_s(tblspcPath, MAXPGPATH, MAXPGPATH - 1, "global");
-    else
+    if (tblspcOid == DEFAULTTABLESPACE_OID) {
+        if (ENABLE_DSS) {
+            rc = snprintf_s(tblspcPath, MAXPGPATH, MAXPGPATH - 1, "%s/base",
+                g_instance.attr.attr_storage.dss_attr.ss_dss_vg_name);
+        } else {
+            rc = snprintf_s(tblspcPath, MAXPGPATH, MAXPGPATH - 1, "base");
+        }
+    } else if (tblspcOid == GLOBALTABLESPACE_OID) {
+        if (ENABLE_DSS) {
+            rc = snprintf_s(tblspcPath, MAXPGPATH, MAXPGPATH - 1, "%s/global",
+                g_instance.attr.attr_storage.dss_attr.ss_dss_vg_name);
+        } else {
+            rc = snprintf_s(tblspcPath, MAXPGPATH, MAXPGPATH - 1, "global");
+        }
+    } else
 #ifdef PGXC
         /* openGauss tablespaces include node name in path */
-        rc = snprintf_s(tblspcPath,
-            MAXPGPATH,
-            MAXPGPATH - 1,
-            "pg_tblspc/%u/%s_%s",
-            tblspcOid,
-            TABLESPACE_VERSION_DIRECTORY,
-            g_instance.attr.attr_common.PGXCNodeName);
+        if (ENABLE_DSS) {
+            rc = snprintf_s(
+                tblspcPath, MAXPGPATH, MAXPGPATH - 1, "%s/pg_tblspc/%u/%s",
+                g_instance.attr.attr_storage.dss_attr.ss_dss_vg_name,
+                tblspcOid, TABLESPACE_VERSION_DIRECTORY);
+        } else {
+            rc = snprintf_s(tblspcPath,
+                MAXPGPATH,
+                MAXPGPATH - 1,
+                "pg_tblspc/%u/%s_%s",
+                tblspcOid,
+                TABLESPACE_VERSION_DIRECTORY,
+                g_instance.attr.attr_common.PGXCNodeName);
+        }
 #else
         rc = snprintf_s(
             tblspcPath, MAXPGPATH, MAXPGPATH - 1, "pg_tblspc/%u/%s", tblspcOid, TABLESPACE_VERSION_DIRECTORY);
@@ -761,8 +815,8 @@ int64 CalculateCStoreRelationSize(Relation rel, ForkNumber forknum)
          */
         for (int i = 0; i < RelationGetDescr(rel)->natts; i++) {
             totalsize += calculate_relation_size(
-                &rel->rd_node, rel->rd_backend, ColumnId2ColForkNum(rel->rd_att->attrs[i]->attnum));
-            CFileNode tmpNode(rel->rd_node, rel->rd_att->attrs[i]->attnum, MAIN_FORKNUM);
+                &rel->rd_node, rel->rd_backend, ColumnId2ColForkNum(rel->rd_att->attrs[i].attnum));
+            CFileNode tmpNode(rel->rd_node, rel->rd_att->attrs[i].attnum, MAIN_FORKNUM);
             CUStorage custore(tmpNode);
             for (segcount = 0;; segcount++) {
                 struct stat fst;
@@ -1414,11 +1468,11 @@ Datum pg_partition_size_name(PG_FUNCTION_ARGS)
     names = stringToQualifiedNameList(partTableName);
     partTableOid = RangeVarGetRelid(makeRangeVarFromNameList(names), NoLock, false);
 
-    partOid = partitionNameGetPartitionOid(
+    partOid = PartitionNameGetPartitionOid(
         partTableOid, partName, PART_OBJ_TYPE_TABLE_PARTITION, NoLock, true, false, NULL, NULL, NoLock);
 
     if (!OidIsValid(partOid)) {
-        partOid = partitionNameGetPartitionOid(partTableOid, partName, PART_OBJ_TYPE_TABLE_SUB_PARTITION, NoLock, true,
+        partOid = SubPartitionNameGetSubPartitionOid(partTableOid, partName, NoLock, NoLock, true,
             false, NULL, NULL, NoLock, &subparentOid);
     }
 
@@ -1452,6 +1506,13 @@ static int64 calculate_partition_size(Oid partTableOid, Oid partOid)
 
     if (partTableRel == NULL) {
         return 0;
+    }
+
+    if (!RelationIsPartitioned(partTableRel)) {
+        relation_close(partTableRel, AccessShareLock);
+        ereport(ERROR,
+                (errcode(ERRCODE_UNDEFINED_TABLE),
+                 errmsg("relation %u is not a partitioned table", partTableOid)));
     }
 
     if (!RelationIsSubPartitioned(partTableRel)) {
@@ -1538,11 +1599,11 @@ Datum pg_partition_indexes_size_name(PG_FUNCTION_ARGS)
     names = stringToQualifiedNameList(partTableName);
     partTableOid = RangeVarGetRelid(makeRangeVarFromNameList(names), NoLock, false);
 
-    partOid = partitionNameGetPartitionOid(
+    partOid = PartitionNameGetPartitionOid(
         partTableOid, partName, PART_OBJ_TYPE_TABLE_PARTITION, NoLock, true, false, NULL, NULL, NoLock);
 
     if (!OidIsValid(partOid)) {
-        partOid = partitionNameGetPartitionOid(partTableOid, partName, PART_OBJ_TYPE_TABLE_SUB_PARTITION, NoLock, true,
+        partOid = SubPartitionNameGetSubPartitionOid(partTableOid, partName, NoLock, NoLock, true,
             false, NULL, NULL, NoLock, &subparentOid);
     }
 
@@ -1573,6 +1634,13 @@ static int64 calculate_partition_indexes_size(Oid partTableOid, Oid partOid)
 
     if (partTableRel == NULL) {
         return 0;
+    }
+
+    if (!RelationIsPartitioned(partTableRel)) {
+        relation_close(partTableRel, AccessShareLock);
+        ereport(ERROR,
+                (errcode(ERRCODE_UNDEFINED_TABLE),
+                 errmsg("relation %u is not a partitioned table", partTableOid)));
     }
 
     List *partOidList = NIL;
@@ -1979,6 +2047,7 @@ Datum pg_partition_filenode(PG_FUNCTION_ARGS)
         case PART_OBJ_TYPE_TABLE_PARTITION:
         case PART_OBJ_TYPE_INDEX_PARTITION:
         case PART_OBJ_TYPE_TOAST_TABLE:
+        case PART_OBJ_TYPE_TABLE_SUB_PARTITION:
             // okay, these have storage
             if (partRelForm->relfilenode)
                 result = partRelForm->relfilenode;

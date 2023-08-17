@@ -12,6 +12,7 @@ base_dir = contrib/whale
 include $(top_builddir)/src/Makefile.global
 
 include $(top_builddir)/$(base_dir)/configure.mk
+override CPPFLAGS := -I. -I$(srcdir) $(CPPFLAGS)
 
 ifneq "$(MAKECMDGOALS)" "clean"
   ifneq "$(MAKECMDGOALS)" "distclean"
@@ -21,7 +22,7 @@ ifneq "$(MAKECMDGOALS)" "clean"
   endif
 endif
 OBJS= analyze.o gram.o hint_gram.o keywords.o kwlookup.o parser.o \
-      parse_agg.o parse_clause.o parse_coerce.o parse_collate.o parse_cte.o \
+      parse_agg.o parse_clause.o parse_startwith.o parse_coerce.o parse_collate.o parse_cte.o \
       parse_expr.o parse_func.o parse_hint.o parse_merge.o parse_node.o parse_oper.o parse_param.o \
       parse_relation.o parse_target.o parse_type.o parse_utilcmd.o scansup.o parse_compatibility.o
 
@@ -50,9 +51,11 @@ gram.cpp: gram.y
 ifdef BISON
 	$(BISON) -d $(BISONFLAGS) -o $@ $<
 	sed -i 's/YY_NULL nullptr/YY_NULL 0/g' gram.cpp
+	sed -i 's/\# define YYINITDEPTH .*/\# define YYINITDEPTH 1000/g' gram.cpp
 else
 	@$(missing) bison $< $@
 	sed -i 's/YY_NULL nullptr/YY_NULL 0/g' gram.cpp
+	sed -i 's/\# define YYINITDEPTH .*/\# define YYINITDEPTH 1000/g' gram.cpp
 endif
 
 scan.inc: scan.l
@@ -64,7 +67,7 @@ else
 endif
 
 # Force these dependencies to be known even without dependency info built:
-gram.o keywords.o parser.o: gram.hpp
+gram.o keywords.o parser.o: gram.hpp kwlist_d.h
 
 hint_gram.o: hint_scan.inc
 ifeq ($(GCC),yes)
@@ -82,6 +85,15 @@ else
 	sed -i 's/YY_NULL nullptr/YY_NULL 0/g' hint_gram.cpp
 endif
 
+# where to find gen_keywordlist.pl and subsidiary files
+TOOLSDIR = $(top_srcdir)/src/tools
+GEN_KEYWORDLIST = $(PERL) -I $(TOOLSDIR) $(TOOLSDIR)/gen_keywordlist.pl
+GEN_KEYWORDLIST_DEPS = $(TOOLSDIR)/gen_keywordlist.pl $(TOOLSDIR)/PerfectHash.pm
+
+# generate SQL keyword lookup table to be included into keywords*.o.
+kwlist_d.h: $(top_builddir)/$(base_dir)/include/plugin_parser/kwlist.h $(GEN_KEYWORDLIST_DEPS)
+	$(GEN_KEYWORDLIST) --extern -o $(top_builddir)/$(base_dir)/include/plugin_parser $(top_builddir)/$(base_dir)/include/plugin_parser/kwlist.h
+
 hint_scan.inc: hint_scan.l | scan.inc
 ifdef FLEX
 	$(FLEX) $(FLEXFLAGS) -o'$@' $<
@@ -97,7 +109,7 @@ hint_gram.o: hint_gram.hpp
 clean distclean maintainer-clean:
 	rm -f lex.backup
 	rm -f gram.cpp gram.hpp scan.inc hint_gram.hpp hint_gram.cpp
+	rm -f kwlist_d.h
 
- 
 maintainer-check:
 	$(PERL) $(top_srcdir)/src/tools/check_keywords.pl $(top_srcdir)

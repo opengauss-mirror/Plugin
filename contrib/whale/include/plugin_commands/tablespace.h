@@ -15,6 +15,7 @@
 #define TABLESPACE_H
 
 #include "access/xloginsert.h"
+#include "catalog/objectaddress.h"
 #include "lib/stringinfo.h"
 #include "nodes/parsenodes.h"
 #include "workload/workload.h"
@@ -30,7 +31,7 @@
 #define CRITICA_POINT_VALUE 104857600 /* 100 MB */
 #define TABLESPACE_THRESHOLD_RATE 0.9 /* threshold rate */
 #define TABLESPACE_UNLIMITED_STRING "unlimited"
-#define PG_LOCATION_DIR "pg_location"
+#define PG_LOCATION_DIR (g_instance.datadir_cxt.locationDir)
 
 typedef struct TableSpaceUsageSlot {
     uint64 maxSize;
@@ -54,9 +55,9 @@ public:
     static int ShmemSize(void);
     static void Init(void);
     static void IsExceedMaxsize(Oid tableSpaceOid, uint64 requestSize, bool segment);
-
-private:
     static bool IsLimited(Oid tableSpaceOid, uint64* maxSize);
+    
+private:
     static inline int GetBucketIndex(Oid tableSpaceOid);
     static inline void ResetUsageSlot(TableSpaceUsageSlot* info);
     static inline void ResetBucket(TableSpaceUsageBucket* bucket);
@@ -100,11 +101,11 @@ typedef struct TableSpaceOpts {
             relation->rd_rel->relowner, requestSize, RelationUsesSpaceType(relation->rd_rel->relpersistence)); \
     }
 
-extern void CreateTableSpace(CreateTableSpaceStmt* stmt);
+extern Oid CreateTableSpace(CreateTableSpaceStmt* stmt);
 extern void DropTableSpace(DropTableSpaceStmt* stmt);
-extern void RenameTableSpace(const char* oldname, const char* newname);
-extern void AlterTableSpaceOwner(const char* name, Oid newOwnerId);
-extern void AlterTableSpaceOptions(AlterTableSpaceOptionsStmt* stmt);
+extern ObjectAddress RenameTableSpace(const char* oldname, const char* newname);
+extern ObjectAddress AlterTableSpaceOwner(const char* name, Oid newOwnerId);
+extern Oid AlterTableSpaceOptions(AlterTableSpaceOptionsStmt* stmt);
 extern bool IsSpecifiedTblspc(Oid spcOid, const char* specifedTblspc);
 
 extern void TablespaceCreateDbspace(Oid spcNode, Oid dbNode, bool isRedo);

@@ -116,7 +116,7 @@
 #include "catalog/storage_gtt.h"
 #include "executor/executor.h"
 #include "foreign/foreign.h"
-#include "plugin_mb/pg_wchar.h"
+#include "mb/pg_wchar.h"
 #include "miscadmin.h"
 #include "nodes/makefuncs.h"
 #include "nodes/nodeFuncs.h"
@@ -130,15 +130,15 @@
 #include "optimizer/streamplan.h"
 #include "optimizer/var.h"
 #include "optimizer/planner.h"
-#include "plugin_parser/parse_clause.h"
-#include "plugin_parser/parse_coerce.h"
-#include "plugin_parser/parsetree.h"
-#include "plugin_parser/parse_relation.h"
+#include "parser/parse_clause.h"
+#include "parser/parse_coerce.h"
+#include "parser/parsetree.h"
+#include "parser/parse_relation.h"
 #include "pgstat.h"
 #include "utils/acl.h"
 #include "utils/builtins.h"
 #include "utils/bytea.h"
-#include "utils/date.h"
+#include "plugin_utils/date.h"
 #include "utils/datum.h"
 #include "utils/expr_distinct.h"
 #include "utils/extended_statistics.h"
@@ -151,10 +151,13 @@
 #include "utils/selfuncs.h"
 #include "utils/spccache.h"
 #include "utils/syscache.h"
-#include "utils/timestamp.h"
+#include "plugin_utils/timestamp.h"
 #include "utils/snapmgr.h"
 #include "utils/typcache.h"
 #include "utils/memutils.h"
+#include "optimizer/gplanmgr.h"
+#include "instruments/instr_statement.h"
+
 #ifdef PGXC
 #include "pgxc/pgxc.h"
 #include "access/transam.h"
@@ -196,6 +199,14 @@ static Const* string_to_bytea_const(const char* str, size_t str_len);
 static List* specialExpr_group_num(PlannerInfo* root, List* nodeList, double* numdistinct, double rows);
 static List* add_unique_group_var(
     PlannerInfo* root, List* varinfos, Node* var, VariableStatData* vardata, STATS_EST_TYPE eType = STATS_TYPE_LOCAL);
+#ifndef ENABLE_MULTIPLE_NODES
+static double var_eq_const_histogram(VariableStatData* vardata, double hight_of_histogram, double otherdistinct,
+    Datum constval);
+static double var_eq_const_selectivity(VariableStatData *vardata, double selec, double otherdistinct, Datum constval);
+static int binary_search_hist (int low, int high, Datum* histogram, Datum constval, FmgrInfo *leop);
+static int get_num_eq_slot (int i, Datum* histogram, int nvalues, Datum constval, FmgrInfo *eqop);
+static FmgrInfo get_op(Oid type, Oid accessMethodId, StrategyNumber strategy);
+#endif
 extern double get_join_ratio(VariableStatData* vardata, SpecialJoinInfo* sjinfo);
 bool can_use_possion(VariableStatData* vardata, SpecialJoinInfo* sjinfo, double* ratio);
 extern Datum pg_stat_get_last_analyze_time(PG_FUNCTION_ARGS);
@@ -441,16 +452,15 @@ static double var_eq_const(VariableStatData* vardata, Oid opera, Datum constval,
                     extrapolationselec = numbers[nnumbers - 1];
             }
 
-            /*
-             * and in fact it's probably a good deal less. We approximate that
-             * all the not-common values share this remaining fraction
-             * equally, so we divide by the number of other distinct values.
-             */
             otherdistinct =
                 get_variable_numdistinct(vardata, &isdefault, false, 1.0, NULL, STATS_TYPE_GLOBAL) - nnumbers;
+#ifndef ENABLE_MULTIPLE_NODES
+            /* Check whether the const is in any of histogram buckets */
+            selec = var_eq_const_selectivity(vardata, selec, otherdistinct, constval);
+#else
             if (otherdistinct > 1)
                 selec /= otherdistinct;
-
+#endif
             /*
              * Another cross-check: selectivity shouldn't be estimated as more
              * than the least common "most common value".
@@ -1068,6 +1078,15 @@ Datum scalarltsel(PG_FUNCTION_ARGS)
     Oid opera = PG_GETARG_OID(1);
     List* args = (List*)PG_GETARG_POINTER(2);
     int varRelid = PG_GETARG_INT32(3);
+    float8 selec;
+
+    selec = scalarltsel_internal(root, opera, args, varRelid);
+
+    PG_RETURN_FLOAT8(selec);
+}
+
+float8 scalarltsel_internal(PlannerInfo* root, Oid opera, List* args, int varRelid)
+{
     VariableStatData vardata;
     vardata.statsTuple = NULL;
     vardata.freefunc = NULL;
@@ -1085,14 +1104,14 @@ Datum scalarltsel(PG_FUNCTION_ARGS)
      * then punt and return a default estimate.
      */
     if (!get_restriction_variable(root, args, varRelid, &vardata, &other, &varonleft))
-        PG_RETURN_FLOAT8(DEFAULT_INEQ_SEL);
+        return DEFAULT_INEQ_SEL;
 
     /*
      * Can't do anything useful if the something is not a constant, either.
      */
     if (!IsA(other, Const)) {
         ReleaseVariableStats(vardata);
-        PG_RETURN_FLOAT8(DEFAULT_INEQ_SEL);
+        return DEFAULT_INEQ_SEL;
     }
 
     /*
@@ -1101,7 +1120,7 @@ Datum scalarltsel(PG_FUNCTION_ARGS)
      */
     if (((Const*)other)->constisnull) {
         ReleaseVariableStats(vardata);
-        PG_RETURN_FLOAT8(0.0);
+        return 0.0;
     }
     constval = ((Const*)other)->constvalue;
     consttype = ((Const*)other)->consttype;
@@ -1118,7 +1137,7 @@ Datum scalarltsel(PG_FUNCTION_ARGS)
         if (!opera) {
             /* Use default selectivity (should we raise an error instead?) */
             ReleaseVariableStats(vardata);
-            PG_RETURN_FLOAT8(DEFAULT_INEQ_SEL);
+            return DEFAULT_INEQ_SEL;
         }
         isgt = true;
     }
@@ -1127,7 +1146,7 @@ Datum scalarltsel(PG_FUNCTION_ARGS)
 
     ReleaseVariableStats(vardata);
 
-    PG_RETURN_FLOAT8((float8)selec);
+    return (float8)selec;
 }
 
 /*
@@ -3569,6 +3588,7 @@ double estimate_num_groups(PlannerInfo* root, List* groupExprs, double input_row
         oldcontext = MemoryContextSwitchTo(ExtendedStat);
         es = New(ExtendedStat) ES_SELECTIVITY();
         (void)es->calculate_selectivity(root, varinfos, NULL, JOIN_INNER, NULL, ES_GROUPBY, eType);
+        es->clear();
         (void)MemoryContextSwitchTo(oldcontext);
         varinfos = es->unmatched_clause_group;
     }
@@ -4020,6 +4040,8 @@ static double convert_numeric_to_scalar(Datum value, Oid typid)
     switch (typid) {
         case BOOLOID:
             return (double)DatumGetBool(value);
+        case INT1OID:
+            return (double)DatumGetInt8(value);
         case INT2OID:
             return (double)DatumGetInt16(value);
         case INT4OID:
@@ -4894,9 +4916,11 @@ static void examine_simple_variable(PlannerInfo* root, Var* var, VariableStatDat
          * This is a temporary fix for mislocated varattno after inlist2join
          * optimization.
          */
-        if (!rel->subroot->parse->is_from_inlist2join_rewrite) {
-            subquery = rel->subroot->parse;
+        if (rel->subroot->parse->is_from_inlist2join_rewrite) {
+            return;
         }
+        subquery = rel->subroot->parse;
+
         Assert(IsA(subquery, Query));
 
         /* Get the subquery output expression referenced by the upper Var */
@@ -4978,6 +5002,8 @@ statistic_proc_security_check(const VariableStatData *vardata, Oid func_oid)
 
     if (get_func_leakproof(func_oid))
         return true;
+    
+    instr_stmt_report_cause_type(NUM_F_LEAKPROOF);
 
     ereport(DEBUG2,
             (errmodule(MOD_OPT),
@@ -5398,7 +5424,7 @@ static bool get_actual_variable_range(PlannerInfo* root, VariableStatData* varda
          * The first index column must match the desired variable and sort
          * operator --- but we can use a descending-order index.
          */
-        if (!match_index_to_operand(vardata->var, 0, index))
+        if (!match_index_to_operand(vardata->var, 0, index, true))
             continue;
         switch (get_op_opfamily_strategy(sortop, index->sortopfamily[0])) {
             case BTLessStrategyNumber:
@@ -5655,7 +5681,7 @@ static Pattern_Prefix_Status like_fixed_prefix(
                     errmsg("case insensitive matching not supported on type bytea")));
 
         /* If case-insensitive, we need locale info */
-        if (lc_ctype_is_c(collation))
+        if (lc_ctype_is_c(collation) || COLLATION_IN_B_FORMAT(collation))
             locale_is_c = true;
         else if (collation != DEFAULT_COLLATION_OID) {
             if (!OidIsValid(collation)) {
@@ -5718,7 +5744,7 @@ static Pattern_Prefix_Status like_fixed_prefix(
         *prefix_const = string_to_const(match, typeId);
     else
         *prefix_const = string_to_bytea_const(match, match_pos);
-
+    (*prefix_const)->constcollid = patt_const->constcollid;
     if (rest_selec != NULL)
         *rest_selec = like_selectivity(&patt[pos], pattlen - pos, case_insensitive);
 
@@ -5769,6 +5795,7 @@ static Pattern_Prefix_Status regex_fixed_prefix(
     }
 
     *prefix_const = string_to_const(prefix, typeId);
+    (*prefix_const)->constcollid = patt_const->constcollid;
 
     if (rest_selec != NULL) {
         if (exact) {
@@ -5790,6 +5817,38 @@ static Pattern_Prefix_Status regex_fixed_prefix(
         return Pattern_Prefix_Partial;
 }
 
+static Pattern_Prefix_Status like_fixed_prefix_with_encoding(
+    Const* patt_const, bool case_insensitive, Oid collation, Const** prefix_const, Selectivity* rest_selec)
+{
+    Pattern_Prefix_Status result;
+    int tmp_encoding = get_valid_charset_by_collation(patt_const->constcollid);
+    int db_encoding = GetDatabaseEncoding();
+    if (db_encoding == tmp_encoding) {
+        return like_fixed_prefix(patt_const, case_insensitive, collation, prefix_const, rest_selec);
+    }
+
+    DB_ENCODING_SWITCH_TO(tmp_encoding);
+    result = like_fixed_prefix(patt_const, case_insensitive, collation, prefix_const, rest_selec);
+    DB_ENCODING_SWITCH_BACK(db_encoding);
+    return result;
+}
+
+static Pattern_Prefix_Status regex_fixed_prefix_with_encoding(
+    Const* patt_const, bool case_insensitive, Oid collation, Const** prefix_const, Selectivity* rest_selec)
+{
+    Pattern_Prefix_Status result;
+    int tmp_encoding = get_valid_charset_by_collation(patt_const->constcollid);
+    int db_encoding = GetDatabaseEncoding();
+    if (db_encoding == tmp_encoding) {
+        return regex_fixed_prefix(patt_const, case_insensitive, collation, prefix_const, rest_selec);
+    }
+
+    DB_ENCODING_SWITCH_TO(tmp_encoding);
+    result = regex_fixed_prefix(patt_const, case_insensitive, collation, prefix_const, rest_selec);
+    DB_ENCODING_SWITCH_BACK(db_encoding);
+    return result;
+}
+
 Pattern_Prefix_Status pattern_fixed_prefix(
     Const* patt, Pattern_Type ptype, Oid collation, Const** prefix, Selectivity* rest_selec)
 {
@@ -5797,16 +5856,16 @@ Pattern_Prefix_Status pattern_fixed_prefix(
 
     switch (ptype) {
         case Pattern_Type_Like:
-            result = like_fixed_prefix(patt, false, collation, prefix, rest_selec);
+            result = like_fixed_prefix_with_encoding(patt, false, collation, prefix, rest_selec);
             break;
         case Pattern_Type_Like_IC:
-            result = like_fixed_prefix(patt, true, collation, prefix, rest_selec);
+            result = like_fixed_prefix_with_encoding(patt, true, collation, prefix, rest_selec);
             break;
         case Pattern_Type_Regex:
-            result = regex_fixed_prefix(patt, false, collation, prefix, rest_selec);
+            result = regex_fixed_prefix_with_encoding(patt, false, collation, prefix, rest_selec);
             break;
         case Pattern_Type_Regex_IC:
-            result = regex_fixed_prefix(patt, true, collation, prefix, rest_selec);
+            result = regex_fixed_prefix_with_encoding(patt, true, collation, prefix, rest_selec);
             break;
         default:
             ereport(ERROR,
@@ -5815,6 +5874,7 @@ Pattern_Prefix_Status pattern_fixed_prefix(
             result = Pattern_Prefix_None; /* keep compiler quiet */
             break;
     }
+
     return result;
 }
 
@@ -6064,7 +6124,7 @@ static Selectivity regex_selectivity(const char* patt, int pattlen, bool case_in
  */
 static bool byte_increment(unsigned char* ptr, int len)
 {
-    if (*ptr >= 255)
+    if (*ptr == 255)
         return false;
     (*ptr)++;
     return true;
@@ -6345,13 +6405,20 @@ static Const* string_to_bytea_const(const char* str, size_t str_len)
  * predicate_implied_by() and clauselist_selectivity(), but might be
  * problematic if the result were passed to other things.
  */
-static List* add_predicate_to_quals(IndexOptInfo* index, List* indexQuals)
+static List* add_predicate_to_quals(IndexOptInfo* index, List* indexQuals, PlannerInfo* root)
 {
     List* predExtraQuals = NIL;
     ListCell* lc = NULL;
 
     if (index->indpred == NIL)
         return indexQuals;
+
+    if (ENABLE_CACHEDPLAN_MGR && root->glob->boundParams != NULL &&
+        root->glob->boundParams->uParamInfo != DEFUALT_INFO) {
+        root->glob->boundParams->params_lazy_bind = false;
+        indexQuals = eval_const_clauses_params(root, indexQuals);
+        root->glob->boundParams->params_lazy_bind = true;
+    }
 
     foreach (lc, index->indpred) {
         Node* predQual = (Node*)lfirst(lc);
@@ -6360,6 +6427,7 @@ static List* add_predicate_to_quals(IndexOptInfo* index, List* indexQuals)
         if (!predicate_implied_by(oneQual, indexQuals))
             predExtraQuals = list_concat(predExtraQuals, oneQual);
     }
+
     /* list_concat avoids modifying the passed-in indexQuals list */
     return list_concat(predExtraQuals, indexQuals);
 }
@@ -6400,7 +6468,7 @@ static void genericcostestimate(PlannerInfo* root, IndexPath* path, double loop_
      * given indexquals to produce a more accurate idea of the index
      * selectivity.
      */
-    selectivityQuals = add_predicate_to_quals(index, indexQuals);
+    selectivityQuals = add_predicate_to_quals(index, indexQuals, root);
 
     /*
      * Check for ScalarArrayOpExpr index quals, and estimate the number of
@@ -6603,6 +6671,20 @@ Datum btcostestimate(PG_FUNCTION_ARGS)
     Cost* indexTotalCost = (Cost*)PG_GETARG_POINTER(4);
     Selectivity* indexSelectivity = (Selectivity*)PG_GETARG_POINTER(5);
     double* indexCorrelation = (double*)PG_GETARG_POINTER(6);
+
+    btcostestimate_internal(root, path, loop_count, indexStartupCost, indexTotalCost, indexSelectivity, indexCorrelation);
+
+    PG_RETURN_VOID();
+}
+
+Datum ubtcostestimate(PG_FUNCTION_ARGS)
+{
+    return btcostestimate(fcinfo);
+}
+
+void btcostestimate_internal(PlannerInfo *root, IndexPath *path, double loop_count, Cost *indexStartupCost,
+                           Cost *indexTotalCost, Selectivity *indexSelectivity, double *indexCorrelation)
+{
     IndexOptInfo* index = path->indexinfo;
     Oid relid;
     AttrNumber colnum;
@@ -6616,6 +6698,10 @@ Datum btcostestimate(PG_FUNCTION_ARGS)
     double num_sa_scans;
     ListCell* lcc = NULL;
     ListCell* lci = NULL;
+
+    if (ENABLE_CACHEDPLAN_MGR && root->glob->boundParams != NULL) {
+        root->glob->boundParams->params_lazy_bind = false;
+    }
 
     /*
      * For a btree scan, only leading '=' quals plus inequality quals for the
@@ -6697,10 +6783,10 @@ Datum btcostestimate(PG_FUNCTION_ARGS)
             continue; /* keep compiler quiet */
         }
 
-        if (match_index_to_operand(leftop, indexcol, index)) {
+        if (match_index_to_operand(leftop, indexcol, index, true)) {
             /* clause_op is correct */
         } else {
-            Assert(match_index_to_operand(rightop, indexcol, index));
+            Assert(match_index_to_operand(rightop, indexcol, index, true));
             /* Must flip operator to get the opfamily member */
             clause_op = get_commutator(clause_op);
         }
@@ -6744,7 +6830,7 @@ Datum btcostestimate(PG_FUNCTION_ARGS)
          * index-bound quals to produce a more accurate idea of the number of
          * rows covered by the bound conditions.
          */
-        selectivityQuals = add_predicate_to_quals(index, indexBoundQuals);
+        selectivityQuals = add_predicate_to_quals(index, indexBoundQuals, root);
 
         saved_varratios = index->rel->varratio;
         index->rel->varratio = NULL;
@@ -6763,6 +6849,10 @@ Datum btcostestimate(PG_FUNCTION_ARGS)
 
     genericcostestimate(
         root, path, loop_count, numIndexTuples, indexStartupCost, indexTotalCost, indexSelectivity, indexCorrelation);
+
+    if (ENABLE_CACHEDPLAN_MGR && root->glob->boundParams != NULL && root->glob->boundParams->uParamInfo != DEFUALT_INFO) {
+        root->glob->boundParams->params_lazy_bind = true;
+    }
 
     /*
      * If we can get an estimate of the first column's ordering correlation C
@@ -6863,13 +6953,6 @@ Datum btcostestimate(PG_FUNCTION_ARGS)
     }
 
     ReleaseVariableStats(vardata);
-
-    PG_RETURN_VOID();
-}
-
-Datum ubtcostestimate(PG_FUNCTION_ARGS)
-{
-    return btcostestimate(fcinfo);
 }
 
 Datum hashcostestimate(PG_FUNCTION_ARGS)
@@ -6882,8 +6965,16 @@ Datum hashcostestimate(PG_FUNCTION_ARGS)
     Selectivity* indexSelectivity = (Selectivity*)PG_GETARG_POINTER(5);
     double* indexCorrelation = (double*)PG_GETARG_POINTER(6);
 
+    if (ENABLE_CACHEDPLAN_MGR && root->glob->boundParams != NULL) {
+        root->glob->boundParams->params_lazy_bind = false;
+    }
+
     genericcostestimate(
         root, path, loop_count, 0.0, indexStartupCost, indexTotalCost, indexSelectivity, indexCorrelation);
+
+    if (ENABLE_CACHEDPLAN_MGR && root->glob->boundParams != NULL && root->glob->boundParams->uParamInfo != DEFUALT_INFO) {
+        root->glob->boundParams->params_lazy_bind = true;
+    }
 
     PG_RETURN_VOID();
 }
@@ -6898,8 +6989,16 @@ Datum gistcostestimate(PG_FUNCTION_ARGS)
     Selectivity* indexSelectivity = (Selectivity*)PG_GETARG_POINTER(5);
     double* indexCorrelation = (double*)PG_GETARG_POINTER(6);
 
+    if (ENABLE_CACHEDPLAN_MGR && root->glob->boundParams != NULL) {
+        root->glob->boundParams->params_lazy_bind = false;
+    }
+
     genericcostestimate(
         root, path, loop_count, 0.0, indexStartupCost, indexTotalCost, indexSelectivity, indexCorrelation);
+
+    if (ENABLE_CACHEDPLAN_MGR && root->glob->boundParams != NULL && root->glob->boundParams->uParamInfo != DEFUALT_INFO) {
+        root->glob->boundParams->params_lazy_bind = true;
+    }
 
     PG_RETURN_VOID();
 }
@@ -6914,8 +7013,15 @@ Datum spgcostestimate(PG_FUNCTION_ARGS)
     Selectivity* indexSelectivity = (Selectivity*)PG_GETARG_POINTER(5);
     double* indexCorrelation = (double*)PG_GETARG_POINTER(6);
 
+    if (ENABLE_CACHEDPLAN_MGR && root->glob->boundParams != NULL) {
+        root->glob->boundParams->params_lazy_bind = false;
+    }
     genericcostestimate(
         root, path, loop_count, 0.0, indexStartupCost, indexTotalCost, indexSelectivity, indexCorrelation);
+
+    if (ENABLE_CACHEDPLAN_MGR && root->glob->boundParams != NULL && root->glob->boundParams->uParamInfo != DEFUALT_INFO) {
+        root->glob->boundParams->params_lazy_bind = true;
+    }
 
     PG_RETURN_VOID();
 }
@@ -6943,8 +7049,16 @@ Datum psortcostestimate(PG_FUNCTION_ARGS)
     const int col_tuple_multiplier_cost = 10;
     int per_cu_itemnum = DefaultFullCUSize;
 
+    if (root->glob->boundParams != NULL) {
+        root->glob->boundParams->params_lazy_bind = false;
+    }
+
     genericcostestimate(
         root, path, loop_count, 0.0, indexStartupCost, indexTotalCost, indexSelectivity, indexCorrelation);
+
+    if (root->glob->boundParams != NULL && root->glob->boundParams->uParamInfo != DEFUALT_INFO) {
+        root->glob->boundParams->params_lazy_bind = true;
+    }
 
     /*
      * psort get_tid cost is 10 times as btree, we estimate the psort tid cost based
@@ -7014,8 +7128,16 @@ Datum cbtreecostestimate(PG_FUNCTION_ARGS)
     const int col_tuple_multiplier_cost = 10;
     int per_cu_itemnum = DefaultFullCUSize;
 
+    if (ENABLE_CACHEDPLAN_MGR && root->glob->boundParams != NULL) {
+        root->glob->boundParams->params_lazy_bind = false;
+    }
+
     genericcostestimate(
         root, path, loop_count, 0.0, indexStartupCost, indexTotalCost, indexSelectivity, indexCorrelation);
+
+    if (ENABLE_CACHEDPLAN_MGR && root->glob->boundParams != NULL && root->glob->boundParams->uParamInfo != DEFUALT_INFO) {
+        root->glob->boundParams->params_lazy_bind = true;
+    }
 
     /* estimate the btree tid cost based on the former indexTotalCost */
     (*indexTotalCost) *= 10;
@@ -8879,3 +9001,190 @@ double get_windowagg_selectivity(PlannerInfo* root, WindowClause* wc, WindowFunc
 
     return selec;
 }
+#ifndef ENABLE_MULTIPLE_NODES
+static double var_eq_const_selectivity(VariableStatData *vardata, double selec, double otherdistinct, Datum constval)
+{
+    if (u_sess->attr.attr_sql.var_eq_const_selectivity == true && IsIntType(vardata->atttype)) {
+        double hist_selec = var_eq_const_histogram(vardata, selec, otherdistinct, constval);
+        if (!isnan(hist_selec)) {
+            selec = hist_selec;
+        } else if (vardata->rel->tuples >= 1.0) {
+            selec /= vardata->rel->tuples;
+            ereport(DEBUG2, (errmodule(MOD_OPT),
+                errmsg("the number of base relation tuple: %lf, selectivity of the const var: %lf",
+                       vardata->rel->tuples, selec)));
+        } else if (vardata->rel->tuples < 1.0 && otherdistinct > 1) {
+            selec /= otherdistinct;
+        } else {
+            /* do nothing */
+        }
+    } else {
+        if (otherdistinct > 1)
+            selec /= otherdistinct;
+    }
+
+    return selec;
+}
+
+/*
+ * Calculate the selectivity of const which is INT TYPE with the help of histogram.
+ *
+ * There are three situations:
+ * 1) const falls into a bucket of the histogram which left bound is equal to the right bound;
+ * 2) const falls into a bucket of the histogram which left bound is NOT equal to the right bound;
+ * 3) const is not belong to any buckets of the histogram
+ *
+ * The calculation of selectivity for 3) will be done in var_eq_const()
+ */
+static double var_eq_const_histogram(VariableStatData *vardata, double hight_of_histogram, double otherdistinct,
+    Datum constval)
+{
+    double selec = NAN;
+    Oid hist_op = InvalidOid;
+    Datum *values = NULL;
+    int nvalues = 0;
+
+    if (get_attstatsslot(vardata->statsTuple,
+                         vardata->atttype,
+                         vardata->atttypmod,
+                         STATISTIC_KIND_HISTOGRAM,
+                         InvalidOid,
+                         &hist_op,
+                         &values,
+                         &nvalues,
+                         NULL,
+                         NULL)) {
+        if (nvalues > 1) {
+            /* Use binary search to find the location of the const */
+            int num_eq_slot = 0;
+            /* For row storage, after the storage type of a table is determined,
+             * the AMs are the same as we only consider the integer consts.
+             * In this case, we just consider the storage type of the table to get AM.
+             */
+            Oid accessMethodId = InvalidOid;
+            if (vardata->rel->is_ustore)
+            {
+                accessMethodId = UBTREE_AM_OID;
+            } else {
+                accessMethodId = BTREE_AM_OID;
+            }
+            FmgrInfo leop = get_op(vardata->atttype, accessMethodId, BTLessEqualStrategyNumber);
+            FmgrInfo eqop = get_op(vardata->atttype, accessMethodId, BTEqualStrategyNumber);
+            int low = binary_search_hist(0, nvalues, values, constval, &leop);
+            if (low > nvalues ||
+                (low == 0 && !DatumGetBool(FunctionCall2Coll(&eqop, DEFAULT_COLLATION_OID, values[low], constval))) ||
+                (low == nvalues &&
+                !DatumGetBool(FunctionCall2Coll(&eqop, DEFAULT_COLLATION_OID, constval, values[low - 1])))) {
+                /* Constant is not in histogram. */
+                selec = NAN;
+                free_attstatsslot(vardata->atttype, values, nvalues, NULL, 0);
+                return selec;
+            }
+
+            /*
+             * We have values[i-1] <= constant < values[i]
+             * values[i]: high_bound of the bucket that the const falls into
+             * values[i - 1] low_bound of the bucket that the const falls into
+             */
+            num_eq_slot = get_num_eq_slot(low, values, nvalues, constval, &eqop);
+            if (num_eq_slot != 0) {
+                /* Situation 1) left bound is equal to the right bound */
+                selec = hight_of_histogram / (nvalues - 1) * num_eq_slot;
+                ereport(DEBUG2, (errmodule(MOD_OPT),
+                    errmsg("const falls into histogram with equal bounds, the selectivity is: %lf",
+                    selec)));
+            } else {
+                /* Situation 2) left bound is NOT equal to the right bound */
+                double frac = low < nvalues ?
+                    ((values[low] - values[low - 1]) * 1.0 / (values[nvalues - 1] - values[0])) :
+                    1.0 / nvalues;
+                double distinct_hist = CHECK_DISTINCT_HIST((otherdistinct * frac));
+                selec = hight_of_histogram / (nvalues - 1) / distinct_hist;
+                ereport(DEBUG2, (errmodule(MOD_OPT),
+                    errmsg("const falls into histogram with unequal bounds, the selectivity is: %lf",
+                    selec)));
+            }
+        }
+        free_attstatsslot(vardata->atttype, values, nvalues, NULL, 0);
+    }
+    return selec;
+}
+static int binary_search_hist(int low, int high, Datum *histogram, Datum constval, FmgrInfo *leop)
+{
+    int probe = 0;
+
+    while (low < high) {
+        probe = MID(low, high);
+        if (DatumGetBool(FunctionCall2Coll(leop, DEFAULT_COLLATION_OID, histogram[probe], constval))) {
+            low = probe + 1;
+        } else {
+            high = probe;
+        }
+    }
+    return low;
+}
+static int get_num_eq_slot(int i, Datum *histogram, int nvalues, Datum constval, FmgrInfo *eqop)
+{
+    int num_eq_slot = 0;
+    int index = 0;
+    /* deal with the situation where bin boundaries appear identical */
+    if (i < nvalues &&
+        DatumGetBool(FunctionCall2Coll(eqop, DEFAULT_COLLATION_OID, histogram[i], histogram[i - 1]))) {
+        num_eq_slot = 1;
+    }
+    /* deal with left equal bounds */
+    index = PREVIOUS_BOUND(i);
+    while (index >= 0 &&
+        DatumGetBool(FunctionCall2Coll(eqop, DEFAULT_COLLATION_OID, constval, histogram[i - 1])) &&
+        DatumGetBool(FunctionCall2Coll(eqop, DEFAULT_COLLATION_OID, histogram[index], histogram[i - 1]))) {
+        num_eq_slot++;
+        index--;
+    }
+    /* deal with right equal bounds */
+    index = NEXT_BOUND(i);
+    while (i < nvalues && index < nvalues &&
+        DatumGetBool(FunctionCall2Coll(eqop, DEFAULT_COLLATION_OID, histogram[i - 1], histogram[i])) &&
+        DatumGetBool(FunctionCall2Coll(eqop, DEFAULT_COLLATION_OID, histogram[i], histogram[index]))) {
+        num_eq_slot++;
+        index++;
+    }
+    return num_eq_slot;
+}
+static FmgrInfo get_op(Oid type, Oid accessMethodId, StrategyNumber strategy)
+{
+    Oid cmpopr = InvalidOid;
+    FmgrInfo opproc;
+    Oid opfamily = InvalidOid;
+    if (accessMethodId == UBTREE_AM_OID) {
+        switch (type) {
+            case INT1OID:
+                opfamily = INT1_UBTREE_FAM_OID;
+                break;
+            case INT2OID:
+            case INT4OID:
+            case INT8OID:
+                opfamily = INTEGER_UBTREE_FAM_OID;
+                break;
+        }
+    } else {
+        switch (type) {
+            case INT1OID:
+                opfamily = INT1_BTREE_FAM_OID;
+                break;
+            case INT2OID:
+            case INT4OID:
+            case INT8OID:
+                opfamily = INTEGER_BTREE_FAM_OID;
+                break;
+        }
+    }
+    cmpopr = get_opfamily_member(opfamily, type, type, strategy);
+    if (cmpopr == InvalidOid) {
+        ereport(ERROR, (errmodule(MOD_OPT), (errcode(ERRCODE_OPERATE_NOT_SUPPORTED),
+            errmsg("no <= operator for opfamily %u, with type %u", opfamily, type))));
+    }
+    fmgr_info(get_opcode(cmpopr), &opproc);
+
+    return opproc;
+}
+#endif

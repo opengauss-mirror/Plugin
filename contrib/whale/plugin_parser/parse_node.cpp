@@ -59,6 +59,8 @@ ParseState* make_parsestate(ParseState* parentParseState)
     pstate->p_plusjoin_rte_info = NULL;
     pstate->p_rawdefaultlist = NIL;
     pstate->p_has_ignore = false;
+    pstate->p_indexhintLists = NIL;
+    pstate->p_is_flt_frame = false;
 
     if (parentParseState != NULL) {
         pstate->p_sourcetext = parentParseState->p_sourcetext;
@@ -349,7 +351,7 @@ ArrayRef* transformArraySubscripts(ParseState* pstate, Node* arrayBase, Oid arra
         AssertEreport(IsA(ai, A_Indices), MOD_OPT, "");
         if (isSlice) {
             if (ai->lidx) {
-                subexpr = transformExpr(pstate, ai->lidx);
+                subexpr = transformExpr(pstate, ai->lidx, pstate->p_expr_kind);
                 /* If it's not int4 already, try to coerce */
                 subexpr = coerce_to_target_type(
                     pstate, subexpr, exprType(subexpr), INT4OID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
@@ -366,7 +368,7 @@ ArrayRef* transformArraySubscripts(ParseState* pstate, Node* arrayBase, Oid arra
             }
             lowerIndexpr = lappend(lowerIndexpr, subexpr);
         }
-        subexpr = transformExpr(pstate, ai->uidx);
+        subexpr = transformExpr(pstate, ai->uidx, pstate->p_expr_kind);
         if (get_typecategory(arrayType) == TYPCATEGORY_TABLEOF_VARCHAR) {
             isIndexByVarchar = true;
         }
@@ -457,6 +459,7 @@ Const* make_const(ParseState* pstate, Value* value, int location)
     Datum val;
     int64 val64;
     Oid typid;
+    Oid collid = InvalidOid;
     int typelen;
     bool typebyval = false;
     ParseCallbackState pcbstate;
@@ -516,6 +519,9 @@ Const* make_const(ParseState* pstate, Value* value, int location)
             typid = UNKNOWNOID; /* will be coerced later */
             typelen = -2;       /* cstring-style varwidth type */
             typebyval = false;
+            if (OidIsValid(GetCollationConnection())) {
+                collid = GetCollationConnection();
+            }
             break;
 
         case T_BitString:
@@ -543,7 +549,7 @@ Const* make_const(ParseState* pstate, Value* value, int location)
 
     con = makeConst(typid,
         -1,         /* typmod -1 is OK for all cases */
-        InvalidOid, /* all cases are uncollatable types */
+        collid, /* all cases are uncollatable types */
         typelen,
         val,
         false,

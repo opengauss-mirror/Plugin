@@ -14,10 +14,12 @@
  */
 
 #include "postgres.h"
+#include "plugin_utils/date.h"
 #include "knl/knl_variable.h"
 
 #include <limits.h>
 #include <float.h>
+#include <ctype.h>
 
 #include "access/hash.h"
 #include "plugin_commands/copy.h"
@@ -26,8 +28,7 @@
 #include "plugin_parser/scansup.h"
 #include "utils/array.h"
 #include "utils/builtins.h"
-#include "utils/date.h"
-#include "utils/datetime.h"
+#include "plugin_utils/datetime.h"
 #include "utils/formatting.h"
 #include "utils/nabstime.h"
 #include "utils/sortsupport.h"
@@ -45,11 +46,14 @@
  */
 
 static void EncodeSpecialDate(DateADT dt, char* str, int strlen);
+#ifndef WHALE
 static int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec);
-static int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
+#endif
+static int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 static int tm2timetz(struct pg_tm* tm, fsec_t fsec, int tz, TimeTzADT* result);
 static void AdjustTimeForTypmod(TimeADT* time, int32 typmod);
+static int getStartingDigits(char* str);
 
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -102,9 +106,85 @@ static char* anytime_typmodout(bool istz, int32 typmod)
     return res;
 }
 
+/*
+ * Get starting digits of input string and return as int
+ *
+ * If the first character is not digit, return -1. NOTICE that if the first character is '+' or '-',
+ * it will consider it as invalid digit. So handle starting '+' nad '-' before using this function.
+ */
+static int getStartingDigits(char* str)
+{
+    int digitnum = 0;
+    long trunc_val = 0;
+    while (isdigit((unsigned char)*str)) {
+        trunc_val = trunc_val * 10 + (*str++ - '0');
+        digitnum++;
+        if (trunc_val > PG_INT32_MAX) {
+            return PG_INT32_MAX;
+        }
+    }
+    return digitnum == 0 ? -1 : trunc_val;
+}
+
 /*****************************************************************************
  *	 Date ADT
  *****************************************************************************/
+
+/* DateTypeCheck()
+ * Check date format, and convert to internal date format.
+ */
+static bool DateTypeCheck(char* str, bool can_ignore, struct pg_tm* tm, DateADT &date, fsec_t &fsec, int &dterr)
+{
+    int tzp;
+    int dtype = DTK_NUMBER;
+    int nf;
+    char* field[MAXDATEFIELDS];
+    int ftype[MAXDATEFIELDS];
+    char workbuf[MAXDATELEN + 1];
+    /*
+     * default pg date formatting parsing.
+     */
+    dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
+    if (dterr == 0)
+        dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tzp);
+    if (dterr != 0) {
+        DateTimeParseError(dterr, str, "date", can_ignore);
+        /*
+         * if reporting warning in DateTimeParseError, return 1970-01-01
+         */
+        date = UNIX_EPOCH_JDATE - POSTGRES_EPOCH_JDATE;
+        return true;
+    }
+
+    switch (dtype) {
+        case DTK_DATE:
+            break;
+
+        case DTK_CURRENT:
+            ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                    errmsg("date/time value \"current\" is no longer supported")));
+            GetCurrentDateTime(tm);
+            break;
+
+        case DTK_EPOCH:
+            GetEpochTime(tm);
+            break;
+
+        case DTK_LATE:
+            DATE_NOEND(date);
+            return true;
+
+        case DTK_EARLY:
+            DATE_NOBEGIN(date);
+            return true;
+
+        default:
+            DateTimeParseError(DTERR_BAD_FORMAT, str, "date");
+            break;
+    }
+    return false;
+}
 
 /* date_in()
  * Given date text string, convert to internal date format.
@@ -113,15 +193,9 @@ Datum date_in(PG_FUNCTION_ARGS)
 {
     char* str = PG_GETARG_CSTRING(0);
     DateADT date;
+    int dterr;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
-    int tzp;
-    int dtype = DTK_NUMBER;
-    int nf;
-    int dterr;
-    char* field[MAXDATEFIELDS];
-    int ftype[MAXDATEFIELDS];
-    char workbuf[MAXDATELEN + 1];
     char* date_fmt = NULL;
 
     /*
@@ -135,46 +209,47 @@ Datum date_in(PG_FUNCTION_ARGS)
 
         /* the following logic shared from to_date(). */
         to_timestamp_from_format(tm, &fsec, str, (void*)date_fmt);
-    } else {
-        /*
-         * default pg date formatting parsing.
-         */
-        dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
-        if (dterr == 0)
-            dterr = DecodeDateTime(field, ftype, nf, &dtype, tm, &fsec, &tzp);
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "date");
-
-        switch (dtype) {
-            case DTK_DATE:
-                break;
-
-            case DTK_CURRENT:
-                ereport(ERROR,
-                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                        errmsg("date/time value \"current\" is no longer supported")));
-
-                GetCurrentDateTime(tm);
-                break;
-
-            case DTK_EPOCH:
-                GetEpochTime(tm);
-                break;
-
-            case DTK_LATE:
-                DATE_NOEND(date);
-                PG_RETURN_DATEADT(date);
-
-            case DTK_EARLY:
-                DATE_NOBEGIN(date);
-                PG_RETURN_DATEADT(date);
-
-            default:
-                DateTimeParseError(DTERR_BAD_FORMAT, str, "date");
-                break;
-        }
+    } else if (DateTypeCheck(str, fcinfo->can_ignore, tm, date, fsec, dterr)) {
+        PG_RETURN_DATEADT(date);
     }
 
+    /*
+     * the following logic is unified for date parsing.
+     */
+    if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday))
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date out of range: \"%s\"", str)));
+
+    date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
+
+    PG_RETURN_DATEADT(date);
+}
+
+Datum input_date_in(char* str, bool can_ignore)
+{
+    if (str == NULL) {
+        return (Datum)0;
+    }
+    DateADT date;
+    int dterr;
+    fsec_t fsec;
+    struct pg_tm tt, *tm = &tt;
+
+    if (u_sess->attr.attr_common.enable_iud_fusion) {
+        dterr = ParseIudDateOnly(str, tm);
+        if (dterr == 0) {
+            if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday)) {
+                ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date out of range: \"%s\"", str)));
+            }
+            date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
+
+            PG_RETURN_DATEADT(date);
+        }
+        
+    }
+
+    if (DateTypeCheck(str, can_ignore, tm, date, fsec, dterr)) {
+        PG_RETURN_DATEADT(date);
+    }
     /*
      * the following logic is unified for date parsing.
      */
@@ -210,6 +285,27 @@ Datum date_out(PG_FUNCTION_ARGS)
 
     result = pstrdup(buf);
     PG_RETURN_CSTRING(result);
+}
+
+char* output_date_out(DateADT date)
+{
+    struct pg_tm tt, *tm = &tt;
+
+    u_sess->utils_cxt.dateoutput_buffer[0] = '\0';
+
+    if (DATE_NOT_FINITE(date))
+        EncodeSpecialDate(date, u_sess->utils_cxt.dateoutput_buffer, MAXDATELEN + 1);
+    else {
+        if (unlikely(date > 0 && (INT_MAX - date < POSTGRES_EPOCH_JDATE))) {
+            ereport(ERROR,
+                (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                    errmsg("input julian date is overflow")));
+        }
+        j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+        EncodeDateOnly(tm, u_sess->time_cxt.DateStyle, u_sess->utils_cxt.dateoutput_buffer);
+    }
+
+    return u_sess->utils_cxt.dateoutput_buffer;
 }
 
 /*
@@ -1078,7 +1174,7 @@ Datum time_in(PG_FUNCTION_ARGS)
     int nf;
     int dterr;
     char workbuf[MAXDATELEN + 1];
-    char* field[MAXDATEFIELDS];
+    char* field[MAXDATEFIELDS] = {0};
     int dtype;
     int ftype[MAXDATEFIELDS];
     char* time_fmt = NULL;
@@ -1101,8 +1197,25 @@ Datum time_in(PG_FUNCTION_ARGS)
         dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
         if (dterr == 0)
             dterr = DecodeTimeOnly(field, ftype, nf, &dtype, tm, &fsec, &tz);
-        if (dterr != 0)
-            DateTimeParseError(dterr, str, "time");
+        if (dterr != 0) {
+            DateTimeParseError(dterr, str, "time", fcinfo->can_ignore);
+            /*
+             * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
+             * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
+             */
+            char* field_str = field[0];
+            if (field_str == NULL) {
+                PG_RETURN_TIMEADT(0);
+            }
+            if (*field_str == '+') {
+                field_str++;
+            }
+            int trunc_val = getStartingDigits(field_str);
+            if (trunc_val < 0 || trunc_val >= 60) {
+                PG_RETURN_TIMEADT(0);
+            }
+            PG_RETURN_TIMEADT(trunc_val * 1000 * 1000);
+        }
     }
 
     /*
@@ -1117,7 +1230,11 @@ Datum time_in(PG_FUNCTION_ARGS)
 /* tm2time()
  * Convert a tm structure to a time data type.
  */
+#ifdef WHALE
+int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result)
+#else
 static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result)
+#endif
 {
 #ifdef HAVE_INT64_TIMESTAMP
     *result = ((((tm->tm_hour * MINS_PER_HOUR + tm->tm_min) * SECS_PER_MINUTE) + tm->tm_sec) * USECS_PER_SEC) + fsec;
@@ -1134,7 +1251,11 @@ static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result)
  * If out of this range, leave as UTC (in practice that could only happen
  * if pg_time_t is just 32 bits) - thomas 97/05/27
  */
+#ifdef WHALE
+int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec)
+#else
 static int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec)
+#endif
 {
 #ifdef HAVE_INT64_TIMESTAMP
     tm->tm_hour = time / USECS_PER_HOUR;
@@ -1825,19 +1946,37 @@ Datum timetz_in(PG_FUNCTION_ARGS)
     TimeTzADT* result = NULL;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
-    int tz;
+    int tz = 0;
     int nf;
     int dterr;
     char workbuf[MAXDATELEN + 1];
-    char* field[MAXDATEFIELDS];
+    char* field[MAXDATEFIELDS] = {0};
     int dtype;
     int ftype[MAXDATEFIELDS];
 
     dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
     if (dterr == 0)
         dterr = DecodeTimeOnly(field, ftype, nf, &dtype, tm, &fsec, &tz);
-    if (dterr != 0)
-        DateTimeParseError(dterr, str, "time with time zone");
+    if (dterr != 0) {
+        DateTimeParseError(dterr, str, "time with time zone", fcinfo->can_ignore);
+        /*
+         * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
+         * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
+         */
+        char* field_str = field[0];
+        if (field_str == NULL) {
+            tm->tm_sec = 0;
+        } else {
+            if (*field_str == '+') {
+                field_str++;
+            }
+            int trunc_val = getStartingDigits(field_str);
+            tm->tm_sec = (trunc_val < 0 || trunc_val >= 60) ? 0 : trunc_val;
+        }
+        tm->tm_hour = 0;
+        tm->tm_min = 0;
+        fsec = 0;
+    }
 
     result = (TimeTzADT*)palloc(sizeof(TimeTzADT));
     tm2timetz(tm, fsec, tz, result);

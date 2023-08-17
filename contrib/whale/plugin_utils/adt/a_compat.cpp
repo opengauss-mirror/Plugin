@@ -1,18 +1,19 @@
 /* -------------------------------------------------------------------------
- * oracle_compat.c
- *	Oracle compatible functions.
+ * orafce_compat.c
+ *	Orafce compatible functions.
  *
  * Copyright (c) 1996-2012, PostgreSQL Global Development Group
  *
  *
  * IDENTIFICATION
- *	src/backend/utils/adt/oracle_compat.c
+ *	src/backend/utils/adt/orafce_compat.c
  *
  * -------------------------------------------------------------------------
  */
 #include "postgres.h"
 #include "knl/knl_variable.h"
 
+#include "catalog/pg_proc.h"
 #include "common/int.h"
 #include "utils/builtins.h"
 #include "utils/formatting.h"
@@ -21,6 +22,9 @@
 #include "miscadmin.h"
 
 static text* dotrim(const char* string, int stringlen, const char* set, int setlen, bool doltrim, bool dortrim);
+
+/* Upper limit on total width of the padded output of *pad functions */
+#define PAD_MAX 4000
 
 /********************************************************************
  *
@@ -39,11 +43,8 @@ static text* dotrim(const char* string, int stringlen, const char* set, int setl
 Datum lower(PG_FUNCTION_ARGS)
 {
     text* in_string = PG_GETARG_TEXT_PP(0);
-    if (unlikely(VARATT_IS_HUGE_TOAST_POINTER(in_string))) {
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                errmsg("lower() arguments cannot exceed 1GB")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, in_string, "lower()");
+
     char* out_string = NULL;
     text* result = NULL;
 
@@ -71,11 +72,8 @@ Datum lower(PG_FUNCTION_ARGS)
 Datum upper(PG_FUNCTION_ARGS)
 {
     text* in_string = PG_GETARG_TEXT_PP(0);
-    if (unlikely(VARATT_IS_HUGE_TOAST_POINTER(in_string))) {
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                errmsg("upper() arguments cannot exceed 1GB")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, in_string, "upper()");
+
     char* out_string = NULL;
     text* result = NULL;
 
@@ -108,6 +106,7 @@ Datum initcap(PG_FUNCTION_ARGS)
     text* in_string = PG_GETARG_TEXT_PP(0);
     char* out_string = NULL;
     text* result = NULL;
+    FUNC_CHECK_HUGE_POINTER(false, in_string, "initcap()");
 
     out_string = str_initcap(VARDATA_ANY(in_string), VARSIZE_ANY_EXHDR(in_string), PG_GET_COLLATION());
     result = cstring_to_text(out_string);
@@ -134,82 +133,200 @@ Datum initcap(PG_FUNCTION_ARGS)
 
 Datum lpad(PG_FUNCTION_ARGS)
 {
-    text* string1 = PG_GETARG_TEXT_PP(0);
-    int32 len = PG_GETARG_INT32(1);
-    text* string2 = PG_GETARG_TEXT_PP(2);
-    text* ret = NULL;
-    char *ptr1 = NULL, *ptr2 = NULL, *ptr2start = NULL, *ptr2end = NULL, *ptr_ret = NULL;
-    int m, s1len, s2len;
+    text *string1 = PG_GETARG_TEXT_PP(0);
+    int32 output_width = PG_GETARG_INT32(1);
+    text *string2 = PG_GETARG_TEXT_PP(2);
+    text *ret = NULL;
+    errno_t sret;
+    char *ptr1 = NULL, *ptr2 = NULL, *ptr2start = NULL, *ptr2end = NULL, *ptr_ret = NULL, *spc = " ";
+    int mlen, dsplen, s1blen, s2blen, hslen, total_blen = 0, s1_width = 0, s1_add_blen = 0, s2_add_blen = 0;
+    bool s2_operate = true, half_space = false, init_ptr = true;
 
-    int bytelen;
-    errno_t ss_rc;
+    /* validate output width (the 2nd argument) */
+    if (output_width < 0)
+        output_width = 0;
+    if (output_width > PAD_MAX)
+        output_width = PAD_MAX;
 
-    /* Negative len is silently taken as zero */
-    if (len < 0)
-        len = 0;
+    /* get byte-length of the 1st and 3rd argument strings */
+    s1blen = VARSIZE_ANY_EXHDR(string1);
+    s2blen = VARSIZE_ANY_EXHDR(string2);
 
-    s1len = VARSIZE_ANY_EXHDR(string1);
-    if (s1len < 0)
-        s1len = 0; /* shouldn't happen */
+    /* validate the lengths */
+    if (s1blen < 0)
+        s1blen = 0;
+    if (s2blen < 0)
+        s2blen = 0;
 
-    s2len = VARSIZE_ANY_EXHDR(string2);
-    if (s2len < 0)
-        s2len = 0; /* shouldn't happen */
+    /* if the filler length is zero disable filling */
+    if (s2blen == 0) {
+        s2_operate = false; /* turn off string2 processing flag */
+        output_width = 0; /* same behavior as Orafce database */
+    }
 
-    s1len = pg_mbstrlen_with_len(VARDATA_ANY(string1), s1len);
+    /* byte-length of half-width space */
+    hslen = pg_mblen(spc);
 
-    if (s1len > len)
-        s1len = len; /* truncate string1 to len chars */
+    /*
+     * Calculate the length of the portion of string1 to include in
+     * the final output
+     */
+    ptr1 = VARDATA_ANY(string1);
+    while (s1blen > 0) {
+        /* byte-length and display length per character of string1 */
+        mlen = pg_mblen(ptr1);
+        dsplen = pg_dsplen(ptr1);
 
-    if (s2len <= 0)
-        len = s1len; /* nothing to pad with, so don't pad */
+        /* accumulate display length of string1 */
+        s1_width += dsplen;
 
-    bytelen = pg_database_encoding_max_length() * len;
+        /*
+         * if string1 is longer/wider than the requested output_width,
+         * discard this character and prepend a half-width space instead
+         */
+        if (s1_width >= output_width) {
+            if (s1_width != output_width) {
+                /* secure bytes for a half-width space in the final output */
+                if (output_width != 0) {
+                    s1_add_blen += hslen;
+                    half_space = true;
+                }
+            } else /* exactly fits, so include this chracter */
+            {
+                s1_add_blen += mlen;
+            }
 
-    /* check for integer overflow */
-    if (len != 0 && bytelen / pg_database_encoding_max_length() != len)
-        ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
+            /*
+             * turn off string2 processing because string1 already
+             * consumed output_width
+             */
+            s2_operate = false;
 
-    ret = (text*)palloc(VARHDRSZ + bytelen);
+            /* done with string1 */
+            break;
+        }
 
-    m = len - s1len;
+        /* accumulate string1's portion of byte-length of the output */
+        s1_add_blen += mlen;
 
-    ptr2 = ptr2start = VARDATA_ANY(string2);
-    ptr2end = ptr2 + s2len;
+        /* advance one character within string1 */
+        ptr1 += mlen;
+
+        /* loop counter */
+        s1blen -= mlen;
+    }
+
+    /* Calculate the length of the portion composed of string2 to use for padding */
+    if (s2_operate) {
+        int s2_add_width = 0;
+        /* remaining part of output_width is composed of string2 */
+        s2_add_width = output_width - s1_width;
+
+        ptr2 = ptr2start = VARDATA_ANY(string2);
+        ptr2end = ptr2 + s2blen;
+
+        while (s2_add_width > 0) {
+            /*  byte-length and display length per character of string2 */
+            mlen = pg_mblen(ptr2);
+            dsplen = pg_dsplen(ptr2);
+
+            /*
+             * output_width can not fit this character of string2, so discard it and
+             * prepend a half-width space instead
+             */
+            if (dsplen > s2_add_width) {
+                s2_add_blen += hslen;
+                half_space = true;
+
+                /* done with string2 */
+                break;
+            }
+
+            /* accumulate string2's portion of byte-length of the output */
+            s2_add_blen += mlen;
+
+            /* loop counter */
+            s2_add_width -= dsplen;
+
+            /* advance one character within string2 */
+            ptr2 += mlen;
+
+            /* when get to the end of string2, reset ptr2 to the start */
+            if (ptr2 == ptr2end)
+                ptr2 = ptr2start;
+        }
+    }
+
+    /* allocate enough space to contain output_width worth of characters */
+    total_blen = s1_add_blen + s2_add_blen;
+    ret = (text *)palloc(VARHDRSZ + total_blen);
     ptr_ret = VARDATA(ret);
-    int tmp_len = 0;
 
-    while (m--) {
-        int mlen = pg_mblen(ptr2);
+    /*
+     * add a half-width space as a padding necessary to satisfy the required
+     * output_width
+     *
+     * (memory already allocated as reserved by either s1_add_blen
+     *  or s2_add_blen)
+     */
+    if (half_space) {
+        sret = memcpy_s(ptr_ret, hslen, spc, hslen);
+        securec_check(sret, "", "");
+        ptr_ret += hslen;
+    }
 
-        ss_rc = memcpy_s(ptr_ret, bytelen - tmp_len, ptr2, mlen);
-        securec_check(ss_rc, "\0", "\0");
+    /* prepend string2 padding */
+    while (s2_add_blen > 0) {
+        /* reset ptr2 to the string2 start */
+        if (init_ptr) {
+            init_ptr = false;
+            ptr2 = ptr2start;
+        }
+
+        mlen = pg_mblen(ptr2);
+        if (s2_add_blen < mlen)
+            break;
+
+        sret = memcpy_s(ptr_ret, mlen, ptr2, mlen);
+        securec_check(sret, "", "");
         ptr_ret += mlen;
-        tmp_len += mlen;
         ptr2 += mlen;
-        if (ptr2 == ptr2end) /* wrap around at end of s2 */
+
+        /* loop counter */
+        s2_add_blen -= mlen;
+
+        /* when get to the end of string2, reset ptr2 back to the start */
+        if (ptr2 == ptr2end)
             ptr2 = ptr2start;
     }
 
-    ptr1 = VARDATA_ANY(string1);
+    init_ptr = true;
 
-    tmp_len = 0;
-    while (s1len--) {
-        int mlen = pg_mblen(ptr1);
+    /* string1 */
+    while (s1_add_blen > 0) {
+        /* reset ptr1 back to the start of string1 */
+        if (init_ptr) {
+            init_ptr = false;
+            ptr1 = VARDATA_ANY(string1);
+        }
 
-        ss_rc = memcpy_s(ptr_ret, bytelen - tmp_len, ptr1, mlen);
-        securec_check(ss_rc, "\0", "\0");
+        mlen = pg_mblen(ptr1);
+
+        if (s1_add_blen < mlen)
+            break;
+
+        sret = memcpy_s(ptr_ret, mlen, ptr1, mlen);
+        securec_check(sret, "", "");
         ptr_ret += mlen;
-        tmp_len += mlen;
         ptr1 += mlen;
+
+        /* loop counter */
+        s1_add_blen -= mlen;
     }
 
-    SET_VARSIZE(ret, ptr_ret - (char*)ret);
+    SET_VARSIZE(ret, ptr_ret - (char *)ret);
 
-    if (0 == VARSIZE_ANY_EXHDR(ret) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && !RETURN_NS)
-        PG_RETURN_NULL();
-    else
-        PG_RETURN_TEXT_P(ret);
+    PG_RETURN_TEXT_P(ret);
 }
 
 /********************************************************************
@@ -230,129 +347,200 @@ Datum lpad(PG_FUNCTION_ARGS)
 
 Datum rpad(PG_FUNCTION_ARGS)
 {
-    text* string1 = PG_GETARG_TEXT_PP(0);
-    int32 len = PG_GETARG_INT32(1);
-    text* string2 = PG_GETARG_TEXT_PP(2);
-    text* ret = NULL;
-    char *ptr1 = NULL, *ptr2 = NULL, *ptr2start = NULL, *ptr2end = NULL, *ptr_ret = NULL;
-    int m, s1len, s2len;
+    text *string1 = PG_GETARG_TEXT_PP(0);
+    int32 output_width = PG_GETARG_INT32(1);
+    text *string2 = PG_GETARG_TEXT_PP(2);
+    text *ret;
+    char *ptr1, *ptr2 = NULL, *ptr2start = NULL, *ptr2end = NULL, *ptr_ret, *spc = " ";
+    int mlen, dsplen, s1blen, s2blen, hslen, total_blen = 0, s1_width = 0, s1_add_blen = 0, s2_add_blen = 0;
+    bool s2_operate = true, half_space = false, init_ptr = true;
+    errno_t sret;
 
-    int bytelen;
-    errno_t ss_rc;
+    /* validate output width (the 2nd argument) */
+    if (output_width < 0)
+        output_width = 0;
+    if (output_width > PAD_MAX)
+        output_width = PAD_MAX;
 
-    /* Negative len is silently taken as zero */
-    if (len < 0)
-        len = 0;
+    /* get byte-length of the 1st and 3rd argument strings */
+    s1blen = VARSIZE_ANY_EXHDR(string1);
+    s2blen = VARSIZE_ANY_EXHDR(string2);
 
-    s1len = VARSIZE_ANY_EXHDR(string1);
-    if (s1len < 0)
-        s1len = 0; /* shouldn't happen */
+    /* validate the lengths */
+    if (s1blen < 0)
+        s1blen = 0;
+    if (s2blen < 0)
+        s2blen = 0;
 
-    s2len = VARSIZE_ANY_EXHDR(string2);
-    if (s2len < 0)
-        s2len = 0; /* shouldn't happen */
-
-    s1len = pg_mbstrlen_with_len(VARDATA_ANY(string1), s1len);
-
-    if (s1len > len)
-        s1len = len; /* truncate string1 to len chars */
-
-    if (s2len <= 0)
-        len = s1len; /* nothing to pad with, so don't pad */
-
-    bytelen = pg_database_encoding_max_length() * len;
-
-    /* Check for integer overflow */
-    if (len != 0 && bytelen / pg_database_encoding_max_length() != len)
-        ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
-
-    ret = (text*)palloc(VARHDRSZ + bytelen);
-    m = len - s1len;
-
-    ptr1 = VARDATA_ANY(string1);
-    ptr_ret = VARDATA(ret);
-    int tmp_len = 0;
-
-    while (s1len--) {
-        int mlen = pg_mblen(ptr1);
-
-        ss_rc = memcpy_s(ptr_ret, bytelen - tmp_len, ptr1, mlen);
-        securec_check(ss_rc, "\0", "\0");
-        ptr_ret += mlen;
-        tmp_len += mlen;
-        ptr1 += mlen;
+    /* if the filler length is zero disable filling */
+    if (s2blen == 0) {
+        s2_operate = false; /* turn off string2 processing flag */
+        output_width = 0; /* same behavior as Orafce database */
     }
 
-    ptr2 = ptr2start = VARDATA_ANY(string2);
-    ptr2end = ptr2 + s2len;
+    /* byte-length of half-width space */
+    hslen = pg_mblen(spc);
 
-    tmp_len = 0;
-    while (m--) {
-        int mlen = pg_mblen(ptr2);
+    /*
+     * Calculate the length of the portion of string1 to include in
+     * the final output
+     */
+    ptr1 = VARDATA_ANY(string1);
+    while (s1blen > 0) {
+        /* byte-length and display length per character of string1 */
+        mlen = pg_mblen(ptr1);
+        dsplen = pg_dsplen(ptr1);
 
-        ss_rc = memcpy_s(ptr_ret, bytelen - tmp_len, ptr2, mlen);
-        securec_check(ss_rc, "\0", "\0");
+        /* accumulate display length of string1 */
+        s1_width += dsplen;
+
+        /*
+         * if string1 is longer/wider than the requested output_width,
+         * discard this character and prepend a half-width space instead
+         */
+        if (s1_width >= output_width) {
+            if (s1_width != output_width) {
+                /* secure bytes for a half-width space in the final output */
+                if (output_width != 0) {
+                    s1_add_blen += hslen;
+                    half_space = true;
+                }
+            } else /* exactly fits, so include this chracter */
+            {
+                s1_add_blen += mlen;
+            }
+
+            /*
+             * turn off string2 processing because string1 already
+             * consumed output_width
+             */
+            s2_operate = false;
+
+            /* done with string1 */
+            break;
+        }
+
+        /* accumulate string1's portion of byte-length of the output */
+        s1_add_blen += mlen;
+
+        /* advance one character within string1 */
+        ptr1 += mlen;
+
+        /* loop counter */
+        s1blen -= mlen;
+    }
+
+    /* Calculate the length of the portion composed of string2 to use for padding */
+    if (s2_operate) {
+        int s2_add_width = 0;
+        /* remaining part of output_width is composed of string2 */
+        s2_add_width = output_width - s1_width;
+
+        ptr2 = ptr2start = VARDATA_ANY(string2);
+        ptr2end = ptr2 + s2blen;
+
+        while (s2_add_width > 0) {
+            /*  byte-length and display length per character of string2 */
+            mlen = pg_mblen(ptr2);
+            dsplen = pg_dsplen(ptr2);
+
+            /*
+             * output_width can not fit this character of string2, so discard it and
+             * prepend a half-width space instead
+             */
+            if (dsplen > s2_add_width) {
+                s2_add_blen += hslen;
+                half_space = true;
+
+                /* done with string2 */
+                break;
+            }
+
+            /* accumulate string2's portion of byte-length of the output */
+            s2_add_blen += mlen;
+
+            /* loop counter */
+            s2_add_width -= dsplen;
+
+            /* advance one character within string2 */
+            ptr2 += mlen;
+
+            /* when get to the end of string2, reset ptr2 to the start */
+            if (ptr2 == ptr2end)
+                ptr2 = ptr2start;
+        }
+    }
+
+    /* allocate enough space to contain output_width worth of characters */
+    total_blen = s1_add_blen + s2_add_blen;
+    ret = (text *)palloc(VARHDRSZ + total_blen);
+    ptr_ret = VARDATA(ret);
+
+    /* string1 */
+    while (s1_add_blen > 0) {
+        /* reset ptr1 back to the start of string1 */
+        if (init_ptr) {
+            init_ptr = false;
+            ptr1 = VARDATA_ANY(string1);
+        }
+
+        mlen = pg_mblen(ptr1);
+
+        if (s1_add_blen < mlen)
+            break;
+
+        sret = memcpy_s(ptr_ret, mlen, ptr1, mlen);
+        securec_check(sret, "", "");
         ptr_ret += mlen;
-        tmp_len += mlen;
+        ptr1 += mlen;
+
+        /* loop counter */
+        s1_add_blen -= mlen;
+    }
+
+    init_ptr = true;
+
+    /* append string2 padding */
+    while (s2_add_blen > 0) {
+        /* reset ptr2 to the string2 start */
+        if (init_ptr) {
+            init_ptr = false;
+            ptr2 = ptr2start;
+        }
+
+        mlen = pg_mblen(ptr2);
+        if (s2_add_blen < mlen)
+            break;
+
+        sret = memcpy_s(ptr_ret, mlen, ptr2, mlen);
+        securec_check(sret, "", "");
+        ptr_ret += mlen;
         ptr2 += mlen;
-        if (ptr2 == ptr2end) /* wrap around at end of s2 */
+
+        /* loop counter */
+        s2_add_blen -= mlen;
+
+        /* when get to the end of string2, reset ptr2 back to the start */
+        if (ptr2 == ptr2end)
             ptr2 = ptr2start;
     }
 
-    SET_VARSIZE(ret, ptr_ret - (char*)ret);
+    /*
+     * add a half-width space as a padding necessary to satisfy the required
+     * output_width
+     *
+     * (memory already allocated as reserved by either s1_add_blen
+     *  or s2_add_blen)
+     */
+    if (half_space) {
+        sret = memcpy_s(ptr_ret, hslen, spc, hslen);
+        securec_check(sret, "", "");
+        ptr_ret += hslen;
+    }
 
-    if (0 == VARSIZE_ANY_EXHDR(ret) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && !RETURN_NS)
-        PG_RETURN_NULL();
-    else
-        PG_RETURN_TEXT_P(ret);
-}
+    SET_VARSIZE(ret, ptr_ret - (char *)ret);
 
-/********************************************************************
- *
- * btrim
- *
- * Syntax:
- *
- *	 text btrim(text string, text set)
- *
- * Purpose:
- *
- *	 Returns string with characters removed from the front and back
- *	 up to the first character not in set.
- *
- ********************************************************************/
-
-Datum btrim(PG_FUNCTION_ARGS)
-{
-    text* string = PG_GETARG_TEXT_PP(0);
-    text* set = PG_GETARG_TEXT_PP(1);
-    text* ret = NULL;
-
-    ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set), true, true);
-
-    if ((ret == NULL || 0 == VARSIZE_ANY_EXHDR(ret)) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
-        PG_RETURN_NULL();
-    else
-        PG_RETURN_TEXT_P(ret);
-}
-
-/********************************************************************
- *
- * btrim1 --- btrim with set fixed as ' '
- *
- ********************************************************************/
-
-Datum btrim1(PG_FUNCTION_ARGS)
-{
-    text* string = PG_GETARG_TEXT_PP(0);
-    text* ret = NULL;
-
-    ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), " ", 1, true, true);
-
-    if ((ret == NULL || 0 == VARSIZE_ANY_EXHDR(ret)) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
-        PG_RETURN_NULL();
-    else
-        PG_RETURN_TEXT_P(ret);
+    PG_RETURN_TEXT_P(ret);
 }
 
 /*
@@ -512,6 +700,8 @@ Datum byteatrim(PG_FUNCTION_ARGS)
     char *ptr = NULL, *end = NULL, *ptr2 = NULL, *ptr2start = NULL, *end2 = NULL;
     int m, stringlen, setlen;
 
+    FUNC_CHECK_HUGE_POINTER(false, string, "byteatrim()");
+
     stringlen = VARSIZE_ANY_EXHDR(string);
     setlen = VARSIZE_ANY_EXHDR(set);
 
@@ -580,6 +770,8 @@ Datum ltrim(PG_FUNCTION_ARGS)
     text* set = PG_GETARG_TEXT_PP(1);
     text* ret = NULL;
 
+    FUNC_CHECK_HUGE_POINTER(false, string, "ltrim()");
+
     ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set), true, false);
 
     if ((ret == NULL || 0 == VARSIZE_ANY_EXHDR(ret)) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
@@ -598,6 +790,7 @@ Datum ltrim1(PG_FUNCTION_ARGS)
 {
     text* string = PG_GETARG_TEXT_PP(0);
     text* ret = NULL;
+    FUNC_CHECK_HUGE_POINTER(false, string, "ltrim1()");
 
     ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), " ", 1, true, false);
 
@@ -627,6 +820,7 @@ Datum rtrim(PG_FUNCTION_ARGS)
     text* string = PG_GETARG_TEXT_PP(0);
     text* set = PG_GETARG_TEXT_PP(1);
     text* ret = NULL;
+    FUNC_CHECK_HUGE_POINTER(false, string, "rtrim()");
 
     ret = dotrim(VARDATA_ANY(string), VARSIZE_ANY_EXHDR(string), VARDATA_ANY(set), VARSIZE_ANY_EXHDR(set), false, true);
 
@@ -646,8 +840,10 @@ Datum rtrim1(PG_FUNCTION_ARGS)
 {
     text* string = PG_GETARG_TEXT_PP(0);
     text* ret = NULL;
+    FUNC_CHECK_HUGE_POINTER(false, string, "rtrim1");
 
-    if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && CHAR_COERCE_COMPAT) {
+    if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && CHAR_COERCE_COMPAT
+        && fcinfo->flinfo && fcinfo->flinfo->fn_oid == RTRIM1FUNCOID) {
         /*
          * char(n) will not ignore the tailing blanks in A_FORMAT compatibility.
          * here, we just return original input.
@@ -694,6 +890,8 @@ Datum translate(PG_FUNCTION_ARGS)
     int source_len;
     int from_index;
     errno_t ss_rc;
+
+    FUNC_CHECK_HUGE_POINTER(false, string, "translate()");
 
     m = VARSIZE_ANY_EXHDR(string);
     if (m <= 0)
@@ -804,6 +1002,8 @@ Datum ascii(PG_FUNCTION_ARGS)
     text* string = PG_GETARG_TEXT_PP(0);
     int encoding = GetDatabaseEncoding();
     unsigned char* data = NULL;
+
+    FUNC_CHECK_HUGE_POINTER(false, string, "ascii()");
 
     if (VARSIZE_ANY_EXHDR(string) <= 0)
         PG_RETURN_INT32(0);
@@ -956,6 +1156,9 @@ Datum repeat(PG_FUNCTION_ARGS)
 {
     text* string = PG_GETARG_TEXT_PP(0);
     int32 count = PG_GETARG_INT32(1);
+
+    FUNC_CHECK_HUGE_POINTER(false, string, "repeat()");
+
     text* result = NULL;
     int slen, tlen;
     int i;

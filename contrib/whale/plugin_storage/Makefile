@@ -1,0 +1,23 @@
+#
+# Makefile for plugin_storage
+#
+# contrib/whale/plugin_storage/Makefile
+#
+
+subdir = contrib/whale/plugin_storage
+top_builddir = ../../../
+include $(top_builddir)/src/Makefile.global
+base_dir = contrib/whale
+include $(top_builddir)/$(base_dir)/configure.mk
+
+ifneq "$(MAKECMDGOALS)" "clean"
+  ifneq "$(MAKECMDGOALS)" "distclean"
+    ifneq "$(shell which g++ |grep hutaf_llt |wc -l)" "1"
+      -include $(DEPEND)
+    endif
+  endif
+endif
+
+OBJS = hashfunc.o
+
+include $(top_builddir)/src/gausskernel/common.mk
