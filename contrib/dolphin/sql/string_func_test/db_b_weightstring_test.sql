@@ -56,6 +56,11 @@ SELECT HEX(WEIGHT_STRING('2023-06-01 00:23:59'::timestamp as binary (20)));
 SELECT HEX(WEIGHT_STRING('2021-11-4 16:30:44.3411'::timestamptz as binary (20)));
 SELECT HEX(WEIGHT_STRING('59 minute'::interval as binary (20)));
 SELECT HEX(WEIGHT_STRING(date '2021-12-31' as binary (10)));
+select HEX(WEIGHT_STRING(b'101'));
+select HEX(WEIGHT_STRING(b'101' as char(10)));
+select HEX(WEIGHT_STRING(b'101' as char(10) level 1 desc));
+select HEX(WEIGHT_STRING(b'101' as char(10) level 1 desc reverse));
+select HEX(WEIGHT_STRING(b'101' as binary(10)));
 -- 变量测试
 SET enable_set_variable_b_format = 1;
 SET @var1 = 100;

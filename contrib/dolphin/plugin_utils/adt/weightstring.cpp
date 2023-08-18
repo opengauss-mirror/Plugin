@@ -8,6 +8,7 @@
 #include "utils/typcache.h"
 #include "utils/lsyscache.h"
 #include "utils/date.h"
+#include "utils/varbit.h"
 #include "plugin_commands/mysqlmode.h"
 
 #ifdef DOLPHIN
@@ -24,6 +25,9 @@
 
 #define TWO_NUM_ARGS 2
 #define THREE_NUM_ARGS 3
+
+#define MIN_HEX_LOOP 0
+#define MAX_HEX_LOOP 127
 
 PG_FUNCTION_INFO_V1_PUBLIC(weight_string);
 extern "C" DLL_PUBLIC Datum weight_string(PG_FUNCTION_ARGS);
@@ -43,6 +47,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(weight_string_timestamptz);
 extern "C" DLL_PUBLIC Datum weight_string_timestamptz(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(weight_string_interval);
 extern "C" DLL_PUBLIC Datum weight_string_interval(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(weight_string_bit);
+extern "C" DLL_PUBLIC Datum weight_string_bit(PG_FUNCTION_ARGS);
 
 static void store16be(pg_wchar u, char *res)
 {
@@ -105,6 +111,130 @@ static void reverse_and_transform(char *start, char *end, bool flag_dsc, bool fl
     }
 }
 
+static const char hextbl[] = "0123456789abcdef";
+
+static const int8 hexlookup[128] = {
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0,  1,  2,  3,
+    4,  5,  6,  7,  8,  9,  -1, -1, -1, -1, -1, -1, -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 10, 11, 12, 13, 14, 15, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+};
+
+static inline char get_hex(char c, bool flag, bool &isValid)
+{
+    int res = -1;
+    isValid = true;
+    if (c > MIN_HEX_LOOP && c < MAX_HEX_LOOP)
+        res = hexlookup[(unsigned char)c];
+
+    if (res < 0) {
+        if (flag)
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid hexadecimal digit: \"%c\"", c)));
+        else {
+            isValid = false;
+            return 0;
+        }
+    }
+
+    return (char)res;
+}
+
+static inline unsigned hex_decode(const char *src, unsigned len, char *dst, bool flag)
+{
+    const char *s = NULL;
+    const char *srcend;
+    char v1;
+    char v2;
+    char *p;
+
+    srcend = src + len;
+    s = src;
+    p = dst;
+    while (s < srcend) {
+        if (*s == ' ' || *s == '\n' || *s == '\t' || *s == '\r') {
+            s++;
+            continue;
+        }
+        bool isValid;
+        const int shiftLeft = 4;
+        v1 = get_hex(*s++, flag, isValid) << shiftLeft;
+        if (!isValid) {
+            *dst = 0;
+            return 0;
+        }
+        if (s >= srcend) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("invalid hexadecimal data: odd number of digits")));
+        }
+
+        v2 = get_hex(*s++, flag, isValid);
+        if (!isValid) {
+            *dst = 0;
+            return 0;
+        }
+        *p++ = v1 | v2;
+    }
+
+    return p - dst;
+}
+
+static bytea* hex_decode_internal(char* data, int dataLength)
+{
+    int resultLength;
+    int res;
+    resultLength = dataLength >> SINGLE_BYTE_LENGTH;
+    errno_t rc = EOK;
+
+    char* originData = (char*)palloc(dataLength + 1);
+    rc = memcpy_s(originData, dataLength, data, dataLength);
+    securec_check(rc, "\0", "\0");
+    originData[dataLength] = '\0';
+
+    const int evenLength = 2;
+    char* newData;
+    if (dataLength % evenLength != 0) {
+        resultLength += 1;
+        dataLength += 1;
+        newData = (char*)palloc(dataLength + 1);
+        *newData = '0';
+        rc = memcpy_s(newData + 1, dataLength - 1, data, dataLength - 1);
+        securec_check(rc, "\0", "\0");
+    } else {
+        newData = (char*)palloc(dataLength + 1);
+        rc = memcpy_s(newData, dataLength, data, dataLength);
+        securec_check(rc, "\0", "\0");
+    }
+    newData[dataLength] = '\0';
+    bytea* result = (bytea*)palloc(VARHDRSZ + resultLength);
+    res = hex_decode(newData, dataLength, VARDATA(result), false);
+    if (dataLength != 0 && res == 0) {
+        int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
+        ereport(errlevel,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("Incorrect string value: \"%s\" for function unhex ", originData)));
+    }
+    pfree(newData);
+    pfree(originData);
+    SET_VARSIZE(result, VARHDRSZ + res);
+    return result;
+}
+
+static bytea *bit_to_bytea(int64 arg_int, int len)
+{
+    char *hexResult = (char *)palloc(len + 1);
+    hexResult[len] = '\0';
+    const int andBits = 15;
+    const int rightBits = 4;
+    do {
+        hexResult[--len] = hextbl[arg_int & andBits];
+        arg_int >>= rightBits;
+    } while (len > 0);
+    bytea *decodeResult = hex_decode_internal(hexResult, strlen(hexResult));
+    pfree(hexResult);
+    return decodeResult;
+}
+
 Datum weight_string(PG_FUNCTION_ARGS)
 {
     int encoding;
@@ -138,7 +268,7 @@ Datum weight_string(PG_FUNCTION_ARGS)
         SET_VARSIZE(result, VARHDRSZ + data_len);
         PG_RETURN_TEXT_P(result);
     } else if (!strncmp(type, "CHAR", type_len)) {
-        int retlen = data_len * 2;
+        size_t retlen = data_len * 2;
         if (VARATT_IS_HUGE_TOAST_POINTER(value) || !AllocSizeIsValid(retlen)) {
             ereport(err_level, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                                 errmsg("weight_string could not support more than 1GB data")));
@@ -179,7 +309,7 @@ Datum weight_string_single(PG_FUNCTION_ARGS)
     int encoding;
     char *value = (char *)VARDATA(PG_GETARG_TEXT_P(0));
     size_t data_len = VARSIZE(PG_GETARG_TEXT_P(0)) - VARHDRSZ;
-    int retlen = data_len * 2;
+    size_t retlen = data_len * 2;
     text *result = (text *)palloc(VARHDRSZ + retlen + 1);
     char *result_string = (char *)VARDATA(result);
     int rc = memset_s(result_string, retlen + 1, ' ', retlen + 1);
@@ -214,12 +344,9 @@ Datum weight_string_single(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(result);
 }
 
-Datum weight_string_bytea(PG_FUNCTION_ARGS)
+static text* weight_string_bit_bytea_common(char* value, FunctionCallInfoData *fcinfo, size_t value_len, bool toUnicode)
 {
     if (fcinfo->nargs >= THREE_NUM_ARGS) {
-        bytea *in = PG_GETARG_BYTEA_PP(0);
-        char *value = VARDATA_ANY(in);
-        size_t value_len = VARSIZE_ANY_EXHDR(in);
         char *type = (char *)VARDATA(PG_GETARG_TEXT_P(1));
         size_t type_len = VARSIZE(PG_GETARG_TEXT_P(1)) - VARHDRSZ;
         size_t data_len = PG_GETARG_UINT32(2);
@@ -228,7 +355,7 @@ Datum weight_string_bytea(PG_FUNCTION_ARGS)
             if (VARATT_IS_HUGE_TOAST_POINTER(value) || !AllocSizeIsValid(data_len)) {
                 ereport(err_level, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                                     errmsg("weight_string could not support more than 1GB data")));
-                PG_RETURN_NULL();
+                return cstring_to_text("");
             }
 
             if (value_len > data_len)
@@ -238,18 +365,17 @@ Datum weight_string_bytea(PG_FUNCTION_ARGS)
             errno_t rc = strncpy_s((char *)VARDATA(result), data_len + SINGLE_BYTE_LENGTH, value, value_len);
             securec_check(rc, "\0", "\0");
             SET_VARSIZE(result, VARHDRSZ + data_len);
-            PG_RETURN_TEXT_P(result);
+            return result;
         } else if (!strncmp(type, "CHAR", type_len)) {
-            int retlen = data_len * 2;
+            size_t retlen = data_len * 2;
             if (VARATT_IS_HUGE_TOAST_POINTER(value) || !AllocSizeIsValid(retlen)) {
                 ereport(err_level, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                                     errmsg("weight_string could not support more than 1GB data")));
-                PG_RETURN_NULL();
+                return cstring_to_text("");
             }
             text *result = (text *)palloc0(VARHDRSZ + retlen + 1);
             char *result_string = (char *)VARDATA(result);
             char *start = result_string;
-            char *end = result_string + retlen;
 
             size_t flags = PG_GETARG_UINT32(3);
             uint flag_dsc = flags & WEIGHTSTRING_DESC_LEVEL1;
@@ -259,31 +385,40 @@ Datum weight_string_bytea(PG_FUNCTION_ARGS)
             if (encoding < 0) {
                 encoding = PG_SQL_ASCII;
             }
-
-            char_to_unicode(value, value_len, result_string, retlen, encoding);
-
+            if (toUnicode) {
+                char_to_unicode(value, value_len, result_string, retlen, encoding);
+            } else {
+                errno_t rc = strncpy_s((char *)VARDATA(result), data_len + SINGLE_BYTE_LENGTH, value, value_len);
+                securec_check(rc, "\0", "\0");
+                retlen = data_len;
+            }
+            char *end = result_string + retlen;
             if (flag_dsc || flag_rev) {
                 reverse_and_transform(start, end, flag_dsc, flag_rev);
             }
 
             SET_VARSIZE(result, VARHDRSZ + retlen);
-            PG_RETURN_TEXT_P(result);
+            return result;
         } else {
             ereport(err_level,
                     (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                      errmsg("weight_string function does not support syntax other than 'AS CHAR' and 'AS BINARY'.")));
         }
-        PG_RETURN_NULL();
+        return cstring_to_text("");
     }
-
-    text *bvalue = PG_GETARG_BYTEA_PP(0);
-    char *value = VARDATA_ANY(bvalue);
-    size_t cp_len = VARSIZE_ANY_EXHDR(bvalue);
-
-    text *result = (text *)palloc0(VARHDRSZ + cp_len + SINGLE_BYTE_LENGTH);
-    errno_t rc = strncpy_s((char *)VARDATA(result), cp_len + SINGLE_BYTE_LENGTH, value, cp_len);
+    text *result = (text *)palloc0(VARHDRSZ + value_len + SINGLE_BYTE_LENGTH);
+    errno_t rc = strncpy_s((char *)VARDATA(result), value_len + SINGLE_BYTE_LENGTH, value, value_len);
     securec_check(rc, "\0", "\0");
-    SET_VARSIZE(result, VARHDRSZ + cp_len);
+    SET_VARSIZE(result, VARHDRSZ + value_len);
+    return result;
+}
+
+Datum weight_string_bytea(PG_FUNCTION_ARGS)
+{
+    bytea *in = PG_GETARG_BYTEA_PP(0);
+    char *value = VARDATA_ANY(in);
+    size_t value_len = VARSIZE_ANY_EXHDR(in);
+    text* result = weight_string_bit_bytea_common(value, fcinfo, value_len, true);
     PG_RETURN_TEXT_P(result);
 }
 
@@ -347,21 +482,21 @@ static text* date_for_char(char *value, size_t value_len, size_t data_len, size_
     return result;
 }
 
-Datum weight_string_date_common(char* value, FunctionCallInfoData *fcinfo)
+static text* weight_string_date_common(char* value, FunctionCallInfoData *fcinfo)
 {
     if (fcinfo->nargs == TWO_NUM_ARGS) {
-        PG_RETURN_TEXT_P(cstring_to_text(value));
+        return cstring_to_text(value);
     } else if (fcinfo->nargs == THREE_NUM_ARGS) {
         size_t value_len = strlen(value);
         size_t data_len = PG_GETARG_UINT32(2);
         text* result = date_for_binary(value, value_len, data_len);
-        PG_RETURN_TEXT_P(result);
+        return result;
     } else {
         size_t value_len = strlen(value);
         size_t data_len = PG_GETARG_UINT32(2);
         size_t flags = PG_GETARG_UINT32(3);
         text* result = date_for_char(value, value_len, data_len, flags);
-        PG_RETURN_TEXT_P(result);
+        return result;
     }
 }
 
@@ -370,7 +505,9 @@ Datum weight_string_date(PG_FUNCTION_ARGS)
     char* value = NULL;
     DateADT dateVal = PG_GETARG_DATEADT(0);
     value = DatumGetCString(DirectFunctionCall1(date_out, dateVal));
-    return weight_string_date_common(value, fcinfo);
+    text* result = weight_string_date_common(value, fcinfo);
+    pfree(value);
+    PG_RETURN_TEXT_P(result);
 }
 
 
@@ -379,7 +516,9 @@ Datum weight_string_time(PG_FUNCTION_ARGS)
     char* value = NULL;
     TimeADT time = PG_GETARG_TIMEADT(0);
     value = DatumGetCString(DirectFunctionCall1(time_out, time));
-    return weight_string_date_common(value, fcinfo);
+    text* result = weight_string_date_common(value, fcinfo);
+    pfree(value);
+    PG_RETURN_TEXT_P(result);
 }
 
 Datum weight_string_timestamp(PG_FUNCTION_ARGS)
@@ -387,7 +526,9 @@ Datum weight_string_timestamp(PG_FUNCTION_ARGS)
     char* value = NULL;
     Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
     value = DatumGetCString(DirectFunctionCall1(timestamp_out, timestamp));
-    return weight_string_date_common(value, fcinfo);
+    text* result = weight_string_date_common(value, fcinfo);
+    pfree(value);
+    PG_RETURN_TEXT_P(result);
 }
 
 Datum weight_string_timestamptz(PG_FUNCTION_ARGS)
@@ -395,7 +536,9 @@ Datum weight_string_timestamptz(PG_FUNCTION_ARGS)
     char* value = NULL;
     TimestampTz timestamptz = PG_GETARG_TIMESTAMPTZ(0);
     value = DatumGetCString(DirectFunctionCall1(timestamptz_out, timestamptz));
-    return weight_string_date_common(value, fcinfo);
+    text* result = weight_string_date_common(value, fcinfo);
+    pfree(value);
+    PG_RETURN_TEXT_P(result);
 }
 
 Datum weight_string_interval(PG_FUNCTION_ARGS)
@@ -403,7 +546,21 @@ Datum weight_string_interval(PG_FUNCTION_ARGS)
     char* value = NULL;
     Interval* span = PG_GETARG_INTERVAL_P(0);
     value = DatumGetCString(DirectFunctionCall1(interval_out, PointerGetDatum(span)));
-    return weight_string_date_common(value, fcinfo);
+    text* result = weight_string_date_common(value, fcinfo);
+    pfree(value);
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum weight_string_bit(PG_FUNCTION_ARGS)
+{
+    int64 arg_int = DatumGetInt64(DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0)));
+    int bit_len = VARBITBYTES(PG_GETARG_VARBIT_P(0));
+    bytea* bvalue = bit_to_bytea(arg_int, bit_len);
+    char* value = VARDATA_ANY(bvalue);
+    size_t value_len = VARSIZE_ANY_EXHDR(value);
+    text* result = weight_string_bit_bytea_common(value, fcinfo, value_len, false);
+    pfree(bvalue);
+    PG_RETURN_TEXT_P(result);
 }
 
 #endif
