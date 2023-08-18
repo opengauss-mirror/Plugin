@@ -163,6 +163,7 @@ typedef struct BSqlPluginContext {
     int useless_lower_case_table_names;
     bool is_dolphin_call_stmt;
     bool is_binary_proto;
+    bool is_ast_stmt;
 #endif
 } bSqlPluginContext;
 
