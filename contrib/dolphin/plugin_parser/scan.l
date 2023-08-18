@@ -1609,6 +1609,7 @@ scanner_init(const char *str,
 	GetSessionContext()->paramIdx = 0;
 	GetSessionContext()->dolphin_kw_mask = 0;
 	GetSessionContext()->is_first_lable = false;
+	GetSessionContext()->is_ast_stmt = false;
 #endif
 	// Added CALL for procedure and function
 	getDynaParamSeq("init", true, true, NULL);

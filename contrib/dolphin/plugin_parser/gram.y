@@ -1467,8 +1467,9 @@ stmtmulti:	stmtmulti ';' stmt
 					else
 						$$ = NIL;
 				}
-			| AST stmt
+			| AST {GetSessionContext()->is_ast_stmt = true;} stmt
 				{
+					GetSessionContext()->is_ast_stmt = false;
 					$$ = NIL;
 				}
 		;
@@ -3931,8 +3932,12 @@ VariableShowStmt:
 				}
 			| SHOW opt_full_fields from_in dolphin_qualified_name OptDbName OptLikeOrWhere
 				{
-					SelectStmt *n = makeShowColumnsQuery($4->schemaname, $4->relname, $5, $2, $6->is_like, $6->like_or_where);
-					$$ = (Node *)n;
+					if (GetSessionContext()->is_ast_stmt) {
+						$$ = NULL;
+					} else {
+						SelectStmt *n = makeShowColumnsQuery($4->schemaname, $4->relname, $5, $2, $6->is_like, $6->like_or_where);
+						$$ = (Node *)n;
+					}
 				}
 			| SHOW FULL PROCESSLIST
 				{
@@ -3988,8 +3993,12 @@ VariableShowStmt:
 				}
 			| SHOW show_index_opt from_in dolphin_qualified_name show_index_schema_opt where_clause
 				{
-					SelectStmt *s = makeShowIndexQuery($5 ? $5 : $4->schemaname, $4->relname, $6);
-					$$ = (Node*)s;
+					if (GetSessionContext()->is_ast_stmt) {
+						$$ = NULL;
+					} else {
+						SelectStmt *s = makeShowIndexQuery($5 ? $5 : $4->schemaname, $4->relname, $6);
+						$$ = (Node*)s;
+					}
 				}
 			| SHOW opt_databases LikeOrWhere
 				{
@@ -4017,62 +4026,82 @@ VariableShowStmt:
 				}
 			| SHOW CREATE FUNCTION func_name_opt_arg
 				{
-					SelectStmt *n = NULL;
-					const char* message = "improper func name (too many dotted names)";
-					switch (list_length($4)) {
-						case 1:
-							n = findCreateProc(NULL,strVal(linitial($4)),GS_SHOW_CREATE_FUNCTION);
-							break;
-						case 2:
-							n = findCreateProc(strVal(linitial($4)),strVal(lsecond($4)),GS_SHOW_CREATE_FUNCTION);
-							break;
-						default:
-							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-							ereport(errstate,
-									(errcode(ERRCODE_SYNTAX_ERROR),
-									 errmsg("improper func name (too many dotted names): %s",
-											NameListToString($4)),
-									 parser_errposition(@1)));
-							break;
+					if (GetSessionContext()->is_ast_stmt) {
+						$$ = NULL;
+					} else {
+						SelectStmt *n = NULL;
+						const char* message = "improper func name (too many dotted names)";
+						switch (list_length($4)) {
+							case 1:
+								n = findCreateProc(NULL,strVal(linitial($4)),GS_SHOW_CREATE_FUNCTION);
+								break;
+							case 2:
+								n = findCreateProc(strVal(linitial($4)),strVal(lsecond($4)),GS_SHOW_CREATE_FUNCTION);
+								break;
+							default:
+								InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+								ereport(errstate,
+										(errcode(ERRCODE_SYNTAX_ERROR),
+										errmsg("improper func name (too many dotted names): %s",
+												NameListToString($4)),
+										parser_errposition(@1)));
+								break;
+						}
+						$$ = (Node *) n;
 					}
-					$$ = (Node *) n;
 				}
 			| SHOW CREATE PROCEDURE func_name_opt_arg
 				{
-					SelectStmt *n = NULL;
-					const char* message = "improper proc name (too many dotted names)";
-					switch (list_length($4)) {
-						case 1:
-							n = findCreateProc(NULL,strVal(linitial($4)),GS_SHOW_CREATE_PROCEDURE);
-							break;
-						case 2:
-							n = findCreateProc(strVal(linitial($4)),strVal(lsecond($4)),GS_SHOW_CREATE_PROCEDURE);
-							break;
-						default:
-							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-							ereport(errstate,
-									(errcode(ERRCODE_SYNTAX_ERROR),
-									 errmsg("improper proc name (too many dotted names): %s",
-											NameListToString($4)),
-									 parser_errposition(@1)));
-							break;
+					if (GetSessionContext()->is_ast_stmt) {
+						$$ = NULL;
+					} else {
+						SelectStmt *n = NULL;
+						const char* message = "improper proc name (too many dotted names)";
+						switch (list_length($4)) {
+							case 1:
+								n = findCreateProc(NULL,strVal(linitial($4)),GS_SHOW_CREATE_PROCEDURE);
+								break;
+							case 2:
+								n = findCreateProc(strVal(linitial($4)),strVal(lsecond($4)),GS_SHOW_CREATE_PROCEDURE);
+								break;
+							default:
+								InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+								ereport(errstate,
+										(errcode(ERRCODE_SYNTAX_ERROR),
+										errmsg("improper proc name (too many dotted names): %s",
+												NameListToString($4)),
+										parser_errposition(@1)));
+								break;
+						}
+						$$ = (Node *) n;
 					}
-					$$ = (Node *) n;
 				}
 			| SHOW CREATE TABLE dolphin_qualified_name
 				{
-					SelectStmt *n = findCreateClass($4,GS_SHOW_CREATE_TABLE);
-					$$ = (Node *) n;
+					if (GetSessionContext()->is_ast_stmt) {
+						$$ = NULL;
+					} else {
+						SelectStmt *n = findCreateClass($4,GS_SHOW_CREATE_TABLE);
+						$$ = (Node *) n;
+					}
 				}
 			| SHOW CREATE VIEW dolphin_qualified_name
 				{
-					SelectStmt *n = findCreateClass($4,GS_SHOW_CREATE_VIEW);
-					$$ = (Node *) n;
+					if (GetSessionContext()->is_ast_stmt) {
+						$$ = NULL;
+					} else {
+						SelectStmt *n = findCreateClass($4,GS_SHOW_CREATE_VIEW);
+						$$ = (Node *) n;
+					}
 				}
 			| SHOW CREATE TRIGGER qualified_name
 				{
-					SelectStmt *n = findCreateTrigger($4);
-					$$ = (Node *) n;
+					if (GetSessionContext()->is_ast_stmt) {
+						$$ = NULL;
+					} else {
+						SelectStmt *n = findCreateTrigger($4);
+						$$ = (Node *) n;
+					}
 				}
 			| SHOW CREATE opt_database ColId
 				{
@@ -27639,8 +27668,12 @@ ExplainStmt:
 				}
 		| describe_command dolphin_qualified_name
 				{
-					SelectStmt *n = checkTableExistence($2);
-					$$ = (Node *) n;
+					if (GetSessionContext()->is_ast_stmt) {
+						$$ = NULL;
+					} else {
+						SelectStmt *n = checkTableExistence($2);
+						$$ = (Node *) n;
+					}
 				}
 		;
 
