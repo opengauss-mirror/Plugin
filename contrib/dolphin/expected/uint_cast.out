@@ -1221,59 +1221,105 @@ select (1)::uint8::bool;
  t
 (1 row)
 
-select cast('-1' as uint1);
- uint1 
--------
+-- 严格模式
+drop table if exists t_longtext;
+NOTICE:  table "t_longtext" does not exist, skipping
+create table t_longtext(a longtext);
+insert into t_longtext select '-1'::uint8;
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint8
+insert into t_longtext select cast('-1' as uint1);
+WARNING:  Cast to tinyint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint1
+insert into t_longtext select cast('-1' as uint2);
+WARNING:  Cast to smallint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint2
+insert into t_longtext select cast('-1' as uint4);
+WARNING:  Cast to int unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint4
+insert into t_longtext select cast('-1' as uint8);
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint8
+insert into t_longtext select cast('-1' as unsigned);
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint8
+insert into t_longtext select cast('0' as unsigned);
+insert into t_longtext select cast('-9223372036854775808' as unsigned);
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint8
+insert into t_longtext select cast('-9223372036854775809' as unsigned);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+insert into t_longtext select cast('18446744073709551615' as unsigned);
+insert into t_longtext select cast('18446744073709551616' as unsigned);
+ERROR:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+select * from t_longtext;
+          a           
+----------------------
+ 18446744073709551615
  255
-(1 row)
-
-select cast('-1' as uint2);
- uint2 
--------
  65535
-(1 row)
-
-select cast('-1' as uint4);
-   uint4    
-------------
  4294967295
-(1 row)
-
-select cast('-1' as uint8);
-        uint8         
-----------------------
  18446744073709551615
-(1 row)
-
-select cast('-1' as unsigned);
-        uint8         
-----------------------
  18446744073709551615
-(1 row)
-
-select '-1'::uint8;
-        uint8         
-----------------------
+ 0
+ 9223372036854775808
  18446744073709551615
-(1 row)
+(9 rows)
 
-select cast('-128' as uint1);
- uint1 
--------
- 128
-(1 row)
-
-select cast('-129' as uint1);
-ERROR:  tinyint unsigned out of range
+drop table if exists t_longtext;
+-- 非严格模式
+set dolphin.sql_mode = '';
+drop table if exists t_longtext;
+NOTICE:  table "t_longtext" does not exist, skipping
+create table t_longtext(a longtext);
+insert into t_longtext select '-1'::uint8;
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint8
+insert into t_longtext select cast('-1' as uint1);
+WARNING:  Cast to tinyint unsigned converted negative integer to it's positive complement
 CONTEXT:  referenced column: uint1
-select cast('255' as uint1);
- uint1 
--------
+insert into t_longtext select cast('-1' as uint2);
+WARNING:  Cast to smallint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint2
+insert into t_longtext select cast('-1' as uint4);
+WARNING:  Cast to int unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint4
+insert into t_longtext select cast('-1' as uint8);
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint8
+insert into t_longtext select cast('-1' as unsigned);
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint8
+insert into t_longtext select cast('0' as unsigned);
+insert into t_longtext select cast('-9223372036854775808' as unsigned);
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint8
+insert into t_longtext select cast('-9223372036854775809' as unsigned);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+insert into t_longtext select cast('18446744073709551615' as unsigned);
+insert into t_longtext select cast('18446744073709551616' as unsigned);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+select * from t_longtext;
+          a           
+----------------------
+ 18446744073709551615
  255
-(1 row)
+ 65535
+ 4294967295
+ 18446744073709551615
+ 18446744073709551615
+ 0
+ 9223372036854775808
+ 9223372036854775808
+ 18446744073709551615
+ 18446744073709551615
+(11 rows)
 
-select cast('256' as uint1);
-ERROR:  tinyint unsigned out of range
-CONTEXT:  referenced column: uint1
+drop table if exists t_longtext;
+reset dolphin.sql_mode;
 drop schema uint_cast cascade;
 reset current_schema;
