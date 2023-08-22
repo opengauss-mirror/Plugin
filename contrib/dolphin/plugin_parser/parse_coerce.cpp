@@ -3056,11 +3056,21 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
          * behavior that many types had implicit (yipes!) casts to text.
          */
         if (result == COERCION_PATH_NONE) {
+#ifdef DOLPHIN
+            if (ccontext >= COERCION_ASSIGNMENT &&
+                (TypeCategory(targetTypeId) == TYPCATEGORY_STRING || targetTypeId == BLOBOID)) {
+                result = COERCION_PATH_COERCEVIAIO;
+            } else if (ccontext >= COERCION_EXPLICIT &&
+                (TypeCategory(sourceTypeId) == TYPCATEGORY_STRING || sourceTypeId == BLOBOID)) {
+                result = COERCION_PATH_COERCEVIAIO;
+            }
+#else
             if (ccontext >= COERCION_ASSIGNMENT && TypeCategory(targetTypeId) == TYPCATEGORY_STRING) {
                 result = COERCION_PATH_COERCEVIAIO;
             } else if (ccontext >= COERCION_EXPLICIT && TypeCategory(sourceTypeId) == TYPCATEGORY_STRING) {
                 result = COERCION_PATH_COERCEVIAIO;
             }
+#endif
         }
     }
 

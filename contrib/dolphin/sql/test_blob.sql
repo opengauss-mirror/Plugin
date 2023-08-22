@@ -317,5 +317,11 @@ select * from t_dezebium_0007_02;
 update t_dezebium_0007_02 set c2='101',c5='FG';
 delete from t_dezebium_0007_02 where hex(c23)=6162;
 
+create table t_blob(a blob);
+create table t_bytea(a bytea);
+insert into t_bytea values('11');
+insert into t_blob select * from t_bytea;
+select * from t_blob;
+
 drop schema test_blob cascade;
 reset current_schema;
