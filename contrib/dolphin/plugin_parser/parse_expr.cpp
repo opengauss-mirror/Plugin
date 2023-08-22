@@ -2067,6 +2067,32 @@ static Expr *ExplainFuncExpr(FuncExpr *expr)
     return ((Expr *)expr);
 }
 
+static inline bool IsSameCategory(Oid type1, Oid type2)
+{
+    bool unsigned_flag = false;
+    bool is_temporal_type1 = false;
+    CmpType cmp_type1 = map_oid_to_cmp_type(type1, &unsigned_flag, &is_temporal_type1);
+    bool is_temporal_type2 = false;
+    CmpType cmp_type2 = map_oid_to_cmp_type(type2, &unsigned_flag, &is_temporal_type2);
+    /* mixed date and other type, treat it as not same */
+    if (is_temporal_type1 != is_temporal_type2) {
+        return false;
+    }
+    /* exactly match, same category */
+    if (cmp_type1 == cmp_type2) {
+        return true;
+    }
+    /*
+     * when reach here, cmp_type1 not equal to cmp_type2, and if one of them is string, means another one is not string.
+     * return false
+     */
+    if (cmp_type1 == CMP_STRING_TYPE || cmp_type2 == CMP_STRING_TYPE) {
+        return false;
+    }
+    /* type1 and type2 are int/real/decimal, they are same category */
+    return true;
+}
+
 /*
  * handle between and case, we have two cases:
  * 1. some arg's type is for openGauss only(like money), we should use openGauss original routinue, then we do what gram.y do,
@@ -2090,18 +2116,27 @@ static Node* HandleBetweenAnd(ParseState* pstate, FuncCall* fn, List* targs)
     }
 
     bool all_type_is_common = true;
+    bool all_type_is_same = true;
+    Oid type_oid = exprType((Node*)list_nth(targs, 0));
     ListCell* args = NULL;
     foreach (args, targs) {
         Node* arg = (Node*)lfirst(args);
+        Oid cur_arg_typ = exprType(arg);
         /* If some arg type is for openGauss only(like money, hash, etc..), try to use openGauss original routinue */
-        if (type_to_index(exprType(arg)) == FIELD_TYPE_INVALID) {
+        if (type_to_index(cur_arg_typ) == FIELD_TYPE_INVALID) {
             all_type_is_common = false;
             break;
         }
+
+        /* if all arg has same catagory, we can use original routinue(<,> operator) */
+        if (!IsSameCategory(type_oid, cur_arg_typ)) {
+            all_type_is_same = false;
+            /* continue check, make sure all_type_is_common value is correct */
+        }
     }
 
-    /* return NULL is all type is common, means we will use b_between_and function */
-    if (all_type_is_common) {
+    /* return NULL means we will use b_between_and function */
+    if (all_type_is_common && !all_type_is_same) {
         return NULL;
     }
 
@@ -3856,9 +3891,12 @@ static FieldType agg_field_type(List *args)
 }
 
 /* classify all MySQL type into 4 compare result type: CmpType, and set unsigned_flag to true if the type is unsigned */
-CmpType map_oid_to_cmp_type(Oid oid, bool *unsigned_flag)
+CmpType map_oid_to_cmp_type(Oid oid, bool *unsigned_flag, bool *is_temporal_type)
 {
     *unsigned_flag = false;
+    if (is_temporal_type != NULL) {
+        *is_temporal_type = false;
+    }
     if (oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
         oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
         oid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
@@ -3883,6 +3921,15 @@ CmpType map_oid_to_cmp_type(Oid oid, bool *unsigned_flag)
         case INT8OID:
         case INT16OID:
             return CMP_INT_TYPE;
+        case DATEOID:
+        case TIMEOID:
+        case TIMESTAMPOID:
+        case TIMESTAMPTZOID:
+        case TIMETZOID:
+            if (is_temporal_type != NULL) {
+                *is_temporal_type = true;
+            }
+            /* fall-through */
         case ANYSETOID:
         case CHAROID:
         case TEXTOID:
@@ -3892,11 +3939,6 @@ CmpType map_oid_to_cmp_type(Oid oid, bool *unsigned_flag)
         case BPCHAROID:
         case VARCHAROID:
         case NVARCHAR2OID:
-        case DATEOID:
-        case TIMEOID:
-        case TIMESTAMPOID:
-        case TIMESTAMPTZOID:
-        case TIMETZOID:
         case ANYENUMOID:
             return CMP_STRING_TYPE;
         default:

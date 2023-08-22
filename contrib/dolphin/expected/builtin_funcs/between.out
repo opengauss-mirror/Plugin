@@ -569,6 +569,94 @@ select '2'::money not between SYMMETRIC '5' and '1';
  f
 (1 row)
 
+-- test with 3 arg has same type
+set enable_seqscan to off;
+set enable_bitmapscan to off;
+create table t_b1(a int1, b int2, c int4, d float, e double, f numeric, g text, h varchar(10), i char(10));
+create index i_t_b1_a on t_b1(a);
+create index i_t_b1_b on t_b1(b);
+create index i_t_b1_c on t_b1(c);
+create index i_t_b1_d on t_b1(d);
+create index i_t_b1_e on t_b1(e);
+create index i_t_b1_f on t_b1(f);
+create index i_t_b1_g on t_b1(g);
+create index i_t_b1_h on t_b1(h);
+create index i_t_b1_i on t_b1(i);
+analyze t_b1;
+explain (costs off) select * from t_b1 where a between 1 and 2;
+              QUERY PLAN               
+---------------------------------------
+ [Bypass]
+ Index Scan using i_t_b1_a on t_b1
+   Index Cond: ((a >= 1) AND (a <= 2))
+(3 rows)
+
+explain (costs off) select * from t_b1 where b between 1 and 2;
+              QUERY PLAN               
+---------------------------------------
+ [Bypass]
+ Index Scan using i_t_b1_b on t_b1
+   Index Cond: ((b >= 1) AND (b <= 2))
+(3 rows)
+
+explain (costs off) select * from t_b1 where c between 1 and 2;
+              QUERY PLAN               
+---------------------------------------
+ [Bypass]
+ Index Scan using i_t_b1_c on t_b1
+   Index Cond: ((c >= 1) AND (c <= 2))
+(3 rows)
+
+explain (costs off) select * from t_b1 where d between 1 and 2;
+                                QUERY PLAN                                 
+---------------------------------------------------------------------------
+ [Bypass]
+ Index Scan using i_t_b1_d on t_b1
+   Index Cond: ((d >= 1::double precision) AND (d <= 2::double precision))
+(3 rows)
+
+explain (costs off) select * from t_b1 where e between 1 and 2;
+                                QUERY PLAN                                 
+---------------------------------------------------------------------------
+ [Bypass]
+ Index Scan using i_t_b1_e on t_b1
+   Index Cond: ((e >= 1::double precision) AND (e <= 2::double precision))
+(3 rows)
+
+explain (costs off) select * from t_b1 where f between 1 and 2;
+                       QUERY PLAN                        
+---------------------------------------------------------
+ [Bypass]
+ Index Scan using i_t_b1_f on t_b1
+   Index Cond: ((f >= 1::numeric) AND (f <= 2::numeric))
+(3 rows)
+
+explain (costs off) select * from t_b1 where g between '1' and '2';
+                      QUERY PLAN                       
+-------------------------------------------------------
+ [Bypass]
+ Index Scan using i_t_b1_g on t_b1
+   Index Cond: ((g >= '1'::text) AND (g <= '2'::text))
+(3 rows)
+
+explain (costs off) select * from t_b1 where h between '1' and '2';
+                              QUERY PLAN                               
+-----------------------------------------------------------------------
+ [Bypass]
+ Index Scan using i_t_b1_h on t_b1
+   Index Cond: (((h)::text >= '1'::text) AND ((h)::text <= '2'::text))
+(3 rows)
+
+explain (costs off) select * from t_b1 where i between '1' and '2';
+                        QUERY PLAN                         
+-----------------------------------------------------------
+ [Bypass]
+ Index Scan using i_t_b1_i on t_b1
+   Index Cond: ((i >= '1'::bpchar) AND (i <= '2'::bpchar))
+(3 rows)
+
 drop schema db_between cascade;
-NOTICE:  drop cascades to table t_between_and_0007
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table t_between_and_0007
+drop cascades to table t_b1
 reset current_schema;
