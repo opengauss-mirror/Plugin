@@ -1,0 +1,11 @@
+drop view if exists performance_schema.events_statements_current;
+drop view if exists performance_schema.events_statements_history;
+drop view if exists performance_schema.events_statements_summary_by_digest;
+drop view if exists performance_schema.statement_history;
+drop view if exists performance_schema.events_waits_current;
+drop view if exists performance_schema.events_waits_summary_global_by_event_name;
+drop view if exists performance_schema.file_summary_by_instance;
+drop view if exists performance_schema.table_io_waits_summary_by_table;
+drop view if exists performance_schema.table_io_waits_summary_by_index_usage;
+drop function if exists pg_catalog.get_statement_history();
+drop schema if exists performance_schema;
