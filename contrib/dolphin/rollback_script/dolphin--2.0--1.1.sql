@@ -4028,7 +4028,7 @@ END
 $for_og_310$;
 
 -- left operator
-DROP OPERATOR IF EXISTS pg_catalog.-(json);
+DROP OPERATOR IF EXISTS pg_catalog.+(NONE, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_uplus(json);
 
 -- binary cmp operator
