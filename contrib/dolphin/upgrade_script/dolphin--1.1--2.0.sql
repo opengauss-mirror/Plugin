@@ -8033,3 +8033,10 @@ DROP FUNCTION IF EXISTS pg_catalog.a_sysdate();
 CREATE OR REPLACE FUNCTION pg_catalog.a_sysdate()
 returns timestamp without time zone LANGUAGE SQL
 VOLATILE as $$ SELECT CURRENT_TIMESTAMP::timestamp(0) without time zone$$;
+
+DROP CAST IF EXISTS (json AS boolean);
+DROP FUNCTION IF EXISTS pg_catalog.json_to_bool(json);
+CREATE OR REPLACE FUNCTION pg_catalog.json_to_bool(json) 
+RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as 
+'select cast(cast($1 as text) as boolean)';
+CREATE CAST (json AS boolean) WITH FUNCTION json_to_bool(json) AS IMPLICIT;
