@@ -1,7 +1,12 @@
 DO $for_og_310$
+DECLARE
+  ans boolean;
+  v_isinplaceupgrade boolean;
 BEGIN
     -- add special script for version before 3.1.0, cause 3.1.0 is dolphin 1.0 and 5.0.0 is dolphin 1.0 too, but they are different.
-    if working_version_num() <= 92780 then
+    select case when count(*)=1 then true else false end as ans from (select setting from pg_settings where name = 'upgrade_mode' and setting != '0') into ans;
+    show isinplaceupgrade into v_isinplaceupgrade;
+    if working_version_num() <= 92780 and ans and v_isinplaceupgrade then
         DROP CAST IF EXISTS (float8 as boolean);
         DROP CAST IF EXISTS (float as boolean);
         DROP FUNCTION IF EXISTS pg_catalog.float8_bool(float8);
@@ -3859,10 +3864,12 @@ $for_og_310$;
 DO $for_upgrade_only$
 DECLARE
   ans boolean;
+  v_isinplaceupgrade boolean;
 BEGIN
     select case when count(*)=1 then true else false end as ans from (select setting from pg_settings where name = 'upgrade_mode' and setting != '0') into ans;
+    show isinplaceupgrade into v_isinplaceupgrade;
     -- we can do drop operator only during upgrade
-    if ans = true then
+    if ans = true and v_isinplaceupgrade = true then
         drop operator IF EXISTS pg_catalog./(int1, int1);
         create operator pg_catalog./(leftarg = int1, rightarg = int1, procedure = dolphin_catalog.dolphin_int1div);
         COMMENT ON OPERATOR pg_catalog./(int1, int1) IS 'dolphin_int1div';
