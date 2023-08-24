@@ -1498,6 +1498,19 @@ typedef struct PlDebugEntry {
     PLpgSQL_function* func;
 } PlDebugEntry;
 
+typedef enum AddBreakPointError {
+    ADD_BP_ERR_ALREADY_EXISTS = -1,
+    ADD_BP_ERR_OUT_OF_RANGE = -2,
+    ADD_BP_ERR_INVALID_BP_POS = -3
+} AddBreakPointError;
+
+typedef struct PLDebug_codeline {
+    NodeTag type;
+    int lineno;
+    char* code;
+    bool canBreak;
+} PLDebug_codeline;
+
 typedef List* (*RawParserHook)(const char*, List**);
 
 const int MAXINT8LEN = 25;
@@ -1528,6 +1541,7 @@ const char DEBUG_STEP_INTO_HEADER = 's';
 const char DEBUG_STEP_INTO_HEADER_AFTER = 'S';
 const char DEBUG_BACKTRACE_HEADER = 't';
 const char DEBUG_SET_VARIABLE_HEADER = 'h';
+const char DEBUG_INFOCODE_HEADER = 'i';
 
 /* server return message */
 const int DEBUG_SERVER_SUCCESS = 0;
@@ -1633,6 +1647,7 @@ extern void RecvUnixMsg(const char* buf, int bufLen, char* destBuf, int destLen)
 extern char* ResizeDebugBufferIfNecessary(char* buffer, int* oldSize, int needSize);
 extern void ReleaseDebugCommIdx(int idx);
 extern void SendUnixMsg(int socket, const char* val, int len, bool is_client);
+extern List* collect_breakable_line(PLpgSQL_function* func);
 
 /**********************************************************************
  * Function declarations
@@ -1685,7 +1700,7 @@ extern PLpgSQL_rec_type* plpgsql_build_rec_type(const char* typname, int lineno,
 extern PLpgSQL_rec* plpgsql_build_record(const char* refname, int lineno, bool add2namespace, TupleDesc tupleDesc);
 extern int plpgsql_recognize_err_condition(const char* condname, bool allow_sqlstate);
 extern PLpgSQL_condition* plpgsql_parse_err_condition(char* condname);
-extern PLpgSQL_condition* plpgsql_parse_err_condition_b_signal(const char* condname);
+PLpgSQL_condition* plpgsql_parse_err_condition_b_signal(const char* condname);
 extern PLpgSQL_condition* plpgsql_parse_err_condition_b(const char* condname);
 extern int plpgsql_adddatum(PLpgSQL_datum* newm, bool isChange = true);
 extern int plpgsql_add_initdatums(int** varnos);
