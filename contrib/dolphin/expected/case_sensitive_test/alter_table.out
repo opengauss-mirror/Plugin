@@ -368,27 +368,27 @@ explain (costs off) select * from NV_Parent where d between '2011-08-01' and '20
 create table NV_Child_2009 (check (d between '2009-01-01'::date and '2009-12-31'::date)) Inherits (NV_Parent);
 ERROR:  CREATE TABLE ... INHERITS is not yet supported.
 explain (costs off) select * from NV_Parent where d between '2011-08-01'::date and '2011-08-31'::date;
-                             QUERY PLAN                             
---------------------------------------------------------------------
+                             QUERY PLAN                              
+---------------------------------------------------------------------
  Seq Scan on "NV_Parent"
-   Filter: b_between_and(d, '2011-08-01'::date, '2011-08-31'::date)
+   Filter: ((d >= '2011-08-01'::date) AND (d <= '2011-08-31'::date))
 (2 rows)
 
 explain (costs off) select * from NV_Parent where d between '2009-08-01'::date and '2009-08-31'::date;
-                             QUERY PLAN                             
---------------------------------------------------------------------
+                             QUERY PLAN                              
+---------------------------------------------------------------------
  Seq Scan on "NV_Parent"
-   Filter: b_between_and(d, '2009-08-01'::date, '2009-08-31'::date)
+   Filter: ((d >= '2009-08-01'::date) AND (d <= '2009-08-31'::date))
 (2 rows)
 
 -- after validation, the constraint should be used
 alter table NV_Child_2011 VALIDATE CONSTRAINT nv_child_2011_d_check;
 ERROR:  relation "NV_Child_2011" does not exist
 explain (costs off) select * from NV_Parent where d between '2009-08-01'::date and '2009-08-31'::date;
-                             QUERY PLAN                             
---------------------------------------------------------------------
+                             QUERY PLAN                              
+---------------------------------------------------------------------
  Seq Scan on "NV_Parent"
-   Filter: b_between_and(d, '2009-08-01'::date, '2009-08-31'::date)
+   Filter: ((d >= '2009-08-01'::date) AND (d <= '2009-08-31'::date))
 (2 rows)
 
 -- Foreign key adding test with mixed types
