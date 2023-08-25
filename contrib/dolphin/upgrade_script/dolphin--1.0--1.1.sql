@@ -3856,6 +3856,8 @@ BEGIN
 END
 $for_og_310$;
 
+GRANT USAGE ON schema dolphin_catalog TO PUBLIC;
+
 DO $for_upgrade_only$
 DECLARE
   ans boolean;
