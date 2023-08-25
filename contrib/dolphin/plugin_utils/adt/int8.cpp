@@ -1912,6 +1912,8 @@ Datum text_cast_int8(PG_FUNCTION_ARGS)
 
 Datum varlena_cast_int8(PG_FUNCTION_ARGS)
 {
-    PG_RETURN_INT64(text_cast_int8(fcinfo));
+    Datum data = DirectFunctionCall1(textout, PG_GETARG_DATUM(0));
+    int128 result = DatumGetInt128(DirectFunctionCall1(int16in, data));
+    PG_RETURN_INT64(checkSignedRange(result, fcinfo));
 }
 #endif

@@ -823,6 +823,19 @@ SELECT 'ab'::varbinary(2) <> 'ab'::binary;
  f
 (1 row)
 
+-- binary to bigint
+select (20220101)::binary(30)::bigint;
+   int8   
+----------
+ 20220101
+(1 row)
+
+select (-2075)::binary(30)::bigint;
+ int8  
+-------
+ -2075
+(1 row)
+
 drop schema test_binary cascade;
 NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to table test_bytea

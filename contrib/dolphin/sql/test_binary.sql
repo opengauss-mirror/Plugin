@@ -234,5 +234,9 @@ SELECT 'ab'::varbinary(2) > 'ab'::binary;
 SELECT 'ab'::varbinary(2) >= 'ab'::binary;
 SELECT 'ab'::varbinary(2) <> 'ab'::binary;
 
+-- binary to bigint
+select (20220101)::binary(30)::bigint;
+select (-2075)::binary(30)::bigint;
+
 drop schema test_binary cascade;
 reset current_schema;
