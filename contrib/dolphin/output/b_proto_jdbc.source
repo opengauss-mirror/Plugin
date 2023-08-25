@@ -18,6 +18,31 @@ NOTICE:  The iteration value of password is not recommended.Setting the iteratio
 GRANT ALL PRIVILEGES TO proto_user;
 SET ROLE proto_user PASSWORD 'Gauss@123';
 create schema db_jdbc;
+\! $THIRD_PARTY_LIBS/kernel/platform/openjdk8/jdk/bin/javac -classpath @abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar @abs_builddir@/proto_jdbc/class/*.java
+-- wrong password before setting set_native_password
+\! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user wrong_pass@123
+Exception in thread "main" java.sql.SQLException: failed in auth check, role:proto_user
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 -- set password for navtive_password_plugin authentication
 select set_native_password('proto_user', 'Gauss@123');
            set_native_password            
@@ -25,7 +50,6 @@ select set_native_password('proto_user', 'Gauss@123');
  676a8fd5633248f6f59e17d4939f7f6e7093c350
 (1 row)
 
-\! $THIRD_PARTY_LIBS/kernel/platform/openjdk8/jdk/bin/javac -classpath @abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar @abs_builddir@/proto_jdbc/class/*.java
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcTest localhost $dp db_jdbc proto_user Gauss@123
 c1:INT
 c2:INT UNSIGNED
