@@ -1,0 +1,10 @@
+create schema test_dolphin_catalog;
+set current_schema = test_dolphin_catalog;
+create user test password 'Huawei@123';
+SET SESSION AUTHORIZATION test PASSWORD 'Huawei@123';
+set dolphin.b_compatibility_mode to on;
+select 1+1;
+RESET SESSION AUTHORIZATION;
+reset current_schema;
+drop schema test_dolphin_catalog;
+drop user test;
