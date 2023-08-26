@@ -334,20 +334,23 @@ Node* coerce_to_target_type(ParseState* pstate, Node* expr, Oid exprtype, Oid ta
             (cformat != COERCE_IMPLICIT_CAST),
             (result != expr && !IsA(result, Const)));
     }
-#ifdef PGXC
-    /* Do not need to do that on local Coordinator */
-    if (IsConnFromCoord())
-#endif
-        if (expr != origexpr) {
-            /* Reinstall top CollateExpr */
-            CollateExpr* coll = (CollateExpr*)origexpr;
-            CollateExpr* newcoll = makeNode(CollateExpr);
 
-            newcoll->arg = (Expr*)result;
-            newcoll->collOid = coll->collOid;
-            newcoll->location = coll->location;
-            result = (Node*)newcoll;
-        }
+    if (expr != origexpr && (
+#ifdef PGXC
+        /* Do not need to do that on local Coordinator */
+        IsConnFromCoord() ||
+#endif
+        type_is_collatable(targettype))) {
+
+        /* Reinstall top CollateExpr */
+        CollateExpr* coll = (CollateExpr*)origexpr;
+        CollateExpr* newcoll = makeNode(CollateExpr);
+
+        newcoll->arg = (Expr*)result;
+        newcoll->collOid = coll->collOid;
+        newcoll->location = coll->location;
+        result = (Node*)newcoll;
+    }
 
     return result;
 }
@@ -361,7 +364,8 @@ Node* coerce_to_target_type(ParseState* pstate, Node* expr, Oid exprtype, Oid ta
  * target_charset - desired result character set
  * target_type - desired result type
  */
-Node* coerce_to_target_charset(Node* expr, int target_charset, Oid target_type, int32 target_typmod, Oid target_collation)
+Node* coerce_to_target_charset(Node* expr, int target_charset, Oid target_type, int32 target_typmod,
+    Oid target_collation, bool eval_const)
 {
     FuncExpr* fexpr = NULL;
     Node* result = NULL;
@@ -413,7 +417,7 @@ Node* coerce_to_target_charset(Node* expr, int target_charset, Oid target_type, 
 
     /* set collation after coerce_to_target_type */
     exprSetCollation(result, target_collation);
-    if (IsA(expr, Const) || IsA(expr, RelabelType)) {
+    if (eval_const && (IsA(expr, Const) || IsA(expr, RelabelType))) {
         result = eval_const_expression_value(NULL, result, NULL);
     }
     return result;
