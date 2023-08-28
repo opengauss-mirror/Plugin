@@ -1975,18 +1975,23 @@ ScalarVector* vbpcharlen(PG_FUNCTION_ARGS)
 }
 
 #ifdef DOLPHIN
+
+
 PG_FUNCTION_INFO_V1_PUBLIC(text_bool);
 extern "C" DLL_PUBLIC Datum text_bool(PG_FUNCTION_ARGS);
-
 Datum text_bool(PG_FUNCTION_ARGS)
 {
     text *input = PG_GETARG_TEXT_PP(0);
+    int len = VARSIZE_ANY_EXHDR(input);
     char *a1p = NULL;
     double tmp;
 
     a1p = VARDATA_ANY(input);
     tmp = atof(a1p);
-
+    bool result = false;
+    if (parse_bool_with_len(a1p, len, &result)) {
+        PG_RETURN_BOOL((tmp ? true : false) || result);
+    }
     PG_RETURN_BOOL(tmp ? true : false);
 }
 

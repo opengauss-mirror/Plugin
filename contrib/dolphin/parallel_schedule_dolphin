@@ -33,7 +33,7 @@ test: builtin_funcs/bin builtin_funcs/char builtin_funcs/char_length builtin_fun
 
 test: builtin_funcs/db_b_hex builtin_funcs/db_b_if builtin_funcs/elt builtin_funcs/field builtin_funcs/find_in_set builtin_funcs/soundex builtin_funcs/space builtin_funcs/make_set builtin_funcs/between builtin_funcs/not_between
 
-test: uint_agg uint_and uint_cast uint_cast2 uint_div uint_mi uint_mod uint_mod2 uint_mul uint_numeric uint_operator uint_or uint_partition uint_pl uint_xor 
+test: uint_agg uint_and uint_cast uint_cast2 uint_div uint_mi uint_mod uint_mod2 uint_mul uint_numeric uint_operator uint_or uint_partition uint_pl uint_xor
 
 test: uint_procedure_col_bypass uint_smp uint_index uint_sql_mode uint_ignore uint_join signed_unsigned_cast uint_in implicit_cast uint_auto_increment
 
@@ -136,7 +136,7 @@ test: builtin_funcs/cast any_value_test default_function get_b_database union2
 
 test: json_type json_pretty json_valid json_length json_objectagg json_arrayagg json_operator json_storage_size
 
-test: test_uuid_short test_sleep distinct dual_test fulltext_index
+test: test_uuid_short test_sleep distinct dual_test fulltext_index test_text2bool
 
 test: operator_compatibility_test/numeric_operator_test_normal operator_compatibility_test/numeric_operator_test_min operator_compatibility_test/numeric_operator_test_max operator_compatibility_test/time_operator_test operator_compatibility_test/string_operator_test operator_compatibility_test/multi_type_operator_test
 
