@@ -245,6 +245,10 @@ select c1 < c5, c1 > c5, c1 <= c5, c1 >= c5 from binary_operator;
 select c1 < c6, c1 > c6, c1 <= c6, c1 >= c6 from binary_operator;
 select c1 < c7, c1 > c7, c1 <= c7, c1 >= c7 from binary_operator;
 
+-- binary to bigint
+select (20220101)::binary(30)::bigint;
+select (-2075)::binary(30)::bigint;
+
 drop table if exists binary_operator;
 reset dolphin.b_compatibility_mode;
 
