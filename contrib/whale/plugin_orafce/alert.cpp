@@ -18,14 +18,14 @@
 #include "utils/rel.h"
 #include "plugin_postgres.h"
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_alert_register);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_alert_remove);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_alert_removeall);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_alert_set_defaults);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_alert_signal);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_alert_waitany);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_alert_waitone);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_alert_defered_signal);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_alert_register);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_alert_remove);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_alert_removeall);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_alert_set_defaults);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_alert_signal);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_alert_waitany);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_alert_waitone);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_alert_defered_signal);
 
 #ifndef _GetCurrentTimestamp
 #define _GetCurrentTimestamp() GetCurrentTimestamp()
@@ -510,13 +510,13 @@ static void create_message(text *event_name, text *message)
 
 /*
  *
- *  PROCEDURE DBMS_ALERT.REGISTER (name IN VARCHAR2);
+ *  PROCEDURE GMS_ALERT.REGISTER (name IN VARCHAR2);
  *
  *  Registers the calling session to receive notification of alert name.
  *
  */
 
-Datum dbms_alert_register(PG_FUNCTION_ARGS)
+Datum gms_alert_register(PG_FUNCTION_ARGS)
 {
     text *name = PG_GETARG_TEXT_P(0);
     int cycle = 0;
@@ -536,14 +536,14 @@ Datum dbms_alert_register(PG_FUNCTION_ARGS)
 
 /*
  *
- *  PROCEDURE DBMS_ALERT.REMOVE(name IN VARCHAR2);
+ *  PROCEDURE GMS_ALERT.REMOVE(name IN VARCHAR2);
  *
  *  Unregisters the calling session from receiving notification of alert name.
  *  Don't raise any exceptions.
  *
  */
 
-Datum dbms_alert_remove(PG_FUNCTION_ARGS)
+Datum gms_alert_remove(PG_FUNCTION_ARGS)
 {
     text *name = PG_GETARG_TEXT_P(0);
 
@@ -570,13 +570,13 @@ Datum dbms_alert_remove(PG_FUNCTION_ARGS)
 
 /*
  *
- *  PROCEDURE DBMS_ALERT.REMOVEALL;
+ *  PROCEDURE GMS_ALERT.REMOVEALL;
  *
  *  Unregisters the calling session from notification of all alerts.
  *
  */
 
-Datum dbms_alert_removeall(PG_FUNCTION_ARGS)
+Datum gms_alert_removeall(PG_FUNCTION_ARGS)
 {
     int cycle = 0;
     float8 endtime;
@@ -611,7 +611,7 @@ Datum dbms_alert_removeall(PG_FUNCTION_ARGS)
 
 /*
  *
- *  PROCEDURE DBMS_ALERT.WAITANY(name OUT VARCHAR2 ,message OUT VARCHAR2
+ *  PROCEDURE GMS_ALERT.WAITANY(name OUT VARCHAR2 ,message OUT VARCHAR2
  *                              ,status OUT INTEGER
  *                              ,timeout IN NUMBER DEFAULT MAXWAIT);
  *
@@ -622,7 +622,7 @@ Datum dbms_alert_removeall(PG_FUNCTION_ARGS)
  *
  */
 
-Datum dbms_alert_waitany(PG_FUNCTION_ARGS)
+Datum gms_alert_waitany(PG_FUNCTION_ARGS)
 {
     float8 timeout;
     TupleDesc tupdesc;
@@ -668,7 +668,7 @@ Datum dbms_alert_waitany(PG_FUNCTION_ARGS)
 
 /*
  *
- *  PROCEDURE DBMS_ALERT.WAITONE(name IN VARCHAR2, message OUT VARCHAR2
+ *  PROCEDURE GMS_ALERT.WAITONE(name IN VARCHAR2, message OUT VARCHAR2
  *                              ,status OUT INTEGER
  *                              ,timeout IN NUMBER DEFAULT MAXWAIT);
  *
@@ -678,7 +678,7 @@ Datum dbms_alert_waitany(PG_FUNCTION_ARGS)
  *
  */
 
-Datum dbms_alert_waitone(PG_FUNCTION_ARGS)
+Datum gms_alert_waitone(PG_FUNCTION_ARGS)
 {
     text *name;
     float8 timeout;
@@ -734,16 +734,16 @@ Datum dbms_alert_waitone(PG_FUNCTION_ARGS)
 
 /*
  *
- *  PROCEDURE DBMS_ALERT.SET_DEFAULTS(sensitivity IN NUMBER);
+ *  PROCEDURE GMS_ALERT.SET_DEFAULTS(sensitivity IN NUMBER);
  *
  *  The SET_DEFAULTS procedure is used to set session configurable settings
- *  used by the DBMS_ALERT package. Currently, the polling loop interval sleep time
+ *  used by the GMS_ALERT package. Currently, the polling loop interval sleep time
  *  is the only session setting that can be modified using this procedure. The
  *  header for this procedure is,
  *
  */
 
-Datum dbms_alert_set_defaults(PG_FUNCTION_ARGS)
+Datum gms_alert_set_defaults(PG_FUNCTION_ARGS)
 {
     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("feature not supported"),
                     errdetail("Sensitivity isn't supported.")));
@@ -757,9 +757,9 @@ Datum dbms_alert_set_defaults(PG_FUNCTION_ARGS)
  */
 
 /*
-CREATE OR REPLACE FUNCTION dbms_alert._defered_signal() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION gms_alert._defered_signal() RETURNS trigger AS $$
 BEGIN
-  PERFORM dbms_alert._signal(NEW.event, NEW.message);
+  PERFORM gms_alert._signal(NEW.event, NEW.message);
   DELETE FROM ora_alerts WHERE oid=NEW.oid;
   RETURN NEW;
 END;
@@ -769,7 +769,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
 #define DatumGetItemPointer(X) ((ItemPointer)DatumGetPointer(X))
 #define ItemPointerGetDatum(X) PointerGetDatum(X)
 
-Datum dbms_alert_defered_signal(PG_FUNCTION_ARGS)
+Datum gms_alert_defered_signal(PG_FUNCTION_ARGS)
 {
     TriggerData *trigdata = (TriggerData *)fcinfo->context;
     TupleDesc tupdesc;
@@ -851,7 +851,7 @@ Datum dbms_alert_defered_signal(PG_FUNCTION_ARGS)
 
 /*
  *
- *  PROCEDURE DBMS_ALERT.SIGNAL(name IN VARCHAR2,message IN VARCHAR2);
+ *  PROCEDURE GMS_ALERT.SIGNAL(name IN VARCHAR2,message IN VARCHAR2);
  *
  *  Signals the occurrence of alert name and attaches message. (Sessions
  *  registered for alert name are notified only when the signaling transaction
@@ -861,7 +861,7 @@ Datum dbms_alert_defered_signal(PG_FUNCTION_ARGS)
 
 /*
 
-CREATE OR REPLACE FUNCTION dbms_alert.signal(_event text, _message text) RETURNS void AS $$
+CREATE OR REPLACE FUNCTION gms_alert.signal(_event text, _message text) RETURNS void AS $$
 BEGIN
   PERFORM 1 FROM pg_catalog.pg_class c
             WHERE pg_catalog.pg_table_is_visible(c.oid)
@@ -870,7 +870,7 @@ BEGIN
     CREATE TEMP TABLE ora_alerts(event text, message text) WITH OIDS;
     REVOKE ALL ON TABLE ora_alerts FROM PUBLIC;
     CREATE CONSTRAINT TRIGGER ora_alert_signal AFTER INSERT ON ora_alerts
-      INITIALLY DEFERRED FOR EACH ROW EXECUTE PROCEDURE dbms_alert._defered_signal();
+      INITIALLY DEFERRED FOR EACH ROW EXECUTE PROCEDURE gms_alert._defered_signal();
   END IF;
   INSERT INTO ora_alerts(event, message) VALUES(_event, _message);
 END;
@@ -882,7 +882,7 @@ $$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
         ereport(ERROR,                       \
                 (errcode(ERRCODE_INTERNAL_ERROR), errmsg("SPI execute error"), errdetail("Can't execute %s.", cmd)));
 
-Datum dbms_alert_signal(PG_FUNCTION_ARGS)
+Datum gms_alert_signal(PG_FUNCTION_ARGS)
 {
     SPIPlanPtr plan;
     Oid argtypes[] = {TEXTOID, TEXTOID};
@@ -910,7 +910,7 @@ Datum dbms_alert_signal(PG_FUNCTION_ARGS)
         SPI_EXEC("CREATE TABLE ora_alerts(event text, message text, session_id bigint)", UTILITY);
         SPI_EXEC("REVOKE ALL ON TABLE ora_alerts FROM PUBLIC", UTILITY);
         SPI_EXEC("CREATE CONSTRAINT TRIGGER ora_alert_signal AFTER INSERT ON ora_alerts "
-                 "INITIALLY DEFERRED FOR EACH ROW EXECUTE PROCEDURE dbms_alert.defered_signal()",
+                 "INITIALLY DEFERRED FOR EACH ROW EXECUTE PROCEDURE gms_alert.defered_signal()",
                  UTILITY);
     }
 

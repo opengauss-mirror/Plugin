@@ -41,31 +41,31 @@
 
 #define ONE_YEAR (60 * 60 * 24 * 365)
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_pack_message_text);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_unpack_message_text);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_send_message);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_receive_message);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_unique_session_name);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_list_pipes);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_next_item_type);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_create_pipe);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_create_pipe_2);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_create_pipe_1);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_reset_buffer);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_purge);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_remove_pipe);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_pack_message_date);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_unpack_message_date);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_pack_message_timestamp);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_unpack_message_timestamp);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_pack_message_number);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_unpack_message_number);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_pack_message_bytea);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_unpack_message_bytea);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_pack_message_record);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_unpack_message_record);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_pack_message_integer);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_pipe_pack_message_bigint);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_pack_message_text);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_unpack_message_text);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_send_message);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_receive_message);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_unique_session_name);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_list_pipes);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_next_item_type);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_create_pipe);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_create_pipe_2);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_create_pipe_1);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_reset_buffer);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_purge);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_remove_pipe);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_pack_message_date);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_unpack_message_date);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_pack_message_timestamp);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_unpack_message_timestamp);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_pack_message_number);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_unpack_message_number);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_pack_message_bytea);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_unpack_message_bytea);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_pack_message_record);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_unpack_message_record);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_pack_message_integer);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_pipe_pack_message_bigint);
 
 typedef struct _queue_item {
     void *ptr;
@@ -170,7 +170,7 @@ bool ora_lock_shmem(size_t size, int max_pipes, int max_events, int max_locks, b
     sh_memory *sh_mem;
 
     if (GetSessionContext()->pipes == NULL) {
-        sh_mem = (sh_memory *)ShmemInitStruct("dbms_pipe", size, &found);
+        sh_mem = (sh_memory *)ShmemInitStruct("gms_pipe", size, &found);
         if (sh_mem == NULL)
             ereport(FATAL,
                     (errcode(ERRCODE_OUT_OF_MEMORY), errmsg("out of memory"),
@@ -492,7 +492,7 @@ static void remove_pipe(text *pipe_name, bool purge)
     }
 }
 
-Datum dbms_pipe_next_item_type(PG_FUNCTION_ARGS)
+Datum gms_pipe_next_item_type(PG_FUNCTION_ARGS)
 {
     PG_RETURN_INT32(GetSessionContext()->input_buffer != NULL ? GetSessionContext()->input_buffer->next->type
                                                                 : IT_NO_MORE_ITEMS);
@@ -521,7 +521,7 @@ static message_buffer *check_buffer(message_buffer *buffer, int32 size)
     return buffer;
 }
 
-Datum dbms_pipe_pack_message_text(PG_FUNCTION_ARGS)
+Datum gms_pipe_pack_message_text(PG_FUNCTION_ARGS)
 {
     text *str = PG_GETARG_TEXT_PP(0);
 
@@ -531,7 +531,7 @@ Datum dbms_pipe_pack_message_text(PG_FUNCTION_ARGS)
     PG_RETURN_VOID();
 }
 
-Datum dbms_pipe_pack_message_date(PG_FUNCTION_ARGS)
+Datum gms_pipe_pack_message_date(PG_FUNCTION_ARGS)
 {
     DateADT dt = PG_GETARG_DATEADT(0);
 
@@ -541,7 +541,7 @@ Datum dbms_pipe_pack_message_date(PG_FUNCTION_ARGS)
     PG_RETURN_VOID();
 }
 
-Datum dbms_pipe_pack_message_timestamp(PG_FUNCTION_ARGS)
+Datum gms_pipe_pack_message_timestamp(PG_FUNCTION_ARGS)
 {
     TimestampTz dt = PG_GETARG_TIMESTAMPTZ(0);
 
@@ -551,7 +551,7 @@ Datum dbms_pipe_pack_message_timestamp(PG_FUNCTION_ARGS)
     PG_RETURN_VOID();
 }
 
-Datum dbms_pipe_pack_message_number(PG_FUNCTION_ARGS)
+Datum gms_pipe_pack_message_number(PG_FUNCTION_ARGS)
 {
     Numeric num = PG_GETARG_NUMERIC(0);
 
@@ -561,7 +561,7 @@ Datum dbms_pipe_pack_message_number(PG_FUNCTION_ARGS)
     PG_RETURN_VOID();
 }
 
-Datum dbms_pipe_pack_message_bytea(PG_FUNCTION_ARGS)
+Datum gms_pipe_pack_message_bytea(PG_FUNCTION_ARGS)
 {
     bytea *data = PG_GETARG_BYTEA_P(0);
 
@@ -598,7 +598,7 @@ static void init_args_3(FunctionCallInfo info, Datum arg0, Datum arg1, Datum arg
  *  We can serialize only typed record
  */
 
-Datum dbms_pipe_pack_message_record(PG_FUNCTION_ARGS)
+Datum gms_pipe_pack_message_record(PG_FUNCTION_ARGS)
 {
     HeapTupleHeader rec = PG_GETARG_HEAPTUPLEHEADER(0);
     Oid tupType;
@@ -634,7 +634,7 @@ Datum dbms_pipe_pack_message_record(PG_FUNCTION_ARGS)
     PG_RETURN_VOID();
 }
 
-static Datum dbms_pipe_unpack_message(PG_FUNCTION_ARGS, message_data_type dtype)
+static Datum gms_pipe_unpack_message(PG_FUNCTION_ARGS, message_data_type dtype)
 {
     Oid tupType;
     void *ptr;
@@ -713,38 +713,38 @@ static Datum dbms_pipe_unpack_message(PG_FUNCTION_ARGS, message_data_type dtype)
     PG_RETURN_DATUM(result);
 }
 
-Datum dbms_pipe_unpack_message_text(PG_FUNCTION_ARGS)
+Datum gms_pipe_unpack_message_text(PG_FUNCTION_ARGS)
 {
-    return dbms_pipe_unpack_message(fcinfo, IT_VARCHAR);
+    return gms_pipe_unpack_message(fcinfo, IT_VARCHAR);
 }
 
-Datum dbms_pipe_unpack_message_date(PG_FUNCTION_ARGS)
+Datum gms_pipe_unpack_message_date(PG_FUNCTION_ARGS)
 {
     if (DB_IS_CMPT(A_FORMAT)) {
-        return dbms_pipe_unpack_message(fcinfo, IT_TIMESTAMPTZ);
+        return gms_pipe_unpack_message(fcinfo, IT_TIMESTAMPTZ);
     } else {
-        return dbms_pipe_unpack_message(fcinfo, IT_DATE);
+        return gms_pipe_unpack_message(fcinfo, IT_DATE);
     }
 }
 
-Datum dbms_pipe_unpack_message_timestamp(PG_FUNCTION_ARGS)
+Datum gms_pipe_unpack_message_timestamp(PG_FUNCTION_ARGS)
 {
-    return dbms_pipe_unpack_message(fcinfo, IT_TIMESTAMPTZ);
+    return gms_pipe_unpack_message(fcinfo, IT_TIMESTAMPTZ);
 }
 
-Datum dbms_pipe_unpack_message_number(PG_FUNCTION_ARGS)
+Datum gms_pipe_unpack_message_number(PG_FUNCTION_ARGS)
 {
-    return dbms_pipe_unpack_message(fcinfo, IT_NUMBER);
+    return gms_pipe_unpack_message(fcinfo, IT_NUMBER);
 }
 
-Datum dbms_pipe_unpack_message_bytea(PG_FUNCTION_ARGS)
+Datum gms_pipe_unpack_message_bytea(PG_FUNCTION_ARGS)
 {
-    return dbms_pipe_unpack_message(fcinfo, IT_BYTEA);
+    return gms_pipe_unpack_message(fcinfo, IT_BYTEA);
 }
 
-Datum dbms_pipe_unpack_message_record(PG_FUNCTION_ARGS)
+Datum gms_pipe_unpack_message_record(PG_FUNCTION_ARGS)
 {
-    return dbms_pipe_unpack_message(fcinfo, IT_RECORD);
+    return gms_pipe_unpack_message(fcinfo, IT_RECORD);
 }
 
 #define WATCH_PRE(t, et, c)         \
@@ -762,7 +762,7 @@ Datum dbms_pipe_unpack_message_record(PG_FUNCTION_ARGS)
     while (true && t != 0)            \
         ;
 
-Datum dbms_pipe_receive_message(PG_FUNCTION_ARGS)
+Datum gms_pipe_receive_message(PG_FUNCTION_ARGS)
 {
     text *pipe_name = NULL;
     int timeout = ONE_YEAR;
@@ -797,7 +797,7 @@ Datum dbms_pipe_receive_message(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(RESULT_DATA);
 }
 
-Datum dbms_pipe_send_message(PG_FUNCTION_ARGS)
+Datum gms_pipe_send_message(PG_FUNCTION_ARGS)
 {
     text *pipe_name = NULL;
     int timeout = ONE_YEAR;
@@ -841,7 +841,7 @@ Datum dbms_pipe_send_message(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(RESULT_DATA);
 }
 
-Datum dbms_pipe_unique_session_name(PG_FUNCTION_ARGS)
+Datum gms_pipe_unique_session_name(PG_FUNCTION_ARGS)
 {
     StringInfoData strbuf;
 
@@ -870,7 +870,7 @@ Datum dbms_pipe_unique_session_name(PG_FUNCTION_ARGS)
 
 #define DB_PIPES_COLS 6
 
-Datum dbms_pipe_list_pipes(PG_FUNCTION_ARGS)
+Datum gms_pipe_list_pipes(PG_FUNCTION_ARGS)
 {
     FuncCallContext *funcctx;
     TupleDesc tupdesc;
@@ -983,10 +983,10 @@ Datum dbms_pipe_list_pipes(PG_FUNCTION_ARGS)
 
 /*
  * Registration explicit pipes
- *   dbms_pipe.create_pipe(pipe_name varchar, limit := -1 int, private := false bool);
+ *   gms_pipe.create_pipe(pipe_name varchar, limit := -1 int, private := false bool);
  */
 
-Datum dbms_pipe_create_pipe(PG_FUNCTION_ARGS)
+Datum gms_pipe_create_pipe(PG_FUNCTION_ARGS)
 {
     text *pipe_name = NULL;
     int limit = 0;
@@ -1046,7 +1046,7 @@ Datum dbms_pipe_create_pipe(PG_FUNCTION_ARGS)
  * Clean local input, output buffers
  */
 
-Datum dbms_pipe_reset_buffer(PG_FUNCTION_ARGS)
+Datum gms_pipe_reset_buffer(PG_FUNCTION_ARGS)
 {
     if (GetSessionContext()->output_buffer != NULL) {
         pfree(GetSessionContext()->output_buffer);
@@ -1066,7 +1066,7 @@ Datum dbms_pipe_reset_buffer(PG_FUNCTION_ARGS)
  * pipe.
  */
 
-Datum dbms_pipe_purge(PG_FUNCTION_ARGS)
+Datum gms_pipe_purge(PG_FUNCTION_ARGS)
 {
     text *pipe_name = PG_GETARG_TEXT_P(0);
 
@@ -1092,7 +1092,7 @@ Datum dbms_pipe_purge(PG_FUNCTION_ARGS)
  * Remove pipe if exists
  */
 
-Datum dbms_pipe_remove_pipe(PG_FUNCTION_ARGS)
+Datum gms_pipe_remove_pipe(PG_FUNCTION_ARGS)
 {
     text *pipe_name = PG_GETARG_TEXT_P(0);
 
@@ -1118,7 +1118,7 @@ Datum dbms_pipe_remove_pipe(PG_FUNCTION_ARGS)
  * Some void udf which I can't wrap in sql
  */
 
-Datum dbms_pipe_create_pipe_2(PG_FUNCTION_ARGS)
+Datum gms_pipe_create_pipe_2(PG_FUNCTION_ARGS)
 {
     Datum arg1;
     int limit = -1;
@@ -1132,12 +1132,12 @@ Datum dbms_pipe_create_pipe_2(PG_FUNCTION_ARGS)
     if (!PG_ARGISNULL(1))
         limit = PG_GETARG_INT32(1);
 
-    DirectFunctionCall3(dbms_pipe_create_pipe, arg1, Int32GetDatum(limit), BoolGetDatum(false));
+    DirectFunctionCall3(gms_pipe_create_pipe, arg1, Int32GetDatum(limit), BoolGetDatum(false));
 
     PG_RETURN_VOID();
 }
 
-Datum dbms_pipe_create_pipe_1(PG_FUNCTION_ARGS)
+Datum gms_pipe_create_pipe_1(PG_FUNCTION_ARGS)
 {
     Datum arg1;
 
@@ -1147,23 +1147,23 @@ Datum dbms_pipe_create_pipe_1(PG_FUNCTION_ARGS)
 
     arg1 = PG_GETARG_DATUM(0);
 
-    DirectFunctionCall3(dbms_pipe_create_pipe, arg1, (Datum)-1, BoolGetDatum(false));
+    DirectFunctionCall3(gms_pipe_create_pipe, arg1, (Datum)-1, BoolGetDatum(false));
 
     PG_RETURN_VOID();
 }
 
-Datum dbms_pipe_pack_message_integer(PG_FUNCTION_ARGS)
+Datum gms_pipe_pack_message_integer(PG_FUNCTION_ARGS)
 {
     /* Casting from int4 to numeric */
-    DirectFunctionCall1(dbms_pipe_pack_message_number, DirectFunctionCall1(int4_numeric, PG_GETARG_DATUM(0)));
+    DirectFunctionCall1(gms_pipe_pack_message_number, DirectFunctionCall1(int4_numeric, PG_GETARG_DATUM(0)));
 
     PG_RETURN_VOID();
 }
 
-Datum dbms_pipe_pack_message_bigint(PG_FUNCTION_ARGS)
+Datum gms_pipe_pack_message_bigint(PG_FUNCTION_ARGS)
 {
     /* Casting from int8 to numeric */
-    DirectFunctionCall1(dbms_pipe_pack_message_number, DirectFunctionCall1(int8_numeric, PG_GETARG_DATUM(0)));
+    DirectFunctionCall1(gms_pipe_pack_message_number, DirectFunctionCall1(int8_numeric, PG_GETARG_DATUM(0)));
 
     PG_RETURN_VOID();
 }

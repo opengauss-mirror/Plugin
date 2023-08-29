@@ -18,15 +18,15 @@
 #include "plugin_postgres.h"
 #include "plugin_orafce/builtins.h"
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_random_initialize);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_random_normal);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_random_random);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_random_seed_int);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_random_seed_varchar);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_random_string);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_random_terminate);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_random_value);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_random_value_range);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_random_initialize);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_random_normal);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_random_random);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_random_seed_int);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_random_seed_varchar);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_random_string);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_random_terminate);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_random_value);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_random_value_range);
 
 /* Coefficients in rational approximations. */
 static const double a[] = {-3.969683028665376e+01, 2.209460984245205e+02,  -2.759285104469687e+02,
@@ -46,11 +46,11 @@ static const double d[] = {7.784695709041462e-03, 3.224671290700398e-01, 2.44513
 static double ltqnorm(double p);
 
 /*
- * dbms_random.initialize (seed IN BINARY_INTEGER)
+ * gms_random.initialize (seed IN BINARY_INTEGER)
  *
  *     Initialize package with a seed value
  */
-Datum dbms_random_initialize(PG_FUNCTION_ARGS)
+Datum gms_random_initialize(PG_FUNCTION_ARGS)
 {
     GetSessionContext()->seed = PG_GETARG_INT32(0);
 
@@ -58,11 +58,11 @@ Datum dbms_random_initialize(PG_FUNCTION_ARGS)
 }
 
 /*
- * dbms_random.normal() RETURN NUMBER;
+ * gms_random.normal() RETURN NUMBER;
  *
  *     Returns random numbers in a standard normal distribution
  */
-Datum dbms_random_normal(PG_FUNCTION_ARGS)
+Datum gms_random_normal(PG_FUNCTION_ARGS)
 {
     float8 result;
     unsigned int seed = GetSessionContext()->seed;
@@ -73,11 +73,11 @@ Datum dbms_random_normal(PG_FUNCTION_ARGS)
 }
 
 /*
- * dbms_random.random() RETURN BINARY_INTEGER;
+ * gms_random.random() RETURN BINARY_INTEGER;
  *
  *     Generate Random Numeric Values
  */
-Datum dbms_random_random(PG_FUNCTION_ARGS)
+Datum gms_random_random(PG_FUNCTION_ARGS)
 {
     int result;
     unsigned int seed = GetSessionContext()->seed;
@@ -91,12 +91,12 @@ Datum dbms_random_random(PG_FUNCTION_ARGS)
 }
 
 /*
- * dbms_random.seed(val IN BINARY_INTEGER);
- * dbms_random.seed(val IN VARCHAR2);
+ * gms_random.seed(val IN BINARY_INTEGER);
+ * gms_random.seed(val IN VARCHAR2);
  *
  *     Reset the seed value
  */
-Datum dbms_random_seed_int(PG_FUNCTION_ARGS)
+Datum gms_random_seed_int(PG_FUNCTION_ARGS)
 {
     GetSessionContext()->seed = PG_GETARG_INT32(0);
 
@@ -109,7 +109,7 @@ Datum dbms_random_seed_int(PG_FUNCTION_ARGS)
  * Hash function should be changed between mayor pg versions,
  * don't use text based seed for regres tests!
  */
-Datum dbms_random_seed_varchar(PG_FUNCTION_ARGS)
+Datum gms_random_seed_varchar(PG_FUNCTION_ARGS)
 {
     text *key = PG_GETARG_TEXT_P(0);
     Datum seed;
@@ -121,7 +121,7 @@ Datum dbms_random_seed_varchar(PG_FUNCTION_ARGS)
 }
 
 /*
- * dbms_random.string(opt IN CHAR, len IN NUMBER) RETURN VARCHAR2;
+ * gms_random.string(opt IN CHAR, len IN NUMBER) RETURN VARCHAR2;
  *
  *     Create Random Strings
  * opt seed values:
@@ -147,7 +147,7 @@ static text *random_string(const char *charset, size_t chrset_size, int len)
     return cstring_to_text(str->data);
 }
 
-Datum dbms_random_string(PG_FUNCTION_ARGS)
+Datum gms_random_string(PG_FUNCTION_ARGS)
 {
     char *option;
     int len;
@@ -206,22 +206,22 @@ Datum dbms_random_string(PG_FUNCTION_ARGS)
 }
 
 /*
- * dbms_random.terminate;
+ * gms_random.terminate;
  *
  *     Terminate use of the Package
  */
-Datum dbms_random_terminate(PG_FUNCTION_ARGS)
+Datum gms_random_terminate(PG_FUNCTION_ARGS)
 {
     /* do nothing */
     PG_RETURN_VOID();
 }
 
 /*
- * dbms_random.value() RETURN NUMBER;
+ * gms_random.value() RETURN NUMBER;
  *
  *     Gets a random number, greater than or equal to 0 and less than 1.
  */
-Datum dbms_random_value(PG_FUNCTION_ARGS)
+Datum gms_random_value(PG_FUNCTION_ARGS)
 {
     float8 result;
     unsigned int seed = GetSessionContext()->seed;
@@ -232,12 +232,12 @@ Datum dbms_random_value(PG_FUNCTION_ARGS)
 }
 
 /*
- * dbms_random.value(low  NUMBER, high NUMBER) RETURN NUMBER
+ * gms_random.value(low  NUMBER, high NUMBER) RETURN NUMBER
  *
  *     Alternatively, you can get a random Orafce number x,
  *     where x is greater than or equal to low and less than high
  */
-Datum dbms_random_value_range(PG_FUNCTION_ARGS)
+Datum gms_random_value_range(PG_FUNCTION_ARGS)
 {
     float8 low = PG_GETARG_FLOAT8(0);
     float8 high = PG_GETARG_FLOAT8(1);

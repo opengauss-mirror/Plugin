@@ -700,8 +700,7 @@ Datum a_plpgsql_call_handler(PG_FUNCTION_ARGS)
     int save_sec_context = 0;
     Oid cast_owner = InvalidOid;
     bool has_switch = false;
-    // PGSTAT_INIT_PLSQL_TIME_RECORD
-    int64 startTime = 0;
+    PGSTAT_INIT_TIME_RECORD();
     bool needRecord = false;
     PLpgSQL_package* pkg = NULL;
     MemoryContext oldContext = CurrentMemoryContext;
@@ -1054,8 +1053,7 @@ Datum a_plpgsql_inline_handler(PG_FUNCTION_ARGS)
     FmgrInfo flinfo;
     Datum retval;
     int rc;
-    // PGSTAT_INIT_PLSQL_TIME_RECORD
-    int64 startTime = 0;
+    PGSTAT_INIT_TIME_RECORD();
     bool needRecord = false;
 
     _PG_init();

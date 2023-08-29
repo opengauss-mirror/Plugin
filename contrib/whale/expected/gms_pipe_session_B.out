@@ -38,7 +38,7 @@ NOTICE:  RECEIVE 24: (2,rob)
 
 -- Receives messages sent via an explicit private pipe under the same user
 -- 'pipe_test_owner'
-SELECT dbms_pipe.receive_message('recv_private1_notifier');
+SELECT gms_pipe.receive_message('recv_private1_notifier');
  receive_message 
 -----------------
                0
@@ -67,7 +67,7 @@ SET SESSION AUTHORIZATION pipe_test_other PASSWORD 'Test@123';
 -- Try to receive messages sent via an explicit private pipe under the user
 -- 'pipe_test_other' who is not the owner of pipe.
 -- insufficient privileges in case of 'private_pipe_2'.
-SELECT dbms_pipe.receive_message('recv_private2_notifier');
+SELECT gms_pipe.receive_message('recv_private2_notifier');
  receive_message 
 -----------------
                0
@@ -77,7 +77,7 @@ SELECT receiveFrom('private_pipe_2');
 ERROR:  insufficient privilege
 -- These are explicit private pipes created using create_pipe(text,integer)
 -- and create_pipe(text)
-SELECT dbms_pipe.receive_message('recv_public1_notifier');
+SELECT gms_pipe.receive_message('recv_public1_notifier');
  receive_message 
 -----------------
                0
@@ -98,7 +98,7 @@ NOTICE:  RECEIVE 24: (2,rob)
  
 (1 row)
 
-SELECT dbms_pipe.receive_message('recv_public2_notifier');
+SELECT gms_pipe.receive_message('recv_public2_notifier');
  receive_message 
 -----------------
                0
@@ -137,9 +137,9 @@ NOTICE:  RECEIVE checking two-argument send_message()
  
 (1 row)
 
--- Tests dbms_pipe.db_pipes view
+-- Tests gms_pipe.db_pipes view
 SELECT name, items, "limit", private, owner
-FROM dbms_pipe.db_pipes
+FROM gms_pipe.db_pipes
 WHERE name LIKE 'private%'
 ORDER BY name;
       name      | items | limit | private |      owner      
@@ -148,10 +148,10 @@ ORDER BY name;
  private_pipe_2 |     9 |    10 | t       | pipe_test_owner
 (2 rows)
 
--- Tests dbms_pipe.__list_pipes(); attribute size is not included
+-- Tests gms_pipe.__list_pipes(); attribute size is not included
 -- since it can be different across runs.
 SELECT name, items, "limit", private, owner
-FROM dbms_pipe.__list_pipes()  AS  (name varchar, items int4, siz int4, "limit" int4, private bool, owner varchar)
+FROM gms_pipe.__list_pipes()  AS  (name varchar, items int4, siz int4, "limit" int4, private bool, owner varchar)
 WHERE name <> 'pipe_name_4'
 ORDER BY 1;
       name      | items | limit | private |      owner      
@@ -164,37 +164,37 @@ ORDER BY 1;
 (5 rows)
 
 -- Tests remove_pipe(text)
-SELECT dbms_pipe.remove_pipe('private_pipe_1');
+SELECT gms_pipe.remove_pipe('private_pipe_1');
  remove_pipe 
 -------------
  
 (1 row)
 
-SELECT dbms_pipe.remove_pipe('private_pipe_2');
+SELECT gms_pipe.remove_pipe('private_pipe_2');
  remove_pipe 
 -------------
  
 (1 row)
 
-SELECT dbms_pipe.remove_pipe('public_pipe_3');
+SELECT gms_pipe.remove_pipe('public_pipe_3');
  remove_pipe 
 -------------
  
 (1 row)
 
-SELECT dbms_pipe.remove_pipe('public_pipe_4');
+SELECT gms_pipe.remove_pipe('public_pipe_4');
  remove_pipe 
 -------------
  
 (1 row)
 
-SELECT dbms_pipe.purge('pipe_name_1');
+SELECT gms_pipe.purge('pipe_name_1');
  purge 
 -------
  
 (1 row)
 
-SELECT dbms_pipe.purge('pipe_name_2');
+SELECT gms_pipe.purge('pipe_name_2');
  purge 
 -------
  
@@ -207,7 +207,7 @@ SELECT  dropTempTable();
  
 (1 row)
 
-SELECT dbms_pipe.purge('pipe_name_3');
+SELECT gms_pipe.purge('pipe_name_3');
  purge 
 -------
  
@@ -220,7 +220,7 @@ SELECT checkUniqueSessionNameB();
  f
 (1 row)
 
-SELECT dbms_pipe.purge('pipe_name_4');
+SELECT gms_pipe.purge('pipe_name_4');
  purge 
 -------
  
@@ -232,13 +232,13 @@ DROP FUNCTION checkUniqueSessionNameB();
 DROP FUNCTION bulkReceive();
 DROP FUNCTION dropTempTable();
 -- Perform a recieve on removed pipe resulting on timeout
-SELECT dbms_pipe.receive_message('public_pipe_4',2);
+SELECT gms_pipe.receive_message('public_pipe_4',2);
  receive_message 
 -----------------
                1
 (1 row)
 
-SELECT dbms_pipe.purge('public_pipe_4');
+SELECT gms_pipe.purge('public_pipe_4');
  purge 
 -------
  

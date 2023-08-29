@@ -35,11 +35,11 @@
 
 #include "utils/elog.h"
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_utility_format_call_stack0);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_utility_format_call_stack1);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_utility_get_time);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_utility_format_call_stack0);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_utility_format_call_stack1);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_utility_get_time);
 
-static char *dbms_utility_format_call_stack(char mode)
+static char *gms_utility_format_call_stack(char mode)
 {
     MemoryContext oldcontext = CurrentMemoryContext;
     ErrorData *edata = NULL;
@@ -157,12 +157,12 @@ static char *dbms_utility_format_call_stack(char mode)
     return sinfo->data;
 }
 
-Datum dbms_utility_format_call_stack0(PG_FUNCTION_ARGS)
+Datum gms_utility_format_call_stack0(PG_FUNCTION_ARGS)
 {
-    PG_RETURN_TEXT_P(cstring_to_text(dbms_utility_format_call_stack('o')));
+    PG_RETURN_TEXT_P(cstring_to_text(gms_utility_format_call_stack('o')));
 }
 
-Datum dbms_utility_format_call_stack1(PG_FUNCTION_ARGS)
+Datum gms_utility_format_call_stack1(PG_FUNCTION_ARGS)
 {
     text *arg = PG_GETARG_TEXT_P(0);
     char mode;
@@ -182,14 +182,14 @@ Datum dbms_utility_format_call_stack1(PG_FUNCTION_ARGS)
                             errdetail("Allowed only chars [ops].")));
     }
 
-    PG_RETURN_TEXT_P(cstring_to_text(dbms_utility_format_call_stack(mode)));
+    PG_RETURN_TEXT_P(cstring_to_text(gms_utility_format_call_stack(mode)));
 }
 
 /*
  * Returns the number of hundredths of seconds that have elapsed
  * since a point in time in the past.
  */
-Datum dbms_utility_get_time(PG_FUNCTION_ARGS)
+Datum gms_utility_get_time(PG_FUNCTION_ARGS)
 {
     struct timeval tv;
 
