@@ -55,7 +55,8 @@ extern "C" Datum year_integer(PG_FUNCTION_ARGS);
 extern "C" Datum uint8out(PG_FUNCTION_ARGS);
 extern "C" Datum dolphin_binaryin(PG_FUNCTION_ARGS);
 Datum bittobigint(VarBit* arg, bool isUnsigned);
-Datum bit_bin_in(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(bit_bin_in);
+extern "C" DLL_PUBLIC Datum bit_bin_in(PG_FUNCTION_ARGS);
 #endif
 
 

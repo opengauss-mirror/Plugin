@@ -4102,3 +4102,5 @@ DROP FUNCTION IF EXISTS pg_catalog.a_sysdate();
 
 DROP CAST IF EXISTS (json AS boolean);
 DROP FUNCTION IF EXISTS pg_catalog.json_to_bool(json);
+
+DROP FUNCTION IF EXISTS pg_catalog.bit_bin_in(cstring, oid, integer);

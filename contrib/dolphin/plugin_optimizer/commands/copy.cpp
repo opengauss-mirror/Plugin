@@ -6025,6 +6025,12 @@ CopyState BeginCopyFrom(Relation rel, const char* filename, List* attnamelist,
         /* Fetch the input function and typioparam info */
         if (IS_BINARY(cstate))
             getTypeBinaryInputInfo(attr[attnum - 1].atttypid, &in_func_oid, &typioparams[attnum - 1]);
+#ifdef DOLPHIN
+        else if (attr[attnum - 1].atttypid == BITOID) {
+            in_func_oid = get_func_oid("bit_bin_in", PG_CATALOG_NAMESPACE, NULL);
+            typioparams[attnum - 1] = BITOID;
+        }
+#endif
         else
             getTypeInputInfo(attr[attnum - 1].atttypid, &in_func_oid, &typioparams[attnum - 1]);
         fmgr_info(in_func_oid, &in_functions[attnum - 1]);
