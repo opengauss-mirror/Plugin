@@ -31,6 +31,8 @@
 #include "../mb/nlssort/nlssort_pinyin_map1_complex.map"
 #include "../mb/nlssort/nlssort_pinyin_map3.map"
 #include "../mb/nlssort/nlssort_pinyin_map5.map"
+#include "knl/knl_thread.h"
+#include "plugin_postgres.h"
 
 bool check_nlssort_args(const char *argname, char **sort_method);
 
@@ -45,6 +47,142 @@ void append_str_complex(uint32 code, StringInfo chars_encoded_part,
 static int compare_simple(const void *p1, const void *p2);
 static int compare_complex(const void *p1, const void *p2);
 
+static text *_nls_run_strxfrm(text *string, text *locale)
+{
+    char *string_str;
+    int string_len;
+
+    char *locale_str = NULL;
+    int locale_len = 0;
+
+    text *result;
+    char *tmp = NULL;
+    size_t rest = 0;
+    int changed_locale = 0;
+    errno_t sret;
+
+    /*
+     * Save the default, server-wide locale setting.
+     * It should not change during the life-span of the server so it
+     * is safe to save it only once, during the first invocation.
+     */
+    if (!GetSessionContext()->lc_collate_cache) {
+        if ((GetSessionContext()->lc_collate_cache = setlocale(LC_COLLATE, NULL)))
+        /* Make a copy of the locale name string. */
+#ifdef _MSC_VER
+            GetSessionContext()->lc_collate_cache = _strdup(GetSessionContext()->lc_collate_cache);
+#else
+            GetSessionContext()->lc_collate_cache = strdup(GetSessionContext()->lc_collate_cache);
+#endif
+        if (!GetSessionContext()->lc_collate_cache) {
+            ereport(ERROR, (errmsg("failed to retrieve the default LC_COLLATE value")));
+        }
+    }
+
+    /*
+     * To run strxfrm, we need a zero-terminated strings.
+     */
+    string_len = VARSIZE_ANY_EXHDR(string);
+    if (string_len < 0)
+        return NULL;
+    string_str = (char *)palloc(string_len + 1);
+    sret = memcpy_s(string_str, string_len, VARDATA_ANY(string), string_len);
+    securec_check(sret, "", "");
+
+    *(string_str + string_len) = '\0';
+
+    if (locale) {
+        locale_len = VARSIZE_ANY_EXHDR(locale);
+    }
+
+    /*
+     * If different than default locale is requested, call setlocale.
+     */
+    if (locale_len > 0 && (strncmp(GetSessionContext()->lc_collate_cache, VARDATA_ANY(locale), locale_len) ||
+                           *(GetSessionContext()->lc_collate_cache + locale_len) != '\0')) {
+        locale_str = (char *)palloc(locale_len + 1);
+        sret = memcpy_s(locale_str, locale_len, VARDATA_ANY(locale), locale_len);
+        securec_check(sret, "", "");
+        *(locale_str + locale_len) = '\0';
+
+        /*
+         * Try to set correct locales.
+         * If setlocale failed, we know the default stayed the same,
+         * co we can safely elog.
+         */
+        if (!setlocale(LC_COLLATE, locale_str)) {
+            ereport(ERROR, (errmsg("failed to set the requested LC_COLLATE value [%s]", locale_str)));
+        }
+
+        changed_locale = 1;
+    }
+
+    /*
+     * We do TRY / CATCH / END_TRY to catch ereport / elog that might
+     * happen during palloc. Ereport during palloc would not be
+     * nice since it would leave the server with changed locales
+     * setting, resulting in bad things.
+     */
+    PG_TRY();
+    {
+        /*
+         * Text transformation.
+         * Increase the buffer until the strxfrm is able to fit.
+         */
+        size_t size = string_len * GetSessionContext()->multiplication + 1;
+        tmp = (char *)palloc(size + VARHDRSZ);
+
+        rest = strxfrm(tmp + VARHDRSZ, string_str, size);
+        while (rest >= size) {
+            pfree(tmp);
+            size = rest + 1;
+            tmp = (char *)palloc(size + VARHDRSZ);
+            rest = strxfrm(tmp + VARHDRSZ, string_str, size);
+            /*
+             * Cache the multiplication factor so that the next
+             * time we start with better value.
+             */
+            if (string_len)
+                GetSessionContext()->multiplication = (rest / string_len) + 2;
+        }
+    }
+    PG_CATCH();
+    {
+        if (changed_locale) {
+            /*
+             * Set original locale
+             */
+            if (!setlocale(LC_COLLATE, GetSessionContext()->lc_collate_cache)) {
+                ereport(FATAL, (errmsg("failed to set back the default LC_COLLATE value [%s]",
+                                       GetSessionContext()->lc_collate_cache)));
+            }
+        }
+    }
+    PG_END_TRY();
+
+    if (changed_locale) {
+        /*
+         * Set original locale
+         */
+        if (!setlocale(LC_COLLATE, GetSessionContext()->lc_collate_cache)) {
+                ereport(FATAL, (errmsg("failed to set back the default LC_COLLATE value [%s]",
+                                       GetSessionContext()->lc_collate_cache)));
+        }
+        pfree(locale_str);
+    }
+    pfree(string_str);
+
+    /*
+     * If the multiplication factor went down, reset it.
+     */
+    if (string_len && rest < string_len * GetSessionContext()->multiplication / 4)
+        GetSessionContext()->multiplication = (rest / string_len) + 1;
+
+    result = (text *)tmp;
+    SET_VARSIZE(result, rest + VARHDRSZ);
+    return result;
+}
+
 /*
  * Find the corresponding encoding rule according to the second argument.
  * Return the code of the first argument under this encoding rule.
@@ -53,6 +191,7 @@ static int compare_complex(const void *p1, const void *p2);
  */
 Datum nlssort(PG_FUNCTION_ARGS)
 {
+#ifndef WHALE
     char *chars_to_be_encoded = NULL;
     char *nlssort_arg = NULL;
     char *sort_method = NULL;
@@ -61,6 +200,8 @@ Datum nlssort(PG_FUNCTION_ARGS)
     if (PG_ARGISNULL(1)) {
         PG_RETURN_NULL();
     }
+
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), PG_GETARG_TEXT_P(0), "nlssort()");
 
     nlssort_arg = text_to_cstring(PG_GETARG_TEXT_P(1));
     if (check_nlssort_args(nlssort_arg, &sort_method)) {
@@ -93,6 +234,30 @@ Datum nlssort(PG_FUNCTION_ARGS)
     pfree_ext(sort_method);
 
     PG_RETURN_TEXT_P(cstring_to_text(chars_encoded));
+#else
+    text *locale;
+    text *result;
+
+    if (PG_ARGISNULL(0))
+        PG_RETURN_NULL();
+    if (PG_ARGISNULL(1)) {
+        if (GetSessionContext()->def_locale != NULL)
+            locale = GetSessionContext()->def_locale;
+        else {
+            locale = (text *)palloc(VARHDRSZ);
+            SET_VARSIZE(locale, VARHDRSZ);
+        }
+    } else {
+        locale = PG_GETARG_TEXT_PP(1);
+    }
+
+    result = _nls_run_strxfrm(PG_GETARG_TEXT_PP(0), locale);
+
+    if (!result)
+        PG_RETURN_NULL();
+
+    PG_RETURN_BYTEA_P(result);
+#endif
 }
 
 /*

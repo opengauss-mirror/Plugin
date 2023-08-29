@@ -70,14 +70,8 @@ static void GetExprNumDistinctWalker(PlannerInfo *root, VariableStatData *varDat
 static void TransferFunctionNumDistinct(PlannerInfo *root, VariableStatData *varData, FuncExpr *funcExpr,
     bool isJoinVar);
 static bool CheckFuncArgsForTransferNumDistinct(FuncExpr *funcExpr, Node **varNode);
-static bool IsFunctionTransferNumDistinct(FuncExpr *funcExpr);
 
-
-/*
- * The array collects all of the type-cast functions which can transfer number of distinct from any one of
- * its arguments, other parameters are viewed as Const.
- */
-static Oid g_typeCastFuncOids[] = {
+Oid g_typeCastFuncOids[] = {
     /* type cast from bool */
     BOOLTOINT1FUNCOID, BOOLTOINT2FUNCOID, BOOLTOINT4FUNCOID, BOOLTOINT8FUNCOID, BOOLTOTEXTFUNCOID,
 
@@ -99,8 +93,8 @@ static Oid g_typeCastFuncOids[] = {
     INT8TONUMERICFUNCOID, INT8TOHEXFUNCOID,
 
     /* type cast from float4/float8 */
-    FLOAT4TOBPCHARFUNCOID, FLOAT4TOTEXTFUNCOID, FLOAT4TOVARCHARFUNCOID, FLOAT4TOFLOAT8FUNCOID, 
-    FLOAT4TONUMERICFUNCOID, FLOAT8TOBPCHARFUNCOID, FLOAT8TOINTERVALFUNCOID, FLOAT8TOTEXTFUNCOID, 
+    FLOAT4TOBPCHARFUNCOID, FLOAT4TOTEXTFUNCOID, FLOAT4TOVARCHARFUNCOID, FLOAT4TOFLOAT8FUNCOID,
+    FLOAT4TONUMERICFUNCOID, FLOAT8TOBPCHARFUNCOID, FLOAT8TOINTERVALFUNCOID, FLOAT8TOTEXTFUNCOID,
     FLOAT8TOVARCHARFUNCOID, FLOAT8TONUMERICFUNCOID, FLOAT8TOTIMESTAMPFUNCOID,
 
     /* type cast from numeric */
@@ -116,7 +110,7 @@ static Oid g_typeCastFuncOids[] = {
     /* type cast from text */
     TODATEDEFAULTFUNCOID, TODATEFUNCOID, TOTIMESTAMPFUNCOID, TOTIMESTAMPDEFAULTFUNCOID,
     TEXTTOREGCLASSFUNCOID, TEXTTOINT1FUNCOID, TEXTTOINT2FUNCOID, TEXTTOINT4FUNCOID, TEXTTOINT8FUNCOID,
-    TEXTTONUMERICFUNCOID, TEXTTOTIMESTAMP, TIMESTAMPTONEWTIMEZONEFUNCOID, TIMESTAMPTZTONEWTIMEZONEFUNCOID, 
+    TEXTTONUMERICFUNCOID, TEXTTOTIMESTAMP, TIMESTAMPTONEWTIMEZONEFUNCOID, TIMESTAMPTZTONEWTIMEZONEFUNCOID,
     HEXTORAWFUNCOID,
 
     /* type cast from char/varchar/bpchar */
@@ -387,7 +381,7 @@ static bool CheckFuncArgsForTransferNumDistinct(FuncExpr *funcExpr, Node **varNo
 /*
  * check if the function can transfer number of distinct from one of its parameters
  */
-static bool IsFunctionTransferNumDistinct(FuncExpr *funcExpr)
+bool IsFunctionTransferNumDistinct(FuncExpr *funcExpr)
 {
     /*
      * We explicitly allow or disallow functions to transfer number of distinct.

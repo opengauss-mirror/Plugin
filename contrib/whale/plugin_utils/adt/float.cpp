@@ -61,7 +61,6 @@ static const uint32 nan[2] = {0xffffffff, 0x7fffffff};
 /* ========== USER I/O ROUTINES ========== */
 
 static int float4_cmp_internal(float4 a, float4 b);
-int float8_cmp_internal(float8 a, float8 b);
 double float8in_internal(char* str, char** s, bool* hasError);
 
 #ifndef HAVE_CBRT
@@ -257,10 +256,17 @@ Datum float4in(PG_FUNCTION_ARGS)
      * Check for an empty-string input to begin with, to avoid the vagaries of
      * strtod() on different platforms.
      */
-    if (*num == '\0')
+    if (*num == '\0') {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING,
+                    (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                     errmsg("invalid input syntax for type real: \"%s\". truncated automatically", orig_num)));
+            PG_RETURN_FLOAT4(0);
+        }
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type real: \"%s\"", orig_num)));
+    }
 
     /* skip leading whitespace */
     while (*num != '\0' && isspace((unsigned char)*num))
@@ -300,11 +306,13 @@ Datum float4in(PG_FUNCTION_ARGS)
              * detect whether it's a "real" out-of-range condition by checking
              * to see if the result is zero or huge.
              */
-            if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL)
-                ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("\"%s\" is out of range for type real", orig_num)));
-        } else
+            if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL) {
+                ereport((fcinfo->can_ignore ? WARNING : ERROR),
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                         errmsg("\"%s\" is out of range for type real", orig_num)));
+                val = (val == 0.0 ? 0 : (val >= HUGE_VAL ? FLT_MAX : FLT_MIN));
+            }
+        } else if (!fcinfo->can_ignore)
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type real: \"%s\"", orig_num)));
@@ -346,8 +354,8 @@ Datum float4in(PG_FUNCTION_ARGS)
     while (*endptr != '\0' && isspace((unsigned char)*endptr))
         endptr++;
 
-    /* if there is any junk left at the end of the string, bail out */
-    if (*endptr != '\0')
+    /* if there is any junk left at the end of the string, bail out. if can_ignore == true, discard junk and continue */
+    if (*endptr != '\0' && !fcinfo->can_ignore)
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type real: \"%s\"", orig_num)));
@@ -356,6 +364,22 @@ Datum float4in(PG_FUNCTION_ARGS)
      * if we get here, we have a legal double, still need to check to see if
      * it's a legal float4
      */
+    if (fcinfo->can_ignore) {
+        if (isinf((float4)val) && !isinf(val)) {
+            ereport(WARNING, (errmsg("value out of range: overflow")));
+            PG_RETURN_FLOAT4(val < 0 ? -FLT_MAX : FLT_MAX);
+        }
+        if (((float4)val) == 0.0 && val != 0) {
+            ereport(WARNING, (errmsg("value out of range: underflow")));
+            PG_RETURN_FLOAT4(0);
+        }
+        if (*endptr != '\0') {
+            ereport(WARNING,
+                    (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                     errmsg("invalid input syntax for type real: \"%s\". truncated automatically", orig_num)));
+        }
+        PG_RETURN_FLOAT4((float4)val);
+    }
     CHECKFLOATVAL((float4)val, isinf(val), val == 0);
 
     PG_RETURN_FLOAT4((float4)val);
@@ -475,10 +499,17 @@ Datum float8in(PG_FUNCTION_ARGS)
      * Check for an empty-string input to begin with, to avoid the vagaries of
      * strtod() on different platforms.
      */
-    if (*num == '\0')
+    if (*num == '\0') {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING,
+                    (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                     errmsg("invalid input syntax for type double precision: \"%s\". truncated automatically", orig_num)));
+            PG_RETURN_FLOAT8(0);
+        }
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
+    }
 
     /* skip leading whitespace */
     while (*num != '\0' && isspace((unsigned char)*num))
@@ -518,11 +549,13 @@ Datum float8in(PG_FUNCTION_ARGS)
              * detect whether it's a "real" out-of-range condition by checking
              * to see if the result is zero or huge.
              */
-            if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL)
-                ereport(ERROR,
-                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                        errmsg("\"%s\" is out of range for type double precision", orig_num)));
-        } else
+            if (val == 0.0 || val >= HUGE_VAL || val <= -HUGE_VAL) {
+                ereport(fcinfo->can_ignore ? WARNING : ERROR,
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                         errmsg("\"%s\" is out of range for type double precision", orig_num)));
+                val = (val == 0.0 ? 0 : (val >= HUGE_VAL ? DBL_MAX : DBL_MIN));
+            }
+        } else if (!fcinfo->can_ignore)
             ereport(ERROR,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
@@ -564,11 +597,18 @@ Datum float8in(PG_FUNCTION_ARGS)
     while (*endptr != '\0' && isspace((unsigned char)*endptr))
         endptr++;
 
-    /* if there is any junk left at the end of the string, bail out */
-    if (*endptr != '\0')
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
+    /* if there is any junk left at the end of the string, bail out. if can_ignore == true, discard junk and continue. */
+    if (*endptr != '\0') {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING,
+                    (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                     errmsg("invalid input syntax for type double precision: \"%s\". truncated automatically", orig_num)));
+        } else {
+            ereport(ERROR,
+                    (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                     errmsg("invalid input syntax for type double precision: \"%s\"", orig_num)));
+        }
+    }
 
     CHECKFLOATVAL(val, true, true);
 
@@ -1175,6 +1215,18 @@ Datum dtof(PG_FUNCTION_ARGS)
 {
     float8 num = PG_GETARG_FLOAT8(0);
 
+    if (fcinfo->can_ignore) {
+        if (isinf((float4)num) && !isinf(num)) {
+            ereport(WARNING, (errmsg("value out of range: overflow")));
+            PG_RETURN_FLOAT4(num < 0 ? -FLT_MAX : FLT_MAX);
+        }
+        if (((float4)num) == 0.0 && num != 0) {
+            ereport(WARNING, (errmsg("value out of range: underflow")));
+            PG_RETURN_FLOAT4(0);
+        }
+        PG_RETURN_FLOAT4((float4)num);
+    }
+
     CHECKFLOATVAL((float4)num, isinf(num), num == 0);
 
     PG_RETURN_FLOAT4((float4)num);
@@ -1200,8 +1252,13 @@ Datum dtoi4(PG_FUNCTION_ARGS)
      * exact power of 2, so it will be represented exactly; but PG_INT32_MAX
      * isn't, and might get rounded off, so avoid using it.
      */
-    if (num < (float8)PG_INT32_MIN || num >= -((float8)PG_INT32_MIN) || isnan(num))
+    if (num < (float8)PG_INT32_MIN || num >= -((float8)PG_INT32_MIN) || isnan(num)) {
+        if (fcinfo->can_ignore && !isnan(num)) {
+            ereport(WARNING, (errmsg("integer out of range")));
+            PG_RETURN_INT32(num < (float8)PG_INT32_MIN ? INT_MIN : INT_MAX);
+        }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+    }
 
     PG_RETURN_INT32((int32)num);
 }
@@ -1226,8 +1283,13 @@ Datum dtoi2(PG_FUNCTION_ARGS)
      * exact power of 2, so it will be represented exactly; but PG_INT16_MAX
      * isn't, and might get rounded off, so avoid using it.
      */
-    if (num < (float8)PG_INT16_MIN || num >= -((float8)PG_INT16_MIN) || isnan(num))
+    if (num < (float8)PG_INT16_MIN || num >= -((float8)PG_INT16_MIN) || isnan(num)) {
+        if (fcinfo->can_ignore && !isnan(num)) {
+            ereport(WARNING, (errmsg("smallint out of range")));
+            PG_RETURN_INT16(num < (float8)PG_INT16_MIN ? SHRT_MIN : SHRT_MAX);
+        }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+    }
 
     PG_RETURN_INT16((int16)num);
 }
@@ -1272,6 +1334,17 @@ Datum ftoi4(PG_FUNCTION_ARGS)
      * exact power of 2, so it will be represented exactly; but PG_INT32_MAX
      * isn't, and might get rounded off, so avoid using it.
      */
+
+    if (fcinfo->can_ignore && num < (float4)PG_INT32_MIN) {
+        ereport(WARNING, (errmsg("integer out of range")));
+        PG_RETURN_INT32((int32)INT_MIN);
+    }
+
+    if (fcinfo->can_ignore && num >= -((float4)PG_INT32_MIN)) {
+        ereport(WARNING, (errmsg("integer out of range")));
+        PG_RETURN_INT32((int32)INT_MAX);
+    }
+
     if (num < (float4)PG_INT32_MIN || num >= -((float4)PG_INT32_MIN) || isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
 
@@ -1298,6 +1371,16 @@ Datum ftoi2(PG_FUNCTION_ARGS)
      * exact power of 2, so it will be represented exactly; but PG_INT16_MAX
      * isn't, and might get rounded off, so avoid using it.
      */
+    if (fcinfo->can_ignore && num < (float4)PG_INT16_MIN) {
+        ereport(WARNING, (errmsg("smallint out of range")));
+        PG_RETURN_INT16((int16)SHRT_MIN);
+    }
+
+    if (fcinfo->can_ignore && num >= -((float4)PG_INT16_MIN)) {
+        ereport(WARNING, (errmsg("smallint out of range")));
+        PG_RETURN_INT16((int16)SHRT_MAX);
+    }
+
     if (num < (float4)PG_INT16_MIN || num >= -((float4)PG_INT16_MIN) || isnan(num))
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
 
@@ -1348,7 +1431,13 @@ Datum dceil(PG_FUNCTION_ARGS)
 {
     float8 arg1 = PG_GETARG_FLOAT8(0);
 
-    PG_RETURN_FLOAT8(ceil(arg1));
+    float8 result = ceil(arg1);
+    if (DB_IS_CMPT(A_FORMAT) && -0.0 == result) {
+        /* ceil function won't return -0 if compatible with O type database */
+        result = 0.0;
+    }
+
+    PG_RETURN_FLOAT8(result);
 }
 
 /*

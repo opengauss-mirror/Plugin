@@ -47,7 +47,6 @@ static bool aclitem_match(const AclItem* a1, const AclItem* a2);
 static int aclitemComparator(const void* arg1, const void* arg2);
 static void check_circularity(const Acl* old_acl, const AclItem* mod_aip, Oid ownerId);
 static Acl* recursive_revoke(Acl* acl, Oid grantee, AclMode revoke_privs, Oid ownerId, DropBehavior behavior);
-static int oidComparator(const void* arg1, const void* arg2);
 
 static AclMode convert_priv_string(text* priv_type_text);
 static AclMode convert_any_priv_string(text* priv_type_text, const priv_map* privileges);
@@ -1512,7 +1511,7 @@ int aclmembers(const Acl* acl, Oid** roleids)
     }
 
     /* Sort the array */
-    qsort(list, j, sizeof(Oid), oidComparator);
+    qsort(list, j, sizeof(Oid), oid_cmp);
 
     /* Remove duplicates from the array */
     k = 0;
@@ -1528,22 +1527,6 @@ int aclmembers(const Acl* acl, Oid** roleids)
     *roleids = list;
 
     return k + 1;
-}
-
-/*
- * oidComparator
- *		qsort comparison function for Oids
- */
-static int oidComparator(const void* arg1, const void* arg2)
-{
-    Oid oid1 = *(const Oid*)arg1;
-    Oid oid2 = *(const Oid*)arg2;
-
-    if (oid1 > oid2)
-        return 1;
-    if (oid1 < oid2)
-        return -1;
-    return 0;
 }
 
 /*
@@ -1731,7 +1714,7 @@ Datum aclexplode(PG_FUNCTION_ARGS)
          * build tupdesc for result tuples (matches out parameters in pg_proc
          * entry)
          */
-        tupdesc = CreateTemplateTupleDesc(4, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(4, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "grantor", OIDOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "grantee", OIDOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)3, "privilege_type", TEXTOID, -1, 0);
@@ -5736,6 +5719,7 @@ void select_best_grantor(
     }
 }
 
+extern HeapTuple SearchUserHostName(const char* userName, Oid* oid);
 /*
  * get_role_oid - Given a role name, look up the role's OID.
  *
@@ -5744,11 +5728,14 @@ void select_best_grantor(
  */
 Oid get_role_oid(const char* rolname, bool missing_ok)
 {
-    Oid oid;
+    Oid oid = InvalidOid;
 
     /* Functions which use cache in clientauth need hold interrupts for safe. */
     HOLD_INTERRUPTS();
-    oid = GetSysCacheOid1(AUTHNAME, CStringGetDatum(rolname));
+    HeapTuple tuple = NULL;
+    tuple = SearchUserHostName(rolname, &oid);
+    if (HeapTupleIsValid(tuple))
+        ReleaseSysCache(tuple);
     RESUME_INTERRUPTS();
     CHECK_FOR_INTERRUPTS();
     if (!OidIsValid(oid) && !missing_ok)

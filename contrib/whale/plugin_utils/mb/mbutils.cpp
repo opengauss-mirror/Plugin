@@ -223,6 +223,12 @@ void InitializeClientEncoding(void)
                     pg_enc2name_tbl[u_sess->mb_cxt.pending_client_encoding].name,
                     GetDatabaseEncodingName())));
     }
+    u_sess->mb_cxt.character_set_connection = &pg_enc2name_tbl[GetDatabaseEncoding()];
+    if (ENABLE_MULTI_CHARSET) {
+        u_sess->mb_cxt.collation_connection = get_default_collation_by_charset(GetDatabaseEncoding(), false);
+    } else {
+        u_sess->mb_cxt.collation_connection = InvalidOid;
+    }
 }
 
 /*
@@ -320,6 +326,69 @@ unsigned char* pg_do_encoding_conversion(unsigned char* src, int len, int src_en
     return result;
 }
 
+void construct_conversion_fmgr_info(int src_encoding, int dst_encoding, void* finfo)
+{
+    Assert(finfo != NULL);
+
+    FmgrInfo* convert_finfo = (FmgrInfo*)finfo;
+    if (src_encoding == dst_encoding) {
+        convert_finfo->fn_oid = InvalidOid;
+        return;
+    }
+
+    if (src_encoding == PG_SQL_ASCII || dst_encoding == PG_SQL_ASCII) {
+        convert_finfo->fn_oid = InvalidOid;
+        return;
+    }
+
+    Oid convert_func = FindDefaultConversionProc(src_encoding, dst_encoding);
+    if (OidIsValid(convert_func)) {
+        fmgr_info(convert_func, convert_finfo);
+    } else {
+        convert_finfo->fn_oid = InvalidOid;
+    }
+}
+
+
+static char* fast_encoding_conversion(char* src, int len, int src_encoding, int dest_encoding, FmgrInfo* convert_finfo)
+{
+    if (len <= 0) {
+        return src;
+    }
+
+    char* result = NULL;
+    Assert(convert_finfo != NULL);
+    Assert(OidIsValid(convert_finfo->fn_oid));
+
+    /*
+     * Allocate space for conversion result, being wary of integer overflow
+     */
+    if ((Size)len >= (MaxAllocSize / (Size)MAX_CONVERSION_GROWTH)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                errmsg("out of memory"),
+                errdetail("String of %d bytes is too long for encoding conversion.", len)));
+    }
+    result = (char*)palloc(len * MAX_CONVERSION_GROWTH + 1);
+
+    FunctionCall5(convert_finfo,
+        Int32GetDatum(src_encoding),
+        Int32GetDatum(dest_encoding),
+        CStringGetDatum(src),
+        CStringGetDatum(result),
+        Int32GetDatum(len));
+    return result;
+}
+
+char* try_fast_encoding_conversion(char* src, int len, int src_encoding, int dest_encoding, void* convert_finfo)
+{
+    if (unlikely(!OidIsValid(((FmgrInfo*)convert_finfo)->fn_oid))) {
+        return (char*)pg_do_encoding_conversion((unsigned char*)src, len, src_encoding, dest_encoding);
+    }
+
+    return fast_encoding_conversion(src, len, src_encoding, dest_encoding, (FmgrInfo*)convert_finfo);
+}
+
 /*
  * Convert string using encoding_name. The source
  * encoding is the DB encoding.
@@ -349,6 +418,7 @@ Datum pg_convert_to_nocase(PG_FUNCTION_ARGS)
     Datum dest_encoding_name = PG_GETARG_DATUM(1);
     Datum src_encoding_name = DirectFunctionCall1(namein, CStringGetDatum(u_sess->mb_cxt.DatabaseEncoding->name));
     Datum result;
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), DatumGetPointer(string), "pg_convert()");
 
     /*
      * pg_convert expects a bytea as its first argument. We're passing it a
@@ -618,6 +688,42 @@ char* pg_any_to_server(const char* s, int len, int encoding)
 }
 
 /*
+ * convert any encoding to client encoding.
+ */
+char* pg_any_to_client(const char* s, int len, int encoding, void* convert_finfo)
+{
+    Assert(u_sess->mb_cxt.ClientEncoding);
+
+    if (len <= 0) {
+        return (char*)s;
+    }
+    int client_encoding = u_sess->mb_cxt.ClientEncoding->encoding;
+
+    if (encoding == client_encoding || client_encoding == PG_SQL_ASCII) {
+        /*
+         * No conversion is needed, but we must still validate the data.
+         */
+        return (char*)s;
+    }
+
+    if (encoding == PG_SQL_ASCII) {
+        /* No conversion is possible, but we must validate the result */
+        (void) pg_verify_mbstr(client_encoding, s, len, false);
+        return (char*)s;
+    }
+
+    if (u_sess->mb_cxt.DatabaseEncoding->encoding == encoding) {
+        return perform_default_encoding_conversion(s, len, false);
+    } else if (convert_finfo != NULL) {
+        return try_fast_encoding_conversion(
+            (char*)s, len, encoding, client_encoding, convert_finfo);
+    } else {
+        return (char*)pg_do_encoding_conversion(
+            (unsigned char*)s, len, encoding, client_encoding);
+    }
+}
+
+/*
  * convert server encoding to client encoding.
  */
 char* pg_server_to_client(const char* s, int len)
@@ -647,7 +753,7 @@ bool WillTranscodingBePerformed(int encoding)
 /*
  * convert server encoding to any encoding.
  */
-char* pg_server_to_any(const char* s, int len, int encoding)
+char* pg_server_to_any(const char* s, int len, int encoding, void *convert_finfo)
 {
     Assert(u_sess->mb_cxt.DatabaseEncoding);
     Assert(u_sess->mb_cxt.ClientEncoding);
@@ -665,6 +771,9 @@ char* pg_server_to_any(const char* s, int len, int encoding)
     }
     if (u_sess->mb_cxt.ClientEncoding->encoding == encoding) {
         return perform_default_encoding_conversion(s, len, false);
+    } else if (convert_finfo != NULL) {
+        return try_fast_encoding_conversion(
+            (char*)s, len, u_sess->mb_cxt.DatabaseEncoding->encoding, encoding, convert_finfo);
     } else {
         return (char*)pg_do_encoding_conversion(
             (unsigned char*)s, len, u_sess->mb_cxt.DatabaseEncoding->encoding, encoding);
@@ -806,6 +915,27 @@ int pg_mbstrlen_with_len(const char* mbstr, int limit)
 }
 
 /* returns the length (counted in wchars) of a multibyte string
+ * (not necessarily NULL terminated)
+ */
+int pg_encoding_mbstrlen_with_len(const char* mbstr, int limit, int encoding)
+{
+    int len = 0;
+
+    /* optimization for single byte encoding */
+    if (pg_encoding_max_length(encoding) == 1) {
+        return limit;
+    }
+    while (limit > 0 && *mbstr) {
+        int l = pg_encoding_mblen(encoding, mbstr);
+
+        limit -= l;
+        mbstr += l;
+        len++;
+    }
+    return len;
+}
+
+/* returns the length (counted in wchars) of a multibyte string
  * with fixed encoding.
  */
 int pg_mbstrlen_with_len_eml(const char* mbstr, int limit, int eml)
@@ -829,10 +959,6 @@ int pg_mbstrlen_with_len_toast(const char* mbstr, int* limit)
 {
     int len = 0;
 
-    /* optimization for single byte encoding */
-    if (pg_database_encoding_max_length() == 1) {
-        return *limit;
-    }
     while (*limit > 0 && *mbstr) {
         int l = pg_mblen(mbstr);
 
@@ -925,8 +1051,8 @@ template<bool calCharLength> int MbCharClipLen(const char* mbstr, int len, int l
  */
 int pg_mbcharcliplen(const char* mbstr, int len, int limit)
 {
-    bool pgFormat = DB_IS_CMPT(PG_FORMAT);
-    if (pgFormat) {
+    bool calCharLength = DB_IS_CMPT(PG_FORMAT | B_FORMAT);
+    if (calCharLength) {
         return MbCharClipLen<true>(mbstr, len, limit);
     } else {
         return MbCharClipLen<false>(mbstr, len, limit);
@@ -1016,6 +1142,26 @@ const char* GetDatabaseEncodingName(void)
 {
     Assert(u_sess->mb_cxt.DatabaseEncoding);
     return u_sess->mb_cxt.DatabaseEncoding->name;
+}
+
+int GetCharsetConnection(void)
+{
+    Assert(u_sess->mb_cxt.character_set_connection);
+    return u_sess->mb_cxt.character_set_connection->encoding;
+}
+
+const char* GetCharsetConnectionName(void)
+{
+    Assert(u_sess->mb_cxt.character_set_connection);
+    return u_sess->mb_cxt.character_set_connection->name;
+}
+
+Oid GetCollationConnection(void)
+{
+    if (!ENABLE_MULTI_CHARSET) {
+        return InvalidOid;
+    }
+    return u_sess->mb_cxt.collation_connection;
 }
 
 Datum getdatabaseencoding(PG_FUNCTION_ARGS)

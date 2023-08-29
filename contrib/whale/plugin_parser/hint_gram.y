@@ -60,7 +60,8 @@ static double convert_to_numeric(Node *value);
 
 %token <keyword> NestLoop_P MergeJoin_P HashJoin_P No_P Leading_P Rows_P Broadcast_P Redistribute_P BlockName_P
 	TableScan_P IndexScan_P IndexOnlyScan_P Skew_P HINT_MULTI_NODE_P NULL_P TRUE_P FALSE_P Predpush_P
-	PredpushSameLevel_P Rewrite_P Gather_P Set_P USE_CPLAN_P USE_GPLAN_P ON_P OFF_P No_expand_P NO_GPC_P
+	PredpushSameLevel_P Rewrite_P Gather_P Set_P USE_CPLAN_P USE_GPLAN_P ON_P OFF_P No_expand_P SQL_IGNORE_P NO_GPC_P
+	CHOOSE_ADAPTIVE_GPLAN_P
 
 %nonassoc	IDENT NULL_P
 
@@ -97,7 +98,9 @@ join_hint_item:
 	| No_P stream_hint
 	{
 		StreamHint	*streamHint = (StreamHint *) $2;
-		streamHint->negative = true;
+		if (streamHint != NULL) {
+			streamHint->negative = true;
+		}
 		$$ = (Node *) streamHint;
 	}
 	| row_hint
@@ -127,9 +130,14 @@ join_hint_item:
 	}
 	| HINT_MULTI_NODE_P
 	{
+#ifndef ENABLE_MULTIPLE_NODES
+		hint_scanner_yyerror("unsupport distributed hint", yyscanner);
+		$$ = NULL;
+#else /* ENABLE_MULTIPLE_NODES */
 		MultiNodeHint *multi_node_hint = (MultiNodeHint *)makeNode(MultiNodeHint);
 		multi_node_hint->multi_node_hint = true;
 		$$ = (Node *) multi_node_hint;
+#endif /* ENABLE_MULTIPLE_NODES */
 	}
     | pred_push_hint
     {
@@ -163,10 +171,20 @@ join_hint_item:
 	{
 		$$ = $1;
 	}
+	| SQL_IGNORE_P
+	{
+		SqlIgnoreHint *sql_ignore_hint = (SqlIgnoreHint *)makeNode(SqlIgnoreHint);
+		sql_ignore_hint->sql_ignore_hint = true;
+		$$ = (Node *) sql_ignore_hint;
+	}
 
 gather_hint:
 	Gather_P '(' IDENT ')'
 	{
+#ifndef ENABLE_MULTIPLE_NODES
+		hint_scanner_yyerror("unsupport distributed hint", yyscanner);
+		$$ = NULL;
+#else /* ENABLE_MULTIPLE_NODES */
 		GatherHint *gatherHint = makeNode(GatherHint);
 		gatherHint->base.hint_keyword = HINT_KEYWORD_GATHER;
 		gatherHint->base.state = HINT_STATE_NOTUSED;
@@ -180,6 +198,7 @@ gather_hint:
 			gatherHint->source = HINT_GATHER_UNKNOWN;
 		}
 		$$ = (Node *) gatherHint;
+#endif /* ENABLE_MULTIPLE_NODES */
 	}
 
 no_gpc_hint:
@@ -242,6 +261,23 @@ set_hint:
 			$$ = (Node *) setHint;
 		}
 	}
+	|
+	Set_P '(' Rewrite_P guc_value ')'
+	{
+		char* name = "rewrite_rule";
+		Value* guc_val = NULL;
+		if (IsA($4, Integer)) {
+			guc_val = integerToString((Value*)$4);
+		} else {
+			guc_val = (Value*)$4;
+		}
+		SetHint *setHint = makeNode(SetHint);
+		setHint->base.hint_keyword = HINT_KEYWORD_SET;
+		setHint->base.state = HINT_STATE_NOTUSED;
+		setHint->name = name;
+		setHint->value = strVal(guc_val);
+		$$ = (Node *) setHint;
+	}
 
 plancache_hint:
 	USE_CPLAN_P
@@ -250,6 +286,8 @@ plancache_hint:
 		planCacheHint->base.hint_keyword = HINT_KEYWORD_CPLAN;
 		planCacheHint->base.state = HINT_STATE_NOTUSED;
 		planCacheHint->chooseCustomPlan = true;
+        planCacheHint->method = CHOOSE_NONE_GPLAN;
+
 		$$ = (Node *) planCacheHint;
 	}
 	| USE_GPLAN_P
@@ -258,8 +296,21 @@ plancache_hint:
 		planCacheHint->base.hint_keyword = HINT_KEYWORD_GPLAN;
 		planCacheHint->base.state = HINT_STATE_NOTUSED;
 		planCacheHint->chooseCustomPlan = false;
+        planCacheHint->method = CHOOSE_DEFAULT_GPLAN;
+
 		$$ = (Node *) planCacheHint;
 	}
+    | CHOOSE_ADAPTIVE_GPLAN_P
+    {
+        PlanCacheHint *planCacheHint = makeNode(PlanCacheHint);
+		planCacheHint->base.hint_keyword = HINT_KEYWORD_CHOOSE_ADAPTIVE_GPLAN;
+		planCacheHint->base.state = HINT_STATE_NOTUSED;
+		planCacheHint->chooseCustomPlan = false;
+        planCacheHint->method = CHOOSE_ADAPTIVE_GPLAN;
+
+		$$ = (Node *) planCacheHint;
+    }
+
 
 rewrite_hint:
 	Rewrite_P '(' ident_list ')'
@@ -267,6 +318,7 @@ rewrite_hint:
 		RewriteHint *rewriteHint = makeNode(RewriteHint);
 		rewriteHint->param_names = $3;
 		rewriteHint->param_bits = 0;
+		rewriteHint->base.hint_keyword = HINT_KEYWORD_REWRITE;
 		$$ = (Node *) rewriteHint;
 	}
 
@@ -381,21 +433,31 @@ join_method_hint:
 stream_hint:
 	Broadcast_P '(' ident_list ')'
 	{
+#ifndef ENABLE_MULTIPLE_NODES
+		hint_scanner_yyerror("unsupport distributed hint", yyscanner);
+		$$ = NULL;
+#else /* ENABLE_MULTIPLE_NODES */
 		StreamHint *streamHint = makeNode(StreamHint);
 		streamHint->base.relnames = $3;
 		streamHint->base.hint_keyword = HINT_KEYWORD_BROADCAST;
 		streamHint->stream_type = STREAM_BROADCAST;
 
 		$$ = (Node*)streamHint;
+#endif /* ENABLE_MULTIPLE_NODES */
 	}
 	| Redistribute_P '(' ident_list ')'
 	{
+#ifndef ENABLE_MULTIPLE_NODES
+		hint_scanner_yyerror("unsupport distributed hint", yyscanner);
+		$$ = NULL;
+#else /* ENABLE_MULTIPLE_NODES */
 		StreamHint *streamHint = makeNode(StreamHint);
 		streamHint->base.relnames = $3;
 		streamHint->base.hint_keyword = HINT_KEYWORD_REDISTRIBUTE;
 		streamHint->stream_type = STREAM_REDISTRIBUTE;
 
 		$$ = (Node*)streamHint;
+#endif /* ENABLE_MULTIPLE_NODES */
 	}
 	;
 
@@ -484,6 +546,10 @@ scan_hint:
 skew_hint:
 	Skew_P '(' skew_relist column_list_p value_list_p ')'
 	{
+#ifndef ENABLE_MULTIPLE_NODES
+		hint_scanner_yyerror("unsupport distributed hint", yyscanner);
+		$$ = NULL;
+#else /* ENABLE_MULTIPLE_NODES */
 		SkewHint	*skewHint = makeNode(SkewHint);
 		skewHint->base.relnames = $3;
 		skewHint->base.hint_keyword = HINT_KEYWORD_SKEW;
@@ -491,10 +557,15 @@ skew_hint:
 		skewHint->column_list = $4;
 		skewHint->value_list = $5;
 		$$ = (Node *) skewHint;
+#endif /* ENABLE_MULTIPLE_NODES */
 	}
 	|
 	Skew_P '(' skew_relist column_list_p ')'
 	{
+#ifndef ENABLE_MULTIPLE_NODES
+		hint_scanner_yyerror("unsupport distributed hint", yyscanner);
+		$$ = NULL;
+#else /* ENABLE_MULTIPLE_NODES */
 		SkewHint	*skewHint = makeNode(SkewHint);
 		skewHint->base.relnames = $3;
 		skewHint->base.hint_keyword = HINT_KEYWORD_SKEW;
@@ -502,6 +573,7 @@ skew_hint:
 		skewHint->column_list = $4;
 		skewHint->value_list = NIL;
 		$$ = (Node *) skewHint;
+#endif /* ENABLE_MULTIPLE_NODES */
 	}
 	;
 

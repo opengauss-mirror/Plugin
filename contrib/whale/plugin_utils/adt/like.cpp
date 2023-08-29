@@ -25,6 +25,7 @@
 #include "miscadmin.h"
 #include "utils/builtins.h"
 #include "utils/pg_locale.h"
+#include "catalog/gs_collation.h"
 
 static int SB_MatchText(char* t, int tlen, char* p, int plen, pg_locale_t locale, bool locale_is_c);
 static text* SB_do_like_escape(text*, text*);
@@ -153,6 +154,15 @@ int GenericMatchText(char* s, int slen, char* p, int plen)
         return MB_MatchText(s, slen, p, plen, 0, true);
 }
 
+int generic_match_text_with_collation(char* s, int slen, char* p, int plen, Oid collation)
+{
+    if (is_b_format_collation(collation)) {
+        return match_text_by_builtin_collations((unsigned char*)s, slen, (unsigned char*)p, plen, collation);
+    }
+
+    return GenericMatchText(s, slen, p, plen);
+}
+
 static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation)
 {
     char *s = NULL, *p = NULL;
@@ -172,10 +182,7 @@ static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation)
         str = DatumGetTextP(DirectFunctionCall1Coll(lower, collation, PointerGetDatum(str)));
         s = VARDATA(str);
         slen = (VARSIZE(str) - VARHDRSZ);
-        if (GetDatabaseEncoding() == PG_UTF8)
-            return UTF8_MatchText(s, slen, p, plen, 0, true);
-        else
-            return MB_MatchText(s, slen, p, plen, 0, true);
+        return generic_match_text_with_collation(s, slen, p, plen, collation);
     } else {
         /*
          * Here we need to prepare locale information for SB_lower_char. This
@@ -184,7 +191,7 @@ static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation)
         pg_locale_t locale = 0;
         bool locale_is_c = false;
 
-        if (lc_ctype_is_c(collation))
+        if (lc_ctype_is_c(collation) || COLLATION_IN_B_FORMAT(collation))
             locale_is_c = true;
         else if (collation != DEFAULT_COLLATION_OID) {
             if (!OidIsValid(collation)) {
@@ -252,11 +259,8 @@ Datum textlike(PG_FUNCTION_ARGS)
 {
     text* str = PG_GETARG_TEXT_PP(0);
     text* pat = PG_GETARG_TEXT_PP(1);
-    if (unlikely(VARATT_IS_HUGE_TOAST_POINTER(str))) {
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                errmsg("like 'partten' cannot exceed 1GB")));
-    }
+    FUNC_CHECK_HUGE_POINTER(false, str, "textlike()");
+
     bool result = false;
     char *s, *p;
     int slen, plen;
@@ -266,7 +270,7 @@ Datum textlike(PG_FUNCTION_ARGS)
     p = VARDATA_ANY(pat);
     plen = VARSIZE_ANY_EXHDR(pat);
 
-    result = (GenericMatchText(s, slen, p, plen) == LIKE_TRUE);
+    result = (generic_match_text_with_collation(s, slen, p, plen, PG_GET_COLLATION()) == LIKE_TRUE);
 
     PG_RETURN_BOOL(result);
 }
@@ -275,6 +279,8 @@ Datum textnlike(PG_FUNCTION_ARGS)
 {
     text* str = PG_GETARG_TEXT_PP(0);
     text* pat = PG_GETARG_TEXT_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, str, "textnlike()");
+
     bool result = false;
     char *s, *p;
     int slen, plen;
@@ -284,7 +290,7 @@ Datum textnlike(PG_FUNCTION_ARGS)
     p = VARDATA_ANY(pat);
     plen = VARSIZE_ANY_EXHDR(pat);
 
-    result = (GenericMatchText(s, slen, p, plen) != LIKE_TRUE);
+    result = (generic_match_text_with_collation(s, slen, p, plen, PG_GET_COLLATION()) != LIKE_TRUE);
 
     PG_RETURN_BOOL(result);
 }
@@ -293,6 +299,8 @@ Datum bytealike(PG_FUNCTION_ARGS)
 {
     bytea* str = PG_GETARG_BYTEA_PP(0);
     bytea* pat = PG_GETARG_BYTEA_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, str, "bytealike()");
+
     bool result = false;
     char *s, *p;
     int slen, plen;
@@ -311,6 +319,8 @@ Datum byteanlike(PG_FUNCTION_ARGS)
 {
     bytea* str = PG_GETARG_BYTEA_PP(0);
     bytea* pat = PG_GETARG_BYTEA_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, str, "byteanlike()");
+
     bool result = false;
     char *s, *p;
     int slen, plen;
@@ -330,6 +340,8 @@ byteawithoutorderwithequalcollike(PG_FUNCTION_ARGS)
 {
     bytea *str = PG_GETARG_BYTEA_PP(0);
     bytea *pat = PG_GETARG_BYTEA_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, str, "byteanlike()");
+
     bool result = false;
     char *s, *p;
     int slen, plen;
@@ -349,6 +361,8 @@ byteawithoutorderwithequalcolnlike(PG_FUNCTION_ARGS)
 {
     bytea *str = PG_GETARG_BYTEA_PP(0);
     bytea *pat = PG_GETARG_BYTEA_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, str, "byteanlike()");
+
     bool result = false;
     char *s, *p;
     int slen, plen;
@@ -367,6 +381,8 @@ Datum rawlike(PG_FUNCTION_ARGS)
 {
     bytea* str = PG_GETARG_BYTEA_PP(0);
     bytea* pat = PG_GETARG_BYTEA_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, str, "rawlike()");
+
     bool result = false;
     char *s, *p;
     int slen, plen;
@@ -384,6 +400,8 @@ Datum rawnlike(PG_FUNCTION_ARGS)
 {
     bytea* str = PG_GETARG_BYTEA_PP(0);
     bytea* pat = PG_GETARG_BYTEA_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, str, "rawnlike()");
+
     bool result = false;
     char *s, *p;
     int slen, plen;
@@ -431,6 +449,8 @@ Datum texticlike(PG_FUNCTION_ARGS)
 {
     text* str = PG_GETARG_TEXT_PP(0);
     text* pat = PG_GETARG_TEXT_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, str, "textclike()");
+
     bool result = false;
 
     result = (Generic_Text_IC_like(str, pat, PG_GET_COLLATION()) == LIKE_TRUE);
@@ -442,6 +462,8 @@ Datum texticnlike(PG_FUNCTION_ARGS)
 {
     text* str = PG_GETARG_TEXT_PP(0);
     text* pat = PG_GETARG_TEXT_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, str, "texticnlike()");
+
     bool result = false;
 
     result = (Generic_Text_IC_like(str, pat, PG_GET_COLLATION()) != LIKE_TRUE);
@@ -457,6 +479,8 @@ Datum like_escape(PG_FUNCTION_ARGS)
 {
     text* pat = PG_GETARG_TEXT_PP(0);
     text* esc = PG_GETARG_TEXT_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, pat, "like_escape()");
+
     text* result = NULL;
 
     if (pg_database_encoding_max_length() == 1)
@@ -475,6 +499,8 @@ Datum like_escape_bytea(PG_FUNCTION_ARGS)
 {
     bytea* pat = PG_GETARG_BYTEA_PP(0);
     bytea* esc = PG_GETARG_BYTEA_PP(1);
+    FUNC_CHECK_HUGE_POINTER(false, pat, "like_escape_bytea()");
+
     bytea* result = SB_do_like_escape((text*)pat, (text*)esc);
 
     PG_RETURN_BYTEA_P((bytea*)result);

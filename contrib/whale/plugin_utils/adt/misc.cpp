@@ -20,6 +20,7 @@
 #include <dirent.h>
 #include <math.h>
 
+#include "access/sysattr.h"
 #include "catalog/catalog.h"
 #include "catalog/pg_authid.h"
 #include "catalog/pg_tablespace.h"
@@ -30,19 +31,21 @@
 #include "funcapi.h"
 #include "instruments/gs_stat.h"
 #include "miscadmin.h"
-#include "plugin_parser/keywords.h"
+#include "parser/keywords.h"
 #include "pgstat.h"
 #include "postmaster/syslogger.h"
+#include "rewrite/rewriteHandler.h"
 #include "replication/replicainternal.h"
 #include "storage/smgr/fd.h"
 #include "storage/pmsignal.h"
 #include "storage/proc.h"
 #include "storage/procarray.h"
+#include "storage/file/fio_device.h"
 #include "utils/lsyscache.h"
 #include "tcop/tcopprot.h"
 #include "utils/acl.h"
 #include "utils/builtins.h"
-#include "utils/timestamp.h"
+#include "plugin_utils/timestamp.h"
 #include "gssignal/gs_signal.h"
 #include "workload/workload.h"
 #ifdef PGXC
@@ -100,11 +103,11 @@ Datum current_query(PG_FUNCTION_ARGS)
 #define SIGNAL_BACKEND_SUCCESS 0
 #define SIGNAL_BACKEND_ERROR 1
 #define SIGNAL_BACKEND_NOPERMISSION 2
-static int pg_signal_backend(ThreadId pid, int sig)
+static int pg_signal_backend(ThreadId pid, int sig, bool checkPermission)
 {
     PGPROC* proc = NULL;
 
-    if (!superuser()) {
+    if (checkPermission && !superuser()) {
         /*
          * Since the user is not superuser, check for matching roles. Trust
          * that BackendPidGetProc will return NULL if the pid isn't valid,
@@ -185,12 +188,10 @@ uint64 get_query_id_beentry(ThreadId  tid)
         beentry--;
     }
 
-    if (localentry->st_procpid > 0 || localentry->st_sessionid > 0) {
-        pfree_ext(localentry->st_appname);
-        pfree_ext(localentry->st_clienthostname);
-        pfree_ext(localentry->st_conninfo);
-        pfree_ext(localentry->st_activity);
-    }
+    pfree_ext(localentry->st_appname);
+    pfree_ext(localentry->st_clienthostname);
+    pfree_ext(localentry->st_conninfo);
+    pfree_ext(localentry->st_activity);
 
     pfree(localentry);
 
@@ -215,7 +216,7 @@ Datum pg_cancel_backend(PG_FUNCTION_ARGS)
         ereport(ERROR,
             (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE), (errmsg("kill backend is prohibited during online expansion."))));
 
-    r = pg_signal_backend(tid, SIGINT);
+    r = pg_signal_backend(tid, SIGINT, true);
 
     if (r == SIGNAL_BACKEND_NOPERMISSION) {
         ereport(ERROR,
@@ -242,7 +243,7 @@ Datum pg_cancel_session(PG_FUNCTION_ARGS)
                 (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
                     (errmsg("kill backend is prohibited during online expansion."))));
 
-        r = pg_signal_backend(tid, SIGINT);
+        r = pg_signal_backend(tid, SIGINT, true);
 
         if (r == SIGNAL_BACKEND_NOPERMISSION)
             ereport(ERROR,
@@ -285,7 +286,7 @@ Datum pg_cancel_invalid_query(PG_FUNCTION_ARGS)
 #endif
 }
 
-static int kill_backend(ThreadId tid)
+int kill_backend(ThreadId tid, bool checkPermission)
 {
     /*
      * It is forbidden to kill backend in the online expansion to protect
@@ -294,8 +295,8 @@ static int kill_backend(ThreadId tid)
     if (u_sess->attr.attr_sql.enable_online_ddl_waitlock && !u_sess->attr.attr_common.xc_maintenance_mode)
         ereport(ERROR,
             (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE), (errmsg("kill backend is prohibited during online expansion."))));
-
-    int r = pg_signal_backend(tid, SIGTERM);
+ 
+    int r = pg_signal_backend(tid, SIGTERM, checkPermission);
     if (r == SIGNAL_BACKEND_NOPERMISSION) {
         ereport(ERROR,
             (errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
@@ -319,7 +320,7 @@ static int kill_backend(ThreadId tid)
 Datum pg_terminate_backend(PG_FUNCTION_ARGS)
 {
     ThreadId tid = PG_GETARG_INT64(0);
-    int r = kill_backend(tid);
+    int r = kill_backend(tid, true);
     PG_RETURN_BOOL(r == SIGNAL_BACKEND_SUCCESS);
 }
 
@@ -330,7 +331,7 @@ Datum pg_terminate_session(PG_FUNCTION_ARGS)
     int r = -1;
 
     if (tid == sid) {
-        r = kill_backend(tid);
+        r = kill_backend(tid, true);
     } else if (ENABLE_THREAD_POOL) {
         ThreadPoolSessControl *sess_ctrl = g_threadPoolControler->GetSessionCtrl();
         int ctrl_idx = sess_ctrl->FindCtrlIdxBySessId(sid);
@@ -626,37 +627,50 @@ Datum pg_tablespace_databases(PG_FUNCTION_ARGS)
 
         fctx = (ts_db_fctx*)palloc(sizeof(ts_db_fctx));
 
-        /*
-         * size = tablespace dirname length + dir sep char + oid + terminator
-         */
-#ifdef PGXC
-        /* openGauss tablespaces also include node name in path */
-        location_len = 9 + 1 + OIDCHARS + 1 + strlen(g_instance.attr.attr_common.PGXCNodeName) + 1 +
-                       strlen(TABLESPACE_VERSION_DIRECTORY) + 1;
-        fctx->location = (char*)palloc(location_len);
-#else
-        location_len = 9 + 1 + OIDCHARS + 1 + strlen(TABLESPACE_VERSION_DIRECTORY) + 1 fctx->location =
-                           (char*)palloc(location_len);
-#endif
         if (tablespaceOid == GLOBALTABLESPACE_OID) {
             fctx->dirdesc = NULL;
             ereport(WARNING, (errmsg("global tablespace never has databases")));
         } else {
-            if (tablespaceOid == DEFAULTTABLESPACE_OID)
-                ss_rc = sprintf_s(fctx->location, location_len, "base");
-            else
-#ifdef PGXC
-                /* openGauss tablespaces also include node name in path */
+            if (tablespaceOid == DEFAULTTABLESPACE_OID) {
+                location_len = (int)strlen(DEFTBSDIR) + 1;
+                fctx->location = (char*)palloc(location_len);
+                ss_rc = sprintf_s(fctx->location, (size_t)location_len, "%s", DEFTBSDIR);
+            } else if (ENABLE_DSS) {
+                location_len = (int)strlen(TBLSPCDIR) + 1 + OIDCHARS + 1 +
+                               (int)strlen(TABLESPACE_VERSION_DIRECTORY) + 1;
+                fctx->location = (char*)palloc(location_len);
                 ss_rc = sprintf_s(fctx->location,
                     location_len,
-                    "pg_tblspc/%u/%s_%s",
+                    "%s/%u/%s",
+                    TBLSPCDIR,
+                    tablespaceOid,
+                    TABLESPACE_VERSION_DIRECTORY);
+            } else {
+#ifdef PGXC
+                /* openGauss tablespaces also include node name in path */
+                location_len = (int)strlen(TBLSPCDIR) + 1 + OIDCHARS + 1 +
+                               (int)strlen(TABLESPACE_VERSION_DIRECTORY) + 1 +
+                               (int)strlen(g_instance.attr.attr_common.PGXCNodeName) + 1;
+                fctx->location = (char*)palloc(location_len);
+                ss_rc = sprintf_s(fctx->location,
+                    location_len,
+                    "%s/%u/%s_%s",
+                    TBLSPCDIR,
                     tablespaceOid,
                     TABLESPACE_VERSION_DIRECTORY,
                     g_instance.attr.attr_common.PGXCNodeName);
 #else
-                ss_rc = sprintf_s(
-                    fctx->location, location_len, "pg_tblspc/%u/%s", tablespaceOid, TABLESPACE_VERSION_DIRECTORY);
+                location_len = (int)strlen(TBLSPCDIR) + 1 + OIDCHARS + 1 +
+                               (int)strlen(TABLESPACE_VERSION_DIRECTORY) + 1;
+                fctx->location = (char*)palloc(location_len);
+                ss_rc = sprintf_s(fctx->location,
+                    location_len,
+                    "%s/%u/%s",
+                    TBLSPCDIR,
+                    tablespaceOid,
+                    TABLESPACE_VERSION_DIRECTORY);
 #endif
+            }
             securec_check_ss(ss_rc, "\0", "\0");
             fctx->dirdesc = AllocateDir(fctx->location);
 
@@ -690,7 +704,7 @@ Datum pg_tablespace_databases(PG_FUNCTION_ARGS)
         /* if database subdir is empty, don't report tablespace as used */
 
         /* size = path length + dir sep char + file name + terminator */
-        int sub_len = strlen(fctx->location) + 1 + strlen(de->d_name) + 1;
+        int sub_len = (int)strlen(fctx->location) + 1 + (int)strlen(de->d_name) + 1;
         subdir = (char*)palloc(sub_len);
         ss_rc = sprintf_s(subdir, sub_len, "%s/%s", fctx->location, de->d_name);
         securec_check_ss(ss_rc, "\0", "\0");
@@ -743,7 +757,8 @@ Datum pg_tablespace_location(PG_FUNCTION_ARGS)
      * Find the location of the tablespace by reading the symbolic link that
      * is in pg_tblspc/<oid>.
      */
-    errno_t ss_rc = snprintf_s(sourcepath, sizeof(sourcepath), sizeof(sourcepath) - 1, "pg_tblspc/%u", tablespaceOid);
+    errno_t ss_rc = snprintf_s(sourcepath, sizeof(sourcepath), sizeof(sourcepath) - 1,
+                               "%s/%u", TBLSPCDIR, tablespaceOid);
     securec_check_ss(ss_rc, "\0", "\0");
 
     rllen = readlink(sourcepath, targetpath, sizeof(targetpath));
@@ -842,7 +857,7 @@ Datum pg_get_keywords(PG_FUNCTION_ARGS)
         funcctx = SRF_FIRSTCALL_INIT();
         oldcontext = MemoryContextSwitchTo(funcctx->multi_call_memory_ctx);
 
-        tupdesc = CreateTemplateTupleDesc(3, false, TAM_HEAP);
+        tupdesc = CreateTemplateTupleDesc(3, false);
         TupleDescInitEntry(tupdesc, (AttrNumber)1, "word", TEXTOID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)2, "catcode", CHAROID, -1, 0);
         TupleDescInitEntry(tupdesc, (AttrNumber)3, "catdesc", TEXTOID, -1, 0);
@@ -854,14 +869,15 @@ Datum pg_get_keywords(PG_FUNCTION_ARGS)
 
     funcctx = SRF_PERCALL_SETUP();
 
-    if (funcctx->call_cntr < (unsigned int)(NumScanKeywords)) {
+    if (funcctx->call_cntr < (uint32)ScanKeywords.num_keywords) {
         char* values[3];
         HeapTuple tuple;
 
         /* cast-away-const is ugly but alternatives aren't much better */
-        values[0] = (char*)ScanKeywords[funcctx->call_cntr].name;
+        values[0] = (char *)GetScanKeyword(funcctx->call_cntr,
+										   &ScanKeywords);
 
-        switch (ScanKeywords[funcctx->call_cntr].category) {
+        switch (ScanKeywordCategories[funcctx->call_cntr]) {
             case UNRESERVED_KEYWORD:
                 values[1] = "U";
                 values[2] = _("unreserved");
@@ -997,7 +1013,7 @@ void cancel_backend(ThreadId       pid)
 {
     int sig_return = 0;
 
-    sig_return = pg_signal_backend(pid, SIGINT);
+    sig_return = pg_signal_backend(pid, SIGINT, true);
 
     if (sig_return == SIGNAL_BACKEND_NOPERMISSION) {
         ereport(ERROR,
@@ -1005,4 +1021,72 @@ void cancel_backend(ThreadId       pid)
                 errmsg("fail to drop the user"),
                 errhint("fail to cancel backend process for privilege")));
     }
+}
+
+/*
+ * SQL wrapper around RelationGetReplicaIndex().
+ */
+Datum pg_get_replica_identity_index(PG_FUNCTION_ARGS)
+{
+    Oid reloid = PG_GETARG_OID(0);
+    Oid idxoid;
+    Relation rel;
+
+    rel = heap_open(reloid, AccessShareLock);
+    idxoid = RelationGetReplicaIndex(rel);
+    heap_close(rel, AccessShareLock);
+
+    if (OidIsValid(idxoid))
+        PG_RETURN_OID(idxoid);
+    else
+        PG_RETURN_NULL();
+}
+
+/* Compatible with ROW_COUNT functions of B database */
+Datum b_database_row_count(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_INT64(u_sess->statement_cxt.last_row_count);
+}
+
+/*
+ * pg_relation_is_updatable - determine which update events the specified
+ * relation supports.
+ *
+ * This relies on relation_is_updatable() in rewriteHandler.c, which see
+ * for additional information.
+ */
+Datum pg_relation_is_updatable(PG_FUNCTION_ARGS)
+{
+    Oid reloid = PG_GETARG_OID(0);
+    bool include_triggers = PG_GETARG_BOOL(1);
+
+    PG_RETURN_INT32(relation_is_updatable(reloid, include_triggers, NULL));
+}
+
+/*
+ * pg_column_is_updatable - determine whether a column is updatable
+ *
+ * This function encapsulates the decision about just what
+ * information_schema.columns.is_updatable actually means.	It's not clear
+ * whether deletability of the column's relation should be required, so
+ * we want that decision in C code where we could change it without initdb.
+ */
+Datum pg_column_is_updatable(PG_FUNCTION_ARGS)
+{
+    Oid reloid = PG_GETARG_OID(0);
+    AttrNumber attnum = PG_GETARG_INT16(1);
+    AttrNumber col = attnum - FirstLowInvalidHeapAttributeNumber;
+    bool include_triggers = PG_GETARG_BOOL(2);
+    int events;
+
+    /* System columns are never updatable */
+    if (attnum <= 0)
+        PG_RETURN_BOOL(false);
+
+    events = relation_is_updatable(reloid, include_triggers, bms_make_singleton(col));
+
+    /* We require both updatability and deletability of the relation */
+#define REQ_EVENTS ((1 << CMD_UPDATE) | (1 << CMD_DELETE))
+
+    PG_RETURN_BOOL((events & REQ_EVENTS) == REQ_EVENTS);
 }

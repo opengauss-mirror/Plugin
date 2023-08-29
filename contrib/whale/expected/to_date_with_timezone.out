@@ -1,0 +1,81 @@
+/* the bug is OpenGauss DCH_from_char() Bug, pg is right but opengauss is wrong! */
+set orafce.nls_date_format='YY-MonDD HH24:MI:SS';
+select to_date('14-Jan08 11:44:49+05:30');
+         to_date          
+--------------------------
+ Mon Jan 14 11:44:49 2008
+(1 row)
+
+set orafce.nls_date_format='YY-DDMon HH24:MI:SS';
+select to_date('14-08Jan 11:44:49+05:30');
+ERROR:  invalid input syntax for type timestamp: "14-08Jan 11:44:49+05:30"
+CONTEXT:  referenced column: to_date
+set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
+select to_date('21052014 12:13:44+05:30');
+ERROR:  date/time field value out of range: "21052014 12:13:44+05:30"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: to_date
+set orafce.nls_date_format='DDMMYY HH24:MI:SS';
+select to_date('210514 12:13:44+05:30');
+         to_date          
+--------------------------
+ Fri May 14 12:13:44 2021
+(1 row)
+
+select to_date('14-Jan08 11:44:49+05:30' ,'YY-MonDD HH24:MI:SS');
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_date
+select to_date('14-08Jan 11:44:49+05:30','YY-DDMon HH24:MI:SS');
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_date
+select to_date('21052014 12:13:44+05:30','DDMMYYYY HH24:MI:SS');
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_date
+select to_date('210514 12:13:44+05:30','DDMMYY HH24:MI:SS');
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_date
+set orafce.nls_date_format='YY-MonDD HH24:MI:SS';
+select orafce.to_char(orafce.to_date('14-Jan08 11:44:49+05:30'));
+         to_char          
+--------------------------
+ Mon Jan 14 11:44:49 2008
+(1 row)
+
+set orafce.nls_date_format='YY-DDMon HH24:MI:SS';
+select orafce.to_char(orafce.to_date('14-08Jan 11:44:49+05:30'));
+ERROR:  invalid input syntax for type timestamp: "14-08Jan 11:44:49+05:30"
+CONTEXT:  referenced column: to_char
+set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
+select orafce.to_char(orafce.to_date('21052014 12:13:44+05:30'));
+ERROR:  date/time field value out of range: "21052014 12:13:44+05:30"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: to_char
+set orafce.nls_date_format='DDMMYY HH24:MI:SS';
+select orafce.to_char(orafce.to_date('210514 12:13:44+05:30'));
+         to_char          
+--------------------------
+ Fri May 14 12:13:44 2021
+(1 row)
+
+set orafce.nls_date_format='DDMMYY HH24:MI:SS';
+select orafce.to_char(to_date('14-Jan08 11:44:49+05:30' ,'YY-MonDD HH24:MI:SS'));
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_char
+set orafce.nls_date_format='DDMMYYYY HH24:MI:SS';
+select orafce.to_char(to_date('14-08Jan 11:44:49+05:30','YY-DDMon HH24:MI:SS'));
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_char
+set orafce.nls_date_format='YY-MonDD HH24:MI:SS';
+select orafce.to_char(to_date('21052014 12:13:44+05:30','DDMMYYYY HH24:MI:SS'));
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_char
+set orafce.nls_date_format='DDMMYY HH24:MI:SS';
+select orafce.to_char(to_date('210514 12:13:44+05:30','DDMMYY HH24:MI:SS'));
+ERROR:  invalid data for match  in date string
+CONTEXT:  referenced column: to_char
+SELECT next_day ('2008-01-01', 'sunAAA');
+ERROR:  Invalid day format: 'sunAAA' of the week
+CONTEXT:  referenced column: next_day
+SELECT next_day ('2008-01-01 121212', 'sunAAA');
+ERROR:  Invalid day format: 'sunAAA' of the week
+CONTEXT:  referenced column: next_day

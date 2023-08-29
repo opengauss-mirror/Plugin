@@ -30,10 +30,15 @@
 #include "pgxc/pgxc.h"
 #include "utils/array.h"
 #include "utils/builtins.h"
+#include "plugin_utils/date.h"
 #include "utils/datum.h"
+#include "utils/fmgrtab.h"
 #include "utils/lsyscache.h"
+#include "plugin_utils/timestamp.h"
 #include "utils/syscache.h"
 #include "utils/pl_package.h"
+#include "catalog/gs_collation.h"
+#include "plugin_parser/parse_utilcmd.h"
 
 static int32 typenameTypeMod(ParseState* pstate, const TypeName* typname, Type typ);
 
@@ -309,7 +314,7 @@ Type LookupTypeNameExtended(ParseState* pstate, const TypeName* typname, int32* 
         if (schemaname != NULL) {
             /* Look in package type */
             if (isPkgType) {
-                typoid = LookupTypeInPackage(typeName, pkgOid, namespaceId);
+                typoid = LookupTypeInPackage(typname->names, typeName, pkgOid, namespaceId);
             } else {
                 /* Look in specific schema only */
                 typoid = GetSysCacheOid2(TYPENAMENSP, PointerGetDatum(typeName), ObjectIdGetDatum(namespaceId));
@@ -321,10 +326,10 @@ Type LookupTypeNameExtended(ParseState* pstate, const TypeName* typname, int32* 
         } else {
             if (pkgName == NULL) {
                 /* find type in current packgae first */
-                typoid = LookupTypeInPackage(typeName);
+                typoid = LookupTypeInPackage(typname->names, typeName);
             }
             if (isPkgType) {
-                typoid = LookupTypeInPackage(typeName, pkgOid);
+                typoid = LookupTypeInPackage(typname->names, typeName, pkgOid);
             }
             if (!OidIsValid(typoid)) {
                 /* Unqualified type name, so search the search path */
@@ -652,6 +657,48 @@ Oid LookupCollation(ParseState* pstate, List* collnames, int location)
     return colloid;
 }
 
+Oid get_column_def_collation_b_format(ColumnDef* coldef, Oid typeOid, Oid typcollation,
+    bool is_bin_type, Oid rel_coll_oid)
+{
+    if (coldef->typname->charset != PG_INVALID_ENCODING && !IsSupportCharsetType(typeOid) && !type_is_enum(typeOid) && !type_is_set(typeOid)) {
+        ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH),
+                errmsg("type %s not support set charset", format_type_be(typeOid))));
+    }
+
+    Oid result = InvalidOid;
+    if (!OidIsValid(typcollation) && !is_bin_type && !type_is_set(typeOid)) {
+        return InvalidOid;
+    } else if (OidIsValid(coldef->collOid)) {
+        /* Precooked collation spec, use that */
+        return coldef->collOid;
+    }
+
+    char* schemaname = NULL;
+    char* collate = NULL;
+    if (coldef->collClause) {
+        DeconstructQualifiedName(coldef->collClause->collname, &schemaname, &collate);
+        if (schemaname != NULL && strcmp(schemaname, "pg_catalog") != 0) {
+            ereport(ERROR, (errcode(ERRCODE_UNDEFINED_SCHEMA),
+                    errmsg("error schema name for collate")));
+        }
+    }
+    /* For binary type, if the table's default collation is not "binary", the rel_coll_oid is not inherited. */
+    if (is_bin_type) {
+        rel_coll_oid = InvalidOid;
+    }
+    result = transform_default_collation(collate, coldef->typname->charset, rel_coll_oid, true);
+    if (!OidIsValid(result)) {
+        if (!USE_DEFAULT_COLLATION) {
+            result = typcollation;
+        } else if (is_bin_type) {
+            result = BINARY_COLLATION_OID;
+        } else {
+            result = get_default_collation_by_charset(GetDatabaseEncoding());
+        }
+    }
+    return result;
+}
+
 /*
  * GetColumnDefCollation
  *
@@ -660,13 +707,16 @@ Oid LookupCollation(ParseState* pstate, List* collnames, int location)
  *
  * pstate is only used for error location purposes, and can be NULL.
  */
-Oid GetColumnDefCollation(ParseState* pstate, ColumnDef* coldef, Oid typeOid)
+Oid GetColumnDefCollation(ParseState* pstate, ColumnDef* coldef, Oid typeOid, Oid rel_coll_oid)
 {
     Oid result;
     Oid typcollation = get_typcollation(typeOid);
     int location = -1;
+    bool is_bin_type = IsBinaryType(typeOid);
 
-    if (coldef->collClause) {
+    if (DB_IS_CMPT(B_FORMAT)) {
+        result = get_column_def_collation_b_format(coldef, typeOid, typcollation, is_bin_type, rel_coll_oid);
+    } else if (coldef->collClause) {
         /* We have a raw COLLATE clause, so look up the collation */
         location = coldef->collClause->location;
         result = LookupCollation(pstate, coldef->collClause->collname, location);
@@ -678,8 +728,11 @@ Oid GetColumnDefCollation(ParseState* pstate, ColumnDef* coldef, Oid typeOid)
         result = typcollation;
     }
 
+    if (coldef->collClause) {
+        check_binary_collation(result, typeOid);
+    }
     /* Complain if COLLATE is applied to an uncollatable type */
-    if (OidIsValid(result) && !OidIsValid(typcollation)) {
+    if (OidIsValid(result) && !OidIsValid(typcollation) && !is_bin_type && !type_is_set(typeOid)) {
         ereport(ERROR,
             (errcode(ERRCODE_DATATYPE_MISMATCH),
                 errmsg("collations are not supported by type %s", format_type_be(typeOid)),
@@ -761,15 +814,33 @@ Oid typeTypeCollation(Type typ)
  * Given a type structure and a string, returns the internal representation
  * of that string.	The "string" can be NULL to perform conversion of a NULL
  * (which might result in failure, if the input function rejects NULLs).
+ *
+ * With param can_ignore == true, truncation or transformation may be cast
+ * for input string if string is invalid for target type.
  */
-Datum stringTypeDatum(Type tp, char* string, int32 atttypmod)
+Datum stringTypeDatum(Type tp, char* string, int32 atttypmod, bool can_ignore)
 {
     Form_pg_type typform = (Form_pg_type)GETSTRUCT(tp);
     Oid typinput = typform->typinput;
     Oid typioparam = getTypeIOParam(tp);
     Datum result;
 
-    result = OidInputFunctionCall(typinput, string, typioparam, atttypmod);
+    switch (typinput) {
+    case F_DATE_IN:
+        result = input_date_in(string, can_ignore);
+        break;
+    case F_BPCHARIN:
+        result = input_bpcharin(string, typioparam, atttypmod);
+        break;
+    case F_VARCHARIN:
+        result = input_varcharin(string, typioparam, atttypmod);
+        break;
+    case F_TIMESTAMP_IN:
+        result = input_timestamp_in(string, typioparam, atttypmod, can_ignore);
+        break;
+    default:
+        result = OidInputFunctionCall(typinput, string, typioparam, atttypmod, can_ignore);
+    }
 
 #ifdef RANDOMIZE_ALLOCATED_MEMORY
 
@@ -838,6 +909,7 @@ static void pts_error_callback(void* arg)
 void parseTypeString(const char* str, Oid* typeid_p, int32* typmod_p)
 {
     StringInfoData buf;
+    buf.data = NULL;
     List* raw_parsetree_list = NIL;
     SelectStmt* stmt = NULL;
     ResTarget* restarget = NULL;
@@ -905,8 +977,90 @@ void parseTypeString(const char* str, Oid* typeid_p, int32* typmod_p)
     return;
 
 fail:
+    pfree_ext(buf.data);
     InsertErrorMessage("invalid type name", u_sess->plsql_cxt.plpgsql_yylloc);
     ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("invalid type name \"%s\"", str)));
+}
+
+/*
+ * Given a string that is supposed to be a SQL-compatible type declaration,
+ * such as "int4" or "integer" or "character varying(32)", parse
+ * the string and return the result as a TypeName.
+ * If the string cannot be parsed as a type, an error is raised.
+ */
+TypeName * typeStringToTypeName(const char *str)
+{
+    StringInfoData buf;
+    buf.data = NULL;
+    List* raw_parsetree_list = NIL;
+    SelectStmt* stmt = NULL;
+    ResTarget* restarget = NULL;
+    TypeCast* typecast = NULL;
+    TypeName* typname = NULL;
+    ErrorContextCallback ptserrcontext;
+
+    /* make sure we give useful error for empty input */
+    if (strspn(str, " \t\n\r\f") == strlen(str)) {
+        goto fail;
+    }
+
+    initStringInfo(&buf);
+    appendStringInfo(&buf, "SELECT NULL::%s", str);
+
+    /*
+     * Setup error traceback support in case of ereport() during parse
+     */
+    ptserrcontext.callback = pts_error_callback;
+    ptserrcontext.arg = (void*)str;
+    ptserrcontext.previous = t_thrd.log_cxt.error_context_stack;
+    t_thrd.log_cxt.error_context_stack = &ptserrcontext;
+
+    raw_parsetree_list = raw_parser(buf.data);
+
+    t_thrd.log_cxt.error_context_stack = ptserrcontext.previous;
+
+    /*
+     * Make sure we got back exactly what we expected and no more; paranoia is
+     * justified since the string might contain anything.
+     */
+    if (list_length(raw_parsetree_list) != 1)
+        goto fail;
+    stmt = (SelectStmt*)linitial(raw_parsetree_list);
+    if (stmt == NULL || !IsA(stmt, SelectStmt) || stmt->distinctClause != NIL || stmt->intoClause != NULL ||
+        stmt->fromClause != NIL || stmt->whereClause != NULL || stmt->groupClause != NIL ||
+        stmt->havingClause != NULL || stmt->windowClause != NIL || stmt->withClause != NULL ||
+        stmt->valuesLists != NIL || stmt->sortClause != NIL || stmt->limitOffset != NULL || stmt->limitCount != NULL ||
+        stmt->lockingClause != NIL || stmt->op != SETOP_NONE) {
+        goto fail;
+    }
+    if (list_length(stmt->targetList) != 1) {
+        goto fail;
+    }
+    restarget = (ResTarget*)linitial(stmt->targetList);
+    if (restarget == NULL || !IsA(restarget, ResTarget) || restarget->name != NULL || restarget->indirection != NIL) {
+        goto fail;
+    }
+    typecast = (TypeCast*)restarget->val;
+    if (typecast == NULL || !IsA(typecast, TypeCast) || typecast->arg == NULL || !IsA(typecast->arg, A_Const)) {
+        goto fail;
+    }
+    typname = typecast->typname;
+    if (typname == NULL || !IsA(typname, TypeName)) {
+        goto fail;
+    }
+    if (typname->setof) {
+        goto fail;
+    }
+    pfree_ext(buf.data);
+ 
+    return typname;
+ 
+fail:
+    pfree_ext(buf.data);
+    ereport(ERROR,
+            (errcode(ERRCODE_SYNTAX_ERROR),
+             errmsg("invalid type name \"%s\"", str)));
+    return NULL;
 }
 
 /*
@@ -985,16 +1139,39 @@ bool IsTypeSupportedByCStore(Oid typeOid)
         case VARBITARRAYOID:
         case BYTEAWITHOUTORDERCOLOID:
         case BYTEAWITHOUTORDERWITHEQUALCOLOID:
-        case VOIDOID:
             return true;
         default:
             break;
     }
 
-    ereport(DEBUG2, (errmodule(MOD_OPT_PLANNER),
-        errmsg("Vectorize plan failed due to unsupport type: %d", typeOid)));
     return false;
 }
+
+bool IsTypeSupportedByVectorEngine(Oid typeOid)
+{
+    if (IsTypeSupportedByCStore(typeOid)) {
+        return true;
+    }
+
+    switch (typeOid) {
+        /* Name, MacAddr and UUID also be processed in rowtovec and vectorow,
+         * but it may cause result not correct. So do not support it here.
+         */
+        case VOIDOID:
+        case UNKNOWNOID:
+        case CSTRINGOID: {
+            return true;
+        }
+        default:
+            break;
+    }
+
+    ereport(DEBUG2, (errmodule(MOD_OPT_PLANNER),
+        errmsg("Vectorize plan failed due to unsupport type: %u", typeOid)));
+
+    return false;
+}
+
 /*
  * IsTypeSupportedByORCRelation
  * Return true if the type is supported by ORC format relation.
@@ -1286,12 +1463,8 @@ HeapTuple FindPkgVariableType(ParseState* pstate, const TypeName* typname, int32
     }
 
     /* handle var.col%TYPE firsr */
-    tup = FindRowVarColType(typname->names);
+    tup = FindRowVarColType(typname->names, NULL, NULL, typmod_p);
     if (tup != NULL) {
-        typmod = typenameTypeMod(pstate, typname, (Type)tup);
-        if (typmod_p != NULL) {
-            *typmod_p = typmod;
-        }
         return tup;
     }
 
@@ -1301,6 +1474,10 @@ HeapTuple FindPkgVariableType(ParseState* pstate, const TypeName* typname, int32
     }
     PLpgSQL_datum* datum = GetPackageDatum(typname->names);
     if (datum != NULL && datum->dtype == PLPGSQL_DTYPE_VAR) {
+        if (OidIsValid(((PLpgSQL_var*)datum)->datatype->tableOfIndexType)) {
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("not support ref table of variable as procedure argument type")));
+        }
         Oid typOid =  ((PLpgSQL_var*)datum)->datatype->typoid;
         tup = SearchSysCache1(TYPEOID, ObjectIdGetDatum(typOid));
         /* should not happen */
@@ -1317,8 +1494,41 @@ HeapTuple FindPkgVariableType(ParseState* pstate, const TypeName* typname, int32
 #endif
 }
 
+static void check_record_nest_tableof_index_type(const char* typeName, List* typeNames)
+{
+    PLpgSQL_datum* datum = NULL;
+    if (typeName != NULL) {
+        PLpgSQL_nsitem* ns = NULL;
+        PLpgSQL_package* pkg = u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package;
+        ns = plpgsql_ns_lookup(pkg->public_ns, false, typeName, NULL, NULL, NULL);
+        if (ns == NULL) {
+            ns = plpgsql_ns_lookup(pkg->private_ns, false, typeName, NULL, NULL, NULL);
+        }
+
+        if (ns == NULL || ns->itemtype != PLPGSQL_NSTYPE_RECORD) {
+            return ;
+        }
+        datum = pkg->datums[ns->itemno];
+    } else {
+        datum = GetPackageDatum(typeNames);
+    }
+
+    if (datum != NULL && datum->dtype == PLPGSQL_DTYPE_RECORD_TYPE) {
+        PLpgSQL_rec_type* var_type = (PLpgSQL_rec_type*)datum;
+        PLpgSQL_type* type = NULL;
+        for (int i = 0; i < var_type->attrnum; i++) {
+            type = var_type->types[i];
+            if (type->ttype == PLPGSQL_TTYPE_SCALAR && OidIsValid(type->tableOfIndexType)) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("record nested table of index type do not support in out args")));
+            }
+        }
+    }
+}
+
 /* find the type if it is a package type */
-Oid LookupTypeInPackage(const char* typeName, Oid pkgOid, Oid namespaceId)
+Oid LookupTypeInPackage(List* typeNames, const char* typeName, Oid pkgOid, Oid namespaceId)
 {
     Oid typOid = InvalidOid;
     char* castTypeName = NULL;
@@ -1343,6 +1553,9 @@ Oid LookupTypeInPackage(const char* typeName, Oid pkgOid, Oid namespaceId)
             pfree_ext(castTypeName);
         }
 
+        if (OidIsValid(typOid)) {
+            check_record_nest_tableof_index_type(typeName, NULL);
+        }
         return typOid;
     }
 
@@ -1361,6 +1574,7 @@ Oid LookupTypeInPackage(const char* typeName, Oid pkgOid, Oid namespaceId)
     pfree_ext(castTypeName);
 
     if (OidIsValid(typOid)) {
+        check_record_nest_tableof_index_type(NULL, typeNames);
         return typOid;
     }
 
@@ -1394,4 +1608,34 @@ Oid LookupTypeInPackage(const char* typeName, Oid pkgOid, Oid namespaceId)
     return typOid;
 
 
+}
+
+bool IsBinaryType(Oid typid)
+{
+    return ((typid) == BLOBOID ||
+            (typid) == BYTEAOID);
+}
+
+void check_type_supports_multi_charset(Oid typid, bool allow_array)
+{
+    switch (typid) {
+        case XMLOID:
+        case JSONOID:
+        case TSVECTOROID:
+        case GTSVECTOROID:
+        case TSQUERYOID:
+        case RECORDOID:
+        case HLL_OID:
+        case HLL_HASHVAL_OID:
+        case HLL_TRANS_OID:
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("multi character set for datatype '%s' is not supported", get_typename(typid))));
+        default:
+            break;
+    }
+
+    if (!allow_array && type_is_array(typid)) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+            errmsg("multi character set for datatype '%s' is not supported", get_typename(typid))));
+    }
 }

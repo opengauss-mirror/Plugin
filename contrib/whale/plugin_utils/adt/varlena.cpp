@@ -42,6 +42,8 @@
 #include "executor/node/nodeSort.h"
 #include "pgxc/groupmgr.h"
 #include "openssl/evp.h"
+#include "catalog/gs_collation.h"
+#include "catalog/pg_collation_fn.h"
 
 #define SUBSTR_WITH_LEN_OFFSET 2
 #define SUBSTR_A_CMPT_OFFSET 4
@@ -107,6 +109,8 @@ typedef struct {
 
 static int varstrfastcmp_c(Datum x, Datum y, SortSupport ssup);
 static int bpcharfastcmp_c(Datum x, Datum y, SortSupport ssup);
+static int varstrfastcmp_builtin(Datum x, Datum y, SortSupport ssup);
+static int bpvarstrfastcmp_builtin(Datum x, Datum y, SortSupport ssup);
 static int varstrfastcmp_locale(Datum x, Datum y, SortSupport ssup);
 static int varstrcmp_abbrev(Datum x, Datum y, SortSupport ssup);
 static Datum varstr_abbrev_convert(Datum original, SortSupport ssup);
@@ -230,6 +234,48 @@ char* text_to_cstring(const text* t)
         pfree_ext(tunpacked);
 
     return result;
+}
+
+char* output_text_to_cstring(const text* t)
+{
+    if (unlikely(t == NULL)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("invalid null pointer input for text_to_cstring()")));
+    }
+    FUNC_CHECK_HUGE_POINTER(false, t, "text_to_cstring()");
+
+    /* must cast away the const, unfortunately */
+    text* tunpacked = pg_detoast_datum_packed((struct varlena*)t);
+    int len = VARSIZE_ANY_EXHDR(tunpacked);
+    char* result = NULL;
+
+    if (len + 1 > 256) {
+        result = (char*)palloc(len + 1);
+    } else {
+        u_sess->utils_cxt.varcharoutput_buffer[0] = '\0';
+        result = u_sess->utils_cxt.varcharoutput_buffer;
+    }
+    memcpy(result, VARDATA_ANY(tunpacked), len);
+    result[len] = '\0';
+
+    if (tunpacked != t)
+        pfree_ext(tunpacked);
+
+    return result;
+}
+
+char* output_int32_to_cstring(int32 value)
+{
+    u_sess->utils_cxt.int4output_buffer[0] = '\0';
+    pg_ltoa(value, u_sess->utils_cxt.int4output_buffer);
+    return u_sess->utils_cxt.int4output_buffer;
+}
+
+char* output_int64_to_cstring(int64 value)
+{
+    u_sess->utils_cxt.int8output_buffer[0] = '\0';
+    pg_lltoa(value, u_sess->utils_cxt.int8output_buffer);
+    return u_sess->utils_cxt.int8output_buffer;
 }
 
 /*
@@ -621,6 +667,32 @@ Datum bytea_string_agg_finalfn(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
 }
 
+Oid binary_need_transform_typeid(Oid typeoid, Oid* collation)
+{
+    Oid new_typid = typeoid;
+    if (*collation == BINARY_COLLATION_OID) {
+        /* use switch case stmt for extension in feature */
+        switch (typeoid) {
+            /* binary type no need to transform */
+            case BLOBOID:
+            case BYTEAOID:
+                break;
+            /* string type need to transform to binary type */
+            case TEXTOID:
+                new_typid = BLOBOID;
+                break;
+            default:
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("Un-support feature"),
+                        errdetail("type %s cannot be set to binary collation currently", get_typename(typeoid))));
+                break;
+        }
+        /* binary collation in attribute level collation no need to be set. */
+        *collation = InvalidOid;
+    }
+    return new_typid;
+}
+
 /*
  *		textin			- converts "..." to internal representation
  */
@@ -786,6 +858,25 @@ int32 text_length(Datum str)
         int32 result = 0;
 
         result = pg_mbstrlen_with_len(VARDATA_ANY(t), VARSIZE_ANY_EXHDR(t));
+        if ((Pointer)(t) != (Pointer)(str))
+            pfree_ext(t);
+
+        PG_RETURN_INT32(result);
+    }
+}
+
+int32 text_length_with_encoding(Datum str, int encoding)
+{
+    Assert(PG_VALID_ENCODING(encoding));
+
+    /* fastpath when max encoding length is one */
+    if (pg_encoding_max_length(encoding) == 1)
+        PG_RETURN_INT32(toast_raw_datum_size(str) - VARHDRSZ);
+    else {
+        text* t = DatumGetTextPP(str);
+        int32 result = 0;
+
+        result = pg_encoding_mbstrlen_with_len(VARDATA_ANY(t), VARSIZE_ANY_EXHDR(t), encoding);
         if ((Pointer)(t) != (Pointer)(str))
             pfree_ext(t);
 
@@ -1271,6 +1362,22 @@ text* text_substring(Datum str, int32 start, int32 length, bool length_not_speci
     return NULL;
 }
 
+text* text_substring_with_encoding(Datum str, int32 start, int32 length, bool length_not_specified, int encoding)
+{
+    Assert(encoding != PG_INVALID_ENCODING);
+
+    int db_encoding = GetDatabaseEncoding();
+    if (encoding == db_encoding) {
+        return text_substring(str, start, length, length_not_specified);
+    }
+
+    text* result = NULL;
+    DB_ENCODING_SWITCH_TO(encoding);
+    result = text_substring(str, start, length, length_not_specified);
+    DB_ENCODING_SWITCH_BACK(db_encoding);
+    return result;
+}
+
 // adapt A db's substr(text str,integer start,integer length)
 // when start<0, amend the sartPosition to abs(start) from last char,
 // then search backward
@@ -1692,6 +1799,8 @@ int varstr_cmp(char* arg1, int len1, char* arg2, int len2, Oid collid)
         result = memcmp(arg1, arg2, Min(len1, len2));
         if ((result == 0) && (len1 != len2))
             result = (len1 < len2) ? -1 : 1;
+    } else if (is_b_format_collation(collid)) {
+        result = varstr_cmp_by_builtin_collations(arg1, len1, arg2, len2, collid);
     } else {
         char a1buf[TEXTBUFLEN];
         char a2buf[TEXTBUFLEN];
@@ -1870,6 +1979,23 @@ int text_cmp(text* arg1, text* arg2, Oid collid)
     return varstr_cmp(a1p, len1, a2p, len2, collid);
 }
 
+bool texteq_with_collation(PG_FUNCTION_ARGS)
+{
+    Datum arg1 = PG_GETARG_DATUM(0);
+    Datum arg2 = PG_GETARG_DATUM(1);
+    bool result = false;
+
+    text* targ1 = DatumGetTextPP(arg1);
+    text* targ2 = DatumGetTextPP(arg2);
+
+    /* text_cmp return 0 means equal */
+    result = (text_cmp(targ1, targ2, PG_GET_COLLATION()) == 0);
+    PG_FREE_IF_COPY(targ1, 0);
+    PG_FREE_IF_COPY(targ2, 1);
+
+    return result;
+}
+
 /*
  * Comparison functions for text strings.
  *
@@ -1882,13 +2008,18 @@ Datum texteq(PG_FUNCTION_ARGS)
 {
     Datum arg1 = PG_GETARG_DATUM(0);
     Datum arg2 = PG_GETARG_DATUM(1);
+    bool result = false;
 
     if (VARATT_IS_HUGE_TOAST_POINTER(DatumGetPointer(arg1)) || VARATT_IS_HUGE_TOAST_POINTER(DatumGetPointer(arg2))) {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                 errmsg("texteq could not support more than 1GB clob/blob data")));
     }
-    bool result = false;
     Size len1, len2;
+
+    if (is_b_format_collation(PG_GET_COLLATION())) {
+        result = texteq_with_collation(fcinfo);
+        PG_RETURN_BOOL(result);
+    }
 
     /*
      * Since we only care about equality or not-equality, we can avoid all the
@@ -1924,6 +2055,12 @@ Datum textne(PG_FUNCTION_ARGS)
     }
     bool result = false;
     Size len1, len2;
+
+    Oid collid = PG_GET_COLLATION();
+    if (is_b_format_collation(collid)) {
+        result = !(texteq_with_collation(fcinfo));
+        PG_RETURN_BOOL(result);
+    }
 
     /* See comment in texteq() */
     len1 = toast_raw_datum_size(arg1);
@@ -2062,7 +2199,6 @@ Datum text_gt(PG_FUNCTION_ARGS)
     FUNC_CHECK_HUGE_POINTER(false, arg1, "text_gt()");
 
     bool result = false;
-
     result = (text_cmp(arg1, arg2, PG_GET_COLLATION()) > 0);
 
     PG_FREE_IF_COPY(arg1, 0);
@@ -2078,7 +2214,6 @@ Datum text_ge(PG_FUNCTION_ARGS)
     FUNC_CHECK_HUGE_POINTER(false, arg1, "text_ge()");
 
     bool result = false;
-
     result = (text_cmp(arg1, arg2, PG_GET_COLLATION()) >= 0);
 
     PG_FREE_IF_COPY(arg1, 0);
@@ -2133,6 +2268,7 @@ void varstr_sortsupport(SortSupport ssup, Oid collid, bool bpchar)
 {
     bool abbreviate = ssup->abbreviate;
     bool collate_c = false;
+    bool collate_builtin = false;
     VarStringSortSupport* sss = NULL;
 
 #ifdef HAVE_LOCALE_T
@@ -2164,6 +2300,14 @@ void varstr_sortsupport(SortSupport ssup, Oid collid, bool bpchar)
             ssup->comparator = bpcharfastcmp_c;
 
         collate_c = true;
+    } else if (is_b_format_collation(collid)) {
+        if (!bpchar) {
+            ssup->comparator = bpvarstrfastcmp_builtin;
+        } else {
+            ssup->comparator = varstrfastcmp_builtin;
+        }
+        collate_builtin = true;
+        abbreviate = false;
     }
 #ifdef WIN32
     else if (GetDatabaseEncoding() == PG_UTF8)
@@ -2223,7 +2367,7 @@ void varstr_sortsupport(SortSupport ssup, Oid collid, bool bpchar)
      * scratch space (and to detect requirement for BpChar semantics from
      * caller), and the abbreviation case requires additional state.
      */
-    if (abbreviate || !collate_c) {
+    if (abbreviate || !collate_c || !collate_builtin) {
         sss = (VarStringSortSupport*)palloc(sizeof(VarStringSortSupport));
         sss->buf1 = (char*)palloc(TEXTBUFLEN);
         sss->buflen1 = TEXTBUFLEN;
@@ -2334,6 +2478,61 @@ static int bpcharfastcmp_c(Datum x, Datum y, SortSupport ssup)
     return cmp;
 }
 
+/*
+ * sortsupport comparison func (for builtin locale case)
+ */
+static int varstrfastcmp_builtin(Datum x, Datum y, SortSupport ssup)
+{
+    text* arg1 = DatumGetTextPP(x);
+    text* arg2 = DatumGetTextPP(y);
+    char *a1p = NULL, *a2p = NULL;
+    size_t len1, len2;
+    int result;
+
+    a1p = VARDATA_ANY(arg1);
+    a2p = VARDATA_ANY(arg2);
+
+    len1 = VARSIZE_ANY_EXHDR(arg1);
+    len2 = VARSIZE_ANY_EXHDR(arg2);
+
+    result = varstr_cmp_by_builtin_collations(a1p, len1, a2p, len2, ssup->ssup_collation);
+
+    /* We can't afford to leak memory here. */
+    if (PointerGetDatum(arg1) != x) {
+        pfree_ext(arg1);
+    }
+    if (PointerGetDatum(arg2) != y) {
+        pfree_ext(arg2);
+    }
+
+    return result;
+}
+
+static int bpvarstrfastcmp_builtin(Datum x, Datum y, SortSupport ssup)
+{
+    BpChar* arg1 = DatumGetBpCharPP(x);
+    BpChar* arg2 = DatumGetBpCharPP(y);
+    int len1, len2;
+    int result;
+
+    char* a1p = VARDATA_ANY(arg1);
+    char* a2p = VARDATA_ANY(arg2);
+
+    len1 = bpchartruelen(a1p, VARSIZE_ANY_EXHDR(arg1));
+    len2 = bpchartruelen(a2p, VARSIZE_ANY_EXHDR(arg2));
+
+    result = varstr_cmp_by_builtin_collations(a1p, len1, a2p, len2, ssup->ssup_collation);
+
+    /* We can't afford to leak memory here. */
+    if (PointerGetDatum(arg1) != x) {
+        pfree_ext(arg1);
+    }
+    if (PointerGetDatum(arg2) != y) {
+        pfree_ext(arg2);
+    }
+
+    return result;
+}
 /*
  * sortsupport comparison func (for locale case)
  */
@@ -3087,6 +3286,10 @@ bytea* bytea_substring(Datum str, int S, int L, bool length_not_specified)
         if (E < 1)
             return PG_STR_GET_BYTEA("");
 
+#ifdef WHALE
+        int strlen = toast_raw_datum_size(str) - VARHDRSZ;
+        E = Min(E, strlen + 1);
+#endif
         L1 = E - S1;
     }
 
@@ -6169,7 +6372,6 @@ Datum group_concat_transfn(PG_FUNCTION_ARGS)
         appendStringInfoText(state, argsconcat); /* value */
         if (state->len > maxlength) {
             state->len = maxlength;
-            state->data[state->len] = '\0';
         }
     } else {
         /*
@@ -6971,8 +7173,10 @@ Datum substrb_with_lenth(PG_FUNCTION_ARGS)
     }
 
     result = get_substring_really(str, start, length, false);
+#ifndef WHALE
     if ((NULL == result || 0 == VARSIZE_ANY_EXHDR(result)) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
         PG_RETURN_NULL();
+#endif
     PG_RETURN_TEXT_P(result);
 }
 
@@ -6996,8 +7200,10 @@ Datum substrb_without_lenth(PG_FUNCTION_ARGS)
     }
 
     result = get_substring_really(str, start, -1, true);
+#ifndef WHALE
     if ((NULL == result || 0 == VARSIZE_ANY_EXHDR(result)) && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
         PG_RETURN_NULL();
+#endif
     PG_RETURN_TEXT_P(result);
 }
 
@@ -7110,4 +7316,25 @@ Datum float8_text(PG_FUNCTION_ARGS)
 
     pfree_ext(tmp);
     PG_RETURN_DATUM(result);
+}
+
+Datum btvarstrequalimage(PG_FUNCTION_ARGS)
+{
+    Assert(PG_NARGS() != 0);
+
+    Oid opcintype = PG_GETARG_OID(0);
+    Oid collid = PG_GET_COLLATION();
+
+    if (opcintype == InvalidOid || !OidIsValid(collid)) {
+        PG_RETURN_BOOL(false);
+    }
+
+    if (opcintype != BPCHAROID && opcintype != NAMEOID && opcintype != TEXTOID) {
+        PG_RETURN_BOOL(false);
+    }
+
+    if (lc_collate_is_c(collid) || collid == DEFAULT_COLLATION_OID)
+        PG_RETURN_BOOL(true);
+    else
+        PG_RETURN_BOOL(false);
 }

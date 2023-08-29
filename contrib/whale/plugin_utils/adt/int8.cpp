@@ -48,8 +48,11 @@ typedef struct {
  *
  * If errorOK is false, ereport a useful error message if the string is bad.
  * If errorOK is true, just return "false" for bad input.
+ *
+ * Param can_ignore is true when using ignore hint, which will ignore errors of
+ * overflowing or invalid input.
  */
-bool scanint8(const char* str, bool errorOK, int64* result)
+bool scanint8(const char* str, bool errorOK, int64* result, bool can_ignore)
 {
     const char* ptr = str;
     int64 tmp = 0;
@@ -95,6 +98,13 @@ bool scanint8(const char* str, bool errorOK, int64* result)
         int8 digit = (*ptr++ - '0');
 
         if (unlikely(pg_mul_s64_overflow(tmp, 10, &tmp)) || unlikely(pg_sub_s64_overflow(tmp, digit, &tmp))) {
+            if (can_ignore) {
+                ereport(WARNING,
+                        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                         errmsg("value \"%s\" is out of range for type %s. truncated automatically", str, "bigint")));
+                *result = neg ? PG_INT64_MIN : PG_INT64_MAX;
+                return true;
+            }
             if (errorOK)
                 return false;
             else
@@ -110,14 +120,15 @@ bool scanint8(const char* str, bool errorOK, int64* result)
     }
 
     if (unlikely(*ptr != '\0')) {
-        if (errorOK)
-            return false;
-        else
-            /* Empty string will be treated as NULL if sql_compatibility == A_FORMAT,
-                Other wise whitespace will be convert to 0 */
-            ereport(ERROR,
-                (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                    errmsg("invalid input syntax for type %s: \"%s\"", "bigint", str)));
+        if (!can_ignore) {
+            if (errorOK)
+                return false;
+            else
+                /* Empty string will be treated as NULL if sql_compatibility == A_FORMAT,
+                    Other wise whitespace will be convert to 0 */
+                ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                                errmsg("invalid input syntax for type %s: \"%s\"", "bigint", str)));
+        }
     }
 
     if (!neg) {
@@ -144,7 +155,7 @@ Datum int8in(PG_FUNCTION_ARGS)
     char* str = PG_GETARG_CSTRING(0);
     int64 result;
 
-    (void)scanint8(str, false, &result);
+    (void)scanint8(str, false, &result, fcinfo->can_ignore);
     PG_RETURN_INT64(result);
 }
 
@@ -1092,8 +1103,13 @@ Datum int84(PG_FUNCTION_ARGS)
     result = (int32)arg;
 
     /* Test for overflow by reverse-conversion. */
-    if ((int64)result != arg)
+    if ((int64)result != arg) {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("integer out of range")));
+            PG_RETURN_INT32(arg < INT_MIN ? INT_MIN : INT_MAX);
+        }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("integer out of range")));
+    }
 
     PG_RETURN_INT32(result);
 }
@@ -1113,8 +1129,13 @@ Datum int82(PG_FUNCTION_ARGS)
     result = (int16)arg;
 
     /* Test for overflow by reverse-conversion. */
-    if ((int64)result != arg)
+    if ((int64)result != arg) {
+        if (fcinfo->can_ignore) {
+            ereport(WARNING, (errmsg("smallint out of range")));
+            PG_RETURN_INT32(arg < SHRT_MIN ? SHRT_MIN : SHRT_MAX);
+        }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("smallint out of range")));
+    }
 
     PG_RETURN_INT16(result);
 }
@@ -1149,8 +1170,13 @@ Datum dtoi8(PG_FUNCTION_ARGS)
      * exact power of 2, so it will be represented exactly; but PG_INT64_MAX
      * isn't, and might get rounded off, so avoid using it.
      */
-    if (num < (float8)PG_INT64_MIN || num >= -((float8)PG_INT64_MIN) || isnan(num))
+    if (num < (float8)PG_INT64_MIN || num >= -((float8)PG_INT64_MIN) || isnan(num)) {
+        if (fcinfo->can_ignore && !isnan(num)) {
+            ereport(WARNING, (errmsg("bigint out of range")));
+            PG_RETURN_INT64(num < (float8)PG_INT64_MIN ? LONG_MIN : LONG_MAX);
+        }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+    }
 
     PG_RETURN_INT64((int64)num);
 }
@@ -1185,8 +1211,13 @@ Datum ftoi8(PG_FUNCTION_ARGS)
      * exact power of 2, so it will be represented exactly; but PG_INT64_MAX
      * isn't, and might get rounded off, so avoid using it.
      */
-    if (num < (float4)PG_INT64_MIN || num >= -((float4)PG_INT64_MIN) || isnan(num))
+    if (num < (float4)PG_INT64_MIN || num >= -((float4)PG_INT64_MIN) || isnan(num)) {
+        if (fcinfo->can_ignore && !isnan(num)) {
+            ereport(WARNING, (errmsg("bigint out of range")));
+            PG_RETURN_INT64(num < (float4)PG_INT64_MIN ? LONG_MIN : LONG_MAX);
+        }
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
+    }
 
     PG_RETURN_INT64((int64)num);
 }
@@ -1281,7 +1312,7 @@ Datum generate_series_step_int8(PG_FUNCTION_ARGS)
 
         /* do when there is more left to send */
         SRF_RETURN_NEXT(funcctx, Int64GetDatum(result));
-    } else
+    } 
         /* do when there is no more left */
         SRF_RETURN_DONE(funcctx);
 }

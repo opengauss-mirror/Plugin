@@ -47,6 +47,21 @@
 #define fprintf(file, fmt, msg)  ereport(ERROR, (errmsg_internal("%s", msg)))
 
 /*
+ * Constant data exported from this file.  This array maps from the
+ * zero-based keyword numbers returned by ScanKeywordLookup to the
+ * Bison token numbers needed by gram.y.  This is exported because
+ * callers need to pass it to scanner_init, if they are using the
+ * standard keyword list ScanKeywords.
+ */
+#define PG_KEYWORD(kwname, value, category) value,
+
+const uint16 ScanKeywordTokens[] = {
+#include "plugin_parser/kwlist.h"
+};
+
+#undef PG_KEYWORD
+
+/*
  * Set the type of YYSTYPE.
  */
 #define YYSTYPE core_YYSTYPE
@@ -93,6 +108,7 @@ static bool is_utf16_surrogate_first(pg_wchar c);
 static bool is_utf16_surrogate_second(pg_wchar c);
 static pg_wchar surrogate_pair_to_codepoint(pg_wchar first, pg_wchar second);
 static void addunicode(pg_wchar c, yyscan_t yyscanner);
+static void set_is_delimiter_name(char* text, core_yyscan_t yyscanner );
 
 #define yyerror(msg)  scanner_yyerror(msg, yyscanner)
 
@@ -325,6 +341,10 @@ dot_dot			\.\.
 colon_equals	":="
 para_equals	"=>"
 
+set_ident_start	"@@"
+set_ident_cont	[A-Za-z\200-\377_0-9\$\#]
+set_identifier	{set_ident_start}{set_ident_cont}*
+
 /*
  * "self" is the set of chars that should be returned as single-character
  * tokens.  "op_chars" is the set of chars that can make up "Op" tokens,
@@ -361,7 +381,13 @@ param			\${integer}
 
 newParam		:({identifier}|{integer})
 
-newArray		:({integer}{space}*\])
+newArray		:({identifier}|{integer}){space}*\]
+
+set_user_cont			[A-Za-z\377_0-9\$\.]
+set_user_escape_quote		[^']
+set_user_escape_dquote		[^"]
+set_user_escape_bquote		[^`]	
+setUserIdentifier		@(({set_user_cont}+)|(\'{set_user_escape_quote}+\')|(\"{set_user_escape_dquote}+\")|(\`{set_user_escape_bquote}+\`))
 
 other			.
 
@@ -514,19 +540,18 @@ other			.
 					 * We will pass this along as a normal character string,
 					 * but preceded with an internally-generated "NCHAR".
 					 */
-					const ScanKeyword *keyword;
+					int kwnum;
 
 					SET_YYLLOC();
 					yyless(1);				/* eat only 'n' this time */
 
-					keyword = ScanKeywordLookup("nchar",
-												yyextra->keywords,
-												yyextra->num_keywords);
-					if (keyword != NULL)
+					kwnum = ScanKeywordLookup("nchar",
+											  yyextra->keywordlist);
+					if (kwnum >= 0)
 					{
-						yylval->keyword = keyword->name;
 						yyextra->is_hint_str = false;
-						return keyword->value;
+						yylval->keyword = GetScanKeyword(kwnum, yyextra->keywordlist);
+						return yyextra->keyword_tokens[kwnum];
 					}
 					else
 					{
@@ -588,6 +613,7 @@ other			.
 					BEGIN(INITIAL);
 					yylval->str = litbuf_udeescape('\\', yyscanner);
 					yyextra->is_hint_str = false;
+					set_is_delimiter_name(yytext,yyscanner);
 					return SCONST;
 		}
 <xus>{xusstop2} {
@@ -747,8 +773,9 @@ other			.
 					if (yyextra->literallen == 0)
 						yyerror("zero-length delimited identifier");
 					ident = litbufdup(yyscanner);
-					if (yyextra->literallen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false)
+					if (yyextra->literallen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, yyextra->literallen, yyextra->warnOnTruncateIdent);
+					set_is_delimiter_name(ident,yyscanner);
 					yylval->str = ident;
 					yyextra->ident_quoted = true;
 					yyextra->is_hint_str = false;
@@ -763,7 +790,7 @@ other			.
 						yyerror("zero-length delimited identifier");
 					ident = litbuf_udeescape('\\', yyscanner);
 					identlen = strlen(ident);
-					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false)
+					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, identlen, yyextra->warnOnTruncateIdent);
 					yylval->str = ident;
 					/* throw back all but the quote */
@@ -781,7 +808,7 @@ other			.
 						yyerror("zero-length delimited identifier");
 					ident = litbuf_udeescape(yytext[yyleng - 2], yyscanner);
 					identlen = strlen(ident);
-					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false)
+					if (identlen >= NAMEDATALEN && u_sess->parser_cxt.is_load_copy == false && u_sess->parser_cxt.isForbidTruncate == false)
 						truncate_identifier(ident, identlen, yyextra->warnOnTruncateIdent);
 					yylval->str = ident;
 					yyextra->ident_quoted = false;
@@ -857,6 +884,7 @@ other			.
                             /* reset is_createstmt to parse next sql */
                             yyextra->is_createstmt = false;
                         }
+						set_is_delimiter_name(yytext,yyscanner);
 					}
 					yyextra->is_hint_str = false;
 					return yytext[0];
@@ -872,6 +900,22 @@ other			.
 					int		nchars = yyleng;
 					char   *slashstar = strstr(yytext, "/*");
 					char   *dashdash = strstr(yytext, "--");
+
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT &&
+						(u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES))
+					{
+						if(nchars > 3 && yytext[0] == '@' && yytext[1] == '`' && yytext[nchars-1] == '`')
+						{
+							char	*subtext = strstr(yytext + 2, "`");
+							if (strlen(subtext) == 1)
+							{
+								SET_YYLLOC();
+								yylval->str = pstrdup(yytext + 1);
+								yyextra->is_hint_str = false;
+								return SET_USER_IDENT;
+							}
+						}
+					}
 
 					if (slashstar && dashdash)
 					{
@@ -909,6 +953,7 @@ other			.
 					}
 
 					SET_YYLLOC();
+					set_is_delimiter_name(yytext,yyscanner);
 
 					if (nchars < (int)yyleng)
 					{
@@ -950,6 +995,12 @@ other			.
 						yyextra->is_hint_str = false;
 						return CmpOp;
 					}
+					else if (strcmp(yytext, "<=>") == 0 && (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT))
+					{
+						yylval->str = pstrdup(yytext);
+						yyextra->is_hint_str = false;
+						return CmpNullOp;
+					}
 					else
 						yylval->str = pstrdup(yytext);
 					yyextra->is_hint_str = false;
@@ -957,6 +1008,7 @@ other			.
 				}
 {newArray}		{
 					yyless(1);
+					SET_YYLLOC();
 					yyextra->is_hint_str = false;
 					return yytext[0];
 				}
@@ -1031,43 +1083,72 @@ other			.
 					return VCONST;
 				}
 
+{set_identifier} {
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT &&
+						(u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES)) {
+						char		   *set_ident;
+						SET_YYLLOC();
+ 
+						/*
+						* No.  Convert the identifier to lower case, and truncate
+						* if necessary.
+						*/
+						set_ident = downcase_truncate_identifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
+						if (strcmp(set_ident, "@@session") == 0) {
+							yyextra->is_hint_str = false;
+							return SET_IDENT_SESSION;
+						} else if (strcmp(set_ident, "@@global") == 0) {
+							yyextra->is_hint_str = false;
+							return SET_IDENT_GLOBAL;
+						} else {
+							yylval->str = set_ident;
+							yyextra->ident_quoted = false;
+							return SET_IDENT;
+						}
+					} else {
+						SET_YYLLOC();
+						yyless(2);
+						yylval->str = pstrdup(yytext);
+						yyextra->is_hint_str = false;
+						return Op;
+					}
+				}
 
 {identifier}	{
-					const ScanKeyword *keyword;
-					char		   *ident;
+					int kwnum;
+                    char *ident;
 
 					SET_YYLLOC();
 
 					/* Is it a keyword? */
-					keyword = ScanKeywordLookup(yytext,
-												yyextra->keywords,
-												yyextra->num_keywords);
+					kwnum = ScanKeywordLookup(yytext, yyextra->keywordlist);
 
 					yyextra->is_hint_str = false;
 					bool isPlpgsqlKeyword = yyextra->isPlpgsqlKeyWord;
 
-					if (keyword != NULL)
+					if (kwnum >= 0)
 					{
-						yylval->keyword = keyword->name;
+						yylval->keyword = GetScanKeyword(kwnum, yyextra->keywordlist);
+                        uint16 token = yyextra->keyword_tokens[kwnum];
 
 						/* Find the CREATE PROCEDURE syntax and set dolqstart. */
-						if (keyword->value == CREATE)
+						if (token == CREATE)
 						{
 							yyextra->is_createstmt = true;
 						}
-						else if (keyword->value == TRIGGER && yyextra->is_createstmt)
+						else if (token == TRIGGER && yyextra->is_createstmt)
 						{
 							/* Create trigger don't need set dolqstart */
 							yyextra->is_createstmt = false;
 						}
-						else if ((keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->procedure : PROCEDURE) ||
-						    keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->function : FUNCTION))
+						else if ((token == (isPlpgsqlKeyword? yyextra->plKeywordValue->procedure : PROCEDURE) ||
+                           token == (isPlpgsqlKeyword? yyextra->plKeywordValue->function : FUNCTION))
 							&& (yyextra->is_createstmt))
 						{
 							/* Make yyextra->dolqstart not NULL means its in a proc with $$. */
 							yyextra->dolqstart = "";
 						}
-						else if (keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->begin : BEGIN_P))
+						else if (token == (isPlpgsqlKeyword? yyextra->plKeywordValue->begin : BEGIN_P))
 						{
                             if (!(u_sess->parser_cxt.isCreateFuncOrProc || u_sess->plsql_cxt.curr_compile_context != NULL)) {
                                 /* cases that have to be a trans stmt and fall quickly */
@@ -1079,16 +1160,17 @@ other			.
                                     return BEGIN_NON_ANOYBLOCK;
                             }
 						}
-						else if (keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->select : SELECT) ||
-								 keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->update : UPDATE) ||
-								 keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->insert : INSERT) ||
-								 keyword->value == (isPlpgsqlKeyword? yyextra->plKeywordValue->Delete : DELETE_P) ||
-								 keyword->value == MERGE)
+                        else if (token == (isPlpgsqlKeyword? yyextra->plKeywordValue->select : SELECT) ||
+                                 token == (isPlpgsqlKeyword? yyextra->plKeywordValue->update : UPDATE) ||
+                                 token == (isPlpgsqlKeyword? yyextra->plKeywordValue->insert : INSERT) ||
+                                 token == (isPlpgsqlKeyword? yyextra->plKeywordValue->Delete : DELETE_P) ||
+                                 token == MERGE)
 						{
 							yyextra->is_hint_str = true;
 						}
 
-						return keyword->value;
+                        set_is_delimiter_name(yytext,yyscanner);
+						return token;
 					}
 
 					/*
@@ -1096,9 +1178,34 @@ other			.
 					 * if necessary.
 					 */
 					ident = downcase_truncate_identifier(yytext, yyleng, yyextra->warnOnTruncateIdent);
+					/* Is it _charset? */
+					if (ident[0] == '_' &&
+						ENABLE_MULTI_CHARSET &&
+						pg_valid_server_encoding(ident + 1) >= 0) {
+						yylval->str = pstrdup(ident + 1);
+						yyextra->is_hint_str = false;
+						yyextra->ident_quoted = false;
+						return UNDERSCORE_CHARSET;
+					}
 					yylval->str = ident;
 					yyextra->ident_quoted = false;
+					set_is_delimiter_name(yytext,yyscanner);
 					return IDENT;
+				}
+
+{setUserIdentifier}	{
+					SET_YYLLOC();
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT &&
+						(u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES || u_sess->attr.attr_common.b_compatibility_user_host_auth)) {
+						yylval->str = pstrdup(yytext + 1);
+						yyextra->is_hint_str = false;
+						return SET_USER_IDENT;
+					} else {
+						yyless(1);
+						yylval->str = pstrdup(yytext);
+						yyextra->is_hint_str = false;
+						return yytext[0];
+					}
 				}
 
 {other}			{
@@ -1171,12 +1278,13 @@ void
 scanner_yyerror(const char *message, core_yyscan_t yyscanner)
 {
 	const char *loc = yyextra->scanbuf + *yylloc;
-	u_sess->plsql_cxt.have_error = true; 
+	u_sess->plsql_cxt.have_error = true;
     int errstate = 0;
 	int lines = 0;
 	int rc = CompileWhich();
 #ifndef ENABLE_MULTIPLE_NODES
-        if (rc != PLPGSQL_COMPILE_NULL && u_sess->attr.attr_common.plsql_show_all_error) {
+        if (rc != PLPGSQL_COMPILE_NULL && u_sess->attr.attr_common.plsql_show_all_error
+            && t_thrd.log_cxt.errordata_stack_depth <= ERRORDATA_STACK_SIZE - 2) {
             lines = GetProcedureLineNumberInPackage(u_sess->plsql_cxt.curr_compile_context->core_yy->scanbuf, u_sess->plsql_cxt.plpgsql_yylloc);
             addErrorList(message, lines);
         }
@@ -1235,8 +1343,8 @@ scanner_yyerror(const char *message, core_yyscan_t yyscanner)
 core_yyscan_t
 scanner_init(const char *str,
 			 core_yy_extra_type *yyext,
-			 const ScanKeyword *keywords,
-			 int num_keywords)
+			 const ScanKeywordList *keywordlist,
+			 const uint16 *keyword_tokens)
 {
 	Size		slen = strlen(str);
 	yyscan_t	scanner;
@@ -1248,8 +1356,8 @@ scanner_init(const char *str,
 
 	core_yyset_extra(yyext, scanner);
 
-	yyext->keywords = keywords;
-	yyext->num_keywords = num_keywords;
+	yyext->keywordlist = keywordlist;
+	yyext->keyword_tokens = keyword_tokens;
 	yyext->in_slash_proc_body = false;
 	yyext->paren_depth = 0;
 	yyext->query_string_locationlist = NIL;
@@ -1279,6 +1387,9 @@ scanner_init(const char *str,
     /* plpgsql keyword params */
     yyext->isPlpgsqlKeyWord = false;
     yyext->plKeywordValue = NULL;
+	yyext->is_delimiter_name = false;
+	yyext->is_last_colon = false;
+	yyext->is_proc_end = false;
 
 	// Added CALL for procedure and function
 	getDynaParamSeq("init", true, true, NULL);
@@ -1358,6 +1469,24 @@ addlitchar(unsigned char ychar, core_yyscan_t yyscanner)
 	/* append new data */
 	yyextra->literalbuf[yyextra->literallen] = ychar;
 	yyextra->literallen += 1;
+}
+
+static void set_is_delimiter_name(char* text, core_yyscan_t yyscanner)
+{ 
+	if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+		if (strcmp(text,u_sess->attr.attr_common.delimiter_name) == 0 && yyextra->paren_depth == 0 && !yyextra->in_slash_proc_body) {
+			if (strcmp(text,";") != 0) {
+				yyextra->query_string_locationlist = lappend_int(yyextra->query_string_locationlist, *yylloc);
+				yyextra->is_createstmt = false;
+			}
+			yyextra->is_delimiter_name = true;
+		} else {
+			yyextra->is_delimiter_name = false;
+		}
+		if (strcmp(text,u_sess->attr.attr_common.delimiter_name) == 0 && strcmp(text,";") != 0 && yyextra->in_slash_proc_body) {
+			yyextra->is_proc_end = true;
+		}
+	}
 }
 
 

@@ -24,6 +24,8 @@
 #include "plugin_mb/pg_wchar.h"
 #include "utils/sortsupport.h"
 #include "vecexecutor/vectorbatch.h"
+#include "utils/pg_locale.h"
+#include "catalog/gs_collation.h"
 
 #include "miscadmin.h"
 
@@ -37,6 +39,7 @@
         }                                                       \
     } while (0)
 
+int bpcharcase(PG_FUNCTION_ARGS);
 
 /* common code for bpchartypmodin and varchartypmodin */
 static int32 anychar_typmodin(ArrayType* ta, const char* typname)
@@ -207,6 +210,19 @@ Datum bpcharin(PG_FUNCTION_ARGS)
     PG_RETURN_BPCHAR_P(result);
 }
 
+Datum input_bpcharin(char* str, Oid typioparam, int32 atttypmod)
+{
+    if (str == NULL) {
+        return (Datum)0;
+    }
+    BpChar* result = NULL;
+#ifdef NOT_USED
+    Oid typelem = typioparam;
+#endif
+    result = bpchar_input(str, strlen(str), atttypmod);
+    PG_RETURN_BPCHAR_P(result);
+}
+
 /*
  * Convert a CHARACTER value to a C string.
  *
@@ -250,30 +266,14 @@ Datum bpcharsend(PG_FUNCTION_ARGS)
     return textsend(fcinfo);
 }
 
-/*
- * Converts a CHARACTER type to the specified size.
- *
- * maxlen is the typmod, ie, declared length plus VARHDRSZ bytes.
- * isExplicit is true if this is for an explicit cast to char(N).
- *
- * Truncation rules: for an explicit cast, silently truncate to the given
- * length; for an implicit cast, raise error unless extra characters are
- * all spaces.	(This is sort-of per SQL: the spec would actually have us
- * raise a "completion condition" for the explicit cast case, but Postgres
- * hasn't got such a concept.)
- */
-Datum bpchar(PG_FUNCTION_ARGS)
+Datum bpchar_launch(bool can_ignore, BpChar* source, int32 &maxlen, bool isExplicit)
 {
-    BpChar* source = PG_GETARG_BPCHAR_PP(0);
-    int32 maxlen = PG_GETARG_INT32(1);
-    bool isExplicit = PG_GETARG_BOOL(2);
     BpChar* result = NULL;
     int32 len;
     char* r = NULL;
     char* s = NULL;
-    int i;
     errno_t ss_rc = 0;
-
+    int i;
     /* No work if typmod is invalid */
     if (maxlen < (int32)VARHDRSZ)
         PG_RETURN_BPCHAR_P(source);
@@ -301,10 +301,12 @@ Datum bpchar(PG_FUNCTION_ARGS)
 
         if (!isExplicit) {
             for (i = maxmblen; i < len; i++)
-                if (s[i] != ' ')
-                    ereport(ERROR,
+                if (s[i] != ' ') {
+                    ereport(can_ignore ? WARNING : ERROR,
                         (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
-                            errmsg("value too long for type character(%d)", maxlen)));
+                             errmsg("value too long for type character(%d)", maxlen)));
+                    break;
+                }
         }
 
         len = maxmblen;
@@ -315,7 +317,7 @@ Datum bpchar(PG_FUNCTION_ARGS)
          *
          * Now, only explicit cast char type data should pad blank space.
          */
-        if (!isExplicit)
+        if (!isExplicit || DB_IS_CMPT(PG_FORMAT | B_FORMAT))
             maxlen = len;
     }
 
@@ -337,6 +339,34 @@ Datum bpchar(PG_FUNCTION_ARGS)
     }
 
     PG_RETURN_BPCHAR_P(result);
+}
+
+/*
+ * Converts a CHARACTER type to the specified size.
+ *
+ * maxlen is the typmod, ie, declared length plus VARHDRSZ bytes.
+ * isExplicit is true if this is for an explicit cast to char(N).
+ *
+ * Truncation rules: for an explicit cast, silently truncate to the given
+ * length; for an implicit cast, raise error unless extra characters are
+ * all spaces.	(This is sort-of per SQL: the spec would actually have us
+ * raise a "completion condition" for the explicit cast case, but Postgres
+ * hasn't got such a concept.)
+ */
+Datum bpchar(PG_FUNCTION_ARGS)
+{
+    BpChar* source = PG_GETARG_BPCHAR_PP(0);
+    int32 maxlen = PG_GETARG_INT32(1);
+    bool isExplicit = PG_GETARG_BOOL(2);
+    return bpchar_launch(fcinfo->can_ignore, source, maxlen, isExplicit);
+}
+
+Datum opfusion_bpchar(Datum arg1, Datum arg2, Datum arg3)
+{
+    BpChar* source = (BpChar*)arg1;
+    int32 maxlen = arg2;
+    bool isExplicit = arg3;
+    return bpchar_launch(false, source, maxlen, isExplicit);
 }
 
 /* char_bpchar()
@@ -490,6 +520,21 @@ Datum varcharin(PG_FUNCTION_ARGS)
     PG_RETURN_VARCHAR_P(result);
 }
 
+Datum input_varcharin(char* str, Oid typioparam, int32 atttypmod)
+{
+    if (str ==NULL) {
+        return (Datum)0;
+    }
+    VarChar* result = NULL;
+
+#ifdef NOT_USED
+    Oid typelem = typioparam;
+#endif
+
+    result = varchar_input(str, strlen(str), atttypmod);
+    PG_RETURN_VARCHAR_P(result);
+}
+
 /*
  * Convert a VARCHAR value to a C string.
  *
@@ -564,6 +609,40 @@ Datum varchar_transform(PG_FUNCTION_ARGS)
     PG_RETURN_POINTER(ret);
 }
 
+Datum varchar_launch(bool can_ignore, VarChar* source, int32 &typmod, bool isExplicit)
+{
+    int32 len, maxlen;
+    size_t maxmblen;
+    int i;
+    char* s_data = NULL;
+    len = VARSIZE_ANY_EXHDR(source);
+    s_data = VARDATA_ANY(source);
+    maxlen = typmod - VARHDRSZ;
+    /* No work if typmod is invalid or supplied data fits it already */
+    if (maxlen < 0 || len <= maxlen)
+        PG_RETURN_VARCHAR_P(source);
+
+    /* only reach here if string is too long... */
+    if (len > maxlen && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && CHAR_COERCE_COMPAT)
+        ereport(ERROR,
+            (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                errmsg("value too long for type character varying(%d)", maxlen)));
+
+    /* truncate multibyte string preserving multibyte boundary */
+    maxmblen = pg_mbcharcliplen(s_data, len, maxlen);
+
+    if (!isExplicit) {
+        for (i = maxmblen; i < len; i++)
+            if (s_data[i] != ' ') {
+                ereport(can_ignore ? WARNING : ERROR,
+                    (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                        errmsg("value too long for type character varying(%d)", maxlen)));
+                break;
+            }
+    }
+    PG_RETURN_VARCHAR_P((VarChar*)cstring_to_text_with_len(s_data, maxmblen));
+}
+
 /*
  * Converts a VARCHAR type to the specified size.
  *
@@ -581,37 +660,15 @@ Datum varchar(PG_FUNCTION_ARGS)
     VarChar* source = PG_GETARG_VARCHAR_PP(0);
     int32 typmod = PG_GETARG_INT32(1);
     bool isExplicit = PG_GETARG_BOOL(2);
-    int32 len, maxlen;
-    size_t maxmblen;
-    int i;
-    char* s_data = NULL;
+    return varchar_launch(fcinfo->can_ignore, source, typmod, isExplicit);
+}
 
-    len = VARSIZE_ANY_EXHDR(source);
-    s_data = VARDATA_ANY(source);
-    maxlen = typmod - VARHDRSZ;
-
-    /* No work if typmod is invalid or supplied data fits it already */
-    if (maxlen < 0 || len <= maxlen)
-        PG_RETURN_VARCHAR_P(source);
-
-    /* only reach here if string is too long... */
-    if (len > maxlen && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && CHAR_COERCE_COMPAT)
-        ereport(ERROR,
-            (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
-                errmsg("value too long for type character varying(%d)", maxlen)));
-
-    /* truncate multibyte string preserving multibyte boundary */
-    maxmblen = pg_mbcharcliplen(s_data, len, maxlen);
-
-    if (!isExplicit) {
-        for (i = maxmblen; i < len; i++)
-            if (s_data[i] != ' ')
-                ereport(ERROR,
-                    (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
-                        errmsg("value too long for type character varying(%d)", maxlen)));
-    }
-
-    PG_RETURN_VARCHAR_P((VarChar*)cstring_to_text_with_len(s_data, maxmblen));
+Datum opfusion_varchar(Datum arg1, Datum arg2, Datum arg3)
+{
+    VarChar* source = (VarChar*)arg1;
+    int32 typmod = arg2;
+    bool isExplicit = arg3;
+    return varchar_launch(false, source, typmod, isExplicit);
 }
 
 Datum varchartypmodin(PG_FUNCTION_ARGS)
@@ -675,7 +732,7 @@ Datum bpcharlen(PG_FUNCTION_ARGS)
     int len;
 
     /* get number of bytes, ignoring trailing spaces */
-    if (DB_IS_CMPT(PG_FORMAT)) {
+    if (DB_IS_CMPT(PG_FORMAT | B_FORMAT)) {
         len = bcTruelen(arg);
     } else {
         len = VARSIZE_ANY_EXHDR(arg);
@@ -705,6 +762,8 @@ Datum bpcharoctetlen(PG_FUNCTION_ARGS)
 {
     Datum arg = PG_GETARG_DATUM(0);
 
+    FUNC_CHECK_HUGE_POINTER(PG_ARGISNULL(0), DatumGetPointer(arg), "bpcharoctetlen()");
+
     /* We need not detoast the input at all */
     PG_RETURN_INT32(toast_raw_datum_size(arg) - VARHDRSZ);
 }
@@ -719,10 +778,16 @@ Datum bpcharoctetlen(PG_FUNCTION_ARGS)
 
 Datum bpchareq(PG_FUNCTION_ARGS)
 {
+    bool result = false;
+    if (is_b_format_collation(PG_GET_COLLATION())) {
+        /* use varstr_cmp to compare, return 0 means equal */
+        result = (bpcharcase(fcinfo) == 0);
+        PG_RETURN_BOOL(result);
+    }
+
     BpChar* arg1 = PG_GETARG_BPCHAR_PP(0);
     BpChar* arg2 = PG_GETARG_BPCHAR_PP(1);
     int len1, len2;
-    bool result = false;
 
     len1 = bcTruelen(arg1);
     len2 = bcTruelen(arg2);
@@ -744,10 +809,15 @@ Datum bpchareq(PG_FUNCTION_ARGS)
 
 Datum bpcharne(PG_FUNCTION_ARGS)
 {
+    bool result = false;
+    if (is_b_format_collation(PG_GET_COLLATION())) {
+        result = !(bpcharcase(fcinfo) == 0);
+        PG_RETURN_BOOL(result);
+    }
+
     BpChar* arg1 = PG_GETARG_BPCHAR_PP(0);
     BpChar* arg2 = PG_GETARG_BPCHAR_PP(1);
     int len1, len2;
-    bool result = false;
 
     len1 = bcTruelen(arg1);
     len2 = bcTruelen(arg2);
@@ -961,11 +1031,16 @@ Datum hashbpchar(PG_FUNCTION_ARGS)
     char* keydata = NULL;
     int keylen;
     Datum result;
+    Oid collid = PG_GET_COLLATION();
 
     keydata = VARDATA_ANY(key);
     keylen = bcTruelen(key);
 
-    result = hash_any((unsigned char*)keydata, keylen);
+    if (is_b_format_collation(collid)) {
+        result = hash_text_by_builtin_collations((unsigned char *)VARDATA_ANY(key), keylen, collid);
+    } else {
+        result = hash_any((unsigned char*)keydata, keylen);
+    }
 
     /* Avoid leaking memory for toasted inputs */
     PG_FREE_IF_COPY(key, 0);
@@ -1219,10 +1294,12 @@ Datum nvarchar2(PG_FUNCTION_ARGS)
 
     if (!isExplicit) {
         for (i = maxmblen; i < len; i++)
-            if (s_data[i] != ' ')
-                ereport(ERROR,
+            if (s_data[i] != ' ') {
+                ereport(fcinfo->can_ignore ? WARNING: ERROR,
                     (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
                         errmsg("value too long for type nvarchar2(%d)", maxlen)));
+                break;
+            }
     }
 
     PG_RETURN_NVARCHAR2_P((NVarChar2*)cstring_to_text_with_len(s_data, maxmblen));
@@ -1779,12 +1856,13 @@ ScalarVector* vbpcharlen(PG_FUNCTION_ARGS)
     int len;
     int eml;
     eml = pg_database_encoding_max_length();
+    bool getTrueLen = DB_IS_CMPT(PG_FORMAT | B_FORMAT);
 
     if (pselection != NULL) {
         for (k = 0; k < nvalues; k++) {
             if (pselection[k]) {
                 if (NOT_NULL(vflag[k])) {
-                    len = VARSIZE_ANY_EXHDR(varg->m_vals[k]);
+                    len = getTrueLen ? bcTruelen((BpChar*)varg->m_vals[k]) : VARSIZE_ANY_EXHDR(varg->m_vals[k]);
                     if (eml != 1)
                         len = pg_mbstrlen_with_len_eml(VARDATA_ANY(varg->m_vals[k]), len, eml);
                     vresult->m_vals[k] = Int32GetDatum(len);
@@ -1797,7 +1875,7 @@ ScalarVector* vbpcharlen(PG_FUNCTION_ARGS)
     } else {
         for (k = 0; k < nvalues; k++) {
             if (NOT_NULL(vflag[k])) {
-                len = VARSIZE_ANY_EXHDR(varg->m_vals[k]);
+                len = getTrueLen ? bcTruelen((BpChar*)varg->m_vals[k]) : VARSIZE_ANY_EXHDR(varg->m_vals[k]);
                 if (eml != 1)
                     len = pg_mbstrlen_with_len_eml(VARDATA_ANY(varg->m_vals[k]), len, eml);
                 vresult->m_vals[k] = Int32GetDatum(len);

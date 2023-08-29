@@ -21,6 +21,7 @@
 #include "access/tableam.h"
 #include "catalog/heap.h"
 #include "catalog/namespace.h"
+#include "catalog/pg_auth_history.h"
 #include "catalog/pg_type.h"
 #include "funcapi.h"
 #include "nodes/makefuncs.h"
@@ -57,6 +58,9 @@
 #include "optimizer/planner.h"
 #include "storage/tcap.h"
 #include "gs_ledger/ledger_utils.h"
+#ifdef ENABLE_MOT
+#include "storage/mot/jit_def.h"
+#endif
 
 #define MAXSTRLEN ((1 << 11) - 1)
 static RangeTblEntry* scanNameSpaceForRefname(ParseState* pstate, const char* refname, int location);
@@ -68,6 +72,7 @@ static void expandTupleDesc(TupleDesc tupdesc, Alias* eref, int rtindex, int sub
     bool include_dropped, List** colnames, List** colvars);
 static void setRteOrientation(Relation rel, RangeTblEntry* rte);
 static int32* getValuesTypmods(RangeTblEntry* rte);
+static IndexHintType preCheckIndexHints(ParseState* pstate, List* indexhints, Relation relation);
 
 #ifndef PGXC
 static int specialAttNum(const char* attname);
@@ -891,7 +896,7 @@ static void buildRelationAliases(TupleDesc tupdesc, Alias* alias, Alias* eref)
     }
 
     for (varattno = 0; varattno < maxattrs; varattno++) {
-        Form_pg_attribute attr = tupdesc->attrs[varattno];
+        Form_pg_attribute attr = &tupdesc->attrs[varattno];
         Value* attrname = NULL;
 
         if (attr->attisdropped) {
@@ -995,7 +1000,7 @@ Relation parserOpenTable(ParseState *pstate, const RangeVar *relation, int lockm
     initStringInfo(&detailInfo);
 
     char *snapshot_name = strchr(relation->relname, DB4AI_SNAPSHOT_VERSION_DELIMITER);
-    if (snapshot_name) {
+    if (unlikely(snapshot_name)) {
         *snapshot_name = *u_sess->attr.attr_sql.db4ai_snapshot_version_delimiter;
         while (*(++snapshot_name)) {
             if (*snapshot_name == DB4AI_SNAPSHOT_VERSION_SEPARATOR) {
@@ -1008,6 +1013,11 @@ Relation parserOpenTable(ParseState *pstate, const RangeVar *relation, int lockm
     rel = HeapOpenrvExtended(relation, lockmode, true, isSupportSynonym, &detailInfo);
     if (rel == NULL) {
         /* Report some error and detail info if detailInfo has some messages. */
+#ifdef ENABLE_MOT
+        if (u_sess->mot_cxt.jit_compile_depth > 0) {
+            u_sess->mot_cxt.jit_parse_error = MOT_JIT_TABLE_NOT_FOUND;
+        }
+#endif
         if (relation->schemaname) {
             if (IS_PGXC_DATANODE) {
                 /*
@@ -1119,7 +1129,7 @@ Relation parserOpenTable(ParseState *pstate, const RangeVar *relation, int lockm
     TrForbidAccessRbObject(RelationRelationId, RelationGetRelid(rel), relation->relname);
 
     /* check wlm session info whether is valid in this database */
-    if (!CheckWLMSessionInfoTableValid(relation->relname) && !u_sess->attr.attr_common.IsInplaceUpgrade) {
+    if (ENABLE_WORKLOAD_CONTROL && !CheckWLMSessionInfoTableValid(relation->relname) && !u_sess->attr.attr_common.IsInplaceUpgrade) {
         ereport(NOTICE,
             (errcode(ERRCODE_UNDEFINED_TABLE),
                 errmsg("relation \"%s\" has data only in database \"postgres\"", relation->relname),
@@ -1130,10 +1140,14 @@ Relation parserOpenTable(ParseState *pstate, const RangeVar *relation, int lockm
         TryUnlockAllAccounts();
     }
 
-    if (rel->partMap && rel->partMap->type == PART_TYPE_INTERVAL) {
-        /* take AccessShareLock on ADD_PARTITION_ACTION to avoid concurrency with new partition operations. */
-        LockRelationForAccessIntervalPartitionTab(rel);
+#ifndef ENABLE_MULTIPLE_NODES
+    if (RelationIsPartitioned(rel)) {
+        /* take ShareLock to avoid PARTITION DDL COMMIT until we finish the InitPlan. Distribute mode doesn't support
+         * partition DDL/DML parallel work, no need this action */
+        LockPartitionObject(RelationGetRelid(rel), PARTITION_OBJECT_LOCK_SDEQUENCE, PARTITION_SHARE_LOCK);
+        AddPartitionDMLInfo(RelationGetRelid(rel));
     }
+#endif
 
     if (IS_PGXC_COORDINATOR && !IsConnFromCoord()) {
         if (u_sess->attr.attr_sql.enable_parallel_ddl && !isFirstNode && isCreateView) {
@@ -1218,6 +1232,7 @@ RangeTblEntry* addRangeTableEntry(ParseState* pstate, RangeVar* relation, Alias*
     if (list_length(relation->partitionNameList) > 0) {
         GetPartitionOidListForRTE(rte, relation);
     }
+#ifdef ENABLE_MULTIPLE_NODES
     if (!rte->relhasbucket && relation->isbucket) {
         ereport(ERROR, (errmsg("table is normal,cannot contains buckets(0,1,2...)")));
     }
@@ -1230,6 +1245,7 @@ RangeTblEntry* addRangeTableEntry(ParseState* pstate, RangeVar* relation, Alias*
         rte->isbucket = true;
         rte->buckets = RangeVarGetBucketList(relation);
     }
+#endif
 
 #ifdef PGXC
     rte->relname = pstrdup(RelationGetRelationName(rel));
@@ -1273,6 +1289,21 @@ RangeTblEntry* addRangeTableEntry(ParseState* pstate, RangeVar* relation, Alias*
         }
     }
 
+    /* B compatibility deal index hint pre check*/
+    IndexHintType ihtype = INDEX_HINT_USE;
+    if (DB_IS_CMPT(B_FORMAT) && relation->indexhints != NIL) {
+        ihtype = preCheckIndexHints(pstate, relation->indexhints, rel);
+        if (ihtype == INDEX_HINT_NOT_EXISTS) {
+            ereport(ERROR,
+            (errcode(ERRCODE_UNDEFINED_OBJECT),
+                errmsg(
+                    "index not exists in relation %s", RelationGetRelationName(rel))));
+        } else if (ihtype == INDEX_HINT_MIX) {
+            ereport(ERROR,
+            (errcode(ERRCODE_DUPLICATE_OBJECT),
+                errmsg("mixed use force index and use index")));
+        }
+    }
     return rte;
 }
 
@@ -1898,7 +1929,7 @@ void addRTEtoQuery(
 {
     if (addToJoinList) {
         int rtindex = RTERangeTablePosn(pstate, rte, NULL);
-        RangeTblRef* rtr = makeNode(RangeTblRef);
+        RangeTblRef* rtr = makeNodeFast(RangeTblRef);
 
         rtr->rtindex = rtindex;
         pstate->p_joinlist = lappend(pstate->p_joinlist, rtr);
@@ -2235,7 +2266,7 @@ static void expandTupleDesc(TupleDesc tupdesc, Alias* eref, int rtindex, int sub
     int varattno;
 
     for (varattno = 0; varattno < maxattrs; varattno++) {
-        Form_pg_attribute attr = tupdesc->attrs[varattno];
+        Form_pg_attribute attr = &tupdesc->attrs[varattno];
 
         if (attr->attisdropped) {
             if (include_dropped) {
@@ -2514,7 +2545,7 @@ void get_rte_attribute_type(RangeTblEntry* rte, AttrNumber attnum, Oid* vartype,
                             errmsg("column %d of relation \"%s\" does not exist", attnum, rte->eref->aliasname)));
                 }
 
-                att_tup = tupdesc->attrs[attnum - 1];
+                att_tup = &tupdesc->attrs[attnum - 1];
 
                 /*
                  * If dropped column, pretend it ain't there.  See notes
@@ -2756,7 +2787,7 @@ int attnameAttNum(Relation rd, const char* attname, bool sysColOK)
     int i;
 
     for (i = 0; i < rd->rd_rel->relnatts; i++) {
-        Form_pg_attribute att = rd->rd_att->attrs[i];
+        Form_pg_attribute att = &rd->rd_att->attrs[i];
 
         if (namestrcmp(&(att->attname), attname) == 0 && !att->attisdropped) {
             return i + 1;
@@ -2820,7 +2851,7 @@ Name attnumAttName(Relation rd, int attid)
     if (attid > rd->rd_att->natts) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_ATTRIBUTE), errmsg("invalid attribute number %d", attid)));
     }
-    return &rd->rd_att->attrs[attid - 1]->attname;
+    return &rd->rd_att->attrs[attid - 1].attname;
 }
 
 /*
@@ -2842,7 +2873,7 @@ Oid attnumTypeId(Relation rd, int attid)
     if (attid > rd->rd_att->natts) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_ATTRIBUTE), errmsg("invalid attribute number %d", attid)));
     }
-    return rd->rd_att->attrs[attid - 1]->atttypid;
+    return rd->rd_att->attrs[attid - 1].atttypid;
 }
 
 /*
@@ -2859,7 +2890,7 @@ Oid attnumCollationId(Relation rd, int attid)
     if (attid > rd->rd_att->natts) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_ATTRIBUTE), errmsg("invalid attribute number %d", attid)));
     }
-    return rd->rd_att->attrs[attid - 1]->attcollation;
+    return rd->rd_att->attrs[attid - 1].attcollation;
 }
 
 /*
@@ -2976,6 +3007,7 @@ static void setRteOrientation(Relation rel, RangeTblEntry* rte)
 {
     if (RelationIsCUFormat(rel)) {
         rte->orientation = REL_COL_ORIENTED;
+#ifdef ENABLE_MULTIPLE_NODES
     } else if (RelationIsPAXFormat(rel)) {
         rte->orientation = REL_PAX_ORIENTED;
 
@@ -2986,7 +3018,63 @@ static void setRteOrientation(Relation rel, RangeTblEntry* rte)
         }
     } else if(RelationIsTsStore(rel)) {
         rte->orientation = REL_TIMESERIES_ORIENTED;
+#endif
     } else {
         rte->orientation = REL_ROW_ORIENTED;
     }
+}
+
+/*check index in the table , and mixd write force and use*/
+static IndexHintType preCheckIndexHints(ParseState* pstate, List* indexhints, Relation relation)
+{
+    IndexHintType retType = INDEX_HINT_USE;
+    ListCell* lc = NULL;
+    ListCell* lc_index = NULL;
+    List* indexOidList = NIL;
+    Oid indexOid = InvalidOid;
+    Oid relationOid = RelationGetRelid(relation);
+    Oid relationNsOid = RelationGetNamespace(relation);
+    List* indexList = RelationGetIndexList(relation);
+    IndexHintDefinition* idef = NULL;
+    bool exist_indexs = false;
+
+    /*no index in table ,return */
+    if (indexList == NIL) {
+        retType = INDEX_HINT_NOT_EXISTS;
+        return retType;
+    }
+
+    IndexHintType itype = ((IndexHintDefinition*)lfirst(list_head(indexhints)))->index_type;
+    foreach (lc, indexhints) {
+        idef = (IndexHintDefinition*)lfirst(lc);
+        itype = (IndexHintType)(idef->index_type | itype);
+        if (itype == INDEX_HINT_MIX) {
+            retType = INDEX_HINT_MIX;
+            goto err;
+        }
+        /*check index is in table*/
+        foreach (lc_index, idef->indexnames) {
+            indexOid = get_relname_relid(strVal(lfirst(lc_index)), relationNsOid);
+            exist_indexs = false;
+            if (OidIsValid(indexOid)) {
+                if (list_member_oid(indexList, indexOid)) {
+                    exist_indexs = true;
+                }
+            }
+            if (!exist_indexs) {
+                retType = INDEX_HINT_NOT_EXISTS;
+                goto err;
+            }
+            IndexHintRelationData* indexdata = makeNode(IndexHintRelationData);
+            indexdata->indexOid = indexOid;
+            indexdata->relationOid = relationOid;
+            indexdata->index_type = idef->index_type;
+            indexOidList = list_append_unique(indexOidList, (Node*)indexdata);
+        }
+    }
+    pstate->p_indexhintLists = list_copy(indexOidList);
+err:
+    if (indexOidList != NIL)
+        list_free(indexOidList);
+    return retType;
 }

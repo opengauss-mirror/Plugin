@@ -52,11 +52,14 @@ typedef struct {
     List* uuids;     /* used for create sequence */
     bool isResizing; /* true if the table is resizing */
     bool ofType;         /* true if statement contains OF typename */
+    Oid rel_coll_id;    /* relation collation oid */
 } CreateStmtContext;
 
 typedef enum TransformTableType { TRANSFORM_INVALID = 0, TRANSFORM_TO_HASHBUCKET, TRANSFORM_TO_NONHASHBUCKET} TransformTableType;
 
 extern void checkPartitionSynax(CreateStmt *stmt);
+extern Oid fill_relation_collation(const char* collate, int charset, List** options,
+    Oid nsp_coll_oid = InvalidOid);
 extern List* transformCreateStmt(CreateStmt* stmt, const char* queryString, const List* uuids,
     bool preCheck, Oid *namespaceid, bool isFirstNode = true);
 extern List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* queryString);
@@ -67,7 +70,7 @@ extern void transformPartitionValue(ParseState* pstate, Node* rangePartDef, bool
 extern List* transformListPartitionValue(ParseState* pstate, List* boundary, bool needCheck, bool needFree);
 extern List* transformRangePartitionValueInternal(ParseState* pstate, List* boundary,
     bool needCheck, bool needFree, bool isPartition = true);
-extern Node* transformIntoConst(ParseState* pstate, Node* maxElem, bool isPartition = true);
+extern Node* transformIntoConst(ParseState* pstate, ParseExprKind exprKind, Node* maxElem, bool isPartition = true);
 
 #ifdef PGXC
 extern bool CheckLocalIndexColumn(char loctype, char* partcolname, char* indexcolname);
@@ -84,7 +87,7 @@ extern Oid searchSeqidFromExpr(Node* cooked_default);
 extern bool is_start_end_def_list(List* def_list);
 extern void get_range_partition_name_prefix(char* namePrefix, char* srcName, bool printNotice, bool isPartition);
 extern List* transformRangePartStartEndStmt(ParseState* pstate, List* partitionList, List* pos, 
-	Form_pg_attribute* attrs, int32 existPartNum, Const* lowBound, Const* upBound, bool needFree, 
+	FormData_pg_attribute* attrs, int32 existPartNum, Const* lowBound, Const* upBound, bool needFree, 
 	bool isPartition = true);
 extern bool check_contains_tbllike_in_multi_nodegroup(CreateStmt* stmt);
 extern bool is_multi_nodegroup_createtbllike(PGXCSubCluster* subcluster, Oid oid);
@@ -93,5 +96,8 @@ extern char* getTmptableIndexName(const char* srcSchema, const char* srcIndex);
 extern IndexStmt* generateClonedIndexStmt(
     CreateStmtContext* cxt, Relation source_idx, const AttrNumber* attmap, int attmap_length, Relation rel,
     TransformTableType transformType);
+extern Oid transform_default_collation(const char* collate, int charset, Oid def_coll_oid = InvalidOid,
+    bool is_attr = false);
+extern Oid check_collation_by_charset(const char* collate, int charset);
 
 #endif /* PARSE_UTILCMD_H */

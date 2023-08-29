@@ -27,6 +27,7 @@
 #include "plugin_parser/parse_agg.h"
 #include "plugin_parser/parse_clause.h"
 #include "plugin_parser/parse_coerce.h"
+#include "plugin_parser/parse_expr.h"
 #include "plugin_parser/parse_func.h"
 #include "plugin_parser/parse_relation.h"
 #include "plugin_parser/parse_target.h"
@@ -63,7 +64,8 @@ static Oid cl_get_input_param_original_type(Oid func_oid, int argno);
  *	The argument expressions (in fargs) must have been transformed already.
  *	But the agg_order expressions, if any, have not been.
  */
-Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, FuncCall* fn, int location, bool call_func)
+Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, Node* last_srf, FuncCall* fn, int location,
+                        bool call_func)
 {
     bool is_column = (fn == NULL);
     List* agg_order = (fn ? fn->agg_order : NIL);
@@ -478,6 +480,11 @@ Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, FuncCal
         fargs = lappend(fargs, newa);
     }
 
+    /* if it returns a set, check that's OK */
+    if (retset && pstate && pstate->p_is_flt_frame) {
+        check_srf_call_placement(pstate, last_srf, location);
+    }
+
     /* build the appropriate output structure */
     if (fdresult == FUNCDETAIL_NORMAL) {
         FuncExpr* funcexpr = makeNode(FuncExpr);
@@ -605,6 +612,15 @@ Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, FuncCal
                 (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
                     errmsg("aggregate ORDER BY is not implemented for window functions"),
                     parser_errposition(pstate, location)));
+        if (pstate->p_is_flt_frame) {
+            /*
+            * Window functions can't either take or return sets
+            */
+            if (pstate->p_last_srf != last_srf)
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                errmsg("window function calls cannot contain set-returning function calls"),
+                                parser_errposition(pstate, exprLocation(pstate->p_last_srf))));
+        }
 
         if (retset)
             ereport(ERROR,
@@ -649,6 +665,12 @@ Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, FuncCal
 
         retval = (Node*)wfunc;
     }
+
+    if (retset && pstate && pstate->p_is_flt_frame) {
+        /* if it returns a set, remember it for error checks at higher levels */
+        pstate->p_last_srf = retval;
+    }
+
 
     return retval;
 }
@@ -1399,6 +1421,30 @@ FuncCandidateList func_select_candidate(int nargs, Oid* input_typeids, FuncCandi
     if (ncandidates == 1)
         return candidates;
 
+#ifndef ENABLE_MULTIPLE_NODES
+    Oid caller_pkg_oid = InvalidOid;
+    if (OidIsValid(u_sess->plsql_cxt.running_pkg_oid)) {
+        caller_pkg_oid = u_sess->plsql_cxt.running_pkg_oid;
+    } else if (u_sess->plsql_cxt.curr_compile_context != NULL &&
+        u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package != NULL) {
+        caller_pkg_oid = u_sess->plsql_cxt.curr_compile_context->plpgsql_curr_compile_package->pkg_oid;
+    }
+    nbestMatch = 0;
+    ncandidates = 0;
+    last_candidate = NULL;
+    for (current_candidate = candidates; current_candidate != NULL; current_candidate = current_candidate->next) {
+        nmatch = 0;
+        if (current_candidate->packageOid == caller_pkg_oid) {
+            nmatch++;
+        }
+        keep_candidate(nmatch, nbestMatch, current_candidate, last_candidate, candidates, ncandidates);
+    }
+    if (last_candidate) /* terminate rebuilt list */
+        last_candidate->next = NULL;
+    if (ncandidates == 1)
+        return candidates;
+#endif
+
     return NULL; /* failed to select a best candidate */
 } /* func_select_candidate() */
 
@@ -1454,7 +1500,14 @@ FuncCandidateList sort_candidate_func_list(FuncCandidateList oldCandidates)
         }
         candidates[smallestIndex] = NULL;
     }
-
+    
+    for (int i = 0; i < size; i++) {
+        if (candidates[i] != NULL) {
+            lastCandidate->next = candidates[i];
+            lastCandidate = lastCandidate->next;
+        }
+    }
+    lastCandidate->next = NULL;
     pfree(candidates);
     return sortedCandidates;
 }
@@ -1821,6 +1874,18 @@ void make_fn_arguments(ParseState* pstate, List* fargs, Oid* actual_arg_types, O
                     COERCE_IMPLICIT_CAST,
                     -1);
                 na->arg = (Expr*)node;
+            } else if (IsA(node, UserVar)) {
+                UserVar* uvar = (UserVar*)node;
+
+                node = coerce_type(pstate,
+                    (Node*)uvar->value,
+                    actual_arg_types[i],
+                    declared_arg_types[i],
+                    -1,
+                    COERCION_IMPLICIT,
+                    COERCE_IMPLICIT_CAST,
+                    -1);
+                uvar->value = (Expr*)node;
             } else {
                 node = coerce_type(pstate,
                     node,
@@ -1913,7 +1978,7 @@ static Node* ParseComplexProjection(ParseState* pstate, char* funcname, Node* fi
     AssertEreport(tupdesc, MOD_OPT, "");
 
     for (i = 0; i < tupdesc->natts; i++) {
-        Form_pg_attribute att = tupdesc->attrs[i];
+        Form_pg_attribute att = &tupdesc->attrs[i];
 
         if (strcmp(funcname, NameStr(att->attname)) == 0 && !att->attisdropped) {
             /* Success, so generate a FieldSelect expression */
@@ -2002,7 +2067,7 @@ Oid LookupFuncName(List* funcname, int nargs, const Oid* argtypes, bool noError)
     while (clist) {
         /* if argtype is CL type replace it with original type */
         for (int i = 0; i < nargs; i++) {
-            if (IsClientLogicType(clist->args[i])) {
+            if (IsClientLogicType(clist->args[i]) && !u_sess->attr.attr_common.IsInplaceUpgrade) {
                 clist->args[i] = cl_get_input_param_original_type(clist->oid, i);
             }
         }
@@ -2335,4 +2400,180 @@ static Oid cl_get_input_param_original_type(Oid func_id, int argno)
         ReleaseSysCache(gs_oldtup);
     }
     return ret;
+}
+
+/*
+ * check_srf_call_placement
+ *		Verify that a set-returning function is called in a valid place,
+ *		and throw a nice error if not.
+ *
+ * A side-effect is to set pstate->p_hasTargetSRFs true if appropriate.
+ */
+void check_srf_call_placement(ParseState* pstate, Node* last_srf, int location)
+{
+    const char* err;
+    bool errkind;
+
+    /*
+     * Check to see if the set-returning function is in an invalid place
+     * within the query.  Basically, we don't allow SRFs anywhere except in
+     * the targetlist (which includes GROUP BY/ORDER BY expressions), VALUES,
+     * and functions in FROM.
+     *
+     * For brevity we support two schemes for reporting an error here: set
+     * "err" to a custom message, or set "errkind" true if the error context
+     * is sufficiently identified by what ParseExprKindName will return, *and*
+     * what it will return is just a SQL keyword.  (Otherwise, use a custom
+     * message to avoid creating translation problems.)
+     */
+    err = NULL;
+    errkind = false;
+    switch (pstate->p_expr_kind) {
+        case EXPR_KIND_NONE:
+            Assert(false); /* can't happen */
+            break;
+        case EXPR_KIND_OTHER:
+            /* Accept SRF here; caller must throw error if wanted */
+            break;
+        case EXPR_KIND_JOIN_ON:
+        case EXPR_KIND_JOIN_USING:
+            err = _("set-returning functions are not allowed in JOIN conditions");
+            break;
+        case EXPR_KIND_FROM_SUBSELECT:
+            /* can't get here, but just in case, throw an error */
+            errkind = true;
+            break;
+        case EXPR_KIND_FROM_FUNCTION:
+            if (pstate->p_is_flt_frame) {
+                /* okay, but we don't allow nested SRFs here */
+                /* errmsg is chosen to match transformRangeFunction() */
+                /* errposition should point to the inner SRF */
+                if (pstate->p_last_srf != last_srf)
+                    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                    errmsg("set-returning functions must appear at top level of FROM"),
+                                    parser_errposition(pstate, exprLocation(pstate->p_last_srf))));
+            }
+            break;
+        case EXPR_KIND_WHERE:
+            errkind = true;
+            break;
+        case EXPR_KIND_POLICY:
+            err = _("set-returning functions are not allowed in policy expressions");
+            break;
+        case EXPR_KIND_HAVING:
+            errkind = true;
+            break;
+        case EXPR_KIND_FILTER:
+            errkind = true;
+            break;
+        case EXPR_KIND_WINDOW_PARTITION:
+        case EXPR_KIND_WINDOW_ORDER:
+            /* okay, these are effectively GROUP BY/ORDER BY */
+            pstate->p_hasTargetSRFs = true;
+            break;
+        case EXPR_KIND_WINDOW_FRAME_RANGE:
+        case EXPR_KIND_WINDOW_FRAME_ROWS:
+            err = _("set-returning functions are not allowed in window definitions");
+            break;
+        case EXPR_KIND_SELECT_TARGET:
+        case EXPR_KIND_INSERT_TARGET:
+            /* okay */
+            pstate->p_hasTargetSRFs = true;
+            break;
+        case EXPR_KIND_UPDATE_SOURCE:
+        case EXPR_KIND_UPDATE_TARGET:
+            /* disallowed because it would be ambiguous what to do */
+            errkind = true;
+            break;
+        case EXPR_KIND_GROUP_BY:
+        case EXPR_KIND_ORDER_BY:
+            /* okay */
+            pstate->p_hasTargetSRFs = true;
+            break;
+        case EXPR_KIND_DISTINCT_ON:
+            /* okay */
+            pstate->p_hasTargetSRFs = true;
+            break;
+        case EXPR_KIND_LIMIT:
+        case EXPR_KIND_OFFSET:
+            errkind = true;
+            break;
+        case EXPR_KIND_RETURNING:
+            errkind = true;
+            break;
+        case EXPR_KIND_VALUES:
+            /* SRFs are presently not supported by nodeValuesscan.c */
+            errkind = true;
+            break;
+        case EXPR_KIND_VALUES_SINGLE:
+            /* okay, since we process this like a SELECT tlist */
+            pstate->p_hasTargetSRFs = true;
+            break;
+        case EXPR_KIND_CHECK_CONSTRAINT:
+        case EXPR_KIND_DOMAIN_CHECK:
+            err = _("set-returning functions are not allowed in check constraints");
+            break;
+        case EXPR_KIND_COLUMN_DEFAULT:
+        case EXPR_KIND_FUNCTION_DEFAULT:
+            err = _("set-returning functions are not allowed in DEFAULT expressions");
+            break;
+        case EXPR_KIND_INDEX_EXPRESSION:
+            err = _("set-returning functions are not allowed in index expressions");
+            break;
+        case EXPR_KIND_INDEX_PREDICATE:
+            err = _("set-returning functions are not allowed in index predicates");
+            break;
+        case EXPR_KIND_STATS_EXPRESSION:
+            err = _("set-returning functions are not allowed in statistics expressions");
+            break;
+        case EXPR_KIND_ALTER_COL_TRANSFORM:
+            err = _("set-returning functions are not allowed in transform expressions");
+            break;
+        case EXPR_KIND_EXECUTE_PARAMETER:
+            err = _("set-returning functions are not allowed in EXECUTE parameters");
+            break;
+        case EXPR_KIND_TRIGGER_WHEN:
+            err = _("set-returning functions are not allowed in trigger WHEN conditions");
+            break;
+        case EXPR_KIND_PARTITION_EXPRESSION:
+            err = _("set-returning functions are not allowed in partition key expressions");
+            break;
+        case EXPR_KIND_PARTITION_BOUND:
+            err = _("set-returning functions are not allowed in partition bound expression");
+            break;
+        case EXPR_KIND_CALL_ARGUMENT:
+            err = _("set-returning functions are not allowed in CALL procedure argument");
+            break;
+        case EXPR_KIND_COPY_WHERE:
+            err = _("set-returning functions are not allowed in WHERE condition in COPY FROM");
+            break;
+        case EXPR_KIND_GENERATED_COLUMN:
+            err = _("set-returning functions are not allowed in generation expression");
+            break;
+        case EXPR_KIND_WINDOW_FRAME_GROUPS:
+            err = _("set-returning functions are not allowed in window frame clause with GROUPS");
+            break;
+        case EXPR_KIND_MERGE_WHEN:
+            err = _("set-returning functions are not allowed in merge when expression");
+            break;
+        case EXPR_KIND_CYCLE_MARK:
+            errkind = true;
+            /*
+             * There is intentionally no default: case here, so that the
+             * compiler will warn if we add a new ParseExprKind without
+             * extending this switch.  If we do see an unrecognized value at
+             * runtime, the behavior will be the same as for EXPR_KIND_OTHER,
+             * which is sane anyway.
+             */
+    }
+    if (err)
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg_internal("%s", err),
+                parser_errposition(pstate, location)));
+    if (errkind)
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("set-returning functions are not allowed"),
+                 parser_errposition(pstate, location)));
 }

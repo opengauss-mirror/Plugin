@@ -12,7 +12,6 @@ subdir = contrib/whale/plugin_utils/mb
 top_builddir = ../../../..
 base_dir = contrib/whale
 include $(top_builddir)/src/Makefile.global
-
 include $(top_builddir)/$(base_dir)/configure.mk
 
 ifneq "$(MAKECMDGOALS)" "clean"
@@ -25,6 +24,3 @@ endif
 OBJS = mbutils.o
 
 include $(top_srcdir)/src/gausskernel/common.mk
-
-clean distclean maintainer-clean:
-	$(MAKE) -C conversion_procs $@

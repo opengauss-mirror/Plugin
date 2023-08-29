@@ -15,7 +15,7 @@
  */
 #include "postgres.h"
 #include "knl/knl_variable.h"
-
+#include "utils/fmgroids.h"
 #include "catalog/pg_cast.h"
 #include "catalog/pg_class.h"
 #include "catalog/pg_inherits_fn.h"
@@ -31,6 +31,11 @@
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
 #include "utils/typcache.h"
+#include "optimizer/clauses.h"
+#include "utils/numeric.h"
+#include "utils/guc.h"
+#include "utils/guc_tables.h"
+#include "plugin_mb/pg_wchar.h"
 #ifdef PGXC
 #include "pgxc/pgxc.h"
 #endif
@@ -44,9 +49,22 @@ static Node* coerce_record_to_complex(
     ParseState* pstate, Node* node, Oid targetTypeId, CoercionContext ccontext, CoercionForm cformat, int location);
 static bool is_complex_array(Oid typid);
 static bool typeIsOfTypedTable(Oid reltypeId, Oid reloftypeId);
+static Oid choose_decode_result1_type(ParseState* pstate, List* exprs, const char* context);
+static void handle_diff_category(ParseState* pstate, Node* nextExpr, const char* context,
+    TYPCATEGORY preferCategory, TYPCATEGORY nextCategory, Oid preferType, Oid nextType);
+static bool category_can_be_matched(TYPCATEGORY preferCategory, TYPCATEGORY nextCategory);
+static bool type_can_be_matched(Oid preferType, Oid nextType);
 static Oid choose_specific_expr_type(ParseState* pstate, List* exprs, const char* context);
 static Oid choose_nvl_type(ParseState* pstate, List* exprs, const char* context);
 static Oid choose_expr_type(ParseState* pstate, List* exprs, const char* context, Node** which_expr);
+static bool check_category_in_whitelist(TYPCATEGORY category, Oid type);
+static bool check_numeric_type_in_blacklist(Oid type);
+static bool meet_decode_compatibility(List* exprs, const char* context);
+static bool meet_c_format_compatibility(List* exprs, const char* context);
+static bool meet_set_type_compatibility(List* exprs, const char* context, Oid *retOid);
+extern Node* makeAConst(Value* v, int location);
+#define CHECK_PARSE_PHRASE(context, target) \
+    (AssertMacro(sizeof(target) - 1 == strlen(target)), strncmp(context, target, sizeof(target) - 1) == 0)
 
 /*
  * @Description: same as get_element_type() except this reports error
@@ -102,6 +120,50 @@ inline Oid get_valid_array_type(Oid elem_type)
  * ccontext, cformat - context indicators to control coercions
  * location - parse location of the coercion request, or -1 if unknown/implicit
  */
+
+static bool check_varchar_coerce(Node* node, Oid target_type_id, int32 target_typ_mod)
+{
+    if ((target_type_id != VARCHAROID && target_type_id != BPCHAROID)|| exprTypmod(node) != -1) {
+        return false;
+    }
+    if (!IsA(node, Const)) {
+        return false;
+    }
+    Const *con = (Const*)node;
+
+    if (con->constisnull) {
+        return false;
+    }
+    if (target_type_id == VARCHAROID) {
+        VarChar *source = DatumGetVarCharPP(con->constvalue);
+        int32 len;
+        int32 maxlen;
+        len = VARSIZE_ANY_EXHDR(source);
+        maxlen = target_typ_mod;
+        /*No work if typmod is invalid or supplied data fits it already*/
+        if (maxlen < 0 || len <= maxlen) {
+            return true;
+        }
+        return false;
+    } else if (target_type_id == BPCHAROID) {
+        BpChar *source = DatumGetBpCharPP(con->constvalue);
+        int32 len;
+        int32 maxlen = 0;
+        maxlen = target_typ_mod;
+        if (maxlen < (int32)VARHDRSZ) {
+            return true;
+        }
+        maxlen -= VARHDRSZ;
+        len = VARSIZE_ANY_EXHDR(source);
+        if (len == maxlen) {
+            return true;
+        }
+        return false;
+    } else {
+        return false;
+    }
+}
+
 Node* coerce_to_target_type(ParseState* pstate, Node* expr, Oid exprtype, Oid targettype, int32 targettypmod,
     CoercionContext ccontext, CoercionForm cformat, int location)
 {
@@ -133,14 +195,23 @@ Node* coerce_to_target_type(ParseState* pstate, Node* expr, Oid exprtype, Oid ta
      * well as a type coercion.  If we find ourselves adding both, force the
      * inner coercion node to implicit display form.
      */
-    result = coerce_type_typmod(result,
-        targettype,
-        targettypmod,
-        cformat,
-        location,
-        (cformat != COERCE_IMPLICIT_CAST),
-        (result != expr && !IsA(result, Const)));
-
+    if (u_sess->attr.attr_common.enable_iud_fusion && pstate
+        && !pstate->p_joinlist && pstate->p_expr_kind == EXPR_KIND_INSERT_TARGET && result != NULL
+        && check_varchar_coerce(result, targettype, targettypmod)) {
+        Const* cons = (Const*)result;
+        cons->consttypmod = DatumGetInt32((targettypmod));
+        cons->constcollid = InvalidOid;
+        cons->location = -1;
+        result = (Node*)cons;
+    } else {
+        result = coerce_type_typmod(result,
+            targettype,
+            targettypmod,
+            cformat,
+            location,
+            (cformat != COERCE_IMPLICIT_CAST),
+            (result != expr && !IsA(result, Const)));
+    }
 #ifdef PGXC
     /* Do not need to do that on local Coordinator */
     if (IsConnFromCoord())
@@ -156,6 +227,161 @@ Node* coerce_to_target_type(ParseState* pstate, Node* expr, Oid exprtype, Oid ta
             result = (Node*)newcoll;
         }
 
+    return result;
+}
+
+/*
+ * coerce_to_target_charset()
+ *		Convert an expression to a target character set.
+ *
+ * pstate - parse state (can be NULL, see semtc_coerce_type)
+ * expr - input expression tree (already transformed by semtc_expr)
+ * target_charset - desired result character set
+ * target_type - desired result type
+ */
+Node* coerce_to_target_charset(Node* expr, int target_charset, Oid target_type, int32 target_typmod, Oid target_collation)
+{
+    FuncExpr* fexpr = NULL;
+    Node* result = NULL;
+    List* args = NIL;
+    Const* cons = NULL;
+    int exprcharset;
+    Oid exprtype;
+
+    if (target_charset == PG_INVALID_ENCODING) {
+        return expr;
+    }
+
+    exprcharset = exprCharset((Node*)expr);
+    if (exprcharset == PG_INVALID_ENCODING) {
+        exprcharset = GetDatabaseEncoding();
+    }
+    if (exprcharset == target_charset) {
+        return expr;
+    }
+
+    check_type_supports_multi_charset(target_type, false);
+    exprtype = exprType(expr);
+    /* datatype have no collation and charset */
+    if (exprtype != UNKNOWNOID && !OidIsValid(get_typcollation(exprtype))) {
+        return expr;
+    }
+    /* coerce expression to bytea or text first */
+    args = list_make1(coerce_type(
+        NULL, expr, exprtype, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, exprLocation(expr)));
+
+    /* construct a convert FuncExpr */
+    const char* expr_charset_name = pg_encoding_to_char(exprcharset);
+    const char* target_charset_name = pg_encoding_to_char(target_charset);
+    cons = makeConst(NAMEOID, -1, InvalidOid, sizeof(const char*), NameGetDatum(expr_charset_name), false, true);
+    args = lappend(args, cons);
+
+    cons = makeConst(NAMEOID, -1, InvalidOid, sizeof(const char*), NameGetDatum(target_charset_name), false, true);
+    args = lappend(args, cons);
+
+    fexpr = makeFuncExpr(CONVERTFUNCOID, TEXTOID, args, target_collation, InvalidOid, COERCE_IMPLICIT_CAST);
+
+    /* coerce convert expression to original datatype */
+    if (target_type == UNKNOWNOID) {
+        result = (Node*)fexpr;
+    } else {
+        result = coerce_type(NULL, (Node*)fexpr, TEXTOID, target_type, target_typmod,
+            COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, exprLocation(expr));
+    }
+
+    /* set collation after coerce_to_target_type */
+    exprSetCollation(result, target_collation);
+    if (IsA(expr, Const) || IsA(expr, RelabelType)) {
+        result = eval_const_expression_value(NULL, result, NULL);
+    }
+    return result;
+}
+
+/*
+ * user_defined variables only store integer, float, bit, string and null,
+ * therefor, we convert the constant to the corresponding type.
+ * atttypid: datatype
+ * isSelect: subquery flag
+ */
+Node *type_transfer(Node *node, Oid atttypid, bool isSelect)
+{
+    Node *result = NULL;
+    Const *con = (Const *)node;
+    if (con->constisnull) {
+        return node;
+    }
+
+    switch (atttypid) {
+        case BOOLOID:
+        case INT1OID:
+        case INT2OID:
+        case INT4OID:
+        case INT8OID:
+            result = coerce_type(NULL, node, con->consttype,
+                INT8OID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+            break;
+        case FLOAT4OID:
+        case FLOAT8OID:
+        case NUMERICOID:
+            result = coerce_type(NULL, node, con->consttype,
+                FLOAT8OID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+            break;
+        case BITOID:
+            result = coerce_type(NULL, node, con->consttype,
+                BITOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+            break;
+        case VARBITOID:
+            result = coerce_type(NULL, node, con->consttype,
+                VARBITOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+            break;
+        default:
+            if (isSelect) {
+                result = node;
+            } else {
+                Oid collid = exprCollation(node);
+                result = coerce_type(NULL, node, con->consttype, TEXTOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+                if (OidIsValid(collid)) {
+                    exprSetCollation(result, collid);
+                }
+            }
+            break;
+    }
+
+    return result;
+}
+
+/*
+ * convert expression to const.
+ */
+Node *const_expression_to_const(Node *node)
+{
+    Node *result = NULL;
+    Const *con = (Const *)node;
+
+    if (nodeTag(node) != T_Const) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("The value of a user_defined variable must be convertible to a constant.")));
+    }
+
+    /* user_defined varibale only stores integer, float, bit, string, null. */
+    result = type_transfer(node, con->consttype, false);
+    return eval_const_expression_value(NULL, result, NULL);
+}
+
+static Datum stringTypeDatum_with_collation(Type tp, char* string, int32 atttypmod, bool can_ignore, Oid collation)
+{
+    Datum result; 
+    int tmp_encoding = get_valid_charset_by_collation(collation);
+    int db_encoding = GetDatabaseEncoding();
+
+    if (tmp_encoding == db_encoding) {
+        return stringTypeDatum(tp, string, atttypmod, can_ignore);
+    }
+
+    DB_ENCODING_SWITCH_TO(tmp_encoding);
+    result = stringTypeDatum(tp, string, atttypmod, can_ignore);
+    DB_ENCODING_SWITCH_BACK(db_encoding);
     return result;
 }
 
@@ -291,7 +517,12 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
 
         newcon->consttype = baseTypeId;
         newcon->consttypmod = inputTypeMod;
-        newcon->constcollid = typeTypeCollation(targetType);
+        if (OidIsValid(GetCollationConnection()) &&
+            IsSupportCharsetType(baseTypeId)) {
+            newcon->constcollid = GetCollationConnection();
+        } else {
+            newcon->constcollid = typeTypeCollation(targetType);
+        }
         newcon->constlen = typeLen(targetType);
         newcon->constbyval = typeByVal(targetType);
         newcon->constisnull = con->constisnull;
@@ -311,13 +542,15 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
         setup_parser_errposition_callback(&pcbstate, pstate, con->location);
 
         /*
-         * We assume here that UNKNOWN's internal representation is the same
-         * as CSTRING.
-         */
+        * We assume here that UNKNOWN's internal representation is the same
+        * as CSTRING.
+        */
         if (!con->constisnull) {
-            newcon->constvalue = stringTypeDatum(targetType, DatumGetCString(con->constvalue), inputTypeMod);
+            newcon->constvalue = stringTypeDatum_with_collation(targetType, DatumGetCString(con->constvalue),
+                inputTypeMod, pstate != NULL && pstate->p_has_ignore, con->constcollid);
         } else {
-            newcon->constvalue = stringTypeDatum(targetType, NULL, inputTypeMod);
+            newcon->constvalue =
+                stringTypeDatum(targetType, NULL, inputTypeMod, pstate != NULL && pstate->p_has_ignore);
         }
 
         cancel_parser_errposition_callback(&pcbstate);
@@ -462,6 +695,15 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
         r->location = location;
         return (Node*)r;
     }
+
+    if (targetTypeId == ANYSETOID && type_is_set(inputTypeId)) {
+        return node;
+    }
+
+    if (type_is_set(inputTypeId) && type_is_set(targetTypeId)) {
+        return node;
+    }
+
     /* If we get here, caller blew it */
     ereport(ERROR,
         (errcode(ERRCODE_UNDEFINED_FUNCTION),
@@ -560,6 +802,19 @@ bool can_coerce_type(int nargs, Oid* input_typeids, Oid* target_typeids, Coercio
          * If input is a class type that inherits from target, accept
          */
         if (typeInheritsFrom(inputTypeId, targetTypeId) || typeIsOfTypedTable(inputTypeId, targetTypeId)) {
+            continue;
+        }
+
+        /*
+         * If input or target type is a actual set type, accept if the other is of number or char type value.
+         */
+        if (targetTypeId == ANYSETOID && type_is_set(inputTypeId)) {
+            continue;
+        }
+        /*
+         * If input and target type are different actual set type, accept
+         */
+        if (type_is_set(targetTypeId) && type_is_set(inputTypeId)) {
             continue;
         }
 
@@ -690,12 +945,17 @@ static Node* coerce_type_typmod(Node* node, Oid targetTypeId, int32 targetTypMod
     pathtype = find_typmod_coercion_function(targetTypeId, &funcId);
 
     if (pathtype != COERCION_PATH_NONE) {
+        Oid node_collation = exprCollation(node);
         /* Suppress display of nested coercion steps */
         if (hideInputCoercion) {
             hide_coercion_node(node);
         }
         node = build_coercion_expression(
             node, pathtype, funcId, targetTypeId, targetTypMod, cformat, location, isExplicit);
+        if (OidIsValid(node_collation)) {
+            exprSetInputCollation(node, node_collation);
+            exprSetCollation(node, node_collation);
+        }
     }
 
     return node;
@@ -791,8 +1051,13 @@ static Node* build_coercion_expression(Node* node, CoercionPathType pathtype, Oi
         args = list_make1(node);
 
         if (nargs >= 2) {
-            /* Pass target typmod as an int4 constant */
-            cons = makeConst(INT4OID, -1, InvalidOid, sizeof(int32), Int32GetDatum(targetTypMod), false, true);
+            if (type_is_set(targetTypeId)) {
+                /* Pass actual set id as Oid type */
+                cons = makeConst(OIDOID, -1, InvalidOid, sizeof(Oid), ObjectIdGetDatum(targetTypeId), false, true);
+            } else {
+                /* Pass target typmod as an int4 constant */
+                cons = makeConst(INT4OID, -1, InvalidOid, sizeof(int32), Int32GetDatum(targetTypMod), false, true);
+            }
 
             args = lappend(args, cons);
         }
@@ -905,7 +1170,7 @@ static Node* coerce_record_to_complex(
         Oid exprtype;
 
         /* Fill in NULLs for dropped columns in rowtype */
-        if (tupdesc->attrs[i]->attisdropped) {
+        if (tupdesc->attrs[i].attisdropped) {
             /*
              * can't use atttypid here, but it doesn't really matter what type
              * the Const claims to be.
@@ -926,8 +1191,8 @@ static Node* coerce_record_to_complex(
         cexpr = coerce_to_target_type(pstate,
             expr,
             exprtype,
-            tupdesc->attrs[i]->atttypid,
-            tupdesc->attrs[i]->atttypmod,
+            tupdesc->attrs[i].atttypid,
+            tupdesc->attrs[i].atttypmod,
             ccontext,
             COERCE_IMPLICIT_CAST,
             -1);
@@ -937,7 +1202,7 @@ static Node* coerce_record_to_complex(
                     errmsg("cannot cast type %s to %s", format_type_be(RECORDOID), format_type_be(targetTypeId)),
                     errdetail("Cannot cast type %s to %s in column %d.",
                         format_type_be(exprtype),
-                        format_type_be(tupdesc->attrs[i]->atttypid),
+                        format_type_be(tupdesc->attrs[i].atttypid),
                         ucolno),
                     parser_coercion_errposition(pstate, location, expr)));
         }
@@ -1044,6 +1309,120 @@ Node* coerce_to_specific_type(ParseState* pstate, Node* node, Oid targetTypeId, 
     return node;
 }
 
+Node* coerce_to_settype(ParseState* pstate, Node* expr, Oid exprtype, Oid targettype, int32 targettypmod,
+CoercionContext ccontext, CoercionForm cformat, int location, Oid collation)
+{
+    if (!can_coerce_type(1, &exprtype, &targettype, ccontext)) {
+        return NULL;
+    }
+
+    if (exprtype == targettype || expr == NULL) {
+        /* no conversion needed */
+        return expr;
+    }
+
+    Node* result = NULL;
+    CoercionPathType pathtype;
+    Oid funcId;
+
+    if (exprtype == UNKNOWNOID && IsA(expr, Const)) {
+        Const* con = (Const*)expr;
+        Const* newcon = makeNode(Const);
+
+        int32 baseTypeMod = targettypmod;
+        Oid baseTypeId = getBaseTypeAndTypmod(targettype, &baseTypeMod);
+        int32 inputTypeMod = -1;
+        Type target = typeidType(baseTypeId);
+        ParseCallbackState pcbstate;
+
+        newcon->consttype = baseTypeId;
+        newcon->consttypmod = inputTypeMod;
+        newcon->constcollid = typeTypeCollation(target);
+        newcon->constlen = typeLen(target);
+        newcon->constbyval = typeByVal(target);
+        newcon->constisnull = con->constisnull;
+        newcon->cursor_data.cur_dno = -1;
+        newcon->location = con->location;
+        setup_parser_errposition_callback(&pcbstate, pstate, con->location);
+
+        Form_pg_type typform = (Form_pg_type)GETSTRUCT(target);
+        Oid typinput = typform->typinput;
+        Oid typioparam = getTypeIOParam(target);
+        newcon->constvalue = OidInputFunctionCallColl(typinput, DatumGetCString(con->constvalue), typioparam, inputTypeMod, collation);
+
+        cancel_parser_errposition_callback(&pcbstate);
+        result = (Node*)newcon;
+        ReleaseSysCache(target);
+
+        result = coerce_type_typmod(result,
+            targettype,
+            targettypmod,
+            cformat,
+            location,
+            (cformat != COERCE_IMPLICIT_CAST),
+            (result != expr && !IsA(result, Const)));
+
+        return result;
+    }
+
+    pathtype = find_coercion_pathway(targettype, exprtype, ccontext, &funcId);
+    if (pathtype != COERCION_PATH_NONE) {
+        if (pathtype != COERCION_PATH_RELABELTYPE) {
+            Oid baseTypeId;
+            int32 baseTypeMod;
+
+            baseTypeMod = targettypmod;
+            baseTypeId = getBaseTypeAndTypmod(targettype, &baseTypeMod);
+
+            result = build_coercion_expression(
+                expr, pathtype, funcId, baseTypeId, baseTypeMod, cformat, location, (cformat != COERCE_IMPLICIT_CAST));
+
+            if (targettype != baseTypeId)
+                result = coerce_to_domain(result,
+                    baseTypeId,
+                    baseTypeMod,
+                    targettype,
+                    cformat,
+                    location,
+                    true,
+                    exprIsLengthCoercion(result, NULL));
+        } else {
+            result = coerce_to_domain(expr, InvalidOid, -1, targettype, cformat, location, false, false);
+            if (result == expr) {
+                RelabelType* r = makeRelabelType((Expr*)result, targettype, -1, InvalidOid, cformat);
+
+                r->location = location;
+                result = (Node*)r;
+            }
+        }
+
+        result = coerce_type_typmod(result,
+            targettype,
+            targettypmod,
+            cformat,
+            location,
+            (cformat != COERCE_IMPLICIT_CAST),
+            (result != expr && !IsA(result, Const)));
+
+        return result;
+    }
+
+    if (targettype == ANYSETOID && type_is_set(exprtype)) {
+        return expr;
+    }
+
+    if (type_is_set(exprtype) && type_is_set(targettype)) {
+        return expr;
+    }
+
+    ereport(ERROR,
+        (errcode(ERRCODE_UNDEFINED_FUNCTION),
+            errmsg("failed to find conversion function from %s to %s",
+                format_type_be(exprtype),
+                format_type_be(targettype))));
+    return NULL;
+}
+
 /*
  * parser_coercion_errposition - report coercion error location, if possible
  *
@@ -1061,6 +1440,138 @@ int parser_coercion_errposition(ParseState* pstate, int coerce_location, Node* i
     } else {
         return parser_errposition(pstate, exprLocation(input_expr));
     }
+}
+
+/* choose_decode_result1_type
+ * Choose case when and decode return value type in A_FORMAT.
+ */
+static Oid choose_decode_result1_type(ParseState* pstate, List* exprs, const char* context)
+{
+    Node* preferExpr = NULL;
+    Oid preferType = UNKNOWNOID;
+    TYPCATEGORY preferCategory = TYPCATEGORY_UNKNOWN;
+    ListCell* lc = NULL;
+
+    /* result1 is the first expr, treat result1 type (or category) as return value type */
+    foreach (lc, exprs) {
+        preferExpr = (Node*)lfirst(lc);
+
+        /* if first expr is "null", treat it as unknown type */
+        if (IsA(preferExpr, Const) && ((Const*)preferExpr)->constisnull) {
+            break;
+        }
+
+        preferType = getBaseType(exprType(preferExpr));
+        preferCategory = get_typecategory(preferType);
+        break;
+    }
+    if (lc == NULL) {
+        return preferType;
+    }
+
+    lc = lnext(lc);
+    for_each_cell(lc, lc)
+    {
+        Node* nextExpr = (Node*)lfirst(lc);
+        Oid nextType = getBaseType(exprType(nextExpr));
+
+        /* skip "null" */
+        if (IsA(nextExpr, Const) && ((Const*)nextExpr)->constisnull) {
+            continue;
+        }
+
+        /* no need to check if nextType the same as preferType */
+        if (nextType != preferType) {
+            TYPCATEGORY nextCategory = get_typecategory(nextType);
+
+            /*
+            * Both types in different categories, we check if nextCategory/nextType can be implicitly
+            * converted to preferCategory/preferType. Here we will treat unknow type as text type.
+            */
+            if (nextCategory != preferCategory) {
+                handle_diff_category(pstate, nextExpr, context, preferCategory, nextCategory, preferType, nextType);
+            }
+            /* both types is same categories, we choose a priority higher. */
+            else if (GetPriority(preferType) < GetPriority(nextType)) {
+                preferType = nextType;
+            }
+        }
+    }
+
+    /*
+     * If preferCategory is TYPCATEGORY_NUMERIC, choose NUMERICOID as preferType.
+     * To compatible with a string representing a large number needs to be converted to a number type.
+     * e.g., "select decode(1, 2, 2, '63274723794832454677432493248593478549543535453'::text);"
+     */
+    if (preferCategory == TYPCATEGORY_NUMERIC) {
+        preferType = NUMERICOID;
+    }
+
+    return preferType;
+}
+
+/*
+ * Handle the case where nextCategory and preferCategory are different.
+ * Check whether nextCategory can be converted to preferCategory,
+ * or nextType can be converted to preferType.
+ */
+static void handle_diff_category(ParseState* pstate, Node* nextExpr, const char* context,
+    TYPCATEGORY preferCategory, TYPCATEGORY nextCategory, Oid preferType, Oid nextType)
+{
+    if (!category_can_be_matched(preferCategory, nextCategory) &&
+        !type_can_be_matched(preferType, nextType)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_DATATYPE_MISMATCH),
+                errmsg("%s types %s and %s cannot be matched",
+                    context,
+                    format_type_be(preferType == UNKNOWNOID ? TEXTOID : preferType),
+                    format_type_be(nextType == UNKNOWNOID ? TEXTOID : nextType)),
+                parser_errposition(pstate, exprLocation(nextExpr))));
+    }
+}
+
+/*
+ * Check whether nextCategory can be converted to preferCategory.
+ */
+static bool category_can_be_matched(TYPCATEGORY preferCategory, TYPCATEGORY nextCategory)
+{
+    bool can_be_matched = false;
+
+    static TYPCATEGORY categoryMatchedList[][2] = {
+        {TYPCATEGORY_STRING, TYPCATEGORY_UNKNOWN}, {TYPCATEGORY_STRING, TYPCATEGORY_NUMERIC},
+        {TYPCATEGORY_UNKNOWN, TYPCATEGORY_STRING}, {TYPCATEGORY_UNKNOWN, TYPCATEGORY_NUMERIC},
+        {TYPCATEGORY_NUMERIC, TYPCATEGORY_STRING}, {TYPCATEGORY_NUMERIC, TYPCATEGORY_UNKNOWN},
+        {TYPCATEGORY_STRING, TYPCATEGORY_DATETIME}, {TYPCATEGORY_STRING, TYPCATEGORY_TIMESPAN},
+        {TYPCATEGORY_UNKNOWN, TYPCATEGORY_DATETIME}, {TYPCATEGORY_UNKNOWN, TYPCATEGORY_TIMESPAN}};
+
+    for (unsigned int i = 0; i < sizeof(categoryMatchedList) / sizeof(categoryMatchedList[0]); i++) {
+        if (preferCategory == categoryMatchedList[i][0] && nextCategory == categoryMatchedList[i][1]) {
+            can_be_matched = true;
+            break;
+        }
+    }
+
+    return can_be_matched;
+}
+
+/*
+ * Check whether nextType can be converted to preferType.
+ */
+static bool type_can_be_matched(Oid preferType, Oid nextType)
+{
+    bool can_be_matched = false;
+
+    static Oid typeMatchedList[][2] = {
+        {RAWOID, VARCHAROID}, {RAWOID, TEXTOID}, {VARCHAROID, RAWOID}, {TEXTOID, RAWOID}};
+
+    for (unsigned int i = 0; i < sizeof(typeMatchedList) / sizeof(typeMatchedList[0]); i++) {
+        if (preferType == typeMatchedList[i][0] && nextType == typeMatchedList[i][1]) {
+            can_be_matched = true;
+            break;
+        }
+    }
+
+    return can_be_matched;
 }
 
 /* choose_specific_expr_type
@@ -1293,6 +1804,86 @@ static Oid choose_expr_type(ParseState* pstate, List* exprs, const char* context
 }
 
 /*
+ * To maintain forward compatibility, decode type conversion rules compatible with O is
+ * only valid for a few specific type categories. Save these type categories in the form
+ * of a whitelist. If any one is not in the whitelist, allInWhitelist is set to false.
+ */
+bool check_all_in_whitelist(List* resultexprs)
+{
+    bool allInWhitelist = true;
+    Node* exprTmp = NULL;
+    ListCell* lc = NULL;
+    Oid exprTypeTmp = UNKNOWNOID;
+    TYPCATEGORY exprCategoryTmp = TYPCATEGORY_UNKNOWN;
+
+    foreach (lc, resultexprs) {
+        exprTmp = (Node*)lfirst(lc);
+
+        /* if exprTmp is "null", treat it as unknown type, can skip it. */
+        if (IsA(exprTmp, Const) && ((Const*)exprTmp)->constisnull) {
+            continue;
+        }
+
+        exprTypeTmp = getBaseType(exprType(exprTmp));
+        exprCategoryTmp = get_typecategory(exprTypeTmp);
+        if (!check_category_in_whitelist(exprCategoryTmp, exprTypeTmp)) {
+            allInWhitelist = false;
+            break;
+        }
+    }
+
+    return allInWhitelist;
+}
+
+/*
+ * Check whether the given category and type is in the whitelist.
+ */
+static bool check_category_in_whitelist(TYPCATEGORY category, Oid type)
+{
+    bool categoryInWhitelist = false;
+
+    static TYPCATEGORY categoryWhitelist[] = {TYPCATEGORY_BOOLEAN, TYPCATEGORY_NUMERIC, TYPCATEGORY_STRING,
+        TYPCATEGORY_UNKNOWN, TYPCATEGORY_DATETIME, TYPCATEGORY_TIMESPAN, TYPCATEGORY_USER};
+    
+    for (unsigned int i = 0; i < sizeof(categoryWhitelist) / sizeof(categoryWhitelist[0]); i++) {
+        if (category == categoryWhitelist[i]) {
+            /*
+             * For TYPCATEGORY_USER, just RAW in the whitelist.
+             * For TYPCATEGORY_NUMERIC, some numeric type not in the whitelist.
+             */
+            if ((category == TYPCATEGORY_USER && type != RAWOID) ||
+                (category == TYPCATEGORY_NUMERIC && check_numeric_type_in_blacklist(type))) {
+                break;
+            }
+            categoryInWhitelist = true;
+            break;
+        }
+    }
+
+    return categoryInWhitelist;
+}
+
+/*
+ * Check whether the given numeric type is in the blacklist.
+ */
+static bool check_numeric_type_in_blacklist(Oid type)
+{
+    bool typeInBlacklist = false;
+
+    static Oid numericTypeBlacklist[] = {CASHOID, INT16OID, REGPROCOID, OIDOID, REGPROCEDUREOID,
+        REGOPEROID, REGOPERATOROID, REGCLASSOID, REGTYPEOID, REGCONFIGOID, REGDICTIONARYOID};
+
+    for (unsigned int i = 0; i < sizeof(numericTypeBlacklist) / sizeof(numericTypeBlacklist[0]); i++) {
+        if (type == numericTypeBlacklist[i]) {
+            typeInBlacklist = true;
+            break;
+        }
+    }
+
+    return typeInBlacklist;
+}
+
+/*
  * select_common_type()
  *		Determine the common supertype of a list of input expressions.
  *		This is used for determining the output type of CASE, UNION,
@@ -1316,6 +1907,13 @@ Oid select_common_type(ParseState* pstate, List* exprs, const char* context, Nod
     pexpr = (Node*)linitial(exprs);
     lc = lnext(list_head(exprs));
     ptype = exprType(pexpr);
+
+    if (meet_set_type_compatibility(exprs, context, &ptype)) {
+        if (which_expr != NULL)
+            *which_expr = pexpr;
+        /* need return textoid even all the set types are the same */
+        return ptype;
+    }
 
     /*
      * If all input types are valid and exactly the same, just pick that type.
@@ -1341,10 +1939,14 @@ Oid select_common_type(ParseState* pstate, List* exprs, const char* context, Nod
         }
     }
 
-    if ((u_sess->attr.attr_sql.sql_compatibility == C_FORMAT && context != NULL &&
-        (0 == strncmp(context, "CASE", sizeof("CASE")) || 0 == strncmp(context, "COALESCE", sizeof("COALESCE")))) ||
-        (ENABLE_SQL_BETA_FEATURE(A_STYLE_COERCE) && context != NULL &&
-            (0 == strncmp(context, "CASE", sizeof("CASE"))))) {
+    if (meet_decode_compatibility(exprs, context)) {
+        /*
+         * For A format, result1 is considered the most significant type in determining preferred type.
+         * In this function, try to choose a higher priority type of the same category as result1.
+         * And check whether other parameters can be implicitly converted to the data type of result1.
+         */
+        ptype = choose_decode_result1_type(pstate, exprs, context);
+    } else if (meet_c_format_compatibility(exprs, context)) {
         /*
          * To C format, we need handle numeric and string mix situation.
          * For A format, type should be coerced by the first case, therefore, it can accept cases like
@@ -1353,9 +1955,8 @@ Oid select_common_type(ParseState* pstate, List* exprs, const char* context, Nod
          * using C format coercion.
          */
         ptype = choose_specific_expr_type(pstate, exprs, context);
-    }
-    /* Follow A db nvl*/
-    else if (context != NULL && 0 == strncmp(context, "NVL", sizeof("NVL"))) {
+    } else if (context != NULL && CHECK_PARSE_PHRASE(context, "NVL")) {
+        /* Follow A db nvl*/
         ptype = choose_nvl_type(pstate, exprs, context);
     } else {
         ptype = choose_expr_type(pstate, exprs, context, which_expr);
@@ -1379,6 +1980,57 @@ Oid select_common_type(ParseState* pstate, List* exprs, const char* context, Nod
         *which_expr = pexpr;
     }
     return ptype;
+}
+
+/*
+ * Check meet the decode type conversion rules compatibility or not.
+ */
+static bool meet_decode_compatibility(List* exprs, const char* context)
+{
+    bool res = u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && ENABLE_SQL_BETA_FEATURE(A_STYLE_COERCE) &&
+        context != NULL && CHECK_PARSE_PHRASE(context, "DECODE") && check_all_in_whitelist(exprs);
+
+    return res;
+}
+
+/*
+ * Check meet the c format compatibility or not.
+ * For A format, some temporary are also in it.
+ */
+static bool meet_c_format_compatibility(List* exprs, const char* context)
+{
+    bool res = (u_sess->attr.attr_sql.sql_compatibility == C_FORMAT && context != NULL &&
+                (CHECK_PARSE_PHRASE(context, "CASE") || CHECK_PARSE_PHRASE(context, "COALESCE") ||
+                 CHECK_PARSE_PHRASE(context, "DECODE"))) ||
+               (ENABLE_SQL_BETA_FEATURE(A_STYLE_COERCE) && context != NULL && CHECK_PARSE_PHRASE(context, "DECODE"));
+    return res;
+}
+
+/*
+ * Check the expression list contains set type or not.
+ * If true, common type is text for CASE/GREATEST/LEAST/NVL/COALESCE/VALUES/DECODE,
+ * but we do not need common type for IN/NOT IN expression, left expression compares
+ * each in list.
+ */
+static bool meet_set_type_compatibility(List* exprs, const char* context, Oid *retOid)
+{
+    Node* expr = NULL;
+    ListCell* lc = NULL;
+    Oid typOid = UNKNOWNOID;
+
+    bool inCtx = (context != NULL && strcmp(context, "IN") == 0);
+
+    foreach (lc, exprs) {
+        expr = (Node*)lfirst(lc);
+
+        typOid = getBaseType(exprType(expr));
+        if (type_is_set(typOid)) {
+            *retOid = inCtx ? InvalidOid : TEXTOID;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /*
@@ -1473,6 +2125,7 @@ bool check_generic_type_consistency(Oid* actual_arg_types, Oid* declared_arg_typ
     bool have_anyelement = false;
     bool have_anynonarray = false;
     bool have_anyenum = false;
+    bool have_anyset = false;
 
     /*
      * Loop through the arguments to see if we have any that are polymorphic.
@@ -1482,12 +2135,15 @@ bool check_generic_type_consistency(Oid* actual_arg_types, Oid* declared_arg_typ
         Oid decl_type = declared_arg_types[j];
         Oid actual_type = actual_arg_types[j];
 
-        if (decl_type == ANYELEMENTOID || decl_type == ANYNONARRAYOID || decl_type == ANYENUMOID) {
+        if (decl_type == ANYELEMENTOID || decl_type == ANYNONARRAYOID ||
+            decl_type == ANYENUMOID || decl_type == ANYSETOID) {
             have_anyelement = true;
             if (decl_type == ANYNONARRAYOID) {
                 have_anynonarray = true;
             } else if (decl_type == ANYENUMOID) {
                 have_anyenum = true;
+            } else if (decl_type == ANYSETOID) {
+                have_anyset = true;
             }
             if (actual_type == UNKNOWNOID) {
                 continue;
@@ -1571,6 +2227,13 @@ bool check_generic_type_consistency(Oid* actual_arg_types, Oid* declared_arg_typ
     if (have_anyenum) {
         /* require the element type to be an enum */
         if (!type_is_enum(elem_typeid)) {
+            return false;
+        }
+    }
+
+    if (have_anyset) {
+        /* require the element type to be an set */
+        if (!type_is_set(elem_typeid)) {
             return false;
         }
     }
@@ -1864,7 +2527,7 @@ Oid enforce_generic_type_consistency(
     }
 
     /* if we return ANYELEMENT use the appropriate argument type */
-    if (rettype == ANYELEMENTOID || rettype == ANYNONARRAYOID || rettype == ANYENUMOID) {
+    if (rettype == ANYELEMENTOID || rettype == ANYNONARRAYOID || rettype == ANYENUMOID || rettype == ANYSETOID) {
         return elem_typeid;
     }
 
@@ -2051,6 +2714,13 @@ bool IsBinaryCoercible(Oid srctype, Oid targettype)
         }
     }
 
+    /* Also accept any set type as coercible to ANYSET */
+    if (targettype == ANYSETOID) {
+        if (type_is_set(srctype)) {
+            return true;
+        }
+    }
+
     /* Also accept any range type as coercible to ANYRANGE */
     if (targettype == ANYRANGEOID) {
         if (type_is_range(srctype)) {
@@ -2131,6 +2801,15 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
     /* Domains are always coercible to and from their base type */
     if (sourceTypeId == targetTypeId) {
         return COERCION_PATH_RELABELTYPE;
+    }
+
+    /* target is an actual set type, change it to anyset to find the path */
+    if (targetTypeId != ANYSETOID && type_is_set(targetTypeId)) {
+        targetTypeId = ANYSETOID;
+    }
+
+    if (sourceTypeId != ANYSETOID && type_is_set(sourceTypeId)) {
+        sourceTypeId = ANYSETOID;
     }
 
     /* Look in pg_cast */
@@ -2269,30 +2948,36 @@ CoercionPathType find_typmod_coercion_function(Oid typeId, Oid* funcid)
     *funcid = InvalidOid;
     result = COERCION_PATH_FUNC;
 
-    targetType = typeidType(typeId);
-    typeForm = (Form_pg_type)GETSTRUCT(targetType);
-
-    /* Check for a varlena array type */
-    if (typeForm->typelem != InvalidOid && typeForm->typlen == -1) {
-        /* Yes, switch our attention to the element type */
-        typeId = typeForm->typelem;
-        result = COERCION_PATH_ARRAYCOERCE;
+    switch (typeId) {
+        case BPCHAROID:
+            *funcid = F_BPCHAR;
+            break;
+        case VARCHAROID:
+            *funcid = F_VARCHAR;
+            break;
+        default:
+        {
+            targetType = typeidType(typeId);
+            typeForm = (Form_pg_type)GETSTRUCT(targetType);
+            /* Check for a varlena array type */
+            if (typeForm->typelem != InvalidOid && typeForm->typlen == -1) {
+                /* Yes, switch our attention to the element type */
+                typeId = typeForm->typelem;
+                result = COERCION_PATH_ARRAYCOERCE;
+            }
+            ReleaseSysCache(targetType);
+            /* Look in pg_cast */
+            tuple = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(typeId), ObjectIdGetDatum(typeId));
+            if (HeapTupleIsValid(tuple)) {
+                Form_pg_cast castForm = (Form_pg_cast)GETSTRUCT(tuple);
+                *funcid = castForm->castfunc;
+                ReleaseSysCache(tuple);
+            }
+            if (!OidIsValid(*funcid)) {
+                result = COERCION_PATH_NONE;
+            }
+        }
     }
-    ReleaseSysCache(targetType);
-
-    /* Look in pg_cast */
-    tuple = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(typeId), ObjectIdGetDatum(typeId));
-
-    if (HeapTupleIsValid(tuple)) {
-        Form_pg_cast castForm = (Form_pg_cast)GETSTRUCT(tuple);
-        *funcid = castForm->castfunc;
-        ReleaseSysCache(tuple);
-    }
-
-    if (!OidIsValid(*funcid)) {
-        result = COERCION_PATH_NONE;
-    }
-
     return result;
 }
 
@@ -2349,4 +3034,171 @@ void expression_error_callback(void* arg)
         errcontext("referenced column: %s", colname);
     }
 }
+ 
+Node *transferConstToAconst(Node *node)
+{
+    Node *result = NULL;
+ 
+    if(!IsA(node, Const)) {
+        ereport(ERROR, 
+            (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("The variable value expr must be convertible to a constant.")));
+    }
+ 
+    Datum constval = ((Const*)node)->constvalue;
+    Oid consttype = ((Const*)node)->consttype;
+    Value* val = NULL;
 
+    if (((Const*)node)->constisnull) {
+        ereport(ERROR, 
+            (errcode(ERRCODE_INVALID_OPERATION),
+                errmsg("The variable value expr can't be a null value.")));
+    }
+    switch(consttype) {
+        case INT1OID:
+        case INT2OID:
+        case INT4OID:
+        case INT8OID:
+            {
+                int64 val_int64 = DatumGetInt64(constval);
+                val = makeInteger(val_int64);
+            } break;
+        case TEXTOID:
+            {
+                char* constr = TextDatumGetCString(constval);
+                val = makeString(constr);
+            }  break;
+        case FLOAT4OID:
+        case FLOAT8OID:
+            {
+                float8 value = DatumGetFloat8(constval);
+                char *value_str = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(value)));
+                val = makeFloat(value_str);
+            } break;
+        case NUMERICOID:
+            {
+                Numeric value =  DatumGetNumeric(constval);
+                char* str_val = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(value)));
+                val = makeFloat(str_val);
+            } break;
+        case BOOLOID:
+            {
+                bool value = DatumGetBool(constval);
+                const char *constr = value ? "t" : "f";
+                val = makeString((char*)constr);
+            } break;
+        /*
+        * set configuration only support types above.
+        * if assigned value are not types above, will attempt to convert the type to text.
+        * if the type connot be converted to text also, an error is reported.
+        */
+        default:
+            {
+                PG_TRY();
+                {
+                    Const* con = (Const *)node;
+                    Node* expr = coerce_type(NULL,(Node*)con , con->consttype, TEXTOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+                    if (IsA(expr, Const) && (((Const*)expr)->consttype = TEXTOID)) {
+                        char* constr = TextDatumGetCString(((Const*)expr)->constvalue);
+                        val = makeString(constr);
+                    } else {
+                        ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION), 
+                                        errmsg("set value cannot be assigned to the %s type", format_type_be(consttype))));
+                    }
+                }
+                PG_CATCH();
+                {
+                    ereport(ERROR, (errcode(ERRCODE_UNDEFINED_FUNCTION), 
+                                    errmsg("set value cannot be assigned to the %s type", format_type_be(consttype))));
+                }
+                PG_END_TRY();
+            } break;
+    }
+ 
+    result = makeAConst(val, -1);
+    return result;
+}
+
+Const* setValueToConstExpr(SetVariableExpr* set)
+{
+    Const* result = NULL;
+    Value* value;
+    /* initial value is null Const */
+    Datum val = (Datum)0;
+    Oid typid = UNKNOWNOID;
+    int typelen = -2;
+    bool typebyval = false;
+
+    struct config_generic* record = NULL;
+    record = find_option(set->name, false, ERROR);
+    char* variable_str = SetVariableExprGetConfigOption(set);
+
+    switch (record->vartype) {
+        case PGC_BOOL:
+            {
+                bool variable_bool = false;
+                if (strcmp(variable_str,"true") || strcmp(variable_str,"on")) {
+                    variable_bool = true;
+                }
+                val = BoolGetDatum(variable_bool);
+                typid = BOOLOID;
+                typelen = 1;
+                typebyval = true;
+            } break;
+        case PGC_INT: 
+            {
+                int variable = (int32)strtol((const char*)variable_str, (char**)NULL,10);
+                value = makeInteger(variable);
+                val = Int64GetDatum(intVal(value));
+                typid = INT8OID;
+                typelen = sizeof(int64);
+                typebyval = true;
+            } break;
+        case PGC_INT64:
+            {
+                int variable = (int64)strtol((const char*)variable_str, (char**)NULL,10);
+                value = makeInteger(variable);
+                val = Int64GetDatum(intVal(value));
+                typid = INT8OID;
+                typelen = sizeof(int64);
+                typebyval = true;
+            } break;
+        case PGC_REAL:
+            {
+                value = makeFloat(variable_str);
+                val = Float8GetDatum(floatVal(value));
+                typid = FLOAT8OID;
+                typelen = sizeof(float8);
+                typebyval = true;
+            } break;
+        case PGC_STRING:
+            {
+                value = makeString(variable_str);
+                val = CStringGetDatum(strVal(value));
+                typid = UNKNOWNOID; /* will be coerced later */
+                typelen = -2;       /* cstring-style varwidth type */
+                typebyval = false;
+            } break;
+        case PGC_ENUM:
+            {
+                value = makeString(variable_str);
+                val = CStringGetDatum(strVal(value));
+                typid = UNKNOWNOID; /* will be coerced later */
+                typelen = -2;       /* cstring-style varwidth type */
+                typebyval = false;
+            } break;
+        default:
+            break;
+    }
+ 
+    result = makeConst(typid,
+        -1,         /* typmod -1 is OK for all cases */
+        InvalidOid, /* all cases are uncollatable types */
+        typelen,
+        val,
+        false,
+        typebyval);
+ 
+    result->location = -1;
+    return result;
+}

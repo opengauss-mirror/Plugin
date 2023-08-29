@@ -779,7 +779,7 @@ static byteawithoutorderwithequalcol *byteawithoutorderwithequalcol_substring(Da
 }
 
 /*
- * adapt oracle's substr(byteawithoutorderwithequalcol str,integer start,integer length)
+ * adapt orafce's substr(byteawithoutorderwithequalcol str,integer start,integer length)
  * when start<0, amend the sartPosition to abs(start) from last char,
  * then search backward
  */
@@ -810,7 +810,7 @@ Datum byteawithoutorderwithequalcol_substr_orclcompat(PG_FUNCTION_ARGS)
 }
 
 /*
- * adapt oracle's substr(byteawithoutorderwithequalcol x,integer y)
+ * adapt orafce's substr(byteawithoutorderwithequalcol x,integer y)
  * when start<0, amend the sartPosition to abs(start) from last char,
  * then search backward
  */

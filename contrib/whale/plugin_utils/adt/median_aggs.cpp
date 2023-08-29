@@ -28,7 +28,7 @@
 #include "utils/lsyscache.h"
 #include "utils/median_aggs.h"
 #include "utils/memutils.h"
-#include "utils/timestamp.h"
+#include "plugin_utils/timestamp.h"
 
 /*
  * working state for median aggregation
