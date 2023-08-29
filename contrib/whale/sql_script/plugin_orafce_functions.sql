@@ -178,62 +178,62 @@ CREATE VIEW public.dual AS SELECT 'X'::varchar AS dummy;
 REVOKE ALL ON public.dual FROM PUBLIC;
 GRANT SELECT, REFERENCES ON public.dual TO PUBLIC;
 
--- this packege is emulation of dbms_output Orafce packege
+-- this packege is emulation of gms_output Orafce packege
 
-CREATE SCHEMA dbms_output;
+CREATE SCHEMA gms_output;
 
-CREATE FUNCTION dbms_output.enable(IN buffer_size int4)
+CREATE FUNCTION gms_output.enable(IN buffer_size int4)
 RETURNS void
-AS '$libdir/whale','dbms_output_enable'
+AS '$libdir/whale','gms_output_enable'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_output.enable(IN int4) IS 'Enable package functionality';
+COMMENT ON FUNCTION gms_output.enable(IN int4) IS 'Enable package functionality';
 
-CREATE FUNCTION dbms_output.enable()
+CREATE FUNCTION gms_output.enable()
 RETURNS void
-AS '$libdir/whale','dbms_output_enable_default'
+AS '$libdir/whale','gms_output_enable_default'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_output.enable() IS 'Enable package functionality';
+COMMENT ON FUNCTION gms_output.enable() IS 'Enable package functionality';
 
-CREATE FUNCTION dbms_output.disable()
+CREATE FUNCTION gms_output.disable()
 RETURNS void
-AS '$libdir/whale','dbms_output_disable'
+AS '$libdir/whale','gms_output_disable'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_output.disable() IS 'Disable package functionality';
+COMMENT ON FUNCTION gms_output.disable() IS 'Disable package functionality';
 
-CREATE FUNCTION dbms_output.serveroutput(IN bool)
+CREATE FUNCTION gms_output.serveroutput(IN bool)
 RETURNS void
-AS '$libdir/whale','dbms_output_serveroutput'
+AS '$libdir/whale','gms_output_serveroutput'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_output.serveroutput(IN bool) IS 'Set drowing output';
+COMMENT ON FUNCTION gms_output.serveroutput(IN bool) IS 'Set drowing output';
 
-CREATE FUNCTION dbms_output.put(IN a text)
+CREATE FUNCTION gms_output.put(IN a text)
 RETURNS void
-AS '$libdir/whale','dbms_output_put'
+AS '$libdir/whale','gms_output_put'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_output.put(IN text) IS 'Put some text to output';
+COMMENT ON FUNCTION gms_output.put(IN text) IS 'Put some text to output';
 
-CREATE FUNCTION dbms_output.put_line(IN a text)
+CREATE FUNCTION gms_output.put_line(IN a text)
 RETURNS void
-AS '$libdir/whale','dbms_output_put_line'
+AS '$libdir/whale','gms_output_put_line'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_output.put_line(IN text) IS 'Put line to output';
+COMMENT ON FUNCTION gms_output.put_line(IN text) IS 'Put line to output';
 
-CREATE FUNCTION dbms_output.new_line()
+CREATE FUNCTION gms_output.new_line()
 RETURNS void
-AS '$libdir/whale','dbms_output_new_line'
+AS '$libdir/whale','gms_output_new_line'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_output.new_line() IS 'Put new line char to output';
+COMMENT ON FUNCTION gms_output.new_line() IS 'Put new line char to output';
 
-CREATE FUNCTION dbms_output.get_line(OUT line text, OUT status int4)
-AS '$libdir/whale','dbms_output_get_line'
+CREATE FUNCTION gms_output.get_line(OUT line text, OUT status int4)
+AS '$libdir/whale','gms_output_get_line'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_output.get_line(OUT text, OUT int4) IS 'Get line from output buffer';
+COMMENT ON FUNCTION gms_output.get_line(OUT text, OUT int4) IS 'Get line from output buffer';
 
 
-CREATE FUNCTION dbms_output.get_lines(OUT lines text[], INOUT numlines int4)
-AS '$libdir/whale','dbms_output_get_lines'
+CREATE FUNCTION gms_output.get_lines(OUT lines text[], INOUT numlines int4)
+AS '$libdir/whale','gms_output_get_lines'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_output.get_lines(OUT text[], INOUT int4) IS 'Get lines from output buffer';
+COMMENT ON FUNCTION gms_output.get_lines(OUT text[], INOUT int4) IS 'Get lines from output buffer';
 
 
 -- others functions
@@ -490,25 +490,25 @@ RETURNS timestamptz
 AS '$libdir/whale', 'ora_decode'
 LANGUAGE C IMMUTABLE;
 
-CREATE SCHEMA dbms_utility;
+CREATE SCHEMA gms_utility;
 
-CREATE FUNCTION dbms_utility.format_call_stack(text)
+CREATE FUNCTION gms_utility.format_call_stack(text)
 RETURNS text
-AS '$libdir/whale','dbms_utility_format_call_stack1'
+AS '$libdir/whale','gms_utility_format_call_stack1'
 LANGUAGE C STRICT VOLATILE;
-COMMENT ON FUNCTION dbms_utility.format_call_stack(text) IS 'Return formated call stack';
+COMMENT ON FUNCTION gms_utility.format_call_stack(text) IS 'Return formated call stack';
 
-CREATE FUNCTION dbms_utility.format_call_stack()
+CREATE FUNCTION gms_utility.format_call_stack()
 RETURNS text
-AS '$libdir/whale','dbms_utility_format_call_stack0'
+AS '$libdir/whale','gms_utility_format_call_stack0'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_utility.format_call_stack() IS 'Return formated call stack';
+COMMENT ON FUNCTION gms_utility.format_call_stack() IS 'Return formated call stack';
 
-CREATE FUNCTION dbms_utility.get_time()
+CREATE FUNCTION gms_utility.get_time()
 RETURNS int
-AS '$libdir/whale','dbms_utility_get_time'
+AS '$libdir/whale','gms_utility_get_time'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_utility.get_time() IS 'Returns the number of hundredths of seconds that have elapsed since point in time';
+COMMENT ON FUNCTION gms_utility.get_time() IS 'Returns the number of hundredths of seconds that have elapsed since point in time';
 
 
 CREATE SCHEMA utl_file;
@@ -699,62 +699,62 @@ GRANT SELECT ON TABLE utl_file.utl_file_dir TO PUBLIC;
 
 
 
--- dbms_random
-CREATE SCHEMA dbms_random;
+-- gms_random
+CREATE SCHEMA gms_random;
 
-CREATE FUNCTION dbms_random.initialize(int)
+CREATE FUNCTION gms_random.initialize(int)
 RETURNS void
-AS '$libdir/whale','dbms_random_initialize'
+AS '$libdir/whale','gms_random_initialize'
 LANGUAGE C IMMUTABLE STRICT;
-COMMENT ON FUNCTION dbms_random.initialize(int) IS 'Initialize package with a seed value';
+COMMENT ON FUNCTION gms_random.initialize(int) IS 'Initialize package with a seed value';
 
-CREATE FUNCTION dbms_random.normal()
+CREATE FUNCTION gms_random.normal()
 RETURNS double precision
-AS '$libdir/whale','dbms_random_normal'
+AS '$libdir/whale','gms_random_normal'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_random.normal() IS 'Returns random numbers in a standard normal distribution';
+COMMENT ON FUNCTION gms_random.normal() IS 'Returns random numbers in a standard normal distribution';
 
-CREATE FUNCTION dbms_random.random()
+CREATE FUNCTION gms_random.random()
 RETURNS integer
-AS '$libdir/whale','dbms_random_random'
+AS '$libdir/whale','gms_random_random'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_random.random() IS 'Generate Random Numeric Values';
+COMMENT ON FUNCTION gms_random.random() IS 'Generate Random Numeric Values';
 
-CREATE FUNCTION dbms_random.seed(integer)
+CREATE FUNCTION gms_random.seed(integer)
 RETURNS void
-AS '$libdir/whale','dbms_random_seed_int'
+AS '$libdir/whale','gms_random_seed_int'
 LANGUAGE C IMMUTABLE STRICT;
-COMMENT ON FUNCTION dbms_random.seed(int) IS 'Reset the seed value';
+COMMENT ON FUNCTION gms_random.seed(int) IS 'Reset the seed value';
 
-CREATE FUNCTION dbms_random.seed(text)
+CREATE FUNCTION gms_random.seed(text)
 RETURNS void
-AS '$libdir/whale','dbms_random_seed_varchar'
+AS '$libdir/whale','gms_random_seed_varchar'
 LANGUAGE C IMMUTABLE STRICT;
-COMMENT ON FUNCTION dbms_random.seed(text) IS 'Reset the seed value';
+COMMENT ON FUNCTION gms_random.seed(text) IS 'Reset the seed value';
 
-CREATE FUNCTION dbms_random.string(opt text, len int)
+CREATE FUNCTION gms_random.string(opt text, len int)
 RETURNS text
-AS '$libdir/whale','dbms_random_string'
+AS '$libdir/whale','gms_random_string'
 LANGUAGE C IMMUTABLE;
-COMMENT ON FUNCTION dbms_random.string(text,int) IS 'Create Random Strings';
+COMMENT ON FUNCTION gms_random.string(text,int) IS 'Create Random Strings';
 
-CREATE FUNCTION dbms_random.terminate()
+CREATE FUNCTION gms_random.terminate()
 RETURNS void
-AS '$libdir/whale','dbms_random_terminate'
+AS '$libdir/whale','gms_random_terminate'
 LANGUAGE C IMMUTABLE;
-COMMENT ON FUNCTION dbms_random.terminate() IS 'Terminate use of the Package';
+COMMENT ON FUNCTION gms_random.terminate() IS 'Terminate use of the Package';
 
-CREATE FUNCTION dbms_random.value(low double precision, high double precision)
+CREATE FUNCTION gms_random.value(low double precision, high double precision)
 RETURNS double precision
-AS '$libdir/whale','dbms_random_value_range'
+AS '$libdir/whale','gms_random_value_range'
 LANGUAGE C STRICT VOLATILE;
-COMMENT ON FUNCTION dbms_random.value(double precision, double precision) IS 'Generate Random number x, where x is greater or equal to low and less then high';
+COMMENT ON FUNCTION gms_random.value(double precision, double precision) IS 'Generate Random number x, where x is greater or equal to low and less then high';
 
-CREATE FUNCTION dbms_random.value()
+CREATE FUNCTION gms_random.value()
 RETURNS double precision
-AS '$libdir/whale','dbms_random_value'
+AS '$libdir/whale','gms_random_value'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_random.value() IS 'Generate Random number x, where x is greater or equal to 0 and less then 1';
+COMMENT ON FUNCTION gms_random.value() IS 'Generate Random number x, where x is greater or equal to 0 and less then 1';
 
 CREATE FUNCTION dump(text)
 RETURNS varchar
@@ -1590,10 +1590,10 @@ LANGUAGE 'c'
 STRICT IMMUTABLE
 ;
 
-GRANT USAGE ON SCHEMA dbms_output TO PUBLIC;
-GRANT USAGE ON SCHEMA dbms_utility TO PUBLIC;
+GRANT USAGE ON SCHEMA gms_output TO PUBLIC;
+GRANT USAGE ON SCHEMA gms_utility TO PUBLIC;
 GRANT USAGE ON SCHEMA utl_file TO PUBLIC;
-GRANT USAGE ON SCHEMA dbms_random TO PUBLIC;
+GRANT USAGE ON SCHEMA gms_random TO PUBLIC;
 GRANT USAGE ON SCHEMA orafce TO PUBLIC;
 
 CREATE FUNCTION pg_catalog.round(value timestamp without time zone, fmt text)
@@ -2631,178 +2631,178 @@ AS $$ SELECT (date_trunc('MONTH', $1) + INTERVAL '1 MONTH - 1 day' + $1::time)::
 LANGUAGE SQL IMMUTABLE STRICT;
 
 
-CREATE SCHEMA dbms_pipe;
+CREATE SCHEMA gms_pipe;
 
-CREATE FUNCTION dbms_pipe.pack_message(text)
+CREATE FUNCTION gms_pipe.pack_message(text)
 RETURNS void
-AS '$libdir/whale','dbms_pipe_pack_message_text'
+AS '$libdir/whale','gms_pipe_pack_message_text'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.pack_message(text) IS 'Add text field to message';
+COMMENT ON FUNCTION gms_pipe.pack_message(text) IS 'Add text field to message';
 
-CREATE FUNCTION dbms_pipe.unpack_message_text()
+CREATE FUNCTION gms_pipe.unpack_message_text()
 RETURNS text
-AS '$libdir/whale','dbms_pipe_unpack_message_text'
+AS '$libdir/whale','gms_pipe_unpack_message_text'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_pipe.unpack_message_text() IS 'Get text fiedl from message';
+COMMENT ON FUNCTION gms_pipe.unpack_message_text() IS 'Get text fiedl from message';
 
-CREATE FUNCTION dbms_pipe.receive_message(text, int)
+CREATE FUNCTION gms_pipe.receive_message(text, int)
 RETURNS int
-AS '$libdir/whale','dbms_pipe_receive_message'
+AS '$libdir/whale','gms_pipe_receive_message'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_pipe.receive_message(text, int) IS 'Receive message from pipe';
+COMMENT ON FUNCTION gms_pipe.receive_message(text, int) IS 'Receive message from pipe';
 
-CREATE FUNCTION dbms_pipe.receive_message(text)
+CREATE FUNCTION gms_pipe.receive_message(text)
 RETURNS int
-AS $$SELECT dbms_pipe.receive_message($1,NULL::int);$$
+AS $$SELECT gms_pipe.receive_message($1,NULL::int);$$
 LANGUAGE SQL VOLATILE;
-COMMENT ON FUNCTION dbms_pipe.receive_message(text) IS 'Receive message from pipe';
+COMMENT ON FUNCTION gms_pipe.receive_message(text) IS 'Receive message from pipe';
 
-CREATE FUNCTION dbms_pipe.send_message(text, int, int)
+CREATE FUNCTION gms_pipe.send_message(text, int, int)
 RETURNS int
-AS '$libdir/whale','dbms_pipe_send_message'
+AS '$libdir/whale','gms_pipe_send_message'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_pipe.send_message(text, int, int) IS 'Send message to pipe';
+COMMENT ON FUNCTION gms_pipe.send_message(text, int, int) IS 'Send message to pipe';
 
-CREATE FUNCTION dbms_pipe.send_message(text, int)
+CREATE FUNCTION gms_pipe.send_message(text, int)
 RETURNS int
-AS $$SELECT dbms_pipe.send_message($1,$2,NULL);$$
+AS $$SELECT gms_pipe.send_message($1,$2,NULL);$$
 LANGUAGE SQL VOLATILE;
-COMMENT ON FUNCTION dbms_pipe.send_message(text, int) IS 'Send message to pipe';
+COMMENT ON FUNCTION gms_pipe.send_message(text, int) IS 'Send message to pipe';
 
-CREATE FUNCTION dbms_pipe.send_message(text)
+CREATE FUNCTION gms_pipe.send_message(text)
 RETURNS int
-AS $$SELECT dbms_pipe.send_message($1,NULL,NULL);$$
+AS $$SELECT gms_pipe.send_message($1,NULL,NULL);$$
 LANGUAGE SQL VOLATILE;
-COMMENT ON FUNCTION dbms_pipe.send_message(text) IS 'Send message to pipe';
+COMMENT ON FUNCTION gms_pipe.send_message(text) IS 'Send message to pipe';
 
-CREATE FUNCTION dbms_pipe.unique_session_name()
+CREATE FUNCTION gms_pipe.unique_session_name()
 RETURNS varchar
-AS '$libdir/whale','dbms_pipe_unique_session_name'
+AS '$libdir/whale','gms_pipe_unique_session_name'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.unique_session_name() IS 'Returns unique session name';
+COMMENT ON FUNCTION gms_pipe.unique_session_name() IS 'Returns unique session name';
 
-CREATE FUNCTION dbms_pipe.__list_pipes()
+CREATE FUNCTION gms_pipe.__list_pipes()
 RETURNS SETOF RECORD
-AS '$libdir/whale','dbms_pipe_list_pipes'
+AS '$libdir/whale','gms_pipe_list_pipes'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.__list_pipes() IS '';
+COMMENT ON FUNCTION gms_pipe.__list_pipes() IS '';
 
-CREATE VIEW dbms_pipe.db_pipes
-AS SELECT * FROM dbms_pipe.__list_pipes() AS (Name varchar, Items int, Size int, "limit" int, "private" bool, "owner" varchar);
+CREATE VIEW gms_pipe.db_pipes
+AS SELECT * FROM gms_pipe.__list_pipes() AS (Name varchar, Items int, Size int, "limit" int, "private" bool, "owner" varchar);
 
-CREATE FUNCTION dbms_pipe.next_item_type()
+CREATE FUNCTION gms_pipe.next_item_type()
 RETURNS int
-AS '$libdir/whale','dbms_pipe_next_item_type'
+AS '$libdir/whale','gms_pipe_next_item_type'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.next_item_type() IS 'Returns type of next field in message';
+COMMENT ON FUNCTION gms_pipe.next_item_type() IS 'Returns type of next field in message';
 
-CREATE FUNCTION dbms_pipe.create_pipe(text, int, bool)
+CREATE FUNCTION gms_pipe.create_pipe(text, int, bool)
 RETURNS void
-AS '$libdir/whale','dbms_pipe_create_pipe'
+AS '$libdir/whale','gms_pipe_create_pipe'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_pipe.create_pipe(text, int, bool) IS 'Create named pipe';
+COMMENT ON FUNCTION gms_pipe.create_pipe(text, int, bool) IS 'Create named pipe';
 
-CREATE FUNCTION dbms_pipe.create_pipe(text, int)
+CREATE FUNCTION gms_pipe.create_pipe(text, int)
 RETURNS void
-AS '$libdir/whale','dbms_pipe_create_pipe_2'
+AS '$libdir/whale','gms_pipe_create_pipe_2'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_pipe.create_pipe(text, int) IS 'Create named pipe';
+COMMENT ON FUNCTION gms_pipe.create_pipe(text, int) IS 'Create named pipe';
 
-CREATE FUNCTION dbms_pipe.create_pipe(text)
+CREATE FUNCTION gms_pipe.create_pipe(text)
 RETURNS void
-AS '$libdir/whale','dbms_pipe_create_pipe_1'
+AS '$libdir/whale','gms_pipe_create_pipe_1'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_pipe.create_pipe(text) IS 'Create named pipe';
+COMMENT ON FUNCTION gms_pipe.create_pipe(text) IS 'Create named pipe';
 
-CREATE FUNCTION dbms_pipe.reset_buffer()
+CREATE FUNCTION gms_pipe.reset_buffer()
 RETURNS void
-AS '$libdir/whale','dbms_pipe_reset_buffer'
+AS '$libdir/whale','gms_pipe_reset_buffer'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_pipe.reset_buffer() IS 'Clean input buffer';
+COMMENT ON FUNCTION gms_pipe.reset_buffer() IS 'Clean input buffer';
 
-CREATE FUNCTION dbms_pipe.purge(text)
+CREATE FUNCTION gms_pipe.purge(text)
 RETURNS void
-AS '$libdir/whale','dbms_pipe_purge'
+AS '$libdir/whale','gms_pipe_purge'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.purge(text) IS 'Clean pipe';
+COMMENT ON FUNCTION gms_pipe.purge(text) IS 'Clean pipe';
 
-CREATE FUNCTION dbms_pipe.remove_pipe(text)
+CREATE FUNCTION gms_pipe.remove_pipe(text)
 RETURNS void
-AS '$libdir/whale','dbms_pipe_remove_pipe'
+AS '$libdir/whale','gms_pipe_remove_pipe'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.remove_pipe(text) IS 'Destroy pipe';
+COMMENT ON FUNCTION gms_pipe.remove_pipe(text) IS 'Destroy pipe';
 
-CREATE FUNCTION dbms_pipe.pack_message(pg_catalog.date)
+CREATE FUNCTION gms_pipe.pack_message(pg_catalog.date)
 RETURNS void
-AS '$libdir/whale','dbms_pipe_pack_message_date'
+AS '$libdir/whale','gms_pipe_pack_message_date'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.pack_message(pg_catalog.date) IS 'Add date field to message';
+COMMENT ON FUNCTION gms_pipe.pack_message(pg_catalog.date) IS 'Add date field to message';
 
-CREATE FUNCTION dbms_pipe.unpack_message_date()
+CREATE FUNCTION gms_pipe.unpack_message_date()
 RETURNS date
-AS '$libdir/whale','dbms_pipe_unpack_message_date'
+AS '$libdir/whale','gms_pipe_unpack_message_date'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.unpack_message_date() IS 'Get date field from message';
+COMMENT ON FUNCTION gms_pipe.unpack_message_date() IS 'Get date field from message';
 
-CREATE FUNCTION dbms_pipe.pack_message(timestamp with time zone)
+CREATE FUNCTION gms_pipe.pack_message(timestamp with time zone)
 RETURNS void
-AS '$libdir/whale','dbms_pipe_pack_message_timestamp'
+AS '$libdir/whale','gms_pipe_pack_message_timestamp'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.pack_message(timestamp with time zone) IS 'Add timestamp field to message';
+COMMENT ON FUNCTION gms_pipe.pack_message(timestamp with time zone) IS 'Add timestamp field to message';
 
-CREATE FUNCTION dbms_pipe.unpack_message_timestamp()
+CREATE FUNCTION gms_pipe.unpack_message_timestamp()
 RETURNS timestamp with time zone
-AS '$libdir/whale','dbms_pipe_unpack_message_timestamp'
+AS '$libdir/whale','gms_pipe_unpack_message_timestamp'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.unpack_message_timestamp() IS 'Get timestamp field from message';
+COMMENT ON FUNCTION gms_pipe.unpack_message_timestamp() IS 'Get timestamp field from message';
 
-CREATE FUNCTION dbms_pipe.pack_message(numeric)
+CREATE FUNCTION gms_pipe.pack_message(numeric)
 RETURNS void
-AS '$libdir/whale','dbms_pipe_pack_message_number'
+AS '$libdir/whale','gms_pipe_pack_message_number'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.pack_message(numeric) IS 'Add numeric field to message';
+COMMENT ON FUNCTION gms_pipe.pack_message(numeric) IS 'Add numeric field to message';
 
-CREATE FUNCTION dbms_pipe.unpack_message_number()
+CREATE FUNCTION gms_pipe.unpack_message_number()
 RETURNS numeric
-AS '$libdir/whale','dbms_pipe_unpack_message_number'
+AS '$libdir/whale','gms_pipe_unpack_message_number'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.unpack_message_number() IS 'Get numeric field from message';
+COMMENT ON FUNCTION gms_pipe.unpack_message_number() IS 'Get numeric field from message';
 
-CREATE FUNCTION dbms_pipe.pack_message(integer)
+CREATE FUNCTION gms_pipe.pack_message(integer)
 RETURNS void
-AS '$libdir/whale','dbms_pipe_pack_message_integer'
+AS '$libdir/whale','gms_pipe_pack_message_integer'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.pack_message(integer) IS 'Add numeric field to message';
+COMMENT ON FUNCTION gms_pipe.pack_message(integer) IS 'Add numeric field to message';
 
-CREATE FUNCTION dbms_pipe.pack_message(bigint)
+CREATE FUNCTION gms_pipe.pack_message(bigint)
 RETURNS void
-AS '$libdir/whale','dbms_pipe_pack_message_bigint'
+AS '$libdir/whale','gms_pipe_pack_message_bigint'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.pack_message(bigint) IS 'Add numeric field to message';
+COMMENT ON FUNCTION gms_pipe.pack_message(bigint) IS 'Add numeric field to message';
 
-CREATE FUNCTION dbms_pipe.pack_message(bytea)
+CREATE FUNCTION gms_pipe.pack_message(bytea)
 RETURNS void
-AS '$libdir/whale','dbms_pipe_pack_message_bytea'
+AS '$libdir/whale','gms_pipe_pack_message_bytea'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.pack_message(bytea) IS 'Add bytea field to message';
+COMMENT ON FUNCTION gms_pipe.pack_message(bytea) IS 'Add bytea field to message';
 
-CREATE FUNCTION dbms_pipe.unpack_message_bytea()
+CREATE FUNCTION gms_pipe.unpack_message_bytea()
 RETURNS bytea
-AS '$libdir/whale','dbms_pipe_unpack_message_bytea'
+AS '$libdir/whale','gms_pipe_unpack_message_bytea'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.unpack_message_bytea() IS 'Get bytea field from message';
+COMMENT ON FUNCTION gms_pipe.unpack_message_bytea() IS 'Get bytea field from message';
 
-CREATE FUNCTION dbms_pipe.pack_message(record)
+CREATE FUNCTION gms_pipe.pack_message(record)
 RETURNS void
-AS '$libdir/whale','dbms_pipe_pack_message_record'
+AS '$libdir/whale','gms_pipe_pack_message_record'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.pack_message(record) IS 'Add record field to message';
+COMMENT ON FUNCTION gms_pipe.pack_message(record) IS 'Add record field to message';
 
-CREATE FUNCTION dbms_pipe.unpack_message_record()
+CREATE FUNCTION gms_pipe.unpack_message_record()
 RETURNS record
-AS '$libdir/whale','dbms_pipe_unpack_message_record'
+AS '$libdir/whale','gms_pipe_unpack_message_record'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_pipe.unpack_message_record() IS 'Get record field from message';
+COMMENT ON FUNCTION gms_pipe.unpack_message_record() IS 'Get record field from message';
 
 
 
@@ -3288,63 +3288,63 @@ AS $$ SELECT TRANSLATE($1, 'A'||$2, 'A'); $$
 LANGUAGE SQL IMMUTABLE STRICT;
 COMMENT ON FUNCTION plvchr.stripped(text, text) IS 'Strips a string of all instances of the specified characters';
 
--- dbms_alert
+-- gms_alert
 
-CREATE SCHEMA dbms_alert;
+CREATE SCHEMA gms_alert;
 
-CREATE FUNCTION dbms_alert.register(name text)
+CREATE FUNCTION gms_alert.register(name text)
 RETURNS void
-AS '$libdir/whale','dbms_alert_register'
+AS '$libdir/whale','gms_alert_register'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_alert.register(text) IS 'Register session as recipient of alert name';
+COMMENT ON FUNCTION gms_alert.register(text) IS 'Register session as recipient of alert name';
 
-CREATE FUNCTION dbms_alert.remove(name text)
+CREATE FUNCTION gms_alert.remove(name text)
 RETURNS void
-AS '$libdir/whale','dbms_alert_remove'
+AS '$libdir/whale','gms_alert_remove'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION dbms_alert.remove(text) IS 'Remove session as recipient of alert name';
+COMMENT ON FUNCTION gms_alert.remove(text) IS 'Remove session as recipient of alert name';
 
-CREATE FUNCTION dbms_alert.removeall()
+CREATE FUNCTION gms_alert.removeall()
 RETURNS void
-AS '$libdir/whale','dbms_alert_removeall'
+AS '$libdir/whale','gms_alert_removeall'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_alert.removeall() IS 'Remove registration for all alerts';
+COMMENT ON FUNCTION gms_alert.removeall() IS 'Remove registration for all alerts';
 
-CREATE FUNCTION dbms_alert._signal(name text, message text)
+CREATE FUNCTION gms_alert._signal(name text, message text)
 RETURNS void
-AS '$libdir/whale','dbms_alert_signal'
+AS '$libdir/whale','gms_alert_signal'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_alert._signal(text, text) IS '';
+COMMENT ON FUNCTION gms_alert._signal(text, text) IS '';
 
-CREATE FUNCTION dbms_alert.waitany(OUT name text, OUT message text, OUT status integer, timeout float8)
+CREATE FUNCTION gms_alert.waitany(OUT name text, OUT message text, OUT status integer, timeout float8)
 RETURNS record
-AS '$libdir/whale','dbms_alert_waitany'
+AS '$libdir/whale','gms_alert_waitany'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_alert.waitany(OUT text, OUT text, OUT integer, float8) IS 'Wait for any signal';
+COMMENT ON FUNCTION gms_alert.waitany(OUT text, OUT text, OUT integer, float8) IS 'Wait for any signal';
 
-CREATE FUNCTION dbms_alert.waitone(name text, OUT message text, OUT status integer, timeout float8)
+CREATE FUNCTION gms_alert.waitone(name text, OUT message text, OUT status integer, timeout float8)
 RETURNS record
-AS '$libdir/whale','dbms_alert_waitone'
+AS '$libdir/whale','gms_alert_waitone'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_alert.waitone(text, OUT text, OUT integer, float8) IS 'Wait for specific signal';
+COMMENT ON FUNCTION gms_alert.waitone(text, OUT text, OUT integer, float8) IS 'Wait for specific signal';
 
-CREATE FUNCTION dbms_alert.set_defaults(sensitivity float8)
+CREATE FUNCTION gms_alert.set_defaults(sensitivity float8)
 RETURNS void
-AS '$libdir/whale','dbms_alert_set_defaults'
+AS '$libdir/whale','gms_alert_set_defaults'
 LANGUAGE C VOLATILE;
-COMMENT ON FUNCTION dbms_alert.set_defaults(float8) IS '';
+COMMENT ON FUNCTION gms_alert.set_defaults(float8) IS '';
 
-CREATE FUNCTION dbms_alert.defered_signal()
+CREATE FUNCTION gms_alert.defered_signal()
 RETURNS trigger
-AS '$libdir/whale','dbms_alert_defered_signal'
+AS '$libdir/whale','gms_alert_defered_signal'
 LANGUAGE C SECURITY DEFINER;
-REVOKE ALL ON FUNCTION dbms_alert.defered_signal() FROM PUBLIC;
+REVOKE ALL ON FUNCTION gms_alert.defered_signal() FROM PUBLIC;
 
-CREATE FUNCTION dbms_alert.signal(_event text, _message text)
+CREATE FUNCTION gms_alert.signal(_event text, _message text)
 RETURNS void
-AS '$libdir/whale','dbms_alert_signal'
+AS '$libdir/whale','gms_alert_signal'
 LANGUAGE C SECURITY DEFINER;
-COMMENT ON FUNCTION dbms_alert.signal(text, text) IS 'Emit signal to all recipients';
+COMMENT ON FUNCTION gms_alert.signal(text, text) IS 'Emit signal to all recipients';
 
 
 
@@ -3578,57 +3578,57 @@ RETURNS nvarchar2
 AS '$libdir/whale','orafce_concat2'
 LANGUAGE C IMMUTABLE;
 
--- dbms_assert
+-- gms_assert
 
-CREATE SCHEMA dbms_assert;
+CREATE SCHEMA gms_assert;
 
-CREATE FUNCTION dbms_assert.enquote_literal(str varchar)
+CREATE FUNCTION gms_assert.enquote_literal(str varchar)
 RETURNS varchar
-AS '$libdir/whale','dbms_assert_enquote_literal'
+AS '$libdir/whale','gms_assert_enquote_literal'
 LANGUAGE C IMMUTABLE STRICT;
-COMMENT ON FUNCTION dbms_assert.enquote_literal(varchar) IS 'Add leading and trailing quotes, verify that all single quotes are paired with adjacent single quotes';
+COMMENT ON FUNCTION gms_assert.enquote_literal(varchar) IS 'Add leading and trailing quotes, verify that all single quotes are paired with adjacent single quotes';
 
-CREATE FUNCTION dbms_assert.enquote_name(str varchar, loweralize boolean)
+CREATE FUNCTION gms_assert.enquote_name(str varchar, loweralize boolean)
 RETURNS varchar
-AS '$libdir/whale','dbms_assert_enquote_name'
+AS '$libdir/whale','gms_assert_enquote_name'
 LANGUAGE C IMMUTABLE STRICT;
-COMMENT ON FUNCTION dbms_assert.enquote_name(varchar, boolean) IS 'Enclose name in double quotes';
+COMMENT ON FUNCTION gms_assert.enquote_name(varchar, boolean) IS 'Enclose name in double quotes';
 
-CREATE FUNCTION dbms_assert.enquote_name(str varchar)
+CREATE FUNCTION gms_assert.enquote_name(str varchar)
 RETURNS varchar
-AS 'SELECT dbms_assert.enquote_name($1, true)'
+AS 'SELECT gms_assert.enquote_name($1, true)'
 LANGUAGE SQL IMMUTABLE STRICT;
-COMMENT ON FUNCTION dbms_assert.enquote_name(varchar) IS 'Enclose name in double quotes';
+COMMENT ON FUNCTION gms_assert.enquote_name(varchar) IS 'Enclose name in double quotes';
 
-CREATE FUNCTION dbms_assert.noop(str varchar)
+CREATE FUNCTION gms_assert.noop(str varchar)
 RETURNS varchar
-AS '$libdir/whale','dbms_assert_noop'
+AS '$libdir/whale','gms_assert_noop'
 LANGUAGE C IMMUTABLE STRICT;
-COMMENT ON FUNCTION dbms_assert.noop(varchar) IS 'Returns value without any checking.';
+COMMENT ON FUNCTION gms_assert.noop(varchar) IS 'Returns value without any checking.';
 
-CREATE FUNCTION dbms_assert.schema_name(str varchar)
+CREATE FUNCTION gms_assert.schema_name(str varchar)
 RETURNS varchar
-AS '$libdir/whale','dbms_assert_schema_name'
+AS '$libdir/whale','gms_assert_schema_name'
 LANGUAGE C IMMUTABLE;
-COMMENT ON FUNCTION dbms_assert.schema_name(varchar) IS 'Verify input string is an existing schema name.';
+COMMENT ON FUNCTION gms_assert.schema_name(varchar) IS 'Verify input string is an existing schema name.';
 
-CREATE FUNCTION dbms_assert.object_name(str varchar)
+CREATE FUNCTION gms_assert.object_name(str varchar)
 RETURNS varchar
-AS '$libdir/whale','dbms_assert_object_name'
+AS '$libdir/whale','gms_assert_object_name'
 LANGUAGE C IMMUTABLE;
-COMMENT ON FUNCTION dbms_assert.object_name(varchar) IS 'Verify input string is an existing object name.';
+COMMENT ON FUNCTION gms_assert.object_name(varchar) IS 'Verify input string is an existing object name.';
 
-CREATE FUNCTION dbms_assert.simple_sql_name(str varchar)
+CREATE FUNCTION gms_assert.simple_sql_name(str varchar)
 RETURNS varchar
-AS '$libdir/whale','dbms_assert_simple_sql_name'
+AS '$libdir/whale','gms_assert_simple_sql_name'
 LANGUAGE C IMMUTABLE;
-COMMENT ON FUNCTION dbms_assert.object_name(varchar) IS 'Verify input string is an sql name.';
+COMMENT ON FUNCTION gms_assert.object_name(varchar) IS 'Verify input string is an sql name.';
 
-CREATE FUNCTION dbms_assert.qualified_sql_name(str varchar)
+CREATE FUNCTION gms_assert.qualified_sql_name(str varchar)
 RETURNS varchar
-AS '$libdir/whale','dbms_assert_qualified_sql_name'
+AS '$libdir/whale','gms_assert_qualified_sql_name'
 LANGUAGE C IMMUTABLE;
-COMMENT ON FUNCTION dbms_assert.object_name(varchar) IS 'Verify input string is an qualified sql name.';
+COMMENT ON FUNCTION gms_assert.object_name(varchar) IS 'Verify input string is an qualified sql name.';
 
 
 CREATE FUNCTION orafce.sysdate()
@@ -3679,21 +3679,21 @@ LANGUAGE SQL IMMUTABLE STRICT;
 CREATE OPERATOR || (procedure = orafce.orafce_concat2, leftarg = varchar2, rightarg = varchar2);
 CREATE OPERATOR || (procedure = orafce.orafce_concat2, leftarg = nvarchar2, rightarg = nvarchar2);
 
-GRANT USAGE ON SCHEMA dbms_pipe TO PUBLIC;
-GRANT USAGE ON SCHEMA dbms_alert TO PUBLIC;
+GRANT USAGE ON SCHEMA gms_pipe TO PUBLIC;
+GRANT USAGE ON SCHEMA gms_alert TO PUBLIC;
 GRANT USAGE ON SCHEMA plvdate TO PUBLIC;
 GRANT USAGE ON SCHEMA plvstr TO PUBLIC;
 GRANT USAGE ON SCHEMA plvchr TO PUBLIC;
 GRANT USAGE ON SCHEMA plvsubst TO PUBLIC;
 GRANT USAGE ON SCHEMA plunit TO PUBLIC;
-GRANT USAGE ON SCHEMA dbms_assert TO PUBLIC;
-GRANT SELECT ON dbms_pipe.db_pipes to PUBLIC;
+GRANT USAGE ON SCHEMA gms_assert TO PUBLIC;
+GRANT SELECT ON gms_pipe.db_pipes to PUBLIC;
 
 
 /* orafce 3.3. related changes */
-ALTER FUNCTION dbms_assert.enquote_name ( character varying ) STRICT;
-ALTER FUNCTION dbms_assert.enquote_name ( character varying, boolean ) STRICT;
-ALTER FUNCTION dbms_assert.noop ( character varying ) STRICT;
+ALTER FUNCTION gms_assert.enquote_name ( character varying ) STRICT;
+ALTER FUNCTION gms_assert.enquote_name ( character varying, boolean ) STRICT;
+ALTER FUNCTION gms_assert.noop ( character varying ) STRICT;
 
 CREATE OR REPLACE FUNCTION pg_catalog.to_number(numeric)
 RETURNS numeric AS $$

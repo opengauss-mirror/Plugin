@@ -25,13 +25,13 @@
 
 #endif
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_assert_enquote_literal);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_assert_enquote_name);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_assert_noop);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_assert_qualified_sql_name);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_assert_schema_name);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_assert_simple_sql_name);
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_assert_object_name);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_assert_enquote_literal);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_assert_enquote_name);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_assert_noop);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_assert_qualified_sql_name);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_assert_schema_name);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_assert_simple_sql_name);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_assert_object_name);
 
 #define CUSTOM_EXCEPTION(code, msg) ereport(ERROR, (errcode(ERRCODE_ORA_PACKAGES_##code), errmsg(msg)))
 
@@ -118,7 +118,7 @@ bool ParseIdentifierString(char *rawstring)
 }
 
 /****************************************************************
- * DBMS_ASSERT.ENQUOTE_LITERAL
+ * GMS_ASSERT.ENQUOTE_LITERAL
  *
  * Syntax:
  *   FUNCTION ENQUOTE_LITERAL(str varchar) RETURNS varchar;
@@ -129,13 +129,13 @@ bool ParseIdentifierString(char *rawstring)
  *
  ****************************************************************/
 
-Datum dbms_assert_enquote_literal(PG_FUNCTION_ARGS)
+Datum gms_assert_enquote_literal(PG_FUNCTION_ARGS)
 {
     PG_RETURN_DATUM(DirectFunctionCall1(quote_literal, PG_GETARG_DATUM(0)));
 }
 
 /****************************************************************
- * DBMS_ASSERT.ENQUOTE_NAME
+ * GMS_ASSERT.ENQUOTE_NAME
  *
  * Syntax:
  *   FUNCTION ENQUOTE_NAME(str varchar) RETURNS varchar;
@@ -148,7 +148,7 @@ Datum dbms_assert_enquote_literal(PG_FUNCTION_ARGS)
  *
  ****************************************************************/
 
-Datum dbms_assert_enquote_name(PG_FUNCTION_ARGS)
+Datum gms_assert_enquote_name(PG_FUNCTION_ARGS)
 {
     Datum name = PG_GETARG_DATUM(0);
     bool loweralize = PG_GETARG_BOOL(1);
@@ -163,7 +163,7 @@ Datum dbms_assert_enquote_name(PG_FUNCTION_ARGS)
 }
 
 /****************************************************************
- * DBMS_ASSERT.NOOP
+ * GMS_ASSERT.NOOP
  *
  * Syntax:
  *   FUNCTION NOOP(str varchar) RETURNS varchar;
@@ -173,7 +173,7 @@ Datum dbms_assert_enquote_name(PG_FUNCTION_ARGS)
  *
  ****************************************************************/
 
-Datum dbms_assert_noop(PG_FUNCTION_ARGS)
+Datum gms_assert_noop(PG_FUNCTION_ARGS)
 {
     text *str = PG_GETARG_TEXT_P(0);
 
@@ -181,7 +181,7 @@ Datum dbms_assert_noop(PG_FUNCTION_ARGS)
 }
 
 /****************************************************************
- * DBMS_ASSERT.QUALIFIED_SQL_NAME
+ * GMS_ASSERT.QUALIFIED_SQL_NAME
  *
  * Syntax:
  *   FUNCTION QUALIFIED_SQL_NAME(str varchar) RETURNS varchar;
@@ -193,7 +193,7 @@ Datum dbms_assert_noop(PG_FUNCTION_ARGS)
  *
  ****************************************************************/
 
-Datum dbms_assert_qualified_sql_name(PG_FUNCTION_ARGS)
+Datum gms_assert_qualified_sql_name(PG_FUNCTION_ARGS)
 {
     text *qname;
 
@@ -211,7 +211,7 @@ Datum dbms_assert_qualified_sql_name(PG_FUNCTION_ARGS)
 }
 
 /****************************************************************
- * DBMS_ASSERT.SCHEMA_NAME
+ * GMS_ASSERT.SCHEMA_NAME
  *
  * Syntax:
  *   FUNCTION SCHEMA_NAME(str varchar) RETURNS varchar;
@@ -223,7 +223,7 @@ Datum dbms_assert_qualified_sql_name(PG_FUNCTION_ARGS)
  *
  ****************************************************************/
 
-Datum dbms_assert_schema_name(PG_FUNCTION_ARGS)
+Datum gms_assert_schema_name(PG_FUNCTION_ARGS)
 {
     Oid namespaceId;
     AclResult aclresult;
@@ -265,7 +265,7 @@ Datum dbms_assert_schema_name(PG_FUNCTION_ARGS)
 }
 
 /****************************************************************
- * DBMS_ASSERT.SIMPLE_SQL_NAME
+ * GMS_ASSERT.SIMPLE_SQL_NAME
  *
  * Syntax:
  *   FUNCTION SIMPLE_SQL_NAME(str varchar) RETURNS varchar;
@@ -302,7 +302,7 @@ static bool check_sql_name(char *cp, int len)
     return true;
 }
 
-Datum dbms_assert_simple_sql_name(PG_FUNCTION_ARGS)
+Datum gms_assert_simple_sql_name(PG_FUNCTION_ARGS)
 {
     text *sname;
     int len;
@@ -325,7 +325,7 @@ Datum dbms_assert_simple_sql_name(PG_FUNCTION_ARGS)
 }
 
 /****************************************************************
- * DBMS_ASSERT.OBJECT_NAME
+ * GMS_ASSERT.OBJECT_NAME
  *
  * Syntax:
  *   FUNCTION OBJECT_NAME(str varchar) RETURNS varchar;
@@ -337,7 +337,7 @@ Datum dbms_assert_simple_sql_name(PG_FUNCTION_ARGS)
  *
  ****************************************************************/
 
-Datum dbms_assert_object_name(PG_FUNCTION_ARGS)
+Datum gms_assert_object_name(PG_FUNCTION_ARGS)
 {
     List *names;
     text *str;

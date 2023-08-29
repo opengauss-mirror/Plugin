@@ -50,7 +50,7 @@ static void add_str(const char *str, int len)
     if (GetSessionContext()->buffer_len + len > GetSessionContext()->buffer_size)
         ereport(ERROR, (errcode(ERRCODE_INSUFFICIENT_RESOURCES), errmsg("buffer overflow"),
                         errdetail("Buffer overflow, limit of %d bytes", GetSessionContext()->buffer_size),
-                        errhint("Increase buffer size in dbms_output.enable() next time")));
+                        errhint("Increase buffer size in gms_output.enable() next time")));
 
     if (len != 0) {
         sret = memcpy_s(GetSessionContext()->buffer + GetSessionContext()->buffer_len, len, str, len);
@@ -125,7 +125,7 @@ static void send_buffer()
  *
  */
 
-static void dbms_output_enable_internal(int32 n_buf_size)
+static void gms_output_enable_internal(int32 n_buf_size)
 {
     /* We allocate +2 bytes for an end-of-line and a string terminator. */
     if (GetSessionContext()->buffer == NULL) {
@@ -140,17 +140,17 @@ static void dbms_output_enable_internal(int32 n_buf_size)
     }
 }
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_output_enable_default);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_output_enable_default);
 
-Datum dbms_output_enable_default(PG_FUNCTION_ARGS)
+Datum gms_output_enable_default(PG_FUNCTION_ARGS)
 {
-    dbms_output_enable_internal(BUFSIZE_DEFAULT);
+    gms_output_enable_internal(BUFSIZE_DEFAULT);
     PG_RETURN_VOID();
 }
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_output_enable);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_output_enable);
 
-Datum dbms_output_enable(PG_FUNCTION_ARGS)
+Datum gms_output_enable(PG_FUNCTION_ARGS)
 {
     int32 n_buf_size;
 
@@ -168,13 +168,13 @@ Datum dbms_output_enable(PG_FUNCTION_ARGS)
         }
     }
 
-    dbms_output_enable_internal(n_buf_size);
+    gms_output_enable_internal(n_buf_size);
     PG_RETURN_VOID();
 }
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_output_disable);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_output_disable);
 
-Datum dbms_output_disable(PG_FUNCTION_ARGS)
+Datum gms_output_disable(PG_FUNCTION_ARGS)
 {
     if (GetSessionContext()->buffer)
         pfree(GetSessionContext()->buffer);
@@ -186,13 +186,13 @@ Datum dbms_output_disable(PG_FUNCTION_ARGS)
     PG_RETURN_VOID();
 }
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_output_serveroutput);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_output_serveroutput);
 
-Datum dbms_output_serveroutput(PG_FUNCTION_ARGS)
+Datum gms_output_serveroutput(PG_FUNCTION_ARGS)
 {
     GetSessionContext()->is_server_output = PG_GETARG_BOOL(0);
     if (GetSessionContext()->is_server_output && !GetSessionContext()->buffer)
-        dbms_output_enable_internal(BUFSIZE_DEFAULT);
+        gms_output_enable_internal(BUFSIZE_DEFAULT);
     PG_RETURN_VOID();
 }
 
@@ -200,18 +200,18 @@ Datum dbms_output_serveroutput(PG_FUNCTION_ARGS)
  * main functions
  */
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_output_put);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_output_put);
 
-Datum dbms_output_put(PG_FUNCTION_ARGS)
+Datum gms_output_put(PG_FUNCTION_ARGS)
 {
     if (GetSessionContext()->buffer)
         add_text(PG_GETARG_TEXT_PP(0));
     PG_RETURN_VOID();
 }
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_output_put_line);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_output_put_line);
 
-Datum dbms_output_put_line(PG_FUNCTION_ARGS)
+Datum gms_output_put_line(PG_FUNCTION_ARGS)
 {
     if (GetSessionContext()->buffer) {
         add_text(PG_GETARG_TEXT_PP(0));
@@ -220,16 +220,16 @@ Datum dbms_output_put_line(PG_FUNCTION_ARGS)
     PG_RETURN_VOID();
 }
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_output_new_line);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_output_new_line);
 
-Datum dbms_output_new_line(PG_FUNCTION_ARGS)
+Datum gms_output_new_line(PG_FUNCTION_ARGS)
 {
     if (GetSessionContext()->buffer)
         add_newline();
     PG_RETURN_VOID();
 }
 
-static text *dbms_output_next(void)
+static text *gms_output_next(void)
 {
     if (GetSessionContext()->buffer_get < GetSessionContext()->buffer_len) {
         text *line = cstring_to_text(GetSessionContext()->buffer + GetSessionContext()->buffer_get);
@@ -239,9 +239,9 @@ static text *dbms_output_next(void)
         return NULL;
 }
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_output_get_line);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_output_get_line);
 
-Datum dbms_output_get_line(PG_FUNCTION_ARGS)
+Datum gms_output_get_line(PG_FUNCTION_ARGS)
 {
     TupleDesc tupdesc;
     Datum result;
@@ -254,7 +254,7 @@ Datum dbms_output_get_line(PG_FUNCTION_ARGS)
     if (get_call_result_type(fcinfo, NULL, &tupdesc) != TYPEFUNC_COMPOSITE)
         elog(ERROR, "return type must be a row type");
 
-    if ((line = dbms_output_next()) != NULL) {
+    if ((line = gms_output_next()) != NULL) {
         values[0] = PointerGetDatum(line);
         values[1] = Int32GetDatum(0); /* 0: succeeded */
     } else {
@@ -268,9 +268,9 @@ Datum dbms_output_get_line(PG_FUNCTION_ARGS)
     PG_RETURN_DATUM(result);
 }
 
-PG_FUNCTION_INFO_V1_PUBLIC(dbms_output_get_lines);
+PG_FUNCTION_INFO_V1_PUBLIC(gms_output_get_lines);
 
-Datum dbms_output_get_lines(PG_FUNCTION_ARGS)
+Datum gms_output_get_lines(PG_FUNCTION_ARGS)
 {
     TupleDesc tupdesc;
     Datum result;
@@ -287,7 +287,7 @@ Datum dbms_output_get_lines(PG_FUNCTION_ARGS)
     if (get_call_result_type(fcinfo, NULL, &tupdesc) != TYPEFUNC_COMPOSITE)
         elog(ERROR, "return type must be a row type");
 
-    for (n = 0; n < max_lines && (line = dbms_output_next()) != NULL; n++) {
+    for (n = 0; n < max_lines && (line = gms_output_next()) != NULL; n++) {
         astate = accumArrayResult(astate, PointerGetDatum(line), false, TEXTOID, CurrentMemoryContext);
     }
 

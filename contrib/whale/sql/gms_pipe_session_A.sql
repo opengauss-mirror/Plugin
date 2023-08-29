@@ -10,8 +10,8 @@ ALTER TABLE TEMP OWNER TO pipe_test_owner;
 SET client_min_messages = notice;
 
 -- Notify session B of 'pipe_test_owner' having been created.
-SELECT dbms_pipe.pack_message(1);
-SELECT dbms_pipe.send_message('pipe_test_owner_created_notifier');
+SELECT gms_pipe.pack_message(1);
+SELECT gms_pipe.send_message('pipe_test_owner_created_notifier');
 -- Create a new connection under the userid of pipe_test_owner
 SET SESSION AUTHORIZATION pipe_test_owner PASSWORD 'Test@123';
 
@@ -20,10 +20,10 @@ SET SESSION AUTHORIZATION pipe_test_owner PASSWORD 'Test@123';
  */
 CREATE OR REPLACE FUNCTION send(pipename text) RETURNS void AS $$
 BEGIN
-        IF dbms_pipe.send_message(pipename,2,10) = 1 THEN
+        IF gms_pipe.send_message(pipename,2,10) = 1 THEN
                 RAISE NOTICE 'Timeout';
                 PERFORM pg_sleep(2);
-                PERFORM dbms_pipe.send_message(pipename,2,10);
+                PERFORM gms_pipe.send_message(pipename,2,10);
         END IF;
 END; $$ LANGUAGE plpgsql;
 
@@ -32,24 +32,24 @@ CREATE OR REPLACE FUNCTION createImplicitPipe() RETURNS void AS $$
 DECLARE
         row TEMP%ROWTYPE;
 BEGIN
-        PERFORM dbms_pipe.pack_message('Message From Session A'::text);
+        PERFORM gms_pipe.pack_message('Message From Session A'::text);
         PERFORM send('named_pipe');
-        PERFORM dbms_pipe.pack_message('2013-01-01'::date);
+        PERFORM gms_pipe.pack_message('2013-01-01'::date);
         PERFORM send('named_pipe');
-        PERFORM dbms_pipe.pack_message('2013-01-01 09:00:00'::timestamp);
+        PERFORM gms_pipe.pack_message('2013-01-01 09:00:00'::timestamp);
         PERFORM send('named_pipe');
-        PERFORM dbms_pipe.pack_message('2013-01-01 09:00:00-08'::timestamptz);
+        PERFORM gms_pipe.pack_message('2013-01-01 09:00:00-08'::timestamptz);
         PERFORM send('named_pipe');
-        PERFORM dbms_pipe.pack_message(12345.6789::numeric);
+        PERFORM gms_pipe.pack_message(12345.6789::numeric);
         PERFORM send('named_pipe');
-        PERFORM dbms_pipe.pack_message(12345::integer);
+        PERFORM gms_pipe.pack_message(12345::integer);
         PERFORM send('named_pipe');
-        PERFORM dbms_pipe.pack_message(99999999999::bigint);
+        PERFORM gms_pipe.pack_message(99999999999::bigint);
         PERFORM send('named_pipe');
-        PERFORM dbms_pipe.pack_message(E'\\201'::bytea);
+        PERFORM gms_pipe.pack_message(E'\\201'::bytea);
         PERFORM send('named_pipe');
         SELECT * INTO row FROM TEMP WHERE id=2;
-	PERFORM dbms_pipe.pack_message(row);
+	PERFORM gms_pipe.pack_message(row);
         PERFORM send('named_pipe');
 END; $$ LANGUAGE plpgsql;
 
@@ -57,16 +57,16 @@ CREATE OR REPLACE FUNCTION bulkSend() RETURNS void AS $$
 DECLARE
         row TEMP%ROWTYPE;
 BEGIN
-        PERFORM dbms_pipe.pack_message('Message From Session A'::text);
-        PERFORM dbms_pipe.pack_message('2013-01-01'::date);
-        PERFORM dbms_pipe.pack_message('2013-01-01 09:00:00'::timestamp);
-        PERFORM dbms_pipe.pack_message('2013-01-01 09:00:00-08'::timestamptz);
-        PERFORM dbms_pipe.pack_message(12345.6789::numeric);
-        PERFORM dbms_pipe.pack_message(12345::integer);
-        PERFORM dbms_pipe.pack_message(99999999999::bigint);
-        PERFORM dbms_pipe.pack_message(E'\\201'::bytea);
+        PERFORM gms_pipe.pack_message('Message From Session A'::text);
+        PERFORM gms_pipe.pack_message('2013-01-01'::date);
+        PERFORM gms_pipe.pack_message('2013-01-01 09:00:00'::timestamp);
+        PERFORM gms_pipe.pack_message('2013-01-01 09:00:00-08'::timestamptz);
+        PERFORM gms_pipe.pack_message(12345.6789::numeric);
+        PERFORM gms_pipe.pack_message(12345::integer);
+        PERFORM gms_pipe.pack_message(99999999999::bigint);
+        PERFORM gms_pipe.pack_message(E'\\201'::bytea);
         SELECT * INTO row FROM TEMP WHERE id=2;
-        PERFORM dbms_pipe.pack_message(row);
+        PERFORM gms_pipe.pack_message(row);
         PERFORM send('named_pipe_2');
 END; $$ LANGUAGE plpgsql;
 
@@ -78,11 +78,11 @@ END; $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION createPipe(name text,ver integer) RETURNS void AS $$
 BEGIN
 	IF ver = 3 THEN
-                PERFORM dbms_pipe.create_pipe(name,4,true);
+                PERFORM gms_pipe.create_pipe(name,4,true);
         ELSIF ver = 2 THEN
-                PERFORM dbms_pipe.create_pipe(name,4);
+                PERFORM gms_pipe.create_pipe(name,4);
         ELSE
-                PERFORM dbms_pipe.create_pipe(name);
+                PERFORM gms_pipe.create_pipe(name);
 	END IF;
 END; $$ LANGUAGE plpgsql;
 
@@ -98,26 +98,26 @@ BEGIN
 
 	PERFORM createPipe(pipename,create_version);
 
-	PERFORM dbms_pipe.reset_buffer();
+	PERFORM gms_pipe.reset_buffer();
 
-        PERFORM dbms_pipe.pack_message('Message From Session A'::text);
+        PERFORM gms_pipe.pack_message('Message From Session A'::text);
         PERFORM send(pipename);
-        PERFORM dbms_pipe.pack_message('2013-01-01'::date);
+        PERFORM gms_pipe.pack_message('2013-01-01'::date);
         PERFORM send(pipename);
-        PERFORM dbms_pipe.pack_message('2013-01-01 09:00:00'::timestamp);
+        PERFORM gms_pipe.pack_message('2013-01-01 09:00:00'::timestamp);
         PERFORM send(pipename);
-        PERFORM dbms_pipe.pack_message('2013-01-01 09:00:00-08'::timestamptz);
+        PERFORM gms_pipe.pack_message('2013-01-01 09:00:00-08'::timestamptz);
         PERFORM send(pipename);
-        PERFORM dbms_pipe.pack_message(12345.6789::numeric);
+        PERFORM gms_pipe.pack_message(12345.6789::numeric);
         PERFORM send(pipename);
-        PERFORM dbms_pipe.pack_message(12345::integer);
+        PERFORM gms_pipe.pack_message(12345::integer);
         PERFORM send(pipename);
-        PERFORM dbms_pipe.pack_message(99999999999::bigint);
+        PERFORM gms_pipe.pack_message(99999999999::bigint);
         PERFORM send(pipename);
-        PERFORM dbms_pipe.pack_message(E'\\201'::bytea);
+        PERFORM gms_pipe.pack_message(E'\\201'::bytea);
         PERFORM send(pipename);
         SELECT * INTO row FROM TEMP WHERE id=2;
-        PERFORM dbms_pipe.pack_message(row);
+        PERFORM gms_pipe.pack_message(row);
         PERFORM send(pipename);
 END; $$ LANGUAGE plpgsql;
 
@@ -125,39 +125,39 @@ END; $$ LANGUAGE plpgsql;
 -- Test send_message(text)
 CREATE OR REPLACE FUNCTION checkSend1() RETURNS void AS $$
 BEGIN
-	PERFORM dbms_pipe.pack_message('checking one-argument send_message()');
-	PERFORM dbms_pipe.send_message('pipe_name_1');
+	PERFORM gms_pipe.pack_message('checking one-argument send_message()');
+	PERFORM gms_pipe.send_message('pipe_name_1');
 END; $$ LANGUAGE plpgsql;
 
 
 -- Test send_message(text,integer)
 CREATE OR REPLACE FUNCTION checkSend2() RETURNS void AS $$
 BEGIN
-        PERFORM dbms_pipe.pack_message('checking two-argument send_message()');
-	IF dbms_pipe.send_message('pipe_name_2',2) = 1 THEN
+        PERFORM gms_pipe.pack_message('checking two-argument send_message()');
+	IF gms_pipe.send_message('pipe_name_2',2) = 1 THEN
                 RAISE NOTICE 'Timeout';
                 PERFORM pg_sleep(2);
-                PERFORM dbms_pipe.send_message('pipe_name_2',2);
+                PERFORM gms_pipe.send_message('pipe_name_2',2);
         END IF;
 END; $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION notifyDropTemp() RETURNS void AS $$
 BEGIN
-	PERFORM dbms_pipe.pack_message(1);
-	PERFORM dbms_pipe.send_message('pipe_name_3');
+	PERFORM gms_pipe.pack_message(1);
+	PERFORM gms_pipe.send_message('pipe_name_3');
 END; $$ LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION checkUniqueSessionNameA() RETURNS void AS $$
 BEGIN
-	PERFORM dbms_pipe.pack_message(dbms_pipe.unique_session_name());
-	PERFORM dbms_pipe.send_message('pipe_name_4');
+	PERFORM gms_pipe.pack_message(gms_pipe.unique_session_name());
+	PERFORM gms_pipe.send_message('pipe_name_4');
 END; $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION notify(pipename text) RETURNS void AS $$
 BEGIN
-	PERFORM dbms_pipe.pack_message(1);
-	PERFORM dbms_pipe.send_message(pipename);
+	PERFORM gms_pipe.pack_message(1);
+	PERFORM gms_pipe.send_message(pipename);
 END; $$ LANGUAGE plpgsql;
 
 \set ECHO all

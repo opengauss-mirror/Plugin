@@ -423,302 +423,302 @@ SELECT trunc(months_between('21-feb-2008 12:11:11', '2008-02-29 11:11:11'));
 (1 row)
 
 SET search_path TO default;
-select length('jmenuji se Pavel Stehule'),dbms_pipe.pack_message('jmenuji se Pavel Stehule');
+select length('jmenuji se Pavel Stehule'),gms_pipe.pack_message('jmenuji se Pavel Stehule');
  length | pack_message 
 --------+--------------
      24 | 
 (1 row)
 
-select length('a bydlim ve Skalici'),dbms_pipe.pack_message('a bydlim ve Skalici');
+select length('a bydlim ve Skalici'),gms_pipe.pack_message('a bydlim ve Skalici');
  length | pack_message 
 --------+--------------
      19 | 
 (1 row)
 
-select dbms_pipe.send_message('pavel',0,1);
+select gms_pipe.send_message('pavel',0,1);
  send_message 
 --------------
             0
 (1 row)
 
-select dbms_pipe.send_message('pavel',0,2);
+select gms_pipe.send_message('pavel',0,2);
  send_message 
 --------------
             0
 (1 row)
 
-select dbms_pipe.receive_message('pavel',0);
+select gms_pipe.receive_message('pavel',0);
  receive_message 
 -----------------
                0
 (1 row)
 
-select '>>>>'||dbms_pipe.unpack_message_text()||'<<<<';
+select '>>>>'||gms_pipe.unpack_message_text()||'<<<<';
              ?column?             
 ----------------------------------
  >>>>jmenuji se Pavel Stehule<<<<
 (1 row)
 
-select '>>>>'||dbms_pipe.unpack_message_text()||'<<<<';
+select '>>>>'||gms_pipe.unpack_message_text()||'<<<<';
           ?column?           
 -----------------------------
  >>>>a bydlim ve Skalici<<<<
 (1 row)
 
-select dbms_pipe.receive_message('pavel',0);
+select gms_pipe.receive_message('pavel',0);
  receive_message 
 -----------------
                0
 (1 row)
 
-select dbms_pipe.purge('bob');
+select gms_pipe.purge('bob');
  purge 
 -------
  
 (1 row)
 
-select dbms_pipe.reset_buffer();
+select gms_pipe.reset_buffer();
  reset_buffer 
 --------------
  
 (1 row)
 
-select dbms_pipe.pack_message('012345678901234+1');
+select gms_pipe.pack_message('012345678901234+1');
  pack_message 
 --------------
  
 (1 row)
 
-select dbms_pipe.send_message('bob',0,10);
+select gms_pipe.send_message('bob',0,10);
  send_message 
 --------------
             0
 (1 row)
 
-select dbms_pipe.pack_message('012345678901234+2');
+select gms_pipe.pack_message('012345678901234+2');
  pack_message 
 --------------
  
 (1 row)
 
-select dbms_pipe.send_message('bob',0,10);
+select gms_pipe.send_message('bob',0,10);
  send_message 
 --------------
             0
 (1 row)
 
-select dbms_pipe.pack_message('012345678901234+3');
+select gms_pipe.pack_message('012345678901234+3');
  pack_message 
 --------------
  
 (1 row)
 
-select dbms_pipe.send_message('bob',0,10);
+select gms_pipe.send_message('bob',0,10);
  send_message 
 --------------
             0
 (1 row)
 
 --------------------------------------------
-select dbms_pipe.receive_message('bob',0);
+select gms_pipe.receive_message('bob',0);
  receive_message 
 -----------------
                0
 (1 row)
 
-select dbms_pipe.unpack_message_text();
+select gms_pipe.unpack_message_text();
  unpack_message_text 
 ---------------------
  012345678901234+1
 (1 row)
 
-select dbms_pipe.receive_message('bob',0);
+select gms_pipe.receive_message('bob',0);
  receive_message 
 -----------------
                0
 (1 row)
 
-select dbms_pipe.unpack_message_text();
+select gms_pipe.unpack_message_text();
  unpack_message_text 
 ---------------------
  012345678901234+2
 (1 row)
 
-select dbms_pipe.receive_message('bob',0);
+select gms_pipe.receive_message('bob',0);
  receive_message 
 -----------------
                0
 (1 row)
 
-select dbms_pipe.unpack_message_text();
+select gms_pipe.unpack_message_text();
  unpack_message_text 
 ---------------------
  012345678901234+3
 (1 row)
 
-select dbms_pipe.unique_session_name() LIKE 'PG$PIPE$%';
+select gms_pipe.unique_session_name() LIKE 'PG$PIPE$%';
  ?column? 
 ----------
  t
 (1 row)
 
-select dbms_pipe.pack_message('012345678901234-1');
+select gms_pipe.pack_message('012345678901234-1');
  pack_message 
 --------------
  
 (1 row)
 
-select dbms_pipe.send_message('bob',0,10);
+select gms_pipe.send_message('bob',0,10);
  send_message 
 --------------
             0
 (1 row)
 
-select dbms_pipe.receive_message('bob',0);
+select gms_pipe.receive_message('bob',0);
  receive_message 
 -----------------
                0
 (1 row)
 
-select dbms_pipe.unpack_message_text();
+select gms_pipe.unpack_message_text();
  unpack_message_text 
 ---------------------
  012345678901234-1
 (1 row)
 
-select dbms_pipe.pack_message('012345678901234-2');
+select gms_pipe.pack_message('012345678901234-2');
  pack_message 
 --------------
  
 (1 row)
 
-select dbms_pipe.send_message('bob',0,10);
+select gms_pipe.send_message('bob',0,10);
  send_message 
 --------------
             0
 (1 row)
 
-select dbms_pipe.send_message('bob',0,10);
+select gms_pipe.send_message('bob',0,10);
  send_message 
 --------------
             0
 (1 row)
 
-select dbms_pipe.receive_message('bob',0);
+select gms_pipe.receive_message('bob',0);
  receive_message 
 -----------------
                0
 (1 row)
 
-select dbms_pipe.unpack_message_text();
+select gms_pipe.unpack_message_text();
  unpack_message_text 
 ---------------------
  012345678901234-2
 (1 row)
 
-select dbms_pipe.pack_message(TO_DATE('2006-10-11', 'YYYY-MM-DD'));
+select gms_pipe.pack_message(TO_DATE('2006-10-11', 'YYYY-MM-DD'));
  pack_message 
 --------------
  
 (1 row)
 
-select dbms_pipe.send_message('test_date');
+select gms_pipe.send_message('test_date');
  send_message 
 --------------
             0
 (1 row)
 
-select dbms_pipe.receive_message('test_date');
+select gms_pipe.receive_message('test_date');
  receive_message 
 -----------------
                0
 (1 row)
 
-select dbms_pipe.next_item_type();
+select gms_pipe.next_item_type();
  next_item_type 
 ----------------
              13
 (1 row)
 
-select dbms_pipe.unpack_message_date();
+select gms_pipe.unpack_message_date();
  unpack_message_date 
 ---------------------
  2006-10-11 07:00:00
 (1 row)
 
-select dbms_pipe.pack_message(to_timestamp('2008-10-30 01:23:45', 'YYYY-MM-DD HH24:MI:SS'));
+select gms_pipe.pack_message(to_timestamp('2008-10-30 01:23:45', 'YYYY-MM-DD HH24:MI:SS'));
  pack_message 
 --------------
  
 (1 row)
 
-select dbms_pipe.send_message('test_timestamp');
+select gms_pipe.send_message('test_timestamp');
  send_message 
 --------------
             0
 (1 row)
 
-select dbms_pipe.receive_message('test_timestamp');
+select gms_pipe.receive_message('test_timestamp');
  receive_message 
 -----------------
                0
 (1 row)
 
-select dbms_pipe.next_item_type();
+select gms_pipe.next_item_type();
  next_item_type 
 ----------------
              13
 (1 row)
 
-select to_char(dbms_pipe.unpack_message_timestamp(), 'YYYY-MM-DD HH24:MI:SS');
+select to_char(gms_pipe.unpack_message_timestamp(), 'YYYY-MM-DD HH24:MI:SS');
        to_char       
 ---------------------
  2008-10-30 01:23:45
 (1 row)
 
-select dbms_pipe.pack_message(6262626262::numeric);
+select gms_pipe.pack_message(6262626262::numeric);
  pack_message 
 --------------
  
 (1 row)
 
-select dbms_pipe.send_message('test_int');
+select gms_pipe.send_message('test_int');
  send_message 
 --------------
             0
 (1 row)
 
-select dbms_pipe.receive_message('test_int');
+select gms_pipe.receive_message('test_int');
  receive_message 
 -----------------
                0
 (1 row)
 
-select dbms_pipe.next_item_type();
+select gms_pipe.next_item_type();
  next_item_type 
 ----------------
               9
 (1 row)
 
-select dbms_pipe.unpack_message_number();
+select gms_pipe.unpack_message_number();
  unpack_message_number 
 -----------------------
             6262626262
 (1 row)
 
-select dbms_pipe.purge('bob');
+select gms_pipe.purge('bob');
  purge 
 -------
  
 (1 row)
 
-select dbms_pipe.reset_buffer();
+select gms_pipe.reset_buffer();
  reset_buffer 
 --------------
  
 (1 row)
 
-select name, items, "limit", private, owner from dbms_pipe.db_pipes where name = 'bob';
+select name, items, "limit", private, owner from gms_pipe.db_pipes where name = 'bob';
  name | items | limit | private | owner 
 ------+-------+-------+---------+-------
 (0 rows)
@@ -2421,112 +2421,112 @@ SELECT nanvl(12345::numeric, '1'::char), nanvl('NaN'::numeric, '1'::char);
  12345 |     1
 (1 row)
 
-select dbms_assert.enquote_literal('some text '' some text');
+select gms_assert.enquote_literal('some text '' some text');
      enquote_literal      
 --------------------------
  'some text '' some text'
 (1 row)
 
-select dbms_assert.enquote_name('''"AAA');
+select gms_assert.enquote_name('''"AAA');
  enquote_name 
 --------------
  "'""aaa"
 (1 row)
 
-select dbms_assert.enquote_name('''"AAA', false);
+select gms_assert.enquote_name('''"AAA', false);
  enquote_name 
 --------------
  "'""AAA"
 (1 row)
 
-select dbms_assert.noop('some string');
+select gms_assert.noop('some string');
     noop     
 -------------
  some string
 (1 row)
 
-select dbms_assert.qualified_sql_name('aaa.bbb.ccc."aaaa""aaa"');
+select gms_assert.qualified_sql_name('aaa.bbb.ccc."aaaa""aaa"');
    qualified_sql_name    
 -------------------------
  aaa.bbb.ccc."aaaa""aaa"
 (1 row)
 
-select dbms_assert.qualified_sql_name('aaa.bbb.cc%c."aaaa""aaa"');
+select gms_assert.qualified_sql_name('aaa.bbb.cc%c."aaaa""aaa"');
 ERROR:  string is not qualified SQL name
 CONTEXT:  referenced column: qualified_sql_name
-select dbms_assert.schema_name('dbms_assert');
+select gms_assert.schema_name('gms_assert');
  schema_name 
 -------------
- dbms_assert
+ gms_assert
 (1 row)
 
-select dbms_assert.schema_name('jabadabado');
+select gms_assert.schema_name('jabadabado');
 ERROR:  invalid schema name
 CONTEXT:  referenced column: schema_name
-select dbms_assert.simple_sql_name('"Aaa dghh shsh"');
+select gms_assert.simple_sql_name('"Aaa dghh shsh"');
  simple_sql_name 
 -----------------
  "Aaa dghh shsh"
 (1 row)
 
-select dbms_assert.simple_sql_name('ajajaj -- ajaj');
+select gms_assert.simple_sql_name('ajajaj -- ajaj');
 ERROR:  string is not simple SQL name
 CONTEXT:  referenced column: simple_sql_name
-select dbms_assert.object_name('pg_catalog.pg_class');
+select gms_assert.object_name('pg_catalog.pg_class');
      object_name     
 ---------------------
  pg_catalog.pg_class
 (1 row)
 
-select dbms_assert.object_name('dbms_assert.fooo');
+select gms_assert.object_name('gms_assert.fooo');
 ERROR:  invalid object name
 CONTEXT:  referenced column: object_name
-select dbms_assert.enquote_literal(NULL);
+select gms_assert.enquote_literal(NULL);
  enquote_literal 
 -----------------
  
 (1 row)
 
-select dbms_assert.enquote_name(NULL);
+select gms_assert.enquote_name(NULL);
  enquote_name 
 --------------
  
 (1 row)
 
-select dbms_assert.enquote_name(NULL, false);
+select gms_assert.enquote_name(NULL, false);
  enquote_name 
 --------------
  
 (1 row)
 
-select dbms_assert.noop(NULL);
+select gms_assert.noop(NULL);
  noop 
 ------
  
 (1 row)
 
-select dbms_assert.qualified_sql_name(NULL);
+select gms_assert.qualified_sql_name(NULL);
 ERROR:  string is not qualified SQL name
 CONTEXT:  referenced column: qualified_sql_name
-select dbms_assert.qualified_sql_name(NULL);
+select gms_assert.qualified_sql_name(NULL);
 ERROR:  string is not qualified SQL name
 CONTEXT:  referenced column: qualified_sql_name
-select dbms_assert.schema_name(NULL);
+select gms_assert.schema_name(NULL);
 ERROR:  invalid schema name
 CONTEXT:  referenced column: schema_name
-select dbms_assert.schema_name(NULL);
+select gms_assert.schema_name(NULL);
 ERROR:  invalid schema name
 CONTEXT:  referenced column: schema_name
-select dbms_assert.simple_sql_name(NULL);
+select gms_assert.simple_sql_name(NULL);
 ERROR:  string is not simple SQL name
 CONTEXT:  referenced column: simple_sql_name
-select dbms_assert.simple_sql_name(NULL);
+select gms_assert.simple_sql_name(NULL);
 ERROR:  string is not simple SQL name
 CONTEXT:  referenced column: simple_sql_name
-select dbms_assert.object_name(NULL);
+select gms_assert.object_name(NULL);
 ERROR:  invalid object name
 CONTEXT:  referenced column: object_name
-select dbms_assert.object_name(NULL);
+select gms_assert.object_name(NULL);
 ERROR:  invalid object name
 CONTEXT:  referenced column: object_name
 select plunit.assert_true(NULL);
@@ -3472,10 +3472,10 @@ SELECT orafce.round(1.234::float, 2), orafce.trunc(1.234::float, 2);
 --
 -- should not fail - fix: Crashes due to insufficent argument checking (#59)
 --
-select dbms_random.string(null, 42);
+select gms_random.string(null, 42);
 ERROR:  an argument is NULL
 CONTEXT:  referenced column: string
-select dbms_pipe.create_pipe(null);
+select gms_pipe.create_pipe(null);
 ERROR:  pipe name is NULL
 DETAIL:  Pipename may not be NULL.
 CONTEXT:  referenced column: create_pipe

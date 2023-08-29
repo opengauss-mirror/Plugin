@@ -93,64 +93,64 @@ SELECT months_between ('2008-02-29 111111', '2008-04-30 12:12:12');
 SELECT trunc(months_between('21-feb-2008 12:11:11', '2008-02-29 11:11:11'));
 SET search_path TO default;
 
-select length('jmenuji se Pavel Stehule'),dbms_pipe.pack_message('jmenuji se Pavel Stehule');
-select length('a bydlim ve Skalici'),dbms_pipe.pack_message('a bydlim ve Skalici');
-select dbms_pipe.send_message('pavel',0,1);
-select dbms_pipe.send_message('pavel',0,2);
-select dbms_pipe.receive_message('pavel',0);
-select '>>>>'||dbms_pipe.unpack_message_text()||'<<<<';
-select '>>>>'||dbms_pipe.unpack_message_text()||'<<<<';
-select dbms_pipe.receive_message('pavel',0);
+select length('jmenuji se Pavel Stehule'),gms_pipe.pack_message('jmenuji se Pavel Stehule');
+select length('a bydlim ve Skalici'),gms_pipe.pack_message('a bydlim ve Skalici');
+select gms_pipe.send_message('pavel',0,1);
+select gms_pipe.send_message('pavel',0,2);
+select gms_pipe.receive_message('pavel',0);
+select '>>>>'||gms_pipe.unpack_message_text()||'<<<<';
+select '>>>>'||gms_pipe.unpack_message_text()||'<<<<';
+select gms_pipe.receive_message('pavel',0);
 
-select dbms_pipe.purge('bob');
-select dbms_pipe.reset_buffer();
+select gms_pipe.purge('bob');
+select gms_pipe.reset_buffer();
 
-select dbms_pipe.pack_message('012345678901234+1');
-select dbms_pipe.send_message('bob',0,10);
-select dbms_pipe.pack_message('012345678901234+2');
-select dbms_pipe.send_message('bob',0,10);
-select dbms_pipe.pack_message('012345678901234+3');
-select dbms_pipe.send_message('bob',0,10);
+select gms_pipe.pack_message('012345678901234+1');
+select gms_pipe.send_message('bob',0,10);
+select gms_pipe.pack_message('012345678901234+2');
+select gms_pipe.send_message('bob',0,10);
+select gms_pipe.pack_message('012345678901234+3');
+select gms_pipe.send_message('bob',0,10);
 --------------------------------------------
-select dbms_pipe.receive_message('bob',0);
-select dbms_pipe.unpack_message_text();
-select dbms_pipe.receive_message('bob',0);
-select dbms_pipe.unpack_message_text();
-select dbms_pipe.receive_message('bob',0);
-select dbms_pipe.unpack_message_text();
+select gms_pipe.receive_message('bob',0);
+select gms_pipe.unpack_message_text();
+select gms_pipe.receive_message('bob',0);
+select gms_pipe.unpack_message_text();
+select gms_pipe.receive_message('bob',0);
+select gms_pipe.unpack_message_text();
 
-select dbms_pipe.unique_session_name() LIKE 'PG$PIPE$%';
-select dbms_pipe.pack_message('012345678901234-1');
-select dbms_pipe.send_message('bob',0,10);
-select dbms_pipe.receive_message('bob',0);
-select dbms_pipe.unpack_message_text();
-select dbms_pipe.pack_message('012345678901234-2');
-select dbms_pipe.send_message('bob',0,10);
-select dbms_pipe.send_message('bob',0,10);
-select dbms_pipe.receive_message('bob',0);
-select dbms_pipe.unpack_message_text();
+select gms_pipe.unique_session_name() LIKE 'PG$PIPE$%';
+select gms_pipe.pack_message('012345678901234-1');
+select gms_pipe.send_message('bob',0,10);
+select gms_pipe.receive_message('bob',0);
+select gms_pipe.unpack_message_text();
+select gms_pipe.pack_message('012345678901234-2');
+select gms_pipe.send_message('bob',0,10);
+select gms_pipe.send_message('bob',0,10);
+select gms_pipe.receive_message('bob',0);
+select gms_pipe.unpack_message_text();
 
-select dbms_pipe.pack_message(TO_DATE('2006-10-11', 'YYYY-MM-DD'));
-select dbms_pipe.send_message('test_date');
-select dbms_pipe.receive_message('test_date');
-select dbms_pipe.next_item_type();
-select dbms_pipe.unpack_message_date();
+select gms_pipe.pack_message(TO_DATE('2006-10-11', 'YYYY-MM-DD'));
+select gms_pipe.send_message('test_date');
+select gms_pipe.receive_message('test_date');
+select gms_pipe.next_item_type();
+select gms_pipe.unpack_message_date();
 
-select dbms_pipe.pack_message(to_timestamp('2008-10-30 01:23:45', 'YYYY-MM-DD HH24:MI:SS'));
-select dbms_pipe.send_message('test_timestamp');
-select dbms_pipe.receive_message('test_timestamp');
-select dbms_pipe.next_item_type();
-select to_char(dbms_pipe.unpack_message_timestamp(), 'YYYY-MM-DD HH24:MI:SS');
+select gms_pipe.pack_message(to_timestamp('2008-10-30 01:23:45', 'YYYY-MM-DD HH24:MI:SS'));
+select gms_pipe.send_message('test_timestamp');
+select gms_pipe.receive_message('test_timestamp');
+select gms_pipe.next_item_type();
+select to_char(gms_pipe.unpack_message_timestamp(), 'YYYY-MM-DD HH24:MI:SS');
 
-select dbms_pipe.pack_message(6262626262::numeric);
-select dbms_pipe.send_message('test_int');
-select dbms_pipe.receive_message('test_int');
-select dbms_pipe.next_item_type();
-select dbms_pipe.unpack_message_number();
-select dbms_pipe.purge('bob');
-select dbms_pipe.reset_buffer();
+select gms_pipe.pack_message(6262626262::numeric);
+select gms_pipe.send_message('test_int');
+select gms_pipe.receive_message('test_int');
+select gms_pipe.next_item_type();
+select gms_pipe.unpack_message_number();
+select gms_pipe.purge('bob');
+select gms_pipe.reset_buffer();
 
-select name, items, "limit", private, owner from dbms_pipe.db_pipes where name = 'bob';
+select name, items, "limit", private, owner from gms_pipe.db_pipes where name = 'bob';
 
 select PLVstr.betwn('Harry and Sally are very happy', 7, 9);
 select PLVstr.betwn('Harry and Sally are very happy', 7, 9, FALSE);
@@ -501,31 +501,31 @@ SELECT nanvl(12345::float4, '1'::char), nanvl('NaN'::float4, '1'::char);
 SELECT nanvl(12345::float8, '1'::char), nanvl('NaN'::float8, '1'::char);
 SELECT nanvl(12345::numeric, '1'::char), nanvl('NaN'::numeric, '1'::char);
 
-select dbms_assert.enquote_literal('some text '' some text');
-select dbms_assert.enquote_name('''"AAA');
-select dbms_assert.enquote_name('''"AAA', false);
-select dbms_assert.noop('some string');
-select dbms_assert.qualified_sql_name('aaa.bbb.ccc."aaaa""aaa"');
-select dbms_assert.qualified_sql_name('aaa.bbb.cc%c."aaaa""aaa"');
-select dbms_assert.schema_name('dbms_assert');
-select dbms_assert.schema_name('jabadabado');
-select dbms_assert.simple_sql_name('"Aaa dghh shsh"');
-select dbms_assert.simple_sql_name('ajajaj -- ajaj');
-select dbms_assert.object_name('pg_catalog.pg_class');
-select dbms_assert.object_name('dbms_assert.fooo');
+select gms_assert.enquote_literal('some text '' some text');
+select gms_assert.enquote_name('''"AAA');
+select gms_assert.enquote_name('''"AAA', false);
+select gms_assert.noop('some string');
+select gms_assert.qualified_sql_name('aaa.bbb.ccc."aaaa""aaa"');
+select gms_assert.qualified_sql_name('aaa.bbb.cc%c."aaaa""aaa"');
+select gms_assert.schema_name('gms_assert');
+select gms_assert.schema_name('jabadabado');
+select gms_assert.simple_sql_name('"Aaa dghh shsh"');
+select gms_assert.simple_sql_name('ajajaj -- ajaj');
+select gms_assert.object_name('pg_catalog.pg_class');
+select gms_assert.object_name('gms_assert.fooo');
 
-select dbms_assert.enquote_literal(NULL);
-select dbms_assert.enquote_name(NULL);
-select dbms_assert.enquote_name(NULL, false);
-select dbms_assert.noop(NULL);
-select dbms_assert.qualified_sql_name(NULL);
-select dbms_assert.qualified_sql_name(NULL);
-select dbms_assert.schema_name(NULL);
-select dbms_assert.schema_name(NULL);
-select dbms_assert.simple_sql_name(NULL);
-select dbms_assert.simple_sql_name(NULL);
-select dbms_assert.object_name(NULL);
-select dbms_assert.object_name(NULL);
+select gms_assert.enquote_literal(NULL);
+select gms_assert.enquote_name(NULL);
+select gms_assert.enquote_name(NULL, false);
+select gms_assert.noop(NULL);
+select gms_assert.qualified_sql_name(NULL);
+select gms_assert.qualified_sql_name(NULL);
+select gms_assert.schema_name(NULL);
+select gms_assert.schema_name(NULL);
+select gms_assert.simple_sql_name(NULL);
+select gms_assert.simple_sql_name(NULL);
+select gms_assert.object_name(NULL);
+select gms_assert.object_name(NULL);
 
 select plunit.assert_true(NULL);
 select plunit.assert_true(1 = 2);
@@ -770,8 +770,8 @@ SELECT orafce.round(1.234::float, 2), orafce.trunc(1.234::float, 2);
 --
 -- should not fail - fix: Crashes due to insufficent argument checking (#59)
 --
-select dbms_random.string(null, 42);
-select dbms_pipe.create_pipe(null);
+select gms_random.string(null, 42);
+select gms_pipe.create_pipe(null);
 select plunit.assert_not_equals(1,2,3);
 
 --
