@@ -791,16 +791,12 @@ insert ignore into test_uint4 values(-129::uint8);
 WARNING:  int unsigned out of range
 CONTEXT:  referenced column: c1
 ---- ui8toi8
----- over int8_max 严格模式error，非严格模式warning，结果int8_max
+---- over int8_max 正整数溢出为对应的负整数
 insert into test_int8 values(9223372036854775808::uint8);
-ERROR:  bigint out of range
-CONTEXT:  referenced column: c1
 insert into test_int8 values(-9223372036854775809::uint8);
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: c1
 insert ignore into test_int8 values(9223372036854775808::uint8);
-WARNING:  bigint out of range
-CONTEXT:  referenced column: c1
 insert ignore into test_int8 values(-9223372036854775808::uint8);
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: c1
@@ -1062,15 +1058,16 @@ select * from test_int4;
 (8 rows)
 
 select * from test_int8;
-         c1          
----------------------
-          2147483647
-               32767
- 9223372036854775807
- 9223372036854775807
- 9223372036854775807
- 9223372036854775807
-(6 rows)
+          c1          
+----------------------
+           2147483647
+                32767
+  9223372036854775807
+  9223372036854775807
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
+(7 rows)
 
 select * from test_uint1;
  c1  
@@ -2013,16 +2010,12 @@ insert ignore into test_uint4 values(-129::uint8);
 WARNING:  int unsigned out of range
 CONTEXT:  referenced column: c1
 ---- ui8toi8
----- over int8_max 严格模式error，非严格模式warning，结果int8_max
+---- over int8_max 正整数溢出为对应的负整数
 insert into test_int8 values(9223372036854775808::uint8);
-WARNING:  bigint out of range
-CONTEXT:  referenced column: c1
 insert into test_int8 values(-9223372036854775809::uint8);
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: c1
 insert ignore into test_int8 values(9223372036854775808::uint8);
-WARNING:  bigint out of range
-CONTEXT:  referenced column: c1
 insert ignore into test_int8 values(-9223372036854775808::uint8);
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: c1
@@ -2407,21 +2400,21 @@ select * from test_int4;
 (22 rows)
 
 select * from test_int8;
-         c1          
----------------------
- 9223372036854775807
-          2147483647
-          2147483647
-               32767
-               32767
- 9223372036854775807
- 9223372036854775807
- 9223372036854775807
- 9223372036854775807
- 9223372036854775807
- 9223372036854775807
- 9223372036854775807
- 9223372036854775807
+          c1          
+----------------------
+  9223372036854775807
+           2147483647
+           2147483647
+                32767
+                32767
+  9223372036854775807
+  9223372036854775807
+  9223372036854775807
+  9223372036854775807
+  9223372036854775807
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
 (13 rows)
 
 select * from test_uint1;

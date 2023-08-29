@@ -55,8 +55,11 @@ select cast(1e30::uint8 as signed);
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: int8
 select cast(18446744073709551615::uint8 as signed);
-ERROR:  bigint out of range
-CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
 select cast(18446744073709551616::uint8 as signed);
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: int8
@@ -67,8 +70,11 @@ select cast(9223372036854775807::uint8 as signed);
 (1 row)
 
 select cast(9223372036854775808::uint8 as signed);
-ERROR:  bigint out of range
-CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
 select cast(-9223372036854775808::uint8 as signed);
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: int8
@@ -434,8 +440,13 @@ select * from test_uint8;
 (3 rows)
 
 select cast(a as signed) from test_uint8;
-ERROR:  bigint out of range
-CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+ -9223372036854775808
+                   -1
+(3 rows)
+
 ----- bit
 drop table if exists test_bit;
 NOTICE:  table "test_bit" does not exist, skipping
@@ -568,39 +579,31 @@ select cast(123::uint8 as signed);
 select cast(1e30::uint8 as int8);
 WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: int8
-WARNING:  bigint out of range
-CONTEXT:  referenced column: int8
-        int8         
----------------------
- 9223372036854775807
+ int8 
+------
+   -1
 (1 row)
 
 select cast(1e30::uint8 as signed);
 WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: int8
-WARNING:  bigint out of range
-CONTEXT:  referenced column: int8
-        int8         
----------------------
- 9223372036854775807
+ int8 
+------
+   -1
 (1 row)
 
 select cast(18446744073709551615::uint8 as signed);
-WARNING:  bigint out of range
-CONTEXT:  referenced column: int8
-        int8         
----------------------
- 9223372036854775807
+ int8 
+------
+   -1
 (1 row)
 
 select cast(18446744073709551616::uint8 as signed);
 WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: int8
-WARNING:  bigint out of range
-CONTEXT:  referenced column: int8
-        int8         
----------------------
- 9223372036854775807
+ int8 
+------
+   -1
 (1 row)
 
 select cast(9223372036854775807::uint8 as signed);
@@ -610,11 +613,9 @@ select cast(9223372036854775807::uint8 as signed);
 (1 row)
 
 select cast(9223372036854775808::uint8 as signed);
-WARNING:  bigint out of range
-CONTEXT:  referenced column: int8
-        int8         
----------------------
- 9223372036854775807
+         int8         
+----------------------
+ -9223372036854775808
 (1 row)
 
 select cast(-9223372036854775808::uint8 as signed);
@@ -1174,20 +1175,14 @@ select * from test_uint8;
 (6 rows)
 
 select cast(a as signed) from test_uint8;
-WARNING:  bigint out of range
-CONTEXT:  referenced column: a
-WARNING:  bigint out of range
-CONTEXT:  referenced column: a
-WARNING:  bigint out of range
-CONTEXT:  referenced column: a
-          a          
----------------------
- 9223372036854775807
- 9223372036854775807
- 9223372036854775807
- 9223372036854775807
-                   0
-                   0
+          a           
+----------------------
+  9223372036854775807
+ -9223372036854775808
+                   -1
+                   -1
+                    0
+                    0
 (6 rows)
 
 ----- bit
