@@ -261,7 +261,9 @@ bool exec_native_password_auth(Port *port)
     bool isNull;
     Datum datum = SysCacheGetAttr(AUTHNAME, roleTup, Anum_pg_authid_rolpasswordext, &(isNull));
     if (isNull) {
-        ret = true; /*user has no password */
+        ret = false; /*user has no password */
+        ereport(WARNING, (errmsg("user '%s' has not set native password, please execute "
+            "'select set_native_password('%s', 'password');' first.", port->user_name, port->user_name)));
         goto release;
     }
 
