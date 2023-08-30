@@ -801,5 +801,117 @@ SELECT col1,col2 FROM test_autoinc_insert_select ORDER BY 1;
 drop table test_autoinc_source;
 drop table test_autoinc_insert_select;
 
+select 18446744073709551615::int16::int1;
+create table auto_inc_int1 (
+    col1 int1 auto_increment primary key,
+    col2 int
+);
+insert into auto_inc_int1 values(127, 1);
+insert into auto_inc_int1(col2) values(2);
+insert into auto_inc_int1(col2) values(3);
+select * from auto_inc_int1 order by 1,2;
+delete from auto_inc_int1;
+insert into auto_inc_int1(col2) values(4);
+select * from auto_inc_int1 order by 1,2;
+drop table auto_inc_int1;
+
+select 18446744073709551615::int16::uint1;
+create table auto_inc_uint1 (
+    col1 int1 unsigned auto_increment primary key,
+    col2 int
+);
+insert into auto_inc_uint1 values(255, 1);
+insert into auto_inc_uint1(col2) values(2);
+insert into auto_inc_uint1(col2) values(3);
+select * from auto_inc_uint1 order by 1,2;
+delete from auto_inc_uint1;
+insert into auto_inc_uint1(col2) values(4);
+select * from auto_inc_uint1 order by 1,2;
+drop table auto_inc_uint1;
+
+select 18446744073709551615::int16::int2;
+create table auto_inc_int2 (
+    col1 int2 auto_increment primary key,
+    col2 int
+);
+insert into auto_inc_int2 values(32767, 1);
+insert into auto_inc_int2(col2) values(2);
+insert into auto_inc_int2(col2) values(3);
+select * from auto_inc_int2 order by 1,2;
+delete from auto_inc_int2;
+insert into auto_inc_int2(col2) values(4);
+select * from auto_inc_int2 order by 1,2;
+drop table auto_inc_int2;
+
+select 18446744073709551615::int16::uint2;
+create table auto_inc_uint2 (
+    col1 int2 unsigned auto_increment primary key,
+    col2 int
+);
+insert into auto_inc_uint2 values(65535, 1);
+insert into auto_inc_uint2(col2) values(2);
+insert into auto_inc_uint2(col2) values(3);
+select * from auto_inc_uint2 order by 1,2;
+delete from auto_inc_uint2;
+insert into auto_inc_uint2(col2) values(4);
+select * from auto_inc_uint2 order by 1,2;
+drop table auto_inc_uint2;
+
+select 18446744073709551615::int16::int4;
+create table auto_inc_int4 (
+    col1 int4 auto_increment primary key,
+    col2 int
+);
+insert into auto_inc_int4 values(2147483647, 1);
+insert into auto_inc_int4(col2) values(2);
+insert into auto_inc_int4(col2) values(3);
+select * from auto_inc_int4 order by 1,2;
+delete from auto_inc_int4;
+insert into auto_inc_int4(col2) values(4);
+select * from auto_inc_int4 order by 1,2;
+drop table auto_inc_int4;
+
+select 18446744073709551615::int16::uint4;
+create table auto_inc_uint4 (
+    col1 int4 unsigned auto_increment primary key,
+    col2 int
+);
+insert into auto_inc_uint4 values(4294967295, 1);
+insert into auto_inc_uint4(col2) values(2);
+insert into auto_inc_uint4(col2) values(3);
+select * from auto_inc_uint4 order by 1,2;
+delete from auto_inc_uint4;
+insert into auto_inc_uint4(col2) values(4);
+select * from auto_inc_uint4 order by 1,2;
+drop table auto_inc_uint4;
+
+select 18446744073709551615::int16::int8;
+create table auto_inc_int8 (
+    col1 int8 auto_increment primary key,
+    col2 int
+);
+insert into auto_inc_int8 values(9223372036854775807, 1);
+insert into auto_inc_int8(col2) values(2);
+insert into auto_inc_int8(col2) values(3);
+select * from auto_inc_int8 order by 1,2;
+delete from auto_inc_int8;
+insert into auto_inc_int8(col2) values(4);
+select * from auto_inc_int8 order by 1,2;
+drop table auto_inc_int8;
+
+select 18446744073709551616::int16::uint8;
+create table auto_inc_uint8 (
+    col1 int8 unsigned auto_increment primary key,
+    col2 int
+);
+insert into auto_inc_uint8 values(18446744073709551615, 1);
+insert into auto_inc_uint8(col2) values(2);
+insert into auto_inc_uint8(col2) values(3);
+select * from auto_inc_uint8 order by 1,2;
+delete from auto_inc_uint8;
+insert into auto_inc_uint8(col2) values(4);
+select * from auto_inc_uint8 order by 1,2;
+drop table auto_inc_uint8;
+
 drop schema uint_auto_increment cascade;
 reset current_schema;
