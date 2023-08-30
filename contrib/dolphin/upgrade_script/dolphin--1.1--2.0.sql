@@ -8049,3 +8049,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_to_bool(json)
 RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as 
 'select cast(cast($1 as text) as boolean)';
 CREATE CAST (json AS boolean) WITH FUNCTION json_to_bool(json) AS IMPLICIT;
+
+DROP FUNCTION IF EXISTS pg_catalog.bit_bin_in(cstring, oid, integer);
+CREATE OR REPLACE FUNCTION pg_catalog.bit_bin_in(cstring, oid, integer) RETURNS bit LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','bit_bin_in';

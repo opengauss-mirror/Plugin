@@ -31,6 +31,7 @@
 #include "utils/syscache.h"
 #ifdef DOLPHIN
 #include "plugin_utils/varbit.h"
+extern "C" Datum bit_bin_in(PG_FUNCTION_ARGS);
 #else
 #include "utils/varbit.h"
 #endif
