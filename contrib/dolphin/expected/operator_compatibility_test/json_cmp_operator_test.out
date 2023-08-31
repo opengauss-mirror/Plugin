@@ -25,6 +25,7 @@ CREATE TABLE test_json_table
     `numeric` decimal(20, 6),
     `bit1` bit(1),
     `bit64` bit(64),
+    `boolean` boolean,
     `date` date,
     `time` time,
     `time(4)` time(4),
@@ -48,7 +49,7 @@ CREATE TABLE test_json_table
 );
 NOTICE:  CREATE TABLE will create implicit set "test_json_table_set_t_set" for column "test_json_table.set_t"
 insert into test_json_table values(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                                   b'1', b'111',
+                                   b'1', b'111', true,
                                    '2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023',
                                    '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a',
                                    'a', 'a,c',
@@ -311,6 +312,26 @@ select `bit64`, `json`,
                               bit64                               |       json       | json>bit64 | json>=bit64 | json<bit64 | json<=bit64 | json!=bit64 | json<>bit64 | json=bit64 | json<=>bit64 
 ------------------------------------------------------------------+------------------+------------+-------------+------------+-------------+-------------+-------------+------------+--------------
  0000000000000000000000000000000000000000000000000000000000000111 | {"a": 1, "b": 2} | t          | t           | f          | f           | t           | t           | f          | f
+(1 row)
+
+select `boolean`, `json`,
+       `boolean` > `json` as `boolean>json`, `boolean` >= `json` as `boolean>=json`,
+       `boolean` < `json` as `boolean<json`, `boolean` <= `json` as `boolean<=json`,
+       `boolean` != `json` as `boolean!=json`, `boolean` <> `json` as `boolean<>json`,
+       `boolean` = `json` as `boolean=json`, `boolean` <=> `json` as `boolean<=>json` from test_json_table;
+ boolean |       json       | boolean>json | boolean>=json | boolean<json | boolean<=json | boolean!=json | boolean<>json | boolean=json | boolean<=>json 
+---------+------------------+--------------+---------------+--------------+---------------+---------------+---------------+--------------+----------------
+ t       | {"a": 1, "b": 2} | f            | f             | t            | t             | t             | t             | f            | f
+(1 row)
+
+select `boolean`, `json`,
+       `json` > `boolean` as `json>boolean`, `json` >= `boolean` as `json>=boolean`,
+       `json` < `boolean` as `json<boolean`, `json` <= `boolean` as `json<=boolean`,
+       `json` != `boolean` as `json!=boolean`, `json` <> `boolean` as `json<>boolean`,
+       `json` = `boolean` as `json=boolean`, `json` <=> `boolean` as `json<=>boolean` from test_json_table;
+ boolean |       json       | json>boolean | json>=boolean | json<boolean | json<=boolean | json!=boolean | json<>boolean | json=boolean | json<=>boolean 
+---------+------------------+--------------+---------------+--------------+---------------+---------------+---------------+--------------+----------------
+ t       | {"a": 1, "b": 2} | t            | t             | f            | f             | t             | t             | f            | f
 (1 row)
 
 select `date`, `json`,

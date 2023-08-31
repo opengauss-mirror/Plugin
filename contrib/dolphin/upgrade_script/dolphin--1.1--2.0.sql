@@ -7870,6 +7870,9 @@ CREATE OPERATOR pg_catalog.=(leftarg = text, rightarg = json, procedure = pg_cat
 DROP FUNCTION IF EXISTS pg_catalog.json_eq(bit, json);
 CREATE OR REPLACE FUNCTION pg_catalog.json_eq(bit, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_eq';
 CREATE OPERATOR pg_catalog.=(leftarg = bit, rightarg = json, procedure = pg_catalog.json_eq);
+DROP FUNCTION IF EXISTS pg_catalog.json_eq(boolean, json);
+CREATE OR REPLACE FUNCTION pg_catalog.json_eq(boolean, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_eq';
+CREATE OPERATOR pg_catalog.=(leftarg = boolean, rightarg = json, procedure = pg_catalog.json_eq);
 DROP FUNCTION IF EXISTS pg_catalog.json_eq(year, json);
 CREATE OR REPLACE FUNCTION pg_catalog.json_eq(year, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_eq';
 CREATE OPERATOR pg_catalog.=(leftarg = year, rightarg = json, procedure = pg_catalog.json_eq);
@@ -7883,6 +7886,9 @@ CREATE OPERATOR pg_catalog.!=(leftarg = text, rightarg = json, procedure = pg_ca
 DROP FUNCTION IF EXISTS pg_catalog.json_ne(bit, json);
 CREATE OR REPLACE FUNCTION pg_catalog.json_ne(bit, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ne';
 CREATE OPERATOR pg_catalog.!=(leftarg = bit, rightarg = json, procedure = pg_catalog.json_ne);
+DROP FUNCTION IF EXISTS pg_catalog.json_ne(boolean, json);
+CREATE OR REPLACE FUNCTION pg_catalog.json_ne(boolean, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ne';
+CREATE OPERATOR pg_catalog.!=(leftarg = boolean, rightarg = json, procedure = pg_catalog.json_ne);
 DROP FUNCTION IF EXISTS pg_catalog.json_ne(year, json);
 CREATE OR REPLACE FUNCTION pg_catalog.json_ne(year, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ne';
 CREATE OPERATOR pg_catalog.!=(leftarg = year, rightarg = json, procedure = pg_catalog.json_ne);
@@ -7896,6 +7902,9 @@ CREATE OPERATOR pg_catalog.>(leftarg = text, rightarg = json, procedure = pg_cat
 DROP FUNCTION IF EXISTS pg_catalog.json_gt(bit, json);
 CREATE OR REPLACE FUNCTION pg_catalog.json_gt(bit, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_gt';
 CREATE OPERATOR pg_catalog.>(leftarg = bit, rightarg = json, procedure = pg_catalog.json_gt);
+DROP FUNCTION IF EXISTS pg_catalog.json_gt(boolean, json);
+CREATE OR REPLACE FUNCTION pg_catalog.json_gt(boolean, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_gt';
+CREATE OPERATOR pg_catalog.>(leftarg = boolean, rightarg = json, procedure = pg_catalog.json_gt);
 DROP FUNCTION IF EXISTS pg_catalog.json_gt(year, json);
 CREATE OR REPLACE FUNCTION pg_catalog.json_gt(year, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_gt';
 CREATE OPERATOR pg_catalog.>(leftarg = year, rightarg = json, procedure = pg_catalog.json_gt);
@@ -7909,6 +7918,9 @@ CREATE OPERATOR pg_catalog.>=(leftarg = text, rightarg = json, procedure = pg_ca
 DROP FUNCTION IF EXISTS pg_catalog.json_ge(bit, json);
 CREATE OR REPLACE FUNCTION pg_catalog.json_ge(bit, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ge';
 CREATE OPERATOR pg_catalog.>=(leftarg = bit, rightarg = json, procedure = pg_catalog.json_ge);
+DROP FUNCTION IF EXISTS pg_catalog.json_ge(boolean, json);
+CREATE OR REPLACE FUNCTION pg_catalog.json_ge(boolean, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ge';
+CREATE OPERATOR pg_catalog.>=(leftarg = boolean, rightarg = json, procedure = pg_catalog.json_ge);
 DROP FUNCTION IF EXISTS pg_catalog.json_ge(year, json);
 CREATE OR REPLACE FUNCTION pg_catalog.json_ge(year, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_ge';
 CREATE OPERATOR pg_catalog.>=(leftarg = year, rightarg = json, procedure = pg_catalog.json_ge);
@@ -7922,6 +7934,9 @@ CREATE OPERATOR pg_catalog.<(leftarg = text, rightarg = json, procedure = pg_cat
 DROP FUNCTION IF EXISTS pg_catalog.json_lt(bit, json);
 CREATE OR REPLACE FUNCTION pg_catalog.json_lt(bit, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_lt';
 CREATE OPERATOR pg_catalog.<(leftarg = bit, rightarg = json, procedure = pg_catalog.json_lt);
+DROP FUNCTION IF EXISTS pg_catalog.json_lt(boolean, json);
+CREATE OR REPLACE FUNCTION pg_catalog.json_lt(boolean, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_lt';
+CREATE OPERATOR pg_catalog.<(leftarg = boolean, rightarg = json, procedure = pg_catalog.json_lt);
 DROP FUNCTION IF EXISTS pg_catalog.json_lt(year, json);
 CREATE OR REPLACE FUNCTION pg_catalog.json_lt(year, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_lt';
 CREATE OPERATOR pg_catalog.<(leftarg = year, rightarg = json, procedure = pg_catalog.json_lt);
@@ -7935,6 +7950,9 @@ CREATE OPERATOR pg_catalog.<=(leftarg = text, rightarg = json, procedure = pg_ca
 DROP FUNCTION IF EXISTS pg_catalog.json_le(bit, json);
 CREATE OR REPLACE FUNCTION pg_catalog.json_le(bit, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_le';
 CREATE OPERATOR pg_catalog.<=(leftarg = bit, rightarg = json, procedure = pg_catalog.json_le);
+DROP FUNCTION IF EXISTS pg_catalog.json_le(boolean, json);
+CREATE OR REPLACE FUNCTION pg_catalog.json_le(boolean, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_le';
+CREATE OPERATOR pg_catalog.<=(leftarg = boolean, rightarg = json, procedure = pg_catalog.json_le);
 DROP FUNCTION IF EXISTS pg_catalog.json_le(year, json);
 CREATE OR REPLACE FUNCTION pg_catalog.json_le(year, json) RETURNS bool LANGUAGE C IMMUTABLE as '$libdir/dolphin','json_le';
 CREATE OPERATOR pg_catalog.<=(leftarg = year, rightarg = json, procedure = pg_catalog.json_le);
@@ -8048,7 +8066,7 @@ DROP FUNCTION IF EXISTS pg_catalog.json_to_bool(json);
 CREATE OR REPLACE FUNCTION pg_catalog.json_to_bool(json) 
 RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as 
 'select cast(cast($1 as text) as boolean)';
-CREATE CAST (json AS boolean) WITH FUNCTION json_to_bool(json) AS IMPLICIT;
+CREATE CAST (json AS boolean) WITH FUNCTION json_to_bool(json) AS ASSIGNMENT;
 
 DROP FUNCTION IF EXISTS pg_catalog.bit_bin_in(cstring, oid, integer);
 CREATE OR REPLACE FUNCTION pg_catalog.bit_bin_in(cstring, oid, integer) RETURNS bit LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','bit_bin_in';

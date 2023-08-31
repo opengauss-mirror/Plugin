@@ -31,6 +31,7 @@ CREATE TABLE test_json_table
     `numeric` decimal(20, 6),
     `bit1` bit(1),
     `bit64` bit(64),
+    `boolean` boolean,
     `date` date,
     `time` time,
     `time(4)` time(4),
@@ -276,6 +277,23 @@ CREATE TABLE test_json_type AS SELECT
 `bit64` xor `json` AS `bit64_xor_json`,
 `bit64` and `json` AS `bit64_and_json`,
 `bit64` or `json` AS `bit64_or_json`,
+`boolean` + `json` AS `boolean+json`,
+`boolean` - `json` AS `boolean-json`,
+`boolean` * `json` AS `boolean*json`,
+`boolean` / `json` AS `boolean/json`,
+`boolean` % `json` AS `boolean%json`,
+-- `boolean` ^ `json` AS `boolean^json`,
+`boolean` >> `json` AS `boolean>>json`,
+`boolean` << `json` AS `boolean<<json`,
+`boolean` | `json` AS `boolean|json`,
+`boolean` & `json` AS `boolean&json`,
+`boolean` || `json` AS `boolean||json`,
+`boolean` && `json` AS `boolean&&json`,
+`boolean` div `json` AS `boolean_div_json`,
+`boolean` mod `json` AS `boolean_mod_json`,
+-- `boolean` xor `json` AS `boolean_xor_json`,
+`boolean` and `json` AS `boolean_and_json`,
+`boolean` or `json` AS `boolean_or_json`,
 `date` + `json` AS `date+json`,
 `date` - `json` AS `date-json`,
 `date` * `json` AS `date*json`,
@@ -820,6 +838,23 @@ CREATE TABLE test_json_type AS SELECT
 `json` xor `bit64` AS `json_xor_bit64`,
 `json` and `bit64` AS `json_and_bit64`,
 `json` or `bit64` AS `json_or_bit64`,
+`json` + `boolean` AS `json+boolean`,
+`json` - `boolean` AS `json-boolean`,
+`json` * `boolean` AS `json*boolean`,
+`json` / `boolean` AS `json/boolean`,
+`json` % `boolean` AS `json%boolean`,
+-- `json` ^ `boolean` AS `json^boolean`,
+`json` >> `boolean` AS `json>>boolean`,
+`json` << `boolean` AS `json<<boolean`,
+`json` | `boolean` AS `json|boolean`,
+`json` & `boolean` AS `json&boolean`,
+`json` || `boolean` AS `json||boolean`,
+`json` && `boolean` AS `json&&boolean`,
+`json` div `boolean` AS `json_div_boolean`,
+`json` mod `boolean` AS `json_mod_boolean`,
+-- `json` xor `boolean` AS `json_xor_boolean`,
+`json` and `boolean` AS `json_and_boolean`,
+`json` or `boolean` AS `json_or_boolean`,
 `json` + `date` AS `json+date`,
 `json` - `date` AS `json-date`,
 `json` * `date` AS `json*date`,
@@ -1173,7 +1208,7 @@ delete from test_json_type;
 delete from test_json_table;
 insert into test_json_type values(null);
 insert into test_json_table values(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                                   b'1', b'111',
+                                   b'1', b'111', true,
                                    '2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023',
                                    '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a',
                                    'a', 'a,c',
@@ -1399,6 +1434,23 @@ UPDATE test_json_type, test_json_table SET test_json_type.`bit64_mod_json` = tes
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64_xor_json` = test_json_table.`bit64` xor test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64_and_json` = test_json_table.`bit64` and test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64_or_json` = test_json_table.`bit64` or test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean+json` = test_json_table.`boolean` + test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean-json` = test_json_table.`boolean` - test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean*json` = test_json_table.`boolean` * test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean/json` = test_json_table.`boolean` / test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean%json` = test_json_table.`boolean` % test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean^json` = test_json_table.`boolean` ^ test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean>>json` = test_json_table.`boolean` >> test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean<<json` = test_json_table.`boolean` << test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean|json` = test_json_table.`boolean` | test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean&json` = test_json_table.`boolean` & test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean||json` = test_json_table.`boolean` || test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean&&json` = test_json_table.`boolean` && test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean_div_json` = test_json_table.`boolean` div test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean_mod_json` = test_json_table.`boolean` mod test_json_table.`json`;
+-- UPDATE test_json_type, test_json_table SET test_json_type.`boolean_xor_json` = test_json_table.`boolean` xor test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean_and_json` = test_json_table.`boolean` and test_json_table.`json`;
+UPDATE test_json_type, test_json_table SET test_json_type.`boolean_or_json` = test_json_table.`boolean` or test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`date+json` = test_json_table.`date` + test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`date-json` = test_json_table.`date` - test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`date*json` = test_json_table.`date` * test_json_table.`json`;
@@ -1943,6 +1995,23 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_bit64` = tes
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_bit64` = test_json_table.`json` xor test_json_table.`bit64`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_bit64` = test_json_table.`json` and test_json_table.`bit64`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_bit64` = test_json_table.`json` or test_json_table.`bit64`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json+boolean` = test_json_table.`json` + test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json-boolean` = test_json_table.`json` - test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json*boolean` = test_json_table.`json` * test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json/boolean` = test_json_table.`json` / test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json%boolean` = test_json_table.`json` % test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json^boolean` = test_json_table.`json` ^ test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json>>boolean` = test_json_table.`json` >> test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json<<boolean` = test_json_table.`json` << test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json|boolean` = test_json_table.`json` | test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json&boolean` = test_json_table.`json` & test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json||boolean` = test_json_table.`json` || test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json&&boolean` = test_json_table.`json` && test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json_div_boolean` = test_json_table.`json` div test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_boolean` = test_json_table.`json` mod test_json_table.`boolean`;
+-- UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_boolean` = test_json_table.`json` xor test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json_and_boolean` = test_json_table.`json` and test_json_table.`boolean`;
+UPDATE test_json_type, test_json_table SET test_json_type.`json_or_boolean` = test_json_table.`json` or test_json_table.`boolean`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json+date` = test_json_table.`json` + test_json_table.`date`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json-date` = test_json_table.`json` - test_json_table.`date`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json*date` = test_json_table.`json` * test_json_table.`date`;
