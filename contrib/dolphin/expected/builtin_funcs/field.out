@@ -93,6 +93,123 @@ select field(' ','@',null,' ','',' ');
      3
 (1 row)
 
+select field(1.1000000000000001888, 1.1000000000000001777);
+ field 
+-------
+     0
+(1 row)
+
+select field(1.1000000000000001888, 1.1000000000000001777, 2);
+ field 
+-------
+     0
+(1 row)
+
+select field(1.1000000000000001888, 1.1000000000000001777, '2');
+ field 
+-------
+     1
+(1 row)
+
+select field(1.1000000000000001888, 1.1000000000000001777, 'abc');
+ field 
+-------
+     1
+(1 row)
+
+select field(1.1000000000000001888, 'abc', 1.1000000000000001777);
+ field 
+-------
+     2
+(1 row)
+
+set b_format_behavior_compat_options to 'enable_multi_charset';
+set names 'utf8mb4' collate 'utf8mb4_bin';
+select field('abc', 'ABC');
+ field 
+-------
+     0
+(1 row)
+
+select field('abc', 'ABC', 2);
+ field 
+-------
+     1
+(1 row)
+
+select field('abc', 'ABC', '2');
+ field 
+-------
+     0
+(1 row)
+
+select field('abc', 'ABC', 1.1000000000000001888);
+ field 
+-------
+     1
+(1 row)
+
+select field('abc', 'ABCd', 1.1000000000000001888);
+ field 
+-------
+     1
+(1 row)
+
+select field('abc', 1.1000000000000001888, 'ABC');
+ field 
+-------
+     2
+(1 row)
+
+select field('abc', 1.1000000000000001888, 'ABCd');
+ field 
+-------
+     2
+(1 row)
+
+set names 'utf8mb4' collate 'utf8mb4_general_ci';
+select field('abc', 'ABC');
+ field 
+-------
+     1
+(1 row)
+
+select field('abc', 'ABC', 2);
+ field 
+-------
+     1
+(1 row)
+
+select field('abc', 'ABC', '2');
+ field 
+-------
+     1
+(1 row)
+
+select field('abc', 'ABC', 1.1000000000000001888);
+ field 
+-------
+     1
+(1 row)
+
+select field('abc', 'ABCd', 1.1000000000000001888);
+ field 
+-------
+     1
+(1 row)
+
+select field('abc', 1.1000000000000001888, 'ABC');
+ field 
+-------
+     2
+(1 row)
+
+select field('abc', 1.1000000000000001888, 'ABCd');
+ field 
+-------
+     2
+(1 row)
+
 create table tb_1116592(c1 int, c2 varchar, c3 text);
 insert into tb_1116592 values(1, 'test1', 'city1');
 insert into tb_1116592 values(2, 'test2', 'city2');
