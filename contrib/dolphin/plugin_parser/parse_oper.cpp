@@ -1617,8 +1617,7 @@ static bool TransformJsonDolphinType(char* oprname, Oid& ltypeId, Oid& rtypeId)
                 rtypeId = INT4OID;
             }
             transformed = true;
-        }
-        else if (strcmp("%", oprname) == 0 || strcmp("^", oprname) == 0 ||
+        } else if (strcmp("%", oprname) == 0 || strcmp("^", oprname) == 0 ||
             // mod, xor
             strcmp("|", oprname) == 0 || strcmp("&", oprname) == 0 ||
             // or, and
