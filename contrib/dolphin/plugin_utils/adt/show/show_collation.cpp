@@ -50,9 +50,9 @@ void ShowCollationFirstCall(PG_FUNCTION_ARGS)
     fctx->tuple_desc = ShowCollationTupleDesc();
     char *query = "select collname as collation, "
                   "       lower(pg_encoding_to_char(collencoding))::name as charset, oid as id, "
-                  "       NULL     as default, "
-                  "       'Yes'    as compiled, "
-                  "       NULL     as sortlen "
+                  "       collisdef::text       as default, "
+                  "       'Yes'                 as compiled, "
+                  "       NULL                  as sortlen "
                   "from pg_collation "
                   "where charset IN (select charset from show_character_set() where server = true) "
                   "order by collname;";
