@@ -166,6 +166,7 @@ WARNING:  invalid input syntax for type bigint: "\x312e323361"
 WARNING:  invalid input syntax for type bigint: "\x312e323361"
 WARNING:  invalid input syntax for type bigint: "\x312e323361"
 WARNING:  invalid input syntax for type bigint: "\x312e323361"
+WARNING:  Truncated incorrect INTEGER value: '\x312e323361'
 WARNING:  invalid input syntax for type bigint: "\x312e323361"
 WARNING:  invalid input syntax for type bigint: "\x312e323361"
 WARNING:  invalid input syntax for type bigint: "\x312e323361"
@@ -2305,59 +2306,108 @@ select 1 xor 0;
 (1 row)
 
 select '-12.3abc' xor null;
-ERROR:  invalid input syntax for type int16: "-12.3abc"
+WARNING:  invalid input syntax for type int16: "-12.3abc"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
 SQL function "xor" statement 1
 referenced column: xor
+ xor 
+-----
+    
+(1 row)
+
 select '-12.3abc' xor -100.1;
-ERROR:  invalid input syntax for type int16: "-12.3abc"
+WARNING:  invalid input syntax for type int16: "-12.3abc"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
 SQL function "xor" statement 1
 referenced column: xor
+ xor 
+-----
+   0
+(1 row)
+
 select '-12.3abc' xor 0;
-ERROR:  invalid input syntax for type int16: "-12.3abc"
+WARNING:  invalid input syntax for type int16: "-12.3abc"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
 SQL function "xor" statement 1
 referenced column: xor
+ xor 
+-----
+   1
+(1 row)
+
 select '-12.3abc' xor 5;
-ERROR:  invalid input syntax for type int16: "-12.3abc"
+WARNING:  invalid input syntax for type int16: "-12.3abc"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
 SQL function "xor" statement 1
 referenced column: xor
+ xor 
+-----
+   0
+(1 row)
+
 select '-12.3abc' xor 158.3;
-ERROR:  invalid input syntax for type int16: "-12.3abc"
+WARNING:  invalid input syntax for type int16: "-12.3abc"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
 SQL function "xor" statement 1
 referenced column: xor
+ xor 
+-----
+   0
+(1 row)
+
 select '-12.3abc' xor -8.222e4;
-ERROR:  invalid input syntax for type int16: "-12.3abc"
+WARNING:  invalid input syntax for type int16: "-12.3abc"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
 SQL function "xor" statement 1
 referenced column: xor
+ xor 
+-----
+   0
+(1 row)
+
 select '-12.3abc' xor true;
-ERROR:  invalid input syntax for type int16: "-12.3abc"
+WARNING:  invalid input syntax for type int16: "-12.3abc"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
 SQL function "xor" statement 1
 referenced column: xor
+ xor 
+-----
+   0
+(1 row)
+
 select '-12.3abc' xor false;
-ERROR:  invalid input syntax for type int16: "-12.3abc"
+WARNING:  invalid input syntax for type int16: "-12.3abc"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
 SQL function "xor" statement 1
 referenced column: xor
+ xor 
+-----
+   1
+(1 row)
+
 select '-12.3abc' xor 'null';
-ERROR:  invalid input syntax for type int16: "-12.3abc"
+WARNING:  invalid input syntax for type int16: "-12.3abc"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
 SQL function "xor" statement 1
 referenced column: xor
+WARNING:  Truncated incorrect INTEGER value: 'null'
+CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
+ xor 
+-----
+   1
+(1 row)
+
 create table t1 (a int, b varchar(20));
 insert into t1 values(1, 'true');
 select a = 1 xor b = 'true' from t1;

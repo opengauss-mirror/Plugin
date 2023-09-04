@@ -2,7 +2,7 @@ create schema tinyint_cast;
 set current_schema to 'tinyint_cast';
 create table t1(a int1);
 insert into t1 values('');
-ERROR:  invalid input syntax for integer: ""
+ERROR:  invalid input syntax for tinyint: ""
 LINE 1: insert into t1 values('');
                               ^
 CONTEXT:  referenced column: a

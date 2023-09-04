@@ -3158,12 +3158,16 @@ select * from t_v21 natural join t_enum;
 select * from t_v21 natural join t_set;
 --?.*
 select * from t_v22 natural join t_v1;
+WARNING:  invalid input syntax for tinyint: "1.23a                                                                                               "
+WARNING:  invalid input syntax for tinyint: "1.23a                                                                                               "
                                                  col1                                                 
 ------------------------------------------------------------------------------------------------------
  1.23a                                                                                               
 (1 row)
 
 select * from t_v22 natural join t_v2;
+WARNING:  invalid input syntax for tinyint: "1.23a                                                                                               "
+WARNING:  invalid input syntax for tinyint: "1.23a                                                                                               "
                                                  col1                                                 
 ------------------------------------------------------------------------------------------------------
  1.23a                                                                                               
@@ -3347,12 +3351,16 @@ select * from t_v22 natural join t_enum;
 select * from t_v22 natural join t_set;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_v23 natural join t_v1;
+WARNING:  invalid input syntax for tinyint: "1.23a"
+WARNING:  invalid input syntax for tinyint: "1.23a"
  col1  
 -------
  1.23a
 (1 row)
 
 select * from t_v23 natural join t_v2;
+WARNING:  invalid input syntax for tinyint: "1.23a"
+WARNING:  invalid input syntax for tinyint: "1.23a"
  col1  
 -------
  1.23a
@@ -4517,12 +4525,16 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v30 natural join t_v1;
+WARNING:  invalid input syntax for tinyint: "1.23a"
+WARNING:  invalid input syntax for tinyint: "1.23a"
  col1  
 -------
  1.23a
 (1 row)
 
 select * from t_v30 natural join t_v2;
+WARNING:  invalid input syntax for tinyint: "1.23a"
+WARNING:  invalid input syntax for tinyint: "1.23a"
  col1  
 -------
  1.23a

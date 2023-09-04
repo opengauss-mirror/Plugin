@@ -167,24 +167,40 @@ CONTEXT:  referenced column: smalldatetime
 (1 row)
 
 select int 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for integer: "keyword_test"
+LINE 1: select int 'keyword_test' from t_alias_case0001_1;
+                   ^
+CONTEXT:  referenced column: int4
  int4 
 ------
     0
 (1 row)
 
 select tinyint 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for tinyint: "keyword_test"
+LINE 1: select tinyint 'keyword_test' from t_alias_case0001_1;
+                       ^
+CONTEXT:  referenced column: int1
  int1 
 ------
  0
 (1 row)
 
 select smallint 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for smallint: "keyword_test"
+LINE 1: select smallint 'keyword_test' from t_alias_case0001_1;
+                        ^
+CONTEXT:  referenced column: int2
  int2 
 ------
     0
 (1 row)
 
 select mediumint 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for integer: "keyword_test"
+LINE 1: select mediumint 'keyword_test' from t_alias_case0001_1;
+                         ^
+CONTEXT:  referenced column: int4
  int4 
 ------
     0
@@ -223,6 +239,10 @@ CONTEXT:  referenced column: float8
 (1 row)
 
 select BINARY_INTEGER 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for integer: "keyword_test"
+LINE 1: select BINARY_INTEGER 'keyword_test' from t_alias_case0001_1...
+                              ^
+CONTEXT:  referenced column: int4
  int4 
 ------
     0

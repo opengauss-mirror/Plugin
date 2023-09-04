@@ -11,23 +11,42 @@ CONTEXT:  referenced column: varchar
 (1 row)
 
 SELECT CONVERT('1.1', signed);
-ERROR:  invalid input syntax for type int16: "1.1"
+WARNING:  invalid input syntax for type int16: "1.1"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: int8
+ int8 
+------
+    1
+(1 row)
+
 SELECT CONVERT('1.5', signed);
-ERROR:  invalid input syntax for type int16: "1.5"
+WARNING:  invalid input syntax for type int16: "1.5"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: int8
+ int8 
+------
+    1
+(1 row)
+
 SELECT CONVERT('abc', signed);
+WARNING:  Truncated incorrect INTEGER value: 'abc'
+CONTEXT:  referenced column: int8
  int8 
 ------
     0
 (1 row)
 
 SELECT CONVERT('1111111111111111111111111111111111111111111', signed);
-ERROR:  value "1111111111111111111111111111111111111111111" is out of range for type int16
+WARNING:  value "1111111111111111111111111111111111111111111" is out of range for type int16
 DETAIL:  text exceeds the length of int16
 CONTEXT:  referenced column: int8
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
 SELECT CONVERT(1111111111111111111111111111111111111111111, signed);
 WARNING:  bigint out of range
 CONTEXT:  referenced column: int8
@@ -47,23 +66,42 @@ CONTEXT:  referenced column: int8
 (1 row)
 
 SELECT CONVERT('1.1', unsigned);
-ERROR:  invalid input syntax for type int16: "1.1"
+WARNING:  invalid input syntax for type int16: "1.1"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: uint8
+ uint8 
+-------
+ 1
+(1 row)
+
 SELECT CONVERT('1.5', unsigned);
-ERROR:  invalid input syntax for type int16: "1.5"
+WARNING:  invalid input syntax for type int16: "1.5"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: uint8
+ uint8 
+-------
+ 1
+(1 row)
+
 SELECT CONVERT('abc', unsigned);
+WARNING:  Truncated incorrect INTEGER value: 'abc'
+CONTEXT:  referenced column: uint8
  uint8 
 -------
  0
 (1 row)
 
 SELECT CONVERT('1111111111111111111111111111111111111111111', unsigned);
-ERROR:  value "1111111111111111111111111111111111111111111" is out of range for type int16
+WARNING:  value "1111111111111111111111111111111111111111111" is out of range for type int16
 DETAIL:  text exceeds the length of int16
 CONTEXT:  referenced column: uint8
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 SELECT CONVERT(1111111111111111111111111111111111111111111, unsigned);
 WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
