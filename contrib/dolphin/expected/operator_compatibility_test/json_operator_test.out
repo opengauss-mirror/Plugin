@@ -2402,6 +2402,8 @@ CONTEXT:  referenced column: int8/json
 ERROR:  division by zero
 CONTEXT:  referenced column: int8/json
 UPDATE test_json_type, test_json_table SET test_json_type.`int8%json` = test_json_table.`int8` % test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: int8%json
 UPDATE test_json_type, test_json_table SET test_json_type.`int8^json` = test_json_table.`int8` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: int8^json
@@ -2412,7 +2414,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`int8<<json` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: int8<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`int8|json` = test_json_table.`int8` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: int8|json
 UPDATE test_json_type, test_json_table SET test_json_type.`int8&json` = test_json_table.`int8` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: int8&json
 UPDATE test_json_type, test_json_table SET test_json_type.`int8||json` = test_json_table.`int8` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`int8&&json` = test_json_table.`int8` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`int8_div_json` = test_json_table.`int8` div test_json_table.`json`;
@@ -2439,6 +2445,8 @@ CONTEXT:  referenced column: uint8/json
 ERROR:  division by zero
 CONTEXT:  referenced column: uint8/json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8%json` = test_json_table.`uint8` % test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: uint8%json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8^json` = test_json_table.`uint8` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: uint8^json
@@ -2449,7 +2457,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`uint8<<json` = test_j
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: uint8<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8|json` = test_json_table.`uint8` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: uint8|json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8&json` = test_json_table.`uint8` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: uint8&json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8||json` = test_json_table.`uint8` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8&&json` = test_json_table.`uint8` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8_div_json` = test_json_table.`uint8` div test_json_table.`json`;
@@ -2486,7 +2498,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`float4<<json` = test_
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: float4<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`float4|json` = test_json_table.`float4` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: float4|json
 UPDATE test_json_type, test_json_table SET test_json_type.`float4&json` = test_json_table.`float4` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: float4&json
 UPDATE test_json_type, test_json_table SET test_json_type.`float4||json` = test_json_table.`float4` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`float4&&json` = test_json_table.`float4` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`float4_div_json` = test_json_table.`float4` div test_json_table.`json`;
@@ -2523,7 +2539,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`float8<<json` = test_
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: float8<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`float8|json` = test_json_table.`float8` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: float8|json
 UPDATE test_json_type, test_json_table SET test_json_type.`float8&json` = test_json_table.`float8` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: float8&json
 UPDATE test_json_type, test_json_table SET test_json_type.`float8||json` = test_json_table.`float8` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`float8&&json` = test_json_table.`float8` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`float8_div_json` = test_json_table.`float8` div test_json_table.`json`;
@@ -2560,7 +2580,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`numeric<<json` = test
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: numeric<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric|json` = test_json_table.`numeric` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: numeric|json
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric&json` = test_json_table.`numeric` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: numeric&json
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric||json` = test_json_table.`numeric` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric&&json` = test_json_table.`numeric` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric_div_json` = test_json_table.`numeric` div test_json_table.`json`;
@@ -2597,7 +2621,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`bit1<<json` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: bit1<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1|json` = test_json_table.`bit1` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: bit1|json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1&json` = test_json_table.`bit1` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: bit1&json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1||json` = test_json_table.`bit1` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1&&json` = test_json_table.`bit1` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1_div_json` = test_json_table.`bit1` div test_json_table.`json`;
@@ -2634,7 +2662,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`bit64<<json` = test_j
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: bit64<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64|json` = test_json_table.`bit64` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: bit64|json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64&json` = test_json_table.`bit64` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: bit64&json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64||json` = test_json_table.`bit64` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64&&json` = test_json_table.`bit64` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64_div_json` = test_json_table.`bit64` div test_json_table.`json`;
@@ -2671,7 +2703,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`date<<json` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: date<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`date|json` = test_json_table.`date` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: date|json
 UPDATE test_json_type, test_json_table SET test_json_type.`date&json` = test_json_table.`date` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: date&json
 UPDATE test_json_type, test_json_table SET test_json_type.`date||json` = test_json_table.`date` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`date&&json` = test_json_table.`date` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`date_div_json` = test_json_table.`date` div test_json_table.`json`;
@@ -2708,7 +2744,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`time<<json` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: time<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`time|json` = test_json_table.`time` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: time|json
 UPDATE test_json_type, test_json_table SET test_json_type.`time&json` = test_json_table.`time` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: time&json
 UPDATE test_json_type, test_json_table SET test_json_type.`time||json` = test_json_table.`time` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`time&&json` = test_json_table.`time` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`time_div_json` = test_json_table.`time` div test_json_table.`json`;
@@ -2745,7 +2785,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`time(4)<<json` = test
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: time(4)<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)|json` = test_json_table.`time(4)` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: time(4)|json
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)&json` = test_json_table.`time(4)` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: time(4)&json
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)||json` = test_json_table.`time(4)` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)&&json` = test_json_table.`time(4)` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)_div_json` = test_json_table.`time(4)` div test_json_table.`json`;
@@ -2784,7 +2828,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`datetime<<json` = tes
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: datetime<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime|json` = test_json_table.`datetime` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: datetime|json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime&json` = test_json_table.`datetime` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: datetime&json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime||json` = test_json_table.`datetime` || test_json_table.`json`;
 ERROR:  argument of OR must be type boolean, not type timestamp without time zone
 LINE 1: ..._json_table SET test_json_type.`datetime||json` = test_json_...
@@ -2843,7 +2891,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`datetime(4)<<json` = 
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: datetime(4)<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime(4)|json` = test_json_table.`datetime(4)` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: datetime(4)|json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime(4)&json` = test_json_table.`datetime(4)` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: datetime(4)&json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime(4)||json` = test_json_table.`datetime(4)` || test_json_table.`json`;
 ERROR:  argument of OR must be type boolean, not type timestamp without time zone
 LINE 1: ...on_table SET test_json_type.`datetime(4)||json` = test_json_...
@@ -2902,7 +2954,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`timestamp<<json` = te
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: timestamp<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp|json` = test_json_table.`timestamp` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: timestamp|json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp&json` = test_json_table.`timestamp` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: timestamp&json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp||json` = test_json_table.`timestamp` || test_json_table.`json`;
 ERROR:  argument of OR must be type boolean, not type timestamp with time zone
 LINE 1: ...json_table SET test_json_type.`timestamp||json` = test_json_...
@@ -2961,7 +3017,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`timestamp(4)<<json` =
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: timestamp(4)<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp(4)|json` = test_json_table.`timestamp(4)` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: timestamp(4)|json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp(4)&json` = test_json_table.`timestamp(4)` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: timestamp(4)&json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp(4)||json` = test_json_table.`timestamp(4)` || test_json_table.`json`;
 ERROR:  argument of OR must be type boolean, not type timestamp with time zone
 LINE 1: ...n_table SET test_json_type.`timestamp(4)||json` = test_json_...
@@ -3018,7 +3078,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`year<<json` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: year<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`year|json` = test_json_table.`year` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: year|json
 UPDATE test_json_type, test_json_table SET test_json_type.`year&json` = test_json_table.`year` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: year&json
 UPDATE test_json_type, test_json_table SET test_json_type.`year||json` = test_json_table.`year` || test_json_table.`json`;
 ERROR:  argument of OR must be type boolean, not type year
 LINE 1: ...test_json_table SET test_json_type.`year||json` = test_json_...
@@ -3077,20 +3141,24 @@ CONTEXT:  referenced column: char^json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: char^json
 UPDATE test_json_type, test_json_table SET test_json_type.`char>>json` = test_json_table.`char` >> test_json_table.`json`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for bigint: "1.23a"
 CONTEXT:  referenced column: char>>json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: char>>json
 UPDATE test_json_type, test_json_table SET test_json_type.`char<<json` = test_json_table.`char` << test_json_table.`json`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for bigint: "1.23a"
 CONTEXT:  referenced column: char<<json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: char<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`char|json` = test_json_table.`char` | test_json_table.`json`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for bigint: "1.23a"
+CONTEXT:  referenced column: char|json
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: char|json
 UPDATE test_json_type, test_json_table SET test_json_type.`char&json` = test_json_table.`char` & test_json_table.`json`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for bigint: "1.23a"
+CONTEXT:  referenced column: char&json
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: char&json
 UPDATE test_json_type, test_json_table SET test_json_type.`char||json` = test_json_table.`char` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`char&&json` = test_json_table.`char` && test_json_table.`json`;
@@ -3138,20 +3206,24 @@ CONTEXT:  referenced column: varchar^json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varchar^json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar>>json` = test_json_table.`varchar` >> test_json_table.`json`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for bigint: "1.23a"
 CONTEXT:  referenced column: varchar>>json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varchar>>json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar<<json` = test_json_table.`varchar` << test_json_table.`json`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for bigint: "1.23a"
 CONTEXT:  referenced column: varchar<<json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varchar<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar|json` = test_json_table.`varchar` | test_json_table.`json`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for bigint: "1.23a"
+CONTEXT:  referenced column: varchar|json
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: varchar|json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar&json` = test_json_table.`varchar` & test_json_table.`json`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for bigint: "1.23a"
+CONTEXT:  referenced column: varchar&json
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: varchar&json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar||json` = test_json_table.`varchar` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar&&json` = test_json_table.`varchar` && test_json_table.`json`;
@@ -3637,20 +3709,24 @@ CONTEXT:  referenced column: text^json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: text^json
 UPDATE test_json_type, test_json_table SET test_json_type.`text>>json` = test_json_table.`text` >> test_json_table.`json`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for bigint: "1.23a"
 CONTEXT:  referenced column: text>>json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: text>>json
 UPDATE test_json_type, test_json_table SET test_json_type.`text<<json` = test_json_table.`text` << test_json_table.`json`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for bigint: "1.23a"
 CONTEXT:  referenced column: text<<json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: text<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`text|json` = test_json_table.`text` | test_json_table.`json`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for bigint: "1.23a"
+CONTEXT:  referenced column: text|json
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: text|json
 UPDATE test_json_type, test_json_table SET test_json_type.`text&json` = test_json_table.`text` & test_json_table.`json`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for bigint: "1.23a"
+CONTEXT:  referenced column: text&json
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: text&json
 UPDATE test_json_type, test_json_table SET test_json_type.`text||json` = test_json_table.`text` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`text&&json` = test_json_table.`text` && test_json_table.`json`;
@@ -3692,7 +3768,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`enum_t<<json` = test_
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: enum_t<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t|json` = test_json_table.`enum_t` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: enum_t|json
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t&json` = test_json_table.`enum_t` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: enum_t&json
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t||json` = test_json_table.`enum_t` || test_json_table.`json`;
 --?.*
 LINE 1: ...st_json_table SET test_json_type.`enum_t||json` = test_json_...
@@ -3745,7 +3825,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`set_t<<json` = test_j
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: set_t<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t|json` = test_json_table.`set_t` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: set_t|json
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t&json` = test_json_table.`set_t` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: set_t&json
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t||json` = test_json_table.`set_t` || test_json_table.`json`;
 ERROR:  argument of OR must be type boolean, not type test_json_table_set_t_set
 LINE 1: ...est_json_table SET test_json_type.`set_t||json` = test_json_...
@@ -3792,7 +3876,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^int1` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^int1
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>int1` = test_json_table.`json` >> test_json_table.`int1`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>int1
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<int1` = test_json_table.`json` << test_json_table.`int1`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<int1
 UPDATE test_json_type, test_json_table SET test_json_type.`json|int1` = test_json_table.`json` | test_json_table.`int1`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json|int1
@@ -3829,7 +3917,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^uint1` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^uint1
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>uint1` = test_json_table.`json` >> test_json_table.`uint1`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>uint1
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<uint1` = test_json_table.`json` << test_json_table.`uint1`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<uint1
 UPDATE test_json_type, test_json_table SET test_json_type.`json|uint1` = test_json_table.`json` | test_json_table.`uint1`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json|uint1
@@ -3866,7 +3958,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^int2` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^int2
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>int2` = test_json_table.`json` >> test_json_table.`int2`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>int2
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<int2` = test_json_table.`json` << test_json_table.`int2`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<int2
 UPDATE test_json_type, test_json_table SET test_json_type.`json|int2` = test_json_table.`json` | test_json_table.`int2`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json|int2
@@ -3903,7 +3999,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^uint2` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^uint2
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>uint2` = test_json_table.`json` >> test_json_table.`uint2`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>uint2
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<uint2` = test_json_table.`json` << test_json_table.`uint2`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<uint2
 UPDATE test_json_type, test_json_table SET test_json_type.`json|uint2` = test_json_table.`json` | test_json_table.`uint2`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json|uint2
@@ -3940,7 +4040,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^int4` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^int4
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>int4` = test_json_table.`json` >> test_json_table.`int4`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>int4
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<int4` = test_json_table.`json` << test_json_table.`int4`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<int4
 UPDATE test_json_type, test_json_table SET test_json_type.`json|int4` = test_json_table.`json` | test_json_table.`int4`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json|int4
@@ -3977,7 +4081,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^uint4` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^uint4
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>uint4` = test_json_table.`json` >> test_json_table.`uint4`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>uint4
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<uint4` = test_json_table.`json` << test_json_table.`uint4`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<uint4
 UPDATE test_json_type, test_json_table SET test_json_type.`json|uint4` = test_json_table.`json` | test_json_table.`uint4`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json|uint4
@@ -4008,13 +4116,23 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/int8` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/int8
 UPDATE test_json_type, test_json_table SET test_json_type.`json%int8` = test_json_table.`json` % test_json_table.`int8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json%int8
 UPDATE test_json_type, test_json_table SET test_json_type.`json^int8` = test_json_table.`json` ^ test_json_table.`int8`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^int8
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>int8` = test_json_table.`json` >> test_json_table.`int8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>int8
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<int8` = test_json_table.`json` << test_json_table.`int8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<int8
 UPDATE test_json_type, test_json_table SET test_json_type.`json|int8` = test_json_table.`json` | test_json_table.`int8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|int8
 UPDATE test_json_type, test_json_table SET test_json_type.`json&int8` = test_json_table.`json` & test_json_table.`int8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&int8
 UPDATE test_json_type, test_json_table SET test_json_type.`json||int8` = test_json_table.`json` || test_json_table.`int8`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&int8` = test_json_table.`json` && test_json_table.`int8`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_int8` = test_json_table.`json` div test_json_table.`int8`;
@@ -4039,13 +4157,23 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/uint8` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/uint8
 UPDATE test_json_type, test_json_table SET test_json_type.`json%uint8` = test_json_table.`json` % test_json_table.`uint8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json%uint8
 UPDATE test_json_type, test_json_table SET test_json_type.`json^uint8` = test_json_table.`json` ^ test_json_table.`uint8`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^uint8
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>uint8` = test_json_table.`json` >> test_json_table.`uint8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>uint8
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<uint8` = test_json_table.`json` << test_json_table.`uint8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<uint8
 UPDATE test_json_type, test_json_table SET test_json_type.`json|uint8` = test_json_table.`json` | test_json_table.`uint8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|uint8
 UPDATE test_json_type, test_json_table SET test_json_type.`json&uint8` = test_json_table.`json` & test_json_table.`uint8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&uint8
 UPDATE test_json_type, test_json_table SET test_json_type.`json||uint8` = test_json_table.`json` || test_json_table.`uint8`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&uint8` = test_json_table.`json` && test_json_table.`uint8`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_uint8` = test_json_table.`json` div test_json_table.`uint8`;
@@ -4074,9 +4202,17 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^float4` = test_j
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^float4
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>float4` = test_json_table.`json` >> test_json_table.`float4`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>float4
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<float4` = test_json_table.`json` << test_json_table.`float4`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<float4
 UPDATE test_json_type, test_json_table SET test_json_type.`json|float4` = test_json_table.`json` | test_json_table.`float4`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|float4
 UPDATE test_json_type, test_json_table SET test_json_type.`json&float4` = test_json_table.`json` & test_json_table.`float4`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&float4
 UPDATE test_json_type, test_json_table SET test_json_type.`json||float4` = test_json_table.`json` || test_json_table.`float4`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&float4` = test_json_table.`json` && test_json_table.`float4`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_float4` = test_json_table.`json` div test_json_table.`float4`;
@@ -4105,9 +4241,17 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^float8` = test_j
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^float8
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>float8` = test_json_table.`json` >> test_json_table.`float8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>float8
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<float8` = test_json_table.`json` << test_json_table.`float8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<float8
 UPDATE test_json_type, test_json_table SET test_json_type.`json|float8` = test_json_table.`json` | test_json_table.`float8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|float8
 UPDATE test_json_type, test_json_table SET test_json_type.`json&float8` = test_json_table.`json` & test_json_table.`float8`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&float8
 UPDATE test_json_type, test_json_table SET test_json_type.`json||float8` = test_json_table.`json` || test_json_table.`float8`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&float8` = test_json_table.`json` && test_json_table.`float8`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_float8` = test_json_table.`json` div test_json_table.`float8`;
@@ -4136,9 +4280,17 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^numeric` = test_
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^numeric
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>numeric` = test_json_table.`json` >> test_json_table.`numeric`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>numeric
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<numeric` = test_json_table.`json` << test_json_table.`numeric`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<numeric
 UPDATE test_json_type, test_json_table SET test_json_type.`json|numeric` = test_json_table.`json` | test_json_table.`numeric`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|numeric
 UPDATE test_json_type, test_json_table SET test_json_type.`json&numeric` = test_json_table.`json` & test_json_table.`numeric`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&numeric
 UPDATE test_json_type, test_json_table SET test_json_type.`json||numeric` = test_json_table.`json` || test_json_table.`numeric`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&numeric` = test_json_table.`json` && test_json_table.`numeric`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_numeric` = test_json_table.`json` div test_json_table.`numeric`;
@@ -4179,7 +4331,11 @@ LINE 1: ...t_json_type.`json<<bit1` = test_json_table.`json` << test_js...
 HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json|bit1` = test_json_table.`json` | test_json_table.`bit1`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|bit1
 UPDATE test_json_type, test_json_table SET test_json_type.`json&bit1` = test_json_table.`json` & test_json_table.`bit1`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&bit1
 UPDATE test_json_type, test_json_table SET test_json_type.`json||bit1` = test_json_table.`json` || test_json_table.`bit1`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&bit1` = test_json_table.`json` && test_json_table.`bit1`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_bit1` = test_json_table.`json` div test_json_table.`bit1`;
@@ -4220,7 +4376,11 @@ LINE 1: ..._json_type.`json<<bit64` = test_json_table.`json` << test_js...
 HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json|bit64` = test_json_table.`json` | test_json_table.`bit64`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|bit64
 UPDATE test_json_type, test_json_table SET test_json_type.`json&bit64` = test_json_table.`json` & test_json_table.`bit64`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&bit64
 UPDATE test_json_type, test_json_table SET test_json_type.`json||bit64` = test_json_table.`json` || test_json_table.`bit64`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&bit64` = test_json_table.`json` && test_json_table.`bit64`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_bit64` = test_json_table.`json` div test_json_table.`bit64`;
@@ -4249,9 +4409,17 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^date` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^date
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>date` = test_json_table.`json` >> test_json_table.`date`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>date
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<date` = test_json_table.`json` << test_json_table.`date`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<date
 UPDATE test_json_type, test_json_table SET test_json_type.`json|date` = test_json_table.`json` | test_json_table.`date`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|date
 UPDATE test_json_type, test_json_table SET test_json_type.`json&date` = test_json_table.`json` & test_json_table.`date`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&date
 UPDATE test_json_type, test_json_table SET test_json_type.`json||date` = test_json_table.`json` || test_json_table.`date`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&date` = test_json_table.`json` && test_json_table.`date`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_date` = test_json_table.`json` div test_json_table.`date`;
@@ -4280,9 +4448,17 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^time` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^time
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>time` = test_json_table.`json` >> test_json_table.`time`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>time
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<time` = test_json_table.`json` << test_json_table.`time`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<time
 UPDATE test_json_type, test_json_table SET test_json_type.`json|time` = test_json_table.`json` | test_json_table.`time`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|time
 UPDATE test_json_type, test_json_table SET test_json_type.`json&time` = test_json_table.`json` & test_json_table.`time`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&time
 UPDATE test_json_type, test_json_table SET test_json_type.`json||time` = test_json_table.`json` || test_json_table.`time`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&time` = test_json_table.`json` && test_json_table.`time`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_time` = test_json_table.`json` div test_json_table.`time`;
@@ -4311,9 +4487,17 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^time(4)` = test_
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^time(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>time(4)` = test_json_table.`json` >> test_json_table.`time(4)`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>time(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<time(4)` = test_json_table.`json` << test_json_table.`time(4)`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<time(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json|time(4)` = test_json_table.`json` | test_json_table.`time(4)`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|time(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json&time(4)` = test_json_table.`json` & test_json_table.`time(4)`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&time(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json||time(4)` = test_json_table.`json` || test_json_table.`time(4)`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&time(4)` = test_json_table.`json` && test_json_table.`time(4)`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_time(4)` = test_json_table.`json` div test_json_table.`time(4)`;
@@ -4344,13 +4528,21 @@ CONTEXT:  referenced column: json^datetime
 WARNING:  integer out of range
 CONTEXT:  referenced column: json^datetime
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>datetime` = test_json_table.`json` >> test_json_table.`datetime`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>datetime
 WARNING:  integer out of range
 CONTEXT:  referenced column: json>>datetime
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<datetime` = test_json_table.`json` << test_json_table.`datetime`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<datetime
 WARNING:  integer out of range
 CONTEXT:  referenced column: json<<datetime
 UPDATE test_json_type, test_json_table SET test_json_type.`json|datetime` = test_json_table.`json` | test_json_table.`datetime`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|datetime
 UPDATE test_json_type, test_json_table SET test_json_type.`json&datetime` = test_json_table.`json` & test_json_table.`datetime`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&datetime
 UPDATE test_json_type, test_json_table SET test_json_type.`json||datetime` = test_json_table.`json` || test_json_table.`datetime`;
 ERROR:  argument of OR must be type boolean, not type timestamp without time zone
 LINE 1: ...type.`json||datetime` = test_json_table.`json` || test_json_...
@@ -4401,13 +4593,21 @@ CONTEXT:  referenced column: json^datetime(4)
 WARNING:  integer out of range
 CONTEXT:  referenced column: json^datetime(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>datetime(4)` = test_json_table.`json` >> test_json_table.`datetime(4)`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>datetime(4)
 WARNING:  integer out of range
 CONTEXT:  referenced column: json>>datetime(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<datetime(4)` = test_json_table.`json` << test_json_table.`datetime(4)`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<datetime(4)
 WARNING:  integer out of range
 CONTEXT:  referenced column: json<<datetime(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json|datetime(4)` = test_json_table.`json` | test_json_table.`datetime(4)`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|datetime(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json&datetime(4)` = test_json_table.`json` & test_json_table.`datetime(4)`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&datetime(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json||datetime(4)` = test_json_table.`json` || test_json_table.`datetime(4)`;
 ERROR:  argument of OR must be type boolean, not type timestamp without time zone
 LINE 1: ...e.`json||datetime(4)` = test_json_table.`json` || test_json_...
@@ -4458,13 +4658,21 @@ CONTEXT:  referenced column: json^timestamp
 WARNING:  integer out of range
 CONTEXT:  referenced column: json^timestamp
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>timestamp` = test_json_table.`json` >> test_json_table.`timestamp`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>timestamp
 WARNING:  integer out of range
 CONTEXT:  referenced column: json>>timestamp
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<timestamp` = test_json_table.`json` << test_json_table.`timestamp`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<timestamp
 WARNING:  integer out of range
 CONTEXT:  referenced column: json<<timestamp
 UPDATE test_json_type, test_json_table SET test_json_type.`json|timestamp` = test_json_table.`json` | test_json_table.`timestamp`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|timestamp
 UPDATE test_json_type, test_json_table SET test_json_type.`json&timestamp` = test_json_table.`json` & test_json_table.`timestamp`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&timestamp
 UPDATE test_json_type, test_json_table SET test_json_type.`json||timestamp` = test_json_table.`json` || test_json_table.`timestamp`;
 ERROR:  argument of OR must be type boolean, not type timestamp with time zone
 LINE 1: ...ype.`json||timestamp` = test_json_table.`json` || test_json_...
@@ -4515,13 +4723,21 @@ CONTEXT:  referenced column: json^timestamp(4)
 WARNING:  integer out of range
 CONTEXT:  referenced column: json^timestamp(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>timestamp(4)` = test_json_table.`json` >> test_json_table.`timestamp(4)`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>timestamp(4)
 WARNING:  integer out of range
 CONTEXT:  referenced column: json>>timestamp(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<timestamp(4)` = test_json_table.`json` << test_json_table.`timestamp(4)`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<timestamp(4)
 WARNING:  integer out of range
 CONTEXT:  referenced column: json<<timestamp(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json|timestamp(4)` = test_json_table.`json` | test_json_table.`timestamp(4)`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|timestamp(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json&timestamp(4)` = test_json_table.`json` & test_json_table.`timestamp(4)`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&timestamp(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json||timestamp(4)` = test_json_table.`json` || test_json_table.`timestamp(4)`;
 ERROR:  argument of OR must be type boolean, not type timestamp with time zone
 LINE 1: ....`json||timestamp(4)` = test_json_table.`json` || test_json_...
@@ -4570,9 +4786,17 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^year` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^year
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>year` = test_json_table.`json` >> test_json_table.`year`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>year
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<year` = test_json_table.`json` << test_json_table.`year`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<year
 UPDATE test_json_type, test_json_table SET test_json_type.`json|year` = test_json_table.`json` | test_json_table.`year`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|year
 UPDATE test_json_type, test_json_table SET test_json_type.`json&year` = test_json_table.`json` & test_json_table.`year`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&year
 UPDATE test_json_type, test_json_table SET test_json_type.`json||year` = test_json_table.`json` || test_json_table.`year`;
 ERROR:  argument of OR must be type boolean, not type year
 LINE 1: ...son_type.`json||year` = test_json_table.`json` || test_json_...
@@ -4629,12 +4853,24 @@ CONTEXT:  referenced column: json^char
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json^char
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>char` = test_json_table.`json` >> test_json_table.`char`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>char
+WARNING:  invalid input syntax for integer: "1.23a"
+CONTEXT:  referenced column: json>>char
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<char` = test_json_table.`json` << test_json_table.`char`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<char
+WARNING:  invalid input syntax for integer: "1.23a"
+CONTEXT:  referenced column: json<<char
 UPDATE test_json_type, test_json_table SET test_json_type.`json|char` = test_json_table.`json` | test_json_table.`char`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|char
+WARNING:  invalid input syntax for bigint: "1.23a"
 CONTEXT:  referenced column: json|char
 UPDATE test_json_type, test_json_table SET test_json_type.`json&char` = test_json_table.`json` & test_json_table.`char`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&char
+WARNING:  invalid input syntax for bigint: "1.23a"
 CONTEXT:  referenced column: json&char
 UPDATE test_json_type, test_json_table SET test_json_type.`json||char` = test_json_table.`json` || test_json_table.`char`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&char` = test_json_table.`json` && test_json_table.`char`;
@@ -4680,12 +4916,24 @@ CONTEXT:  referenced column: json^varchar
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json^varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>varchar` = test_json_table.`json` >> test_json_table.`varchar`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>varchar
+WARNING:  invalid input syntax for integer: "1.23a"
+CONTEXT:  referenced column: json>>varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<varchar` = test_json_table.`json` << test_json_table.`varchar`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<varchar
+WARNING:  invalid input syntax for integer: "1.23a"
+CONTEXT:  referenced column: json<<varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json|varchar` = test_json_table.`json` | test_json_table.`varchar`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|varchar
+WARNING:  invalid input syntax for bigint: "1.23a"
 CONTEXT:  referenced column: json|varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json&varchar` = test_json_table.`json` & test_json_table.`varchar`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&varchar
+WARNING:  invalid input syntax for bigint: "1.23a"
 CONTEXT:  referenced column: json&varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json||varchar` = test_json_table.`json` || test_json_table.`varchar`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&varchar` = test_json_table.`json` && test_json_table.`varchar`;
@@ -5157,12 +5405,24 @@ CONTEXT:  referenced column: json^text
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json^text
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>text` = test_json_table.`json` >> test_json_table.`text`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>text
+WARNING:  invalid input syntax for integer: "1.23a"
+CONTEXT:  referenced column: json>>text
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<text` = test_json_table.`json` << test_json_table.`text`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<text
+WARNING:  invalid input syntax for integer: "1.23a"
+CONTEXT:  referenced column: json<<text
 UPDATE test_json_type, test_json_table SET test_json_type.`json|text` = test_json_table.`json` | test_json_table.`text`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|text
+WARNING:  invalid input syntax for bigint: "1.23a"
 CONTEXT:  referenced column: json|text
 UPDATE test_json_type, test_json_table SET test_json_type.`json&text` = test_json_table.`json` & test_json_table.`text`;
-WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&text
+WARNING:  invalid input syntax for bigint: "1.23a"
 CONTEXT:  referenced column: json&text
 UPDATE test_json_type, test_json_table SET test_json_type.`json||text` = test_json_table.`json` || test_json_table.`text`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&text` = test_json_table.`json` && test_json_table.`text`;
@@ -5196,9 +5456,17 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^enum_t` = test_j
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^enum_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>enum_t` = test_json_table.`json` >> test_json_table.`enum_t`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>enum_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<enum_t` = test_json_table.`json` << test_json_table.`enum_t`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<enum_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json|enum_t` = test_json_table.`json` | test_json_table.`enum_t`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|enum_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json&enum_t` = test_json_table.`json` & test_json_table.`enum_t`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&enum_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json||enum_t` = test_json_table.`json` || test_json_table.`enum_t`;
 --?.*
 LINE 1: ...n_type.`json||enum_t` = test_json_table.`json` || test_json_...
@@ -5243,9 +5511,17 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^set_t` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^set_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>set_t` = test_json_table.`json` >> test_json_table.`set_t`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>set_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<set_t` = test_json_table.`json` << test_json_table.`set_t`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<set_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json|set_t` = test_json_table.`json` | test_json_table.`set_t`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|set_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json&set_t` = test_json_table.`json` & test_json_table.`set_t`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&set_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json||set_t` = test_json_table.`json` || test_json_table.`set_t`;
 ERROR:  argument of OR must be type boolean, not type test_json_table_set_t_set
 LINE 1: ...on_type.`json||set_t` = test_json_table.`json` || test_json_...
@@ -5302,13 +5578,25 @@ CONTEXT:  referenced column: json^json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^json
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>json` = test_json_table.`json` >> test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json>>json
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<json` = test_json_table.`json` << test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`json|json` = test_json_table.`json` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|json
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|json
 UPDATE test_json_type, test_json_table SET test_json_type.`json&json` = test_json_table.`json` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&json
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&json
 UPDATE test_json_type, test_json_table SET test_json_type.`json||json` = test_json_table.`json` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&json` = test_json_table.`json` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_json` = test_json_table.`json` div test_json_table.`json`;

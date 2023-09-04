@@ -2463,6 +2463,25 @@ CONTEXT:  referenced column: int8
    -1
 (1 row)
 
+--- non-strict mode
+SET dolphin.sql_mode = '';
+select cast('abc' as signed); --warning
+WARNING:  Truncated incorrect INTEGER value: 'abc'
+CONTEXT:  referenced column: int8
+ int8 
+------
+    0
+(1 row)
+
+select cast('1.9' as signed); --warning
+WARNING:  invalid input syntax for type int16: "1.9"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: int8
+ int8 
+------
+    1
+(1 row)
+
 drop table if exists test_numeric;
 drop table if exists test_float;
 drop table if exists test_double;

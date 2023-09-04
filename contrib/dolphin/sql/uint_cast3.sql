@@ -94,5 +94,12 @@ select '65536'::text::uint2;
 select '4294967296'::text::uint4;
 select '18446744073709551616'::text::uint8;
 
+SET dolphin.sql_mode = '';
+select cast('-0' as unsigned);
+create table t_uint(a uint1, b uint2, c uint4, d uint8);
+insert into t_uint values('-0', '-0', '-0', '-0');
+select * from t_uint;
+drop table t_uint;
+
 drop schema uint_cast3 cascade;
 reset current_schema;
