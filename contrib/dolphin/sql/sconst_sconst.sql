@@ -1,0 +1,12 @@
+select 'a';
+select 'a' 'b';
+select 'ca' between 'b' and 'c' 'd'; -- same as select 'ca' between 'b' and 'cd';
+select 'ca' between 'b' and 'cd';
+select hex('1') 'a';
+select current_schema() 'a';
+select current_schema 'a';
+select 'a' 'a' like 'a' 'a'; -- same as select 'aa' like 'aa';
+select 'aa' like 'a' 'a';
+select '3' mod '2' '3';
+select '3' mod '23';
+select '1' + '2' '3';
