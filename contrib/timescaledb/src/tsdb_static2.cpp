@@ -56,7 +56,7 @@
 
 
 
-
+static THR_LOCAL TransactionState CurrentTransactionState = NULL;
 static MultiXactId *OldestVisibleMXactId;
 
 static SlruCtlData MultiXactOffsetCtlData;
@@ -79,29 +79,6 @@ static Vfd *VfdCache;
 static int	nfile = 0;
 static List *pendingReindexedIndexes = NIL;
 
-static TransactionStateData TopTransactionStateData = {
-	0,							/* transaction id */
-	0,							/* subtransaction id */
-	NULL,						/* savepoint name */
-	0,							/* savepoint level */
-	TRANS_DEFAULT,				/* transaction state */
-	TBLOCK_DEFAULT,				/* transaction block state from the client
-								 * perspective */
-	0,							/* transaction nesting depth */
-	0,							/* GUC context nesting depth */
-	NULL,						/* cur transaction context */
-	NULL,						/* cur transaction resource owner */
-	NULL,						/* subcommitted child Xids */
-	0,							/* # of subcommitted child Xids */
-	0,							/* allocated size of childXids[] */
-	InvalidOid,					/* previous CurrentUserId setting */
-	0,							/* previous SecurityRestrictionContext */
-	false,						/* entry-time xact r/o state */
-	false,						/* startedInRecovery */
-	false,						/* didLogXid */
-	0,							/* parallelMode */
-	NULL						/* link to parent state block */
-};
 
 
 
@@ -176,10 +153,6 @@ static TransactionStateData TopTransactionStateData = {
 #define debug_elog6(a,b,c,d,e,f)
 #endif
 
-#define MultiXactIdToOffsetPage(xid) \
-	((xid) / (MultiXactOffset) MULTIXACT_OFFSETS_PER_PAGE)
-#define MultiXactIdToOffsetEntry(xid) \
-	((xid) % (MultiXactOffset) MULTIXACT_OFFSETS_PER_PAGE)
 
 #define MultiXactOffsetCtl	(&MultiXactOffsetCtlData)
 
@@ -202,7 +175,6 @@ static bool lock_named_request_allowed = true;
 static EventTriggerCacheStateType EventTriggerCacheState = ETCS_NEEDS_REBUILD;
 static HTAB *EventTriggerCache;
 static MemoryContext EventTriggerCacheContext;
-static TransactionState CurrentTransactionState = &TopTransactionStateData;
 static MultiXactStateData *MultiXactState;
 static ErrorData errordata[ERRORDATA_STACK_SIZE];
 
@@ -352,7 +324,6 @@ static int	maxAllocatedDescs = 0;
 
 #define MULTIXACT_OFFSETS_PER_PAGE (BLCKSZ / sizeof(MultiXactOffset))
 
-#define MXOffsetToMemberPage(xid) ((xid) / (TransactionId) MULTIXACT_MEMBERS_PER_PAGE)
 
 #define MXOffsetToMemberOffset(xid) \
 	(MXOffsetToFlagsOffset(xid) + MULTIXACT_FLAGBYTES_PER_GROUP + \

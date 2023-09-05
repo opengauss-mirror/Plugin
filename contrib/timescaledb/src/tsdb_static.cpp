@@ -50,6 +50,8 @@
 #include "catalog/pg_largeobject_metadata.h"
 #include "catalog/pg_foreign_server.h"
 
+
+#include "storage/procarray.h"
 #include "tsdb_event_trigger.h"
 #include "tsdb_static2.cpp"
 
@@ -1029,13 +1031,13 @@ static void slot_deform_tuple(TupleTableSlot *slot, uint32 natts)
     bool *isnull = slot->tts_isnull;
     HeapTupleHeader tup = tuple->t_data;
     bool hasnulls = HeapTupleHasNulls(tuple);
-    Form_pg_attribute *att = tupleDesc->attrs;
+    FormData_pg_attribute *att = tupleDesc->attrs;
     uint32 attnum;
     char *tp = NULL;         /* ptr to tuple data */
     long off;                /* offset in tuple data */
     bits8 *bp = tup->t_bits; /* ptr to null bitmap in tuple */
     bool slow = false;       /* can we use/set attcacheoff? */
-    bool heapToUHeap = tupleDesc->tdTableAmType == TAM_USTORE;
+    bool heapToUHeap = tupleDesc->td_tam_ops == TableAmUstore;
 	
     /*
      * Check whether the first call for this tuple, and initialize or restore
@@ -1049,7 +1051,7 @@ static void slot_deform_tuple(TupleTableSlot *slot, uint32 natts)
     } else {
         /* Restore state from previous execution */
         off = slot->tts_off;
-        slow = slot->tts_slow;
+        slow = TTS_SLOW(slot);
     }
 
     /*
@@ -1061,7 +1063,7 @@ static void slot_deform_tuple(TupleTableSlot *slot, uint32 natts)
     tp = (char *)tup + tup->t_hoff;
 
     for (; attnum < natts; attnum++) {
-        Form_pg_attribute thisatt = att[attnum];
+        Form_pg_attribute thisatt = &att[attnum];
 
         if (hasnulls && att_isnull(attnum, bp)) {
             values[attnum] = (Datum)0;
@@ -1088,5 +1090,8 @@ static void slot_deform_tuple(TupleTableSlot *slot, uint32 natts)
      */
     slot->tts_nvalid = attnum;
     slot->tts_off = off;
-    slot->tts_slow = slow;
+    if (slow)
+        slot->tts_flags |= TTS_FLAG_SLOW;
+    else
+        slot->tts_flags &= ~TTS_FLAG_SLOW;
 }

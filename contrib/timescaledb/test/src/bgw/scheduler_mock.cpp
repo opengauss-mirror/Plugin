@@ -70,11 +70,11 @@ serialize_test_parameters(int32 ttl)
 	JsonbValue user_oid;
 
 	user_oid.type = jbvNumeric;
-	user_oid.val.numeric =
+	user_oid.numeric =
 		DatumGetNumeric(DirectFunctionCall1(int4_numeric, Int32GetDatum((int32) GetUserId())));
 
 	ttl_value.type = jbvNumeric;
-	ttl_value.val.numeric = DatumGetNumeric(DirectFunctionCall1(int4_numeric, Int32GetDatum(ttl)));
+	ttl_value.numeric = DatumGetNumeric(DirectFunctionCall1(int4_numeric, Int32GetDatum(ttl)));
 
 	result = pushJsonbValue(&parseState, WJB_BEGIN_ARRAY, NULL);
 
@@ -94,16 +94,16 @@ static void
 deserialize_test_parameters(char *params, int32 *ttl, Oid *user_oid)
 {
 	Jsonb *jb = (Jsonb *) DatumGetPointer(DirectFunctionCall1(jsonb_in, CStringGetDatum(params)));
-	JsonbValue *ttl_v = getIthJsonbValueFromContainer(VARDATA(jb), 0);
-	JsonbValue *user_v = getIthJsonbValueFromContainer(VARDATA(jb), 1);
+	JsonbValue *ttl_v = getIthJsonbValueFromSuperHeader((JsonbSuperHeader)&jb->superheader, 0);
+	JsonbValue *user_v = getIthJsonbValueFromSuperHeader((JsonbSuperHeader)&jb->superheader, 1);
 	Numeric ttl_numeric;
 	Numeric user_numeric;
 
 	Assert(ttl_v->type == jbvNumeric);
 	Assert(user_v->type == jbvNumeric);
 
-	ttl_numeric = ttl_v->val.numeric;
-	user_numeric = user_v->val.numeric;
+	ttl_numeric = ttl_v->numeric;
+	user_numeric = user_v->numeric;
 	*ttl = DatumGetInt32(DirectFunctionCall1(numeric_int4, NumericGetDatum(ttl_numeric)));
 	*user_oid =
 		(Oid) DatumGetInt32(DirectFunctionCall1(numeric_int4, NumericGetDatum(user_numeric)));
@@ -339,7 +339,7 @@ get_test_job_type_from_name(Name job_type_name)
 	for (i = 0; i < _MAX_TEST_JOB_TYPE; i++)
 	{
 		if (namestrcmp(job_type_name, test_job_type_names[i]) == 0)
-			return i;
+			return (TestJobType)i;
 	}
 	return _MAX_TEST_JOB_TYPE;
 }

@@ -395,6 +395,7 @@ create_compressed_table_indexes(Oid compresstable_relid, CompressColInfo *compre
 		ts_hypertable_cache_get_cache_and_entry(compresstable_relid, CACHE_FLAG_NONE, &hcache);
 	IndexStmt stmt = {
 		.type = T_IndexStmt,
+		.missing_ok = false,
 		.schemaname = {},
 		.idxname = NULL,
 		.relation = makeRangeVar(NameStr(ht->fd.schema_name), NameStr(ht->fd.table_name), 0),

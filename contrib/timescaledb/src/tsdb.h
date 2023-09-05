@@ -23,6 +23,8 @@
 #include "access/heapam.h"
 #include "access/genam.h"
 #include "commands/vacuum.h"
+#include "utils/evtcache.h"
+#include "tsdb_head.h"
 
 extern CopyState BeginCopyFrom(Relation rel, const char *filename,
 			  bool is_program, List *attnamelist, List *options);
@@ -196,8 +198,6 @@ extern void build_aggregate_finalfn_expr(Oid *agg_input_types,
 extern bool reindex_relation(Oid relid, int flags, int options); 
 extern ColumnDef *makeColumnDef(const char *colname,
 			  Oid typeOid, int32 typmod, Oid collOid); 
-extern void *MemoryContextAllocExtended(MemoryContext context,
-						   Size size, int flags); 
 extern ArrayBuildStateArr *initArrayResultArr(Oid array_type, Oid element_type,
 				   MemoryContext rcontext, bool subcontext);
 extern ArrayBuildState *initArrayResult(Oid element_type,
@@ -226,8 +226,6 @@ extern SortPath *create_sort_path(PlannerInfo *root,
 				 double limit_tuples);
 
 extern bool IsInParallelMode(void);
-extern void RunObjectPostCreateHook(Oid classId, Oid objectId, int subId,
-						bool is_internal); 
 
 extern void InitPostgres(const char *in_dbname, Oid dboid, const char *username,
  			 Oid useroid, char *out_dbname);
@@ -267,8 +265,7 @@ extern Oid resolve_aggregate_transtype(Oid aggfuncid,
 							Oid *inputTypes,
 							int numArguments);
 
-extern void ProcArrayGetReplicationSlotXmin(TransactionId *xmin,
-								TransactionId *catalog_xmin);
+
 extern bool check_functions_in_node(Node *node, check_function_callback checker,
 						void *context);
 extern char func_parallel(Oid funcid); 

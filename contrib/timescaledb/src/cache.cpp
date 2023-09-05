@@ -331,7 +331,7 @@ cache_subxact_abort(SubXactEvent event, SubTransactionId subtxn_id, SubTransacti
 	switch (event)
 	{
 		case SUBXACT_EVENT_START_SUB:
-		case 3:
+		case 2:
 			/* do nothing */
 			break;
 		case SUBXACT_EVENT_COMMIT_SUB:

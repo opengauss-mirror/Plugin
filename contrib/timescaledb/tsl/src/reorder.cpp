@@ -881,7 +881,7 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 
 			tuple =(HeapTuple) tuplesort_getheaptuple(tuplesort,
 										   /* forward= */ true
-#if PG96
+#if !OG30
 										   ,
 										   &should_free
 #endif

@@ -41,33 +41,15 @@
 #include "utils/rel.h"
 #include "utils/syscache.h"
 #include "tcop/utility.h"
+#include "utils/evtcache.h"
 
 
 #include "tsdb_get_obj.h"
 #include "tsdb_event_trigger.h"
+#include "tsdb_head.h"
+
 
 THR_LOCAL PGDLLIMPORT int SessionReplicationRole;
-typedef struct EventTriggerQueryState
-{
-	/* memory context for this state's objects */
-	MemoryContext cxt;
-
-	/* sql_drop */
-	slist_head	SQLDropList;
-	bool		in_sql_drop;
-
-	/* table_rewrite */
-	Oid			table_rewrite_oid;		/* InvalidOid, or set for
-										 * table_rewrite event */
-	int			table_rewrite_reason;	/* AT_REWRITE reason */
-
-	/* Support for command collection */
-	bool		commandCollectionInhibited;
-	CollectedCommand *currentCommand;
-	List	   *commandList;	/* list of CollectedCommand; see
-								 * deparse_utility.h */
-	struct EventTriggerQueryState *previous;
-} EventTriggerQueryState;
 
 static EventTriggerQueryState *currentEventTriggerState = NULL;
 
