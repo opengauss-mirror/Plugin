@@ -6082,8 +6082,12 @@ Datum sha1(PG_FUNCTION_ARGS)
     char* text_str = text_to_cstring(source_text);
     char* source_str = text_str;
 
+#ifdef DOLPHIN
     text* tunpacked = pg_detoast_datum_packed((struct varlena*)source_text);
     GS_UINT32 source_len = VARSIZE_ANY_EXHDR(tunpacked);
+#else
+    GS_UINT32 source_len = strlen(source_str);
+#endif
  
     /* calculate the hash result */
     char* result = (char*)palloc((SHA1_DIGEST_LENGTH * 2 + 1) * (sizeof(char)));
