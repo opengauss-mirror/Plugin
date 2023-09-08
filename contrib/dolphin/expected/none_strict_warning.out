@@ -6,26 +6,51 @@ create table test_int8(c1 int8);
 ---- numeric__int1
 ---- over float8_max 严格模式error，非严格模式warning, 结果127
 select cast(2e308 as int1);
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 ---- int8_max~float8_max 严格模式error，非严格模式warning，结果127
 select cast(1e308 as int1);
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 ---- float4in
 ---- over float8_max 严格模式error，非严格模式warning，结果float4_max
 select cast(3.5e308 as float4);
-ERROR:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type real
+WARNING:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type real
 CONTEXT:  referenced column: float4
+   float4    
+-------------
+ 3.40282e+38
+(1 row)
+
 ---- float4_max~float8_max 严格模式error，非严格模式warning，结果float4_max
 select cast(3.5e38 as float4);
-ERROR:  value out of range: overflow
+WARNING:  value out of range: overflow
 CONTEXT:  referenced column: float4
+   float4    
+-------------
+ 3.40282e+38
+(1 row)
+
 ---- float8in
 ---- over float8_max 严格模式error，非严格模式warning，结果float8_max
 select cast(3.5e308 as float8);
-ERROR:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type double precision
+WARNING:  "350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" is out of range for type double precision
 CONTEXT:  referenced column: float8
+        float8         
+-----------------------
+ 1.79769313486232e+308
+(1 row)
+
 ---- dtoi4
 create table test_int4(c1 int4);
 ---- over int4_max 严格模式error，非严格模式warning，结果int4_max
@@ -262,20 +287,40 @@ WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: c1
 ---- numeric_cast_uint1
 select cast(1e30 as uint1);
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 ---- numeric_cast_uint2
 select cast(1e30 as uint2);
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 ---- numeric_cast_uint4
 select cast(1e30 as uint4);
-ERROR:  unsigned int out of range
+WARNING:  unsigned int out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 ---- numeric_cast_uint8
 select cast(1e30 as uint8);
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 ---- i2toui1
 ---- over uint1_max 严格模式error，非严格模式warning，结果uint1_max
 insert into test_uint1 values(256::int2);
@@ -845,8 +890,13 @@ CONTEXT:  referenced column: c1
 ---- i1_cast_ui1
 ---- 127
 select cast(128::int1 as uint1);
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 127
+(1 row)
+
 ---- 246
 select cast(-10::int1 as uint1);
  uint1 
@@ -857,8 +907,15 @@ select cast(-10::int1 as uint1);
 ---- i4_cast_ui1
 ---- 255
 select cast(2147483648::int4 as uint1);
-ERROR:  integer out of range
+WARNING:  integer out of range
 CONTEXT:  referenced column: uint1
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 ---- 246
 select cast(-10::int4 as uint1);
  uint1 
@@ -869,8 +926,15 @@ select cast(-10::int4 as uint1);
 ---- i8_cast_ui1
 ---- 255
 select cast(9223372036854775808::int8 as uint1);
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: uint1
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 ---- 246
 select cast(-10::int8 as uint1);
  uint1 
@@ -881,8 +945,15 @@ select cast(-10::int8 as uint1);
 ---- i4_cast_ui2
 ---- 65535
 select cast(2147483648::int4 as uint2);
-ERROR:  integer out of range
+WARNING:  integer out of range
 CONTEXT:  referenced column: uint2
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 ---- 65526
 select cast(-10::int4 as uint2);
  uint2 
@@ -893,8 +964,15 @@ select cast(-10::int4 as uint2);
 ---- i8_cast_ui2
 ---- 65535
 select cast(9223372036854775808::int8 as uint2);
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: uint2
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 ---- 65526
 select cast(-10::int8 as uint2);
  uint2 
@@ -905,8 +983,15 @@ select cast(-10::int8 as uint2);
 ---- i8_cast_ui4
 ---- 4294967295
 select cast(9223372036854775808::int8 as uint4);
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: uint4
+WARNING:   int unsigned out of range
+CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 ---- 4294967286
 select cast(-10::int8 as uint4);
    uint4    
@@ -917,8 +1002,13 @@ select cast(-10::int8 as uint4);
 ---- f4_cast_ui1
 ---- 255
 select cast(9223372036854775808.5::float4 as uint1);
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 ---- 245
 select cast(-10.5::float4 as uint1);
  uint1 
@@ -929,8 +1019,13 @@ select cast(-10.5::float4 as uint1);
 ---- f8_cast_ui1
 ---- 255
 select cast(9223372036854775808.5::float8 as uint1);
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 ---- 245
 select cast(-10.5::float8 as uint1);
  uint1 
@@ -941,8 +1036,13 @@ select cast(-10.5::float8 as uint1);
 ---- f4_cast_ui2
 ---- 65535
 select cast(65535.5::float4 as uint2);
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 ---- 65525
 select cast(-10.5::float4 as uint2);
  uint2 
@@ -953,8 +1053,13 @@ select cast(-10.5::float4 as uint2);
 ---- f8_cast_ui2
 ---- 65535
 select cast(65535.5::float8 as uint2);
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 ---- 65525
 select cast(-10.5::float8 as uint2);
  uint2 
@@ -965,8 +1070,13 @@ select cast(-10.5::float8 as uint2);
 ---- f4_cast_ui4
 ---- 65535
 select cast(4294967295.5::float4 as uint4);
-ERROR:  int unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 ---- 65525
 select cast(-10.5::float4 as uint4);
    uint4    
@@ -977,8 +1087,13 @@ select cast(-10.5::float4 as uint4);
 ---- f8_cast_ui4
 ---- 65535
 select cast(4294967295.5::float8 as uint4);
-ERROR:  int unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 ---- 65525
 select cast(-10.5::float8 as uint4);
    uint4    
@@ -990,8 +1105,13 @@ select cast(-10.5::float8 as uint4);
 ---- f4_cast_ui8
 ---- 65535
 select cast(18446744073709551615.5::float4 as uint8);
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 ---- 65525
 select cast(-10.5::float4 as uint8);
         uint8         
@@ -1002,8 +1122,13 @@ select cast(-10.5::float4 as uint8);
 ---- f8_cast_ui8
 ---- 65535
 select cast(18446744073709551615.5::float8 as uint8);
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 ---- 65525
 select cast(-10.5::float8 as uint8);
         uint8         

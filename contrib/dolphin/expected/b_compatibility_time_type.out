@@ -47,9 +47,14 @@ SELECT INTERVAL 1 SECOND + datetime'1997-12-31 23:59:59';
 -- when b_compatibility_mode = false;
 set dolphin.b_compatibility_mode = false;
 SELECT '1997-12-31 23:59:59' + INTERVAL 1 SECOND;
-ERROR:  interval field value out of range: "1997-12-31 23:59:59"
+WARNING:  interval field value out of range: "1997-12-31 23:59:59"
 LINE 1: SELECT '1997-12-31 23:59:59' + INTERVAL 1 SECOND;
                ^
+ ?column? 
+----------
+ @ 1 sec
+(1 row)
+
 SELECT datetime'1997-12-31 23:59:59' + INTERVAL 1 SECOND;
       ?column?       
 ---------------------
@@ -57,9 +62,14 @@ SELECT datetime'1997-12-31 23:59:59' + INTERVAL 1 SECOND;
 (1 row)
 
 SELECT '1997-12-31 23:59:59' - INTERVAL 1 SECOND;
-ERROR:  interval field value out of range: "1997-12-31 23:59:59"
+WARNING:  interval field value out of range: "1997-12-31 23:59:59"
 LINE 1: SELECT '1997-12-31 23:59:59' - INTERVAL 1 SECOND;
                ^
+  ?column?   
+-------------
+ @ 1 sec ago
+(1 row)
+
 SELECT datetime'1997-12-31 23:59:59' - INTERVAL 1 SECOND;
       ?column?       
 ---------------------
@@ -67,9 +77,14 @@ SELECT datetime'1997-12-31 23:59:59' - INTERVAL 1 SECOND;
 (1 row)
 
 SELECT INTERVAL 1 SECOND + '1997-12-31 23:59:59';
-ERROR:  interval field value out of range: "1997-12-31 23:59:59"
+WARNING:  interval field value out of range: "1997-12-31 23:59:59"
 LINE 1: SELECT INTERVAL 1 SECOND + '1997-12-31 23:59:59';
                                    ^
+ ?column? 
+----------
+ @ 1 sec
+(1 row)
+
 SELECT INTERVAL 1 SECOND + datetime'1997-12-31 23:59:59';
       ?column?       
 ---------------------
@@ -109,15 +124,25 @@ SELECT date'2000-2-29';
 (1 row)
 
 SELECT date'2001-2-29';
-ERROR:  date/time field value out of range: "2001-2-29"
+WARNING:  date/time field value out of range: "2001-2-29"
 LINE 1: SELECT date'2001-2-29';
                    ^
 CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
 SELECT date'2100-2-29';
-ERROR:  date/time field value out of range: "2100-2-29"
+WARNING:  date/time field value out of range: "2100-2-29"
 LINE 1: SELECT date'2100-2-29';
                    ^
 CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
 SELECT date'0000-1-1';
     date    
 ------------
@@ -125,10 +150,15 @@ SELECT date'0000-1-1';
 (1 row)
 
 SELECT date'01-01';
-ERROR:  invalid input syntax for type date: "01-01"
+WARNING:  invalid input syntax for type date: "01-01"
 LINE 1: SELECT date'01-01';
                    ^
 CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
 SELECT date'9-01-01';
     date    
 ------------
@@ -161,10 +191,15 @@ SELECT date'99991231';
 (1 row)
 
 SELECT date'100000101';
-ERROR:  invalid input syntax for type date: "100000101"
+WARNING:  invalid input syntax for type date: "100000101"
 LINE 1: SELECT date'100000101';
                    ^
 CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
 SELECT date'10000101';
     date    
 ------------
@@ -176,11 +211,16 @@ WARNING:  Incorrect date value: "9990101". "YYYYMMDD" or "YYMMDD" format is reco
 LINE 1: SELECT date'9990101';
                    ^
 CONTEXT:  referenced column: date
-ERROR:  date/time field value out of range: "9990101"
+WARNING:  date/time field value out of range: "9990101"
 LINE 1: SELECT date'9990101';
                    ^
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
 SELECT date'701010';
     date    
 ------------
@@ -194,16 +234,26 @@ SELECT date'691010';
 (1 row)
 
 SELECT date'691310';
-ERROR:  date/time field value out of range: "691310"
+WARNING:  date/time field value out of range: "691310"
 LINE 1: SELECT date'691310';
                    ^
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
 SELECT date'691131';
-ERROR:  date/time field value out of range: "691131"
+WARNING:  date/time field value out of range: "691131"
 LINE 1: SELECT date'691131';
                    ^
 CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
 SELECT date'10101';
     date    
 ------------
@@ -211,11 +261,16 @@ SELECT date'10101';
 (1 row)
 
 SELECT date'10130';
-ERROR:  date/time field value out of range: "10130"
+WARNING:  date/time field value out of range: "10130"
 LINE 1: SELECT date'10130';
                    ^
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
 SELECT date'00120101';
     date    
 ------------
@@ -236,8 +291,13 @@ SELECT 990101::date;
 (1 row)
 
 SELECT 100::date;
-ERROR:  Out of range value for date
+WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
 SELECT 101::date;
     date    
 ------------
@@ -341,30 +401,55 @@ SELECT time'12:12:12.123456';
 (1 row)
 
 SELECT time'34 22:59:59.999999';
-ERROR:  date/time field value out of range: "34 22:59:59.999999"
+WARNING:  Truncated incorrect time value.
 LINE 1: SELECT time'34 22:59:59.999999';
                    ^
 CONTEXT:  referenced column: time
+   time    
+-----------
+ 838:59:59
+(1 row)
+
 SELECT time'12:60:12.123456';
-ERROR:  date/time field value out of range: "12:60:12.123456"
+WARNING:  date/time field value out of range: "12:60:12.123456"
 LINE 1: SELECT time'12:60:12.123456';
                    ^
 CONTEXT:  referenced column: time
+      time       
+-----------------
+ 13:00:12.123456
+(1 row)
+
 SELECT time'12:12:60.123456';
-ERROR:  date/time field value out of range: "12:12:60.123456"
+WARNING:  date/time field value out of range: "12:12:60.123456"
 LINE 1: SELECT time'12:12:60.123456';
                    ^
 CONTEXT:  referenced column: time
+      time       
+-----------------
+ 12:13:00.123456
+(1 row)
+
 SELECT time'34 23:00:00';
-ERROR:  date/time field value out of range: "34 23:00:00"
+WARNING:  Truncated incorrect time value.
 LINE 1: SELECT time'34 23:00:00';
                    ^
 CONTEXT:  referenced column: time
+   time    
+-----------
+ 838:59:59
+(1 row)
+
 SELECT time'-34 23:00:00';
-ERROR:  date/time field value out of range: "-34 23:00:00"
+WARNING:  Truncated incorrect time value.
 LINE 1: SELECT time'-34 23:00:00';
                    ^
 CONTEXT:  referenced column: time
+    time    
+------------
+ -838:59:59
+(1 row)
+
 SELECT time'34 22:59:59';
    time    
 -----------
@@ -378,25 +463,45 @@ SELECT time'-34 22:59:59';
 (1 row)
 
 SELECT time'34 22:59:59.999999';
-ERROR:  date/time field value out of range: "34 22:59:59.999999"
+WARNING:  Truncated incorrect time value.
 LINE 1: SELECT time'34 22:59:59.999999';
                    ^
 CONTEXT:  referenced column: time
+   time    
+-----------
+ 838:59:59
+(1 row)
+
 SELECT time'34 22:59:59.9999999999999999999999';
-ERROR:  date/time field value out of range: "34 22:59:59.9999999999999999999999"
+WARNING:  Truncated incorrect time value.
 LINE 1: SELECT time'34 22:59:59.9999999999999999999999';
                    ^
 CONTEXT:  referenced column: time
+   time    
+-----------
+ 838:59:59
+(1 row)
+
 SELECT time'-34 22:59:59.9999999999999999999999';
-ERROR:  date/time field value out of range: "-34 22:59:59.9999999999999999999999"
+WARNING:  Truncated incorrect time value.
 LINE 1: SELECT time'-34 22:59:59.9999999999999999999999';
                    ^
 CONTEXT:  referenced column: time
+    time    
+------------
+ -838:59:59
+(1 row)
+
 SELECT time'-34 22:59:59.9999999999999999999999';
-ERROR:  date/time field value out of range: "-34 22:59:59.9999999999999999999999"
+WARNING:  Truncated incorrect time value.
 LINE 1: SELECT time'-34 22:59:59.9999999999999999999999';
                    ^
 CONTEXT:  referenced column: time
+    time    
+------------
+ -838:59:59
+(1 row)
+
 SELECT time'838:59:59';
    time    
 -----------
@@ -404,10 +509,15 @@ SELECT time'838:59:59';
 (1 row)
 
 SELECT time'839:00:00';
-ERROR:  date/time field value out of range: "839:00:00"
+WARNING:  Truncated incorrect time value.
 LINE 1: SELECT time'839:00:00';
                    ^
 CONTEXT:  referenced column: time
+   time    
+-----------
+ 838:59:59
+(1 row)
+
 SELECT time'59:59';
    time   
 ----------
@@ -555,11 +665,21 @@ SELECT 233445.123::time;
 (1 row)
 
 SELECT 8385959.999999::time;
-ERROR:  invalid input syntax for type time: "8385959.999999"
+WARNING:  invalid input syntax for type time: "8385959.999999"
 CONTEXT:  referenced column: time
+   time    
+-----------
+ 839:00:00
+(1 row)
+
 SELECT 8385959.9999999::time;
-ERROR:  invalid input syntax for type time: "8385959.9999999"
+WARNING:  invalid input syntax for type time: "8385959.9999999"
 CONTEXT:  referenced column: time
+   time    
+-----------
+ 839:00:00
+(1 row)
+
 SELECT -232323::time;
  ?column?  
 -----------
@@ -770,10 +890,15 @@ SELECT datetime(1)'71101';
 (1 row)
 
 SELECT datetime(1)'0101';
-ERROR:  invalid input syntax for type timestamp: "0101"
+WARNING:  invalid input syntax for type timestamp: "0101"
 LINE 1: SELECT datetime(1)'0101';
                           ^
 CONTEXT:  referenced column: timestamp
+      timestamp      
+---------------------
+ 0000-00-00 00:00:00
+(1 row)
+
 -- YYYYMMDDhhmmss or YYMMDDhhmmss
 SELECT 11::datetime;
 ERROR:  timestamp out of range

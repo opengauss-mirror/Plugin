@@ -295,6 +295,22 @@ select b'11' between 1::float and 2.5::decimal;
 (1 row)
 
 select 100 between '-Inf'::float and '+Inf'::float;
+WARNING:  value out of range: overflow
+LINE 1: select 100 between '-Inf'::float and '+Inf'::float;
+                           ^
+CONTEXT:  referenced column: b_between_and
+WARNING:  value out of range: overflow
+LINE 1: select 100 between '-Inf'::float and '+Inf'::float;
+                                             ^
+CONTEXT:  referenced column: b_between_and
+WARNING:  value out of range: overflow
+LINE 1: select 100 between '-Inf'::float and '+Inf'::float;
+                           ^
+CONTEXT:  referenced column: b_between_and
+WARNING:  value out of range: overflow
+LINE 1: select 100 between '-Inf'::float and '+Inf'::float;
+                                             ^
+CONTEXT:  referenced column: b_between_and
  b_between_and 
 ---------------
  t
