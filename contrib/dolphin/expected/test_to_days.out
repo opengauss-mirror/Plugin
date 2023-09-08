@@ -2,14 +2,29 @@ create schema test_to_days;
 set current_schema = test_to_days;
 set dolphin.sql_mode = default;
 select to_days(100);
-ERROR:  timestamp out of range
+WARNING:  timestamp out of range
 CONTEXT:  referenced column: to_days
+ to_days 
+---------
+        
+(1 row)
+
 select to_days(-1);
-ERROR:  timestamp out of range
+WARNING:  timestamp out of range
 CONTEXT:  referenced column: to_days
+ to_days 
+---------
+        
+(1 row)
+
 select to_days(1000000000000000000);
-ERROR:  timestamp out of range
+WARNING:  timestamp out of range
 CONTEXT:  referenced column: to_days
+ to_days 
+---------
+        
+(1 row)
+
 select to_days(20221111);
  to_days 
 ---------
@@ -23,8 +38,13 @@ select to_days(20001111100000);
 (1 row)
 
 select to_days(20001111250000);
-ERROR:  timestamp out of range
+WARNING:  timestamp out of range
 CONTEXT:  referenced column: to_days
+ to_days 
+---------
+        
+(1 row)
+
 create table t1(c datetime);
 create table t2(c timestamp);
 insert into t1 values(to_days(100));

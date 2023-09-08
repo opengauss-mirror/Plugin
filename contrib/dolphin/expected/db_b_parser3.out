@@ -145,49 +145,85 @@ ERROR:  syntax error at or near "1"
 LINE 1: select div 1;
                    ^
 select '-12.3abc' div null;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' div null;
                ^
 CONTEXT:  referenced column: div
+ div 
+-----
+    
+(1 row)
+
 select '-12.3abc' div -100.1;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' div -100.1;
                ^
 CONTEXT:  referenced column: div
+ div 
+-----
+   0
+(1 row)
+
 select '-12.3abc' div 0;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' div 0;
                ^
 CONTEXT:  referenced column: div
+ERROR:  division by zero
+CONTEXT:  referenced column: div
 select '-12.3abc' div 5;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' div 5;
                ^
 CONTEXT:  referenced column: div
+ div 
+-----
+  -2
+(1 row)
+
 select '-12.3abc' div 158.3;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' div 158.3;
                ^
 CONTEXT:  referenced column: div
+ div 
+-----
+   0
+(1 row)
+
 select '-12.3abc' div -8.222e4;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' div -8.222e4;
                ^
 CONTEXT:  referenced column: div
+ div 
+-----
+   0
+(1 row)
+
 select '-12.3abc' div true;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' div true;
                ^
 CONTEXT:  referenced column: div
+ div 
+-----
+ -12
+(1 row)
+
 select '-12.3abc' div false;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' div false;
                ^
 CONTEXT:  referenced column: div
+ERROR:  division by zero
+CONTEXT:  referenced column: div
 select '-12.3abc' div 'null';
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' div 'null';
                ^
+CONTEXT:  referenced column: div
+ERROR:  division by zero
 CONTEXT:  referenced column: div
 select 123456 div 5 div 4;
  div  
@@ -252,50 +288,95 @@ ERROR:  syntax error at or near "1"
 LINE 1: select mod 1;
                    ^
 select '-12.3abc' mod null;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod null;
                ^
 CONTEXT:  referenced column: b_mod
+ b_mod 
+-------
+      
+(1 row)
+
 select '-12.3abc' mod -100.1;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod -100.1;
                ^
 CONTEXT:  referenced column: b_mod
+ b_mod 
+-------
+ -12.3
+(1 row)
+
 select '-12.3abc' mod 0;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod 0;
                ^
 CONTEXT:  referenced column: b_mod
+ b_mod 
+-------
+      
+(1 row)
+
 select '-12.3abc' mod 5;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod 5;
                ^
 CONTEXT:  referenced column: b_mod
+ b_mod 
+-------
+  -2.3
+(1 row)
+
 select '-12.3abc' mod 158.3;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod 158.3;
                ^
 CONTEXT:  referenced column: b_mod
+ b_mod 
+-------
+ -12.3
+(1 row)
+
 select '-12.3abc' mod -8.222e4;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod -8.222e4;
                ^
 CONTEXT:  referenced column: b_mod
+ b_mod 
+-------
+ -12.3
+(1 row)
+
 select '-12.3abc' mod true;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod true;
                ^
 CONTEXT:  referenced column: b_mod
+ b_mod 
+-------
+  -0.3
+(1 row)
+
 select '-12.3abc' mod false;
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod false;
                ^
 CONTEXT:  referenced column: b_mod
+ b_mod 
+-------
+      
+(1 row)
+
 select '-12.3abc' mod 'null';
-ERROR:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod 'null';
                ^
 CONTEXT:  referenced column: b_mod
+ b_mod 
+-------
+      
+(1 row)
+
 select 123456 mod 5 mod 4;
  b_mod 
 -------
@@ -344,50 +425,99 @@ select 1 xor 0;
 (1 row)
 
 select '-12.3abc' xor null;
-ERROR:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor null;
                ^
 CONTEXT:  referenced column: xor
+ xor 
+-----
+    
+(1 row)
+
 select '-12.3abc' xor -100.1;
-ERROR:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor -100.1;
                ^
 CONTEXT:  referenced column: xor
+ xor 
+-----
+   0
+(1 row)
+
 select '-12.3abc' xor 0;
-ERROR:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor 0;
                ^
 CONTEXT:  referenced column: xor
+ xor 
+-----
+   1
+(1 row)
+
 select '-12.3abc' xor 5;
-ERROR:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor 5;
                ^
 CONTEXT:  referenced column: xor
+ xor 
+-----
+   0
+(1 row)
+
 select '-12.3abc' xor 158.3;
-ERROR:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor 158.3;
                ^
 CONTEXT:  referenced column: xor
+ xor 
+-----
+   0
+(1 row)
+
 select '-12.3abc' xor -8.222e4;
-ERROR:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor -8.222e4;
                ^
 CONTEXT:  referenced column: xor
+ xor 
+-----
+   0
+(1 row)
+
 select '-12.3abc' xor true;
-ERROR:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor true;
                ^
 CONTEXT:  referenced column: xor
+ xor 
+-----
+   0
+(1 row)
+
 select '-12.3abc' xor false;
-ERROR:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor false;
                ^
 CONTEXT:  referenced column: xor
+ xor 
+-----
+   1
+(1 row)
+
 select '-12.3abc' xor 'null';
-ERROR:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor 'null';
                ^
 CONTEXT:  referenced column: xor
+WARNING:  invalid input syntax for integer: "null"
+LINE 1: select '-12.3abc' xor 'null';
+                              ^
+CONTEXT:  referenced column: xor
+ xor 
+-----
+   1
+(1 row)
+
 create table t1 (a int, b varchar(20));
 insert into t1 values(1, 'true');
 select a = 1 xor b = 'true' from t1;

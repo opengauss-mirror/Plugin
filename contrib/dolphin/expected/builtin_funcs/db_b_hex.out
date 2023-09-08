@@ -1,15 +1,25 @@
 create schema db_b_hex;
 set current_schema to 'db_b_hex';
 select hex(int1(255));
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: to_number
 SQL function "int1" statement 1
 referenced column: hex
+ hex 
+-----
+ 7f
+(1 row)
+
 select hex(int1(256));
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: to_number
 SQL function "int1" statement 1
 referenced column: hex
+ hex 
+-----
+ 7f
+(1 row)
+
 -- max value for int32
 select hex(2147483647);
    hex    

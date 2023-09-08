@@ -114,8 +114,13 @@ SELECT UNHEX(name) from test_unhex;
 -- 严格模式，参数不合法，报error
 set dolphin.sql_mode = 'sql_mode_strict';
 SELECT UNHEX('GG');
-ERROR:  Incorrect string value: "GG" for function unhex 
+WARNING:  Incorrect string value: "GG" for function unhex 
 CONTEXT:  referenced column: unhex
+ unhex 
+-------
+ 
+(1 row)
+
 drop schema unhex_test cascade;
 NOTICE:  drop cascades to table test_unhex
 reset current_schema;

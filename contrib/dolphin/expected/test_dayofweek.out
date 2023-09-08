@@ -16,10 +16,15 @@ select current_timestamp;
 (1 row)
 
 select dayofweek('14:14:14');
-ERROR:  invalid input syntax for type timestamp: "14:14:14"
+WARNING:  invalid input syntax for type timestamp: "14:14:14"
 LINE 1: select dayofweek('14:14:14');
                          ^
 CONTEXT:  referenced column: dayofweek
+ dayofweek 
+-----------
+          
+(1 row)
+
 select dayofweek(time'10:10:10');
  dayofweek 
 -----------

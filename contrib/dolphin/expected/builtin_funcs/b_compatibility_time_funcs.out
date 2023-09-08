@@ -493,20 +493,45 @@ select hour('838:59:59');
 (1 row)
 
 select hour('-840:59:59');
-ERROR:  time zone displacement out of range: "-840:59:59"
+WARNING:  Truncated incorrect time value.
 CONTEXT:  referenced column: hour
+ hour 
+------
+ -838
+(1 row)
+
 select hour('840:59:59');
-ERROR:  date/time field value out of range: "840:59:59"
+WARNING:  Truncated incorrect time value.
 CONTEXT:  referenced column: hour
+ hour 
+------
+  838
+(1 row)
+
 select hour('');
-ERROR:  invalid input syntax for type time: ""
+WARNING:  invalid input syntax for type time: ""
 CONTEXT:  referenced column: hour
+ hour 
+------
+     
+(1 row)
+
 select hour('abc');
-ERROR:  invalid input syntax for type timestamp: "abc"
+WARNING:  invalid input syntax for type time: "abc"
 CONTEXT:  referenced column: hour
+ hour 
+------
+    0
+(1 row)
+
 select hour('1234abc');
-ERROR:  invalid input syntax for type timestamp: "1234abc"
+WARNING:  invalid input syntax for type time: "1234abc"
 CONTEXT:  referenced column: hour
+ hour 
+------
+    0
+(1 row)
+
 set dolphin.sql_mode = '';
 select hour('-838:59:59');
  hour 

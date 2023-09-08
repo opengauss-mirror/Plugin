@@ -26,6 +26,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.math.BigDecimal;
 import java.sql.Blob;
+import java.sql.SQLException;
 
 public class MySQLJdbcPrepareTest {
     private static String host;
@@ -148,6 +149,52 @@ public class MySQLJdbcPrepareTest {
             p1.close();
             p2.clearParameters();
             p2.close();
+            resultSet.close();
+
+            statement.execute("set dolphin.b_compatibility_mode = on");
+            statement.execute("set dolphin.sql_mode = 'sql_mode_strict,ansi_quotes'");
+            statement.executeUpdate("insert into t3(c3) values(0)");
+            PreparedStatement p3 = connection.prepareStatement("select * from t3 where c3=?");
+            p3.setString(1, "abc");
+            resultSet = p3.executeQuery();
+            resultSetMetaData = resultSet.getMetaData();
+            while (resultSet.next()) {
+                for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+                    byte[] val = resultSet.getBytes(i);
+                    String out = val != null ? new String(val) : null;
+                    System.out.println(resultSetMetaData.getColumnName(i) + ":" +resultSetMetaData.getColumnTypeName(i) + ":" + out);
+                }
+            }
+            p3.close();
+            resultSet.close();
+
+            try {
+                p3 = connection.prepareStatement("update t3 set c1 = 1 where c3=?");
+                p3.setString(1, "abc");
+                p3.executeUpdate();
+                p3.close();
+            } catch (SQLException e) {
+                // expect failed
+                System.out.println("update failed:" + e.getMessage());
+                p3.close();
+            }
+
+            try {
+                p3 = connection.prepareStatement("delete from t3 where c3=?");
+                p3.setString(1, "abc");
+                p3.executeUpdate();
+                p3.close();
+            }  catch (SQLException e) {
+                // expect failed
+                System.out.println("delete failed:" + e.getMessage());
+                p3.close();
+            }
+
+            statement.execute("set dolphin.sql_mode = 'ansi_quotes'");
+            p3 = connection.prepareStatement("delete from t3 where c3=?");
+            p3.setString(1, "abc");
+            p3.executeUpdate();
+            p3.close();
         }
     }
 }

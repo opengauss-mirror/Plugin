@@ -1,0 +1,385 @@
+-- test strict mode
+create schema strict_mode_test;
+set current_schema to 'strict_mode_test';
+set dolphin.b_compatibility_mode = on;
+set dolphin.sql_mode = 'sql_mode_strict,ansi_quotes,auto_recompile_function';
+set b_format_behavior_compat_options = 'enable_set_variables';
+set behavior_compat_options = 'skip_insert_gs_source';
+create table t_int1(a int1);
+create index i_t_int1 on t_int1(a);
+create table t_text(a text);
+create table t_uint1(a int1);
+insert into t_uint1 values(0),(1);
+
+delimiter //
+create function test1(a int4) returns int4
+deterministic begin
+insert into t_int1 values(a);
+return a;
+end//
+delimiter ;
+
+--select
+select test1('abc'); -- warning, 'abc' to int4
+select * from t_int1;
+select test1(333333); -- error, 333333 execeed int1_max, which is insert
+explain (costs off) select test1('abc');
+explain (costs off) select test1(333333);
+
+-- prepare/execute
+prepare st1 from 'select test1(''abc'');';
+execute st1;
+deallocate prepare st1;
+
+-- prepare insert. error
+prepare st1 from 'insert into t_text values(test1(''abc''));';
+
+select * from t_int1;
+
+--test opfuion, same as common case
+set enable_seqscan to off;
+set enable_bitmapscan to off;
+-- ok
+explain (costs off) select * from t_int1 where a = 'abc';
+select * from t_int1 where a = 'abc';
+
+--make sure is bypass
+explain (costs off) update t_int1 set a = 1 where a = 1;
+explain (costs off) delete from t_int1 where a = 1;
+explain (costs off) insert into t_int1 values(1);
+
+--error, explain will check the actual query's type
+explain (costs off) update t_int1 set a = 1 where a = 'abc';
+update t_int1 set a = 1 where a = 'abc';
+explain (costs off) delete from t_int1 where a = 'abc';
+delete from t_int1 where a = 'abc';
+explain (costs off) insert into t_int1 values('abc');
+insert into t_int1 values('abc');
+reset enable_seqscan;
+
+delimiter //
+drop procedure test1//
+create or replace function test1(arg1 int4) returns int4
+deterministic begin
+insert into t_int1 values(arg1);
+select a into arg1 from t_int1 where a = 'abc' limit 1; -- warning
+return arg1;
+end//
+
+select test1(1)//
+insert into t_text values(test1(1))// -- warning, even it's insert
+select * from t_text order by 1//
+drop procedure test1//
+
+create or replace function test1(arg1 int4) returns int4
+deterministic begin
+perform * from t_int1 where a = 'abc' limit 1; -- warning
+insert into t_text values(arg1);
+return arg1;
+end//
+
+select test1(1)//
+insert into t_text values(test1(1))// -- warning, even it's insert
+select * from t_text order by 1//
+drop procedure test1//
+
+create or replace function test1(arg1 int4) returns int4
+deterministic begin
+perform * from t_int1 where a = 'abc' limit 1; -- warning
+insert into t_int1 values(arg1);
+perform * from t_int1 where a = 'abc' limit 1; -- warning
+return arg1;
+end//
+
+select test1(1)//
+insert into t_text values(test1(1))// -- warning, even it's insert
+select * from t_text order by 1//
+drop procedure test1//
+
+create or replace function test1(a int1) returns int
+deterministic begin
+declare b int;
+set b = 'abc'; -- assign value, report error even in non-strict mode
+return b;
+end;
+//
+select test1(1)//
+insert into t_text values(test1(1))//
+select * from t_text order by 1//
+drop procedure test1//
+
+create or replace function test1(a int1) returns int
+deterministic begin
+declare b int;
+declare c int;
+set c = 1;
+set b = 1;
+if b > 'abc' then -- if compare, different type, don't report error
+set c=2;
+end if;
+return c;
+end;
+//
+select test1(1)//
+insert into t_text values(test1(1))//
+select * from t_text order by 1//
+drop procedure test1//
+
+create or replace function test1(a int1) returns int
+deterministic begin
+declare c int;
+case a
+when 'abc' then -- case when value, different type, don't report error
+set c=2;
+else
+set c=3;
+end case;
+return c;
+end;
+//
+select test1(1)//
+insert into t_text values(test1(1))//
+select * from t_text order by 1//
+drop procedure test1//
+
+create or replace function test1(a int1) returns int
+deterministic begin
+declare c int;
+set c = 1;
+while a >= 'abc' do -- while value, different type
+set c = 2;
+set a = -1;
+end while;
+return c;
+end;
+//
+select test1(1)//
+insert into t_text values(test1(1))//
+select * from t_text order by 1//
+drop procedure test1//
+
+create or replace function test1(a int1) returns int
+deterministic begin
+declare c int;
+set c = 1;
+for dint in 'abc' .. '1abc' loop -- wrong value in for ... loop, MySQL doesn't support, don't report error
+perform 1;
+end loop;
+return c;
+end;
+//
+select test1(1)//
+insert into t_text values(test1(1))//
+select * from t_text order by 1//
+
+drop procedure test1//
+
+create or replace function test1(arg1 int1) returns text
+DETERMINISTIC begin
+declare b int;
+declare c text;
+set b = 1;
+for dint in select a from t_int1 where a='abc' loop -- select query in for loop, MySQL doesn't support, don't report error
+perform 1;
+set c = dint;
+end loop;
+return c;
+end;
+//
+select test1(1)//
+insert into t_text values(test1(1))// -- warning
+select * from t_text order by 1//
+drop procedure test1//
+
+create or replace function test1(a int1) returns int
+DETERMINISTIC begin
+declare c int;
+forall dint in 'abc' .. '1abc'  -- wrong value in forall, MySQL doesn't support, don't report error
+select dint into c;
+return c;
+end;
+//
+select test1(1)//
+insert into t_text values(test1(1))//
+select * from t_text order by 1//
+drop procedure test1//
+
+create or replace function test1(arg1 int1) returns text
+DETERMINISTIC begin
+declare c text;
+declare cursor c1 is select a from t_uint1 where a='abc';   -- wrong value in declare cursor, MySQL doesn't support, don't report error
+for dint in c1 loop
+set c = dint;
+end loop;
+return c;
+end;
+//
+select test1(1)//
+insert into t_text values(test1(1))// -- warning
+select * from t_text order by 1//
+drop procedure test1//
+
+create or replace function test1() returns text
+DETERMINISTIC begin
+declare x int;
+declare c text;
+declare myarray text[];
+myarray := array['a', 'b'];
+foreach x in array myarray   -- wrong value in foreach, MySQL doesn't support, don't report error
+loop
+set c = x;
+end loop;
+return c;
+end;
+//
+select test1()//
+insert into t_text values(test1())//
+select * from t_text order by 1//
+drop procedure test1//
+
+create or replace function test1() returns int
+DETERMINISTIC
+begin
+return 'abc'; -- wrong value in return case, report error
+end;
+//
+select test1()//
+insert into t_text values(test1())//
+select * from t_text order by 1//
+drop procedure test1//
+
+create function test1() returns setof int
+DETERMINISTIC begin
+return next 'abc'; -- wrong value in return next case, MySQL doesn't support, treat it as return, report error
+return next 1;
+return next 'abc';
+return;
+end;
+//
+select test1()//
+insert into t_text values(test1())//
+select * from t_text order by 1//
+drop procedure test1//
+
+create function test1() returns setof int1
+DETERMINISTIC begin
+return query (select a from t_uint1 where a='abc');  -- wrong value in return query case, MySQL doesn't support, don't report error
+return;
+end;
+//
+select test1()//
+insert into t_text values(test1())// -- warning
+select * from t_text order by 1//
+drop procedure test1//
+
+create function test1() returns int
+DETERMINISTIC begin
+declare res int;
+EXECUTE IMMEDIATE 'select a from t_uint1 where a=''abc''' into res;  -- wrong value in EXECUTE IMMEDIATE, MySQL doesn't support, don't report error
+return res;
+end;
+//
+select test1()//
+insert into t_text values(test1())// -- warning
+select * from t_text order by 1//
+drop procedure test1//
+
+create function test1() returns int
+DETERMINISTIC begin
+declare res int;
+select a from t_uint1 where a='abc' into res; -- wrong value in select into var, don't report error
+return res;
+end;
+//
+select test1()//
+insert into t_text values(test1())// -- warning
+select * from t_text order by 1//
+drop procedure test1//
+
+create function test1() returns int
+DETERMINISTIC
+begin
+declare res int;
+declare _r record;
+for _r in execute 'select a from t_uint1 where a=''abc'';' loop  -- wrong value in for cursor,  MySQL doesn't support, don't report error
+set res = _r.a;
+end loop;
+return res;
+end;
+//
+select test1()//
+insert into t_text values(test1())// -- warning
+select * from t_text order by 1//
+drop procedure test1//
+
+create function test1() returns int
+DETERMINISTIC
+begin
+declare res int;
+DECLARE cur1 CURSOR FOR SELECT a FROM t_uint1 where a = 'abc';   -- wrong value in DECLARE cursor,  don't report error
+open cur1;
+fetch cur1 into res;
+close cur1;
+return res;
+end;
+//
+select test1()//
+insert into t_text values(test1())// -- warning
+select * from t_text order by 1//
+drop procedure test1//
+
+create function test1() returns int
+DETERMINISTIC
+begin
+declare res int;
+DECLARE cur1 CURSOR FOR SELECT 'abc'; 
+open cur1;
+fetch cur1 into res; -- wrong type in fetch, report error
+close cur1;
+return res;
+end;
+//
+select test1()//
+insert into t_text values(test1())//
+select * from t_text order by 1//
+
+drop procedure test1//
+
+delimiter ;
+
+select a into @a from t_uint1 where a='abc'; -- warning
+select a into outfile '@abs_srcdir@/data/strict_mode_test.data' from t_uint1 where a='abc'; -- warning
+select * into new_table from t_uint1 where a = 'abc'; -- ctas, error
+
+-- language sql
+create function test1() returns double
+as $$
+select 1 + 'abc';
+$$;
+select test1();
+insert into t_text values(test1());
+select * from t_text order by 1;
+drop procedure test1;
+
+create function test1() returns int
+as $$
+select 1 + 1;
+update t_int1 set a = 1 where a = 'abc';
+$$;
+
+--remove auto_recompile_function
+set dolphin.sql_mode = 'sql_mode_strict,ansi_quotes';
+delimiter //
+create or replace function test1(a int1) returns int
+deterministic begin
+declare b int;
+set b = 'abc';
+return b;
+end;
+//
+select test1(1)//
+insert into t_text values(test1(1))// -- no recompile warning
+drop procedure test1//
+
+delimiter ;
+drop schema strict_mode_test cascade;
