@@ -234,6 +234,10 @@ create table test_ignore_invalid_input(c1 int, c2 char(5), c3 timestamp, c4 bit(
                                          c8 json, c9 jsonb, c10 xml);
 insert ignore into test_ignore_invalid_input values('invalid input', 'invalid input', 'invalid input', b'100001', 1000, 'invalid input',
                                                     'invalid input', 'invalid input', 'invalid input', 'invalid input');
+WARNING:  invalid input syntax for integer: "invalid input"
+LINE 1: ...sert ignore into test_ignore_invalid_input values('invalid i...
+                                                             ^
+CONTEXT:  referenced column: c1
 WARNING:  invalid input syntax for type timestamp: "invalid input"
 LINE 1: ...id_input values('invalid input', 'invalid input', 'invalid i...
                                                              ^

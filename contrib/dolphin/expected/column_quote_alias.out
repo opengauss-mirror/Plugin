@@ -148,7 +148,7 @@ LINE 1: select mediumint 'keyword_test' from t_alias_case0001_1;
                          ^
 CONTEXT:  referenced column: int4
 select bigint 'keyword_test' from t_alias_case0001_1;
-ERROR:  invalid input syntax for type bigint: "keyword_test"
+ERROR:  invalid input syntax for bigint: "keyword_test"
 LINE 1: select bigint 'keyword_test' from t_alias_case0001_1;
                       ^
 CONTEXT:  referenced column: int8

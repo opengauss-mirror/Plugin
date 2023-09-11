@@ -47,7 +47,7 @@ select * from t3;
 (2 rows)
 
 insert into t4 values('');
-ERROR:  invalid input syntax for type bigint unsigned: ""
+ERROR:  invalid input syntax for bigint unsigned: ""
 LINE 1: insert into t4 values('');
                               ^
 CONTEXT:  referenced column: a

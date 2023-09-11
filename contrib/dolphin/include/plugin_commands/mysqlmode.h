@@ -24,16 +24,114 @@
     (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_BLOCK_RETURN_MULTI_RESULTS)
 
 extern int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool can_ignore, bool isUnsigned = false);
-extern int8 PgStrtoint8Internal(const char* s, bool sqlModeStrict, bool can_ignore);
-extern int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict, bool can_ignore);
-extern int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict, bool can_ignore);
-extern uint8 PgStrtouint8Internal(const char* s, bool sqlModeStrict, bool can_ignore);
-extern uint16 PgStrtouint16Internal(const char* s, bool sqlModeStrict, bool can_ignore);
-extern uint32 PgStrtouint32Internal(const char* s, bool sqlModeStrict, bool can_ignore);
-extern bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlModeStrict, bool can_ignore);
 extern void CheckSpaceAndDotInternal(char& digitAfterDot, const char** ptr,
                                      bool checkDecimal = true, int endChar = '\0');
 extern uint64 pg_getmsguint64(StringInfo msg);
 extern void pg_ctoa(int8 i, char* a);
 extern int get_step_len(unsigned char ch);
+
+template <bool is_unsigned>
+int64 PgStrToIntInternal(const char* s, bool errOk, uint64 max, int64 min, const char* typname)
+{
+    const char* ptr = s;
+    int128 tmp = 0;
+    bool neg = false;
+    char digitAfterDot = '\0';
+    int errlevel = errOk ? WARNING : ERROR;
+    const int baseDecimal = 10;
+
+    if (*s == 0) {
+        goto invalid_syntax;
+    }
+
+    /* skip leading spaces */
+    while (likely(*ptr) && isspace((unsigned char)*ptr)) {
+        ptr++;
+    }
+
+    /* handle sign */
+    if (*ptr == '-') {
+        ptr++;
+        neg = true;
+    } else if (*ptr == '+')
+        ptr++;
+
+    /* require at least one digit */
+    if (unlikely(!isdigit((unsigned char)*ptr))) {
+        goto invalid_syntax;
+    }
+
+    /* process digits */
+    while (*ptr && isdigit((unsigned char)*ptr)) {
+        int8 digit = (*ptr++ - '0');
+        if (is_unsigned) {
+            tmp = tmp * baseDecimal + digit;
+            if (tmp > max) {
+                goto out_of_range;
+            }
+        } else {
+            tmp = tmp * baseDecimal - digit;
+            if (tmp < min || tmp > max) {
+                goto out_of_range;
+            }
+        }
+    }
+
+    /* allow trailing whitespace, but not other trailing chars */
+    CheckSpaceAndDotInternal(digitAfterDot, &ptr);
+
+    /* could fail if input is most negative number */
+    if (is_unsigned) {
+        if (neg && tmp > min) {
+            goto out_of_range;
+        }
+    } else if (!neg) {
+        if (unlikely(tmp == min)) {
+            goto out_of_range;
+        }
+        tmp = -tmp;
+    }
+
+    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (is_unsigned) {
+            if (tmp == max) {
+                ereport(errlevel, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                    errmsg("value \"%s\" is out of range for type %s", s, typname)));
+            }
+            if (!neg && tmp < max) {
+                tmp++;
+            }
+        } else {
+            if (tmp == max || tmp == min) {
+                ereport(errlevel,
+                    (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                        errmsg("value \"%s\" is out of range for type %s", s, typname)));
+            }
+            if (!neg && tmp < max) {
+                tmp++;
+            } else if (neg && tmp > min) {
+                tmp--;
+            }
+        }
+    }
+
+    /* we check *ptr at last */
+    if (unlikely(*ptr != '\0')) {
+        goto invalid_syntax;
+    }
+
+    return (int64)tmp;
+
+out_of_range:
+    ereport(errlevel,
+        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+            errmsg("value \"%s\" is out of range for type %s", s, typname)));
+    return neg ? min : (int64)max;
+
+invalid_syntax:
+    ereport(errlevel,
+        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for %s: \"%s\"", typname, s)));
+    return (int64)tmp;
+}
+
 #endif /* MYSQLMODE_H */

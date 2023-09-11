@@ -208,6 +208,10 @@ select coalesce('2001-01-01 01:01:01.3654'::timestamp,null, null,'2012-08-02 15:
 (1 row)
 
 SELECT coalesce(null,1, 'k');
+WARNING:  invalid input syntax for integer: "k"
+LINE 1: SELECT coalesce(null,1, 'k');
+                                ^
+CONTEXT:  referenced column: coalesce
  coalesce 
 ----------
         1
@@ -3011,6 +3015,10 @@ select coalesce('2001-01-01 01:01:01.3654'::timestamp,null, null,'2012-08-02 15:
 (1 row)
 
 SELECT coalesce(null,1, 'k');
+WARNING:  invalid input syntax for integer: "k"
+LINE 1: SELECT coalesce(null,1, 'k');
+                                ^
+CONTEXT:  referenced column: coalesce
  coalesce 
 ----------
         1

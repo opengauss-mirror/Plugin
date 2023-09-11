@@ -70,11 +70,8 @@ extern Datum varchar_float8(PG_FUNCTION_ARGS);
 Datum uint1in(PG_FUNCTION_ARGS)
 {
     char *num = PG_GETARG_CSTRING(0);
-#ifdef DOLPHIN
-    PG_RETURN_UINT8(PgStrtouint8Internal(num, SQL_MODE_STRICT(), fcinfo->can_ignore));
-#else
-    PG_RETURN_UINT8((uint8)PgAtoiInternal(num, sizeof(uint8), '\0', SQL_MODE_STRICT(), fcinfo->can_ignore, true));
-#endif
+    PG_RETURN_UINT8(PgStrToIntInternal<true>(num, fcinfo->can_ignore || !SQL_MODE_STRICT(),
+        PG_UINT8_MAX, 0, "tinyint unsigned"));
 }
 
 /*
@@ -583,7 +580,8 @@ Datum uint2in(PG_FUNCTION_ARGS)
 {
     char *num = PG_GETARG_CSTRING(0);
 
-    PG_RETURN_UINT16(PgStrtouint16Internal(num, SQL_MODE_STRICT(), fcinfo->can_ignore));
+    PG_RETURN_UINT16(PgStrToIntInternal<true>(num, fcinfo->can_ignore || !SQL_MODE_STRICT(),
+        PG_UINT16_MAX, 0, "smallint unsigned"));
 }
 
 Datum uint2out(PG_FUNCTION_ARGS)
@@ -1089,7 +1087,8 @@ Datum uint4in(PG_FUNCTION_ARGS)
 {
     char *num = PG_GETARG_CSTRING(0);
 
-    PG_RETURN_UINT32(PgStrtouint32Internal(num, SQL_MODE_STRICT(), fcinfo->can_ignore));
+    PG_RETURN_UINT32(PgStrToIntInternal<true>(num, fcinfo->can_ignore || !SQL_MODE_STRICT(),
+        PG_UINT32_MAX, 0, "int unsigned"));
 }
 
 Datum uint4out(PG_FUNCTION_ARGS)
@@ -2316,8 +2315,8 @@ bool scanuint8(const char *str, bool errorOK, uint64 *result, bool can_ignore)
 Datum uint8in(PG_FUNCTION_ARGS)
 {
     char *str = PG_GETARG_CSTRING(0);
-    uint64 result;
-    (void)scanuint8(str, false, &result, fcinfo->can_ignore);
+    uint64 result = (uint64)PgStrToIntInternal<true>(str, fcinfo->can_ignore || !SQL_MODE_STRICT(),
+        PG_UINT64_MAX, 0, "bigint unsigned");
     PG_RETURN_UINT64(result);
 }
 

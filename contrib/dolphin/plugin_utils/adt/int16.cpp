@@ -40,7 +40,9 @@
 #include "utils/int16.h"
 #include "utils/int8.h"
 #include "utils/numeric.h"
-
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 const int MAXINT16LEN = 45;
 
 typedef struct {
@@ -54,6 +56,14 @@ static inline bool check_one_digit(const CheckContext* cxt, int128* result, bool
 {
     /* require at least one digit */
     if (unlikely(!isdigit(cxt->ptr))) {
+#ifdef DOLPHIN
+        ereport(cxt->errorOK ? WARNING : ERROR,
+                (errmodule(MOD_FUNCTION), errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                    errmsg("Truncated incorrect INTEGER value: '%s'", cxt->str)));
+        *result = cxt->tmp;
+        *ret = true;
+        return true;
+#else
         if (cxt->errorOK) {
             *ret = false;
             return true;
@@ -69,6 +79,7 @@ static inline bool check_one_digit(const CheckContext* cxt, int128* result, bool
             *ret = true;
             return true;
         }
+#endif
     }
     return false;
 }
@@ -83,7 +94,9 @@ bool scanint16(const char* str, bool errorOK, int128* result)
     const char* ptr = str;
     int128 tmp = 0;
     bool neg = false;
-
+#ifdef DOLPHIN
+    int elevel = errorOK ? WARNING : ERROR;
+#endif
     /*
      * Do our own scan, rather than relying on sscanf which might be broken
      * for long long.
@@ -115,6 +128,16 @@ bool scanint16(const char* str, bool errorOK, int128* result)
     while (*ptr && isdigit((unsigned char)*ptr)) {
         int8 digit = (*ptr++ - '0');
         if (unlikely(pg_mul_s128_overflow(tmp, base, &tmp)) || unlikely(pg_sub_s128_overflow(tmp, digit, &tmp))) {
+#ifdef DOLPHIN
+            ereport(elevel,
+                    (errmodule(MOD_FUNCTION), errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                        errmsg("value \"%s\" is out of range for type %s", str, "int16"),
+                        errdetail("text exceeds the length of int16"),
+                        errcause("invalid input."),
+                        erraction("use numeric for large integer value.")));
+            *result = neg ? PG_INT128_MIN : PG_INT128_MAX;
+            return true;
+#else
             if (errorOK) {
                 return false;
             } else {
@@ -125,6 +148,7 @@ bool scanint16(const char* str, bool errorOK, int128* result)
                         errcause("invalid input."),
                         erraction("use numeric for large integer value.")));
             }
+#endif
         }
     }
 
@@ -134,6 +158,15 @@ bool scanint16(const char* str, bool errorOK, int128* result)
     }
 
     if (unlikely(*ptr != '\0')) {
+#ifdef DOLPHIN
+        ereport(elevel,
+            (errmodule(MOD_FUNCTION), errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for type %s: \"%s\"", "int16", str),
+                errdetail("text contain invalid character"),
+                errcause("invalid input."),
+                erraction("check the validity of input.")));
+
+#else
         if (errorOK) {
             return false;
         } else {
@@ -146,10 +179,24 @@ bool scanint16(const char* str, bool errorOK, int128* result)
                     errcause("invalid input."),
                     erraction("check the validity of input.")));
         }
+#endif
     }
 
     if (!neg) {
         /* could fail if input is most negative number */
+#ifdef DOLPHIN
+        if (unlikely(tmp == PG_INT128_MIN)) {
+            ereport(elevel,
+                    (errmodule(MOD_FUNCTION), errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                        errmsg("value \"%s\" is out of range for type %s", str, "int16"),
+                        errdetail("text exceeds the length of int16"),
+                        errcause("invalid input."),
+                        erraction("use numeric for large integer value.")));
+            tmp = -(tmp + 1);
+        } else {
+            tmp = -tmp;
+        }
+#else
         if (unlikely(tmp == PG_INT128_MIN)) {
             if (errorOK) {
                 return false;
@@ -163,6 +210,7 @@ bool scanint16(const char* str, bool errorOK, int128* result)
             }
         }
         tmp = -tmp;
+#endif
     }
 
     *result = tmp;
@@ -175,8 +223,11 @@ Datum int16in(PG_FUNCTION_ARGS)
 {
     char* str = PG_GETARG_CSTRING(0);
     int128 result;
-
+#ifdef DOLPHIN
+    (void)scanint16(str, fcinfo->can_ignore || !SQL_MODE_STRICT(), &result);
+#else
     (void)scanint16(str, false, &result);
+#endif
     PG_RETURN_INT128(result);
 }
 

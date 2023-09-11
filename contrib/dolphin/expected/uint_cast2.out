@@ -337,6 +337,10 @@ CONTEXT:  referenced column: a
 set dolphin.sql_mode = '';
 delete from t1;
 insert into t1 values('-1');
+WARNING:  value "-1" is out of range for type int unsigned
+LINE 1: insert into t1 values('-1');
+                              ^
+CONTEXT:  referenced column: a
 insert into t1 values('-1'::time);
 WARNING:  int unsigned out of range
 CONTEXT:  referenced column: a
@@ -344,7 +348,11 @@ insert into t1 values('-1'::text);
 WARNING:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::char(10));
+WARNING:  value "-1" is out of range for type int unsigned
+CONTEXT:  referenced column: a
 insert into t1 values('-1'::varchar(10));
+WARNING:  value "-1" is out of range for type int unsigned
+CONTEXT:  referenced column: a
 insert into t1 values('-1'::binary(10));
 WARNING:  int unsigned out of range
 CONTEXT:  referenced column: a
@@ -547,6 +555,10 @@ CONTEXT:  referenced column: a
 set dolphin.sql_mode = '';
 delete from t1;
 insert into t1 values('-1');
+WARNING:  value "-1" is out of range for type smallint unsigned
+LINE 1: insert into t1 values('-1');
+                              ^
+CONTEXT:  referenced column: a
 insert into t1 values('-1'::time);
 WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: a
@@ -554,7 +566,11 @@ insert into t1 values('-1'::text);
 WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::char(10));
+WARNING:  value "-1" is out of range for type smallint unsigned
+CONTEXT:  referenced column: a
 insert into t1 values('-1'::varchar(10));
+WARNING:  value "-1" is out of range for type smallint unsigned
+CONTEXT:  referenced column: a
 insert into t1 values('-1'::binary(10));
 WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: a
