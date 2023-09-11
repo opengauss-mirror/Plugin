@@ -227,6 +227,18 @@ Datum int1_16(PG_FUNCTION_ARGS)
 Datum int16_1(PG_FUNCTION_ARGS)
 {
     int128 arg = PG_GETARG_INT128(0);
+#ifdef DOLPHIN
+    /*
+     * 1. in dolphin, int1 is signed, not unsigned.
+     * 2. actually mysql doesn't have int16, so we can ignore this case. but we use int16 in auto_increment,
+     *      when cast auto_increment value to int1/int2/int4, we will invoke this function.
+     */
+    int8 result = (int8)arg;
+    if ((int128)result != arg) {
+        /* truncate to max value when overflow. don't raise any warning or error */
+        result = INT8_MAX;
+    }
+#else
     uint8 result;
 
     result = (uint8)arg;
@@ -240,7 +252,7 @@ Datum int16_1(PG_FUNCTION_ARGS)
                 errcause("invalid cast."),
                 erraction("cast overflow.")));
     }
-
+#endif
     PG_RETURN_INT16(result);
 }
 
@@ -260,12 +272,17 @@ Datum int16_2(PG_FUNCTION_ARGS)
 
     /* Test for overflow by reverse-conversion. */
     if ((int128)result != arg) {
+#ifdef DOLPHIN
+        /* truncate to max value when overflow. don't raise any warning or error */
+        result = INT16_MAX;
+#else
         ereport(ERROR,
             (errmodule(MOD_FUNCTION), errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                 errmsg("smallint out of range"),
                 errdetail("cannot cast value too large for smallint"),
                 errcause("invalid cast."),
                 erraction("cast overflow.")));
+#endif
     }
 
     PG_RETURN_INT16(result);
@@ -286,12 +303,17 @@ Datum int16_4(PG_FUNCTION_ARGS)
 
     /* Test for overflow by reverse-conversion. */
     if ((int128)result != arg) {
+#ifdef DOLPHIN
+        /* truncate to max value when overflow. don't raise any warning or error */
+        result = INT32_MAX;
+#else
         ereport(ERROR,
             (errmodule(MOD_FUNCTION), errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                 errmsg("integer out of range"),
                 errdetail("cannot cast value too large for integer"),
                 errcause("invalid cast."),
                 erraction("cast overflow.")));
+#endif
     }
 
     PG_RETURN_INT32(result);
@@ -312,12 +334,17 @@ Datum int16_8(PG_FUNCTION_ARGS)
 
     /* Test for overflow by reverse-conversion. */
     if ((int128)result != arg) {
+#ifdef DOLPHIN
+        /* truncate to max value when overflow. don't raise any warning or error */
+        result = PG_INT64_MAX;
+#else
         ereport(ERROR,
             (errmodule(MOD_FUNCTION), errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                 errmsg("bigint out of range"),
                 errdetail("cannot cast value too large for bigint"),
                 errcause("invalid cast."),
                 erraction("cast overflow.")));
+#endif
     }
 
     PG_RETURN_INT64(result);
@@ -335,18 +362,6 @@ extern "C" DLL_PUBLIC Datum int16_u2(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum int16_u4(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum int16_u8(PG_FUNCTION_ARGS);
 
-void int16_overflow(int128 arg1, int128 arg2, char* typeName)
-{
-    if (arg1 != arg2) {
-        ereport(ERROR,
-            (errmodule(MOD_FUNCTION), errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-                errmsg("%s out of range", typeName),
-                errdetail("cannot cast value too large for %s", typeName),
-                errcause("invalid cast."),
-                erraction("cast overflow.")));
-    }
-}
-
 Datum uint_16(PG_FUNCTION_ARGS)
 {
     uint64 arg = PG_GETARG_UINT64(0);
@@ -361,7 +376,9 @@ Datum int16_u1(PG_FUNCTION_ARGS)
     result = (uint8)arg;
 
     /* Test for overflow by reverse-conversion. */
-    int16_overflow((int128)result, arg, "tinyint unsigned");
+    if ((int128)result != arg) {
+        result = UINT8_MAX;
+    }
     PG_RETURN_INT16(result);
 }
 
@@ -373,7 +390,9 @@ Datum int16_u2(PG_FUNCTION_ARGS)
     result = (uint16)arg;
 
     /* Test for overflow by reverse-conversion. */
-    int16_overflow((int128)result, arg, "smallint unsigned");
+    if ((int128)result != arg) {
+        result = UINT16_MAX;
+    }
     PG_RETURN_INT16(result);
 }
 
@@ -385,7 +404,9 @@ Datum int16_u4(PG_FUNCTION_ARGS)
     result = (uint32)arg;
 
     /* Test for overflow by reverse-conversion. */
-    int16_overflow((int128)result, arg, "integer unsigned");
+    if ((int128)result != arg) {
+        result = UINT32_MAX;
+    }
     PG_RETURN_INT32(result);
 }
 
@@ -397,7 +418,9 @@ Datum int16_u8(PG_FUNCTION_ARGS)
     result = (uint64)arg;
 
     /* Test for overflow by reverse-conversion. */
-    int16_overflow((int128)result, arg, "bigint unsigned");
+    if ((int128)result != arg) {
+        result = UINT64_MAX;
+    }
     PG_RETURN_INT64(result);
 }
 #endif
