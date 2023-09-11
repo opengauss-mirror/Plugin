@@ -1312,6 +1312,7 @@ hypertable_create_schema(const char *schema_name)
 {
 	CreateSchemaStmt stmt = {
 		.type = {},
+		.missing_ok = false,
 		.schemaname = (char *) schema_name,
 		.authid = "",
 		.hasBlockChain = false,

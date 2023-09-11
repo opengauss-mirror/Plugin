@@ -46,6 +46,7 @@
 #include "optimizer/predtest.h"
 #include "utils/acl.h"
 
+
 #include "plan_agg_bookend.h"
 
 #include "tsdb_dsm.h"
@@ -1789,7 +1790,7 @@ convert_tuples_by_name_map(TupleDesc indesc,
 	  for (i = 0; i < n; i++)
  
 	{
-		    Form_pg_attribute att = outdesc->attrs[i];
+		    Form_pg_attribute att = &outdesc->attrs[i];
 		    char    *attname;
 		    Oid     atttypid;
 		    int32    atttypmod;
@@ -1804,7 +1805,7 @@ convert_tuples_by_name_map(TupleDesc indesc,
 		    for (j = 0; j < indesc->natts; j++)
    
 		{
-			      att = indesc->attrs[j];
+			      att = &indesc->attrs[j];
 			      if (att->attisdropped)
         continue;
 			      if (strcmp(attname, NameStr(att->attname)) == 0)
@@ -2787,42 +2788,6 @@ makeColumnDef(const char *colname, Oid typeOid, int32 typmod, Oid collOid)
 	return n;
 }
 
-void *
-MemoryContextAllocExtended(MemoryContext context, Size size, int flags)
-{
-	void *ret;
-
-	AssertArg(MemoryContextIsValid(context));
-	AssertNotInCriticalSection(context);
-
-	if (((flags & MCXT_ALLOC_HUGE) != 0 && !AllocHugeSizeIsValid(size)) ||
-		((flags & MCXT_ALLOC_HUGE) == 0 && !AllocSizeIsValid(size)))
-		elog(ERROR, "invalid memory alloc request size %zu", size);
-
-	context->isReset = false;
-
-	void *(*alloc) (MemoryContext context, Size size);
-	ret = (alloc)(context, size);
-	if (ret == NULL)
-	{
-		if ((flags & MCXT_ALLOC_NO_OOM) == 0)
-		{
-			MemoryContextStats(TopMemoryContext);
-			ereport(ERROR,
-					(errcode(ERRCODE_OUT_OF_MEMORY),
-					 errmsg("out of memory"),
-					 errdetail("Failed on request of size %zu.", size)));
-		}
-		return NULL;
-	}
-
-	VALGRIND_MEMPOOL_ALLOC(context, ret, size);
-
-	if ((flags & MCXT_ALLOC_ZERO) != 0)
-		MemSetAligned(ret, 0, size);
-
-	return ret;
-}
 
 ArrayBuildStateArr *
 initArrayResultArr(Oid array_type, Oid element_type, MemoryContext rcontext, bool subcontext)

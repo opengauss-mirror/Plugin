@@ -383,14 +383,14 @@ chunk_append_exec(ExtensiblePlanState *node)
 		state->choose_next_subplan(state);
 
 #if PG96
-	if (node->ss.ps.ps_TupFromTlist)
+	if (node->ss.ps.ps_vec_TupFromTlist)
 	{
 		resultslot = ExecProject(projinfo, &isdone);
 
 		if (isdone == ExprMultipleResult)
 			return resultslot;
 
-		node->ss.ps.ps_TupFromTlist = false;
+		node->ss.ps.ps_vec_TupFromTlist = false;
 	}
 #endif
 
@@ -428,7 +428,7 @@ chunk_append_exec(ExtensiblePlanState *node)
 
 			if (isdone != ExprEndResult)
 			{
-				node->ss.ps.ps_TupFromTlist = (isdone == ExprMultipleResult);
+				node->ss.ps.ps_vec_TupFromTlist = (isdone == ExprMultipleResult);
 				return resultslot;
 			}
 #else

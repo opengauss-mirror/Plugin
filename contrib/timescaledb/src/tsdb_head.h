@@ -20,6 +20,7 @@
 #include "commands/explain.h"
 #include "access/slru.h"
 
+#include "utils/evtcache.h"
 #include "parser/parse_coerce.h"
 #include "access/reloptions.h"
 #include "tsdb_shm.h"
@@ -138,8 +139,7 @@ typedef bool (*check_function_callback) (Oid func_id, void *context);
 
 #define PQ_RECV_BUFFER_SIZE 8192 
 #define pq_flush() (PqCommMethods->flush())
-#define pq_putmessage(msgtype, s, len) \
-	(PqCommMethods->putmessage(msgtype, s, len))
+
 
 #define		PROC_VACUUM_FOR_WRAPAROUND	0x08
 
@@ -316,7 +316,7 @@ typedef void (*PG_init_t) (void);
 
 
 #define MAX_UNIT_LEN		3
-#define EventTriggerNameIndexId  3467
+
 #define PolicyRelationId	3256 
 #define MQH_INITIAL_BUFSIZE				8192
 #define GUC_UNIT_XSEGS			0x4000 
@@ -462,8 +462,6 @@ typedef void (*parallel_worker_main_type) (struct dsm_segment *seg,struct shm_to
 
 
 
-#define MIN_TIMESTAMP	(-211813488000.0)
-#define END_TIMESTAMP	185330760393600.0 
 #define DATETIME_MIN_JULIAN (0)   
 
 typedef void (*pqsigfunc) (int signo); 
@@ -483,8 +481,8 @@ extern pqsigfunc pqsignal(int signo, pqsigfunc func);
 #define BGW_EXTRALEN					128  
 
 
-#define get_pathtarget_sortgroupref(target, colno) \
-	((target)->sortgrouprefs ? (target)->sortgrouprefs[colno] : (Index) 0) 
+// #define get_pathtarget_sortgroupref(target, colno) \
+// 	((target)->sortgrouprefs ? (target)->sortgrouprefs[colno] : (Index) 0) 
 
  
 
@@ -573,6 +571,9 @@ extern void RunObjectPostAlterHook(Oid classId, Oid objectId, int subId,
 #define list_make5_oid(x1,x2,x3,x4,x5)	lcons_oid(x1, list_make4_oid(x2, x3, x4, x5)) 
  
 #define Int4LessOperator	97
+
+extern void RunObjectPostCreateHook(Oid classId, Oid objectId, int subId,
+						bool is_internal); 
 
 
 #define InvokeObjectPostCreateHook(classId,objectId,subId)			\
@@ -693,23 +694,8 @@ typedef enum
 } HTSU_Result;
 
 
-typedef enum
-{
-PROCESS_UTILITY_TOPLEVEL,/* toplevel interactive command */
-ROCESS_UTILITY_QUERY,/* a complete query, but not toplevel */
-PROCESS_UTILITY_SUBCOMMAND/* a portion of a query */
-} ProcessUtilityContext;
 
-typedef enum UpperRelationKind
-{
-UPPERREL_SETOP,/* result of UNION/INTERSECT/EXCEPT, if any */
-UPPERREL_GROUP_AGG,/* result of grouping/aggregation, if any */
-UPPERREL_WINDOW,/* result of window functions, if any */
-UPPERREL_DISTINCT,/* result of "SELECT DISTINCT", if any */
-UPPERREL_ORDERED,/* result of ORDER BY, if any */
-UPPERREL_FINAL/* result of any remaining top-level actions */
-/* NB: UPPERREL_FINAL must be last enum entry; it's used to size arrays */
-} UpperRelationKind;
+
 
 
 typedef void (*create_upper_paths_hook_type) (PlannerInfo *root,
@@ -914,27 +900,7 @@ typedef enum VolatileFunctionStatus
 	VOLATILITY_NOVOLATILE
 } VolatileFunctionStatus; 
 
-typedef struct PathTarget
-{
-	pg_node_attr(no_copy_equal, no_read);
 
-	NodeTag	type;
-
-	/* list of expressions to be computed */
-	List	   *exprs;
-
-	/* corresponding sort/group refnos, or 0 */
-	Index	   *sortgrouprefs pg_node_attr(array_size(exprs));
-
-	/* cost of evaluating the expressions */
-	QualCost	cost;
-
-	/* estimated avg width of result tuples */
-	int			width;
-
-	/* indicates if exprs contain any volatile functions */
-	VolatileFunctionStatus has_volatile_expr;
-} PathTarget; 
 
 #define AGGSPLITOP_COMBINE		0x01
 #define AGGSPLITOP_SKIPFINAL	0x02 
@@ -994,29 +960,7 @@ typedef struct RoleSpec
 } RoleSpec;
 
 
-#define EventTriggerRelationId	3466
 
-CATALOG(pg_event_trigger,3466)
-{
-	NameData	evtname;		/* trigger's name */
-	NameData	evtevent;		/* trigger's event */
-	Oid			evtowner;		/* trigger's owner */
-	Oid			evtfoid;		/* OID of function to be called */
-	char		evtenabled;		/* trigger's firing configuration WRT
-								 * session_replication_role */
-
-#ifdef CATALOG_VARLEN
-	text		evttags[1];		/* command TAGs this event trigger targets */
-#endif
-	Oid oid;
-} FormData_pg_event_trigger;
-
-/* ----------------
- *		Form_pg_event_trigger corresponds to a pointer to a tuple with
- *		the format of pg_event_trigger relation.
- * ----------------
- */
-typedef FormData_pg_event_trigger *Form_pg_event_trigger;
 
 /* ----------------
  *		compiler constants for pg_event_trigger
@@ -1032,18 +976,6 @@ typedef FormData_pg_event_trigger *Form_pg_event_trigger;
 
 #define Anum_pg_index_indislive			12
 
-
-
-
-
-/*
- * For ALTER TABLE commands, we keep a list of the subcommands therein.
- */
-typedef struct CollectedATSubcmd
-{
-	ObjectAddress address;		/* affected column, constraint, index, ... */
-	Node	   *parsetree;
-} CollectedATSubcmd;
 
 
 
@@ -1201,16 +1133,6 @@ typedef enum WCOKind
 	WCO_RLS_CONFLICT_CHECK		/* RLS ON CONFLICT DO UPDATE USING policy */
 } WCOKind; 
 
-typedef struct WithCheckOption
-{
-	NodeTag		type;
-	WCOKind		kind;			/* kind of WCO */
-	char	   *relname;		/* name of relation that specified the WCO */
-	char	   *polname;		/* name of RLS policy being checked */
-	Node	   *qual;			/* constraint qual to check */
-	bool		cascaded;		/* true for a cascaded WCO on a view */
-} WithCheckOption; 
-
 typedef struct RangeTblFunction
 {
 	NodeTag		type;
@@ -1272,26 +1194,11 @@ typedef struct
 	AggClauseCosts *costs;
 } get_agg_clause_costs_context;
 
-typedef struct ProjectionPath
-{
-	Path		path;
-	Path	   *subpath;		/* path representing input source */
-	bool		dummypp;		/* true if no separate Result is needed */
-} ProjectionPath; 
 
-typedef enum
-{
-	EVT_DDLCommandStart,
-	EVT_DDLCommandEnd,
-	EVT_SQLDrop,
-	EVT_TableRewrite
-} EventTriggerEvent; 
 
-typedef enum
-{
-EVENTTRIGGERNAME,
-EVENTTRIGGEROID,
-}Eventtrigger_tsdb;
+
+
+
 
 typedef enum IndexAMProperty
 {
@@ -1455,13 +1362,6 @@ typedef enum
 } CEOUC_WAIT_MODE; 
 
 
-typedef struct
-{
-	Oid			fnoid;			/* function to be called */
-	char		enabled;		/* as SESSION_REPLICATION_ROLE_* */
-	int			ntags;			/* number of command tags */
-	char	  **tag;			/* command tags in SORTED order */
-} EventTriggerCacheItem; 
 
 
 
@@ -1500,6 +1400,19 @@ typedef struct RI_ConstraintInfo
 												 * FK) */
 	dlist_node	valid_link;		/* Link in list of valid entries */
 } RI_ConstraintInfo;
+
+typedef enum
+{
+	ETCS_NEEDS_REBUILD,
+	ETCS_REBUILD_STARTED,
+	ETCS_VALID,
+} EventTriggerCacheStateType; 
+
+typedef struct
+{
+	EventTriggerEvent event;
+	List	   *triggerlist;
+} EventTriggerCacheEntry;
 
 typedef struct NamedLWLockTrancheRequest
 {
@@ -1581,18 +1494,9 @@ static const int MultiXactStatusLock[MaxMultiXactStatus + 1] =
 #define TUPLOCK_from_mxstatus(status) \
 			(MultiXactStatusLock[(status)])
 
-typedef struct
-{
-	EventTriggerEvent event;
-	List	   *triggerlist;
-} EventTriggerCacheEntry;
 
-typedef enum
-{
-	ETCS_NEEDS_REBUILD,
-	ETCS_REBUILD_STARTED,
-	ETCS_VALID,
-} EventTriggerCacheStateType; 
+
+
 
 
 typedef struct ViewOptions
@@ -2072,43 +1976,8 @@ struct Tuplesortstate
 	int			datumTypeLen;
 };
 
-typedef enum TBlockState
-{
-	/* not-in-transaction-block states */
-	TBLOCK_DEFAULT,				/* idle */
-	TBLOCK_STARTED,				/* running single-query transaction */
 
-	/* transaction block states */
-	TBLOCK_BEGIN,				/* starting transaction block */
-	TBLOCK_INPROGRESS,			/* live transaction */
-	TBLOCK_PARALLEL_INPROGRESS, /* live transaction inside parallel worker */
-	TBLOCK_END,					/* COMMIT received */
-	TBLOCK_ABORT,				/* failed xact, awaiting ROLLBACK */
-	TBLOCK_ABORT_END,			/* failed xact, ROLLBACK received */
-	TBLOCK_ABORT_PENDING,		/* live xact, ROLLBACK received */
-	TBLOCK_PREPARE,				/* live xact, PREPARE received */
 
-	/* subtransaction states */
-	TBLOCK_SUBBEGIN,			/* starting a subtransaction */
-	TBLOCK_SUBINPROGRESS,		/* live subtransaction */
-	TBLOCK_SUBRELEASE,			/* RELEASE received */
-	TBLOCK_SUBCOMMIT,			/* COMMIT received while TBLOCK_SUBINPROGRESS */
-	TBLOCK_SUBABORT,			/* failed subxact, awaiting ROLLBACK */
-	TBLOCK_SUBABORT_END,		/* failed subxact, ROLLBACK received */
-	TBLOCK_SUBABORT_PENDING,	/* live subxact, ROLLBACK received */
-	TBLOCK_SUBRESTART,			/* live subxact, ROLLBACK TO received */
-	TBLOCK_SUBABORT_RESTART		/* failed subxact, ROLLBACK TO received */
-} TBlockState;
-
-typedef enum TransState
-{
-	TRANS_DEFAULT,				/* idle */
-	TRANS_START,				/* transaction starting */
-	TRANS_INPROGRESS,			/* inside a valid transaction */
-	TRANS_COMMIT,				/* commit in progress */
-	TRANS_ABORT,				/* abort in progress */
-	TRANS_PREPARE				/* prepare in progress */
-} TransState;
 
 typedef struct
 {
@@ -2221,30 +2090,6 @@ typedef struct vfd
 	int			fileFlags;		/* open(2) flags for (re)opening the file */
 	int			fileMode;		/* mode to pass to open(2) */
 } Vfd;
-typedef struct TransactionStateData
-{
-	TransactionId transactionId;	/* my XID, or Invalid if none */
-	SubTransactionId subTransactionId;	/* my subxact ID */
-	char	   *name;			/* savepoint name, if any */
-	int			savepointLevel; /* savepoint level */
-	TransState	state;			/* low-level state */
-	TBlockState blockState;		/* high-level state */
-	int			nestingLevel;	/* transaction nesting depth */
-	int			gucNestLevel;	/* GUC context nesting depth */
-	MemoryContext curTransactionContext;		/* my xact-lifetime context */
-	ResourceOwner curTransactionOwner;	/* my query resources */
-	TransactionId *childXids;	/* subcommitted child XIDs, in XID order */
-	int			nChildXids;		/* # of subcommitted child XIDs */
-	int			maxChildXids;	/* allocated size of childXids[] */
-	Oid			prevUser;		/* previous CurrentUserId setting */
-	int			prevSecContext; /* previous SecurityRestrictionContext */
-	bool		prevXactReadOnly;		/* entry-time xact r/o state */
-	bool		startedInRecovery;		/* did we start in recovery? */
-	bool		didLogXid;		/* has xid been included in WAL record? */
-	int			parallelModeLevel;		/* Enter/ExitParallelMode counter */
-	struct TransactionStateData *parent;		/* back link to parent */
-} TransactionStateData;
-
 
 typedef struct RI_CompareKey
 {
@@ -2352,25 +2197,7 @@ typedef struct PendingRelDelete
 	struct PendingRelDelete *next;		/* linked-list link */
 } PendingRelDelete;
 
-typedef struct ProcArrayStruct
-{
-	int			numProcs;		
-	int			maxProcs;		
-	int			maxKnownAssignedXids;	
-	int			numKnownAssignedXids;	
-	int			tailKnownAssignedXids;	
-	int			headKnownAssignedXids;	
-	slock_t		known_assigned_xids_lck;		
-	TransactionId lastOverflowedXid;
 
-	/* oldest xmin of any replication slot */
-	TransactionId replication_slot_xmin;
-	/* oldest catalog xmin of any replication slot */
-	TransactionId replication_slot_catalog_xmin;
-
-	/* indexes into allPgXact[], has PROCARRAY_MAXPROCS entries */
-	int			pgprocnos[FLEXIBLE_ARRAY_MEMBER];
-} ProcArrayStruct;
 
 
 

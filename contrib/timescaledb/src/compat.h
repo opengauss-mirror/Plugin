@@ -6,7 +6,7 @@
 
 #ifndef TIMESCALEDB_COMPAT_H
 #define TIMESCALEDB_COMPAT_H
-
+#include "c.h"
 #include <commands/trigger.h>
 #include <postgres.h>
 #include <pgstat.h>
@@ -296,7 +296,7 @@
 /* ExecBuildProjectionInfo */
 #if PG96
 #define ExecBuildProjectionInfoCompat(tl, exprContext, slot, parent, inputdesc)                    \
-	ExecBuildProjectionInfo((List *) ExecInitExpr((Expr *) tl, NULL), exprContext, slot, inputdesc)
+	ExecBuildProjectionInfo(((List *) ExecInitExpr((Expr *) tl, NULL)), exprContext, slot, parent, inputdesc)
 #else
 #define ExecBuildProjectionInfoCompat(tl, exprContext, slot, parent, inputdesc)                    \
 	ExecBuildProjectionInfo(tl, exprContext, slot, parent, inputdesc)

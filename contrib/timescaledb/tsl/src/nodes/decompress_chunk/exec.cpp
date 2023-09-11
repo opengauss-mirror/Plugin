@@ -330,14 +330,14 @@ decompress_chunk_exec(ExtensiblePlanState *node)
 		return NULL;
 
 #if PG96
-	if (node->ss.ps.ps_TupFromTlist)
+	if (node->ss.ps.ps_vec_TupFromTlist)
 	{
 		resultslot = ExecProject(node->ss.ps.ps_ProjInfo, &isDone);
 
 		if (isDone == ExprMultipleResult)
 			return resultslot;
 
-		node->ss.ps.ps_TupFromTlist = false;
+		node->ss.ps.ps_vec_TupFromTlist = false;
 	}
 #endif
 
@@ -371,7 +371,7 @@ decompress_chunk_exec(ExtensiblePlanState *node)
 
 		if (isDone != ExprEndResult)
 		{
-			node->ss.ps.ps_TupFromTlist = (isDone == ExprMultipleResult);
+			node->ss.ps.ps_vec_TupFromTlist = (isDone == ExprMultipleResult);
 			return resultslot;
 		}
 #else

@@ -52,6 +52,7 @@
 #include "parser/parse_collate.h"
 
 #include "optimizer/pathnode.h"
+#include "utils/evtcache.h"
 
 #include "catalog/storage.h"
 #include "tsdb_static.cpp"
@@ -61,7 +62,7 @@
 bool
 IsInParallelMode(void)
 {
-	return CurrentTransactionState->parallelModeLevel != 0;
+	return false;
 } 
 
 void
@@ -613,20 +614,7 @@ check_functions_in_node(Node *node, check_function_callback checker,
 	return false;
 }
 
-void
-ProcArrayGetReplicationSlotXmin(TransactionId *xmin,
-								TransactionId *catalog_xmin)
-{
-	LWLockAcquire(ProcArrayLock, LW_SHARED);
 
-	if (xmin != NULL)
-		*xmin = procArray->replication_slot_xmin;
-
-	if (catalog_xmin != NULL)
-		*catalog_xmin = procArray->replication_slot_catalog_xmin;
-
-	LWLockRelease(ProcArrayLock);
-}
 
 Relids
 find_childrel_parents(PlannerInfo *root, RelOptInfo *rel)

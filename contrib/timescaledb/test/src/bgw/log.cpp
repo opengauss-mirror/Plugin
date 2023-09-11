@@ -69,7 +69,7 @@ emit_log_hook_callback(ErrorData *edata)
 	/*
 	 * once proc_exit has started we may no longer be able to start transactions
 	 */
-	if (MyProc == NULL)
+	if (t_thrd.proc == NULL)
 		return;
 
 	/*

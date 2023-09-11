@@ -1,5 +1,5 @@
 set(SOURCES
-  init.c
+  init.cpp
   ${PROJECT_SOURCE_DIR}/src/extension.cpp
   ${PROJECT_SOURCE_DIR}/src/guc.cpp
 )

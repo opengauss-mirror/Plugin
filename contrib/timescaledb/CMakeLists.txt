@@ -376,3 +376,14 @@ add_custom_target(licensecheck
 if (IS_DIRECTORY ${PROJECT_SOURCE_DIR}/.git)
   configure_file(${PROJECT_SOURCE_DIR}/scripts/githooks/commit_msg.py ${PROJECT_SOURCE_DIR}/.git/hooks/commit-msg COPYONLY)
 endif()
+
+
+
+
+set(PROJECT_TRUNK_DIR ${CMAKE_SOURCE_DIR}/../..)
+set(PROJECT_OPENGS_DIR ${PROJECT_TRUNK_DIR} CACHE INTERNAL "")
+set(PROJECT_SRC_DIR ${PROJECT_OPENGS_DIR}/src CACHE INTERNAL "")
+set(Third_party_library $ENV{BINARYLIBS}/kernel/dependency/libobs/comm/include)
+add_definitions(-DPGXC)
+include_directories(${PROJECT_SRC_DIR}/include ${PROJECT_INCLUDE_DIR} ${Third_party_library})
+

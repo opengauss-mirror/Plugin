@@ -139,6 +139,7 @@ create_default_index(Hypertable *ht, List *indexelems)
 {
 	IndexStmt stmt = {
 		.type = T_IndexStmt,
+		.missing_ok= false,
 		.schemaname = "",
 		.idxname = NULL,
 		.relation = makeRangeVar(NameStr(ht->fd.schema_name), NameStr(ht->fd.table_name), 0),

@@ -828,7 +828,7 @@ static void
 gapfill_rescan(ExtensiblePlanState *node)
 {
 #if PG96
-	node->ss.ps.ps_TupFromTlist = false;
+	node->ss.ps.ps_vec_TupFromTlist = false;
 #endif
 	if (node->extensible_ps != NIL)
 	{
@@ -1035,17 +1035,16 @@ gapfill_state_return_subplan_slot(GapFillState *state)
 	if (modified)
 	{
 #if PG12_LT
-		if (state->subslot->tts_shouldFree)
+		if (TTS_SHOULDFREE(state->subslot))
 		{
 			heap_freetuple((HeapTuple)state->subslot->tts_tuple);
-			state->subslot->tts_shouldFree = false;
 		}
 		state->subslot->tts_tuple = NULL;
 
-		if (state->subslot->tts_shouldFreeMin)
+		if (TTS_SHOULDFREEMIN(state->subslot))
 		{
 			heap_free_minimal_tuple(state->subslot->tts_mintuple);
-			state->subslot->tts_shouldFreeMin = false;
+
 		}
 		state->subslot->tts_mintuple = NULL;
 
@@ -1129,14 +1128,14 @@ fetch_subplan_tuple(ExtensiblePlanState *node)
 #endif
 
 #if PG96
-	if (node->ss.ps.ps_TupFromTlist)
+	if (node->ss.ps.ps_vec_TupFromTlist)
 	{
 		resultslot = ExecProject(node->ss.ps.ps_ProjInfo, &isDone);
 
 		if (isDone == ExprMultipleResult)
 			return resultslot;
 
-		node->ss.ps.ps_TupFromTlist = false;
+		node->ss.ps.ps_vec_TupFromTlist = false;
 	}
 #endif
 
@@ -1159,7 +1158,7 @@ fetch_subplan_tuple(ExtensiblePlanState *node)
 
 		if (isDone != ExprEndResult)
 		{
-			node->ss.ps.ps_TupFromTlist = (isDone == ExprMultipleResult);
+			node->ss.ps.ps_vec_TupFromTlist = (isDone == ExprMultipleResult);
 			return resultslot;
 		}
 #else

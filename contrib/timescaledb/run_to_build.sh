@@ -1,0 +1,1 @@
+./bootstrap -DUSE_OPENSSL=0 -DREGRESS_CHECKS=OFF 

@@ -69,7 +69,7 @@
 void _process_utility_init(void);
 void _process_utility_fini(void);
 
-static ProcessUtility_hook_type_tsdb prev_ProcessUtility_hook;
+static ProcessUtility_hook_type prev_ProcessUtility_hook;
 static bool expect_chunk_modification = false;
 static bool process_altertable_set_options(AlterTableCmd *cmd, Hypertable *ht);
 static bool process_altertable_reset_options(AlterTableCmd *cmd, Hypertable *ht);
@@ -84,24 +84,50 @@ prev_ProcessUtility(ProcessUtilityArgs *args)
 		/* Call any earlier hooks */
 		(prev_ProcessUtility_hook)(args->pstmt,
 								   args->query_string,
-								   args->context,
 								   args->params,
+								   true,
 								   args->queryEnv,
 								   args->dest,
-								   args->completion_tag);
+								   false,
+								   args->completion_tag,
+								   false);
 #else
-		(prev_ProcessUtility_hook)(args->parsetree,
-								   args->query_string,
-									args->context,
-								   args->params,
+	processutility_context temp = {
+		.parse_tree =args->parsetree,
+		.query_string = args->query_string,
+		.readOnlyTree  =false,
+		.params = args->params,
+		.is_top_level = true
+	};
+	processutility_context *for_tsdb = &temp;
+		(prev_ProcessUtility_hook)(for_tsdb,
 								   args->dest,
-								   args->completion_tag);
+								   false,
+								   args->completion_tag,
+								   args->context,
+								   false);
 #endif
 	}
 	else
 	{
 		/* Call the standard */
-#if !PG96
+#ifdef OG30
+	processutility_context temp = {
+		.parse_tree =args->parsetree,
+		.query_string = args->query_string,
+		.readOnlyTree  =false,
+		.params = args->params,
+		.is_top_level = true
+	};
+	processutility_context *for_tsdb = &temp;
+		standard_ProcessUtility(for_tsdb,
+								args->dest,
+								true,
+								args->completion_tag,
+								args->context);
+#else
+{
+	#if !PG96
 		standard_ProcessUtility(args->pstmt,
 								args->query_string,
 								args->context,
@@ -117,6 +143,9 @@ prev_ProcessUtility(ProcessUtilityArgs *args)
 								args->dest,
 								args->completion_tag);
 #endif
+}
+#endif
+
 	}
 }
 
@@ -899,9 +928,16 @@ process_drop_hypertable(ProcessUtilityArgs *args, DropStmt *stmt)
 						ts_hypertable_get_by_id(ht->fd.compressed_hypertable_id);
 					ts_hypertable_drop(compressed_hypertable, DROP_CASCADE);
 				}
+				#ifdef OG30
+				if (stmt->behavior == DROP_CASCADE && !TS_HYPERTABLE_HAS_COMPRESSION(ht))
+				{
+					ts_hypertable_drop(ht, DROP_CASCADE);
+					handled = true;
+				}
+				#endif
 			}
 
-			handled = true;
+			//handled = true;
 		}
 	}
 
@@ -1080,12 +1116,18 @@ static bool
 process_drop_start(ProcessUtilityArgs *args)
 {
 	DropStmt *stmt = (DropStmt *) args->parsetree;
-
+	bool handled = false;
 	switch (stmt->removeType)
 	{
 		case OBJECT_TABLE:
-			process_drop_hypertable(args, stmt);
-			process_drop_chunk(args, stmt);
+			#ifdef OG30
+				handled = process_drop_hypertable(args, stmt);
+				process_drop_chunk(args, stmt);
+			#else
+				process_drop_hypertable(args, stmt);
+				process_drop_chunk(args, stmt);
+			#endif
+
 			break;
 		case OBJECT_INDEX:
 			process_drop_hypertable_index(args, stmt);
@@ -1097,7 +1139,7 @@ process_drop_start(ProcessUtilityArgs *args)
 			break;
 	}
 
-	return false;
+	return handled;
 }
 
 static void
@@ -1115,7 +1157,7 @@ reindex_chunk(Hypertable *ht, Oid chunk_relid, void *arg)
 			ReindexTable(stmt->relation,
 						 (const char*)stmt->name,
 						 &stmt->memUsage
-#if PG12_GE
+#if OG30
 						 ,
 						 stmt->concurrent /* TODO test */
 #endif
@@ -3399,22 +3441,14 @@ process_ddl_sql_drop(EventTriggerDropObject *obj)
 	}
 }
 
-/*
- * ProcessUtility hook for DDL commands that have not yet been processed by
- * PostgreSQL.
- */
 static void
 timescaledb_ddl_command_start(
-#if PG10_GE
-	PlannedStmt *pstmt,
-#else
-	Node *parsetree,
-#endif
-	const char *query_string, ProcessUtilityContext context, ParamListInfo params,
-#if PG10_GE
-	QueryEnvironment *queryEnv,
-#endif
-	DestReceiver *dest, char *completion_tag)
+	processutility_context* processutility_cxt,
+	DestReceiver *dest,
+	bool sentToRemote,
+	char *completion_tag,
+	ProcessUtilityContext context,
+	bool isCTAS)
 {
 	ProcessUtilityArgs args = {
 		.hcache = NULL,
@@ -3424,11 +3458,11 @@ timescaledb_ddl_command_start(
 		.queryEnv = queryEnv,
 		.parse_state = make_parsestate(NULL),
 	#else
-		.parsetree = parsetree,
+		.parsetree = processutility_cxt->parse_tree,
 	#endif
-		.query_string = query_string,
-		.context = context,
-		.params = params,
+		.query_string = processutility_cxt->query_string,
+		.context = {},
+		.params = processutility_cxt->params,
 		.dest = dest,
 		.hypertable_list = NIL,
 		.completion_tag = completion_tag,
@@ -3575,8 +3609,8 @@ process_utility_subxact_abort(SubXactEvent event, SubTransactionId mySubid,
 void
 _process_utility_init(void)
 {
-	prev_ProcessUtility_hook = ProcessUtility_hook_tsdb;
-	ProcessUtility_hook_tsdb = timescaledb_ddl_command_start;
+	prev_ProcessUtility_hook = ProcessUtility_hook;
+	ProcessUtility_hook = timescaledb_ddl_command_start;
 	RegisterXactCallback(process_utility_xact_abort, NULL);
 	RegisterSubXactCallback(process_utility_subxact_abort, NULL);
 }
@@ -3584,7 +3618,7 @@ _process_utility_init(void)
 void
 _process_utility_fini(void)
 {
-	ProcessUtility_hook_tsdb = prev_ProcessUtility_hook;
+	ProcessUtility_hook = prev_ProcessUtility_hook;
 	UnregisterXactCallback(process_utility_xact_abort, NULL);
 	UnregisterSubXactCallback(process_utility_subxact_abort, NULL);
 }

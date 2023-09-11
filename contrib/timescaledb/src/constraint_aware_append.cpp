@@ -54,10 +54,9 @@ excluded_by_constraint(PlannerInfo *root, RangeTblEntry *rte, Index rt_index, Li
 		.isPartitionedTable = false,
 		.partflag = {},
 		.rows = 0,
-		.width = 0,
 		.encodedwidth = 0,
 		.encodednum =0,
-		.reltargetlist = 0,   
+		.reltarget = 0,   
     	.distribute_keys = 0, 
     	.pathlist = 0,        
     	.ppilist = 0,         
@@ -75,7 +74,8 @@ excluded_by_constraint(PlannerInfo *root, RangeTblEntry *rte, Index rt_index, Li
     	.attr_widths=0,  
     	.lateral_vars=0, 
     	.lateral_relids=0,
-    	.indexlist=0,     
+    	.indexlist=0,
+		.statlist={},     
     	.pages=0,  
     	.tuples=0,       
     	.multiple=0,    
@@ -90,8 +90,13 @@ excluded_by_constraint(PlannerInfo *root, RangeTblEntry *rte, Index rt_index, Li
     	.subplan=0, 
    		.subroot={},
    	 	.subplan_params=0,
+		.serverid=0,
+		.userid=0,
+		.useridiscurrent=false,
     	.fdwroutine={}, 
-    	.fdw_private = 0 ,
+    	.fdw_private = 0,
+		.unique_for_rels={},
+		.non_unique_for_rels={},
 		.baserestrictinfo = restrictinfos,
 	};
 
@@ -174,20 +179,21 @@ ca_append_begin(ExtensiblePlanState *node, EState *estate, int eflags)
 	 * create skeleton plannerinfo to reuse some PostgreSQL planner functions
 	 */
 	Query parse = {
-		.type = {},
+		.type = (NodeTag)0,
 		.commandType = {},
 		.querySource = {},
 		.queryId = 0,
 		.canSetTag = false,
+		.is_flt_frame = false,
 		.utilityStmt = NULL,
 		.resultRelation = InvalidOid,
 	};
 	PlannerGlobal glob = {
-		.type = {},
+		.type = (NodeTag)0,
 		.boundParams = NULL,
 	};
 	PlannerInfo root = {
-		.type = {},
+		.type = (NodeTag)0,
 		.parse = &parse,
 		.glob = &glob,
 	};
@@ -340,14 +346,14 @@ ca_append_exec(ExtensiblePlanState *node)
 		return NULL;
 
 #if PG96
-	if (node->ss.ps.ps_TupFromTlist)
+	if (node->ss.ps.ps_vec_TupFromTlist)
 	{
 		resultslot = ExecProject(node->ss.ps.ps_ProjInfo, &isDone);
 
 		if (isDone == ExprMultipleResult)
 			return resultslot;
 
-		node->ss.ps.ps_TupFromTlist = false;
+		node->ss.ps.ps_vec_TupFromTlist = false;
 	}
 #endif
 
@@ -370,7 +376,7 @@ ca_append_exec(ExtensiblePlanState *node)
 
 		if (isDone != ExprEndResult)
 		{
-			node->ss.ps.ps_TupFromTlist = (isDone == ExprMultipleResult);
+			node->ss.ps.ps_vec_TupFromTlist = (isDone == ExprMultipleResult);
 			return resultslot;
 		}
 #else
@@ -392,7 +398,7 @@ static void
 ca_append_rescan(ExtensiblePlanState *node)
 {
 #if PG96
-	node->ss.ps.ps_TupFromTlist = false;
+	node->ss.ps.ps_vec_TupFromTlist = false;
 #endif
 	if (node->extensible_ps != NIL)
 	{
