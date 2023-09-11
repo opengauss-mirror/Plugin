@@ -31513,8 +31513,9 @@ CharacterWithoutLength:	 character
 					$$ = SystemTypeName($1);
 
 					/* char defaults to char(1), varchar to no limit */
-					if (strcmp($1, "bpchar") == 0)
+					if (!ENABLE_B_CMPT_MODE && strcmp($1, "bpchar") == 0) {
 						$$->typmods = list_make1(makeIntConst(1, -1));
+					}
 
 					$$->location = @1;
 				}
@@ -31523,7 +31524,9 @@ CharacterWithoutLength:	 character
 					$$ = SystemTypeName((char *)("bpchar"));
 
 					/* char defaults to char(1), varchar to no limit */
-					$$->typmods = list_make1(makeIntConst(1, -1));
+					if (!ENABLE_B_CMPT_MODE) {
+						$$->typmods = list_make1(makeIntConst(1, -1));
+					}
 
 					$$->location = @1;
 				}
