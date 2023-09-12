@@ -82,6 +82,15 @@ select year('2022-06-13');
 select year('9999-06-13');
 select year('10000-06-13');
 select year(20221009);
+set dolphin.sql_mode='';
+select year('');
+select year('2022');
+select year('2022-06');
+select year('2022-06-13');
+select year('9999-06-13');
+select year('10000-06-13');
+select year(20221009);
+reset dolphin.sql_mode;
 
 --测试点：LOCATE(substr,str)
 select locate('test','testgood');

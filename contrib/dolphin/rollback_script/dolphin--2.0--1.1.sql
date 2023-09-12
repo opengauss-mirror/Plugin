@@ -1711,12 +1711,12 @@ $for_og_310$;
 
 DROP FUNCTION IF EXISTS pg_catalog.export_set (bit, "any", "any") CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.export_set (bit, "any", "any", "any") CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any", "any", bit) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (int16, "any", "any", "any", bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.export_set (bit, "any", "any", "any", int8) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.export_set (bit, "any", "any", "any", bit) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any", "any", int8) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any", "any") CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.export_set (int8, "any", "any") CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (int16, "any", "any", "any", int8) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (int16, "any", "any", "any") CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.export_set (int16, "any", "any") CASCADE;
 
 DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text, text, numeric) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text, text) CASCADE;
@@ -1887,5 +1887,9 @@ DROP FUNCTION IF EXISTS pg_catalog.a_sysdate();
 
 DROP CAST IF EXISTS (json AS boolean);
 DROP FUNCTION IF EXISTS pg_catalog.json_to_bool(json);
+
+DROP FUNCTION IF EXISTS pg_catalog.hex(int8);
+DROP FUNCTION IF EXISTS pg_catalog.hex(int16);
+CREATE OR REPLACE FUNCTION pg_catalog.hex(int8) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'int_to_hex';
 
 DROP FUNCTION IF EXISTS pg_catalog.bit_bin_in(cstring, oid, integer);

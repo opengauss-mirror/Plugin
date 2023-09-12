@@ -22173,7 +22173,17 @@ Datum export_set_5args_any(PG_FUNCTION_ARGS)
 {
     char *on, *off, *separator;
     const int arg2 = 2, arg3 = 3;
-    uint64 value = PG_GETARG_INT64(0);
+    int128 value = PG_GETARG_INT128(0);
+    if (unlikely(value > PG_UINT64_MAX)) {
+        ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("Truncated incorrect value")));
+        value = PG_INT64_MAX;
+    } else if (unlikely(value < PG_INT64_MIN)) {
+        ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("Truncated incorrect value")));
+        value = PG_INT64_MIN;
+    }
+    value = (uint64)value;
 
     Datum dt = PG_GETARG_DATUM(1);
     Oid valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
@@ -22202,7 +22212,17 @@ PG_FUNCTION_INFO_V1_PUBLIC(export_set_4args_any);
 extern "C" DLL_PUBLIC Datum export_set_4args_any(PG_FUNCTION_ARGS);
 Datum export_set_4args_any(PG_FUNCTION_ARGS)
 {
-    uint64 value = PG_GETARG_INT64(0);
+    int128 value = PG_GETARG_INT128(0);
+    if (unlikely(value > PG_UINT64_MAX)) {
+        ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("Truncated incorrect value")));
+        value = PG_INT64_MAX;
+    } else if (unlikely(value < PG_INT64_MIN)) {
+        ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("Truncated incorrect value")));
+        value = PG_INT64_MIN;
+    }
+    value = (uint64)value;
     const int arg2 = 2, arg3 = 3;
     char *on, *off, *separator;
 
@@ -22228,7 +22248,17 @@ PG_FUNCTION_INFO_V1_PUBLIC(export_set_3args_any);
 extern "C" DLL_PUBLIC Datum export_set_3args_any(PG_FUNCTION_ARGS);
 Datum export_set_3args_any(PG_FUNCTION_ARGS)
 {
-    uint64 value = PG_GETARG_INT64(0);
+    int128 value = PG_GETARG_INT128(0);
+    if (unlikely(value > PG_UINT64_MAX)) {
+        ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("Truncated incorrect value")));
+        value = PG_INT64_MAX;
+    } else if (unlikely(value < PG_INT64_MIN)) {
+        ereport(SQL_MODE_STRICT() ? ERROR : WARNING,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("Truncated incorrect value")));
+        value = PG_INT64_MIN;
+    }
+    value = (uint64)value;
     const int arg2 = 2;
     char *on, *off;
 
@@ -22249,7 +22279,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(export_set_5args_bits);
 extern "C" DLL_PUBLIC Datum export_set_5args_bits(PG_FUNCTION_ARGS);
 Datum export_set_5args_bits(PG_FUNCTION_ARGS)
 {
-    fcinfo->arg[0] = DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0));
+    fcinfo->arg[0] = Int128GetDatum(DatumGetInt64(DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0))));
     fcinfo->arg[4] = DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(4));
     return export_set_5args_any(fcinfo);
 }
@@ -22258,7 +22288,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(export_set_5args_bit_1);
 extern "C" DLL_PUBLIC Datum export_set_5args_bit_1(PG_FUNCTION_ARGS);
 Datum export_set_5args_bit_1(PG_FUNCTION_ARGS)
 {
-    fcinfo->arg[0] = DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0));
+    fcinfo->arg[0] = Int128GetDatum(DatumGetInt64(DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0))));
     return export_set_5args_any(fcinfo);
 }
 
@@ -22274,7 +22304,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(export_set_4args_bit);
 extern "C" DLL_PUBLIC Datum export_set_4args_bit(PG_FUNCTION_ARGS);
 Datum export_set_4args_bit(PG_FUNCTION_ARGS)
 {
-    fcinfo->arg[0] = DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0));
+    fcinfo->arg[0] = Int128GetDatum(DatumGetInt64(DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0))));
     return export_set_4args_any(fcinfo);
 }
 
@@ -22282,7 +22312,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(export_set_3args_bit);
 extern "C" DLL_PUBLIC Datum export_set_3args_bit(PG_FUNCTION_ARGS);
 Datum export_set_3args_bit(PG_FUNCTION_ARGS)
 {
-    fcinfo->arg[0] = DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0));
+    fcinfo->arg[0] = Int128GetDatum(DatumGetInt64(DirectFunctionCall1(bittoint8, PG_GETARG_DATUM(0))));
     return export_set_3args_any(fcinfo);
 }
 

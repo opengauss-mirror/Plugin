@@ -26,14 +26,23 @@ select hex(9223372036854775807);
 
 -- out of range for int64
 select hex(9223372036854775808);
-ERROR:  bigint out of range
-CONTEXT:  referenced column: hex
+       hex        
+------------------
+ 8000000000000000
+(1 row)
+
 select hex(9223372036854775811);
-ERROR:  bigint out of range
-CONTEXT:  referenced column: hex
+       hex        
+------------------
+ 8000000000000003
+(1 row)
+
 select hex(1546546574654561321324564564543453);
-ERROR:  bigint out of range
-CONTEXT:  referenced column: hex
+       hex        
+------------------
+ ffffffffffffffff
+(1 row)
+
 -- test for negative numbers
 select hex(-1);
        hex        
@@ -57,6 +66,18 @@ select hex(-9223372036854775808);
        hex        
 ------------------
  8000000000000000
+(1 row)
+
+select hex(-9223372036854775807);
+       hex        
+------------------
+ 8000000000000001
+(1 row)
+
+select hex(-9223372036854775809);
+       hex        
+------------------
+ ffffffffffffffff
 (1 row)
 
 -- test for float
