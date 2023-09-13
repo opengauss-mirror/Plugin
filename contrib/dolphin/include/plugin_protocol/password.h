@@ -24,6 +24,6 @@
 
 #include "openssl/sha.h"
 
-extern char* sha1_hex_to_bytes(const char b[SHA_DIGEST_LENGTH * 2]);
+void sha1_hex_to_bytes(const char b[SHA_DIGEST_LENGTH * 2], char t[SHA_DIGEST_LENGTH]);
 
 #endif
