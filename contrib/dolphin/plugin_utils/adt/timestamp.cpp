@@ -5029,7 +5029,7 @@ Datum text_year_part(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp;
     char* str = TextDatumGetCString(PG_GETARG_TEXT_PP(0));
-    if (!datetime_in_no_ereport(str, &timestamp)) {
+    if (!datetime_in_no_ereport(str, &timestamp) || timestamp == TIMESTAMP_ZERO) {
         PG_RETURN_NULL();
     }
     float8 result = 0;

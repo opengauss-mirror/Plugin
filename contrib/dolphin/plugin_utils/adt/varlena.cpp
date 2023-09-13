@@ -5806,12 +5806,17 @@ Datum to_hex64(PG_FUNCTION_ARGS)
 #ifdef DOLPHIN
 #define HEX_BUF_LEN 32
 /*
- * Convert an int64 to a string containing a base 16 (hex) representation of the input.
+ * Convert an int128 to a string containing a base 16 (hex) representation of the input.
  * The input parameter must be integer.
  */
 Datum int_to_hex(PG_FUNCTION_ARGS)
 {
-    uint64 value = (uint64)PG_GETARG_INT64(0);
+    int128 value = PG_GETARG_INT128(0);
+    if (unlikely(value >= PG_UINT64_MAX || value < PG_INT64_MIN)) {
+        value = PG_UINT64_MAX;
+    } else {
+        value = (uint64)value;
+    }
     char* ptr = NULL;
     char buf[HEX_BUF_LEN]; /* bigger than needed, but reasonable */
 
@@ -10484,6 +10489,7 @@ Datum substring_index_numeric(PG_FUNCTION_ARGS)
                  errmsg("bigint out of range")));
         count128 = PG_INT64_MIN;
     }
+    count128 = (int32)count128;
     result = SubstringIndexReally(textStr, textStrToSearch, count128);
 
     PG_RETURN_TEXT_P(result);

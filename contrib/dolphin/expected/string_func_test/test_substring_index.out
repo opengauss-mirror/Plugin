@@ -106,15 +106,15 @@ SELECT SUBSTRING_INDEX('www.opengauss.com','.',-2147483648);
 (1 row)
 
 SELECT SUBSTRING_INDEX('www.opengauss.com','.',9223372036854775807);
-  substring_index  
--------------------
- www.opengauss.com
+ substring_index 
+-----------------
+ com
 (1 row)
 
 SELECT SUBSTRING_INDEX('www.opengauss.com','.',-9223372036854775808);
-  substring_index  
--------------------
- www.opengauss.com
+ substring_index 
+-----------------
+ 
 (1 row)
 
 SELECT SUBSTRING_INDEX('www.opengauss.com','.',10000000000000000000);

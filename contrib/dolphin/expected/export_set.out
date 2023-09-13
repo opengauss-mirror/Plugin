@@ -51,6 +51,7 @@ SELECT EXPORT_SET(b'0101','Y','N');
 (1 row)
 
 -- 测试上界
+set dolphin.sql_mode = '';
 SELECT EXPORT_SET(9223372036854775807,'Y','N',',',64);
                                                            export_set                                                            
 ---------------------------------------------------------------------------------------------------------------------------------
@@ -58,11 +59,31 @@ SELECT EXPORT_SET(9223372036854775807,'Y','N',',',64);
 (1 row)
 
 SELECT EXPORT_SET(9223372036854775808,'Y','N',',',64);
-ERROR:  bigint out of range
-CONTEXT:  referenced column: export_set
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
 SELECT EXPORT_SET(9223372036854775809,'Y','N',',',64);
-ERROR:  bigint out of range
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(18446744073709551615,'Y','N',',',64);
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+(1 row)
+
+SELECT EXPORT_SET(18446744073709551616,'Y','N',',',64);
+WARNING:  Truncated incorrect value
 CONTEXT:  referenced column: export_set
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,N
+(1 row)
+
 -- 测试下界
 SELECT EXPORT_SET(-9223372036854775807,'Y','N',',',64);
                                                            export_set                                                            
@@ -77,8 +98,118 @@ SELECT EXPORT_SET(-9223372036854775808,'Y','N',',',64);
 (1 row)
 
 SELECT EXPORT_SET(-9223372036854775809,'Y','N',',',64);
-ERROR:  bigint out of range
+WARNING:  Truncated incorrect value
 CONTEXT:  referenced column: export_set
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(9223372036854775807,'Y','N',',');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,N
+(1 row)
+
+SELECT EXPORT_SET(9223372036854775808,'Y','N',',');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(9223372036854775809,'Y','N',',');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(18446744073709551615,'Y','N',',');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+(1 row)
+
+SELECT EXPORT_SET(18446744073709551616,'Y','N',',');
+WARNING:  Truncated incorrect value
+CONTEXT:  referenced column: export_set
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,N
+(1 row)
+
+SELECT EXPORT_SET(-9223372036854775807,'Y','N',',');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(-9223372036854775808,'Y','N',',');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(-9223372036854775809,'Y','N',',');
+WARNING:  Truncated incorrect value
+CONTEXT:  referenced column: export_set
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(9223372036854775807,'Y','N');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,N
+(1 row)
+
+SELECT EXPORT_SET(9223372036854775808,'Y','N');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(9223372036854775809,'Y','N');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(18446744073709551615,'Y','N');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y
+(1 row)
+
+SELECT EXPORT_SET(18446744073709551616,'Y','N');
+WARNING:  Truncated incorrect value
+CONTEXT:  referenced column: export_set
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,N
+(1 row)
+
+SELECT EXPORT_SET(-9223372036854775807,'Y','N');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ Y,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(-9223372036854775808,'Y','N');
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+SELECT EXPORT_SET(-9223372036854775809,'Y','N');
+WARNING:  Truncated incorrect value
+CONTEXT:  referenced column: export_set
+                                                           export_set                                                            
+---------------------------------------------------------------------------------------------------------------------------------
+ N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,Y
+(1 row)
+
+reset dolphin.sql_mode;
 -- 测试长度参数
 SELECT EXPORT_SET(5,'Y','N',',',64);
                                                            export_set                                                            

@@ -17,6 +17,8 @@ select hex(-1);
 select hex(-2);
 select hex(-123123123);
 select hex(-9223372036854775808);
+select hex(-9223372036854775807);
+select hex(-9223372036854775809);
 
 -- test for float
 select hex(12.34);
