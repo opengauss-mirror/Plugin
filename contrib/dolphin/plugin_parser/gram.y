@@ -23027,6 +23027,49 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->withCheckOption = (ViewCheckOption)$9;
 					$$ = (Node *) n;
 				}
+			| ALTER view_algo_shift_expr definer_expression view_security_expression VIEW dolphin_qualified_name opt_column_list AS SelectStmt opt_check_option
+				{
+#ifndef ENABLE_MULTIPLE_NODES
+					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
+#endif
+					{
+						ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("ALTER VIEW AS is not supported.")));
+					}
+					ViewStmt *n = makeNode(ViewStmt);
+					n->definer = $3;
+					n->view = $6;
+					n->aliases = $7;
+					n->query = $9;
+					n->replace = true;
+					n->sql_statement = NULL;
+					n->is_alter = true;
+					n->withCheckOption = (ViewCheckOption)$10;
+					n->viewSecurityOption = (ViewSecurityOption)$4;
+					$$ = (Node *) n;
+				}
+			| ALTER view_algo_shift_expr view_security_expression VIEW dolphin_qualified_name opt_column_list AS SelectStmt opt_check_option
+				{
+#ifndef ENABLE_MULTIPLE_NODES
+					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
+#endif
+					{
+						ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("ALTER VIEW AS is not supported.")));
+					}
+					ViewStmt *n = makeNode(ViewStmt);
+					n->view = $5;
+					n->aliases = $6;
+					n->query = $8;
+					n->replace = true;
+					n->sql_statement = NULL;
+					n->is_alter = true;
+					n->withCheckOption = (ViewCheckOption)$9;
+					n->viewSecurityOption = (ViewSecurityOption)$3;
+					$$ = (Node *) n;
+				}
 			| ALTER MATERIALIZED VIEW qualified_name RENAME TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
@@ -24519,108 +24562,93 @@ CreateContQueryStmt: CREATE CONTVIEW qualified_name opt_reloptions AS SelectStmt
  *
  *****************************************************************************/
 
-ViewStmt: CREATE OptTemp ViewStmtBaseBody
+ViewStmt: CREATE ViewStmtBaseBody
 				{
-					ViewStmt *n = (ViewStmt*) $3;
-					n->view->relpersistence = $2;
+					ViewStmt *n = (ViewStmt*) $2;
 					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node*) n;
 				}
-		| CREATE OR REPLACE OptTemp ViewStmtBaseBody
+		| CREATE OR REPLACE ViewStmtBaseBody
 				{
-					ViewStmt *n = (ViewStmt*) $5;
-					n->view->relpersistence = $4;
+					ViewStmt *n = (ViewStmt*) $4;
 					n->replace = true;
 					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node*) n;
 				}
-		| CREATE opt_or_replace definer_expression OptTemp ViewStmtBaseBody
+		| CREATE opt_or_replace definer_expression ViewStmtBaseBody
 				{
-					ViewStmt *n = (ViewStmt*) $5;
-					n->view->relpersistence = $4;
+					ViewStmt *n = (ViewStmt*) $4;
 					n->definer = $3;
 					n->replace = $2;
 					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node*) n;
 				}
-		| CREATE opt_or_replace view_algo_expr OptTemp ViewStmtBaseBody
+		| CREATE opt_or_replace view_algo_expr ViewStmtBaseBody
 				{
-					ViewStmt *n = (ViewStmt*) $5;
-					n->view->relpersistence = $4;
+					ViewStmt *n = (ViewStmt*) $4;
 					n->replace = $2;
 					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node*) n;
 				}
-		| CREATE opt_or_replace view_algo_expr definer_expression OptTemp ViewStmtBaseBody
+		| CREATE opt_or_replace view_algo_expr definer_expression ViewStmtBaseBody
 				{
-					ViewStmt *n = (ViewStmt*) $6;
-					n->view->relpersistence = $5;
+					ViewStmt *n = (ViewStmt*) $5;
 					n->definer = $4;
 					n->replace = $2;
 					$$ = (Node*) n;
 				}
-		| CREATE view_security_expression OptTemp VIEW qualified_name opt_column_list opt_reloptions
-				AS SelectStmt opt_check_option
+		| CREATE view_security_expression ViewStmtBaseBody
 				{
-					ViewStmt *n = makeNode(ViewStmt);
-					n->view = $5;
-					n->view->relpersistence = $3;
-					n->aliases = $6;
-					n->query = $9;
-					n->replace = false;
-					n->options = $7;
-					n->sql_statement = NULL;
-					n->withCheckOption = (ViewCheckOption)$10;
+					ViewStmt *n = (ViewStmt*) $3;
 					n->viewSecurityOption = (ViewSecurityOption)$2;
-					$$ = (Node *) n;
+					$$ = (Node*) n;
 				}
-		| CREATE OR REPLACE view_security_expression OptTemp VIEW qualified_name opt_column_list opt_reloptions
-				AS SelectStmt opt_check_option
+		| CREATE OR REPLACE view_security_expression ViewStmtBaseBody
 				{
-					ViewStmt *n = makeNode(ViewStmt);
-					n->view = $7;
-					n->view->relpersistence = $5;
-					n->aliases = $8;
-					n->query = $11;
+					ViewStmt *n = (ViewStmt*) $5;
 					n->replace = true;
-					n->options = $9;
-					n->sql_statement = NULL;
-					n->withCheckOption = (ViewCheckOption)$12;
 					n->viewSecurityOption = (ViewSecurityOption)$4;
 					$$ = (Node *) n;
 				}
-		| CREATE opt_or_replace definer_expression view_security_expression OptTemp VIEW qualified_name opt_column_list opt_reloptions
-				AS SelectStmt opt_check_option
+		| CREATE opt_or_replace definer_expression view_security_expression ViewStmtBaseBody
 				{
-					ViewStmt *n = makeNode(ViewStmt);
+					ViewStmt *n = (ViewStmt*) $5;
 					n->definer = $3;
-					n->view = $7;
-					n->view->relpersistence = $5;
-					n->aliases = $8;
-					n->query = $11;
 					n->replace = $2;
-					n->options = $9;
-					n->sql_statement = NULL;
-					n->withCheckOption = (ViewCheckOption)$12;
 					n->viewSecurityOption = (ViewSecurityOption)$4;
+ 					$$ = (Node *) n;
+ 				}
+		| CREATE opt_or_replace view_algo_expr view_security_expression ViewStmtBaseBody
+				{
+					ViewStmt *n = (ViewStmt*) $5;
+					n->replace = $2;
+					n->viewSecurityOption = (ViewSecurityOption)$4;
+					$$ = (Node *) n;
+				}
+		| CREATE opt_or_replace view_algo_expr definer_expression view_security_expression ViewStmtBaseBody
+				{
+					ViewStmt *n = (ViewStmt*) $6;
+					n->definer = $4;
+					n->replace = $2;
+					n->viewSecurityOption = (ViewSecurityOption)$5;
  					$$ = (Node *) n;
  				}
 		;
 
-ViewStmtBaseBody: VIEW dolphin_qualified_name opt_column_list opt_reloptions AS SelectStmt opt_check_option
+ViewStmtBaseBody: OptTemp VIEW dolphin_qualified_name opt_column_list opt_reloptions AS SelectStmt opt_check_option
 	{
 		ViewStmt* stmt = makeNode(ViewStmt);
-		stmt->view = $2;
-		stmt->aliases = $3;
-		stmt->options = $4;
+		stmt->view = $3;
+		stmt->aliases = $4;
+		stmt->options = $5;
 
 		/* 'AS' is here */
 
-		stmt->query = $6;
-		stmt->withCheckOption = (ViewCheckOption)$7;
+		stmt->query = $7;
+		stmt->withCheckOption = (ViewCheckOption)$8;
 		stmt->replace = false;
 		stmt->sql_statement = NULL;
-		stmt->view->relpersistence = RELPERSISTENCE_PERMANENT;
+		stmt->view->relpersistence = $1;
 		$$ = (Node*)stmt;
 	}
 
