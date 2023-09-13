@@ -1607,7 +1607,17 @@ static bool TransformJsonDolphinType(char* oprname, Oid& ltypeId, Oid& rtypeId)
         }
     } else {
         /* transfrom for binary operator */
-        if (strcmp("%", oprname) == 0 || strcmp("^", oprname) == 0 ||
+        if (strcmp("+", oprname) == 0 || strcmp("-", oprname) == 0 ||
+            strcmp("*", oprname) == 0 || strcmp("/", oprname) == 0) {
+            // + - * /
+            if (!IsNumericCatalogByOid(ltypeId)) {
+                ltypeId = INT4OID;
+            }
+            if (!IsNumericCatalogByOid(rtypeId)) {
+                rtypeId = INT4OID;
+            }
+            transformed = true;
+        } else if (strcmp("%", oprname) == 0 || strcmp("^", oprname) == 0 ||
             // mod, xor
             strcmp("|", oprname) == 0 || strcmp("&", oprname) == 0 ||
             // or, and

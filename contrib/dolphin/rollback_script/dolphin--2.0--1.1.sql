@@ -1823,6 +1823,8 @@ DROP OPERATOR IF EXISTS pg_catalog.=(text, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_eq(text, json);
 DROP OPERATOR IF EXISTS pg_catalog.=(bit, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_eq(bit, json);
+DROP OPERATOR IF EXISTS pg_catalog.=(boolean, json);
+DROP FUNCTION IF EXISTS pg_catalog.json_eq(boolean, json);
 DROP OPERATOR IF EXISTS pg_catalog.=(year, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_eq(year, json);
 
@@ -1832,6 +1834,8 @@ DROP OPERATOR IF EXISTS pg_catalog.!=(text, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_ne(text, json);
 DROP OPERATOR IF EXISTS pg_catalog.!=(bit, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_ne(bit, json);
+DROP OPERATOR IF EXISTS pg_catalog.!=(boolean, json);
+DROP FUNCTION IF EXISTS pg_catalog.json_ne(boolean, json);
 DROP OPERATOR IF EXISTS pg_catalog.!=(year, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_ne(year, json);
 
@@ -1841,6 +1845,8 @@ DROP OPERATOR IF EXISTS pg_catalog.>(text, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_gt(text, json);
 DROP OPERATOR IF EXISTS pg_catalog.>(bit, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_gt(bit, json);
+DROP OPERATOR IF EXISTS pg_catalog.>(boolean, json);
+DROP FUNCTION IF EXISTS pg_catalog.json_gt(boolean, json);
 DROP OPERATOR IF EXISTS pg_catalog.>(year, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_gt(year, json);
 
@@ -1850,6 +1856,8 @@ DROP OPERATOR IF EXISTS pg_catalog.>=(text, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_ge(text, json);
 DROP OPERATOR IF EXISTS pg_catalog.>=(bit, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_ge(bit, json);
+DROP OPERATOR IF EXISTS pg_catalog.>=(boolean, json);
+DROP FUNCTION IF EXISTS pg_catalog.json_ge(boolean, json);
 DROP OPERATOR IF EXISTS pg_catalog.>=(year, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_ge(year, json);
 
@@ -1859,6 +1867,8 @@ DROP OPERATOR IF EXISTS pg_catalog.<(text, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_lt(text, json);
 DROP OPERATOR IF EXISTS pg_catalog.<(bit, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_lt(bit, json);
+DROP OPERATOR IF EXISTS pg_catalog.<(boolean, json);
+DROP FUNCTION IF EXISTS pg_catalog.json_lt(boolean, json);
 DROP OPERATOR IF EXISTS pg_catalog.<(year, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_lt(year, json);
 
@@ -1868,6 +1878,8 @@ DROP OPERATOR IF EXISTS pg_catalog.<=(text, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_le(text, json);
 DROP OPERATOR IF EXISTS pg_catalog.<=(bit, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_le(bit, json);
+DROP OPERATOR IF EXISTS pg_catalog.<=(boolean, json);
+DROP FUNCTION IF EXISTS pg_catalog.json_le(boolean, json);
 DROP OPERATOR IF EXISTS pg_catalog.<=(year, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_le(year, json);
 

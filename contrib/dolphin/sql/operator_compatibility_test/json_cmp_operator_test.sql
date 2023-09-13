@@ -24,6 +24,7 @@ CREATE TABLE test_json_table
     `numeric` decimal(20, 6),
     `bit1` bit(1),
     `bit64` bit(64),
+    `boolean` boolean,
     `date` date,
     `time` time,
     `time(4)` time(4),
@@ -46,7 +47,7 @@ CREATE TABLE test_json_table
     `json` json
 );
 insert into test_json_table values(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                                   b'1', b'111',
+                                   b'1', b'111', true,
                                    '2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023',
                                    '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a',
                                    'a', 'a,c',
@@ -181,6 +182,16 @@ select `bit64`, `json`,
        `json` < `bit64` as `json<bit64`, `json` <= `bit64` as `json<=bit64`,
        `json` != `bit64` as `json!=bit64`, `json` <> `bit64` as `json<>bit64`,
        `json` = `bit64` as `json=bit64`, `json` <=> `bit64` as `json<=>bit64` from test_json_table;
+select `boolean`, `json`,
+       `boolean` > `json` as `boolean>json`, `boolean` >= `json` as `boolean>=json`,
+       `boolean` < `json` as `boolean<json`, `boolean` <= `json` as `boolean<=json`,
+       `boolean` != `json` as `boolean!=json`, `boolean` <> `json` as `boolean<>json`,
+       `boolean` = `json` as `boolean=json`, `boolean` <=> `json` as `boolean<=>json` from test_json_table;
+select `boolean`, `json`,
+       `json` > `boolean` as `json>boolean`, `json` >= `boolean` as `json>=boolean`,
+       `json` < `boolean` as `json<boolean`, `json` <= `boolean` as `json<=boolean`,
+       `json` != `boolean` as `json!=boolean`, `json` <> `boolean` as `json<>boolean`,
+       `json` = `boolean` as `json=boolean`, `json` <=> `boolean` as `json<=>boolean` from test_json_table;
 select `date`, `json`,
        `date` > `json` as `date>json`, `date` >= `json` as `date>=json`,
        `date` < `json` as `date<json`, `date` <= `json` as `date<=json`,
