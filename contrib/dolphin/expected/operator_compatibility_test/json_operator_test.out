@@ -2768,7 +2768,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`boolean<<json` = test
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: boolean<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean|json` = test_json_table.`boolean` | test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: boolean|json
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean&json` = test_json_table.`boolean` & test_json_table.`json`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: boolean&json
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean||json` = test_json_table.`boolean` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean&&json` = test_json_table.`boolean` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean_div_json` = test_json_table.`boolean` div test_json_table.`json`;
@@ -4507,9 +4511,17 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json^boolean` = test_
 ERROR:  failed to find conversion function from boolean to double precision
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>boolean` = test_json_table.`json` >> test_json_table.`boolean`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json>>boolean
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<boolean` = test_json_table.`json` << test_json_table.`boolean`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json<<boolean
 UPDATE test_json_type, test_json_table SET test_json_type.`json|boolean` = test_json_table.`json` | test_json_table.`boolean`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json|boolean
 UPDATE test_json_type, test_json_table SET test_json_type.`json&boolean` = test_json_table.`json` & test_json_table.`boolean`;
+WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
+CONTEXT:  referenced column: json&boolean
 UPDATE test_json_type, test_json_table SET test_json_type.`json||boolean` = test_json_table.`json` || test_json_table.`boolean`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&boolean` = test_json_table.`json` && test_json_table.`boolean`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_boolean` = test_json_table.`json` div test_json_table.`boolean`;
