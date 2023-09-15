@@ -50,11 +50,11 @@ extern Oid oprfuncid(Operator op);
 extern bool IsIntType(Oid typeoid);
 extern bool IsCharType(Oid typeoid);
 #ifdef DOLPHIN
-extern inline bool IsUnsignedIntType(Oid typeoid);
-extern inline bool IsFloatType(Oid typeoid);
-extern inline bool IsNumericType(Oid typeoid);
-extern inline bool IsDolphinStringType(Oid typeoid);
-extern inline bool IsDatetimeType(Oid typeoid);
+extern bool IsUnsignedIntType(Oid typeoid);
+extern bool IsFloatType(Oid typeoid);
+extern bool IsNumericType(Oid typeoid);
+extern bool IsDolphinStringType(Oid typeoid);
+extern bool IsDatetimeType(Oid typeoid);
 #endif
 
 /* Build expression tree for an operator invocation */
