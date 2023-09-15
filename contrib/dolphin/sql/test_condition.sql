@@ -1285,8 +1285,16 @@ select strcmp(vch, blb) from typeset;
 select strcmp(vch, txt) from typeset;
 select strcmp(blb, txt) from typeset;
 
-
-
+create table t1 (a int, b bigint unsigned);
+create table t2 (c int);
+insert into t1 (a, b) values (1,4572794622775114594), (2,18196094287899841997),
+(3,11120436154190595086);
+insert into t2 (c) values (1), (2), (3);
+select case t1.a when 0 then 0 else t1.b end from t1 order by a;
+select t1.a, (case t1.a when 0 then 0 else t1.b end) d from t1
+join t2 on t1.a=t2.c order by d;
+drop table t1;
+drop table t2;
 
 drop schema db_test_condition cascade;
 reset current_schema;
