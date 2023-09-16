@@ -1,5 +1,23 @@
 -- Tests for package GMS_RANDOM
 SET behavior_compat_options='display_leading_zero';
+SELECT gms_random.value()::numeric(10, 8);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+SELECT gms_random.value(10, 20)::numeric(10, 8);
+--?.*
+--?.*
+--?.*
+(1 row)
+
+SELECT gms_random.normal()::numeric(10, 8);
+--?.*
+--?.*
+--?.*
+(1 row)
+
 SELECT gms_random.initialize(8);
  initialize 
 ------------
@@ -9,13 +27,13 @@ SELECT gms_random.initialize(8);
 SELECT gms_random.normal()::numeric(10, 8);
    normal   
 ------------
- 0.75384501
+ 0.93473331
 (1 row)
 
 SELECT gms_random.normal()::numeric(10, 8);
    normal   
 ------------
- 0.75384501
+ 1.24846096
 (1 row)
 
 SELECT gms_random.seed(8);
@@ -27,7 +45,7 @@ SELECT gms_random.seed(8);
 SELECT gms_random.random();
    random   
 ------------
- 1179092454
+ 1396023812
 (1 row)
 
 SELECT gms_random.seed('test');
@@ -39,31 +57,31 @@ SELECT gms_random.seed('test');
 SELECT gms_random.string('U',5);
  string 
 --------
- MEKYF
+ EKYFB
 (1 row)
 
 SELECT gms_random.string('P',2);
  string 
 --------
- /t
+ 2;
 (1 row)
 
 SELECT gms_random.string('x',4);
  string 
 --------
- H6EX
+ 79VW
 (1 row)
 
 SELECT gms_random.string('a',2);
  string 
 --------
- zj
+ iu
 (1 row)
 
 SELECT gms_random.string('l',3);
  string 
 --------
- mek
+ csk
 (1 row)
 
 SELECT gms_random.seed(5);
@@ -75,13 +93,13 @@ SELECT gms_random.seed(5);
 SELECT gms_random.value()::numeric(10, 8);
    value    
 ------------
- 0.10901326
+ 0.56540745
 (1 row)
 
 SELECT gms_random.value(10,15)::numeric(10, 8);
     value    
 -------------
- 10.54506628
+ 11.88223150
 (1 row)
 
 SELECT gms_random.terminate();
