@@ -22840,6 +22840,16 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
+			| ALTER TABLE relation_expr RENAME DolphinColId
+				{
+					RenameStmt *n = makeNode(RenameStmt);
+					n->renameType = OBJECT_TABLE;
+					n->relation = $3;
+					n->subname = NULL;
+					n->newname = GetDolphinObjName($5->str, $5->is_quoted);
+					n->missing_ok = false;
+					$$ = (Node *)n;
+				}
 			| ALTER TABLE relation_expr RENAME to_or_as DolphinColId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
@@ -22848,6 +22858,16 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->subname = NULL;
 					n->newname = GetDolphinObjName($6->str, $6->is_quoted);
 					n->missing_ok = false;
+					$$ = (Node *)n;
+				}
+			| ALTER TABLE IF_P EXISTS relation_expr RENAME DolphinColId
+				{
+					RenameStmt *n = makeNode(RenameStmt);
+					n->renameType = OBJECT_TABLE;
+					n->relation = $5;
+					n->subname = NULL;
+					n->newname = GetDolphinObjName($7->str, $7->is_quoted);
+					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
 			| ALTER TABLE IF_P EXISTS relation_expr RENAME to_or_as DolphinColId
@@ -23109,7 +23129,18 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE relation_expr RENAME opt_column name TO name
+			| ALTER TABLE relation_expr RENAME name TO name
+				{
+					RenameStmt *n = makeNode(RenameStmt);
+					n->renameType = OBJECT_COLUMN;
+					n->relationType = OBJECT_TABLE;
+					n->relation = $3;
+					n->subname = $5;
+					n->newname = $7;
+					n->missing_ok = false;
+					$$ = (Node *)n;
+				}
+			| ALTER TABLE relation_expr RENAME COLUMN name TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_COLUMN;
@@ -23120,7 +23151,18 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE IF_P EXISTS relation_expr RENAME opt_column name TO name
+			| ALTER TABLE IF_P EXISTS relation_expr RENAME name TO name
+				{
+					RenameStmt *n = makeNode(RenameStmt);
+					n->renameType = OBJECT_COLUMN;
+					n->relationType = OBJECT_TABLE;
+					n->relation = $5;
+					n->subname = $7;
+					n->newname = $9;
+					n->missing_ok = true;
+					$$ = (Node *)n;
+				}
+			| ALTER TABLE IF_P EXISTS relation_expr RENAME COLUMN name TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_COLUMN;
