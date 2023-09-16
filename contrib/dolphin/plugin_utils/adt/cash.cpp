@@ -33,7 +33,9 @@
 #include "utils/numeric.h"
 #include "utils/numeric_gs.h"
 #include "utils/pg_locale.h"
-
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 #define CACHE_BUFF_LEN_L 256
 extern "C" DLL_PUBLIC Datum uint8mul(PG_FUNCTION_ARGS);
 
@@ -661,8 +663,13 @@ Datum cash_div_cash(PG_FUNCTION_ARGS)
     Cash divisor = PG_GETARG_CASH(1);
     float8 quotient;
 
-    if (divisor == 0)
+    if (divisor == 0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
+    }
 
     quotient = (float8)dividend / (float8)divisor;
     PG_RETURN_FLOAT8(quotient);
@@ -703,8 +710,13 @@ Datum cash_div_flt8(PG_FUNCTION_ARGS)
     float8 f = PG_GETARG_FLOAT8(1);
     Cash result;
 
-    if (f == 0.0)
+    if (f == 0.0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
+    }
 
     result = rint(c / f);
     PG_RETURN_CASH(result);
@@ -746,8 +758,13 @@ Datum cash_div_flt4(PG_FUNCTION_ARGS)
     float4 f = PG_GETARG_FLOAT4(1);
     Cash result;
 
-    if (f == 0.0)
+    if (f == 0.0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
+    }
 
     result = rint(c / (float8)f);
     PG_RETURN_CASH(result);
@@ -788,9 +805,13 @@ Datum cash_div_int8(PG_FUNCTION_ARGS)
     int64 i = PG_GETARG_INT64(1);
     Cash result;
 
-    if (i == 0)
+    if (i == 0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
-
+    }
     result = c / i;
 
     PG_RETURN_CASH(result);
@@ -832,8 +853,13 @@ Datum cash_div_int4(PG_FUNCTION_ARGS)
     int32 i = PG_GETARG_INT32(1);
     Cash result;
 
-    if (i == 0)
+    if (i == 0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
+    }
 
     result = c / i;
 
@@ -876,8 +902,13 @@ Datum cash_div_int2(PG_FUNCTION_ARGS)
     int16 s = PG_GETARG_INT16(1);
     Cash result;
 
-    if (s == 0)
+    if (s == 0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
+    }
 
     result = c / s;
     PG_RETURN_CASH(result);
@@ -919,8 +950,13 @@ Datum cash_div_int1(PG_FUNCTION_ARGS)
     int1 s = PG_GETARG_INT8(1);
     Cash result;
 
-    if (s == 0)
+    if (s == 0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
+    }
 
     result = c / s;
     PG_RETURN_CASH(result);

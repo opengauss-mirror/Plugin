@@ -4,6 +4,7 @@ DROP ROLE if EXISTS us2;
 CREATE ROLE us2 IDENTIFIED BY 'Aa@123456';
 GRANT ALL ON SCHEMA m_create_proc_type TO us2;
 SET ROLE us2 PASSWORD 'Aa@123456';
+set dolphin.sql_mode = 'sql_mode_strict,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero';
 
 --test create procedure 
 delimiter //

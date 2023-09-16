@@ -3679,8 +3679,13 @@ Datum interval_div(PG_FUNCTION_ARGS)
 
     result = (Interval*)palloc(sizeof(Interval));
 
-    if (factor == 0.0)
+    if (factor == 0.0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
+    }
     if (isnan(factor)) {
         /* NaN convert process. It differs from interval_mul to maintain compatibility. */
         INTERVAL_CONVERT_INFINITY_NAN(result);

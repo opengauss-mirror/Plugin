@@ -189,7 +189,7 @@ begin
     insert into debug_info select * from dbe_pldebugger.turn_on(funcoid);
 end;
 $$;
---?ERROR:  cache lookup failed for function.*
+--?ERROR:  function with oid .* does not exist
 CONTEXT:  SQL statement "insert into debug_info select * from dbe_pldebugger.turn_on(funcoid)"
 PL/pgSQL function inline_code_block line 7 at SQL statement
 truncate debug_info;
