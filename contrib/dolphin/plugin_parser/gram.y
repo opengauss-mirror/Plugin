@@ -4501,16 +4501,6 @@ AlterTableStmt:
 					n->need_rewrite_sql = false;
 					$$ = (Node *)n;
 				}
-		|	ALTER TABLE relation_expr ADD_P '(' add_column_cmds ')'
-				{
-					AlterTableStmt *n = makeNode(AlterTableStmt);
-					n->relation = $3;
-					n->cmds = $6;
-					n->relkind = OBJECT_TABLE;
-					n->missing_ok = false;
-					n->need_rewrite_sql = false;
-					$$ = (Node *)n;
-				}
 		/* REDISANYVALUE key value only used in tsdb redis command, it is used in OM code */
 		|	ALTER TABLE relation_expr REDISANYVALUE
 				{
@@ -4526,19 +4516,6 @@ AlterTableStmt:
 		 * ALTER TABLE IF_P EXISTS MODIFY_P '(' modify_column_cmds ')'
 		 */
 		|	ALTER TABLE IF_P EXISTS relation_expr MODIFY_P '(' modify_column_cmds ')'
-				{
-					AlterTableStmt *n = makeNode(AlterTableStmt);
-					n->relation = $5;
-					n->cmds = $8;
-					n->relkind = OBJECT_TABLE;
-					n->missing_ok = true;
-					n->need_rewrite_sql = false;
-					$$ = (Node *)n;
-				}
-		/*
-		 * ALTER TABLE IF_P EXISTS ADD_P '(' add_column_cmds ')'
-		 */
-		|	ALTER TABLE IF_P EXISTS relation_expr ADD_P '(' add_column_cmds ')'
 				{
 					AlterTableStmt *n = makeNode(AlterTableStmt);
 					n->relation = $5;
@@ -4889,8 +4866,27 @@ alter_table_or_partition:
 
 /* ALTER TABLE sql clauses for ordinary table */
 alter_table_cmds:
-			alter_table_cmd                         { $$ = list_make1($1); }
-			| alter_table_cmds ',' alter_table_cmd  { $$ = lappend($1, $3); }
+			alter_table_cmd
+			{
+				/*
+				 * alter_table_cmd is defined as Node* actually, but it may be a list, check ADD_P '(' add_column_cmds ')'.
+				 * we use a simple way to check nodetag by IsA, otherwise we need to change alter_table_cmd's type to List,
+				 * and change all return values in alter_table_cmd as a list, which lead to many code change
+				 */
+				if (!IsA($1, List)) {
+					$$ = list_make1($1);
+				} else {
+					$$ = (List*)$1;
+				}
+			}
+			| alter_table_cmds ',' alter_table_cmd
+			{
+				if (!IsA($3, List)) {
+					$$ = lappend($1, $3);
+				} else {
+					$$ = list_concat($1, (List*)$3);
+				}
+			}
 		;
 
 /* ALTER TABLE PARTITION sql clauses */
@@ -5343,6 +5339,10 @@ reset_partition_cmd:
 			}
 		;
 
+/*
+ * Note: alter_table_cmd defined as a Node, but it may return a list, check ADD_P '(' add_column_cmds ')'.
+ * so please check the return value's nodetag before using it.
+ */
 alter_table_cmd:
 			/*ALTER INDEX index_name UNUSABLE*/
 			UNUSABLE
@@ -5410,6 +5410,16 @@ alter_table_cmd:
 					n->subtype = AT_AddColumn;
 					n->def = $3;
 					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> ADD <coldef, ...>, add column with bracket does not support first/after */
+			| ADD_P '(' add_column_cmds ')'
+				{
+					$$ = (Node *)$3;
+				}
+			/* ALTER TABLE <name> ADD COLUMN <coldef, ...>, add column with bracket does not support first/after */
+			| ADD_P COLUMN '(' add_column_cmds ')'
+				{
+					$$ = (Node *)$4;
 				}
 			| ADD_P TABLE dolphin_qualified_name
 				{
