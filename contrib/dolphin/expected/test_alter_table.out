@@ -22,6 +22,13 @@ alter table alter_table_tbl1 force;
 -- rename index/key old_index_name to new_index_name
 create index alter_table_tbl_b_ind on alter_table_tbl1(b);
 alter table alter_table_tbl1 rename index alter_table_tbl_b_ind to new_alter_table_tbl_b_ind;
+-- rename [ TO | AS ] new_table_name
+alter table alter_table_tbl1 rename to new_alter_table_tbl1;
+alter table new_alter_table_tbl1 rename as new_new_alter_table_tbl1;
+alter table new_new_alter_table_tbl1 rename new_new_new_alter_table_tbl1;
+alter table if exists new_new_new_alter_table_tbl1 rename alter_table_tbl1;
+alter table if exists not_exists_tbl rename new_not_exists_tbl;
+NOTICE:  relation "not_exists_tbl" does not exist, skipping
 -- test multi-cmd
 alter table alter_table_tbl1 add column key int, rename index new_alter_table_tbl_b_ind to alter_table_tbl_b_ind;
 alter table alter_table_tbl1 drop column key, drop key alter_table_tbl_b_ind;
