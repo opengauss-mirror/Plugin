@@ -122,6 +122,15 @@ alter view if exists vv_v set (check_option=local);
 alter algorithm=temptable view if exists vv_v set (check_option=local);
 alter algorithm=temptable view if exists vv_v reset (check_option);
 
+create table v_test(a int);
+CREATE ALGORITHM = UNDEFINED DEFINER = `algorithm` SQL SECURITY DEFINER VIEW alg_definer_sql AS SELECT * FROM v_test;
+CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW alg_sql AS SELECT * FROM v_test;
+ALTER ALGORITHM = UNDEFINED DEFINER = `algorithm` SQL SECURITY DEFINER VIEW alg_sql as SELECT * FROM v_test;
+ALTER ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW alg_definer_sql as SELECT * FROM v_test;
+drop view alg_sql;
+drop view alg_definer_sql;
+drop table v_test;
+
 drop table vv_t cascade;
 drop user nu cascade;
 drop schema vs cascade;
