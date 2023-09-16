@@ -1905,3 +1905,18 @@ DROP FUNCTION IF EXISTS pg_catalog.hex(int16);
 CREATE OR REPLACE FUNCTION pg_catalog.hex(int8) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'int_to_hex';
 
 DROP FUNCTION IF EXISTS pg_catalog.bit_bin_in(cstring, oid, integer);
+
+DROP FUNCTION IF EXISTS pg_catalog.b_mod(a numeric, b numeric);
+CREATE OR REPLACE FUNCTION pg_catalog.b_mod(a numeric, b numeric)
+returns numeric
+as
+$$
+begin
+  IF b = 0 then
+    return null;
+  else
+    return (select a % b);
+  end if;
+end;
+$$
+language plpgsql;

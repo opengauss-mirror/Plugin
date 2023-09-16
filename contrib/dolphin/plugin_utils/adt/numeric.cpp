@@ -2570,6 +2570,10 @@ Datum numeric_div(PG_FUNCTION_ARGS)
      */
     rscale = select_div_scale(&arg1, &arg2);
 #ifdef DOLPHIN
+    if (unlikely(arg2.ndigits == 0 || arg2.digits[0] == 0)) {
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+    }
     /*
      * The actual precision calculation method in M* is simulated here.
      * The result is compared with the actual precision of openGauss,
@@ -2646,6 +2650,12 @@ Datum numeric_div_trunc(PG_FUNCTION_ARGS)
      */
     init_var_from_num(num1, &arg1);
     init_var_from_num(num2, &arg2);
+#ifdef DOLPHIN
+    if (unlikely(arg2.ndigits == 0 || arg2.digits[0] == 0)) {
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+    }
+#endif
 
     init_var(&result);
 
@@ -2706,7 +2716,10 @@ Datum numeric_mod(PG_FUNCTION_ARGS)
         free_var(&result);
         free_var(&arg2);
         free_var(&arg1);
-
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         if (DB_IS_CMPT(PG_FORMAT)) {
             /* zero is not allowed to be divisor if compatible with PG */
             ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
@@ -22499,11 +22512,15 @@ Datum oct_str(PG_FUNCTION_ARGS)
     PG_RETURN_TEXT_P(cstring_to_text(result));
 }
 
-static Numeric numeric_div_internal(NumericVar arg1, NumericVar arg2)
+static Numeric numeric_div_internal(NumericVar arg1, NumericVar arg2, bool ignore)
 {
     NumericVar result;
     Numeric res;
     int rscale;
+    if (unlikely(arg2.ndigits == 0 || arg2.digits[0] == 0)) {
+        CheckErrDivByZero(ignore);
+        return NULL;
+    }
 
     init_var(&result);
 
@@ -22511,7 +22528,6 @@ static Numeric numeric_div_internal(NumericVar arg1, NumericVar arg2)
      * Select scale for division result
      */
     rscale = select_div_scale(&arg1, &arg2);
-#ifdef DOLPHIN
     /*
      * The actual precision calculation method in M* is simulated here.
      * The result is compared with the actual precision of openGauss,
@@ -22528,19 +22544,16 @@ static Numeric numeric_div_internal(NumericVar arg1, NumericVar arg2)
         int tempScale = ROUND_UP(scale1 + scale2 + GetSessionContext()->div_precision_increment) * DIG_PER_DEC1;
         rscale = tempScale > rscale ? tempScale : rscale;
     }
-#endif
 
     /*
      * Do the divide and return the result
      */
     div_var(&arg1, &arg2, &result, rscale, true);
 
-#ifdef DOLPHIN
     if (enableBCmptMode) {
         int outputScale = arg1.dscale + div_precision_increment;
         round_var(&result, outputScale > oldScale ? outputScale : oldScale);
     }
-#endif
 
     res = make_result(&result);
 
@@ -22561,9 +22574,12 @@ Datum dolphin_int4div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_INT32(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int2div);
@@ -22579,9 +22595,12 @@ Datum dolphin_int2div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_INT16(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int1div);
@@ -22597,9 +22616,12 @@ Datum dolphin_int1div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_INT8(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int8div);
@@ -22615,9 +22637,12 @@ Datum dolphin_int8div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar(PG_GETARG_INT64(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint1div);
@@ -22633,9 +22658,12 @@ Datum dolphin_uint1div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_UINT8(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int1_div_uint1);
@@ -22651,9 +22679,12 @@ Datum dolphin_int1_div_uint1(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_UINT8(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint1_div_int1);
@@ -22669,9 +22700,12 @@ Datum dolphin_uint1_div_int1(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_INT8(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int24div);
@@ -22687,9 +22721,12 @@ Datum dolphin_int24div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_INT32(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int28div);
@@ -22705,9 +22742,12 @@ Datum dolphin_int28div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar(PG_GETARG_INT64(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int2_div_uint2);
@@ -22723,9 +22763,12 @@ Datum dolphin_int2_div_uint2(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_UINT16(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int42div);
@@ -22741,9 +22784,12 @@ Datum dolphin_int42div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_INT16(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int48div);
@@ -22759,9 +22805,12 @@ Datum dolphin_int48div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar(PG_GETARG_INT64(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int4_div_uint4);
@@ -22777,9 +22826,12 @@ Datum dolphin_int4_div_uint4(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_UINT32(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int82div);
@@ -22795,9 +22847,12 @@ Datum dolphin_int82div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_INT16(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int84div);
@@ -22813,9 +22868,12 @@ Datum dolphin_int84div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_INT32(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint2_div_int2);
@@ -22831,9 +22889,12 @@ Datum dolphin_uint2_div_int2(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_INT16(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint2div);
@@ -22849,9 +22910,12 @@ Datum dolphin_uint2div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_UINT16(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint4div);
@@ -22867,9 +22931,12 @@ Datum dolphin_uint4div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_UINT32(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint4_div_int4);
@@ -22885,9 +22952,12 @@ Datum dolphin_uint4_div_int4(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar((int64)PG_GETARG_INT32(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint8_div_int8);
@@ -22903,9 +22973,12 @@ Datum dolphin_uint8_div_int8(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     int64_to_numericvar(PG_GETARG_INT64(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int8_div_uint8);
@@ -22921,9 +22994,12 @@ Datum dolphin_int8_div_uint8(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     uint8_to_numericvar(PG_GETARG_UINT64(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint8div);
@@ -22939,9 +23015,12 @@ Datum dolphin_uint8div(PG_FUNCTION_ARGS)
     init_var(&arg2_var);
     uint8_to_numericvar(PG_GETARG_UINT64(1), &arg2_var);
 
-    Numeric result = numeric_div_internal(arg1_var, arg2_var);
-
-    PG_RETURN_NUMERIC(result);
+    Numeric result = numeric_div_internal(arg1_var, arg2_var, fcinfo->can_ignore);
+    if (likely(result)) {
+        PG_RETURN_NUMERIC(result);
+    } else {
+        PG_RETURN_NULL();
+    }
 }
 
 Datum numeric_cast_int8(PG_FUNCTION_ARGS)

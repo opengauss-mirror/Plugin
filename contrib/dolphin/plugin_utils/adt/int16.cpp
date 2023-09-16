@@ -709,6 +709,10 @@ Datum int16div(PG_FUNCTION_ARGS)
     float8 result;
 
     if (arg2 == 0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR,
             (errmodule(MOD_FUNCTION), errcode(ERRCODE_DIVISION_BY_ZERO),
                 errmsg("division by zero"),

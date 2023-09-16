@@ -4080,7 +4080,7 @@ returns numeric
 as
 $$
 begin
-    return 0;
+    return $1::double % $2::double;
 end;
 $$
 language plpgsql;
@@ -4091,7 +4091,7 @@ returns numeric
 as
 $$
 begin
-    return null;
+    return $1::double % $2::double;
 end;
 $$
 language plpgsql;
@@ -4102,7 +4102,7 @@ returns numeric
 as
 $$
 begin
-    return null;
+    return $1::double % $2::double;
 end;
 $$
 language plpgsql;
@@ -4113,7 +4113,7 @@ returns numeric
 as
 $$
 begin
-    return 0;
+    return $1::double / $2::double;
 end;
 $$
 language plpgsql;
@@ -4124,7 +4124,7 @@ returns numeric
 as
 $$
 begin
-    return null;
+    return $1::double / $2::double;
 end;
 $$
 language plpgsql;
@@ -4135,7 +4135,7 @@ returns numeric
 as
 $$
 begin
-    return null;
+    return $1::double / $2::double;
 end;
 $$
 language plpgsql;
@@ -4191,3 +4191,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.hex(int16) RETURNS text LANGUAGE C IMMUTAB
 
 DROP FUNCTION IF EXISTS pg_catalog.bit_bin_in(cstring, oid, integer);
 CREATE OR REPLACE FUNCTION pg_catalog.bit_bin_in(cstring, oid, integer) RETURNS bit LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','bit_bin_in';
+
+DROP FUNCTION IF EXISTS pg_catalog.b_mod(a numeric, b numeric);
+CREATE OR REPLACE FUNCTION pg_catalog.b_mod(a numeric, b numeric) returns numeric LANGUAGE SQL IMMUTABLE STRICT as 'select a % b';
