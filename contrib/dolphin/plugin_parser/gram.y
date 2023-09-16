@@ -2045,8 +2045,6 @@ UserId:
 					}
 			| SCONST
 					{
-						if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT || !u_sess->attr.attr_common.b_compatibility_user_host_auth)
-							ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("syntax error at or near \"%s\"", $1), parser_errposition(@1)));
 						if (strchr($1,'@'))
 							ereport(ERROR,(errcode(ERRCODE_INVALID_NAME),errmsg("@ can't be allowed in username")));
 						if (strlen($1) >= NAMEDATALEN) {
@@ -37012,7 +37010,6 @@ DolphinUserId:		DolphinRoleId					{ $$ = $1; }
 							}
 					| SCONST
 							{
-								CheckUserHostIsValid();
 								if (strchr($1,'@'))
 									ereport(ERROR,(errcode(ERRCODE_INVALID_NAME),errmsg("@ can't be allowed in username")));
 								$$ = CreateDolphinIdent(pstrdup($1), false);
