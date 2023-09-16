@@ -368,25 +368,45 @@ LINE 1: SELECT NAME_CONST('test', 1E+1001);
                                   ^
 CONTEXT:  referenced column: name_const
 SELECT NAME_CONST('test', '9999-99-99 99:99:99'::time); --ERROR
-ERROR:  date/time field value out of range: "9999-99-99 99:99:99"
+WARNING:  date/time field value out of range: "9999-99-99 99:99:99"
 LINE 1: SELECT NAME_CONST('test', '9999-99-99 99:99:99'::time);
                                   ^
 CONTEXT:  referenced column: name_const
+   test   
+----------
+ 00:00:00
+(1 row)
+
 SELECT NAME_CONST('9999-99-99 99:99:99'::time, 'test'); --ERROR
-ERROR:  date/time field value out of range: "9999-99-99 99:99:99"
+WARNING:  date/time field value out of range: "9999-99-99 99:99:99"
 LINE 1: SELECT NAME_CONST('9999-99-99 99:99:99'::time, 'test');
                           ^
 CONTEXT:  referenced column: name_const
+ 00:00:00 
+----------
+ test
+(1 row)
+
 SELECT NAME_CONST('test', 'test'::integer); --ERROR
-ERROR:  invalid input syntax for integer: "test"
+WARNING:  invalid input syntax for integer: "test"
 LINE 1: SELECT NAME_CONST('test', 'test'::integer);
                                   ^
 CONTEXT:  referenced column: name_const
+ test 
+------
+    0
+(1 row)
+
 SELECT NAME_CONST('test'::integer, 'test'); --ERROR
-ERROR:  invalid input syntax for integer: "test"
+WARNING:  invalid input syntax for integer: "test"
 LINE 1: SELECT NAME_CONST('test'::integer, 'test');
                           ^
 CONTEXT:  referenced column: name_const
+  0   
+------
+ test
+(1 row)
+
 SELECT NAME_CONST('test', '2'::boolean);  --ERROR
 ERROR:  invalid input syntax for type boolean: "2"
 LINE 1: SELECT NAME_CONST('test', '2'::boolean);

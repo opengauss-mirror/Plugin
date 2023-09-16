@@ -85,8 +85,13 @@ select (18446744073709550515)::float8::uint8;
 (1 row)
 
 select (-18446744073709550515)::float8::uint8;
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+ uint8 
+-------
+ 0
+(1 row)
+
 select (92233720368547758.0)::float4::uint8;
        uint8       
 -------------------
@@ -112,35 +117,85 @@ select (-9223372036854775809.0)::float4::uint8;
 (1 row)
 
 select (18446744073709550515)::float4::uint8;
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 select (-18446744073709550515)::float4::uint8;
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+ uint8 
+-------
+ 0
+(1 row)
+
 select (-922337203685477580999.0)::float4::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 0
+(1 row)
+
 select (-922337203685477580999.0)::float8::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 0
+(1 row)
+
 select (-922337203685477580999.0)::float4::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 0
+(1 row)
+
 select (-922337203685477580999.0)::float8::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 0
+(1 row)
+
 select (-922337203685477580999.0)::float4::uint4;
-ERROR:  int unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: uint4
+ uint4 
+-------
+ 0
+(1 row)
+
 select (-922337203685477580999.0)::float8::uint4;
-ERROR:  int unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: uint4
+ uint4 
+-------
+ 0
+(1 row)
+
 select (-922337203685477580999.0)::float4::uint8;
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+ uint8 
+-------
+ 0
+(1 row)
+
 select (-922337203685477580999.0)::float8::uint8;
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+ uint8 
+-------
+ 0
+(1 row)
+
 select (0)::numeric::uint8;
  uint8 
 -------
@@ -148,6 +203,8 @@ select (0)::numeric::uint8;
 (1 row)
 
 select (-1)::numeric::uint8;
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
  uint8 
 -------
  0
@@ -160,8 +217,13 @@ select (18446744073709551615)::numeric(20)::uint8;
 (1 row)
 
 select (18446744073709551616)::numeric(20)::uint8;
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 select (-1)::int2::uint8;
         uint8         
 ----------------------
@@ -187,8 +249,13 @@ select (32767)::int2::uint8;
 (1 row)
 
 select (32768)::int2::uint8;
-ERROR:  smallint out of range
+WARNING:  smallint out of range
 CONTEXT:  referenced column: uint8
+ uint8 
+-------
+ 32767
+(1 row)
+
 select (-32768)::int2::uint8;
         uint8         
 ----------------------
@@ -196,8 +263,13 @@ select (-32768)::int2::uint8;
 (1 row)
 
 select (-32769)::int2::uint8;
-ERROR:  smallint out of range
+WARNING:  smallint out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709518848
+(1 row)
+
 select (-1)::int4::uint8;
         uint8         
 ----------------------
@@ -223,8 +295,13 @@ select (2147483647)::int4::uint8;
 (1 row)
 
 select (2147483648)::int4::uint8;
-ERROR:  integer out of range
+WARNING:  integer out of range
 CONTEXT:  referenced column: uint8
+   uint8    
+------------
+ 2147483647
+(1 row)
+
 select (-2147483648)::int4::uint8;
         uint8         
 ----------------------
@@ -232,8 +309,13 @@ select (-2147483648)::int4::uint8;
 (1 row)
 
 select (-2147483649)::int4::uint8;
-ERROR:  integer out of range
+WARNING:  integer out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744071562067968
+(1 row)
+
 select (-1)::int8::uint8;
         uint8         
 ----------------------
@@ -259,8 +341,13 @@ select (9223372036854775807)::int8::uint8;
 (1 row)
 
 select (9223372036854775808)::int8::uint8;
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: uint8
+        uint8        
+---------------------
+ 9223372036854775807
+(1 row)
+
 select (-9223372036854775808)::int8::uint8;
         uint8        
 ---------------------
@@ -268,8 +355,13 @@ select (-9223372036854775808)::int8::uint8;
 (1 row)
 
 select (-9223372036854775809)::int8::uint8;
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: uint8
+        uint8        
+---------------------
+ 9223372036854775808
+(1 row)
+
 select (-1)::bool::uint4;
  uint4 
 -------
@@ -331,6 +423,8 @@ select (0)::numeric::uint4;
 (1 row)
 
 select (-1)::numeric::uint4;
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: uint4
  uint4 
 -------
  0
@@ -343,8 +437,13 @@ select (4294967295)::numeric::uint4;
 (1 row)
 
 select (4294967296)::numeric::uint4;
-ERROR:  unsigned int out of range
+WARNING:  unsigned int out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 select (-1)::int2::uint4;
    uint4    
 ------------
@@ -370,8 +469,13 @@ select (32767)::int2::uint4;
 (1 row)
 
 select (32768)::int2::uint4;
-ERROR:  smallint out of range
+WARNING:  smallint out of range
 CONTEXT:  referenced column: uint4
+ uint4 
+-------
+ 32767
+(1 row)
+
 select (-32768)::int2::uint4;
    uint4    
 ------------
@@ -379,8 +483,13 @@ select (-32768)::int2::uint4;
 (1 row)
 
 select (-32769)::int2::uint4;
-ERROR:  smallint out of range
+WARNING:  smallint out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294934528
+(1 row)
+
 select (-1)::int4::uint4;
    uint4    
 ------------
@@ -406,8 +515,13 @@ select (2147483647)::int4::uint4;
 (1 row)
 
 select (2147483648)::int4::uint4;
-ERROR:  integer out of range
+WARNING:  integer out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 2147483647
+(1 row)
+
 select (-2147483648)::int4::uint4;
    uint4    
 ------------
@@ -415,8 +529,13 @@ select (-2147483648)::int4::uint4;
 (1 row)
 
 select (-2147483649)::int4::uint4;
-ERROR:  integer out of range
+WARNING:  integer out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 2147483648
+(1 row)
+
 select (-1)::int8::uint4;
    uint4    
 ------------
@@ -436,17 +555,41 @@ select (1)::int8::uint4;
 (1 row)
 
 select (9223372036854775807)::int8::uint4;
-ERROR:   int unsigned out of range
+WARNING:   int unsigned out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 select (9223372036854775808)::int8::uint4;
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: uint4
+WARNING:   int unsigned out of range
+CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 select (-9223372036854775808)::int8::uint4;
-ERROR:   int unsigned out of range
+WARNING:   int unsigned out of range
 CONTEXT:  referenced column: uint4
+ uint4 
+-------
+ 0
+(1 row)
+
 select (-9223372036854775809)::int8::uint4;
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: uint4
+WARNING:   int unsigned out of range
+CONTEXT:  referenced column: uint4
+ uint4 
+-------
+ 0
+(1 row)
+
 select (4294967295)::int8::uint4;
    uint4    
 ------------
@@ -454,8 +597,13 @@ select (4294967295)::int8::uint4;
 (1 row)
 
 select (4294967296)::int8::uint4;
-ERROR:   int unsigned out of range
+WARNING:   int unsigned out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 select (-2147483648)::int8::uint4;
    uint4    
 ------------
@@ -463,8 +611,13 @@ select (-2147483648)::int8::uint4;
 (1 row)
 
 select (-2147483649)::int8::uint4;
-ERROR:   int unsigned out of range
+WARNING:   int unsigned out of range
 CONTEXT:  referenced column: uint4
+ uint4 
+-------
+ 0
+(1 row)
+
 select (-1)::bool::uint2;
  uint2 
 -------
@@ -526,6 +679,8 @@ select (0)::numeric::uint2;
 (1 row)
 
 select (-1)::numeric::uint2;
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
  uint2 
 -------
  0
@@ -568,8 +723,13 @@ select (32767)::int2::uint2;
 (1 row)
 
 select (32768)::int2::uint2;
-ERROR:  smallint out of range
+WARNING:  smallint out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 32767
+(1 row)
+
 select (-32768)::int2::uint2;
  uint2 
 -------
@@ -577,8 +737,13 @@ select (-32768)::int2::uint2;
 (1 row)
 
 select (-32769)::int2::uint2;
-ERROR:  smallint out of range
+WARNING:  smallint out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 32768
+(1 row)
+
 select (-1)::int4::uint2;
  uint2 
 -------
@@ -598,17 +763,41 @@ select (1)::int4::uint2;
 (1 row)
 
 select (2147483647)::int4::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 select (2147483648)::int4::uint2;
-ERROR:  integer out of range
+WARNING:  integer out of range
 CONTEXT:  referenced column: uint2
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 select (-2147483648)::int4::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 0
+(1 row)
+
 select (-2147483649)::int4::uint2;
-ERROR:  integer out of range
+WARNING:  integer out of range
 CONTEXT:  referenced column: uint2
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 0
+(1 row)
+
 select (65535)::int4::uint2;
  uint2 
 -------
@@ -616,8 +805,13 @@ select (65535)::int4::uint2;
 (1 row)
 
 select (65536)::int4::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 select (-32768)::int4::uint2;
  uint2 
 -------
@@ -625,8 +819,13 @@ select (-32768)::int4::uint2;
 (1 row)
 
 select (-32769)::int4::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 0
+(1 row)
+
 select (-1)::int8::uint2;
  uint2 
 -------
@@ -646,17 +845,41 @@ select (1)::int8::uint2;
 (1 row)
 
 select (9223372036854775807)::int8::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 select (9223372036854775808)::int8::uint2;
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: uint2
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 select (-9223372036854775808)::int8::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 0
+(1 row)
+
 select (-9223372036854775809)::int8::uint2;
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: uint2
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 0
+(1 row)
+
 select (65535)::int8::uint2;
  uint2 
 -------
@@ -664,8 +887,13 @@ select (65535)::int8::uint2;
 (1 row)
 
 select (65536)::int8::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 select (-32768)::int8::uint2;
  uint2 
 -------
@@ -673,8 +901,13 @@ select (-32768)::int8::uint2;
 (1 row)
 
 select (-32769)::int8::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 0
+(1 row)
+
 select (-1)::bool::uint1;
  uint1 
 -------
@@ -736,6 +969,8 @@ select (0)::numeric::uint1;
 (1 row)
 
 select (-1)::numeric::uint1;
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
  uint1 
 -------
  0
@@ -748,8 +983,13 @@ select (255)::numeric::uint1;
 (1 row)
 
 select (256)::numeric::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select (-1)::int2::uint1;
  uint1 
 -------
@@ -769,17 +1009,41 @@ select (1)::int2::uint1;
 (1 row)
 
 select (32767)::int2::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select (32768)::int2::uint1;
-ERROR:  smallint out of range
+WARNING:  smallint out of range
 CONTEXT:  referenced column: uint1
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select (-32768)::int2::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 0
+(1 row)
+
 select (-32769)::int2::uint1;
-ERROR:  smallint out of range
+WARNING:  smallint out of range
 CONTEXT:  referenced column: uint1
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 0
+(1 row)
+
 select (255)::int2::uint1;
  uint1 
 -------
@@ -787,8 +1051,13 @@ select (255)::int2::uint1;
 (1 row)
 
 select (256)::int2::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select (-128)::int2::uint1;
  uint1 
 -------
@@ -796,8 +1065,13 @@ select (-128)::int2::uint1;
 (1 row)
 
 select (-129)::int2::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 0
+(1 row)
+
 select (-1)::int4::uint1;
  uint1 
 -------
@@ -817,17 +1091,41 @@ select (1)::int4::uint1;
 (1 row)
 
 select (2147483647)::int4::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select (2147483648)::int4::uint1;
-ERROR:  integer out of range
+WARNING:  integer out of range
 CONTEXT:  referenced column: uint1
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select (-2147483648)::int4::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 0
+(1 row)
+
 select (-2147483649)::int4::uint1;
-ERROR:  integer out of range
+WARNING:  integer out of range
 CONTEXT:  referenced column: uint1
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 0
+(1 row)
+
 select (255)::int4::uint1;
  uint1 
 -------
@@ -835,8 +1133,13 @@ select (255)::int4::uint1;
 (1 row)
 
 select (256)::int4::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select (-128)::int4::uint1;
  uint1 
 -------
@@ -844,8 +1147,13 @@ select (-128)::int4::uint1;
 (1 row)
 
 select (-129)::int4::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 0
+(1 row)
+
 select (-1)::int8::uint1;
  uint1 
 -------
@@ -865,17 +1173,41 @@ select (1)::int8::uint1;
 (1 row)
 
 select (9223372036854775807)::int8::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select (9223372036854775808)::int8::uint1;
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: uint1
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select (-9223372036854775808)::int8::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 0
+(1 row)
+
 select (-9223372036854775809)::int8::uint1;
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: uint1
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 0
+(1 row)
+
 select (255)::int8::uint1;
  uint1 
 -------
@@ -883,8 +1215,13 @@ select (255)::int8::uint1;
 (1 row)
 
 select (256)::int8::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select (-128)::int8::uint1;
  uint1 
 -------
@@ -892,8 +1229,13 @@ select (-128)::int8::uint1;
 (1 row)
 
 select (-129)::int8::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 0
+(1 row)
+
 select (-1)::int1::uint1;
  uint1 
 -------
@@ -913,11 +1255,21 @@ select (1)::int1::uint1;
 (1 row)
 
 select (255)::int1::uint1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 127
+(1 row)
+
 select (256)::int1::uint1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 127
+(1 row)
+
 select (-1)::int1::uint2;
  uint2 
 -------
@@ -937,11 +1289,21 @@ select (1)::int1::uint2;
 (1 row)
 
 select (255)::int1::uint2;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 127
+(1 row)
+
 select (256)::int1::uint2;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 127
+(1 row)
+
 select (-1)::int1::uint4;
    uint4    
 ------------
@@ -961,11 +1323,21 @@ select (1)::int1::uint4;
 (1 row)
 
 select (255)::int1::uint4;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: uint4
+ uint4 
+-------
+ 127
+(1 row)
+
 select (256)::int1::uint4;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: uint4
+ uint4 
+-------
+ 127
+(1 row)
+
 select (-1)::int1::uint8;
         uint8         
 ----------------------
@@ -985,14 +1357,29 @@ select (1)::int1::uint8;
 (1 row)
 
 select (255)::int1::uint8;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: uint8
+ uint8 
+-------
+ 127
+(1 row)
+
 select (256)::int1::uint8;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: uint8
+ uint8 
+-------
+ 127
+(1 row)
+
 select 255::uint1::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 255::uint1::int2;
  int2 
 ------
@@ -1030,11 +1417,21 @@ select 255::uint1::numeric;
 (1 row)
 
 select 255::uint2::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 65535::uint2::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 32767::uint2::int2;
  int2  
 -------
@@ -1042,8 +1439,13 @@ select 32767::uint2::int2;
 (1 row)
 
 select 65535::uint2::int2;
-ERROR:  smallint out of range
+WARNING:  smallint out of range
 CONTEXT:  referenced column: int2
+ int2  
+-------
+ 32767
+(1 row)
+
 select 65535::uint2::int4;
  int4  
 -------
@@ -1075,11 +1477,21 @@ select 65535::uint2::numeric;
 (1 row)
 
 select 255::uint4::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 4294967295::uint4::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 32767::uint4::int2;
  int2  
 -------
@@ -1087,8 +1499,13 @@ select 32767::uint4::int2;
 (1 row)
 
 select 4294967295::uint4::int2;
-ERROR:  smallint out of range
+WARNING:  smallint out of range
 CONTEXT:  referenced column: int2
+ int2  
+-------
+ 32767
+(1 row)
+
 select 2147483647::uint4::int4;
     int4    
 ------------
@@ -1096,8 +1513,13 @@ select 2147483647::uint4::int4;
 (1 row)
 
 select 4294967295::uint4::int4;
-ERROR:  int out of range
+WARNING:  int out of range
 CONTEXT:  referenced column: int4
+    int4    
+------------
+ 2147483647
+(1 row)
+
 select 4294967295::uint4::int8;
     int8    
 ------------
@@ -1123,11 +1545,21 @@ select 4294967295::uint4::numeric;
 (1 row)
 
 select 255::uint8::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 18446744073709551615::uint8::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 32767::uint8::int2;
  int2  
 -------
@@ -1135,8 +1567,13 @@ select 32767::uint8::int2;
 (1 row)
 
 select 18446744073709551615::uint8::int2;
-ERROR:  smallint out of range
+WARNING:  smallint out of range
 CONTEXT:  referenced column: int2
+ int2  
+-------
+ 32767
+(1 row)
+
 select 2147483647::uint8::int4;
     int4    
 ------------
@@ -1144,8 +1581,13 @@ select 2147483647::uint8::int4;
 (1 row)
 
 select 18446744073709551615::uint8::int4;
-ERROR:  int out of range
+WARNING:  int out of range
 CONTEXT:  referenced column: int4
+    int4    
+------------
+ 2147483647
+(1 row)
+
 select 9223372036854775807::uint8::int8;
         int8         
 ---------------------

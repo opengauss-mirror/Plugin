@@ -51,8 +51,13 @@ select (-128.4)::float4::int1;
 (1 row)
 
 select (127.9)::float4::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select (127.3)::float4::int1;
  int1 
 ------
@@ -72,8 +77,13 @@ select (-128.4)::float8::int1;
 (1 row)
 
 select (127.9)::float8::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select (127.3)::float8::int1;
  int1 
 ------
@@ -93,8 +103,13 @@ select (-128.4)::numeric::int1;
 (1 row)
 
 select (127.9)::numeric::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select (127.3)::numeric::int1;
  int1 
 ------
@@ -114,11 +129,21 @@ select (127)::int2::int1;
 (1 row)
 
 select (32767)::int2::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select (-32768)::int2::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ -128
+(1 row)
+
 select (127)::int4::int1;
  int1 
 ------
@@ -132,11 +157,21 @@ select (-128)::int4::int1;
 (1 row)
 
 select (2147483647)::int4::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select (-2147483648)::int4::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ -128
+(1 row)
+
 select (127)::int8::int1;
  int1 
 ------
@@ -150,11 +185,21 @@ select (-128)::int8::int1;
 (1 row)
 
 select (9223372036854775807)::int8::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select (-9223372036854775808)::int8::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ -128
+(1 row)
+
 select (-1)::int1::uint1;
  uint1 
 -------
@@ -276,26 +321,61 @@ select (-128)::int1::uint8;
 (1 row)
 
 select 255::uint1::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 255::uint2::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 65535::uint2::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 255::uint4::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 4294967295::uint4::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 255::uint8::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 18446744073709551615::uint8::int1;
-ERROR:  tinyint out of range
+WARNING:  tinyint out of range
 CONTEXT:  referenced column: int1
+ int1 
+------
+ 127
+(1 row)
+
 select 1::int1::int16;
  int16 
 -------

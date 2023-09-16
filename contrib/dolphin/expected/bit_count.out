@@ -33,8 +33,13 @@ select bit_count(18446744073709551615);
 (1 row)
 
 select bit_count(18446744073709551616);
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: bit_count
+ bit_count 
+-----------
+        63
+(1 row)
+
 select bit_count(-9223372036854775807);
  bit_count 
 -----------
@@ -48,8 +53,13 @@ select bit_count(-9223372036854775808);
 (1 row)
 
 select bit_count(-9223372036854775809);
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: bit_count
+ bit_count 
+-----------
+         1
+(1 row)
+
 -- 测试字符串越界（超过64无符号数范围）
 select bit_count('18446744073709551614');
  bit_count 
@@ -64,8 +74,13 @@ select bit_count('18446744073709551615');
 (1 row)
 
 select bit_count('18446744073709551616');
-ERROR:  Incorrect INTEGER value
+WARNING:  Incorrect INTEGER value
 CONTEXT:  referenced column: bit_count
+ bit_count 
+-----------
+        64
+(1 row)
+
 select bit_count('-9223372036854775807');
  bit_count 
 -----------
@@ -79,8 +94,13 @@ select bit_count('-9223372036854775808');
 (1 row)
 
 select bit_count('-9223372036854775809');
-ERROR:  Incorrect INTEGER value
+WARNING:  Incorrect INTEGER value
 CONTEXT:  referenced column: bit_count
+ bit_count 
+-----------
+         1
+(1 row)
+
 set dolphin.sql_mode = '';
 select bit_count('18446744073709551614');
  bit_count 

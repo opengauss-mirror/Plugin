@@ -8512,10 +8512,22 @@ const char* CreateCommandTag(Node* parse_tree)
             break;
 
         case T_SelectStmt:
+#ifdef DOLPHIN
+            if (((SelectStmt *)parse_tree)->intoClause != NULL) {
+                IntoClause *into = ((SelectStmt *)parse_tree)->intoClause;
+                if (into->userVarList != NIL || into->filename != NULL) {
+                    tag = "SELECT INTO";
+                } else {
+                    tag = "CREATE TABLE AS";
+                }
+            }
+#else
             if (((SelectStmt *)parse_tree)->intoClause != NULL &&
                 ((SelectStmt *)parse_tree)->intoClause->userVarList != NIL) {
                 tag = "SELECT INTO";
-            } else {
+            }
+#endif
+            else {
                 tag = "SELECT";
             }
             break;

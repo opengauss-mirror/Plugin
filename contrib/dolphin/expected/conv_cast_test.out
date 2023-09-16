@@ -263,43 +263,92 @@ select '65535'::uint2::time;
 (1 row)
 
 select '4294967295'::uint4::time;
-ERROR:  invalid input syntax for type time: "4294967295"
+WARNING:  invalid input syntax for type time: "4294967295"
 CONTEXT:  referenced column: time
+     time     
+--------------
+ 429497:13:35
+(1 row)
+
 select '18446744073709551615'::uint8::time;
-ERROR:  invalid input syntax for type time: "18446744073709551615"
+WARNING:  invalid input syntax for type time: "18446744073709551615"
 CONTEXT:  referenced column: time
+   time   
+----------
+ 00:00:00
+(1 row)
+
 
 select '4294967295'::uint1::time;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: time
+   time   
+----------
+ 00:02:55
+(1 row)
+
 select '4294967295'::uint2::time;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: time
+   time   
+----------
+ 06:55:35
+(1 row)
+
 select '4294967295'::uint4::time;
-ERROR:  invalid input syntax for type time: "4294967295"
+WARNING:  invalid input syntax for type time: "4294967295"
 CONTEXT:  referenced column: time
+     time     
+--------------
+ 429497:13:35
+(1 row)
+
 select '4294967295'::uint8::time;
-ERROR:  invalid input syntax for type time: "4294967295"
+WARNING:  invalid input syntax for type time: "4294967295"
 CONTEXT:  referenced column: time
+     time     
+--------------
+ 429497:13:35
+(1 row)
+
 
 select '4294967295'::int1::time;
-ERROR:  value "4294967295" is out of range for type tinyint
+WARNING:  value "4294967295" is out of range for type tinyint
 LINE 1: select '4294967295'::int1::time;
                ^
 CONTEXT:  referenced column: time
+   time   
+----------
+ 00:01:27
+(1 row)
+
 select '4294967295'::int2::time;
-ERROR:  value "4294967295" is out of range for type smallint
+WARNING:  value "4294967295" is out of range for type smallint
 LINE 1: select '4294967295'::int2::time;
                ^
 CONTEXT:  referenced column: time
+ERROR:  time out of range
+CONTEXT:  referenced column: time
 select '4294967295'::int4::time;
-ERROR:  value "4294967295" is out of range for type integer
+WARNING:  value "4294967295" is out of range for type integer
 LINE 1: select '4294967295'::int4::time;
                ^
 CONTEXT:  referenced column: time
-select '4294967295'::int8::time;
-ERROR:  invalid input syntax for type time: "4294967295"
+WARNING:  Truncated incorrect time value.
 CONTEXT:  referenced column: time
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select '4294967295'::int8::time;
+WARNING:  invalid input syntax for type time: "4294967295"
+CONTEXT:  referenced column: time
+     time     
+--------------
+ 429497:13:35
+(1 row)
+
 
 select conv('-211111111111111111111111111111111111111111111111111111111177777',10,8);
           conv          
@@ -580,11 +629,23 @@ SELECT '20220101121212.5'::date;
 
 
 select cast(b'1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111' as unsigned);
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 select cast(b'1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111' as signed);
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: int8
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
 select cast(b'1111111111111111111111111111111111111111111111111111111111111111' as unsigned);
         uint8         
 ----------------------
@@ -592,8 +653,13 @@ select cast(b'1111111111111111111111111111111111111111111111111111111111111111' 
 (1 row)
 
 select cast(b'1111111111111111111111111111111111111111111111111111111111111111' as signed);
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
 select cast(b'111111111111111111111111111111111111111111111111111111111111111' as unsigned);
         uint8        
 ---------------------
@@ -607,11 +673,23 @@ select cast(b'111111111111111111111111111111111111111111111111111111111111111' a
 (1 row)
 
 select cast(b'11111111111111111111111111111111111111111111111111111111111111111' as unsigned);
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 select cast(b'11111111111111111111111111111111111111111111111111111111111111111' as signed);
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: int8
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
 
 select hex('9999-12-31 23:59:59'::datetime::bit(64));
        hex        

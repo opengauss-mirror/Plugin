@@ -171,4 +171,4 @@ test: test_show_slave_status
 test: test_show_open_tables
 test: test_show_open_tables_lock_waiting_1 test_show_open_tables_lock_waiting_2
 test: test_show_open_tables_cleanup
-test: column_quote_alias sconst_sconst
+test: column_quote_alias sconst_sconst sqlmode_strict

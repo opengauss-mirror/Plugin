@@ -49,11 +49,21 @@ select insert('abcdefg', 100, 200, 'yyy');
 (1 row)
 
 select insert('abcdefg', 412321321421, 4, 'yyy');
-ERROR:  integer out of range
+WARNING:  integer out of range
 CONTEXT:  referenced column: insert
+ insert  
+---------
+ abcdefg
+(1 row)
+
 select insert('abcdefg', -412321321421, 4, 'yyy');
-ERROR:  integer out of range
+WARNING:  integer out of range
 CONTEXT:  referenced column: insert
+ insert  
+---------
+ abcdefg
+(1 row)
+
 select insert('abcdefg', 1147483640, 1147483640, 'yyy');
  insert  
 ---------

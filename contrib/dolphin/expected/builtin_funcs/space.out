@@ -55,8 +55,13 @@ LINE 1: select space(1,2,3);
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: space
 select space(2147483647111);
-ERROR:  integer out of range
+WARNING:  integer out of range
 CONTEXT:  referenced column: space
+ space 
+-------
+ 
+(1 row)
+
 select space(b'111');
   space  
 ---------

@@ -136,6 +136,39 @@ c30:DECIMAL:20.000
 c31:JSON:{"k": "v"}
 c32:CHAR:a
 c33:CHAR:a
+c1:INT:null
+c2:INT UNSIGNED:null
+c3:TINYINT:0
+c4:TINYINT UNSIGNED:null
+c5:SMALLINT:null
+c6:SMALLINT UNSIGNED:null
+c7:BIGINT:null
+c8:BIGINT UNSIGNED:null
+c9:FLOAT:null
+c10:DOUBLE:null
+c11:BIT:null
+c12:TINYINT:null
+c13:CHAR:null
+c15:VARCHAR:null
+c16:VARCHAR:null
+c18:YEAR:null
+c19:DATE:null
+c20:TIME:null
+c21:TIMESTAMP:null
+c22:DATETIME:null
+c23:TINYBLOB:null
+c24:BLOB:null
+c25:MEDIUMBLOB:null
+c26:LONGBLOB:null
+c27:GEOMETRY:null
+c28:GEOMETRY:null
+c29:VARCHAR:null
+c30:DECIMAL:null
+c31:JSON:null
+c32:CHAR:null
+c33:CHAR:null
+update failed:invalid input syntax for tinyint: "abc"
+delete failed:invalid input syntax for tinyint: "abc"
 select * from t3;
  c1 |  c2  | c3 | c4 | c5 | c6 | c7 | c8 | c9  | c10 |    c11     | c12 |    c13     |   c15   |   c16    | c18  |    c19     |   c20    |            c21             |           c22           |    c23     |   c24    |    c25     |    c26     |   c27    |        c28         | c29  |  c30   |    c31     | c32 | c33 
 ----+------+----+----+----+----+----+----+-----+-----+------------+-----+------------+---------+----------+------+------------+----------+----------------------------+-------------------------+------------+----------+------------+------------+----------+--------------------+------+--------+------------+-----+-----

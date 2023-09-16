@@ -47,7 +47,9 @@
 #include "miscadmin.h"
 #include "tcop/tcopprot.h"
 #include "commands/event_trigger.h"
-
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 /* functions reference other modules */
 extern THR_LOCAL List* baseSearchPath;
@@ -136,6 +138,9 @@ PLpgSQL_function* plpgsql_compile(FunctionCallInfo fcinfo, bool for_validator)
     bool function_valid = false;
     bool hashkey_valid = false;
     bool isnull = false;
+#ifdef DOLPHIN
+    bool recompile_due_to_strict = false;
+#endif
     /*
      * Lookup the pg_proc tuple by Oid; we'll need it in any case
      */
@@ -167,8 +172,16 @@ recheck:
 
     if (func != NULL) {
         /* We have a compiled function, but is it still valid? */
+#ifdef DOLPHIN
+        recompile_due_to_strict = (SQL_MODE_ATUO_RECOMPILE_FUNCTION() && SQL_MODE_STRICT() &&
+            proc_struct->pronamespace != PG_CATALOG_NAMESPACE);
+#endif
         if (func->fn_xmin == HeapTupleGetRawXmin(proc_tup) &&
-            ItemPointerEquals(&func->fn_tid, &proc_tup->t_self) && plpgsql_check_search_path(func, proc_tup)) {
+            ItemPointerEquals(&func->fn_tid, &proc_tup->t_self) && plpgsql_check_search_path(func, proc_tup)
+#ifdef DOLPHIN
+            && !recompile_due_to_strict
+#endif
+            ) {
             function_valid = true;
         } else {
             /*
@@ -223,6 +236,11 @@ recheck:
      * If the function wasn't found or was out-of-date, we have to compile it
      */
     if (!function_valid) {
+#ifdef DOLPHIN
+        if (!for_validator && recompile_due_to_strict) {
+            ereport(WARNING, (errmsg("re-compile function '%s' due to strict mode.", proc_struct->proname.data)));
+        }
+#endif
         /*
          * Calculate hashkey if we didn't already; we'll need it to store the
          * completed function.
@@ -4069,7 +4087,9 @@ PLpgSQL_type* build_datatype(HeapTuple type_tup, int32 typmod, Oid collation)
         case TYPTYPE_DOMAIN:
         case TYPTYPE_ENUM:
         case TYPTYPE_RANGE:
+#ifdef DOLPHIN
         case TYPTYPE_SET:
+#endif
             typ->ttype = PLPGSQL_TTYPE_SCALAR;
             break;
         case TYPTYPE_COMPOSITE:
@@ -4959,6 +4979,7 @@ TupleDesc getCursorTupleDesc(PLpgSQL_expr* expr, bool isOnlySelect, bool isOnlyP
     expr->func->datums = u_sess->plsql_cxt.curr_compile_context->plpgsql_Datums;
     expr->func->ndatums = u_sess->plsql_cxt.curr_compile_context->plpgsql_nDatums;
     TupleDesc tupleDesc = NULL;
+    NodeTag old_node_tag = t_thrd.postgres_cxt.cur_command_tag;
     PG_TRY();
     {
         List* parsetreeList = pg_parse_query(expr->query);
@@ -4970,6 +4991,7 @@ TupleDesc getCursorTupleDesc(PLpgSQL_expr* expr, bool isOnlySelect, bool isOnlyP
         List* queryList = NIL;
         foreach(cell, parsetreeList) {
             Node *parsetree = (Node *)lfirst(cell);
+            t_thrd.postgres_cxt.cur_command_tag = transform_node_tag(parsetree);
             if (nodeTag(parsetree) == T_SelectStmt) {
                 if (checkSelectIntoParse((SelectStmt*)parsetree)) {
                     list_free_deep(parsetreeList);
@@ -5016,6 +5038,7 @@ TupleDesc getCursorTupleDesc(PLpgSQL_expr* expr, bool isOnlySelect, bool isOnlyP
     }
     PG_CATCH();
     {
+        t_thrd.postgres_cxt.cur_command_tag = old_node_tag;
         /* Save error info */
         MemoryContext ecxt = MemoryContextSwitchTo(current_context);
         ErrorData* edata = CopyErrorData();
@@ -5036,6 +5059,7 @@ TupleDesc getCursorTupleDesc(PLpgSQL_expr* expr, bool isOnlySelect, bool isOnlyP
     }
     PG_END_TRY();
 
+    t_thrd.postgres_cxt.cur_command_tag = old_node_tag;
     return tupleDesc;
 }
 static int get_inner_type_ind(Oid typeoid)
