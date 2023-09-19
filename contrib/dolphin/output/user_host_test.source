@@ -13,9 +13,7 @@ ERROR:  user@host is only supported in b database when the b_compatibility_user_
 create user 'test_user_host'@'127.0.%' password 'test123@';
 ERROR:  user@host is only supported in b database when the b_compatibility_user_host_auth is on
 create user 'test_user_host%' password 'test123@';
-ERROR:  syntax error at or near "test_user_host%"
-LINE 1: create user 'test_user_host%' password 'test123@';
-                    ^
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user 'test_user_host'@'127.0.0.1' password 'test123@';
 ERROR:  user@host is only supported in b database when the b_compatibility_user_host_auth is on
 create database user_host_db dbcompatibility 'B';
@@ -30,9 +28,7 @@ ERROR:  user@host is only supported in b database when the b_compatibility_user_
 create user 'test_user_host'@'127.0.%' password 'test123@';
 ERROR:  user@host is only supported in b database when the b_compatibility_user_host_auth is on
 create user 'test_user_host%' password 'test123@';
-ERROR:  syntax error at or near "test_user_host%"
-LINE 1: create user 'test_user_host%' password 'test123@';
-                    ^
+ERROR:  role "test_user_host%" already exists
 create user 'test_user_host'@'127.0.0.1' password 'test123@';
 ERROR:  user@host is only supported in b database when the b_compatibility_user_host_auth is on
 set b_compatibility_user_host_auth = on;
@@ -51,7 +47,7 @@ NOTICE:  The iteration value of password is not recommended.Setting the iteratio
 create user 'test_user_host'@'127.0.%' password 'test123@';
 NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user 'test_user_host%' password 'test123@';
-NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+ERROR:  role "test_user_host%" already exists
 create user 'test_user_host'@'127.0.0.1' password 'test123@';
 NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user 'test_user_host1@127.0.0.1' password 'test123@';
