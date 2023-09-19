@@ -1255,7 +1255,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 
 	ZEROFILL ZONE
 
-	AST DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ
+	AST DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ DB_B_POINT
 	WEIGHT_STRING REVERSE 
 
 %token ALGORITHM_UNDEFINED ALGORITHM_MERGE ALGORITHM_TEMPTABLE
@@ -1351,7 +1351,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
  * blame any funny behavior of UNBOUNDED on the SQL standard, though.
  */
 %nonassoc	UNBOUNDED		/* ideally should have same precedence as IDENT */
-%nonassoc	IDENT GENERATED NULL_P PARTITION SUBPARTITION RANGE ROWS PRECEDING FOLLOWING CUBE ROLLUP DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ
+%nonassoc	IDENT GENERATED NULL_P PARTITION SUBPARTITION RANGE ROWS PRECEDING FOLLOWING CUBE ROLLUP DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ DB_B_POINT
 %left		Op OPERATOR '@'		/* multi-character ops and user-defined operators */
 %nonassoc	NOTNULL
 %nonassoc	ISNULL
@@ -36391,6 +36391,11 @@ DOLPHINIDENT: IDENT
 				{
 					$$ = CreateDolphinIdent(pstrdup($1), false);
 				}
+			| DB_B_POINT
+				{
+					$$ = CreateDolphinIdent(pstrdup($1), false);
+				}
+			;
 
 AexprConst:
 			AexprConst_without_Sconst	{ $$ = $1; }
@@ -36578,6 +36583,12 @@ AexprConst_without_Sconst: Iconst
 			| DB_B_TIMESTAMPTZ SCONST
 				{
 					TypeName * tmp = SystemTypeName("timestamptz");
+					tmp->location = @1;
+					$$ = makeStringConstCast($2, @2, tmp);
+				}
+			| DB_B_POINT SCONST
+				{
+					TypeName * tmp = SystemTypeName("point");
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
