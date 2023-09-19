@@ -2,6 +2,8 @@
 #define PLUGIN_POSTGRES_H
 #include "plugin_orafce/orafce.h"
 
+#include "executor/spi.h"
+
 #if defined _WIN32 || defined __CYGWIN__
   #ifdef BUILDING_DLL
     #ifdef __GNUC__
@@ -84,6 +86,7 @@ typedef  struct ASqlPluginContext {
     /* file.c */
     OraFileSlot	slots[MAX_SLOTS];	/* initilaized with zeros */
     int32	slotid = 0;	/* next slot id */
+    SPIPlanPtr plan = NULL;
     /* others.c */
     char *lc_collate_cache = NULL;
     size_t multiplication = 1;

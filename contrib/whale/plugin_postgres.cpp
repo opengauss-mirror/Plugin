@@ -232,6 +232,7 @@ static void init_orafce_vars(ASqlPluginContext* orafce_psc)
     orafce_psc->mru_weekdays = NULL;
 /* file.c */
     orafce_psc->slotid = 0;
+    orafce_psc->plan = NULL;
     init_slots();
 /* others.c */
     orafce_psc->lc_collate_cache = NULL;

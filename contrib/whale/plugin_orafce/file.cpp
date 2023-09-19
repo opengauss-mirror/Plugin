@@ -17,8 +17,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include "executor/spi.h"
-
 #include "access/htup.h"
 #include "catalog/pg_type.h"
 #include "fmgr.h"
@@ -749,7 +747,6 @@ static void check_secure_locality(const char *path)
 
 static char *safe_named_location(text *location)
 {
-    static SPIPlanPtr plan = NULL;
     MemoryContext old_cxt;
 
     Oid argtypes[] = {TEXTOID};
@@ -764,15 +761,15 @@ static char *safe_named_location(text *location)
     if (SPI_connect() < 0)
         ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("SPI_connect failed")));
 
-    if (!plan) {
+    if (!GetSessionContext()->plan) {
         /* Don't use LIKE not to escape '_' and '%' */
         SPIPlanPtr p = SPI_prepare("SELECT dir FROM utl_file.utl_file_dir WHERE dirname = $1", 1, argtypes);
 
-        if (p == NULL || (plan = SPI_saveplan(p)) == NULL)
+        if (p == NULL || (GetSessionContext()->plan = SPI_saveplan(p)) == NULL)
             ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("SPI_prepare_failed")));
     }
 
-    if (SPI_OK_SELECT != SPI_execute_plan(plan, values, nulls, false, 1))
+    if (SPI_OK_SELECT != SPI_execute_plan(GetSessionContext()->plan, values, nulls, false, 1))
         ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("can't execute sql")));
 
     if (SPI_processed > 0) {
