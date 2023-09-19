@@ -277,5 +277,46 @@ Has OIDs: no
 Options: orientation=row, compression=no
 
 drop table test_primary;
+--new add column grammar
+create table add_col_test(a int);
+ALTER TABLE add_col_test ADD KEY f2k(f2), ADD COLUMN(f1 INT, f3 int), ADD COLUMN (f2 INT);
+ALTER TABLE if EXISTS add_col_test ADD COLUMN (f11 INT, f31 int), ADD COLUMN (f21 INT), ADD KEY f1k(f1);
+ALTER TABLE if EXISTS add_col_test ADD (f12 INT, f32 int), ADD COLUMN (f22 INT);
+ALTER TABLE if EXISTS add_col_test ADD COLUMN (f13 INT, f33 int), ADD COLUMN (f23 INT);
+ALTER TABLE if EXISTS does_not_exists_table_test ADD COLUMN (f1 INT, f3 int), ADD COLUMN (f2 INT), ADD KEY f2k(f2);
+NOTICE:  relation "does_not_exists_table_test" does not exist, skipping
+--original grammar
+ALTER TABLE add_col_test ADD (f14 INT, f34 int);
+ALTER TABLE if EXISTS add_col_test ADD (f15 INT, f35 int);
+ALTER TABLE if EXISTS does_not_exists_table_test ADD (f13 INT, f33 int);
+NOTICE:  relation "does_not_exists_table_test" does not exist, skipping
+\d+ add_col_test
+                 Table "db_alter_table.add_col_test"
+ Column |  Type   | Modifiers | Storage | Stats target | Description 
+--------+---------+-----------+---------+--------------+-------------
+ a      | integer |           | plain   |              | 
+ f1     | integer |           | plain   |              | 
+ f3     | integer |           | plain   |              | 
+ f2     | integer |           | plain   |              | 
+ f11    | integer |           | plain   |              | 
+ f31    | integer |           | plain   |              | 
+ f21    | integer |           | plain   |              | 
+ f12    | integer |           | plain   |              | 
+ f32    | integer |           | plain   |              | 
+ f22    | integer |           | plain   |              | 
+ f13    | integer |           | plain   |              | 
+ f33    | integer |           | plain   |              | 
+ f23    | integer |           | plain   |              | 
+ f14    | integer |           | plain   |              | 
+ f34    | integer |           | plain   |              | 
+ f15    | integer |           | plain   |              | 
+ f35    | integer |           | plain   |              | 
+Indexes:
+    "f1k" btree (f1) TABLESPACE pg_default
+    "f2k" btree (f2) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
+
+drop table add_col_test;
 drop schema db_alter_table cascade;
 reset current_schema;
