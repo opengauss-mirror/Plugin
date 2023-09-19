@@ -15,6 +15,30 @@ select * from t_load_data_0037;
     3 | 小明   |    16 | 
 (3 rows)
 
+-- test ignore
+create  table t_load_ignore(c_01 int primary key,c_02 int default 18,c_03 char(5) default '女',c_04 varchar(15));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_load_ignore_pkey" for table "t_load_ignore"
+load data infile '@abs_builddir@/data/load-ignore.txt' ignore
+    into table t_load_ignore character set 'utf8'
+    fields terminated by ',' enclosed by '"'
+    lines starting by '(' terminated by ')';
+WARNING:  invalid input syntax for integer: " "
+CONTEXT:  COPY t_load_ignore, line 1, column c_02: " "
+WARNING:  invalid input syntax for integer: " "
+CONTEXT:  COPY t_load_ignore, line 2, column c_02: " "
+WARNING:  invalid input syntax for integer: " "
+CONTEXT:  COPY t_load_ignore, line 3, column c_02: " "
+select * from t_load_ignore order by c_01;
+ c_01 | c_02 | c_03  |  c_04  
+------+------+-------+--------
+   11 |    0 | '男'  | 'test'
+   12 |    0 |       | 'test'
+   13 |    0 |       | 'test'
+   14 |   12 | 'man' | 'test'
+   15 |   12 |       | 'test'
+   16 |      |       | 'test'
+(6 rows)
+
 create table t1(a int, b int);
 load data infile '@abs_builddir@/data/load1.csv' into table t1;
 select * from t1;
