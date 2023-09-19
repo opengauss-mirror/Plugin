@@ -24,6 +24,13 @@ select pg_catalog.pg_get_expr(i.indpred, i.indrelid) from pg_catalog.pg_index i 
 create table t7(a timestamp check(a > pg_systimestamp()::timestamp(0)));
 select pg_catalog.pg_get_expr(co.conbin, co.conrelid) from pg_catalog.pg_constraint co left join pg_catalog.pg_class cl on cl.oid = co.conrelid where cl.relname = 't7';
 
+CREATE TABLE test(
+id BIGINT NOT NULL DEFAULT '-1',
+name INT(11) NOT NULL DEFAULT -1,
+col1 float default '-1.1', col2 double default '+2.2', col3 float default '-1.1e3');
+show create table test;
+drop table test;
+
 drop table t1;
 drop table t2;
 drop table t3;
