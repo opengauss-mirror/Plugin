@@ -12,7 +12,7 @@ REGRESS = assessment
 top_builddir = ../..
 subdir = contrib/assessment
 
-override CPPFLAGS :=$(filter-out -fPIE,  $(CPPFLAGS)) -fPIC
+override CPPFLAGS :=$(filter-out -fPIE,  $(CPPFLAGS)) -fPIC -Wl,-z,now -fstack-protector-all -pie
 TARGET_NAME=gs_assessment
 EXTRA_CLEAN=$(TARGET_NAME)
 # make clean if change EXEC_OBJS
