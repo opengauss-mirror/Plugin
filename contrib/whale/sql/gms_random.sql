@@ -1,5 +1,8 @@
 -- Tests for package GMS_RANDOM
 SET behavior_compat_options='display_leading_zero';
+SELECT gms_random.value()::numeric(10, 8);
+SELECT gms_random.value(10, 20)::numeric(10, 8);
+SELECT gms_random.normal()::numeric(10, 8);
 SELECT gms_random.initialize(8);
 SELECT gms_random.normal()::numeric(10, 8);
 SELECT gms_random.normal()::numeric(10, 8);

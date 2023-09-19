@@ -7,6 +7,7 @@
 
 #include "postgres.h"
 #include "access/hash.h"
+#include "access/xact.h"
 #include "lib/stringinfo.h"
 #include "utils/builtins.h"
 
@@ -67,6 +68,11 @@ Datum gms_random_normal(PG_FUNCTION_ARGS)
     float8 result;
     unsigned int seed = GetSessionContext()->seed;
     /* need random value from (0..1) */
+    if (seed == 0) {
+        seed = (unsigned int)(GetCurrentStmtsysTimestamp());
+    } else {
+        GetSessionContext()->seed = rand_r(&seed);
+    }
     result = ltqnorm(((double)rand_r(&seed) + 1) / ((double)RAND_MAX + 2));
 
     PG_RETURN_FLOAT8(result);
@@ -85,6 +91,11 @@ Datum gms_random_random(PG_FUNCTION_ARGS)
      * Orafce generator generates numebers from -2^31 and +2^31,
      * ANSI C only from 0 .. RAND_MAX,
      */
+    if (seed == 0) {
+        seed = (unsigned int)(GetCurrentStmtsysTimestamp());
+    } else {
+        GetSessionContext()->seed = rand_r(&seed);
+    }
     result = 2 * (rand_r(&seed) - RAND_MAX / 2);
 
     PG_RETURN_INT32(result);
@@ -136,6 +147,11 @@ static text *random_string(const char *charset, size_t chrset_size, int len)
     StringInfo str;
     int i;
     unsigned int seed = GetSessionContext()->seed;
+    if (seed == 0) {
+        seed = (unsigned int)(GetCurrentStmtsysTimestamp());
+    } else {
+        GetSessionContext()->seed = rand_r(&seed);
+    }
 
     str = makeStringInfo();
     for (i = 0; i < len; i++) {
@@ -225,6 +241,11 @@ Datum gms_random_value(PG_FUNCTION_ARGS)
 {
     float8 result;
     unsigned int seed = GetSessionContext()->seed;
+    if (seed == 0) {
+        seed = (unsigned int)(GetCurrentStmtsysTimestamp());
+    } else {
+        GetSessionContext()->seed = rand_r(&seed);
+    }
     /* result [0.0 - 1.0) */
     result = (double)rand_r(&seed) / ((double)RAND_MAX + 1);
 
@@ -243,6 +264,11 @@ Datum gms_random_value_range(PG_FUNCTION_ARGS)
     float8 high = PG_GETARG_FLOAT8(1);
     float8 result;
     unsigned int seed = GetSessionContext()->seed;
+    if (seed == 0) {
+        seed = (unsigned int)(GetCurrentStmtsysTimestamp());
+    } else {
+        GetSessionContext()->seed = rand_r(&seed);
+    }
 
     if (low > high)
         PG_RETURN_NULL();
