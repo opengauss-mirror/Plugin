@@ -1108,6 +1108,9 @@ FuncCandidateList func_select_candidate(int nargs, Oid* input_typeids, FuncCandi
         for (i = 0; i < nargs; i++) {
             if (input_base_typeids[i] != UNKNOWNOID &&
                 (current_typeids[i] == input_base_typeids[i] ||
+#ifdef WHALE
+                    current_typeids[i] == ANYOID ||
+#endif
                     (different_category && current_typeids[i] == get_highest_type(slot_category[i]))))
                 nmatch++;
         }

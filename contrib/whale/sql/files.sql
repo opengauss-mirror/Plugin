@@ -136,3 +136,20 @@ DROP FUNCTION gen_file(text);
 DROP FUNCTION read_file(text);
 
 DELETE FROM utl_file.utl_file_dir;
+
+-- test about new connect
+create database test_a;
+\c test_a
+CREATE EXTENSION whale;
+INSERT INTO utl_file.utl_file_dir(dir, dirname) VALUES(utl_file.tmpdir(), 'TMPDIR');
+CREATE OR REPLACE FUNCTION gen_file(dir text) RETURNS void AS $$
+DECLARE
+f utl_file.file_type;
+BEGIN
+f := utl_file.fopen(dir, 'regress_orafce.txt', 'w');
+RAISE NOTICE 'is_open = %', utl_file.is_open(f);
+f := utl_file.fclose(f);
+RAISE NOTICE 'is_open = %', utl_file.is_open(f);
+END;
+$$ LANGUAGE plpgsql;
+SELECT gen_file('TMPDIR');
