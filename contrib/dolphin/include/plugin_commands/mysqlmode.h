@@ -29,6 +29,7 @@
 #define SQL_MODE_AllOW_PROCEDURE_WITH_SELECT()                                      \
     (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_BLOCK_RETURN_MULTI_RESULTS)
 #define SQL_MODE_ATUO_RECOMPILE_FUNCTION() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_ATUO_RECOMPILE_FUNCTION)
+#define  GET_QUOTE() (SQL_MODE_ANSI_QUOTES() ? '\"' : '`')
 
 extern int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool can_ignore, bool isUnsigned = false);
 extern void CheckSpaceAndDotInternal(char& digitAfterDot, const char** ptr,
