@@ -7099,73 +7099,73 @@ select pg_typeof(ifnull(blb, txt)) from typeset;
 select pg_typeof(ifnull(bin, smint)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, anint)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, bgint)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, dcmal)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, nmric)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, flt)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, bt)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, dt)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, tmstp)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, tm)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, ch)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, vch)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, blb)) from typeset;
@@ -7183,73 +7183,73 @@ select pg_typeof(ifnull(bin, txt)) from typeset;
 select pg_typeof(ifnull(vbin, smint)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, anint)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, bgint)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, dcmal)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, nmric)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, flt)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, bt)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, dt)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, tmstp)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, tm)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, ch)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, vch)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, blb)) from typeset;

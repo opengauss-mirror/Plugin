@@ -4281,6 +4281,18 @@ bool SplitIdentifierString(char* rawstring, char separator, List** namelist, boo
     char* curname = NULL;
     char* endp = NULL;
     char* downname = NULL;
+#ifdef DOLPHIN
+    char quote = GET_QUOTE();
+    do {
+        if (*nextp == quote) {
+            /* Quoted name --- collapse quote-quote pairs, no downcasing */
+            curname = nextp + 1;
+            for (;;) {
+                endp = strchr(nextp + 1, quote);
+                if (endp == NULL)
+                    return false; /* mismatched quotes */
+                if (endp[1] != quote)
+#else
     do {
         if (*nextp == '\"') {
             /* Quoted name --- collapse quote-quote pairs, no downcasing */
@@ -4290,6 +4302,7 @@ bool SplitIdentifierString(char* rawstring, char separator, List** namelist, boo
                 if (endp == NULL)
                     return false; /* mismatched quotes */
                 if (endp[1] != '\"')
+#endif
                     break; /* found end of quoted name */
                 /* Collapse adjacent quotes into one quote, and look again */
                 if (strlen(endp) > 0) {

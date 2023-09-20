@@ -105,6 +105,10 @@
 #include "commands/sequence.h"
 #include "client_logic/client_logic.h"
 
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
+
 /* ----------
  * Pretty formatting constants
  * ----------
@@ -12201,7 +12205,12 @@ const char* quote_identifier(const char* ident)
             /* okay */
         } else {
             safe = false;
+#ifdef DOLPHIN
+
+            if (ch == GET_QUOTE())
+#else
             if (ch == '"')
+#endif
                 nquotes++;
         }
     }
@@ -12230,6 +12239,18 @@ const char* quote_identifier(const char* ident)
     result = (char*)palloc(strlen(ident) + nquotes + 2 + 1);
 
     optr = result;
+#ifdef DOLPHIN
+    char quote = GET_QUOTE();
+    *optr++ = quote;
+    for (ptr = ident; *ptr; ptr++) {
+        char ch = *ptr;
+
+        if (ch == quote)
+            *optr++ = quote;
+        *optr++ = ch;
+    }
+    *optr++ = quote;
+#else
     *optr++ = '"';
     for (ptr = ident; *ptr; ptr++) {
         char ch = *ptr;
@@ -12239,6 +12260,7 @@ const char* quote_identifier(const char* ident)
         *optr++ = ch;
     }
     *optr++ = '"';
+#endif
     *optr = '\0';
 
     return result;
