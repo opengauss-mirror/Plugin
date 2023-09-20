@@ -117,7 +117,7 @@ test: case_sensitive_test_backquote/clean_env
 test: case_sensitive_test_backquote/role_test
 # case sensitive test end
 
-test: test_mysql_prepare db_b_rename_user_test export_set if_not_exists_test test_create_index_if_not_exists
+test: test_mysql_prepare db_b_rename_user_test export_set if_not_exists_test test_create_index_if_not_exists timediff_illegal_participation
 
 test: test_mysql_operator test_op_xor_unsignedint test_op_blob test_op_xor_boolandfloat test_mysql_char test_op_xor_dateandtime
 
