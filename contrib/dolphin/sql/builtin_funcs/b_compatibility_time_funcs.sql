@@ -241,6 +241,15 @@ drop table insert_subdate;
 
 select * from func_test;
 
+SELECT SUBDATE(time'839:59:59', interval 2 hour);
+SELECT SUBDATE(time'-838:59:59.9', interval 2 hour);
+SELECT SUBDATE('839:59:59', interval 2 hour);
+SELECT SUBDATE('-838:59:59.9', interval 2 hour);
+select subdate('839:59:59', 1);
+select subdate(time '838:59:59',-1);
+select subdate(time '838:59:59',interval -2 hour);
+select subdate(time '838:59:59',interval 1 month);
+
 -- hour函数测试
 select hour('-838:59:59');
 select hour('838:59:59');

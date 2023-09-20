@@ -4198,7 +4198,7 @@ bool date_in_no_ereport(const char* str, DateADT *date)
  * false.
  * @return false if the input string cannot be converted to time, otherwise true.
  */
-bool time_in_no_ereport(const char *str, TimeADT *time)
+bool time_in_without_overflow(const char *str, TimeADT *time, bool can_ignore)
 {
     bool ret = true;
     MemoryContext current_ctx = CurrentMemoryContext;
@@ -4209,10 +4209,21 @@ bool time_in_no_ereport(const char *str, TimeADT *time)
     }
     PG_CATCH();
     {
+        if (!can_ignore && SQL_MODE_STRICT()) {
+            PG_RE_THROW();
+        }
         // If catch an error, just empty the error stack and set return value to false.
         (void)MemoryContextSwitchTo(current_ctx);
+        ErrorData* errdata = CopyErrorData();
+        if (errdata->sqlerrcode == DTERR_FIELD_OVERFLOW) {
+            ret = true;
+            *time = B_FORMAT_TIME_MAX_VALUE;
+        } else {
+            ret = false;
+        }
+        ereport(WARNING, (errmsg("%s", errdata->message)));
         FlushErrorState();
-        ret = false;
+        FreeErrorData(errdata);
     }
     PG_END_TRY();
     return ret;
@@ -4513,6 +4524,7 @@ Datum subdate_datetime_days_text(PG_FUNCTION_ARGS)
     text* tmp = PG_GETARG_TEXT_PP(0);
     int64 days = PG_GETARG_INT64(1);
     char *expr;
+    int elevel = (SQL_MODE_STRICT() && !fcinfo->can_ignore) ? ERROR : WARNING;
 
     expr = text_to_cstring(tmp);
 
@@ -4523,7 +4535,7 @@ Datum subdate_datetime_days_text(PG_FUNCTION_ARGS)
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(date_text, result);
         }
-        ereport(ERROR,
+        ereport(elevel,
                 (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                  errmsg("date/time field value out of range")));
         PG_RETURN_NULL();
@@ -4535,7 +4547,7 @@ Datum subdate_datetime_days_text(PG_FUNCTION_ARGS)
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(datetime_text, result);
         }
-        ereport(ERROR,
+        ereport(elevel,
                 (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                  errmsg("date/time field value out of range")));
         PG_RETURN_NULL();
@@ -4554,6 +4566,7 @@ Datum subdate_datetime_interval_text(PG_FUNCTION_ARGS)
     text* tmp = PG_GETARG_TEXT_PP(0);
     Interval *span = PG_GETARG_INTERVAL_P(1);
     char *expr;
+    int elevel = (SQL_MODE_STRICT() && !fcinfo->can_ignore) ? ERROR : WARNING;
 
     expr = text_to_cstring(tmp);
 
@@ -4562,7 +4575,7 @@ Datum subdate_datetime_interval_text(PG_FUNCTION_ARGS)
         date = DatumGetDateADT(DirectFunctionCall1(date_in, CStringGetDatum(expr)));
         if (date_sub_interval(date, span, &result))
             return DirectFunctionCall1(date_text, result);
-        ereport(ERROR,
+        ereport(elevel,
                 (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                  errmsg("date/time field value out of range")));
         PG_RETURN_NULL();
@@ -4573,7 +4586,7 @@ Datum subdate_datetime_interval_text(PG_FUNCTION_ARGS)
         if (datetime_sub_interval(datetime, span, &result))
             /* The variable datetime or result does not exceed the specified range*/
             return DirectFunctionCall1(datetime_text, result);
-        ereport(ERROR,
+        ereport(elevel,
                 (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                  errmsg("date/time field value out of range")));
         PG_RETURN_NULL();
@@ -4590,6 +4603,7 @@ Datum subdate_time_days(PG_FUNCTION_ARGS)
     TimeADT time = PG_GETARG_TIMEADT(0);
     int64 days = PG_GETARG_INT64(1);
     TimeADT time2;
+    int elevel = (SQL_MODE_STRICT() && !fcinfo->can_ignore) ? ERROR : WARNING;
 
 #ifdef HAVE_INT64_TIMESTAMP
     time2 = days * HOURS_PER_DAY * MINS_PER_HOUR * SECS_PER_MINUTE * USECS_PER_SEC;
@@ -4600,7 +4614,7 @@ Datum subdate_time_days(PG_FUNCTION_ARGS)
     if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE) {
         PG_RETURN_TIMEADT(time);
     }
-    ereport(ERROR,
+    ereport(elevel,
             (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
              errmsg("time field value out of range")));
     PG_RETURN_NULL();
@@ -4616,8 +4630,9 @@ Datum subdate_time_interval(PG_FUNCTION_ARGS)
     TimeADT time = PG_GETARG_TIMEADT(0);
     Interval *span = PG_GETARG_INTERVAL_P(1);
     TimeADT time2 = span->time;
+    int elevel = (SQL_MODE_STRICT() && !fcinfo->can_ignore) ? ERROR : WARNING;
     if (span->month != 0) {
-        ereport(ERROR,
+        ereport(elevel,
                 (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                  errmsg("time field value out of range")));
         PG_RETURN_NULL();
@@ -4631,7 +4646,7 @@ Datum subdate_time_interval(PG_FUNCTION_ARGS)
     if (time >= -B_FORMAT_TIME_MAX_VALUE && time <= B_FORMAT_TIME_MAX_VALUE) {
         PG_RETURN_TIMEADT(time);
     }
-    ereport(ERROR,
+    ereport(elevel,
             (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
              errmsg("time field value out of range")));
     PG_RETURN_NULL();
@@ -5308,7 +5323,10 @@ static inline Datum GetSepecificPartOfTime(PG_FUNCTION_ARGS, const char *part)
         PG_RETURN_NULL();
     }
     TimeADT tm;
-    if (time_in_no_ereport(tString, &tm)) {
+    if (time_in_without_overflow(tString, &tm, fcinfo->can_ignore)) {
+        if (tm < 0) {
+            tm *= -1;
+        }
         return DirectFunctionCall2(time_part, CStringGetTextDatum(part), TimeADTGetDatum(tm));
     }
     Timestamp ts = DatumGetTimestamp(
