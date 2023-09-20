@@ -4794,10 +4794,10 @@ Datum date_bool(PG_FUNCTION_ARGS)
     timestamp = date2timestamp(dateVal);
 
     if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0) {
-        if (tm->tm_year > 0 || tm->tm_mon > 0 || tm->tm_mday > 0)
-            PG_RETURN_BOOL(true);
+        if (tm->tm_year == 0 && tm->tm_mon == 0 && tm->tm_mday == 0)
+            PG_RETURN_BOOL(false);
         else
-            PG_RETURN_NULL();
+            PG_RETURN_BOOL(true);
     } else {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
     }
@@ -4814,10 +4814,10 @@ Datum time_bool(PG_FUNCTION_ARGS)
     struct pg_tm tt, *tm = &tt;
 
     if (time2tm(timeVal, tm, &fsec) == 0) {
-        if (tm->tm_hour > 0 || tm->tm_min > 0 || tm->tm_sec > 0)
-            PG_RETURN_BOOL(true);
-        else
+        if (tm->tm_hour == 0 && tm->tm_min == 0 && tm->tm_sec == 0)
             PG_RETURN_BOOL(false);
+        else
+            PG_RETURN_BOOL(true);
     } else {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
     }
