@@ -7687,11 +7687,17 @@ Datum to_seconds(PG_FUNCTION_ARGS)
     val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
     convert_to_datetime(PG_GETARG_DATUM(0), val_type, &timestamp);
     if (timestamp < B_FORMAT_TIMESTAMP_MIN_VALUE || timestamp > B_FORMAT_TIMESTAMP_MAX_VALUE) {
+        if (!SQL_MODE_STRICT() || fcinfo->can_ignore) {
+            PG_RETURN_NULL();
+        }
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time value out of range")));
     }
     Timestamp result = calc_timestamp_from_zero(timestamp);
     if (result == B_FORMAT_TIMESTAMP_MIN_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field out of range")));
+        if (!SQL_MODE_STRICT() || fcinfo->can_ignore) {
+            PG_RETURN_NULL();
+        }
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time value out of range")));
     }
     PG_RETURN_NUMERIC(DirectFunctionCall1(int8_numeric, result /= USECS_PER_SEC));
 }
@@ -10467,7 +10473,7 @@ Datum subtime_text(PG_FUNCTION_ARGS)
     char *str1, *str2;
     str1 = text_to_cstring(expr1);
     str2 = text_to_cstring(expr2);
-    if (!time_in_no_ereport(str2, &time2)) {
+    if (!time_in_without_overflow(str2, &time2, fcinfo->can_ignore)) {
         ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
                         errmsg("invalid input syntax \"%s\"", str2)));
     }
@@ -10493,7 +10499,7 @@ Datum subtime_text(PG_FUNCTION_ARGS)
         }
         ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
                         errmsg("date/time field overflow")));
-    } else if (time_in_no_ereport(str1, &time1)) {
+    } else if (time_in_without_overflow(str1, &time1, fcinfo->can_ignore)) {
         TimeADT result;
         if (!time_in_range(time1)) {
             ereport(ERROR,
@@ -10532,9 +10538,9 @@ Datum timediff_text(PG_FUNCTION_ARGS)
     Timestamp datetime1, datetime2;
     TimeADT result;
     bool exp1_is_datetime = datetime_in_no_ereport(str1, &datetime1);
-    bool exp1_is_time = time_in_no_ereport(str1, &time1);
+    bool exp1_is_time = time_in_without_overflow(str1, &time1, fcinfo->can_ignore);
     bool exp2_is_datetime = datetime_in_no_ereport(str2, &datetime2);
-    bool exp2_is_time = time_in_no_ereport(str2, &time2);
+    bool exp2_is_time = time_in_without_overflow(str2, &time2, fcinfo->can_ignore);
 
     if ((is_date_format(str1) && exp1_is_datetime) || (!exp1_is_time && !exp1_is_datetime)) {
         // if str1 is date fomat (eg: '2000-01-01') or invalid datetime/time format
@@ -10971,7 +10977,7 @@ Datum timediff_time_text(PG_FUNCTION_ARGS)
     TimeADT time2;
     Timestamp datetime2;
     bool exp2_is_datetime = datetime_in_no_ereport(str2, &datetime2);
-    bool exp2_is_time = time_in_no_ereport(str2, &time2);
+    bool exp2_is_time = time_in_without_overflow(str2, &time2, fcinfo->can_ignore);
 
     if (!time_in_range(time1)) {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),

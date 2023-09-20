@@ -361,15 +361,10 @@ SELECT time'12:12:12.123456';
 (1 row)
 
 SELECT time'34 22:59:59.999999';
-WARNING:  Truncated incorrect time value.
+ERROR:  Incorrect time value
 LINE 1: SELECT time'34 22:59:59.999999';
                    ^
 CONTEXT:  referenced column: time
-   time    
------------
- 838:59:59
-(1 row)
-
 SELECT time'12:60:12.123456';
 WARNING:  date/time field value out of range: "12:60:12.123456"
 LINE 1: SELECT time'12:60:12.123456';
@@ -391,25 +386,15 @@ CONTEXT:  referenced column: time
 (1 row)
 
 SELECT time'34 23:00:00';
-WARNING:  Truncated incorrect time value.
+ERROR:  Incorrect time value
 LINE 1: SELECT time'34 23:00:00';
                    ^
 CONTEXT:  referenced column: time
-   time    
------------
- 838:59:59
-(1 row)
-
 SELECT time'-34 23:00:00';
-WARNING:  Truncated incorrect time value.
+ERROR:  Incorrect time value
 LINE 1: SELECT time'-34 23:00:00';
                    ^
 CONTEXT:  referenced column: time
-    time    
-------------
- -838:59:59
-(1 row)
-
 SELECT time'34 22:59:59';
    time    
 -----------
@@ -423,45 +408,25 @@ SELECT time'-34 22:59:59';
 (1 row)
 
 SELECT time'34 22:59:59.999999';
-WARNING:  Truncated incorrect time value.
+ERROR:  Incorrect time value
 LINE 1: SELECT time'34 22:59:59.999999';
                    ^
 CONTEXT:  referenced column: time
-   time    
------------
- 838:59:59
-(1 row)
-
 SELECT time'34 22:59:59.9999999999999999999999';
-WARNING:  Truncated incorrect time value.
+ERROR:  Incorrect time value
 LINE 1: SELECT time'34 22:59:59.9999999999999999999999';
                    ^
 CONTEXT:  referenced column: time
-   time    
------------
- 838:59:59
-(1 row)
-
 SELECT time'-34 22:59:59.9999999999999999999999';
-WARNING:  Truncated incorrect time value.
+ERROR:  Incorrect time value
 LINE 1: SELECT time'-34 22:59:59.9999999999999999999999';
                    ^
 CONTEXT:  referenced column: time
-    time    
-------------
- -838:59:59
-(1 row)
-
 SELECT time'-34 22:59:59.9999999999999999999999';
-WARNING:  Truncated incorrect time value.
+ERROR:  Incorrect time value
 LINE 1: SELECT time'-34 22:59:59.9999999999999999999999';
                    ^
 CONTEXT:  referenced column: time
-    time    
-------------
- -838:59:59
-(1 row)
-
 SELECT time'838:59:59';
    time    
 -----------
@@ -469,15 +434,10 @@ SELECT time'838:59:59';
 (1 row)
 
 SELECT time'839:00:00';
-WARNING:  Truncated incorrect time value.
+ERROR:  Incorrect time value
 LINE 1: SELECT time'839:00:00';
                    ^
 CONTEXT:  referenced column: time
-   time    
------------
- 838:59:59
-(1 row)
-
 SELECT time'59:59';
    time   
 ----------

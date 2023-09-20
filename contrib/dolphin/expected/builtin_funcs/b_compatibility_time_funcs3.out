@@ -383,6 +383,28 @@ select * from func_test3;
 --? UTC_TIMESTAMP(6)                                            | .*
 (101 rows)
 
+select to_seconds('-838:59:59');
+WARNING:  time zone displacement out of range: "-838:59:59"
+CONTEXT:  referenced column: to_seconds
+ to_seconds 
+------------
+           
+(1 row)
+
+select to_seconds(-8385959);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: to_seconds
+ to_seconds 
+------------
+           
+(1 row)
+
+select to_seconds(time'-838:59:59');
+ to_seconds  
+-------------
+ 63859366801
+(1 row)
+
 drop schema b_time_funcs3 cascade;
 NOTICE:  drop cascades to table func_test3
 reset current_schema;
