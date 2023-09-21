@@ -476,14 +476,14 @@ show create view tt19v;
  View  |                                                                                      Create View                                                                                       | character_set_client | collation_connection 
 -------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
  tt19v | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt19v AS                                                                                                                +| UTF8                 | en_US.UTF-8
-       | SELECT ('foo'::text = ANY (ARRAY['abc'::text, 'def'::text, 'foo'::text])) AS c1, ('foo'::text = ANY ((SELECT ARRAY['abc'::text, 'def'::text, 'foo'::text] AS "array")::text[])) AS c2; |                      | 
+       | SELECT ('foo'::text = ANY (ARRAY['abc'::text, 'def'::text, 'foo'::text])) AS c1, ('foo'::text = ANY ((SELECT ARRAY['abc'::text, 'def'::text, 'foo'::text] AS `array`)::text[])) AS c2; |                      | 
 (1 row)
 
 show create view test_get_def.tt19v;
  View  |                                                                                      Create View                                                                                       | character_set_client | collation_connection 
 -------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
  tt19v | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt19v AS                                                                                                                +| UTF8                 | en_US.UTF-8
-       | SELECT ('foo'::text = ANY (ARRAY['abc'::text, 'def'::text, 'foo'::text])) AS c1, ('foo'::text = ANY ((SELECT ARRAY['abc'::text, 'def'::text, 'foo'::text] AS "array")::text[])) AS c2; |                      | 
+       | SELECT ('foo'::text = ANY (ARRAY['abc'::text, 'def'::text, 'foo'::text])) AS c1, ('foo'::text = ANY ((SELECT ARRAY['abc'::text, 'def'::text, 'foo'::text] AS `array`)::text[])) AS c2; |                      | 
 (1 row)
 
 -- table view exchange show create test
@@ -493,7 +493,7 @@ show create table tt19v;
  View  |                                                                                      Create View                                                                                       | character_set_client | collation_connection 
 -------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
  tt19v | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt19v AS                                                                                                                +| UTF8                 | en_US.UTF-8
-       | SELECT ('foo'::text = ANY (ARRAY['abc'::text, 'def'::text, 'foo'::text])) AS c1, ('foo'::text = ANY ((SELECT ARRAY['abc'::text, 'def'::text, 'foo'::text] AS "array")::text[])) AS c2; |                      | 
+       | SELECT ('foo'::text = ANY (ARRAY['abc'::text, 'def'::text, 'foo'::text])) AS c1, ('foo'::text = ANY ((SELECT ARRAY['abc'::text, 'def'::text, 'foo'::text] AS `array`)::text[])) AS c2; |                      | 
 (1 row)
 
 drop view tt19v;
@@ -602,14 +602,14 @@ show create view my_property_normal;
         View        |                                     Create View                                     | character_set_client | collation_connection 
 --------------------+-------------------------------------------------------------------------------------+----------------------+----------------------
  my_property_normal | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.my_property_normal AS+| UTF8                 | en_US.UTF-8
-                    | SELECT  * FROM customer WHERE (customer.name = ("current_user"())::text);           |                      | 
+                    | SELECT  * FROM customer WHERE (customer.name = (`current_user`())::text);           |                      | 
 (1 row)
 
 show create table my_property_normal;
         View        |                                     Create View                                     | character_set_client | collation_connection 
 --------------------+-------------------------------------------------------------------------------------+----------------------+----------------------
  my_property_normal | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.my_property_normal AS+| UTF8                 | en_US.UTF-8
-                    | SELECT  * FROM customer WHERE (customer.name = ("current_user"())::text);           |                      | 
+                    | SELECT  * FROM customer WHERE (customer.name = (`current_user`())::text);           |                      | 
 (1 row)
 
 show create view my_property_secure;
@@ -617,7 +617,7 @@ show create view my_property_secure;
 --------------------+--------------------------------------------------------------------------------------------------------+----------------------+----------------------
  my_property_secure | CREATE OR REPLACE DEFINER = test_showcreate SQL SECUIRTY DEFINER VIEW test_get_def.my_property_secure +| UTF8                 | en_US.UTF-8
                     |  WITH (security_barrier=true) AS                                                                      +|                      | 
-                    | SELECT  * FROM customer WHERE (customer.name = ("current_user"())::text);                              |                      | 
+                    | SELECT  * FROM customer WHERE (customer.name = (`current_user`())::text);                              |                      | 
 (1 row)
 
 show create table my_property_secure;
@@ -625,7 +625,7 @@ show create table my_property_secure;
 --------------------+--------------------------------------------------------------------------------------------------------+----------------------+----------------------
  my_property_secure | CREATE OR REPLACE DEFINER = test_showcreate SQL SECUIRTY DEFINER VIEW test_get_def.my_property_secure +| UTF8                 | en_US.UTF-8
                     |  WITH (security_barrier=true) AS                                                                      +|                      | 
-                    | SELECT  * FROM customer WHERE (customer.name = ("current_user"())::text);                              |                      | 
+                    | SELECT  * FROM customer WHERE (customer.name = (`current_user`())::text);                              |                      | 
 (1 row)
 
 drop view my_property_normal;

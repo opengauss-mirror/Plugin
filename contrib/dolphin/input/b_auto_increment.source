@@ -225,6 +225,13 @@ SELECT LAST_INSERT_ID();
 reset dolphin.sql_mode;
 drop table if exists test9;
 
+-- test about ansi_quotes
+set dolphin.sql_mode= '';
+create table txxx(`ABcD` int, primary key(`ABcD`));
+alter table txxx modify `ABcD` int auto_increment;
+alter table txxx modify `abcd` int auto_increment;
+alter table txxx modify ABcD int auto_increment;
+
 \c postgres
 drop database if exists dolphin_autoinc;
 drop database if exists dolphin_autoinc_restore;

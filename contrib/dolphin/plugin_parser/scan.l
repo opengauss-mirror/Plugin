@@ -904,7 +904,7 @@ other			.
 					{
 						yylval->str = ident;
 					}
-					yyextra->ident_quoted = false;
+					yyextra->ident_quoted = true;
 					yyextra->is_hint_str = false;
 					return IDENT;
 				}
