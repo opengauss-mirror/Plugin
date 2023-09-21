@@ -1,0 +1,53 @@
+create schema unix_timestamp_timezone;
+set current_schema = unix_timestamp_timezone;
+set timezone='PRC';
+select unix_timestamp('1970-01-01+00');
+select unix_timestamp('1970-01-01+08');
+select unix_timestamp('1970-01-01 00:00:00');
+select unix_timestamp('1970-01-01 08:00:00');
+select unix_timestamp('1970-01-01 00:00:00+00:00');
+select unix_timestamp('1970-01-01 08:00:00+00:00');
+select unix_timestamp('1970-01-01 00:00:00+08:00');
+select unix_timestamp('1970-01-01 08:00:00+08:00');
+
+set timezone='+00';
+select unix_timestamp('1970-01-01+00');
+select unix_timestamp('1970-01-01+08');
+select unix_timestamp('1970-01-01 00:00:00');
+select unix_timestamp('1970-01-01 08:00:00');
+select unix_timestamp('1970-01-01 00:00:00+00:00');
+select unix_timestamp('1970-01-01 08:00:00+00:00');
+select unix_timestamp('1970-01-01 00:00:00+08:00');
+select unix_timestamp('1970-01-01 08:00:00+08:00');
+
+set timezone='+04';
+select unix_timestamp('1970-01-01+00');
+select unix_timestamp('1970-01-01+08');
+select unix_timestamp('1970-01-01 00:00:00');
+select unix_timestamp('1970-01-01 08:00:00');
+select unix_timestamp('1970-01-01 00:00:00+00:00');
+select unix_timestamp('1970-01-01 08:00:00+00:00');
+select unix_timestamp('1970-01-01 00:00:00+08:00');
+select unix_timestamp('1970-01-01 08:00:00+08:00');
+
+set timezone='+08';
+select unix_timestamp('1970-01-01+00');
+select unix_timestamp('1970-01-01+08');
+select unix_timestamp('1970-01-01 00:00:00');
+select unix_timestamp('1970-01-01 08:00:00');
+select unix_timestamp('1970-01-01 00:00:00+00:00');
+select unix_timestamp('1970-01-01 08:00:00+00:00');
+select unix_timestamp('1970-01-01 00:00:00+08:00');
+select unix_timestamp('1970-01-01 08:00:00+08:00');
+
+set timezone='-08';
+select unix_timestamp('1970-01-01+00');
+select unix_timestamp('1970-01-01+08');
+select unix_timestamp('1970-01-01 00:00:00');
+select unix_timestamp('1970-01-01 08:00:00');
+select unix_timestamp('1970-01-01 00:00:00+00:00');
+select unix_timestamp('1970-01-01 08:00:00+00:00');
+select unix_timestamp('1970-01-01 00:00:00+08:00');
+select unix_timestamp('1970-01-01 08:00:00+08:00');
+reset current_schema;
+drop schema unix_timestamp_timezone cascade;
