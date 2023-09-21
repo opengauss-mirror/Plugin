@@ -402,7 +402,7 @@ CONTEXT:  referenced column: to_seconds
 select to_seconds(time'-838:59:59');
  to_seconds  
 -------------
- 63859366801
+ 63859453201
 (1 row)
 
 drop schema b_time_funcs3 cascade;

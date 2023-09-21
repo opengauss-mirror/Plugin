@@ -454,6 +454,9 @@ vnumeric_op(PG_FUNCTION_ARGS)
 	uint16		num1Flags, num2Flags;		// numeric flags of num1 and num2 
 	Datum       args[2];
 	FunctionCallInfoData finfo;
+#ifdef DOLPHIN
+	finfo.isnull = false;
+#endif
 	finfo.arg = &args[0];
 
 	if(likely(pselection == NULL))
@@ -473,14 +476,26 @@ vnumeric_op(PG_FUNCTION_ARGS)
 					arg2 = NUMERIC_FLAG_IS_BI128(num2Flags);
 					// call big integer fast calculate function
 					presult[i] = (BiFunMatrix[op][arg1][arg2])(leftarg, rightarg, NULL);
+#ifdef DOLPHIN
+					SET_NOTNULL(pflagsRes[i]);
+#endif
 				} 
 				else // numeric_funcs
 				{
 					args[0] = NumericGetDatum(leftarg);
 					args[1] = NumericGetDatum(rightarg);
 					presult[i] = numericFun(&finfo);
+#ifdef DOLPHIN
+					if (!finfo.isnull) {
+						SET_NOTNULL(pflagsRes[i]);
+					} else {
+						SET_NULL(pflagsRes[i]);
+					}
+#endif
 				}
+#ifndef DOLPHIN
 				SET_NOTNULL(pflagsRes[i]);
+#endif
 			}
 			else
 			{
@@ -508,14 +523,26 @@ vnumeric_op(PG_FUNCTION_ARGS)
 						arg2 = NUMERIC_FLAG_IS_BI128(num2Flags);
 						// call big integer fast calculate function
 						presult[i] = (BiFunMatrix[op][arg1][arg2])(leftarg, rightarg, NULL);
+#ifdef DOLPHIN
+						SET_NOTNULL(pflagsRes[i]);
+#endif
 					} 
 					else // numeric_funcs
 					{
 						args[0] = NumericGetDatum(leftarg);
 						args[1] = NumericGetDatum(rightarg);
 						presult[i] = numericFun(&finfo);
+#ifdef DOLPHIN
+						if (!finfo.isnull) {
+							SET_NOTNULL(pflagsRes[i]);
+						} else {
+							SET_NULL(pflagsRes[i]);
+						}
+#endif
 					}
+#ifndef DOLPHIN
 					SET_NOTNULL(pflagsRes[i]);
+#endif
 				}
 				else
 				{

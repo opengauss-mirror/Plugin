@@ -78,7 +78,7 @@ begin
     insert into tmp_holder select breakpointno || ':' || lineno || ':' || query || ':' || enable from dbe_pldebugger.info_breakpoints();
 end;
 $$;
-WARNING:  lineno must be within the range of [1, MaxLineNumber] Please use dbe_pldebugger.info_code for valid breakpoint candidates
+WARNING:  lineno must be within the range of [1, MaxLineNumber]. Please use dbe_pldebugger.info_code for valid breakpoint candidates
 CONTEXT:  SQL statement "insert into tmp_holder select * from dbe_pldebugger.add_breakpoint(funcoid, 0)"
 PL/pgSQL function inline_code_block line 6 at SQL statement
 WARNING:  the given line number does not name a valid breakpoint. Please use dbe_pldebugger.info_code for valid breakpoint candidates
@@ -90,7 +90,7 @@ PL/pgSQL function inline_code_block line 9 at SQL statement
 WARNING:  the given line number already contains a valid breakpoint. Please se dbe_pldebugger.info_breakpoints for detail.
 CONTEXT:  SQL statement "insert into tmp_holder select * from dbe_pldebugger.add_breakpoint(funcoid, 15)"
 PL/pgSQL function inline_code_block line 11 at SQL statement
-WARNING:  lineno must be within the range of [1, MaxLineNumber] Please use dbe_pldebugger.info_code for valid breakpoint candidates
+WARNING:  lineno must be within the range of [1, MaxLineNumber]. Please use dbe_pldebugger.info_code for valid breakpoint candidates
 CONTEXT:  SQL statement "insert into tmp_holder select * from dbe_pldebugger.add_breakpoint(funcoid, 50)"
 PL/pgSQL function inline_code_block line 19 at SQL statement
 select * from tmp_holder;

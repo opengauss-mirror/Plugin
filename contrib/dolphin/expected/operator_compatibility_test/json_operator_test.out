@@ -2206,8 +2206,6 @@ CONTEXT:  referenced column: int1*json
 UPDATE test_json_type, test_json_table SET test_json_type.`int1/json` = test_json_table.`int1` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: int1/json
-ERROR:  division by zero
-CONTEXT:  referenced column: int1/json
 UPDATE test_json_type, test_json_table SET test_json_type.`int1%json` = test_json_table.`int1` % test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: int1%json
@@ -2229,7 +2227,13 @@ CONTEXT:  referenced column: int1&json
 UPDATE test_json_type, test_json_table SET test_json_type.`int1||json` = test_json_table.`int1` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`int1&&json` = test_json_table.`int1` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`int1_div_json` = test_json_table.`int1` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: int1_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`int1_mod_json` = test_json_table.`int1` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: int1_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`int1_xor_json` = test_json_table.`int1` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2248,8 +2252,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: uint1*json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint1/json` = test_json_table.`uint1` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: uint1/json
-ERROR:  division by zero
 CONTEXT:  referenced column: uint1/json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint1%json` = test_json_table.`uint1` % test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -2272,7 +2274,13 @@ CONTEXT:  referenced column: uint1&json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint1||json` = test_json_table.`uint1` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`uint1&&json` = test_json_table.`uint1` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`uint1_div_json` = test_json_table.`uint1` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: uint1_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint1_mod_json` = test_json_table.`uint1` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: uint1_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint1_xor_json` = test_json_table.`uint1` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2291,8 +2299,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: int2*json
 UPDATE test_json_type, test_json_table SET test_json_type.`int2/json` = test_json_table.`int2` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: int2/json
-ERROR:  division by zero
 CONTEXT:  referenced column: int2/json
 UPDATE test_json_type, test_json_table SET test_json_type.`int2%json` = test_json_table.`int2` % test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -2315,7 +2321,13 @@ CONTEXT:  referenced column: int2&json
 UPDATE test_json_type, test_json_table SET test_json_type.`int2||json` = test_json_table.`int2` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`int2&&json` = test_json_table.`int2` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`int2_div_json` = test_json_table.`int2` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: int2_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`int2_mod_json` = test_json_table.`int2` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: int2_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`int2_xor_json` = test_json_table.`int2` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2334,8 +2346,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: uint2*json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint2/json` = test_json_table.`uint2` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: uint2/json
-ERROR:  division by zero
 CONTEXT:  referenced column: uint2/json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint2%json` = test_json_table.`uint2` % test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -2358,7 +2368,13 @@ CONTEXT:  referenced column: uint2&json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint2||json` = test_json_table.`uint2` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`uint2&&json` = test_json_table.`uint2` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`uint2_div_json` = test_json_table.`uint2` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: uint2_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint2_mod_json` = test_json_table.`uint2` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: uint2_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint2_xor_json` = test_json_table.`uint2` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2377,8 +2393,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: int4*json
 UPDATE test_json_type, test_json_table SET test_json_type.`int4/json` = test_json_table.`int4` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: int4/json
-ERROR:  division by zero
 CONTEXT:  referenced column: int4/json
 UPDATE test_json_type, test_json_table SET test_json_type.`int4%json` = test_json_table.`int4` % test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -2401,7 +2415,13 @@ CONTEXT:  referenced column: int4&json
 UPDATE test_json_type, test_json_table SET test_json_type.`int4||json` = test_json_table.`int4` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`int4&&json` = test_json_table.`int4` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`int4_div_json` = test_json_table.`int4` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: int4_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`int4_mod_json` = test_json_table.`int4` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: int4_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`int4_xor_json` = test_json_table.`int4` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2420,8 +2440,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: uint4*json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint4/json` = test_json_table.`uint4` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: uint4/json
-ERROR:  division by zero
 CONTEXT:  referenced column: uint4/json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint4%json` = test_json_table.`uint4` % test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -2444,7 +2462,13 @@ CONTEXT:  referenced column: uint4&json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint4||json` = test_json_table.`uint4` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`uint4&&json` = test_json_table.`uint4` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`uint4_div_json` = test_json_table.`uint4` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: uint4_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint4_mod_json` = test_json_table.`uint4` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: uint4_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint4_xor_json` = test_json_table.`uint4` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2463,8 +2487,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: int8*json
 UPDATE test_json_type, test_json_table SET test_json_type.`int8/json` = test_json_table.`int8` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: int8/json
-ERROR:  division by zero
 CONTEXT:  referenced column: int8/json
 UPDATE test_json_type, test_json_table SET test_json_type.`int8%json` = test_json_table.`int8` % test_json_table.`json`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
@@ -2487,7 +2509,13 @@ CONTEXT:  referenced column: int8&json
 UPDATE test_json_type, test_json_table SET test_json_type.`int8||json` = test_json_table.`int8` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`int8&&json` = test_json_table.`int8` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`int8_div_json` = test_json_table.`int8` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: int8_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`int8_mod_json` = test_json_table.`int8` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: int8_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`int8_xor_json` = test_json_table.`int8` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2506,8 +2534,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: uint8*json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8/json` = test_json_table.`uint8` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: uint8/json
-ERROR:  division by zero
 CONTEXT:  referenced column: uint8/json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8%json` = test_json_table.`uint8` % test_json_table.`json`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
@@ -2530,7 +2556,13 @@ CONTEXT:  referenced column: uint8&json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8||json` = test_json_table.`uint8` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8&&json` = test_json_table.`uint8` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8_div_json` = test_json_table.`uint8` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: uint8_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8_mod_json` = test_json_table.`uint8` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: uint8_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`uint8_xor_json` = test_json_table.`uint8` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2549,8 +2581,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: float4*json
 UPDATE test_json_type, test_json_table SET test_json_type.`float4/json` = test_json_table.`float4` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: float4/json
-ERROR:  division by zero
 CONTEXT:  referenced column: float4/json
 UPDATE test_json_type, test_json_table SET test_json_type.`float4%json` = test_json_table.`float4` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`float4^json` = test_json_table.`float4` ^ test_json_table.`json`;
@@ -2571,7 +2601,13 @@ CONTEXT:  referenced column: float4&json
 UPDATE test_json_type, test_json_table SET test_json_type.`float4||json` = test_json_table.`float4` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`float4&&json` = test_json_table.`float4` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`float4_div_json` = test_json_table.`float4` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: float4_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`float4_mod_json` = test_json_table.`float4` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: float4_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`float4_xor_json` = test_json_table.`float4` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2590,8 +2626,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: float8*json
 UPDATE test_json_type, test_json_table SET test_json_type.`float8/json` = test_json_table.`float8` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: float8/json
-ERROR:  division by zero
 CONTEXT:  referenced column: float8/json
 UPDATE test_json_type, test_json_table SET test_json_type.`float8%json` = test_json_table.`float8` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`float8^json` = test_json_table.`float8` ^ test_json_table.`json`;
@@ -2612,7 +2646,13 @@ CONTEXT:  referenced column: float8&json
 UPDATE test_json_type, test_json_table SET test_json_type.`float8||json` = test_json_table.`float8` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`float8&&json` = test_json_table.`float8` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`float8_div_json` = test_json_table.`float8` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: float8_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`float8_mod_json` = test_json_table.`float8` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: float8_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`float8_xor_json` = test_json_table.`float8` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2631,8 +2671,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: numeric*json
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric/json` = test_json_table.`numeric` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: numeric/json
-ERROR:  division by zero
 CONTEXT:  referenced column: numeric/json
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric%json` = test_json_table.`numeric` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric^json` = test_json_table.`numeric` ^ test_json_table.`json`;
@@ -2653,7 +2691,13 @@ CONTEXT:  referenced column: numeric&json
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric||json` = test_json_table.`numeric` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric&&json` = test_json_table.`numeric` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric_div_json` = test_json_table.`numeric` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: numeric_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric_mod_json` = test_json_table.`numeric` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: numeric_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric_xor_json` = test_json_table.`numeric` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2672,8 +2716,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: bit1*json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1/json` = test_json_table.`bit1` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: bit1/json
-ERROR:  division by zero
 CONTEXT:  referenced column: bit1/json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1%json` = test_json_table.`bit1` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1^json` = test_json_table.`bit1` ^ test_json_table.`json`;
@@ -2694,7 +2736,13 @@ CONTEXT:  referenced column: bit1&json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1||json` = test_json_table.`bit1` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1&&json` = test_json_table.`bit1` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1_div_json` = test_json_table.`bit1` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: bit1_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1_mod_json` = test_json_table.`bit1` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: bit1_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1_xor_json` = test_json_table.`bit1` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2713,8 +2761,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: bit64*json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64/json` = test_json_table.`bit64` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: bit64/json
-ERROR:  division by zero
 CONTEXT:  referenced column: bit64/json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64%json` = test_json_table.`bit64` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64^json` = test_json_table.`bit64` ^ test_json_table.`json`;
@@ -2735,7 +2781,13 @@ CONTEXT:  referenced column: bit64&json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64||json` = test_json_table.`bit64` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64&&json` = test_json_table.`bit64` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64_div_json` = test_json_table.`bit64` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: bit64_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64_mod_json` = test_json_table.`bit64` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: bit64_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64_xor_json` = test_json_table.`bit64` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2754,8 +2806,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: boolean*json
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean/json` = test_json_table.`boolean` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: boolean/json
-ERROR:  division by zero
 CONTEXT:  referenced column: boolean/json
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean%json` = test_json_table.`boolean` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean^json` = test_json_table.`boolean` ^ test_json_table.`json`;
@@ -2776,7 +2826,13 @@ CONTEXT:  referenced column: boolean&json
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean||json` = test_json_table.`boolean` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean&&json` = test_json_table.`boolean` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean_div_json` = test_json_table.`boolean` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: boolean_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean_mod_json` = test_json_table.`boolean` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: boolean_mod_json
 -- UPDATE test_json_type, test_json_table SET test_json_type.`boolean_xor_json` = test_json_table.`boolean` xor test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean_and_json` = test_json_table.`boolean` and test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean_or_json` = test_json_table.`boolean` or test_json_table.`json`;
@@ -2791,8 +2847,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: date*json
 UPDATE test_json_type, test_json_table SET test_json_type.`date/json` = test_json_table.`date` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: date/json
-ERROR:  division by zero
 CONTEXT:  referenced column: date/json
 UPDATE test_json_type, test_json_table SET test_json_type.`date%json` = test_json_table.`date` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`date^json` = test_json_table.`date` ^ test_json_table.`json`;
@@ -2813,7 +2867,13 @@ CONTEXT:  referenced column: date&json
 UPDATE test_json_type, test_json_table SET test_json_type.`date||json` = test_json_table.`date` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`date&&json` = test_json_table.`date` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`date_div_json` = test_json_table.`date` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: date_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`date_mod_json` = test_json_table.`date` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: date_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`date_xor_json` = test_json_table.`date` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2832,8 +2892,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: time*json
 UPDATE test_json_type, test_json_table SET test_json_type.`time/json` = test_json_table.`time` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: time/json
-ERROR:  division by zero
 CONTEXT:  referenced column: time/json
 UPDATE test_json_type, test_json_table SET test_json_type.`time%json` = test_json_table.`time` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`time^json` = test_json_table.`time` ^ test_json_table.`json`;
@@ -2854,7 +2912,13 @@ CONTEXT:  referenced column: time&json
 UPDATE test_json_type, test_json_table SET test_json_type.`time||json` = test_json_table.`time` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`time&&json` = test_json_table.`time` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`time_div_json` = test_json_table.`time` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: time_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`time_mod_json` = test_json_table.`time` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: time_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`time_xor_json` = test_json_table.`time` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2873,8 +2937,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: time(4)*json
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)/json` = test_json_table.`time(4)` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: time(4)/json
-ERROR:  division by zero
 CONTEXT:  referenced column: time(4)/json
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)%json` = test_json_table.`time(4)` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)^json` = test_json_table.`time(4)` ^ test_json_table.`json`;
@@ -2895,7 +2957,13 @@ CONTEXT:  referenced column: time(4)&json
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)||json` = test_json_table.`time(4)` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)&&json` = test_json_table.`time(4)` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)_div_json` = test_json_table.`time(4)` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: time(4)_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)_mod_json` = test_json_table.`time(4)` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: time(4)_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)_xor_json` = test_json_table.`time(4)` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2914,8 +2982,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: datetime*json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime/json` = test_json_table.`datetime` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: datetime/json
-ERROR:  division by zero
 CONTEXT:  referenced column: datetime/json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime%json` = test_json_table.`datetime` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime^json` = test_json_table.`datetime` ^ test_json_table.`json`;
@@ -2946,7 +3012,13 @@ LINE 1: ..._json_table SET test_json_type.`datetime&&json` = test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime_div_json` = test_json_table.`datetime` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: datetime_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime_mod_json` = test_json_table.`datetime` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: datetime_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime_xor_json` = test_json_table.`datetime` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -2978,8 +3050,6 @@ CONTEXT:  referenced column: datetime(4)*json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime(4)/json` = test_json_table.`datetime(4)` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: datetime(4)/json
-ERROR:  division by zero
-CONTEXT:  referenced column: datetime(4)/json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime(4)%json` = test_json_table.`datetime(4)` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime(4)^json` = test_json_table.`datetime(4)` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -3009,7 +3079,13 @@ LINE 1: ...on_table SET test_json_type.`datetime(4)&&json` = test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime(4)_div_json` = test_json_table.`datetime(4)` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: datetime(4)_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime(4)_mod_json` = test_json_table.`datetime(4)` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: datetime(4)_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime(4)_xor_json` = test_json_table.`datetime(4)` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3041,8 +3117,6 @@ CONTEXT:  referenced column: timestamp*json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp/json` = test_json_table.`timestamp` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: timestamp/json
-ERROR:  division by zero
-CONTEXT:  referenced column: timestamp/json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp%json` = test_json_table.`timestamp` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp^json` = test_json_table.`timestamp` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -3072,7 +3146,13 @@ LINE 1: ...json_table SET test_json_type.`timestamp&&json` = test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp_div_json` = test_json_table.`timestamp` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: timestamp_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp_mod_json` = test_json_table.`timestamp` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: timestamp_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp_xor_json` = test_json_table.`timestamp` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3104,8 +3184,6 @@ CONTEXT:  referenced column: timestamp(4)*json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp(4)/json` = test_json_table.`timestamp(4)` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: timestamp(4)/json
-ERROR:  division by zero
-CONTEXT:  referenced column: timestamp(4)/json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp(4)%json` = test_json_table.`timestamp(4)` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp(4)^json` = test_json_table.`timestamp(4)` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -3135,7 +3213,13 @@ LINE 1: ...n_table SET test_json_type.`timestamp(4)&&json` = test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp(4)_div_json` = test_json_table.`timestamp(4)` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: timestamp(4)_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp(4)_mod_json` = test_json_table.`timestamp(4)` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: timestamp(4)_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp(4)_xor_json` = test_json_table.`timestamp(4)` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3167,8 +3251,6 @@ CONTEXT:  referenced column: year*json
 UPDATE test_json_type, test_json_table SET test_json_type.`year/json` = test_json_table.`year` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: year/json
-ERROR:  division by zero
-CONTEXT:  referenced column: year/json
 UPDATE test_json_type, test_json_table SET test_json_type.`year%json` = test_json_table.`year` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`year^json` = test_json_table.`year` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -3196,7 +3278,13 @@ LINE 1: ...test_json_table SET test_json_type.`year&&json` = test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`year_div_json` = test_json_table.`year` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: year_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`year_mod_json` = test_json_table.`year` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: year_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`year_xor_json` = test_json_table.`year` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3232,8 +3320,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: char/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: char/json
-ERROR:  division by zero
-CONTEXT:  referenced column: char/json
 UPDATE test_json_type, test_json_table SET test_json_type.`char%json` = test_json_table.`char` % test_json_table.`json`;
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: char%json
@@ -3265,7 +3351,19 @@ CONTEXT:  referenced column: char&json
 UPDATE test_json_type, test_json_table SET test_json_type.`char||json` = test_json_table.`char` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`char&&json` = test_json_table.`char` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`char_div_json` = test_json_table.`char` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: char_div_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: char_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`char_mod_json` = test_json_table.`char` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: char_mod_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: char_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`char_xor_json` = test_json_table.`char` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3296,8 +3394,6 @@ UPDATE test_json_type, test_json_table SET test_json_type.`varchar/json` = test_
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varchar/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: varchar/json
-ERROR:  division by zero
 CONTEXT:  referenced column: varchar/json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar%json` = test_json_table.`varchar` % test_json_table.`json`;
 WARNING:  invalid input syntax for type numeric: "1.23a"
@@ -3330,7 +3426,19 @@ CONTEXT:  referenced column: varchar&json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar||json` = test_json_table.`varchar` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar&&json` = test_json_table.`varchar` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar_div_json` = test_json_table.`varchar` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: varchar_div_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: varchar_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar_mod_json` = test_json_table.`varchar` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: varchar_mod_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: varchar_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar_xor_json` = test_json_table.`varchar` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3361,8 +3469,6 @@ UPDATE test_json_type, test_json_table SET test_json_type.`binary/json` = test_j
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: binary/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: binary/json
-ERROR:  division by zero
 CONTEXT:  referenced column: binary/json
 UPDATE test_json_type, test_json_table SET test_json_type.`binary%json` = test_json_table.`binary` % test_json_table.`json`;
 ERROR:  failed to find conversion function from "binary" to numeric
@@ -3395,7 +3501,19 @@ LINE 1: ...st_json_table SET test_json_type.`binary&&json` = test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`binary_div_json` = test_json_table.`binary` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: binary_div_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: binary_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`binary_mod_json` = test_json_table.`binary` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: binary_mod_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: binary_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`binary_xor_json` = test_json_table.`binary` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3435,8 +3553,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varbinary/json
-ERROR:  division by zero
-CONTEXT:  referenced column: varbinary/json
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary%json` = test_json_table.`varbinary` % test_json_table.`json`;
 ERROR:  failed to find conversion function from "varbinary" to numeric
 CONTEXT:  referenced column: test_json_type
@@ -3468,7 +3584,19 @@ LINE 1: ...json_table SET test_json_type.`varbinary&&json` = test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary_div_json` = test_json_table.`varbinary` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: varbinary_div_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: varbinary_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary_mod_json` = test_json_table.`varbinary` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: varbinary_mod_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: varbinary_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary_xor_json` = test_json_table.`varbinary` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3508,8 +3636,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: tinyblob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: tinyblob/json
-ERROR:  division by zero
-CONTEXT:  referenced column: tinyblob/json
 UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob%json` = test_json_table.`tinyblob` % test_json_table.`json`;
 ERROR:  failed to find conversion function from tinyblob to numeric
 CONTEXT:  referenced column: test_json_type
@@ -3541,7 +3667,19 @@ LINE 1: ..._json_table SET test_json_type.`tinyblob&&json` = test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob_div_json` = test_json_table.`tinyblob` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: tinyblob_div_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: tinyblob_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob_mod_json` = test_json_table.`tinyblob` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: tinyblob_mod_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: tinyblob_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob_xor_json` = test_json_table.`tinyblob` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3581,8 +3719,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: blob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: blob/json
-ERROR:  division by zero
-CONTEXT:  referenced column: blob/json
 UPDATE test_json_type, test_json_table SET test_json_type.`blob%json` = test_json_table.`blob` % test_json_table.`json`;
 ERROR:  failed to find conversion function from blob to numeric
 CONTEXT:  referenced column: test_json_type
@@ -3614,7 +3750,19 @@ LINE 1: ...test_json_table SET test_json_type.`blob&&json` = test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`blob_div_json` = test_json_table.`blob` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: blob_div_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: blob_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`blob_mod_json` = test_json_table.`blob` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: blob_mod_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: blob_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`blob_xor_json` = test_json_table.`blob` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3654,8 +3802,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: mediumblob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: mediumblob/json
-ERROR:  division by zero
-CONTEXT:  referenced column: mediumblob/json
 UPDATE test_json_type, test_json_table SET test_json_type.`mediumblob%json` = test_json_table.`mediumblob` % test_json_table.`json`;
 ERROR:  failed to find conversion function from mediumblob to numeric
 CONTEXT:  referenced column: test_json_type
@@ -3687,7 +3833,19 @@ LINE 1: ...son_table SET test_json_type.`mediumblob&&json` = test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`mediumblob_div_json` = test_json_table.`mediumblob` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: mediumblob_div_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: mediumblob_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`mediumblob_mod_json` = test_json_table.`mediumblob` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: mediumblob_mod_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: mediumblob_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`mediumblob_xor_json` = test_json_table.`mediumblob` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3727,8 +3885,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: longblob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: longblob/json
-ERROR:  division by zero
-CONTEXT:  referenced column: longblob/json
 UPDATE test_json_type, test_json_table SET test_json_type.`longblob%json` = test_json_table.`longblob` % test_json_table.`json`;
 ERROR:  failed to find conversion function from longblob to numeric
 CONTEXT:  referenced column: test_json_type
@@ -3760,7 +3916,19 @@ LINE 1: ..._json_table SET test_json_type.`longblob&&json` = test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`longblob_div_json` = test_json_table.`longblob` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: longblob_div_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: longblob_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`longblob_mod_json` = test_json_table.`longblob` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: longblob_mod_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: longblob_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`longblob_xor_json` = test_json_table.`longblob` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3800,8 +3968,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: text/json
-ERROR:  division by zero
-CONTEXT:  referenced column: text/json
 UPDATE test_json_type, test_json_table SET test_json_type.`text%json` = test_json_table.`text` % test_json_table.`json`;
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: text%json
@@ -3833,7 +3999,19 @@ CONTEXT:  referenced column: text&json
 UPDATE test_json_type, test_json_table SET test_json_type.`text||json` = test_json_table.`text` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`text&&json` = test_json_table.`text` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`text_div_json` = test_json_table.`text` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: text_div_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: text_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`text_mod_json` = test_json_table.`text` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: text_mod_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: text_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`text_xor_json` = test_json_table.`text` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3856,8 +4034,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: enum_t*json
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t/json` = test_json_table.`enum_t` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: enum_t/json
-ERROR:  division by zero
 CONTEXT:  referenced column: enum_t/json
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t%json` = test_json_table.`enum_t` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t^json` = test_json_table.`enum_t` ^ test_json_table.`json`;
@@ -3886,7 +4062,13 @@ LINE 1: ...st_json_table SET test_json_type.`enum_t&&json` = test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t_div_json` = test_json_table.`enum_t` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: enum_t_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t_mod_json` = test_json_table.`enum_t` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: enum_t_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t_xor_json` = test_json_table.`enum_t` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3913,8 +4095,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: set_t*json
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t/json` = test_json_table.`set_t` / test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: set_t/json
-ERROR:  division by zero
 CONTEXT:  referenced column: set_t/json
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t%json` = test_json_table.`set_t` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t^json` = test_json_table.`set_t` ^ test_json_table.`json`;
@@ -3943,7 +4123,13 @@ LINE 1: ...est_json_table SET test_json_type.`set_t&&json` = test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t_div_json` = test_json_table.`set_t` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
+referenced column: set_t_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t_mod_json` = test_json_table.`set_t` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(anyelement,json) line 3 at RETURN
+referenced column: set_t_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t_xor_json` = test_json_table.`set_t` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -3992,7 +4178,13 @@ CONTEXT:  referenced column: json&int1
 UPDATE test_json_type, test_json_table SET test_json_type.`json||int1` = test_json_table.`json` || test_json_table.`int1`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&int1` = test_json_table.`json` && test_json_table.`int1`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_int1` = test_json_table.`json` div test_json_table.`int1`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_int1
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_int1` = test_json_table.`json` mod test_json_table.`int1`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_int1
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_int1` = test_json_table.`json` xor test_json_table.`int1`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4033,7 +4225,13 @@ CONTEXT:  referenced column: json&uint1
 UPDATE test_json_type, test_json_table SET test_json_type.`json||uint1` = test_json_table.`json` || test_json_table.`uint1`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&uint1` = test_json_table.`json` && test_json_table.`uint1`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_uint1` = test_json_table.`json` div test_json_table.`uint1`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_uint1
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_uint1` = test_json_table.`json` mod test_json_table.`uint1`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_uint1
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_uint1` = test_json_table.`json` xor test_json_table.`uint1`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4074,7 +4272,13 @@ CONTEXT:  referenced column: json&int2
 UPDATE test_json_type, test_json_table SET test_json_type.`json||int2` = test_json_table.`json` || test_json_table.`int2`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&int2` = test_json_table.`json` && test_json_table.`int2`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_int2` = test_json_table.`json` div test_json_table.`int2`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_int2
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_int2` = test_json_table.`json` mod test_json_table.`int2`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_int2
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_int2` = test_json_table.`json` xor test_json_table.`int2`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4115,7 +4319,13 @@ CONTEXT:  referenced column: json&uint2
 UPDATE test_json_type, test_json_table SET test_json_type.`json||uint2` = test_json_table.`json` || test_json_table.`uint2`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&uint2` = test_json_table.`json` && test_json_table.`uint2`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_uint2` = test_json_table.`json` div test_json_table.`uint2`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_uint2
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_uint2` = test_json_table.`json` mod test_json_table.`uint2`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_uint2
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_uint2` = test_json_table.`json` xor test_json_table.`uint2`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4156,7 +4366,13 @@ CONTEXT:  referenced column: json&int4
 UPDATE test_json_type, test_json_table SET test_json_type.`json||int4` = test_json_table.`json` || test_json_table.`int4`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&int4` = test_json_table.`json` && test_json_table.`int4`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_int4` = test_json_table.`json` div test_json_table.`int4`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_int4
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_int4` = test_json_table.`json` mod test_json_table.`int4`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_int4
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_int4` = test_json_table.`json` xor test_json_table.`int4`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4197,7 +4413,13 @@ CONTEXT:  referenced column: json&uint4
 UPDATE test_json_type, test_json_table SET test_json_type.`json||uint4` = test_json_table.`json` || test_json_table.`uint4`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&uint4` = test_json_table.`json` && test_json_table.`uint4`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_uint4` = test_json_table.`json` div test_json_table.`uint4`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_uint4
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_uint4` = test_json_table.`json` mod test_json_table.`uint4`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_uint4
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_uint4` = test_json_table.`json` xor test_json_table.`uint4`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4238,7 +4460,13 @@ CONTEXT:  referenced column: json&int8
 UPDATE test_json_type, test_json_table SET test_json_type.`json||int8` = test_json_table.`json` || test_json_table.`int8`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&int8` = test_json_table.`json` && test_json_table.`int8`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_int8` = test_json_table.`json` div test_json_table.`int8`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_int8
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_int8` = test_json_table.`json` mod test_json_table.`int8`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_int8
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_int8` = test_json_table.`json` xor test_json_table.`int8`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4279,7 +4507,13 @@ CONTEXT:  referenced column: json&uint8
 UPDATE test_json_type, test_json_table SET test_json_type.`json||uint8` = test_json_table.`json` || test_json_table.`uint8`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&uint8` = test_json_table.`json` && test_json_table.`uint8`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_uint8` = test_json_table.`json` div test_json_table.`uint8`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_uint8
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_uint8` = test_json_table.`json` mod test_json_table.`uint8`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_uint8
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_uint8` = test_json_table.`json` xor test_json_table.`uint8`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4318,7 +4552,13 @@ CONTEXT:  referenced column: json&float4
 UPDATE test_json_type, test_json_table SET test_json_type.`json||float4` = test_json_table.`json` || test_json_table.`float4`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&float4` = test_json_table.`json` && test_json_table.`float4`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_float4` = test_json_table.`json` div test_json_table.`float4`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_float4
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_float4` = test_json_table.`json` mod test_json_table.`float4`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_float4
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_float4` = test_json_table.`json` xor test_json_table.`float4`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4357,7 +4597,13 @@ CONTEXT:  referenced column: json&float8
 UPDATE test_json_type, test_json_table SET test_json_type.`json||float8` = test_json_table.`json` || test_json_table.`float8`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&float8` = test_json_table.`json` && test_json_table.`float8`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_float8` = test_json_table.`json` div test_json_table.`float8`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_float8
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_float8` = test_json_table.`json` mod test_json_table.`float8`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_float8
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_float8` = test_json_table.`json` xor test_json_table.`float8`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4396,7 +4642,13 @@ CONTEXT:  referenced column: json&numeric
 UPDATE test_json_type, test_json_table SET test_json_type.`json||numeric` = test_json_table.`json` || test_json_table.`numeric`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&numeric` = test_json_table.`json` && test_json_table.`numeric`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_numeric` = test_json_table.`json` div test_json_table.`numeric`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_numeric
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_numeric` = test_json_table.`json` mod test_json_table.`numeric`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_numeric
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_numeric` = test_json_table.`json` xor test_json_table.`numeric`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4441,7 +4693,13 @@ CONTEXT:  referenced column: json&bit1
 UPDATE test_json_type, test_json_table SET test_json_type.`json||bit1` = test_json_table.`json` || test_json_table.`bit1`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&bit1` = test_json_table.`json` && test_json_table.`bit1`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_bit1` = test_json_table.`json` div test_json_table.`bit1`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_bit1
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_bit1` = test_json_table.`json` mod test_json_table.`bit1`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_bit1
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_bit1` = test_json_table.`json` xor test_json_table.`bit1`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4486,7 +4744,13 @@ CONTEXT:  referenced column: json&bit64
 UPDATE test_json_type, test_json_table SET test_json_type.`json||bit64` = test_json_table.`json` || test_json_table.`bit64`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&bit64` = test_json_table.`json` && test_json_table.`bit64`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_bit64` = test_json_table.`json` div test_json_table.`bit64`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_bit64
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_bit64` = test_json_table.`json` mod test_json_table.`bit64`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_bit64
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_bit64` = test_json_table.`json` xor test_json_table.`bit64`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4525,7 +4789,13 @@ CONTEXT:  referenced column: json&boolean
 UPDATE test_json_type, test_json_table SET test_json_type.`json||boolean` = test_json_table.`json` || test_json_table.`boolean`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&boolean` = test_json_table.`json` && test_json_table.`boolean`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_boolean` = test_json_table.`json` div test_json_table.`boolean`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_boolean
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_boolean` = test_json_table.`json` mod test_json_table.`boolean`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_boolean
 -- UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_boolean` = test_json_table.`json` xor test_json_table.`boolean`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_boolean` = test_json_table.`json` and test_json_table.`boolean`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_boolean` = test_json_table.`json` or test_json_table.`boolean`;
@@ -4560,7 +4830,13 @@ CONTEXT:  referenced column: json&date
 UPDATE test_json_type, test_json_table SET test_json_type.`json||date` = test_json_table.`json` || test_json_table.`date`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&date` = test_json_table.`json` && test_json_table.`date`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_date` = test_json_table.`json` div test_json_table.`date`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_date
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_date` = test_json_table.`json` mod test_json_table.`date`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_date
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_date` = test_json_table.`json` xor test_json_table.`date`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4599,7 +4875,13 @@ CONTEXT:  referenced column: json&time
 UPDATE test_json_type, test_json_table SET test_json_type.`json||time` = test_json_table.`json` || test_json_table.`time`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&time` = test_json_table.`json` && test_json_table.`time`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_time` = test_json_table.`json` div test_json_table.`time`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_time
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_time` = test_json_table.`json` mod test_json_table.`time`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_time
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_time` = test_json_table.`json` xor test_json_table.`time`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4638,7 +4920,13 @@ CONTEXT:  referenced column: json&time(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json||time(4)` = test_json_table.`json` || test_json_table.`time(4)`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&time(4)` = test_json_table.`json` && test_json_table.`time(4)`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_time(4)` = test_json_table.`json` div test_json_table.`time(4)`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_time(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_time(4)` = test_json_table.`json` mod test_json_table.`time(4)`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_time(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_time(4)` = test_json_table.`json` xor test_json_table.`time(4)`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4691,7 +4979,13 @@ LINE 1: ...type.`json&&datetime` = test_json_table.`json` && test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_datetime` = test_json_table.`json` div test_json_table.`datetime`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_datetime
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_datetime` = test_json_table.`json` mod test_json_table.`datetime`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_datetime
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_datetime` = test_json_table.`json` xor test_json_table.`datetime`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4756,7 +5050,13 @@ LINE 1: ...e.`json&&datetime(4)` = test_json_table.`json` && test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_datetime(4)` = test_json_table.`json` div test_json_table.`datetime(4)`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_datetime(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_datetime(4)` = test_json_table.`json` mod test_json_table.`datetime(4)`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_datetime(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_datetime(4)` = test_json_table.`json` xor test_json_table.`datetime(4)`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4821,7 +5121,13 @@ LINE 1: ...ype.`json&&timestamp` = test_json_table.`json` && test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_timestamp` = test_json_table.`json` div test_json_table.`timestamp`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_timestamp
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_timestamp` = test_json_table.`json` mod test_json_table.`timestamp`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_timestamp
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_timestamp` = test_json_table.`json` xor test_json_table.`timestamp`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4886,7 +5192,13 @@ LINE 1: ....`json&&timestamp(4)` = test_json_table.`json` && test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_timestamp(4)` = test_json_table.`json` div test_json_table.`timestamp(4)`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_timestamp(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_timestamp(4)` = test_json_table.`json` mod test_json_table.`timestamp(4)`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_timestamp(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_timestamp(4)` = test_json_table.`json` xor test_json_table.`timestamp(4)`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -4945,7 +5257,13 @@ LINE 1: ...son_type.`json&&year` = test_json_table.`json` && test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_year` = test_json_table.`json` div test_json_table.`year`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_year
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_year` = test_json_table.`json` mod test_json_table.`year`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_year
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_year` = test_json_table.`json` xor test_json_table.`year`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -5012,7 +5330,19 @@ CONTEXT:  referenced column: json&char
 UPDATE test_json_type, test_json_table SET test_json_type.`json||char` = test_json_table.`json` || test_json_table.`char`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&char` = test_json_table.`json` && test_json_table.`char`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_char` = test_json_table.`json` div test_json_table.`char`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_char
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_char
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_char` = test_json_table.`json` mod test_json_table.`char`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_char
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_char
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_char` = test_json_table.`json` xor test_json_table.`char`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -5075,7 +5405,19 @@ CONTEXT:  referenced column: json&varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json||varchar` = test_json_table.`json` || test_json_table.`varchar`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&varchar` = test_json_table.`json` && test_json_table.`varchar`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_varchar` = test_json_table.`json` div test_json_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_varchar
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_varchar` = test_json_table.`json` mod test_json_table.`varchar`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_varchar
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_varchar` = test_json_table.`json` xor test_json_table.`varchar`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -5138,7 +5480,19 @@ LINE 1: ...n_type.`json&&binary` = test_json_table.`json` && test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_binary` = test_json_table.`json` div test_json_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_binary
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_binary` = test_json_table.`json` mod test_json_table.`binary`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_binary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_binary
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_binary` = test_json_table.`json` xor test_json_table.`binary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -5209,7 +5563,19 @@ LINE 1: ...ype.`json&&varbinary` = test_json_table.`json` && test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_varbinary` = test_json_table.`json` div test_json_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_varbinary
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_varbinary` = test_json_table.`json` mod test_json_table.`varbinary`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_varbinary
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_varbinary
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_varbinary` = test_json_table.`json` xor test_json_table.`varbinary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -5280,7 +5646,19 @@ LINE 1: ...type.`json&&tinyblob` = test_json_table.`json` && test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_tinyblob` = test_json_table.`json` div test_json_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_tinyblob
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_tinyblob` = test_json_table.`json` mod test_json_table.`tinyblob`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_tinyblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_tinyblob
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_tinyblob` = test_json_table.`json` xor test_json_table.`tinyblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -5351,7 +5729,19 @@ LINE 1: ...son_type.`json&&blob` = test_json_table.`json` && test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_blob` = test_json_table.`json` div test_json_table.`blob`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_blob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_blob
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_blob` = test_json_table.`json` mod test_json_table.`blob`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_blob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_blob
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_blob` = test_json_table.`json` xor test_json_table.`blob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -5422,7 +5812,19 @@ LINE 1: ...pe.`json&&mediumblob` = test_json_table.`json` && test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_mediumblob` = test_json_table.`json` div test_json_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_mediumblob
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_mediumblob` = test_json_table.`json` mod test_json_table.`mediumblob`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_mediumblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_mediumblob
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_mediumblob` = test_json_table.`json` xor test_json_table.`mediumblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -5493,7 +5895,19 @@ LINE 1: ...type.`json&&longblob` = test_json_table.`json` && test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_longblob` = test_json_table.`json` div test_json_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_longblob
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_longblob` = test_json_table.`json` mod test_json_table.`longblob`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_longblob
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_longblob
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_longblob` = test_json_table.`json` xor test_json_table.`longblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -5564,7 +5978,19 @@ CONTEXT:  referenced column: json&text
 UPDATE test_json_type, test_json_table SET test_json_type.`json||text` = test_json_table.`json` || test_json_table.`text`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&text` = test_json_table.`json` && test_json_table.`text`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_text` = test_json_table.`json` div test_json_table.`text`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_text
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_text
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_text` = test_json_table.`json` mod test_json_table.`text`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_text
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_text
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_text` = test_json_table.`json` xor test_json_table.`text`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -5615,7 +6041,13 @@ LINE 1: ...n_type.`json&&enum_t` = test_json_table.`json` && test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_enum_t` = test_json_table.`json` div test_json_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_enum_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_enum_t` = test_json_table.`json` mod test_json_table.`enum_t`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_enum_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_enum_t` = test_json_table.`json` xor test_json_table.`enum_t`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -5670,7 +6102,13 @@ LINE 1: ...on_type.`json&&set_t` = test_json_table.`json` && test_json_...
                                                              ^
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_set_t` = test_json_table.`json` div test_json_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
+referenced column: json_div_set_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_set_t` = test_json_table.`json` mod test_json_table.`set_t`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,anyelement) line 3 at RETURN
+referenced column: json_mod_set_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_set_t` = test_json_table.`json` xor test_json_table.`set_t`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -5706,8 +6144,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/json
-ERROR:  division by zero
-CONTEXT:  referenced column: json/json
 UPDATE test_json_type, test_json_table SET test_json_type.`json%json` = test_json_table.`json` % test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json^json` = test_json_table.`json` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -5737,7 +6173,19 @@ CONTEXT:  referenced column: json&json
 UPDATE test_json_type, test_json_table SET test_json_type.`json||json` = test_json_table.`json` || test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&json` = test_json_table.`json` && test_json_table.`json`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_json` = test_json_table.`json` div test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,json) line 3 at RETURN
+referenced column: json_div_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function "div"(json,json) line 3 at RETURN
+referenced column: json_div_json
 UPDATE test_json_type, test_json_table SET test_json_type.`json_mod_json` = test_json_table.`json` mod test_json_table.`json`;
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,json) line 3 at RETURN
+referenced column: json_mod_json
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  PL/pgSQL function b_mod(json,json) line 3 at RETURN
+referenced column: json_mod_json
 UPDATE test_json_type, test_json_table SET test_json_type.`json_xor_json` = test_json_table.`json` xor test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  SQL statement "SELECT (select a ^ b)"
@@ -5768,7 +6216,7 @@ int1+json             | 1
 int1-json             | 1
 int1*json             | 0
 int1/json             | 
-int1%json             | 1
+int1%json             | 
 int1^json             | 1
 int1>>json            | 1
 int1<<json            | 1
@@ -5802,7 +6250,7 @@ int2+json             | 1
 int2-json             | 1
 int2*json             | 0
 int2/json             | 
-int2%json             | 1
+int2%json             | 
 int2^json             | 1
 int2>>json            | 1
 int2<<json            | 1
@@ -5836,7 +6284,7 @@ int4+json             | 1
 int4-json             | 1
 int4*json             | 0
 int4/json             | 
-int4%json             | 1
+int4%json             | 
 int4^json             | 1
 int4>>json            | 1
 int4<<json            | 1
@@ -5870,7 +6318,7 @@ int8+json             | 1
 int8-json             | 1
 int8*json             | 0
 int8/json             | 
-int8%json             | 1
+int8%json             | 
 int8^json             | 1
 int8>>json            | 1
 int8<<json            | 1
@@ -5904,7 +6352,7 @@ float4+json           | 1
 float4-json           | 1
 float4*json           | 0
 float4/json           | 
-float4%json           | 1
+float4%json           | 
 float4^json           | 1
 float4>>json          | 1
 float4<<json          | 1
@@ -5921,7 +6369,7 @@ float8+json           | 1
 float8-json           | 1
 float8*json           | 0
 float8/json           | 
-float8%json           | 1
+float8%json           | 
 float8^json           | 1
 float8>>json          | 1
 float8<<json          | 1
@@ -5938,7 +6386,7 @@ numeric+json          | 1
 numeric-json          | 1
 numeric*json          | 0
 numeric/json          | 
-numeric%json          | 1.000000
+numeric%json          | 
 numeric^json          | 1
 numeric>>json         | 1
 numeric<<json         | 1
@@ -5955,7 +6403,7 @@ bit1+json             | 1
 bit1-json             | 1
 bit1*json             | 0
 bit1/json             | 
-bit1%json             | 1
+bit1%json             | 
 bit1^json             | 1
 bit1>>json            | 1
 bit1<<json            | 1
@@ -5972,7 +6420,7 @@ bit64+json            | 7
 bit64-json            | 7
 bit64*json            | 0
 bit64/json            | 
-bit64%json            | 7
+bit64%json            | 
 bit64^json            | 7
 bit64>>json           | 0000000000000000000000000000000000000000000000000000000000000111
 bit64<<json           | 0000000000000000000000000000000000000000000000000000000000000111
@@ -5989,7 +6437,7 @@ boolean+json          | 1
 boolean-json          | 1
 boolean*json          | 0
 boolean/json          | 
-boolean%json          | 1
+boolean%json          | 
 boolean>>json         | 1
 boolean<<json         | 1
 boolean|json          | 1
@@ -6004,7 +6452,7 @@ date+json             | 20230205
 date-json             | 20230205
 date*json             | 0
 date/json             | 
-date%json             | 20230205
+date%json             | 
 date^json             | 20230205
 date>>json            | 20230205
 date<<json            | 20230205
@@ -6021,7 +6469,7 @@ time+json             | 191050
 time-json             | 191050
 time*json             | 0
 time/json             | 
-time%json             | 191050
+time%json             | 
 time^json             | 191050
 time>>json            | 191050
 time<<json            | 191050
@@ -6038,7 +6486,7 @@ time(4)+json          | 191050.3456
 time(4)-json          | 191050.3456
 time(4)*json          | 0
 time(4)/json          | 
-time(4)%json          | 191050.345600
+time(4)%json          | 
 time(4)^json          | 191050
 time(4)>>json         | 191050
 time(4)<<json         | 191050
@@ -6055,7 +6503,7 @@ datetime+json         | 20230205191050
 datetime-json         | 20230205191050
 datetime*json         | 0
 datetime/json         | 
-datetime%json         | 20230205191050
+datetime%json         | 
 datetime^json         | 2147483647
 datetime>>json        | 20230205191050
 datetime<<json        | 20230205191050
@@ -6068,7 +6516,7 @@ datetime(4)+json      | 20230205191050.5
 datetime(4)-json      | 20230205191050.5
 datetime(4)*json      | 0
 datetime(4)/json      | 
-datetime(4)%json      | 20230205191050.456000
+datetime(4)%json      | 
 datetime(4)^json      | 2147483647
 datetime(4)>>json     | 20230205191050
 datetime(4)<<json     | 20230205191050
@@ -6081,7 +6529,7 @@ timestamp+json        | 20230205191050
 timestamp-json        | 20230205191050
 timestamp*json        | 0
 timestamp/json        | 
-timestamp%json        | 20230205191050
+timestamp%json        | 
 timestamp^json        | 2147483647
 timestamp>>json       | 20230205191050
 timestamp<<json       | 20230205191050
@@ -6094,7 +6542,7 @@ timestamp(4)+json     | 20230205191050.5
 timestamp(4)-json     | 20230205191050.5
 timestamp(4)*json     | 0
 timestamp(4)/json     | 
-timestamp(4)%json     | 20230205191050.456000
+timestamp(4)%json     | 
 timestamp(4)^json     | 2147483647
 timestamp(4)>>json    | 20230205191050
 timestamp(4)<<json    | 20230205191050
@@ -6107,7 +6555,7 @@ year+json             | 2023
 year-json             | 2023
 year*json             | 0
 year/json             | 
-year%json             | 2023
+year%json             | 
 year^json             | 2023
 year>>json            | 2023
 year<<json            | 2023
@@ -6120,7 +6568,7 @@ char+json             | 1.23
 char-json             | 1.23
 char*json             | 0
 char/json             | 
-char%json             | 1.23
+char%json             | 
 char^json             | 1
 char>>json            | 1
 char<<json            | 1
@@ -6137,7 +6585,7 @@ varchar+json          | 1.23
 varchar-json          | 1.23
 varchar*json          | 0
 varchar/json          | 
-varchar%json          | 1.23
+varchar%json          | 
 varchar^json          | 1
 varchar>>json         | 1
 varchar<<json         | 1
@@ -6202,7 +6650,7 @@ text+json             | 1.23
 text-json             | 1.23
 text*json             | 0
 text/json             | 
-text%json             | 1.23
+text%json             | 
 text^json             | 1
 text>>json            | 1
 text<<json            | 1
@@ -6219,7 +6667,7 @@ enum_t+json           | 1
 enum_t-json           | 1
 enum_t*json           | 0
 enum_t/json           | 
-enum_t%json           | 1
+enum_t%json           | 
 enum_t^json           | 1
 enum_t>>json          | 1
 enum_t<<json          | 1
@@ -6232,7 +6680,7 @@ set_t+json            | 5
 set_t-json            | 5
 set_t*json            | 0
 set_t/json            | 
-set_t%json            | 5
+set_t%json            | 
 set_t^json            | 5
 set_t>>json           | 5
 set_t<<json           | 5
@@ -6520,7 +6968,7 @@ json&time(4)          | 0
 json||time(4)         | t
 json&&time(4)         | f
 json_div_time(4)      | 0
-json_mod_time(4)      | 0
+json_mod_time(4)      | 0.0000
 json_xor_time(4)      | 191050
 json_and_time(4)      | f
 json_or_time(4)       | t
@@ -6548,7 +6996,7 @@ json<<datetime(4)     | 0
 json|datetime(4)      | 20230205191050
 json&datetime(4)      | 0
 json_div_datetime(4)  | 0
-json_mod_datetime(4)  | 0
+json_mod_datetime(4)  | 0.0
 json_xor_datetime(4)  | 2147483647
 json+timestamp        | 20230205191050
 json-timestamp        | -20230205191050
@@ -6574,7 +7022,7 @@ json<<timestamp(4)    | 0
 json|timestamp(4)     | 20230205191050
 json&timestamp(4)     | 0
 json_div_timestamp(4) | 0
-json_mod_timestamp(4) | 0
+json_mod_timestamp(4) | 0.0
 json_xor_timestamp(4) | 2147483647
 json+year             | 2023
 json-year             | -2023
@@ -6602,7 +7050,7 @@ json&char             | 0
 json||char            | t
 json&&char            | f
 json_div_char         | 0
-json_mod_char         | 0
+json_mod_char         | 0.00
 json_xor_char         | 1
 json_and_char         | f
 json_or_char          | t
@@ -6619,7 +7067,7 @@ json&varchar          | 0
 json||varchar         | t
 json&&varchar         | f
 json_div_varchar      | 0
-json_mod_varchar      | 0
+json_mod_varchar      | 0.00
 json_xor_varchar      | 1
 json_and_varchar      | f
 json_or_varchar       | t
@@ -6629,7 +7077,7 @@ json*binary           | 0
 json/binary           | 0
 json^binary           | 1
 json_div_binary       | 0
-json_mod_binary       | 0
+json_mod_binary       | 0.00
 json_xor_binary       | 1
 json+varbinary        | 1.23
 json-varbinary        | -1.23
@@ -6637,7 +7085,7 @@ json*varbinary        | 0
 json/varbinary        | 0
 json^varbinary        | 1
 json_div_varbinary    | 0
-json_mod_varbinary    | 0
+json_mod_varbinary    | 0.00
 json_xor_varbinary    | 1
 json+tinyblob         | 1.23
 json-tinyblob         | -1.23
@@ -6645,7 +7093,7 @@ json*tinyblob         | 0
 json/tinyblob         | 0
 json^tinyblob         | 1
 json_div_tinyblob     | 0
-json_mod_tinyblob     | 0
+json_mod_tinyblob     | 0.00
 json_xor_tinyblob     | 1
 json+blob             | 1.23
 json-blob             | -1.23
@@ -6653,7 +7101,7 @@ json*blob             | 0
 json/blob             | 0
 json^blob             | 1
 json_div_blob         | 0
-json_mod_blob         | 0
+json_mod_blob         | 0.00
 json_xor_blob         | 1
 json+mediumblob       | 1.23
 json-mediumblob       | -1.23
@@ -6661,7 +7109,7 @@ json*mediumblob       | 0
 json/mediumblob       | 0
 json^mediumblob       | 1
 json_div_mediumblob   | 0
-json_mod_mediumblob   | 0
+json_mod_mediumblob   | 0.00
 json_xor_mediumblob   | 1
 json+longblob         | 1.23
 json-longblob         | -1.23
@@ -6669,7 +7117,7 @@ json*longblob         | 0
 json/longblob         | 0
 json^longblob         | 1
 json_div_longblob     | 0
-json_mod_longblob     | 0
+json_mod_longblob     | 0.00
 json_xor_longblob     | 1
 json+text             | 1.23
 json-text             | -1.23
@@ -6684,7 +7132,7 @@ json&text             | 0
 json||text            | t
 json&&text            | f
 json_div_text         | 0
-json_mod_text         | 0
+json_mod_text         | 0.00
 json_xor_text         | 1
 json_and_text         | f
 json_or_text          | t
@@ -6718,7 +7166,7 @@ json+json             | 0
 json-json             | 0
 json*json             | 0
 json/json             | 
-json%json             | 0
+json%json             | 
 json^json             | 0
 json>>json            | 0
 json<<json            | 0

@@ -401,7 +401,7 @@ select mod(16, 7);
 select mod(0.0::float8, 0.0::numeric);
  mod 
 -----
-   0
+    
 (1 row)
 
 select sqrt(64::numeric);
@@ -910,7 +910,7 @@ select mod(16, 7);
 select mod(0.0::float8, 0.0::numeric);
  mod 
 -----
-   0
+    
 (1 row)
 
 select sqrt(64::numeric);
@@ -1420,7 +1420,7 @@ select mod(16, 7);
 select mod(0.0::float8, 0.0::numeric);
  mod 
 -----
-   0
+    
 (1 row)
 
 select sqrt(64::numeric);

@@ -164,7 +164,7 @@ ERROR:  must attach a execute func before execute dbe_pldebugger.abort
 DETAIL:  execute func not attached before execute dbe_pldebugger.abort
 -- turn off without turn on
 select * from dbe_pldebugger.turn_off(1);
-WARNING:  function 1 has not be turned on
+WARNING:  function 1 has not been turned on
  turn_off 
 ----------
  f
@@ -189,7 +189,7 @@ begin
     insert into debug_info select * from dbe_pldebugger.turn_on(funcoid);
 end;
 $$;
---?ERROR:  cache lookup failed for function.*
+--?ERROR:  function with oid .* does not exist
 CONTEXT:  SQL statement "insert into debug_info select * from dbe_pldebugger.turn_on(funcoid)"
 PL/pgSQL function inline_code_block line 7 at SQL statement
 truncate debug_info;

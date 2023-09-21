@@ -100,7 +100,8 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
     {"no_zero_date", OPT_SQL_MODE_NO_ZERO_DATE},
     {"pad_char_to_full_length", OPT_SQL_MODE_PAD_CHAR_TO_FULL_LENGTH},
     {"block_return_multi_results", OPT_SQL_MODE_BLOCK_RETURN_MULTI_RESULTS},
-    {"auto_recompile_function", OPT_SQL_MODE_ATUO_RECOMPILE_FUNCTION}
+    {"auto_recompile_function", OPT_SQL_MODE_ATUO_RECOMPILE_FUNCTION},
+    {"error_for_division_by_zero", OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO}
 };
 
 #define DOLPHIN_TYPES_NUM 12
@@ -932,7 +933,7 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->sqlModeString,
                                "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,"
-                               "pad_char_to_full_length,auto_recompile_function",
+                               "pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero",
                                PGC_USERSET,
                                GUC_LIST_INPUT | GUC_REPORT,
                                CheckSqlMode,
