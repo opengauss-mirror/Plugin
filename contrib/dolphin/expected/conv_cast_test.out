@@ -334,13 +334,8 @@ WARNING:  value "4294967295" is out of range for type integer
 LINE 1: select '4294967295'::int4::time;
                ^
 CONTEXT:  referenced column: time
-WARNING:  Truncated incorrect time value.
+ERROR:  Incorrect time value
 CONTEXT:  referenced column: time
-   time    
------------
- 838:59:59
-(1 row)
-
 select '4294967295'::int8::time;
 WARNING:  invalid input syntax for type time: "4294967295"
 CONTEXT:  referenced column: time

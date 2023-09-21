@@ -188,5 +188,10 @@ insert into func_test3(functionName, result) values('UTC_TIMESTAMP(6)', UTC_TIME
 insert into func_test3(functionName, result) values('UTC_TIMESTAMP(-1)', UTC_TIMESTAMP(-1));
 
 select * from func_test3;
+
+select to_seconds('-838:59:59');
+select to_seconds(-8385959);
+select to_seconds(time'-838:59:59');
+
 drop schema b_time_funcs3 cascade;
 reset current_schema;

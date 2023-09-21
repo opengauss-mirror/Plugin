@@ -479,11 +479,75 @@ select * from func_test;
  subdate('2022-01-01 01:01:01', interval 1.999 second)                  | 2022-01-01 01:00:59.001
 --?.*
 
+SELECT SUBDATE(time'839:59:59', interval 2 hour);
+ERROR:  Incorrect time value
+LINE 1: SELECT SUBDATE(time'839:59:59', interval 2 hour);
+                           ^
+CONTEXT:  referenced column: subdate
+SELECT SUBDATE(time'-838:59:59.9', interval 2 hour);
+ERROR:  Incorrect time value
+LINE 1: SELECT SUBDATE(time'-838:59:59.9', interval 2 hour);
+                           ^
+CONTEXT:  referenced column: subdate
+SELECT SUBDATE('839:59:59', interval 2 hour);
+WARNING:  date/time field value out of range: "839:59:59"
+CONTEXT:  referenced column: subdate
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: subdate
+ subdate 
+---------
+ 
+(1 row)
+
+SELECT SUBDATE('-838:59:59.9', interval 2 hour);
+WARNING:  time zone displacement out of range: "-838:59:59.9"
+CONTEXT:  referenced column: subdate
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: subdate
+ subdate 
+---------
+ 
+(1 row)
+
+select subdate('839:59:59', 1);
+WARNING:  date/time field value out of range: "839:59:59"
+CONTEXT:  referenced column: subdate
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: subdate
+ subdate 
+---------
+ 
+(1 row)
+
+select subdate(time '838:59:59',-1);
+WARNING:  time field value out of range
+CONTEXT:  referenced column: subdate
+ subdate 
+---------
+ 
+(1 row)
+
+select subdate(time '838:59:59',interval -2 hour);
+WARNING:  time field value out of range
+CONTEXT:  referenced column: subdate
+ subdate 
+---------
+ 
+(1 row)
+
+select subdate(time '838:59:59',interval 1 month);
+WARNING:  time field value out of range
+CONTEXT:  referenced column: subdate
+ subdate 
+---------
+ 
+(1 row)
+
 -- hour函数测试
 select hour('-838:59:59');
  hour 
 ------
- -838
+  838
 (1 row)
 
 select hour('838:59:59');
@@ -493,15 +557,15 @@ select hour('838:59:59');
 (1 row)
 
 select hour('-840:59:59');
-WARNING:  Truncated incorrect time value.
+WARNING:  Incorrect time value
 CONTEXT:  referenced column: hour
  hour 
 ------
- -838
+  838
 (1 row)
 
 select hour('840:59:59');
-WARNING:  Truncated incorrect time value.
+WARNING:  Incorrect time value
 CONTEXT:  referenced column: hour
  hour 
 ------
@@ -536,7 +600,7 @@ set dolphin.sql_mode = '';
 select hour('-838:59:59');
  hour 
 ------
- -838
+  838
 (1 row)
 
 select hour('838:59:59');
@@ -546,15 +610,15 @@ select hour('838:59:59');
 (1 row)
 
 select hour('-840:59:59');
-WARNING:  Truncated incorrect time value.
+WARNING:  Incorrect time value
 CONTEXT:  referenced column: hour
  hour 
 ------
- -838
+  838
 (1 row)
 
 select hour('840:59:59');
-WARNING:  Truncated incorrect time value.
+WARNING:  Incorrect time value
 CONTEXT:  referenced column: hour
  hour 
 ------
