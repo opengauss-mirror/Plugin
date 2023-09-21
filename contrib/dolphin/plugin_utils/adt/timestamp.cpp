@@ -2535,7 +2535,11 @@ recalc_t:
     if (attimezone == NULL && u_sess->time_cxt.HasCTZSet) {
         *tzp = u_sess->time_cxt.CTimeZone;
         tm->tm_isdst = 0;
+#ifdef DOLPHIN
+        tm->tm_gmtoff = -u_sess->time_cxt.CTimeZone;
+#else
         tm->tm_gmtoff = u_sess->time_cxt.CTimeZone;
+#endif
         tm->tm_zone = NULL;
         if (tzn != NULL)
             *tzn = NULL;
