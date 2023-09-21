@@ -490,12 +490,16 @@ Datum dtoi16(PG_FUNCTION_ARGS)
 {
     float8 num = PG_GETARG_FLOAT8(0);
 
+#ifdef DOLPHIN
+    num = round(num);
+#else
     /*
      * Get rid of any fractional part in the input.  This is so we don't fail
      * on just-out-of-range values that would round into range.  Note
      * assumption that rint() will pass through a NaN or Inf unchanged.
      */
     num = rint(num);
+#endif
     /*
      * Range check.  We must be careful here that the boundary values are
      * expressed exactly in the float domain.  We expect PG_INT128_MIN  to be an
@@ -528,12 +532,16 @@ Datum ftoi16(PG_FUNCTION_ARGS)
 {
     float4 num = PG_GETARG_FLOAT4(0);
 
+#ifdef DOLPHIN
+    num = round(num);
+#else
     /*
      * Get rid of any fractional part in the input.  This is so we don't fail
      * on just-out-of-range values that would round into range.  Note
      * assumption that rint() will pass through a NaN or Inf unchanged.
      */
     num = rint(num);
+#endif
     /*
      * Range check.  We must be careful here that the boundary values are
      * expressed exactly in the float domain.  We expect PG_INT128_MIN  to be an

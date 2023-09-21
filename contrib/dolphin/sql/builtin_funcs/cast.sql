@@ -13,6 +13,11 @@ SELECT CAST('test' AS CHAR CHARACTER SET utf8);
 SELECT CAST('test' AS CHAR CHARACTER SET not_exist);
 SELECT CAST('test' AS nchar CHARACTER SET not_exist);
 
+select 2.5::float::int16;
+select 2.4::float::int16;
+select 2.4::double::int16;
+select 2.5::double::int16;
+
 set dolphin.b_compatibility_mode to on;
 select CAST(9/2 as char);
 select CAST('0.12000' AS CHAR);

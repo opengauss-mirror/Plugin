@@ -846,11 +846,9 @@ extern "C" DLL_PUBLIC Datum db_b_sleep(PG_FUNCTION_ARGS);
 Datum db_b_sleep(PG_FUNCTION_ARGS)
 {
     if (PG_ARGISNULL(0) || PG_GETARG_FLOAT8(0) < 0) {
-        int elevel = SQL_MODE_STRICT() ? ERROR : WARNING;
-        ereport(elevel,
+        ereport(ERROR,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                     errmsg("Incorrect arguments to sleep.")));
-        PG_RETURN_INT32(0);
     }
     pg_sleep(fcinfo);
     PG_RETURN_INT32(0);
