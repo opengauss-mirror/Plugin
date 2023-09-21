@@ -1272,7 +1272,8 @@ void VerifyEncoding(int encoding)
 {
     Oid proc;
 
-    if (encoding == GetDatabaseEncoding() || encoding == PG_SQL_ASCII || GetDatabaseEncoding() == PG_SQL_ASCII)
+    if (encoding == GetDatabaseEncoding() || encoding == PG_SQL_ASCII || GetDatabaseEncoding() == PG_SQL_ASCII ||
+        (GetDatabaseEncoding() == PG_GB18030_2022 && encoding == PG_GB18030))
         return;
 
     proc = FindDefaultConversionProc(encoding, GetDatabaseEncoding());
@@ -9193,7 +9194,7 @@ bool StrToInt32(const char* s, int *val)
     return true;
 }
 
-char* TrimStr(const char* str)
+char* TrimStrQuote(const char* str, bool isQuote)
 {
     if (str == NULL) {
         return NULL;
@@ -9221,10 +9222,22 @@ char* TrimStr(const char* str)
     }
 
     len = end - begin + 1;
+
+    if (isQuote && len>=2 && *begin == '"' && *end == '"') {
+        begin++;
+        end--;
+        len = end - begin + 1;
+    }
+
     rc = memmove_s(cpyStr, strlen(cpyStr), begin, len);
     securec_check(rc, "\0", "\0");
     cpyStr[len] = '\0';
     return cpyStr;
+}
+
+char* TrimStr(const char* str) 
+{
+    return TrimStrQuote(str, false);
 }
 
 /* Deserialize the LOCATION options into locations list.
@@ -11694,7 +11707,7 @@ static Datum getValue(CopyState cstate, TupleDesc tupDesc, char* string, int ind
     cstate->cur_attname = NameStr(attr[index].attname);
     cstate->cur_attval = string;
     atttypmod = (asTypemods != NULL && asTypemods[index].assign) ? asTypemods[index].typemod : attr[index].atttypmod;
-    // 待检视
+
     value =InputFunctionCallForBulkload(cstate, &in_functions[index], string, typioparams[index], atttypmod,
                                         cstate->attr_encodings[index], &cstate->in_convert_funcs[index]);
     cstate->cur_attname = NULL;

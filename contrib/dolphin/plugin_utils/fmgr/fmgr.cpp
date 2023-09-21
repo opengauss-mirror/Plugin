@@ -162,6 +162,10 @@ extern RegExternFunc b_plpgsql_function_table[];
  */
 RegExternFunc b_plpgsql_function_table[3];
 #endif
+/*
+ * Now for whale to rewrite plpgsql_call_handler, plpgsql_inline_handler
+ * and plpgsql_validator.
+ */
 
 static HTAB* CFuncHash = NULL;
 
@@ -413,6 +417,12 @@ static PGFunction load_plpgsql_function(char* funcname)
 #endif
             sizeof(RegExternFunc),
             ExternFuncComp);
+    } else if (u_sess->attr.attr_sql.whale) {
+        search_result = (RegExternFunc*)bsearch(&tmp_key,
+        a_plpgsql_function_table,
+        sizeof(a_plpgsql_function_table) / sizeof(a_plpgsql_function_table[0]),
+        sizeof(RegExternFunc),
+        ExternFuncComp);
     }
     if (search_result == NULL) {
         search_result = (RegExternFunc*)bsearch(&tmp_key,
