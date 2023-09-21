@@ -56,6 +56,30 @@ WARNING:  not_exist is not a valid encoding name. default value set
  t
 (1 row)
 
+select 2.5::float::int16;
+ int16 
+-------
+     3
+(1 row)
+
+select 2.4::float::int16;
+ int16 
+-------
+     2
+(1 row)
+
+select 2.4::double::int16;
+ int16 
+-------
+     2
+(1 row)
+
+select 2.5::double::int16;
+ int16 
+-------
+     3
+(1 row)
+
 set dolphin.b_compatibility_mode to on;
 select CAST(9/2 as char);
       varchar       
