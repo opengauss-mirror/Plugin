@@ -166,6 +166,7 @@ RegExternFunc b_plpgsql_function_table[3];
  * Now for whale to rewrite plpgsql_call_handler, plpgsql_inline_handler
  * and plpgsql_validator.
  */
+RegExternFunc a_plpgsql_function_table[3];
 
 static HTAB* CFuncHash = NULL;
 
