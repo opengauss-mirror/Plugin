@@ -158,6 +158,7 @@ typedef struct BSqlPluginContext {
     bool is_schema_name;
     bool is_first_lable;
     bool is_b_declare;
+    bool group_by_error;
 #endif
 } bSqlPluginContext;
 

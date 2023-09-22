@@ -24,6 +24,41 @@ ERROR:  subquery uses ungrouped column "t.b" from outer query
 LINE 1: ...t.a, (select sum(b) from test_group i where i.b = t.b ) from...
                                                              ^
 set dolphin.sql_mode = '';
+--min/max without optimize
+create table t1(a int, b int, primary key(b));
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+insert into t1 values(1,10);
+--can't use index scan
+explain(costs off) select a, max(b) from t1;
+      QUERY PLAN      
+----------------------
+ Aggregate
+   ->  Seq Scan on t1
+(2 rows)
+
+select a, max(b) from t1;
+ a | max 
+---+-----
+ 1 |  10
+(1 row)
+
+--use index scan
+explain(costs off) select max(b) from t1;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Result
+   InitPlan 1 (returns $0)
+     ->  Limit
+           ->  Index Only Scan Backward using t1_pkey on t1
+(4 rows)
+
+select max(b) from t1;
+ max 
+-----
+  10
+(1 row)
+
+drop table t1;
 select a, b from test_group group by a;
  a | b 
 ---+---

@@ -418,7 +418,10 @@ void parseCheckAggregates(ParseState* pstate, Query* qry)
     bool hasSelfRefRTEs = false;
     PlannerInfo* root = NULL;
     Node* clause = NULL;
-
+#ifdef DOLPHIN
+    /* reset value */
+    GetSessionContext()->group_by_error = false;
+#endif
     /* This should only be called if we found aggregates or grouping */
     AssertEreport(pstate->p_hasAggs || qry->groupClause || qry->havingQual || qry->groupingSets,
         MOD_OPT,
@@ -1403,6 +1406,7 @@ static bool check_ungrouped_columns_walker(Node* node, check_ungrouped_columns_c
             }
 #ifdef DOLPHIN
         }
+        GetSessionContext()->group_by_error = true;
 #endif
         if (attname != NULL) {
             pfree_ext(attname);
