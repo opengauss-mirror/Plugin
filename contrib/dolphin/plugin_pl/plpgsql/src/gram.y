@@ -26,6 +26,7 @@
 #include "commands/typecmds.h"
 #include "funcapi.h"
 #include "nodes/makefuncs.h"
+#include "plugin_commands/mysqlmode.h"
 #include "plugin_parser/analyze.h"
 #include "plugin_parser/keywords.h"
 #include "plugin_parser/parser.h"
@@ -7643,7 +7644,15 @@ make_callfunc_stmt(const char *sqlstart, int location, bool is_assign, bool eate
             }
 
             /* if there is no "out" parameters ,use perform stmt,others use exesql */
+#ifdef DOLPHIN
+            /* if use call return select results ,we shoule set call proc
+             * gram as a exec_stmt_execsql to get a correct result so do 
+             * not generate a stmt_preform here below
+             */
+            if ((0 == all_arg || NULL == p_argmodes) && !SQL_MODE_AllOW_PROCEDURE_WITH_SELECT())
+#else
             if ((0 == all_arg || NULL == p_argmodes))
+#endif
             {
                 PLpgSQL_stmt_perform *perform = NULL;
                 perform = (PLpgSQL_stmt_perform*)palloc0(sizeof(PLpgSQL_stmt_perform));
@@ -7828,7 +7837,15 @@ make_callfunc_stmt(const char *sqlstart, int location, bool is_assign, bool eate
         }
         
         /* if there is no "out" parameters ,use perform stmt,others use exesql */
+#ifdef DOLPHIN
+        /* if use call return select results ,we shoule set call proc
+         * gram as a exec_stmt_execsql to get a correct result so do
+         * not generate a stmt_preform here below
+         */
+        if ((0 == narg || NULL == p_argmodes) && !SQL_MODE_AllOW_PROCEDURE_WITH_SELECT())
+#else
         if (0 == narg || NULL == p_argmodes)
+#endif
         {
             PLpgSQL_stmt_perform *perform = NULL;
             perform = (PLpgSQL_stmt_perform*)palloc0(sizeof(PLpgSQL_stmt_perform));

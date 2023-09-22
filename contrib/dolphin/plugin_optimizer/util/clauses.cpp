@@ -5468,3 +5468,9 @@ List *get_quals_lists(Node *jtnode)
     return quallist;
 }
 
+#ifdef DOLPHIN
+List* dolphin_add_function_defaults(List* args, HeapTuple func_tuple)
+{
+    return add_function_defaults(args, func_tuple);
+}
+#endif

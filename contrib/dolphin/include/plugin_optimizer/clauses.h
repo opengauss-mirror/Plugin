@@ -158,4 +158,8 @@ extern bool isTableofType(Oid typeOid, Oid* base_oid, Oid* indexbyType);
 extern Expr* simplify_function(Oid funcid, Oid result_type, int32 result_typmod, Oid result_collid, Oid input_collid,
     List** args_p, bool process_args, bool allow_non_const, eval_const_expressions_context* context);
 
+#ifdef DOLPHIN
+extern List* dolphin_add_function_defaults(List* args, HeapTuple func_tuple);
+#endif
+
 #endif /* CLAUSES_H */
