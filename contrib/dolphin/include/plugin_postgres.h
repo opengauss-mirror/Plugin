@@ -164,6 +164,7 @@ typedef struct BSqlPluginContext {
     bool is_dolphin_call_stmt;
     bool is_binary_proto;
     bool is_ast_stmt;
+    bool group_by_error;
 #endif
 } bSqlPluginContext;
 
