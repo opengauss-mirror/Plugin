@@ -1,18 +1,19 @@
 create schema test_operator;
 set current_schema to 'test_operator';
+
 drop table if exists test1;
 NOTICE:  table "test1" does not exist, skipping
 create table test1(data json);
 insert into test1 values('[10,20,[30,40]]');
 select data->'$[1]' from test1;
- ?column? 
-----------
+ json_object_field 
+-------------------
  20
 (1 row)
 
 select data->'$[2][1]' from test1;
- ?column? 
-----------
+ json_object_field 
+-------------------
  40
 (1 row)
 
@@ -23,135 +24,175 @@ insert into test2 values('{"a":"lihua"}');
 insert into test2 values('{"b":"zhanghai"}');
 insert into test2 values('{"c":"susan"}');
 select data->'$.a' from test2;
- ?column? 
-----------
+ json_object_field 
+-------------------
  "lihua"
  
  
 (3 rows)
 
 select data->'$.b' from test2;
-  ?column?  
-------------
+ json_object_field 
+-------------------
  
  "zhanghai"
  
 (3 rows)
 
 select data->'$.c' from test2;
- ?column? 
-----------
+ json_object_field 
+-------------------
  
  
  "susan"
 (3 rows)
 
 select data->'$.*' from test2;
-   ?column?   
---------------
+ json_object_field 
+-------------------
  ["lihua"]
  ["zhanghai"]
  ["susan"]
 (3 rows)
 
 select data->>'$.*' from test2;
-   ?column?   
---------------
+ json_object_field_text 
+------------------------
  ["lihua"]
  ["zhanghai"]
  ["susan"]
 (3 rows)
 
 select data->>'$.d' from test2;
- ?column? 
-----------
+ json_object_field_text 
+------------------------
  
  
  
 (3 rows)
 
 select data->'$.d' from test2;
- ?column? 
-----------
+ json_object_field 
+-------------------
  
  
  
 (3 rows)
 
 select data->>'$.a' from test2;
- ?column? 
-----------
+ json_object_field_text 
+------------------------
  lihua
  
  
 (3 rows)
 
 select data->>'$.b' from test2;
- ?column? 
-----------
+ json_object_field_text 
+------------------------
  
  zhanghai
  
 (3 rows)
 
 select data->>'$.c' from test2;
- ?column? 
-----------
+ json_object_field_text 
+------------------------
  
  
  susan
 (3 rows)
 
 select data->'a' from test2;
- ?column? 
-----------
+ json_object_field 
+-------------------
  "lihua"
  
  
 (3 rows)
 
 select data->'b' from test2;
-  ?column?  
-------------
+ json_object_field 
+-------------------
  
  "zhanghai"
  
 (3 rows)
 
 select data->'c' from test2;
- ?column? 
-----------
+ json_object_field 
+-------------------
  
  
  "susan"
 (3 rows)
 
 select data->>'a' from test2;
- ?column? 
-----------
+ json_object_field_text 
+------------------------
  lihua
  
  
 (3 rows)
 
 select data->>'b' from test2;
- ?column? 
-----------
+ json_object_field_text 
+------------------------
  
  zhanghai
  
 (3 rows)
 
 select data->>'c' from test2;
- ?column? 
-----------
+ json_object_field_text 
+------------------------
  
  
  susan
 (3 rows)
 
+
+-- test for precedence
+CREATE TABLE `dept` (
+  `id` int(11) NOT NULL,
+  `dept` varchar(255) DEFAULT NULL,
+  `json_value` json DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "dept_pkey" for table "dept"
+insert into dept VALUES(1,'部门1','{"deptName": "部门1", "deptId": "1", "deptLeaderId": "3"}');
+insert into dept VALUES(2,'部门2','{"deptName": "部门2", "deptId": "2", "deptLeaderId": "4"}');
+insert into dept VALUES(3,'部门3','{"deptName": "部门3", "deptId": "3", "deptLeaderId": "5"}');
+insert into dept VALUES(4,'部门4','{"deptName": "部门4", "deptId": "4", "deptLeaderId": "5"}');
+insert into dept VALUES(5,'部门5','{"deptName": "部门5", "deptId": "5", "deptLeaderId": "5"}');
+
+select * from dept where json_value->>'$.deptId' is not null;
+ id | dept  |                        json_value                         
+----+-------+-----------------------------------------------------------
+  1 | 部门1 | {"deptName": "部门1", "deptId": "1", "deptLeaderId": "3"}
+  2 | 部门2 | {"deptName": "部门2", "deptId": "2", "deptLeaderId": "4"}
+  3 | 部门3 | {"deptName": "部门3", "deptId": "3", "deptLeaderId": "5"}
+  4 | 部门4 | {"deptName": "部门4", "deptId": "4", "deptLeaderId": "5"}
+  5 | 部门5 | {"deptName": "部门5", "deptId": "5", "deptLeaderId": "5"}
+(5 rows)
+
+
+select * from dept where json_value->'$.deptId' is not null;
+ id | dept  |                        json_value                         
+----+-------+-----------------------------------------------------------
+  1 | 部门1 | {"deptName": "部门1", "deptId": "1", "deptLeaderId": "3"}
+  2 | 部门2 | {"deptName": "部门2", "deptId": "2", "deptLeaderId": "4"}
+  3 | 部门3 | {"deptName": "部门3", "deptId": "3", "deptLeaderId": "5"}
+  4 | 部门4 | {"deptName": "部门4", "deptId": "4", "deptLeaderId": "5"}
+  5 | 部门5 | {"deptName": "部门5", "deptId": "5", "deptLeaderId": "5"}
+(5 rows)
+
+
+
 drop schema test_operator cascade;
-NOTICE:  drop cascades to 2 other objects
+NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table test1
 drop cascades to table test2
+drop cascades to table dept
 reset current_schema;
+
