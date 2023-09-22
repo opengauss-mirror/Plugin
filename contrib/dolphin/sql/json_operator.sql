@@ -28,6 +28,23 @@ select data->>'a' from test2;
 select data->>'b' from test2;
 select data->>'c' from test2;
 
+-- test for precedence
+CREATE TABLE `dept` (
+  `id` int(11) NOT NULL,
+  `dept` varchar(255) DEFAULT NULL,
+  `json_value` json DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+insert into dept VALUES(1,'部门1','{"deptName": "部门1", "deptId": "1", "deptLeaderId": "3"}');
+insert into dept VALUES(2,'部门2','{"deptName": "部门2", "deptId": "2", "deptLeaderId": "4"}');
+insert into dept VALUES(3,'部门3','{"deptName": "部门3", "deptId": "3", "deptLeaderId": "5"}');
+insert into dept VALUES(4,'部门4','{"deptName": "部门4", "deptId": "4", "deptLeaderId": "5"}');
+insert into dept VALUES(5,'部门5','{"deptName": "部门5", "deptId": "5", "deptLeaderId": "5"}');
+
+select * from dept where json_value->>'$.deptId' is not null;
+
+select * from dept where json_value->'$.deptId' is not null;
+
 
 drop schema test_operator cascade;
 reset current_schema;

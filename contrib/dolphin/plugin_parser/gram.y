@@ -1138,7 +1138,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
  * DOT_DOT is unused in the core SQL grammar, and so will always provoke
  * parse errors.  It is needed by PL/pgsql.
  */
-%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp COMMENTSTRING SET_USER_IDENT SET_IDENT UNDERSCORE_CHARSET
+%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT UNDERSCORE_CHARSET
 %token <ival>	ICONST PARAM
 %token			TYPECAST ORA_JOINOP DOT_DOT COLON_EQUALS PARA_EQUALS SET_IDENT_SESSION SET_IDENT_GLOBAL
 
@@ -1356,6 +1356,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %nonassoc	NOTNULL
 %nonassoc	ISNULL
 %nonassoc	IS				/* sets precedence for IS NULL, etc */
+%nonassoc	JsonOp JsonOpText
 %left		'+' '-'
 %left		'*' '/' '%'
 %left		'^'
@@ -3384,6 +3385,34 @@ set_expr_extension:
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
 			| b_expr CmpOp b_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, $2, $1, $3, @2); }
+			| b_expr JsonOp b_expr
+				{   
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("json_object_field");
+					n->args = list_make2($1, $3);;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *)n; 
+				}
+			| b_expr JsonOpText b_expr
+				{   
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("json_object_field_text");
+					n->args = list_make2($1, $3);;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *)n; 
+				}
 			| b_expr qual_Op b_expr				%prec Op
 				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, $3, @2); }
 			| qual_Op b_expr					%prec Op
@@ -32433,6 +32462,34 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 				}
             | a_expr CmpOp a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, $2, $1, $3, @2); }
+			| a_expr JsonOp a_expr
+				{   
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("json_object_field");
+					n->args = list_make2($1, $3);;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *)n; 
+				}
+			| a_expr JsonOpText a_expr
+				{   
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("json_object_field_text");
+					n->args = list_make2($1, $3);;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *)n; 
+				}
 			| a_expr qual_Op a_expr				%prec Op
 				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, $3, @2); }
 			| qual_Op a_expr					%prec Op
@@ -33075,6 +33132,34 @@ b_expr:		c_expr
                                 { $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
 			| b_expr CmpOp b_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, $2, $1, $3, @2); }
+			| b_expr JsonOp b_expr
+				{   
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("json_object_field");
+					n->args = list_make2($1, $3);;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *)n; 
+				}
+			| b_expr JsonOpText b_expr
+				{   
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("json_object_field_text");
+					n->args = list_make2($1, $3);;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *)n; 
+				}
 			| b_expr qual_Op b_expr				%prec Op
 				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, $3, @2); }
 			| b_expr CmpNullOp b_expr    %prec IS
