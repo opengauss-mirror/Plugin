@@ -1,0 +1,286 @@
+//---------------------------------------------------------------------------
+//	Greenplum Database
+//	Copyright (C) 2012 Greenplum, Inc.
+//
+//	@filename:
+//		SPQOptimizer.cpp
+//
+//	@doc:
+//		Entry point to SPQ optimizer
+//
+//	@test:
+//
+//
+//---------------------------------------------------------------------------
+
+#include "spq_optimizer_util/SPQOptimizer.h"
+
+#include "spq_optimizer_util/utils/CMemoryPoolPalloc.h"
+#include "spq_optimizer_util/utils/CMemoryPoolPallocManager.h"
+#include "spq_optimizer_util/utils/COptTasks.h"
+
+// the following headers are needed to reference optimizer library initializers
+#include "spqos/_api.h"
+#include "spqos/memory/CMemoryPoolManager.h"
+
+#include "spq_optimizer_util/spq_wrappers.h"
+#include "spqopt/init.h"
+#include "naucrates/exception.h"
+#include "naucrates/init.h"
+#include "utils/guc.h"
+#include "utils/memutils.h"
+
+bool optimizer_trace_fallback = false;
+
+extern MemoryContext MessageContext;
+
+//---------------------------------------------------------------------------
+//	@function:
+//		SPQOptimizer::PlstmtOptimize
+//
+//	@doc:
+//		Optimize given query using SPQ optimizer
+//
+//---------------------------------------------------------------------------
+PlannedStmt *
+SPQOptimizer::SPQOPTOptimizedPlan(
+	Query *query,
+	bool *
+		had_unexpected_failure	// output : set to true if optimizer unexpectedly failed to produce plan
+)
+{
+	SOptContext spqopt_context;
+	PlannedStmt *plStmt = NULL;
+
+	*had_unexpected_failure = false;
+
+	SPQOS_TRY
+	{
+		plStmt = COptTasks::SPQOPTOptimizedPlan(query, &spqopt_context);
+		// clean up context
+		spqopt_context.Free(spqopt_context.epinQuery, spqopt_context.epinPlStmt);
+	}
+	SPQOS_CATCH_EX(ex)
+	{
+		// clone the error message before context free.
+		CHAR *serialized_error_msg =
+			spqopt_context.CloneErrorMsg(t_thrd.mem_cxt.msg_mem_cxt);
+		// clean up context
+		spqopt_context.Free(spqopt_context.epinQuery, spqopt_context.epinPlStmt);
+
+		// Special handler for a few common user-facing errors. In particular,
+		// we want to use the correct error code for these, in case an application
+		// tries to do something smart with them. Also, ERRCODE_INTERNAL_ERROR
+		// is handled specially in elog.c, and we don't want that for "normal"
+		// application errors.
+		if (SPQOS_MATCH_EX(ex, spqdxl::ExmaDXL,
+						  spqdxl::ExmiQuery2DXLNotNullViolation))
+		{
+			errstart(ERROR, ex.Filename(), ex.Line(), NULL, TEXTDOMAIN);
+			errfinish(errcode(ERRCODE_NOT_NULL_VIOLATION),
+					  errmsg("%s", serialized_error_msg));
+		}
+
+		else if (SPQOS_MATCH_EX(ex, spqdxl::ExmaDXL, spqdxl::ExmiOptimizerError) ||
+				 spqopt_context.m_should_error_out)
+		{
+			Assert(NULL != serialized_error_msg);
+			errstart(ERROR, ex.Filename(), ex.Line(), NULL, TEXTDOMAIN);
+			errfinish(errcode(ERRCODE_INTERNAL_ERROR),
+					  errmsg("%s", serialized_error_msg));
+		}
+		else if (SPQOS_MATCH_EX(ex, spqdxl::ExmaSPQDB, spqdxl::ExmiSPQDBError))
+		{
+			PG_RE_THROW();
+		}
+		else if (SPQOS_MATCH_EX(ex, spqdxl::ExmaDXL,
+							   spqdxl::ExmiNoAvailableMemory))
+		{
+			errstart(ERROR, ex.Filename(), ex.Line(), NULL, TEXTDOMAIN);
+			errfinish(errcode(ERRCODE_INTERNAL_ERROR),
+					  errmsg("no available memory to allocate string buffer"));
+		}
+		else if (SPQOS_MATCH_EX(ex, spqdxl::ExmaDXL,
+							   spqdxl::ExmiInvalidComparisonTypeCode))
+		{
+			errstart(ERROR, ex.Filename(), ex.Line(), NULL, TEXTDOMAIN);
+			errfinish(
+				errcode(ERRCODE_INTERNAL_ERROR),
+				errmsg(
+					"invalid comparison type code. Valid values are Eq, NEq, LT, LEq, GT, GEq."));
+		}
+
+		// Failed to produce a plan, but it wasn't an error that should
+		// be propagated to the user. Log the failure if needed, and
+		// return without a plan. The caller should fall back to the
+		// Postgres planner.
+
+		if (optimizer_trace_fallback)
+		{
+			errstart(INFO, ex.Filename(), ex.Line(), NULL, TEXTDOMAIN);
+			errfinish(
+				errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+				errmsg(
+					"SPQORCA failed to produce a plan, falling back to planner"),
+				serialized_error_msg ? errdetail("%s", serialized_error_msg)
+									 : 0);
+		}
+
+		*had_unexpected_failure = spqopt_context.m_is_unexpected_failure;
+
+		if (serialized_error_msg)
+			pfree(serialized_error_msg);
+	}
+	SPQOS_CATCH_END;
+	return plStmt;
+}
+
+
+//---------------------------------------------------------------------------
+//	@function:
+//		SPQOptimizer::SerializeDXLPlan
+//
+//	@doc:
+//		Serialize planned statement into DXL
+//
+//---------------------------------------------------------------------------
+char *
+SPQOptimizer::SerializeDXLPlan(Query *query)
+{
+	SPQOS_TRY;
+	{
+		return COptTasks::Optimize(query);
+	}
+	SPQOS_CATCH_EX(ex);
+	{
+		errstart(ERROR, ex.Filename(), ex.Line(), NULL, TEXTDOMAIN);
+		errfinish(errcode(ERRCODE_INTERNAL_ERROR),
+				  errmsg("optimizer failed to produce plan"));
+	}
+	SPQOS_CATCH_END;
+	return NULL;
+}
+
+//---------------------------------------------------------------------------
+//	@function:
+//		InitSPQOPT()
+//
+//	@doc:
+//		Initialize SPQTOPT and dependent libraries
+//
+//---------------------------------------------------------------------------
+void
+SPQOptimizer::InitSPQOPT()
+{
+	if (u_sess->attr.attr_spq.spq_optimizer_use_gauss_allocators)
+	{
+		CMemoryPoolPallocManager::Init();
+	}
+
+	struct spqos_init_params params = {spqdb::IsAbortRequested};
+
+	spqos_init(&params);
+	spqdxl_init();
+	spqopt_init();
+}
+
+//---------------------------------------------------------------------------
+//	@function:
+//		TerminateSPQOPT()
+//
+//	@doc:
+//		Terminate SPQOPT and dependent libraries
+//
+//---------------------------------------------------------------------------
+void
+SPQOptimizer::TerminateSPQOPT()
+{
+	spqopt_terminate();
+	spqdxl_terminate();
+	spqos_terminate();
+}
+
+//---------------------------------------------------------------------------
+//	@function:
+//		SPQOPTOptimizedPlan
+//
+//	@doc:
+//		Expose SPQ optimizer API to C files
+//
+//---------------------------------------------------------------------------
+PlannedStmt *
+SPQOPTOptimizedPlan(Query *query, bool *had_unexpected_failure)
+{
+	return SPQOptimizer::SPQOPTOptimizedPlan(query, had_unexpected_failure);
+}
+
+//---------------------------------------------------------------------------
+//	@function:
+//		SerializeDXLPlan
+//
+//	@doc:
+//		Serialize planned statement to DXL
+//
+//---------------------------------------------------------------------------
+char *
+SerializeDXLPlan(Query *query)
+{
+	return SPQOptimizer::SerializeDXLPlan(query);
+}
+
+//---------------------------------------------------------------------------
+//	@function:
+//		InitSPQOPT()
+//
+//	@doc:
+//		Initialize SPQTOPT and dependent libraries
+//
+//---------------------------------------------------------------------------
+void
+InitSPQOPT()
+{
+	SPQOS_TRY
+	{
+		return SPQOptimizer::InitSPQOPT();
+	}
+	SPQOS_CATCH_EX(ex)
+	{
+		if (SPQOS_MATCH_EX(ex, spqdxl::ExmaSPQDB, spqdxl::ExmiSPQDBError))
+		{
+			PG_RE_THROW();
+		}
+	}
+	SPQOS_CATCH_END;
+}
+
+//---------------------------------------------------------------------------
+//	@function:
+//		TerminateSPQOPT()
+//
+//	@doc:
+//		Terminate SPQOPT and dependent libraries
+//
+//---------------------------------------------------------------------------
+void
+TerminateSPQOPT()
+{
+	SPQOS_TRY
+	{
+		return SPQOptimizer::TerminateSPQOPT();
+	}
+	SPQOS_CATCH_EX(ex)
+	{
+		if (SPQOS_MATCH_EX(ex, spqdxl::ExmaSPQDB, spqdxl::ExmiSPQDBError))
+		{
+			PG_RE_THROW();
+		}
+	}
+	SPQOS_CATCH_END;
+}
+
+void UnInitSPQOPT(int status, Datum arg)
+{
+	TerminateSPQOPT();
+}
+
+// EOF

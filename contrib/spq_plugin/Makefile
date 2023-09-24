@@ -1,0 +1,21 @@
+# contrib/spq_plugin/Makefile
+top_builddir = ../..
+include $(top_builddir)/src/Makefile.global
+include ./spqplugin.mk
+
+MODULE_big = spqplugin
+EXTENSION = spqplugin
+REGRESS = spqplugin
+DATA = spqplugin--1.0.sql
+
+# recurse make all cpp file to .o file and save objects into ./src/objfiles.txt
+# load all objects from ./src/objfiles.txt, and put spqplugin.o to the first place
+# for opengauss plugin PG_MODULE_MAGIC should place at first of .so, which contained by spqplugin.o
+src_objs = ./src/objfiles.txt
+obj_files = $(addprefix ./, $(shell cat ./src/objfiles.txt))
+compile_src = $(shell $(MAKE) -j -C src)
+
+OBJS = $(if $(compile_src), $(obj_files), $(obj_files))
+
+subdir = contrib/spq_plugin
+include $(top_srcdir)/contrib/contrib-global.mk

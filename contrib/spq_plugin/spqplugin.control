@@ -1,0 +1,6 @@
+# spqplugin extension
+comment = 'example implementation for openGauss server multi-machine parallel optimizer'
+default_version = '1.0'
+module_pathname = '$libdir/spqplugin'
+relocatable = true
+
