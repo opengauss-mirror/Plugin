@@ -1,0 +1,199 @@
+//---------------------------------------------------------------------------
+//	Greenplum Database
+//	Copyright (c) 2004-2015 Pivotal Software, Inc.
+//
+//
+//
+//	@filename:
+//		CMemoryPoolManager.h
+//
+//	@doc:
+//		Central memory pool manager;
+//		provides factory method to generate memory pools;
+//---------------------------------------------------------------------------
+#ifndef SPQOS_CMemoryPoolManager_H
+#define SPQOS_CMemoryPoolManager_H
+
+#include "spqos/common/CSyncHashtable.h"
+#include "spqos/common/CSyncHashtableAccessByIter.h"
+#include "spqos/common/CSyncHashtableAccessByKey.h"
+#include "spqos/common/CSyncHashtableIter.h"
+#include "spqos/memory/CMemoryPool.h"
+
+
+
+#define SPQOS_MEMORY_POOL_HT_SIZE (1024)	 // number of hash table buckets
+
+namespace spqos
+{
+//---------------------------------------------------------------------------
+//	@class:
+//		CMemoryPoolManager
+//
+//	@doc:
+//		Global instance of memory pool management; singleton;
+//
+//---------------------------------------------------------------------------
+class CMemoryPoolManager
+{
+private:
+	typedef CSyncHashtableAccessByKey<CMemoryPool, ULONG_PTR>
+		MemoryPoolKeyAccessor;
+
+	typedef CSyncHashtableIter<CMemoryPool, ULONG_PTR> MemoryPoolIter;
+
+	typedef CSyncHashtableAccessByIter<CMemoryPool, ULONG_PTR>
+		MemoryPoolIterAccessor;
+
+	// memory pool in which all objects created by the manager itself
+	// are allocated - must be thread-safe
+	CMemoryPool *m_internal_memory_pool;
+
+	// memory pool in which all objects created using global new operator
+	// are allocated
+	CMemoryPool *m_global_memory_pool;
+
+	// are allocations using global new operator allowed?
+	BOOL m_allow_global_new;
+
+	// hash table to maintain created pools
+	CSyncHashtable<CMemoryPool, ULONG_PTR> *m_ht_all_pools;
+
+	// create new pool of given type
+	virtual CMemoryPool *NewMemoryPool();
+
+	// no copy ctor
+	CMemoryPoolManager(const CMemoryPoolManager &);
+
+	// clean-up memory pools
+	void Cleanup();
+
+	// destroy a memory pool at shutdown
+	static void DestroyMemoryPoolAtShutdown(CMemoryPool *mp);
+
+	// Set up CMemoryPoolManager's internals
+	void Setup();
+
+protected:
+	// Used for debugging. Indicates what type of memory pool the manager handles .
+	// EMemoryPoolTracker indicates the manager handles CTrackerMemoryPools.
+	// EMemoryPoolExternal indicates the manager handles memory pools with logic outside
+	// the spqorca framework (e.g.: CPallocMemoryPool which is declared in SPQDB)
+	enum EMemoryPoolType
+	{
+		EMemoryPoolTracker = 0,
+		EMemoryPoolExternal,
+		EMemoryPoolSentinel
+	};
+
+	EMemoryPoolType m_memory_pool_type;
+
+	// ctor
+	CMemoryPoolManager(CMemoryPool *internal, EMemoryPoolType memory_pool_type);
+
+	CMemoryPool *
+	GetInternalMemoryPool()
+	{
+		return m_internal_memory_pool;
+	}
+
+	// Initialize global memory pool manager using given types
+	template <typename ManagerType, typename PoolType>
+	static SPQOS_RESULT
+	SetupGlobalMemoryPoolManager()
+	{
+		// raw allocation of memory for internal memory pools
+		void *alloc_internal = spqos::clib::Malloc(sizeof(PoolType));
+
+		SPQOS_OOM_CHECK(alloc_internal);
+
+		SPQOS_TRY
+		{
+			// create internal memory pool
+			CMemoryPool *internal = ::new (alloc_internal) PoolType();
+
+			// instantiate manager
+			*(GetMemoryPoolMgrPtr()) = ::new ManagerType(internal, EMemoryPoolTracker);
+			GetMemoryPoolMgr()->Setup();
+		}
+		SPQOS_CATCH_EX(ex)
+		{
+			spqos::clib::Free(alloc_internal);
+			SPQOS_RETHROW(ex);
+		}
+		SPQOS_CATCH_END;
+		return SPQOS_OK;
+	}
+
+public:
+	// create new memory pool
+	CMemoryPool *CreateMemoryPool();
+
+	// release memory pool
+	void Destroy(CMemoryPool *);
+
+#ifdef SPQOS_DEBUG
+	// print internal contents of allocated memory pools
+	IOstream &OsPrint(IOstream &os);
+
+	// print memory pools whose allocated size above the given threshold
+	void PrintOverSizedPools(CMemoryPool *trace, ULLONG size_threshold);
+#endif	// SPQOS_DEBUG
+
+	// delete memory pools and release manager
+	void Shutdown();
+
+	// accessor of memory pool used in global new allocations
+	CMemoryPool *
+	GetGlobalMemoryPool()
+	{
+		return m_global_memory_pool;
+	}
+
+	virtual ~CMemoryPoolManager()
+	{
+	}
+
+	// are allocations using global new operator allowed?
+	BOOL
+	IsGlobalNewAllowed() const
+	{
+		return m_allow_global_new;
+	}
+
+	// disable allocations using global new operator
+	void
+	DisableGlobalNew()
+	{
+		m_allow_global_new = false;
+	}
+
+	// enable allocations using global new operator
+	void
+	EnableGlobalNew()
+	{
+		m_allow_global_new = true;
+	}
+
+	// return total allocated size in bytes
+	ULLONG TotalAllocatedSize();
+
+	// free memory allocation
+	virtual void DeleteImpl(void *ptr, CMemoryPool::EAllocationType eat);
+
+	// get user requested size of allocation
+	virtual ULONG UserSizeOfAlloc(const void *ptr);
+
+	// initialize global instance
+	static SPQOS_RESULT Init();
+
+	// global accessor
+	static CMemoryPoolManager *GetMemoryPoolMgr();
+	static CMemoryPoolManager **GetMemoryPoolMgrPtr();
+
+};	// class CMemoryPoolManager
+}  // namespace spqos
+
+#endif	// !SPQOS_CMemoryPoolManager_H
+
+// EOF

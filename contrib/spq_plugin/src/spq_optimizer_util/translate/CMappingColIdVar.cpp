@@ -1,0 +1,32 @@
+//---------------------------------------------------------------------------
+//	Greenplum Database
+//	Copyright (C) 2011 Greenplum, Inc.
+//
+//	@filename:
+//		CMappingColIdVar.cpp
+//
+//	@doc:
+//		Implementation of base ColId-> Var mapping class
+//
+//	@test:
+//
+//
+//---------------------------------------------------------------------------
+
+#include "spq_optimizer_util/translate/CMappingColIdVar.h"
+
+using namespace spqdxl;
+
+//---------------------------------------------------------------------------
+//	@function:
+//		CMappingColIdVar::CMappingColIdVar
+//
+//	@doc:
+//		Constructor
+//
+//---------------------------------------------------------------------------
+CMappingColIdVar::CMappingColIdVar(CMemoryPool *mp) : m_mp(mp)
+{
+}
+
+// EOF

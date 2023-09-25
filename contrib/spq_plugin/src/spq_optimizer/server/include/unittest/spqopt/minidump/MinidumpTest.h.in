@@ -1,0 +1,35 @@
+//---------------------------------------------------------------------------
+//	Greenplum Database
+//	Copyright (C) 2018 Pivotal Software, Inc.
+//---------------------------------------------------------------------------
+#ifndef SPQOPT_${test_name}_H
+#define SPQOPT_${test_name}_H
+
+#include "spqos/base.h"
+
+namespace spqopt
+{
+	class ${test_name}
+	{
+		private:
+
+			// counter used to mark last successful test
+			static
+			spqos::ULONG m_ulTestCounter;
+
+		public:
+
+			// unittests
+			static
+			spqos::SPQOS_RESULT EresUnittest();
+
+			static
+			spqos::SPQOS_RESULT EresUnittest_RunTests();
+
+	}; // class ${test_name}
+}
+
+#endif // !SPQOPT_${test_name}_H
+
+// EOF
+
