@@ -37,6 +37,7 @@
 #ifdef DOLPHIN
 #include "plugin_nodes/parsenodes_common.h"
 #include "plugin_nodes/parsenodes.h"
+#include "plugin_optimizer/clauses.h"
 #include "nodes/makefuncs.h"
 #include "utils/typcache.h"
 #endif
@@ -3419,6 +3420,11 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic)
             errmsg("Only support procedure with language plpgsql in muiti result call statement")));
     }
 
+    /* fill up default arguments at the end of procedure args */
+    if (list_length(fexpr->args) < procStruct->pronargs) {
+        /* let memcontext to free old args */
+        fexpr->args = dolphin_add_function_defaults(fexpr->args, tp);
+    }
     /* Prep the context object we'll pass to the procedure */
     callcontext = makeNode(CallContext);
     callcontext->atomic = atomic;
@@ -3565,7 +3571,7 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic)
             Const *con = processOutResToConst(ovalue, atttypid);
             Node* rnode  = atttypid == BOOLOID ? (Node*)con : type_transfer((Node*)con, atttypid, true);
             Expr *var_expr = (Expr *)const_expression_to_const(rnode);
-            check_variable_value_info(((UserVar *)lfirst(lc))->name, var_expr);
+            check_variable_value_info(var->name, var_expr);
             pfree(ovalue);
         }
         pfree(finfo);

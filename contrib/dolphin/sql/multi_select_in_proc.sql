@@ -183,5 +183,62 @@ end;
 
 call pro_11451713();
 
+--bug fix in call in call procedure 
+set dolphin.sql_mode=block_return_multi_results;
+
+create table tab_1145533(id int,pid int,a1 char(8));
+--insert;
+insert into tab_1145533 values(1,2,'s'),(2,3,'b'),(3,4,'c'),(4,5,'d');
+--create proc;
+create or replace procedure pro_1145533()
+as
+begin
+select * from tab_1145533 order by id;
+end;
+/
+create or replace procedure pro1_1145533(n in int)
+as
+begin
+if n>3 then
+call pro_1145533();
+else
+select * from tab_1145533 where id >2;
+end if;
+end;
+/
+create or replace procedure pro2_1145533(n in int)
+as
+begin
+call pro1_1145533(n);
+end;
+/
+call pro2_1145533(2);
+call pro2_1145533(5);
+
+--fill up default value in the end 
+create procedure proc_def_1(a int , b int = 1) as
+begin
+select b,a ;
+end;
+/
+call proc_def_1(2);
+
+set enable_set_variable_b_format = 1;
+
+create procedure proc_def_2(a out int , b int = 1) as
+begin
+a = 1234 + b;
+select b,a ;
+end;
+/
+
+set @out = 123;
+
+call proc_def_2(@out);
+
+call proc_def_2(@out,11);
+
+set  dolphin.sql_mode=default;
+
 drop schema multi_select_proc cascade;
 reset current_schema;
