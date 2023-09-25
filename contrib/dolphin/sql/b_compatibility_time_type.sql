@@ -645,8 +645,17 @@ insert ignore into t_datetime values('0000-00-00');
 select * from t_date;
 select * from t_datetime;
 
+SET TIME ZONE PRC;
+CREATE TABLE test_timestamp(ts timestamp(2));
+INSERT INTO test_timestamp VALUES ('2012-10-21 23:55:23-12:12');
+INSERT INTO test_timestamp VALUES (201112234512);
+SELECT * FROM test_timestamp;
+SET TIME ZONE UTC;
+SELECT * FROM test_timestamp;
+
 drop table if exists t_date;
 drop table if exists t_datetime;
+drop table if exists test_timestamp;
 
 \c postgres
 DROP DATABASE b_time_type;

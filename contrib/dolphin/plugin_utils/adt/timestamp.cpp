@@ -1488,6 +1488,7 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
     int tz;
+    int invalid_tz;
     int dtype;
     int nf;
     int dterr;
@@ -1497,13 +1498,17 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
 
     bool flag = false;
 #ifdef DOLPHIN
-    bool res = cstring_to_tm(str, tm, fsec);
+    bool res = cstring_to_tm(str, tm, fsec, &tz, &invalid_tz);
     flag |= res;
 #endif
 
     if (flag) {
-        tm2timestamp(tm, fsec, NULL, &result);
-        result = timestamp2timestamptz(result);
+        if (invalid_tz) {
+            tm2timestamp(tm, fsec, NULL, &result);
+            result = timestamp2timestamptz(result);
+        } else {
+            tm2timestamp(tm, fsec, &tz, &result);
+        }
     } else {
         dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
         if (dterr != 0) {

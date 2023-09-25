@@ -5220,8 +5220,8 @@ bool CheckDatetimeRange(const pg_tm *tm, const fsec_t fsec, const int tm_type)
    @retval false - error
 */
 
-bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type, 
-                        pg_tm *tm, fsec_t &fsec, int &nano, bool &warnings, bool *null_func_result)
+bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type, pg_tm *tm, fsec_t &fsec,
+                         int &nano, bool &warnings, bool *null_func_result, int* tzp, int* invalid_tz)
 {
     size_t length = strlen(str);
     unsigned int field_length = 0, year_length = 0, digits, i, number_of_fields;
@@ -5462,6 +5462,10 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type,
         }
     }
 
+    if (tzp) {
+        *invalid_tz = DecodeTimezone(str, tzp);
+    }
+
     return true;
 
 ERROR_STRING_DATETIME:
@@ -5527,12 +5531,13 @@ bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano)
  *  @retval true - success
  *  @retval false - error
  */
-bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec)
+bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec, int* tzp, int* invalid_tz)
 {
     int nano = 0, tm_type = DTK_NONE;
     bool warnings = false;
     bool null_func_result = false;
-    if (!cstring_to_datetime(expr, TIME_NO_ZERO_DATE, tm_type, tm, fsec, nano, warnings, &null_func_result) ||
+    if (!cstring_to_datetime(expr, TIME_NO_ZERO_DATE, tm_type, tm, fsec, nano, 
+                             warnings, &null_func_result, tzp, invalid_tz) ||
         !datetime_add_nanoseconds_with_round(tm, fsec, nano)) {
             return false;
         }
