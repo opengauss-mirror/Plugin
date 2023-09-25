@@ -154,34 +154,6 @@ RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bittovarchar';
 DROP CAST IF EXISTS (bit AS varchar) CASCADE;
 CREATE CAST (bit AS varchar) WITH FUNCTION bittovarchar(bit, int4) AS ASSIGNMENT;
 
-DROP FUNCTION IF EXISTS pg_catalog.bittodate(bit) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.bittodate(bit) 
-RETURNS date LANGUAGE SQL IMMUTABLE STRICT as 
-'select cast(cast($1 as text) as date)';
-DROP CAST IF EXISTS (bit AS date) CASCADE;
-CREATE CAST (bit AS date) WITH FUNCTION bittodate(bit) AS ASSIGNMENT;
-
-DROP FUNCTION IF EXISTS pg_catalog.bittodatetime(bit) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.bittodatetime(bit) 
-RETURNS timestamp without time zone LANGUAGE SQL IMMUTABLE STRICT as 
-'select cast(cast($1 as text) as timestamp without time zone)';
-DROP CAST IF EXISTS (bit AS timestamp without time zone) CASCADE;
-CREATE CAST (bit AS timestamp without time zone) WITH FUNCTION bittodatetime(bit) AS ASSIGNMENT;
-
-DROP FUNCTION IF EXISTS pg_catalog.bittotimestamp(bit) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.bittotimestamp(bit) 
-RETURNS timestamptz LANGUAGE SQL IMMUTABLE STRICT as 
-'select cast(cast($1 as text) as timestamptz)';
-DROP CAST IF EXISTS (bit AS timestamptz) CASCADE;
-CREATE CAST (bit AS timestamptz) WITH FUNCTION bittotimestamp(bit) AS ASSIGNMENT;
-
-DROP FUNCTION IF EXISTS pg_catalog.bittotime(bit) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.bittotime(bit) 
-RETURNS time LANGUAGE SQL IMMUTABLE STRICT as 
-'select cast(cast($1 as text) as time)';
-DROP CAST IF EXISTS (bit AS time) CASCADE;
-CREATE CAST (bit AS time) WITH FUNCTION bittotime(bit) AS ASSIGNMENT;
-
 DROP FUNCTION IF EXISTS pg_catalog.bitfromnumeric(numeric, int4) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.bitfromnumeric(numeric, int4) 
 RETURNS bit LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bitfromnumeric';
@@ -315,6 +287,33 @@ CREATE CAST(float8 AS date) WITH FUNCTION float8_b_format_date(float8) AS ASSIGN
 CREATE OR REPLACE FUNCTION pg_catalog.float4_b_format_date (float4) RETURNS date LANGUAGE SQL STABLE STRICT as 'select cast(cast($1 as float8) as date)';
 CREATE CAST(float4 AS date) WITH FUNCTION float4_b_format_date(float4) AS ASSIGNMENT;
 
+DROP FUNCTION IF EXISTS pg_catalog.bittodate(bit) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bittodate(bit) 
+RETURNS date LANGUAGE SQL IMMUTABLE STRICT as 
+'select cast(cast($1 as int8) as date)';
+DROP CAST IF EXISTS (bit AS date) CASCADE;
+CREATE CAST (bit AS date) WITH FUNCTION bittodate(bit) AS ASSIGNMENT;
+
+DROP FUNCTION IF EXISTS pg_catalog.bittodatetime(bit) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bittodatetime(bit) 
+RETURNS timestamp without time zone LANGUAGE SQL IMMUTABLE STRICT as 
+'select cast(cast($1 as int8) as timestamp without time zone)';
+DROP CAST IF EXISTS (bit AS timestamp without time zone) CASCADE;
+CREATE CAST (bit AS timestamp without time zone) WITH FUNCTION bittodatetime(bit) AS ASSIGNMENT;
+
+DROP FUNCTION IF EXISTS pg_catalog.bittotimestamp(bit) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bittotimestamp(bit) 
+RETURNS timestamptz LANGUAGE SQL IMMUTABLE STRICT as 
+'select cast(cast($1 as int8) as timestamptz)';
+DROP CAST IF EXISTS (bit AS timestamptz) CASCADE;
+CREATE CAST (bit AS timestamptz) WITH FUNCTION bittotimestamp(bit) AS ASSIGNMENT;
+
+DROP FUNCTION IF EXISTS pg_catalog.bittotime(bit) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bittotime(bit) 
+RETURNS time LANGUAGE SQL IMMUTABLE STRICT as 
+'select cast(cast($1 as int8) as time)';
+DROP CAST IF EXISTS (bit AS time) CASCADE;
+CREATE CAST (bit AS time) WITH FUNCTION bittotime(bit) AS ASSIGNMENT;
 
 DROP FUNCTION IF EXISTS pg_catalog.int8_b_format_time (int1) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.int16_b_format_time (int2) CASCADE;
