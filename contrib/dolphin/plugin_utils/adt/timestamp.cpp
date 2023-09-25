@@ -44,6 +44,7 @@
 #ifdef DOLPHIN
 #include "plugin_utils/my_locale.h"
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/varbit.h"
 #endif
 
 #ifdef PGXC
@@ -7243,6 +7244,23 @@ Datum subtime(PG_FUNCTION_ARGS)
     PG_RETURN_NULL();
 }
 
+static bool get_time(Oid val_type, Datum value)
+{
+    if (val_type == BITOID) {
+        pg_tm tt, *tm = &tt;
+        fsec_t fsec;
+        int timeSign;
+        int tm_type;
+        bool warnings;
+        bool null_func_result = false;
+
+        int64 arg_int = DatumGetInt64(DirectFunctionCall1(bittoint8, value));
+        char* str = (char*)&arg_int;
+        return cstring_to_time(str, tm, fsec, timeSign, tm_type, warnings, &null_func_result);
+    }
+    return true;
+}
+
 Datum timediff(PG_FUNCTION_ARGS)
 {
     TimeADT time1, time2;
@@ -7252,6 +7270,12 @@ Datum timediff(PG_FUNCTION_ARGS)
 
     val_type1 = get_fn_expr_argtype(fcinfo->flinfo, 0);
     val_type2 = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    if (!get_time(val_type1, PG_GETARG_DATUM(0)) || !get_time(val_type2, PG_GETARG_DATUM(1))) {
+        int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+        ereport(level, (errmsg("Truncated incorrect time value")));
+        PG_RETURN_NULL();
+    }
+
     if (val_type1 == UNKNOWNOID && val_type2 == DATEOID) {
         val_type1 = convert_unknown_to_datetime_time(DatumGetCString(PG_GETARG_DATUM(0)), &datetime1, &time1);
         val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2);

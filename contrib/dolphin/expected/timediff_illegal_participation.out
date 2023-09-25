@@ -1,0 +1,287 @@
+create schema timediff_illegal_participation;
+set current_schema = timediff_illegal_participation;
+set dolphin.sql_mode = default;
+create table test(c time);
+insert into test values(timediff(B'101', B'1010'));
+ERROR:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'1010', B'101'));
+ERROR:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'101', B'100000'));
+ERROR:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'100000', B'101'));
+ERROR:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'101', B'1001'));
+ERROR:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'1001', B'101'));
+ERROR:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'101', B'1101'));
+ERROR:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'1101', B'101'));
+ERROR:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'101', B'1011'));
+ERROR:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'1011', B'101'));
+ERROR:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'101', B'1100'));
+ERROR:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'1100', B'101'));
+ERROR:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert ignore into test values(timediff(B'101', B'1010'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert ignore into test values(timediff(B'1010', B'101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert ignore into test values(timediff(B'101', B'100000'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert ignore into test values(timediff(B'100000', B'101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert ignore into test values(timediff(B'101', B'1001'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert ignore into test values(timediff(B'1001', B'101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert ignore into test values(timediff(B'101', B'1101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert ignore into test values(timediff(B'1101', B'101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert ignore into test values(timediff(B'101', B'1011'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert ignore into test values(timediff(B'1011', B'101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert ignore into test values(timediff(B'101', B'1100'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert ignore into test values(timediff(B'1100', B'101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+select c from test order by c;
+ c 
+---
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+(12 rows)
+
+set dolphin.sql_mode = '';
+select timediff('asdf', '00:00:00');
+WARNING:  invalid input syntax for type time: "asdf"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 00:00:00
+(1 row)
+
+-- test \n
+select timediff(B'101', B'1010');
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+select timediff(B'1010', B'101');
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+-- test ' '
+select timediff(B'101', B'100000');
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+select timediff(B'100000', B'101');
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+-- test \t
+select timediff(B'101', B'1001');
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+select timediff(B'1001', B'101');
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+-- test \r
+select timediff(B'101', B'1101');
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+select timediff(B'1101', B'101');
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+-- test \v
+select timediff(B'101', B'1011');
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+select timediff(B'1011', B'101');
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+--test \f
+select timediff(B'101', B'1100');
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+select timediff(B'1100', B'101'); 
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 
+(1 row)
+
+-- test normal
+select timediff(B'101', B'10101');
+ timediff 
+----------
+ 00:00:00
+(1 row)
+
+select timediff(time'00:00:00', 'asdfg');
+WARNING:  invalid input syntax for type time: "asdfg"
+CONTEXT:  referenced column: timediff
+ timediff 
+----------
+ 00:00:00
+(1 row)
+
+insert into test values(timediff(B'101', B'1010'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'1010', B'101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'101', B'100000'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'100000', B'101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'101', B'1001'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'1001', B'101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'101', B'1101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'1101', B'101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'101', B'1011'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'1011', B'101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'101', B'1100'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+insert into test values(timediff(B'1100', B'101'));
+WARNING:  Truncated incorrect time value
+CONTEXT:  referenced column: c
+select c from test order by c;
+ c 
+---
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+(24 rows)
+
+drop table test;
+reset current_schema;
+drop schema timediff_illegal_participation cascade;
