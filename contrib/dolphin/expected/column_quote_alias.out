@@ -850,6 +850,18 @@ SELECT a 'SSSS' from t_alias_case0001_1;
     1
 (1 row)
 
+select atan(point '(1,1)',point '(2,1)');
+ERROR:  function atan(point, point) does not exist
+LINE 1: select atan(point '(1,1)',point '(2,1)');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: atan
+select hex(compress(point '(1,1)'));
+ERROR:  function compress(point) does not exist
+LINE 1: select hex(compress(point '(1,1)'));
+                   ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: hex
 DROP TABLE t_alias_case0001_1;
 drop schema column_quote_alias cascade;
 reset current_schema;
