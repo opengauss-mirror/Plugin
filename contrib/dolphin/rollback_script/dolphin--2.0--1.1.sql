@@ -1369,6 +1369,18 @@ DROP FUNCTION IF EXISTS pg_catalog.float8_b_format_time (float8) CASCADE;
 DROP CAST IF EXISTS (float4 AS date) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.float4_b_format_date (float4) CASCADE;
 
+DROP CAST IF EXISTS (bit AS time) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.bittotime(bit) CASCADE;
+
+DROP CAST IF EXISTS (bit AS timestamptz) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.bittotimestamp(bit) CASCADE;
+
+DROP CAST IF EXISTS (bit AS timestamp without time zone) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.bittodatetime(bit) CASCADE;
+
+DROP CAST IF EXISTS (bit AS date) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.bittodate(bit) CASCADE;
+
 DROP CAST IF EXISTS (int1 AS date) CASCADE;
 DROP CAST IF EXISTS (int2 AS date) CASCADE;
 DROP CAST IF EXISTS (int8 AS date) CASCADE;
@@ -1435,18 +1447,6 @@ DROP FUNCTION IF EXISTS pg_catalog.bitfromfloat4(float4, int4) CASCADE;
 
 DROP CAST IF EXISTS (numeric as bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.bitfromnumeric(numeric, int4) CASCADE;
-
-DROP CAST IF EXISTS (bit AS time) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.bittotime(bit) CASCADE;
-
-DROP CAST IF EXISTS (bit AS timestamptz) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.bittotimestamp(bit) CASCADE;
-
-DROP CAST IF EXISTS (bit AS timestamp without time zone) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.bittodatetime(bit) CASCADE;
-
-DROP CAST IF EXISTS (bit AS date) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.bittodate(bit) CASCADE;
 
 DROP CAST IF EXISTS (bit AS varchar) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.bittovarchar(bit, int4) CASCADE;
