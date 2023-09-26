@@ -845,8 +845,10 @@ extern "C" DLL_PUBLIC Datum db_b_sleep(PG_FUNCTION_ARGS);
 
 Datum db_b_sleep(PG_FUNCTION_ARGS)
 {
+    /* sleep doesn't distiguish SELECT and IUD, check sql_mode and ignore only */
+    int elevel = !(GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) || fcinfo->can_ignore ? WARNING : ERROR;
     if (PG_ARGISNULL(0) || PG_GETARG_FLOAT8(0) < 0) {
-        ereport(ERROR,
+        ereport(elevel,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                     errmsg("Incorrect arguments to sleep.")));
     }
