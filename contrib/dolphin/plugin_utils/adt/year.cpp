@@ -90,46 +90,27 @@ extern "C" DLL_PUBLIC Datum year_xor_transfn(PG_FUNCTION_ARGS);
  */
 Datum year_in(PG_FUNCTION_ARGS)
 {
-    Datum number = float8in(fcinfo);
-    int32 tmp = (int32)DirectFunctionCall1(dtoi4, number);
     char *str_in = PG_GETARG_CSTRING(0);
-    /*
-     * after float8in(), string can already convert to number
-     * we just need to know string length, without space
-     * 
-     * case1: space, first sign or number
-     * case2: number or dot
-     */
+    bool hasError = false;
+    char* endptr = NULL;
+    double num = float8in_internal(str_in, &endptr, &hasError);
+    int32 tmp = (int32)DirectFunctionCall1(dtoi4, Float8GetDatum(num));
     int len = strlen(str_in);
-    int status = 1;
-    int year_len = 0;
-    for (int i = 0; i < len; ++i) {
-        switch (status)
-        {
-        case 1:
-            if (isdigit(str_in[i]) || str_in[i] == '-' || str_in[i] == '+') {
-                status <<= 1;
-                ++year_len;
-            }
-            break;
-        case 2:
-            if (isdigit(str_in[i]) || str_in[i] == '.') {
-                ++year_len;
-            } else if (str_in[i] == ' ') {
-                status <<= 1;
-            }
-            break;
-        default:
-            break;
-        }
+
+    hasError = hasError || (endptr != NULL && *endptr != '\0');
+    if(hasError) {
+        ereport((!fcinfo->can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for type double precision: \"%s\"", str_in)));
     }
+
     /* 
      * number equals 0, and string length is 4, the result is 0
      * number equals 0, string length is NOT 4, the result is 2000
-     * '0000', '+0000', '00.1', '-0.2' -- 0
+     * '0000', '+000', '00.1', '-0.2', ' 000' -- 0
      * '  000 ', '00000', '0.1' --2000
      */
-    if (tmp == 0 && year_len != YEAR4_LEN) {
+    if (tmp == 0 && len != YEAR4_LEN && !hasError) {
         tmp = 2000;
     }
     YearADT result = int32_to_YearADT(tmp);

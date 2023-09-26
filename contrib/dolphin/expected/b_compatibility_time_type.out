@@ -1591,6 +1591,86 @@ select year '-000';
  0
 (1 row)
 
+select year '';
+WARNING:  invalid input syntax for type double precision: ""
+LINE 1: select year '';
+                    ^
+CONTEXT:  referenced column: year
+ year 
+------
+ 0
+(1 row)
+
+select year ' ';
+WARNING:  invalid input syntax for type double precision: " "
+LINE 1: select year ' ';
+                    ^
+CONTEXT:  referenced column: year
+ year 
+------
+ 0
+(1 row)
+
+select year 'abcd';
+WARNING:  invalid input syntax for type double precision: "abcd"
+LINE 1: select year 'abcd';
+                    ^
+CONTEXT:  referenced column: year
+ year 
+------
+ 0
+(1 row)
+
+select year '001a';
+WARNING:  invalid input syntax for type double precision: "001a"
+LINE 1: select year '001a';
+                    ^
+CONTEXT:  referenced column: year
+ year 
+------
+ 2001
+(1 row)
+
+select year 'a001';
+WARNING:  invalid input syntax for type double precision: "a001"
+LINE 1: select year 'a001';
+                    ^
+CONTEXT:  referenced column: year
+ year 
+------
+ 0
+(1 row)
+
+select year 'a000';
+WARNING:  invalid input syntax for type double precision: "a000"
+LINE 1: select year 'a000';
+                    ^
+CONTEXT:  referenced column: year
+ year 
+------
+ 0
+(1 row)
+
+select year '000a';
+WARNING:  invalid input syntax for type double precision: "000a"
+LINE 1: select year '000a';
+                    ^
+CONTEXT:  referenced column: year
+ year 
+------
+ 0
+(1 row)
+
+select ''::longblob::year;
+WARNING:  invalid input syntax for type double precision: ""
+CONTEXT:  referenced column: year
+SQL function "varlena2year" statement 1
+referenced column: year
+ year 
+------
+ 0
+(1 row)
+
 -- test partition key
 CREATE TABLESPACE b_time_type_example RELATIVE LOCATION 'tablespace1/tablespace_1';
 -- year range key
