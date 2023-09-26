@@ -12,14 +12,25 @@ select sleep(2);
      0
 (1 row)
 
+create table sleep_test(a text);
 -- 非严格模式，参数不合法，报warning，返回0
 set dolphin.sql_mode = 'sql_mode_full_group';
 select sleep(-1);
-ERROR:  Incorrect arguments to sleep.
+WARNING:  Incorrect arguments to sleep.
 CONTEXT:  referenced column: sleep
+ sleep 
+-------
+     0
+(1 row)
+
 select sleep(null);
-ERROR:  Incorrect arguments to sleep.
+WARNING:  Incorrect arguments to sleep.
 CONTEXT:  referenced column: sleep
+ sleep 
+-------
+     0
+(1 row)
+
 select sleep('a');
 WARNING:  invalid input syntax for type double precision: "a"
 LINE 1: select sleep('a');
@@ -30,6 +41,12 @@ CONTEXT:  referenced column: sleep
      0
 (1 row)
 
+insert into sleep_test values(sleep(-1));
+WARNING:  Incorrect arguments to sleep.
+CONTEXT:  referenced column: a
+insert into sleep_test values(sleep(null));
+WARNING:  Incorrect arguments to sleep.
+CONTEXT:  referenced column: a
 -- 严格模式，参数不合法，报error
 set dolphin.sql_mode = 'sql_mode_strict';
 select sleep(-1);
@@ -48,6 +65,18 @@ CONTEXT:  referenced column: sleep
      0
 (1 row)
 
+insert into sleep_test values(sleep(-1));
+ERROR:  Incorrect arguments to sleep.
+CONTEXT:  referenced column: a
+insert into sleep_test values(sleep(null));
+ERROR:  Incorrect arguments to sleep.
+CONTEXT:  referenced column: a
+insert ignore into sleep_test values(sleep(-1));
+WARNING:  Incorrect arguments to sleep.
+CONTEXT:  referenced column: a
+insert ignore into sleep_test values(sleep(null));
+WARNING:  Incorrect arguments to sleep.
+CONTEXT:  referenced column: a
 set dolphin.sql_mode = '';
 select sleep('0000-00-00'::date);
  sleep 
@@ -56,4 +85,5 @@ select sleep('0000-00-00'::date);
 (1 row)
 
 drop schema test_sleep cascade;
+NOTICE:  drop cascades to table sleep_test
 reset current_schema;
