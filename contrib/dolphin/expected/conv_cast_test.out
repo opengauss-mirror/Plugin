@@ -761,5 +761,103 @@ select 'false'::bool::float8;
 (1 row)
 
 
+create table test_date(a date);
+set dolphin.sql_mode = sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function;
+select 0::date;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+insert into test_date values(0);
+ERROR:  Out of range value for date
+CONTEXT:  referenced column: a
+select 1::date;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+insert into test_date values(1);
+ERROR:  Out of range value for date
+CONTEXT:  referenced column: a
+set dolphin.sql_mode = sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,pad_char_to_full_length,auto_recompile_function;
+select 0::date;
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+insert into test_date values(0);
+select 1::date;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+insert into test_date values(1);
+ERROR:  Out of range value for date
+CONTEXT:  referenced column: a
+set dolphin.sql_mode = sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function;
+select 0::date;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+insert into test_date values(0);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: a
+select 1::date;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+insert into test_date values(1);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: a
+set dolphin.sql_mode = sql_mode_full_group,pipes_as_concat,ansi_quotes,pad_char_to_full_length,auto_recompile_function;
+select 0::date;
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+insert into test_date values(0);
+select 1::date;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+insert into test_date values(1);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: a
+reset dolphin.sql_mode;
+select * from test_date;
+     a      
+------------
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+(5 rows)
+
+
 drop schema conv_cast_test cascade;
+NOTICE:  drop cascades to table test_date
 reset current_schema;

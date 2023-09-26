@@ -287,9 +287,11 @@ SELECT 990101::date;
 (1 row)
 
 SELECT 100::date;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
     date    
 ------------
- 1999-12-31
+ 0000-00-00
 (1 row)
 
 SELECT 101::date;
@@ -2002,8 +2004,6 @@ CREATE TABLE t_NO_ZERO_DATE_date(v date);
 CREATE TABLE t_NO_ZERO_DATE_datetime(v datetime);
 CREATE TABLE t_NO_ZERO_DATE_timestamp(v timestamp);
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES(0);
-ERROR:  Out of range value for date
-CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
 WARNING:  date/time field value out of range: "0000-00-01"
@@ -2111,7 +2111,8 @@ SELECT * FROM t_NO_ZERO_DATE_date order by v;
  0000-00-00
  0000-00-00
  0000-00-00
-(6 rows)
+ 0000-00-00
+(7 rows)
 
 SELECT * FROM t_NO_ZERO_DATE_datetime order by v;
           v          
