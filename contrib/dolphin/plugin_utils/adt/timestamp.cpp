@@ -308,6 +308,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(timestamp_xor_transfn);
 extern "C" DLL_PUBLIC Datum timestamp_xor_transfn(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(timestamp_agg_finalfn);
 extern "C" DLL_PUBLIC Datum timestamp_agg_finalfn(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_cast);
+extern "C" DLL_PUBLIC Datum timestamp_cast(PG_FUNCTION_ARGS);
 #endif
 
 /* b format datetime and timestamp type */
@@ -440,6 +442,18 @@ Datum b_db_statement_start_timestamp(PG_FUNCTION_ARGS)
  * Convert a string to internal form.
  */
 Datum timestamp_in(PG_FUNCTION_ARGS)
+#ifdef DOLPHIN
+{
+    return timestamp_internal(fcinfo, false);
+}
+
+Datum timestamp_cast(PG_FUNCTION_ARGS)
+{
+    return timestamp_internal(fcinfo, true);
+}
+
+Datum timestamp_internal(PG_FUNCTION_ARGS, bool is_date_sconst)
+#endif
 {
     char* str = PG_GETARG_CSTRING(0);
 
@@ -489,7 +503,7 @@ Datum timestamp_in(PG_FUNCTION_ARGS)
             */
             dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
             if (dterr != 0) {
-                DateTimeParseError(dterr, str, "timestamp", fcinfo->can_ignore);
+                DateTimeParseErrorWithFlag(dterr, str, "timestamp", fcinfo->can_ignore, is_date_sconst);
                 /*
                  * if error ignorable, function DateTimeParseError reports warning instead, then return current timestamp.
                  */
@@ -505,7 +519,7 @@ Datum timestamp_in(PG_FUNCTION_ARGS)
                 }
             }
             if (dterr != 0) {
-                DateTimeParseError(dterr, str, "timestamp", fcinfo->can_ignore);
+                DateTimeParseErrorWithFlag(dterr, str, "timestamp", fcinfo->can_ignore, is_date_sconst);
                 PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
             }
             switch (dtype) {

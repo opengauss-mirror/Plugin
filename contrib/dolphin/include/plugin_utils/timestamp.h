@@ -133,12 +133,14 @@ extern void add_currentdate_to_time(TimeADT time, Timestamp *result);
 extern bool datetime_in_with_sql_mode_internal(char *str, struct pg_tm *tm, fsec_t *fsec, int &tm_type,
     unsigned int date_flag);
 extern bool datetime_in_range(Timestamp datetime);
+extern Datum timestamp_internal(PG_FUNCTION_ARGS, bool is_date_sconst);
 
 extern "C" DLL_PUBLIC Datum int64_b_format_datetime(PG_FUNCTION_ARGS);
 #endif
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);
 extern Datum time_text(PG_FUNCTION_ARGS);
+
 
 #endif // !FRONTEND_PARSER
 #endif /* TIMESTAMP_H */

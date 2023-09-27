@@ -59,6 +59,9 @@ BEGIN
 END
 $for_og_310$;
 
+DROP FUNCTION IF EXISTS pg_catalog.date_cast(cstring, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_cast(cstring, oid, integer, boolean);
+
 do $$
 begin
     update pg_cast set castcontext='e', castowner=10 where castsource=1560 and casttarget=20 and castcontext='a';

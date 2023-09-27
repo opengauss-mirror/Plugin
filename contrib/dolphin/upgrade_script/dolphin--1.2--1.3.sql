@@ -74,6 +74,12 @@ CREATE FUNCTION pg_catalog.substring_index (
 numeric
 ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_numeric';
 
+DROP FUNCTION IF EXISTS pg_catalog.date_cast(cstring, boolean);
+CREATE OR REPLACE FUNCTION pg_catalog.date_cast(cstring, boolean) RETURNS date LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'date_cast';
+
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_cast(cstring, oid, integer, boolean);
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_cast(cstring, oid, integer, boolean) RETURNS timestamp without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamp_cast';
+
 --change bit -> int/bigint castcontext from 'e' to 'a'
 do $$
 begin

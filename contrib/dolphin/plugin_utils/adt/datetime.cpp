@@ -3554,6 +3554,19 @@ int DecodeUnits(int field, const char* lowtoken, int* val)
 void DateTimeParseError(int dterr, const char* str, const char* datatype, bool can_ignore)
 {
     int level = can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+#ifdef DOLPHIN
+    DateTimeParseErrorInternal(dterr, str, datatype, level);
+}
+
+void DateTimeParseErrorWithFlag(int dterr, const char* str, const char* datatype, bool can_ignore, bool is_error)
+{
+    int level = !is_error && (can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
+    DateTimeParseErrorInternal(dterr, str, datatype, level);
+}
+
+void DateTimeParseErrorInternal(int dterr, const char* str, const char* datatype, int level)
+{
+#endif
     switch (dterr) {
         case DTERR_FIELD_OVERFLOW:
             ereport(level,
