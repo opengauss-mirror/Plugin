@@ -77,9 +77,11 @@ select plvstr.is_prefix('TestABC', 'Test', true);
 (1 row)
 
 select plvstr.is_prefix('TestABC', 'Test', false);
-ERROR:  could not determine which collation to use for lower() function
-HINT:  Use the COLLATE clause to set the collation explicitly.
-CONTEXT:  referenced column: is_prefix
+ is_prefix 
+-----------
+ t
+(1 row)
+
 select plvstr.is_prefix('TestABC', 'ABC', true);
  is_prefix 
 -----------
@@ -87,9 +89,11 @@ select plvstr.is_prefix('TestABC', 'ABC', true);
 (1 row)
 
 select plvstr.is_prefix('TestABC', 'ABC', false);
-ERROR:  could not determine which collation to use for lower() function
-HINT:  Use the COLLATE clause to set the collation explicitly.
-CONTEXT:  referenced column: is_prefix
+ is_prefix 
+-----------
+ f
+(1 row)
+
 select plvstr.is_prefix(123456, 123);
  is_prefix 
 -----------
@@ -314,10 +318,10 @@ select plvstr.swap('abcdef', 'ghi', 3, 3);
 (1 row)
 
 select plvstr.swap('abcdef', 'ghi', 3, 4);
-ERROR:  plvstr.cpp : 1037 : The parameter destMax is equal to zero or larger than the macro : SECUREC_STRING_MAX_LEN.
+ERROR:  The substring to be replaced exceeds the end of the source string
 CONTEXT:  referenced column: swap
 select plvstr.swap('abcdef', 'ghi', 3, 5);
-ERROR:  plvstr.cpp : 1037 : The parameter destMax is equal to zero or larger than the macro : SECUREC_STRING_MAX_LEN.
+ERROR:  The substring to be replaced exceeds the end of the source string
 CONTEXT:  referenced column: swap
 select plvstr.swap('abcdefghijklmnopq', 'rst', 3, 8);
      swap     

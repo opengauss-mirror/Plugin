@@ -399,6 +399,20 @@ Datum plvstr_instr4(PG_FUNCTION_ARGS)
  *
  ****************************************************************/
 
+static void lowercase(char* input, int len)
+{
+    for (int i = 0; i < len; i++) {
+        unsigned char ch = (unsigned char)input[i];
+
+        if (ch >= 'A' && ch <= 'Z') {
+            ch += 'a' - 'A';
+        } else if (IS_HIGHBIT_SET(ch) && isupper(ch)) {
+            ch = tolower(ch);
+        }
+        input[i] = (char)ch;
+    }
+}
+
 Datum plvstr_is_prefix_text(PG_FUNCTION_ARGS)
 {
     text *str = PG_GETARG_TEXT_PP(0);
@@ -415,8 +429,8 @@ Datum plvstr_is_prefix_text(PG_FUNCTION_ARGS)
     mb_encode = pg_database_encoding_max_length() > 1;
 
     if (mb_encode && !case_sens) {
-        str = (text *)DatumGetPointer(DirectFunctionCall1(lower, PointerGetDatum(str)));
-        prefix = (text *)DatumGetPointer(DirectFunctionCall1(lower, PointerGetDatum(prefix)));
+        lowercase(VARDATA_ANY(str), VARSIZE(str));
+        lowercase(VARDATA_ANY(prefix), VARSIZE(prefix));
     }
 
     ap = VARDATA_ANY(str);
@@ -1085,6 +1099,10 @@ Datum plvstr_swap(PG_FUNCTION_ARGS)
     v_len = ora_mb_strlen1(string_in);
 
     start_in = start_in > 0 ? start_in : v_len + start_in + 1;
+
+    if (start_in + oldlen_in > ora_mb_strlen1(string_in)) {
+        ereport(ERROR, (errmsg("The substring to be replaced exceeds the end of the source string")));
+    }
 
     if (start_in == 0 || start_in > v_len)
         PG_RETURN_TEXT_P(TextPCopy(string_in));
