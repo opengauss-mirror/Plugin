@@ -135,12 +135,14 @@ extern bool datetime_in_with_sql_mode_internal(char *str, struct pg_tm *tm, fsec
 extern bool datetime_in_range(Timestamp datetime);
 extern int128 timestamp_int128(Timestamp timestamp);
 extern int128 timestamptz_int128(TimestampTz timestampTz);
+extern Datum timestamp_internal(PG_FUNCTION_ARGS, bool is_date_sconst);
 
 extern "C" DLL_PUBLIC Datum int64_b_format_datetime(PG_FUNCTION_ARGS);
 #endif
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);
 extern Datum time_text(PG_FUNCTION_ARGS);
+
 
 #endif // !FRONTEND_PARSER
 #endif /* TIMESTAMP_H */

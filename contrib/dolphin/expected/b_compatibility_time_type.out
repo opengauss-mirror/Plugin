@@ -124,25 +124,11 @@ SELECT date'2000-2-29';
 (1 row)
 
 SELECT date'2001-2-29';
-WARNING:  date/time field value out of range: "2001-2-29"
-LINE 1: SELECT date'2001-2-29';
-                   ^
+ERROR:  date/time field value out of range: "2001-2-29"
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
-(1 row)
-
 SELECT date'2100-2-29';
-WARNING:  date/time field value out of range: "2100-2-29"
-LINE 1: SELECT date'2100-2-29';
-                   ^
+ERROR:  date/time field value out of range: "2100-2-29"
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
-(1 row)
-
 SELECT date'0000-1-1';
     date    
 ------------
@@ -150,15 +136,8 @@ SELECT date'0000-1-1';
 (1 row)
 
 SELECT date'01-01';
-WARNING:  invalid input syntax for type date: "01-01"
-LINE 1: SELECT date'01-01';
-                   ^
+ERROR:  invalid input syntax for type date: "01-01"
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
-(1 row)
-
 SELECT date'9-01-01';
     date    
 ------------
@@ -191,15 +170,8 @@ SELECT date'99991231';
 (1 row)
 
 SELECT date'100000101';
-WARNING:  date/time field value out of range: "100000101"
-LINE 1: SELECT date'100000101';
-                   ^
+ERROR:  date/time field value out of range: "100000101"
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
-(1 row)
-
 SELECT date'10000101';
     date    
 ------------
@@ -207,16 +179,9 @@ SELECT date'10000101';
 (1 row)
 
 SELECT date'9990101';
-WARNING:  date/time field value out of range: "9990101"
-LINE 1: SELECT date'9990101';
-                   ^
+ERROR:  date/time field value out of range: "9990101"
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
-(1 row)
-
 SELECT date'701010';
     date    
 ------------
@@ -230,26 +195,12 @@ SELECT date'691010';
 (1 row)
 
 SELECT date'691310';
-WARNING:  date/time field value out of range: "691310"
-LINE 1: SELECT date'691310';
-                   ^
+ERROR:  date/time field value out of range: "691310"
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
-(1 row)
-
 SELECT date'691131';
-WARNING:  date/time field value out of range: "691131"
-LINE 1: SELECT date'691131';
-                   ^
+ERROR:  date/time field value out of range: "691131"
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
-(1 row)
-
 SELECT date'10101';
     date    
 ------------
@@ -257,16 +208,9 @@ SELECT date'10101';
 (1 row)
 
 SELECT date'10130';
-WARNING:  date/time field value out of range: "10130"
-LINE 1: SELECT date'10130';
-                   ^
+ERROR:  date/time field value out of range: "10130"
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
-(1 row)
-
 SELECT date'00120101';
     date    
 ------------
