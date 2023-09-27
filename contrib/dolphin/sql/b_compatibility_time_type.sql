@@ -385,6 +385,14 @@ select year '98.5';
 select year '00001';
 select year '-0.2';
 select year '-000';
+select year '';
+select year ' ';
+select year 'abcd';
+select year '001a';
+select year 'a001';
+select year 'a000';
+select year '000a';
+select ''::longblob::year;
 
 -- test partition key
 CREATE TABLESPACE b_time_type_example RELATIVE LOCATION 'tablespace1/tablespace_1';
