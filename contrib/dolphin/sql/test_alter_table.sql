@@ -41,6 +41,28 @@ alter table if exists not_exists_tbl rename new_not_exists_tbl;
 alter table alter_table_tbl1 add column key int, rename index new_alter_table_tbl_b_ind to alter_table_tbl_b_ind;
 alter table alter_table_tbl1 drop column key, drop key alter_table_tbl_b_ind;
 
+-- alter table - rename column
+ALTER TABLE alter_table_tbl1 RENAME COLUMN a TO AB;
+\d alter_table_tbl1
+ALTER TABLE alter_table_tbl1 RENAME COLUMN ab TO Ab;
+\d alter_table_tbl1
+ALTER TABLE alter_table_tbl1 RENAME AB TO AB;
+\d alter_table_tbl1
+ALTER TABLE alter_table_tbl1 RENAME ab TO ab;
+\d alter_table_tbl1
+ALTER TABLE if exists alter_table_tbl1 RENAME COLUMN AB TO Ab;
+\d alter_table_tbl1
+ALTER TABLE if exists alter_table_tbl1 RENAME COLUMN Ab TO ab;
+\d alter_table_tbl1
+ALTER TABLE if exists alter_table_tbl1 RENAME AB TO ab;
+\d alter_table_tbl1
+ALTER TABLE if exists alter_table_tbl1 RENAME Ab TO AB;
+\d alter_table_tbl1
+ALTER TABLE alter_table_tbl1 CHANGE AB ab int;
+\d alter_table_tbl1
+ALTER TABLE alter_table_tbl1 CHANGE COLUMN AB AB int;
+\d alter_table_tbl1
+
 drop table alter_table_tbl1, alter_table_tbl2;
 
 set dolphin.sql_mode='pipes_as_concat,pad_char_to_full_length';
@@ -80,6 +102,25 @@ insert into foreign_key_table_002 values(2,'eeee',2,'2020-07-20',true,'eeee',2.2
 
 delete from foreign_key_table_001 where COL_1=1;
 select * from foreign_key_table_002 order by 1,2,3;
+
+-- alter table - rename column
+ALTER FOREIGN TABLE foreign_key_table_002 RENAME COLUMN COL_1 TO col_1;
+\d foreign_key_table_002
+ALTER FOREIGN TABLE foreign_key_table_002 RENAME COLUMN COL_1 TO Col_1;
+\d foreign_key_table_002
+ALTER FOREIGN TABLE foreign_key_table_002 RENAME col_1 TO col_1;
+\d foreign_key_table_002
+ALTER FOREIGN TABLE foreign_key_table_002 RENAME COL_1 TO COL_1;
+\d foreign_key_table_002
+ALTER FOREIGN TABLE if exists foreign_key_table_002 RENAME COLUMN cOL_1 TO cOL_1;
+\d foreign_key_table_002
+ALTER FOREIGN TABLE if exists foreign_key_table_002 RENAME COLUMN col_1 TO Col_1;
+\d foreign_key_table_002
+ALTER FOREIGN TABLE if exists foreign_key_table_002 RENAME COL_1 TO COL_1;
+\d foreign_key_table_002
+ALTER FOREIGN TABLE if exists foreign_key_table_002 RENAME Col_1 TO col_1;
+\d foreign_key_table_002
+
 drop table foreign_key_table_001,foreign_key_table_002;
 show dolphin.sql_mode;
 

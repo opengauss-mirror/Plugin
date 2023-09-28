@@ -5462,7 +5462,7 @@ alter_table_cmd:
 					n->def = (Node *)def;
 					$$ = (Node *)n;
 				}
-			| CHANGE opt_column ColId DolphinColColId Typename opt_charset ColQualList opt_column_options add_column_first_after
+			| CHANGE opt_column DolphinColColId DolphinColColId Typename opt_charset ColQualList opt_column_options add_column_first_after
 				{
 #ifdef ENABLE_MULTIPLE_NODES
 					const char* message = "Un-support feature";
@@ -22866,7 +22866,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE relation_expr RENAME name TO name
+			| ALTER TABLE relation_expr RENAME DolphinColColId TO DolphinColColId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_COLUMN;
@@ -22877,7 +22877,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE relation_expr RENAME COLUMN name TO name
+			| ALTER TABLE relation_expr RENAME COLUMN DolphinColColId TO DolphinColColId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_COLUMN;
@@ -22888,7 +22888,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE IF_P EXISTS relation_expr RENAME name TO name
+			| ALTER TABLE IF_P EXISTS relation_expr RENAME DolphinColColId TO DolphinColColId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_COLUMN;
@@ -22899,7 +22899,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE IF_P EXISTS relation_expr RENAME COLUMN name TO name
+			| ALTER TABLE IF_P EXISTS relation_expr RENAME COLUMN DolphinColColId TO DolphinColColId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_COLUMN;
@@ -22989,7 +22989,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					$$ = (Node *)n;
 				}
 
-			| ALTER FOREIGN TABLE relation_expr RENAME opt_column name TO name
+			| ALTER FOREIGN TABLE relation_expr RENAME opt_column DolphinColColId TO DolphinColColId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_COLUMN;
@@ -23000,7 +23000,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER FOREIGN TABLE IF_P EXISTS relation_expr RENAME opt_column name TO name
+			| ALTER FOREIGN TABLE IF_P EXISTS relation_expr RENAME opt_column DolphinColColId TO DolphinColColId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_COLUMN;
