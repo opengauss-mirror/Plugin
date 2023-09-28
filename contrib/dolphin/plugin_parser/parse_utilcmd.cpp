@@ -9023,7 +9023,16 @@ static void TransformModifyColumndef(CreateStmtContext* cxt, AlterTableCmd* cmd)
     // drop old auto_increment
     DropModifyColumnAutoIncrement(cxt, cxt->rel, cmd->name);
     /* for CHANGE column */
-    if (strcmp(cmd->name, def->colname) != 0) {
+#ifndef DOLPHIN
+    /*
+     * we need to do rename even though the name is same, cause we don't care about column's case now.
+     * it may do some change even though the name is same.
+     * create table t1(ABC int);
+     * alter table t1 change abc abc int; -- should lead to rename
+     */
+    if (strcmp(cmd->name, def->colname) != 0)
+#endif
+    {
         RenameStmt *rename = makeNode(RenameStmt);
         rename->renameType = OBJECT_COLUMN;
         rename->relationType = OBJECT_TABLE;
