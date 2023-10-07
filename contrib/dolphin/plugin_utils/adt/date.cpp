@@ -499,6 +499,7 @@ int NumberDate(char *str, pg_tm *tm, unsigned int date_flag)
 int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit, unsigned int date_flag)
 {
     int dterr;
+    int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
     /* YYYYMMDD or YYMMDD*/
     tm->tm_mday = date % 100; /* DD */
     tm->tm_mon = date / 100 % 100; /* MM */
@@ -507,7 +508,15 @@ int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit, 
     /* validate b format date */
     if (tm->tm_year > B_FORMAT_MAX_YEAR_OF_DATE) {
         dterr = DTERR_FIELD_OVERFLOW;
-    } else if (is2digits && !date_flag && date == 0 && (!SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
+    } else if (is2digits && !date_flag && date == 0 && !(SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
+        return 0;
+    } else if (is2digits && !date_flag && date > 0 && date < B_FORMAT_DATE_INT_MIN) {
+        ereport(errlevel,
+                (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                            errmsg("Out of range value for date")));
+        tm->tm_year = 0;
+        tm->tm_mon = 0;
+        tm->tm_mday = 0;
         return 0;
     } else {
         dterr = ValidateDateForBDatabase(is2digits, tm, date_flag);
@@ -526,7 +535,11 @@ Datum int32_b_format_date(PG_FUNCTION_ARGS)
                 (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
                             errmsg("Out of range value for date")));
     }
-
+    if (date == 0 && !SQL_MODE_STRICT() && SQL_MODE_NO_ZERO_DATE()) {
+        ereport(WARNING,
+                (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                            errmsg("Out of range value for date")));
+    }
     if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday))
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date out of range: \"%d\"", date)));
 
@@ -4562,10 +4575,10 @@ Datum date_bool(PG_FUNCTION_ARGS)
     timestamp = date2timestamp(dateVal);
 
     if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0) {
-        if (tm->tm_year > 0 || tm->tm_mon > 0 || tm->tm_mday > 0)
-            PG_RETURN_BOOL(true);
+        if (tm->tm_year == 0 && tm->tm_mon == 0 && tm->tm_mday == 0)
+            PG_RETURN_BOOL(false);
         else
-            PG_RETURN_NULL();
+            PG_RETURN_BOOL(true);
     } else {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
     }
@@ -4582,10 +4595,10 @@ Datum time_bool(PG_FUNCTION_ARGS)
     struct pg_tm tt, *tm = &tt;
 
     if (time2tm(timeVal, tm, &fsec) == 0) {
-        if (tm->tm_hour > 0 || tm->tm_min > 0 || tm->tm_sec > 0)
-            PG_RETURN_BOOL(true);
-        else
+        if (tm->tm_hour == 0 && tm->tm_min == 0 && tm->tm_sec == 0)
             PG_RETURN_BOOL(false);
+        else
+            PG_RETURN_BOOL(true);
     } else {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
     }

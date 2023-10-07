@@ -905,7 +905,7 @@ other			.
 					{
 						yylval->str = ident;
 					}
-					yyextra->ident_quoted = false;
+					yyextra->ident_quoted = true;
 					yyextra->is_hint_str = false;
 					return IDENT;
 				}
@@ -1162,6 +1162,18 @@ other			.
 						yylval->str = pstrdup(yytext);
 						yyextra->is_hint_str = false;
 						return CmpNullOp;
+					}
+					else if (strcmp(yytext, "->") == 0)
+					{
+						yylval->str = pstrdup(yytext);
+						yyextra->is_hint_str = false;
+						return JsonOp;
+					}
+					else if (strcmp(yytext, "->>") == 0)
+					{
+						yylval->str = pstrdup(yytext);
+						yyextra->is_hint_str = false;
+						return JsonOpText;
 					}
 					else
 						yylval->str = pstrdup(yytext);

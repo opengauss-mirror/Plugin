@@ -1858,8 +1858,6 @@ CREATE TABLE t_NO_ZERO_DATE_date(v date);
 CREATE TABLE t_NO_ZERO_DATE_datetime(v datetime);
 CREATE TABLE t_NO_ZERO_DATE_timestamp(v timestamp);
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES(0);
-ERROR:  Out of range value for date
-CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-00');
 INSERT INTO t_NO_ZERO_DATE_date(v) VALUES('0000-00-01');
 WARNING:  date/time field value out of range: "0000-00-01"
@@ -1967,7 +1965,8 @@ SELECT * FROM t_NO_ZERO_DATE_date order by v;
  0000-00-00
  0000-00-00
  0000-00-00
-(6 rows)
+ 0000-00-00
+(7 rows)
 
 SELECT * FROM t_NO_ZERO_DATE_datetime order by v;
           v          
@@ -2127,8 +2126,28 @@ select * from t_datetime;
  0000-00-00 00:00:00
 (7 rows)
 
+SET TIME ZONE PRC;
+CREATE TABLE test_timestamp(ts timestamp(2));
+INSERT INTO test_timestamp VALUES ('2012-10-21 23:55:23-12:12');
+INSERT INTO test_timestamp VALUES (201112234512);
+SELECT * FROM test_timestamp;
+           ts           
+------------------------
+ 2012-10-22 20:07:23+08
+ 2020-11-12 23:45:12+08
+(2 rows)
+
+SET TIME ZONE UTC;
+SELECT * FROM test_timestamp;
+           ts           
+------------------------
+ 2012-10-22 12:07:23+00
+ 2020-11-12 15:45:12+00
+(2 rows)
+
 drop table if exists t_date;
 drop table if exists t_datetime;
+drop table if exists test_timestamp;
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;

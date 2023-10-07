@@ -560,6 +560,127 @@ CONTEXT:  referenced column: hour
     0
 (1 row)
 
+-- date_bool&time_bool
+select date_bool('0000-00-00');
+ date_bool 
+-----------
+ f
+(1 row)
+
+select time_bool('00:00:00');
+ time_bool 
+-----------
+ f
+(1 row)
+
+select date_bool('0000-00-01');
+WARNING:  date/time field value out of range: "0000-00-01"
+LINE 1: select date_bool('0000-00-01');
+                         ^
+CONTEXT:  referenced column: date_bool
+ date_bool 
+-----------
+ f
+(1 row)
+
+select time_bool('00:00:01');
+ time_bool 
+-----------
+ t
+(1 row)
+
+select date_bool('0000-01-00');
+WARNING:  date/time field value out of range: "0000-01-00"
+LINE 1: select date_bool('0000-01-00');
+                         ^
+CONTEXT:  referenced column: date_bool
+ date_bool 
+-----------
+ f
+(1 row)
+
+select time_bool('00:01:00');
+ time_bool 
+-----------
+ t
+(1 row)
+
+select date_bool('0000-01-01');
+ date_bool 
+-----------
+ t
+(1 row)
+
+select time_bool('00:01:01');
+ time_bool 
+-----------
+ t
+(1 row)
+
+select date_bool('0001-00-00');
+WARNING:  date/time field value out of range: "0001-00-00"
+LINE 1: select date_bool('0001-00-00');
+                         ^
+CONTEXT:  referenced column: date_bool
+ date_bool 
+-----------
+ f
+(1 row)
+
+select time_bool('01:00:00');
+ time_bool 
+-----------
+ t
+(1 row)
+
+select date_bool('0001-00-01');
+ date_bool 
+-----------
+ t
+(1 row)
+
+select time_bool('01:00:01');
+ time_bool 
+-----------
+ t
+(1 row)
+
+select date_bool('0001-01-00');
+ date_bool 
+-----------
+ t
+(1 row)
+
+select time_bool('01:01:00');
+ time_bool 
+-----------
+ t
+(1 row)
+
+select date_bool('2020-12-31');
+ date_bool 
+-----------
+ t
+(1 row)
+
+select date_bool('2020-12-31 BC');
+ date_bool 
+-----------
+ t
+(1 row)
+
+select time_bool('838:59:59');
+ time_bool 
+-----------
+ t
+(1 row)
+
+select time_bool('-838:59:59');
+ time_bool 
+-----------
+ t
+(1 row)
+
 reset dolphin.sql_mode;
 drop schema b_time_funcs cascade;
 NOTICE:  drop cascades to table func_test

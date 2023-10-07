@@ -1476,11 +1476,9 @@ select 9223372036854775807::uint8::int8;
 (1 row)
 
 select 18446744073709551615::uint8::int8;
-WARNING:  bigint out of range
-CONTEXT:  referenced column: int8
-        int8         
----------------------
- 9223372036854775807
+ int8 
+------
+   -1
 (1 row)
 
 select 18446744073709551615::uint8::float4;

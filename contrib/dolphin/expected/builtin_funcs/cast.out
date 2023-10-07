@@ -56,5 +56,90 @@ WARNING:  not_exist is not a valid encoding name. default value set
  t
 (1 row)
 
+set dolphin.b_compatibility_mode to on;
+select CAST(9/2 as char);
+      varchar       
+--------------------
+ 4.5000000000000000
+(1 row)
+
+select CAST('0.12000' AS CHAR);
+ varchar 
+---------
+ 0.12000
+(1 row)
+
+select CAST('1.203010' AS CHAR);
+ varchar  
+----------
+ 1.203010
+(1 row)
+
+select CAST('-0.20' AS CHAR);
+ varchar 
+---------
+ -0.20
+(1 row)
+
+select CAST(2.090 AS char);
+ varchar 
+---------
+ 2.090
+(1 row)
+
+select CAST('2.090'::float AS char);
+ varchar 
+---------
+ 2.09
+(1 row)
+
+select CAST('4.100000'::double precision AS char);
+ varchar 
+---------
+ 4.1
+(1 row)
+
+select CAST(-6.40100 as char);
+ varchar  
+----------
+ -6.40100
+(1 row)
+
+select 0+CAST(9/2 as char);
+ ?column? 
+----------
+      4.5
+(1 row)
+
+SELECT 0+CAST('0.12000' AS CHAR),0+CAST('1.203010' AS CHAR),0+CAST('-0.20' AS CHAR);
+ ?column? | ?column? | ?column? 
+----------+----------+----------
+     0.12 |  1.20301 |     -0.2
+(1 row)
+
+SELECT (0 + CAST(2.090 AS char))/2;
+ ?column? 
+----------
+    1.045
+(1 row)
+
+SELECT (0 + CAST('2.090'::float AS char))/2;
+ ?column? 
+----------
+    1.045
+(1 row)
+
+SELECT (0 + CAST('4.100000'::double precision AS char))/2;
+ ?column? 
+----------
+     2.05
+(1 row)
+
+select 0+CAST(-6.40100 as char) as res;
+  res   
+--------
+ -6.401
+(1 row)
+
 drop schema db_cast cascade;
 reset current_schema;

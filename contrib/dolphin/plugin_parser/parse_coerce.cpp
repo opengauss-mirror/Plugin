@@ -31,6 +31,7 @@
 #include "plugin_parser/parse_relation.h"
 #include "plugin_parser/parse_type.h"
 #ifdef DOLPHIN
+#include "plugin_parser/parse_oper.h"
 #include "plugin_commands/mysqlmode.h"
 #endif
 #include "utils/builtins.h"
@@ -1577,7 +1578,15 @@ static Oid choose_specific_expr_type(ParseState* pstate, List* exprs, const char
         }
 
         preferType = getBaseType(exprType(preferExpr));
-        get_type_category_preferred(preferType, &preferCategory, &pispreferred);
+#ifdef DOLPHIN
+        if (IsUnsignedIntType(preferType)) {
+            preferCategory = 'N';
+            pispreferred = false;
+        } else
+#endif
+        {
+            get_type_category_preferred(preferType, &preferCategory, &pispreferred);
+        }
         break;
     }
     if (lc == NULL) {
@@ -1599,8 +1608,15 @@ static Oid choose_specific_expr_type(ParseState* pstate, List* exprs, const char
         if (nextType != preferType) {
             TYPCATEGORY nextCategory;
             bool nispreferred = false;
-
-            get_type_category_preferred(nextType, &nextCategory, &nispreferred);
+#ifdef DOLPHIN
+            if (IsUnsignedIntType(nextType)) {
+                nextCategory = 'N';
+                nispreferred = false;
+            } else
+#endif
+            {
+                get_type_category_preferred(nextType, &nextCategory, &nispreferred);
+            }
 
             /*
              * Both types in different categories, if they are numeric and string type

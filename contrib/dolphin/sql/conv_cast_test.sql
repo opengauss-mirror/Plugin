@@ -70,5 +70,29 @@ select cast(b'111111111111111111111111111111111111111111111111111111111111111' a
 select cast(b'11111111111111111111111111111111111111111111111111111111111111111' as unsigned);
 select cast(b'11111111111111111111111111111111111111111111111111111111111111111' as signed);
 
+create table test_date(a date);
+set dolphin.sql_mode = sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length;
+select 0::date;
+insert into test_date values(0);
+select 1::date;
+insert into test_date values(1);
+set dolphin.sql_mode = sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,pad_char_to_full_length;
+select 0::date;
+insert into test_date values(0);
+select 1::date;
+insert into test_date values(1);
+set dolphin.sql_mode = sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length;
+select 0::date;
+insert into test_date values(0);
+select 1::date;
+insert into test_date values(1);
+set dolphin.sql_mode = sql_mode_full_group,pipes_as_concat,ansi_quotes,pad_char_to_full_length;
+select 0::date;
+insert into test_date values(0);
+select 1::date;
+insert into test_date values(1);
+reset dolphin.sql_mode;
+select * from test_date;
+
 drop schema conv_cast_test cascade;
 reset current_schema;

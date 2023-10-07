@@ -499,5 +499,9 @@ insert into test values('addtime(99991231, ''10:00:00'')', addtime(99991231, '10
 
 select * from test order by funcname;
 drop table test;
+
+-- test timediff(date,unknown)
+select timediff(date'2022-01-01','2022-01-02');
+select timediff('2022-01-01',date'2022-01-02');
 \c contrib_regression
 DROP DATABASE b_datetime_func_test3;

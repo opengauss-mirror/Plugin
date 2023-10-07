@@ -260,6 +260,26 @@ select hour('');
 select hour('abc');
 select hour('1234abc');
 
+-- date_bool&time_bool
+select date_bool('0000-00-00');
+select time_bool('00:00:00');
+select date_bool('0000-00-01');
+select time_bool('00:00:01');
+select date_bool('0000-01-00');
+select time_bool('00:01:00');
+select date_bool('0000-01-01');
+select time_bool('00:01:01');
+select date_bool('0001-00-00');
+select time_bool('01:00:00');
+select date_bool('0001-00-01');
+select time_bool('01:00:01');
+select date_bool('0001-01-00');
+select time_bool('01:01:00');
+select date_bool('2020-12-31');
+select date_bool('2020-12-31 BC');
+select time_bool('838:59:59');
+select time_bool('-838:59:59');
+
 reset dolphin.sql_mode;
 
 drop schema b_time_funcs cascade;

@@ -2665,24 +2665,6 @@ Datum ui4toui8(PG_FUNCTION_ARGS)
 Datum ui8toi8(PG_FUNCTION_ARGS)
 {
     uint64 arg1 = PG_GETARG_UINT64(0);
-    int64 result;
-
-    /*
-     * Does it fit in an int64?  Avoid assuming that we have handy constants
-     * defined for the range boundaries, instead test for overflow by
-     * reverse-conversion.
-     */
-    result = (int64)arg1;
-
-    if (arg1 > LONG_MAX) {
-        if (fcinfo->can_ignore || !SQL_MODE_STRICT()) {
-            ereport(WARNING, (errmsg("bigint out of range")));
-            PG_RETURN_INT64((int64)LONG_MAX);
-        } else {
-            ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint out of range")));
-        }
-    }
-
     PG_RETURN_INT64((int64)arg1);
 }
 

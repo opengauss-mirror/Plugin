@@ -1119,7 +1119,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
  * DOT_DOT is unused in the core SQL grammar, and so will always provoke
  * parse errors.  It is needed by PL/pgsql.
  */
-%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp COMMENTSTRING SET_USER_IDENT SET_IDENT
+%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT
 %token <ival>	ICONST PARAM
 %token			TYPECAST ORA_JOINOP DOT_DOT COLON_EQUALS PARA_EQUALS SET_IDENT_SESSION SET_IDENT_GLOBAL
 
@@ -1333,6 +1333,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %nonassoc	NOTNULL
 %nonassoc	ISNULL
 %nonassoc	IS				/* sets precedence for IS NULL, etc */
+%nonassoc	JsonOp JsonOpText
 %left		'+' '-'
 %left		'*' '/' '%'
 %left		'^'
@@ -3303,6 +3304,34 @@ set_expr_extension:
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
 			| b_expr CmpOp b_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, $2, $1, $3, @2); }
+			| b_expr JsonOp b_expr
+				{   
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("json_object_field");
+					n->args = list_make2($1, $3);;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *)n; 
+				}
+			| b_expr JsonOpText b_expr
+				{   
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("json_object_field_text");
+					n->args = list_make2($1, $3);;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *)n; 
+				}
 			| b_expr qual_Op b_expr				%prec Op
 				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, $3, @2); }
 			| qual_Op b_expr					%prec Op
@@ -4219,16 +4248,6 @@ AlterTableStmt:
 					n->need_rewrite_sql = false;
 					$$ = (Node *)n;
 				}
-		|	ALTER TABLE relation_expr ADD_P '(' add_column_cmds ')'
-				{
-					AlterTableStmt *n = makeNode(AlterTableStmt);
-					n->relation = $3;
-					n->cmds = $6;
-					n->relkind = OBJECT_TABLE;
-					n->missing_ok = false;
-					n->need_rewrite_sql = false;
-					$$ = (Node *)n;
-				}
 		/* REDISANYVALUE key value only used in tsdb redis command, it is used in OM code */
 		|	ALTER TABLE relation_expr REDISANYVALUE
 				{
@@ -4244,19 +4263,6 @@ AlterTableStmt:
 		 * ALTER TABLE IF_P EXISTS MODIFY_P '(' modify_column_cmds ')'
 		 */
 		|	ALTER TABLE IF_P EXISTS relation_expr MODIFY_P '(' modify_column_cmds ')'
-				{
-					AlterTableStmt *n = makeNode(AlterTableStmt);
-					n->relation = $5;
-					n->cmds = $8;
-					n->relkind = OBJECT_TABLE;
-					n->missing_ok = true;
-					n->need_rewrite_sql = false;
-					$$ = (Node *)n;
-				}
-		/*
-		 * ALTER TABLE IF_P EXISTS ADD_P '(' add_column_cmds ')'
-		 */
-		|	ALTER TABLE IF_P EXISTS relation_expr ADD_P '(' add_column_cmds ')'
 				{
 					AlterTableStmt *n = makeNode(AlterTableStmt);
 					n->relation = $5;
@@ -4607,8 +4613,27 @@ alter_table_or_partition:
 
 /* ALTER TABLE sql clauses for ordinary table */
 alter_table_cmds:
-			alter_table_cmd                         { $$ = list_make1($1); }
-			| alter_table_cmds ',' alter_table_cmd  { $$ = lappend($1, $3); }
+			alter_table_cmd
+			{
+				/*
+				 * alter_table_cmd is defined as Node* actually, but it may be a list, check ADD_P '(' add_column_cmds ')'.
+				 * we use a simple way to check nodetag by IsA, otherwise we need to change alter_table_cmd's type to List,
+				 * and change all return values in alter_table_cmd as a list, which lead to many code change
+				 */
+				if (!IsA($1, List)) {
+					$$ = list_make1($1);
+				} else {
+					$$ = (List*)$1;
+				}
+			}
+			| alter_table_cmds ',' alter_table_cmd
+			{
+				if (!IsA($3, List)) {
+					$$ = lappend($1, $3);
+				} else {
+					$$ = list_concat($1, (List*)$3);
+				}
+			}
 		;
 
 /* ALTER TABLE PARTITION sql clauses */
@@ -5061,6 +5086,10 @@ reset_partition_cmd:
 			}
 		;
 
+/*
+ * Note: alter_table_cmd defined as a Node, but it may return a list, check ADD_P '(' add_column_cmds ')'.
+ * so please check the return value's nodetag before using it.
+ */
 alter_table_cmd:
 			/*ALTER INDEX index_name UNUSABLE*/
 			UNUSABLE
@@ -5128,6 +5157,16 @@ alter_table_cmd:
 					n->subtype = AT_AddColumn;
 					n->def = $3;
 					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> ADD <coldef, ...>, add column with bracket does not support first/after */
+			| ADD_P '(' add_column_cmds ')'
+				{
+					$$ = (Node *)$3;
+				}
+			/* ALTER TABLE <name> ADD COLUMN <coldef, ...>, add column with bracket does not support first/after */
+			| ADD_P COLUMN '(' add_column_cmds ')'
+				{
+					$$ = (Node *)$4;
 				}
 			| ADD_P TABLE dolphin_qualified_name
 				{
@@ -22426,6 +22465,16 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
+			| ALTER TABLE relation_expr RENAME DolphinColId
+				{
+					RenameStmt *n = makeNode(RenameStmt);
+					n->renameType = OBJECT_TABLE;
+					n->relation = $3;
+					n->subname = NULL;
+					n->newname = GetDolphinObjName($5->str, $5->is_quoted);
+					n->missing_ok = false;
+					$$ = (Node *)n;
+				}
 			| ALTER TABLE relation_expr RENAME to_or_as DolphinColId
 				{
 					RenameStmt *n = makeNode(RenameStmt);
@@ -22434,6 +22483,16 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->subname = NULL;
 					n->newname = GetDolphinObjName($6->str, $6->is_quoted);
 					n->missing_ok = false;
+					$$ = (Node *)n;
+				}
+			| ALTER TABLE IF_P EXISTS relation_expr RENAME DolphinColId
+				{
+					RenameStmt *n = makeNode(RenameStmt);
+					n->renameType = OBJECT_TABLE;
+					n->relation = $5;
+					n->subname = NULL;
+					n->newname = GetDolphinObjName($7->str, $7->is_quoted);
+					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
 			| ALTER TABLE IF_P EXISTS relation_expr RENAME to_or_as DolphinColId
@@ -22650,7 +22709,18 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE relation_expr RENAME opt_column name TO name
+			| ALTER TABLE relation_expr RENAME name TO name
+				{
+					RenameStmt *n = makeNode(RenameStmt);
+					n->renameType = OBJECT_COLUMN;
+					n->relationType = OBJECT_TABLE;
+					n->relation = $3;
+					n->subname = $5;
+					n->newname = $7;
+					n->missing_ok = false;
+					$$ = (Node *)n;
+				}
+			| ALTER TABLE relation_expr RENAME COLUMN name TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_COLUMN;
@@ -22661,7 +22731,18 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE IF_P EXISTS relation_expr RENAME opt_column name TO name
+			| ALTER TABLE IF_P EXISTS relation_expr RENAME name TO name
+				{
+					RenameStmt *n = makeNode(RenameStmt);
+					n->renameType = OBJECT_COLUMN;
+					n->relationType = OBJECT_TABLE;
+					n->relation = $5;
+					n->subname = $7;
+					n->newname = $9;
+					n->missing_ok = true;
+					$$ = (Node *)n;
+				}
+			| ALTER TABLE IF_P EXISTS relation_expr RENAME COLUMN name TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_COLUMN;
@@ -30748,8 +30829,9 @@ CharacterWithoutLength:	 character
 					$$ = SystemTypeName($1);
 
 					/* char defaults to char(1), varchar to no limit */
-					if (strcmp($1, "bpchar") == 0)
+					if (!ENABLE_B_CMPT_MODE && strcmp($1, "bpchar") == 0) {
 						$$->typmods = list_make1(makeIntConst(1, -1));
+					}
 
 					$$->location = @1;
 				}
@@ -30758,7 +30840,9 @@ CharacterWithoutLength:	 character
 					$$ = SystemTypeName((char *)("bpchar"));
 
 					/* char defaults to char(1), varchar to no limit */
-					$$->typmods = list_make1(makeIntConst(1, -1));
+					if (!ENABLE_B_CMPT_MODE) {
+						$$->typmods = list_make1(makeIntConst(1, -1));
+					}
 
 					$$->location = @1;
 				}
@@ -31513,6 +31597,34 @@ a_expr:		c_expr									{ $$ = $1; }
 				}
             | a_expr CmpOp a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, $2, $1, $3, @2); }
+			| a_expr JsonOp a_expr
+				{   
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("json_object_field");
+					n->args = list_make2($1, $3);;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *)n; 
+				}
+			| a_expr JsonOpText a_expr
+				{   
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("json_object_field_text");
+					n->args = list_make2($1, $3);;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *)n; 
+				}
 			| a_expr qual_Op a_expr				%prec Op
 				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, $3, @2); }
 			| qual_Op a_expr					%prec Op
@@ -32155,6 +32267,34 @@ b_expr:		c_expr
                                 { $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
 			| b_expr CmpOp b_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, $2, $1, $3, @2); }
+			| b_expr JsonOp b_expr
+				{   
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("json_object_field");
+					n->args = list_make2($1, $3);;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *)n; 
+				}
+			| b_expr JsonOpText b_expr
+				{   
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("json_object_field_text");
+					n->args = list_make2($1, $3);;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @2;
+					n->call_func = false;
+					$$ = (Node *)n; 
+				}
 			| b_expr qual_Op b_expr				%prec Op
 				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, $3, @2); }
 			| b_expr CmpNullOp b_expr    %prec IS

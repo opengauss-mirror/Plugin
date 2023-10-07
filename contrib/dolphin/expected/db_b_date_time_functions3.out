@@ -1002,5 +1002,18 @@ select * from test order by funcname;
 (320 rows)
 
 drop table test;
+-- test timediff(date,unknown)
+select timediff(date'2022-01-01','2022-01-02');
+ timediff  
+-----------
+ -24:00:00
+(1 row)
+
+select timediff('2022-01-01',date'2022-01-02');
+ timediff  
+-----------
+ -24:00:00
+(1 row)
+
 \c contrib_regression
 DROP DATABASE b_datetime_func_test3;

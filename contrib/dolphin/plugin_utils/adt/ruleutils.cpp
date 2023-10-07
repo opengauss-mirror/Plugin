@@ -105,6 +105,10 @@
 #include "commands/sequence.h"
 #include "client_logic/client_logic.h"
 
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
+
 /* ----------
  * Pretty formatting constants
  * ----------
@@ -11066,7 +11070,11 @@ static void get_const_expr(Const* constval, deparse_context* context, int showty
     char* extval = NULL;
     bool isfloat = false;
     bool needlabel = false;
-
+#ifdef DOLPHIN
+    bool without_cast = false;
+    const char *left_bracket = PRETTY_PAREN(context) ? "" : "(";
+    const char *right_bracket = PRETTY_PAREN(context) ? "" : ")";
+#endif
     if (constval->constisnull || constval->ismaxvalue) {
         /*
          * Always label the type of a NULL/MAXVALUE constant to
@@ -11141,15 +11149,27 @@ static void get_const_expr(Const* constval, deparse_context* context, int showty
         case FLOAT8OID: {
             if (strspn(extval, "0123456789+-eE.") == strlen(extval)) {
                 if (!iseq) {
-                    if (extval[0] == '+' || extval[0] == '-')
+                    if (extval[0] == '+' || extval[0] == '-') {
+#ifdef DOLPHIN
+                        without_cast = PRETTY_PAREN(context);
+                        appendStringInfo(buf, "%s%s%s", left_bracket, priStr, right_bracket);
+#else
                         appendStringInfo(buf, "(%s)", priStr);
-                    else
+#endif
+                    } else {
                         appendStringInfoString(buf, priStr);
+                    }
                 } else {
-                    if (extval[0] == '+' || extval[0] == '-')
+                    if (extval[0] == '+' || extval[0] == '-') {
+#ifdef DOLPHIN
+                        without_cast = PRETTY_PAREN(context);
+                        appendStringInfo(buf, "%s%s%s", left_bracket, extval, right_bracket);
+#else
                         appendStringInfo(buf, "(%s)", extval);
-                    else
+#endif
+                    } else {
                         appendStringInfoString(buf, extval);
+                    }
                 }
                 if (strcspn(extval, "eE.") != strlen(extval))
                     isfloat = true; /* it looks like a float */
@@ -11183,10 +11203,16 @@ static void get_const_expr(Const* constval, deparse_context* context, int showty
              * below.
              */
             if (strspn(extval, "0123456789+-eE.") == strlen(extval)) {
-                if (extval[0] == '+' || extval[0] == '-')
+                if (extval[0] == '+' || extval[0] == '-') {
+#ifdef DOLPHIN
+                    without_cast = PRETTY_PAREN(context);
+                    appendStringInfo(buf, "%s%s%s", left_bracket, extval, right_bracket);
+#else
                     appendStringInfo(buf, "(%s)", extval);
-                else
+#endif
+                } else {
                     appendStringInfoString(buf, extval);
+                }
                 if (strcspn(extval, "eE.") != strlen(extval))
                     isfloat = true; /* it looks like a float */
             } else
@@ -11241,8 +11267,14 @@ static void get_const_expr(Const* constval, deparse_context* context, int showty
             needlabel = true;
             break;
     }
-    if (needlabel || showtype > 0)
+    if (
+#ifdef DOLPHIN
+        !without_cast &&
+#endif
+        (needlabel || showtype > 0))
+    {
         appendStringInfo(buf, "::%s", format_type_with_typemod(constval->consttype, constval->consttypmod));
+    }
 
     get_const_collation(constval, context);
 }
@@ -12201,7 +12233,12 @@ const char* quote_identifier(const char* ident)
             /* okay */
         } else {
             safe = false;
+#ifdef DOLPHIN
+
+            if (ch == GET_QUOTE())
+#else
             if (ch == '"')
+#endif
                 nquotes++;
         }
     }
@@ -12230,6 +12267,18 @@ const char* quote_identifier(const char* ident)
     result = (char*)palloc(strlen(ident) + nquotes + 2 + 1);
 
     optr = result;
+#ifdef DOLPHIN
+    char quote = GET_QUOTE();
+    *optr++ = quote;
+    for (ptr = ident; *ptr; ptr++) {
+        char ch = *ptr;
+
+        if (ch == quote)
+            *optr++ = quote;
+        *optr++ = ch;
+    }
+    *optr++ = quote;
+#else
     *optr++ = '"';
     for (ptr = ident; *ptr; ptr++) {
         char ch = *ptr;
@@ -12239,6 +12288,7 @@ const char* quote_identifier(const char* ident)
         *optr++ = ch;
     }
     *optr++ = '"';
+#endif
     *optr = '\0';
 
     return result;

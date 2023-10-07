@@ -30,6 +30,13 @@ alter table alter_table_tbl1 force;
 create index alter_table_tbl_b_ind on alter_table_tbl1(b);
 alter table alter_table_tbl1 rename index alter_table_tbl_b_ind to new_alter_table_tbl_b_ind;
 
+-- rename [ TO | AS ] new_table_name
+alter table alter_table_tbl1 rename to new_alter_table_tbl1;
+alter table new_alter_table_tbl1 rename as new_new_alter_table_tbl1;
+alter table new_new_alter_table_tbl1 rename new_new_new_alter_table_tbl1;
+alter table if exists new_new_new_alter_table_tbl1 rename alter_table_tbl1;
+alter table if exists not_exists_tbl rename new_not_exists_tbl;
+
 -- test multi-cmd
 alter table alter_table_tbl1 add column key int, rename index new_alter_table_tbl_b_ind to alter_table_tbl_b_ind;
 alter table alter_table_tbl1 drop column key, drop key alter_table_tbl_b_ind;
@@ -134,5 +141,20 @@ create table test_primary(f11 int, f12 varchar(20), f13 bool, constraint con_t_p
 \d+ test_primary
 drop table test_primary;
 
+--new add column grammar
+create table add_col_test(a int);
+ALTER TABLE add_col_test ADD KEY f2k(f2), ADD COLUMN(f1 INT, f3 int), ADD COLUMN (f2 INT);
+ALTER TABLE if EXISTS add_col_test ADD COLUMN (f11 INT, f31 int), ADD COLUMN (f21 INT), ADD KEY f1k(f1);
+ALTER TABLE if EXISTS add_col_test ADD (f12 INT, f32 int), ADD COLUMN (f22 INT);
+ALTER TABLE if EXISTS add_col_test ADD COLUMN (f13 INT, f33 int), ADD COLUMN (f23 INT);
+ALTER TABLE if EXISTS does_not_exists_table_test ADD COLUMN (f1 INT, f3 int), ADD COLUMN (f2 INT), ADD KEY f2k(f2);
+
+--original grammar
+ALTER TABLE add_col_test ADD (f14 INT, f34 int);
+ALTER TABLE if EXISTS add_col_test ADD (f15 INT, f35 int);
+ALTER TABLE if EXISTS does_not_exists_table_test ADD (f13 INT, f33 int);
+\d+ add_col_test
+
+drop table add_col_test;
 drop schema db_alter_table cascade;
 reset current_schema;

@@ -7099,73 +7099,73 @@ select pg_typeof(ifnull(blb, txt)) from typeset;
 select pg_typeof(ifnull(bin, smint)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, anint)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, bgint)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, dcmal)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, nmric)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, flt)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, bt)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, dt)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, tmstp)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, tm)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, ch)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, vch)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(bin, blb)) from typeset;
@@ -7183,73 +7183,73 @@ select pg_typeof(ifnull(bin, txt)) from typeset;
 select pg_typeof(ifnull(vbin, smint)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, anint)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, bgint)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, dcmal)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, nmric)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, flt)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, bt)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, dt)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, tmstp)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, tm)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, ch)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, vch)) from typeset;
   pg_typeof  
 -------------
- "varbinary"
+ `varbinary`
 (1 row)
 
 select pg_typeof(ifnull(vbin, blb)) from typeset;
@@ -8525,6 +8525,30 @@ select strcmp(blb, txt) from typeset;
      -1
 (1 row)
 
+create table t1 (a int, b bigint unsigned);
+create table t2 (c int);
+insert into t1 (a, b) values (1,4572794622775114594), (2,18196094287899841997),
+(3,11120436154190595086);
+insert into t2 (c) values (1), (2), (3);
+select case t1.a when 0 then 0 else t1.b end from t1 order by a;
+          b           
+----------------------
+ 4572794622775114594
+ 18196094287899841997
+ 11120436154190595086
+(3 rows)
+
+select t1.a, (case t1.a when 0 then 0 else t1.b end) d from t1
+join t2 on t1.a=t2.c order by d;
+ a |          d           
+---+----------------------
+ 1 | 4572794622775114594
+ 3 | 11120436154190595086
+ 2 | 18196094287899841997
+(3 rows)
+
+drop table t1;
+drop table t2;
 drop schema db_test_condition cascade;
 NOTICE:  drop cascades to table typeset
 reset current_schema;

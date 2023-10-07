@@ -6378,6 +6378,10 @@ Datum InputFunctionCallForBulkload(CopyState cstate, FmgrInfo* flinfo, char* str
     if (str == NULL && flinfo->fn_strict)
         return (Datum)0; /* just return null result */
 
+#ifdef DOLPHIN
+    fcinfo.can_ignore = cstate->is_ignore;
+#endif
+
     SPI_STACK_LOG("push cond", NULL, NULL);
     pushed = SPI_push_conditional();
 

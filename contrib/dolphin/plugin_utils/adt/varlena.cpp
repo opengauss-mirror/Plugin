@@ -4281,6 +4281,18 @@ bool SplitIdentifierString(char* rawstring, char separator, List** namelist, boo
     char* curname = NULL;
     char* endp = NULL;
     char* downname = NULL;
+#ifdef DOLPHIN
+    char quote = GET_QUOTE();
+    do {
+        if (*nextp == quote) {
+            /* Quoted name --- collapse quote-quote pairs, no downcasing */
+            curname = nextp + 1;
+            for (;;) {
+                endp = strchr(nextp + 1, quote);
+                if (endp == NULL)
+                    return false; /* mismatched quotes */
+                if (endp[1] != quote)
+#else
     do {
         if (*nextp == '\"') {
             /* Quoted name --- collapse quote-quote pairs, no downcasing */
@@ -4290,6 +4302,7 @@ bool SplitIdentifierString(char* rawstring, char separator, List** namelist, boo
                 if (endp == NULL)
                     return false; /* mismatched quotes */
                 if (endp[1] != '\"')
+#endif
                     break; /* found end of quoted name */
                 /* Collapse adjacent quotes into one quote, and look again */
                 if (strlen(endp) > 0) {
@@ -5949,7 +5962,13 @@ Datum sha1(PG_FUNCTION_ARGS)
  
     char* text_str = text_to_cstring(source_text);
     char* source_str = text_str;
+
+#ifdef DOLPHIN
+    text* tunpacked = pg_detoast_datum_packed((struct varlena*)source_text);
+    GS_UINT32 source_len = VARSIZE_ANY_EXHDR(tunpacked);
+#else
     GS_UINT32 source_len = strlen(source_str);
+#endif
  
     /* calculate the hash result */
     char* result = (char*)palloc((SHA1_DIGEST_LENGTH * 2 + 1) * (sizeof(char)));

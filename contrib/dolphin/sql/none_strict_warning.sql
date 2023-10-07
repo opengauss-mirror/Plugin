@@ -429,7 +429,7 @@ insert ignore into test_uint4 values(4294967296::uint8);
 insert ignore into test_uint4 values(-129::uint8);
 
 ---- ui8toi8
----- over int8_max 严格模式error，非严格模式warning，结果int8_max
+---- over int8_max 正整数溢出为对应的负整数
 insert into test_int8 values(9223372036854775808::uint8);
 insert into test_int8 values(-9223372036854775809::uint8);
 insert ignore into test_int8 values(9223372036854775808::uint8);
@@ -979,7 +979,7 @@ insert ignore into test_uint4 values(4294967296::uint8);
 insert ignore into test_uint4 values(-129::uint8);
 
 ---- ui8toi8
----- over int8_max 严格模式error，非严格模式warning，结果int8_max
+---- over int8_max 正整数溢出为对应的负整数
 insert into test_int8 values(9223372036854775808::uint8);
 insert into test_int8 values(-9223372036854775809::uint8);
 insert ignore into test_int8 values(9223372036854775808::uint8);

@@ -9,6 +9,14 @@ fields terminated by '!' enclosed by '*'
 lines starting by '[' terminated by ')]';
 select * from t_load_data_0037;
 
+-- test ignore
+create  table t_load_ignore(c_01 int primary key,c_02 int default 18,c_03 char(5) default '女',c_04 varchar(15));
+load data infile '@abs_builddir@/data/load-ignore.txt' ignore
+    into table t_load_ignore character set 'utf8'
+    fields terminated by ',' enclosed by '"'
+    lines starting by '(' terminated by ')';
+select * from t_load_ignore order by c_01;
+
 create table t1(a int, b int);
 load data infile '@abs_builddir@/data/load1.csv' into table t1;
 select * from t1;
