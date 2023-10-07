@@ -22,12 +22,6 @@ load data infile '@abs_builddir@/data/load-ignore.txt' ignore
     into table t_load_ignore character set 'utf8'
     fields terminated by ',' enclosed by '"'
     lines starting by '(' terminated by ')';
-WARNING:  invalid input syntax for integer: " "
-CONTEXT:  COPY t_load_ignore, line 1, column c_02: " "
-WARNING:  invalid input syntax for integer: " "
-CONTEXT:  COPY t_load_ignore, line 2, column c_02: " "
-WARNING:  invalid input syntax for integer: " "
-CONTEXT:  COPY t_load_ignore, line 3, column c_02: " "
 select * from t_load_ignore order by c_01;
  c_01 | c_02 | c_03  |  c_04  
 ------+------+-------+--------

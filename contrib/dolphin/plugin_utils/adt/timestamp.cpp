@@ -44,7 +44,7 @@
 #ifdef DOLPHIN
 #include "plugin_utils/my_locale.h"
 #include "plugin_commands/mysqlmode.h"
-#include "plugin_utils/varbit.h"
+#include "utils/varbit.h"
 #endif
 
 #ifdef PGXC

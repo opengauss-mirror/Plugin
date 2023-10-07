@@ -236,13 +236,8 @@ SELECT 990101::date;
 (1 row)
 
 SELECT 100::date;
-WARNING:  Out of range value for date
+ERROR:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
-(1 row)
-
 SELECT 101::date;
     date    
 ------------
