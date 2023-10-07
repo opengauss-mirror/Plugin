@@ -33593,7 +33593,8 @@ void ExecRemovePartition(Oid relid, char* tableName)
         REINDEX_REL_PROCESS_TOAST | REINDEX_REL_SUPPRESS_INDEX_USE | REINDEX_REL_CHECK_CONSTRAINTS,
         REINDEX_ALL_INDEX, NULL, NULL))
         ereport(NOTICE, (errmsg("The table has no indexes")));
-    relation_close(rel, AccessExclusiveLock);
+    /* hold lock until transaction commit, cause we still need lock before doing RelationForgetRelation */
+    relation_close(rel, NoLock);
     RelationForgetRelation(relid);
     list_free_ext(tempTableOidList);
     list_free_ext(indexOidList);
