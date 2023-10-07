@@ -252,3 +252,4 @@ weightstring.cpp
 windowfuncs.cpp
 year.cpp
 year.h
+alter.cpp
