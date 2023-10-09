@@ -38,6 +38,12 @@ CONTEXT:  referenced column: c
 insert into test values(timediff(B'1100', B'101'));
 ERROR:  Truncated incorrect time value
 CONTEXT:  referenced column: c
+insert into test values(TIMEDIFF(CURRENT_DATE, '2004-12-07'));
+ERROR:  time field value out of range
+CONTEXT:  referenced column: c
+insert into test values(TIMEDIFF('2004-12-07', CURRENT_DATE));
+ERROR:  time field value out of range
+CONTEXT:  referenced column: c
 insert ignore into test values(timediff(B'101', B'1010'));
 WARNING:  Truncated incorrect time value
 CONTEXT:  referenced column: c
@@ -74,9 +80,33 @@ CONTEXT:  referenced column: c
 insert ignore into test values(timediff(B'1100', B'101'));
 WARNING:  Truncated incorrect time value
 CONTEXT:  referenced column: c
+insert ignore into test values(TIMEDIFF(CURRENT_DATE, '2004-12-07'));
+WARNING:  time field value out of range
+CONTEXT:  referenced column: c
+insert ignore into test values(TIMEDIFF('2004-12-07', CURRENT_DATE));
+WARNING:  time field value out of range
+CONTEXT:  referenced column: c
+SELECT TIMEDIFF(CURRENT_DATE, '2004-12-07');
+WARNING:  time field value out of range
+CONTEXT:  referenced column: timediff
+ timediff  
+-----------
+ 838:59:59
+(1 row)
+
+SELECT TIMEDIFF('2004-12-07', CURRENT_DATE);
+WARNING:  time field value out of range
+CONTEXT:  referenced column: timediff
+  timediff  
+------------
+ -838:59:59
+(1 row)
+
 select c from test order by c;
- c 
----
+     c      
+------------
+ -838:59:59
+ 838:59:59
  
  
  
@@ -89,7 +119,7 @@ select c from test order by c;
  
  
  
-(12 rows)
+(14 rows)
 
 set dolphin.sql_mode = '';
 select timediff('asdf', '00:00:00');
@@ -253,9 +283,19 @@ CONTEXT:  referenced column: c
 insert into test values(timediff(B'1100', B'101'));
 WARNING:  Truncated incorrect time value
 CONTEXT:  referenced column: c
+insert into test values(TIMEDIFF(CURRENT_DATE, '2004-12-07'));
+WARNING:  time field value out of range
+CONTEXT:  referenced column: c
+insert into test values(TIMEDIFF('2004-12-07', CURRENT_DATE));
+WARNING:  time field value out of range
+CONTEXT:  referenced column: c
 select c from test order by c;
- c 
----
+     c      
+------------
+ -838:59:59
+ -838:59:59
+ 838:59:59
+ 838:59:59
  
  
  
@@ -280,7 +320,7 @@ select c from test order by c;
  
  
  
-(24 rows)
+(28 rows)
 
 drop table test;
 reset current_schema;

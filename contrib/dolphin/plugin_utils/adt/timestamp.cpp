@@ -7033,7 +7033,7 @@ Oid convert_unknown_to_datetime_time(const char* str, Timestamp *datetime, TimeA
     {
         *datetime = DatumGetTimestamp(
             DirectFunctionCall1(date_timestamp, DirectFunctionCall1(date_in, CStringGetDatum(start))));
-        return DATEOID;
+        typid = DATEOID;
     }
     PG_CATCH();
     {
@@ -7041,9 +7041,10 @@ Oid convert_unknown_to_datetime_time(const char* str, Timestamp *datetime, TimeA
         *time = DatumGetTimeADT(
             DirectFunctionCall3(time_in, CStringGetDatum(start), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
         check_b_format_time_range_with_ereport(*time);
-        return TIMEOID;
+        typid = TIMEOID;
     }
     PG_END_TRY();
+    return typid;
 }
 
 /**
@@ -7272,11 +7273,11 @@ Datum timediff(PG_FUNCTION_ARGS)
     Timestamp datetime1, datetime2;
     Oid val_type1, val_type2;
     TimeADT result;
+    int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
 
     val_type1 = get_fn_expr_argtype(fcinfo->flinfo, 0);
     val_type2 = get_fn_expr_argtype(fcinfo->flinfo, 1);
     if (!get_time(val_type1, PG_GETARG_DATUM(0)) || !get_time(val_type2, PG_GETARG_DATUM(1))) {
-        int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
         ereport(level, (errmsg("Truncated incorrect time value")));
         PG_RETURN_NULL();
     }
@@ -7320,7 +7321,11 @@ Datum timediff(PG_FUNCTION_ARGS)
                             errmsg("unsupported input data type: %s", format_type_be(val_type1))));
         }
     }
-    check_b_format_time_range_with_ereport(result);
+    if (result < -B_FORMAT_TIME_MAX_VALUE || result > B_FORMAT_TIME_MAX_VALUE) {
+        ereport(level, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                        errmsg("time field value out of range")));
+        result = result < -B_FORMAT_TIME_MAX_VALUE ? -B_FORMAT_TIME_MAX_VALUE : B_FORMAT_TIME_MAX_VALUE;
+    }
     PG_RETURN_TIMEADT(result);
 }
 
