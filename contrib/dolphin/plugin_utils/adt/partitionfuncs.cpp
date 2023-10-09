@@ -252,7 +252,8 @@ Datum RebuildPartition(PG_FUNCTION_ARGS)
         reindexPartition(relid, partOid, REINDEX_REL_SUPPRESS_INDEX_USE, REINDEX_ALL_INDEX);
     }
     releasePartitionList(rel, &partList, AccessExclusiveLock);
-    relation_close(rel, AccessShareLock);
+    /* hold lock until transaction commit, cause we still need lock before doing RelationForgetRelation */
+    relation_close(rel, NoLock);
     RelationForgetRelation(relid);
     PG_RETURN_TEXT_P(cstring_to_text(tableName));
 }
