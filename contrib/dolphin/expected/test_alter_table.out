@@ -32,6 +32,107 @@ NOTICE:  relation "not_exists_tbl" does not exist, skipping
 -- test multi-cmd
 alter table alter_table_tbl1 add column key int, rename index new_alter_table_tbl_b_ind to alter_table_tbl_b_ind;
 alter table alter_table_tbl1 drop column key, drop key alter_table_tbl_b_ind;
+-- alter table - rename column
+ALTER TABLE alter_table_tbl1 RENAME COLUMN a TO AB;
+\d alter_table_tbl1
+Table "db_alter_table.alter_table_tbl1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ AB     | integer | not null
+ b      | integer | 
+Indexes:
+    "alter_table_tbl1_pkey" PRIMARY KEY, btree ("AB") TABLESPACE pg_default
+
+ALTER TABLE alter_table_tbl1 RENAME COLUMN ab TO Ab;
+\d alter_table_tbl1
+Table "db_alter_table.alter_table_tbl1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ Ab     | integer | not null
+ b      | integer | 
+Indexes:
+    "alter_table_tbl1_pkey" PRIMARY KEY, btree ("Ab") TABLESPACE pg_default
+
+ALTER TABLE alter_table_tbl1 RENAME AB TO AB;
+\d alter_table_tbl1
+Table "db_alter_table.alter_table_tbl1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ AB     | integer | not null
+ b      | integer | 
+Indexes:
+    "alter_table_tbl1_pkey" PRIMARY KEY, btree ("AB") TABLESPACE pg_default
+
+ALTER TABLE alter_table_tbl1 RENAME ab TO ab;
+\d alter_table_tbl1
+Table "db_alter_table.alter_table_tbl1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ ab     | integer | not null
+ b      | integer | 
+Indexes:
+    "alter_table_tbl1_pkey" PRIMARY KEY, btree (ab) TABLESPACE pg_default
+
+ALTER TABLE if exists alter_table_tbl1 RENAME COLUMN AB TO Ab;
+\d alter_table_tbl1
+Table "db_alter_table.alter_table_tbl1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ Ab     | integer | not null
+ b      | integer | 
+Indexes:
+    "alter_table_tbl1_pkey" PRIMARY KEY, btree ("Ab") TABLESPACE pg_default
+
+ALTER TABLE if exists alter_table_tbl1 RENAME COLUMN Ab TO ab;
+\d alter_table_tbl1
+Table "db_alter_table.alter_table_tbl1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ ab     | integer | not null
+ b      | integer | 
+Indexes:
+    "alter_table_tbl1_pkey" PRIMARY KEY, btree (ab) TABLESPACE pg_default
+
+ALTER TABLE if exists alter_table_tbl1 RENAME AB TO ab;
+\d alter_table_tbl1
+Table "db_alter_table.alter_table_tbl1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ ab     | integer | not null
+ b      | integer | 
+Indexes:
+    "alter_table_tbl1_pkey" PRIMARY KEY, btree (ab) TABLESPACE pg_default
+
+ALTER TABLE if exists alter_table_tbl1 RENAME Ab TO AB;
+\d alter_table_tbl1
+Table "db_alter_table.alter_table_tbl1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ AB     | integer | not null
+ b      | integer | 
+Indexes:
+    "alter_table_tbl1_pkey" PRIMARY KEY, btree ("AB") TABLESPACE pg_default
+
+ALTER TABLE alter_table_tbl1 CHANGE AB ab int;
+\d alter_table_tbl1
+Table "db_alter_table.alter_table_tbl1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ ab     | integer | not null
+ b      | integer | 
+Indexes:
+    "alter_table_tbl1_pkey" PRIMARY KEY, btree (ab) TABLESPACE pg_default
+
+ALTER TABLE alter_table_tbl1 CHANGE COLUMN AB AB int;
+\d alter_table_tbl1
+Table "db_alter_table.alter_table_tbl1"
+ Column |  Type   | Modifiers 
+--------+---------+-----------
+ AB     | integer | not null
+ b      | integer | 
+Indexes:
+    "alter_table_tbl1_pkey" PRIMARY KEY, btree ("AB") TABLESPACE pg_default
+
 drop table alter_table_tbl1, alter_table_tbl2;
 set dolphin.sql_mode='pipes_as_concat,pad_char_to_full_length';
 create table table_ddl_0030_01(col1 int primary key,col2 varchar(20));
@@ -76,6 +177,127 @@ select * from foreign_key_table_002 order by 1,2,3;
      2 | eeee                           |     2 | 2020-07-20 00:00:00-07 | t     | eeee                           |   2.2
      3 | dddd                           |     1 | 2020-07-20 00:00:00-07 | t     | dddd                           |   2.2
 (2 rows)
+
+-- alter table - rename column
+ALTER FOREIGN TABLE foreign_key_table_002 RENAME COLUMN COL_1 TO col_1;
+\d foreign_key_table_002
+ Table "db_alter_table.foreign_key_table_002"
+ Column |           Type           | Modifiers 
+--------+--------------------------+-----------
+ col_1  | smallint                 | default 3
+ COL_2  | character(30)            | 
+ COL_3  | integer                  | 
+ COL_4  | timestamp with time zone | 
+ COL_5  | boolean                  | 
+ COL_6  | character(30)            | 
+ COL_7  | real                     | 
+Foreign-key constraints:
+    "foreign_key_table_002_col_1_fkey" FOREIGN KEY (col_1) REFERENCES foreign_key_table_001(`COL_1`) ON DELETE SET DEFAULT
+
+ALTER FOREIGN TABLE foreign_key_table_002 RENAME COLUMN COL_1 TO Col_1;
+\d foreign_key_table_002
+ Table "db_alter_table.foreign_key_table_002"
+ Column |           Type           | Modifiers 
+--------+--------------------------+-----------
+ Col_1  | smallint                 | default 3
+ COL_2  | character(30)            | 
+ COL_3  | integer                  | 
+ COL_4  | timestamp with time zone | 
+ COL_5  | boolean                  | 
+ COL_6  | character(30)            | 
+ COL_7  | real                     | 
+Foreign-key constraints:
+    "foreign_key_table_002_col_1_fkey" FOREIGN KEY (`Col_1`) REFERENCES foreign_key_table_001(`COL_1`) ON DELETE SET DEFAULT
+
+ALTER FOREIGN TABLE foreign_key_table_002 RENAME col_1 TO col_1;
+\d foreign_key_table_002
+ Table "db_alter_table.foreign_key_table_002"
+ Column |           Type           | Modifiers 
+--------+--------------------------+-----------
+ col_1  | smallint                 | default 3
+ COL_2  | character(30)            | 
+ COL_3  | integer                  | 
+ COL_4  | timestamp with time zone | 
+ COL_5  | boolean                  | 
+ COL_6  | character(30)            | 
+ COL_7  | real                     | 
+Foreign-key constraints:
+    "foreign_key_table_002_col_1_fkey" FOREIGN KEY (col_1) REFERENCES foreign_key_table_001(`COL_1`) ON DELETE SET DEFAULT
+
+ALTER FOREIGN TABLE foreign_key_table_002 RENAME COL_1 TO COL_1;
+\d foreign_key_table_002
+ Table "db_alter_table.foreign_key_table_002"
+ Column |           Type           | Modifiers 
+--------+--------------------------+-----------
+ COL_1  | smallint                 | default 3
+ COL_2  | character(30)            | 
+ COL_3  | integer                  | 
+ COL_4  | timestamp with time zone | 
+ COL_5  | boolean                  | 
+ COL_6  | character(30)            | 
+ COL_7  | real                     | 
+Foreign-key constraints:
+    "foreign_key_table_002_col_1_fkey" FOREIGN KEY (`COL_1`) REFERENCES foreign_key_table_001(`COL_1`) ON DELETE SET DEFAULT
+
+ALTER FOREIGN TABLE if exists foreign_key_table_002 RENAME COLUMN cOL_1 TO cOL_1;
+\d foreign_key_table_002
+ Table "db_alter_table.foreign_key_table_002"
+ Column |           Type           | Modifiers 
+--------+--------------------------+-----------
+ cOL_1  | smallint                 | default 3
+ COL_2  | character(30)            | 
+ COL_3  | integer                  | 
+ COL_4  | timestamp with time zone | 
+ COL_5  | boolean                  | 
+ COL_6  | character(30)            | 
+ COL_7  | real                     | 
+Foreign-key constraints:
+    "foreign_key_table_002_col_1_fkey" FOREIGN KEY (`cOL_1`) REFERENCES foreign_key_table_001(`COL_1`) ON DELETE SET DEFAULT
+
+ALTER FOREIGN TABLE if exists foreign_key_table_002 RENAME COLUMN col_1 TO Col_1;
+\d foreign_key_table_002
+ Table "db_alter_table.foreign_key_table_002"
+ Column |           Type           | Modifiers 
+--------+--------------------------+-----------
+ Col_1  | smallint                 | default 3
+ COL_2  | character(30)            | 
+ COL_3  | integer                  | 
+ COL_4  | timestamp with time zone | 
+ COL_5  | boolean                  | 
+ COL_6  | character(30)            | 
+ COL_7  | real                     | 
+Foreign-key constraints:
+    "foreign_key_table_002_col_1_fkey" FOREIGN KEY (`Col_1`) REFERENCES foreign_key_table_001(`COL_1`) ON DELETE SET DEFAULT
+
+ALTER FOREIGN TABLE if exists foreign_key_table_002 RENAME COL_1 TO COL_1;
+\d foreign_key_table_002
+ Table "db_alter_table.foreign_key_table_002"
+ Column |           Type           | Modifiers 
+--------+--------------------------+-----------
+ COL_1  | smallint                 | default 3
+ COL_2  | character(30)            | 
+ COL_3  | integer                  | 
+ COL_4  | timestamp with time zone | 
+ COL_5  | boolean                  | 
+ COL_6  | character(30)            | 
+ COL_7  | real                     | 
+Foreign-key constraints:
+    "foreign_key_table_002_col_1_fkey" FOREIGN KEY (`COL_1`) REFERENCES foreign_key_table_001(`COL_1`) ON DELETE SET DEFAULT
+
+ALTER FOREIGN TABLE if exists foreign_key_table_002 RENAME Col_1 TO col_1;
+\d foreign_key_table_002
+ Table "db_alter_table.foreign_key_table_002"
+ Column |           Type           | Modifiers 
+--------+--------------------------+-----------
+ col_1  | smallint                 | default 3
+ COL_2  | character(30)            | 
+ COL_3  | integer                  | 
+ COL_4  | timestamp with time zone | 
+ COL_5  | boolean                  | 
+ COL_6  | character(30)            | 
+ COL_7  | real                     | 
+Foreign-key constraints:
+    "foreign_key_table_002_col_1_fkey" FOREIGN KEY (col_1) REFERENCES foreign_key_table_001(`COL_1`) ON DELETE SET DEFAULT
 
 drop table foreign_key_table_001,foreign_key_table_002;
 show dolphin.sql_mode;
