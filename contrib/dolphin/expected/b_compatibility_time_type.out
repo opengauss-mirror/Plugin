@@ -307,8 +307,13 @@ SELECT 10228::date;
 (1 row)
 
 SELECT 10229::date;
-ERROR:  Out of range value for date
+WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
 SELECT 991231::date;
     date    
 ------------
@@ -328,14 +333,29 @@ SELECT 21000228::date;
 (1 row)
 
 SELECT 21000229::date;
-ERROR:  Out of range value for date
+WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
 SELECT 100000000::date;
-ERROR:  Out of range value for date
+WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
 SELECT 100101231::date;
-ERROR:  Out of range value for date
+WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
 -- test time
 -- '[-][D] hh:mm:ss.fsec'
 SELECT time(7)'12:12:12.123456';

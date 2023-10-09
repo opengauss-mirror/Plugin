@@ -76,6 +76,15 @@ select 19990101222222::uint8::timestamp;
 select 19990101222222::uint8::timestamptz;
 select 19990101222222::uint8::datetime;
 
+select '-1'::uint1::date;
+select '256'::uint1::date;
+select 2004::uint2::date;
+select '65536'::uint2::date;
+select '65535'::uint2::date;
+select 2067::uint8::date;
+select '-1'::uint8::date;
+select '18446744073709551615'::uint8::date;
+
 select 1999::uint4::year;
 select 1999::year::uint4;
 

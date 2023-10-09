@@ -40,7 +40,7 @@ test: builtin_funcs/bin builtin_funcs/char builtin_funcs/char_length builtin_fun
 
 test: builtin_funcs/db_b_hex builtin_funcs/db_b_if builtin_funcs/elt builtin_funcs/field builtin_funcs/find_in_set builtin_funcs/soundex builtin_funcs/space builtin_funcs/make_set builtin_funcs/between builtin_funcs/not_between
 
-test: uint_agg uint_and uint_cast uint_cast2 uint_div uint_mi uint_mod uint_mod2 uint_mul uint_numeric uint_operator uint_or uint_partition uint_pl uint_xor
+test: uint_agg uint_and uint_cast uint_cast2 uint_cast3 uint_div uint_mi uint_mod uint_mod2 uint_mul uint_numeric uint_operator uint_or uint_partition uint_pl uint_xor
 
 test: uint_procedure_col_bypass uint_smp uint_index uint_sql_mode uint_ignore uint_join signed_unsigned_cast uint_in implicit_cast uint_auto_increment signed_cast
 
