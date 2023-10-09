@@ -10591,10 +10591,24 @@ Datum blob_any_value(PG_FUNCTION_ARGS)
     PG_RETURN_BYTEA_P(vlena);
 }
 
+static char* AnyElementGetCString(Oid anyOid, Datum anyDatum)
+{
+    char* data = NULL;
+    Oid typeOutput = InvalidOid;
+    bool typIsVarlena = false;
+    getTypeOutputInfo(anyOid, &typeOutput, &typIsVarlena);
+    if (typIsVarlena) {
+        data = DatumGetCString(DirectFunctionCall1(textout, anyDatum));
+    } else {
+        data = DatumGetCString(OidOutputFunctionCall(typeOutput, anyDatum));
+    }
+    return data;
+}
+
 Datum Varlena2Float8(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
     bool hasError = false;
     char* endptr = NULL;
 
@@ -10611,7 +10625,7 @@ Datum Varlena2Float8(PG_FUNCTION_ARGS)
 Datum Varlena2Numeric(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
     Datum result;
 
     result = DirectFunctionCall3(numeric_in, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
@@ -10623,7 +10637,7 @@ Datum Varlena2Numeric(PG_FUNCTION_ARGS)
 Datum Varlena2Bpchar(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
     Datum result;
 
     result = DirectFunctionCall3(bpcharin, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
@@ -10635,7 +10649,7 @@ Datum Varlena2Bpchar(PG_FUNCTION_ARGS)
 Datum Varlena2Varchar(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
     Datum result;
 
     result = DirectFunctionCall3(varcharin, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
@@ -10647,7 +10661,7 @@ Datum Varlena2Varchar(PG_FUNCTION_ARGS)
 Datum Varlena2Text(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
     Datum result;
 
     result = DirectFunctionCall3(textin, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));

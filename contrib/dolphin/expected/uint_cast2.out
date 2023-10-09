@@ -835,5 +835,66 @@ select * from t1;
 
 reset dolphin.sql_mode;
 drop table if exists t1;
+--test for db core
+select varlena_cast_ui1(1);
+ varlena_cast_ui1 
+------------------
+ 1
+(1 row)
+
+select varlena_cast_ui2(1);
+ varlena_cast_ui2 
+------------------
+ 1
+(1 row)
+
+select varlena_cast_ui4(1);
+ varlena_cast_ui4 
+------------------
+ 1
+(1 row)
+
+select varlena_cast_ui8(1);
+ varlena_cast_ui8 
+------------------
+ 1
+(1 row)
+
+select varlena_cast_int8(1);
+ varlena_cast_int8 
+-------------------
+                 1
+(1 row)
+
+select varlena2float8(1);
+ varlena2float8 
+----------------
+              1
+(1 row)
+
+select varlena2numeric(1);
+ varlena2numeric 
+-----------------
+               1
+(1 row)
+
+select Varlena2Bpchar(1);
+ varlena2bpchar 
+----------------
+ 1
+(1 row)
+
+select Varlena2Varchar(1);
+ varlena2varchar 
+-----------------
+ 1
+(1 row)
+
+select Varlena2Text(1);
+ varlena2text 
+--------------
+ 1
+(1 row)
+
 drop schema uint_cast2 cascade;
 reset current_schema;
