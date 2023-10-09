@@ -1,7 +1,5 @@
-drop database if exists uint_cast3;
-NOTICE:  database "uint_cast3" does not exist, skipping
-create database uint_cast3 dbcompatibility 'b';
-\c uint_cast3
+create schema uint_cast3;
+set current_schema to 'uint_cast3';
 select 1::uint1::int16;
  int16 
 -------
@@ -99,9 +97,9 @@ select 1::clob::uint8;
 (1 row)
 
 select 1::uint4::abstime;
-           abstime            
-------------------------------
- Wed Dec 31 16:00:01 1969 PST
+        abstime         
+------------------------
+ 1969-12-31 16:00:01-08
 (1 row)
 
 select 1::abstime::uint4;
@@ -341,43 +339,115 @@ select 151503::uint4::time;
 select 19990101::uint4::date;
     date    
 ------------
- 01-01-1999
+ 1999-01-01
 (1 row)
 
 select 19990101::uint4::timestamp;
-         timestamptz          
-------------------------------
- Fri Jan 01 00:00:00 1999 PST
+      timestamptz       
+------------------------
+ 1999-01-01 00:00:00-08
 (1 row)
 
 select 19990101::uint4::timestamptz;
-         timestamptz          
-------------------------------
- Fri Jan 01 00:00:00 1999 PST
+      timestamptz       
+------------------------
+ 1999-01-01 00:00:00-08
 (1 row)
 
 select 19990101::uint4::datetime;
-        timestamp         
---------------------------
- Fri Jan 01 00:00:00 1999
+      timestamp      
+---------------------
+ 1999-01-01 00:00:00
 (1 row)
 
 select 19990101222222::uint8::timestamp;
-         timestamptz          
-------------------------------
- Fri Jan 01 22:22:22 1999 PST
+      timestamptz       
+------------------------
+ 1999-01-01 22:22:22-08
 (1 row)
 
 select 19990101222222::uint8::timestamptz;
-         timestamptz          
-------------------------------
- Fri Jan 01 22:22:22 1999 PST
+      timestamptz       
+------------------------
+ 1999-01-01 22:22:22-08
 (1 row)
 
 select 19990101222222::uint8::datetime;
-        timestamp         
---------------------------
- Fri Jan 01 22:22:22 1999
+      timestamp      
+---------------------
+ 1999-01-01 22:22:22
+(1 row)
+
+select '-1'::uint1::date;
+WARNING:  Cast to tinyint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: date
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+select '256'::uint1::date;
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: date
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+select 2004::uint2::date;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+select '65536'::uint2::date;
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: date
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+select '65535'::uint2::date;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+select 2067::uint8::date;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+select '-1'::uint8::date;
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: date
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+select '18446744073709551615'::uint8::date;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+    date    
+------------
+ 0000-00-00
 (1 row)
 
 select 1999::uint4::year;
@@ -393,24 +463,32 @@ select 1999::year::uint4;
 (1 row)
 
 select (-1)::text::uint1;
+WARNING:  Cast to tinyint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint1
  uint1 
 -------
  255
 (1 row)
 
 select (-1)::text::uint2;
+WARNING:  Cast to smallint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint2
  uint2 
 -------
  65535
 (1 row)
 
 select (-1)::text::uint4;
+WARNING:  Cast to int unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint4
    uint4    
 ------------
  4294967295
 (1 row)
 
 select (-1)::text::uint8;
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint8
         uint8         
 ----------------------
  18446744073709551615
@@ -441,16 +519,52 @@ select '18446744073709551615'::text::uint8;
 (1 row)
 
 select '256'::text::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select '65536'::text::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 select '4294967296'::text::uint4;
-ERROR:  int unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 select '18446744073709551616'::text::uint8;
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
-\c postgres
-drop database uint_cast3;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+SET dolphin.sql_mode = '';
+select cast('-0' as unsigned);
+ uint8 
+-------
+ 0
+(1 row)
+
+create table t_uint(a uint1, b uint2, c uint4, d uint8);
+insert into t_uint values('-0', '-0', '-0', '-0');
+select * from t_uint;
+ a | b | c | d 
+---+---+---+---
+ 0 | 0 | 0 | 0
+(1 row)
+
+drop table t_uint;
+drop schema uint_cast3 cascade;
+reset current_schema;

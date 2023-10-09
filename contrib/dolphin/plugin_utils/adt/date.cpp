@@ -565,19 +565,28 @@ Datum int32_b_format_date(PG_FUNCTION_ARGS)
     int4 date = PG_GETARG_INT32(0);
     DateADT result;
     struct pg_tm tt, *tm = &tt;
+    int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
     if (int32_b_format_date_internal(tm, date, true)) {
-        ereport(ERROR,
+        ereport(errlevel,
                 (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
                             errmsg("Out of range value for date")));
+        tm->tm_year = 0;
+        tm->tm_mon = 0;
+        tm->tm_mday = 0;
     }
     if (date == 0 && !SQL_MODE_STRICT() && SQL_MODE_NO_ZERO_DATE()) {
         ereport(WARNING,
                 (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
                             errmsg("Out of range value for date")));
     }
-    if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday))
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date out of range: \"%d\"", date)));
-
+    if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday)) {
+        ereport(errlevel,
+                (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                            errmsg("date out of range: \"%d\"", date)));
+        tm->tm_year = 0;
+        tm->tm_mon = 0;
+        tm->tm_mday = 0;
+    }
     result = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
     PG_RETURN_DATEADT(result);
 }
