@@ -19,7 +19,7 @@ CREATE TABLE test_numeric_table_min
     `bit1` bit(1),
     `bit64` bit(64)
 );
-
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,error_for_division_by_zero';
 -- type test when b_compatibility_mode is on
 set dolphin.b_compatibility_mode to on;
 drop table if exists test_numeric_type_min;

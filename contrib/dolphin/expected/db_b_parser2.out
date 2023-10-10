@@ -176,9 +176,11 @@ select second('373839');
 (1 row)
 
 select second('2022-10-09');
+WARNING:  invalid input syntax for type time: "2022-10-09"
+CONTEXT:  referenced column: second
  second 
 --------
-      0
+     22
 (1 row)
 
 select minute('10:20:30');
@@ -218,9 +220,11 @@ select minute('373839');
 (1 row)
 
 select minute('2022-10-09');
+WARNING:  invalid input syntax for type time: "2022-10-09"
+CONTEXT:  referenced column: minute
  minute 
 --------
-      0
+     20
 (1 row)
 
 select microsecond('10:20:30');
@@ -260,6 +264,8 @@ select microsecond('373839');
 (1 row)
 
 select microsecond('2022-10-09');
+WARNING:  invalid input syntax for type time: "2022-10-09"
+CONTEXT:  referenced column: microsecond
  microsecond 
 -------------
            0
@@ -302,6 +308,8 @@ select hour('373839');
 (1 row)
 
 select hour('2022-10-09');
+WARNING:  invalid input syntax for type time: "2022-10-09"
+CONTEXT:  referenced column: hour
  hour 
 ------
     0
@@ -344,18 +352,24 @@ SELECT weekofyear(20221009);
 (1 row)
 
 select year('');
+WARNING:  invalid input syntax for type timestamp: ""
+CONTEXT:  referenced column: year
  year 
 ------
      
 (1 row)
 
 select year('2022');
+WARNING:  invalid input syntax for type timestamp: "2022"
+CONTEXT:  referenced column: year
  year 
 ------
      
 (1 row)
 
 select year('2022-06');
+WARNING:  invalid input syntax for type timestamp: "2022-06"
+CONTEXT:  referenced column: year
  year 
 ------
      

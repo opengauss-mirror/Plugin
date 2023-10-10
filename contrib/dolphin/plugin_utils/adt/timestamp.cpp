@@ -3679,8 +3679,13 @@ Datum interval_div(PG_FUNCTION_ARGS)
 
     result = (Interval*)palloc(sizeof(Interval));
 
-    if (factor == 0.0)
+    if (factor == 0.0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
+    }
     if (isnan(factor)) {
         /* NaN convert process. It differs from interval_mul to maintain compatibility. */
         INTERVAL_CONVERT_INFINITY_NAN(result);
@@ -4860,7 +4865,7 @@ Datum text_year_part(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp;
     char* str = TextDatumGetCString(PG_GETARG_TEXT_PP(0));
-    if (!datetime_in_no_ereport(str, &timestamp)) {
+    if (!datetime_in_no_ereport(str, &timestamp) || timestamp == TIMESTAMP_ZERO) {
         PG_RETURN_NULL();
     }
     float8 result = 0;

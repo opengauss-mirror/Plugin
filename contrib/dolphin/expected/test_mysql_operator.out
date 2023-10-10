@@ -1491,7 +1491,10 @@ select a^b from testforbit where b%a^1=1;
 (0 rows)
 
 select a^b from testforbit where a/b^1<1;
-ERROR:  division by zero
+ ?column? 
+----------
+(0 rows)
+
 select a^b from testforbit where a*b^1!=1;
  ?column? 
 ----------

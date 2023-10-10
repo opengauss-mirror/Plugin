@@ -967,9 +967,13 @@ Datum float4div(PG_FUNCTION_ARGS)
     float4 arg2 = PG_GETARG_FLOAT4(1);
     float4 result;
 
-    if (arg2 == 0.0)
+    if (arg2 == 0.0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
-
+    }
     if (arg1 == 0.0)
         PG_RETURN_FLOAT4(0);
 
@@ -1040,9 +1044,13 @@ Datum float8div(PG_FUNCTION_ARGS)
     float8 arg2 = PG_GETARG_FLOAT8(1);
     float8 result;
 
-    if (arg2 == 0.0)
+    if (arg2 == 0.0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
-
+    }
 #ifdef DOLPHIN
     if (arg1 == 0.0) {
         if (GetSessionContext()->enableBCmptMode && arg2 < 0) {
@@ -2688,8 +2696,13 @@ Datum float48div(PG_FUNCTION_ARGS)
     float8 arg2 = PG_GETARG_FLOAT8(1);
     float8 result;
 
-    if (arg2 == 0.0)
+    if (arg2 == 0.0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
+    }
 
 #ifdef DOLPHIN
     if (arg1 == 0.0) {
@@ -2770,9 +2783,13 @@ Datum float84div(PG_FUNCTION_ARGS)
     float4 arg2 = PG_GETARG_FLOAT4(1);
     float8 result;
 
-    if (arg2 == 0.0)
+    if (arg2 == 0.0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
-
+    }
 #ifdef DOLPHIN
     if (arg1 == 0.0) {
         if (GetSessionContext()->enableBCmptMode && arg2 < 0) {
@@ -3248,7 +3265,8 @@ Datum dolphin_float4div(PG_FUNCTION_ARGS)
     float8 result;
 
     if (arg2 == 0.0) {
-        ereport(ERROR, (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
     }
 
     if (arg1 == 0.0) {

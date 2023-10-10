@@ -6,6 +6,7 @@ CREATE ROLE us2 IDENTIFIED BY 'Aa@123456';
 NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 GRANT ALL ON SCHEMA m_create_proc_type TO us2;
 SET ROLE us2 PASSWORD 'Aa@123456';
+set dolphin.sql_mode = 'sql_mode_strict,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero';
 --test create procedure 
 delimiter //
 CREATE PROCEDURE p()
@@ -170,18 +171,18 @@ CREATE PROCEDURE testpro_m6(a int)
 end//
  delimiter ;
 show create procedure testpro_m6;
- Procedure  |                          Create Procedure                           |                                               sql_mode                                               | character_set_client | collation_connection | Database Collation 
-------------+---------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+----------------------+----------------------+--------------------
- testpro_m6 | CREATE DEFINER = us2 PROCEDURE m_create_proc_type.testpro_m6(a int)+| sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length | UTF8                 | en_US.UTF-8          | en_US.UTF-8
-            |     BEGIN      declare b int;                                      +|                                                                                                      |                      |                      | 
-            |         declare c int;                                             +|                                                                                                      |                      |                      | 
-            |         b:= 9;                                                     +|                                                                                                      |                      |                      | 
-            |         insert into test values (a + b);                           +|                                                                                                      |                      |                      | 
-            |         begin                                                      +|                                                                                                      |                      |                      | 
-            |             insert into test values (a + b);                       +|                                                                                                      |                      |                      | 
-            |         end;                                                       +|                                                                                                      |                      |                      | 
-            | end;                                                               +|                                                                                                      |                      |                      | 
-            |                                                                     |                                                                                                      |                      |                      | 
+ Procedure  |                          Create Procedure                           |                                      sql_mode                                       | character_set_client | collation_connection | Database Collation 
+------------+---------------------------------------------------------------------+-------------------------------------------------------------------------------------+----------------------+----------------------+--------------------
+ testpro_m6 | CREATE DEFINER = us2 PROCEDURE m_create_proc_type.testpro_m6(a int)+| sql_mode_strict,pipes_as_concat,ansi_quotes,no_zero_date,error_for_division_by_zero | UTF8                 | en_US.UTF-8          | en_US.UTF-8
+            |     BEGIN      declare b int;                                      +|                                                                                     |                      |                      | 
+            |         declare c int;                                             +|                                                                                     |                      |                      | 
+            |         b:= 9;                                                     +|                                                                                     |                      |                      | 
+            |         insert into test values (a + b);                           +|                                                                                     |                      |                      | 
+            |         begin                                                      +|                                                                                     |                      |                      | 
+            |             insert into test values (a + b);                       +|                                                                                     |                      |                      | 
+            |         end;                                                       +|                                                                                     |                      |                      | 
+            | end;                                                               +|                                                                                     |                      |                      | 
+            |                                                                     |                                                                                     |                      |                      | 
 (1 row)
 
  delimiter //

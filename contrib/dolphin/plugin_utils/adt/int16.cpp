@@ -40,6 +40,9 @@
 #include "utils/int16.h"
 #include "utils/int8.h"
 #include "utils/numeric.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 const int MAXINT16LEN = 45;
 
@@ -650,6 +653,10 @@ Datum int16div(PG_FUNCTION_ARGS)
     float8 result;
 
     if (arg2 == 0) {
+#ifdef DOLPHIN
+        CheckErrDivByZero(fcinfo->can_ignore);
+        PG_RETURN_NULL();
+#endif
         ereport(ERROR,
             (errmodule(MOD_FUNCTION), errcode(ERRCODE_DIVISION_BY_ZERO),
                 errmsg("division by zero"),

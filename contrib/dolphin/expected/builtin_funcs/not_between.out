@@ -211,8 +211,13 @@ select 1 not between 0 and cast(18446744073709551615 as unsigned);
 (1 row)
 
 select 1 not between 0 and cast(18446744073709551615 as signed);
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: b_not_between_and
+ b_not_between_and 
+-------------------
+ f
+(1 row)
+
 select cast(0 as unsigned) not between -1 and 1;
  b_not_between_and 
 -------------------
@@ -244,6 +249,22 @@ select b'11' not between 1::float and 2.5::decimal;
 (1 row)
 
 select 100 not between '-Inf'::float and '+Inf'::float;
+WARNING:  value out of range: overflow
+LINE 1: select 100 not between '-Inf'::float and '+Inf'::float;
+                               ^
+CONTEXT:  referenced column: b_not_between_and
+WARNING:  value out of range: overflow
+LINE 1: select 100 not between '-Inf'::float and '+Inf'::float;
+                                                 ^
+CONTEXT:  referenced column: b_not_between_and
+WARNING:  value out of range: overflow
+LINE 1: select 100 not between '-Inf'::float and '+Inf'::float;
+                               ^
+CONTEXT:  referenced column: b_not_between_and
+WARNING:  value out of range: overflow
+LINE 1: select 100 not between '-Inf'::float and '+Inf'::float;
+                                                 ^
+CONTEXT:  referenced column: b_not_between_and
  b_not_between_and 
 -------------------
  f

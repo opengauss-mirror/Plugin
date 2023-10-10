@@ -1,24 +1,32 @@
 create schema uint_numeric;
 set current_schema to 'uint_numeric';
 select (-1)::numeric::uint1;
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
  uint1 
 -------
  0
 (1 row)
 
 select (-1)::numeric::uint2;
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
  uint2 
 -------
  0
 (1 row)
 
 select (-1)::numeric::uint4;
+WARNING:  unsigned int out of range
+CONTEXT:  referenced column: uint4
  uint4 
 -------
  0
 (1 row)
 
 select (-1)::numeric::uint8;
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
  uint8 
 -------
  0
@@ -73,17 +81,37 @@ select 18446744073709551615::numeric(30)::uint8;
 (1 row)
 
 select 256::numeric::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select 65536::numeric::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 select 4294967296::numeric::uint4;
-ERROR:  unsigned int out of range
+WARNING:  unsigned int out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 select 18446744073709551616::numeric(30)::uint8;
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 select (-1)::float4::uint1;
  uint1 
 -------
@@ -145,23 +173,53 @@ select 65535::float4::uint2;
 (1 row)
 
 select 4294967295::float4::uint4;
-ERROR:  int unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 select 18446744073709551615::float4::uint8;
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 select 256::float4::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select 65536::float4::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 select 4294967296::float4::uint4;
-ERROR:  int unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 select 18446744073709551616::float4::uint8;
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 select (-1)::float8::uint1;
  uint1 
 -------
@@ -229,20 +287,45 @@ select 4294967295::float8::uint4;
 (1 row)
 
 select 18446744073709551615::float8::uint8;
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 select 256::float8::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select 65536::float8::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 select 4294967296::float8::uint4;
-ERROR:  int unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 select 18446744073709551616::float8::uint8;
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 create table t1(a uint1);
 create table t2(a uint2);
 create table t3(a uint4);

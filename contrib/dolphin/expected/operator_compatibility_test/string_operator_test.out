@@ -1210,8 +1210,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: char/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: char/json
-ERROR:  division by zero
-CONTEXT:  referenced column: char/json
 UPDATE test_string_type, test_string_table SET test_string_type.`varchar+char` = test_string_table.`varchar`+test_string_table.`char`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varchar+char
@@ -1415,8 +1413,6 @@ UPDATE test_string_type, test_string_table SET test_string_type.`varchar/json` =
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varchar/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: varchar/json
-ERROR:  division by zero
 CONTEXT:  referenced column: varchar/json
 UPDATE test_string_type, test_string_table SET test_string_type.`binary+char` = test_string_table.`binary`+test_string_table.`char`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -1622,8 +1618,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: binary/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: binary/json
-ERROR:  division by zero
-CONTEXT:  referenced column: binary/json
 UPDATE test_string_type, test_string_table SET test_string_type.`varbinary+char` = test_string_table.`varbinary`+test_string_table.`char`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary+char
@@ -1827,8 +1821,6 @@ UPDATE test_string_type, test_string_table SET test_string_type.`varbinary/json`
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: varbinary/json
-ERROR:  division by zero
 CONTEXT:  referenced column: varbinary/json
 UPDATE test_string_type, test_string_table SET test_string_type.`tinyblob+char` = test_string_table.`tinyblob`+test_string_table.`char`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -2034,8 +2026,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: tinyblob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: tinyblob/json
-ERROR:  division by zero
-CONTEXT:  referenced column: tinyblob/json
 UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob+char` = test_string_table.`mediumblob`+test_string_table.`char`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: mediumblob+char
@@ -2239,8 +2229,6 @@ UPDATE test_string_type, test_string_table SET test_string_type.`mediumblob/json
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: mediumblob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: mediumblob/json
-ERROR:  division by zero
 CONTEXT:  referenced column: mediumblob/json
 UPDATE test_string_type, test_string_table SET test_string_type.`longblob+char` = test_string_table.`longblob`+test_string_table.`char`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -2446,8 +2434,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: longblob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: longblob/json
-ERROR:  division by zero
-CONTEXT:  referenced column: longblob/json
 UPDATE test_string_type, test_string_table SET test_string_type.`text+char` = test_string_table.`text`+test_string_table.`char`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text+char
@@ -2652,8 +2638,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: text/json
-ERROR:  division by zero
-CONTEXT:  referenced column: text/json
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t+char` = test_string_table.`enum_t`+test_string_table.`char`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: enum_t+char
@@ -2770,8 +2754,6 @@ CONTEXT:  referenced column: enum_t*json
 UPDATE test_string_type, test_string_table SET test_string_type.`enum_t/json` = test_string_table.`enum_t`/test_string_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: enum_t/json
-ERROR:  division by zero
-CONTEXT:  referenced column: enum_t/json
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t+char` = test_string_table.`set_t`+test_string_table.`char`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: set_t+char
@@ -2887,8 +2869,6 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: set_t*json
 UPDATE test_string_type, test_string_table SET test_string_type.`set_t/json` = test_string_table.`set_t`/test_string_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: set_t/json
-ERROR:  division by zero
 CONTEXT:  referenced column: set_t/json
 UPDATE test_string_type, test_string_table SET test_string_type.`json+char` = test_string_table.`json`+test_string_table.`char`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -3093,8 +3073,6 @@ UPDATE test_string_type, test_string_table SET test_string_type.`json/json` = te
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: json/json
-ERROR:  division by zero
 CONTEXT:  referenced column: json/json
 SELECT * FROM test_string_type;
  char+char | char-char | char*char | char/char | char+varchar | char-varchar | char*varchar | char/varchar | char+binary | char-binary | char*binary | char/binary | char+varbinary | char-varbinary | char*varbinary | char/varbinary | char+tinyblob | char-tinyblob | char*tinyblob | char/tinyblob | char+mediumblob | char-mediumblob | char*mediumblob | char/mediumblob | char+longblob | char-longblob | char*longblob | char/longblob | char+text | char-text | char*text | char/text | char+enum_t | char-enum_t | char*enum_t | char/enum_t | char+set_t | char-set_t | char*set_t | char/set_t | char+json | char-json | char*json | char/json | varchar+char | varchar-char | varchar*char | varchar/char | varchar+varchar | varchar-varchar | varchar*varchar | varchar/varchar | varchar+binary | varchar-binary | varchar*binary | varchar/binary | varchar+varbinary | varchar-varbinary | varchar*varbinary | varchar/varbinary | varchar+tinyblob | varchar-tinyblob | varchar*tinyblob | varchar/tinyblob | varchar+mediumblob | varchar-mediumblob | varchar*mediumblob | varchar/mediumblob | varchar+longblob | varchar-longblob | varchar*longblob | varchar/longblob | varchar+text | varchar-text | varchar*text | varchar/text | varchar+enum_t | varchar-enum_t | varchar*enum_t | varchar/enum_t | varchar+set_t | varchar-set_t | varchar*set_t | varchar/set_t | varchar+json | varchar-json | varchar*json | varchar/json | binary+char | binary-char | binary*char | binary/char | binary+varchar | binary-varchar | binary*varchar | binary/varchar | binary+binary | binary-binary | binary*binary | binary/binary | binary+varbinary | binary-varbinary | binary*varbinary | binary/varbinary | binary+tinyblob | binary-tinyblob | binary*tinyblob | binary/tinyblob | binary+mediumblob | binary-mediumblob | binary*mediumblob | binary/mediumblob | binary+longblob | binary-longblob | binary*longblob | binary/longblob | binary+text | binary-text | binary*text | binary/text | binary+enum_t | binary-enum_t | binary*enum_t | binary/enum_t | binary+set_t | binary-set_t | binary*set_t | binary/set_t | binary+json | binary-json | binary*json | binary/json | varbinary+char | varbinary-char | varbinary*char | varbinary/char | varbinary+varchar | varbinary-varchar | varbinary*varchar | varbinary/varchar | varbinary+binary | varbinary-binary | varbinary*binary | varbinary/binary | varbinary+varbinary | varbinary-varbinary | varbinary*varbinary | varbinary/varbinary | varbinary+tinyblob | varbinary-tinyblob | varbinary*tinyblob | varbinary/tinyblob | varbinary+mediumblob | varbinary-mediumblob | varbinary*mediumblob | varbinary/mediumblob | varbinary+longblob | varbinary-longblob | varbinary*longblob | varbinary/longblob | varbinary+text | varbinary-text | varbinary*text | varbinary/text | varbinary+enum_t | varbinary-enum_t | varbinary*enum_t | varbinary/enum_t | varbinary+set_t | varbinary-set_t | varbinary*set_t | varbinary/set_t | varbinary+json | varbinary-json | varbinary*json | varbinary/json | tinyblob+char | tinyblob-char | tinyblob*char | tinyblob/char | tinyblob+varchar | tinyblob-varchar | tinyblob*varchar | tinyblob/varchar | tinyblob+binary | tinyblob-binary | tinyblob*binary | tinyblob/binary | tinyblob+varbinary | tinyblob-varbinary | tinyblob*varbinary | tinyblob/varbinary | tinyblob+tinyblob | tinyblob-tinyblob | tinyblob*tinyblob | tinyblob/tinyblob | tinyblob+mediumblob | tinyblob-mediumblob | tinyblob*mediumblob | tinyblob/mediumblob | tinyblob+longblob | tinyblob-longblob | tinyblob*longblob | tinyblob/longblob | tinyblob+text | tinyblob-text | tinyblob*text | tinyblob/text | tinyblob+enum_t | tinyblob-enum_t | tinyblob*enum_t | tinyblob/enum_t | tinyblob+set_t | tinyblob-set_t | tinyblob*set_t | tinyblob/set_t | tinyblob+json | tinyblob-json | tinyblob*json | tinyblob/json | mediumblob+char | mediumblob-char | mediumblob*char | mediumblob/char | mediumblob+varchar | mediumblob-varchar | mediumblob*varchar | mediumblob/varchar | mediumblob+binary | mediumblob-binary | mediumblob*binary | mediumblob/binary | mediumblob+varbinary | mediumblob-varbinary | mediumblob*varbinary | mediumblob/varbinary | mediumblob+tinyblob | mediumblob-tinyblob | mediumblob*tinyblob | mediumblob/tinyblob | mediumblob+mediumblob | mediumblob-mediumblob | mediumblob*mediumblob | mediumblob/mediumblob | mediumblob+longblob | mediumblob-longblob | mediumblob*longblob | mediumblob/longblob | mediumblob+text | mediumblob-text | mediumblob*text | mediumblob/text | mediumblob+enum_t | mediumblob-enum_t | mediumblob*enum_t | mediumblob/enum_t | mediumblob+set_t | mediumblob-set_t | mediumblob*set_t | mediumblob/set_t | mediumblob+json | mediumblob-json | mediumblob*json | mediumblob/json | longblob+char | longblob-char | longblob*char | longblob/char | longblob+varchar | longblob-varchar | longblob*varchar | longblob/varchar | longblob+binary | longblob-binary | longblob*binary | longblob/binary | longblob+varbinary | longblob-varbinary | longblob*varbinary | longblob/varbinary | longblob+tinyblob | longblob-tinyblob | longblob*tinyblob | longblob/tinyblob | longblob+mediumblob | longblob-mediumblob | longblob*mediumblob | longblob/mediumblob | longblob+longblob | longblob-longblob | longblob*longblob | longblob/longblob | longblob+text | longblob-text | longblob*text | longblob/text | longblob+enum_t | longblob-enum_t | longblob*enum_t | longblob/enum_t | longblob+set_t | longblob-set_t | longblob*set_t | longblob/set_t | longblob+json | longblob-json | longblob*json | longblob/json | text+char | text-char | text*char | text/char | text+varchar | text-varchar | text*varchar | text/varchar | text+binary | text-binary | text*binary | text/binary | text+varbinary | text-varbinary | text*varbinary | text/varbinary | text+tinyblob | text-tinyblob | text*tinyblob | text/tinyblob | text+mediumblob | text-mediumblob | text*mediumblob | text/mediumblob | text+longblob | text-longblob | text*longblob | text/longblob | text+text | text-text | text*text | text/text | text+enum_t | text-enum_t | text*enum_t | text/enum_t | text+set_t | text-set_t | text*set_t | text/set_t | text+json | text-json | text*json | text/json | enum_t+char | enum_t-char | enum_t*char |    enum_t/char    | enum_t+varchar | enum_t-varchar | enum_t*varchar |  enum_t/varchar   | enum_t+binary | enum_t-binary | enum_t*binary |   enum_t/binary   | enum_t+varbinary | enum_t-varbinary | enum_t*varbinary | enum_t/varbinary  | enum_t+tinyblob | enum_t-tinyblob | enum_t*tinyblob |  enum_t/tinyblob  | enum_t+mediumblob | enum_t-mediumblob | enum_t*mediumblob | enum_t/mediumblob | enum_t+longblob | enum_t-longblob | enum_t*longblob |  enum_t/longblob  | enum_t+text | enum_t-text | enum_t*text |    enum_t/text    | enum_t+enum_t | enum_t-enum_t | enum_t*enum_t | enum_t/enum_t | enum_t+set_t | enum_t-set_t | enum_t*set_t | enum_t/set_t | enum_t+json | enum_t-json | enum_t*json | enum_t/json | set_t+char | set_t-char | set_t*char |   set_t/char    | set_t+varchar | set_t-varchar | set_t*varchar |  set_t/varchar  | set_t+binary | set_t-binary | set_t*binary |  set_t/binary   | set_t+varbinary | set_t-varbinary | set_t*varbinary | set_t/varbinary | set_t+tinyblob | set_t-tinyblob | set_t*tinyblob | set_t/tinyblob  | set_t+mediumblob | set_t-mediumblob | set_t*mediumblob | set_t/mediumblob | set_t+longblob | set_t-longblob | set_t*longblob | set_t/longblob  | set_t+text | set_t-text | set_t*text |   set_t/text    | set_t+enum_t | set_t-enum_t | set_t*enum_t | set_t/enum_t | set_t+set_t | set_t-set_t | set_t*set_t | set_t/set_t | set_t+json | set_t-json | set_t*json | set_t/json | json+char | json-char | json*char | json/char | json+varchar | json-varchar | json*varchar | json/varchar | json+binary | json-binary | json*binary | json/binary | json+varbinary | json-varbinary | json*varbinary | json/varbinary | json+tinyblob | json-tinyblob | json*tinyblob | json/tinyblob | json+mediumblob | json-mediumblob | json*mediumblob | json/mediumblob | json+longblob | json-longblob | json*longblob | json/longblob | json+text | json-text | json*text | json/text | json+enum_t | json-enum_t | json*enum_t | json/enum_t | json+set_t | json-set_t | json*set_t | json/set_t | json+json | json-json | json*json | json/json 
