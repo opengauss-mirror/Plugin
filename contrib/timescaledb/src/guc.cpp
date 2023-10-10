@@ -13,16 +13,12 @@
 #include "hypertable_cache.h"
 #include "telemetry/telemetry.h"
 
-typedef enum TelemetryLevel
-{
-	TELEMETRY_OFF,
-	TELEMETRY_BASIC,
-} TelemetryLevel;
+
 
 /* Define which level means on. We use this object to have at least one object
  * of type TelemetryLevel in the code, otherwise pgindent won't work for the
  * type */
-static const TelemetryLevel on_level = TELEMETRY_BASIC;
+
 
 bool
 ts_telemetry_on()
@@ -30,9 +26,7 @@ ts_telemetry_on()
 	return ts_guc_telemetry_level == on_level;
 }
 
-static const struct config_enum_entry telemetry_level_options[] = {
-	{ "off", TELEMETRY_OFF, false }, { "basic", TELEMETRY_BASIC, false }, { NULL, 0, false }
-};
+
 
 bool ts_guc_disable_optimizations = false;
 bool ts_guc_optimize_non_hypertables = false;

@@ -18,6 +18,7 @@
 #include "dimension.h"
 #include "tablespace.h"
 
+
 static void *hypertable_cache_create_entry(Cache *cache, CacheQuery *query);
 static void hypertable_cache_missing_error(const Cache *cache, const CacheQuery *query);
 
@@ -49,11 +50,11 @@ hypertable_cache_valid_result(const void *result)
 	return ((HypertableCacheEntry *) result)->hypertable != NULL;
 }
 
-static Cache *
+Cache *
 hypertable_cache_create()
 {
 	MemoryContext ctx =
-		AllocSetContextCreate(u_sess->cache_mem_cxt, "Hypertable cache", ALLOCSET_DEFAULT_SIZES);
+		AllocSetContextCreate(LocalMyDBCacheMemCxt(), "Hypertable cache", ALLOCSET_DEFAULT_SIZES);
 
 	Cache *cache =(Cache *) MemoryContextAlloc(ctx, sizeof(Cache));
 	Cache		templatee =
@@ -97,7 +98,7 @@ hypertable_cache_create()
 	return cache;
 }
 
-static Cache *hypertable_cache_current = NULL;
+
 
 static ScanTupleResult
 hypertable_tuple_found(TupleInfo *ti, void *data)
@@ -231,13 +232,14 @@ ts_hypertable_cache_get_entry_with_table(Cache *cache, const Oid relid, const ch
 extern TSDLLEXPORT Cache *
 ts_hypertable_cache_pin()
 {
+	
 	return ts_cache_pin(hypertable_cache_current);
 }
 
 void
 _hypertable_cache_init(void)
 {
-	CreateCacheMemoryContext();
+	
 	hypertable_cache_current = hypertable_cache_create();
 }
 

@@ -139,6 +139,7 @@ _cache_invalidate_init(void)
 	RegisterXactCallback(cache_invalidate_xact_end, NULL);
 	RegisterSubXactCallback(cache_invalidate_subxact_end, NULL);
 	CacheRegisterThreadRelcacheCallback(cache_invalidate_callback, PointerGetDatum(NULL));
+	tsdb_first_start = true;
 }
 
 void
@@ -146,5 +147,6 @@ _cache_invalidate_fini(void)
 {
 	UnregisterXactCallback(cache_invalidate_xact_end, NULL);
 	UnregisterSubXactCallback(cache_invalidate_subxact_end, NULL);
+	tsdb_first_start = false;
 	/* No way to unregister relcache callback */
 }

@@ -602,8 +602,8 @@ static void inline do_load()
 	 */
 	PG_TRY();
 	{
-		PGFunction ts_post_load_init =
-			load_external_function(soname, POST_LOAD_INIT_FN, false, NULL);
+		CFunInfo temp_for_tsdb = load_external_function(soname, POST_LOAD_INIT_FN, false, NULL);
+		PGFunction ts_post_load_init = temp_for_tsdb.user_fn;
 
 		if (ts_post_load_init != NULL)
 			DirectFunctionCall1(ts_post_load_init, CharGetDatum(0));

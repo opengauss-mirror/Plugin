@@ -420,14 +420,7 @@ ca_append_explain(ExtensiblePlanState *node, List *ancestors, ExplainState *es)
 								 es);
 }
 
-static ExtensibleExecMethods constraint_aware_append_state_methods = {
-	.ExtensibleName = "",
-	.BeginExtensiblePlan = ca_append_begin,
-	.ExecExtensiblePlan = ca_append_exec,
-	.EndExtensiblePlan = ca_append_end,
-	.ReScanExtensiblePlan = ca_append_rescan,
-	.ExplainExtensiblePlan = ca_append_explain,
-};
+
 
 static Node *
 constraint_aware_append_state_create(ExtensiblePlan *cscan)
@@ -443,10 +436,6 @@ constraint_aware_append_state_create(ExtensiblePlan *cscan)
 	return (Node *) state;
 }
 
-static ExtensiblePlanMethods constraint_aware_append_plan_methods = {
-	.ExtensibleName = "ConstraintAwareAppend",
-	.CreateExtensiblePlanState = constraint_aware_append_state_create,
-};
 
 static Plan *
 constraint_aware_append_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath *path,
@@ -560,10 +549,7 @@ constraint_aware_append_plan_create(PlannerInfo *root, RelOptInfo *rel, Extensib
 	return &cscan->scan.plan;
 }
 
-static ExtensiblePathMethods constraint_aware_append_path_methods = {
-	.ExtensibleName = "ConstraintAwareAppend",
-	.PlanExtensiblePath = constraint_aware_append_plan_create,
-};
+
 
 Path *
 ts_constraint_aware_append_path_create(PlannerInfo *root, Hypertable *ht, Path *subpath)
@@ -654,4 +640,22 @@ void
 _constraint_aware_append_init(void)
 {
 	RegisterCustomScanMethods(&constraint_aware_append_plan_methods);
+	constraint_aware_append_path_methods = {
+	.ExtensibleName = "ConstraintAwareAppend",
+	.PlanExtensiblePath = constraint_aware_append_plan_create,
+	};
+
+    constraint_aware_append_plan_methods = {
+	.ExtensibleName = "ConstraintAwareAppend",
+	.CreateExtensiblePlanState = constraint_aware_append_state_create,
+	};
+
+	constraint_aware_append_state_methods = {
+	.ExtensibleName = "",
+	.BeginExtensiblePlan = ca_append_begin,
+	.ExecExtensiblePlan = ca_append_exec,
+	.EndExtensiblePlan = ca_append_end,
+	.ReScanExtensiblePlan = ca_append_rescan,
+	.ExplainExtensiblePlan = ca_append_explain,
+	};
 }

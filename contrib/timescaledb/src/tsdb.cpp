@@ -49,6 +49,7 @@
 
 #include "plan_agg_bookend.h"
 
+
 #include "tsdb_dsm.h"
 #include "tsdb_static.cpp"
 
@@ -86,12 +87,7 @@ void heap_endscan(HeapScanDescData*& scan)
 {
 
 }
-PGFunction load_external_function(char *filename, char *funcname,
-					   bool signalNotFound, void **filehandle,int tsdb)
-{
-	PGFunction p;
-	return p;
-}
+
 List *make_pathkeys_for_sortclauses(PlannerInfo *root,
 							  List *sortclauses,
 							  List *tlist)
@@ -154,18 +150,7 @@ bool reindex_relation(Oid relid, int flags, int options)
 {
 	return false;
 }
-ObjectAddress
-DefineIndex_tsdb(Oid relationId,
-			IndexStmt *stmt,
-			Oid indexRelationId,
-			bool is_alter_table,
-			bool check_rights,
-			bool skip_build,
-			bool quiet)
-			{
-				ObjectAddress o;
-				return o;
-			}
+
 void cluster_rel(Oid tableOid, Oid indexOid, bool recheck,
 			bool verbose)
 {
@@ -1547,18 +1532,7 @@ array_create_iterator(ArrayType *arr, int slice_ndim, ArrayMetaState *mstate)
 
 	return iterator;
 }
-void
-CreateCacheMemoryContext(void)
-{
-	  /*
-  * Purely for paranoia, check that context doesn't exist; caller probably
-  * did so already.
-  */
- if (u_sess->cache_mem_cxt == nullptr ) {
-            u_sess->cache_mem_cxt =
-                AllocSetContextCreate(u_sess->top_mem_cxt, "SessionCacheMemoryContext", ALLOCSET_DEFAULT_SIZES);
-        }
-}
+
 
 
 
@@ -3508,3 +3482,5 @@ ts_preprocess_first_last_aggregates(PlannerInfo *root, List *tlist)
 	replace_aggref_in_tlist(minmaxagg_path);
 	add_path(grouped_rel, (Path *) minmaxagg_path);
 }
+
+

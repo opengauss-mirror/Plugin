@@ -7,9 +7,7 @@
 #include <pg_config.h>
 #include <access/xact.h>
 #include <config.h>
-#ifndef WIN32
-#include "parallel.h"
-#endif
+
 #include <commands/extension.h>
 #include <miscadmin.h>
 #include <utils/guc.h>
@@ -54,7 +52,7 @@ post_analyze_hook(ParseState *pstate, Query *query)
 		 * not perform this check
 		 */
 #ifndef WIN32
-	if (prev_post_parse_analyze_hook != NULL && !IsParallelWorker())
+	if (prev_post_parse_analyze_hook != NULL)
 		elog(ERROR, "the extension called with a loader should always have a NULL prev hook");
 #endif
 	if (BROKEN && !creating_extension)
@@ -77,7 +75,7 @@ _PG_init(void)
 	 * not perform this check
 	 */
 #ifndef WIN32
-	if (prev_post_parse_analyze_hook != NULL && !IsParallelWorker())
+	if (prev_post_parse_analyze_hook != NULL)
 		elog(ERROR, "the extension called with a loader should always have a NULL prev hook");
 #endif
 	post_parse_analyze_hook = post_analyze_hook;

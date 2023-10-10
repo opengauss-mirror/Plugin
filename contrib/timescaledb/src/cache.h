@@ -10,7 +10,16 @@
 #include <utils/memutils.h>
 #include <utils/hsearch.h>
 
+#include "tsdb_head.h"
 #include "export.h"
+#include "commands/extension.h"
+
+
+typedef enum TelemetryLevel
+{
+	TELEMETRY_OFF,
+	TELEMETRY_BASIC,
+} TelemetryLevel;
 
 typedef enum CacheQueryFlags
 {
@@ -56,6 +65,26 @@ typedef struct Cache
 							 * VACUUM */
 } Cache;
 
+typedef struct tsdb_session_context {
+    List *tsdb_pinned_caches;
+    MemoryContext tsdb_pinned_caches_mctx;
+	Cache *tsdb_hypertable_cache_current;
+	List *tsdb_planner_hcaches;
+	const char *tsdb_TS_CTE_EXPAND;
+	ExtensiblePathMethods tsdb_constraint_aware_append_path_methods;
+	ExtensiblePlanMethods tsdb_constraint_aware_append_plan_methods;
+	ExtensibleExecMethods tsdb_constraint_aware_append_state_methods;
+	ExtensiblePlanMethods tsdb_chunk_append_plan_methods;
+	bool tsdb_expect_chunk_modification;
+
+	
+	struct config_enum_entry tsdb_telemetry_level_options[3];
+	TelemetryLevel tsdb_on_level;
+	bool tsdb_first_start;
+} tsdb_session_context; 
+
+
+
 extern void ts_cache_init(Cache *cache);
 extern void ts_cache_invalidate(Cache *cache);
 extern void *ts_cache_fetch(Cache *cache, CacheQuery *query);
@@ -66,7 +95,14 @@ extern MemoryContext ts_cache_memory_ctx(Cache *cache);
 extern Cache *ts_cache_pin(Cache *cache);
 extern TSDLLEXPORT int ts_cache_release(Cache *cache);
 
+
+
 extern void _cache_init(void);
 extern void _cache_fini(void);
+
+extern "C" void set_extension_index(uint32 index);
+extern "C" void init_session_vars(void);
+
+extern tsdb_session_context* get_session_context(bool is_from_PG_init=false);
 
 #endif /* TIMESCALEDB_CACHE_H */

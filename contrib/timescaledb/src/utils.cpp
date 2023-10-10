@@ -517,11 +517,19 @@ ts_lookup_proc_filtered(const char *schema, const char *funcname, Oid *rettype, 
 	 * that would not allow us to check for functions that take either
 	 * ANYELEMENTOID or a dimension-specific in the same search.
 	 */
-	catlist = SearchSysCacheList1(PROCNAMEARGSNSP, CStringGetDatum(funcname));
+	#ifndef ENABLE_MULTIPLE_NODES
+    if (t_thrd.proc->workingVersionNum < 92470) {
+        catlist = SearchSysCacheList1(PROCNAMEARGSNSP, CStringGetDatum(funcname));
+    } else {
+        catlist = SearchSysCacheList1(PROCALLARGS, CStringGetDatum(funcname));
+    }
+	#else
+    catlist = SearchSysCacheList1(PROCNAMEARGSNSP, CStringGetDatum(funcname));
+	#endif
 
 	for (i = 0; i < catlist->n_members; i++)
 	{
-		HeapTuple proctup = &catlist->systups[i]->tuple;
+		HeapTuple proctup = t_thrd.lsc_cxt.FetchTupleFromCatCList(catlist, i);
 		Form_pg_proc procform = (Form_pg_proc) GETSTRUCT(proctup);
 
 		if (procform->pronamespace == namespace_oid &&

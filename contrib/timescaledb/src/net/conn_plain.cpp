@@ -255,7 +255,7 @@ ts_plain_errmsg(Connection *conn)
 	return errmsg;
 }
 
-static ConnOps plain_ops = {
+static THR_LOCAL ConnOps plain_ops = {
 	.size = sizeof(Connection),
 	.init = NULL,
 	.connect = ts_plain_connect,

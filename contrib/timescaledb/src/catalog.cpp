@@ -20,6 +20,7 @@
 #include "compat.h"
 #include "catalog.h"
 #include "extension.h"
+#include "utils/numeric.h"
 
 #if !PG96
 #include <utils/regproc.h>
@@ -550,14 +551,19 @@ TSDLLEXPORT int64
 ts_catalog_table_next_seq_id(Catalog *catalog, CatalogTable table)
 {
 	Oid relid = catalog->tables[table].serial_relid;
-
+	NumericVar x;
+	int64 val;
 	if (!OidIsValid(relid))
 		elog(ERROR,
 			 "no serial ID column for table \"%s.%s\"",
 			 catalog_table_names[table].schema_name,
 			 catalog_table_name(table));
-
-	return DatumGetInt64(DirectFunctionCall1(nextval_oid, ObjectIdGetDatum(relid)));
+	Datum temp = (DirectFunctionCall1(nextval_oid, ObjectIdGetDatum(relid)));
+	Numeric num = (Numeric)temp;
+    
+	init_var_from_num(num, &x);
+	numericvar_to_int64(&x,&val);
+	return val;
 }
 
 Oid

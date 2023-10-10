@@ -6,13 +6,16 @@
 #include <postgres.h>
 #include <access/xact.h>
 
+
 #include "cache.h"
 #include "compat.h"
 
+
+
+
 /* List of pinned caches. A cache occurs once in this list for every pin
  * taken */
-static List *pinned_caches = NIL;
-static MemoryContext pinned_caches_mctx = NULL;
+
 
 
 typedef struct CachePin
@@ -28,7 +31,7 @@ cache_reset_pinned_caches(void)
 		MemoryContextDelete(pinned_caches_mctx);
 
 	pinned_caches_mctx =
-		AllocSetContextCreate(u_sess->cache_mem_cxt, "Cache pins", ALLOCSET_DEFAULT_SIZES);
+		AllocSetContextCreate(TopMemoryContext, "Cache pins", ALLOCSET_DEFAULT_SIZES);
 
 	pinned_caches = NIL;
 }
@@ -91,12 +94,15 @@ ts_cache_invalidate(Cache *cache)
 extern Cache *
 ts_cache_pin(Cache *cache)
 {
+	
+	
 	MemoryContext old = MemoryContextSwitchTo(pinned_caches_mctx);
 	CachePin *cp = (CachePin*)palloc(sizeof(CachePin));
 
 	cp->cache = cache;
 	cp->subtxnid = GetCurrentSubTransactionId();
 	pinned_caches = lappend(pinned_caches, cp);
+	
 	MemoryContextSwitchTo(old);
 	cache->refcount++;
 	return cache;
@@ -343,6 +349,9 @@ cache_subxact_abort(SubXactEvent event, SubTransactionId subtxn_id, SubTransacti
 	}
 }
 
+
+
+
 void
 _cache_init(void)
 {
@@ -360,3 +369,5 @@ _cache_fini(void)
 	UnregisterXactCallback(cache_xact_end, NULL);
 	UnregisterSubXactCallback(cache_subxact_abort, NULL);
 }
+
+

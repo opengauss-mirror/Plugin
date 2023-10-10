@@ -243,7 +243,7 @@ static bool
 load_tsl(void)
 {
 	char soname[MAX_SO_NAME_LEN] = { 0 };
-
+	CFunInfo temp_for_tsdb;
 	if (tsl_handle != NULL)
 	{
 		Assert(tsl_startup_fn != NULL);
@@ -258,11 +258,12 @@ load_tsl(void)
 
 	snprintf(soname, MAX_SO_NAME_LEN, TS_LIBDIR "%s-%s", TSL_LIBRARY_NAME, TIMESCALEDB_VERSION_MOD);
 
-	tsl_startup_fn = load_external_function(
+	temp_for_tsdb = load_external_function(
 		/* filename= */ soname,
 		/* funcname= */ "ts_module_init",
 		/* signalNotFound= */ false,
 		/* filehandle= */ &tsl_handle);
+	tsl_startup_fn = temp_for_tsdb.user_fn;
 
 	if (tsl_handle == NULL || tsl_startup_fn == NULL)
 		goto loading_failed;

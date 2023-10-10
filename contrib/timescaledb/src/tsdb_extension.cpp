@@ -1,3 +1,4 @@
+#include "postgres.h"
 #include "compat.h"
 
 #include "commands/cluster.h"
@@ -239,16 +240,7 @@ pg_event_trigger_ownercheck(Oid et_oid, Oid roleid)
 } 
 
 
-List *
-EventCacheLookup(EventTriggerEvent event)
-{
-	EventTriggerCacheEntry *entry;
 
-	if (EventTriggerCacheState != ETCS_VALID)
-		BuildEventTriggerCache();
-	entry =(EventTriggerCacheEntry *) hash_search(EventTriggerCache, &event, HASH_FIND, NULL);
-	return entry != NULL ? entry->triggerlist : NULL;
-} 
 
 bool
 has_bypassrls_privilege(Oid roleid)
