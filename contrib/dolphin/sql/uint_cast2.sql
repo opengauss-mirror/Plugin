@@ -435,5 +435,17 @@ reset dolphin.sql_mode;
 
 drop table if exists t1;
 
+--test for db core
+select varlena_cast_ui1(1);
+select varlena_cast_ui2(1);
+select varlena_cast_ui4(1);
+select varlena_cast_ui8(1);
+select varlena_cast_int8(1);
+select varlena2float8(1);
+select varlena2numeric(1);
+select Varlena2Bpchar(1);
+select Varlena2Varchar(1);
+select Varlena2Text(1);
+
 drop schema uint_cast2 cascade;
 reset current_schema;

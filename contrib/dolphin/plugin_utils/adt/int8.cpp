@@ -1803,8 +1803,18 @@ Datum text_cast_int8(PG_FUNCTION_ARGS)
 
 Datum varlena_cast_int8(PG_FUNCTION_ARGS)
 {
-    Datum data = DirectFunctionCall1(textout, PG_GETARG_DATUM(0));
-    int128 result = DatumGetInt128(DirectFunctionCall1(int16in, data));
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    int128 result;
+    Oid typeOutput = InvalidOid;
+    bool typIsVarlena = false;
+    getTypeOutputInfo(fcinfo->argTypes[0], &typeOutput, &typIsVarlena);
+    if (typIsVarlena) {
+        tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
+    } else {
+        tmp = DatumGetCString(OidOutputFunctionCall(typeOutput, txt));
+    }
+    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
     PG_RETURN_INT64(checkSignedRange(result, fcinfo));
 }
 #endif
