@@ -27,7 +27,8 @@ CREATE VIEW test_view as select '2022-01-30' as text_type, date '2022-01-30' as 
  text_type | text |           | extended | 
  date_type | date |           | plain    | 
 View definition:
- SELECT '2022-01-30'::text AS text_type, '2022-01-30'::date AS date_type;
+ SELECT '2022-01-30'::text AS text_type, 
+    date_cast('2022-01-30'::cstring, true) AS date_type;
 
 -- string to date
 select if (true, '2022-01-30', date '2022-01-30') as a, if (false, '2022-01-30', date '2022-01-30') as b;
@@ -104,7 +105,7 @@ select if (true, 2.2::float8, 1::int4) as a, if (false, 2.2::float8, 1::int4) as
 select if (true, 'aaa'::binary(5), date '2022-01-30') as a, if (false, 'aaa'::binary(5), date '2022-01-30') as b;
 ERROR:  CASE/ELSE could not convert type date to "binary"
 LINE 1: select if (true, 'aaa'::binary(5), date '2022-01-30') as a, ...
-                                                ^
+                                           ^
 CONTEXT:  referenced column: a
 -- binary to numeric
 select if (true, 'aaa'::binary(5), 1.1::numeric(10, 2)) as a, if (false, 'aaa'::binary(5), 1.1::numeric(10, 2)) as b;
@@ -128,7 +129,7 @@ CONTEXT:  referenced column: a
 select if (true, 'aaa'::varbinary(5), date '2022-01-30') as a, if (false, 'aaa'::varbinary(5), date '2022-01-30') as b;
 ERROR:  CASE/ELSE could not convert type date to "varbinary"
 LINE 1: select if (true, 'aaa'::varbinary(5), date '2022-01-30') as ...
-                                                   ^
+                                              ^
 CONTEXT:  referenced column: a
 -- varbinary to numeric
 select if (true, 'aaa'::varbinary(5), 1.1::numeric(10, 2)) as a, if (false, 'aaa'::varbinary(5), 1.1::numeric(10, 2)) as b;

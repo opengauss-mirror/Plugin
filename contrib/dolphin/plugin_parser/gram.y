@@ -36910,17 +36910,29 @@ AexprConst_without_Sconst: Iconst
 				}
 			| DATE_P SCONST
 				{
-					TypeName * tmp = NULL;
 					if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
 					{
+						TypeName * tmp = NULL;
 						tmp = SystemTypeName("timestamp");
 						tmp->typmods = list_make1(makeIntConst(0,-1));
+						tmp->location = @1;
+						tmp->end_location = @1 + DATE_LEN;
+						$$ = makeStringConstCast($2, @2, tmp);
 					}
-					else
-						tmp = SystemTypeName("date");
-					tmp->location = @1;
-					tmp->end_location = @1 + DATE_LEN;
-					$$ = makeStringConstCast($2, @2, tmp);
+					else {
+						FuncCall *n = makeNode(FuncCall);
+						n->funcname = SystemFuncName("date_cast");
+						n->colname = pstrdup("date");
+						n->args = list_make2(makeStringConst($2, @2), makeBoolAConst(TRUE, -1));
+						n->agg_order = NIL;
+						n->agg_star = FALSE;
+						n->agg_distinct = FALSE;
+						n->func_variadic = FALSE;
+						n->over = NULL;
+						n->location = @1;
+						n->call_func = false;
+						$$ = (Node *)n;
+					}
 				}
 			| SMALLDATETIME SCONST
 				{
