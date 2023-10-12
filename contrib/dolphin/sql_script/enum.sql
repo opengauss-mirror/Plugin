@@ -1,17 +1,30 @@
 DROP FUNCTION IF EXISTS pg_catalog.enum2float8(anyenum) cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.enum2float8(anyenum) RETURNS float8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'Enum2Float8';
 
-INSERT INTO pg_catalog.pg_cast
--- castsource is anyenum(3500), casttarget(701) is float8, castowner is 10(superuser)
-SELECT 3500, 701, oid, 'i', 'f', 10
-FROM pg_proc WHERE 
-proname = 'enum2float8' AND
--- namespace is pg_catalog
-pronamespace = 11 AND
--- input arg is anyenum
-proargtypes='3500' AND
--- return type is float8
-prorettype = 701;
+do $$
+DECLARE
+ans boolean;
+BEGIN
+    for ans in select case when count(*)=1 then true else false end as ans  from (select * from pg_catalog.pg_cast where castsource=3500 and casttarget=701)
+    LOOP
+        if ans = true then
+            UPDATE pg_catalog.pg_cast SET castfunc = (SELECT oid FROM pg_proc WHERE proname = 'enum2float8' AND pronamespace = 11 AND proargtypes='3500' AND prorettype = 701),castcontext='i',castmethod='f',castowner=10;
+        else
+            INSERT INTO pg_catalog.pg_cast
+            -- castsource is anyenum(3500), casttarget(701) is float8, castowner is 10(superuser)
+            SELECT 3500, 701, oid, 'i', 'f', 10
+            FROM pg_proc WHERE 
+            proname = 'enum2float8' AND
+            -- namespace is pg_catalog
+            pronamespace = 11 AND
+            -- input arg is anyenum
+            proargtypes='3500' AND
+            -- return type is float8
+            prorettype = 701;
+        end if;
+        exit;
+    END LOOP;
+END$$;
 
 DROP FUNCTION IF EXISTS pg_catalog.enumtextlt(anyenum, text) CASCADE; 
 CREATE FUNCTION pg_catalog.enumtextlt ( 
