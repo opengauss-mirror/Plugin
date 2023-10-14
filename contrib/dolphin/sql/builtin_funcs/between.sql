@@ -156,5 +156,14 @@ explain (costs off) select * from t_b1 where f between 1 and 2;
 explain (costs off) select * from t_b1 where g between '1' and '2';
 explain (costs off) select * from t_b1 where h between '1' and '2';
 explain (costs off) select * from t_b1 where i between '1' and '2';
+--test time cmp of time and date
+select date'2018-12-31' between time'23:56:59' and timestamp'2018-12-31 23:56:59';
+select date'2018-12-31' not between time'23:56:59' and timestamp'2018-12-31 23:56:59';
+select date'2018-12-31' between symmetric time'23:56:59' and timestamp'2018-12-31 23:56:59';
+select date'2018-12-31' not between symmetric time'23:56:59' and timestamp'2018-12-31 23:56:59';
+select time'23:56:59' between date'2018-12-31' and timestamp'2018-12-31 23:56:59';
+select time'23:56:59' not between date'2018-12-31' and timestamp'2018-12-31 23:56:59';
+select time'23:56:59' between datetime'2018-12-31' and timestamptz'2018-12-31 23:56:59';
+select time'23:56:59' not between datetime'2018-12-31' and timestamptz'2018-12-31 23:56:59';
 drop schema db_between cascade;
 reset current_schema;
