@@ -17,13 +17,12 @@
 *		ExecEndSeqScan			releases any storage allocated.
 *		ExecReScanSeqScan		rescans the relation
  */
+#include "postgres.h"
+#include "storage/lock/lock.h"
 #include "storage/predicate.h"
 #include "access/valid.h"
 #include "utils/guc.h"
 #include "utils/builtins.h"
-#include "libpq/pqformat.h"
-#include "pgxc/execRemote.h"
-#include "libpq/libpq.h"
 #include "storage/smgr/segment.h"
 #include "mpmcqueue.h"
 #include "executor/executor.h"
@@ -275,112 +274,6 @@ struct DirectReadBuff {
     char* buff;
 };
 
-class SpqDirectReadBlockManager : public SpqPageManager {
-public:
-    HeapScanDesc scan;
-    MpmcBoundedQueue<DirectReadBuff*> pagequeue;
-    DirectReadBuff *currentPages;
-public:
-    SpqDirectReadBlockManager(HeapScanDesc scan, ScanDirection direction)
-        : SpqPageManager(direction), scan(scan), pagequeue(PAGE_QUEUE_SIZE), currentPages(nullptr) {
-        scan->rs_base.rs_cbuf = InvalidBuffer;
-        scan->rs_base.rs_snapshot = SnapshotAny;
-    }
-
-    SpqState FetchBlocks(uint32 start, uint32 end)
-    {
-        uint32 step = 0;
-
-        do {
-            start = start + step;
-            step = seg_direct_read_get_range(start);
-            if (start + step - 1 >= end) {
-                step = end - start + 1;
-            }
-
-            DirectReadBuff *buffer = (DirectReadBuff*)palloc(sizeof(DirectReadBuff) + BLOCKSIZE * step);
-            if (buffer == nullptr) {
-                elog(ERROR, "SpqDirectReadBlockManager: try palloc memory failed.");
-            }
-            bool enqueued = false;
-            for (int i = 0; i < MAX_ENQUEUE_TIME; ++i) {
-                if (pagequeue.Enqueue(buffer)) {
-                    enqueued = true;
-                    break;
-                }
-            }
-            if (!enqueued) {
-                pfree(buffer);
-                elog(ERROR, "SpqDirectReadBlockManager: try push buffer to page queue failed.");
-            }
-            buffer->buff = (char *)(buffer + 1);
-            buffer->start = start;
-            buffer->size = step;
-            buffer->current = InvalidBlockNumber;
-            buffer->currentPage = buffer->buff;
-            // sync read
-            seg_direct_read(scan->rs_base.rs_rd->rd_smgr, MAIN_FORKNUM, start, step, buffer->buff, buffer->locStart);
-        } while (start + step - 1 < end);
-        return SpqState::SPQ_SUCCESS;
-    }
-
-    SpqState GetNewPage()
-    {
-        if (pagequeue.Empty() && currentPages == nullptr) {
-            return SpqState::SPQ_QUEUE_EMPTY;
-        }
-
-        while (true) {
-            // if currentPage is empty, try get a new page from pagequeue
-            if (currentPages == nullptr) {
-                if (!pagequeue.Dequeue(currentPages)) {
-                    return SpqState::SPQ_QUEUE_EMPTY;
-                }
-            }
-
-            if (currentPages->current == InvalidBlockNumber) {
-                currentPages->current = 0;
-            } else {
-                currentPages->current++;
-            }
-            while (currentPages->current < currentPages->size) {
-                currentPages->currentPage = currentPages->buff + BLOCKSIZE * currentPages->current;
-                if (PageIsVerified(currentPages->currentPage, currentPages->locStart + currentPages->current)) {
-                    if (ScanDirectionIsForward(direction)) {
-                        currentPages->lineOff = FirstOffsetNumber;
-                    } else if (ScanDirectionIsBackward(direction)) {
-                        currentPages->lineOff = PageGetMaxOffsetNumber(currentPages->currentPage);
-                    } else {
-                        return SpqState::SPQ_QUERY_END;
-                    }
-                    return SpqState::SPQ_SUCCESS;
-                }
-                currentPages->current++;
-            }
-
-            pfree(currentPages);
-            currentPages = nullptr;
-        }
-    }
-
-    bool GetTupleFromPage(TupleTableSlot* slot)
-    {
-        if (currentPages == nullptr) {
-            return false;
-        }
-
-        return GetNextTupleFromPage<false>(scan, currentPages->currentPage, direction, currentPages->lineOff, slot);
-    }
-
-    void Rescan(TableScanDesc scanDesc)
-    {
-        while (pagequeue.Dequeue(currentPages)) {
-            pfree(currentPages);
-        }
-        currentPages = nullptr;
-    }
-};
-
 class SpqLocalBlockManager : public SpqBlockManager {
 public:
     uint32 instanceID;
@@ -436,104 +329,6 @@ public:
         } else {
             nextBlock = instanceID * step;
         }
-    }
-};
-SpqAdpScanPagesRes adps_get_adps_response(int plan_node_id, ScanDirection direction, uint32 nblocks, int64_t iter_no)
-{
-    StringInfoData buffer;
-    SpqAdpScanPagesRes seqRes;
-    int request_size, response_size, code;
-    char *encoded_msg;
-    const char *msg_buffer;
-    SpqAdpScanPagesReq req = {
-        .plan_node_id = plan_node_id,
-        .direction = direction,
-        .nblocks = nblocks,
-        .cur_scan_iter_no = iter_no,
-    };
-
-    request_size = sizeof(SpqAdpScanPagesReq);
-    encoded_msg = (char *)palloc(request_size * 2 + 1);
-    hex_encode((const char *)&req, request_size, encoded_msg);
-    encoded_msg[request_size * 2] = '\0';
-    pq_beginmessage(&buffer, 'a');
-    pq_sendstring(&buffer, encoded_msg);
-    pfree(encoded_msg);
-    pq_endmessage_reuse(&buffer);
-
-    /* Must flush this message */
-    if (EOF == pq_flush()) {
-      elog(ERROR, "block_iter: can`t send paging response");
-      goto finish;
-    }
-    response_size = sizeof(SpqAdpScanPagesRes);
-
-    code = pq_getbyte();
-    if (code == EOF) {
-        elog(ERROR, "block_iter: can`t get paging response");
-        goto finish;
-    }
-    if (code != ADPS_RESPONSE_PAGE) {
-        elog(ERROR, "block_iter: get an error paging response, code:%d", code);
-        goto finish;
-    }
-    if (EOF == pq_getmessage(&buffer, response_size + sizeof(int))) {
-        elog(ERROR, "block_iter: can`t get paging response");
-        goto finish;
-    }
-    msg_buffer = pq_getmsgbytes(&buffer, response_size);
-    memcpy(&seqRes, msg_buffer, response_size);
-
-finish:
-    pfree(buffer.data);
-
-    return seqRes;
-}
-
-class SpqAdaptiveBlockManager : public SpqBlockManager {
-public:
-    uint32 maxBlockNum;
-    int plan_node_id;
-    int64_t iter_no;
-    bool isBlockEnd;
-    uint32 end;
-public:
-    SpqAdaptiveBlockManager(uint32 maxBlockNum, ScanDirection direction, int plan_node_id, uint32 step)
-        : SpqBlockManager(direction, step), maxBlockNum(maxBlockNum), plan_node_id(plan_node_id)
-    {
-        isBlockEnd = false;
-        iter_no = 0;
-        end = InvalidBlockNumber;
-    }
-
-    SpqState GetBlockIDs(uint32 &start, uint32 &end)
-    {
-        SpqAdpScanPagesRes response = adps_get_adps_response(plan_node_id, SpqBlockManager::direction, maxBlockNum, iter_no);
-        if (response.success == false) {
-            isBlockEnd = true;
-            return SPQ_SUCCESS;
-        }
-        start = response.page_start;
-        end = response.page_end;
-        this->end = end;
-
-        return SPQ_SUCCESS;
-    }
-
-    bool IsBlockEnd()
-    {
-        if (ScanDirectionIsNoMovement(direction)) {
-            // has no direction, means will not get new page for scanning.
-            return true;
-        } else {
-            return isBlockEnd;
-        }
-    }
-
-    void Rescan()
-    {
-        ++iter_no;
-        isBlockEnd = false;
     }
 };
 
@@ -645,8 +440,6 @@ SpqSeqScanState* ExecInitSpqSeqScan(SpqSeqScan* node, EState* estate, int eflags
             ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("error relation type.")));
         }
         spqScan->pageManager = New(CurrentMemoryContext) SpqBufmgrPageManager(scanDesc, estate->es_direction);
-    } else {
-        spqScan->pageManager = New(CurrentMemoryContext) SpqDirectReadBlockManager(scanDesc, estate->es_direction);
     }
 
     SpqBlockManager* blockManager = nullptr;
@@ -657,11 +450,6 @@ SpqSeqScanState* ExecInitSpqSeqScan(SpqSeqScan* node, EState* estate, int eflags
                                                                       seqScan->ss_currentScanDesc->rs_nblocks,
                                                                       estate->es_direction,
                                                                       FETCH_BLOCK_NUM);
-    } else if (node->isAdaptiveScan) {
-        blockManager = New(CurrentMemoryContext) SpqAdaptiveBlockManager(seqScan->ss_currentScanDesc->rs_nblocks,
-                                                                         estate->es_direction,
-                                                                         node->scan.plan.plan_node_id,
-                                                                         FETCH_BLOCK_NUM);
     } else {
         int sliceNumber;
         int instanceID;
