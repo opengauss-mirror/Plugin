@@ -5353,6 +5353,10 @@ static void set_deparse_planstate(deparse_namespace* dpns, PlanState* ps)
      */
     if (IsA(ps, AppendState))
         dpns->outer_planstate = ((AppendState*)ps)->appendplans[0];
+#ifdef USE_SPQ
+    else if (IsA(ps, SequenceState))
+        dpns->outer_planstate = ((SequenceState *) ps)->subplans[1];
+#endif
     else if (IsA(ps, VecAppendState))
         dpns->outer_planstate = ((VecAppendState*)ps)->appendplans[0];
     else if (IsA(ps, MergeAppendState))
@@ -5380,6 +5384,10 @@ static void set_deparse_planstate(deparse_namespace* dpns, PlanState* ps)
      */
     if (IsA(ps, SubqueryScanState))
         dpns->inner_planstate = ((SubqueryScanState*)ps)->subplan;
+#ifdef USE_SPQ
+    else if (IsA(ps, SequenceState))
+        dpns->inner_planstate = ((SequenceState *) ps)->subplans[0];
+#endif
     else if (IsA(ps, VecSubqueryScanState))
         dpns->inner_planstate = ((VecSubqueryScanState*)ps)->subplan;
     else if (IsA(ps, CteScanState))
