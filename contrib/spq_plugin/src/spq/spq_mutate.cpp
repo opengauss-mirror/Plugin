@@ -573,7 +573,11 @@ List* make_distributed_key_by_groupingset(PlannerInfo* root, Plan *subplan, List
         return nullptr;
     }
     double multiple = 0.0;
-    return get_distributekey_from_tlist(root, subplan->targetlist, groupcls, subplan->plan_rows, &multiple, nullptr);
+    List* distributed = spq_get_distributekey_from_tlist(root, subplan->targetlist, groupcls, subplan->plan_rows, &multiple, nullptr);
+    if (distributed == nullptr) {
+        ereport(ERROR, (errmsg("get_distributekey_from_tlist fail")));
+    }
+    return distributed;
 }
 
 Plan* make_stream(PlannerInfo* root, Plan *subplan, Motion *motion)

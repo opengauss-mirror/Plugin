@@ -45,6 +45,7 @@
 #include "catalog/pg_aggregate.h"
 #include "parser/parse_agg.h"
 #include "spqos/error/CAutoExceptionStack.h"
+#include "parser/parse_coerce.h"
 
 #define SPQ_WRAP_START                                                             \
     sigjmp_buf local_sigjmp_buf;                                                   \
@@ -975,7 +976,7 @@ spqdb::GetComparisonOperator(Oid left_oid, Oid right_oid, unsigned int cmpt)
 	SPQ_WRAP_START;
 	{
 		/* catalog tables: pg_amop */
-		return get_comparison_operator(left_oid, right_oid, (CmpType) cmpt);
+		return get_comparison_operator(left_oid, right_oid, (SPQCmpType) cmpt);
 	}
 	SPQ_WRAP_END;
 	return InvalidOid;

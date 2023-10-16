@@ -27,6 +27,7 @@
 #include "spq/spq_vars.h"
 
 #include "spq/spq_util.h"
+#include "pgxc/nodemgr.h"
 
 const char* sync_guc_names_array[] = {
     "log_min_messages",

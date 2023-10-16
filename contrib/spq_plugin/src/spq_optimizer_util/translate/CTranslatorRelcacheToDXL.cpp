@@ -1793,7 +1793,7 @@ CTranslatorRelcacheToDXL::RetrieveScOp(CMemoryPool *mp, IMDId *mdid)
 	}
 
 	// get comparison type
-	CmpType cmpt = (CmpType) spqdb::GetComparisonType(op_oid);
+	SPQCmpType cmpt = (SPQCmpType) spqdb::GetComparisonType(op_oid);
 	IMDType::ECmpType cmp_type = ParseCmpType(cmpt);
 
 	// get func oid
@@ -2818,7 +2818,7 @@ CTranslatorRelcacheToDXL::RetrieveScCmp(CMemoryPool *mp, IMDId *mdid)
 
 	OID left_oid = CMDIdSPQDB::CastMdid(mdid_left)->Oid();
 	OID right_oid = CMDIdSPQDB::CastMdid(mdid_right)->Oid();
-	CmpType cmpt = (CmpType) GetComparisonType(cmp_type);
+	SPQCmpType cmpt = (SPQCmpType) GetComparisonType(cmp_type);
 
 	OID scalar_cmp_oid = spqdb::GetComparisonOperator(left_oid, right_oid, cmpt);
 
