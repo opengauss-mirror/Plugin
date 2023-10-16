@@ -1,5 +1,5 @@
 -- test strict mode
-create schema strict_mode_test;
+create schema strict_mode_test CHARACTER SET ='utf8' COLLATE ='utf8_bin';
 set current_schema to 'strict_mode_test';
 set dolphin.b_compatibility_mode = on;
 set dolphin.sql_mode = 'sql_mode_strict,ansi_quotes,auto_recompile_function';

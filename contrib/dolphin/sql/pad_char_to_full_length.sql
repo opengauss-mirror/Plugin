@@ -1,4 +1,4 @@
-create schema pad_char_to_full_length;
+create schema pad_char_to_full_length CHARACTER SET ='utf8' COLLATE ='utf8_bin';
 set current_schema to 'pad_char_to_full_length';
 
 create table t (name char(100));
