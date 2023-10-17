@@ -27,8 +27,6 @@
 PG_MODULE_MAGIC;
 PG_FUNCTION_INFO_V1(spqplugin_invoke);
 
-const uint SPQ_VERSION_NUM = 92904;
-
 THR_LOCAL spq_planner_hook_type backup_spq_planner_hook = NULL;
 THR_LOCAL bool HOOK_INIT = false;
 THR_LOCAL MemoryContext OptimizerMemoryContext = NULL;
@@ -230,12 +228,6 @@ PlannedStmt* spq_optimize_query(Query* parse, int cursorOptions, ParamListInfo b
 
 void _PG_init(void)
 {
-    if (SPQ_VERSION_NUM != GRAND_VERSION_NUM) {
-        ereport(WARNING, (errmsg("SPQ_VERSION_NUM:%d and GRAND_VERSION_NUM:%d do not match!",
-                                 SPQ_VERSION_NUM, GRAND_VERSION_NUM)));
-        return;
-    }
-
     if (!HOOK_INIT) {
         backup_spq_planner_hook = spq_planner_hook;
         spq_planner_hook = spq_optimize_query;

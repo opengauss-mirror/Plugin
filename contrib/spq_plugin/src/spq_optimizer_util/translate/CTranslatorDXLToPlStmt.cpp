@@ -4845,6 +4845,9 @@ CTranslatorDXLToPlStmt::TranslateDXLTblDescrToRangeTblEntry(
 	base_table_context->SetOID(oid);
 	base_table_context->SetRelIndex(index);
 
+	/* spq */
+	rte->relkind = get_rel_relkind(rte->relid);
+
 	Alias *alias = MakeNode(Alias);
 	alias->colnames = NIL;
 

@@ -21,6 +21,7 @@
 //---------------------------------------------------------------------------
 
 #include "spq_optimizer_util/spq_wrappers.h"
+#include "spqplugin.h"
 
 #include "spqos/base.h"
 #include "spqos/error/CAutoExceptionStack.h"
@@ -34,6 +35,7 @@
 #include "utils/memutils.h"
 #include "utils/numeric.h"
 #include "utils/lsyscache.h"
+#include "utils/selfuncs.h"
 #include "spq/spq_util.h"
 #include "spq/spq_hash.h"
 #include "optimizer/clauses.h"
@@ -43,6 +45,7 @@
 #include "catalog/pg_aggregate.h"
 #include "parser/parse_agg.h"
 #include "spqos/error/CAutoExceptionStack.h"
+#include "parser/parse_coerce.h"
 
 #define SPQ_WRAP_START                                                             \
     sigjmp_buf local_sigjmp_buf;                                                   \
@@ -55,10 +58,6 @@
     } else {                                                                       \
         SPQOS_RAISE(spqdxl::ExmaSPQDB, spqdxl::ExmiSPQDBError);                    \
     }
-
-extern double extern_convert_timevalue_to_scalar(Datum value, Oid typid);
-extern double extern_numeric_to_double_no_overflow(Numeric num);
-
 using namespace spqos;
 
 bool
@@ -977,7 +976,7 @@ spqdb::GetComparisonOperator(Oid left_oid, Oid right_oid, unsigned int cmpt)
 	SPQ_WRAP_START;
 	{
 		/* catalog tables: pg_amop */
-		return get_comparison_operator(left_oid, right_oid, (CmpType) cmpt);
+		return get_comparison_operator(left_oid, right_oid, (SPQCmpType) cmpt);
 	}
 	SPQ_WRAP_END;
 	return InvalidOid;
@@ -1734,7 +1733,7 @@ spqdb::NumericToDoubleNoOverflow(Numeric num)
 {
 	SPQ_WRAP_START;
 	{
-		return extern_numeric_to_double_no_overflow(num);
+		return numeric_to_double_no_overflow(num);
 	}
 	SPQ_WRAP_END;
 	return 0.0;
@@ -1756,7 +1755,7 @@ spqdb::ConvertTimeValueToScalar(Datum datum, Oid typid)
 {
 	SPQ_WRAP_START;
 	{
-		return extern_convert_timevalue_to_scalar(datum, typid);
+		return convert_timevalue_to_scalar(datum, typid);
 	}
 	SPQ_WRAP_END;
 	return 0.0;
