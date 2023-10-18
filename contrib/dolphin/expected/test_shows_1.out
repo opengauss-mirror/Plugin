@@ -91,7 +91,8 @@ show plugins;
 --?.*
 --?.*
 --?.*
-(13 rows)
+--?.*
+(14 rows)
 
 -- show tables test
 show tables;
