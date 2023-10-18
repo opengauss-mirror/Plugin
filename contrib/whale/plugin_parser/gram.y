@@ -3032,6 +3032,7 @@ opt_boolean_or_string:
 			 * is the same, so we don't need to distinguish them here.
 			 */
 			| ColId_or_Sconst						{ $$ = $1; }
+			| BINARY								{ $$ = "binary";}
 		;
 
 /* Timezone values can be:
@@ -7662,7 +7663,7 @@ master_key_elem:
             // len is not filled on purpose ??
             $$ = (Node*) n;
         }
-        | KEY_PATH '=' ColId
+        | KEY_PATH '=' ColId_or_Sconst
         {
             ClientLogicGlobalParam *n = makeNode (ClientLogicGlobalParam);
             n->key = ClientLogicGlobalProperty::CMK_KEY_PATH;
@@ -9868,6 +9869,34 @@ CreateSeqStmt:
 
 					n->sequence = $5;
 					n->options = $6;
+					n->missing_ok = false;
+					n->ownerId = InvalidOid;
+/* PGXC_BEGIN */
+					n->is_serial = false;
+/* PGXC_END */
+					n->uuid = 0;
+					n->canCreateTempSeq = false;
+					$$ = (Node *)n;
+				}
+			| CREATE OptTemp opt_large_seq SEQUENCE IF_P NOT EXISTS qualified_name OptSeqOptList
+				{
+					CreateSeqStmt *n = makeNode(CreateSeqStmt);
+					$8->relpersistence = $2;
+					n->is_large = $3;
+#ifdef ENABLE_MULTIPLE_NODES
+					if (n->is_large) {
+        				const char* message = "large sequence is not supported.";
+    					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(ERROR,
+							(errmodule(MOD_PARSER),
+								errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg("large sequence is not supported.")));
+					}
+#endif
+
+					n->sequence = $8;
+					n->options = $9;
+					n->missing_ok = true;
 					n->ownerId = InvalidOid;
 /* PGXC_BEGIN */
 					n->is_serial = false;
@@ -17674,23 +17703,25 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE relation_expr RENAME TO name
+			| ALTER TABLE relation_expr RENAME TO qualified_name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_TABLE;
 					n->relation = $3;
 					n->subname = NULL;
-					n->newname = $6;
+					n->newname = $6->relname;
+					n->newschema = $6->schemaname;
 					n->missing_ok = false;
 					$$ = (Node *)n;
 				}
-			| ALTER TABLE IF_P EXISTS relation_expr RENAME TO name
+			| ALTER TABLE IF_P EXISTS relation_expr RENAME TO qualified_name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_TABLE;
 					n->relation = $5;
 					n->subname = NULL;
-					n->newname = $8;
+					n->newname = $8->relname;
+					n->newschema = $8->schemaname;
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
@@ -18861,6 +18892,16 @@ AlterSubscriptionStmt:
 					n->options = list_make1(makeDefElem("enabled",
 											(Node *)makeInteger(TRUE)));
 					$$ = (Node *)n;
+				}
+			| ALTER SUBSCRIPTION name DISABLE_P
+				{
+					AlterSubscriptionStmt *n =
+						makeNode(AlterSubscriptionStmt);
+					n->refresh = false;
+					n->subname = $3;
+					n->options = list_make1(makeDefElem("enabled",
+											(Node *)makeInteger(FALSE)));
+					$$ = (Node *)n;
 				}		;
 
 /*****************************************************************************
@@ -19671,7 +19712,7 @@ load_when_option_item:
 	;
 
 /*
- three string formats used to be compatible with orafce
+ three string formats used to be compatible with oracle
 	1. string
 	2. 'string'
 	3. "string"
@@ -25562,6 +25603,7 @@ opt_evtime_unit:
 				$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
 												 INTERVAL_MASK(MONTH), @1));
 			}
+			;
 
 opt_interval:
 			YEAR_P
@@ -29736,9 +29778,9 @@ makeStringConst(char *str, int location)
 	A_Const *n = makeNode(A_Const);
 
 
-	if (NULL == str || (0 == strlen(str) && !ACCEPT_EMPTY_STR))
+	if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT)
 	{
-		if (NULL == str || 0 == strlen(str))
+		if (NULL == str || (0 == strlen(str) && !ACCEPT_EMPTY_STR))
 		{
 			n->val.type = T_Null;
 			n->val.val.str = str;
