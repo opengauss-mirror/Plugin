@@ -8839,7 +8839,7 @@ bool isNumeric(const char* str)
     return true;
 }
 
-static double numeric_to_double_no_overflow(Numeric num)
+static double numeric_to_double_no_overflow_dolphin(Numeric num)
 {
     char* endptr = NULL;
     char* tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
@@ -8965,11 +8965,11 @@ static text* _m_char(FunctionCallInfo fcinfo)
                     str = char_deal(str, quotient, remainder, remainders, times);
                     break;                
                 case NUMERICOID:
-                    ret_round = (int128)round(numeric_to_double_no_overflow((Numeric)PG_GETARG_DATUM(i)));
+                    ret_round = (int128)round(numeric_to_double_no_overflow_dolphin((Numeric)PG_GETARG_DATUM(i)));
                     if ((*((int128 *)DatumGetPointer((Datum)(&ret_round)))) >= PG_UINT64_MAX) {
                         appendStringInfoString(&str, MAX_UINT32_STR);
                     } else {
-                        quotient = (uint32)(round(numeric_to_double_no_overflow((Numeric)value)));
+                        quotient = (uint32)(round(numeric_to_double_no_overflow_dolphin((Numeric)value)));
                         str = char_deal(str, quotient, remainder, remainders, times);
                     }
                     break;

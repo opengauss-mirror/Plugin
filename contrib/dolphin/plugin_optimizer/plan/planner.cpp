@@ -96,6 +96,9 @@
 
 /* Hook for plugins to get control in planner() */
 THR_LOCAL ndp_pushdown_hook_type ndp_pushdown_hook = NULL;
+#ifdef USE_SPQ
+THR_LOCAL spq_planner_hook_type spq_planner_hook = NULL;
+#endif
 
 #ifndef MIN
 #define MIN(A, B) ((B) < (A) ? (B) : (A))
@@ -380,6 +383,12 @@ PlannedStmt* planner(Query* parse, int cursorOptions, ParamListInfo boundParams)
     PlannedStmt* result = NULL;
     instr_time starttime;
     double totaltime = 0;
+
+#ifdef USE_SPQ
+    if (spq_planner_hook) {
+        return (*spq_planner_hook) (parse, cursorOptions, boundParams);
+    }
+#endif
 
     INSTR_TIME_SET_CURRENT(starttime);
 
@@ -3536,12 +3545,14 @@ static Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                     wflists,
                     &needSecondLevelAgg,
                     collectiveGroupExpr);
-#ifdef ENABLE_MULTIPLE_NODES
-                /*
-                 * grouping_tlist was modified by build_groupingsets_plan,
-                 * we have to change tlist at the same time.
-                 */
-                tlist = grouping_tlist;
+#if defined(ENABLE_MULTIPLE_NODES) || defined(USE_SPQ)
+                if (IS_SPQ_RUNNING) {
+                    /*
+                     * grouping_tlist was modified by build_groupingsets_plan,
+                     * we have to change tlist at the same time.
+                     */
+                    tlist = grouping_tlist;
+                }
 #endif
                 /* Delete eq class expr after grouping */
                 delete_eq_member(root, tlist, collectiveGroupExpr);
@@ -16000,3 +16011,88 @@ adjust_plan_for_srfs(PlannerInfo *root, Plan *plan, List *targets, List *targets
     }
     return newplan;
 }
+
+#ifdef USE_SPQ
+static Node* get_spq_multiple_from_expr(
+    PlannerInfo* root, Node* expr, double rows, double* skew_multiple, double* bias_multiple)
+{
+    List* groupExprs = NIL;
+    Oid datatype = exprType((Node*)(expr));
+    bool use_skew_multiple = true;
+
+    if (!OidIsValid(datatype) || !IsSpqTypeDistributable(datatype))
+        return NULL;
+
+    groupExprs = list_make1(expr);
+    get_multiple_from_exprlist(root, groupExprs, rows, &use_skew_multiple, true, skew_multiple, bias_multiple);
+    list_free_ext(groupExprs);
+
+    return expr;
+}
+
+
+List* spq_get_distributekey_from_tlist(
+    PlannerInfo* root, List* tlist, List* groupcls, double rows, double* result_multiple, void* skew_info)
+{
+    ListCell* lcell = NULL;
+    List* distkey = NIL;
+    double multiple = 0.0;
+    double bias_multiple = 0.0;
+    double skew_multiple = 0.0;
+    List* exprMultipleList = NIL;
+
+    foreach (lcell, groupcls) {
+        Node* expr = (Node*)lfirst(lcell);
+
+        if (IsA(expr, SortGroupClause))
+            expr = get_sortgroupclause_expr((SortGroupClause*)expr, tlist);
+
+        expr = get_spq_multiple_from_expr(root, expr, rows, &skew_multiple, &bias_multiple);
+        if (expr != NULL) {
+            /*
+             * we can't estimate skew of grouping sets because there's
+             * null added, so just add all columns and set mutiple to 1
+             */
+            if (root->parse->groupingSets) {
+                distkey = lappend(distkey, expr);
+                *result_multiple = 1;
+                continue;
+            }
+            if ((skew_multiple == 1.0) && (bias_multiple <= 1.0)) {
+                *result_multiple = 1;
+                list_free_ext(exprMultipleList);
+                return list_make1(expr);
+            } else if ((u_sess->pgxc_cxt.NumDataNodes == skew_multiple) &&
+                       (u_sess->pgxc_cxt.NumDataNodes ==
+                           bias_multiple)) { /* All the expr are const, return the first expr.  */
+                if (distkey == NULL)
+                    distkey = lappend(distkey, expr);
+                *result_multiple = u_sess->pgxc_cxt.NumDataNodes;
+
+                continue;
+            } else {
+                if (skew_multiple == 1.0) {
+                    /*
+                     * If distinct num of multiple has no skew, we should use bias multiple to
+                     * compute mix multiple.
+                     */
+                    multiple = bias_multiple;
+                }
+                else if (bias_multiple <= 1.0) /* mcf has no skew, handle skew_multiple */
+                    multiple = skew_multiple;
+                else
+                    multiple = Max(bias_multiple, skew_multiple);
+
+                exprMultipleList = add_multiple_to_list(expr, multiple, exprMultipleList);
+            }
+        }
+    }
+
+    if (exprMultipleList != NULL) {
+        distkey = get_mix_diskey_by_exprlist(root, exprMultipleList, rows, result_multiple, (AggSkewInfo*)skew_info);
+        list_free_ext(exprMultipleList);
+    }
+
+    return distkey;
+}
+#endif

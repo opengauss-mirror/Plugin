@@ -4387,9 +4387,9 @@ uint64 CopyFrom(CopyState cstate)
     if ((resultRelInfo->ri_TrigDesc != NULL &&
         (resultRelInfo->ri_TrigDesc->trig_insert_before_row || resultRelInfo->ri_TrigDesc->trig_insert_instead_row)) ||
 #ifdef DOLPHIN
-        cstate->volatile_defexprs || is_single_insert) {
+        cstate->volatile_defexprs || isForeignTbl || is_single_insert) {
 #else
-        cstate->volatile_defexprs) {
+        cstate->volatile_defexprs || isForeignTbl) {
 #endif
         useHeapMultiInsert = false;
     } else {
@@ -4927,6 +4927,8 @@ uint64 CopyFrom(CopyState cstate)
 
             if (!skip_tuple && isForeignTbl) {
                 resultRelInfo->ri_FdwRoutine->ExecForeignInsert(estate, resultRelInfo, slot, NULL);
+                Assert(!useHeapMultiInsert);
+                resetPerTupCxt = true;
                 processed++;
             } else if (!skip_tuple) {
                 /*
@@ -5180,6 +5182,14 @@ uint64 CopyFrom(CopyState cstate)
                  * tuples inserted by an INSERT command.
                  */
                 processed++;
+            } else {/*skip_tupe == true*/
+                /*
+                 * only the before row insert trigget would make skip_tupe==true
+                 * which useHeapMultiInsert must be false
+                 * so we can safely reset the per-tuple memory context in next iteration
+                 */
+                Assert(useHeapMultiInsert == false);
+                resetPerTupCxt = true;
             }
 #ifdef PGXC
         }
@@ -7243,6 +7253,7 @@ static bool CopyReadLineTextTemplate(CopyState cstate)
     for (;;) {
         int prev_raw_ptr;
         char c;
+        char sec = '\0';
 
         /*
          * Load more data if needed.  Ideally we would just force four bytes
@@ -7280,6 +7291,27 @@ static bool CopyReadLineTextTemplate(CopyState cstate)
         /* OK to fetch a character */
         prev_raw_ptr = raw_buf_ptr;
         c = copy_raw_buf[raw_buf_ptr++];
+        if (raw_buf_ptr < copy_buf_len) {
+            sec = copy_raw_buf[raw_buf_ptr];
+        }
+        if (IS_TEXT(cstate) && (cstate->copy_dest == COPY_NEW_FE) && !cstate->is_load_copy) {
+            if (c == '\\') {
+                char c2;
+                IF_NEED_REFILL_AND_NOT_EOF_CONTINUE(0);
+
+                /* get next character */
+                c2 = copy_raw_buf[raw_buf_ptr];
+
+                /*
+                 * If the following character is a newline or CRLF,
+                 * skip the '\\'.
+                 */
+                if (c2 == '\n' || c2 == '\r' ||
+                    (c2 == '\r' && (raw_buf_ptr + 1) < copy_buf_len && copy_raw_buf[raw_buf_ptr + 1] == '\n')) {
+                    continue;
+                }
+            }
+        }
 
         if (csv_mode) {
             /*
@@ -7640,10 +7672,12 @@ static bool CopyReadLineTextTemplate(CopyState cstate)
          * high-bit set, so as an optimization we can avoid this block
          * entirely if it is not set.
          */
-        if (cstate->encoding_embeds_ascii && IS_HIGHBIT_SET(c)) {
+        if ((cstate->encoding_embeds_ascii || cstate->file_encoding == PG_GBK || cstate->file_encoding == PG_GB18030)
+            && IS_HIGHBIT_SET(c)) {
             int mblen;
 
             mblen_str[0] = c;
+            mblen_str[1] = sec;
             /* All our encodings only read the first byte to get the length */
             mblen = pg_encoding_mblen(cstate->file_encoding, mblen_str);
             IF_NEED_REFILL_AND_NOT_EOF_CONTINUE(mblen - 1);

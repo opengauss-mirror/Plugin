@@ -85,4 +85,7 @@ extern char *getEnumLableByOrder(Oid enumOid, int order);
 extern Node *transferConstToAconst(Node *node);
 
 extern Const* setValueToConstExpr(SetVariableExpr* set);
+#ifdef USE_SPQ
+extern bool get_cast_func(Oid oidSrc, Oid oidDest, bool *is_binary_coercible, Oid *oidCastFunc, CoercionPathType *pathtype);
+#endif
 #endif /* PARSE_COERCE_H */
