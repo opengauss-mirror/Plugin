@@ -203,6 +203,9 @@ extern "C" DLL_PUBLIC Datum bytea2var(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(tinyblob_rawin);
 extern "C" DLL_PUBLIC Datum tinyblob_rawin(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_blob_rawout);
+extern "C" DLL_PUBLIC Datum dolphin_blob_rawout(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(mediumblob_rawin);
 extern "C" DLL_PUBLIC Datum mediumblob_rawin(PG_FUNCTION_ARGS);
 
@@ -923,7 +926,7 @@ Datum rawout(PG_FUNCTION_ARGS)
         pfree_ext(ans);
         PG_RETURN_CSTRING(out_string);
     } else {
-        return byteaout(fcinfo);
+        return dolphin_blob_rawout(fcinfo);
     }
 }
 
@@ -8576,6 +8579,30 @@ Datum tinyblob_rawin(PG_FUNCTION_ARGS)
 #endif
     check_blob_size(result, (int64)TinyBlobMaxAllocSize);
     return result;
+}
+
+Datum dolphin_blob_rawout(PG_FUNCTION_ARGS)
+{
+    bytea* vlena = PG_GETARG_BYTEA_PP(0);
+    char* result = NULL;
+    char* rp = NULL;
+
+    char* vp = NULL;
+    int len;
+    int i;
+
+    len = 1 + VARSIZE_ANY_EXHDR(vlena); /* empty string has 1 char */
+    rp = result = (char*)palloc(len);
+    vp = VARDATA_ANY(vlena);
+    for (i = VARSIZE_ANY_EXHDR(vlena); i != 0; i--, vp++) {
+        *rp++ = *vp;
+    }
+    *rp = '\0';
+
+    /* free memory if allocated by the toaster */
+    PG_FREE_IF_COPY(vlena, 0);
+
+    PG_RETURN_CSTRING(result);
 }
 
 Datum mediumblob_rawin(PG_FUNCTION_ARGS)

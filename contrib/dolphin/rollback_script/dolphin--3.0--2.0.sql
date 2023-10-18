@@ -54,3 +54,14 @@ DROP FUNCTION IF EXISTS pg_catalog.timestamptz_le_time (timestamp with time zone
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_lt_time (timestamp with time zone, time);
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_ge_time (timestamp with time zone, time);
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_gt_time (timestamp with time zone, time);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_rawout (
+tinyblob
+) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
+
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_rawout (
+mediumblob
+) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
+
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_rawout (
+longblob
+) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
