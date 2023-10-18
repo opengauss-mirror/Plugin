@@ -6307,4 +6307,153 @@ Datum adddate_datetime_interval_text(PG_FUNCTION_ARGS)
     PG_RETURN_NULL();
 }
 
+#ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(time_eq_timestamp);
+extern "C" DLL_PUBLIC Datum time_eq_timestamp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_ne_timestamp);
+extern "C" DLL_PUBLIC Datum time_ne_timestamp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_lt_timestamp);
+extern "C" DLL_PUBLIC Datum time_lt_timestamp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_le_timestamp);
+extern "C" DLL_PUBLIC Datum time_le_timestamp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_gt_timestamp);
+extern "C" DLL_PUBLIC Datum time_gt_timestamp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(time_ge_timestamp);
+extern "C" DLL_PUBLIC Datum time_ge_timestamp(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_eq_time);
+extern "C" DLL_PUBLIC Datum timestamp_eq_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_ne_time);
+extern "C" DLL_PUBLIC Datum timestamp_ne_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_lt_time);
+extern "C" DLL_PUBLIC Datum timestamp_lt_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_le_time);
+extern "C" DLL_PUBLIC Datum timestamp_le_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_gt_time);
+extern "C" DLL_PUBLIC Datum timestamp_gt_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_ge_time);
+extern "C" DLL_PUBLIC Datum timestamp_ge_time(PG_FUNCTION_ARGS);
+/* Convert the time to timestamp type.
+   Fill in the missing date with the current date */
+static Timestamp time2timestamp(TimeADT timeVal)
+{
+    Timestamp result;
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec = 0;
+    GetCurrentDateTime(tm);
+    time2tm(timeVal, tm, &fsec);
+    tm2timestamp(tm, fsec, NULL, &result);
+    return result;
+}
+/* time_timestamp */
+Datum time_eq_timestamp(PG_FUNCTION_ARGS)
+{
+    TimeADT time1 = PG_GETARG_TIMEADT(0);
+    Timestamp dt1 = time2timestamp(time1);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+    
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) == 0);
+}
+
+Datum time_ne_timestamp(PG_FUNCTION_ARGS)
+{
+    TimeADT time1 = PG_GETARG_TIMEADT(0);
+    Timestamp dt1 = time2timestamp(time1);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+    
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) != 0);
+}
+
+Datum time_lt_timestamp(PG_FUNCTION_ARGS)
+{
+    TimeADT time1 = PG_GETARG_TIMEADT(0);
+    Timestamp dt1 = time2timestamp(time1);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+    
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) < 0);
+}
+
+Datum time_le_timestamp(PG_FUNCTION_ARGS)
+{
+    TimeADT time1 = PG_GETARG_TIMEADT(0);
+    Timestamp dt1 = time2timestamp(time1);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+    
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) <= 0);
+}
+
+Datum time_gt_timestamp(PG_FUNCTION_ARGS)
+{
+    TimeADT time1 = PG_GETARG_TIMEADT(0);
+    Timestamp dt1 = time2timestamp(time1);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+    
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) > 0);
+}
+
+Datum time_ge_timestamp(PG_FUNCTION_ARGS)
+{
+    TimeADT time1 = PG_GETARG_TIMEADT(0);
+    Timestamp dt1 = time2timestamp(time1);
+    Timestamp dt2 = PG_GETARG_TIMESTAMP(1);
+    
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) >= 0);
+}
+/* timestamp_time */
+Datum timestamp_eq_time(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    TimeADT time1 = PG_GETARG_TIMEADT(1);
+    Timestamp dt2 = time2timestamp(time1);
+    
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) == 0);
+}
+
+Datum timestamp_ne_time(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    TimeADT time1 = PG_GETARG_TIMEADT(1);
+    Timestamp dt2 = time2timestamp(time1);
+    
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) != 0);
+}
+
+Datum timestamp_lt_time(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    TimeADT time1 = PG_GETARG_TIMEADT(1);
+    Timestamp dt2 = time2timestamp(time1);
+    
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) < 0);
+}
+
+Datum timestamp_le_time(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    TimeADT time1 = PG_GETARG_TIMEADT(1);
+    Timestamp dt2 = time2timestamp(time1);
+    
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) <= 0);
+}
+
+Datum timestamp_gt_time(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    TimeADT time1 = PG_GETARG_TIMEADT(1);
+    Timestamp dt2 = time2timestamp(time1);
+    
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) > 0);
+}
+
+Datum timestamp_ge_time(PG_FUNCTION_ARGS)
+{
+    Timestamp dt1 = PG_GETARG_TIMESTAMP(0);
+    TimeADT time1 = PG_GETARG_TIMEADT(1);
+    Timestamp dt2 = time2timestamp(time1);
+    
+    PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) >= 0);
+}
+#endif
+
 #endif

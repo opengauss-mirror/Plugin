@@ -1875,3 +1875,172 @@ select pg_typeof(sysdate(3) / 2);
  double precision
 (1 row)
 
+-- CURRENT_DATE (00:00:00) == (current date) 00:00:00
+select CURRENT_DATE = time'00:00:00';
+ ?column? 
+----------
+ t
+(1 row)
+
+select (CURRENT_DATE::date + interval'11 hour 11 min 11 sec') = time'11:11:11';
+ ?column? 
+----------
+ t
+(1 row)
+
+select (CURRENT_DATE::datetime + interval'11 hour 11 min 11 sec') = time'11:11:11';
+ ?column? 
+----------
+ t
+(1 row)
+
+select (CURRENT_DATE::timestamp + interval'11 hour 11 min 11 sec') = time'11:11:11';
+ ?column? 
+----------
+ t
+(1 row)
+
+select CURRENT_DATE <> time'00:00:00';
+ ?column? 
+----------
+ f
+(1 row)
+
+select (CURRENT_DATE::date + interval'11 hour 11 min 11 sec') <> time'11:11:11';
+ ?column? 
+----------
+ f
+(1 row)
+
+select (CURRENT_DATE::datetime + interval'11 hour 11 min 11 sec') <> time'11:11:11';
+ ?column? 
+----------
+ f
+(1 row)
+
+select (CURRENT_DATE::timestamp + interval'11 hour 11 min 11 sec') <> time'11:11:11';
+ ?column? 
+----------
+ f
+(1 row)
+
+select CURRENT_DATE < time'00:00:00';
+ ?column? 
+----------
+ f
+(1 row)
+
+select (CURRENT_DATE::date + interval'11 hour 11 min 11 sec') < time'11:11:11';
+ ?column? 
+----------
+ f
+(1 row)
+
+select (CURRENT_DATE::datetime + interval'11 hour 11 min 11 sec') < time'11:11:11';
+ ?column? 
+----------
+ f
+(1 row)
+
+select (CURRENT_DATE::timestamp + interval'11 hour 11 min 11 sec') < time'11:11:11';
+ ?column? 
+----------
+ f
+(1 row)
+
+select CURRENT_DATE <= time'00:00:00';
+ ?column? 
+----------
+ t
+(1 row)
+
+select (CURRENT_DATE::date + interval'11 hour 11 min 11 sec') <= time'11:11:11';
+ ?column? 
+----------
+ t
+(1 row)
+
+select (CURRENT_DATE::datetime + interval'11 hour 11 min 11 sec') <= time'11:11:11';
+ ?column? 
+----------
+ t
+(1 row)
+
+select (CURRENT_DATE::timestamp + interval'11 hour 11 min 11 sec') <= time'11:11:11';
+ ?column? 
+----------
+ t
+(1 row)
+
+select CURRENT_DATE > time'00:00:00';
+ ?column? 
+----------
+ f
+(1 row)
+
+select (CURRENT_DATE::date + interval'11 hour 11 min 11 sec') > time'11:11:11';
+ ?column? 
+----------
+ f
+(1 row)
+
+select (CURRENT_DATE::datetime + interval'11 hour 11 min 11 sec') > time'11:11:11';
+ ?column? 
+----------
+ f
+(1 row)
+
+select (CURRENT_DATE::timestamp + interval'11 hour 11 min 11 sec') > time'11:11:11';
+ ?column? 
+----------
+ f
+(1 row)
+
+select CURRENT_DATE >= time'00:00:00';
+ ?column? 
+----------
+ t
+(1 row)
+
+select (CURRENT_DATE::date + interval'11 hour 11 min 11 sec') >= time'11:11:11';
+ ?column? 
+----------
+ t
+(1 row)
+
+select (CURRENT_DATE::datetime + interval'11 hour 11 min 11 sec') >= time'11:11:11';
+ ?column? 
+----------
+ t
+(1 row)
+
+select (CURRENT_DATE::timestamp + interval'11 hour 11 min 11 sec') >= time'11:11:11';
+ ?column? 
+----------
+ t
+(1 row)
+
+select time'11:11:11' < date'2023-01-01';
+ ?column? 
+----------
+ f
+(1 row)
+
+select time'11:11:11' < datetime'2023-01-01 11:11:11';
+ ?column? 
+----------
+ f
+(1 row)
+
+select time'11:11:11' < timestamp'2023-01-01 11:11:11';
+ ?column? 
+----------
+ f
+(1 row)
+
+select time'11:11:11' < timestamptz'2023-01-01 11:11:11';
+ ?column? 
+----------
+ f
+(1 row)
+
