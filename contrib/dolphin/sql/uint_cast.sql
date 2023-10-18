@@ -283,6 +283,13 @@ select (1)::uint4::bool;
 select (0)::uint8::bool;
 select (1)::uint8::bool;
 
+
+set dolphin.b_compatibility_mode = on;
+select '-125'::bit(64)::uint1;
+select '-125'::bit(64)::uint2;
+select '-123456'::bit(64)::uint4;
+reset dolphin.b_compatibility_mode;
+
 -- 严格模式
 drop table if exists t_longtext;
 create table t_longtext(a longtext);

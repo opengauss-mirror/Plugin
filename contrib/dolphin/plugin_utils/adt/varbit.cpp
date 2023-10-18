@@ -47,6 +47,9 @@ static int32 bit_cmp(VarBit* arg1, VarBit* arg2, int leadingZeroLen1 = -1, int l
 extern "C" Datum ui8toi1(PG_FUNCTION_ARGS);
 extern "C" Datum ui8toi2(PG_FUNCTION_ARGS);
 extern "C" Datum ui8toi4(PG_FUNCTION_ARGS);
+extern "C" Datum ui8toui1(PG_FUNCTION_ARGS);
+extern "C" Datum ui8toui2(PG_FUNCTION_ARGS);
+extern "C" Datum ui8toui4(PG_FUNCTION_ARGS);
 extern "C" Datum date_int8(PG_FUNCTION_ARGS);
 extern "C" Datum datetime_float(PG_FUNCTION_ARGS);
 extern "C" Datum timestamptz_int8(PG_FUNCTION_ARGS);
@@ -1577,7 +1580,8 @@ Datum bittotinyint(VarBit* arg, bool isUnsigned)
     int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
 
     if (GetSessionContext()->enableBCmptMode) {
-        result = (uint8)DirectFunctionCall1(ui8toi1, Int64GetDatum(bittobigint(arg, true)));
+        result = isUnsigned ? (uint8)DirectFunctionCall1(ui8toui1, Int64GetDatum(bittobigint(arg, true))) :
+                 (uint8)DirectFunctionCall1(ui8toi1, Int64GetDatum(bittobigint(arg, true)));
         PG_RETURN_INT8(result);
     }
 
@@ -1611,7 +1615,8 @@ Datum bittosmallint(VarBit* arg, bool isUnsigned)
     int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
 
     if (GetSessionContext()->enableBCmptMode) {
-        result = (uint16)DirectFunctionCall1(ui8toi2, Int64GetDatum(bittobigint(arg, true)));
+        result = isUnsigned ? (uint16)DirectFunctionCall1(ui8toui2, Int64GetDatum(bittobigint(arg, true))) :
+                 (uint16)DirectFunctionCall1(ui8toi2, Int64GetDatum(bittobigint(arg, true)));
         PG_RETURN_INT16(result);
     }
 
@@ -1645,7 +1650,8 @@ Datum bittoint(VarBit* arg, bool isUnsigned)
     int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
 
     if (GetSessionContext()->enableBCmptMode) {
-        result = (uint32)DirectFunctionCall1(ui8toi4, Int64GetDatum(bittobigint(arg, true)));
+        result = isUnsigned ? (uint32)DirectFunctionCall1(ui8toui4, Int64GetDatum(bittobigint(arg, true))) :
+                 (uint32)DirectFunctionCall1(ui8toi4, Int64GetDatum(bittobigint(arg, true)));
         PG_RETURN_INT32(result);
     }
 
