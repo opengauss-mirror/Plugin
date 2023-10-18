@@ -37,6 +37,7 @@
 #include "access/multixact.h"
 #include "catalog/catalog.h"
 #include "catalog/dependency.h"
+#include "catalog/gs_matview.h"
 #include "catalog/heap.h"
 #include "catalog/index.h"
 #include "catalog/indexing.h"
@@ -161,7 +162,7 @@
 #include "access/heapam.h"
 #include "utils/typcache.h"
 #include "utils/numeric.h"
-#include "plugin_utils/timestamp.h"
+#include "utils/timestamp.h"
 #include "catalog/pg_database.h"
 #include "catalog/pg_authid.h"
 #include "catalog/pg_auth_members.h"
@@ -780,6 +781,8 @@ static int128 EvaluateAutoIncrement(Relation rel, TupleDesc desc, AttrNumber att
 static void SetRelAutoIncrement(Relation rel, TupleDesc desc, int128 autoinc);
 static Node* RecookAutoincAttrDefault(Relation rel, int attrno, Oid targettype, int targettypmod);
 static void check_unsupported_charset_for_column(Oid collation, const char* col_name);
+static void AlterTableNamespaceDependentProcess(Relation classRel ,Relation rel, Oid oldNspOid,
+                                                Oid nspOid, ObjectAddresses* objsMoved, char* newrelname);
 
 inline static bool CStoreSupportATCmd(AlterTableType cmdtype)
 {
@@ -3664,6 +3667,13 @@ void RemoveRelations(DropStmt* drop, StringInfo tmp_queryString, RemoteQueryExec
         }
 
         delrel = try_relation_open(relOid, NoLock);
+        /*Not allow to drop mlog*/
+        if (relkind == RELKIND_RELATION && delrel != NULL && ISMLOG(delrel->rd_rel->relname.data)) {
+            /*If we can find a base table, it is mlog.*/
+            if (get_matview_mlog_baserelid(relOid)!= InvalidOid)
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                    errmsg("Use 'Drop table' to drop mlog table %s is not allowed.",delrel->rd_rel->relname.data)));
+        }
         /*
          * Open up drop table command for table being redistributed right now.
          *
@@ -6577,7 +6587,7 @@ ObjectAddress RenameRelation(RenameStmt* stmt)
 #endif
 
         /* Do the work */
-        RenameRelationInternal(relid, stmt->newname);
+        RenameRelationInternal(relid, stmt->newname, stmt->newschema);
         /*
          * Record the changecsn of the table that defines the index
          */
@@ -6602,19 +6612,48 @@ ObjectAddress RenameRelation(RenameStmt* stmt)
  *			  the sequence name should probably be removed from the
  *			  sequence, AFAIK there's no need for it to be there.
  */
-void RenameRelationInternal(Oid myrelid, const char* newrelname)
+void RenameRelationInternal(Oid myrelid, const char* newrelname, char* newschema)
 {
     Relation targetrelation;
     Relation relrelation; /* for RELATION relation */
     HeapTuple reltup;
     Form_pg_class relform;
     Oid namespaceId;
+    Oid oldNspOid = InvalidOid;
+    bool needChangeNsp = false;
+    ObjectAddresses* objsMoved = NULL;
+    ObjectAddress thisobj;
+    bool is_present = false;
+
+    thisobj.classId = RelationRelationId;
+    thisobj.objectId = myrelid;
+    thisobj.objectSubId = 0;
 
     /*
      * Grab an exclusive lock on the target table, index, sequence or view,
      * which we will NOT release until end of transaction.
      */
     targetrelation = relation_open(myrelid, AccessExclusiveLock);
+
+    if (newschema != NULL) {
+        if (targetrelation->rd_mlogoid != InvalidOid) {
+            ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                    (errmsg("Un-support feature"),
+                        errdetail("table owning matview doesn't support this ALTER yet."))));
+        }
+
+        if (targetrelation->rd_rel->relkind == RELKIND_MATVIEW) {
+            ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                    errmsg("ALTER MATERIALIZED VIEW is not yet supported.")));
+        }
+
+        /* Permission check */
+        if (!pg_class_ownercheck(RelationGetRelid(targetrelation), GetUserId())) {
+            aclcheck_error(ACLCHECK_NOT_OWNER, ACL_KIND_CLASS, RelationGetRelationName(targetrelation));
+        }
+    }
 
     if (RelationIsSubPartitioned(targetrelation)) {
         ereport(
@@ -6647,6 +6686,24 @@ void RenameRelationInternal(Oid myrelid, const char* newrelname)
 
     relform = (Form_pg_class)GETSTRUCT(reltup);
 
+
+    oldNspOid = namespaceId;
+    if (newschema != NULL) {
+        /* Get and lock schema OID and check its permissions. */
+        RangeVar* newrv = makeRangeVar(newschema, (char*)newrelname, -1);
+        Oid newNspOid = RangeVarGetAndCheckCreationNamespace(newrv, NoLock, NULL, '\0');
+
+        needChangeNsp = (newNspOid != namespaceId);
+        if (needChangeNsp) {
+            /* common checks on switching namespaces */
+            CheckSetNamespace(namespaceId, newNspOid, RelationRelationId, myrelid);
+            ledger_check_switch_schema(namespaceId, newNspOid);
+            objsMoved = new_object_addresses();
+            namespaceId = newNspOid;
+            is_present = object_address_present(&thisobj, objsMoved);
+        }
+    }
+
     /*
      * Check relation name to ensure that it doesn't conflict with existing synonym.
      */
@@ -6656,8 +6713,17 @@ void RenameRelationInternal(Oid myrelid, const char* newrelname)
                     get_namespace_name(namespaceId))));
     }
 
-    if (get_relname_relid(newrelname, namespaceId) != InvalidOid)
-        ereport(ERROR, (errcode(ERRCODE_DUPLICATE_TABLE), errmsg("relation \"%s\" already exists", newrelname)));
+    if (get_relname_relid(newrelname, namespaceId) != InvalidOid) {
+        if (newschema != NULL) {
+            ereport(ERROR,
+                (errcode(ERRCODE_DUPLICATE_TABLE),
+                    errmsg("relation \"%s\" already exists in schema \"%s\"",
+                        newrelname,
+                        newschema)));
+        } else {
+            ereport(ERROR, (errcode(ERRCODE_DUPLICATE_TABLE), errmsg("relation \"%s\" already exists", newrelname)));
+        }
+    }
 
 #ifdef ENABLE_MULTIPLE_NODES
     if (RelationIsTsStore(targetrelation)) {
@@ -6684,6 +6750,9 @@ void RenameRelationInternal(Oid myrelid, const char* newrelname)
      */
     (void)namestrcpy(&(relform->relname), newrelname);
 
+    /* Update pg_class tuple with new nsp. */
+    relform->relnamespace = namespaceId;
+
     simple_heap_update(relrelation, &reltup->t_self, reltup);
 
     /* keep the system catalog indexes current */
@@ -6700,14 +6769,33 @@ void RenameRelationInternal(Oid myrelid, const char* newrelname)
         renamePartitionedTable(myrelid, newrelname);
     }
 
+    if (needChangeNsp && !is_present) {
+        if (changeDependencyFor(RelationRelationId, myrelid, NamespaceRelationId, oldNspOid, namespaceId) != 1) {
+            ereport(ERROR,
+                (errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
+                    errmsg("failed to change schema dependency for relation \"%s\"", NameStr(relform->relname))));
+        }
+
+        add_exact_object_address(&thisobj, objsMoved);
+    }
+
     tableam_tops_free_tuple(reltup);
     heap_close(relrelation, RowExclusiveLock);
 
-    /*
-     * Also rename the associated type, if any.
-     */
-    if (OidIsValid(targetrelation->rd_rel->reltype))
-        RenameTypeInternal(targetrelation->rd_rel->reltype, newrelname, namespaceId);
+    if (needChangeNsp && !is_present) {
+        AlterTableNamespaceDependentProcess(relrelation, targetrelation, oldNspOid, namespaceId, objsMoved,
+                                            (char*)newrelname);
+        if (targetrelation->rd_isblockchain) {
+            rename_hist_by_newnsp(myrelid, newschema);
+        }
+        free_object_addresses(objsMoved);
+    } else {
+        /*
+        * Also rename the associated type, if any.
+        */
+        if (OidIsValid(targetrelation->rd_rel->reltype))
+            RenameTypeInternal(targetrelation->rd_rel->reltype, newrelname, oldNspOid);
+    }
 
     /*
      * Also rename the associated constraint, if any.
@@ -21492,8 +21580,16 @@ void AlterTableNamespaceInternal(Relation rel, Oid oldNspOid, Oid nspOid, Object
 
     AlterRelationNamespaceInternal(classRel, RelationGetRelid(rel), oldNspOid, nspOid, true, objsMoved);
 
+    AlterTableNamespaceDependentProcess(classRel, rel, oldNspOid, nspOid, objsMoved, NULL);
+
+    heap_close(classRel, RowExclusiveLock);
+}
+
+static void AlterTableNamespaceDependentProcess(Relation classRel ,Relation rel, Oid oldNspOid,
+                                                Oid nspOid, ObjectAddresses* objsMoved, char* newrelname)
+{
     /* Fix the table's row type too */
-    (void)AlterTypeNamespaceInternal(rel->rd_rel->reltype, nspOid, false, false, objsMoved);
+    (void)AlterTypeNamespaceInternal(rel->rd_rel->reltype, nspOid, false, false, objsMoved, newrelname);
 
     /* Change the table's set type too */
     TupleDesc tupDesc = rel->rd_att;
@@ -21510,8 +21606,6 @@ void AlterTableNamespaceInternal(Relation rel, Oid oldNspOid, Oid nspOid, Object
         AlterSeqNamespaces(classRel, rel, oldNspOid, nspOid, objsMoved, AccessExclusiveLock);
         AlterConstraintNamespaces(RelationGetRelid(rel), oldNspOid, nspOid, false, objsMoved);
     }
-
-    heap_close(classRel, RowExclusiveLock);
 }
 
 /*
@@ -21917,6 +22011,51 @@ void RangeVarCallbackOwnsTable(const RangeVar* relation, Oid relId, Oid oldRelId
     AclResult aclresult = pg_class_aclcheck(relId, GetUserId(), ACL_INDEX);
     if (aclresult != ACLCHECK_OK && !pg_class_ownercheck(relId, GetUserId())) {
         aclcheck_error(aclresult, ACL_KIND_CLASS, relation->relname);
+    }
+}
+
+/*
+ * This is intended as a callback for RangeVarGetRelidExtended().  It allows
+ * the relation to be locked only if (1) it's a materialized view and
+ * (2) the current user is the owner (or the superuser).
+ * This meets the permission-checking needs of and REFRESH MATERIALIZED VIEW;
+ * we expose it here so that it can be used by all.
+ */
+void RangeVarCallbackOwnsMatView(const RangeVar* relation, Oid relId, Oid oldRelId, bool target_is_partition, void* arg)
+{
+    char relkind;
+
+    /* Nothing to do if the relation was not found. */
+    if (!OidIsValid(relId)) {
+        return;
+    }
+
+    /*
+     * If the relation does exist, check whether it's an index.  But note that
+     * the relation might have been dropped between the time we did the name
+     * lookup and now.	In that case, there's nothing to do.
+     */
+    relkind = get_rel_relkind(relId);
+    if (!relkind) {
+        return;
+    }
+    if (relkind != RELKIND_RELATION &&
+        relkind != RELKIND_TOASTVALUE &&
+        relkind != RELKIND_MATVIEW) {
+        ereport(ERROR,
+                (errcode(ERRCODE_WRONG_OBJECT_TYPE),
+                errmsg("\"%s\" is not a table or materialized view", relation->relname)));
+    }
+
+    /* Check permissions */
+    AclResult aclresult = pg_class_aclcheck(relId, GetUserId(), ACL_INSERT | ACL_DELETE);
+    if (aclresult != ACLCHECK_OK) {
+        aclcheck_error(aclresult, ACL_KIND_CLASS, relation->relname);
+    }
+
+    bool is_owner = pg_class_ownercheck(relId, GetUserId());
+    if (!is_owner) {
+        aclcheck_error(ACLCHECK_NOT_OWNER, ACL_KIND_CLASS, relation->relname);
     }
 }
 
@@ -28041,6 +28180,21 @@ static void ATExecSplitPartition(Relation partTableRel, AlterTableCmd* cmd)
         ATUnusableGlobalIndex(partTableRel);
     }
 }
+#ifdef USE_SPQ
+void spq_btbuild_update_pg_class(Relation heap, Relation index)
+{
+    List *options = NIL;
+    DefElem *opt;
+    opt = makeNode(DefElem);
+    opt->type = T_DefElem;
+    opt->defnamespace = NULL;
+    opt->defname = "spq_build";
+    opt->defaction = DEFELEM_SET;
+    opt->arg = (Node *)makeString("finish");
+    options = lappend(options, opt);
+    ATExecSetRelOptions(index, options, AT_SetRelOptions, ShareUpdateExclusiveLock);
+}
+#endif
 
 void CheckSrcListSubPartitionForSplit(Relation rel, Oid partOid, Oid subPartOid)
 {
@@ -31270,12 +31424,6 @@ void CreateWeakPasswordDictionary(CreateWeakPasswordDictionaryStmt* stmt)
     }
 
     rel = heap_open(GsGlobalConfigRelationId, RowExclusiveLock);
-    if (!OidIsValid(rel)) {
-        ereport(ERROR, 
-            (errcode(ERRCODE_SYSTEM_ERROR),
-                errmsg("could not open gs_global_config")));
-        return;
-    }
 
     foreach (pwd_obj, stmt->weak_password_string_list) {
         Datum values[Natts_gs_global_config] = {0};

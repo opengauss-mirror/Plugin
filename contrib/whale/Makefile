@@ -2,7 +2,6 @@
 parser = plugin_parser
 utils = plugin_utils
 executor = plugin_executor
-commands = plugin_optimizer/commands
 plan = plugin_optimizer/plan
 pl = plugin_pl/plpgsql/src
 adt = $(utils)/adt
@@ -57,7 +56,7 @@ $(orafce)/utility.o $(orafce)/random.o $(orafce)/datefce.o $(orafce)/convert.o $
 $(orafce)/aggregate.o $(orafce)/charlen.o $(orafce)/charpad.o $(orafce)/plvstr.o $(orafce)/replace_empty_string.o \
 $(orafce)/varchar2.o $(orafce)/file.o $(orafce)/plvdate.o $(orafce)/plvsubst.o $(orafce)/plunit.o 
 
-all $(OBJS): write_git_commit parser utils executor plan commands storage pl orafce;
+all $(OBJS): write_git_commit parser utils executor plan storage pl orafce;
 
 parser:
 	make -C $(parser)
@@ -73,9 +72,6 @@ storage:
 
 plan:
 	make -C $(plan)
-
-commands:
-	make -C $(commands)
 
 pl:
 	make -C $(pl)
