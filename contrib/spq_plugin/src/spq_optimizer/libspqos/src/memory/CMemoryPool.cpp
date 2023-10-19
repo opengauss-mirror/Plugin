@@ -36,12 +36,28 @@ CMemoryPool::UserSizeOfAlloc(const void *ptr)
 	return CMemoryPoolManager::GetMemoryPoolMgr()->UserSizeOfAlloc(ptr);
 }
 
+// get user requested size of allocation
+ULONG
+CMemoryPool::UserDXLSizeOfAlloc(const void *ptr)
+{
+    SPQOS_ASSERT(NULL != ptr);
+
+    return CMemoryPoolManager::GetDXLMemoryPoolMgr()->UserSizeOfAlloc(ptr);
+}
+
 
 void
 CMemoryPool::DeleteImpl(void *ptr, EAllocationType eat)
 {
 	CMemoryPoolManager::GetMemoryPoolMgr()->DeleteImpl(ptr, eat);
 }
+
+void
+    CMemoryPool::DeleteDXLImpl(void *ptr, EAllocationType eat)
+{
+    CMemoryPoolManager::GetDXLMemoryPoolMgr()->DeleteImpl(ptr, eat);
+}
+
 
 #ifdef SPQOS_DEBUG
 

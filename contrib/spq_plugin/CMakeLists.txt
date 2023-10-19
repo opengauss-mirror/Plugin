@@ -29,6 +29,7 @@ add_subdirectory(src)
 set(spqplugin_DEF_OPTIONS ${MACRO_OPTIONS})
 set(spqplugin_COMPILE_OPTIONS ${OPTIMIZE_OPTIONS} ${OS_OPTIONS} ${PROTECT_OPTIONS} ${WARNING_OPTIONS} ${LIB_SECURE_OPTIONS} ${CHECK_OPTIONS})
 set(spqplugin_LINK_OPTIONS ${LIB_LINK_OPTIONS})
+list(APPEND spqplugin_LINK_OPTIONS -lxerces-c)
 
 add_shared_libtarget(spqplugin TGT_spqplugin_SRC TGT_spqplugin_INC "${spqplugin_DEF_OPTIONS}" "${spqplugin_COMPILE_OPTIONS}" "${spqplugin_LINK_OPTIONS}")
 

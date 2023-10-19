@@ -9,6 +9,8 @@
 //		Singleton to keep error messages;
 //---------------------------------------------------------------------------
 
+#include "knl/knl_session.h"
+
 #include "spqos/error/CMessageRepository.h"
 
 #include "spqos/common/CSyncHashtableAccessByKey.h"
@@ -17,10 +19,6 @@
 
 
 using namespace spqos;
-//---------------------------------------------------------------------------
-// static singleton
-//---------------------------------------------------------------------------
-CMessageRepository *CMessageRepository::m_repository = NULL;
 
 //---------------------------------------------------------------------------
 //	@function:
@@ -106,7 +104,7 @@ CMessageRepository::LookupMessage(CException exc, ELocale locale)
 SPQOS_RESULT
 CMessageRepository::Init()
 {
-	SPQOS_ASSERT(NULL == m_repository);
+	SPQOS_ASSERT(NULL == u_sess->spq_cxt.m_repository);
 
 	CAutoMemoryPool amp;
 	CMemoryPool *mp = amp.Pmp();
@@ -115,7 +113,7 @@ CMessageRepository::Init()
 	repository->InitDirectory(mp);
 	repository->LoadStandardMessages();
 
-	CMessageRepository::m_repository = repository;
+	u_sess->spq_cxt.m_repository = repository;
 
 	// detach safety
 	(void) amp.Detach();
@@ -135,8 +133,8 @@ CMessageRepository::Init()
 CMessageRepository *
 CMessageRepository::GetMessageRepository()
 {
-	SPQOS_ASSERT(NULL != m_repository);
-	return m_repository;
+	SPQOS_ASSERT(NULL != u_sess->spq_cxt.m_repository);
+	return u_sess->spq_cxt.m_repository;
 }
 
 
@@ -154,7 +152,7 @@ void
 CMessageRepository::Shutdown()
 {
 	CMemoryPoolManager::GetMemoryPoolMgr()->Destroy(m_mp);
-	CMessageRepository::m_repository = NULL;
+	u_sess->spq_cxt.m_repository = NULL;
 }
 
 

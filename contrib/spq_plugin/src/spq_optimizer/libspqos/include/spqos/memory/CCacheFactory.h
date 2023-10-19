@@ -42,8 +42,6 @@ namespace spqos
 class CCacheFactory
 {
 private:
-	// global instance
-	static CCacheFactory *m_factory;
 
 	// memory pool allocated to caches
 	CMemoryPool *m_mp;
@@ -58,11 +56,7 @@ private:
 
 public:
 	// private dtor
-	~CCacheFactory()
-	{
-		SPQOS_ASSERT(NULL == m_factory &&
-					"Cache factory has not been shut down");
-	}
+	~CCacheFactory();
 
 	// initialize global memory pool
 	static SPQOS_RESULT Init();
@@ -71,11 +65,7 @@ public:
 	void Shutdown();
 
 	// global accessor
-	inline static CCacheFactory *
-	GetFactory()
-	{
-		return m_factory;
-	}
+    static CCacheFactory *GetFactory();
 
 	// create a cache instance
 	template <class T, class K>

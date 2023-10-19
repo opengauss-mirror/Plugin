@@ -20,11 +20,10 @@
 #include "spqopt/mdcache/CMDCache.h"
 #include "spqopt/xforms/CXformFactory.h"
 #include "naucrates/init.h"
+#include "knl/knl_session.h"
 
 using namespace spqos;
 using namespace spqopt;
-
-static CMemoryPool *mp = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -43,10 +42,10 @@ spqopt_init()
 {
 	{
 		CAutoMemoryPool amp;
-		mp = amp.Pmp();
+        u_sess->spq_cxt.m_xform_mp = amp.Pmp();
 
 		// add standard exception messages
-		(void) spqopt::EresExceptionInit(mp);
+		(void) spqopt::EresExceptionInit(u_sess->spq_cxt.m_xform_mp);
 
 		// detach safety
 		(void) amp.Detach();
@@ -69,13 +68,11 @@ spqopt_init()
 void
 spqopt_terminate()
 {
-#ifdef SPQOS_DEBUG
 	CMDCache::Shutdown();
 
-	CMemoryPoolManager::GetMemoryPoolMgr()->Destroy(mp);
+	CMemoryPoolManager::GetMemoryPoolMgr()->Destroy(u_sess->spq_cxt.m_xform_mp);
 
 	CXformFactory::Pxff()->Shutdown();
-#endif	// SPQOS_DEBUG
 }
 
 // EOF

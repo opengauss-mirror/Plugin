@@ -22,6 +22,12 @@ void InitDXL();
 // shutdown DXL library support
 void ShutdownDXL();
 
+// initialize DXL Memory Manager support
+void InitDXLManager();
+
+// shutdown DXL Memory Manager support
+void ShutdownDXLManager(int code, void* args);
+
 // initialize Xerces parser utils
 void spqdxl_init(void);
 

@@ -85,6 +85,40 @@ static void log_optimizer(PlannedStmt *plan, bool fUnexpectedFailure)
     // }
 }
 
+static void init_spq_optimizer_context(PlannerGlobal* glob)
+{
+    glob->plannerContext = (PlannerContext*)palloc0(sizeof(PlannerContext));
+
+    glob->plannerContext->plannerMemContext = AllocSetContextCreate(CurrentMemoryContext,
+                                                                    "PlannerContext",
+                                                                    ALLOCSET_DEFAULT_MINSIZE,
+                                                                    ALLOCSET_DEFAULT_INITSIZE,
+                                                                    ALLOCSET_DEFAULT_MAXSIZE);
+
+    if (u_sess->opt_cxt.skew_strategy_opt != SKEW_OPT_OFF) {
+        glob->plannerContext->dataSkewMemContext = AllocSetContextCreate(glob->plannerContext->plannerMemContext,
+                                                                         "DataSkewContext",
+                                                                         ALLOCSET_DEFAULT_MINSIZE,
+                                                                         ALLOCSET_DEFAULT_INITSIZE,
+                                                                         ALLOCSET_DEFAULT_MAXSIZE);
+    }
+
+    glob->plannerContext->tempMemCxt = AllocSetContextCreate(glob->plannerContext->plannerMemContext,
+                                                             "Planner Temp MemoryContext",
+                                                             ALLOCSET_DEFAULT_MINSIZE,
+                                                             ALLOCSET_DEFAULT_INITSIZE,
+                                                             ALLOCSET_DEFAULT_MAXSIZE);
+    glob->plannerContext->refCounter = 0;
+}
+
+static void deinit_spq_optimizer_context(PlannerGlobal* glob)
+{
+    MemoryContextDelete(glob->plannerContext->plannerMemContext);
+    glob->plannerContext->plannerMemContext = NULL;
+    glob->plannerContext->dataSkewMemContext = NULL;
+    glob->plannerContext->tempMemCxt = NULL;
+    glob->plannerContext->refCounter = 0;
+}
 /*
  * spq_planner
  * 		Plan the query using the SPQOPT planner
@@ -122,6 +156,8 @@ PlannedStmt *spq_planner(Query *parse, ParamListInfo boundParams)
     glob->subplans = NIL;
     glob->relationOids = NIL;
     glob->invalItems = NIL;
+    init_spq_optimizer_context(glob);
+    MemoryContext old_context = MemoryContextSwitchTo(glob->plannerContext->plannerMemContext);
 
     root = makeNode(PlannerInfo);
     root->parse = parse;
@@ -164,8 +200,10 @@ PlannedStmt *spq_planner(Query *parse, ParamListInfo boundParams)
      * If SPQOPT didn't produce a plan, bail out and fall back to the Postgres
      * planner.
      */
-    if (!result)
+    if (!result) {
+        MemoryContextSwitchTo(old_context);
         return NULL;
+    }
 
     /*
      * Post-process the plan.
@@ -269,8 +307,20 @@ PlannedStmt *spq_planner(Query *parse, ParamListInfo boundParams)
     //result->oneoffPlan = glob->oneoffPlan;
     result->transientPlan = glob->transientPlan;
 
-    make_spq_remote_query(root, result, glob);
-    result->is_spq_optmized = true;
+    PG_TRY();
+    {
+        make_spq_remote_query(root, result, glob);
+        result->is_spq_optmized = true;
+    }
+    PG_CATCH();
+    {
+        ereport(WARNING, (errmsg("make_spq_remote_query failed.")));
+        deinit_spq_optimizer_context(glob);
+        result = nullptr;
+    }
+    PG_END_TRY();
+
+    MemoryContextSwitchTo(old_context);
 
     return result;
 }

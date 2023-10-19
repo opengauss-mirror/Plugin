@@ -30,6 +30,7 @@
 using namespace spqos;
 using namespace spqos::clib;
 
+CMemoryPoolManager *CMemoryPoolManager::m_dxl_memory_pool_mgr = nullptr;
 // ctor
 CMemoryPoolManager::CMemoryPoolManager(CMemoryPool *internal,
 									   EMemoryPoolType memory_pool_type)
@@ -87,6 +88,27 @@ CMemoryPoolManager::GetMemoryPoolMgrPtr()
 {
 	return &(u_sess->spq_cxt.m_memory_pool_mgr);
 }
+
+// Initialize dxl memory pool manager using CMemoryPoolTracker
+SPQOS_RESULT
+CMemoryPoolManager::DXLInit()
+{
+    return SetupDXLMemoryPoolManager<CMemoryPoolManager, CMemoryPoolTracker>();
+}
+
+
+CMemoryPoolManager *
+    CMemoryPoolManager::GetDXLMemoryPoolMgr()
+{
+    return m_dxl_memory_pool_mgr;
+}
+
+CMemoryPoolManager **
+    CMemoryPoolManager::GetDXLMemoryPoolMgrPtr()
+{
+    return &(m_dxl_memory_pool_mgr);
+}
+
 
 CMemoryPool *
 CMemoryPoolManager::CreateMemoryPool()
@@ -287,6 +309,26 @@ CMemoryPoolManager::Shutdown()
 #endif	// SPQOS_DEBUG
 
 	Free(internal);
+}
+
+// Delete dxl memory pools and release manager
+void
+    CMemoryPoolManager::ShutdownDXLMgr()
+{
+    // cleanup remaining memory pools
+    Cleanup();
+
+    // save off pointers for explicit deletion
+    CMemoryPool *internal = m_internal_memory_pool;
+
+    ::delete m_dxl_memory_pool_mgr;
+    m_dxl_memory_pool_mgr = nullptr;
+
+#ifdef SPQOS_DEBUG
+    internal->AssertEmpty(oswcerr);
+#endif	// SPQOS_DEBUG
+
+    Free(internal);
 }
 
 // EOF

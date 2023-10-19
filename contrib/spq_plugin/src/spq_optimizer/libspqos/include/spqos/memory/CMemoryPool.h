@@ -160,6 +160,12 @@ public:
 	// free allocation
 	static void DeleteImpl(void *ptr, EAllocationType eat);
 
+    // requested size of allocation
+    static ULONG UserDXLSizeOfAlloc(const void *ptr);
+
+    // free allocation
+    static void DeleteDXLImpl(void *ptr, EAllocationType eat);
+
 #ifdef SPQOS_DEBUG
 
 	// check if the memory pool keeps track of live objects
@@ -247,6 +253,27 @@ public:
 		// Free memory.
 		CMemoryPool::DeleteImpl(object_array, CMemoryPool::EatArray);
 	}
+
+    static void
+        DeleteDXLArray(T *object_array)
+    {
+        if (NULL == object_array)
+        {
+            return;
+        }
+
+        // Invoke destructor on each array element in reverse
+        // order from construction.
+        const SIZE_T num_elements =
+            CMemoryPool::UserDXLSizeOfAlloc(object_array) / sizeof(T);
+        for (SIZE_T idx = num_elements - 1; idx < num_elements; --idx)
+        {
+            object_array[idx].~T();
+        }
+
+        // Free memory.
+        CMemoryPool::DeleteDXLImpl(object_array, CMemoryPool::EatArray);
+    }
 };
 
 // Specialization for const-qualified types.
@@ -265,6 +292,12 @@ public:
 	{
 		CDeleter<T>::DeleteArray(const_cast<T *>(object_array));
 	}
+
+    static void
+        DeleteDXLArray(const T *object_array)
+    {
+        CDeleter<T>::DeleteDXLArray(const_cast<T *>(object_array));
+    }
 };
 }  // namespace delete_detail
 }  // namespace spqos
@@ -323,6 +356,14 @@ void
 SPQOS_DELETE_ARRAY(T *object_array)
 {
 	::spqos::delete_detail::CDeleter<T>::DeleteArray(object_array);
+}
+
+// Delete an array allocated by SPQOS_NEW_DXL_ARRAY().
+template <typename T>
+void
+    SPQOS_DELETE_DXL_ARRAY(T *object_array)
+{
+    ::spqos::delete_detail::CDeleter<T>::DeleteDXLArray(object_array);
 }
 #endif	// !SPQOS_CMemoryPool_H
 

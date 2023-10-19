@@ -11,13 +11,10 @@
 
 #include "spqos/base.h"
 #include "spqos/memory/CMemoryPoolManager.h"
-
+#include "knl/knl_session.h"
 #include "spqopt/xforms/xforms.h"
 
 using namespace spqopt;
-
-// global instance of xform factory
-CXformFactory *CXformFactory::m_pxff = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -58,7 +55,7 @@ CXformFactory::CXformFactory(CMemoryPool *mp)
 //---------------------------------------------------------------------------
 CXformFactory::~CXformFactory()
 {
-	SPQOS_ASSERT(NULL == m_pxff && "Xform factory has not been shut down");
+	SPQOS_ASSERT(NULL == u_sess->spq_cxt.m_pxff && "Xform factory has not been shut down");
 
 	// delete all xforms in the array
 	for (ULONG i = 0; i < CXform::ExfSentinel; i++)
@@ -369,13 +366,13 @@ CXformFactory::Init()
 	SPQOS_TRY
 	{
 		// create xform factory instance
-		m_pxff = SPQOS_NEW(mp) CXformFactory(mp);
+		u_sess->spq_cxt.m_pxff = SPQOS_NEW(mp) CXformFactory(mp);
 	}
 	SPQOS_CATCH_EX(ex)
 	{
 		// destroy memory pool if global instance was not created
 		CMemoryPoolManager::GetMemoryPoolMgr()->Destroy(mp);
-		m_pxff = NULL;
+		u_sess->spq_cxt.m_pxff = NULL;
 
 		if (SPQOS_MATCH_EX(ex, CException::ExmaSystem, CException::ExmiOOM))
 		{
@@ -391,7 +388,7 @@ CXformFactory::Init()
 	SPQOS_CATCH_END;
 
 	// instantiating the factory
-	m_pxff->Instantiate();
+	u_sess->spq_cxt.m_pxff->Instantiate();
 
 	return eres;
 }
@@ -415,11 +412,17 @@ CXformFactory::Shutdown()
 	CMemoryPool *mp = pxff->m_mp;
 
 	// destroy xform factory
-	CXformFactory::m_pxff = NULL;
+	u_sess->spq_cxt.m_pxff = NULL;
 	SPQOS_DELETE(pxff);
 
 	// release allocated memory pool
 	CMemoryPoolManager::GetMemoryPoolMgr()->Destroy(mp);
+}
+
+CXformFactory*
+CXformFactory::Pxff()
+{
+    return u_sess->spq_cxt.m_pxff;
 }
 
 

@@ -1,6 +1,7 @@
 AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR} TGT_spq_plugin_SRC)
 
-SET(TGT_spq_plugin_INC ../include)
+SET(TGT_spq_plugin_INC ../include
+        ./spq_optimizer/libnaucrates/include)
 
 set(spq_plugin_DEF_OPTIONS ${MACRO_OPTIONS})
 set(spq_plugin_COMPILE_OPTIONS ${OPTIMIZE_OPTIONS} ${OS_OPTIONS} ${PROTECT_OPTIONS} ${WARNING_OPTIONS} ${LIB_SECURE_OPTIONS} ${CHECK_OPTIONS})
