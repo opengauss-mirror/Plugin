@@ -18,6 +18,10 @@ rm -f dolphin--2.0--3.0.sql
 cp upgrade_script/dolphin--2.0--3.0.sql dolphin--2.0--3.0.sql
 rm -f dolphin--3.0--2.0.sql
 cp rollback_script/dolphin--3.0--2.0.sql dolphin--3.0--2.0.sql
+rm -f dolphin--2.0--2.0.1.sql
+cp upgrade_script/dolphin--2.0--2.0.1.sql dolphin--2.0--2.0.1.sql
+rm -f dolphin--2.0.1--2.0.sql
+cp rollback_script/dolphin--2.0.1--2.0.sql dolphin--2.0.1--2.0.sql
 cp llvmir/openGauss_expr_dolphin_${BUILD_TUPLE}.ir openGauss_expr_dolphin.ir
 DOLPHIN_CMAKE_BUILD_DIR=`pwd`/tmp_build
 [ -d "${DOLPHIN_CMAKE_BUILD_DIR}" ] && rm -rf ${DOLPHIN_CMAKE_BUILD_DIR}
