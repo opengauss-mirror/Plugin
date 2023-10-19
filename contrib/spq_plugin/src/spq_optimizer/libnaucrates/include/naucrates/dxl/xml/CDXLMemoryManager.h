@@ -10,8 +10,8 @@
 //		Provides a wrapper around the SPQOS CMemoryPool interface.
 //---------------------------------------------------------------------------
 
-#ifndef SPQDXL_CDXLMemoryManager_H
-#define SPQDXL_CDXLMemoryManager_H
+#ifndef DXL_CDXLMemoryManager_H
+#define DXL_CDXLMemoryManager_H
 
 #include <iostream>
 #include <xercesc/framework/MemoryManager.hpp>
@@ -50,11 +50,11 @@ public:
 	// MemoryManager interface functions
 
 	// allocates memory
-	void *allocate(XMLSize_t  // size
+	virtual void *allocate(XMLSize_t  // size
 	);
 
 	// deallocates memory
-	void deallocate(void *pv);
+	virtual void deallocate(void *pv);
 
 	// accessor to the underlying memory pool
 	CMemoryPool *
@@ -73,6 +73,6 @@ public:
 };
 }  // namespace spqdxl
 
-#endif	// SPQDXL_CDXLMemoryManager_H
+#endif	// DXL_CDXLMemoryManager_H
 
 // EOF

@@ -29,6 +29,7 @@
 #include "naucrates/init.h"
 #include "utils/guc.h"
 #include "utils/memutils.h"
+#include "storage/ipc.h"
 
 bool optimizer_trace_fallback = false;
 
@@ -172,6 +173,11 @@ SPQOptimizer::SerializeDXLPlan(Query *query)
 void
 SPQOptimizer::InitSPQOPT()
 {
+
+    if (u_sess->spq_cxt.spq_opt_initialized) {
+        return;
+    }
+
 	if (u_sess->attr.attr_spq.spq_optimizer_use_gauss_allocators)
 	{
 		CMemoryPoolPallocManager::Init();
@@ -182,6 +188,9 @@ SPQOptimizer::InitSPQOPT()
 	spqos_init(&params);
 	spqdxl_init();
 	spqopt_init();
+    u_sess->spq_cxt.spq_opt_initialized = true;
+    on_proc_exit(UnInitSPQOPT, PointerGetDatum(u_sess));
+
 }
 
 //---------------------------------------------------------------------------
@@ -280,7 +289,10 @@ TerminateSPQOPT()
 
 void UnInitSPQOPT(int status, Datum arg)
 {
+    knl_session_context* session_back = u_sess;
+    u_sess = (knl_session_context*) DatumGetPointer(arg);
 	TerminateSPQOPT();
+    u_sess = session_back;
 }
 
 // EOF

@@ -9,6 +9,7 @@
 //		 Function implementation of CCacheFactory
 //---------------------------------------------------------------------------
 
+#include "knl/knl_session.h"
 
 #include "spqos/memory/CCacheFactory.h"
 
@@ -17,9 +18,6 @@
 #include "spqos/memory/CCache.h"
 
 using namespace spqos;
-
-// global instance of cache factory
-CCacheFactory *CCacheFactory::m_factory = NULL;
 
 //---------------------------------------------------------------------------
 //	@function:
@@ -31,6 +29,20 @@ CCacheFactory *CCacheFactory::m_factory = NULL;
 //---------------------------------------------------------------------------
 CCacheFactory::CCacheFactory(CMemoryPool *mp) : m_mp(mp)
 {
+}
+
+//---------------------------------------------------------------------------
+//	@function:
+//		CCacheFactory::~CCacheFactory
+//
+//	@doc:
+//		Ctor;
+//
+//---------------------------------------------------------------------------
+CCacheFactory::~CCacheFactory()
+{
+    SPQOS_ASSERT(NULL == u_sess->spq_cxt.m_factory &&
+                 "Cache factory has not been shut down");
 }
 
 
@@ -71,14 +83,14 @@ CCacheFactory::Init()
 	SPQOS_TRY
 	{
 		// create cache factory instance
-		CCacheFactory::m_factory = SPQOS_NEW(mp) CCacheFactory(mp);
+		u_sess->spq_cxt.m_factory = SPQOS_NEW(mp) CCacheFactory(mp);
 	}
 	SPQOS_CATCH_EX(ex)
 	{
 		// destroy memory pool if global instance was not created
 		CMemoryPoolManager::GetMemoryPoolMgr()->Destroy(mp);
 
-		CCacheFactory::m_factory = NULL;
+		u_sess->spq_cxt.m_factory = NULL;
 
 		if (SPQOS_MATCH_EX(ex, CException::ExmaSystem, CException::ExmiOOM))
 		{
@@ -112,10 +124,26 @@ CCacheFactory::Shutdown()
 	CMemoryPool *mp = factory->m_mp;
 
 	// destroy cache factory
-	CCacheFactory::m_factory = NULL;
+	u_sess->spq_cxt.m_factory = NULL;
 	SPQOS_DELETE(factory);
 
 	// release allocated memory pool
 	CMemoryPoolManager::GetMemoryPoolMgr()->Destroy(mp);
 }
+
+
+//---------------------------------------------------------------------------
+//	@function:
+//		CCacheFactory::GetFactory
+//
+//	@doc:
+//		get factory from context
+//
+//---------------------------------------------------------------------------
+CCacheFactory *
+CCacheFactory::GetFactory()
+{
+	return u_sess->spq_cxt.m_factory;
+}
+
 // EOF

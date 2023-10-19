@@ -53,9 +53,6 @@ private:
 	// ensure that xforms are inserted in order
 	ULONG m_lastAddedOrSkippedXformId;
 
-	// global instance
-	static CXformFactory *m_pxff;
-
 	// private ctor
 	explicit CXformFactory(CMemoryPool *mp);
 
@@ -104,12 +101,7 @@ public:
 	BOOL IsXformIdUsed(CXform::EXformId exfid);
 
 	// global accessor
-	static CXformFactory *
-	Pxff()
-	{
-		return m_pxff;
-	}
-
+    static CXformFactory *Pxff();
 	// initialize global factory instance
 	static SPQOS_RESULT Init();
 

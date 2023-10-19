@@ -18,28 +18,26 @@
 #include "naucrates/dxl/parser/parsehandlers.h"
 #include "naucrates/dxl/xml/CDXLMemoryManager.h"
 #include "naucrates/dxl/xml/dxltokens.h"
-
+#include "knl/knl_session.h"
 using namespace spqdxl;
 
 XERCES_CPP_NAMESPACE_USE
 
-CParseHandlerFactory::TokenParseHandlerFuncMap
-	*CParseHandlerFactory::m_token_parse_handler_func_map = NULL;
 
 // adds a new mapping of token to corresponding parse handler
 void
 CParseHandlerFactory::AddMapping(
 	Edxltoken token_type, ParseHandlerOpCreatorFunc *parse_handler_op_func)
 {
-	SPQOS_ASSERT(NULL != m_token_parse_handler_func_map);
+	SPQOS_ASSERT(NULL != u_sess->spq_cxt.m_token_parse_handler_func_map);
 	const XMLCh *token_identifier_str = CDXLTokens::XmlstrToken(token_type);
 	SPQOS_ASSERT(NULL != token_identifier_str);
 
 #ifdef SPQOS_DEBUG
 	BOOL success =
 #endif
-		m_token_parse_handler_func_map->Insert(token_identifier_str,
-											   parse_handler_op_func);
+    ((CParseHandlerFactory::TokenParseHandlerFuncMap*)u_sess->spq_cxt.m_token_parse_handler_func_map)
+            ->Insert(token_identifier_str, parse_handler_op_func);
 
 	SPQOS_ASSERT(success);
 }
@@ -48,7 +46,7 @@ CParseHandlerFactory::AddMapping(
 void
 CParseHandlerFactory::Init(CMemoryPool *mp)
 {
-	m_token_parse_handler_func_map =
+	u_sess->spq_cxt.m_token_parse_handler_func_map =
 		SPQOS_NEW(mp) TokenParseHandlerFuncMap(mp, HASH_MAP_SIZE);
 
 	// array mapping XML Token -> Parse Handler Creator mappings to hashmap
@@ -313,10 +311,10 @@ CParseHandlerFactory::GetParseHandler(CMemoryPool *mp,
 									  CParseHandlerManager *parse_handler_mgr,
 									  CParseHandlerBase *parse_handler_root)
 {
-	SPQOS_ASSERT(NULL != m_token_parse_handler_func_map);
+	SPQOS_ASSERT(NULL != u_sess->spq_cxt.m_token_parse_handler_func_map);
 
 	ParseHandlerOpCreatorFunc *create_parse_handler_func =
-		m_token_parse_handler_func_map->Find(token_identifier_str);
+            ((CParseHandlerFactory::TokenParseHandlerFuncMap*)u_sess->spq_cxt.m_token_parse_handler_func_map)->Find(token_identifier_str);
 
 	if (create_parse_handler_func != NULL)
 	{

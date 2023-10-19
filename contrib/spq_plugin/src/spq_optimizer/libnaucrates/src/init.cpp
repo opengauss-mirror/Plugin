@@ -11,7 +11,7 @@
 //---------------------------------------------------------------------------
 
 #include "knl/knl_session.h"
-
+#include "knl/knl_instance.h"
 #include "naucrates/init.h"
 
 #include <xercesc/framework/MemBufInputSource.hpp>
@@ -23,10 +23,13 @@
 #include "naucrates/dxl/xml/CDXLMemoryManager.h"
 #include "naucrates/dxl/xml/dxltokens.h"
 #include "naucrates/exception.h"
+#include "naucrates/dxl/xml/SPQCDXLMemoryManager.h"
 
 using namespace spqos;
 using namespace spqdxl;
-
+spqos::CMemoryPool* global_memory_pool = nullptr;
+pthread_mutex_t dxl_init_lock = PTHREAD_MUTEX_INITIALIZER;
+bool dxl_global_init_status = false;
 //---------------------------------------------------------------------------
 //      @function:
 //              InitDXL
@@ -49,16 +52,6 @@ InitDXL()
 	SPQOS_ASSERT(NULL != u_sess->spq_cxt.pmpXerces);
 	SPQOS_ASSERT(NULL != u_sess->spq_cxt.pmpDXL);
 
-	// setup own memory manager
-	u_sess->spq_cxt.dxl_memory_manager = SPQOS_NEW(u_sess->spq_cxt.pmpXerces) CDXLMemoryManager(u_sess->spq_cxt.pmpXerces);
-
-	// initialize Xerces, if this fails library initialization should crash here
-	XMLPlatformUtils::Initialize(XMLUni::fgXercescDefaultLocale,  // locale
-								 NULL,	// nlsHome: location for message files
-								 NULL,	// panicHandler
-								 u_sess->spq_cxt.dxl_memory_manager	 // memoryManager
-	);
-
 	// initialize DXL tokens
 	CDXLTokens::Init(u_sess->spq_cxt.pmpDXL);
 
@@ -68,6 +61,48 @@ InitDXL()
 	u_sess->spq_cxt.m_ulpInitDXL++;
 }
 
+
+//---------------------------------------------------------------------------
+//      @function:
+//              InitDXLManager
+//
+//      @doc:
+//				Initialize DXL Memory Manager; must be called before any library
+//				function is called
+//
+//
+//---------------------------------------------------------------------------
+void
+InitDXLManager()
+{
+    if (dxl_global_init_status) {
+        return ;
+    }
+
+    pthread_mutex_lock(&dxl_init_lock);
+    if (!dxl_global_init_status) {
+        if (SPQOS_OK != spqos::CMemoryPoolManager::DXLInit()) {
+            ereport(ERROR, (errmsg("SPQ InitDXLManager error, dxl memory manager init failed.")));
+            pthread_mutex_unlock(&dxl_init_lock);
+            return;
+        }
+        global_memory_pool = CMemoryPoolManager::GetDXLMemoryPoolMgr()->CreateMemoryPool();
+
+        // setup own memory manager
+        spqdxl::CDXLMemoryManager *dxl_memory_manager =
+            SPQOS_NEW(global_memory_pool)
+                SPQCDXLMemoryManager(global_memory_pool);
+        // initialize Xerces, if this fails library initialization should crash here
+        XMLPlatformUtils::Initialize(XMLUni::fgXercescDefaultLocale,  // locale
+                                     NULL,    // nlsHome: location for message files
+                                     NULL,    // panicHandler
+                                     dxl_memory_manager     // memoryManager
+        );
+        (void) on_exit(ShutdownDXLManager, NULL);
+        dxl_global_init_status = true;
+    }
+    pthread_mutex_unlock(&dxl_init_lock);
+}
 
 //---------------------------------------------------------------------------
 //      @function:
@@ -90,12 +125,25 @@ ShutdownDXL()
 
 	u_sess->spq_cxt.m_ulpShutdownDXL++;
 
-	XMLPlatformUtils::Terminate();
-
 	CDXLTokens::Terminate();
+}
 
-	SPQOS_DELETE(u_sess->spq_cxt.dxl_memory_manager);
-	u_sess->spq_cxt.dxl_memory_manager = NULL;
+//---------------------------------------------------------------------------
+//      @function:
+//              ShutdownDXLManager
+//
+//      @doc:
+//
+//
+//
+//---------------------------------------------------------------------------
+void
+ShutdownDXLManager(int code, void* args)
+{
+    XMLPlatformUtils::Terminate();
+    CMemoryPoolManager::GetDXLMemoryPoolMgr()->ShutdownDXLMgr();
+    ::delete global_memory_pool;
+    global_memory_pool = nullptr;
 }
 
 
@@ -142,7 +190,6 @@ spqdxl_init()
 void
 spqdxl_terminate()
 {
-#ifdef SPQOS_DEBUG
 	ShutdownDXL();
 
 	if (NULL != u_sess->spq_cxt.pmpDXL)
@@ -156,7 +203,6 @@ spqdxl_terminate()
 		(CMemoryPoolManager::GetMemoryPoolMgr())->Destroy(u_sess->spq_cxt.pmpXerces);
 		u_sess->spq_cxt.pmpXerces = NULL;
 	}
-#endif	// SPQOS_DEBUG
 }
 
 // EOF

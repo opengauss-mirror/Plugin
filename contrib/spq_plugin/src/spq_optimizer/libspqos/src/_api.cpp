@@ -285,15 +285,13 @@ spqos_terminate()
 #ifdef SPQOS_DEBUG_COUNTERS
 	CDebugCounter::Shutdown();
 #endif
-#ifdef SPQOS_DEBUG
 #ifdef SPQOS_FPSIMULATOR
 	CFSimulator::FSim()->Shutdown();
 #endif	// SPQOS_FPSIMULATOR
-	CMessageRepository::GetMessageRepository()->Shutdown();
-	CWorkerPoolManager::WorkerPoolManager()->Shutdown();
-	CCacheFactory::GetFactory()->Shutdown();
-	CMemoryPoolManager::GetMemoryPoolMgr()->Shutdown();
-#endif	// SPQOS_DEBUG
+    CMessageRepository::GetMessageRepository()->Shutdown();
+    CWorkerPoolManager::WorkerPoolManager()->Shutdown();
+    CCacheFactory::GetFactory()->Shutdown();
+    CMemoryPoolManager::GetMemoryPoolMgr()->Shutdown();
 }
 
 // EOF

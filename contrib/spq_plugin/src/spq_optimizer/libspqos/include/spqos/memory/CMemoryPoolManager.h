@@ -59,6 +59,8 @@ private:
 	// hash table to maintain created pools
 	CSyncHashtable<CMemoryPool, ULONG_PTR> *m_ht_all_pools;
 
+    static CMemoryPoolManager *m_dxl_memory_pool_mgr;
+
 	// create new pool of given type
 	virtual CMemoryPool *NewMemoryPool();
 
@@ -125,6 +127,35 @@ protected:
 		return SPQOS_OK;
 	}
 
+
+    // Initialize dxl memory pool manager using given types
+    template <typename ManagerType, typename PoolType>
+    static SPQOS_RESULT
+        SetupDXLMemoryPoolManager()
+    {
+        // raw allocation of memory for internal memory pools
+        void *alloc_internal = spqos::clib::Malloc(sizeof(PoolType));
+
+        SPQOS_OOM_CHECK(alloc_internal);
+
+        SPQOS_TRY
+        {
+            // create internal memory pool
+            CMemoryPool *internal = ::new (alloc_internal) PoolType();
+
+            // instantiate manager
+            *(GetDXLMemoryPoolMgrPtr()) = ::new ManagerType(internal, EMemoryPoolTracker);
+            GetDXLMemoryPoolMgr()->Setup();
+        }
+        SPQOS_CATCH_EX(ex)
+        {
+            spqos::clib::Free(alloc_internal);
+            SPQOS_RETHROW(ex);
+        }
+        SPQOS_CATCH_END;
+        return SPQOS_OK;
+    }
+
 public:
 	// create new memory pool
 	CMemoryPool *CreateMemoryPool();
@@ -142,6 +173,8 @@ public:
 
 	// delete memory pools and release manager
 	void Shutdown();
+
+    void ShutdownDXLMgr();
 
 	// accessor of memory pool used in global new allocations
 	CMemoryPool *
@@ -187,9 +220,16 @@ public:
 	// initialize global instance
 	static SPQOS_RESULT Init();
 
+    // initialize dxl instance
+    static SPQOS_RESULT DXLInit();
+
 	// global accessor
 	static CMemoryPoolManager *GetMemoryPoolMgr();
 	static CMemoryPoolManager **GetMemoryPoolMgrPtr();
+
+    // dxl accessor
+    static CMemoryPoolManager *GetDXLMemoryPoolMgr();
+    static CMemoryPoolManager **GetDXLMemoryPoolMgrPtr();
 
 };	// class CMemoryPoolManager
 }  // namespace spqos

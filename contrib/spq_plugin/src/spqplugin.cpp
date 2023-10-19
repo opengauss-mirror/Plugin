@@ -9,7 +9,6 @@
  * -------------------------------------------------------------------------
  */
 #include "postgres.h"
-#include <threads.h>
 #include <stdint.h>
 #include "nodes/nodeFuncs.h"
 #include "catalog/pg_inherits_fn.h"
@@ -23,6 +22,7 @@
 #include "guc_spq.h"
 #include "spqplugin.h"
 #include "storage/ipc.h"
+#include "naucrates/init.h"
 
 PG_MODULE_MAGIC;
 PG_FUNCTION_INFO_V1(spqplugin_invoke);
@@ -136,8 +136,6 @@ static void spq_guc_init(knl_u_spq_context* spq_cxt)
     MemoryContext oldContext = MemoryContextSwitchTo(spq_cxt->spq_worker_context);
     InitSpqConfigureNames();
     MemoryContextSwitchTo(oldContext);
-    InitSPQOPT();
-    on_proc_exit(UnInitSPQOPT, 0);
 }
 
 static bool should_spq_planner(Query *parse)
@@ -171,6 +169,7 @@ static bool should_spq_planner(Query *parse)
     }
 
     if (!check_disable_spq_planner_walker((Node *)parse, NULL)) {
+        InitSPQOPT();
         return true;
     }
 
@@ -222,12 +221,12 @@ PlannedStmt* spq_optimize_query(Query* parse, int cursorOptions, ParamListInfo b
     if (u_sess->attr.attr_common.max_datanode_for_plan > 0 && IS_PGXC_COORDINATOR && !IsConnFromCoord()) {
         GetRemoteQuery(result, NULL);
     }
-
     return result;
 }
 
 void _PG_init(void)
 {
+    InitDXLManager();
     if (!HOOK_INIT) {
         backup_spq_planner_hook = spq_planner_hook;
         spq_planner_hook = spq_optimize_query;

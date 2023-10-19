@@ -26,9 +26,6 @@ namespace spqos
 class CMessageRepository
 {
 private:
-	// global singleton
-	static CMessageRepository *m_repository;
-
 	// memory pool
 	CMemoryPool *m_mp;
 
