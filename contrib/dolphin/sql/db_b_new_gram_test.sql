@@ -483,6 +483,47 @@ drop table authid;
 drop table authid_t1;
 create table body(body int);
 
+CREATE TABLE `Student` (
+    `Sno` varchar(3) NOT NULL,
+    `Sname` varchar(8) NOT NULL,
+    `Ssex` varchar(2) NOT NULL,
+    PRIMARY KEY (`Sno`)
+);
+
+CREATE TABLE `Score` (
+    `S_no` varchar(3) NOT NULL,
+    `Cno` varchar(5) NOT NULL,
+    `Degree` decimal(4, 1) DEFAULT NULL,
+    PRIMARY KEY (`S_no`, `Cno`),
+    CONSTRAINT `Score_ibfk_1` FOREIGN KEY (`S_no`) REFERENCES `Student` (`Sno`)
+);
+
+INSERT INTO `Student` (`Sno`, `Sname`, `Ssex`)
+VALUES ('101', '李军', '男'),
+    ('103', '陆君', '男'),
+    ('105', '匡明', '男');
+
+INSERT INTO `Score` (`S_no`, `Cno`, `Degree`)
+VALUES ('101', '3-105', '64.0'),
+    ('101', '6-166', '85.0'),
+    ('103', '3-105', '92.0'),
+    ('103', '3-245', '86.0');
+select a.Sno as no,a.Sname as name ,
+                            (select  Degree from Score 
+                             where Cno= '3-105' and S_no=no) 
+from Student as a;
+
+--expr
+select (a.Sno+1) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
+--multi var
+select (a.Sno+a.Sname) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
+--func
+select (a.Sno is null) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
+select hex(a.Sno) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
+-- agg not support
+select sum(a.Sno) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
+drop table Score;
+drop table Student;
 drop schema test_m cascade;
 drop schema db_b_new_gram_test cascade;
 reset current_schema;

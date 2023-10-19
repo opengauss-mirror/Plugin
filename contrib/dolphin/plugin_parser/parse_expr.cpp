@@ -723,54 +723,80 @@ static Node* replaceExprAliasIfNecessary(ParseState* pstate, char* colname, Colu
     bool isFind = false;
     Expr* matchExpr = NULL;
     TargetEntry* tle = NULL;
-    foreach (lc, pstate->p_target_list) {
-        tle = (TargetEntry*)lfirst(lc);
-        /*
-         * 1. in a select stmt in stored procudre, a columnref may be a param(e.g. a declared var or the stored
-         *    procedure's arg), which is not a alias, so can not be matched here.
-         * 2. in a select stmt in stored procudre such like a[1],a[2],a[3], they have same name,
-         *    so, we should pass this target.
-         */
-        bool isArrayParam = IsA(tle->expr, ArrayRef) && ((ArrayRef*)tle->expr)->refexpr != NULL &&
-                            IsA(((ArrayRef*)tle->expr)->refexpr, Param);
-        if (tle->resname != NULL && !IsA(tle->expr, Param) && !isArrayParam &&
 #ifdef DOLPHIN
-            strncasecmp(tle->resname, colname, strlen(colname) + 1) == 0) {
-#else
-            strncmp(tle->resname, colname, strlen(colname) + 1) == 0) {
+    int varlevelsup = 0;
+    int matchVarlevel = 0;
+    while (pstate != NULL) {
 #endif
-            if (checkExprHasWindowFuncs((Node*)tle->expr)) {
-                ereport(ERROR,
-                    (errcode(ERRCODE_UNDEFINED_COLUMN),
-                        errmsg("Alias \"%s\" reference with window function included is not supported.", colname),
-                        parser_errposition(pstate, cref->location)));
-#ifndef ENABLE_MULTIPLE_NODES
-            } else if (ContainRownumExpr((Node*)tle->expr)) {
-                ereport(ERROR,
-                    (errcode(ERRCODE_UNDEFINED_COLUMN),
-                     errmsg("Alias \"%s\" reference with ROWNUM included is invalid.", colname),
-                     parser_errposition(pstate, cref->location)));
-#endif					 
-            } else if (contain_volatile_functions((Node*)tle->expr)) {
-                ereport(ERROR,
-                    (errcode(ERRCODE_UNDEFINED_COLUMN),
-                        errmsg("Alias \"%s\" reference with volatile function included is not supported.", colname),
-                        parser_errposition(pstate, cref->location)));
-            } else {
-                if (!isFind) {
-                    matchExpr = tle->expr;
-                    isFind = true;
-                } else {
+        foreach (lc, pstate->p_target_list) {
+            tle = (TargetEntry*)lfirst(lc);
+            /*
+             * 1. in a select stmt in stored procudre, a columnref may be a param(e.g. a declared var or the stored
+             *    procedure's arg), which is not a alias, so can not be matched here.
+             * 2. in a select stmt in stored procudre such like a[1],a[2],a[3], they have same name,
+             *    so, we should pass this target.
+             */
+            bool isArrayParam = IsA(tle->expr, ArrayRef) && ((ArrayRef*)tle->expr)->refexpr != NULL &&
+                                IsA(((ArrayRef*)tle->expr)->refexpr, Param);
+            if (tle->resname != NULL && !IsA(tle->expr, Param) && !isArrayParam &&
+#ifdef DOLPHIN
+                strncasecmp(tle->resname, colname, strlen(colname) + 1) == 0) {
+#else
+                strncmp(tle->resname, colname, strlen(colname) + 1) == 0) {
+#endif
+                if (checkExprHasWindowFuncs((Node*)tle->expr)) {
                     ereport(ERROR,
                         (errcode(ERRCODE_UNDEFINED_COLUMN),
-                            errmsg("Alias \"%s\" is ambiguous.", colname),
+                            errmsg("Alias \"%s\" reference with window function included is not supported.", colname),
                             parser_errposition(pstate, cref->location)));
-                    return NULL;
+#ifndef ENABLE_MULTIPLE_NODES
+                } else if (ContainRownumExpr((Node*)tle->expr)) {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_UNDEFINED_COLUMN),
+                         errmsg("Alias \"%s\" reference with ROWNUM included is invalid.", colname),
+                         parser_errposition(pstate, cref->location)));
+#endif					 
+                } else if (contain_volatile_functions((Node*)tle->expr)) {
+                    ereport(ERROR,
+                        (errcode(ERRCODE_UNDEFINED_COLUMN),
+                            errmsg("Alias \"%s\" reference with volatile function included is not supported.", colname),
+                            parser_errposition(pstate, cref->location)));
+                } else {
+                    if (!isFind) {
+                        matchExpr = tle->expr;
+                        isFind = true;
+#ifdef DOLPHIN
+                        matchVarlevel = varlevelsup;
+#endif
+                    } else {
+                        ereport(ERROR,
+                            (errcode(ERRCODE_UNDEFINED_COLUMN),
+                                errmsg("Alias \"%s\" is ambiguous.", colname),
+                                parser_errposition(pstate, cref->location)));
+                        return NULL;
+                    }
                 }
             }
         }
+#ifdef DOLPHIN
+        pstate = pstate->parentParseState;
+        varlevelsup++;
     }
+    Node *res = (Node*)copyObject(matchExpr);
+    if (matchVarlevel == 0) {
+        return res;
+    }
+    List *varList = pull_var_clause(res, PVC_REJECT_AGGREGATES, PVC_RECURSE_PLACEHOLDERS,
+        PVC_RECURSE_SPECIAL_EXPR, true);
+    foreach (lc, varList) {
+        Var *var = (Var*)lfirst(lc);
+        var->varlevelsup += matchVarlevel;
+    }
+    list_free(varList);
+    return res;
+#else
     return (Node*)copyObject(matchExpr);
+#endif
 }
 
 static Node* ParseColumnRef(ParseState* pstate, RangeTblEntry* rte, char* colname, ColumnRef* cref)
