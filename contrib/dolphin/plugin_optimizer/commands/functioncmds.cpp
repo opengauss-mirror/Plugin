@@ -3391,7 +3391,7 @@ void ExecuteCallStmt(DolphinCallStmt *stmt, ParamListInfo params, bool atomic)
     
     Oid definer = GetUserId();
     Form_pg_proc procStruct;
-    bool topCall = false;
+    volatile bool topCall = false; /* use volatile to let PG_CATCH get the right value */
     /* Get function's pg_proc entry */
     tp = SearchSysCache1(PROCOID, ObjectIdGetDatum(fexpr->funcid));
     if (!HeapTupleIsValid(tp)) {
