@@ -27,6 +27,9 @@
 #include "mpmcqueue.h"
 #include "executor/executor.h"
 #include "executor/node/nodeSeqscan.h"
+#include "pgxc/execRemote.h"
+#include "libpq/pqformat.h"
+#include "libpq/libpq.h"
 #include "executor/spq_seqscan.h"
 
 #define DECOMPRESS_HEAP_TUPLE(_isCompressed, _heapTuple, _destTupleData, _rd_att, _heapPage)  \
@@ -332,6 +335,142 @@ public:
     }
 };
 
+class SpqAdaptiveBlockManager : public SpqBlockManager {
+public:
+    uint32 maxBlockNum;
+    int plan_node_id;
+    int64_t iter_no;
+    bool isBlockEnd;
+    uint32 end;
+    bool connected;
+    gsocket forward_conn;
+    gsocket backward_conn;
+public:
+    SpqAdaptiveBlockManager(uint32 maxBlockNum, ScanDirection direction, int plan_node_id, uint32 step)
+        : SpqBlockManager(direction, step), maxBlockNum(maxBlockNum), plan_node_id(plan_node_id)
+    {
+        isBlockEnd = false;
+        iter_no = 0;
+        end = InvalidBlockNumber;
+        connected = false;
+    }
+
+    void BuildConnect()
+    {
+        QCConnKey key = {
+            .query_id = u_sess->debug_query_id,
+            .plan_node_id = plan_node_id,
+            .node_id = 0,
+            .type = SPQ_QC_CONNECTION,
+        };
+
+        constexpr int MAX_RETRY_TIME = 100000;
+        bool found = false;
+        QCConnEntry* entry;
+        int retry = 0;
+        while (!found && retry < MAX_RETRY_TIME) {
+            pthread_rwlock_wrlock(&g_instance.spq_cxt.adp_connects_lock);
+            entry = (QCConnEntry*)hash_search(g_instance.spq_cxt.adp_connects, (void*)&key, HASH_FIND, &found);
+            if (!found) {
+                pthread_rwlock_unlock(&g_instance.spq_cxt.adp_connects_lock);
+                pg_usleep(100);
+                ++retry;
+                continue;
+            }
+            backward_conn = entry->backward;
+            BackConnInfo fcmsg;
+            if (entry->forward.idx == 0) {
+                fcmsg.node_idx = backward_conn.idx;
+                fcmsg.version = backward_conn.ver;
+                fcmsg.streamcap = entry->streamcap;
+                fcmsg.query_id = u_sess->debug_query_id;
+                fcmsg.stream_key = {
+                    .queryId = entry->key.query_id,
+                    .planNodeId = entry->key.plan_node_id,
+                    .producerSmpId = 0,
+                    .consumerSmpId = 0,
+                };
+                fcmsg.backward = &backward_conn;
+                int error = gs_r_build_reply_connection(&fcmsg, backward_conn.ver, &entry->forward.sid);
+                if (error != 0) {
+                    gs_close_gsocket(&entry->forward);
+                    ereport(ERROR, ((errmsg("spq try build dual channel backward direction failed"))));
+                }
+                entry->forward.idx = backward_conn.idx;
+                entry->forward.ver = backward_conn.ver;
+                entry->forward.type = GSOCK_PRODUCER;
+            }
+            forward_conn = entry->forward;
+            pthread_rwlock_unlock(&g_instance.spq_cxt.adp_connects_lock);
+            break;
+        }
+        if (backward_conn.idx == 0) {
+            gs_close_gsocket(&backward_conn);
+            ereport(ERROR, ((errmsg("spq try build dual channel forward direction failed"))));
+        }
+    }
+
+    SpqAdpScanPagesRes adps_get_adps_response(uint32 nblocks, int64_t iter_no)
+    {
+        if (!connected) {
+            BuildConnect();
+            connected = true;
+        }
+        SpqAdpScanPagesRes seqRes;
+        SpqAdpScanPagesReq req = {
+            .plan_node_id = plan_node_id,
+            .direction = SpqBlockManager::direction,
+            .nblocks = nblocks,
+            .cur_scan_iter_no = iter_no,
+        };
+
+        int rc = gs_send(&forward_conn, (char*)&req, sizeof(SpqAdpScanPagesReq), -1, true);
+        if (rc <= 0) {
+            ereport(ERROR, (errmsg("spq seq scan: try send adaptive request failed")));
+        }
+
+        do {
+            rc = gs_recv(&backward_conn, (char*)&seqRes, sizeof(SpqAdpScanPagesRes));
+        } while (rc == 0 || errno == ECOMMTCPNODATA);
+
+        if (rc < 0) {
+            ereport(ERROR, (errmsg("spq seq scan: try recv adaptive request failed")));
+        }
+
+        return seqRes;
+    }
+
+    SpqState GetBlockIDs(uint32 &start, uint32 &end)
+    {
+        SpqAdpScanPagesRes response = adps_get_adps_response(maxBlockNum, iter_no);
+        if (response.success == false) {
+            isBlockEnd = true;
+            return SPQ_QUERY_END;
+        }
+        start = response.page_start;
+        end = response.page_end;
+        this->end = end;
+
+        return SPQ_SUCCESS;
+    }
+
+    bool IsBlockEnd()
+    {
+        if (ScanDirectionIsNoMovement(direction)) {
+            // has no direction, means will not get new page for scanning.
+            return true;
+        } else {
+            return isBlockEnd;
+        }
+    }
+
+    void Rescan()
+    {
+        ++iter_no;
+        isBlockEnd = false;
+    }
+};
+
 TupleTableSlot* SpqScanNext(ScanState* node)
 {
     if (node->ps.type != T_SpqSeqScanState) {
@@ -361,6 +500,9 @@ TupleTableSlot* SpqScanNext(ScanState* node)
         CHECK_FOR_INTERRUPTS();
         uint32 start, end;
         state = blockManager->GetBlockIDs(start, end);
+        if (state == SpqState::SPQ_QUERY_END) {
+            return NULL;
+        }
         if (state != SpqState::SPQ_SUCCESS) {
             ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
                             errmsg("block manager get block ids error, code: %d", state)));
@@ -450,6 +592,11 @@ SpqSeqScanState* ExecInitSpqSeqScan(SpqSeqScan* node, EState* estate, int eflags
                                                                       seqScan->ss_currentScanDesc->rs_nblocks,
                                                                       estate->es_direction,
                                                                       FETCH_BLOCK_NUM);
+    } else if (node->isAdaptiveScan) {
+        blockManager = New(CurrentMemoryContext) SpqAdaptiveBlockManager(seqScan->ss_currentScanDesc->rs_nblocks,
+                                                                         estate->es_direction,
+                                                                         node->scan.plan.plan_node_id,
+                                                                         FETCH_BLOCK_NUM);
     } else {
         int sliceNumber;
         int instanceID;

@@ -15,6 +15,7 @@
 #include "postgres.h"
 
 #include "catalog/pg_collation.h"
+#include "catalog/pg_proc.h"
 #include "nodes/makefuncs.h"
 #include "nodes/parsenodes.h"
 #include "nodes/plannodes.h"
@@ -519,22 +520,24 @@ CTranslatorDXLToScalar::TranslateDXLScalarAggrefToScalar(
 	switch (dxlop->GetDXLAggStage())
 	{
 		case EdxlaggstageNormal:
-            aggref->aggsplittype = AGGSTAGE_NORMAL;
+			aggref->aggsplittype = AGGSTAGE_NORMAL;
 			break;
 		case EdxlaggstagePartial:
-            aggref->aggsplittype = AGGSTAGE_PARTIAL;
+			aggref->aggsplittype = AGGSTAGE_PARTIAL;
 			aggref->agghas_collectfn = false;
 			break;
 		case EdxlaggstageIntermediate:
-            aggref->aggsplittype = AGGSTAGE_PARTIAL;
-            aggref->agghas_collectfn = true;
-            aggref->aggstage = aggref->aggstage + 1;
-            break;
-		case EdxlaggstageFinal:
-            aggref->aggsplittype = AGGSTAGE_FINAL;
+			aggref->aggsplittype = AGGSTAGE_PARTIAL;
 			aggref->agghas_collectfn = true;
+			aggref->aggstage = aggref->aggstage + 1;
+			break;
+		case EdxlaggstageFinal:
+			aggref->aggsplittype = AGGSTAGE_FINAL;
+			if (aggref->aggfnoid != STRINGAGGFUNCOID) {
+				aggref->agghas_collectfn = true;
+			}
 			SPQOS_ASSERT(aggref->aggstage == 0);
-            aggref->aggstage = aggref->aggstage + 1;
+			aggref->aggstage = aggref->aggstage + 1;
 			break;
 		default:
 			SPQOS_RAISE(
