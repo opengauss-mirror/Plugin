@@ -11,9 +11,9 @@ set dolphin.sql_mode = '';
 load data infile '@abs_builddir@/data/load_null.csv' into table t1 fields terminated by ',';
 WARNING:  invalid input syntax for numeric: ""
 CONTEXT:  COPY t1, line 1, column d: ""
-WARNING:  invalid input syntax for integer: ""
+WARNING:  invalid input syntax for type integer: ""
 CONTEXT:  COPY t1, line 2, column a: ""
-WARNING:  invalid input syntax for bigint: ""
+WARNING:  invalid input syntax for type bigint: ""
 CONTEXT:  COPY t1, line 2, column b: ""
 WARNING:  invalid input syntax for numeric: ""
 CONTEXT:  COPY t1, line 2, column d: ""
@@ -28,9 +28,9 @@ delete t1;
 load data infile '@abs_builddir@/data/load_null.csv' into table t1 fields terminated by ','(b, c);
 WARNING:  invalid input syntax for numeric: ""
 CONTEXT:  COPY t1, line 1, column d: ""
-WARNING:  invalid input syntax for bigint: ""
+WARNING:  invalid input syntax for type bigint: ""
 CONTEXT:  COPY t1, line 2, column b: ""
-WARNING:  invalid input syntax for int unsigned: ""
+WARNING:  invalid input syntax for type int unsigned: ""
 CONTEXT:  COPY t1, line 2, column c: ""
 WARNING:  invalid input syntax for numeric: ""
 CONTEXT:  COPY t1, line 2, column d: ""
@@ -46,9 +46,9 @@ create table t2(a int default 4, b int8 not null, c uint4 not null default 2, d 
 load data infile '@abs_builddir@/data/load_null.csv' into table t2 fields terminated by ',';
 WARNING:  invalid input syntax for numeric: ""
 CONTEXT:  COPY t2, line 1, column d: ""
-WARNING:  invalid input syntax for integer: ""
+WARNING:  invalid input syntax for type integer: ""
 CONTEXT:  COPY t2, line 2, column a: ""
-WARNING:  invalid input syntax for bigint: ""
+WARNING:  invalid input syntax for type bigint: ""
 CONTEXT:  COPY t2, line 2, column b: ""
 WARNING:  invalid input syntax for numeric: ""
 CONTEXT:  COPY t2, line 2, column d: ""
@@ -61,9 +61,9 @@ select * from t2;
 
 delete t2;
 load data infile '@abs_builddir@/data/load_null.csv' into table t2 fields terminated by ','(b, c);
-WARNING:  invalid input syntax for bigint: ""
+WARNING:  invalid input syntax for type bigint: ""
 CONTEXT:  COPY t2, line 2, column b: ""
-WARNING:  invalid input syntax for int unsigned: ""
+WARNING:  invalid input syntax for type int unsigned: ""
 CONTEXT:  COPY t2, line 2, column c: ""
 select * from t2;
  a | b | c | d 

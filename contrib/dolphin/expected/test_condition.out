@@ -208,7 +208,7 @@ select coalesce('2001-01-01 01:01:01.3654'::timestamp,null, null,'2012-08-02 15:
 (1 row)
 
 SELECT coalesce(null,1, 'k');
-WARNING:  invalid input syntax for integer: "k"
+WARNING:  invalid input syntax for type integer: "k"
 LINE 1: SELECT coalesce(null,1, 'k');
                                 ^
 CONTEXT:  referenced column: coalesce
@@ -957,7 +957,7 @@ SELECT ifnull(''::text, '100'::int2);
 (1 row)
 
 SELECT ifnull(''::int2, 'hello!'::text);
-WARNING:  invalid input syntax for smallint: ""
+WARNING:  invalid input syntax for type smallint: ""
 LINE 1: SELECT ifnull(''::int2, 'hello!'::text);
                       ^
 CONTEXT:  referenced column: ifnull
@@ -967,7 +967,7 @@ CONTEXT:  referenced column: ifnull
 (1 row)
 
 SELECT ifnull('hello!'::text, ''::int2);
-WARNING:  invalid input syntax for smallint: ""
+WARNING:  invalid input syntax for type smallint: ""
 LINE 1: SELECT ifnull('hello!'::text, ''::int2);
                                       ^
 CONTEXT:  referenced column: ifnull
@@ -1269,7 +1269,7 @@ select pg_typeof(ifnull(''::text, '100'::int2));
 (1 row)
 
 select pg_typeof(ifnull(''::int2, 'hello!'::text));
-WARNING:  invalid input syntax for smallint: ""
+WARNING:  invalid input syntax for type smallint: ""
 LINE 1: select pg_typeof(ifnull(''::int2, 'hello!'::text));
                                 ^
 CONTEXT:  referenced column: pg_typeof
@@ -1279,7 +1279,7 @@ CONTEXT:  referenced column: pg_typeof
 (1 row)
 
 select pg_typeof(ifnull('hello!'::text, ''::int2));
-WARNING:  invalid input syntax for smallint: ""
+WARNING:  invalid input syntax for type smallint: ""
 LINE 1: select pg_typeof(ifnull('hello!'::text, ''::int2));
                                                 ^
 CONTEXT:  referenced column: pg_typeof
@@ -1611,7 +1611,7 @@ SELECT isnull(''::char);
 (1 row)
 
 SELECT isnull(''::int2);
-WARNING:  invalid input syntax for smallint: ""
+WARNING:  invalid input syntax for type smallint: ""
 LINE 1: SELECT isnull(''::int2);
                       ^
  ?column? 
@@ -1620,7 +1620,7 @@ LINE 1: SELECT isnull(''::int2);
 (1 row)
 
 SELECT isnull(''::int4);
-WARNING:  invalid input syntax for integer: ""
+WARNING:  invalid input syntax for type integer: ""
 LINE 1: SELECT isnull(''::int4);
                       ^
  ?column? 
@@ -1629,7 +1629,7 @@ LINE 1: SELECT isnull(''::int4);
 (1 row)
 
 SELECT isnull(''::int8);
-WARNING:  invalid input syntax for bigint: ""
+WARNING:  invalid input syntax for type bigint: ""
 LINE 1: SELECT isnull(''::int8);
                       ^
  ?column? 
@@ -3015,7 +3015,7 @@ select coalesce('2001-01-01 01:01:01.3654'::timestamp,null, null,'2012-08-02 15:
 (1 row)
 
 SELECT coalesce(null,1, 'k');
-WARNING:  invalid input syntax for integer: "k"
+WARNING:  invalid input syntax for type integer: "k"
 LINE 1: SELECT coalesce(null,1, 'k');
                                 ^
 CONTEXT:  referenced column: coalesce
@@ -3590,7 +3590,7 @@ SELECT ifnull(''::text, '100'::int2);
 (1 row)
 
 SELECT ifnull(''::int2, 'hello!'::text);
-WARNING:  invalid input syntax for smallint: ""
+WARNING:  invalid input syntax for type smallint: ""
 LINE 1: SELECT ifnull(''::int2, 'hello!'::text);
                       ^
 CONTEXT:  referenced column: ifnull
@@ -3600,7 +3600,7 @@ CONTEXT:  referenced column: ifnull
 (1 row)
 
 SELECT ifnull('hello!'::text, ''::int2);
-WARNING:  invalid input syntax for smallint: ""
+WARNING:  invalid input syntax for type smallint: ""
 LINE 1: SELECT ifnull('hello!'::text, ''::int2);
                                       ^
 CONTEXT:  referenced column: ifnull
@@ -3899,7 +3899,7 @@ SELECT isnull(''::char);
 (1 row)
 
 SELECT isnull(''::int2);
-WARNING:  invalid input syntax for smallint: ""
+WARNING:  invalid input syntax for type smallint: ""
 LINE 1: SELECT isnull(''::int2);
                       ^
  ?column? 
@@ -3908,7 +3908,7 @@ LINE 1: SELECT isnull(''::int2);
 (1 row)
 
 SELECT isnull(''::int4);
-WARNING:  invalid input syntax for integer: ""
+WARNING:  invalid input syntax for type integer: ""
 LINE 1: SELECT isnull(''::int4);
                       ^
  ?column? 
@@ -3917,7 +3917,7 @@ LINE 1: SELECT isnull(''::int4);
 (1 row)
 
 SELECT isnull(''::int8);
-WARNING:  invalid input syntax for bigint: ""
+WARNING:  invalid input syntax for type bigint: ""
 LINE 1: SELECT isnull(''::int8);
                       ^
  ?column? 

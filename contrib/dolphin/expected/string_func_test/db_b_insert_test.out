@@ -90,7 +90,7 @@ select insert('abcdefg', 2, 4, 5.21);
 
 set dolphin.sql_mode='';
 select insert('abcdefg', '2aa', 4, 'yyy');
-WARNING:  invalid input syntax for bigint: "2aa"
+WARNING:  invalid input syntax for type bigint: "2aa"
 LINE 1: select insert('abcdefg', '2aa', 4, 'yyy');
                                  ^
 CONTEXT:  referenced column: insert
@@ -100,7 +100,7 @@ CONTEXT:  referenced column: insert
 (1 row)
 
 select insert('abcdefg', 2, '3abc', 'yyy');
-WARNING:  invalid input syntax for bigint: "3abc"
+WARNING:  invalid input syntax for type bigint: "3abc"
 LINE 1: select insert('abcdefg', 2, '3abc', 'yyy');
                                     ^
 CONTEXT:  referenced column: insert
@@ -110,7 +110,7 @@ CONTEXT:  referenced column: insert
 (1 row)
 
 select insert('abcdefg', 'aa2', 4, 'yyy');
-WARNING:  invalid input syntax for bigint: "aa2"
+WARNING:  invalid input syntax for type bigint: "aa2"
 LINE 1: select insert('abcdefg', 'aa2', 4, 'yyy');
                                  ^
 CONTEXT:  referenced column: insert
@@ -120,7 +120,7 @@ CONTEXT:  referenced column: insert
 (1 row)
 
 select insert('abcdefg', 2, 'aa2', 'yyy');
-WARNING:  invalid input syntax for bigint: "aa2"
+WARNING:  invalid input syntax for type bigint: "aa2"
 LINE 1: select insert('abcdefg', 2, 'aa2', 'yyy');
                                     ^
 CONTEXT:  referenced column: insert

@@ -77,7 +77,7 @@ select * from test_error;
 (0 rows)
 
 insert into test_error set name = 1, id='@';
-ERROR:  invalid input syntax for integer: "@"
+ERROR:  invalid input syntax for type integer: "@"
 LINE 1: insert into test_error set name = 1, id='@';
                                                 ^
 CONTEXT:  referenced column: id

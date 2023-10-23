@@ -7,7 +7,7 @@ drop table if exists t_tinyint;
 NOTICE:  table "t_tinyint" does not exist, skipping
 create table t_tinyint(c tinyint);
 insert ignore into t_tinyint values('12a34');
-WARNING:  invalid input syntax for tinyint: "12a34"
+WARNING:  invalid input syntax for type tinyint: "12a34"
 LINE 1: insert ignore into t_tinyint values('12a34');
                                             ^
 CONTEXT:  referenced column: c
@@ -22,17 +22,17 @@ LINE 1: insert ignore into t_tinyint values('-12555a34');
                                             ^
 CONTEXT:  referenced column: c
 insert ignore into t_tinyint values('aaa123a34');
-WARNING:  invalid input syntax for tinyint: "aaa123a34"
+WARNING:  invalid input syntax for type tinyint: "aaa123a34"
 LINE 1: insert ignore into t_tinyint values('aaa123a34');
                                             ^
 CONTEXT:  referenced column: c
 insert ignore into t_tinyint values('abcde');
-WARNING:  invalid input syntax for tinyint: "abcde"
+WARNING:  invalid input syntax for type tinyint: "abcde"
 LINE 1: insert ignore into t_tinyint values('abcde');
                                             ^
 CONTEXT:  referenced column: c
 insert ignore into t_tinyint values('');
-WARNING:  invalid input syntax for tinyint: ""
+WARNING:  invalid input syntax for type tinyint: ""
 LINE 1: insert ignore into t_tinyint values('');
                                             ^
 CONTEXT:  referenced column: c
@@ -48,7 +48,7 @@ select * from t_tinyint;
 (6 rows)
 
 update ignore t_tinyint set c = '12a34';
-WARNING:  invalid input syntax for tinyint: "12a34"
+WARNING:  invalid input syntax for type tinyint: "12a34"
 LINE 1: update ignore t_tinyint set c = '12a34';
                                         ^
 CONTEXT:  referenced column: c
@@ -57,7 +57,7 @@ drop table if exists t_tinyint_unsigned;
 NOTICE:  table "t_tinyint_unsigned" does not exist, skipping
 create table t_tinyint_unsigned(c tinyint unsigned);
 insert ignore into t_tinyint_unsigned values('12a34');
-WARNING:  invalid input syntax for tinyint unsigned: "12a34"
+WARNING:  invalid input syntax for type tinyint unsigned: "12a34"
 LINE 1: insert ignore into t_tinyint_unsigned values('12a34');
                                                      ^
 CONTEXT:  referenced column: c
@@ -72,17 +72,17 @@ LINE 1: insert ignore into t_tinyint_unsigned values('-12555a34');
                                                      ^
 CONTEXT:  referenced column: c
 insert ignore into t_tinyint_unsigned values('aaa123a34');
-WARNING:  invalid input syntax for tinyint unsigned: "aaa123a34"
+WARNING:  invalid input syntax for type tinyint unsigned: "aaa123a34"
 LINE 1: insert ignore into t_tinyint_unsigned values('aaa123a34');
                                                      ^
 CONTEXT:  referenced column: c
 insert ignore into t_tinyint_unsigned values('abcde');
-WARNING:  invalid input syntax for tinyint unsigned: "abcde"
+WARNING:  invalid input syntax for type tinyint unsigned: "abcde"
 LINE 1: insert ignore into t_tinyint_unsigned values('abcde');
                                                      ^
 CONTEXT:  referenced column: c
 insert ignore into t_tinyint_unsigned values('');
-WARNING:  invalid input syntax for tinyint unsigned: ""
+WARNING:  invalid input syntax for type tinyint unsigned: ""
 LINE 1: insert ignore into t_tinyint_unsigned values('');
                                                      ^
 CONTEXT:  referenced column: c
@@ -98,7 +98,7 @@ select * from t_tinyint_unsigned;
 (6 rows)
 
 update ignore t_tinyint_unsigned set c = '12a34';
-WARNING:  invalid input syntax for tinyint unsigned: "12a34"
+WARNING:  invalid input syntax for type tinyint unsigned: "12a34"
 LINE 1: update ignore t_tinyint_unsigned set c = '12a34';
                                                  ^
 CONTEXT:  referenced column: c
@@ -107,7 +107,7 @@ drop table if exists t_smallint;
 NOTICE:  table "t_smallint" does not exist, skipping
 create table t_smallint(c smallint);
 insert ignore into t_smallint values ('12a34');
-WARNING:  invalid input syntax for smallint: "12a34"
+WARNING:  invalid input syntax for type smallint: "12a34"
 LINE 1: insert ignore into t_smallint values ('12a34');
                                               ^
 CONTEXT:  referenced column: c
@@ -122,17 +122,17 @@ LINE 1: insert ignore into t_smallint values ('-123333333333333a34')...
                                               ^
 CONTEXT:  referenced column: c
 insert ignore into t_smallint values ('aaa1234a5');
-WARNING:  invalid input syntax for smallint: "aaa1234a5"
+WARNING:  invalid input syntax for type smallint: "aaa1234a5"
 LINE 1: insert ignore into t_smallint values ('aaa1234a5');
                                               ^
 CONTEXT:  referenced column: c
 insert ignore into t_smallint values ('abcde');
-WARNING:  invalid input syntax for smallint: "abcde"
+WARNING:  invalid input syntax for type smallint: "abcde"
 LINE 1: insert ignore into t_smallint values ('abcde');
                                               ^
 CONTEXT:  referenced column: c
 insert ignore into t_smallint values ('');
-WARNING:  invalid input syntax for smallint: ""
+WARNING:  invalid input syntax for type smallint: ""
 LINE 1: insert ignore into t_smallint values ('');
                                               ^
 CONTEXT:  referenced column: c
@@ -148,7 +148,7 @@ select * from t_smallint;
 (6 rows)
 
 update ignore t_smallint set c = '12a34';
-WARNING:  invalid input syntax for smallint: "12a34"
+WARNING:  invalid input syntax for type smallint: "12a34"
 LINE 1: update ignore t_smallint set c = '12a34';
                                          ^
 CONTEXT:  referenced column: c
@@ -157,7 +157,7 @@ drop table if exists t_smallint_unsigned;
 NOTICE:  table "t_smallint_unsigned" does not exist, skipping
 create table t_smallint_unsigned(c smallint unsigned);
 insert ignore into t_smallint_unsigned values ('12a34');
-WARNING:  invalid input syntax for smallint unsigned: "12a34"
+WARNING:  invalid input syntax for type smallint unsigned: "12a34"
 LINE 1: insert ignore into t_smallint_unsigned values ('12a34');
                                                        ^
 CONTEXT:  referenced column: c
@@ -172,17 +172,17 @@ LINE 1: insert ignore into t_smallint_unsigned values ('-12333333333...
                                                        ^
 CONTEXT:  referenced column: c
 insert ignore into t_smallint_unsigned values ('aaa1234a5');
-WARNING:  invalid input syntax for smallint unsigned: "aaa1234a5"
+WARNING:  invalid input syntax for type smallint unsigned: "aaa1234a5"
 LINE 1: insert ignore into t_smallint_unsigned values ('aaa1234a5');
                                                        ^
 CONTEXT:  referenced column: c
 insert ignore into t_smallint_unsigned values ('abcde');
-WARNING:  invalid input syntax for smallint unsigned: "abcde"
+WARNING:  invalid input syntax for type smallint unsigned: "abcde"
 LINE 1: insert ignore into t_smallint_unsigned values ('abcde');
                                                        ^
 CONTEXT:  referenced column: c
 insert ignore into t_smallint_unsigned values ('');
-WARNING:  invalid input syntax for smallint unsigned: ""
+WARNING:  invalid input syntax for type smallint unsigned: ""
 LINE 1: insert ignore into t_smallint_unsigned values ('');
                                                        ^
 CONTEXT:  referenced column: c
@@ -198,7 +198,7 @@ select * from t_smallint_unsigned;
 (6 rows)
 
 update ignore t_smallint_unsigned set c = '12a34';
-WARNING:  invalid input syntax for smallint unsigned: "12a34"
+WARNING:  invalid input syntax for type smallint unsigned: "12a34"
 LINE 1: update ignore t_smallint_unsigned set c = '12a34';
                                                   ^
 CONTEXT:  referenced column: c
@@ -207,7 +207,7 @@ drop table if exists t_int;
 NOTICE:  table "t_int" does not exist, skipping
 create table t_int(c int);
 insert ignore into t_int values ('12a34');
-WARNING:  invalid input syntax for integer: "12a34"
+WARNING:  invalid input syntax for type integer: "12a34"
 LINE 1: insert ignore into t_int values ('12a34');
                                          ^
 CONTEXT:  referenced column: c
@@ -222,17 +222,17 @@ LINE 1: insert ignore into t_int values ('-1233333333333333333333333...
                                          ^
 CONTEXT:  referenced column: c
 insert ignore into t_int values ('aaa123a45');
-WARNING:  invalid input syntax for integer: "aaa123a45"
+WARNING:  invalid input syntax for type integer: "aaa123a45"
 LINE 1: insert ignore into t_int values ('aaa123a45');
                                          ^
 CONTEXT:  referenced column: c
 insert ignore into t_int values ('abcde');
-WARNING:  invalid input syntax for integer: "abcde"
+WARNING:  invalid input syntax for type integer: "abcde"
 LINE 1: insert ignore into t_int values ('abcde');
                                          ^
 CONTEXT:  referenced column: c
 insert ignore into t_int values ('');
-WARNING:  invalid input syntax for integer: ""
+WARNING:  invalid input syntax for type integer: ""
 LINE 1: insert ignore into t_int values ('');
                                          ^
 CONTEXT:  referenced column: c
@@ -248,7 +248,7 @@ select * from t_int;
 (6 rows)
 
 update ignore t_int set c = '12a34';
-WARNING:  invalid input syntax for integer: "12a34"
+WARNING:  invalid input syntax for type integer: "12a34"
 LINE 1: update ignore t_int set c = '12a34';
                                     ^
 CONTEXT:  referenced column: c
@@ -257,7 +257,7 @@ drop table if exists t_int_unsigned;
 NOTICE:  table "t_int_unsigned" does not exist, skipping
 create table t_int_unsigned(c int unsigned);
 insert ignore into t_int_unsigned values ('12a34');
-WARNING:  invalid input syntax for int unsigned: "12a34"
+WARNING:  invalid input syntax for type int unsigned: "12a34"
 LINE 1: insert ignore into t_int_unsigned values ('12a34');
                                                   ^
 CONTEXT:  referenced column: c
@@ -272,17 +272,17 @@ LINE 1: insert ignore into t_int_unsigned values ('-1233333333333333...
                                                   ^
 CONTEXT:  referenced column: c
 insert ignore into t_int_unsigned values ('aaa123a45');
-WARNING:  invalid input syntax for int unsigned: "aaa123a45"
+WARNING:  invalid input syntax for type int unsigned: "aaa123a45"
 LINE 1: insert ignore into t_int_unsigned values ('aaa123a45');
                                                   ^
 CONTEXT:  referenced column: c
 insert ignore into t_int_unsigned values ('abcde');
-WARNING:  invalid input syntax for int unsigned: "abcde"
+WARNING:  invalid input syntax for type int unsigned: "abcde"
 LINE 1: insert ignore into t_int_unsigned values ('abcde');
                                                   ^
 CONTEXT:  referenced column: c
 insert ignore into t_int_unsigned values ('');
-WARNING:  invalid input syntax for int unsigned: ""
+WARNING:  invalid input syntax for type int unsigned: ""
 LINE 1: insert ignore into t_int_unsigned values ('');
                                                   ^
 CONTEXT:  referenced column: c
@@ -298,7 +298,7 @@ select * from t_int_unsigned;
 (6 rows)
 
 update ignore t_int_unsigned set c = '12a34';
-WARNING:  invalid input syntax for int unsigned: "12a34"
+WARNING:  invalid input syntax for type int unsigned: "12a34"
 LINE 1: update ignore t_int_unsigned set c = '12a34';
                                              ^
 CONTEXT:  referenced column: c
@@ -307,7 +307,7 @@ drop table if exists t_bigint;
 NOTICE:  table "t_bigint" does not exist, skipping
 create table t_bigint(c bigint);
 insert ignore into t_bigint values ('12a34');
-WARNING:  invalid input syntax for bigint: "12a34"
+WARNING:  invalid input syntax for type bigint: "12a34"
 LINE 1: insert ignore into t_bigint values ('12a34');
                                             ^
 CONTEXT:  referenced column: c
@@ -322,17 +322,17 @@ LINE 1: insert ignore into t_bigint values ('-1233333333333333333333...
                                             ^
 CONTEXT:  referenced column: c
 insert ignore into t_bigint values ('aaa123a45');
-WARNING:  invalid input syntax for bigint: "aaa123a45"
+WARNING:  invalid input syntax for type bigint: "aaa123a45"
 LINE 1: insert ignore into t_bigint values ('aaa123a45');
                                             ^
 CONTEXT:  referenced column: c
 insert ignore into t_bigint values ('abcde');
-WARNING:  invalid input syntax for bigint: "abcde"
+WARNING:  invalid input syntax for type bigint: "abcde"
 LINE 1: insert ignore into t_bigint values ('abcde');
                                             ^
 CONTEXT:  referenced column: c
 insert ignore into t_bigint values ('');
-WARNING:  invalid input syntax for bigint: ""
+WARNING:  invalid input syntax for type bigint: ""
 LINE 1: insert ignore into t_bigint values ('');
                                             ^
 CONTEXT:  referenced column: c
@@ -348,7 +348,7 @@ select * from t_bigint;
 (6 rows)
 
 update ignore t_bigint set c = '12a34';
-WARNING:  invalid input syntax for bigint: "12a34"
+WARNING:  invalid input syntax for type bigint: "12a34"
 LINE 1: update ignore t_bigint set c = '12a34';
                                        ^
 CONTEXT:  referenced column: c
@@ -357,7 +357,7 @@ drop table if exists t_bigint_unsigned;
 NOTICE:  table "t_bigint_unsigned" does not exist, skipping
 create table t_bigint_unsigned(c bigint unsigned);
 insert ignore into t_bigint_unsigned values ('12a34');
-WARNING:  invalid input syntax for bigint unsigned: "12a34"
+WARNING:  invalid input syntax for type bigint unsigned: "12a34"
 LINE 1: insert ignore into t_bigint_unsigned values ('12a34');
                                                      ^
 CONTEXT:  referenced column: c
@@ -372,17 +372,17 @@ LINE 1: insert ignore into t_bigint_unsigned values ('-1233333333333...
                                                      ^
 CONTEXT:  referenced column: c
 insert ignore into t_bigint_unsigned values ('aaa123a45');
-WARNING:  invalid input syntax for bigint unsigned: "aaa123a45"
+WARNING:  invalid input syntax for type bigint unsigned: "aaa123a45"
 LINE 1: insert ignore into t_bigint_unsigned values ('aaa123a45');
                                                      ^
 CONTEXT:  referenced column: c
 insert ignore into t_bigint_unsigned values ('abcde');
-WARNING:  invalid input syntax for bigint unsigned: "abcde"
+WARNING:  invalid input syntax for type bigint unsigned: "abcde"
 LINE 1: insert ignore into t_bigint_unsigned values ('abcde');
                                                      ^
 CONTEXT:  referenced column: c
 insert ignore into t_bigint_unsigned values ('');
-WARNING:  invalid input syntax for bigint unsigned: ""
+WARNING:  invalid input syntax for type bigint unsigned: ""
 LINE 1: insert ignore into t_bigint_unsigned values ('');
                                                      ^
 CONTEXT:  referenced column: c
@@ -398,7 +398,7 @@ select * from t_bigint_unsigned;
 (6 rows)
 
 update ignore t_bigint_unsigned set c = '12a34';
-WARNING:  invalid input syntax for bigint unsigned: "12a34"
+WARNING:  invalid input syntax for type bigint unsigned: "12a34"
 LINE 1: update ignore t_bigint_unsigned set c = '12a34';
                                                 ^
 CONTEXT:  referenced column: c
