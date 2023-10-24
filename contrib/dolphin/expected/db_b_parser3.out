@@ -2136,7 +2136,7 @@ select 1 xor 0;
 (1 row)
 
 select '-12.3abc' xor null;
-WARNING:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for type integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor null;
                ^
 CONTEXT:  referenced column: xor
@@ -2146,7 +2146,7 @@ CONTEXT:  referenced column: xor
 (1 row)
 
 select '-12.3abc' xor -100.1;
-WARNING:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for type integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor -100.1;
                ^
 CONTEXT:  referenced column: xor
@@ -2156,7 +2156,7 @@ CONTEXT:  referenced column: xor
 (1 row)
 
 select '-12.3abc' xor 0;
-WARNING:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for type integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor 0;
                ^
 CONTEXT:  referenced column: xor
@@ -2166,7 +2166,7 @@ CONTEXT:  referenced column: xor
 (1 row)
 
 select '-12.3abc' xor 5;
-WARNING:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for type integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor 5;
                ^
 CONTEXT:  referenced column: xor
@@ -2176,7 +2176,7 @@ CONTEXT:  referenced column: xor
 (1 row)
 
 select '-12.3abc' xor 158.3;
-WARNING:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for type integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor 158.3;
                ^
 CONTEXT:  referenced column: xor
@@ -2186,7 +2186,7 @@ CONTEXT:  referenced column: xor
 (1 row)
 
 select '-12.3abc' xor -8.222e4;
-WARNING:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for type integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor -8.222e4;
                ^
 CONTEXT:  referenced column: xor
@@ -2196,7 +2196,7 @@ CONTEXT:  referenced column: xor
 (1 row)
 
 select '-12.3abc' xor true;
-WARNING:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for type integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor true;
                ^
 CONTEXT:  referenced column: xor
@@ -2206,7 +2206,7 @@ CONTEXT:  referenced column: xor
 (1 row)
 
 select '-12.3abc' xor false;
-WARNING:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for type integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor false;
                ^
 CONTEXT:  referenced column: xor
@@ -2216,11 +2216,11 @@ CONTEXT:  referenced column: xor
 (1 row)
 
 select '-12.3abc' xor 'null';
-WARNING:  invalid input syntax for integer: "-12.3abc"
+WARNING:  invalid input syntax for type integer: "-12.3abc"
 LINE 1: select '-12.3abc' xor 'null';
                ^
 CONTEXT:  referenced column: xor
-WARNING:  invalid input syntax for integer: "null"
+WARNING:  invalid input syntax for type integer: "null"
 LINE 1: select '-12.3abc' xor 'null';
                               ^
 CONTEXT:  referenced column: xor

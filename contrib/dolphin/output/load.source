@@ -54,7 +54,7 @@ insert into t_space_float values(3, ' 1.12  ', '  2.17  ', ' 3.19  ', ' 4.12   '
 insert into t_space_float values(4, ' -1.12  ', '  -2.12  ', ' 3.12  ', ' 4.12   ');
 insert into t_space_float values(5, ' 1.5  ', '  2.6  ', ' 3.9  ', ' 4.9   '); -- should carry
 insert into t_space_float values(5, ' 1.5. ', '  2.6  ', ' 3.9  ', ' 4.9   '); -- should error
-ERROR:  invalid input syntax for integer: " 1.5. "
+ERROR:  invalid input syntax for type integer: " 1.5. "
 LINE 1: insert into t_space_float values(5, ' 1.5. ', '  2.6  ', ' 3...
                                             ^
 CONTEXT:  referenced column: c1
@@ -75,11 +75,11 @@ load data infile '@abs_builddir@/data/load-ignore.txt' ignore
     into table t_load_ignore character set 'utf8'
     fields terminated by ',' enclosed by '"'
     lines starting by '(' terminated by ')';
-WARNING:  invalid input syntax for integer: " "
+WARNING:  invalid input syntax for type integer: " "
 CONTEXT:  COPY t_load_ignore, line 1, column c_02: " "
-WARNING:  invalid input syntax for integer: " "
+WARNING:  invalid input syntax for type integer: " "
 CONTEXT:  COPY t_load_ignore, line 2, column c_02: " "
-WARNING:  invalid input syntax for integer: " "
+WARNING:  invalid input syntax for type integer: " "
 CONTEXT:  COPY t_load_ignore, line 3, column c_02: " "
 select * from t_load_ignore order by c_01;
  c_01 | c_02 | c_03  |  c_04  

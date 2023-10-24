@@ -386,7 +386,7 @@ CONTEXT:  referenced column: name_const
 (1 row)
 
 SELECT NAME_CONST('test', 'test'::integer); --ERROR
-WARNING:  invalid input syntax for integer: "test"
+WARNING:  invalid input syntax for type integer: "test"
 LINE 1: SELECT NAME_CONST('test', 'test'::integer);
                                   ^
 CONTEXT:  referenced column: name_const
@@ -396,7 +396,7 @@ CONTEXT:  referenced column: name_const
 (1 row)
 
 SELECT NAME_CONST('test'::integer, 'test'); --ERROR
-WARNING:  invalid input syntax for integer: "test"
+WARNING:  invalid input syntax for type integer: "test"
 LINE 1: SELECT NAME_CONST('test'::integer, 'test');
                           ^
 CONTEXT:  referenced column: name_const

@@ -9,7 +9,7 @@ insert into func_test(functionName, result) values('makedate(''2003'',''61'')', 
 insert into func_test(functionName, result) values('makedate(''12.4'',''12.5'')', makedate('12.4','12.5'));
 insert into func_test(functionName, result) values('makedate(12.4,12.5)', makedate(12.4,12.5));
 insert into func_test(functionName, result) values('makedate(''abcd'', ''61'')', makedate('abcd', '61'));
-ERROR:  invalid input syntax for bigint: "abcd"
+ERROR:  invalid input syntax for type bigint: "abcd"
 LINE 1: ...lt) values('makedate(''abcd'', ''61'')', makedate('abcd', '6...
                                                              ^
 insert into func_test(functionName, result) values('makedate(false, true)', makedate(false, true));
@@ -37,7 +37,7 @@ insert into func_test(functionName, result) values('makedate(2001, 9223372036854
 insert into func_test(functionName, result) values ('maketime(''25.5'', ''30.4'', ''30'')', maketime('25.5', '30.4', '30'));
 insert into func_test(functionName, result) values ('maketime(25.5, 30.4, 30)', maketime(25.5, 30.4, 30));
 insert into func_test(functionName, result) values ('maketime(''ABCD'', ''30.4'', ''30.123'')', maketime('ABCD', '30.4', '30.123'));
-ERROR:  invalid input syntax for bigint: "ABCD"
+ERROR:  invalid input syntax for type bigint: "ABCD"
 LINE 1: ...ketime(''ABCD'', ''30.4'', ''30.123'')', maketime('ABCD', '3...
                                                              ^
 insert into func_test(functionName, result) values ('maketime(false, true, true)', maketime(false, true, true));
@@ -87,7 +87,7 @@ insert into func_test(functionName, result) values ('period_add(''202101'', ''10
 insert into func_test(functionName, result) values ('period_add(''202101.4'', ''10.5'')', period_add('202101.4', '10.5'));
 insert into func_test(functionName, result) values ('period_add(202101.4, 10.5)', period_add(202101.4, 10.5));
 insert into func_test(functionName, result) values ('period_add(''abcd'', 1)', period_add('abcd', 1));
-ERROR:  invalid input syntax for bigint: "abcd"
+ERROR:  invalid input syntax for type bigint: "abcd"
 LINE 1: ...lt) values ('period_add(''abcd'', 1)', period_add('abcd', 1)...
                                                              ^
 insert into func_test(functionName, result) values ('period_add(true, false)', period_add(true, false));
@@ -121,7 +121,7 @@ insert into func_test(functionName, result) values ('period_diff(''202101'', ''2
 insert into func_test(functionName, result) values ('period_diff(''202101.4'', ''202102.5'')', period_diff('202101.4', '202102.5')); 
 insert into func_test(functionName, result) values ('period_diff(202101.4, 202102.5)', period_diff(202101.4, 202102.5)); 
 insert into func_test(functionName, result) values ('period_diff(''abcd'', ''abcd'')', period_diff('abcd', 'abcd')); 
-ERROR:  invalid input syntax for bigint: "abcd"
+ERROR:  invalid input syntax for type bigint: "abcd"
 LINE 1: ...s ('period_diff(''abcd'', ''abcd'')', period_diff('abcd', 'a...
                                                              ^
 insert into func_test(functionName, result) values ('period_diff(true, false)', period_diff(true, false)); 
@@ -196,7 +196,7 @@ insert into func_test(functionName, result) values ('subdate(''2022-1-1'', 20)',
 insert into func_test(functionName, result) values ('subdate(''2022-1-1'', ''20.5'')',subdate('2022-1-1', '20.5'));
 insert into func_test(functionName, result) values ('subdate(''2022-1-1'', 20.5)',subdate('2022-1-1', 20.5));
 insert into func_test(functionName, result) values ('subdate(''abcd'', ''abcd'')',subdate('abcd', 'abcd'));
-ERROR:  invalid input syntax for bigint: "abcd"
+ERROR:  invalid input syntax for type bigint: "abcd"
 CONTEXT:  SQL function "subdate" during inlining
 referenced column: result
 insert into func_test(functionName, result) values ('subdate(''2022-1-1'', true)',subdate('2022-1-1', true));

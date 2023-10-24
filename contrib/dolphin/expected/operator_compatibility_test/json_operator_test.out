@@ -3329,22 +3329,22 @@ CONTEXT:  referenced column: char^json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: char^json
 UPDATE test_json_type, test_json_table SET test_json_type.`char>>json` = test_json_table.`char` >> test_json_table.`json`;
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: char>>json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: char>>json
 UPDATE test_json_type, test_json_table SET test_json_type.`char<<json` = test_json_table.`char` << test_json_table.`json`;
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: char<<json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: char<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`char|json` = test_json_table.`char` | test_json_table.`json`;
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: char|json
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: char|json
 UPDATE test_json_type, test_json_table SET test_json_type.`char&json` = test_json_table.`char` & test_json_table.`json`;
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: char&json
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: char&json
@@ -3404,22 +3404,22 @@ CONTEXT:  referenced column: varchar^json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varchar^json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar>>json` = test_json_table.`varchar` >> test_json_table.`json`;
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: varchar>>json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varchar>>json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar<<json` = test_json_table.`varchar` << test_json_table.`json`;
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: varchar<<json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varchar<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar|json` = test_json_table.`varchar` | test_json_table.`json`;
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: varchar|json
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: varchar|json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar&json` = test_json_table.`varchar` & test_json_table.`json`;
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: varchar&json
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: varchar&json
@@ -3977,22 +3977,22 @@ CONTEXT:  referenced column: text^json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: text^json
 UPDATE test_json_type, test_json_table SET test_json_type.`text>>json` = test_json_table.`text` >> test_json_table.`json`;
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: text>>json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: text>>json
 UPDATE test_json_type, test_json_table SET test_json_type.`text<<json` = test_json_table.`text` << test_json_table.`json`;
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: text<<json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: text<<json
 UPDATE test_json_type, test_json_table SET test_json_type.`text|json` = test_json_table.`text` | test_json_table.`json`;
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: text|json
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: text|json
 UPDATE test_json_type, test_json_table SET test_json_type.`text&json` = test_json_table.`text` & test_json_table.`json`;
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: text&json
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: text&json
@@ -5310,22 +5310,22 @@ CONTEXT:  referenced column: json^char
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>char` = test_json_table.`json` >> test_json_table.`char`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json>>char
-WARNING:  invalid input syntax for integer: "1.23a"
+WARNING:  invalid input syntax for type integer: "1.23a"
 CONTEXT:  referenced column: json>>char
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<char` = test_json_table.`json` << test_json_table.`char`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json<<char
-WARNING:  invalid input syntax for integer: "1.23a"
+WARNING:  invalid input syntax for type integer: "1.23a"
 CONTEXT:  referenced column: json<<char
 UPDATE test_json_type, test_json_table SET test_json_type.`json|char` = test_json_table.`json` | test_json_table.`char`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json|char
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: json|char
 UPDATE test_json_type, test_json_table SET test_json_type.`json&char` = test_json_table.`json` & test_json_table.`char`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json&char
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: json&char
 UPDATE test_json_type, test_json_table SET test_json_type.`json||char` = test_json_table.`json` || test_json_table.`char`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&char` = test_json_table.`json` && test_json_table.`char`;
@@ -5385,22 +5385,22 @@ CONTEXT:  referenced column: json^varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>varchar` = test_json_table.`json` >> test_json_table.`varchar`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json>>varchar
-WARNING:  invalid input syntax for integer: "1.23a"
+WARNING:  invalid input syntax for type integer: "1.23a"
 CONTEXT:  referenced column: json>>varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<varchar` = test_json_table.`json` << test_json_table.`varchar`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json<<varchar
-WARNING:  invalid input syntax for integer: "1.23a"
+WARNING:  invalid input syntax for type integer: "1.23a"
 CONTEXT:  referenced column: json<<varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json|varchar` = test_json_table.`json` | test_json_table.`varchar`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json|varchar
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: json|varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json&varchar` = test_json_table.`json` & test_json_table.`varchar`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json&varchar
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: json&varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json||varchar` = test_json_table.`json` || test_json_table.`varchar`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&varchar` = test_json_table.`json` && test_json_table.`varchar`;
@@ -5958,22 +5958,22 @@ CONTEXT:  referenced column: json^text
 UPDATE test_json_type, test_json_table SET test_json_type.`json>>text` = test_json_table.`json` >> test_json_table.`text`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json>>text
-WARNING:  invalid input syntax for integer: "1.23a"
+WARNING:  invalid input syntax for type integer: "1.23a"
 CONTEXT:  referenced column: json>>text
 UPDATE test_json_type, test_json_table SET test_json_type.`json<<text` = test_json_table.`json` << test_json_table.`text`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json<<text
-WARNING:  invalid input syntax for integer: "1.23a"
+WARNING:  invalid input syntax for type integer: "1.23a"
 CONTEXT:  referenced column: json<<text
 UPDATE test_json_type, test_json_table SET test_json_type.`json|text` = test_json_table.`json` | test_json_table.`text`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json|text
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: json|text
 UPDATE test_json_type, test_json_table SET test_json_type.`json&text` = test_json_table.`json` & test_json_table.`text`;
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json&text
-WARNING:  invalid input syntax for bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: json&text
 UPDATE test_json_type, test_json_table SET test_json_type.`json||text` = test_json_table.`json` || test_json_table.`text`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&text` = test_json_table.`json` && test_json_table.`text`;

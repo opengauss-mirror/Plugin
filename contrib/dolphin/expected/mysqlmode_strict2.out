@@ -21,7 +21,7 @@ insert into test_tint(a) values(-355);
 WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into test_tint(a) values('a888');
-WARNING:  invalid input syntax for tinyint unsigned: "a888"
+WARNING:  invalid input syntax for type tinyint unsigned: "a888"
 LINE 1: insert into test_tint(a) values('a888');
                                         ^
 CONTEXT:  referenced column: a
@@ -80,7 +80,7 @@ insert into test_sint(a) values(-3553434343434343432434);
 WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: a
 insert into test_sint(a) values('a888');
-WARNING:  invalid input syntax for smallint unsigned: "a888"
+WARNING:  invalid input syntax for type smallint unsigned: "a888"
 LINE 1: insert into test_sint(a) values('a888');
                                         ^
 CONTEXT:  referenced column: a
@@ -139,7 +139,7 @@ insert into test_int(a) values(-3553434343434343432434);
 WARNING:  unsigned int out of range
 CONTEXT:  referenced column: a
 insert into test_int(a) values('a888');
-WARNING:  invalid input syntax for int unsigned: "a888"
+WARNING:  invalid input syntax for type int unsigned: "a888"
 LINE 1: insert into test_int(a) values('a888');
                                        ^
 CONTEXT:  referenced column: a
@@ -198,7 +198,7 @@ insert into test_bint(a) values(-3553434343434343432434);
 WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: a
 insert into test_bint(a) values('a888');
-WARNING:  invalid input syntax for bigint unsigned: "a888"
+WARNING:  invalid input syntax for type bigint unsigned: "a888"
 LINE 1: insert into test_bint(a) values('a888');
                                         ^
 CONTEXT:  referenced column: a
@@ -408,7 +408,7 @@ select * from test_tint1;
 
 delete from test_tint1;
 insert into test_tint1 select * from test_varchar7;
-WARNING:  invalid input syntax for tinyint unsigned: "adsfsda"
+WARNING:  invalid input syntax for type tinyint unsigned: "adsfsda"
 CONTEXT:  referenced column: a
 WARNING:  value "-123499" is out of range for type tinyint unsigned
 CONTEXT:  referenced column: a
@@ -427,9 +427,9 @@ select * from test_tint1;
 
 delete from test_tint1;
 insert into test_tint1 select * from test_char;
-WARNING:  invalid input syntax for tinyint unsigned: "a"
+WARNING:  invalid input syntax for type tinyint unsigned: "a"
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for tinyint unsigned: "-"
+WARNING:  invalid input syntax for type tinyint unsigned: "-"
 CONTEXT:  referenced column: a
 select * from test_tint1;
  a 
@@ -543,7 +543,7 @@ select * from test_sint1;
 
 delete from test_sint1;
 insert into test_sint1 select * from test_varchar7;
-WARNING:  invalid input syntax for smallint unsigned: "adsfsda"
+WARNING:  invalid input syntax for type smallint unsigned: "adsfsda"
 CONTEXT:  referenced column: a
 WARNING:  value "-123499" is out of range for type smallint unsigned
 CONTEXT:  referenced column: a
@@ -558,9 +558,9 @@ select * from test_sint1;
 
 delete from test_sint1;
 insert into test_sint1 select * from test_char;
-WARNING:  invalid input syntax for smallint unsigned: "a"
+WARNING:  invalid input syntax for type smallint unsigned: "a"
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for smallint unsigned: "-"
+WARNING:  invalid input syntax for type smallint unsigned: "-"
 CONTEXT:  referenced column: a
 select * from test_sint1;
  a 
@@ -666,7 +666,7 @@ select * from test_int1;
 
 delete from test_int1;
 insert into test_int1 select * from test_varchar7;
-WARNING:  invalid input syntax for int unsigned: "adsfsda"
+WARNING:  invalid input syntax for type int unsigned: "adsfsda"
 CONTEXT:  referenced column: a
 WARNING:  value "-123499" is out of range for type int unsigned
 CONTEXT:  referenced column: a
@@ -681,9 +681,9 @@ select * from test_int1;
 
 delete from test_int1;
 insert into test_int1 select * from test_char;
-WARNING:  invalid input syntax for int unsigned: "a"
+WARNING:  invalid input syntax for type int unsigned: "a"
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for int unsigned: "-"
+WARNING:  invalid input syntax for type int unsigned: "-"
 CONTEXT:  referenced column: a
 select * from test_int1;
  a 
@@ -781,7 +781,7 @@ select * from test_bint1;
 
 delete from test_bint1;
 insert into test_bint1 select * from test_varchar7;
-WARNING:  invalid input syntax for bigint unsigned: "adsfsda"
+WARNING:  invalid input syntax for type bigint unsigned: "adsfsda"
 CONTEXT:  referenced column: a
 WARNING:  value "-123499" is out of range for type bigint unsigned
 CONTEXT:  referenced column: a
@@ -796,9 +796,9 @@ select * from test_bint1;
 
 delete from test_bint1;
 insert into test_bint1 select * from test_char;
-WARNING:  invalid input syntax for bigint unsigned: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for bigint unsigned: "-"
+WARNING:  invalid input syntax for type bigint unsigned: "-"
 CONTEXT:  referenced column: a
 select * from test_bint1;
  a 
@@ -1434,7 +1434,7 @@ insert into test_tint_strict(a) values(-355);
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into test_tint_strict(a) values('a888');
-ERROR:  invalid input syntax for tinyint unsigned: "a888"
+ERROR:  invalid input syntax for type tinyint unsigned: "a888"
 LINE 1: insert into test_tint_strict(a) values('a888');
                                                ^
 CONTEXT:  referenced column: a
@@ -1483,7 +1483,7 @@ insert into test_sint_strict(a) values(-3553434343434343432434);
 ERROR:  smallint unsigned out of range
 CONTEXT:  referenced column: a
 insert into test_sint_strict(a) values('a888');
-ERROR:  invalid input syntax for smallint unsigned: "a888"
+ERROR:  invalid input syntax for type smallint unsigned: "a888"
 LINE 1: insert into test_sint_strict(a) values('a888');
                                                ^
 CONTEXT:  referenced column: a
@@ -1532,7 +1532,7 @@ insert into test_int_strict(a) values(-3553434343434343432434);
 ERROR:  unsigned int out of range
 CONTEXT:  referenced column: a
 insert into test_int_strict(a) values('a888');
-ERROR:  invalid input syntax for int unsigned: "a888"
+ERROR:  invalid input syntax for type int unsigned: "a888"
 LINE 1: insert into test_int_strict(a) values('a888');
                                               ^
 CONTEXT:  referenced column: a
@@ -1581,7 +1581,7 @@ insert into test_bint_strict(a) values(-3553434343434343432434);
 ERROR:  bigint unsigned out of range
 CONTEXT:  referenced column: a
 insert into test_bint_strict(a) values('a888');
-ERROR:  invalid input syntax for bigint unsigned: "a888"
+ERROR:  invalid input syntax for type bigint unsigned: "a888"
 LINE 1: insert into test_bint_strict(a) values('a888');
                                                ^
 CONTEXT:  referenced column: a

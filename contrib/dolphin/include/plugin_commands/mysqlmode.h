@@ -140,7 +140,7 @@ out_of_range:
 
 invalid_syntax:
     ereport(errlevel,
-        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for %s: \"%s\"", typname, s)));
+        (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION), errmsg("invalid input syntax for type %s: \"%s\"", typname, s)));
     return (int64)tmp;
 }
 
