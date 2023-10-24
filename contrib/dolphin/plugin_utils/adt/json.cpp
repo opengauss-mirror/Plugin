@@ -434,6 +434,8 @@ static void parse_object(JsonLexContext *lex, JsonSemAction *sem)
     json_struct_action oend = sem->object_end;
     JsonTokenType tok;
 
+    check_stack_depth();
+
     if (ostart != NULL) {
         (*ostart)(sem->semstate);
     }
@@ -506,6 +508,8 @@ static void parse_array(JsonLexContext *lex, JsonSemAction *sem)
      */
     json_struct_action astart = sem->array_start;
     json_struct_action aend = sem->array_end;
+
+    check_stack_depth();
 
     if (astart != NULL) {
         (*astart)(sem->semstate);

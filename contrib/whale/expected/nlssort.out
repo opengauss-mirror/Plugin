@@ -6,19 +6,19 @@ INSERT INTO test_sort VALUES ('red'), ('brown'), ('yellow'), ('Purple');
 SELECT * FROM test_sort ORDER BY NLSSORT(name, 'en_US.utf8');
   name  
 --------
- Purple
  yellow
- red
  brown
+ Purple
+ red
 (4 rows)
 
 SELECT * FROM test_sort ORDER BY NLSSORT(name, '');
   name  
 --------
- Purple
  yellow
- red
  brown
+ Purple
+ red
 (4 rows)
 
 SELECT set_nls_sort('invalid');
@@ -40,10 +40,10 @@ SELECT set_nls_sort('');
 SELECT * FROM test_sort ORDER BY NLSSORT(name);
   name  
 --------
- Purple
  yellow
- red
  brown
+ Purple
+ red
 (4 rows)
 
 SELECT set_nls_sort('en_US.utf8');
@@ -55,20 +55,20 @@ SELECT set_nls_sort('en_US.utf8');
 SELECT * FROM test_sort ORDER BY NLSSORT(name);
   name  
 --------
- Purple
  yellow
- red
  brown
+ Purple
+ red
 (4 rows)
 
 INSERT INTO test_sort VALUES(NULL);
 SELECT * FROM test_sort ORDER BY NLSSORT(name);
   name  
 --------
- Purple
  yellow
- red
  brown
+ Purple
+ red
  
 (5 rows)
 
