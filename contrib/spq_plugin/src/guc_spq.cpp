@@ -1100,6 +1100,26 @@ static void InitSpqConfigureNamesBool()
                              NULL,
                              NULL,
                              NULL);
+    DefineCustomBoolVariable("spqplugin.spq_enable_adaptive_scan",
+                             "Enable spq adaptive scan for dynamic table scan range.",
+                             NULL,
+                             &u_sess->attr.attr_spq.spq_enable_adaptive_scan,
+                             false,
+                             PGC_USERSET,
+                             0,
+                             NULL,
+                             NULL,
+                             NULL);
+    DefineCustomBoolVariable("spqplugin.spq_optimizer_calc_multiple_dop",
+                             "Enable spq select 1 or n dop.",
+                             NULL,
+                             &u_sess->attr.attr_spq.spq_optimizer_calc_multiple_dop,
+                             false,
+                             PGC_USERSET,
+                             0,
+                             NULL,
+                             NULL,
+                             NULL);
 }
 
 static void InitSpqConfigureNamesInt()

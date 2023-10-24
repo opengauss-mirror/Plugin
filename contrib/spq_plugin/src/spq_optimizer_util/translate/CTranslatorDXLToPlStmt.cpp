@@ -328,9 +328,9 @@ CTranslatorDXLToPlStmt::GetPlannedStmtFromDXL(const CDXLNode *dxlnode,
 		//m_dxl_to_plstmt_context->GetCurrentMotionId() - 1;
 
 	planned_stmt->commandType = m_cmd_type;
-    /* SPQ: for get param type list */
-    List* paramList =  m_dxl_to_plstmt_context->GetParamTypes();
-    planned_stmt->nParamExec = spqdb::ListLength(paramList);
+	/* SPQ: for get param type list */
+	List* paramList =  m_dxl_to_plstmt_context->GetParamTypes();
+	planned_stmt->nParamExec = spqdb::ListLength(paramList);
 
 	/*SPQOS_ASSERT(plan->nMotionNodes >= 0);
 	if (0 == plan->nMotionNodes && !m_is_tgt_tbl_distributed)
@@ -376,6 +376,7 @@ CTranslatorDXLToPlStmt::GetPlannedStmtFromDXL(const CDXLNode *dxlnode,
 			}
 		}
 	}*/
+	planned_stmt->enable_adaptive_scan = u_sess->attr.attr_spq.spq_enable_adaptive_scan;
 
 	return planned_stmt;
 }
@@ -609,7 +610,7 @@ CTranslatorDXLToPlStmt::TranslateDXLTblScan(
         SpqSeqScan *spq_scan = MakeNode(SpqSeqScan);
         spq_scan->scan.scanrelid = index;
         spq_scan->isFullTableScan = false;
-        spq_scan->isAdaptiveScan = false;
+        spq_scan->isAdaptiveScan = u_sess->attr.attr_spq.spq_enable_adaptive_scan;
         spq_scan->isDirectRead = false;
         plan = &(spq_scan->scan.plan);
         plan_return = (Plan *) spq_scan;

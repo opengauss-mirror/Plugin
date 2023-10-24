@@ -23,6 +23,11 @@
 #include "nodes/pg_list.h"
 #include "optimizer/var.h"
 #include "optimizer/tlist.h"
+#include "utils/spccache.h"
+#include "optimizer/cost.h"
+#include "spq/spq_util.h"
+#include "parser/parsetree.h"
+
 /*
  * Is the node a "subclass" of Plan?
  */
@@ -579,6 +584,56 @@ List* make_distributed_key_by_groupingset(PlannerInfo* root, Plan *subplan, List
     }
     return distributed;
 }
+int exec_by_multiple_dop(PlannerInfo* root, Plan *spqplan)
+{
+    if (u_sess->attr.attr_spq.spq_optimizer_calc_multiple_dop == false) {
+        return spqplan->dop;
+    }
+    if (!IsA(spqplan, SpqSeqScan)) {
+        return spqplan->dop;
+    }
+    int cur_dop = u_sess->opt_cxt.query_dop > 1 ? u_sess->opt_cxt.query_dop : 1;
+    if (cur_dop == 1) {
+        return cur_dop;
+    }
+    /* cost_seqscan use for reference
+        1. QualCost(startup_cost) is not used because baserestrictinfo is not initialized.
+        2. cpu_run_cost is not used because reltarget is not initialized.
+        baserestrictinfo & reltarget need to call a series of set_baserel_size_estimates function
+    */
+    Cost run_cost_single = 0;
+    Cost run_cost_mul = 0;
+    Cost cpu_per_tuple = 0.0;
+    SeqScan *seqscan = (SeqScan *)spqplan;
+    Oid reloid = getrelid(seqscan->scanrelid, root->glob->finalrtable);
+    Assert(reloid != InvalidOid);
+    Relation relation = heap_open(reloid, NoLock);
+    Oid reltablespace = RelationGetForm(relation)->reltablespace;
+    RelPageType curpages = RelationGetNumberOfBlocks(relation);
+    double rows = (double)relation->rd_rel->reltuples;
+    double spc_seq_page_cost;
+
+    get_tablespace_page_costs(reltablespace, NULL, &spc_seq_page_cost);
+    // cant init qpqual_cost
+
+    run_cost_mul += u_sess->opt_cxt.smp_thread_cost * (cur_dop - 1);
+
+    run_cost_single += spc_seq_page_cost * curpages;
+    if (u_sess->attr.attr_sql.enable_seqscan_dopcost) {
+        run_cost_mul += spc_seq_page_cost * curpages / cur_dop;
+    } else {
+        run_cost_mul += spc_seq_page_cost * curpages;
+    }
+    cpu_per_tuple = u_sess->attr.attr_sql.cpu_tuple_cost;
+    run_cost_single += cpu_per_tuple * clamp_row_est(rows);
+    run_cost_mul += cpu_per_tuple * clamp_row_est(rows / getSpqsegmentCount());
+    if (run_cost_mul > run_cost_single ) {
+        spqplan->dop = 1;
+        spqplan->parallel_enabled = false;
+    }
+    heap_close(relation, NoLock);
+    return spqplan->dop;
+}
 
 Plan* make_stream(PlannerInfo* root, Plan *subplan, Motion *motion)
 {
@@ -598,7 +653,7 @@ Plan* make_stream(PlannerInfo* root, Plan *subplan, Motion *motion)
     plan->multiple = 1.0;
 
     // set by redistribute_keys?
-    stream->smpDesc.producerDop = subplan->dop;
+    stream->smpDesc.producerDop = exec_by_multiple_dop(root, subplan);
     stream->smpDesc.consumerDop = u_sess->opt_cxt.query_dop;
     plan->dop = stream->smpDesc.consumerDop;
 
@@ -641,7 +696,7 @@ Plan* make_sort(Motion *motion, Plan *subplan)
     node->nullsFirst = motion->nullsFirst;
     return (Plan*)node;
 }
-Plan* create_spq_local_gather(Plan* plan, Motion *motion)
+Plan* create_spq_local_gather(PlannerInfo* root, Plan* plan, Motion *motion)
 {
     if (IsA(plan, Stream)) {
         Stream* st = (Stream*)plan;
@@ -658,7 +713,7 @@ Plan* create_spq_local_gather(Plan* plan, Motion *motion)
     stream_node->is_dummy = false;
     stream_node->sort = NULL;
     stream_node->smpDesc.consumerDop = 1;
-    stream_node->smpDesc.producerDop = plan->dop;
+    stream_node->smpDesc.producerDop = exec_by_multiple_dop(root, plan);
     stream_node->smpDesc.distriType = LOCAL_ROUNDROBIN;
     stream_node->distribute_keys = NIL;
  
@@ -678,10 +733,10 @@ Plan* create_spq_local_gather(Plan* plan, Motion *motion)
     stream_node->streamID = motion->motionID;
     return stream_plan;
 }
-Plan* make_gather_Remote(Plan *lefttree, Motion *motion) {
+Plan* make_gather_Remote(PlannerInfo* root, Plan *lefttree, Motion *motion) {
 
     if (lefttree->dop > 1) {
-        lefttree = create_spq_local_gather(lefttree, motion);
+        lefttree = create_spq_local_gather(root, lefttree, motion);
     }
     RemoteQuery* remote_query = makeNode(RemoteQuery);
     remote_query->combine_type = COMBINE_TYPE_NONE;
@@ -710,7 +765,7 @@ Plan* make_gather_Remote(Plan *lefttree, Motion *motion) {
     return (Plan*)remote_query;
 
 }
-Plan* make_gather_stream(Plan *subplan, Motion *motion) {
+Plan* make_gather_stream(PlannerInfo* root, Plan *subplan, Motion *motion) {
     /* Set stream struct parameter. */
     //double size = (PLAN_LOCAL_ROWS(subplan)) * (subplan->plan_width) / 8192.0;
     Stream *stream_node = makeNode(Stream);
@@ -720,7 +775,7 @@ Plan* make_gather_stream(Plan *subplan, Motion *motion) {
     stream_node->is_dummy = false;
     stream_node->sort = NULL;
     stream_node->smpDesc.consumerDop = u_sess->opt_cxt.query_dop;
-    stream_node->smpDesc.producerDop = subplan->dop; /* plan->dop */
+    stream_node->smpDesc.producerDop = exec_by_multiple_dop(root, subplan); /* plan->dop */
     stream_node->smpDesc.distriType = REMOTE_DIRECT_DISTRIBUTE;
     stream_node->distribute_keys = NIL;
     /* Set plan struct parameter. */
@@ -800,9 +855,9 @@ Plan *replace_motion_stream_recurse(PlannerInfo* root, Plan *plan, bool &top)
         if (motion->motionType == MOTIONTYPE_GATHER) {
             if (backtop) {
                 top = backtop;
-                return make_gather_Remote(subplan, motion);
+                return make_gather_Remote(root, subplan, motion);
             }
-            Plan *gather_stream = make_gather_stream(subplan, motion);
+            Plan *gather_stream = make_gather_stream(root, subplan, motion);
             top = backtop;
             return gather_stream;
         } else {
@@ -816,7 +871,9 @@ Plan *replace_motion_stream_recurse(PlannerInfo* root, Plan *plan, bool &top)
         if (plan->righttree) {
             plan->righttree = replace_motion_stream_recurse(root, plan->righttree, top);
         }
-        plan->dop =  u_sess->opt_cxt.query_dop;
+        if (plan->lefttree == nullptr && plan->righttree == nullptr) {
+            plan->dop =  u_sess->opt_cxt.query_dop;
+        }
         plan->parallel_enabled = (plan->dop > 1);
         return plan;
     }
