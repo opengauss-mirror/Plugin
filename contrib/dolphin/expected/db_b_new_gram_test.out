@@ -1233,6 +1233,81 @@ create table body(body int);
 ERROR:  syntax error at or near "body"
 LINE 1: create table body(body int);
                      ^
+CREATE TABLE `Student` (
+    `Sno` varchar(3) NOT NULL,
+    `Sname` varchar(8) NOT NULL,
+    `Ssex` varchar(2) NOT NULL,
+    PRIMARY KEY (`Sno`)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "student_pkey" for table "student"
+CREATE TABLE `Score` (
+    `S_no` varchar(3) NOT NULL,
+    `Cno` varchar(5) NOT NULL,
+    `Degree` decimal(4, 1) DEFAULT NULL,
+    PRIMARY KEY (`S_no`, `Cno`),
+    CONSTRAINT `Score_ibfk_1` FOREIGN KEY (`S_no`) REFERENCES `Student` (`Sno`)
+);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "score_pkey" for table "score"
+INSERT INTO `Student` (`Sno`, `Sname`, `Ssex`)
+VALUES ('101', '李军', '男'),
+    ('103', '陆君', '男'),
+    ('105', '匡明', '男');
+INSERT INTO `Score` (`S_no`, `Cno`, `Degree`)
+VALUES ('101', '3-105', '64.0'),
+    ('101', '6-166', '85.0'),
+    ('103', '3-105', '92.0'),
+    ('103', '3-245', '86.0');
+select a.Sno as no,a.Sname as name ,
+                            (select  Degree from Score 
+                             where Cno= '3-105' and S_no=no) 
+from Student as a;
+ no  | name | Degree 
+-----+------+--------
+ 101 | 李军 |   64.0
+ 103 | 陆君 |   92.0
+ 105 | 匡明 |       
+(3 rows)
+
+--expr
+select (a.Sno+1) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
+ no  | name | Degree 
+-----+------+--------
+ 102 | 李军 |       
+ 104 | 陆君 |       
+ 106 | 匡明 |       
+(3 rows)
+
+--multi var
+select (a.Sno+a.Sname) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
+ no  | name | Degree 
+-----+------+--------
+ 101 | 李军 |   64.0
+ 103 | 陆君 |   92.0
+ 105 | 匡明 |       
+(3 rows)
+
+--func
+select (a.Sno is null) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
+ no | name | Degree 
+----+------+--------
+ f  | 李军 |       
+ f  | 陆君 |       
+ f  | 匡明 |       
+(3 rows)
+
+select hex(a.Sno) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
+   no   | name | Degree 
+--------+------+--------
+ 313031 | 李军 |       
+ 313033 | 陆君 |       
+ 313035 | 匡明 |       
+(3 rows)
+
+-- agg not support
+select sum(a.Sno) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
+ERROR:  Aggref found where not expected
+drop table Score;
+drop table Student;
 drop schema test_m cascade;
 NOTICE:  drop cascades to table test_unique
 drop schema db_b_new_gram_test cascade;
