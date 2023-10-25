@@ -3885,3 +3885,16 @@ $for_upgrade_only$;
 DROP FUNCTION IF EXISTS pg_catalog.dolphin_invoke();
 CREATE FUNCTION pg_catalog.dolphin_invoke()
     RETURNS VOID AS '$libdir/dolphin','dolphin_invoke' LANGUAGE C STRICT;
+
+-- The reason for using replace is because we don't want to change the OID
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_rawout (
+tinyblob
+) RETURNS cstring LANGUAGE  C IMMUTABLE STRICT as '$libdir/dolphin',  'dolphin_blob_rawout';
+
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_rawout (
+mediumblob
+) RETURNS cstring LANGUAGE  C IMMUTABLE STRICT as '$libdir/dolphin',  'dolphin_blob_rawout';
+
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_rawout (
+longblob
+) RETURNS cstring LANGUAGE  C IMMUTABLE STRICT as '$libdir/dolphin',  'dolphin_blob_rawout';

@@ -306,21 +306,21 @@ INSERT INTO bit_xor_tinyblob(a) values('111');
 SELECT BIT_XOR(a) from bit_xor_tinyblob;
  bit_xor 
 ---------
- 111
+ 0
 (1 row)
 
 INSERT INTO bit_xor_tinyblob(a) values('101');
 SELECT BIT_XOR(a) from bit_xor_tinyblob;
  bit_xor 
 ---------
- 10
+ 0
 (1 row)
 
 INSERT INTO bit_xor_tinyblob(a) values(NULL);
 SELECT BIT_XOR(a) from bit_xor_tinyblob;
  bit_xor 
 ---------
- 10
+ 0
 (1 row)
 
 DROP TABLE if exists bit_xor_tinyblob;
@@ -447,21 +447,21 @@ INSERT INTO bit_xor_mediumblob(a) values('111');
 SELECT BIT_XOR(a) from bit_xor_mediumblob;
  bit_xor 
 ---------
- 111
+ 0
 (1 row)
 
 INSERT INTO bit_xor_mediumblob(a) values('101');
 SELECT BIT_XOR(a) from bit_xor_mediumblob;
  bit_xor 
 ---------
- 10
+ 0
 (1 row)
 
 INSERT INTO bit_xor_mediumblob(a) values(NULL);
 SELECT BIT_XOR(a) from bit_xor_mediumblob;
  bit_xor 
 ---------
- 10
+ 0
 (1 row)
 
 DROP TABLE if exists bit_xor_mediumblob;
@@ -470,21 +470,21 @@ INSERT INTO bit_xor_longblob(a) values('111');
 SELECT BIT_XOR(a) from bit_xor_longblob;
  bit_xor 
 ---------
- 111
+ 0
 (1 row)
 
 INSERT INTO bit_xor_longblob(a) values('101');
 SELECT BIT_XOR(a) from bit_xor_longblob;
  bit_xor 
 ---------
- 10
+ 0
 (1 row)
 
 INSERT INTO bit_xor_longblob(a) values(NULL);
 SELECT BIT_XOR(a) from bit_xor_longblob;
  bit_xor 
 ---------
- 10
+ 0
 (1 row)
 
 DROP TABLE if exists bit_xor_longblob;
