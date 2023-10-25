@@ -135,6 +135,8 @@ extern bool datetime_in_with_sql_mode_internal(char *str, struct pg_tm *tm, fsec
 extern bool datetime_in_range(Timestamp datetime);
 extern int128 timestamp_int128(Timestamp timestamp);
 extern int128 timestamptz_int128(TimestampTz timestampTz);
+extern TimestampTz time2timestamptz(TimeADT timeVal);
+extern TimestampTz timetz2timestamptz(TimeTzADT* timetzVal);
 
 extern "C" DLL_PUBLIC Datum int64_b_format_datetime(PG_FUNCTION_ARGS);
 #endif
