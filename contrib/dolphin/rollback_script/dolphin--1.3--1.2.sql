@@ -79,6 +79,11 @@ DROP FUNCTION IF EXISTS pg_catalog.varchar_cast_int8(varchar) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.text_cast_int8(text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int8(anyelement) CASCADE;
 
+DROP FUNCTION IF EXISTS pg_catalog.time_cast(cstring, boolean);
+DROP CAST IF EXISTS (TEXT AS time);
+DROP FUNCTION IF EXISTS pg_catalog.time_cast_implicit(TEXT);
+DROP FUNCTION IF EXISTS pg_catalog.text_time_explicit(TEXT);
+
 do $$
 begin
     update pg_cast set castcontext='e', castowner=10 where castsource=1560 and casttarget=20 and castcontext='a';

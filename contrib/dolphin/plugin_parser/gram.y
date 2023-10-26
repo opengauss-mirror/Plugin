@@ -36348,9 +36348,18 @@ AexprConst_without_Sconst: Iconst
 				}
 			| TIME SCONST
 				{
-					TypeName * tmp = SystemTypeName("time");
-					tmp->location = @1;
-					$$ = makeStringConstCast($2, @2, tmp);
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("time_cast");
+					n->colname = pstrdup("time");
+					n->args = list_make2(makeStringConst($2, @2), makeBoolAConst(TRUE, -1));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
 			| TIME WITH_TIME ZONE SCONST
 				{

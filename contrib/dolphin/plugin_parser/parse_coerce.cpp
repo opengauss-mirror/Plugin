@@ -426,6 +426,7 @@ static bool hasTextCoercePath(Oid* srcoid, Oid destoid, CoercionContext ccontext
 {
     if (ccontext == COERCION_EXPLICIT &&
         ((ENABLE_B_CMPT_MODE && destoid == INT8OID) ||
+         (ENABLE_B_CMPT_MODE && destoid == TIMEOID)  ||
         destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
         destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
         destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
@@ -3222,6 +3223,18 @@ bool IsEquivalentEnums(Oid enumOid1, Oid enumOid2)
     heap_close(enumRel, AccessShareLock);
     return isEquivalent;
 }
+
+void TryFindSpecifiedCastFunction(const Oid sourceTypeId, const Oid targetTypeId, Oid defaultFuncId, Oid* funcId)
+{
+    if (sourceTypeId == TEXTOID && targetTypeId == TIMEOID) {
+        *funcId = get_func_oid("text_time_explicit", PG_CATALOG_NAMESPACE, NULL);
+    } else if (ENABLE_B_CMPT_MODE && targetTypeId == INT8OID) {
+        *funcId = findSignedExplicitCastFunction(sourceTypeId, defaultFuncId);
+    } else {
+        *funcId = findUnsignedExplicitCastFunction(targetTypeId, sourceTypeId, defaultFuncId);
+    }
+}
+
 #endif
 /*
  * find_coercion_pathway
@@ -3328,11 +3341,7 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
                     result = COERCION_PATH_FUNC;
 #ifdef DOLPHIN
                     if (ccontext == COERCION_EXPLICIT) {
-                        if (ENABLE_B_CMPT_MODE && targetTypeId == INT8OID) {
-                            *funcid = findSignedExplicitCastFunction(sourceTypeId, castForm->castfunc);
-                        } else {
-                            *funcid = findUnsignedExplicitCastFunction(targetTypeId, sourceTypeId, castForm->castfunc);
-                        }
+                        TryFindSpecifiedCastFunction(sourceTypeId, targetTypeId, castForm->castfunc, funcid);
                     } else
 #endif
                     {

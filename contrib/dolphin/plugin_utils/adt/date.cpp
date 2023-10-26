@@ -171,6 +171,16 @@ PG_FUNCTION_INFO_V1_PUBLIC(date_int);
 extern "C" DLL_PUBLIC Datum date_int(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(date_cast);
 extern "C" DLL_PUBLIC Datum date_cast(PG_FUNCTION_ARGS);
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_cast);
+extern "C" DLL_PUBLIC Datum time_cast(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_cast_implicit);
+extern "C" DLL_PUBLIC Datum time_cast_implicit(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(text_time_explicit);
+extern "C" DLL_PUBLIC Datum text_time_explicit(PG_FUNCTION_ARGS);
 #endif
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -1474,15 +1484,66 @@ Datum abstime_date(PG_FUNCTION_ARGS)
 
 Datum time_in(PG_FUNCTION_ARGS)
 {
-    char* str = PG_GETARG_CSTRING(0);
+#ifdef DOLPHIN
+    Datum datum_internal;
+    char* input_str = PG_GETARG_CSTRING(0);
+    time_internal(fcinfo, input_str, TIME_IN, &datum_internal);
+    return datum_internal;
+}
 
+/*
+ *	 time_cast_implicit, such as select time'23:65:66'
+ *
+ */
+Datum time_cast(PG_FUNCTION_ARGS)
+{
+    Datum datum_internal;
+    char* input_str = PG_GETARG_CSTRING(0);
+    time_internal(fcinfo, input_str, TIME_CAST, &datum_internal);
+    return datum_internal;
+}
+
+
+Datum time_cast_implicit(PG_FUNCTION_ARGS)
+{
+    char* input_str = DatumGetCString(textout(fcinfo));
+    return DirectFunctionCall1(time_in, CStringGetDatum(input_str));
+}
+
+
+char* parser_function_input(Datum txt, Oid oid)
+{
+    Oid typeOutput;
+    bool typIsVarlena;
+    getTypeOutputInfo(oid, &typeOutput, &typIsVarlena);
+    return DatumGetCString(OidOutputFunctionCall(typeOutput, txt));
+}
+
+
+/*
+ *	 text_time_explicit, such as select cast('23:65:66' as time)
+ *
+ */
+Datum text_time_explicit(PG_FUNCTION_ARGS)
+{
+    Datum datum_internal;
+    char* input_str = parser_function_input(PG_GETARG_DATUM(0), fcinfo->argTypes[0]);
+    if (time_internal(fcinfo, input_str, TEXT_TIME_EXPLICIT, &datum_internal) == TIME_INCORRECT) {
+        PG_RETURN_NULL();
+    }
+    return datum_internal;
+}
+
+TimeErrorType time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Datum* datum_internal)
+{
 #ifdef NOT_USED
     Oid typelem = PG_GETARG_OID(1);
 #endif
-    int32 typmod = PG_GETARG_INT32(2);
+    int32 typmod = time_cast_type > 0 ? -1 : PG_GETARG_INT32(2);
     TimeADT result;
     fsec_t fsec;
-    struct pg_tm tt, *tm = &tt;
+    struct pg_tm tt;
+    struct pg_tm *tm = &tt;
     int tz;
     int nf;
     int dterr;
@@ -1491,16 +1552,14 @@ Datum time_in(PG_FUNCTION_ARGS)
     int dtype;
     int ftype[MAXDATEFIELDS];
     char* time_fmt = NULL;
-#ifdef DOLPHIN
     int timeSign = 1;
     /* tt2 stores openGauss's parsing result while tt stores M*'s parsing result */
     struct pg_tm tt2;
     bool null_func_result = false;
-#endif
     /*
      * this case is used for time format is specified.
      */
-    if (4 == PG_NARGS()) {
+    if (TIME_WITH_FORMAT_ARGS_SIZE == PG_NARGS() && time_cast_type == 0) {
         time_fmt = PG_GETARG_CSTRING(3);
         if (time_fmt == NULL) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT), errmsg("specified time format is null")));
@@ -1509,7 +1568,6 @@ Datum time_in(PG_FUNCTION_ARGS)
         /* the following logic shared from to_timestamp(). */
         to_timestamp_from_format(tm, &fsec, str, (void*)time_fmt);
     } else {
-#ifdef DOLPHIN
         int tm_type;
         bool warnings;
         errno_t rc = memset_s(tm, sizeof(struct pg_tm), 0, sizeof(struct pg_tm));
@@ -1523,7 +1581,8 @@ Datum time_in(PG_FUNCTION_ARGS)
             char *adjusted = adjust_b_format_time(str, &timeSign, &D, &hasD);
             /* check if empty */
             if (strlen(adjusted) == 0) {
-                PG_RETURN_TIMEADT(0);
+                *datum_internal = TimeADTGetDatum(0);
+                return TIME_INCORRECT;
             }
             dterr = ParseDateTime(adjusted, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
             if (dterr == 0) {
@@ -1535,30 +1594,96 @@ Datum time_in(PG_FUNCTION_ARGS)
                  * otherwise we can return tt which stores M*'s parsing result.
                  */
                 if (SQL_MODE_STRICT()) {
-                    DateTimeParseError(dterr, str, "time", fcinfo->can_ignore);
+                    DateTimeParseErrorWithFlag(dterr, str, "time", fcinfo->can_ignore, !fcinfo->can_ignore);
                     /*
                      * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
                      * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
                      */
                     char* field_str = field[0];
                     if (field_str == NULL) {
-                        PG_RETURN_TIMEADT(0);
+                        *datum_internal = TimeADTGetDatum(0);
+                        return TIME_INCORRECT;
                     }
                     if (*field_str == '+') {
                         field_str++;
                     }
                     int trunc_val = getStartingDigits(field_str);
                     if (trunc_val < 0 || trunc_val >= 60) {
-                        PG_RETURN_TIMEADT(0);
+                        *datum_internal = TimeADTGetDatum(0);
+                        return TIME_INCORRECT;
                     }
-                    PG_RETURN_TIMEADT(trunc_val * 1000 * 1000);
+                    *datum_internal = TimeADTGetDatum(trunc_val * TIME_MS_TO_S_RADIX * TIME_MS_TO_S_RADIX);
+                    return TIME_INCORRECT;
+                } else if (SQL_MODE_NOT_STRICT_ON_INSERT()) {
+                    /* for case insert unavailable data, need to set the unavailable data to 0 to compatible with M */
+                    DateTimeParseError(dterr, str, "time", true);
+                    if (IsResetUnavailableDataTime(dterr, !SQL_MODE_STRICT() && !CMD_TAG_IS_SELECT())) {
+                        *datum_internal = TimeADTGetDatum(0);
+                        return TIME_INCORRECT;
+                    } else {
+                        tm = &tt; // switch to M*'s parsing result
+                    }
                 } else {
-                    DateTimeParseError(dterr, str, "time", !SQL_MODE_STRICT());
-                    tm = &tt; // switch to M*'s parsing result
+                    if (time_cast_type == TEXT_TIME_EXPLICIT) {
+                        DateTimeParseError(dterr, str, "time", true);
+                        tm = &tt; // switch to M*'s parsing result
+                        if (dterr != DTERR_TZDISP_OVERFLOW) {
+                            return TIME_INCORRECT;
+                        }
+                    }
+                    if (time_cast_type == TIME_CAST) {
+                        DateTimeParseErrorWithFlag(dterr, str, "time", fcinfo->can_ignore, !SQL_MODE_STRICT());
+                        tm = &tt; // switch to M*'s parsing result
+                    } else {
+                        DateTimeParseError(dterr, str, "time", !SQL_MODE_STRICT());
+                        tm = &tt; // switch to M*'s parsing result
+                    }
                 }
             }
         }
+    }
+
+    /*
+     * the following logic is unified for time parsing.
+     */
+    tm2time(tm, fsec, &result);
+    AdjustTimeForTypmod(&result, typmod);
+    result *= timeSign;
+    *datum_internal = TimeADTGetDatum(result);
+    return TIME_CORRECT;
+
 #else
+
+    char* str = PG_GETARG_CSTRING(0);
+
+#ifdef NOT_USED
+    Oid typelem = PG_GETARG_OID(1);
+#endif
+    int32 typmod = PG_GETARG_INT32(2);
+    TimeADT result;
+    fsec_t fsec;
+    struct pg_tm tt;
+    struct pg_tm *tm = &tt;
+    int tz;
+    int nf;
+    int dterr;
+    char workbuf[MAXDATELEN + 1];
+    char* field[MAXDATEFIELDS] = {0};
+    int dtype;
+    int ftype[MAXDATEFIELDS];
+    char* time_fmt = NULL;
+    /*
+     * this case is used for time format is specified.
+     */
+    if (TIME_WITH_FORMAT_ARGS_SIZE == PG_NARGS()) {
+        time_fmt = PG_GETARG_CSTRING(3);
+        if (time_fmt == NULL) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT), errmsg("specified time format is null")));
+        }
+
+        /* the following logic shared from to_timestamp(). */
+        to_timestamp_from_format(tm, &fsec, str, (void*)time_fmt);
+    } else {
         /*
          * original pg time format parsing
          */
@@ -1579,9 +1704,8 @@ Datum time_in(PG_FUNCTION_ARGS)
             if (trunc_val < 0 || trunc_val >= 60) {
                 PG_RETURN_TIMEADT(0);
             }
-            PG_RETURN_TIMEADT(trunc_val * 1000 * 1000);
+            PG_RETURN_TIMEADT(trunc_val * TIME_MS_TO_S_RADIX * TIME_MS_TO_S_RADIX);
         }
-#endif
     }
 
     /*
@@ -1589,11 +1713,11 @@ Datum time_in(PG_FUNCTION_ARGS)
      */
     tm2time(tm, fsec, &result);
     AdjustTimeForTypmod(&result, typmod);
-#ifdef DOLPHIN
-    result *= timeSign;
-#endif
     PG_RETURN_TIMEADT(result);
+#endif
 }
+
+
 #ifdef DOLPHIN
 int NumberTime(bool timeIn24, char *str, pg_tm *tm, fsec_t *fsec, int D, bool hasD)
 {
@@ -5026,7 +5150,8 @@ Datum adddate_datetime_interval_t(PG_FUNCTION_ARGS)
     text* tmp = PG_GETARG_TEXT_PP(0);
     Interval span = *PG_GETARG_INTERVAL_P(1);
     char *expr;
-    struct pg_tm tt, *tm = &tt;
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
     fsec_t fsec;
     int tm_type = DTK_NONE;
 
@@ -5586,7 +5711,8 @@ Datum time_float(PG_FUNCTION_ARGS)
 Datum date_int(PG_FUNCTION_ARGS)
 {
     DateADT date = PG_GETARG_DATEADT(0);
-    struct pg_tm tt, *tm = &tt;
+    struct pg_tm tt;
+    struct pg_tm *tm = &tt;
     
     if (unlikely(date > 0 && (INT_MAX - date < POSTGRES_EPOCH_JDATE))) {
         ereport(ERROR,

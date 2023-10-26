@@ -160,6 +160,18 @@ CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_int8 (
 anyelement
 ) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varlena_cast_int8';
 
+DROP FUNCTION IF EXISTS pg_catalog.time_cast(cstring, boolean);
+CREATE OR REPLACE FUNCTION pg_catalog.time_cast(cstring, boolean) RETURNS time without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'time_cast';
+
+DROP CAST IF EXISTS (TEXT AS time);
+DROP FUNCTION IF EXISTS pg_catalog.time_cast_implicit(TEXT);
+CREATE OR REPLACE FUNCTION pg_catalog.time_cast_implicit(TEXT) RETURNS time without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'time_cast_implicit';
+
+DROP FUNCTION IF EXISTS pg_catalog.text_time_explicit(TEXT);
+CREATE OR REPLACE FUNCTION pg_catalog.text_time_explicit(TEXT) RETURNS time without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_time_explicit';
+
+CREATE CAST(TEXT AS time) WITH FUNCTION time_cast_implicit(TEXT) AS ASSIGNMENT;
+
 --change bit -> int/bigint castcontext from 'e' to 'a'
 do $$
 begin

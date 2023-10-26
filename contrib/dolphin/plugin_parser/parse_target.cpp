@@ -1630,6 +1630,13 @@ static int FigureColnameInternal(Node* node, char** name)
             } else {
                 *name = strVal(llast(((FuncCall*)node)->funcname));
             }
+#ifdef DOLPHIN
+            /* to make the last displayed column name as the type name instead of the function name. */
+            if (strcmp(strVal(llast(((FuncCall*)node)->funcname)), "time_cast") == 0 ||
+                strcmp(strVal(llast(((FuncCall*)node)->funcname)), "date_cast") == 0) {
+                return 1;
+            }
+#endif
             return 2;
         case T_A_Expr:
             /* make nullif() act like a regular function */

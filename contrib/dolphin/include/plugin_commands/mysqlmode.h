@@ -22,6 +22,11 @@
 #define OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO (1 << 9)
 #define OPT_SQL_MODE_MAX 10
 #define SQL_MODE_STRICT() ((GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && !CMD_TAG_IS_SELECT())
+#define SQL_MODE_STRICT_ON_SELECT() ((GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && CMD_TAG_IS_SELECT())
+#define SQL_MODE_NOT_STRICT_ON_INSERT() \
+    (!(GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && !CMD_TAG_IS_SELECT())
+#define SQL_MODE_NOT_STRICT_ON_SELECT() \
+    (!(GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && CMD_TAG_IS_SELECT())
 #define SQL_MODE_FULL_GROUP() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_FULL_GROUP)
 #define SQL_MODE_PIPES_AS_CONCAT() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_PIPES_AS_CONCAT)
 #define SQL_MODE_ANSI_QUOTES() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_ANSI_QUOTES)

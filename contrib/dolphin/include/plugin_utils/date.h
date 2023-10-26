@@ -42,6 +42,8 @@
 #define NANO2MICRO_BASE 1000
 #define HALF_NANO2MICRO_BASE 500
 #define FRAC_PART_LEN_IN_NUMERICSEC 100000000
+#define TIME_WITH_FORMAT_ARGS_SIZE 4
+#define TIME_MS_TO_S_RADIX 1000
 
 #ifdef DOLPHIN
 #define TWO_DIGITS_YEAR_DATE_ONE 691231 /* 2069-12-31 */
@@ -81,6 +83,7 @@ extern TimeADT time_in_with_flag(char *str, unsigned int date_flag);
 extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag);
 extern bool date_add_interval(DateADT date, Interval *span, DateADT *result);
 extern Datum date_internal(PG_FUNCTION_ARGS, bool is_date_sconst);
+extern Datum textout (PG_FUNCTION_ARGS);
 
 typedef struct DateTimeFormat
 {
@@ -89,6 +92,26 @@ typedef struct DateTimeFormat
     const char *datetime_format;
     const char *time_format;
 }DateTimeFormat;
+
+typedef enum
+{
+    TIME_CORRECT = 0,
+    TIME_IGNORED_INCORRECT,
+    TIME_INCORRECT
+}TimeErrorType;
+
+typedef enum
+{
+    TIME_IN = 0,
+    TIME_CAST,
+    TIME_CAST_IMPLICIT,
+    TEXT_TIME_EXPLICIT
+}TimeCastType;
+
+
+extern TimeErrorType time_internal(PG_FUNCTION_ARGS, char* str, int is_time_sconst, Datum* datum_internal);
+char* parser_function_input(Datum txt, Oid oid);
+
 #endif
 
 #endif /* DATE_H */

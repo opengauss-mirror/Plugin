@@ -481,13 +481,9 @@ select * from func_test;
 
 SELECT SUBDATE(time'839:59:59', interval 2 hour);
 ERROR:  Incorrect time value
-LINE 1: SELECT SUBDATE(time'839:59:59', interval 2 hour);
-                           ^
 CONTEXT:  referenced column: subdate
 SELECT SUBDATE(time'-838:59:59.9', interval 2 hour);
 ERROR:  Incorrect time value
-LINE 1: SELECT SUBDATE(time'-838:59:59.9', interval 2 hour);
-                           ^
 CONTEXT:  referenced column: subdate
 SELECT SUBDATE('839:59:59', interval 2 hour);
 WARNING:  date/time field value out of range: "839:59:59"

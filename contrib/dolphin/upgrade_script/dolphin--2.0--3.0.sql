@@ -5,18 +5,6 @@ CREATE FUNCTION pg_catalog.dolphin_invoke()
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_cast(cstring, oid, integer, boolean);
 CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_cast(cstring, oid, integer, boolean) RETURNS timestamp with time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamptz_cast';
 
-DROP FUNCTION IF EXISTS pg_catalog.time_cast(cstring, boolean);
-CREATE OR REPLACE FUNCTION pg_catalog.time_cast(cstring, boolean) RETURNS time without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'time_cast';
-
-DROP CAST IF EXISTS (TEXT AS time);
-DROP FUNCTION IF EXISTS pg_catalog.time_cast_implicit(TEXT);
-CREATE OR REPLACE FUNCTION pg_catalog.time_cast_implicit(TEXT) RETURNS time without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'time_cast_implicit';
-
-DROP FUNCTION IF EXISTS pg_catalog.text_time_explicit(TEXT);
-CREATE OR REPLACE FUNCTION pg_catalog.text_time_explicit(TEXT) RETURNS time without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_time_explicit';
-
-CREATE CAST(TEXT AS time) WITH FUNCTION time_cast_implicit(TEXT) AS ASSIGNMENT;
-
 CREATE OR REPLACE FUNCTION pg_catalog.date_cast_datetime(date) RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_cast_datetime';
 CREATE OR REPLACE FUNCTION pg_catalog.date_cast_timestamptz(date) RETURNS timestamp LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_cast_timestamptz';
 
