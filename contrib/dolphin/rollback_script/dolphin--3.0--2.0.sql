@@ -5,6 +5,11 @@ CREATE FUNCTION pg_catalog.dolphin_invoke()
 DROP FUNCTION IF EXISTS pg_catalog.date_cast(cstring, boolean);
 DROP FUNCTION IF EXISTS pg_catalog.timestamp_cast(cstring, oid, integer, boolean);
 
+DROP FUNCTION IF EXISTS pg_catalog.time_cast(cstring, boolean);
+DROP CAST IF EXISTS (TEXT AS time);
+DROP FUNCTION IF EXISTS pg_catalog.time_cast_implicit(TEXT);
+DROP FUNCTION IF EXISTS pg_catalog.text_time_explicit(TEXT);
+
 DROP OPERATOR IF EXISTS pg_catalog.=(time, timestamp without time zone);
 DROP OPERATOR IF EXISTS pg_catalog.<>(time, timestamp without time zone);
 DROP OPERATOR IF EXISTS pg_catalog.<=(time, timestamp without time zone);
