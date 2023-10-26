@@ -399,6 +399,413 @@ CONTEXT:  referenced column: to_seconds
            
 (1 row)
 
+-- 进位和非法值
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+create table test1(a time);
+insert into test1 values('23:65:66');
+WARNING:  date/time field value out of range: "23:65:66"
+LINE 1: insert into test1 values('23:65:66');
+                                 ^
+CONTEXT:  referenced column: a
+select * from test1;
+    a     
+----------
+ 00:00:00
+(1 row)
+
+truncate test1;
+insert into test1 values('23:65');
+WARNING:  date/time field value out of range: "23:65"
+LINE 1: insert into test1 values('23:65');
+                                 ^
+CONTEXT:  referenced column: a
+select * from test1;
+    a     
+----------
+ 00:00:00
+(1 row)
+
+truncate test1;
+insert into test1 values('23-65');
+WARNING:  time zone displacement out of range: "23-65"
+LINE 1: insert into test1 values('23-65');
+                                 ^
+CONTEXT:  referenced column: a
+select * from test1;
+    a     
+----------
+ 00:00:23
+(1 row)
+
+truncate test1;
+insert into test1 values('23:59:59');
+select * from test1;
+    a     
+----------
+ 23:59:59
+(1 row)
+
+truncate test1;
+insert into test1 values('23:59:59.8888');
+select * from test1;
+    a     
+----------
+ 24:00:00
+(1 row)
+
+truncate test1;
+insert into test1 values('23:65:66.8888');
+WARNING:  date/time field value out of range: "23:65:66.8888"
+LINE 1: insert into test1 values('23:65:66.8888');
+                                 ^
+CONTEXT:  referenced column: a
+select * from test1;
+    a     
+----------
+ 00:00:00
+(1 row)
+
+truncate test1;
+insert into test1 values('0:0:0');
+select * from test1;
+    a     
+----------
+ 00:00:00
+(1 row)
+
+truncate test1;
+insert into test1 values('-1:-:-1:1');
+WARNING:  invalid input syntax for type time: "-1:-:-1:1"
+LINE 1: insert into test1 values('-1:-:-1:1');
+                                 ^
+CONTEXT:  referenced column: a
+select * from test1;
+     a     
+-----------
+ -00:00:01
+(1 row)
+
+truncate test1;
+insert into test1 values('23:55:56.1234');
+select * from test1;
+    a     
+----------
+ 23:55:56
+(1 row)
+
+truncate test1;
+select time'23:65:66';
+ERROR:  date/time field value out of range: "23:65:66"
+CONTEXT:  referenced column: time
+select time'23:65';
+ERROR:  date/time field value out of range: "23:65"
+CONTEXT:  referenced column: time
+select time'23-65';
+ERROR:  time zone displacement out of range: "23-65"
+CONTEXT:  referenced column: time
+select time'23:59:59.8888';
+     time      
+---------------
+ 23:59:59.8888
+(1 row)
+
+select time'23:65:66.8888';
+ERROR:  date/time field value out of range: "23:65:66.8888"
+CONTEXT:  referenced column: time
+select time'0:0:0';
+   time   
+----------
+ 00:00:00
+(1 row)
+
+select time'-1:-1:-1';
+ERROR:  time zone displacement out of range: "-1:-1:-1"
+CONTEXT:  referenced column: time
+select time'23:55:56.1234';
+     time      
+---------------
+ 23:55:56.1234
+(1 row)
+
+select cast('23:65:66' as time);
+WARNING:  date/time field value out of range: "23:65:66"
+LINE 1: select cast('23:65:66' as time);
+                    ^
+CONTEXT:  referenced column: time
+   time   
+----------
+ 24:06:06
+(1 row)
+
+select cast('23:65'as time);
+WARNING:  date/time field value out of range: "23:65"
+LINE 1: select cast('23:65'as time);
+                    ^
+CONTEXT:  referenced column: time
+   time   
+----------
+ 24:05:00
+(1 row)
+
+select cast('23-65' as time);
+WARNING:  time zone displacement out of range: "23-65"
+LINE 1: select cast('23-65' as time);
+                    ^
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:00:23
+(1 row)
+
+select cast('23:59:59.8888' as time);
+   time   
+----------
+ 24:00:00
+(1 row)
+
+select cast('23:65:66.8888' as time);
+WARNING:  date/time field value out of range: "23:65:66.8888"
+LINE 1: select cast('23:65:66.8888' as time);
+                    ^
+CONTEXT:  referenced column: time
+   time   
+----------
+ 24:06:07
+(1 row)
+
+select cast('0:0:0' as time);
+   time   
+----------
+ 00:00:00
+(1 row)
+
+select cast('-1:-1:-1' as time);
+WARNING:  time zone displacement out of range: "-1:-1:-1"
+LINE 1: select cast('-1:-1:-1' as time);
+                    ^
+CONTEXT:  referenced column: time
+   time    
+-----------
+ -00:00:01
+(1 row)
+
+select cast('23:55:56.1234' as time);
+   time   
+----------
+ 23:55:56
+(1 row)
+
+select addtime('12aaa43', '12aa43');
+WARNING:  Truncated incorrect time value: "12aaa43"
+CONTEXT:  referenced column: addtime
+WARNING:  Truncated incorrect time value: "12aa43"
+CONTEXT:  referenced column: addtime
+ addtime  
+----------
+ 00:00:24
+(1 row)
+
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test1 values('23:65:66');
+ERROR:  date/time field value out of range: "23:65:66"
+LINE 1: insert into test1 values('23:65:66');
+                                 ^
+CONTEXT:  referenced column: a
+select * from test1;
+ a 
+---
+(0 rows)
+
+truncate test1;
+insert into test1 values('23:65');
+ERROR:  date/time field value out of range: "23:65"
+LINE 1: insert into test1 values('23:65');
+                                 ^
+CONTEXT:  referenced column: a
+select * from test1;
+ a 
+---
+(0 rows)
+
+truncate test1;
+insert into test1 values('23-65');
+ERROR:  time zone displacement out of range: "23-65"
+LINE 1: insert into test1 values('23-65');
+                                 ^
+CONTEXT:  referenced column: a
+select * from test1;
+ a 
+---
+(0 rows)
+
+truncate test1;
+insert into test1 values('23:59:59');
+select * from test1;
+    a     
+----------
+ 23:59:59
+(1 row)
+
+truncate test1;
+insert into test1 values('23:59:59.8888');
+select * from test1;
+    a     
+----------
+ 24:00:00
+(1 row)
+
+truncate test1;
+insert into test1 values('23:65:66.8888');
+ERROR:  date/time field value out of range: "23:65:66.8888"
+LINE 1: insert into test1 values('23:65:66.8888');
+                                 ^
+CONTEXT:  referenced column: a
+select * from test1;
+ a 
+---
+(0 rows)
+
+truncate test1;
+insert into test1 values('0:0:0');
+select * from test1;
+    a     
+----------
+ 00:00:00
+(1 row)
+
+truncate test1;
+insert into test1 values('-1:-:-1:1');
+ERROR:  invalid input syntax for type time: "-1:-:-1:1"
+LINE 1: insert into test1 values('-1:-:-1:1');
+                                 ^
+CONTEXT:  referenced column: a
+select * from test1;
+ a 
+---
+(0 rows)
+
+truncate test1;
+insert into test1 values('23:55:56.1234');
+select * from test1;
+    a     
+----------
+ 23:55:56
+(1 row)
+
+truncate test1;
+select time'23:65:66';
+ERROR:  date/time field value out of range: "23:65:66"
+CONTEXT:  referenced column: time
+select time'23:65';
+ERROR:  date/time field value out of range: "23:65"
+CONTEXT:  referenced column: time
+select time'23-65';
+ERROR:  time zone displacement out of range: "23-65"
+CONTEXT:  referenced column: time
+select time'23:59:59.8888';
+     time      
+---------------
+ 23:59:59.8888
+(1 row)
+
+select time'23:65:66.8888';
+ERROR:  date/time field value out of range: "23:65:66.8888"
+CONTEXT:  referenced column: time
+select time'0:0:0';
+   time   
+----------
+ 00:00:00
+(1 row)
+
+select time'-1:-1:-1';
+ERROR:  time zone displacement out of range: "-1:-1:-1"
+CONTEXT:  referenced column: time
+select time'23:55:56.1234';
+     time      
+---------------
+ 23:55:56.1234
+(1 row)
+
+select cast('23:65:66' as time);
+WARNING:  date/time field value out of range: "23:65:66"
+LINE 1: select cast('23:65:66' as time);
+                    ^
+CONTEXT:  referenced column: time
+   time   
+----------
+ 24:06:06
+(1 row)
+
+select cast('23:65'as time);
+WARNING:  date/time field value out of range: "23:65"
+LINE 1: select cast('23:65'as time);
+                    ^
+CONTEXT:  referenced column: time
+   time   
+----------
+ 24:05:00
+(1 row)
+
+select cast('23-65' as time);
+WARNING:  time zone displacement out of range: "23-65"
+LINE 1: select cast('23-65' as time);
+                    ^
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:00:23
+(1 row)
+
+select cast('23:59:59.8888' as time);
+   time   
+----------
+ 24:00:00
+(1 row)
+
+select cast('23:65:66.8888' as time);
+WARNING:  date/time field value out of range: "23:65:66.8888"
+LINE 1: select cast('23:65:66.8888' as time);
+                    ^
+CONTEXT:  referenced column: time
+   time   
+----------
+ 24:06:07
+(1 row)
+
+select cast('0:0:0' as time);
+   time   
+----------
+ 00:00:00
+(1 row)
+
+select cast('-1:-1:-1' as time);
+WARNING:  time zone displacement out of range: "-1:-1:-1"
+LINE 1: select cast('-1:-1:-1' as time);
+                    ^
+CONTEXT:  referenced column: time
+   time    
+-----------
+ -00:00:01
+(1 row)
+
+select cast('23:55:56.1234' as time);
+   time   
+----------
+ 23:55:56
+(1 row)
+
+select addtime('12aaa43', '12aa43');
+WARNING:  Truncated incorrect time value: "12aaa43"
+CONTEXT:  referenced column: addtime
+WARNING:  Truncated incorrect time value: "12aa43"
+CONTEXT:  referenced column: addtime
+ addtime  
+----------
+ 00:00:24
+(1 row)
+
 drop schema b_time_funcs3 cascade;
-NOTICE:  drop cascades to table func_test3
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table func_test3
+drop cascades to table test1
 reset current_schema;

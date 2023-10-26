@@ -3587,6 +3587,31 @@ void DateTimeParseErrorInternal(int dterr, const char* str, const char* datatype
     }
 }
 
+/*
+ * ignore the error on unstrict mode.
+ *
+ * return values: need to reset the time value or not
+ */
+bool IsResetUnavailableDataTime(int dterr, bool is_support_reset_unavailable_datatime)
+{
+    switch (dterr) {
+        case DTERR_FIELD_OVERFLOW:
+            return is_support_reset_unavailable_datatime;
+        case DTERR_MD_FIELD_OVERFLOW:
+            break;
+        case DTERR_INTERVAL_OVERFLOW:
+            break;
+        case DTERR_TZDISP_OVERFLOW:
+            break;
+        case DTERR_ZERO_DATE:
+            break;
+        case DTERR_BAD_FORMAT:
+        default:
+            break;
+    }
+    return false;
+}
+
 /* datebsearch()
  * Binary search -- from Knuth (6.2.1) Algorithm B.  Special case like this
  * is WAY faster than the generic bsearch().
