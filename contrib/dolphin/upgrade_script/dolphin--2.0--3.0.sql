@@ -126,6 +126,20 @@ CREATE OPERATOR pg_catalog.>=(leftarg = timestamp with time zone, rightarg = tim
 
 CREATE OPERATOR pg_catalog.>(leftarg = timestamp with time zone, rightarg = time, procedure = timestamptz_gt_time, COMMUTATOR  = <, NEGATOR  = <=, restrict = scalarltsel, join = scalarltjoinsel);
 
+--change bit -> int/bigint castcontext from 'e' to 'a'
+do $$
+begin
+    update pg_cast set castcontext='a', castowner=10 where castsource=1560 and casttarget=20 and castcontext='e';
+    update pg_cast set castcontext='a', castowner=10 where castsource=1560 and casttarget=23 and castcontext='e';
+    update pg_cast set castcontext='a', castowner=10 where castsource=20 and casttarget=1560 and castcontext='e';
+    update pg_cast set castcontext='a', castowner=10 where castsource=23 and casttarget=1560 and castcontext='e';
+end
+$$;
+drop CAST IF EXISTS (uint4 AS bit);
+drop CAST IF EXISTS (uint8 AS bit);
+CREATE CAST (uint4 AS bit) WITH FUNCTION bitfromuint4(uint4, int4) AS ASSIGNMENT;
+CREATE CAST (uint8 AS bit) WITH FUNCTION bitfromuint8(uint8, int4) AS ASSIGNMENT;
+
 -- The reason for using replace is because we don't want to change the OID
 CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_rawout (
 tinyblob
