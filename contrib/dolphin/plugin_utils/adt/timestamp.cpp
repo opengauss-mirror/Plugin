@@ -10591,8 +10591,8 @@ extern "C" DLL_PUBLIC Datum timestamptz_float8(PG_FUNCTION_ARGS);
 Datum timestamptz_float8(PG_FUNCTION_ARGS)
 {
     TimestampTz dt = PG_GETARG_TIMESTAMPTZ(0);
-    struct pg_tm tt;
-    struct pg_tm* tm = &tt;
+    pg_tm tt;
+    pg_tm* tm = &tt;
     fsec_t fsec;
     int tz;
     const char *tzn = NULL;
@@ -11280,7 +11280,7 @@ extern "C" DLL_PUBLIC Datum timestamptz_gt_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_ge_time);
 extern "C" DLL_PUBLIC Datum timestamptz_ge_time(PG_FUNCTION_ARGS);
 
-static Timestamp time2timestamptz(TimeADT timeVal)
+TimestampTz time2timestamptz(TimeADT timeVal)
 {
     TimestampTz result;
     struct pg_tm tt;
@@ -11290,6 +11290,21 @@ static Timestamp time2timestamptz(TimeADT timeVal)
     time2tm(timeVal, tm, &fsec);
     /* find the current session time zone offset. */
     int tz = DetermineTimeZoneOffset(tm, session_timezone);
+    tm2timestamp(tm, fsec, &tz, &result);
+    return result;
+}
+
+TimestampTz timetz2timestamptz(TimeTzADT* timetzVal)
+{
+    TimestampTz result;
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec = 0;
+    int tz = 0;
+    GetCurrentDateTime(tm);
+    if (timetzVal) {
+        timetz2tm(timetzVal, tm, &fsec, &tz);
+    }
     tm2timestamp(tm, fsec, &tz, &result);
     return result;
 }

@@ -18,6 +18,7 @@
 
 #include <limits.h>
 #include <stdlib.h>
+#include <cinttypes>
 #include <cstring>
 #include <cmath>
 
@@ -55,6 +56,9 @@
 #include "utils/varbit.h"
 #include "plugin_commands/mysqlmode.h"
 #include "plugin_utils/varbit.h"
+#include "plugin_utils/timestamp.h"
+#include "plugin_utils/date.h"
+#include "libpq/libpq-int.h"
 
 #define BETWEEN_AND_ARGC 3
 #define SUBSTR_WITH_LEN_OFFSET 2
@@ -79,8 +83,11 @@
 #define CONV_MAX_CHAR_LEN 65 //max 64bit and 1 sign bit
 #define MYSQL_SUPPORT_MINUS_MAX_LENGTH 65
 #define MAX_UINT32_STR "0xffffffff"
+#define MAXBI64LEN 25
 
 static long convert_bit_to_int (PG_FUNCTION_ARGS, int idx);
+static TimestampTz temporal_to_timestamptz(Oid type, int index, PG_FUNCTION_ARGS);
+static bool is_type_with_date(Oid type);
 #endif
 static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
@@ -7846,8 +7853,9 @@ static char* db_b_format_get_cstring(Datum param, Oid param_oid)
             ch_value = "0";
         }
     } else {
-        if (param_oid == BOOLOID) {
-            ch_value = const_cast<char *>(param ? "1" : "0");
+        ch_value = to_cstring_type(param, param_oid);
+        if (param_oid == BOOLOID && param) {
+            ch_value = "1";
         } else {
             ch_value = "0";
         }
@@ -9236,6 +9244,29 @@ static char* numeric_to_cstring(Numeric n)
     return DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
 }
 
+/**
+  Convert pg_tm value to cstring in YYYYMMDDHHmmSS/YYYYMMDD/HHmmSS format
+  @param tm  The pg_tm value to convert.
+  @param type The oid of the type of timestamp/date/time
+  @return         A cstring in format YYYYMMDDHHmmSS/YYYYMMDD/HHmmSS.
+*/
+static char* tm_to_cstring(pg_tm* tm, Oid type)
+{
+    char str_val[MAXBI64LEN];
+    uint64 val = 0;
+    if (type == TIMEOID || type == TIMETZOID) {
+        val = (tm->tm_hour * 10000UL + tm->tm_min * 100UL + tm->tm_sec);
+    } else if (type == DATEOID) {
+        val = (tm->tm_year * 10000UL + tm->tm_mon * 100UL + tm->tm_mday);
+    } else {
+        val = (tm->tm_year * 10000000000UL + tm->tm_mon * 100000000UL +
+                    tm->tm_mday * 1000000UL + tm->tm_hour * 10000UL +
+                    tm->tm_min * 100UL + tm->tm_sec);
+    }
+    check_sprintf_s(sprintf_s(str_val, MAXBI64LEN, "%" PRIu64, val));
+    return pstrdup(str_val);
+}
+
 static char* cmp_get_string_type(PG_FUNCTION_ARGS, int argn)
 {
     char* res;
@@ -9284,9 +9315,30 @@ static float8 cmp_get_real_type(PG_FUNCTION_ARGS, int argn)
 {
     float8 res;
     char* str_val = NULL;
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    int tz = 0;
+    fsec_t fsec = 0;
+    bool flag = true;
     Oid typeoid = InvalidOid;
     typeoid = fcinfo->argTypes[argn];
-    str_val = db_b_format_get_cstring(PG_GETARG_DATUM(argn), fcinfo->argTypes[argn]);
+    if (is_type_with_date(typeoid)) {
+        const char* tzn = NULL;
+        TimestampTz tsVal = temporal_to_timestamptz(fcinfo->argTypes[argn], argn, fcinfo);
+        timestamp2tm(tsVal, &tz, tm, &fsec, &tzn, NULL);
+        str_val = tm_to_cstring(tm, typeoid);
+    } else if (typeoid == TIMEOID) {
+        TimeADT timeVal = PG_GETARG_TIMEADT(argn);
+        time2tm(timeVal, tm, &fsec);
+        str_val = tm_to_cstring(tm, typeoid);
+    } else if (typeoid == TIMETZOID) {
+        TimeTzADT* timetzVal = PG_GETARG_TIMETZADT_P(argn);
+        timetz2tm(timetzVal, tm, &fsec, &tz);
+        str_val = tm_to_cstring(tm, typeoid);
+    } else {
+        flag = false;
+        str_val = db_b_format_get_cstring(PG_GETARG_DATUM(argn), fcinfo->argTypes[argn]);
+    }
     if (typeoid == FLOAT8OID) {
         res = PG_GETARG_FLOAT8(argn);
     } else if (typeoid == FLOAT4OID) {
@@ -9295,6 +9347,9 @@ static float8 cmp_get_real_type(PG_FUNCTION_ARGS, int argn)
         res = DatumGetFloat8(DirectFunctionCall1(i8tod, (int64)parse_unsigned_val(typeoid, str_val)));
     } else {
         res = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str_val)));
+    }
+    if (flag) {
+        pfree_ext(str_val);
     }
     return res;
 }
@@ -9711,7 +9766,11 @@ static TimestampTz nontemporal_to_timestamptz(Oid type, Datum param)
     TimestampTz timestamptz;
     char* str_val = NULL;
     getTypeOutputInfo(type, &typeOutput, &typIsVarlena);
-    str_val = OidOutputFunctionCall(typeOutput, param);
+    if (typIsVarlena) {
+        str_val = DatumGetCString(DirectFunctionCall1(textout, param));
+    } else {
+        str_val = OidOutputFunctionCall(typeOutput, param);
+    }
     //Convert string to the TIMESTAMPTZ representation.
     timestamptz = DatumGetTimestampTz(DirectFunctionCall3(timestamptz_in, CStringGetDatum(str_val),
                                                           ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
@@ -9732,6 +9791,12 @@ static TimestampTz temporal_to_timestamptz(Oid type, int index, PG_FUNCTION_ARGS
             break;
         case TIMESTAMPTZOID:
             timestamptz = PG_GETARG_TIMESTAMPTZ(index);
+            break;
+        case TIMEOID:
+            timestamptz = time2timestamptz(PG_GETARG_TIMEADT(index));
+            break;
+        case TIMETZOID:
+            timestamptz = timetz2timestamptz(PG_GETARG_TIMETZADT_P(index));
             break;
         default:
             timestamptz = nontemporal_to_timestamptz(fcinfo->argTypes[index], fcinfo->arg[index]);
