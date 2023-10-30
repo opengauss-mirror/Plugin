@@ -59,6 +59,20 @@ DROP FUNCTION IF EXISTS pg_catalog.timestamptz_le_time (timestamp with time zone
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_lt_time (timestamp with time zone, time);
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_ge_time (timestamp with time zone, time);
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_gt_time (timestamp with time zone, time);
+
+do $$
+begin
+    update pg_cast set castcontext='e', castowner=10 where castsource=1560 and casttarget=20 and castcontext='a';
+    update pg_cast set castcontext='e', castowner=10 where castsource=1560 and casttarget=23 and castcontext='a';
+    update pg_cast set castcontext='e', castowner=10 where castsource=20 and casttarget=1560 and castcontext='a';
+    update pg_cast set castcontext='e', castowner=10 where castsource=23 and casttarget=1560 and castcontext='a';
+end
+$$;
+drop CAST IF EXISTS (uint4 AS bit);
+drop CAST IF EXISTS (uint8 AS bit);
+CREATE CAST (uint4 AS bit) WITH FUNCTION bitfromuint4(uint4, int4);
+CREATE CAST (uint8 AS bit) WITH FUNCTION bitfromuint8(uint8, int4);
+
 CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_rawout (
 tinyblob
 ) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
