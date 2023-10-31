@@ -306,3 +306,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.b_not_between_and("any","any","any") retur
 
 DROP FUNCTION IF EXISTS pg_catalog.b_not_sym_between_and("any","any","any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.b_not_sym_between_and("any","any","any") returns boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'not_sym_between_and';
+
+CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_bool(timestamptz) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'timestamptz_bool';
+CREATE CAST (timestamptz as boolean) WITH FUNCTION timestamptz_bool(timestamptz) AS IMPLICIT;
+
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_bool(timestamp(0) without time zone) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'timestamp_bool';
+CREATE CAST (timestamp(0) without time zone as boolean) WITH FUNCTION timestamp_bool(timestamp(0) without time zone) AS IMPLICIT;
