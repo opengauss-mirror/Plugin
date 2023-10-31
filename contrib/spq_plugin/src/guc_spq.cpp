@@ -1499,7 +1499,7 @@ static bool spq_verify_gauss_cluster_map_syntax(const char *liststring)
 {
     if (liststring == nullptr || liststring[0] == '\0') {
         GUC_check_errdetail("spq cluster map is null");
-        return true;
+        return false;
     }
     char *rawname = nullptr;
     List *nodelist = nullptr;
@@ -1508,17 +1508,19 @@ static bool spq_verify_gauss_cluster_map_syntax(const char *liststring)
     NodeDefinition* node;
     int idx = 0;
     errno_t rc;
-
+    MemoryContext oldContext = MemoryContextSwitchTo(u_sess->spq_cxt.spq_worker_context);
     rawname = pstrdup(liststring);
     if (rawname == nullptr) {
-        ereport(DEBUG1, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("spq cluster map pstrdup is null")));
-        return true;
+        GUC_check_errdetail("spq cluster map pstrdup is null");
+        MemoryContextSwitchTo(oldContext);
+        return false;
     }
     if (!SplitIdentifierString(rawname, ',', &nodelist)) {
         pfree(rawname);
         /* syntax error in name list */
-        ereport(DEBUG1, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("spq cluster map is invalid, name|ip|port|oid|cport|sport,...")));
-        return true;
+        GUC_check_errdetail("spq cluster map is invalid, name|ip|port|oid|cport|sport,...");
+        MemoryContextSwitchTo(oldContext);
+        return false;
     }
     array_size = list_length(nodelist);
     // mem build in spq_cxt->spq_worker_context
@@ -1530,13 +1532,14 @@ static bool spq_verify_gauss_cluster_map_syntax(const char *liststring)
         char *nodestring = pstrdup((char *)lfirst(lnode));
         (void)SplitIdentifierString(nodestring, '|', &itemlist);
         if (list_length(itemlist) != 6) {
-            ereport(DEBUG1, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("spq cluster map is invalid, name|ip|port|oid|cport|sport,...")));
+            GUC_check_errdetail("spq cluster map is invalid, name|ip|port|oid|cport|sport,...");
             pfree(rawname);
             pfree(nodestring);
             list_free(nodelist);
             list_free(itemlist);
             pfree(nodesDefinition);
-            return true;
+            MemoryContextSwitchTo(oldContext);
+            return false;
         }
         name = (char *)list_nth(itemlist, 0);
         ip = (char *)list_nth(itemlist, 1);
@@ -1561,8 +1564,12 @@ static bool spq_verify_gauss_cluster_map_syntax(const char *liststring)
     }
     pfree(rawname);
     list_free(nodelist);
+    if (t_thrd.spq_ctx.nodesDefinition != nullptr) {
+        pfree(t_thrd.spq_ctx.nodesDefinition);
+    }
     t_thrd.spq_ctx.num_nodes = array_size;
     t_thrd.spq_ctx.nodesDefinition = nodesDefinition;
+    MemoryContextSwitchTo(oldContext);
     return true;
 }
 
@@ -1571,7 +1578,6 @@ static bool check_spq_cluster_map(char **newval, void **extra, GucSource source)
     if (source == PGC_S_DEFAULT) {
         return true;
     }
-    t_thrd.spq_ctx.num_nodes = 0;
     return spq_verify_gauss_cluster_map_syntax(*newval);
 }
 
