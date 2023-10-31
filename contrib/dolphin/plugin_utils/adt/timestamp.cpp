@@ -11029,4 +11029,31 @@ Datum timediff_date_text(PG_FUNCTION_ARGS)
     PG_RETURN_NULL();
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_bool);
+extern "C" DLL_PUBLIC Datum timestamptz_bool(PG_FUNCTION_ARGS);
+Datum timestamptz_bool(PG_FUNCTION_ARGS)
+{
+    TimestampTz timestamptz = PG_GETARG_TIMESTAMPTZ(0);
+    char* tmp = NULL;
+    tmp = DatumGetCString(DirectFunctionCall1(timestamptz_out, timestamptz));
+
+    if (timestamptz == TIMESTAMP_ZERO || timestamptz == TIMESTAMPTZ_ZERO)
+        PG_RETURN_BOOL(false);
+
+    PG_RETURN_BOOL(tmp ? true : false);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_bool);
+extern "C" DLL_PUBLIC Datum timestamp_bool(PG_FUNCTION_ARGS);
+Datum timestamp_bool(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    char* tmp = NULL;
+    tmp = DatumGetCString(DirectFunctionCall1(timestamp_out, timestamp));
+
+    if (timestamp == TIMESTAMP_ZERO)
+        PG_RETURN_BOOL(false);
+
+    PG_RETURN_BOOL(tmp ? true : false);
+}
 #endif

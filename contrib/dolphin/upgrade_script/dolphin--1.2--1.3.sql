@@ -33,6 +33,16 @@ CREATE OR REPLACE FUNCTION pg_catalog.atan (float8, boolean)  RETURNS float8 AS 
 DROP FUNCTION IF EXISTS pg_catalog.atan (boolean);
 CREATE OR REPLACE FUNCTION pg_catalog.atan (boolean)  RETURNS float8 AS $$ SELECT pg_catalog.atan($1::int4) $$ LANGUAGE SQL;
 
+drop CAST IF EXISTS (timestamptz as boolean);
+drop CAST IF EXISTS (timestamp(0) without time zone as boolean);
+DROP FUNCTION IF EXISTS pg_catalog.timestamptz_bool(timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_bool(timestamp(0) without time zone); 
+CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_bool(timestamptz) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'timestamptz_bool';
+CREATE CAST (timestamptz as boolean) WITH FUNCTION timestamptz_bool(timestamptz) AS ASSIGNMENT;
+
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_bool(timestamp(0) without time zone) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'timestamp_bool';
+CREATE CAST (timestamp(0) without time zone as boolean) WITH FUNCTION timestamp_bool(timestamp(0) without time zone) AS ASSIGNMENT;
+
 --change bit -> int/bigint castcontext from 'e' to 'a'
 do $$
 begin
