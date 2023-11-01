@@ -859,10 +859,8 @@ Datum rawin(PG_FUNCTION_ARGS)
     }
 }
 
-// output interface of RAW type
-Datum rawout(PG_FUNCTION_ARGS)
+Datum normal_rawout(PG_FUNCTION_ARGS)
 {
-    if (!GetSessionContext()->enableBCmptMode) {
         /*fcinfo->fncollation is set to 0 when calling Macro FuncCall1,
         *so the collation value needs to be reset.
         */
@@ -895,6 +893,13 @@ Datum rawout(PG_FUNCTION_ARGS)
         }
         pfree_ext(ans);
         PG_RETURN_CSTRING(out_string);
+}
+
+// output interface of RAW type
+Datum rawout(PG_FUNCTION_ARGS)
+{
+    if (!GetSessionContext()->enableBCmptMode) {
+        return normal_rawout(fcinfo);
     } else {
         return dolphin_blob_rawout(fcinfo);
     }
@@ -8441,26 +8446,16 @@ Datum tinyblob_rawin(PG_FUNCTION_ARGS)
 
 Datum dolphin_blob_rawout(PG_FUNCTION_ARGS)
 {
-    bytea* vlena = PG_GETARG_BYTEA_PP(0);
-    char* result = NULL;
-    char* rp = NULL;
-
-    char* vp = NULL;
-    int len;
-    int i;
-
-    len = 1 + VARSIZE_ANY_EXHDR(vlena); /* empty string has 1 char */
-    rp = result = (char*)palloc(len);
-    vp = VARDATA_ANY(vlena);
-    for (i = VARSIZE_ANY_EXHDR(vlena); i != 0; i--, vp++) {
-        *rp++ = *vp;
+    if (strcmp(u_sess->attr.attr_common.application_name, "gs_dump") == 0 ||
+        strcmp(u_sess->attr.attr_common.application_name, "gs_dumpall") == 0 ||
+        strcmp(u_sess->attr.attr_common.application_name, "gsql") == 0 ||
+        strcmp(u_sess->attr.attr_common.application_name, "gs_probackup") == 0 ||
+        strcmp(u_sess->attr.attr_common.application_name, "gs_rewind") == 0 ||
+        strcmp(u_sess->attr.attr_common.application_name, "gs_clean") == 0) {
+        return byteaout(fcinfo);
+    } else {
+        return normal_rawout(fcinfo);
     }
-    *rp = '\0';
-
-    /* free memory if allocated by the toaster */
-    PG_FREE_IF_COPY(vlena, 0);
-
-    PG_RETURN_CSTRING(result);
 }
 
 Datum mediumblob_rawin(PG_FUNCTION_ARGS)
