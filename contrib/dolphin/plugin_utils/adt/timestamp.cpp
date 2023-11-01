@@ -11035,10 +11035,11 @@ Datum timestamptz_bool(PG_FUNCTION_ARGS)
 {
     TimestampTz timestamptz = PG_GETARG_TIMESTAMPTZ(0);
     char* tmp = NULL;
-    tmp = DatumGetCString(DirectFunctionCall1(timestamptz_out, timestamptz));
 
     if (timestamptz == TIMESTAMP_ZERO || timestamptz == TIMESTAMPTZ_ZERO)
         PG_RETURN_BOOL(false);
+
+    tmp = DatumGetCString(DirectFunctionCall1(timestamptz_out, timestamptz));
 
     PG_RETURN_BOOL(tmp ? true : false);
 }
@@ -11049,10 +11050,11 @@ Datum timestamp_bool(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
     char* tmp = NULL;
-    tmp = DatumGetCString(DirectFunctionCall1(timestamp_out, timestamp));
 
     if (timestamp == TIMESTAMP_ZERO)
         PG_RETURN_BOOL(false);
+
+    tmp = DatumGetCString(DirectFunctionCall1(timestamp_out, timestamp));
 
     PG_RETURN_BOOL(tmp ? true : false);
 }
