@@ -589,9 +589,9 @@ select `tinyblob`, `json`,
        `json` < `tinyblob` as `json<tinyblob`, `json` <= `tinyblob` as `json<=tinyblob`,
        `json` != `tinyblob` as `json!=tinyblob`, `json` <> `tinyblob` as `json<>tinyblob`,
        `json` = `tinyblob` as `json=tinyblob`, `json` <=> `tinyblob` as `json<=>tinyblob` from test_json_table;
- tinyblob |       json       | json>tinyblob | json>=tinyblob | json<tinyblob | json<=tinyblob | json!=tinyblob | json<>tinyblob | json=tinyblob | json<=>tinyblob 
-----------+------------------+---------------+----------------+---------------+----------------+----------------+----------------+---------------+-----------------
- 1.23a    | {"a": 1, "b": 2} | t             | t              | f             | f              | t              | t              | f             | f
+   tinyblob   |       json       | json>tinyblob | json>=tinyblob | json<tinyblob | json<=tinyblob | json!=tinyblob | json<>tinyblob | json=tinyblob | json<=>tinyblob 
+--------------+------------------+---------------+----------------+---------------+----------------+----------------+----------------+---------------+-----------------
+ \x312e323361 | {"a": 1, "b": 2} | t             | t              | f             | f              | t              | t              | f             | f
 (1 row)
 
 select `blob`, `json`,
@@ -609,9 +609,9 @@ select `blob`, `json`,
        `json` < `blob` as `json<blob`, `json` <= `blob` as `json<=blob`,
        `json` != `blob` as `json!=blob`, `json` <> `blob` as `json<>blob`,
        `json` = `blob` as `json=blob`, `json` <=> `blob` as `json<=>blob` from test_json_table;
- blob  |       json       | json>blob | json>=blob | json<blob | json<=blob | json!=blob | json<>blob | json=blob | json<=>blob 
--------+------------------+-----------+------------+-----------+------------+------------+------------+-----------+-------------
- 1.23a | {"a": 1, "b": 2} | t         | t          | f         | f          | t          | t          | f         | f
+     blob     |       json       | json>blob | json>=blob | json<blob | json<=blob | json!=blob | json<>blob | json=blob | json<=>blob 
+--------------+------------------+-----------+------------+-----------+------------+------------+------------+-----------+-------------
+ \x312e323361 | {"a": 1, "b": 2} | t         | t          | f         | f          | t          | t          | f         | f
 (1 row)
 
 select `mediumblob`, `json`,
@@ -629,9 +629,9 @@ select `mediumblob`, `json`,
        `json` < `mediumblob` as `json<mediumblob`, `json` <= `mediumblob` as `json<=mediumblob`,
        `json` != `mediumblob` as `json!=mediumblob`, `json` <> `mediumblob` as `json<>mediumblob`,
        `json` = `mediumblob` as `json=mediumblob`, `json` <=> `mediumblob` as `json<=>mediumblob` from test_json_table;
- mediumblob |       json       | json>mediumblob | json>=mediumblob | json<mediumblob | json<=mediumblob | json!=mediumblob | json<>mediumblob | json=mediumblob | json<=>mediumblob 
-------------+------------------+-----------------+------------------+-----------------+------------------+------------------+------------------+-----------------+-------------------
- 1.23a      | {"a": 1, "b": 2} | t               | t                | f               | f                | t                | t                | f               | f
+  mediumblob  |       json       | json>mediumblob | json>=mediumblob | json<mediumblob | json<=mediumblob | json!=mediumblob | json<>mediumblob | json=mediumblob | json<=>mediumblob 
+--------------+------------------+-----------------+------------------+-----------------+------------------+------------------+------------------+-----------------+-------------------
+ \x312e323361 | {"a": 1, "b": 2} | t               | t                | f               | f                | t                | t                | f               | f
 (1 row)
 
 select `longblob`, `json`,
@@ -649,9 +649,9 @@ select `longblob`, `json`,
        `json` < `longblob` as `json<longblob`, `json` <= `longblob` as `json<=longblob`,
        `json` != `longblob` as `json!=longblob`, `json` <> `longblob` as `json<>longblob`,
        `json` = `longblob` as `json=longblob`, `json` <=> `longblob` as `json<=>longblob` from test_json_table;
- longblob |       json       | json>longblob | json>=longblob | json<longblob | json<=longblob | json!=longblob | json<>longblob | json=longblob | json<=>longblob 
-----------+------------------+---------------+----------------+---------------+----------------+----------------+----------------+---------------+-----------------
- 1.23a    | {"a": 1, "b": 2} | t             | t              | f             | f              | t              | t              | f             | f
+   longblob   |       json       | json>longblob | json>=longblob | json<longblob | json<=longblob | json!=longblob | json<>longblob | json=longblob | json<=>longblob 
+--------------+------------------+---------------+----------------+---------------+----------------+----------------+----------------+---------------+-----------------
+ \x312e323361 | {"a": 1, "b": 2} | t             | t              | f             | f              | t              | t              | f             | f
 (1 row)
 
 select `text`, `json`,
