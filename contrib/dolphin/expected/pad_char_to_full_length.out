@@ -90,10 +90,8 @@ select * from t where name like 'test        %';
 select * from t where name not like 'test        %';
                                                  name                                                 
 ------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
      test                                                                                            
-(3 rows)
+(1 row)
 
 select * from t where name like 'Test        %';
  name 
@@ -129,17 +127,17 @@ select * from t where name not like 'test        %';
 (1 row)
 
 select * from t where name like 'Test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-(2 rows)
+ name 
+------
+(0 rows)
 
 select * from t where name not like 'Test        %';
                                                  name                                                 
 ------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
      test                                                                                            
-(1 row)
+(3 rows)
 
 select cast('a' as char(10)), 'a'::char(10);
  varchar | varchar 
@@ -406,17 +404,17 @@ select * from t_col where name not like 'test        %';
 (1 row)
 
 select * from t_col where name like 'Test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-(2 rows)
+ name 
+------
+(0 rows)
 
 select * from t_col where name not like 'Test        %';
                                                  name                                                 
 ------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
      test                                                                                            
-(1 row)
+(3 rows)
 
 set dolphin.b_compatibility_mode = true;
 select * from t_col where name like 'test        %';
@@ -433,17 +431,17 @@ select * from t_col where name not like 'test        %';
 (1 row)
 
 select * from t_col where name like 'Test        %';
-                                                 name                                                 
-------------------------------------------------------------------------------------------------------
- test                                                                                                
- test                                                                                                
-(2 rows)
+ name 
+------
+(0 rows)
 
 select * from t_col where name not like 'Test        %';
                                                  name                                                 
 ------------------------------------------------------------------------------------------------------
+ test                                                                                                
+ test                                                                                                
      test                                                                                            
-(1 row)
+(3 rows)
 
 set dolphin.b_compatibility_mode = false;
 set try_vector_engine_strategy='force';

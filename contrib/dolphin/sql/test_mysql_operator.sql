@@ -623,10 +623,11 @@ set dolphin.b_compatibility_mode = 0;
 drop schema test_op_xor cascade;
 reset current_schema;
 
-
-create schema like_test;
-set current_schema to 'like_test';
 set dolphin.b_compatibility_mode = 1;
+create schema like_test CHARACTER SET ='utf8' COLLATE ='utf8mb4_general_ci';
+set current_schema to 'like_test';
+set b_format_behavior_compat_options to 'enable_multi_charset';
+set names 'utf8mb4' collate 'utf8_bin';
 
 select 'a' like 'A';
 ---正常报错，like右边缺参数
@@ -634,7 +635,14 @@ select 'a' like;
 ---不报错，'A' 'a' 被当成'Aa'处理
 select 'a' like 'A' 'a';
 
-
+set names 'utf8mb4' collate 'utf8mb4_general_ci';
+select 'a' like 'A';
+select 'a'::char(10) like 'A';
+select 'a'::varchar(10) like 'A';
+select 'a'::VARCHAR2(10) like 'A';
+select 'a'::NVARCHAR2(10) like 'A';
+select 'a'::text like 'A';
+select 'a'::clob like 'A';
 
 select 100 like 100;
 select -100 like 100;
@@ -727,7 +735,7 @@ select * from hotel natural inner join price where name like 'b%';
 select * from hotel natural inner join price where name like binary 'b%';
 select * from hotel natural inner join price where name like 'b/%' escape '/';
 select * from hotel natural inner join price where name like binary 'b/%' escape '/';
-select * from hotel natural inner join price where name not like 'b%';
+select * from hotel natural inner join price where name not like 'b%' order by 1;
 select * from hotel natural inner join price where name not like binary 'b%';
 select * from hotel natural inner join price where name not like 'b/%' escape '/';
 select * from hotel natural inner join price where name not like binary 'b/%' escape '/';
@@ -750,7 +758,7 @@ select count(cout like '2022%') from hotel group by hotel ;
 select max(cout like '2022%') from hotel group by hotel ;
 select min(cout like '2021%') from hotel group by hotel ;
 select avg(cout like '2022%') from hotel group by hotel ;
-select sum(cout like '2022%') from hotel group by hotel ;
+select hotel, sum(cout like '2022%') from hotel group by hotel order by 1;
 select count(cout like binary '2022%') from hotel group by hotel ;
 select max(cout like binary '2022%') from hotel group by hotel ;
 select min(cout like binary '2021%') from hotel group by hotel ;
@@ -768,11 +776,11 @@ create table price(hotelname char(10),price int) with (orientation = column);
 insert into price values
 ('Vienna',500),
 ('Holiday',700);
-select * from hotel natural inner join price where name like 'b%';
+select * from hotel natural inner join price where name like 'b%' order by 1;
 select * from hotel natural inner join price where name like binary 'b%';
 select * from hotel natural inner join price where name like 'b/%' escape '/';
 select * from hotel natural inner join price where name like binary 'b/%' escape '/';
-select * from hotel natural inner join price where name not like 'b%';
+select * from hotel natural inner join price where name not like 'b%' order by 1;
 select * from hotel natural inner join price where name not like binary 'b%';
 select * from hotel natural inner join price where name not like 'b/%' escape '/';
 select * from hotel natural inner join price where name not like binary 'b/%' escape '/';

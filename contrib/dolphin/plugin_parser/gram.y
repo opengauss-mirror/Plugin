@@ -32043,10 +32043,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 				}
 			| a_expr LIKE a_expr
 				{ 
-					if (GetSessionContext()->enableBCmptMode)
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~*", $1, $3, @2); 
-					else 
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, $3, @2); 
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, $3, @2); 
 				}
 			| a_expr LIKE a_expr ESCAPE a_expr
 				{
@@ -32060,17 +32057,11 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 					n->over = NULL;
 					n->location = @2;
 					n->call_func = false;
-					if (GetSessionContext()->enableBCmptMode)
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~*", $1, (Node *) n, @2);
-					else 
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, (Node *) n, @2);
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, (Node *) n, @2);
 				}
 			| a_expr NOT_LIKE a_expr	%prec NOT_LIKE
-				{ 
-					if (GetSessionContext()->enableBCmptMode)
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~*", $1, $3, @2);
-					else 
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, $3, @2);
+				{
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, $3, @2);
 				}
 			| a_expr NOT_LIKE a_expr ESCAPE a_expr	%prec NOT_LIKE
 				{
@@ -32084,10 +32075,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 					n->over = NULL;
 					n->location = @2;
 					n->call_func = false;
-					if (GetSessionContext()->enableBCmptMode)
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~*", $1, (Node *) n, @2); 
-					else 
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, (Node *) n, @2);
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, (Node *) n, @2);
 				}
 			| a_expr ILIKE a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~*", $1, $3, @2); }
