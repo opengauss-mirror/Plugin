@@ -70,7 +70,7 @@ void _process_utility_init(void);
 void _process_utility_fini(void);
 
 static ProcessUtility_hook_type prev_ProcessUtility_hook;
-static bool expect_chunk_modification = false;
+
 static bool process_altertable_set_options(AlterTableCmd *cmd, Hypertable *ht);
 static bool process_altertable_reset_options(AlterTableCmd *cmd, Hypertable *ht);
 
@@ -3440,6 +3440,12 @@ process_ddl_sql_drop(EventTriggerDropObject *obj)
 			break;
 	}
 }
+
+/*
+ * ProcessUtility hook for DDL commands that have not yet been processed by
+ * PostgreSQL.
+*/
+
 
 static void
 timescaledb_ddl_command_start(

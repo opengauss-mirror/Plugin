@@ -326,7 +326,7 @@ initialize_func_info()
 		.keycopy = 0,
 		.alloc = 0,
 		.dealloc = 0,
-		.hcxt = u_sess->cache_mem_cxt,
+		.hcxt = LocalMyDBCacheMemCxt(),
 		.hctl = NULL,
 	};
 	Oid extension_nsp = get_namespace_oid(ts_extension_schema_name(), false);

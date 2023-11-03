@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <c.h>
 #include <postgres.h>
 #include <fmgr.h>
 #include <funcapi.h>
@@ -66,7 +67,7 @@ ts_test_job_refresh(PG_FUNCTION_ARGS)
 		Datum *values =(Datum *) palloc(sizeof(*values) * funcctx->tuple_desc->natts);
 		bool *nulls =(bool *) palloc(sizeof(*nulls) * funcctx->tuple_desc->natts);
 
-		ts_populate_scheduled_job_tuple(lfirst(lc), values);
+		ts_populate_scheduled_job_tuple((ScheduledBgwJob*)lfirst(lc), values);
 		memset(nulls, 0, sizeof(*nulls) * funcctx->tuple_desc->natts);
 		tuple = heap_form_tuple(funcctx->tuple_desc, values, nulls);
 

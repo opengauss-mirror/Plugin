@@ -121,7 +121,7 @@ test_sql_drop(List *dropped_objects)
 {
 	ListCell *lc;
 	int num_objects = list_length(dropped_objects);
-	EventTriggerDropObject **objects = palloc(num_objects * sizeof(EventTriggerDropObject *));
+	EventTriggerDropObject **objects = (EventTriggerDropObject **)palloc(num_objects * sizeof(EventTriggerDropObject *));
 	int i = 0;
 
 	/* Sort the list of dropped objects for predictible order in tests across
@@ -129,7 +129,7 @@ test_sql_drop(List *dropped_objects)
 	 * but it is not available in earlier PostgreSQL versions so we're doing
 	 * our own sorting. */
 	foreach (lc, dropped_objects)
-		objects[i++] = lfirst(lc);
+		objects[i++] = (EventTriggerDropObject *)lfirst(lc);
 
 	qsort(objects, num_objects, sizeof(EventTriggerDropObject *), event_trigger_event_cmp);
 

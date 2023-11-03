@@ -8,8 +8,6 @@ set(SOURCES
   tsdb_loader.cpp
   ${PROJECT_SOURCE_DIR}/src/tsdb_dsm.cpp
   ${PROJECT_SOURCE_DIR}/src/tsdb_shm.cpp
-  ${PROJECT_SOURCE_DIR}/src/tsdb_event_trigger.cpp
-  ${PROJECT_SOURCE_DIR}/src/tsdb_get_obj.cpp
   ${PROJECT_SOURCE_DIR}/src/tsdb_extension.cpp
   ${PROJECT_SOURCE_DIR}/src/tsdb_head.cpp
   ${PROJECT_SOURCE_DIR}/src/tsdb_static.cpp

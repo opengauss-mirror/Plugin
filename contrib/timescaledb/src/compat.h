@@ -7,6 +7,7 @@
 #ifndef TIMESCALEDB_COMPAT_H
 #define TIMESCALEDB_COMPAT_H
 #include "c.h"
+#include "postgres.h"
 #include <commands/trigger.h>
 #include <postgres.h>
 #include <pgstat.h>
@@ -52,6 +53,19 @@
 #error "Unsupported PostgreSQL version"
 #endif
 
+#define pinned_caches (get_session_context()->tsdb_pinned_caches)
+#define pinned_caches_mctx (get_session_context()->tsdb_pinned_caches_mctx)
+#define hypertable_cache_current (get_session_context()->tsdb_hypertable_cache_current)
+#define planner_hcaches (get_session_context()->tsdb_planner_hcaches)
+#define TS_CTE_EXPAND (get_session_context()->tsdb_TS_CTE_EXPAND)
+#define constraint_aware_append_path_methods (get_session_context()->tsdb_constraint_aware_append_path_methods)
+#define constraint_aware_append_plan_methods (get_session_context()->tsdb_constraint_aware_append_plan_methods)
+#define constraint_aware_append_state_methods (get_session_context()->tsdb_constraint_aware_append_state_methods)
+#define chunk_append_plan_methods (get_session_context()->tsdb_chunk_append_plan_methods)
+#define expect_chunk_modification (get_session_context()->tsdb_expect_chunk_modification)
+#define on_level (get_session_context()->tsdb_on_level)
+#define telemetry_level_options (get_session_context()->tsdb_telemetry_level_options)
+#define tsdb_first_start (get_session_context(true)->tsdb_first_start)
 /*
  * The following are compatibility functions for different versions of
  * PostgreSQL. Each compatibility function (or group) has its own logic for
@@ -190,8 +204,24 @@
  * partitioned tables, InvalidOid otherwise.
  * The PG96 interface is used for compatibility.
  */
+#ifdef OG30
+#define DefineIndexCompat(relationId,                                                              \
+						  stmt,                                                                    \
+						  indexRelationId,                                                         \
+						  is_alter_table,                                                          \
+						  check_rights,                                                            \
+						  skip_build,                                                              \
+						  quiet)                                                                   \
+	DefineIndex(relationId,                                                                        \
+				stmt,                                                                              \
+				indexRelationId,                                                                   \
+				is_alter_table,                                                                    \
+				check_rights,                                                                      \
+				skip_build,                                                                        \
+				quiet)
+#else
 #if PG96
-#define DefineIndexCompat DefineIndex_tsdb
+#define DefineIndexCompat DefineIndex
 #elif PG10
 #define DefineIndexCompat(relationId,                                                              \
 						  stmt,                                                                    \
@@ -227,7 +257,7 @@
 				skip_build,                                                                        \
 				quiet)
 #endif
-
+#endif
 #if PG96
 #define DefineRelationCompat(stmt, relkind, ownerid, typaddress, queryString)                      \
 	DefineRelation(stmt, relkind, ownerid, typaddress,0)

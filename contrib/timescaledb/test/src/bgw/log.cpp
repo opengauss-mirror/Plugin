@@ -19,7 +19,7 @@
 #include "compat.h"
 
 static char *bgw_application_name = "unset";
-
+emit_log_hook_type emit_log_hook = NULL;
 void
 ts_bgw_log_set_application_name(char *name)
 {

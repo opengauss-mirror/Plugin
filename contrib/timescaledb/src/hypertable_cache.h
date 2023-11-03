@@ -28,7 +28,13 @@ extern void ts_hypertable_cache_invalidate_callback(void);
 
 extern TSDLLEXPORT Cache *ts_hypertable_cache_pin(void);
 
+
+extern Cache *hypertable_cache_create();
+
 extern void _hypertable_cache_init(void);
 extern void _hypertable_cache_fini(void);
+
+
+
 
 #endif /* TIMESCALEDB_HYPERTABLE_CACHE_H */

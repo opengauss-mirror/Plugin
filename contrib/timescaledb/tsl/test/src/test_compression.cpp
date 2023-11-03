@@ -7,7 +7,7 @@
 #include <postgres.h>
 
 #include <access/heapam.h>
-#include <access/htup_details.h>
+#include <access/htup.h>
 #include <catalog/pg_type.h>
 #include <fmgr.h>
 #include <libpq/pqformat.h>
@@ -93,7 +93,7 @@ test_int_array()
 	for (i = 0; i < 1015; i++)
 		array_compressor_append(compressor, Int32GetDatum(i));
 
-	compressed = array_compressor_finish(compressor);
+	compressed =(ArrayCompressed *)  array_compressor_finish(compressor);
 	Assert(compressed != NULL);
 
 	i = 0;
@@ -135,7 +135,7 @@ test_string_array()
 	for (i = 0; i < 1015; i++)
 		array_compressor_append(compressor, PointerGetDatum(texts[i % 5]));
 
-	compressed = array_compressor_finish(compressor);
+	compressed = (ArrayCompressed *) array_compressor_finish(compressor);
 	Assert(compressed != NULL);
 
 	i = 0;
@@ -184,7 +184,7 @@ test_int_dictionary()
 	for (i = 0; i < 1015; i++)
 		dictionary_compressor_append(compressor, Int32GetDatum(i % 15));
 
-	compressed = dictionary_compressor_finish(compressor);
+	compressed =(DictionaryCompressed* )  dictionary_compressor_finish(compressor);
 	Assert(compressed != NULL);
 
 	i = 0;
@@ -215,7 +215,7 @@ test_string_dictionary()
 	for (i = 0; i < 1014; i++)
 		dictionary_compressor_append(compressor, PointerGetDatum(texts[i % 5]));
 
-	compressed = dictionary_compressor_finish(compressor);
+	compressed = (DictionaryCompressed *) dictionary_compressor_finish(compressor);
 	Assert(compressed != NULL);
 
 	i = 0;
@@ -266,7 +266,7 @@ test_gorilla_int()
 	for (i = 0; i < 1015; i++)
 		gorilla_compressor_append_value(compressor, i);
 
-	compressed = gorilla_compressor_finish(compressor);
+	compressed =(GorillaCompressed*) gorilla_compressor_finish(compressor);
 	Assert(compressed != NULL);
 	AssertInt64Eq(VARSIZE(compressed), 1344);
 
@@ -332,7 +332,7 @@ test_gorilla_float()
 	for (i = 0.0; i < 1015.0; i++)
 		gorilla_compressor_append_value(compressor, float_get_bits(i));
 
-	compressed = gorilla_compressor_finish(compressor);
+	compressed = (GorillaCompressed*)gorilla_compressor_finish(compressor);
 	Assert(compressed != NULL);
 	AssertInt64Eq(VARSIZE(compressed), 1200);
 
@@ -370,7 +370,7 @@ test_gorilla_double()
 	for (i = 0.0; i < 1015.0; i++)
 		gorilla_compressor_append_value(compressor, double_get_bits(i));
 
-	compressed = gorilla_compressor_finish(compressor);
+	compressed = (GorillaCompressed*)gorilla_compressor_finish(compressor);
 	Assert(compressed != NULL);
 	AssertInt64Eq(VARSIZE(compressed), 1200);
 
@@ -510,7 +510,7 @@ compression_info_from_array(ArrayType *compression_info_arr, Oid form_oid)
 
 		tmptup.t_len = HeapTupleHeaderGetDatumLength(form);
 		tmptup.t_data = form;
-		compression_info_vec_append(compression_info, (void *) GETSTRUCT(&tmptup));
+		compression_info_vec_append(compression_info, (Form_hypertable_compression) GETSTRUCT(&tmptup));
 	}
 	if (form_desc != NULL)
 		ReleaseTupleDesc(form_desc);
@@ -612,7 +612,7 @@ Datum
 ts_compression_custom_type_in(PG_FUNCTION_ARGS)
 {
 	char *num = PG_GETARG_CSTRING(0);
-	int16 *val = palloc(sizeof(*val));
+	int16 *val =(int16 *) palloc(sizeof(*val));
 	*val = pg_atoi(num, sizeof(int16), '\0');
 
 	PG_RETURN_POINTER(val);

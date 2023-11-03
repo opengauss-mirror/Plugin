@@ -7,7 +7,7 @@
 #include <postgres.h>
 #include <fmgr.h>
 #include <utils/timestamp.h>
-#include <access/htup_details.h>
+#include <access/htup.h>
 
 #include "bgw/job.h"
 #include "export.h"

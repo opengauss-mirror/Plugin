@@ -25,6 +25,7 @@
 #include "commands/vacuum.h"
 #include "utils/evtcache.h"
 #include "tsdb_head.h"
+#include "cache.h"
 
 extern CopyState BeginCopyFrom(Relation rel, const char *filename,
 			  bool is_program, List *attnamelist, List *options);
@@ -34,8 +35,7 @@ extern ObjectAddress CreateTrigger(CreateTrigStmt *stmt, const char *queryString
 extern ObjectAddress DefineRelation(CreateStmt *stmt, char relkind, Oid ownerId,
 			   ObjectAddress *typaddress, int tsdb=0);    
 extern void heap_endscan(HeapScanDescData*& scan);
-extern PGFunction load_external_function(char *filename, char *funcname,
-					   bool signalNotFound, void **filehandle,int tsdb=0); 
+
 extern List *make_pathkeys_for_sortclauses(PlannerInfo *root,
 							  List *sortclauses,
 							  List *tlist);
@@ -81,21 +81,14 @@ extern List *ExecInsertIndexTuples(TupleTableSlot *slot, ItemPointer tupleid,
 					  EState *estate, bool noDupErr, bool *specConflict,
 					  List *arbiterIndexes);
 
-extern void CreateCacheMemoryContext(void); 
+
 ArrayIterator array_create_iterator(ArrayType *arr, int slice_ndim, ArrayMetaState *mstate);
 extern Oid RangeVarGetRelidExtended_tsdb(const RangeVar *relation,
 						 LOCKMODE lockmode, bool missing_ok, bool nowait,
 						 RangeVarGetRelidCallback_tsdb callback,
 						 void *callback_arg,int tsdb = 0); 
 
-extern ObjectAddress
-DefineIndex_tsdb(Oid relationId,
-			IndexStmt *stmt,
-			Oid indexRelationId,
-			bool is_alter_table,
-			bool check_rights,
-			bool skip_build,
-			bool quiet); 
+
 
 
 void
@@ -198,6 +191,8 @@ extern void build_aggregate_finalfn_expr(Oid *agg_input_types,
 extern bool reindex_relation(Oid relid, int flags, int options); 
 extern ColumnDef *makeColumnDef(const char *colname,
 			  Oid typeOid, int32 typmod, Oid collOid); 
+// extern void *MemoryContextAllocExtended(MemoryContext context,
+// 						   Size size, int flags); 
 extern ArrayBuildStateArr *initArrayResultArr(Oid array_type, Oid element_type,
 				   MemoryContext rcontext, bool subcontext);
 extern ArrayBuildState *initArrayResult(Oid element_type,
@@ -226,6 +221,8 @@ extern SortPath *create_sort_path(PlannerInfo *root,
 				 double limit_tuples);
 
 extern bool IsInParallelMode(void);
+// extern void RunObjectPostCreateHook(Oid classId, Oid objectId, int subId,
+// 						bool is_internal); 
 
 extern void InitPostgres(const char *in_dbname, Oid dboid, const char *username,
  			 Oid useroid, char *out_dbname);
@@ -270,4 +267,6 @@ extern bool check_functions_in_node(Node *node, check_function_callback checker,
 						void *context);
 extern char func_parallel(Oid funcid); 
 extern Relids find_childrel_parents(PlannerInfo *root, RelOptInfo *rel); 
+
+
 #endif

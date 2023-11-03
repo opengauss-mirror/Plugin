@@ -24,7 +24,7 @@
 #include "parser/parse_coerce.h"
 #include "access/reloptions.h"
 #include "tsdb_shm.h"
-#include "tsdb_event_trigger.h"
+#include "event_trigger.h"
 
 static const struct
 {
@@ -63,6 +63,31 @@ static const struct
 #define DEFAULT_CPU_TUPLE_COST 0.01
 #define REINDEX_REL_FORCE_INDEXES_UNLOGGED	0x08
 #define REINDEX_REL_FORCE_INDEXES_PERMANENT 0x10
+
+#if defined _WIN32 || defined __CYGWIN__
+  #ifdef BUILDING_DLL
+    #ifdef __GNUC__
+      #define DLL_PUBLIC __attribute__ ((dllexport))
+    #else
+      #define DLL_PUBLIC __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #else
+    #ifdef __GNUC__
+      #define DLL_PUBLIC __attribute__ ((dllimport))
+    #else
+      #define DLL_PUBLIC __declspec(dllimport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #endif
+  #define DLL_LOCAL
+#else
+  #if __GNUC__ >= 4
+    #define DLL_PUBLIC __attribute__ ((visibility ("default")))
+    #define DLL_LOCAL  __attribute__ ((visibility ("hidden")))
+  #else
+    #define DLL_PUBLIC
+    #define DLL_LOCAL
+  #endif
+#endif
 
 extern bool row_security; 
 
@@ -2383,4 +2408,6 @@ typedef struct BackgroundWorker_TS {
 #define BackgroundWorker BackgroundWorker_TS 
 
 extern PGDLLIMPORT BackgroundWorker *MyBgworkerEntry;
+
+  
 #endif

@@ -38,10 +38,7 @@ static Sort *make_sort(Plan *lefttree, int numCols, AttrNumber *sortColIdx, Oid 
 static Plan *adjust_childscan(PlannerInfo *root, Plan *plan, Path *path, List *pathkeys,
 							  List *tlist, AttrNumber *sortColIdx);
 
-static ExtensiblePlanMethods chunk_append_plan_methods = {
-	.ExtensibleName = "ChunkAppend",
-	.CreateExtensiblePlanState = ts_chunk_append_state_create,
-};
+
 
 void
 _chunk_append_init(void)

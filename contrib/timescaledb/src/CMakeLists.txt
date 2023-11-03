@@ -3,8 +3,6 @@ agg_bookend.cpp
 base64_compat.cpp
 tsdb_dsm.cpp
 tsdb_shm.cpp
-tsdb_event_trigger.cpp
-tsdb_get_obj.cpp
 tsdb_extension.cpp
 tsdb_head.cpp
 tsdb_static.cpp

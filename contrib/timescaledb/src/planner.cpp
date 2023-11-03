@@ -92,7 +92,7 @@ static void cagg_reorder_groupby_clause(RangeTblEntry *subq_rte, int rtno, List 
  * expansion, we also have to account for the case when our custom expansion
  * is turned off with a GUC.
  */
-static const char *TS_CTE_EXPAND = "ts_expand";
+
 
 static void
 rte_mark_for_expansion(RangeTblEntry *rte)
@@ -125,7 +125,6 @@ rte_is_marked_for_expansion(const RangeTblEntry *rte)
  * holds the objects it was warmed with. Since the planner can be invoked
  * recursively, we also need to stack and pop cache objects.
  */
-static List *planner_hcaches = NIL;
 
 static Cache *
 planner_hcache_push(void)
