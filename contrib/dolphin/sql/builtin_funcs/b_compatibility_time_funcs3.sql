@@ -193,6 +193,7 @@ select to_seconds('-838:59:59');
 select to_seconds(-8385959);
 
 -- 进位和非法值
+set dolphin.b_compatibility_mode = true;
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 create table test1(a time);
 insert into test1 values('23:65:66');

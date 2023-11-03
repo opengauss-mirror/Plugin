@@ -645,6 +645,7 @@ CONTEXT:  referenced column: hour
     0
 (1 row)
 
+set dolphin.b_compatibility_mode = true;
 -- date_bool&time_bool
 select date_bool('0000-00-00');
  date_bool 
@@ -665,7 +666,7 @@ LINE 1: select date_bool('0000-00-01');
 CONTEXT:  referenced column: date_bool
  date_bool 
 -----------
- f
+ 
 (1 row)
 
 select time_bool('00:00:01');
@@ -681,7 +682,7 @@ LINE 1: select date_bool('0000-01-00');
 CONTEXT:  referenced column: date_bool
  date_bool 
 -----------
- f
+ 
 (1 row)
 
 select time_bool('00:01:00');
@@ -709,7 +710,7 @@ LINE 1: select date_bool('0001-00-00');
 CONTEXT:  referenced column: date_bool
  date_bool 
 -----------
- f
+ 
 (1 row)
 
 select time_bool('01:00:00');
@@ -764,6 +765,169 @@ select time_bool('-838:59:59');
  time_bool 
 -----------
  t
+(1 row)
+
+-- 异常显示空测试
+select timestamp('2022-05');
+WARNING:  invalid input syntax for type timestamp: "2022-05"
+CONTEXT:  referenced column: timestamp
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select timestamp('2022-05-05');
+      timestamp      
+---------------------
+ 2022-05-05 00:00:00
+(1 row)
+
+select timestamp('2022-05-05 1');
+      timestamp      
+---------------------
+ 2022-05-05 01:00:00
+(1 row)
+
+select timestamp('2023-13-15 1');
+WARNING:  invalid input syntax for type timestamp: "2023-13-15 1"
+CONTEXT:  referenced column: timestamp
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select timestamp('2023-13-15 1:65');
+WARNING:  date/time field value out of range: "2023-13-15 1:65"
+CONTEXT:  referenced column: timestamp
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select timestamp('2022-05-05 1:55:61');
+WARNING:  date/time field value out of range: "2022-05-05 1:55:61"
+CONTEXT:  referenced column: timestamp
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select date('2022-15-05');
+WARNING:  Incorrect datetime value: "2022-15-05"
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select date('2022-05-35');
+WARNING:  Incorrect datetime value: "2022-05-35"
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select date('2022-05-05 01');
+    date    
+------------
+ 2022-05-05
+(1 row)
+
+select date('2022-05-05 01-20-30');
+    date    
+------------
+ 2022-05-05
+(1 row)
+
+select date('2022-05-05 20:59');
+    date    
+------------
+ 2022-05-05
+(1 row)
+
+select date('2022-05-05 20:60');
+WARNING:  Incorrect datetime value: "2022-05-05 20:60"
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('2022-15-05' as date);
+WARNING:  date/time field value out of range: "2022-15-05"
+LINE 1: select cast('2022-15-05' as date);
+                    ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('2022-05-35' as date);
+WARNING:  date/time field value out of range: "2022-05-35"
+LINE 1: select cast('2022-05-35' as date);
+                    ^
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('2022-05-05 01' as date);
+WARNING:  invalid input syntax for type date: "2022-05-05 01"
+LINE 1: select cast('2022-05-05 01' as date);
+                    ^
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('2022-05-05 20-70' as date);
+WARNING:  time zone displacement out of range: "2022-05-05 20-70"
+LINE 1: select cast('2022-05-05 20-70' as date);
+                    ^
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('2022-05-05 20:70' as date);
+WARNING:  date/time field value out of range: "2022-05-05 20:70"
+LINE 1: select cast('2022-05-05 20:70' as date);
+                    ^
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('2022-05-05 20:60' as date);
+WARNING:  date/time field value out of range: "2022-05-05 20:60"
+LINE 1: select cast('2022-05-05 20:60' as date);
+                    ^
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('2022-05-05 20:59' as date);
+    date    
+------------
+ 2022-05-05
 (1 row)
 
 reset dolphin.sql_mode;

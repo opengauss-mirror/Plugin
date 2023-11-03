@@ -269,6 +269,8 @@ select hour('');
 select hour('abc');
 select hour('1234abc');
 
+set dolphin.b_compatibility_mode = true;
+
 -- date_bool&time_bool
 select date_bool('0000-00-00');
 select time_bool('00:00:00');
@@ -288,6 +290,27 @@ select date_bool('2020-12-31');
 select date_bool('2020-12-31 BC');
 select time_bool('838:59:59');
 select time_bool('-838:59:59');
+
+-- 异常显示空测试
+select timestamp('2022-05');
+select timestamp('2022-05-05');
+select timestamp('2022-05-05 1');
+select timestamp('2023-13-15 1');
+select timestamp('2023-13-15 1:65');
+select timestamp('2022-05-05 1:55:61');
+select date('2022-15-05');
+select date('2022-05-35');
+select date('2022-05-05 01');
+select date('2022-05-05 01-20-30');
+select date('2022-05-05 20:59');
+select date('2022-05-05 20:60');
+select cast('2022-15-05' as date);
+select cast('2022-05-35' as date);
+select cast('2022-05-05 01' as date);
+select cast('2022-05-05 20-70' as date);
+select cast('2022-05-05 20:70' as date);
+select cast('2022-05-05 20:60' as date);
+select cast('2022-05-05 20:59' as date);
 
 reset dolphin.sql_mode;
 

@@ -1,8 +1,8 @@
 --create trigger测试
 drop database if exists dump_trigger_db;
 drop database if exists restore_trigger_db;
-create database dump_trigger_db with dbcompatibility = 'B';
-create database restore_trigger_db with dbcompatibility = 'B';
+create database dump_trigger_db with dbcompatibility = 'B' lc_collate 'C';
+create database restore_trigger_db with dbcompatibility = 'B' lc_collate 'C';
 \c dump_trigger_db
 --test definer,if not exists
 create table t_create_trigger_001(c int);
