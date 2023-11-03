@@ -513,6 +513,25 @@ static Datum stringTypeDatum_with_collation(Type tp, char* string, int32 atttypm
 }
 
 #ifdef DOLPHIN
+static Datum stringTypeDatumCompatibleNullResult_with_collation(Type tp, char* string, int32 atttypmod,
+    bool can_ignore, Oid collation, CoercionContext ccontext, bool* result_isnull)
+{
+    Datum result;
+    int tmp_encoding = get_valid_charset_by_collation(collation);
+    int db_encoding = GetDatabaseEncoding();
+
+    if (tmp_encoding == db_encoding) {
+        return stringTypeDatumCompatibleNullResult(tp, string, atttypmod, can_ignore, ccontext, result_isnull);
+    }
+
+    DB_ENCODING_SWITCH_TO(tmp_encoding);
+    result = stringTypeDatumCompatibleNullResult(tp, string, atttypmod, can_ignore, ccontext, result_isnull);
+    DB_ENCODING_SWITCH_BACK(db_encoding);
+    return result;
+}
+#endif
+
+#ifdef DOLPHIN
 static bool hasTextCoercePath(Oid* srcoid, Oid destoid, CoercionContext ccontext, bool* changed)
 {
     if (ccontext == COERCION_EXPLICIT &&
@@ -697,14 +716,28 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
         * We assume here that UNKNOWN's internal representation is the same
         * as CSTRING.
         */
-        if (!con->constisnull) {
-            newcon->constvalue = stringTypeDatum_with_collation(targetType, DatumGetCString(con->constvalue),
-                inputTypeMod, pstate != NULL && pstate->p_has_ignore, con->constcollid);
+#ifdef DOLPHIN
+        if (ENABLE_B_CMPT_MODE) {
+            if (!con->constisnull) {
+                newcon->constvalue = stringTypeDatumCompatibleNullResult_with_collation(targetType,
+                    DatumGetCString(con->constvalue), inputTypeMod, pstate != NULL && pstate->p_has_ignore,
+                    con->constcollid, ccontext, &newcon->constisnull);
+            } else {
+                newcon->constvalue = stringTypeDatumCompatibleNullResult(targetType, NULL,
+                    inputTypeMod, pstate != NULL && pstate->p_has_ignore, ccontext, &newcon->constisnull);
+            }
         } else {
-            newcon->constvalue =
-                stringTypeDatum(targetType, NULL, inputTypeMod, pstate != NULL && pstate->p_has_ignore);
+#endif
+            if (!con->constisnull) {
+                newcon->constvalue = stringTypeDatum_with_collation(targetType, DatumGetCString(con->constvalue),
+                    inputTypeMod, pstate != NULL && pstate->p_has_ignore, con->constcollid);
+            } else {
+                newcon->constvalue =
+                    stringTypeDatum(targetType, NULL, inputTypeMod, pstate != NULL && pstate->p_has_ignore);
+            }
+#ifdef DOLPHIN
         }
-
+#endif
         cancel_parser_errposition_callback(&pcbstate);
 
         result = (Node*)newcon;

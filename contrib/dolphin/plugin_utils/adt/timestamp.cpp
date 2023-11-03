@@ -331,8 +331,15 @@ extern "C" DLL_PUBLIC Datum timestamp_cast(PG_FUNCTION_ARGS);
 #endif
 
 /* b format datetime and timestamp type */
+#ifdef DOLPHIN
+static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec,
+    bool can_ignore, TimeErrorType* time_error_type);
+static int64 integer_b_format_timestamp(bool hasTz, int64 ts,
+    bool can_ignore, TimeErrorType* time_error_type);
+#else
 static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec, bool can_ignore);
 static int64 integer_b_format_timestamp(bool hasTz, int64 ts, bool can_ignore);
+#endif
 static void fillZeroBeforeNumericTimestamp(char *str, char *buf);
 
 /* common code for timestamptypmodin and timestamptztypmodin */
@@ -869,7 +876,12 @@ int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec)
     return dterr;
 }
 
+#ifdef DOLPHIN
+static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec, bool can_ignore,
+    TimeErrorType* time_error_type)
+#else
 static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec, bool can_ignore)
+#endif
 {
     Timestamp result;
     struct pg_tm tt, *tm = &tt;
@@ -902,6 +914,9 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
     if (int32_b_format_time_internal(tm, true, time, &fsec) || int32_b_format_date_internal(tm, date, true)){
         ereport(level,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+#ifdef DOLPHIN
+        *time_error_type = TIME_INCORRECT;
+#endif
         return TIMESTAMP_ZERO;
     }
 
@@ -911,49 +926,100 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
         if (tm2timestamp(tm, fsec, &tz, &result) != 0) {
             ereport(level,
                 (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+#ifdef DOLPHIN
+            *time_error_type = TIME_INCORRECT;
+#endif
             return TIMESTAMP_ZERO;
         }  
     } else {
         if (tm2timestamp(tm, fsec, NULL, &result) != 0) {
             ereport(level,
                 (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+#ifdef DOLPHIN
+            *time_error_type = TIME_INCORRECT;
+#endif
             return TIMESTAMP_ZERO;
         }  
     }
     return result;
 }
 
+#ifdef DOLPHIN
+static int64 integer_b_format_timestamp(bool hasTz, int64 ts, bool can_ignore, TimeErrorType* time_error_type)
+{
+    TimestampTz result;
+    result = int64_b_format_timestamp_internal(hasTz, ts, 0, can_ignore, time_error_type);
+    PG_RETURN_TIMESTAMP(result);
+}
+#else
 static int64 integer_b_format_timestamp(bool hasTz, int64 ts, bool can_ignore)
 {
     TimestampTz result;
     result = int64_b_format_timestamp_internal(hasTz, ts, 0, can_ignore);
     PG_RETURN_TIMESTAMP(result);
 }
+#endif
+
 #ifdef DOLPHIN
+Datum timestamp_to_datum(PG_FUNCTION_ARGS, bool hasTz, int64 ts)
+{
+    TimeErrorType time_error_type = TIME_CORRECT;
+    int64 result = integer_b_format_timestamp(hasTz, ts, fcinfo->can_ignore, &time_error_type);
+    if (fcinfo->ccontext == COERCION_IMPLICIT && time_error_type == TIME_INCORRECT) {
+        PG_RETURN_NULL();
+    }
+    PG_RETURN_TIMESTAMP(result);
+}
+
 Datum int8_b_format_datetime(PG_FUNCTION_ARGS)
 {
     int64 ts = PG_GETARG_INT64(0);
-    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(false, ts, fcinfo->can_ignore));
+    return timestamp_to_datum(fcinfo, false, ts);
 }
 
 Datum int8_b_format_timestamp(PG_FUNCTION_ARGS)
 {
     int64 ts = PG_GETARG_INT64(0);
-    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(true, ts, fcinfo->can_ignore));
+    return timestamp_to_datum(fcinfo, true, ts);
 }
 
 Datum int16_b_format_datetime(PG_FUNCTION_ARGS)
 {
     int64 ts = PG_GETARG_INT64(0);
-    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(false, ts, fcinfo->can_ignore));
+    return timestamp_to_datum(fcinfo, false, ts);
 }
 
 Datum int16_b_format_timestamp(PG_FUNCTION_ARGS)
 {
     int64 ts = PG_GETARG_INT64(0);
-    PG_RETURN_TIMESTAMP(integer_b_format_timestamp(true, ts, fcinfo->can_ignore));
+    return timestamp_to_datum(fcinfo, true, ts);
 }
-#endif
+
+Datum int32_b_format_datetime(PG_FUNCTION_ARGS)
+{
+    int64 ts = PG_GETARG_INT64(0);
+    return timestamp_to_datum(fcinfo, false, ts);
+}
+
+Datum int32_b_format_timestamp(PG_FUNCTION_ARGS)
+{
+    int64 ts = PG_GETARG_INT64(0);
+    return timestamp_to_datum(fcinfo, true, ts);
+}
+
+Datum int64_b_format_datetime(PG_FUNCTION_ARGS)
+{
+    int64 ts = PG_GETARG_INT64(0);
+    return timestamp_to_datum(fcinfo, false, ts);
+}
+
+Datum int64_b_format_timestamp(PG_FUNCTION_ARGS)
+{
+    int64 ts = PG_GETARG_INT64(0);
+    return timestamp_to_datum(fcinfo, true, ts);
+}
+
+#else
 Datum int32_b_format_datetime(PG_FUNCTION_ARGS) 
 {
     int64 ts = PG_GETARG_INT64(0);
@@ -977,6 +1043,7 @@ Datum int64_b_format_timestamp(PG_FUNCTION_ARGS)
     int64 ts = PG_GETARG_INT64(0);
     PG_RETURN_TIMESTAMP(integer_b_format_timestamp(true, ts, fcinfo->can_ignore));
 }
+#endif
 
 /* timestamp_out()
  * Convert a timestamp to external form.
@@ -1494,6 +1561,29 @@ static void check_timestamp_overflow(Timestamp* time, bool isWithTz)
  * Convert a string to internal form.
  */
 Datum timestamptz_in(PG_FUNCTION_ARGS)
+#ifdef DOLPHIN
+{
+    TimeErrorType time_error_type = TIME_CORRECT;
+    Datum result = timestamptz_internal(fcinfo, false, &time_error_type);
+    if (time_error_type == TIME_INCORRECT &&
+        (fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT)) {
+        PG_RETURN_NULL();
+    }
+    return result;
+}
+
+Datum timestamptz_implicit(PG_FUNCTION_ARGS)
+{
+    TimeErrorType time_error_type = TIME_CORRECT;
+    Datum result = timestamptz_internal(fcinfo, true, &time_error_type);
+    if (time_error_type == TIME_INCORRECT) {
+        PG_RETURN_NULL();
+    }
+    return result;
+}
+
+Datum timestamptz_internal(PG_FUNCTION_ARGS, bool is_timestamptz_sconst, TimeErrorType* time_error_type)
+#endif
 {
     char* str = PG_GETARG_CSTRING(0);
 
@@ -1529,11 +1619,14 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
     } else {
         dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
         if (dterr != 0) {
-            DateTimeParseError(dterr, str, "timestamp", fcinfo->can_ignore);
+            DateTimeParseError(dterr, str, "timestamp", is_timestamptz_sconst || fcinfo->can_ignore);
             /*
              * if error ignorable, function DateTimeParseError reports warning instead, then return current timestamp.
              */
-            PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
+#ifdef DOLPHIN
+             *time_error_type = TIME_INCORRECT;
+#endif
+             PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
         }
         if (dterr == 0) {
             if (nf == 1 && ftype[0] == DTK_NUMBER) {
@@ -1546,7 +1639,10 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
             }
         }
         if (dterr != 0) {
-            DateTimeParseError(dterr, str, "timestamp", fcinfo->can_ignore);
+            DateTimeParseError(dterr, str, "timestamp", is_timestamptz_sconst || fcinfo->can_ignore);
+#ifdef DOLPHIN
+            *time_error_type = TIME_INCORRECT;
+#endif
             PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
         }
         switch (dtype) {
@@ -5157,6 +5253,10 @@ Datum timestamptz_part(PG_FUNCTION_ARGS)
                 break;
 
             case DTK_QUARTER:
+#ifdef DOLPHIN
+                if (timestamp == TIMESTAMP_ZERO)
+                    PG_RETURN_NULL();
+#endif
                 result = (tm->tm_mon - 1) / 3 + 1;
                 break;
 
@@ -5226,6 +5326,10 @@ Datum timestamptz_part(PG_FUNCTION_ARGS)
                 break;
 
             case DTK_DOY:
+#ifdef DOLPHIN
+                if (timestamp == TIMESTAMP_ZERO)
+                    PG_RETURN_NULL();
+#endif
                 if (timestamp2tm(timestamp, &tz, tm, &fsec, NULL, NULL) != 0)
                     ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
                 result = (date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - date2j(tm->tm_year, 1, 1) + 1);
@@ -7819,9 +7923,22 @@ Datum timestamp_param1(PG_FUNCTION_ARGS)
     if (datetime >= B_FORMAT_TIMESTAMP_MIN_VALUE && datetime <= B_FORMAT_TIMESTAMP_MAX_VALUE)
         PG_RETURN_TIMESTAMP(datetime);
 
-    ereport(ERROR,
+    if (ENABLE_B_CMPT_MODE) {
+        /*
+         * the case for invalid timestamp value compatible with b db:
+         * select timestamp('xxxx') : should return null
+         * insert xxx values (timestamp('xxxx')) : should throw exeception on strict mode,
+         * and should return null on non-strict mode
+         */
+        int level = (fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
+        ereport(level,
+            (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
+            errmsg("date/time field value out of range")));
+    } else {
+        ereport(ERROR,
             (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
              errmsg("date/time field value out of range")));
+    }
     PG_RETURN_NULL();
 }
 
