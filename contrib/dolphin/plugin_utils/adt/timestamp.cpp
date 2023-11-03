@@ -276,6 +276,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(b_db_date_numeric);
 extern "C" DLL_PUBLIC Datum b_db_date_numeric(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(dayofmonth_text);
 extern "C" DLL_PUBLIC Datum dayofmonth_text(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum dayofmonth_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(dayofmonth_time);
 PG_FUNCTION_INFO_V1_PUBLIC(dayofmonth_numeric);
 extern "C" DLL_PUBLIC Datum dayofmonth_numeric(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(week_text);
@@ -8420,6 +8422,17 @@ Datum dayofmonth_numeric(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     }
     PG_RETURN_INT32(result_tm->tm_mday);
+}
+
+Datum dayofmonth_time(PG_FUNCTION_ARGS)
+{
+    pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    int tz;
+    if (timestamp2tm(GetCurrentTimestamp(), &tz, tm, &fsec, NULL, NULL) != 0)
+        ereport(ERROR,
+            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    PG_RETURN_INT32(tm->tm_mday);
 }
 
 /* b_db_sumdays()

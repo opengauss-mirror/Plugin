@@ -10,6 +10,8 @@ DROP CAST IF EXISTS (TEXT AS time);
 DROP FUNCTION IF EXISTS pg_catalog.time_cast_implicit(TEXT);
 DROP FUNCTION IF EXISTS pg_catalog.text_time_explicit(TEXT);
 
+DROP FUNCTION IF EXISTS pg_catalog.day(time without time zone);
+
 DROP OPERATOR IF EXISTS pg_catalog.=(time, timestamp without time zone);
 DROP OPERATOR IF EXISTS pg_catalog.<>(time, timestamp without time zone);
 DROP OPERATOR IF EXISTS pg_catalog.<=(time, timestamp without time zone);

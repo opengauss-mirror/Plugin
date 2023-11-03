@@ -20,6 +20,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.text_time_explicit(TEXT) RETURNS time with
 
 CREATE CAST(TEXT AS time) WITH FUNCTION time_cast_implicit(TEXT) AS ASSIGNMENT;
 
+DROP FUNCTION IF EXISTS pg_catalog.day(time without time zone);
+CREATE OR REPLACE FUNCTION pg_catalog.day(time without time zone) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'dayofmonth_time';
+
 --CREATE TIME_TIMESTAMP'S COMPARATION FUNCTION
 DROP FUNCTION IF EXISTS pg_catalog.time_eq_timestamp (time, timestamp without time zone) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.time_eq_timestamp (time, timestamp without time zone) RETURNS boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_eq_timestamp';

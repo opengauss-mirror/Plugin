@@ -293,6 +293,24 @@ select quarter(time'203840');
 --?.*
 (1 row)
 
+select day('10:10:10');
+ day 
+-----
+  10
+(1 row)
+
+select day('2002-01-01 11:12:12'::time);
+ day 
+-----
+--?.*
+(1 row)
+
+select dayofmonth('2002-01-01 11:12:12'::time);
+ dayofmonth 
+------------
+--?.*
+(1 row)
+
 reset current_schema;
 drop schema if exists test_dayofweek cascade;
 NOTICE:  drop cascades to 2 other objects
