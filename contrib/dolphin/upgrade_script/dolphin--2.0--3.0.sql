@@ -8,9 +8,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_cast(cstring, oid, integer, bo
 CREATE OR REPLACE FUNCTION pg_catalog.date_cast_datetime(date) RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_cast_datetime';
 CREATE OR REPLACE FUNCTION pg_catalog.date_cast_timestamptz(date) RETURNS timestamp LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_cast_timestamptz';
 
-DROP FUNCTION IF EXISTS pg_catalog.day(time without time zone);
-CREATE OR REPLACE FUNCTION pg_catalog.day(time without time zone) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'dayofmonth_time';
-
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(text);
 CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(text) RETURNS int8 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'time_to_sec';
 

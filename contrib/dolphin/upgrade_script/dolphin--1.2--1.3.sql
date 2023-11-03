@@ -74,6 +74,7 @@ CREATE FUNCTION pg_catalog.substring_index (
 numeric
 ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_numeric';
 
+-- below from 3.0
 DROP FUNCTION IF EXISTS pg_catalog.date_cast(cstring, boolean);
 CREATE OR REPLACE FUNCTION pg_catalog.date_cast(cstring, boolean) RETURNS date LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'date_cast';
 
@@ -171,6 +172,9 @@ DROP FUNCTION IF EXISTS pg_catalog.text_time_explicit(TEXT);
 CREATE OR REPLACE FUNCTION pg_catalog.text_time_explicit(TEXT) RETURNS time without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_time_explicit';
 
 CREATE CAST(TEXT AS time) WITH FUNCTION time_cast_implicit(TEXT) AS ASSIGNMENT;
+
+DROP FUNCTION IF EXISTS pg_catalog.day(time without time zone);
+CREATE OR REPLACE FUNCTION pg_catalog.day(time without time zone) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'dayofmonth_time';
 
 --change bit -> int/bigint castcontext from 'e' to 'a'
 do $$

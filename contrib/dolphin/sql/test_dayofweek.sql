@@ -53,6 +53,9 @@ select quarter('20:38:40');
 select quarter(time'20:38:40');
 select quarter(203840);
 select quarter(time'203840');
+select day('10:10:10');
+select day('2002-01-01 11:12:12'::time);
+select dayofmonth('2002-01-01 11:12:12'::time);
 
 reset current_schema;
 drop schema if exists test_dayofweek cascade;

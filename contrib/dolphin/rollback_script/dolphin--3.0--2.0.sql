@@ -46,8 +46,6 @@ CREATE FUNCTION pg_catalog.dolphin_invoke()
 
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_cast(cstring, oid, integer, boolean);
 
-DROP FUNCTION IF EXISTS pg_catalog.day(time without time zone);
-
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(json);
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(anyset);
