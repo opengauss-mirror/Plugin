@@ -27,7 +27,6 @@
 #include "fmgr/fmgr_core.h"
 #include "lib/stringinfo.h"
 #include "access/tupdesc.h"
-#include "nodes/primnodes.h"
 
 #ifndef FRONTEND_PARSER
 
@@ -669,5 +668,14 @@ inline bool eval_simple_op(Datatype dataVal1, Datatype dataVal2)
 #endif /* !FRONTEND_PARSER */
 
 extern void CopyCursorInfoData(Cursor_Data* target_data, Cursor_Data* source_data);
+
+#ifdef DOLPHIN
+extern bool is_allow_null_result(CoercionContext ccontext);
+extern void CheckNullResultCompatibleNullResult(Oid oid, bool isnull, char* str, CoercionContext ccontext);
+extern Datum InputFunctionCallCompatibleNullResult(FmgrInfo* flinfo, char* str, Oid typioparam, int32 typmod,
+    bool can_ignore, Oid collation, CoercionContext ccontext, bool* result_isnull);
+extern Datum OidInputFunctionCallCompatibleNullResult(Oid functionId, char* str, Oid typioparam, int32 typmod,
+    bool can_ignore, CoercionContext ccontext, bool* result_isnull);
+#endif
 
 #endif /* FMGR_H */

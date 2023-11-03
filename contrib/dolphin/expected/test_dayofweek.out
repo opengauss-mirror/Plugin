@@ -202,6 +202,97 @@ select * from t_datetime;
  0000-00-00 00:00:00
 (3 rows)
 
+set dolphin.b_compatibility_mode = true;
+select dayofmonth('20:38:40');
+WARNING:  invalid input syntax for type timestamp: "20:38:40"
+LINE 1: select dayofmonth('20:38:40');
+                          ^
+CONTEXT:  referenced column: dayofmonth
+ dayofmonth 
+------------
+           
+(1 row)
+
+select dayofmonth(time'20:38:40');
+ dayofmonth 
+------------
+--?.*
+(1 row)
+
+select dayofmonth(203840);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: dayofmonth
+ dayofmonth 
+------------
+           
+(1 row)
+
+select dayofmonth(time'203840');
+ dayofmonth 
+------------
+--?.*
+(1 row)
+
+select dayofyear('20:38:40');
+WARNING:  invalid input syntax for type timestamp: "20:38:40"
+LINE 1: select dayofyear('20:38:40');
+                         ^
+CONTEXT:  referenced column: dayofyear
+ dayofyear 
+-----------
+          
+(1 row)
+
+select dayofyear(time'20:38:40');
+ dayofyear 
+-----------
+--?.*
+(1 row)
+
+select dayofyear(203840);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: dayofyear
+ dayofyear 
+-----------
+          
+(1 row)
+
+select dayofyear(time'203840');
+ dayofyear 
+-----------
+--?.*
+(1 row)
+
+select quarter('20:38:40');
+WARNING:  invalid input syntax for type timestamp: "20:38:40"
+LINE 1: select quarter('20:38:40');
+                       ^
+CONTEXT:  referenced column: quarter
+ quarter 
+---------
+        
+(1 row)
+
+select quarter(time'20:38:40');
+ quarter 
+---------
+--?.*
+(1 row)
+
+select quarter(203840);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: quarter
+ quarter 
+---------
+        
+(1 row)
+
+select quarter(time'203840');
+ quarter 
+---------
+--?.*
+(1 row)
+
 reset current_schema;
 drop schema if exists test_dayofweek cascade;
 NOTICE:  drop cascades to 2 other objects

@@ -55,6 +55,7 @@
 #define TIME_MAX_FRAC 999999
 #define DATE_ALL_ZERO_VALUE (-2451508)
 #define JDATE_ALL_ZERO_VALUE (DATE_ALL_ZERO_VALUE + POSTGRES_EPOCH_JDATE)
+#define MONTH_TO_QUARTER_RADIX 3
 #endif
 
 /* for b compatibility type*/
@@ -82,7 +83,7 @@ extern void adjust_time_range(pg_tm *tm, fsec_t &fsec, bool &warnings);
 extern TimeADT time_in_with_flag(char *str, unsigned int date_flag);
 extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag);
 extern bool date_add_interval(DateADT date, Interval *span, DateADT *result);
-extern Datum date_internal(PG_FUNCTION_ARGS, bool is_date_sconst);
+extern Datum date_internal(PG_FUNCTION_ARGS, bool is_date_sconst, TimeErrorType* time_error_type);
 extern Datum textout (PG_FUNCTION_ARGS);
 
 typedef struct DateTimeFormat
@@ -93,12 +94,6 @@ typedef struct DateTimeFormat
     const char *time_format;
 }DateTimeFormat;
 
-typedef enum
-{
-    TIME_CORRECT = 0,
-    TIME_IGNORED_INCORRECT,
-    TIME_INCORRECT
-}TimeErrorType;
 
 typedef enum
 {

@@ -372,15 +372,23 @@ Datum b_db_statement_start_time(PG_FUNCTION_ARGS)
 Datum date_in(PG_FUNCTION_ARGS)
 #ifdef DOLPHIN
 {
-    return date_internal(fcinfo, false);
+    Datum result;
+    TimeErrorType time_error_type = TIME_CORRECT;
+    result = date_internal(fcinfo, false, &time_error_type);
+    if ((fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT) &&
+        time_error_type == TIME_INCORRECT) {
+        PG_RETURN_NULL();
+    }
+    return result;
 }
 
 Datum date_cast(PG_FUNCTION_ARGS)
 {
-    return date_internal(fcinfo, true);
+    TimeErrorType time_error_type = TIME_CORRECT;
+    return date_internal(fcinfo, true, &time_error_type);
 }
 
-Datum date_internal(PG_FUNCTION_ARGS, bool is_date_sconst)
+Datum date_internal(PG_FUNCTION_ARGS, bool is_date_sconst, TimeErrorType* time_error_type)
 #endif
 {
     char* str = PG_GETARG_CSTRING(0);
@@ -426,6 +434,9 @@ Datum date_internal(PG_FUNCTION_ARGS, bool is_date_sconst)
             /*
              * if reporting warning in DateTimeParseError, return 1970-01-01
              */
+#ifdef DOLPHIN
+            *time_error_type = TIME_INCORRECT;
+#endif
             PG_RETURN_DATEADT(DATE_ALL_ZERO_VALUE);
         }
         if (dterr == 0) {
@@ -439,6 +450,9 @@ Datum date_internal(PG_FUNCTION_ARGS, bool is_date_sconst)
 #endif
         if (dterr != 0) {
             DateTimeParseErrorWithFlag(dterr, str, "date", fcinfo->can_ignore, is_date_sconst);
+#ifdef DOLPHIN
+            *time_error_type = TIME_INCORRECT;
+#endif
             PG_RETURN_DATEADT(DATE_ALL_ZERO_VALUE);
         }
         switch (dtype) {
@@ -2556,13 +2570,45 @@ Datum time_part(PG_FUNCTION_ARGS)
                     break;
                 }
 
+            case DTK_DAY:
+                {
+                    int tz;
+                    if (timestamp2tm(GetCurrentTimestamp(), &tz, tm, &fsec, NULL, NULL) != 0)
+                        ereport(ERROR,
+                            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+                    result = tm->tm_mday;
+                    break;
+                }
+
+            case DTK_DOY:
+                {
+                    int tz;
+                    if (timestamp2tm(GetCurrentTimestamp(), &tz, tm, &fsec, NULL, NULL) != 0)
+                        ereport(ERROR,
+                            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+                    result = (date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - date2j(tm->tm_year, 1, 1) + 1);
+                    break;
+                }
+            
+            case DTK_QUARTER:
+                {
+                    int tz;
+                    if (timestamp2tm(GetCurrentTimestamp(), &tz, tm, &fsec, NULL, NULL) != 0)
+                        ereport(ERROR,
+                            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+                    result = (tm->tm_mon - 1) / MONTH_TO_QUARTER_RADIX + 1;
+                    break;
+                }
 #endif
+
             case DTK_TZ:
             case DTK_TZ_MINUTE:
             case DTK_TZ_HOUR:
+#ifndef DOLPHIN
             case DTK_DAY:
-            case DTK_MONTH:
             case DTK_QUARTER:
+#endif
+            case DTK_MONTH:
             case DTK_YEAR:
             case DTK_DECADE:
             case DTK_CENTURY:
