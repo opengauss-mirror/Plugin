@@ -408,6 +408,7 @@ CDXLTokens::Init(CMemoryPool *mp)
 		{EdxltokenXCNidAttribute, SPQOS_WSZ_LIT("xc_node_id")},
 		{EdxltokenBidAttribute, SPQOS_WSZ_LIT("tablebucketid")},
 		{EdxltokenUidAttribute, SPQOS_WSZ_LIT("gs_tuple_uid")},
+		{EdxltokenRootCtidColName, SPQOS_WSZ_LIT("_root_ctid")},
 
 		{EdxltokenActionColId, SPQOS_WSZ_LIT("ActionCol")},
 		{EdxltokenCtidColId, SPQOS_WSZ_LIT("CtidCol")},

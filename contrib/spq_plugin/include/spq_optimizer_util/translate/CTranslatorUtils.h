@@ -15,7 +15,7 @@
 
 #ifndef SPQDXL_CTranslatorUtils_H
 #define SPQDXL_CTranslatorUtils_H
-#define SPQDXL_SYSTEM_COLUMNS 10
+#define SPQDXL_SYSTEM_COLUMNS 11
 
 #include "postgres.h"
 

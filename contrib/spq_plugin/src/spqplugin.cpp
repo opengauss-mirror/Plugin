@@ -159,7 +159,7 @@ static bool should_spq_planner(Query *parse)
         return false;
     }
 
-    if (IsTransactionBlock()) {
+    if (!u_sess->attr.attr_spq.spq_enable_transaction && IsTransactionBlock()) {
         elog(DEBUG1, "sql in transaction can`t run on spq node");
         return false;
     }
@@ -190,6 +190,12 @@ PlannedStmt* spq_optimize_query(Query* parse, int cursorOptions, ParamListInfo b
         // if build spq plan fail go back
         result = spq_planner(parse, boundParams);
         if (result == nullptr) {
+            if (unlikely(cursorOptions & CURSOR_OPT_SPQ_FORCE))
+            {
+                ereport(ERROR,
+                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                         errmsg("expected a spq plan but get a normal gauss plan.")));
+            }
             t_thrd.spq_ctx.spq_role = ROLE_UTILITY;
         } else {
             set_default_stream();
