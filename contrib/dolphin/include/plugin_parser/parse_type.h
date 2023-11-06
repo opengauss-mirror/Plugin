@@ -18,6 +18,9 @@
 #include "plugin_parser/parse_node.h"
 #include "plugin_postgres.h"
 
+#ifdef DOLPHIN
+#define COL_BINARY_ATTR "_bin"
+#endif
 typedef HeapTuple Type;
 
 extern Type LookupTypeNameSupportUndef(ParseState *pstate, const TypeName *typeName,

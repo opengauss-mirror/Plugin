@@ -75,6 +75,28 @@ drop CAST IF EXISTS (uint8 AS bit);
 CREATE CAST (uint4 AS bit) WITH FUNCTION bitfromuint4(uint4, int4);
 CREATE CAST (uint8 AS bit) WITH FUNCTION bitfromuint8(uint8, int4);
 
+DROP FUNCTION IF EXISTS pg_catalog.rand(int16);
+DROP FUNCTION IF EXISTS pg_catalog.rand(uint4);
+DROP FUNCTION IF EXISTS pg_catalog.rand(timestamp with time zone);
+DROP FUNCTION IF EXISTS pg_catalog.rand(date);
+DROP FUNCTION IF EXISTS pg_catalog.rand(year);
+DROP FUNCTION IF EXISTS pg_catalog.rand(binary);
+DROP FUNCTION IF EXISTS pg_catalog.rand(blob);
+DROP FUNCTION IF EXISTS pg_catalog.rand(anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.rand(anyset);
+DROP FUNCTION IF EXISTS pg_catalog.rand(json);
+
+DROP FUNCTION IF EXISTS pg_catalog.random_bytes(int4);
+DROP FUNCTION IF EXISTS pg_catalog.random_bytes(bit);
+DROP FUNCTION IF EXISTS pg_catalog.random_bytes(timestamp with time zone);
+DROP FUNCTION IF EXISTS pg_catalog.random_bytes(date);
+DROP FUNCTION IF EXISTS pg_catalog.random_bytes(year);
+DROP FUNCTION IF EXISTS pg_catalog.random_bytes(binary);
+DROP FUNCTION IF EXISTS pg_catalog.random_bytes(blob);
+DROP FUNCTION IF EXISTS pg_catalog.random_bytes(anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.random_bytes(anyset);
+DROP FUNCTION IF EXISTS pg_catalog.random_bytes(json);
+
 CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_rawout (
 tinyblob
 ) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';

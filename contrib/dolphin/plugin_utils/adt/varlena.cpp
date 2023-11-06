@@ -22,6 +22,11 @@
 #include <cstring>
 #include <cmath>
 
+#ifdef DOLPHIN
+#include <openssl/rand.h>
+#include <openssl/err.h>
+#endif
+
 #include "access/hash.h"
 #include "access/tuptoaster.h"
 #include "catalog/pg_collation.h"
@@ -10865,5 +10870,49 @@ Datum uint8_xor_text(PG_FUNCTION_ARGS)
     pfree(tmp);
 
     PG_RETURN_UINT64(arg1 ^ arg2_int);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(random_bytes);
+extern "C" DLL_PUBLIC Datum random_bytes(PG_FUNCTION_ARGS);
+#define MAX_RANDOM_BYTES_LEN 1024
+Datum random_bytes(PG_FUNCTION_ARGS)
+{
+    int len = PG_GETARG_INT32(0);
+    if (len <= 0 || len > MAX_RANDOM_BYTES_LEN) {
+        ereport(ERROR, (errmsg("length value is out of range in 'random_bytes'")));
+    }
+
+    bytea *res = (bytea*)palloc(VARHDRSZ + len);
+    SET_VARSIZE(res, VARHDRSZ + len);
+    int ret = RAND_bytes((unsigned char*)VARDATA_ANY(res), len);
+    if (ret != 1) {
+        ERR_clear_error();
+        ereport(ERROR, (errmsg("RAND_bytes can't generate random bytes")));
+    }
+
+    PG_RETURN_BYTEA_P(res);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(rand_seed);
+extern "C" DLL_PUBLIC Datum rand_seed(PG_FUNCTION_ARGS);
+Datum rand_seed(PG_FUNCTION_ARGS)
+{
+    int128 n = PG_ARGISNULL(0) ? 0 : PG_GETARG_INT128(0);
+    int elevel = (!SQL_MODE_STRICT() || fcinfo->can_ignore) ? WARNING : ERROR;
+
+    if (unlikely(n > PG_UINT64_MAX)) {
+        ereport(elevel, (errmsg("Truncated incorrect DECIMAL value")));
+        n = PG_UINT64_MAX;
+    } else if (unlikely(n < PG_INT64_MIN)) {
+        ereport(elevel, (errmsg("Truncated incorrect DECIMAL value")));
+        n = PG_INT64_MIN;
+    }
+
+    gs_srandom((unsigned int)n);
+    float8 result;
+    /* result [0.0 - 1.0) */
+    result = (double)gs_random() / ((double)MAX_RANDOM_VALUE + 1);
+
+    PG_RETURN_FLOAT8(result);
 }
 #endif
