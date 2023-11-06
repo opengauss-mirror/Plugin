@@ -1,6 +1,5 @@
 create schema conv_cast_test;
 set current_schema to 'conv_cast_test';
-
 select conv(-211111111111111111111111111111111111111111111111111111111177777,10,8);
           conv          
 ------------------------
@@ -175,7 +174,6 @@ select conv(1,10,8);
  1
 (1 row)
 
-
 select time'-2 34:25:59'::float4;
  float4  
 ---------
@@ -224,7 +222,6 @@ select time'-0'::float8;
       0
 (1 row)
 
-
 select 127::tinyint::bit(64)::tinyint;
  int1 
 ------
@@ -248,7 +245,6 @@ select 9223372036854775807::bigint::bit(64)::bigint;
 ---------------------
  9223372036854775807
 (1 row)
-
 
 select '255'::uint1::time;
    time   
@@ -277,7 +273,6 @@ CONTEXT:  referenced column: time
 ----------
  00:00:00
 (1 row)
-
 
 select '4294967295'::uint1::time;
 WARNING:  tinyint unsigned out of range
@@ -311,7 +306,6 @@ CONTEXT:  referenced column: time
  429497:13:35
 (1 row)
 
-
 select '4294967295'::int1::time;
 WARNING:  value "4294967295" is out of range for type tinyint
 LINE 1: select '4294967295'::int1::time;
@@ -343,7 +337,6 @@ CONTEXT:  referenced column: time
 --------------
  429497:13:35
 (1 row)
-
 
 select conv('-211111111111111111111111111111111111111111111111111111111177777',10,8);
           conv          
@@ -519,7 +512,6 @@ select conv('1',10,8);
  1
 (1 row)
 
-
 select ''::bit;
  bit 
 -----
@@ -537,10 +529,8 @@ select ''::bit(64);
 ------------------------------------------------------------------
  0000000000000000000000000000000000000000000000000000000000000000
 (1 row)
-
 
 set dolphin.b_compatibility_mode to on;
-
 select ''::bit;
  bit 
 -----
@@ -558,7 +548,6 @@ select ''::bit(64);
 ------------------------------------------------------------------
  0000000000000000000000000000000000000000000000000000000000000000
 (1 row)
-
 
 select 8385959::char(30)::time;
    time    
@@ -584,7 +573,6 @@ select 8385958.999999::varchar(30)::time(6);
  838:59:59
 (1 row)
 
-
 select '838:59:59'::char(30)::time;
    time    
 -----------
@@ -609,7 +597,6 @@ select '838:59:58.999999'::varchar(30)::time(6);
  838:59:59
 (1 row)
 
-
 SELECT '20220101121212'::date;
     date    
 ------------
@@ -621,7 +608,6 @@ SELECT '20220101121212.5'::date;
 ------------
  2022-01-01
 (1 row)
-
 
 select cast(b'1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111' as unsigned);
 WARNING:  bigint unsigned out of range
@@ -685,7 +671,6 @@ CONTEXT:  referenced column: int8
    -1
 (1 row)
 
-
 select hex('9999-12-31 23:59:59'::datetime::bit(64));
        hex        
 ------------------
@@ -697,7 +682,6 @@ select hex('99991231235959'::datetime::bit(64));
 ------------------
  00005af105d18777
 (1 row)
-
 
 select 'true'::bool::bit;
  bit 
@@ -729,7 +713,6 @@ select 'true'::bool::float8;
       1
 (1 row)
 
-
 select 'false'::bool::bit;
  bit 
 -----
@@ -759,7 +742,6 @@ select 'false'::bool::float8;
 --------
       0
 (1 row)
-
 
 create table test_date(a date);
 set dolphin.sql_mode = sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function;
@@ -856,7 +838,6 @@ select * from test_date;
  0000-00-00
  0000-00-00
 (5 rows)
-
 
 drop schema conv_cast_test cascade;
 NOTICE:  drop cascades to table test_date
