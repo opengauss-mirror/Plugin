@@ -571,11 +571,7 @@ Datum bpchartextlike(PG_FUNCTION_ARGS)
     int slen, plen;
 
     s = VARDATA_ANY(str);
-#ifdef DOLPHIN
     slen = SQL_MODE_PAD_CHAR_TO_FULL_LENGTH() ? VARSIZE_ANY_EXHDR(str) : bcTruelen(str);
-#else
-    slen = bcTruelen(str);
-#endif
     p = VARDATA_ANY(pat);
     plen = VARSIZE_ANY_EXHDR(pat);
 
@@ -594,15 +590,11 @@ Datum bpchartextnlike(PG_FUNCTION_ARGS)
     int slen, plen;
 
     s = VARDATA_ANY(str);
-    slen = bcTruelen(str);
+    slen = SQL_MODE_PAD_CHAR_TO_FULL_LENGTH() ? VARSIZE_ANY_EXHDR(str) : bcTruelen(str);
     p = VARDATA_ANY(pat);
     plen = VARSIZE_ANY_EXHDR(pat);
 
-#ifdef DOLPHIN
     result = (generic_match_text_with_collation(s, slen, p, plen, PG_GET_COLLATION()) != LIKE_TRUE);
-#else
-    result = (generic_match_text_with_collation(s, slen, p, plen, PG_GET_COLLATION()) == LIKE_FALSE);
-#endif
 
     PG_RETURN_BOOL(result);
 }

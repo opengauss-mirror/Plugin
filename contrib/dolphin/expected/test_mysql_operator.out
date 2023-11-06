@@ -1555,13 +1555,15 @@ drop table testforint2_p5;
 set dolphin.b_compatibility_mode = 0;
 drop schema test_op_xor cascade;
 reset current_schema;
-create schema like_test;
-set current_schema to 'like_test';
 set dolphin.b_compatibility_mode = 1;
+create schema like_test CHARACTER SET ='utf8' COLLATE ='utf8mb4_general_ci';
+set current_schema to 'like_test';
+set b_format_behavior_compat_options to 'enable_multi_charset';
+set names 'utf8mb4' collate 'utf8_bin';
 select 'a' like 'A';
  ?column? 
 ----------
- t
+ f
 (1 row)
 
 ---正常报错，like右边缺参数
@@ -1574,6 +1576,49 @@ select 'a' like 'A' 'a';
  ?column? 
 ----------
  f
+(1 row)
+
+set names 'utf8mb4' collate 'utf8mb4_general_ci';
+select 'a' like 'A';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'a'::char(10) like 'A';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'a'::varchar(10) like 'A';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'a'::VARCHAR2(10) like 'A';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'a'::NVARCHAR2(10) like 'A';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'a'::text like 'A';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 'a'::clob like 'A';
+ ?column? 
+----------
+ t
 (1 row)
 
 select 100 like 100;
@@ -1892,7 +1937,7 @@ select * from hotel natural inner join price where name like binary 'b/%' escape
 ----+------+-----+------+-------+------+-----------+-------
 (0 rows)
 
-select * from hotel natural inner join price where name not like 'b%';
+select * from hotel natural inner join price where name not like 'b%' order by 1;
  id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
 ----+------------+------------+------------+------------+------+------------+-------
   1 | Alice      | 2022-05-07 | 2022-05-08 | Vienna     |    5 | Vienna     |   500
@@ -1986,11 +2031,11 @@ select avg(cout like '2022%') from hotel group by hotel ;
  1.00000000000000000000
 (2 rows)
 
-select sum(cout like '2022%') from hotel group by hotel ;
- sum 
------
-   2
-   3
+select hotel, sum(cout like '2022%') from hotel group by hotel order by 1;
+   hotel    | sum 
+------------+-----
+ Holiday    |   2
+ Vienna     |   3
 (2 rows)
 
 select count(cout like binary '2022%') from hotel group by hotel ;
@@ -2048,12 +2093,12 @@ create table price(hotelname char(10),price int) with (orientation = column);
 insert into price values
 ('Vienna',500),
 ('Holiday',700);
-select * from hotel natural inner join price where name like 'b%';
+select * from hotel natural inner join price where name like 'b%' order by 1;
  id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
 ----+------------+------------+------------+------------+------+------------+-------
   3 | Bob        | 2022-06-17 | 2022-06-25 | Holiday    |    1 | Vienna     |   500
-  5 | Band       | 2022-03-06 | 2022-03-09 | Vienna     |    3 | Vienna     |   500
   3 | Bob        | 2022-06-17 | 2022-06-25 | Holiday    |    1 | Holiday    |   700
+  5 | Band       | 2022-03-06 | 2022-03-09 | Vienna     |    3 | Vienna     |   500
   5 | Band       | 2022-03-06 | 2022-03-09 | Vienna     |    3 | Holiday    |   700
 (4 rows)
 
@@ -2072,7 +2117,7 @@ select * from hotel natural inner join price where name like binary 'b/%' escape
 ----+------+-----+------+-------+------+-----------+-------
 (0 rows)
 
-select * from hotel natural inner join price where name not like 'b%';
+select * from hotel natural inner join price where name not like 'b%' order by 1;
  id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
 ----+------------+------------+------------+------------+------+------------+-------
   1 | Alice      | 2022-05-07 | 2022-05-08 | Vienna     |    5 | Vienna     |   500
