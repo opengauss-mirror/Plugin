@@ -334,6 +334,11 @@ typedef struct DolphinString
 	bool is_sconst;
 } DolphinString;
 
+typedef struct TypeAttr {
+	int charset;
+	bool binary;
+} TypeAttr;
+
 /* ConstraintAttributeSpec yields an integer bitmask of these flags: */
 #define CAS_NOT_DEFERRABLE			0x01
 #define CAS_DEFERRABLE				0x02
@@ -602,6 +607,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	struct IndexMethodRelationClause *indexmethodrelationclause;
 	struct DolphinString		*dolphinString;
 	struct DolphinIdent			*dolphinIdent;
+	struct TypeAttr* typeattr;
 }
 %type <singletableoption> CreateOption CreateIfNotExistsOption CreateAsOption CreateTableOption
 %type <createtableoptions> CreateOptionList CreateIfNotExistsOptionList CreateAsOptionList
@@ -956,11 +962,12 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <str>		selected_timezone
 
 %type <keyword> character_set
-%type <ival>	charset opt_charset convert_charset default_charset
+%type <ival>	charset convert_charset default_charset
 %type <str>		collate opt_collate default_collate set_names_collate
 %type <charsetcollateopt> CharsetCollate charset_collate optCharsetCollate
+%type <typeattr> opt_charset
 
-%type <boolean> opt_varying opt_timezone opt_no_inherit
+%type <boolean> opt_varying opt_timezone opt_no_inherit opt_bin_mode
 
 %type <ival>	Iconst SignedIconst opt_partitions_num opt_subpartitions_num
 %type <str>		Sconst comment_text notify_payload DolphinColColId 
@@ -1159,7 +1166,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 /* ordinary key words in alphabetical order */
 /* PGXC - added DISTRIBUTE, DIRECT, COORDINATOR, CLEAN,  NODE, BARRIER, SLICE, DATANODE */
 %token <keyword> ABORT_P ABSOLUTE_P ACCESS ACCOUNT ACTION ADD_P ADMIN AFTER
-	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYZE AND ANY APP APPEND ARCHIVE ARRAY AS ASC
+	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYZE AND ANY APP APPEND ARCHIVE ARRAY AS ASC ASCII
         ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOEXTEND_SIZE AUTOMAPPED AUTO_INCREMENT AVG_ROW_LENGTH AGAINST
 
 	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_INTEGER BIT BLANKS
@@ -4534,11 +4541,14 @@ modify_column_cmd:
 						n->def = (Node *) def;
 						/* We only use these three fields of the ColumnDef node */
 						def->typname = $2;
-						def->typname->charset = $3;
+						def->typname->charset = $3->charset;
 						def->collClause = NULL;
 						def->raw_default = NULL;
 						def->update_default = NULL;
 						def->clientLogicColumnRef=NULL;
+						if ($3->binary) {
+							def->columnOptions = list_make1(makeString("binary"));
+						}
 						$$ = (Node *)n;
 					} else {
 #ifdef ENABLE_MULTIPLE_NODES
@@ -4559,7 +4569,11 @@ modify_column_cmd:
 						ColumnDef *def = makeNode(ColumnDef);
 						def->colname = $1;
 						def->typname = $2;
-						def->typname->charset = $3;
+						def->typname->charset = $3->charset;
+						def->columnOptions = $5;
+						if ($3->binary) {
+							def->columnOptions = lappend(def->columnOptions, makeString("binary"));
+						}
 						def->kvtype = ATT_KV_UNDEFINED;
 						def->inhcount = 0;
 						def->is_local = true;
@@ -5477,7 +5491,11 @@ alter_table_cmd:
 					ColumnDef *def = makeNode(ColumnDef);
 					def->colname = $3;
 					def->typname = $4;
-					def->typname->charset = $5;
+					def->typname->charset = $5->charset;
+					def->columnOptions = $7;
+					if ($5->binary) {
+						def->columnOptions = lappend(def->columnOptions, makeString("binary"));
+					}
 					def->kvtype = ATT_KV_UNDEFINED;
 					def->inhcount = 0;
 					def->is_local = true;
@@ -5517,7 +5535,11 @@ alter_table_cmd:
 					ColumnDef *def = makeNode(ColumnDef);
 					def->colname = $4;
 					def->typname = $5;
-					def->typname->charset = $6;
+					def->typname->charset = $6->charset;
+					def->columnOptions = $8;
+					if ($6->binary) {
+						def->columnOptions = lappend(def->columnOptions, makeString("binary"));
+					}
 					def->kvtype = ATT_KV_UNDEFINED;
 					def->inhcount = 0;
 					def->is_local = true;
@@ -9902,7 +9924,7 @@ columnDefForTableElement:	ColIdForTableElement Typename opt_charset KVType ColCm
 					ColumnDef *n = makeNode(ColumnDef);
 					n->colname = $1;
 					n->typname = $2;
-					n->typname->charset = $3;
+					n->typname->charset = $3->charset;
 					n->kvtype = $4;
 					n->inhcount = 0;
 					n->is_local = true;
@@ -9922,6 +9944,10 @@ columnDefForTableElement:	ColIdForTableElement Typename opt_charset KVType ColCm
 						SplitColQualList($7, &n->constraints, &n->collClause, &n->columnOptions,
 										yyscanner);
 					}
+					n->columnOptions = $8;
+					if ($3->binary) {
+						n->columnOptions = lappend(n->columnOptions, makeString("binary"));
+					}
 					$$ = (Node *)n;
 				}
 		;
@@ -9931,7 +9957,7 @@ columnDef:	DolphinColColId Typename opt_charset KVType ColCmprsMode create_gener
 					ColumnDef *n = makeNode(ColumnDef);
 					n->colname = $1;
 					n->typname = $2;
-					n->typname->charset = $3;
+					n->typname->charset = $3->charset;
 					n->kvtype = $4;
 					n->inhcount = 0;
 					n->is_local = true;
@@ -9950,6 +9976,10 @@ columnDef:	DolphinColColId Typename opt_charset KVType ColCmprsMode create_gener
 					} else {
 						SplitColQualList($7, &n->constraints, &n->collClause, &n->columnOptions,
 										yyscanner);
+					}
+					n->columnOptions = $8;
+					if ($3->binary) {
+						n->columnOptions = lappend(n->columnOptions, makeString("binary"));
 					}
 					$$ = (Node *)n;
 				}
@@ -31758,14 +31788,56 @@ convert_charset:
 			}
 		;
 
-opt_charset:
-			charset
+opt_bin_mode:
+			BINARY
 			{
-				$$ = $1;
+				$$ = true;
+			}
+			| /*EMPTY*/ { $$ = false; }
+		;
+
+opt_charset:
+			charset opt_bin_mode
+			{
+				TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+				n->charset = $1;
+				n->binary = $2;
+				$$ = n;
+			}
+			| BINARY
+			{
+				TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+				n->charset = PG_INVALID_ENCODING;
+				n->binary = true;
+				$$ = n;
+			}
+			| BINARY charset
+			{
+				TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+				n->charset = $2;
+				n->binary = true;
+				$$ = n;
+			}
+			| ASCII opt_bin_mode
+			{
+				TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+				n->charset = pg_valid_server_encoding("latin1");
+				n->binary = $2;
+				$$ = n;
+			}
+			| BINARY ASCII
+			{
+				TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+				n->charset = pg_valid_server_encoding("latin1");
+				n->binary = true;
+				$$ = n;
 			}
 			| /*EMPTY*/
 			{
-				$$ = PG_INVALID_ENCODING;
+				TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+				n->charset = PG_INVALID_ENCODING;
+				n->binary = false;
+				$$ = n;
 			}
 		;
 
@@ -37668,6 +37740,7 @@ unreserved_keyword_without_key:
 			| APP
 			| APPEND
 			| ARCHIVE
+			| ASCII
 			| ASSERTION
 			| ASSIGNMENT
 			| AST
