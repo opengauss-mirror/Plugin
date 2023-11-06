@@ -20866,7 +20866,7 @@ static int str_to_int64(char *str, int len, int128 *result, int *from_base_s)
         } else {
             break;  /*illegal character*/
         }
-        if ((num > 9) && (from_base <= num)) {
+        if (from_base <= num) {
             break;   /*param error*/
         }
         sum_128 = sum_128 * from_base + num;

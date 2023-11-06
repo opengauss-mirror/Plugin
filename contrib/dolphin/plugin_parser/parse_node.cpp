@@ -29,6 +29,10 @@
 #include "utils/int8.h"
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/varlena.h"
+#endif
 #include "utils/varbit.h"
 
 static void pcb_error_callback(void* arg);
@@ -529,8 +533,17 @@ Const* make_const(ParseState* pstate, Value* value, int location)
             setup_parser_errposition_callback(&pcbstate, pstate, location);
             val = DirectFunctionCall3(
                 bit_in, CStringGetDatum(strVal(value)), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
-            cancel_parser_errposition_callback(&pcbstate);
+#ifdef DOLPHIN
+            if (SQL_MODE_TREAT_BXCONST_AS_BINARY()) {
+                val = bit_blob(DatumGetVarBitP(val));
+                typid = BINARYOID;
+            } else {
+                typid = BITOID;
+            }
+#else
             typid = BITOID;
+#endif
+            cancel_parser_errposition_callback(&pcbstate);
             typelen = -1;
             typebyval = false;
             break;

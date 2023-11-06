@@ -364,3 +364,14 @@ CREATE OPERATOR pg_catalog.<(leftarg = timestamp with time zone, rightarg = time
 CREATE OPERATOR pg_catalog.>=(leftarg = timestamp with time zone, rightarg = time, procedure = timestamptz_ge_time, COMMUTATOR  = <=, NEGATOR  = <, restrict = scalarltsel, join = scalarltjoinsel);
 
 CREATE OPERATOR pg_catalog.>(leftarg = timestamp with time zone, rightarg = time, procedure = timestamptz_gt_time, COMMUTATOR  = <, NEGATOR  = <=, restrict = scalarltsel, join = scalarltjoinsel);
+
+-- Make the result of oct(bit) and conv(bit) identical to Mysql
+DROP FUNCTION IF EXISTS pg_catalog.conv(bit, int4, int4) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.conv(bit, int4, int4) 
+RETURNS text AS $$ SELECT pg_catalog.conv($1::int8, 10, $3) $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.oct(bit);
+
+CREATE OR REPLACE FUNCTION pg_catalog.oct(t1 bit)
+RETURNS text AS $$ SELECT pg_catalog.conv(t1, 10, 8) $$ LANGUAGE SQL;

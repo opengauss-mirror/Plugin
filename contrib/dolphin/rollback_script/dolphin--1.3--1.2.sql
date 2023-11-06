@@ -177,3 +177,15 @@ DROP FUNCTION IF EXISTS pg_catalog.timestamptz_le_time (timestamp with time zone
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_lt_time (timestamp with time zone, time);
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_ge_time (timestamp with time zone, time);
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_gt_time (timestamp with time zone, time);
+
+-- Make the result of oct(bit) and conv(bit) identical to Mysql
+DROP FUNCTION IF EXISTS pg_catalog.conv(bit, int4, int4) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.oct(bit);
+CREATE OR REPLACE FUNCTION pg_catalog.oct(bit) RETURNS text AS
+$$
+BEGIN
+    RETURN 0;
+END;
+$$
+LANGUAGE plpgsql;

@@ -58,6 +58,7 @@
 #include "plugin_utils/timestamp.h"
 #include "plugin_utils/date.h"
 #include "libpq/libpq-int.h"
+#include "plugin_utils/varlena.h"
 
 #define BETWEEN_AND_ARGC 3
 #define SUBSTR_WITH_LEN_OFFSET 2

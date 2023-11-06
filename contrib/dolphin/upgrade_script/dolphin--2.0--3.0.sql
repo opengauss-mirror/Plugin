@@ -67,17 +67,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(anyenum) returns blob LANGUAG
 CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(anyset) returns blob LANGUAGE SQL volatile as 'select random_bytes($1::int4)';
 CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(json) returns blob LANGUAGE SQL volatile as 'select random_bytes($1::int4)';
 
--- Make the result of oct(bit) and conv(bit) identical to Mysql
-DROP FUNCTION IF EXISTS pg_catalog.conv(bit, int4, int4) CASCADE;
-
-CREATE OR REPLACE FUNCTION pg_catalog.conv(bit, int4, int4) 
-RETURNS text AS $$ SELECT pg_catalog.conv($1::int8, 10, $3) $$ LANGUAGE SQL;
-
-DROP FUNCTION IF EXISTS pg_catalog.oct(bit);
-
-CREATE OR REPLACE FUNCTION pg_catalog.oct(t1 bit)
-RETURNS text AS $$ SELECT pg_catalog.conv(t1, 10, 8) $$ LANGUAGE SQL;
-
 -- Supplement function dayofmonth to make the function dayofmonth() the same as function day()
 DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(text);
 DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
