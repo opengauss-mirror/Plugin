@@ -31,7 +31,10 @@
 #include "utils/syscache.h"
 #ifdef DOLPHIN
 #include "plugin_utils/varbit.h"
+#include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/varlena.h"
 extern "C" Datum bit_bin_in(PG_FUNCTION_ARGS);
+extern "C" Datum bittobinary(PG_FUNCTION_ARGS);
 #else
 #include "utils/varbit.h"
 #endif
@@ -540,12 +543,18 @@ Const* make_const(ParseState* pstate, Value* value, int location)
 #ifdef DOLPHIN
             val = DirectFunctionCall3(
                 bit_bin_in, CStringGetDatum(strVal(value)), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+            if (SQL_MODE_TREAT_BXCONST_AS_BINARY()) {
+                val = bit_blob(DatumGetVarBitP(val));
+                typid = BINARYOID;
+            } else {
+                typid = BITOID;
+            }
 #else
             val = DirectFunctionCall3(
                 bit_in, CStringGetDatum(strVal(value)), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+            typid = BITOID;
 #endif
             cancel_parser_errposition_callback(&pcbstate);
-            typid = BITOID;
             typelen = -1;
             typebyval = false;
             break;

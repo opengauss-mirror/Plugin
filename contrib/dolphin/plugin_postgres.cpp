@@ -101,7 +101,8 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
     {"pad_char_to_full_length", OPT_SQL_MODE_PAD_CHAR_TO_FULL_LENGTH},
     {"block_return_multi_results", OPT_SQL_MODE_BLOCK_RETURN_MULTI_RESULTS},
     {"auto_recompile_function", OPT_SQL_MODE_ATUO_RECOMPILE_FUNCTION},
-    {"error_for_division_by_zero", OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO}
+    {"error_for_division_by_zero", OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO},
+    {"treat_bxconst_as_binary", OPT_SQL_MODE_TREAT_BXCONST_AS_BINARY},
 };
 
 #define DOLPHIN_TYPES_NUM 12

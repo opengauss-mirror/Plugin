@@ -86,3 +86,14 @@ mediumblob
 CREATE OR REPLACE FUNCTION pg_catalog.longblob_rawout (
 longblob
 ) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
+
+-- Make the result of oct(bit) and conv(bit) identical to Mysql
+DROP FUNCTION IF EXISTS pg_catalog.conv(bit, int4, int4) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.oct(bit);
+CREATE OR REPLACE FUNCTION pg_catalog.oct(bit) RETURNS text AS
+$$
+BEGIN
+    RETURN 0;
+END;
+$$

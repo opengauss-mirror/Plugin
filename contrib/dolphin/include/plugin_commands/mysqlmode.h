@@ -20,7 +20,8 @@
 #define OPT_SQL_MODE_BLOCK_RETURN_MULTI_RESULTS (1 << 7)
 #define OPT_SQL_MODE_ATUO_RECOMPILE_FUNCTION (1 << 8)
 #define OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO (1 << 9)
-#define OPT_SQL_MODE_MAX 10
+#define OPT_SQL_MODE_TREAT_BXCONST_AS_BINARY (1<<10)
+#define OPT_SQL_MODE_MAX 11
 #define SQL_MODE_STRICT() ((GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && !CMD_TAG_IS_SELECT())
 #define SQL_MODE_STRICT_ON_SELECT() ((GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && CMD_TAG_IS_SELECT())
 #define SQL_MODE_NOT_STRICT_ON_INSERT() \
@@ -37,6 +38,7 @@
 #define SQL_MODE_ATUO_RECOMPILE_FUNCTION() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_ATUO_RECOMPILE_FUNCTION)
 #define SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO() (GetSessionContext()->sqlModeFlags & \
     OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO)
+#define SQL_MODE_TREAT_BXCONST_AS_BINARY() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_TREAT_BXCONST_AS_BINARY)
 
 extern int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool can_ignore, bool isUnsigned = false);
 extern void CheckSpaceAndDotInternal(char& digitAfterDot, const char** ptr,

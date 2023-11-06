@@ -155,3 +155,14 @@ mediumblob
 CREATE OR REPLACE FUNCTION pg_catalog.longblob_rawout (
 longblob
 ) RETURNS cstring LANGUAGE  C IMMUTABLE STRICT as '$libdir/dolphin',  'dolphin_blob_rawout';
+
+-- Make the result of oct(bit) and conv(bit) identical to Mysql
+DROP FUNCTION IF EXISTS pg_catalog.conv(bit, int4, int4) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.conv(bit, int4, int4) 
+RETURNS text AS $$ SELECT pg_catalog.conv($1::int8, 10, $3) $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.oct(bit);
+
+CREATE OR REPLACE FUNCTION pg_catalog.oct(t1 bit)
+RETURNS text AS $$ SELECT pg_catalog.conv(t1, 10, 8) $$ LANGUAGE SQL;
