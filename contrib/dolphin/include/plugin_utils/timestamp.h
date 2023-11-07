@@ -148,6 +148,12 @@ typedef enum {
 Datum timestamptz_internal(PG_FUNCTION_ARGS, bool is_timestamptz_sconst, TimeErrorType* time_error_type);
 
 extern "C" DLL_PUBLIC Datum int64_b_format_datetime(PG_FUNCTION_ARGS);
+
+static inline bool non_zero_date(const pg_tm *ltime)
+{
+    return ltime->tm_year || ltime->tm_mon || ltime->tm_mday;
+}
+
 #endif
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);
