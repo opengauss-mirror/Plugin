@@ -486,6 +486,24 @@ show create view test_get_def.tt19v;
        | SELECT ('foo'::text = ANY (ARRAY['abc'::text, 'def'::text, 'foo'::text])) AS c1, ('foo'::text = ANY ((SELECT ARRAY['abc'::text, 'def'::text, 'foo'::text] AS `array`)::text[])) AS c2; |                      | 
 (1 row)
 
+create algorithm = merge view with_c_check_option_view as select * from generated_test where a < 10 with cascaded check option;
+create algorithm = merge view with_l_check_option_view as select * from generated_test where a < 10 with local check option;
+show create view with_c_check_option_view;
+           View           |                                                  Create View                                                   | character_set_client | collation_connection 
+--------------------------+----------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ with_c_check_option_view | CREATE OR REPLACE DEFINER = test_showcreate SQL SECURITY DEFINER VIEW test_get_def.with_c_check_option_view AS+| UTF8                 | en_US.UTF-8
+                          | SELECT  * FROM generated_test WHERE (generated_test.a < 10) WITH CASCADED CHECK OPTION;                        |                      | 
+(1 row)
+
+show create view with_l_check_option_view;
+           View           |                                                  Create View                                                   | character_set_client | collation_connection 
+--------------------------+----------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ with_l_check_option_view | CREATE OR REPLACE DEFINER = test_showcreate SQL SECURITY DEFINER VIEW test_get_def.with_l_check_option_view AS+| UTF8                 | en_US.UTF-8
+                          | SELECT  * FROM generated_test WHERE (generated_test.a < 10) WITH LOCAL CHECK OPTION;                           |                      | 
+(1 row)
+
+drop view with_c_check_option_view;
+drop view with_l_check_option_view;
 -- table view exchange show create test
 show create view generated_test;
 ERROR:  'test_get_def.generated_test' is not VIEW
@@ -615,7 +633,7 @@ show create table my_property_normal;
 show create view my_property_secure;
         View        |                                              Create View                                               | character_set_client | collation_connection 
 --------------------+--------------------------------------------------------------------------------------------------------+----------------------+----------------------
- my_property_secure | CREATE OR REPLACE DEFINER = test_showcreate SQL SECUIRTY DEFINER VIEW test_get_def.my_property_secure +| UTF8                 | en_US.UTF-8
+ my_property_secure | CREATE OR REPLACE DEFINER = test_showcreate SQL SECURITY DEFINER VIEW test_get_def.my_property_secure +| UTF8                 | en_US.UTF-8
                     |  WITH (security_barrier=true) AS                                                                      +|                      | 
                     | SELECT  * FROM customer WHERE (customer.name = (`current_user`())::text);                              |                      | 
 (1 row)
@@ -623,7 +641,7 @@ show create view my_property_secure;
 show create table my_property_secure;
         View        |                                              Create View                                               | character_set_client | collation_connection 
 --------------------+--------------------------------------------------------------------------------------------------------+----------------------+----------------------
- my_property_secure | CREATE OR REPLACE DEFINER = test_showcreate SQL SECUIRTY DEFINER VIEW test_get_def.my_property_secure +| UTF8                 | en_US.UTF-8
+ my_property_secure | CREATE OR REPLACE DEFINER = test_showcreate SQL SECURITY DEFINER VIEW test_get_def.my_property_secure +| UTF8                 | en_US.UTF-8
                     |  WITH (security_barrier=true) AS                                                                      +|                      | 
                     | SELECT  * FROM customer WHERE (customer.name = (`current_user`())::text);                              |                      | 
 (1 row)

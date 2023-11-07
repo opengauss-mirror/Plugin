@@ -163,6 +163,14 @@ select 'foo'::text = any(array['abc','def','foo']::text[]) c1,
        'foo'::text = any((select array['abc','def','foo']::text[])::text[]) c2;
 show create view tt19v;
 show create view test_get_def.tt19v;
+
+create algorithm = merge view with_c_check_option_view as select * from generated_test where a < 10 with cascaded check option;
+create algorithm = merge view with_l_check_option_view as select * from generated_test where a < 10 with local check option;
+show create view with_c_check_option_view;
+show create view with_l_check_option_view;
+drop view with_c_check_option_view;
+drop view with_l_check_option_view;
+
 -- table view exchange show create test
 show create view generated_test;
 show create table tt19v;
