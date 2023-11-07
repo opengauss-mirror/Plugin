@@ -930,6 +930,16 @@ select cast('2022-05-05 20:59' as date);
  2022-05-05
 (1 row)
 
+select timestamp'2022-05';
+ERROR:  invalid input syntax for type timestamp: "2022-05"
+CONTEXT:  referenced column: timestamp
+select timestamp'2022-15-05 16:20:10';
+ERROR:  date/time field value out of range: "2022-15-05 16:20:10"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: timestamp
+select timestamp'2022-05-05 16:60:10';
+ERROR:  date/time field value out of range: "2022-05-05 16:60:10"
+CONTEXT:  referenced column: timestamp
 reset dolphin.sql_mode;
 drop schema b_time_funcs cascade;
 NOTICE:  drop cascades to table func_test
