@@ -1649,7 +1649,8 @@ static int FigureColnameInternal(Node* node, char** name)
 #ifdef DOLPHIN
             /* to make the last displayed column name as the type name instead of the function name. */
             if (strcmp(strVal(llast(((FuncCall*)node)->funcname)), "time_cast") == 0 ||
-                strcmp(strVal(llast(((FuncCall*)node)->funcname)), "date_cast") == 0) {
+                strcmp(strVal(llast(((FuncCall*)node)->funcname)), "date_cast") == 0 ||
+                strcmp(strVal(llast(((FuncCall*)node)->funcname)), "timestamp_cast") == 0) {
                 return 1;
             }
 #endif
