@@ -485,7 +485,7 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, bool is_date_sconst)
     /*
      * this case is used for timestamp format is specified.
      */
-    if (4 == PG_NARGS()) {
+    if (4 == PG_NARGS() && !is_date_sconst) {
         timestamp_fmt = PG_GETARG_CSTRING(3);
         if (timestamp_fmt == NULL) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT), errmsg("specified timestamp format is null")));
