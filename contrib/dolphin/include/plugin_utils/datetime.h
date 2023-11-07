@@ -123,6 +123,9 @@ extern bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type
 extern void DateTimeParseErrorWithFlag(int dterr, const char* str, const char* datatype, bool can_ignore = false,
                                        bool is_error = false);
 extern void DateTimeParseErrorInternal(int dterr, const char* str, const char* datatype, int level);
+
+bool CheckDateRange(const pg_tm *tm, bool not_zero_date, time_flags flags);
+
 #endif
 extern bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano);
 extern bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec, int* tzp = NULL, int* invalid_tz = NULL);

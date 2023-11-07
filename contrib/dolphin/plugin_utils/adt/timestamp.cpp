@@ -9864,6 +9864,22 @@ static inline Datum make_text_result(int return_type ,struct pg_tm *tm, fsec_t f
     return CStringGetTextDatum(buf);
 }
 
+time_flags sql_mode_to_time_flags()
+{
+    if (SQL_MODE_NO_ZERO_DATE()) {
+        return TIME_NO_ZERO_IN_DATE;
+    } else {
+        return TIME_FUZZY_DATE;
+    }
+}
+
+static bool date_should_be_null(int target_type, const pg_tm* time, time_flags fuzzy_date)
+{
+    return (fuzzy_date & TIME_NO_ZERO_IN_DATE) != 0 &&
+        (target_type != DTK_TIME) &&
+        (time->tm_year == 0 || time->tm_mon == 0 || time->tm_mday == 0);
+}
+
 /**
  * compatibility of str_to_date
 */
@@ -10139,7 +10155,8 @@ Datum str_to_date(PG_FUNCTION_ARGS)
 
     // a simple quick range check
     if (tm->tm_mon > MONTHS_PER_YEAR || tm->tm_mday > DAYNUM_BIGMON ||
-        tm->tm_hour >= HOURS_PER_DAY || tm->tm_min >= MINS_PER_HOUR || tm->tm_sec >= SECS_PER_MINUTE)
+        tm->tm_hour >= HOURS_PER_DAY || tm->tm_min >= MINS_PER_HOUR || tm->tm_sec >= SECS_PER_MINUTE ||
+        !CheckDateRange(tm, non_zero_date(tm), sql_mode_to_time_flags()))
         goto err;
     
     if (return_type == DTK_TIME && tm->tm_mday) {
@@ -10147,9 +10164,9 @@ Datum str_to_date(PG_FUNCTION_ARGS)
         tm->tm_mday = 0;
     }
 
-    // range check
-    if (!final_range_check(return_type, tm, &fsec))
+    if (date_should_be_null(return_type, tm, sql_mode_to_time_flags())) {
         goto err;
+    }
 
     // make the text result
     result = make_text_result(return_type, tm, fsec, buf);
