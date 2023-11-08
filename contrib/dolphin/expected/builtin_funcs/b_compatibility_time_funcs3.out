@@ -547,8 +547,6 @@ CONTEXT:  referenced column: time
 select cast('23-65' as time);
 WARNING:  time zone displacement out of range: "23-65"
 CONTEXT:  referenced column: time
-WARNING:  time zone displacement out of range: "23-65"
-CONTEXT:  referenced column: time
    time   
 ----------
  00:00:23
@@ -577,8 +575,6 @@ select cast('0:0:0' as time);
 select cast('-1:-1:-1' as time);
 WARNING:  time zone displacement out of range: "-1:-1:-1"
 CONTEXT:  referenced column: time
-WARNING:  time zone displacement out of range: "-1:-1:-1"
-CONTEXT:  referenced column: time
    time    
 -----------
  -00:00:01
@@ -598,6 +594,70 @@ CONTEXT:  referenced column: addtime
  addtime  
 ----------
  00:00:24
+(1 row)
+
+select time('23:65:66');
+WARNING:  date/time field value out of range: "23:65:66"
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time('23:65');
+WARNING:  date/time field value out of range: "23:65"
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time('23-65');
+WARNING:  time zone displacement out of range: "23-65"
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:00:23
+(1 row)
+
+select time('23:59:59.8888');
+     time      
+---------------
+ 23:59:59.8888
+(1 row)
+
+select time('23:65:66.8888');
+WARNING:  date/time field value out of range: "23:65:66.8888"
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time('0:0:0');
+   time   
+----------
+ 00:00:00
+(1 row)
+
+select time('-1:-1:-1');
+WARNING:  time zone displacement out of range: "-1:-1:-1"
+CONTEXT:  referenced column: time
+   time    
+-----------
+ -00:00:01
+(1 row)
+
+select time('23:55:56.1234');
+     time      
+---------------
+ 23:55:56.1234
 (1 row)
 
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
@@ -740,8 +800,6 @@ CONTEXT:  referenced column: time
 select cast('23-65' as time);
 WARNING:  time zone displacement out of range: "23-65"
 CONTEXT:  referenced column: time
-WARNING:  time zone displacement out of range: "23-65"
-CONTEXT:  referenced column: time
    time   
 ----------
  00:00:23
@@ -768,8 +826,6 @@ select cast('0:0:0' as time);
 (1 row)
 
 select cast('-1:-1:-1' as time);
-WARNING:  time zone displacement out of range: "-1:-1:-1"
-CONTEXT:  referenced column: time
 WARNING:  time zone displacement out of range: "-1:-1:-1"
 CONTEXT:  referenced column: time
    time    
@@ -1376,6 +1432,65 @@ SELECT STR_TO_DATE('0000-00-00','%Y-%m-%d');
  str_to_date 
 -------------
  0000-00-00
+(1 row)
+
+set dolphin.b_compatibility_mode = false;
+select time('23:65:66');
+WARNING:  date/time field value out of range: "23:65:66"
+CONTEXT:  referenced column: time
+   time   
+----------
+ 24:06:06
+(1 row)
+
+select time('23:65');
+WARNING:  date/time field value out of range: "23:65"
+CONTEXT:  referenced column: time
+   time   
+----------
+ 24:05:00
+(1 row)
+
+select time('23-65');
+WARNING:  time zone displacement out of range: "23-65"
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:00:23
+(1 row)
+
+select time('23:59:59.8888');
+     time      
+---------------
+ 23:59:59.8888
+(1 row)
+
+select time('23:65:66.8888');
+WARNING:  date/time field value out of range: "23:65:66.8888"
+CONTEXT:  referenced column: time
+     time      
+---------------
+ 24:06:06.8888
+(1 row)
+
+select time('0:0:0');
+   time   
+----------
+ 00:00:00
+(1 row)
+
+select time('-1:-1:-1');
+WARNING:  time zone displacement out of range: "-1:-1:-1"
+CONTEXT:  referenced column: time
+   time    
+-----------
+ -00:00:01
+(1 row)
+
+select time('23:55:56.1234');
+     time      
+---------------
+ 23:55:56.1234
 (1 row)
 
 drop schema b_time_funcs3 cascade;
