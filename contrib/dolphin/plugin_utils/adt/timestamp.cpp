@@ -6882,7 +6882,8 @@ void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime)
  * Error will be reported if the above range is exceeded.
  * @return: Actual time type oid. 
  */
-Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeADT *time)
+Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeADT *time,
+    bool can_ignore, bool* result_isnull)
 {
     size_t len = strlen(str);
     const char *start;
@@ -6907,7 +6908,7 @@ Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeA
     /* Not a timestamp. Try to convert str to time*/
     *time = DatumGetTimeADT(
         DirectFunctionCall3(time_in, CStringGetDatum(start), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
-    check_b_format_time_range_with_ereport(*time);
+    check_b_format_time_range_with_ereport(*time, can_ignore, result_isnull);
     return TIMEOID;
 }
 
@@ -6996,12 +6997,13 @@ Oid convert_unknown_to_datetime_time(const char* str, Timestamp *datetime, TimeA
  * Error will be reported if the above range is exceeded.
  * @return: Actual time type oid. 
  */
-Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time)
+Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time,
+    bool can_ignore, bool* result_isnull)
 {
     switch (valuetypid) {
         case UNKNOWNOID:
         case CSTRINGOID: {
-            return convert_cstring_to_datetime_time(DatumGetCString(value), datetime, time);
+            return convert_cstring_to_datetime_time(DatumGetCString(value), datetime, time, can_ignore, result_isnull);
         }
         case CLOBOID:
         case NVARCHAR2OID:
@@ -7009,7 +7011,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
         case VARCHAROID:
         case TEXTOID: {
             char *str = TextDatumGetCString(value);
-            return convert_cstring_to_datetime_time(str, datetime, time);
+            return convert_cstring_to_datetime_time(str, datetime, time, can_ignore, result_isnull);
         }
         case TIMESTAMPOID:
         case TIMESTAMPTZOID:

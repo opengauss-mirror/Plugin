@@ -242,6 +242,15 @@ select cast('0:0:0' as time);
 select cast('-1:-1:-1' as time);
 select cast('23:55:56.1234' as time);
 select addtime('12aaa43', '12aa43');
+select time('23:65:66');
+select time('23:65');
+select time('23-65');
+select time('23:59:59.8888');
+select time('23:65:66.8888');
+select time('0:0:0');
+select time('-1:-1:-1');
+select time('23:55:56.1234');
+
 
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test1 values('23:65:66');
@@ -375,6 +384,17 @@ SELECT STR_TO_DATE('31/11/22', '%d/%m/%Y');
 SELECT STR_TO_DATE('2023-02-31','%Y-%m-%d');
 SELECT STR_TO_DATE('2004.09.12 10:61:59','%Y.%m.%d %T');
 SELECT STR_TO_DATE('0000-00-00','%Y-%m-%d');
+
+
+set dolphin.b_compatibility_mode = false;
+select time('23:65:66');
+select time('23:65');
+select time('23-65');
+select time('23:59:59.8888');
+select time('23:65:66.8888');
+select time('0:0:0');
+select time('-1:-1:-1');
+select time('23:55:56.1234');
 
 drop schema b_time_funcs3 cascade;
 reset current_schema;

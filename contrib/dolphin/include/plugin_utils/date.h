@@ -28,6 +28,7 @@
 #define B_FORMAT_DATE_NUMBER_MIN_LEN 5
 #define B_FORMAT_TIME_BOUND INT64CONST(839)
 #define B_FORMAT_TIME_MAX_VALUE INT64CONST(B_FORMAT_TIME_BOUND * INT64CONST(3600000000) - 1000000)
+#define B_FORMAT_TIME_INVALID_VALUE_TAG (-B_FORMAT_TIME_MAX_VALUE-1)
 #define B_FORMAT_TIME_NUMBER_MAX_LEN 7
 #define B_FORMAT_DATE_INT_MIN 101
 #define B_FORMAT_MAX_DATE 99991231
@@ -76,7 +77,7 @@ extern void convert_to_time(Datum value, Oid valuetypid, TimeADT *time);
 extern int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
 extern int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 extern bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, int &tm_type, bool &warnings, bool *null_func_result);
-extern void check_b_format_time_range_with_ereport(TimeADT &time);
+extern void check_b_format_time_range_with_ereport(TimeADT &time, bool can_ignore = false, bool* result_isnull = NULL);
 extern void check_b_format_date_range_with_ereport(DateADT &date);
 extern Oid convert_to_datetime_date(Datum value, Oid valuetypid, Timestamp *datetime, DateADT *date);
 extern void adjust_time_range(pg_tm *tm, fsec_t &fsec, bool &warnings);
@@ -104,7 +105,7 @@ typedef enum
 }TimeCastType;
 
 
-extern TimeErrorType time_internal(PG_FUNCTION_ARGS, char* str, int is_time_sconst, Datum* datum_internal);
+extern Datum time_internal(PG_FUNCTION_ARGS, char* str, int is_time_sconst, TimeErrorType* time_error_type);
 char* parser_function_input(Datum txt, Oid oid);
 
 #endif
