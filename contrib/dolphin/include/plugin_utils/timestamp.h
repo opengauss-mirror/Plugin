@@ -119,7 +119,8 @@ extern bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result, b
 extern bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result, bool is_add_func = false);
 
 #ifdef DOLPHIN
-Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time);
+Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time,
+    bool can_ignore = false, bool* result_isnull = NULL);
 extern void check_b_format_datetime_range_with_ereport(Timestamp &datetime);
 extern void datetime_in_with_flag_internal(const char *str, struct pg_tm *tm, fsec_t* fsec, unsigned int date_flag);
 extern bool MaybeRound(struct pg_tm *tm, fsec_t *fsec);

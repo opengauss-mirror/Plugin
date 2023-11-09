@@ -1666,9 +1666,12 @@ Datum abstime_date(PG_FUNCTION_ARGS)
 Datum time_in(PG_FUNCTION_ARGS)
 {
 #ifdef DOLPHIN
-    Datum datum_internal;
     char* input_str = PG_GETARG_CSTRING(0);
-    time_internal(fcinfo, input_str, TIME_IN, &datum_internal);
+    TimeErrorType time_error_type = TIME_CORRECT;
+    Datum datum_internal = time_internal(fcinfo, input_str, TIME_IN, &time_error_type);
+    if (time_error_type == TIME_INCORRECT && ENABLE_B_CMPT_MODE) {
+        PG_RETURN_TIMEADT(B_FORMAT_TIME_INVALID_VALUE_TAG);
+    }
     return datum_internal;
 }
 
@@ -1678,10 +1681,9 @@ Datum time_in(PG_FUNCTION_ARGS)
  */
 Datum time_cast(PG_FUNCTION_ARGS)
 {
-    Datum datum_internal;
     char* input_str = PG_GETARG_CSTRING(0);
-    time_internal(fcinfo, input_str, TIME_CAST, &datum_internal);
-    return datum_internal;
+    TimeErrorType time_error_type = TIME_CORRECT;
+    return time_internal(fcinfo, input_str, TIME_CAST, &time_error_type);
 }
 
 
@@ -1707,15 +1709,16 @@ char* parser_function_input(Datum txt, Oid oid)
  */
 Datum text_time_explicit(PG_FUNCTION_ARGS)
 {
-    Datum datum_internal;
     char* input_str = parser_function_input(PG_GETARG_DATUM(0), fcinfo->argTypes[0]);
-    if (time_internal(fcinfo, input_str, TEXT_TIME_EXPLICIT, &datum_internal) == TIME_INCORRECT) {
+    TimeErrorType time_error_type = TIME_CORRECT;
+    Datum datum_internal = time_internal(fcinfo, input_str, TEXT_TIME_EXPLICIT, &time_error_type);
+    if (time_error_type == TIME_INCORRECT) {
         PG_RETURN_NULL();
     }
     return datum_internal;
 }
 
-TimeErrorType time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Datum* datum_internal)
+Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type)
 {
 #ifdef NOT_USED
     Oid typelem = PG_GETARG_OID(1);
@@ -1762,8 +1765,8 @@ TimeErrorType time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Dat
             char *adjusted = adjust_b_format_time(str, &timeSign, &D, &hasD);
             /* check if empty */
             if (strlen(adjusted) == 0) {
-                *datum_internal = TimeADTGetDatum(0);
-                return TIME_INCORRECT;
+                *time_error_type = TIME_INCORRECT;
+                PG_RETURN_TIMEADT(0);
             }
             dterr = ParseDateTime(adjusted, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
             if (dterr == 0) {
@@ -1782,37 +1785,36 @@ TimeErrorType time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Dat
                      */
                     char* field_str = field[0];
                     if (field_str == NULL) {
-                        *datum_internal = TimeADTGetDatum(0);
-                        return TIME_INCORRECT;
+                        *time_error_type = TIME_INCORRECT;
+                        PG_RETURN_TIMEADT(0);
                     }
                     if (*field_str == '+') {
                         field_str++;
                     }
                     int trunc_val = getStartingDigits(field_str);
                     if (trunc_val < 0 || trunc_val >= 60) {
-                        *datum_internal = TimeADTGetDatum(0);
-                        return TIME_INCORRECT;
+                        *time_error_type = TIME_INCORRECT;
+                        PG_RETURN_TIMEADT(0);
                     }
-                    *datum_internal = TimeADTGetDatum(trunc_val * TIME_MS_TO_S_RADIX * TIME_MS_TO_S_RADIX);
-                    return TIME_INCORRECT;
+                    *time_error_type = TIME_INCORRECT;
+                    PG_RETURN_TIMEADT(trunc_val * TIME_MS_TO_S_RADIX * TIME_MS_TO_S_RADIX);
                 } else if (SQL_MODE_NOT_STRICT_ON_INSERT()) {
                     /* for case insert unavailable data, need to set the unavailable data to 0 to compatible with M */
                     DateTimeParseError(dterr, str, "time", true);
                     if (IsResetUnavailableDataTime(dterr, !SQL_MODE_STRICT() && !CMD_TAG_IS_SELECT())) {
-                        *datum_internal = TimeADTGetDatum(0);
-                        return TIME_INCORRECT;
+                        *time_error_type = TIME_IGNORED_INCORRECT;
+                        PG_RETURN_TIMEADT(0);
                     } else {
                         tm = &tt; // switch to M*'s parsing result
                     }
                 } else {
-                    if (time_cast_type == TEXT_TIME_EXPLICIT) {
+                    if (time_cast_type == TEXT_TIME_EXPLICIT || time_cast_type == TIME_IN) {
                         DateTimeParseError(dterr, str, "time", true);
                         tm = &tt; // switch to M*'s parsing result
                         if (dterr != DTERR_TZDISP_OVERFLOW) {
-                            return TIME_INCORRECT;
+                            *time_error_type = TIME_INCORRECT;
                         }
-                    }
-                    if (time_cast_type == TIME_CAST) {
+                    } else if (time_cast_type == TIME_CAST) {
                         DateTimeParseErrorWithFlag(dterr, str, "time", fcinfo->can_ignore, !SQL_MODE_STRICT());
                         tm = &tt; // switch to M*'s parsing result
                     } else {
@@ -1830,9 +1832,7 @@ TimeErrorType time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Dat
     tm2time(tm, fsec, &result);
     AdjustTimeForTypmod(&result, typmod);
     result *= timeSign;
-    *datum_internal = TimeADTGetDatum(result);
-    return TIME_CORRECT;
-
+    PG_RETURN_TIMEADT(result);
 #else
 
     char* str = PG_GETARG_CSTRING(0);
@@ -4151,13 +4151,18 @@ Datum makedate(PG_FUNCTION_ARGS)
 /*
  * Check whether the TimeADT value is within the specified range: 
  * [-838:59:59, 838:59:59] (the time range is from MySQL).
- * Error will be reported if the TimeADT value exceeds the range.
+ * for case select time('xxx') : should return null if the TimeADT value exceeds the range
+ * and for other case : Error will be reported if the TimeADT value exceeds the range.
  */
-void check_b_format_time_range_with_ereport(TimeADT &time)
+void check_b_format_time_range_with_ereport(TimeADT &time, bool can_ignore, bool* result_isnull)
 {
+    int level = (can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
     if (time < -B_FORMAT_TIME_MAX_VALUE || time > B_FORMAT_TIME_MAX_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), 
+        ereport(level, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), 
                         errmsg("time field value out of range")));
+        if (result_isnull != NULL) {
+            *result_isnull = true;
+        }
     }
 }
 
@@ -4937,8 +4942,14 @@ Datum time_mysql(PG_FUNCTION_ARGS)
     Timestamp datetime;
     Oid val_type;
 
+    bool result_isnull = false;
     val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
-    val_type = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type, &datetime, &time);
+    val_type = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type, &datetime, &time,
+                                        fcinfo->can_ignore, &result_isnull);
+
+    if (result_isnull) {
+        PG_RETURN_NULL();
+    }
 
     switch (val_type) {
         case TIMEOID: {
