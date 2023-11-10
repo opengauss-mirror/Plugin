@@ -108,5 +108,27 @@ SELECT * FROM t0 WHERE t0.c1 is true order by 1,2;
 SELECT * FROM t0 WHERE t0.c1 is false order by 1,2;
 drop table t0;
 
+--test for set
+drop table if exists set_tab;
+create table set_tab (
+  c1 set('1','2','3','4','5'),
+  c2 set('a', 'b', 'c', 'd', 'e')
+);
+insert into set_tab values('1,2','a,b');
+insert into set_tab values('3,4','c,d');
+
+create or replace function gettypeid(tname text) returns INT4 as
+$$
+begin
+    return oid from pg_type where typname = :tname;
+end;
+$$ language plpgsql;
+
+select varlenatoset(c1,gettypeid('set_tab_c1_set')) from set_tab order by 1;
+select varlenatoset(c2,gettypeid('set_tab_c2_set')) from set_tab order by 1;
+
+drop function gettypeid;
+drop table set_tab;
+
 drop schema b_datatype_test cascade;
 reset current_schema;
