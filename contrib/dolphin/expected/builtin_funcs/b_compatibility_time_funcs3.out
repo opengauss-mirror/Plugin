@@ -547,8 +547,6 @@ CONTEXT:  referenced column: time
 select cast('23-65' as time);
 WARNING:  time zone displacement out of range: "23-65"
 CONTEXT:  referenced column: time
-WARNING:  time zone displacement out of range: "23-65"
-CONTEXT:  referenced column: time
    time   
 ----------
  00:00:23
@@ -577,8 +575,6 @@ select cast('0:0:0' as time);
 select cast('-1:-1:-1' as time);
 WARNING:  time zone displacement out of range: "-1:-1:-1"
 CONTEXT:  referenced column: time
-WARNING:  time zone displacement out of range: "-1:-1:-1"
-CONTEXT:  referenced column: time
    time    
 -----------
  -00:00:01
@@ -598,6 +594,70 @@ CONTEXT:  referenced column: addtime
  addtime  
 ----------
  00:00:24
+(1 row)
+
+select time('23:65:66');
+WARNING:  date/time field value out of range: "23:65:66"
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time('23:65');
+WARNING:  date/time field value out of range: "23:65"
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time('23-65');
+WARNING:  time zone displacement out of range: "23-65"
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:00:23
+(1 row)
+
+select time('23:59:59.8888');
+     time      
+---------------
+ 23:59:59.8888
+(1 row)
+
+select time('23:65:66.8888');
+WARNING:  date/time field value out of range: "23:65:66.8888"
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time('0:0:0');
+   time   
+----------
+ 00:00:00
+(1 row)
+
+select time('-1:-1:-1');
+WARNING:  time zone displacement out of range: "-1:-1:-1"
+CONTEXT:  referenced column: time
+   time    
+-----------
+ -00:00:01
+(1 row)
+
+select time('23:55:56.1234');
+     time      
+---------------
+ 23:55:56.1234
 (1 row)
 
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
@@ -740,8 +800,6 @@ CONTEXT:  referenced column: time
 select cast('23-65' as time);
 WARNING:  time zone displacement out of range: "23-65"
 CONTEXT:  referenced column: time
-WARNING:  time zone displacement out of range: "23-65"
-CONTEXT:  referenced column: time
    time   
 ----------
  00:00:23
@@ -770,8 +828,6 @@ select cast('0:0:0' as time);
 select cast('-1:-1:-1' as time);
 WARNING:  time zone displacement out of range: "-1:-1:-1"
 CONTEXT:  referenced column: time
-WARNING:  time zone displacement out of range: "-1:-1:-1"
-CONTEXT:  referenced column: time
    time    
 -----------
  -00:00:01
@@ -791,6 +847,650 @@ CONTEXT:  referenced column: addtime
  addtime  
 ----------
  00:00:24
+(1 row)
+
+-- str_to_date
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+select str_to_date('20231103','%Y%m%d');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('2023113','%Y%m%d');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('2023-11-03','%Y-%m-%d');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('2023,11,03','%Y,%m,%d');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('03,11,2023','%d,%m,%Y');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('2023-11-03 17','%Y-%m-%d');
+WARNING:  Truncated incorrect date value: '2023-11-03 17'
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('2023-11-03 17:30:00','%Y-%m-%d');
+WARNING:  Truncated incorrect date value: '2023-11-03 17:30:00'
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('2023-13-03','%Y-%m-%d');
+WARNING:  Incorrect date value: '2023-13-03' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('2023-November-3', '%Y-%M-%e');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('November,3,2023', '%M,%e,%Y');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('November 3 2023', '%M %d %Y');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('Friday, November 3, 2023', '%W,%M %e, %Y');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('20231103 173050','%Y%m%d %h%i%s');
+WARNING:  Incorrect datetime value: '20231103 173050' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('20231103 1730','%Y%m%d %h%i');
+WARNING:  Incorrect datetime value: '20231103 1730' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('20231103 17','%Y%m%d %h');
+WARNING:  Incorrect datetime value: '20231103 17' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('2023-11-03 17:30:00','%Y-%m-%d %H:%i:%s');
+     str_to_date     
+---------------------
+ 2023-11-03 17:30:00
+(1 row)
+
+select str_to_date('2023,11,03 17:30:10', '%Y,%m,%d %h:%i:%s');
+WARNING:  Incorrect datetime value: '2023,11,03 17:30:10' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('03,11,2023 dummy','%d,%m,%Y'); 
+WARNING:  Truncated incorrect date value: '03,11,2023 dummy'
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('20231103 1730 dummy','%Y%m%d %h%i');
+WARNING:  Truncated incorrect datetime value: '20231103 1730 dummy'
+CONTEXT:  referenced column: str_to_date
+WARNING:  Incorrect datetime value: '20231103 1730 dummy' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('20231103', '%Y%m%d');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('0000-1-1 00:00:00', '%Y-%m-%d');
+WARNING:  Truncated incorrect date value: '0000-1-1 00:00:00'
+CONTEXT:  referenced column: str_to_date
+WARNING:  Incorrect date value: '0000-1-1 00:00:00' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('2023','%Y');
+WARNING:  Incorrect date value: '2023' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('0000','%Y');
+WARNING:  Incorrect date value: '0000' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('9999','%Y');
+WARNING:  Incorrect date value: '9999' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('11','%h');
+ str_to_date 
+-------------
+ 11:00:00
+(1 row)
+
+select str_to_date('13','%h');
+WARNING:  Incorrect time value: '13' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('1730','%h%i');
+WARNING:  Incorrect time value: '1730' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('173005','%h%i%s');
+WARNING:  Incorrect time value: '173005' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('November,11,2023', '%M %e %Y');
+WARNING:  Incorrect date value: 'November,11,2023' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('Friday, November 3, 2023', '%W %M %e %Y');
+WARNING:  Incorrect date value: 'Friday, November 3, 2023' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('10000-11-03', '%Y-%m-%d');
+WARNING:  Incorrect date value: '10000-11-03' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('202311', '%Y%m%d');
+WARNING:  Incorrect date value: '202311' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('0000-00-00', '%Y-%m-%d');
+WARNING:  Incorrect date value: '0000-00-00' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('0000-01-00', '%Y-%m-%d');
+WARNING:  Incorrect date value: '0000-01-00' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('0000-00-01', '%Y-%m-%d');
+WARNING:  Incorrect date value: '0000-00-01' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('2023-02-31', '%Y-%m-%d');
+WARNING:  Incorrect date value: '2023-02-31' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+SELECT STR_TO_DATE('31/11/22', '%d/%m/%Y');
+WARNING:  Incorrect date value: '31/11/22' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+SELECT STR_TO_DATE('2023-02-31','%Y-%m-%d');
+WARNING:  Incorrect date value: '2023-02-31' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+SELECT STR_TO_DATE('2004.09.12 10:61:59','%Y.%m.%d %T');
+WARNING:  Incorrect datetime value: '2004.09.12 10:61:59' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+SELECT STR_TO_DATE('0000-00-00','%Y-%m-%d');
+WARNING:  Incorrect date value: '0000-00-00' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes';
+select str_to_date('20231103','%Y%m%d');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('2023113','%Y%m%d');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('2023-11-03','%Y-%m-%d');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('2023,11,03','%Y,%m,%d');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('03,11,2023','%d,%m,%Y');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('2023-11-03 17','%Y-%m-%d');
+WARNING:  Truncated incorrect date value: '2023-11-03 17'
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('2023-11-03 17:30:00','%Y-%m-%d');
+WARNING:  Truncated incorrect date value: '2023-11-03 17:30:00'
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('2023-13-03','%Y-%m-%d');
+WARNING:  Incorrect date value: '2023-13-03' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('2023-November-3', '%Y-%M-%e');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('November,3,2023', '%M,%e,%Y');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('November 3 2023', '%M %d %Y');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('Friday, November 3, 2023', '%W,%M %e, %Y');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('20231103 173050','%Y%m%d %h%i%s');
+WARNING:  Incorrect datetime value: '20231103 173050' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('20231103 1730','%Y%m%d %h%i');
+WARNING:  Incorrect datetime value: '20231103 1730' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('20231103 17','%Y%m%d %h');
+WARNING:  Incorrect datetime value: '20231103 17' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('2023-11-03 17:30:00','%Y-%m-%d %H:%i:%s');
+     str_to_date     
+---------------------
+ 2023-11-03 17:30:00
+(1 row)
+
+select str_to_date('2023,11,03 17:30:10', '%Y,%m,%d %h:%i:%s');
+WARNING:  Incorrect datetime value: '2023,11,03 17:30:10' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('03,11,2023 dummy','%d,%m,%Y'); 
+WARNING:  Truncated incorrect date value: '03,11,2023 dummy'
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('20231103 1730 dummy','%Y%m%d %h%i');
+WARNING:  Truncated incorrect datetime value: '20231103 1730 dummy'
+CONTEXT:  referenced column: str_to_date
+WARNING:  Incorrect datetime value: '20231103 1730 dummy' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('20231103', '%Y%m%d');
+ str_to_date 
+-------------
+ 2023-11-03
+(1 row)
+
+select str_to_date('0000-1-1 00:00:00', '%Y-%m-%d');
+WARNING:  Truncated incorrect date value: '0000-1-1 00:00:00'
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 0000-01-01
+(1 row)
+
+select str_to_date('2023','%Y');
+ str_to_date 
+-------------
+ 2023-00-00
+(1 row)
+
+select str_to_date('0000','%Y');
+ str_to_date 
+-------------
+ 0000-00-00
+(1 row)
+
+select str_to_date('9999','%Y');
+ str_to_date 
+-------------
+ 9999-00-00
+(1 row)
+
+select str_to_date('11','%h');
+ str_to_date 
+-------------
+ 11:00:00
+(1 row)
+
+select str_to_date('13','%h');
+WARNING:  Incorrect time value: '13' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('1730','%h%i');
+WARNING:  Incorrect time value: '1730' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('173005','%h%i%s');
+WARNING:  Incorrect time value: '173005' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('November,11,2023', '%M %e %Y');
+WARNING:  Incorrect date value: 'November,11,2023' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('Friday, November 3, 2023', '%W %M %e %Y');
+WARNING:  Incorrect date value: 'Friday, November 3, 2023' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('10000-11-03', '%Y-%m-%d');
+WARNING:  Incorrect date value: '10000-11-03' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+select str_to_date('202311', '%Y%m%d');
+ str_to_date 
+-------------
+ 2023-11-00
+(1 row)
+
+select str_to_date('0000-00-00', '%Y-%m-%d');
+ str_to_date 
+-------------
+ 0000-00-00
+(1 row)
+
+select str_to_date('0000-01-00', '%Y-%m-%d');
+ str_to_date 
+-------------
+ 0000-01-00
+(1 row)
+
+select str_to_date('0000-00-01', '%Y-%m-%d');
+ str_to_date 
+-------------
+ 0000-00-01
+(1 row)
+
+select str_to_date('2023-02-31', '%Y-%m-%d');
+WARNING:  Incorrect date value: '2023-02-31' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+SELECT STR_TO_DATE('31/11/22', '%d/%m/%Y');
+WARNING:  Incorrect date value: '31/11/22' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+SELECT STR_TO_DATE('2023-02-31','%Y-%m-%d');
+WARNING:  Incorrect date value: '2023-02-31' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+SELECT STR_TO_DATE('2004.09.12 10:61:59','%Y.%m.%d %T');
+WARNING:  Incorrect datetime value: '2004.09.12 10:61:59' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+ str_to_date 
+-------------
+ 
+(1 row)
+
+SELECT STR_TO_DATE('0000-00-00','%Y-%m-%d');
+ str_to_date 
+-------------
+ 0000-00-00
+(1 row)
+
+set dolphin.b_compatibility_mode = false;
+select time('23:65:66');
+WARNING:  date/time field value out of range: "23:65:66"
+CONTEXT:  referenced column: time
+   time   
+----------
+ 24:06:06
+(1 row)
+
+select time('23:65');
+WARNING:  date/time field value out of range: "23:65"
+CONTEXT:  referenced column: time
+   time   
+----------
+ 24:05:00
+(1 row)
+
+select time('23-65');
+WARNING:  time zone displacement out of range: "23-65"
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:00:23
+(1 row)
+
+select time('23:59:59.8888');
+     time      
+---------------
+ 23:59:59.8888
+(1 row)
+
+select time('23:65:66.8888');
+WARNING:  date/time field value out of range: "23:65:66.8888"
+CONTEXT:  referenced column: time
+     time      
+---------------
+ 24:06:06.8888
+(1 row)
+
+select time('0:0:0');
+   time   
+----------
+ 00:00:00
+(1 row)
+
+select time('-1:-1:-1');
+WARNING:  time zone displacement out of range: "-1:-1:-1"
+CONTEXT:  referenced column: time
+   time    
+-----------
+ -00:00:01
+(1 row)
+
+select time('23:55:56.1234');
+     time      
+---------------
+ 23:55:56.1234
 (1 row)
 
 drop schema b_time_funcs3 cascade;

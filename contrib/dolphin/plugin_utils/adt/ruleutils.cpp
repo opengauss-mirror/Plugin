@@ -13052,9 +13052,9 @@ static void get_viewdefinfo_oid(Oid viewOid, StringInfoData *buf)
         Datum isinvoker =  OidFunctionCall2(ARRAY_CONTAIN_FUNC_OID, reloptions,
             OidFunctionCall3(ANYARRAYINFUNCOID, arrinvoker, TEXTOID, 0));
         if (DatumGetBool(isinvoker)) {
-            appendStringInfo(buf, "SQL SECUIRTY INVOKER ");
+            appendStringInfo(buf, "SQL SECURITY INVOKER ");
         } else {
-            appendStringInfo(buf, "SQL SECUIRTY DEFINER ");
+            appendStringInfo(buf, "SQL SECURITY DEFINER ");
         }
     }
     if (classForm->relpersistence != RELPERSISTENCE_PERMANENT) {
@@ -13080,23 +13080,30 @@ static void get_viewdefinfo_oid(Oid viewOid, StringInfoData *buf)
             appendStringInfo(buf, "\n WITH (%s) ", viewoption);
         }
     }
+    appendStringInfoString(buf, "AS\n");
     viewdef = pg_get_viewdef_worker(viewOid, 0, -1);
-    appendStringInfo(buf, "AS\n%s", viewdef);
+    Size viewdef_len = strlen(viewdef);
+    if (viewdef[viewdef_len - 1] == ';') {
+        /* remove last ';', case we may need to add 'WITH XXX' option */
+        viewdef[viewdef_len - 1] = 0;
+    }
+    appendStringInfoString(buf, viewdef);
 
     /* with local check option OR with cascade check option OR empty */
     if (isnull == false) {
         Datum checkopt =  OidFunctionCall2(ARRAY_CONTAIN_FUNC_OID, reloptions,
             OidFunctionCall3(ANYARRAYINFUNCOID, arrlocal, TEXTOID, 0));
-        if (DatumGetBool(checkopt) && buf->len > 1) {
-            appendStringInfo(buf - 1, " WITH LOCAL CHECK OPTION;");
+        if (DatumGetBool(checkopt)) {
+            appendStringInfo(buf, " WITH LOCAL CHECK OPTION");
         } else {
             checkopt =  OidFunctionCall2(ARRAY_CONTAIN_FUNC_OID, reloptions,
                 OidFunctionCall3(ANYARRAYINFUNCOID, arrcascade, TEXTOID, 0));
-            if (DatumGetBool(checkopt) && buf->len > 1) {
-                appendStringInfo(buf - 1, " WITH CASCADED CHECK OPTION;");
+            if (DatumGetBool(checkopt)) {
+                appendStringInfo(buf, " WITH CASCADED CHECK OPTION");
             }
         }
     }
+    appendStringInfoString(buf, ";");
     ReleaseSysCache(tuple);
     pfree_ext(viewdef);
 }

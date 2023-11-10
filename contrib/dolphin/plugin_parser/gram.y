@@ -32697,10 +32697,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 				}
 			| a_expr LIKE a_expr
 				{ 
-					if (GetSessionContext()->enableBCmptMode)
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~*", $1, $3, @2); 
-					else 
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, $3, @2); 
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, $3, @2); 
 				}
 			| a_expr LIKE a_expr ESCAPE a_expr
 				{
@@ -32714,17 +32711,11 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 					n->over = NULL;
 					n->location = @2;
 					n->call_func = false;
-					if (GetSessionContext()->enableBCmptMode)
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~*", $1, (Node *) n, @2);
-					else 
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, (Node *) n, @2);
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~", $1, (Node *) n, @2);
 				}
 			| a_expr NOT_LIKE a_expr	%prec NOT_LIKE
-				{ 
-					if (GetSessionContext()->enableBCmptMode)
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~*", $1, $3, @2);
-					else 
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, $3, @2);
+				{
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, $3, @2);
 				}
 			| a_expr NOT_LIKE a_expr ESCAPE a_expr	%prec NOT_LIKE
 				{
@@ -32738,10 +32729,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 					n->over = NULL;
 					n->location = @2;
 					n->call_func = false;
-					if (GetSessionContext()->enableBCmptMode)
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~*", $1, (Node *) n, @2); 
-					else 
-						$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, (Node *) n, @2);
+					$$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "!~~", $1, (Node *) n, @2);
 				}
 			| a_expr ILIKE a_expr
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "~~*", $1, $3, @2); }
@@ -35625,18 +35613,12 @@ subquery_Op:
 			| OPERATOR '(' any_operator ')'
 					{ $$ = $3; }
 			| LIKE
-					{ 
-						if (GetSessionContext()->enableBCmptMode)
-							$$ = list_make1(makeString("~~*"));
-						else 
-							$$ = list_make1(makeString("~~"));
+					{
+						$$ = list_make1(makeString("~~"));
 					}
 			| NOT_LIKE	%prec NOT_LIKE
-					{ 
-						if (GetSessionContext()->enableBCmptMode)
-							$$ = list_make1(makeString("!~~*"));
-						else 
-							$$ = list_make1(makeString("!~~"));
+					{
+						$$ = list_make1(makeString("!~~"));
 					}
 			| LIKE BINARY
 					{ $$ = list_make1(makeString("~~")); }
@@ -36964,9 +36946,18 @@ AexprConst_without_Sconst: Iconst
 				}
 			| TIMESTAMP SCONST
 				{
-					TypeName * tmp = SystemTypeName("timestamp");
-					tmp->location = @1;
-					$$ = makeStringConstCast($2, @2, tmp);
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("timestamp_cast");
+					n->colname = pstrdup("timestamp");
+					n->args = list_make4(makeStringConst($2, @2), makeIntConst(-1, -1), makeIntConst(-1, -1), makeBoolAConst(FALSE, -1));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
 			| TIMESTAMP WITH_TIME ZONE SCONST
 				{

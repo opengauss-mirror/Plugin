@@ -312,6 +312,10 @@ select cast('2022-05-05 20:70' as date);
 select cast('2022-05-05 20:60' as date);
 select cast('2022-05-05 20:59' as date);
 
+select timestamp'2022-05';
+select timestamp'2022-15-05 16:20:10';
+select timestamp'2022-05-05 16:60:10';
+
 reset dolphin.sql_mode;
 
 drop schema b_time_funcs cascade;

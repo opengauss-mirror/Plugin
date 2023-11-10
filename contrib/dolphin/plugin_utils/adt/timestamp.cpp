@@ -562,7 +562,7 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, bool is_date_sconst)
     /*
      * this case is used for timestamp format is specified.
      */
-    if (4 == PG_NARGS()) {
+    if (4 == PG_NARGS() && !is_date_sconst) {
         timestamp_fmt = PG_GETARG_CSTRING(3);
         if (timestamp_fmt == NULL) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT), errmsg("specified timestamp format is null")));
@@ -7060,7 +7060,8 @@ void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime)
  * Error will be reported if the above range is exceeded.
  * @return: Actual time type oid. 
  */
-Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeADT *time)
+Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeADT *time,
+    bool can_ignore, bool* result_isnull)
 {
     size_t len = strlen(str);
     const char *start;
@@ -7085,7 +7086,7 @@ Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeA
     /* Not a timestamp. Try to convert str to time*/
     *time = DatumGetTimeADT(
         DirectFunctionCall3(time_in, CStringGetDatum(start), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
-    check_b_format_time_range_with_ereport(*time);
+    check_b_format_time_range_with_ereport(*time, can_ignore, result_isnull);
     return TIMEOID;
 }
 
@@ -7174,12 +7175,13 @@ Oid convert_unknown_to_datetime_time(const char* str, Timestamp *datetime, TimeA
  * Error will be reported if the above range is exceeded.
  * @return: Actual time type oid. 
  */
-Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time)
+Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time,
+    bool can_ignore, bool* result_isnull)
 {
     switch (valuetypid) {
         case UNKNOWNOID:
         case CSTRINGOID: {
-            return convert_cstring_to_datetime_time(DatumGetCString(value), datetime, time);
+            return convert_cstring_to_datetime_time(DatumGetCString(value), datetime, time, can_ignore, result_isnull);
         }
         case CLOBOID:
         case NVARCHAR2OID:
@@ -7187,7 +7189,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
         case VARCHAROID:
         case TEXTOID: {
             char *str = TextDatumGetCString(value);
-            return convert_cstring_to_datetime_time(str, datetime, time);
+            return convert_cstring_to_datetime_time(str, datetime, time, can_ignore, result_isnull);
         }
         case TIMESTAMPOID:
         case TIMESTAMPTZOID:
@@ -10058,6 +10060,22 @@ static inline Datum make_text_result(int return_type ,struct pg_tm *tm, fsec_t f
     return CStringGetTextDatum(buf);
 }
 
+time_flags sql_mode_to_time_flags()
+{
+    if (SQL_MODE_NO_ZERO_DATE()) {
+        return TIME_NO_ZERO_IN_DATE;
+    } else {
+        return TIME_FUZZY_DATE;
+    }
+}
+
+static bool date_should_be_null(int target_type, const pg_tm* time, time_flags fuzzy_date)
+{
+    return (fuzzy_date & TIME_NO_ZERO_IN_DATE) != 0 &&
+        (target_type != DTK_TIME) &&
+        (time->tm_year == 0 || time->tm_mon == 0 || time->tm_mday == 0);
+}
+
 /**
  * compatibility of str_to_date
 */
@@ -10333,7 +10351,8 @@ Datum str_to_date(PG_FUNCTION_ARGS)
 
     // a simple quick range check
     if (tm->tm_mon > MONTHS_PER_YEAR || tm->tm_mday > DAYNUM_BIGMON ||
-        tm->tm_hour >= HOURS_PER_DAY || tm->tm_min >= MINS_PER_HOUR || tm->tm_sec >= SECS_PER_MINUTE)
+        tm->tm_hour >= HOURS_PER_DAY || tm->tm_min >= MINS_PER_HOUR || tm->tm_sec >= SECS_PER_MINUTE ||
+        !CheckDateRange(tm, non_zero_date(tm), sql_mode_to_time_flags()))
         goto err;
     
     if (return_type == DTK_TIME && tm->tm_mday) {
@@ -10341,9 +10360,9 @@ Datum str_to_date(PG_FUNCTION_ARGS)
         tm->tm_mday = 0;
     }
 
-    // range check
-    if (!final_range_check(return_type, tm, &fsec))
+    if (date_should_be_null(return_type, tm, sql_mode_to_time_flags())) {
         goto err;
+    }
 
     // make the text result
     result = make_text_result(return_type, tm, fsec, buf);
