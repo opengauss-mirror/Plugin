@@ -533,9 +533,7 @@ CTranslatorDXLToScalar::TranslateDXLScalarAggrefToScalar(
 			break;
 		case EdxlaggstageFinal:
 			aggref->aggsplittype = AGGSTAGE_FINAL;
-			if (aggref->aggfnoid != STRINGAGGFUNCOID) {
-				aggref->agghas_collectfn = true;
-			}
+			aggref->agghas_collectfn = true;
 			SPQOS_ASSERT(aggref->aggstage == 0);
 			aggref->aggstage = aggref->aggstage + 1;
 			break;

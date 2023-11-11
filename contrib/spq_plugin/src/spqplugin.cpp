@@ -61,6 +61,12 @@ static bool check_disable_spq_planner_walker(Node *node, void *context)
     if (node == NULL)
         return false;
 
+#ifdef PGXC
+    if (IsA(node, Aggref) && !((Aggref*)node)->agghas_collectfn) {
+        return true;
+    }
+#endif
+
     if (!IsA(node, Query)) {
         return expression_tree_walker(node, (bool (*)())check_disable_spq_planner_walker, context);
     }
