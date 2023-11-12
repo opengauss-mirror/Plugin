@@ -8489,7 +8489,7 @@ static bool timestampdiff_datetime_internal(int64 *result,  text *units, Timesta
         } else {
             code = geterrcode();
             msg = pstrdup(Geterrmsg());
-            if(code != ERRCODE_DATETIME_VALUE_OUT_OF_RANGE)
+            if (code != ERRCODE_DATETIME_VALUE_OUT_OF_RANGE)
                 PG_RE_THROW();
             FlushErrorState();
         }
