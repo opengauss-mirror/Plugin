@@ -5742,7 +5742,7 @@ static void CheckColumnTableOfType(Type ctype)
                 errmsg("type %u cannot get tupledesc", HeapTupleGetOid(ctype))));
         }
         for (int i = 0; i < tupleDesc->natts; i++) {
-            if (tupleDesc->attrs[i].attisdropped) {
+            if (tupleDesc->attrs[i].attisdropped || strcmp(NameStr(tupleDesc->attrs[i].attname), "pljson_list_data") == 0) {
                 continue;
             }
             HeapTuple typeTuple = SearchSysCache1(TYPEOID, ObjectIdGetDatum(tupleDesc->attrs[i].atttypid));
@@ -6577,6 +6577,11 @@ static char* CreatestmtGetOrientation(CreateStmt *stmt)
     foreach (lc, stmt->options) {
         DefElem* def = (DefElem*)lfirst(lc);
         if (pg_strcasecmp(def->defname, "orientation") == 0) {
+#ifdef ENABLE_FINANCE_MODE
+            if (defGetString(def) == ORIENTATION_COLUMN)
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                    errmsg("ORIENTATION==COLUMN is not supported on finance mode")));
+#endif
             return defGetString(def);
         }
     }
