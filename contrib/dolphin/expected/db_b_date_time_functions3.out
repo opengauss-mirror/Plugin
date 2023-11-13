@@ -124,6 +124,17 @@ insert into test values('timestampdiff(microsecond, 101, 99991231235959.999999)'
 insert into test values('timestampdiff(week, null, ''9999-12-31'')', timestampdiff(week, null, '9999-12-31'));
 insert into test values('timestampdiff(week, ''9999-12-31'', null)', timestampdiff(week, '9999-12-31', null));
 insert into test values('timestampdiff(week, null, null)', timestampdiff(week, null, null));
+--严格模式下，针对unit的非法报error
+insert into test values('timestampdiff(abc, ''2020-11-11'', ''2020-11-12'')', timestampdiff(abc, '2020-11-11', '2020-11-12'));
+ERROR:  timestamp with time zone units "abc" not recognized
+CONTEXT:  referenced column: result
+insert into test values('timestampdiff(decades, ''2020-11-11'', ''2020-11-12'')', timestampdiff(decades, '2020-11-11', '2020-11-12'));
+ERROR:  timestamp units "decades" not supported
+CONTEXT:  referenced column: result
+--严格模式下，针对value的非法报warning
+insert into test values('timestampdiff(day, ''2020-11-11'', ''abc'')', timestampdiff(day, '2020-11-11', 'abc'));
+ERROR:  Incorrect datetime value: "abc"
+CONTEXT:  referenced column: result
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('timestampdiff(microsecond, ''abc'', ''2021-11-12'')', timestampdiff(microsecond, 'abc', '2021-11-12'));
@@ -135,6 +146,13 @@ CONTEXT:  referenced column: result
 insert into test values('timestampdiff(microsecond, ''10000-1-1'', ''2021-11-12'')', timestampdiff(microsecond, '10000-1-1', '2021-11-12'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
+--非严格模式下，unit不合法，仍然报error
+insert into test values('timestampdiff(abc, ''2020-11-11'', ''2020-11-12'')', timestampdiff(abc, '2020-11-11', '2020-11-12'));
+ERROR:  timestamp with time zone units "abc" not recognized
+CONTEXT:  referenced column: result
+insert into test values('timestampdiff(decades, ''2020-11-11'', ''2020-11-12'')', timestampdiff(decades, '2020-11-11', '2020-11-12'));
+ERROR:  timestamp units "decades" not supported
+CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('timestampdiff(microsecond, ''abc'', ''2021-11-12'')', timestampdiff(microsecond, 'abc', '2021-11-12'));
@@ -145,6 +163,15 @@ ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('timestampdiff(microsecond, ''10000-1-1'', ''2021-11-12'')', timestampdiff(microsecond, '10000-1-1', '2021-11-12'));
 ERROR:  Incorrect datetime value: "10000-1-1"
+CONTEXT:  referenced column: result
+insert into test values('timestampdiff(abc, ''2020-11-11'', ''2020-11-12'')', timestampdiff(abc, '2020-11-11', '2020-11-12'));
+ERROR:  timestamp with time zone units "abc" not recognized
+CONTEXT:  referenced column: result
+insert into test values('timestampdiff(decades, ''2020-11-11'', ''2020-11-12'')', timestampdiff(decades, '2020-11-11', '2020-11-12'));
+ERROR:  timestamp units "decades" not supported
+CONTEXT:  referenced column: result
+insert into test values('timestampdiff(day, ''2020-11-11'', ''abc'')', timestampdiff(day, '2020-11-11', 'abc'));
+ERROR:  Incorrect datetime value: "abc"
 CONTEXT:  referenced column: result
 set dolphin.b_compatibility_mode = false;
 -- test convert_tz
