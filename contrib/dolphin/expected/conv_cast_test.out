@@ -512,6 +512,36 @@ select conv('1',10,8);
  1
 (1 row)
 
+select conv('10', 8, 10);
+ conv 
+------
+ 8
+(1 row)
+
+select conv('180', 8, 10);
+ conv 
+------
+ 1
+(1 row)
+
+select conv('910', 8, 10);
+ conv 
+------
+ 0
+(1 row)
+
+select conv('B1', 8, 10);
+ conv 
+------
+ 0
+(1 row)
+
+select conv('B1', 16, 10);
+ conv 
+------
+ 177
+(1 row)
+
 select ''::bit;
  bit 
 -----
@@ -839,6 +869,106 @@ select * from test_date;
  0000-00-00
 (5 rows)
 
+select b'11100000111000';
+    ?column?    
+----------------
+ 11100000111000
+(1 row)
+
+select conv(b'11100000111000', 10, 8);
+ conv  
+-------
+ 34070
+(1 row)
+
+select conv(b'11100000111000', 20, 8);
+ conv  
+-------
+ 34070
+(1 row)
+
+select conv(b'11100000111000'::int8, 20, 8);
+  conv  
+--------
+ 571546
+(1 row)
+
+select x'4c';
+ ?column? 
+----------
+ 01001100
+(1 row)
+
+select conv(x'4c', 10, 8);
+ conv 
+------
+ 114
+(1 row)
+
+select conv(x'4c', 30, 8);
+ conv 
+------
+ 114
+(1 row)
+
+select conv(x'4c'::int8, 30, 8);
+ conv 
+------
+ 330
+(1 row)
+
+set dolphin.sql_mode = treat_bxconst_as_binary;
+select b'11100000111000';
+ ?column? 
+----------
+ \x3838
+(1 row)
+
+select conv(b'11100000111000', 10, 8);
+ conv 
+------
+ 130
+(1 row)
+
+select conv(b'11100000111000', 20, 8);
+ conv 
+------
+ 250
+(1 row)
+
+select conv(b'11100000111000'::int8, 20, 8);
+ conv 
+------
+ 250
+(1 row)
+
+select x'4c';
+ ?column? 
+----------
+ \x4c
+(1 row)
+
+select conv(x'4c', 10, 8);
+ conv 
+------
+ 0
+(1 row)
+
+select conv(x'4c', 30, 8);
+ conv 
+------
+ 25
+(1 row)
+
+select conv(x'4c'::int8, 30, 8);
+WARNING:  Truncated incorrect INTEGER value: 'L'
+CONTEXT:  referenced column: conv
+ conv 
+------
+ 0
+(1 row)
+
+reset dolphin.sql_mode;
 drop schema conv_cast_test cascade;
 NOTICE:  drop cascades to table test_date
 reset current_schema;
