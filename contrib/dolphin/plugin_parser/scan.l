@@ -106,6 +106,9 @@ static char *litbufdup(core_yyscan_t yyscanner);
 static char *litbuf_udeescape(unsigned char escape, core_yyscan_t yyscanner);
 static unsigned char unescape_single_char(unsigned char c, core_yyscan_t yyscanner);
 static int	process_integer_literal(const char *token, YYSTYPE *lval);
+#ifdef DOLPHIN
+static int process_hex_number(char *token, int len, core_yyscan_t yyscanner, YYSTYPE *lval);
+#endif
 static bool is_utf16_surrogate_first(pg_wchar c);
 static bool is_utf16_surrogate_second(pg_wchar c);
 static pg_wchar surrogate_pair_to_codepoint(pg_wchar first, pg_wchar second);
@@ -252,6 +255,8 @@ xbinside		[^']*
 /* Hexadecimal number */
 xhstart			[xX]{quote}
 xhinside		[^']*
+/* Hexadecimal number, start with 0x */
+xhnumber		0x[0-9A-Fa-f]+
 
 /* National character */
 xnstart			[nN]{quote}
@@ -1201,6 +1206,12 @@ other			.
 					yyextra->is_hint_str = false;
 					return PARAM;
 				}
+{xhnumber}		{
+					SET_YYLLOC();
+					yyextra->is_hint_str = false;
+					/* skip first '0', remain 'x' and other hex number */
+					return process_hex_number(yytext + 1, yyleng - 1, yyscanner, yylval);
+				}
 {integer}		{
 					SET_YYLLOC();
 					yyextra->is_hint_str = false;
@@ -1740,6 +1751,16 @@ litbufdup(core_yyscan_t yyscanner)
 	newm[llen] = '\0';
 	return newm;
 }
+
+#ifdef DOLPHIN
+static int process_hex_number(char *token, int len, core_yyscan_t yyscanner, YYSTYPE *lval)
+{
+	startlit();
+	addlit(token, len, yyscanner);
+	lval->str = litbufdup(yyscanner);
+	return XCONST;
+}
+#endif
 
 static int
 process_integer_literal(const char *token, YYSTYPE *lval)

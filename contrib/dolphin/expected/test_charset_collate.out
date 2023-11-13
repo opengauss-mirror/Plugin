@@ -236,6 +236,234 @@ select pg_get_tabledef('test_binary2');
  WITH (orientation=row, compression=no);
 (1 row)
 
+--binary/ascii attribute
+create schema bin_schema_test character set = utf8 collate utf8_unicode_ci;
+use bin_schema_test;
+set b_format_behavior_compat_options='enable_multi_charset'; -- use to enable different table charset with schema
+create table t_bin(a text binary);
+\d t_bin
+            Table "bin_schema_test.t_bin"
+ Column | Type |              Modifiers              
+--------+------+-------------------------------------
+ a      | text | character set UTF8 collate utf8_bin
+
+create table t_bin2(a text character set gbk binary);
+\d t_bin2
+          Table "bin_schema_test.t_bin2"
+ Column | Type |             Modifiers             
+--------+------+-----------------------------------
+ a      | text | character set GBK collate gbk_bin
+
+create table t_bin3(a text binary) character set gb18030;
+\d t_bin3
+              Table "bin_schema_test.t_bin3"
+ Column | Type |                 Modifiers                 
+--------+------+-------------------------------------------
+ a      | text | character set GB18030 collate gb18030_bin
+
+-- binary has high proirity than collate clause
+create table t_bin4(a text binary collate gb18030_chinese_ci);
+\d t_bin4
+              Table "bin_schema_test.t_bin4"
+ Column | Type |                 Modifiers                 
+--------+------+-------------------------------------------
+ a      | text | character set GB18030 collate gb18030_bin
+
+create table t_bin5(a text binary character set gbk) character set gb18030;
+\d t_bin5
+          Table "bin_schema_test.t_bin5"
+ Column | Type |             Modifiers             
+--------+------+-----------------------------------
+ a      | text | character set GBK collate gbk_bin
+
+-- ascii
+create table t_bin6(a text ascii collate 'af_ZA.iso88591', b text charset binary binary);
+show create table t_bin6;
+ Table  |                        Create Table                         
+--------+-------------------------------------------------------------
+ t_bin6 | SET search_path = bin_schema_test;                         +
+        | CREATE TABLE t_bin6 (                                      +
+        |     a text CHARACTER SET "LATIN1" COLLATE "af_ZA.iso88591",+
+        |     b blob CHARACTER SET "SQL_ASCII" COLLATE "binary"      +
+        | )                                                          +
+        | CHARACTER SET = "UTF8" COLLATE = "utf8_unicode_ci"         +
+        | WITH (orientation=row, compression=no);
+(1 row)
+
+--alter table
+alter table t_bin6 add column c text binary;
+show create table t_bin6;
+ Table  |                        Create Table                         
+--------+-------------------------------------------------------------
+ t_bin6 | SET search_path = bin_schema_test;                         +
+        | CREATE TABLE t_bin6 (                                      +
+        |     a text CHARACTER SET "LATIN1" COLLATE "af_ZA.iso88591",+
+        |     b blob CHARACTER SET "SQL_ASCII" COLLATE "binary",     +
+        |     c text CHARACTER SET "UTF8" COLLATE utf8_bin           +
+        | )                                                          +
+        | CHARACTER SET = "UTF8" COLLATE = "utf8_unicode_ci"         +
+        | WITH (orientation=row, compression=no);
+(1 row)
+
+alter table t_bin6 add column d text character set gbk binary;
+show create table t_bin6;
+ Table  |                        Create Table                         
+--------+-------------------------------------------------------------
+ t_bin6 | SET search_path = bin_schema_test;                         +
+        | CREATE TABLE t_bin6 (                                      +
+        |     a text CHARACTER SET "LATIN1" COLLATE "af_ZA.iso88591",+
+        |     b blob CHARACTER SET "SQL_ASCII" COLLATE "binary",     +
+        |     c text CHARACTER SET "UTF8" COLLATE utf8_bin,          +
+        |     d text CHARACTER SET "GBK" COLLATE gbk_bin             +
+        | )                                                          +
+        | CHARACTER SET = "UTF8" COLLATE = "utf8_unicode_ci"         +
+        | WITH (orientation=row, compression=no);
+(1 row)
+
+alter table t_bin6 add column e text binary character set gbk;
+show create table t_bin6;
+ Table  |                        Create Table                         
+--------+-------------------------------------------------------------
+ t_bin6 | SET search_path = bin_schema_test;                         +
+        | CREATE TABLE t_bin6 (                                      +
+        |     a text CHARACTER SET "LATIN1" COLLATE "af_ZA.iso88591",+
+        |     b blob CHARACTER SET "SQL_ASCII" COLLATE "binary",     +
+        |     c text CHARACTER SET "UTF8" COLLATE utf8_bin,          +
+        |     d text CHARACTER SET "GBK" COLLATE gbk_bin,            +
+        |     e text CHARACTER SET "GBK" COLLATE gbk_bin             +
+        | )                                                          +
+        | CHARACTER SET = "UTF8" COLLATE = "utf8_unicode_ci"         +
+        | WITH (orientation=row, compression=no);
+(1 row)
+
+alter table t_bin6 modify column a text binary;
+show create table t_bin6;
+ Table  |                      Create Table                      
+--------+--------------------------------------------------------
+ t_bin6 | SET search_path = bin_schema_test;                    +
+        | CREATE TABLE t_bin6 (                                 +
+        |     a text CHARACTER SET "UTF8" COLLATE utf8_bin,     +
+        |     b blob CHARACTER SET "SQL_ASCII" COLLATE "binary",+
+        |     c text CHARACTER SET "UTF8" COLLATE utf8_bin,     +
+        |     d text CHARACTER SET "GBK" COLLATE gbk_bin,       +
+        |     e text CHARACTER SET "GBK" COLLATE gbk_bin        +
+        | )                                                     +
+        | CHARACTER SET = "UTF8" COLLATE = "utf8_unicode_ci"    +
+        | WITH (orientation=row, compression=no);
+(1 row)
+
+alter table t_bin6 modify column a text character set gbk binary;
+show create table t_bin6;
+ Table  |                      Create Table                      
+--------+--------------------------------------------------------
+ t_bin6 | SET search_path = bin_schema_test;                    +
+        | CREATE TABLE t_bin6 (                                 +
+        |     a text CHARACTER SET "GBK" COLLATE gbk_bin,       +
+        |     b blob CHARACTER SET "SQL_ASCII" COLLATE "binary",+
+        |     c text CHARACTER SET "UTF8" COLLATE utf8_bin,     +
+        |     d text CHARACTER SET "GBK" COLLATE gbk_bin,       +
+        |     e text CHARACTER SET "GBK" COLLATE gbk_bin        +
+        | )                                                     +
+        | CHARACTER SET = "UTF8" COLLATE = "utf8_unicode_ci"    +
+        | WITH (orientation=row, compression=no);
+(1 row)
+
+alter table t_bin6 modify column a text binary character set gb18030;
+show create table t_bin6;
+ Table  |                      Create Table                       
+--------+---------------------------------------------------------
+ t_bin6 | SET search_path = bin_schema_test;                     +
+        | CREATE TABLE t_bin6 (                                  +
+        |     a text CHARACTER SET "GB18030" COLLATE gb18030_bin,+
+        |     b blob CHARACTER SET "SQL_ASCII" COLLATE "binary", +
+        |     c text CHARACTER SET "UTF8" COLLATE utf8_bin,      +
+        |     d text CHARACTER SET "GBK" COLLATE gbk_bin,        +
+        |     e text CHARACTER SET "GBK" COLLATE gbk_bin         +
+        | )                                                      +
+        | CHARACTER SET = "UTF8" COLLATE = "utf8_unicode_ci"     +
+        | WITH (orientation=row, compression=no);
+(1 row)
+
+alter table t_bin6 change column b b_new text binary;
+show create table t_bin6;
+ Table  |                      Create Table                       
+--------+---------------------------------------------------------
+ t_bin6 | SET search_path = bin_schema_test;                     +
+        | CREATE TABLE t_bin6 (                                  +
+        |     a text CHARACTER SET "GB18030" COLLATE gb18030_bin,+
+        |     b_new text CHARACTER SET "UTF8" COLLATE utf8_bin,  +
+        |     c text CHARACTER SET "UTF8" COLLATE utf8_bin,      +
+        |     d text CHARACTER SET "GBK" COLLATE gbk_bin,        +
+        |     e text CHARACTER SET "GBK" COLLATE gbk_bin         +
+        | )                                                      +
+        | CHARACTER SET = "UTF8" COLLATE = "utf8_unicode_ci"     +
+        | WITH (orientation=row, compression=no);
+(1 row)
+
+alter table t_bin6 change column b_new b_new2 text charset gb18030 binary;
+show create table t_bin6;
+ Table  |                         Create Table                         
+--------+--------------------------------------------------------------
+ t_bin6 | SET search_path = bin_schema_test;                          +
+        | CREATE TABLE t_bin6 (                                       +
+        |     a text CHARACTER SET "GB18030" COLLATE gb18030_bin,     +
+        |     b_new2 text CHARACTER SET "GB18030" COLLATE gb18030_bin,+
+        |     c text CHARACTER SET "UTF8" COLLATE utf8_bin,           +
+        |     d text CHARACTER SET "GBK" COLLATE gbk_bin,             +
+        |     e text CHARACTER SET "GBK" COLLATE gbk_bin              +
+        | )                                                           +
+        | CHARACTER SET = "UTF8" COLLATE = "utf8_unicode_ci"          +
+        | WITH (orientation=row, compression=no);
+(1 row)
+
+alter table t_bin6 change column b_new2 b_new3 text binary charset gbk;
+show create table t_bin6;
+ Table  |                      Create Table                       
+--------+---------------------------------------------------------
+ t_bin6 | SET search_path = bin_schema_test;                     +
+        | CREATE TABLE t_bin6 (                                  +
+        |     a text CHARACTER SET "GB18030" COLLATE gb18030_bin,+
+        |     b_new3 text CHARACTER SET "GBK" COLLATE gbk_bin,   +
+        |     c text CHARACTER SET "UTF8" COLLATE utf8_bin,      +
+        |     d text CHARACTER SET "GBK" COLLATE gbk_bin,        +
+        |     e text CHARACTER SET "GBK" COLLATE gbk_bin         +
+        | )                                                      +
+        | CHARACTER SET = "UTF8" COLLATE = "utf8_unicode_ci"     +
+        | WITH (orientation=row, compression=no);
+(1 row)
+
+-- ascii, grammar is ok, but execute report error
+create table t_bin7(a text binary ascii);
+ERROR:  default collation for encoding "LATIN1" does not exist
+create table t_bin8(a text ascii binary);
+ERROR:  default collation for encoding "LATIN1" does not exist
+create table t_bin9(a text ascii);
+ERROR:  default collation for encoding "LATIN1" does not exist
+-- wrong grammar
+create table t_bin10(a text collate gb18030_chinese_ci binary);
+ERROR:  syntax error at or near "binary"
+LINE 1: ...ate table t_bin10(a text collate gb18030_chinese_ci binary);
+                                                               ^
+create table t_bin11(a text collate gb18030_chinese_ci ascii);
+ERROR:  syntax error at or near "ascii"
+LINE 1: ...eate table t_bin11(a text collate gb18030_chinese_ci ascii);
+                                                                ^
+create table t_bin12(a text character set gbk ascii);
+ERROR:  syntax error at or near "ascii"
+LINE 1: create table t_bin12(a text character set gbk ascii);
+                                                      ^
+create table t_bin13(a text ascii character set gbk);
+ERROR:  syntax error at or near "character"
+LINE 1: create table t_bin13(a text ascii character set gbk);
+                                          ^
+drop schema bin_schema_test cascade;
+NOTICE:  drop cascades to 6 other objects
+DETAIL:  drop cascades to table t_bin
+drop cascades to table t_bin2
+drop cascades to table t_bin3
+drop cascades to table t_bin4
+drop cascades to table t_bin5
+drop cascades to table t_bin6
 drop schema test_charset cascade;
 NOTICE:  drop cascades to 6 other objects
 DETAIL:  drop cascades to table test_charset.test_collate0

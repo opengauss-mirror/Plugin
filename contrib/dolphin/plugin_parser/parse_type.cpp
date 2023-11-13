@@ -791,6 +791,64 @@ Oid LookupCollation(ParseState* pstate, List* collnames, int location)
     return colloid;
 }
 
+#ifdef DOLPHIN
+Oid transform_bin_collation(ColumnDef* coldef, Oid cur_col_oid)
+{
+    Oid result = InvalidOid;
+    bool has_binary = false;
+    List *columnOptions = coldef->columnOptions;
+    ListCell *ColumnOption = NULL;
+    foreach (ColumnOption, columnOptions) {
+        void *pointer = lfirst(ColumnOption);
+        if (IsA(pointer, String)) {
+            Value *v = (Value*)pointer;
+            if (strcmp(v->val.str, "binary") == 0) {
+                has_binary = true;
+                break;
+            }
+        }
+    }
+    if (!has_binary) {
+        return cur_col_oid;
+    }
+
+    int column_charset;
+    /*
+     * get charset of this column:
+     * 1. if assign charset by coldef, use if
+     * 2. get charset by collation
+     * 3. get database's encoding
+     */
+    if (PG_VALID_ENCODING(coldef->typname->charset)) {
+        column_charset = coldef->typname->charset;
+    } else if ((column_charset = get_charset_by_collation(cur_col_oid)) != PG_INVALID_ENCODING) {
+        /* noting to do, already set in if condition */
+    } else {
+        column_charset = GetDatabaseEncoding();
+    }
+
+    /* if the charset is ascii, no need to change(a text charset binary binary) */
+    if (column_charset != PG_SQL_ASCII) {
+        const char *encode_name = pg_encoding_to_char(column_charset);
+        if (encode_name[0] != 0) {
+            Size coll_name_len = strlen(encode_name) + strlen(COL_BINARY_ATTR) + 1;
+            char *coll_name = (char*)palloc(coll_name_len);
+            int ret = sprintf_s(coll_name, coll_name_len, "%s%s", encode_name, COL_BINARY_ATTR);
+            securec_check_ss(ret, "", "");
+            List *coll_name_list = list_make2(makeString("pg_catalog"), makeString(pg_strtolower(coll_name)));
+            result = get_collation_oid(coll_name_list, true);
+            if (!OidIsValid(result)) {
+                ereport(WARNING, (errmsg("invalid collation name: %s, use default collation", coll_name)));
+            }
+            list_free(coll_name_list);
+            pfree(coll_name);
+        }
+    }
+    /* return origin col oid if get correspond binary collation failed */
+    return OidIsValid(result) ? result : cur_col_oid;
+}
+#endif
+
 Oid get_column_def_collation_b_format(ColumnDef* coldef, Oid typeOid, Oid typcollation,
     bool is_bin_type, Oid rel_coll_oid)
 {
@@ -808,7 +866,11 @@ Oid get_column_def_collation_b_format(ColumnDef* coldef, Oid typeOid, Oid typcol
         return InvalidOid;
     } else if (OidIsValid(coldef->collOid)) {
         /* Precooked collation spec, use that */
+#ifdef DOLPHIN
+        return transform_bin_collation(coldef, coldef->collOid);
+#else
         return coldef->collOid;
+#endif
     }
 
     char* schemaname = NULL;
@@ -834,6 +896,9 @@ Oid get_column_def_collation_b_format(ColumnDef* coldef, Oid typeOid, Oid typcol
             result = get_default_collation_by_charset(GetDatabaseEncoding());
         }
     }
+#ifdef DOLPHIN
+    result = transform_bin_collation(coldef, result);
+#endif
     return result;
 }
 
