@@ -807,6 +807,8 @@ CTranslatorUtils::GetSystemColName(AttrNumber attno)
 
 		case UidAttributeNumber:
 			return CDXLTokens::GetDXLTokenStr(EdxltokenUidAttribute);
+		case RootSelfItemPointerAttributeNumber:
+			return CDXLTokens::GetDXLTokenStr(EdxltokenRootCtidColName);
 
 		default:
 			SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiPlStmt2DXLConversion,
@@ -848,7 +850,9 @@ CTranslatorUtils::GetSystemColType(CMemoryPool *mp, AttrNumber attno)
 		case MaxCommandIdAttributeNumber:
 			// cid type
 			return SPQOS_NEW(mp) CMDIdSPQDB(IMDId::EmdidGeneral, SPQDB_CID);
-
+		case RootSelfItemPointerAttributeNumber:
+			// tid type
+			return SPQOS_NEW(mp) CMDIdSPQDB(IMDId::EmdidGeneral, SPQDB_TID);
 		case XC_NodeIdAttributeNumber:
 			return SPQOS_NEW(mp) CMDIdSPQDB(IMDId::EmdidGeneral, SPQDB_NID);
 		case BucketIdAttributeNumber:
@@ -896,7 +900,9 @@ CTranslatorUtils::GetSystemColLength(AttrNumber attno)
 			return 2;
 		case UidAttributeNumber:
 			return 8;
-
+		case RootSelfItemPointerAttributeNumber:
+			// tid type
+			return 6;
 		default:
 			SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiPlStmt2DXLConversion,
 					   SPQOS_WSZ_LIT("Invalid attribute number"));

@@ -362,6 +362,7 @@ enum Edxltoken
 	EdxltokenXmaxColName,
 	EdxltokenCmaxColName,
 	EdxltokenTableOidColName,
+	EdxltokenRootCtidColName,
 	EdxltokenXCNidAttribute,
 	EdxltokenBidAttribute,
 	EdxltokenUidAttribute,

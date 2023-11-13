@@ -1120,6 +1120,16 @@ static void InitSpqConfigureNamesBool()
                              NULL,
                              NULL,
                              NULL);
+    DefineCustomBoolVariable("spqplugin.spq_enable_transaction",
+                             "Enable spq execution in transaction.",
+                             NULL,
+                             &u_sess->attr.attr_spq.spq_enable_transaction,
+                             false,
+                             PGC_USERSET,
+                             0,
+                             NULL,
+                             NULL,
+                             NULL);
 }
 
 static void InitSpqConfigureNamesInt()

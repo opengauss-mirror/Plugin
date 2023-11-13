@@ -2651,6 +2651,13 @@ CTranslatorRelcacheToDXL::GenerateStatsForSystemCols(
 				distinct_remaining = num_rows;
 				break;
 			}
+			case RootSelfItemPointerAttributeNumber: // _root_ctid
+			{
+				is_col_stats_missing = false;
+				freq_remaining = CDouble(1.0);
+				distinct_remaining = num_rows;
+				break;
+			}
 			default:
 				break;
 		}
@@ -3286,7 +3293,9 @@ CTranslatorRelcacheToDXL::RetrieveRelKeysets(CMemoryPool *mp, OID oid,
 		}
 		ULONG ctid_pos =
 			GetAttributePosition(SelfItemPointerAttributeNumber, attno_mapping);
+		ULONG root_ctid_pos = GetAttributePosition(RootSelfItemPointerAttributeNumber, attno_mapping);
 		key_set->Append(SPQOS_NEW(mp) ULONG(ctid_pos));
+		key_set->Append(SPQOS_NEW(mp) ULONG(root_ctid_pos));
 
 		key_sets->Append(key_set);
 	}
