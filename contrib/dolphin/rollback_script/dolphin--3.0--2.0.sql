@@ -97,3 +97,6 @@ BEGIN
     RETURN 0;
 END;
 $$
+
+DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(text);
+DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);

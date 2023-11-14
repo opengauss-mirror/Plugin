@@ -75,6 +75,13 @@ SELECT quarter(20221009);
 SELECT weekday(20221009);
 SELECT weekofyear(20221009);
 
+SELECT dayofmonth('');
+SELECT day('');
+SELECT dayofmonth(true);
+SELECT day(true);
+SELECT dayofmonth(false);
+SELECT day(false);
+
 select year('');
 select year('2022');
 select year('2022-06');

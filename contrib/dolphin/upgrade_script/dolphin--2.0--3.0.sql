@@ -166,3 +166,9 @@ DROP FUNCTION IF EXISTS pg_catalog.oct(bit);
 
 CREATE OR REPLACE FUNCTION pg_catalog.oct(t1 bit)
 RETURNS text AS $$ SELECT pg_catalog.conv(t1, 10, 8) $$ LANGUAGE SQL;
+
+-- Supplement function dayofmonth to make the function dayofmonth() the same as function day()
+DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(text);
+DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
+CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth(text) RETURNS int4 AS $$ SELECT pg_catalog.day($1); $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth(numeric) RETURNS int4 AS $$ SELECT pg_catalog.day($1); $$ LANGUAGE SQL;

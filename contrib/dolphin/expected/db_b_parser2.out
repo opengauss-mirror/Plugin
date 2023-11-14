@@ -351,6 +351,50 @@ SELECT weekofyear(20221009);
          40
 (1 row)
 
+SELECT dayofmonth('');
+WARNING:  Incorrect datetime value: ""
+CONTEXT:  referenced column: dayofmonth
+ dayofmonth 
+------------
+           
+(1 row)
+
+SELECT day('');
+WARNING:  Incorrect datetime value: ""
+CONTEXT:  referenced column: day
+ day 
+-----
+    
+(1 row)
+
+SELECT dayofmonth(true);
+WARNING:  Incorrect datetime value: "1"
+CONTEXT:  referenced column: dayofmonth
+ dayofmonth 
+------------
+           
+(1 row)
+
+SELECT day(true);
+WARNING:  Incorrect datetime value: "1"
+CONTEXT:  referenced column: day
+ day 
+-----
+    
+(1 row)
+
+SELECT dayofmonth(false);
+ dayofmonth 
+------------
+          0
+(1 row)
+
+SELECT day(false);
+ day 
+-----
+   0
+(1 row)
+
 select year('');
 WARNING:  invalid input syntax for type timestamp: ""
 CONTEXT:  referenced column: year
