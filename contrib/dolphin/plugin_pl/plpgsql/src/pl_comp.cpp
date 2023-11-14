@@ -1304,7 +1304,7 @@ static PLpgSQL_function* do_compile(FunctionCallInfo fcinfo, HeapTuple proc_tup,
             FlushErrorState();
         }
         PG_END_TRY();
-    }else {
+    } else {
         bool save_isPerform = u_sess->parser_cxt.isPerform;
         u_sess->parser_cxt.isPerform = false;
         parse_rc = plpgsql_yyparse();
@@ -5247,7 +5247,7 @@ TupleDesc getCursorTupleDesc(PLpgSQL_expr* expr, bool isOnlySelect, bool isOnlyP
                     }
                     expr->func = NULL;
                     list_free_deep(parsetreeList);
-                    return NULL;
+                    PG_TRY_RETURN(NULL);
                 }
             }
             queryList = pg_analyze_and_rewrite_params(parsetree, expr->query, 

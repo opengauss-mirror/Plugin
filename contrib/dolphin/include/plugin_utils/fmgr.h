@@ -29,7 +29,6 @@
 #include "access/tupdesc.h"
 #include "nodes/primnodes.h"
 
-
 #ifndef FRONTEND_PARSER
 
 typedef ScalarVector* (*VectorFunction)(FunctionCallInfo fcinfo);

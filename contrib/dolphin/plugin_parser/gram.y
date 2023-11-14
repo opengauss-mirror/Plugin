@@ -21444,17 +21444,17 @@ param_name:	type_function_name %prec lower_than_zerofill
 		;
 
 func_return:
-			func_type {
-				if (enable_plpgsql_gsdependency_guc()) {
-					pg_yyget_extra(yyscanner)->core_yy_extra.return_pos_end = yylloc;		
+			func_type
+				{
+					if (enable_plpgsql_gsdependency_guc()) {
+						pg_yyget_extra(yyscanner)->core_yy_extra.return_pos_end = yylloc;
+					}
 					/* We can catch over-specified results here if we want to,
 					 * but for now better to silently swallow typmod, etc.
 					 * - thomas 2000-03-22
 					 */
+					$$ = $1;
 				}
-				$$ = $1;
-			}
-			
 		;
 
 /*

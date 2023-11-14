@@ -1169,6 +1169,14 @@ static bool isOrientationSet(List* options, bool* isCUFormat, bool isDfsTbl)
                             errdetail("Valid string are \"column\", \"row\".")));
                 }
 #endif   /* ENABLE_MULTIPLE_NODES */
+#ifdef ENABLE_FINANCE_MODE
+                if (pg_strcasecmp(defGetString(def), ORIENTATION_COLUMN) == 0) {
+                    ereport(ERROR,
+                            (errcode(ERRCODE_INVALID_OPTION),
+                                errmsg("Invalid string for  \"ORIENTATION\" option"),
+                                errdetail("ORIENTATION=COLUNMN is incorrect, not work on finance mode.")));
+                }
+#endif
             }
             if (pg_strcasecmp(defGetString(def), ORIENTATION_COLUMN) == 0 && isCUFormat != NULL) {
                 *isCUFormat = true;
@@ -9018,7 +9026,7 @@ static void sqlcmd_alter_prep_convert_charset(AlteredTableInfo* tab, Relation re
         Form_pg_attribute attTup = (Form_pg_attribute)GETSTRUCT(tuple);
         int attnum = attTup->attnum;
         if (attnum <= 0 || attTup->attisdropped || !type_is_collatable(attTup->atttypid) ||
-            get_charset_by_collation(attTup->attcollation) == cc->charset)
+            attTup->attcollation == targetcollid)
             continue;
 
         transform = (Node*)makeVar(1, attnum, attTup->atttypid, attTup->atttypmod, attTup->attcollation, 0);
