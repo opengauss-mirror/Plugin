@@ -381,3 +381,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(int8) RETURNS int8 LANGUAGE C 
 
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(numeric);
 CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(numeric) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_time_to_sec';
+
+-- Supplement function dayofmonth to make the function dayofmonth() the same as function day()
+DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(text);
+DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
+CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth(text) RETURNS int4 AS $$ SELECT pg_catalog.day($1); $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth(numeric) RETURNS int4 AS $$ SELECT pg_catalog.day($1); $$ LANGUAGE SQL;

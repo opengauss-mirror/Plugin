@@ -61,12 +61,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(anyenum) returns blob LANGUAG
 CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(anyset) returns blob LANGUAGE SQL volatile as 'select random_bytes($1::int4)';
 CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(json) returns blob LANGUAGE SQL volatile as 'select random_bytes($1::int4)';
 
--- Supplement function dayofmonth to make the function dayofmonth() the same as function day()
-DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(text);
-DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
-CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth(text) RETURNS int4 AS $$ SELECT pg_catalog.day($1); $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth(numeric) RETURNS int4 AS $$ SELECT pg_catalog.day($1); $$ LANGUAGE SQL;
-
 drop function if EXISTS pg_catalog.length(binary);
 drop function if EXISTS pg_catalog.length(varbinary);
 CREATE OR REPLACE FUNCTION pg_catalog.length(binary) returns int4 LANGUAGE C immutable strict as '$libdir/dolphin', 'binary_length';

@@ -193,3 +193,6 @@ LANGUAGE plpgsql;
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(numeric);
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(int8);
 CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(numeric) RETURNS int4 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as text)) $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(text);
+DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
