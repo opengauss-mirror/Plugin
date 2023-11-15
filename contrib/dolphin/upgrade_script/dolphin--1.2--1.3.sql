@@ -375,3 +375,9 @@ DROP FUNCTION IF EXISTS pg_catalog.oct(bit);
 
 CREATE OR REPLACE FUNCTION pg_catalog.oct(t1 bit)
 RETURNS text AS $$ SELECT pg_catalog.conv(t1, 10, 8) $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(int8);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(int8) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_time_to_sec';
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(numeric);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(numeric) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_time_to_sec';
