@@ -966,7 +966,7 @@ get_finalize_aggref(Aggref *inp, Var *partial_state_var)
 	aggref->aggstar = false;
 	aggref->aggvariadic = false;
 	aggref->aggkind = AGGKIND_NORMAL;
-	aggref->aggsplit = AGGSPLIT_SIMPLE;
+	aggref->aggsplit = AGGSTAGE_NORMAL;
 	aggref->location = -1;				/*unknown */
 										/* construct the arguments */
 	agggregate_signature = DatumGetCString(DirectFunctionCall1(regprocedureout, inp->aggfnoid));

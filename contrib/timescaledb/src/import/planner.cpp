@@ -267,7 +267,7 @@ ts_make_partial_grouping_target(struct PlannerInfo *root, PathTarget *grouping_t
 			memcpy(newaggref, aggref, sizeof(struct Aggref));
 
 			/* For now, assume serialization is required */
-			mark_partial_aggref(newaggref, AGGSPLIT_INITIAL_SERIAL);
+			mark_partial_aggref(newaggref, AGGSTAGE_PARTIAL);
 
 			lfirst(lc) = newaggref;
 		}

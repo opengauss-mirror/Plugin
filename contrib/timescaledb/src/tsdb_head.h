@@ -912,11 +912,7 @@ typedef struct ConstraintAwareAppendPath
 	ExtensiblePath cpath;
 } ConstraintAwareAppendPath; 
 
-typedef struct Result
-{
-	Plan		plan;
-	Node	   *resconstantqual;
-} Result; 
+
 
 typedef enum VolatileFunctionStatus
 {
@@ -931,15 +927,7 @@ typedef enum VolatileFunctionStatus
 #define AGGSPLITOP_SKIPFINAL	0x02 
 #define AGGSPLITOP_SERIALIZE	0x04
 #define AGGSPLITOP_DESERIALIZE	0x08 
-typedef enum AggSplit
-{
-	/* Basic, non-split aggregation: */
-	AGGSPLIT_SIMPLE = 0,
-	/* Initial phase of partial aggregation, with serialization: */
-	AGGSPLIT_INITIAL_SERIAL = AGGSPLITOP_SKIPFINAL | AGGSPLITOP_SERIALIZE,
-	/* Final phase of partial aggregation, with deserialization: */
-	AGGSPLIT_FINAL_DESERIAL = AGGSPLITOP_COMBINE | AGGSPLITOP_DESERIALIZE
-} AggSplit; 
+
 
 typedef struct AggPath
 {
@@ -1158,20 +1146,7 @@ typedef enum WCOKind
 	WCO_RLS_CONFLICT_CHECK		/* RLS ON CONFLICT DO UPDATE USING policy */
 } WCOKind; 
 
-typedef struct RangeTblFunction
-{
-	NodeTag		type;
 
-	Node	   *funcexpr;		/* expression tree for func call */
-	int			funccolcount;	/* number of columns it contributes to RTE */
-	/* These fields record the contents of a column definition list, if any: */
-	List	   *funccolnames;	/* column names (list of String) */
-	List	   *funccoltypes;	/* OID list of column type OIDs */
-	List	   *funccoltypmods; /* integer list of column typmods */
-	List	   *funccolcollations;		/* OID list of column collation OIDs */
-	/* This is set during planning for use by the executor: */
-	Bitmapset  *funcparams;		/* PARAM_EXEC Param IDs affecting this func */
-} RangeTblFunction; 
 
 
 typedef struct InferenceElem

@@ -2256,7 +2256,7 @@ mark_partial_aggref(Aggref *agg, AggSplit aggsplit)
 	/* aggtranstype should be computed by this point */
 	Assert(OidIsValid(agg->aggtranstype));
 	/* ... but aggsplit should still be as the parser left it */
-	Assert(agg->aggsplit == AGGSPLIT_SIMPLE);
+	Assert(agg->aggsplit == AGGSTAGE_NORMAL);
 
 	/* Mark the Aggref with the intended partial-aggregation mode */
 	agg->aggsplit = aggsplit;

@@ -52,15 +52,15 @@ plan_add_parallel_hashagg(PlannerInfo *root, RelOptInfo *input_rel, RelOptInfo *
 		/* partial phase */
 		get_agg_clause_costs(root,
 							 (Node *) partial_grouping_target->exprs,
-							 AGGSPLIT_INITIAL_SERIAL,
+							 AGGSTAGE_PARTIAL,
 							 &agg_partial_costs);
 
 		/* final phase */
 		get_agg_clause_costs(root,
 							 (Node *) target->exprs,
-							 AGGSPLIT_FINAL_DESERIAL,
+							 AGGSTAGE_FINAL,
 							 &agg_final_costs);
-		get_agg_clause_costs(root, parse->havingQual, AGGSPLIT_FINAL_DESERIAL, &agg_final_costs);
+		get_agg_clause_costs(root, parse->havingQual, AGGSTAGE_FINAL, &agg_final_costs);
 	}
 
 	hashagg_table_size = ts_estimate_hashagg_tablesize(cheapest_partial_path,
@@ -80,7 +80,7 @@ plan_add_parallel_hashagg(PlannerInfo *root, RelOptInfo *input_rel, RelOptInfo *
 											  cheapest_partial_path,
 											  partial_grouping_target,
 											  AGG_HASHED,
-											  AGGSPLIT_INITIAL_SERIAL,
+											  AGGSTAGE_PARTIAL,
 											  parse->groupClause,
 											  NIL,
 											  &agg_partial_costs,
@@ -105,7 +105,7 @@ plan_add_parallel_hashagg(PlannerInfo *root, RelOptInfo *input_rel, RelOptInfo *
 									  partial_path,
 									  target,
 									  AGG_HASHED,
-									  AGGSPLIT_FINAL_DESERIAL,
+									  AGGSTAGE_FINAL,
 									  parse->groupClause,
 									  (List *) parse->havingQual,
 									  &agg_final_costs,
@@ -131,8 +131,8 @@ ts_plan_add_hashagg(PlannerInfo *root, RelOptInfo *input_rel, RelOptInfo *output
 		return;
 
 	MemSet(&agg_costs, 0, sizeof(AggClauseCosts));
-	get_agg_clause_costs(root, (Node *) root->processed_tlist, AGGSPLIT_SIMPLE, &agg_costs);
-	get_agg_clause_costs(root, parse->havingQual, AGGSPLIT_SIMPLE, &agg_costs);
+	get_agg_clause_costs(root, (Node *) root->processed_tlist, AGGSTAGE_NORMAL, &agg_costs);
+	get_agg_clause_costs(root, parse->havingQual, AGGSTAGE_NORMAL, &agg_costs);
 
 	can_hash = (parse->groupClause != NIL && agg_costs.numOrderedAggs == 0 &&
 				grouping_is_hashable(parse->groupClause));
@@ -181,7 +181,7 @@ ts_plan_add_hashagg(PlannerInfo *root, RelOptInfo *input_rel, RelOptInfo *output
 									  cheapest_path,
 									  target,
 									  AGG_HASHED,
-									  AGGSPLIT_SIMPLE,
+									  AGGSTAGE_NORMAL,
 									  parse->groupClause,
 									  (List *) parse->havingQual,
 									  &agg_costs,

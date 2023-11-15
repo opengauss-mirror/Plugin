@@ -73,7 +73,7 @@ check_for_partialize_function_call(Node *node, PartializeWalkerState *state)
 			aggref->aggsplit =6 ;
 
 			if (aggref->aggtranstype == INTERNALOID &&
-				DO_AGGSPLIT_SERIALIZE(AGGSPLIT_INITIAL_SERIAL))
+				DO_AGGSPLIT_SERIALIZE(AGGSTAGE_PARTIAL))
 				aggref->aggtype = BYTEAOID;
 			else
 				aggref->aggtype = aggref->aggtranstype;
@@ -85,7 +85,7 @@ check_for_partialize_function_call(Node *node, PartializeWalkerState *state)
 		 * We check for non-partial aggs to ensure that if any of the aggregates
 		 * in a statement are partialized, all of them have to be.
 		 */
-		else if (aggref->aggsplit != AGGSPLIT_INITIAL_SERIAL)
+		else if (aggref->aggsplit != AGGSTAGE_PARTIAL)
 			state->found_non_partial_agg = true;
 	}
 	else if (IsA(node, FuncExpr) && ((FuncExpr *) node)->funcid == state->fnoid)
@@ -133,7 +133,7 @@ partialize_agg_paths(RelOptInfo *rel)
 		Path *path =(Path *) lfirst(lc);
 
 		if (IsA(path, AggPath))
-			castNode(AggPath, path)->aggsplit = AGGSPLIT_INITIAL_SERIAL;
+			castNode(AggPath, path)->aggsplit = AGGSTAGE_PARTIAL;
 	}
 }
 
