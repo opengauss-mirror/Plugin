@@ -126,6 +126,7 @@ extern void DateTimeParseErrorWithFlag(int dterr, const char* str, const char* d
 extern void DateTimeParseErrorInternal(int dterr, const char* str, const char* datatype, int level);
 
 bool CheckDateRange(const pg_tm *tm, bool not_zero_date, time_flags flags);
+bool CheckDatetimeRange(const pg_tm *tm, const fsec_t fsec, const int tm_type);
 
 #endif
 extern bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano);

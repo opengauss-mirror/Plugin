@@ -12,6 +12,11 @@ DROP FUNCTION IF EXISTS pg_catalog.text_time_explicit(TEXT);
 
 DROP FUNCTION IF EXISTS pg_catalog.day(time without time zone);
 
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(int8);
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(numeric);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(numeric) RETURNS int4 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as text)) $$ LANGUAGE SQL;
+
 DROP OPERATOR IF EXISTS pg_catalog.=(time, timestamp without time zone);
 DROP OPERATOR IF EXISTS pg_catalog.<>(time, timestamp without time zone);
 DROP OPERATOR IF EXISTS pg_catalog.<=(time, timestamp without time zone);

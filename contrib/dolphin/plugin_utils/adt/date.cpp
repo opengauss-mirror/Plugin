@@ -133,6 +133,10 @@ extern "C" DLL_PUBLIC Datum utc_time_func(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(time_to_sec);
 extern "C" DLL_PUBLIC Datum time_to_sec(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int64_time_to_sec);
+extern "C" DLL_PUBLIC Datum int64_time_to_sec(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_time_to_sec);
+extern "C" DLL_PUBLIC Datum numeric_time_to_sec(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(datediff_t_t);
 extern "C" DLL_PUBLIC Datum datediff_t_t(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(datediff_t_n);
@@ -5067,8 +5071,13 @@ Datum time_bool(PG_FUNCTION_ARGS)
 
 /**
  * The function is similar to time_in, but uses flag to control the parsing process.
+ *
+ * return value :
+ * true : there is no warning on str to time, str is correct
+ * false : there are some warnings on str to time, str is incorrect
  */
-void time_in_with_flag_internal(char *str, struct pg_tm *result_tm, fsec_t *result_fsec, int *result_timeSign, unsigned int date_flag)
+bool time_in_with_flag_internal(char *str, struct pg_tm *result_tm, fsec_t *result_fsec, int *result_timeSign,
+    unsigned int date_flag, bool vertify_time = false)
 {
     struct pg_tm tt1, *tm = &tt1;
     fsec_t fsec = 0;
@@ -5080,6 +5089,10 @@ void time_in_with_flag_internal(char *str, struct pg_tm *result_tm, fsec_t *resu
     securec_check(rc, "\0", "\0");
     cstring_to_time(str, tm, fsec, timeSign, tm_type, warnings, &null_func_result);
 
+    if (!warnings && vertify_time) {
+        warnings = !CheckDatetimeRange(tm, fsec, DTK_TIME) || !CheckDateRange(tm, non_zero_date(tm), 0);
+    }
+
     if (warnings) {
         int errlevel = (SQL_MODE_STRICT() || null_func_result) ? ERROR : WARNING;
         ereport(errlevel,
@@ -5090,20 +5103,24 @@ void time_in_with_flag_internal(char *str, struct pg_tm *result_tm, fsec_t *resu
     securec_check(rc, "\0", "\0");
     *result_fsec = fsec;
     *result_timeSign = timeSign;
-    return;
+    return vertify_time ? !warnings : true;
 }
 
-TimeADT time_in_with_flag(char *str, unsigned int date_flag)
+bool time_in_with_flag(char *str, unsigned int date_flag, TimeADT* time_adt, bool vertify_time)
 {
     TimeADT result;
     struct pg_tm tt, *tm = &tt;
     fsec_t fsec;
     int timeSign;
-    time_in_with_flag_internal(str, tm, &fsec, &timeSign, date_flag);
+    bool vertify_time_result = time_in_with_flag_internal(str, tm, &fsec, &timeSign, date_flag, vertify_time);
+    if (!vertify_time_result) {
+        return false;
+    }
     tm2time(tm, fsec, &result);
     AdjustTimeForTypmod(&result, TIMESTAMP_MAX_PRECISION);
     result *= timeSign;
-    return result;
+    *time_adt = result;
+    return true;
 }
 
 /**
@@ -5148,7 +5165,8 @@ Datum time_to_sec(PG_FUNCTION_ARGS)
 {
     TimeADT time;
     char *time_str = text_to_cstring(PG_GETARG_TEXT_PP(0));
-    struct pg_tm result_tt, *result_tm = &result_tt;
+    pg_tm result_tt;
+    pg_tm* result_tm = &result_tt;
     fsec_t fsec;
     int32 result;
     int32 timeSign = 1;
@@ -5164,6 +5182,102 @@ Datum time_to_sec(PG_FUNCTION_ARGS)
     result = ((result_tm->tm_hour * MINS_PER_HOUR + result_tm->tm_min) * SECS_PER_MINUTE) + result_tm->tm_sec;
     result *= timeSign;
     PG_RETURN_INT32(result);
+}
+
+
+/* int64_time_to_sec
+ * @param time, type is int
+ * @return seconds of the given time
+ */
+Datum int64_time_to_sec(PG_FUNCTION_ARGS)
+{
+    TimeADT time;
+    int64 input_time = PG_GETARG_INT64(0);
+    pg_tm result_tt = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    pg_tm* result_tm = &result_tt;
+    fsec_t fsec;
+    int32 timeSign = 1;
+    int32 result;
+
+    errno_t errorno = EOK;
+    char time_str[MAX_LONGLONG_TO_CHAR_LENGTH] = {0};
+    errorno = sprintf_s(time_str, sizeof(time_str), "%lld", input_time);
+    securec_check_ss(errorno, "\0", "\0");
+
+    if (!check_time_min_value(time_str, input_time, fcinfo->can_ignore)) {
+        PG_RETURN_NULL();
+    }
+    if (!longlong_to_tm(input_time, &time, result_tm, &fsec, &timeSign)) {
+        PG_RETURN_NULL();
+    }
+    
+    result = ((result_tm->tm_hour * MINS_PER_HOUR + result_tm->tm_min) * SECS_PER_MINUTE) + result_tm->tm_sec;
+    result *= timeSign;
+    PG_RETURN_INT32(result);
+}
+
+
+/* numeric_time_to_sec
+ * @param time, type is numeric
+ * @return seconds of the given time
+ */
+Datum numeric_time_to_sec(PG_FUNCTION_ARGS)
+{
+    Numeric num1 = PG_GETARG_NUMERIC(0);
+    lldiv_t div1;
+    struct pg_tm tt1 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    pg_tm* result_tm = &tt1;
+    int32 result;
+    TimeADT time;
+    fsec_t fsec;
+    int32 timeSign = 1;
+    
+    Numeric_to_lldiv(num1, &div1);
+
+    char* input_str = DatumGetCString(numeric_out_with_zero(fcinfo));
+
+    if (!check_time_min_value(input_str, div1.quot, fcinfo->can_ignore)) {
+        PG_RETURN_NULL();
+    }
+    if (!longlong_to_tm(div1.quot, &time, result_tm, &fsec, &timeSign)) {
+        PG_RETURN_NULL();
+    }
+    
+    div1.rem = div1.rem < 0 ? -div1.rem : div1.rem;
+
+    time_add_nanoseconds_with_round(input_str, result_tm, div1.rem, &fsec, fcinfo->can_ignore);
+    result = ((result_tm->tm_hour * MINS_PER_HOUR + result_tm->tm_min) * SECS_PER_MINUTE) + result_tm->tm_sec;
+    result *= timeSign;
+    PG_RETURN_INT32(result);
+}
+
+
+bool check_time_min_value(char* input_str, long long nr, bool can_ignore)
+{
+    int errlevel = (SQL_MODE_STRICT() && !can_ignore) ? ERROR : WARNING;
+    if (nr < -TIME_MAX_VALUE) {
+        ereport(errlevel, (errmsg("Truncated incorrect time value: \"%s\"", input_str)));
+        return false;
+    }
+    return true;
+}
+
+bool longlong_to_tm(long long nr, TimeADT* time, pg_tm* result_tm, fsec_t* fsec, int32* timeSign)
+{
+    errno_t errorno = EOK;
+    char time_str[MAX_LONGLONG_TO_CHAR_LENGTH] = {0};
+    errorno = sprintf_s(time_str, sizeof(time_str), "%lld", nr);
+    securec_check_ss(errorno, "\0", "\0");
+    *timeSign = 1;
+    if (!time_in_with_sql_mode(time_str, time, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH), true)) {
+        return false;
+    }
+    if (*time < 0) {
+        *timeSign = -1;
+        *time = -*time;
+    }
+    time2tm(*time, result_tm, fsec);
+    return true;
 }
 
 static inline int32 datediff_internal(struct pg_tm* tm1, struct pg_tm* tm2)
@@ -5582,14 +5696,14 @@ Datum GetSecond(PG_FUNCTION_ARGS)
     return GetSepecificPartOfTime(fcinfo, "second");
 }
 
-bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag)
+bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag, bool vertify_time)
 {
     bool ret = true;
     int code;
     const char *msg = NULL;
     PG_TRY();
     {
-        *result = time_in_with_flag(str, date_flag);
+        ret = time_in_with_flag(str, date_flag, result, vertify_time);
     }
     PG_CATCH();
     {
@@ -5997,6 +6111,94 @@ Datum date_int(PG_FUNCTION_ARGS)
     int32 res = date2int(tm);
     PG_RETURN_INT32(res);
 }
+
+/**
+  format frac part of the time as nanoseconds format
+  for example it return .900000000 when src = .900
+  for time, xx.900000000 is equal to .900
+*/
+long long align_to_nanoseconds(long long src)
+{
+    if (src <= 0) {
+        return src;
+    }
+    while (src <= TIME_MAX_NANO_SECOND) {
+        src = src * TIME_NANO_SECOND_RADIX;
+    }
+    return src;
+}
+
+/**
+  verity the available of timestamp and micro seconds, compatible with mysql same function
+  return true -- unavailable
+  return false -- available
+*/
+bool check_time_mmssff_range(pg_tm *tm, long long microseconds)
+{
+  return tm->tm_min > TIME_MAX_MINUTE || tm->tm_sec > TIME_MAX_SECOND ||
+         microseconds > TIME_MAX_FRAC;
+}
+
+/**
+  time_add_nanoseconds_with_round refers to mysql for compatible with mysql time_to_sec function.
+  the function do the round on nanoseconds of the time
+*/
+bool time_add_nanoseconds_with_round(char* input_str, pg_tm *tm, long long rem, fsec_t* fsec, bool can_ignore)
+{
+    int errlevel = (SQL_MODE_STRICT() && !can_ignore) ? ERROR : WARNING;
+    /* We expect correct input data */
+    if (rem >= MAX_NANO_SECOND) {
+        ereport(errlevel, (errmsg("Truncated incorrect time value: \"%s\"", input_str)));
+    }
+
+    rem = align_to_nanoseconds(rem);
+    uint microseconds = rem / TIME_MS_TO_S_RADIX;
+    uint nanoseconds = rem % TIME_MS_TO_S_RADIX;
+
+    if (check_time_mmssff_range(tm, microseconds)) {
+        ereport(WARNING, (errmsg("Truncated incorrect time value")));
+    }
+
+    if (nanoseconds < NANO_SECOND_ROUND_BASE)
+        return false;
+
+    microseconds += (nanoseconds + NANO_SECOND_ROUND_BASE) / TIME_NANO_SECOND_TO_MICRO_SECOND_RADIX;
+    if (microseconds < MAX_MICRO_SECOND)
+        goto ret;
+
+    microseconds %= MAX_MICRO_SECOND;
+    if (tm->tm_sec < TIME_MAX_SECOND)
+    {
+        tm->tm_sec++;
+        goto ret;
+    }
+
+    tm->tm_sec= 0;
+    if (tm->tm_min < TIME_MAX_SECOND)
+    {
+        tm->tm_min++;
+        goto ret;
+    }
+    tm->tm_min= 0;
+    tm->tm_hour++;
+
+    *fsec = microseconds * TIME_MS_TO_S_RADIX + nanoseconds;
+
+ret:
+    /*
+      We can get '838:59:59.000001' at this point, which
+      is bigger than the maximum possible value '838:59:59.000000'.
+      Checking only "hour > 838" is not enough.
+      Do full adjust_time_range().
+    */
+    bool warning = false;
+    adjust_time_range(tm, *fsec, warning);
+    if (warning == true) {
+        ereport(errlevel, (errmsg("Truncated incorrect time value: \"%s\"", input_str)));
+    }
+    return false;
+}
+
 #endif
 
 #ifdef DOLPHIN
