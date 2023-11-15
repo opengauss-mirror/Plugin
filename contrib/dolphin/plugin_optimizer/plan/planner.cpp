@@ -94,12 +94,6 @@
 #include "catalog/gs_collation.h"
 #include "replication/libpqsw.h"
 
-/* Hook for plugins to get control in planner() */
-THR_LOCAL ndp_pushdown_hook_type ndp_pushdown_hook = NULL;
-#ifdef USE_SPQ
-THR_LOCAL spq_planner_hook_type spq_planner_hook = NULL;
-#endif
-
 #ifndef MIN
 #define MIN(A, B) ((B) < (A) ? (B) : (A))
 #endif
