@@ -44,9 +44,9 @@ WARNING:  timestamp out of range
 CONTEXT:  referenced column: timestamp
 SQL function "bittodatetime" statement 1
 referenced column: timestamp
-      timestamp      
----------------------
- 0000-00-00 00:00:00
+ timestamp 
+-----------
+ 
 (1 row)
 
 select '2022-01-01'::bit(64)::timestamp;
@@ -60,9 +60,9 @@ WARNING:  timestamp out of range
 CONTEXT:  referenced column: timestamptz
 SQL function "bittotimestamp" statement 1
 referenced column: timestamptz
-      timestamptz       
-------------------------
- 0000-00-00 00:00:00-08
+ timestamptz 
+-------------
+ 
 (1 row)
 
 select 8385958.999999::bit(64)::time;
