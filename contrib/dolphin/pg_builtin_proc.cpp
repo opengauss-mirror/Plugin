@@ -34,6 +34,15 @@
 #include "plugin_utils/fmgroids.h"
 #include "plugin_utils/pg_builtin_proc.h"
 
+#ifdef DOLPHIN
+/*
+ * we init b_oidhash and b_nameHash by tmp value, to avoid other backend access b_oidhash/b_nameHash
+ * before we have init all entry in it.
+ */
+struct HTAB* g_tmp_b_nameHash = NULL;
+struct HTAB* g_tmp_b_oidHash = NULL;
+#endif
+
 static_assert(sizeof(true) == sizeof(char), "illegal bool size");
 static_assert(sizeof(false) == sizeof(char), "illegal bool size");
 
@@ -91,17 +100,17 @@ static void InitHashTable(int size)
     info.entrysize = sizeof(HashEntryNameToFuncGroup);
     info.hash = string_hash;
     info.hcxt = g_instance.builtin_proc_context;
-    b_nameHash = hash_create("builtin proc name Lookup Table", size, &info,
+    g_tmp_b_nameHash = hash_create("builtin proc name Lookup Table", size, &info,
                                 HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
     info.keysize = sizeof(Oid);
     info.entrysize = sizeof(HashEntryOidToBuiltinFunc);
     info.hash = oid_hash;
     info.hcxt = g_instance.builtin_proc_context;
-    b_oidHash = hash_create("builtin proc Oid Lookup Table", size, &info,
+    g_tmp_b_oidHash = hash_create("builtin proc Oid Lookup Table", size, &info,
                                 HASH_ELEM | HASH_FUNCTION | HASH_CONTEXT);
 }
 
-static const FuncGroup* NameHashTableAccess(HASHACTION action, const char* name, const FuncGroup* group)
+static const FuncGroup* NameHashTableAccess(HASHACTION action, const char* name, const FuncGroup* group, HTAB* hashp)
 {
     char temp_name[MAX_PROC_NAME_LEN] = {0};
     int rc = strncpy_s((char*)temp_name, MAX_PROC_NAME_LEN, name, strlen(name));
@@ -111,7 +120,7 @@ static const FuncGroup* NameHashTableAccess(HASHACTION action, const char* name,
 
     Assert(name != NULL);
 
-    result = (HashEntryNameToFuncGroup *)hash_search(b_nameHash, &temp_name, action, &found);
+    result = (HashEntryNameToFuncGroup *)hash_search(hashp, &temp_name, action, &found);
     if (action == HASH_ENTER) {
         Assert(!found);
         result->group = group;
@@ -127,13 +136,13 @@ static const FuncGroup* NameHashTableAccess(HASHACTION action, const char* name,
 }
 
 
-static const Builtin_func* OidHashTableAccess(HASHACTION action, Oid oid, const Builtin_func* func)
+static const Builtin_func* OidHashTableAccess(HASHACTION action, Oid oid, const Builtin_func* func, HTAB* hashp)
 {
     HashEntryOidToBuiltinFunc *result = NULL;
     bool found = false;
     Assert(oid > 0);
 
-    result = (HashEntryOidToBuiltinFunc *)hash_search(b_oidHash, &oid, action, &found);
+    result = (HashEntryOidToBuiltinFunc *)hash_search(hashp, &oid, action, &found);
     if (action == HASH_ENTER) {
         Assert(!found);
         result->func = func;
@@ -165,11 +174,11 @@ void initBSQLBuiltinFuncs()
     for (int i = 0; i < b_nfuncgroups; i++) {
         const FuncGroup* fg = &b_func_groups[i];
         CheckNameLength(fg->funcName);
-        NameHashTableAccess(HASH_ENTER, fg->funcName, fg);
+        NameHashTableAccess(HASH_ENTER, fg->funcName, fg, g_tmp_b_nameHash);
 
         for (int j = 0; j < fg->fnums; j++) {
             CheckNameLength(fg->funcs[j].funcName);
-            OidHashTableAccess(HASH_ENTER, fg->funcs[j].foid, &fg->funcs[j]);
+            OidHashTableAccess(HASH_ENTER, fg->funcs[j].foid, &fg->funcs[j], g_tmp_b_oidHash);
             g_sorted_funcs[nfunc++] = &fg->funcs[j];
         }
     }
@@ -180,4 +189,7 @@ void initBSQLBuiltinFuncs()
                 "the number of functions in is mismatch with the declaration")));
     }
     qsort(g_sorted_funcs, nBuiltinFuncs, sizeof(g_sorted_funcs[0]), cmp_func_by_oid);
+    /* all have beed inited, assign value to real b_nameHash/b_oidHash */
+    b_nameHash = g_tmp_b_nameHash;
+    b_oidHash = g_tmp_b_oidHash;
 }
