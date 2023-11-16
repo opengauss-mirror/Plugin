@@ -741,6 +741,9 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
     if (ts < B_FORMAT_DATE_INT_MIN) {
         ereport(level,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+#ifdef DOLPHIN
+        *time_error_type = TIME_INCORRECT;
+#endif
         return TIMESTAMP_ZERO;
     }
     /* find out how many digits in ts */
@@ -816,7 +819,7 @@ Datum timestamp_to_datum(PG_FUNCTION_ARGS, bool hasTz, int64 ts)
 {
     TimeErrorType time_error_type = TIME_CORRECT;
     int64 result = integer_b_format_timestamp(hasTz, ts, fcinfo->can_ignore, &time_error_type);
-    if (fcinfo->ccontext == COERCION_IMPLICIT && time_error_type == TIME_INCORRECT) {
+    if (fcinfo->ccontext == COERCION_IMPLICIT && time_error_type == TIME_INCORRECT && ENABLE_B_CMPT_MODE) {
         PG_RETURN_NULL();
     }
     PG_RETURN_TIMESTAMP(result);
