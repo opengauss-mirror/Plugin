@@ -743,7 +743,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 				name namedata_string fdwName cursor_name file_name
 				index_name cluster_index_specification dolphin_index_name
 				pgxcnode_name pgxcgroup_name resource_pool_name workload_group_name
-				application_name password_string hint_string
+				application_name password_string hint_string dolphin_force_index_name
 %type <list>	func_name func_name_opt_arg dolphin_func_name_opt_arg pkg_name  handler_name qual_Op qual_all_Op subquery_Op dolphin_func_name
 				opt_class opt_inline_handler opt_validator validator_clause
 				opt_collation collate_option
@@ -18986,11 +18986,11 @@ opt_index_name:
 
 /* b compatibility index hint part */
 key_usage_list:
-			index_name
+			dolphin_force_index_name
 			{
 				$$ = list_make1(makeString($1));
 			}
-			| key_usage_list ',' index_name
+			| key_usage_list ',' dolphin_force_index_name
 			{
 				$$ = lappend($1,makeString($3));
 			}
@@ -36589,6 +36589,11 @@ access_method:
 attr_name:	ColLabel								{ $$ = $1; };
 
 index_name: ColId									{ $$ = $1; };
+
+dolphin_force_index_name:
+			index_name								{ $$ = $1; }
+			| PRIMARY								{ $$ = downcase_str(pstrdup($1), false);}
+			;
 
 dolphin_index_name: DolphinColId					{ $$ = downcase_str($1->str, $1->is_quoted); };
 

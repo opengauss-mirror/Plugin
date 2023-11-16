@@ -3077,7 +3077,17 @@ static IndexHintType preCheckIndexHints(ParseState* pstate, List* indexhints, Re
         }
         /*check index is in table*/
         foreach (lc_index, idef->indexnames) {
+#ifdef DOLPHIN
+            char* indexName = strVal(lfirst(lc_index));
+            /* if index name is a primary, we use this relation's pk */
+            if (strcmp(indexName, "primary") == 0) {
+                indexOid = RelationGetPrimaryKeyIndex(relation);
+            } else {
+                indexOid = get_relname_relid(indexName, relationNsOid);
+            }
+#else
             indexOid = get_relname_relid(strVal(lfirst(lc_index)), relationNsOid);
+#endif
             exist_indexs = false;
             if (OidIsValid(indexOid)) {
                 if (list_member_oid(indexList, indexOid)) {
