@@ -45,7 +45,6 @@
 #define FRAC_PART_LEN_IN_NUMERICSEC 100000000
 #define TIME_WITH_FORMAT_ARGS_SIZE 4
 #define TIME_MS_TO_S_RADIX 1000
-
 #ifdef DOLPHIN
 #define TWO_DIGITS_YEAR_DATE_ONE 691231 /* 2069-12-31 */
 #define TWO_DIGITS_YEAR_DATE_TWO 700101 /* 1970-01-01 */
@@ -57,6 +56,13 @@
 #define DATE_ALL_ZERO_VALUE (-2451508)
 #define JDATE_ALL_ZERO_VALUE (DATE_ALL_ZERO_VALUE + POSTGRES_EPOCH_JDATE)
 #define MONTH_TO_QUARTER_RADIX 3
+#define MAX_LONGLONG_TO_CHAR_LENGTH 21
+#define TIME_NANO_SECOND_RADIX 10
+#define MAX_NANO_SECOND 1000000000
+#define NANO_SECOND_ROUND_BASE 500
+#define MAX_MICRO_SECOND 1000000
+#define TIME_MAX_NANO_SECOND 99999999
+#define TIME_NANO_SECOND_TO_MICRO_SECOND_RADIX 1000
 #endif
 
 /* for b compatibility type*/
@@ -83,14 +89,19 @@ extern void check_b_format_time_range_with_ereport(TimeADT &time, bool can_ignor
 extern void check_b_format_date_range_with_ereport(DateADT &date);
 extern Oid convert_to_datetime_date(Datum value, Oid valuetypid, Timestamp *datetime, DateADT *date);
 extern void adjust_time_range(pg_tm *tm, fsec_t &fsec, bool &warnings);
-extern TimeADT time_in_with_flag(char *str, unsigned int date_flag);
-extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag);
+extern bool time_in_with_flag(char *str, unsigned int date_flag, TimeADT* time_adt, bool vertify_time = false);
+extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag, bool vertify_time = false);
 extern bool date_add_interval(DateADT date, Interval *span, DateADT *result);
 extern Datum date_internal(PG_FUNCTION_ARGS, bool is_date_sconst, TimeErrorType* time_error_type);
 extern "C" Datum time_float(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum date_enum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum timestamp_enum(PG_FUNCTION_ARGS);
 extern Datum textout (PG_FUNCTION_ARGS);
+extern bool time_add_nanoseconds_with_round(char* input_str, pg_tm *tm, long long rem, fsec_t* fsec, bool can_ignore);
+extern long long align_to_nanoseconds(long long src);
+extern bool check_time_mmssff_range(pg_tm *tm, long long microseconds);
+extern bool longlong_to_tm(long long nr, TimeADT* time, pg_tm* result_tm, fsec_t* fsec, int32* timeSign);
+bool check_time_min_value(char* input_str, long long nr, bool can_ignore);
 
 typedef struct DateTimeFormat
 {
