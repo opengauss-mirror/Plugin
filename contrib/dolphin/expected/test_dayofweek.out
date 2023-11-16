@@ -204,9 +204,7 @@ select * from t_datetime;
 
 set dolphin.b_compatibility_mode = true;
 select dayofmonth('20:38:40');
-WARNING:  invalid input syntax for type timestamp: "20:38:40"
-LINE 1: select dayofmonth('20:38:40');
-                          ^
+WARNING:  Incorrect datetime value: "20:38:40"
 CONTEXT:  referenced column: dayofmonth
  dayofmonth 
 ------------
@@ -220,7 +218,7 @@ select dayofmonth(time'20:38:40');
 (1 row)
 
 select dayofmonth(203840);
-WARNING:  timestamp out of range
+WARNING:  Incorrect datetime value: "203840"
 CONTEXT:  referenced column: dayofmonth
  dayofmonth 
 ------------
