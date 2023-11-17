@@ -10623,11 +10623,13 @@ TableLikeOptionList:
 				| TableLikeOptionList EXCLUDING TableLikeExcludingOption
 					{
 						if ($3 == CREATE_TABLE_LIKE_ALL) {
-							$$ = ($1 & ~$3) | CREATE_TABLE_LIKE_EXCLUDING_PARTITION | CREATE_TABLE_LIKE_EXCLUDING_INDEXES;
+							$$ = ($1 & ~$3) | CREATE_TABLE_LIKE_EXCLUDING_PARTITION | CREATE_TABLE_LIKE_EXCLUDING_INDEXES | CREATE_TABLE_LIKE_EXCLUDING_DEFAULTS;
 						} else if ($3 & CREATE_TABLE_LIKE_INDEXES) {
 							$$ = ($1 & ~$3) | CREATE_TABLE_LIKE_EXCLUDING_INDEXES;
 						} else if ($3 & CREATE_TABLE_LIKE_PARTITION) {
 							$$ = ($1 & ~$3) | CREATE_TABLE_LIKE_EXCLUDING_PARTITION;
+						} else if ($3 & CREATE_TABLE_LIKE_DEFAULTS) {
+							$$ = ($1 & ~$3) | CREATE_TABLE_LIKE_EXCLUDING_DEFAULTS;
 						} else {
 							$$ = $1 & ~$3; 
 						}
