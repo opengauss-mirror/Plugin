@@ -112,5 +112,14 @@ select name from dataa;
 (1 row)
 
 drop table dataa;
+create table t1_z (jdoc JSON);
+insert into t1_z select ('{' || string_agg('"key' || i || '": "value' || i || '"', ',') || '}')::json from generate_series(1,10) as i;
+select json_set(jdoc,'$.key09','test09','$.key1','test1') from t1_z;
+                                                                                                 json_set                                                                                                 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"key1": "test1", "key2": "value2", "key3": "value3", "key4": "value4", "key5": "value5", "key6": "value6", "key7": "value7", "key8": "value8", "key9": "value9", "key09": "test09", "key10": "value10"}
+(1 row)
+
+drop table t1_z;
 drop schema test_json_set cascade;
 reset current_schema;
