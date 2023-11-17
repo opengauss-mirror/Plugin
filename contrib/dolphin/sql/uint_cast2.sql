@@ -312,5 +312,20 @@ insert into t1 values((-1)::uint1);
 insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 
+select cast(1 as signed integer);
+select cast(1 as unsigned integer);
+select convert(1 , signed integer);
+select convert(1 , unsigned integer);
+
+select cast(1 as integer signed);
+select cast(1 as integer unsigned);
+select convert(1 , integer signed);
+select convert(1 , integer unsigned);
+
+select cast(1 as  signed);
+select cast(1 as unsigned);
+select convert(1 , signed);
+select convert(1 , unsigned);
+
 drop schema uint_cast2 cascade;
 reset current_schema;
