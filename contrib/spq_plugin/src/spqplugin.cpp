@@ -42,6 +42,9 @@ static bool check_rangetbl_support(List* rtable)
         Assert(IsA(rte, RangeTblEntry));
         if (rte->rtekind == RTE_FUNCTION || rte->ispartrel) {
             return false;
+        } else if (rte->rtekind == RTE_SUBQUERY) {
+            Assert(rte->subquery != NULL);
+            return check_rangetbl_support(rte->subquery->rtable);
         }
     }
     return true;
@@ -156,10 +159,6 @@ static bool should_spq_planner(Query *parse)
         elog(ERROR, "parse should not be null.");
     }
 
-    if (!parse->is_support_spq) {
-        return false;
-    }
-
     if (parse->commandType != CMD_SELECT) {
         elog(DEBUG1, "spq can not support this commandType.");
         return false;
@@ -188,7 +187,7 @@ PlannedStmt* spq_optimize_query(Query* parse, int cursorOptions, ParamListInfo b
     instr_time starttime;
     double totaltime = 0;
     t_thrd.spq_ctx.spq_role = ROLE_UTILITY;
-    if (should_spq_planner(parse)) {
+    if ((cursorOptions & CURSOR_OPT_SPQ_OK) && should_spq_planner(parse)) {
         t_thrd.spq_ctx.spq_role = ROLE_QUERY_COORDINTOR;
         t_thrd.spq_ctx.spq_session_id = u_sess->debug_query_id;
         t_thrd.spq_ctx.current_id = 0; 
