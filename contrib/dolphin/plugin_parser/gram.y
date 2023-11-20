@@ -1323,7 +1323,8 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %left		AND
 %right		NOT
 %right		'=' CmpNullOp COLON_EQUALS
-%nonassoc	'<' '>' CmpOp BINARY
+%left		'<' '>' CmpOp
+%nonassoc	BINARY
 %nonassoc	LIKE ILIKE SIMILAR SOUNDS NOT_LIKE NOT_ILIKE NOT_SIMILAR
 %nonassoc	ESCAPE
 %nonassoc	OVERLAPS
