@@ -1690,13 +1690,13 @@ Datum time_cast(PG_FUNCTION_ARGS)
     return time_internal(fcinfo, input_str, TIME_CAST, &time_error_type);
 }
 
-
 Datum time_cast_implicit(PG_FUNCTION_ARGS)
 {
     char* input_str = DatumGetCString(textout(fcinfo));
-    return DirectFunctionCall1(time_in, CStringGetDatum(input_str));
+    TimeErrorType time_error_type = TIME_CORRECT;
+    Datum datum_internal = time_internal(fcinfo, input_str, TIME_CAST_IMPLICIT, &time_error_type);
+    return datum_internal;
 }
-
 
 char* parser_function_input(Datum txt, Oid oid)
 {
@@ -1805,7 +1805,8 @@ Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
                 } else if (SQL_MODE_NOT_STRICT_ON_INSERT()) {
                     /* for case insert unavailable data, need to set the unavailable data to 0 to compatible with M */
                     DateTimeParseError(dterr, str, "time", true);
-                    if (IsResetUnavailableDataTime(dterr, !SQL_MODE_STRICT() && !CMD_TAG_IS_SELECT())) {
+                    if (IsResetUnavailableDataTime(dterr, !CMD_TAG_IS_SELECT() &&
+                            time_cast_type != TIME_CAST_IMPLICIT)) {
                         *time_error_type = TIME_IGNORED_INCORRECT;
                         PG_RETURN_TIMEADT(0);
                     } else {
@@ -4089,7 +4090,7 @@ bool check_pg_tm_time_part(pg_tm *tm, fsec_t fsec)
  * @in fsec - fractional second part in TIME
  * NOTIC: Ensure that all time parts in tm are not out of range before input by check_pg_tm_time_part()
  *
- * @return TRUE if time is out of range, false otherwise.
+ * @return false if time is out of range, true otherwise.
  */
 bool check_pg_tm_time_range(pg_tm *tm, fsec_t fsec)
 {

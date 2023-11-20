@@ -361,7 +361,7 @@ SELECT time'12:12:12.123456';
 (1 row)
 
 SELECT time'34 22:59:59.999999';
-ERROR:  Incorrect time value
+ERROR:  date/time field value out of range: "34 22:59:59.999999"
 CONTEXT:  referenced column: time
 SELECT time'12:60:12.123456';
 ERROR:  date/time field value out of range: "12:60:12.123456"
@@ -370,10 +370,10 @@ SELECT time'12:12:60.123456';
 ERROR:  date/time field value out of range: "12:12:60.123456"
 CONTEXT:  referenced column: time
 SELECT time'34 23:00:00';
-ERROR:  Incorrect time value
+ERROR:  date/time field value out of range: "34 23:00:00"
 CONTEXT:  referenced column: time
 SELECT time'-34 23:00:00';
-ERROR:  Incorrect time value
+ERROR:  date/time field value out of range: "-34 23:00:00"
 CONTEXT:  referenced column: time
 SELECT time'34 22:59:59';
    time    
@@ -388,16 +388,16 @@ SELECT time'-34 22:59:59';
 (1 row)
 
 SELECT time'34 22:59:59.999999';
-ERROR:  Incorrect time value
+ERROR:  date/time field value out of range: "34 22:59:59.999999"
 CONTEXT:  referenced column: time
 SELECT time'34 22:59:59.9999999999999999999999';
-ERROR:  Incorrect time value
+ERROR:  date/time field value out of range: "34 22:59:59.9999999999999999999999"
 CONTEXT:  referenced column: time
 SELECT time'-34 22:59:59.9999999999999999999999';
-ERROR:  Incorrect time value
+ERROR:  date/time field value out of range: "-34 22:59:59.9999999999999999999999"
 CONTEXT:  referenced column: time
 SELECT time'-34 22:59:59.9999999999999999999999';
-ERROR:  Incorrect time value
+ERROR:  date/time field value out of range: "-34 22:59:59.9999999999999999999999"
 CONTEXT:  referenced column: time
 SELECT time'838:59:59';
    time    
@@ -406,7 +406,7 @@ SELECT time'838:59:59';
 (1 row)
 
 SELECT time'839:00:00';
-ERROR:  Incorrect time value
+ERROR:  date/time field value out of range: "839:00:00"
 CONTEXT:  referenced column: time
 SELECT time'59:59';
    time   

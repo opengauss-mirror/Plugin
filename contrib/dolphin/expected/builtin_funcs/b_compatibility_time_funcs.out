@@ -480,10 +480,10 @@ select * from func_test;
 --?.*
 
 SELECT SUBDATE(time'839:59:59', interval 2 hour);
-ERROR:  Incorrect time value
+ERROR:  date/time field value out of range: "839:59:59"
 CONTEXT:  referenced column: subdate
 SELECT SUBDATE(time'-838:59:59.9', interval 2 hour);
-ERROR:  Incorrect time value
+ERROR:  date/time field value out of range: "-838:59:59.9"
 CONTEXT:  referenced column: subdate
 SELECT SUBDATE('839:59:59', interval 2 hour);
 WARNING:  date/time field value out of range: "839:59:59"
@@ -553,7 +553,7 @@ select hour('838:59:59');
 (1 row)
 
 select hour('-840:59:59');
-WARNING:  Incorrect time value
+WARNING:  date/time field value out of range: "-840:59:59"
 CONTEXT:  referenced column: hour
  hour 
 ------
@@ -561,7 +561,7 @@ CONTEXT:  referenced column: hour
 (1 row)
 
 select hour('840:59:59');
-WARNING:  Incorrect time value
+WARNING:  date/time field value out of range: "840:59:59"
 CONTEXT:  referenced column: hour
  hour 
 ------
@@ -606,7 +606,7 @@ select hour('838:59:59');
 (1 row)
 
 select hour('-840:59:59');
-WARNING:  Incorrect time value
+WARNING:  date/time field value out of range: "-840:59:59"
 CONTEXT:  referenced column: hour
  hour 
 ------
@@ -614,7 +614,7 @@ CONTEXT:  referenced column: hour
 (1 row)
 
 select hour('840:59:59');
-WARNING:  Incorrect time value
+WARNING:  date/time field value out of range: "840:59:59"
 CONTEXT:  referenced column: hour
  hour 
 ------

@@ -2308,7 +2308,10 @@ int ValidateTimeForBDatabase(bool timeIn24, struct pg_tm* tm, fsec_t* fsec)
         if (tm->tm_hour >= B_FORMAT_TIME_BOUND || 
                 (tm->tm_hour == B_FORMAT_TIME_BOUND - 1 && tm->tm_min == MINS_PER_HOUR - 1 && 
                 tm->tm_sec == SECS_PER_MINUTE - 1 && *fsec)) {
-            ereport(ERROR, (errcode(DTERR_FIELD_OVERFLOW), errmsg("Incorrect time value")));
+            // we cannot throw execetion directly for some case,
+            // for eample: function call or insert on non-restrict mode
+            // so we just need to return DTERR_FIELD_OVERFLOW and let it to be handled by caller
+            return DTERR_FIELD_OVERFLOW;
         }
     }
     return 0;

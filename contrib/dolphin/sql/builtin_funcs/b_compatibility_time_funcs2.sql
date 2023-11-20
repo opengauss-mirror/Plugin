@@ -64,6 +64,9 @@ insert into func_test2(functionName, result) values('subtime(''838:59:59'', ''-2
 insert into func_test2(functionName, result) values('subtime(''-838:59:59'', ''25:00'')', subtime('-838:59:59', '25:00') );
 insert into func_test2(functionName, result) values('subtime(''839:59:59'', ''837:59:59'')', subtime('839:59:59', '837:59:59') );
 insert into func_test2(functionName, result) values('subtime(''-837:59:59'', ''-839:59:59'')', subtime('-837:59:59', '-839:59:59') );
+insert into func_test2(functionName, result) values('subtime(8385959, ''-1:00:00'')', subtime(8385959,'-1:00:00'));
+insert into func_test2(functionName, result) values('subtime(8375959.9999999, ''-1:00:00'')', subtime(8375959.9999999,'-1:00:00'));
+insert into func_test2(functionName, result) values('subtime(-8385959, ''1:00:00'')', subtime(-8385959,'1:00:00'));
 -- date格式字符串
 insert into func_test2(functionName, result) values('subtime(''2000-01-01'', ''2022-01-01'')', subtime('2000-01-01', '2022-01-01') ); 
 -- 非字符串类型参数用例
@@ -522,5 +525,27 @@ drop table t1;
 drop table t2;
 
 select * from func_test2;
+
+-- 单独select边界测试
+select subtime('838:59:59', '-25:00');
+select subtime('-838:59:59', '25:00');
+select subtime('839:59:59', '837:59:59');
+select subtime('-837:59:59', '-839:59:59') ;
+select subtime(8385959,'-1:00:00');
+select subtime(8375959.9999999,'-1:00:00');
+select subtime(-8385959,'1:00:00');
+
+-- 非严格模式下的写测试
+truncate table func_test2;
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into func_test2(functionName, result) values('subtime(''838:59:59'', ''-25:00'')', subtime('838:59:59', '-25:00'));
+insert into func_test2(functionName, result) values('subtime(''-838:59:59'', ''25:00'')', subtime('-838:59:59', '25:00'));
+insert into func_test2(functionName, result) values('subtime(''839:59:59'', ''837:59:59'')', subtime('839:59:59', '837:59:59'));
+insert into func_test2(functionName, result) values('subtime(''-837:59:59'', ''-839:59:59'')', subtime('-837:59:59', '-839:59:59'));
+insert into func_test2(functionName, result) values('subtime(8385959, ''-1:00:00'')', subtime(8385959,'-1:00:00'));
+insert into func_test2(functionName, result) values('subtime(8375959.9999999, ''-1:00:00'')', subtime(8375959.9999999,'-1:00:00'));
+insert into func_test2(functionName, result) values('subtime(-8385959, ''1:00:00'')', subtime(-8385959,'1:00:00'));
+select * from func_test2 order by functionName;
+
 drop schema b_time_funcs2 cascade;
 reset current_schema;
