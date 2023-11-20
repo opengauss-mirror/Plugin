@@ -6909,9 +6909,16 @@ Oid convert_cstring_to_datetime_time(const char* str, Timestamp *datetime, TimeA
     }
 
     /* Not a timestamp. Try to convert str to time*/
-    *time = DatumGetTimeADT(
-        DirectFunctionCall3(time_in, CStringGetDatum(start), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
-    check_b_format_time_range_with_ereport(*time, can_ignore, result_isnull);
+    if (can_ignore) {
+        *time = DatumGetTimeADT(
+            DirectFunctionCall3Coll(time_cast_implicit, InvalidOid, PointerGetDatum(cstring_to_text(start)),
+                ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+        *time = adjust_time_range_with_warn(*time, can_ignore);
+    } else {
+        *time = DatumGetTimeADT(
+            DirectFunctionCall3(time_in, CStringGetDatum(start), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+        check_b_format_time_range_with_ereport(*time, can_ignore, result_isnull);
+    }
     return TIMEOID;
 }
 
@@ -7149,7 +7156,7 @@ Datum subtime(PG_FUNCTION_ARGS)
 
     val_type1 = get_fn_expr_argtype(fcinfo->flinfo, 0);
     val_type2 = get_fn_expr_argtype(fcinfo->flinfo, 1);
-    val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1);
+    val_type1 = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type1, &datetime1, &time1, true);
 
     switch (val_type2) {
         case TIMESTAMPOID:
@@ -7161,7 +7168,7 @@ Datum subtime(PG_FUNCTION_ARGS)
             val_type2 = TIMEOID;
             break;
         default:
-            val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2);
+            val_type2 = convert_to_datetime_time(PG_GETARG_DATUM(1), val_type2, &datetime2, &time2, true);
             if (val_type2 == TIMESTAMPOID) {
                 PG_RETURN_NULL();
             }
@@ -7173,7 +7180,7 @@ Datum subtime(PG_FUNCTION_ARGS)
             time1 = 0; /* time set to 00:00:00 */
         case TIMEOID: {
             res_time = time1 - time2;
-            check_b_format_time_range_with_ereport(res_time);
+            res_time = adjust_time_range_with_warn(res_time, fcinfo->can_ignore);
             return DirectFunctionCall1(time_text, TimeGetDatum(res_time));
         }
         case TIMESTAMPOID: {
@@ -7196,6 +7203,32 @@ Datum subtime(PG_FUNCTION_ARGS)
 
     PG_RETURN_NULL();
 }
+
+TimeADT adjust_time_range_with_warn(TimeADT time, bool can_ignore)
+{
+    int errlevel = (SQL_MODE_STRICT() && !can_ignore) ? ERROR : WARNING;
+    pg_tm result_tt = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    pg_tm* result_tm = &result_tt;
+    fsec_t fsec;
+    TimeADT time_result;
+    int32 timeSign = 1;
+
+    if (time < 0) {
+        timeSign = -1;
+        time = -time;
+    }
+
+    time2tm(time, result_tm, &fsec);
+    bool warning = false;
+    adjust_time_range(result_tm, fsec, warning);
+    if (warning == true) {
+        ereport(errlevel, (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW),
+                        errmsg("time field value out of range")));
+    }
+    tm2time(result_tm, fsec, &time_result);
+    return timeSign == 1 ? time_result : -time_result;
+}
+
 
 static bool get_time(Oid val_type, Datum value)
 {
