@@ -12,8 +12,8 @@ create table test_nv (id int, name nvarchar(10));
 drop table if exists test_nv;
 
 
-create table test_non(id int, name varchar(25));
-create table test_part(id int, name varchar(25))
+create table test_non(id int default 1, name varchar(25));
+create table test_part(id int default 1, name varchar(25))
 partition by range(id)
 (
     partition p1 values less than(100),
