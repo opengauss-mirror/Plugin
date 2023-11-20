@@ -35,8 +35,8 @@ Options: orientation=row, compression=no
 drop table if exists test_nv;
 
 
-create table test_non(id int, name varchar(25));
-create table test_part(id int, name varchar(25))
+create table test_non(id int default 1, name varchar(25));
+create table test_part(id int default 1, name varchar(25))
 partition by range(id)
 (
     partition p1 values less than(100),
@@ -60,7 +60,7 @@ create table test_non_like2 like test_non;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -80,7 +80,7 @@ create table test_part_like2 like test_part;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -104,7 +104,7 @@ create table if not exists test_non_like2 like test_non;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -124,7 +124,7 @@ create table if not exists test_part_like2 like test_part;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -148,7 +148,7 @@ create table test_non_like2 like test_non including indexes;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -168,7 +168,7 @@ create table test_part_like2 like test_part including indexes;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -200,7 +200,7 @@ create table test_part_like2 like test_part including partition;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -234,7 +234,7 @@ create table test_part_like2 like test_part including partition including indexe
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -250,7 +250,7 @@ create table test_non_like1 (like test_non including all);
                       Table "like_default_test.test_non_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -260,7 +260,7 @@ create table test_non_like2 like test_non including all;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -270,7 +270,7 @@ create table test_part_like1 (like test_part including all);
                      Table "like_default_test.test_part_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -282,7 +282,7 @@ create table test_part_like2 like test_part including all;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -296,7 +296,7 @@ create table test_non_like1 (like test_non including all excluding indexes);
                       Table "like_default_test.test_non_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -306,7 +306,7 @@ create table test_non_like2 like test_non including all excluding indexes;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -316,7 +316,7 @@ create table test_part_like1 (like test_part including all excluding indexes);
                      Table "like_default_test.test_part_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -328,7 +328,7 @@ create table test_part_like2 like test_part including all excluding indexes;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -342,7 +342,7 @@ create table test_non_like1 (like test_non including all excluding partition);
                       Table "like_default_test.test_non_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -352,7 +352,7 @@ create table test_non_like2 like test_non including all excluding partition;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -362,7 +362,7 @@ create table test_part_like1 (like test_part including all excluding partition);
                      Table "like_default_test.test_part_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -372,7 +372,7 @@ create table test_part_like2 like test_part including all excluding partition;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -384,7 +384,7 @@ create table test_non_like1 (like test_non including all excluding partition exc
                       Table "like_default_test.test_non_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -394,7 +394,7 @@ create table test_non_like2 like test_non including all excluding partition excl
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -404,7 +404,7 @@ create table test_part_like1 (like test_part including all excluding partition e
                      Table "like_default_test.test_part_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -414,7 +414,7 @@ create table test_part_like2 like test_part including all excluding partition ex
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -436,7 +436,7 @@ create table test_non_like2 like test_non excluding indexes;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -456,7 +456,7 @@ create table test_part_like2 like test_part excluding indexes;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -480,7 +480,7 @@ create table test_non_like2 like test_non excluding partition;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -500,7 +500,7 @@ create table test_part_like2 like test_part excluding partition;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -522,7 +522,7 @@ create table test_non_like2 like test_non excluding reloptions;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -542,7 +542,7 @@ create table test_part_like2 like test_part excluding reloptions;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -566,7 +566,7 @@ create table test_non_like2 like test_non excluding partition excluding indexes;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -586,7 +586,7 @@ create table test_part_like2 like test_part excluding partition excluding indexe
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -763,7 +763,7 @@ create table test_non_like2 like test_non;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
@@ -785,7 +785,7 @@ create table test_part_like2 like test_part;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like2_id_tableoid_idx" btree (id) TABLESPACE pg_default
@@ -811,7 +811,7 @@ create table if not exists test_non_like2 like test_non;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
@@ -833,7 +833,7 @@ create table if not exists test_part_like2 like test_part;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like2_id_tableoid_idx" btree (id) TABLESPACE pg_default
@@ -861,7 +861,7 @@ create table test_non_like2 like test_non including indexes;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
@@ -876,7 +876,7 @@ create table test_part_like2 like test_part including indexes;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like2_id_tableoid_idx" btree (id) TABLESPACE pg_default
@@ -911,7 +911,7 @@ create table test_part_like2 like test_part including partition;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like2_id_tableoid_idx" btree (id) TABLESPACE pg_default
@@ -949,7 +949,7 @@ create table test_part_like2 like test_part including partition including indexe
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like2_id_tableoid_idx" btree (id) TABLESPACE pg_default
@@ -967,7 +967,7 @@ create table test_non_like1 (like test_non including all);
                       Table "like_default_test.test_non_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like1_id_idx" btree (id) TABLESPACE pg_default
@@ -979,7 +979,7 @@ create table test_non_like2 like test_non including all;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
@@ -991,7 +991,7 @@ create table test_part_like1 (like test_part including all);
                      Table "like_default_test.test_part_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like1_id_tableoid_idx" btree (id) TABLESPACE pg_default
@@ -1005,7 +1005,7 @@ create table test_part_like2 like test_part including all;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_part_like2_id_tableoid_idx" btree (id) TABLESPACE pg_default
@@ -1021,7 +1021,7 @@ create table test_non_like1 (like test_non including all excluding indexes);
                       Table "like_default_test.test_non_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -1031,7 +1031,7 @@ create table test_non_like2 like test_non including all excluding indexes;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -1041,7 +1041,7 @@ create table test_part_like1 (like test_part including all excluding indexes);
                      Table "like_default_test.test_part_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -1053,7 +1053,7 @@ create table test_part_like2 like test_part including all excluding indexes;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -1067,7 +1067,7 @@ create table test_non_like1 (like test_non including all excluding partition);
                       Table "like_default_test.test_non_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like1_id_idx" btree (id) TABLESPACE pg_default
@@ -1079,7 +1079,7 @@ create table test_non_like2 like test_non including all excluding partition;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
@@ -1101,7 +1101,7 @@ create table test_non_like1 (like test_non including all excluding partition exc
                       Table "like_default_test.test_non_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -1111,7 +1111,7 @@ create table test_non_like2 like test_non including all excluding partition excl
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -1121,7 +1121,7 @@ create table test_part_like1 (like test_part including all excluding partition e
                      Table "like_default_test.test_part_like1"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -1131,7 +1131,7 @@ create table test_part_like2 like test_part including all excluding partition ex
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -1153,7 +1153,7 @@ create table test_non_like2 like test_non excluding indexes;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -1173,7 +1173,7 @@ create table test_part_like2 like test_part excluding indexes;
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Partition By RANGE(id)
 Number of partitions: 5 (View pg_partition to check each partition range.)
@@ -1197,7 +1197,7 @@ create table test_non_like2 like test_non excluding partition;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Indexes:
     "test_non_like2_id_idx" btree (id) TABLESPACE pg_default
@@ -1235,7 +1235,7 @@ create table test_non_like2 like test_non excluding partition excluding indexes;
                       Table "like_default_test.test_non_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -1255,7 +1255,7 @@ create table test_part_like2 like test_part excluding partition excluding indexe
                      Table "like_default_test.test_part_like2"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
 --------+-----------------------+-----------+----------+--------------+-------------
- id     | integer               |           | plain    |              | 
+ id     | integer               | default 1 | plain    |              | 
  name   | character varying(25) |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no

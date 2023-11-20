@@ -1959,6 +1959,9 @@ static void transformTableLikeClause(
         if (!(table_like_clause-> options & CREATE_TABLE_LIKE_EXCLUDING_INDEXES)) {
             table_like_clause->options |= CREATE_TABLE_LIKE_INDEXES;
         }
+        if (!(table_like_clause-> options & CREATE_TABLE_LIKE_EXCLUDING_DEFAULTS)) {
+            table_like_clause->options |= CREATE_TABLE_LIKE_DEFAULTS;
+        }
         if (!RELATION_ISNOT_REGULAR_PARTITIONED(relation) &&
             !(table_like_clause-> options & CREATE_TABLE_LIKE_EXCLUDING_PARTITION)) {
             table_like_clause->options |= CREATE_TABLE_LIKE_PARTITION;

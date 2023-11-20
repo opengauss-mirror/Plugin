@@ -1476,7 +1476,7 @@ typedef struct TableLikeClause {
     bits32 options; /* OR of TableLikeOption flags */
 } TableLikeClause;
 
-#define MAX_TABLE_LIKE_OPTIONS (14)
+#define MAX_TABLE_LIKE_OPTIONS (15)
 typedef enum TableLikeOption {
     CREATE_TABLE_LIKE_DEFAULTS = 1 << 0,
     CREATE_TABLE_LIKE_CONSTRAINTS = 1 << 1,
@@ -1493,6 +1493,7 @@ typedef enum TableLikeOption {
     CREATE_TABLE_LIKE_M_STYLE = 1 << 11,
     CREATE_TABLE_LIKE_EXCLUDING_INDEXES = 1 << 12,
     CREATE_TABLE_LIKE_EXCLUDING_PARTITION = 1 << 13,
+    CREATE_TABLE_LIKE_EXCLUDING_DEFAULTS = 1 << 14,
     CREATE_TABLE_LIKE_MAX = 1 << MAX_TABLE_LIKE_OPTIONS,
 #endif
     CREATE_TABLE_LIKE_ALL = 0x7FFFFFFF
