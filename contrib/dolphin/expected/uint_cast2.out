@@ -449,6 +449,78 @@ insert into t1 values(255::uint1);
 insert into t1 values(256::uint1);
 ERROR:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
+select cast(1 as signed integer);
+ int8 
+------
+    1
+(1 row)
+
+select cast(1 as unsigned integer);
+ uint8 
+-------
+ 1
+(1 row)
+
+select convert(1 , signed integer);
+ int8 
+------
+    1
+(1 row)
+
+select convert(1 , unsigned integer);
+ uint8 
+-------
+ 1
+(1 row)
+
+select cast(1 as integer signed);
+ int8 
+------
+    1
+(1 row)
+
+select cast(1 as integer unsigned);
+ uint8 
+-------
+ 1
+(1 row)
+
+select convert(1 , integer signed);
+ int8 
+------
+    1
+(1 row)
+
+select convert(1 , integer unsigned);
+ uint8 
+-------
+ 1
+(1 row)
+
+select cast(1 as  signed);
+ int8 
+------
+    1
+(1 row)
+
+select cast(1 as unsigned);
+ uint8 
+-------
+ 1
+(1 row)
+
+select convert(1 , signed);
+ int8 
+------
+    1
+(1 row)
+
+select convert(1 , unsigned);
+ uint8 
+-------
+ 1
+(1 row)
+
 drop schema uint_cast2 cascade;
 NOTICE:  drop cascades to table t1
 reset current_schema;
