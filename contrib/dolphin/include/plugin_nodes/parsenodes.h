@@ -34,10 +34,8 @@
 #include "tcop/dest.h"
 #include "nodes/parsenodes_common.h"
 
-#ifdef USE_SPQ
 #define CURSOR_OPT_SPQ_OK 0x0200 /* SPQ Execution */
 #define CURSOR_OPT_SPQ_FORCE 0x0400 /* Force to generate a SPQ plan */
-#endif
 
 /*
  * Relids
@@ -498,6 +496,10 @@ typedef struct WindowClause {
     Node* endOffset;       /* expression for ending bound, if any */
     Index winref;          /* ID referenced by window functions */
     bool copiedOrder;      /* did we copy orderClause from refname? */
+#ifdef USE_SPQ
+    bool rePartitionSPQ;   /* did we reassign the tleSortGroupRef when constructing partition Clause */
+    bool reOrderSPQ;       /* did we reassign the tleSortGroupRef when constructing order Clause */
+#endif
 } WindowClause;
 
 /*
