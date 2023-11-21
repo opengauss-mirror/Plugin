@@ -328,7 +328,7 @@ WARNING:  value "4294967295" is out of range for type integer
 LINE 1: select '4294967295'::int4::time;
                ^
 CONTEXT:  referenced column: time
-ERROR:  Incorrect time value
+ERROR:  time out of range
 CONTEXT:  referenced column: time
 select '4294967295'::int8::time;
 WARNING:  invalid input syntax for type time: "4294967295"

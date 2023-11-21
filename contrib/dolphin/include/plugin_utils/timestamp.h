@@ -155,6 +155,9 @@ static inline bool non_zero_date(const pg_tm *ltime)
     return ltime->tm_year || ltime->tm_mon || ltime->tm_mday;
 }
 
+extern TimeADT adjust_time_range_with_warn(TimeADT time, bool can_ignore);
+extern "C" DLL_PUBLIC Datum time_cast_implicit(PG_FUNCTION_ARGS);
+
 #endif
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);
