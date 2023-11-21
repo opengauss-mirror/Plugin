@@ -395,7 +395,7 @@ mattablecolumninfo_add_mattable_index(MatTableColumnInfo *matcolinfo, Hypertable
 	IndexStmt stmt = {
 		.type = T_IndexStmt,
 		.missing_ok = false,
-		.schemaname = "public",
+		.schemaname = NameStr(ht->fd.schema_name),
 		.idxname = NULL,
 		.relation = makeRangeVar(NameStr(ht->fd.schema_name), NameStr(ht->fd.table_name), 0),
 		.accessMethod = DEFAULT_INDEX_TYPE,
