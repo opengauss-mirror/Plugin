@@ -1959,7 +1959,7 @@ WITH ht_size as (
     bsize.total_bytes
   FROM  _timescaledb_catalog.hypertable ht
     LEFT OUTER JOIN pg_tables t ON ht.table_name=t.tablename AND ht.schema_name=t.schemaname
-    --tsbd 暂时注释
+    --tsdb 暂时注释
     LEFT OUTER JOIN @extschema@.hypertable_relation_size(
        NULL 
     )

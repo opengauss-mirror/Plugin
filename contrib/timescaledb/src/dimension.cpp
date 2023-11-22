@@ -554,8 +554,14 @@ dimension_tuple_update(TupleInfo *ti, void *data)
 
 	heap_deform_tuple(ti->tuple, ti->desc, values, nulls);
 
-	Assert((dim->fd.num_slices <= 0 && dim->fd.interval_length > 0) ||
-		   (dim->fd.num_slices > 0 && dim->fd.interval_length <= 0));
+	if (!((dim->fd.num_slices <= 0 && dim->fd.interval_length > 0) ||
+		   (dim->fd.num_slices > 0 && dim->fd.interval_length <= 0)))
+	{
+		ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							 errmsg("invalid interval: must be greater than 0"),
+							 errhint("Please change your chunk interval.")));
+	}
 
 	values[AttrNumberGetAttrOffset(Anum_dimension_column_name)] =
 		NameGetDatum(&dim->fd.column_name);
@@ -628,7 +634,13 @@ dimension_insert_relation(Relation rel, int32 hypertable_id, Name colname, Oid c
 	if (num_slices > 0)
 	{
 		/* Closed (hash) dimension */
-		Assert(num_slices > 0 && interval_length <= 0);
+
+		if (!(num_slices > 0 && interval_length <= 0)){
+			ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							 errmsg("invalid interval: must be greater than 0"),
+							 errhint("Please change your chunk interval.")));
+		}
 		values[AttrNumberGetAttrOffset(Anum_dimension_num_slices)] = Int16GetDatum(num_slices);
 		values[AttrNumberGetAttrOffset(Anum_dimension_aligned)] = BoolGetDatum(false);
 		nulls[AttrNumberGetAttrOffset(Anum_dimension_interval_length)] = true;
@@ -636,7 +648,12 @@ dimension_insert_relation(Relation rel, int32 hypertable_id, Name colname, Oid c
 	else
 	{
 		/* Open (time) dimension */
-		Assert(num_slices <= 0 && interval_length > 0);
+		if (!(num_slices <= 0 && interval_length > 0)){
+			ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							 errmsg("invalid interval: must be between 1 and 9223372036854775807"),
+							 errhint("Please change your chunk interval.")));
+		}
 		values[AttrNumberGetAttrOffset(Anum_dimension_interval_length)] =
 			Int64GetDatum(interval_length);
 		values[AttrNumberGetAttrOffset(Anum_dimension_aligned)] = BoolGetDatum(true);
