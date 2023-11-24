@@ -335,5 +335,13 @@ select varlena_cast_ui8(1);
 select varlena_cast_int8(1);
 select varlena2float8(1);
 
+create OR REPLACE procedure t_p(out ret varchar) as
+begin
+select '{"a":"b"}'::json into ret;
+end;
+/
+select t_p();
+drop procedure t_p;
+
 drop schema uint_cast2 cascade;
 reset current_schema;

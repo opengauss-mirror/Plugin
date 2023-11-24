@@ -10548,6 +10548,9 @@ Datum blob_any_value(PG_FUNCTION_ARGS)
 
 static char* AnyElementGetCString(Oid anyOid, Datum anyDatum)
 {
+    if (!OidIsValid(anyOid)) {
+        return DatumGetCString(DirectFunctionCall1(textout, anyDatum));
+    }
     char* data = NULL;
     Oid typeOutput = InvalidOid;
     bool typIsVarlena = false;
