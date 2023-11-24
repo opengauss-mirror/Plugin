@@ -896,5 +896,23 @@ select Varlena2Text(1);
  1
 (1 row)
 
+select varlena2bit(1,10);
+ varlena2bit 
+-------------
+ 0000110001
+(1 row)
+
+create OR REPLACE procedure t_p(out ret varchar) as
+begin
+select '{"a":"b"}'::json into ret;
+end;
+/
+select t_p();
+    t_p    
+-----------
+ {"a":"b"}
+(1 row)
+
+drop procedure t_p;
 drop schema uint_cast2 cascade;
 reset current_schema;
