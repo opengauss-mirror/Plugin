@@ -55,6 +55,7 @@ do {                                                                            
 #define IZONE_BOUND1 INT64CONST(46740000000) /* 12:59:00 */
 #define IZONE_BOUND2 INT64CONST(46800000000) /* 13:00:00 */
 #define TIMESTAMP_ZERO (-211810291200000000)
+#define TIMESTAMPTZ_ZERO (-211810320343000000)
 
 #define NORMAL_DATE 0   /* enable normal date, mainly work in lldiv_decode_tm_with_sql_mode */
 #define ENABLE_ZERO_DAY 1
