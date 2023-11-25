@@ -211,3 +211,9 @@ CREATE CAST (timestamptz as boolean) WITH FUNCTION timestamptz_bool(timestamptz)
 
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_bool(timestamp(0) without time zone) returns boolean LANGUAGE C immutable strict as '$libdir/dolphin', 'timestamp_bool';
 CREATE CAST (timestamp(0) without time zone as boolean) WITH FUNCTION timestamp_bool(timestamp(0) without time zone) AS ASSIGNMENT;
+
+DROP FUNCTION IF EXISTS pg_catalog.date_format (time without time zone, text);
+CREATE OR REPLACE FUNCTION pg_catalog.date_format (time without time zone, text) RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_format_time';
+
+DROP FUNCTION IF EXISTS pg_catalog.to_char(time without time zone, text);
+CREATE OR REPLACE FUNCTION pg_catalog.to_char(time without time zone, text) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.to_char($1::interval, $2) $$;

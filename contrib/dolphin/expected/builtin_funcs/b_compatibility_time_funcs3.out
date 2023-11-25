@@ -1493,6 +1493,28 @@ select time('23:55:56.1234');
  23:55:56.1234
 (1 row)
 
+set dolphin.b_compatibility_mode = true;
+create table test_time(t time);
+insert into test_time values ('11:12:23.123456');
+insert into test_time values ('22:11:33');
+insert into test_time values ('-22:11:33');
+select date_format(t, '%H%i%s.%f') from test_time; 
+  date_format  
+---------------
+ 111223.000000
+ 221133.000000
+ 014827.000000
+(3 rows)
+
+select to_char(t, 'hh24miss') from test_time;
+  to_char  
+-----------
+ 111223
+ 221133
+ -22-11-33
+(3 rows)
+
+drop table test_time;
 drop schema b_time_funcs3 cascade;
 NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table func_test3
