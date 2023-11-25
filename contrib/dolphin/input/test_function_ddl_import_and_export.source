@@ -1,8 +1,8 @@
 --create function测试
 drop database if exists dump_function_db;
 drop database if exists restore_function_db;
-create database dump_function_db with dbcompatibility = 'B';
-create database restore_function_db with dbcompatibility = 'B';
+create database dump_function_db lc_collate='C' dbcompatibility = 'B';
+create database restore_function_db lc_collate='C' dbcompatibility = 'B';
 \c dump_function_db
 
 create user test_function_definer password 'Test@123';
