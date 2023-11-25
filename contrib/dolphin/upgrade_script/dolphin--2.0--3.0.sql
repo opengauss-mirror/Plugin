@@ -66,12 +66,6 @@ drop function if EXISTS pg_catalog.length(varbinary);
 CREATE OR REPLACE FUNCTION pg_catalog.length(binary) returns int4 LANGUAGE C immutable strict as '$libdir/dolphin', 'binary_length';
 CREATE OR REPLACE FUNCTION pg_catalog.length(varbinary) returns int4 LANGUAGE C immutable strict as '$libdir/dolphin', 'binary_length';
 
-DROP FUNCTION IF EXISTS pg_catalog.date_format (time without time zone, text);
-CREATE OR REPLACE FUNCTION pg_catalog.date_format (time without time zone, text) RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_format_time';
-
-DROP FUNCTION IF EXISTS pg_catalog.to_char(time without time zone, text);
-CREATE OR REPLACE FUNCTION pg_catalog.to_char(time without time zone, text) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.to_char($1::interval, $2) $$;
-
 CREATE OR REPLACE FUNCTION pg_catalog.bit_cast_date(bit) 
 RETURNS date LANGUAGE SQL IMMUTABLE STRICT as 
 'select cast(cast($1 as text) as date)';

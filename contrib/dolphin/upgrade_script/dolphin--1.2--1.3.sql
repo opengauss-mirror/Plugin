@@ -387,3 +387,9 @@ DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(text);
 DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
 CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth(text) RETURNS int4 AS $$ SELECT pg_catalog.day($1); $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.dayofmonth(numeric) RETURNS int4 AS $$ SELECT pg_catalog.day($1); $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.date_format (time without time zone, text);
+CREATE OR REPLACE FUNCTION pg_catalog.date_format (time without time zone, text) RETURNS TEXT LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_format_time';
+
+DROP FUNCTION IF EXISTS pg_catalog.to_char(time without time zone, text);
+CREATE OR REPLACE FUNCTION pg_catalog.to_char(time without time zone, text) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.to_char($1::interval, $2) $$;

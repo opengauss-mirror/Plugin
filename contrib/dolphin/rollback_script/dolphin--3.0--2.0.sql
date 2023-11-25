@@ -91,9 +91,6 @@ DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
 drop function if EXISTS pg_catalog.length(binary);
 drop function if EXISTS pg_catalog.length(varbinary);
 
-DROP FUNCTION IF EXISTS pg_catalog.date_format (time without time zone, text);
-DROP FUNCTION IF EXISTS pg_catalog.to_char(time without time zone, text);
-
 drop function IF EXISTS pg_catalog."user"();
 
 DROP OPERATOR IF EXISTS pg_catalog.>(timestamp without time zone, double precision);

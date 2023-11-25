@@ -295,6 +295,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(date_format_text);
 extern "C" DLL_PUBLIC Datum date_format_text(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(date_format_numeric);
 extern "C" DLL_PUBLIC Datum date_format_numeric(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(date_format_time);
+extern "C" DLL_PUBLIC Datum date_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(str_to_date);
 extern "C" DLL_PUBLIC Datum str_to_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(from_unixtime_with_one_arg);
@@ -5449,7 +5451,7 @@ Datum timestamptz_datetime(PG_FUNCTION_ARGS)
 {
     TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);
     Timestamp result;
-    struct pg_tm tt, *tm = &tt;
+    pg_tm tt, *tm = &tt;
     fsec_t fsec;
     int tz;
 
@@ -9573,6 +9575,41 @@ Datum date_format_numeric(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     }
 
+    format = text_to_cstring(format_text);
+    int format_len = strlen(format);
+    remain = get_result_len(format, format_len);
+    str = (char*)palloc(remain + 1);
+
+    if (!date_format_internal(str, buf, format, format_len, remain, tm, fsec)) {
+        PG_RETURN_NULL();
+    }
+    text *result_text = cstring_to_text(str);
+    pfree(str);
+    PG_RETURN_TEXT_P(result_text);
+}
+
+
+Datum date_format_time(PG_FUNCTION_ARGS)
+{
+    TimeADT timeVal = PG_GETARG_TIMEADT(0);
+    text *format_text = PG_GETARG_TEXT_PP(1);
+    char buf[MAXDATELEN];          /* string for temporary storage */
+    char *format = NULL;           /* format string */
+    char *str = NULL;              /* return string */
+    int remain = 0;       /* remaining buffer size of variable str */
+    struct pg_tm tt, *tm = &tt;
+    fsec_t fsec;
+    errno_t rc = memset_s(tm, sizeof(*tm), 0, sizeof(*tm));
+    securec_check(rc, "\0", "\0");
+    fsec = 0;
+    if (timeVal < 0) {
+#ifdef HAVE_INT64_TIMESTAMP
+        timeVal = USECS_PER_DAY + timeVal;
+#else
+        timeVal = SECS_PER_DAY + timeVal;
+#endif
+    }
+    time2tm(timeVal, tm, &fsec);
     format = text_to_cstring(format_text);
     int format_len = strlen(format);
     remain = get_result_len(format, format_len);

@@ -196,3 +196,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(numeric) RETURNS int4 AS $$ SE
 
 DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(text);
 DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
+
+DROP FUNCTION IF EXISTS pg_catalog.date_format (time without time zone, text);
+DROP FUNCTION IF EXISTS pg_catalog.to_char(time without time zone, text);
