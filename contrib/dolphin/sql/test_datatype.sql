@@ -130,5 +130,22 @@ select varlenatoset(c2,gettypeid('set_tab_c2_set')) from set_tab order by 1;
 drop function gettypeid;
 drop table set_tab;
 
+----
+set dolphin.b_compatibility_mode = true;
+drop table if exists t1;
+create table t1 (a char(16), b date, c datetime);
+insert into t1 SET a='test 2000-01-01', b='2000-01-01', c='2000-01-01';
+select * from t1 where c = '2000-01-01';
+select * from t1 where b = '2000-01-01';
+select * from t1 where c = '2000-01-01'::datetime;
+select * from t1 where b = '2000-01-01'::date;
+set dolphin.b_compatibility_mode = on;
+select * from t1 where c = '2000-01-01';
+select * from t1 where b = '2000-01-01';
+select * from t1 where c = '2000-01-01'::datetime;
+select * from t1 where b = '2000-01-01'::date;
+
+drop table t1;
+
 drop schema b_datatype_test cascade;
 reset current_schema;

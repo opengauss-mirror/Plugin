@@ -582,7 +582,9 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
     /**
     * In order to make 'date ^ unknown' operate as date_text_xor(), we change unknown into text
     */
-    if (GetSessionContext()->enableBCmptMode) {
+   char * oprname = strVal(linitial(opname));
+
+    if (GetSessionContext()->enableBCmptMode && strcmp("^", oprname) == 0) {
         if (ltypeId == UNKNOWNOID && rtypeId == DATEOID) {
             ltypeId = TEXTOID;
         } else if (ltypeId == DATEOID && rtypeId == UNKNOWNOID) {
@@ -592,7 +594,7 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
     /**
     * In order to make 'time ^ unknown' operate as time_text_xor(), we change unknown into text
     */
-    if (GetSessionContext()->enableBCmptMode) {
+    if (GetSessionContext()->enableBCmptMode && strcmp("^", oprname) == 0) {
         if (ltypeId == UNKNOWNOID && rtypeId == TIMEOID) {
             ltypeId = TEXTOID;
         } else if (ltypeId == TIMEOID && rtypeId == UNKNOWNOID) {
