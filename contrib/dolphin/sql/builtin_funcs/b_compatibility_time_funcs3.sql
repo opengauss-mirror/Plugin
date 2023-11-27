@@ -395,5 +395,15 @@ select time('0:0:0');
 select time('-1:-1:-1');
 select time('23:55:56.1234');
 
+set dolphin.b_compatibility_mode = true;
+create table test_time(t time);
+insert into test_time values ('11:12:23.123456');
+insert into test_time values ('22:11:33');
+insert into test_time values ('-22:11:33');
+
+select date_format(t, '%H%i%s.%f') from test_time; 
+select to_char(t, 'hh24miss') from test_time;
+
+drop table test_time;
 drop schema b_time_funcs3 cascade;
 reset current_schema;
