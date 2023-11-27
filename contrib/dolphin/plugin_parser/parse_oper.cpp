@@ -579,28 +579,27 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
             rtypeId = BLOBOID;
         }
     }
-    /**
-    * In order to make 'date ^ unknown' operate as date_text_xor(), we change unknown into text
-    */
-    char* schemaname = NULL;
-    char* opername = NULL;
-    DeconstructQualifiedName(opname, &schemaname, &opername);
-
-    if (GetSessionContext()->enableBCmptMode && strcmp("^", opername) == 0) {
-        if (ltypeId == UNKNOWNOID && rtypeId == DATEOID) {
-            ltypeId = TEXTOID;
-        } else if (ltypeId == DATEOID && rtypeId == UNKNOWNOID) {
-            rtypeId = TEXTOID;
-        }
-    }
-    /**
-    * In order to make 'time ^ unknown' operate as time_text_xor(), we change unknown into text
-    */
-    if (GetSessionContext()->enableBCmptMode && strcmp("^", opername) == 0) {
-        if (ltypeId == UNKNOWNOID && rtypeId == TIMEOID) {
-            ltypeId = TEXTOID;
-        } else if (ltypeId == TIMEOID && rtypeId == UNKNOWNOID) {
-            rtypeId = TEXTOID;
+    if (GetSessionContext()->enableBCmptMode) {
+        char* schemaname = NULL;
+        char* opername = NULL;
+        DeconstructQualifiedName(opname, &schemaname, &opername);
+        if (strcmp("^", opername) == 0) {
+            /**
+            * In order to make 'date ^ unknown' operate as date_text_xor(), we change unknown into text
+            */
+            if (ltypeId == UNKNOWNOID && rtypeId == DATEOID) {
+                ltypeId = TEXTOID;
+            } else if (ltypeId == DATEOID && rtypeId == UNKNOWNOID) {
+                rtypeId = TEXTOID;
+            }
+            /**
+            * In order to make 'time ^ unknown' operate as time_text_xor(), we change unknown into text
+            */
+            if (ltypeId == UNKNOWNOID && rtypeId == TIMEOID) {
+                ltypeId = TEXTOID;
+            } else if (ltypeId == TIMEOID && rtypeId == UNKNOWNOID) {
+                rtypeId = TEXTOID;
+            }
         }
     }
 #endif
