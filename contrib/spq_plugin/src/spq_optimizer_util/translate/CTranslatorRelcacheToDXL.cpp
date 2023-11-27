@@ -84,21 +84,27 @@ static IMDIndex::EmdindexType
 GetIndexTypeFromOid(OID index_oid)
 {
 	//LogicalIndexType indexType = spqdb::GetLogicalIndexType(index_oid);
+	IMDIndex::EmdindexType index_type = IMDIndex::EmdindSentinel;
 	Relation index_rel = spqdb::GetRelation(index_oid);
-	// TODO SPQ
 	switch (index_rel->rd_rel->relam)
 	{
 		case BTREE_AM_OID:
-			return IMDIndex::EmdindBtree;
+			index_type = IMDIndex::EmdindBtree;
+			break;
 		//case INDTYPE_BITMAP:
 			//return IMDIndex::EmdindBitmap;
 		case GIST_AM_OID:
-			return IMDIndex::EmdindGist;
+			index_type = IMDIndex::EmdindGist;
+			break;
 		case GIN_AM_OID:
-			return IMDIndex::EmdindGin;
+			index_type = IMDIndex::EmdindGin;
+			break;
+		default:
+			SPQOS_RAISE(spqdxl::ExmaMD, spqdxl::ExmiMDObjUnsupported,
+				SPQOS_WSZ_LIT("Query references unknown index type"));
 	}
-	SPQOS_RAISE(spqdxl::ExmaMD, spqdxl::ExmiMDObjUnsupported,
-			   SPQOS_WSZ_LIT("Query references unknown index type"));
+	spqdb::CloseRelation(index_rel);
+	return index_type;
 }
 
 //---------------------------------------------------------------------------

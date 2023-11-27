@@ -28,6 +28,8 @@
 #include "spq/spq_util.h"
 #include "parser/parsetree.h"
 
+Plan* make_gather_stream(PlannerInfo* root, Plan *subplan, Motion *motion, PlannedStmt *result);
+
 /*
  * Is the node a "subclass" of Plan?
  */
@@ -634,9 +636,29 @@ int exec_by_multiple_dop(PlannerInfo* root, Plan *spqplan)
     heap_close(relation, NoLock);
     return spqplan->dop;
 }
-
-Plan* make_stream(PlannerInfo* root, Plan *subplan, Motion *motion)
+bool check_slice_dop(PlanSlice *slices, Plan *subplan, PlannedStmt *result)
 {
+    int producerDop = slices->numsegments == 1 ? 1 : u_sess->opt_cxt.query_dop;
+    if (producerDop != subplan->dop)  {
+        ereport(LOG,(errmsg("check_slice_dop fail, slice info:")));
+        for (int i = 0; i < result->numSlices; i++) {
+            PlanSlice *slices = &(result->slices[i]);
+            ereport(LOG, (errmsg("Index[%d] pIndex[%d] type[%d] segments[%d] worker_idx[%d]",
+            slices->sliceIndex, slices->parentIndex, slices->gangType, slices->numsegments, slices->worker_idx)));
+        }
+    }
+    return producerDop == subplan->dop;
+}
+Plan* make_stream(PlannerInfo* root, Plan *subplan, Motion *motion, PlannedStmt *result)
+{
+    PlanSlice *slices = &(result->slices[motion->motionID]);
+    PlanSlice *parentSlices = &(result->slices[slices->parentIndex]);
+    if (check_slice_dop(slices, subplan, result) == false) {
+        ereport(ERROR, (errmsg("check_slice_dop in remote check fail motion[%d]", motion->motionID)));
+    }
+    if (parentSlices->numsegments == 1) {
+        return make_gather_stream(root, subplan, motion, result);
+    }
     Stream* stream = makeNode(Stream);
     Plan* plan = &stream->scan.plan;
     Distribution* distribution = ng_get_dest_distribution(subplan);
@@ -654,7 +676,7 @@ Plan* make_stream(PlannerInfo* root, Plan *subplan, Motion *motion)
 
     // set by redistribute_keys?
     stream->smpDesc.producerDop = exec_by_multiple_dop(root, subplan);
-    stream->smpDesc.consumerDop = u_sess->opt_cxt.query_dop;
+    stream->smpDesc.consumerDop = parentSlices->numsegments > 1 ? u_sess->opt_cxt.query_dop : 1;;
     plan->dop = stream->smpDesc.consumerDop;
 
 
@@ -733,8 +755,13 @@ Plan* create_spq_local_gather(PlannerInfo* root, Plan* plan, Motion *motion)
     stream_node->streamID = motion->motionID;
     return stream_plan;
 }
-Plan* make_gather_Remote(PlannerInfo* root, Plan *lefttree, Motion *motion) {
 
+Plan* make_gather_Remote(PlannerInfo* root, Plan *lefttree, Motion *motion, PlannedStmt *result) {
+
+    PlanSlice *slices = &(result->slices[motion->motionID]);
+    if (check_slice_dop(slices, lefttree, result) == false) {
+        ereport(ERROR, (errmsg("check_slice_dop in remote check fail motion[%d]", motion->motionID)));
+    }
     if (lefttree->dop > 1) {
         lefttree = create_spq_local_gather(root, lefttree, motion);
     }
@@ -751,13 +778,13 @@ Plan* make_gather_Remote(PlannerInfo* root, Plan *lefttree, Motion *motion) {
     remote_query->scan.plan.exec_type = EXEC_ON_COORDS;
     remote_query->is_simple = true;
     remote_query->rq_need_proj = false;
-    //int num = 2; // QDsize
-    //double size = PLAN_LOCAL_ROWS(lefttree) * Max(lefttree->plan_width, 128) / 8192.0;
     copy_plan_costsize(&remote_query->scan.plan, &motion->plan);
     remote_query->scan.plan.plan_width = lefttree->plan_width;
     remote_query->sort = NULL;
     remote_query->streamID = motion->motionID;
     remote_query->scan.plan.dop = 1;
+
+    remote_query->nodeCount = slices->numsegments > 1 ? t_thrd.spq_ctx.num_nodes : 1;
     if (motion->sendSorted) {
         return make_sort(motion, (Plan*)remote_query);
     }
@@ -765,16 +792,20 @@ Plan* make_gather_Remote(PlannerInfo* root, Plan *lefttree, Motion *motion) {
     return (Plan*)remote_query;
 
 }
-Plan* make_gather_stream(PlannerInfo* root, Plan *subplan, Motion *motion) {
-    /* Set stream struct parameter. */
-    //double size = (PLAN_LOCAL_ROWS(subplan)) * (subplan->plan_width) / 8192.0;
+Plan* make_gather_stream(PlannerInfo* root, Plan *subplan, Motion *motion, PlannedStmt *result)
+{
+    PlanSlice *slices = &(result->slices[motion->motionID]);
+    PlanSlice *parentSlices = &(result->slices[slices->parentIndex]);
+    if (check_slice_dop(slices, subplan, result) == false) {
+        ereport(ERROR, (errmsg("check_slice_dop in remote check fail motion[%d]", motion->motionID)));
+    }
     Stream *stream_node = makeNode(Stream);
     stream_node->type = STREAM_GATHER;
     stream_node->consumer_nodes = (ExecNodes *)copyObject(subplan->exec_nodes);
     stream_node->is_sorted = false;
     stream_node->is_dummy = false;
     stream_node->sort = NULL;
-    stream_node->smpDesc.consumerDop = u_sess->opt_cxt.query_dop;
+    stream_node->smpDesc.consumerDop = parentSlices->numsegments > 1 ? u_sess->opt_cxt.query_dop : 1;
     stream_node->smpDesc.producerDop = exec_by_multiple_dop(root, subplan); /* plan->dop */
     stream_node->smpDesc.distriType = REMOTE_DIRECT_DISTRIBUTE;
     stream_node->distribute_keys = NIL;
@@ -796,9 +827,43 @@ Plan* make_gather_stream(PlannerInfo* root, Plan *subplan, Motion *motion) {
     }
     return (Plan*)stream_node;
 }
+Plan* tran_motion_to_stream(PlannerInfo* root, SpqSliceContext *cxt, Plan *plan, bool &top)
+{
+    bool backtop = top;
+    top = false;
+    Motion *motion = (Motion *)plan;
+    Assert(!motion->plan.righttree);
+    int backIndex = cxt->curentIndex;
+    if (motion->motionID >= cxt->result->numSlices) {
+        ereport(ERROR, (errmsg("MotionID check fail id[%d] numslice[%d]", motion->motionID, cxt->result->numSlices)));
+    }
+    cxt->curentIndex = motion->motionID;
+    Plan *subplan = replace_motion_stream_recurse(root, cxt, motion->plan.lefttree, top);
+    cxt->curentIndex = backIndex;
 
+    if (u_sess->attr.attr_spq.spq_debug_slice_print && motion->motionID < cxt->result->numSlices) {
+        PlanSlice *slices = &(cxt->result->slices[motion->motionID]);
+        PlanSlice *parentSlices = &(cxt->result->slices[slices->parentIndex]);
+        ereport(LOG,(errmsg("[MotionInfo] motionID[%d] motiontype[%d] recvcout[%d] sendcount[%d]",
+        motion->motionID, motion->motionType, parentSlices->numsegments, slices->numsegments )));
+        ereport(LOG,(errmsg("[SliceInfo] sliceIndex[%d] slicetype[%d] worker_idx[%d] parentIndex[%d]",
+        slices->sliceIndex, slices->gangType, slices->worker_idx, slices->parentIndex)));
+    }
+    // no need check motion->motionID again in below func;
+    if (motion->motionType == MOTIONTYPE_GATHER) {
+        if (backtop) {
+            top = backtop;
+            return make_gather_Remote(root, subplan, motion, cxt->result);
+        }
+        Plan *gather_stream = make_gather_stream(root, subplan, motion, cxt->result);
+        top = backtop;
+        return gather_stream;
+    } else {
+        return make_stream(root, subplan, motion, cxt->result);
+    }
+}
 //TODO SPQ need fix: dops and multiple gather  
-Plan *replace_motion_stream_recurse(PlannerInfo* root, Plan *plan, bool &top)
+Plan *replace_motion_stream_recurse(PlannerInfo *root, SpqSliceContext *cxt, Plan *plan, bool &top)
 {
 
     ListCell* lc = NULL;
@@ -817,7 +882,7 @@ Plan *replace_motion_stream_recurse(PlannerInfo* root, Plan *plan, bool &top)
             if (IsA(node, SubPlan)) {
                 subplan = (SubPlan*)lfirst(lc);
                 initNode = (Plan*)list_nth(subplans, subplan->plan_id - 1);
-                lfirst(lc) = replace_motion_stream_recurse(root, initNode, top);
+                lfirst(lc) = replace_motion_stream_recurse(root, cxt, initNode, top);
             }
         }
         list_free_ext(subplan_list);
@@ -827,14 +892,14 @@ Plan *replace_motion_stream_recurse(PlannerInfo* root, Plan *plan, bool &top)
     List* initplans = plan->initPlan;
     foreach (lc, initplans) {
         Plan* initplan = (Plan*)lfirst(lc);
-        lfirst(lc) = replace_motion_stream_recurse(root, initplan, top);
+        lfirst(lc) = replace_motion_stream_recurse(root, cxt, initplan, top);
     }
 
     if (IsA(plan, Append)) {
         Append* node = (Append*)plan;
         foreach(lc, node->appendplans) {
             Plan* initNode = (Plan*)lfirst(lc);
-            lfirst(lc) = replace_motion_stream_recurse(root, initNode, top);
+            lfirst(lc) = replace_motion_stream_recurse(root, cxt, initNode, top);
         }
     }  
 
@@ -842,37 +907,26 @@ Plan *replace_motion_stream_recurse(PlannerInfo* root, Plan *plan, bool &top)
         Sequence* node = (Sequence*)plan;
         foreach(lc, node->subplans) {
             Plan* subplan = (Plan*)lfirst(lc);
-            lfirst(lc) = replace_motion_stream_recurse(root, subplan, top);
+            lfirst(lc) = replace_motion_stream_recurse(root, cxt, subplan, top);
         }
     }
 
     if (IsA(plan, Motion)) {
-        bool backtop = top;
-        top = false;
-        Motion *motion = (Motion *)plan;
-        Assert(!motion->plan.righttree);
-        Plan *subplan = replace_motion_stream_recurse(root, motion->plan.lefttree, top);
-        if (motion->motionType == MOTIONTYPE_GATHER) {
-            if (backtop) {
-                top = backtop;
-                return make_gather_Remote(root, subplan, motion);
-            }
-            Plan *gather_stream = make_gather_stream(root, subplan, motion);
-            top = backtop;
-            return gather_stream;
-        } else {
-            return make_stream(root, subplan, motion);
-        }
+        return tran_motion_to_stream(root, cxt, plan, top);
     } else {
         if (plan->lefttree) {
-            plan->lefttree = replace_motion_stream_recurse(root, plan->lefttree, top);
+            plan->lefttree = replace_motion_stream_recurse(root, cxt, plan->lefttree, top);
             plan->dop = plan->lefttree->dop;
         }   
         if (plan->righttree) {
-            plan->righttree = replace_motion_stream_recurse(root, plan->righttree, top);
+            plan->righttree = replace_motion_stream_recurse(root, cxt, plan->righttree, top);
         }
         if (plan->lefttree == nullptr && plan->righttree == nullptr) {
-            plan->dop =  u_sess->opt_cxt.query_dop;
+            if (cxt->curentIndex >= cxt->result->numSlices) {
+                ereport(ERROR, (errmsg("curentIndex check fail curentIndex[%d] numslice[%d]", cxt->curentIndex, cxt->result->numSlices)));
+            }
+            PlanSlice *slices = &(cxt->result->slices[cxt->curentIndex]);
+            plan->dop = slices->numsegments > 1 ? u_sess->opt_cxt.query_dop : 1;
         }
         plan->parallel_enabled = (plan->dop > 1);
         return plan;
@@ -896,7 +950,17 @@ static void InitRemoteNodeDefinition(PlannedStmt* planstmt)
 void make_spq_remote_query(PlannerInfo *root, PlannedStmt *result, PlannerGlobal *glob)
 {
     bool top = true;
-    result->planTree = replace_motion_stream_recurse(root, result->planTree, top);
+    if (u_sess->attr.attr_spq.spq_debug_slice_print) {
+        for (int i = 0; i < result->numSlices; i++) {
+            PlanSlice *slices = &(result->slices[i]);
+            ereport(LOG, (errmsg("Index[%d] pIndex[%d] type[%d] segments[%d] worker_idx[%d]",
+            slices->sliceIndex, slices->parentIndex, slices->gangType, slices->numsegments, slices->worker_idx)));
+        }
+    }
+    SpqSliceContext sliceCxt;
+    sliceCxt.result = result;
+    sliceCxt.curentIndex = 0;
+    result->planTree = replace_motion_stream_recurse(root, &sliceCxt, result->planTree, top);
     // should fix all?
     //result->planTree = set_plan_references(root, result->planTree);
     int parent_node_id = INITIAL_PARENT_NODE_ID; /* beginning with INITIAL_PARENT_NODE_ID */

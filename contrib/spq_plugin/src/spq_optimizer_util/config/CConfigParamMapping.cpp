@@ -295,6 +295,10 @@ void CConfigParamMapping::InitConfigParamElements(CBitSet *traceflag_bitset)
 	 true,	// m_negate_param
 	 SPQOS_WSZ_LIT(
 		 "Penalize a hash join with a skewed redistribute as a child.")},
+	{EopttraceEnableLeftIndexNLJoin, &u_sess->attr.attr_spq.spq_enable_left_index_nestloop_join,
+	 false,	// m_negate_param
+	 SPQOS_WSZ_LIT(
+		 "Enable left index nestloop join.")},
 	{EopttraceTranslateUnusedColrefs, &u_sess->attr.attr_spq.spq_optimizer_prune_unused_columns,
 	 true,	// m_negate_param
 	 SPQOS_WSZ_LIT("Prune unused columns from the query.")},

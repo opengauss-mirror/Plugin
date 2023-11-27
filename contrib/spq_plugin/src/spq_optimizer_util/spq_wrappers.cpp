@@ -1936,11 +1936,11 @@ spqdb::RelPartIsNone(Oid relid)
 {
 	SPQ_WRAP_START;
 	{
-	    //spq partition support
-		//return PART_STATUS_NONE == rel_part_status(relid);
+		// spq partition support
+		return spq_relation_not_partitioned(relid);
 	}
 	SPQ_WRAP_END;
-	return false;
+	return true;
 }
 
 bool

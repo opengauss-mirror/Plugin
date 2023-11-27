@@ -19,12 +19,18 @@
 #include "nodes/nodes.h"
 #include "nodes/plannodes.h"
 
+
+typedef struct SpqSliceContext {
+    PlannedStmt *result;
+    int curentIndex;
+} SpqSliceContext;
+
 extern void collect_shareinput_producers(PlannerInfo *root, Plan *plan);
 extern Plan *replace_shareinput_targetlists(PlannerInfo *root, Plan *plan);
 extern Plan *apply_shareinput_xslice(Plan *plan, PlannerInfo *root);
 extern void remove_subquery_in_RTEs(Node *node);
 extern bool is_plan_node(Node *node);
 extern void make_spq_remote_query(PlannerInfo *root, PlannedStmt *result, PlannerGlobal *glob);
-extern Plan *replace_motion_stream_recurse(PlannerInfo* root, Plan *plan, bool &top);
+extern Plan *replace_motion_stream_recurse(PlannerInfo *root, SpqSliceContext *result, Plan *plan, bool &top);
 
 #endif /* SPQ_MUTATE_H */

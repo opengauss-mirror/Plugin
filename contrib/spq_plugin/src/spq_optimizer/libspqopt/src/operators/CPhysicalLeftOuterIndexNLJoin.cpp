@@ -101,6 +101,17 @@ CPhysicalLeftOuterIndexNLJoin::Ped(CMemoryPool *mp, CExpressionHandle &exprhdl,
 	CEnfdDistribution::EDistributionMatching dmatch =
 		Edm(prppInput, child_index, pdrspqdpCtxt, ulOptReq);
 
+
+	if (SPQOS_FTRACE(EopttraceEnableLeftIndexNLJoin))
+	{
+		if (1 == child_index)
+			return SPQOS_NEW(mp) CEnfdDistribution(SPQOS_NEW(mp)
+				CDistributionSpecReplicated(CDistributionSpec::EdtStrictReplicated), dmatch);
+		else
+			return SPQOS_NEW(mp) CEnfdDistribution(SPQOS_NEW(mp)
+				CDistributionSpecAny(this->Eopid(), true /*fAllowOuterRefs*/), dmatch);
+	}
+
 	if (1 == child_index)
 	{
 		// inner (index-scan side) is requested for Any distribution,

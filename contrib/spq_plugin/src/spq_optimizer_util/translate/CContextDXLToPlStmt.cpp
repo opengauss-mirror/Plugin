@@ -47,12 +47,14 @@ CContextDXLToPlStmt::CContextDXLToPlStmt(
 	  m_plan_id_counter(plan_id_counter),
 	  m_motion_id_counter(motion_id_counter),
 	  m_param_id_counter(param_id_counter),
-      m_param_types_list(NULL),  /* SPQ: param list */
+	  m_param_types_list(NULL),  /* SPQ: param list */
 	  m_distribution_hashops(distribution_hashops),
 	  m_rtable_entries_list(rtable_entries_list),
 	  m_partitioned_tables_list(NULL),
 	  m_num_partition_selectors_array(NULL),
 	  m_subplan_entries_list(subplan_entries_list),
+	  m_subplan_sliceids_list(NULL),
+	  m_slices_list(NULL),
 	  m_result_relation_index(0),
 	  m_into_clause(NULL),
 	  m_distribution_policy(NULL)
@@ -336,6 +338,7 @@ CContextDXLToPlStmt::AddSubplan(Plan *plan)
 {
 	(*(m_subplan_entries_list)) =
 		spqdb::LAppend((*(m_subplan_entries_list)), plan);
+	m_subplan_sliceids_list = spqdb::LAppendInt(m_subplan_sliceids_list, m_current_slice->sliceIndex);
 }
 
 //---------------------------------------------------------------------------
@@ -470,4 +473,57 @@ CContextDXLToPlStmt::GetDistributionHashFuncForType(Oid typid)
 	return hashproc;
 }
 
+int
+CContextDXLToPlStmt::AddSlice(PlanSlice *slice)
+{
+	slice->sliceIndex = list_length(m_slices_list);
+	m_slices_list = spqdb::LAppend(m_slices_list, slice);
+
+	return slice->sliceIndex;
+}
+
+PlanSlice *
+CContextDXLToPlStmt::GetSlices(int *numSlices_p)
+{
+	int numSlices = list_length(m_slices_list);
+	PlanSlice *sliceArray;
+	ListCell *lc;
+	int i;
+  
+	sliceArray = (PlanSlice *) spqdb::SPQDBAlloc(numSlices * sizeof(PlanSlice));
+  
+	i = 0;
+	foreach(lc, m_slices_list)
+	{
+		PlanSlice *src = (PlanSlice *) lfirst(lc);
+  
+		memcpy(&sliceArray[i], src, sizeof(PlanSlice));
+  
+		i++;
+	}
+  
+	m_current_slice = NULL;
+	spqdb::ListFreeDeep(m_slices_list);
+  
+	*numSlices_p = numSlices;
+	return sliceArray;
+}
+int *
+CContextDXLToPlStmt::GetSubplanSliceIdArray()
+{
+	int numSubplans = list_length(*m_subplan_entries_list);
+	int *sliceIdArray;
+	ListCell *lc;
+	int i;
+  
+	sliceIdArray = (int *) spqdb::SPQDBAlloc(numSubplans * sizeof(int));
+  
+	i = 0;
+	foreach(lc, m_subplan_sliceids_list)
+	{
+		sliceIdArray[i++] = lfirst_int(lc);
+	}
+
+	return sliceIdArray;
+}
 // EOF
