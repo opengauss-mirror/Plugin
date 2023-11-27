@@ -362,5 +362,61 @@ select varlenatoset(c2,gettypeid('set_tab_c2_set')) from set_tab order by 1;
 
 drop function gettypeid;
 drop table set_tab;
+----
+set dolphin.b_compatibility_mode = true;
+drop table if exists t1;
+NOTICE:  table "t1" does not exist, skipping
+create table t1 (a char(16), b date, c datetime);
+insert into t1 SET a='test 2000-01-01', b='2000-01-01', c='2000-01-01';
+select * from t1 where c = '2000-01-01';
+        a         |     b      |          c          
+------------------+------------+---------------------
+ test 2000-01-01  | 2000-01-01 | 2000-01-01 00:00:00
+(1 row)
+
+select * from t1 where b = '2000-01-01';
+        a         |     b      |          c          
+------------------+------------+---------------------
+ test 2000-01-01  | 2000-01-01 | 2000-01-01 00:00:00
+(1 row)
+
+select * from t1 where c = '2000-01-01'::datetime;
+        a         |     b      |          c          
+------------------+------------+---------------------
+ test 2000-01-01  | 2000-01-01 | 2000-01-01 00:00:00
+(1 row)
+
+select * from t1 where b = '2000-01-01'::date;
+        a         |     b      |          c          
+------------------+------------+---------------------
+ test 2000-01-01  | 2000-01-01 | 2000-01-01 00:00:00
+(1 row)
+
+set dolphin.b_compatibility_mode = off;
+select * from t1 where c = '2000-01-01';
+        a         |     b      |          c          
+------------------+------------+---------------------
+ test 2000-01-01  | 2000-01-01 | 2000-01-01 00:00:00
+(1 row)
+
+select * from t1 where b = '2000-01-01';
+        a         |     b      |          c          
+------------------+------------+---------------------
+ test 2000-01-01  | 2000-01-01 | 2000-01-01 00:00:00
+(1 row)
+
+select * from t1 where c = '2000-01-01'::datetime;
+        a         |     b      |          c          
+------------------+------------+---------------------
+ test 2000-01-01  | 2000-01-01 | 2000-01-01 00:00:00
+(1 row)
+
+select * from t1 where b = '2000-01-01'::date;
+        a         |     b      |          c          
+------------------+------------+---------------------
+ test 2000-01-01  | 2000-01-01 | 2000-01-01 00:00:00
+(1 row)
+
+drop table t1;
 drop schema b_datatype_test cascade;
 reset current_schema;
