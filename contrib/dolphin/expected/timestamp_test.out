@@ -36,39 +36,35 @@ set dolphin.b_compatibility_mode to on;
 select '2022-01-01'::bit(64)::datetime;
 WARNING:  bit string length 80 does not match type bit(64)
 CONTEXT:  referenced column: timestamp
-WARNING:  bigint out of range
+WARNING:  invalid input syntax for type timestamp: "ÿÿÿÿÿÿÿÿ"
 CONTEXT:  referenced column: timestamp
-SQL function "bittodatetime" statement 1
+SQL function "bit_cast_datetime" statement 1
 referenced column: timestamp
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: timestamp
-SQL function "bittodatetime" statement 1
-referenced column: timestamp
- timestamp 
------------
- 
+      timestamp      
+---------------------
+ 0000-00-00 00:00:00
 (1 row)
 
 select '2022-01-01'::bit(64)::timestamp;
 WARNING:  bit string length 80 does not match type bit(64)
 CONTEXT:  referenced column: timestamptz
-WARNING:  bigint out of range
+WARNING:  invalid input syntax for type timestamp: "ÿÿÿÿÿÿÿÿ"
 CONTEXT:  referenced column: timestamptz
-SQL function "bittotimestamp" statement 1
+SQL function "bit_cast_timestamp" statement 1
 referenced column: timestamptz
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: timestamptz
-SQL function "bittotimestamp" statement 1
-referenced column: timestamptz
- timestamptz 
--------------
- 
+      timestamptz       
+------------------------
+ 0000-00-00 00:00:00-08
 (1 row)
 
 select 8385958.999999::bit(64)::time;
-   time    
------------
- 838:59:59
+WARNING:  invalid input syntax for type time: "õ§"
+CONTEXT:  referenced column: time
+SQL function "bit_cast_time" statement 1
+referenced column: time
+   time   
+----------
+ 00:00:00
 (1 row)
 
 set dolphin.sql_mode='';

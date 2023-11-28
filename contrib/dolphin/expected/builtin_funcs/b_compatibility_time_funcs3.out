@@ -660,6 +660,56 @@ select time('23:55:56.1234');
  23:55:56.1234
 (1 row)
 
+select cast('5555555' as time);
+   time    
+-----------
+ 555:55:55
+(1 row)
+
+select cast('55555555' as time);
+WARNING:  invalid input syntax for type time: "55555555"
+CONTEXT:  referenced column: time
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select cast('555555555' as time);
+WARNING:  invalid input syntax for type time: "555555555"
+CONTEXT:  referenced column: time
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select cast('5555555555' as time);
+ time 
+------
+ 
+(1 row)
+
+select cast('6666666' as time);
+WARNING:  invalid input syntax for type time: "6666666"
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select cast('66666666' as time);
+WARNING:  invalid input syntax for type time: "66666666"
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select cast('6666666666' as time);
+ time 
+------
+ 
+(1 row)
+
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test1 values('23:65:66');
 ERROR:  date/time field value out of range: "23:65:66"
