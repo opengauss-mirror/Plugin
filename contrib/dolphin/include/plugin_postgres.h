@@ -161,6 +161,7 @@ typedef struct BSqlPluginContext {
     char* useless_sql_mode;
     int useless_lower_case_table_names;
     Alias *upSertAliasName;
+    bool is_create_alter_stmt;
 #endif
 } bSqlPluginContext;
 

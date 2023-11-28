@@ -4,18 +4,18 @@ create schema test_default;
 set current_schema = test_default;
 create table t1(a timestamp default pg_systimestamp()::timestamp(0));
 \d t1;
-                                    Table "test_default.t1"
- Column |            Type             |                       Modifiers                        
---------+-----------------------------+--------------------------------------------------------
- a      | timestamp(0) with time zone | default pg_systimestamp()::timestamp(0) with time zone
+                                     Table "test_default.t1"
+ Column |            Type             |                        Modifiers                         
+--------+-----------------------------+----------------------------------------------------------
+ a      | timestamp(0) with time zone | default (pg_systimestamp())::timestamp(0) with time zone
 
 show create table t1;
- Table |                                       Create Table                                       
--------+------------------------------------------------------------------------------------------
- t1    | SET search_path = test_default;                                                         +
-       | CREATE TABLE t1 (                                                                       +
-       |     a timestamp(0) with time zone DEFAULT pg_systimestamp()::timestamp(0) with time zone+
-       | )                                                                                       +
+ Table |                                        Create Table                                        
+-------+--------------------------------------------------------------------------------------------
+ t1    | SET search_path = test_default;                                                           +
+       | CREATE TABLE t1 (                                                                         +
+       |     a timestamp(0) with time zone DEFAULT (pg_systimestamp())::timestamp(0) with time zone+
+       | )                                                                                         +
        | WITH (orientation=row, compression=no);
 (1 row)
 
@@ -40,37 +40,37 @@ show create table t2;
 
 create table t3(a timestamp default pg_systimestamp()::timestamp(0), b int GENERATED ALWAYS AS (length((a)::text)) STORED);
 \d t3
-                                    Table "test_default.t3"
- Column |            Type             |                       Modifiers                        
---------+-----------------------------+--------------------------------------------------------
- a      | timestamp(0) with time zone | default pg_systimestamp()::timestamp(0) with time zone
+                                     Table "test_default.t3"
+ Column |            Type             |                        Modifiers                         
+--------+-----------------------------+----------------------------------------------------------
+ a      | timestamp(0) with time zone | default (pg_systimestamp())::timestamp(0) with time zone
  b      | integer                     | generated always as (length((a)::text)) stored
 
 show create table t3;
- Table |                                       Create Table                                        
--------+-------------------------------------------------------------------------------------------
- t3    | SET search_path = test_default;                                                          +
-       | CREATE TABLE t3 (                                                                        +
-       |     a timestamp(0) with time zone DEFAULT pg_systimestamp()::timestamp(0) with time zone,+
-       |     b integer GENERATED ALWAYS AS (length((a)::text)) STORED                             +
-       | )                                                                                        +
+ Table |                                        Create Table                                         
+-------+---------------------------------------------------------------------------------------------
+ t3    | SET search_path = test_default;                                                            +
+       | CREATE TABLE t3 (                                                                          +
+       |     a timestamp(0) with time zone DEFAULT (pg_systimestamp())::timestamp(0) with time zone,+
+       |     b integer GENERATED ALWAYS AS (length((a)::text)) STORED                               +
+       | )                                                                                          +
        | WITH (orientation=row, compression=no);
 (1 row)
 
 create table t4(a timestamp default pg_systimestamp()::timestamp(0) on update current_timestamp);
 \d t4
-                                                          Table "test_default.t4"
- Column |            Type             |                                             Modifiers                                              
---------+-----------------------------+----------------------------------------------------------------------------------------------------
- a      | timestamp(0) with time zone | default pg_systimestamp()::timestamp(0) with time zone on update b_db_statement_start_timestamp(0)
+                                                           Table "test_default.t4"
+ Column |            Type             |                                              Modifiers                                               
+--------+-----------------------------+------------------------------------------------------------------------------------------------------
+ a      | timestamp(0) with time zone | default (pg_systimestamp())::timestamp(0) with time zone on update b_db_statement_start_timestamp(0)
 
 show create table t4;
- Table |                                                      Create Table                                                       
--------+-------------------------------------------------------------------------------------------------------------------------
- t4    | SET search_path = test_default;                                                                                        +
-       | CREATE TABLE t4 (                                                                                                      +
-       |     a timestamp(0) with time zone DEFAULT pg_systimestamp()::timestamp(0) with time zone ON UPDATE CURRENT_TIMESTAMP(0)+
-       | )                                                                                                                      +
+ Table |                                                       Create Table                                                        
+-------+---------------------------------------------------------------------------------------------------------------------------
+ t4    | SET search_path = test_default;                                                                                          +
+       | CREATE TABLE t4 (                                                                                                        +
+       |     a timestamp(0) with time zone DEFAULT (pg_systimestamp())::timestamp(0) with time zone ON UPDATE CURRENT_TIMESTAMP(0)+
+       | )                                                                                                                        +
        | WITH (orientation=row, compression=no);
 (1 row)
 
@@ -109,11 +109,11 @@ show create table test;
 -------+----------------------------------------------------------
  test  | SET search_path = test_default;                         +
        | CREATE TABLE test (                                     +
-       |     id bigint DEFAULT -1 NOT NULL,                      +
-       |     name integer DEFAULT -1 NOT NULL,                   +
-       |     col1 real DEFAULT -1.1,                             +
+       |     id bigint DEFAULT (-1)::bigint NOT NULL,            +
+       |     name integer DEFAULT (-1) NOT NULL,                 +
+       |     col1 real DEFAULT (-1.1)::real,                     +
        |     col2 double precision DEFAULT 2.2::double precision,+
-       |     col3 real DEFAULT -1100                             +
+       |     col3 real DEFAULT (-1100)::real                     +
        | )                                                       +
        | WITH (orientation=row, compression=no);
 (1 row)
