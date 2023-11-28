@@ -10706,6 +10706,9 @@ Datum blob_any_value(PG_FUNCTION_ARGS)
 
 static char* AnyElementGetCString(Oid anyOid, Datum anyDatum)
 {
+    if (!OidIsValid(anyOid)) {
+        return DatumGetCString(DirectFunctionCall1(textout, anyDatum));
+    }
     char* data = NULL;
     Oid typeOutput = InvalidOid;
     bool typIsVarlena = false;
@@ -10786,7 +10789,7 @@ Datum Varlena2Text(PG_FUNCTION_ARGS)
 Datum Varlena2Bit(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
     int32 typmod = PG_GETARG_INT32(1);
     Datum bits;
     Datum result;
