@@ -771,6 +771,9 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
             }
             break;
         case DEFAULT:
+            if (GetSessionContext()->is_create_alter_stmt) {
+                break;
+            }
             /*
              * DEFAULT must be reduced to one token, to allow START as table / column alias.
              */
@@ -879,6 +882,16 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                     *llocp = cur_yylloc;
                     break;
             }
+            break;
+        case CREATE:
+        case ALTER:
+            if (pg_strncasecmp(yyextra->core_yy_extra.scanbuf, "alter", strlen("alter")) == 0 ||
+                pg_strncasecmp(yyextra->core_yy_extra.scanbuf, "create", strlen("create")) == 0) {
+                GetSessionContext()->is_create_alter_stmt = true;
+            }
+            break;
+        case SELECT:
+            GetSessionContext()->is_create_alter_stmt = false;
             break;
 #endif
         default:
