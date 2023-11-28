@@ -364,9 +364,295 @@ call proc_def_2(@out,11);
  11 | 1245
 (1 row)
 
+set b_format_behavior_compat_options=enable_set_variables;
+drop table if exists t_tinyint0009 cascade;
+NOTICE:  table "t_tinyint0009" does not exist, skipping
+create table t_tinyint0009 (
+c1 tinyint auto_increment primary key,
+c2 tinyint(1) default '0',
+c3 tinyint(10) not null default '0',
+c4 int default '0',
+c5 text
+);
+NOTICE:  CREATE TABLE will create implicit sequence "t_tinyint0009_c1_seq" for serial column "t_tinyint0009.c1"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_tinyint0009_pkey" for table "t_tinyint0009"
+drop procedure if exists insertdata;
+NOTICE:  function insertdata() does not exist, skipping
+create procedure insertdata(num int) as
+begin
+    set @x = 1;
+    truncate t_tinyint0009;
+    repeat
+        set @c1 = @x;
+        set @c2 = floor(0.1*(127-18+1))+18;
+        set @c3 = floor(0.1*(127-100+1))+100;
+        set @c4 = floor(0.1*(10000-127+1))+127;
+        set @c5 = concat('amy', @x);
+        select @c1;
+        select @c2;
+        select @c3;
+        select @c4;
+        select @c5;
+        insert into t_tinyint0009 values (@c1, @c2, @c3, @c4, @c5);
+        set @x = @x + 1;
+        select @x;
+    until @x > num end repeat;
+end;
+/
+call insertdata(4);
+ @c1 
+-----
+   1
+(1 row)
+
+ @c2 
+-----
+  29
+(1 row)
+
+ @c3 
+-----
+ 102
+(1 row)
+
+ @c4  
+------
+ 1114
+(1 row)
+
+ @c5  
+------
+ amy1
+(1 row)
+
+ @x 
+----
+  2
+(1 row)
+
+ @c1 
+-----
+   2
+(1 row)
+
+ @c2 
+-----
+  29
+(1 row)
+
+ @c3 
+-----
+ 102
+(1 row)
+
+ @c4  
+------
+ 1114
+(1 row)
+
+ @c5  
+------
+ amy2
+(1 row)
+
+ @x 
+----
+  3
+(1 row)
+
+ @c1 
+-----
+   3
+(1 row)
+
+ @c2 
+-----
+  29
+(1 row)
+
+ @c3 
+-----
+ 102
+(1 row)
+
+ @c4  
+------
+ 1114
+(1 row)
+
+ @c5  
+------
+ amy3
+(1 row)
+
+ @x 
+----
+  4
+(1 row)
+
+ @c1 
+-----
+   4
+(1 row)
+
+ @c2 
+-----
+  29
+(1 row)
+
+ @c3 
+-----
+ 102
+(1 row)
+
+ @c4  
+------
+ 1114
+(1 row)
+
+ @c5  
+------
+ amy4
+(1 row)
+
+ @x 
+----
+  5
+(1 row)
+
+call insertdata(4);
+ @c1 
+-----
+   1
+(1 row)
+
+ @c2 
+-----
+  29
+(1 row)
+
+ @c3 
+-----
+ 102
+(1 row)
+
+ @c4  
+------
+ 1114
+(1 row)
+
+ @c5  
+------
+ amy1
+(1 row)
+
+ @x 
+----
+  2
+(1 row)
+
+ @c1 
+-----
+   2
+(1 row)
+
+ @c2 
+-----
+  29
+(1 row)
+
+ @c3 
+-----
+ 102
+(1 row)
+
+ @c4  
+------
+ 1114
+(1 row)
+
+ @c5  
+------
+ amy2
+(1 row)
+
+ @x 
+----
+  3
+(1 row)
+
+ @c1 
+-----
+   3
+(1 row)
+
+ @c2 
+-----
+  29
+(1 row)
+
+ @c3 
+-----
+ 102
+(1 row)
+
+ @c4  
+------
+ 1114
+(1 row)
+
+ @c5  
+------
+ amy3
+(1 row)
+
+ @x 
+----
+  4
+(1 row)
+
+ @c1 
+-----
+   4
+(1 row)
+
+ @c2 
+-----
+  29
+(1 row)
+
+ @c3 
+-----
+ 102
+(1 row)
+
+ @c4  
+------
+ 1114
+(1 row)
+
+ @c5  
+------
+ amy4
+(1 row)
+
+ @x 
+----
+  5
+(1 row)
+
+select * from t_tinyint0009 order by c2;
+ c1 | c2 | c3  |  c4  |  c5  
+----+----+-----+------+------
+ 1  | 29 | 102 | 1114 | amy1
+ 2  | 29 | 102 | 1114 | amy2
+ 3  | 29 | 102 | 1114 | amy3
+ 4  | 29 | 102 | 1114 | amy4
+(4 rows)
+
 set  dolphin.sql_mode=default;
 drop schema multi_select_proc cascade;
-NOTICE:  drop cascades to 24 other objects
+NOTICE:  drop cascades to 26 other objects
 DETAIL:  drop cascades to table test_1
 drop cascades to table t
 drop cascades to function proc_a_1()
@@ -391,4 +677,6 @@ drop cascades to function pro1_1145533(integer)
 drop cascades to function pro2_1145533(integer)
 drop cascades to function proc_def_1(integer,integer)
 drop cascades to function proc_def_2(integer)
+drop cascades to table t_tinyint0009
+drop cascades to function insertdata(integer)
 reset current_schema;

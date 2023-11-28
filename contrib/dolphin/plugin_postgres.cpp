@@ -422,6 +422,7 @@ static int SpiIsExecMultiSelect(PLpgSQL_execstate* estate, PLpgSQL_expr* expr, P
     bool outPutSelRes = false;
     Port* MyProcPort = u_sess->proc_cxt.MyProcPort;
     int tmpPos = t_thrd.libpq_cxt.PqSendPointer;
+    CommandDest origDest = u_sess->SPI_cxt._current->dest;
     int rc;
     if (SQL_MODE_AllOW_PROCEDURE_WITH_SELECT() && GetSessionContext()->is_dolphin_call_stmt) {
         CachedPlan* cplan = SPI_plan_get_cached_plan(expr->plan);
@@ -458,6 +459,7 @@ static int SpiIsExecMultiSelect(PLpgSQL_execstate* estate, PLpgSQL_expr* expr, P
         }
     }
     *multi_res = outPutSelRes;
+    u_sess->SPI_cxt._current->dest = origDest;
     return rc;
 }
 
