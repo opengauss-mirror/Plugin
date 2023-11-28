@@ -559,7 +559,7 @@ dimension_tuple_update(TupleInfo *ti, void *data)
 	{
 		ereport(ERROR,
 							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							 errmsg("invalid interval: must be greater than 0"),
+							 errmsg("invalid interval: Must be greater than 0"),
 							 errhint("Please change your chunk interval.")));
 	}
 
@@ -638,7 +638,7 @@ dimension_insert_relation(Relation rel, int32 hypertable_id, Name colname, Oid c
 		if (!(num_slices > 0 && interval_length <= 0)){
 			ereport(ERROR,
 							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							 errmsg("invalid interval: must be greater than 0"),
+							 errmsg("invalid interval: Must be greater than 0"),
 							 errhint("Please change your chunk interval.")));
 		}
 		values[AttrNumberGetAttrOffset(Anum_dimension_num_slices)] = Int16GetDatum(num_slices);
@@ -651,7 +651,7 @@ dimension_insert_relation(Relation rel, int32 hypertable_id, Name colname, Oid c
 		if (!(num_slices <= 0 && interval_length > 0)){
 			ereport(ERROR,
 							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							 errmsg("invalid interval: must be between 1 and 9223372036854775807"),
+							 errmsg("invalid interval: Must be greater than 0"),
 							 errhint("Please change your chunk interval.")));
 		}
 		values[AttrNumberGetAttrOffset(Anum_dimension_interval_length)] =

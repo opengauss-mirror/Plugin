@@ -913,6 +913,14 @@ process_drop_hypertable(ProcessUtilityArgs *args, DropStmt *stmt)
 							 errhint("Please drop the corresponding uncompressed hypertable "
 									 "instead.")));
 
+				
+				if (stmt->behavior != DROP_CASCADE)
+					ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							 errmsg("Dropping  hypertables without CASCADE is not supported"),
+							 errhint("Please use drop hypertable.... CASCADE "
+									 "instead.")));
+
 				/*
 				 *  We need to drop hypertable chunks before the hypertable to avoid the need
 				 *  to CASCADE such drops;
