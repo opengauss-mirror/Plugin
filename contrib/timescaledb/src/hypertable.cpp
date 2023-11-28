@@ -1311,10 +1311,10 @@ static void
 hypertable_create_schema(const char *schema_name)
 {
 	CreateSchemaStmt stmt = {
-		.type = {},
-		.missing_ok = false,
+		.type = T_CreateSchemaStmt,
+		.missing_ok = true,
 		.schemaname = (char *) schema_name,
-		.authid = "",
+		.authid = NULL,
 		.hasBlockChain = false,
 		.schemaElts = NIL,
 		.temptype = {},
