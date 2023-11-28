@@ -88,7 +88,6 @@ extra_clean:
 	make clean -C $(executor)
 	make clean -C $(storage)
 	make clean -C $(plan)
-	make clean -C $(commands)
 	make clean -C $(pl)
 	make clean -C $(orafce)
 clean: extra_clean
