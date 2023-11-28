@@ -393,3 +393,19 @@ CREATE OR REPLACE FUNCTION pg_catalog.date_format (time without time zone, text)
 
 DROP FUNCTION IF EXISTS pg_catalog.to_char(time without time zone, text);
 CREATE OR REPLACE FUNCTION pg_catalog.to_char(time without time zone, text) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.to_char($1::interval, $2) $$;
+
+CREATE OR REPLACE FUNCTION pg_catalog.bit_cast_date(bit) 
+RETURNS date LANGUAGE SQL IMMUTABLE STRICT as 
+'select cast(cast($1 as text) as date)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.bit_cast_datetime(bit) 
+RETURNS timestamp without time zone LANGUAGE SQL IMMUTABLE STRICT as 
+'select cast(cast($1 as text) as timestamp without time zone)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.bit_cast_timestamp(bit) 
+RETURNS timestamptz LANGUAGE SQL IMMUTABLE STRICT as 
+'select cast(cast($1 as text) as timestamptz)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.bit_cast_time(bit) 
+RETURNS time without time zone LANGUAGE SQL IMMUTABLE STRICT as 
+'select cast(cast($1 as text) as time without time zone)';

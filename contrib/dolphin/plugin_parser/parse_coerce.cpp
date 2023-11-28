@@ -3199,6 +3199,22 @@ Oid findSignedExplicitCastFunction(Oid sourceTypeId, Oid funcid)
     return (idx == INVALID_IDX) ? funcid : get_func_oid(castSignedFunction[idx], PG_CATALOG_NAMESPACE, NULL);
 }
 
+Oid findBitCastTimeFunction(Oid targetTypeId, Oid funcid)
+{
+    switch (targetTypeId) {
+        case DATEOID:
+            return get_func_oid("bit_cast_date", PG_CATALOG_NAMESPACE, NULL);
+        case TIMESTAMPOID:
+            return get_func_oid("bit_cast_datetime", PG_CATALOG_NAMESPACE, NULL);
+        case TIMESTAMPTZOID:
+            return get_func_oid("bit_cast_timestamp", PG_CATALOG_NAMESPACE, NULL);
+        case TIMEOID:
+            return get_func_oid("bit_cast_time", PG_CATALOG_NAMESPACE, NULL);
+        default:
+            return funcid;
+    }
+}
+
 bool IsEquivalentEnums(Oid enumOid1, Oid enumOid2)
 {
     if (enumOid1 == enumOid2) {
@@ -3263,6 +3279,8 @@ void TryFindSpecifiedCastFunction(const Oid sourceTypeId, const Oid targetTypeId
         *funcId = get_func_oid("text_time_explicit", PG_CATALOG_NAMESPACE, NULL);
     } else if (ENABLE_B_CMPT_MODE && targetTypeId == INT8OID) {
         *funcId = findSignedExplicitCastFunction(sourceTypeId, defaultFuncId);
+    } else if (sourceTypeId == BITOID) {
+        *funcId = findBitCastTimeFunction(targetTypeId, defaultFuncId);
     } else {
         *funcId = findUnsignedExplicitCastFunction(targetTypeId, sourceTypeId, defaultFuncId);
     }

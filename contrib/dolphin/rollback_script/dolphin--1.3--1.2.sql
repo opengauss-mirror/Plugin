@@ -199,3 +199,8 @@ DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
 
 DROP FUNCTION IF EXISTS pg_catalog.date_format (time without time zone, text);
 DROP FUNCTION IF EXISTS pg_catalog.to_char(time without time zone, text);
+
+DROP FUNCTION IF EXISTS pg_catalog.bit_cast_time(bit);
+DROP FUNCTION IF EXISTS pg_catalog.bit_cast_timestamp(bit);
+DROP FUNCTION IF EXISTS pg_catalog.bit_cast_datetime(bit);
+DROP FUNCTION IF EXISTS pg_catalog.bit_cast_date(bit);

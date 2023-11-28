@@ -35,11 +35,6 @@ DROP FUNCTION IF EXISTS pg_catalog.float4_cast_time(float4);
 DROP FUNCTION IF EXISTS pg_catalog.float8_cast_time(float8);
 DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_time(numeric);
 
-DROP FUNCTION IF EXISTS pg_catalog.bit_cast_time(bit);
-DROP FUNCTION IF EXISTS pg_catalog.bit_cast_timestamp(bit);
-DROP FUNCTION IF EXISTS pg_catalog.bit_cast_datetime(bit);
-DROP FUNCTION IF EXISTS pg_catalog.bit_cast_date(bit);
-
 DROP FUNCTION IF EXISTS pg_catalog.dolphin_invoke();
 CREATE FUNCTION pg_catalog.dolphin_invoke()
     RETURNS VOID AS '$libdir/dolphin','dolphin_invoke' LANGUAGE C STRICT;
