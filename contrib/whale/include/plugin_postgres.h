@@ -73,7 +73,6 @@ typedef  struct ASqlPluginContext {
     int pipe_sid;                                 /* session id */
     orafce_pipe* pipes = NULL;
     LWLockId shmem_lockid;
-//    LWLockTranche tranche;
     /* putline.c */
     bool is_server_output = false;
     char *buffer = NULL;

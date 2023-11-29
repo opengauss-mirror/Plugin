@@ -3511,7 +3511,7 @@ CTranslatorDXLToPlStmt::TranslateDXLAppend(
 	//plan->nMotionNodes = 0;
 	append->appendplans = NIL;
 
-    int max_num_exec_nodes = 0;
+	int max_num_exec_nodes = 0;
 	// translate children
 	CDXLTranslateContext child_context(m_mp, false,
 									   output_context->GetColIdToParamIdMap());
@@ -3524,19 +3524,17 @@ CTranslatorDXLToPlStmt::TranslateDXLAppend(
 
 		SPQOS_ASSERT(NULL != child_plan && "child plan cannot be NULL");
 
-        /* SPQ: add exec_nodes for plan */
-        if (ul == EdxlappendIndexFirstChild)  {
-            plan->exec_nodes = ng_get_dest_execnodes(child_plan);
-            max_num_exec_nodes = list_length(plan->exec_nodes->nodeList);
-        }
-
-        if (max_num_exec_nodes < list_length(plan->exec_nodes->nodeList)) {
-            plan->exec_nodes = ng_get_dest_execnodes(child_plan);
-            max_num_exec_nodes = list_length(plan->exec_nodes->nodeList);
-        }
-
 		append->appendplans = spqdb::LAppend(append->appendplans, child_plan);
-		//plan->nMotionNodes += child_plan->nMotionNodes;
+
+		/* SPQ: add exec_nodes for plan */
+		if (child_plan->exec_nodes == NULL) {
+			SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiExpr2DXLUnsupportedFeature,
+				SPQOS_WSZ_LIT("exec_nodes cannot be NULL"));
+		}
+		if (max_num_exec_nodes < list_length(plan->exec_nodes->nodeList)) {
+			plan->exec_nodes = ng_get_dest_execnodes(child_plan);
+			max_num_exec_nodes = list_length(plan->exec_nodes->nodeList);
+		}
 	}
 
 	CDXLNode *project_list_dxlnode = (*append_dxlnode)[EdxlappendIndexProjList];
@@ -4042,6 +4040,10 @@ CTranslatorDXLToPlStmt::TranslateDXLSequence(
 	/* SPQ: add exec_nodes for plan */
 	int max_num_exec_nodes = 0;
 	plan->exec_nodes = ng_get_dest_execnodes(last_child_plan);
+	if (plan->exec_nodes == NULL) {
+		SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiExpr2DXLUnsupportedFeature,
+			SPQOS_WSZ_LIT("exec_nodes cannot be NULL in last_child of Sequence"));
+	}
 	max_num_exec_nodes = list_length(plan->exec_nodes->nodeList);
 	// translate the rest of the children
 	for (ULONG ul = 1; ul < arity - 1; ul++)
@@ -4052,7 +4054,10 @@ CTranslatorDXLToPlStmt::TranslateDXLSequence(
 			child_dxlnode, &child_context, ctxt_translation_prev_siblings);
 
 		psequence->subplans = spqdb::LAppend(psequence->subplans, child_plan);
-		//plan->nMotionNodes += child_plan->nMotionNodes;
+		if (child_plan->exec_nodes == NULL) {
+			SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiExpr2DXLUnsupportedFeature,
+				SPQOS_WSZ_LIT("exec_nodes cannot be NULL in Sequence"));
+		}
 		if (max_num_exec_nodes < list_length(child_plan->exec_nodes->nodeList)) {
 			plan->exec_nodes = ng_get_dest_execnodes(child_plan);
 			max_num_exec_nodes = list_length(plan->exec_nodes->nodeList);
