@@ -5442,6 +5442,10 @@ static void set_deparse_planstate(deparse_namespace* dpns, PlanState* ps)
     /* index_tlist is set only if it's an IndexOnlyScan */
     if (IsA(ps->plan, IndexOnlyScan))
         dpns->index_tlist = ((IndexOnlyScan*)ps->plan)->indextlist;
+#ifdef USE_SPQ
+    else if IsA(ps->plan, SpqIndexOnlyScan)
+        dpns->index_tlist = ((IndexOnlyScan*)ps->plan)->indextlist;
+#endif
     else if (IsA(ps->plan, ForeignScan))
         dpns->index_tlist = ((ForeignScan *)ps->plan)->fdw_scan_tlist;
     else if (IsA(ps->plan, ExtensiblePlan))
@@ -6843,7 +6847,23 @@ static void get_setop_query(Node* setOp, Query* query, deparse_context* context,
             if (context->qrw_phase)
                 get_setop_query(subquery->setOperations, subquery, context, resultDesc);
             else
-                Assert(false);
+                get_query_def(subquery,
+                    buf,
+                    context->namespaces,
+                    resultDesc,
+                    context->prettyFlags,
+                    context->wrapColumn,
+                    context->indentLevel
+#ifdef PGXC
+                    ,
+                    context->finalise_aggs,
+                    context->sortgroup_colno,
+                    context->parser_arg
+#endif /* PGXC */
+                    ,
+                    context->qrw_phase,
+                    context->viewdef,
+                    context->is_fqs);
         }
 
         if (need_paren)
@@ -7050,6 +7070,24 @@ static void get_rule_groupingset(GroupingSet* gset, List* targetlist, deparse_co
     }
 
     appendStringInfoString(buf, ")");
+}
+
+static void get_rule_separator(Const* con, StringInfo buf)
+{
+    Oid typoutput;
+    char* extval = NULL;
+    bool typIsVarlena = false;
+    
+    appendStringInfoString(buf, "\'");
+    if (u_sess->exec_cxt.under_auto_explain) {
+        appendStringInfoString(buf, "***");
+    } else if (!con->constisnull) {
+        getTypeOutputInfo(con->consttype, &typoutput, &typIsVarlena);
+        extval = OidOutputFunctionCall(typoutput, con->constvalue);
+        appendStringInfoString(buf, extval);
+        pfree_ext(extval);
+    }
+    appendStringInfoChar(buf, '\'');
 }
 
 /*
@@ -10891,18 +10929,9 @@ static void get_agg_expr(Aggref* aggref, deparse_context* context)
         }
 
         if (pg_strcasecmp(funcname, "group_concat") == 0) {
-            Oid typoutput;
-            char* extval = NULL;
-            bool typIsVarlena = false;
-            /* parse back the first argument as separator */
-            TargetEntry* tle = (TargetEntry*)lfirst(list_head(aggref->args));
-            getTypeOutputInfo(((Const*)tle->expr)->consttype, &typoutput, &typIsVarlena);
-            extval = OidOutputFunctionCall(typoutput, ((Const*)tle->expr)->constvalue);
-
-            appendStringInfoString(buf, " SEPARATOR '");
-            appendStringInfoString(buf, extval);
-            appendStringInfoChar(buf, '\'');
-            pfree_ext(extval);
+            appendStringInfoString(buf, " SEPARATOR ");
+            Const* con = (Const*)(((TargetEntry*)lfirst(list_head(aggref->args)))->expr);
+            get_rule_separator(con, buf);
         }
     }
 
