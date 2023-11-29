@@ -3531,7 +3531,7 @@ CTranslatorDXLToPlStmt::TranslateDXLAppend(
 			SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiExpr2DXLUnsupportedFeature,
 				SPQOS_WSZ_LIT("exec_nodes cannot be NULL"));
 		}
-		if (max_num_exec_nodes < list_length(plan->exec_nodes->nodeList)) {
+		if (max_num_exec_nodes < list_length(child_plan->exec_nodes->nodeList)) {
 			plan->exec_nodes = ng_get_dest_execnodes(child_plan);
 			max_num_exec_nodes = list_length(plan->exec_nodes->nodeList);
 		}
