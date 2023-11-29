@@ -14401,7 +14401,7 @@ triggerbody_subprogram_or_single:
 			} trigger_body_stmt
 				{
 					Node* node = (Node*)$2;
-					if(node->type == T_Invalid)
+					if(IsA(node, FunctionSources))
 					{
 						GetSessionContext()->single_line_trigger_begin = 0;
 						$$ = (FunctionSources*)$2;
@@ -14415,7 +14415,7 @@ triggerbody_subprogram_or_single:
 						int end_pos = yylloc;
 						strbody = TriggerBodyGet(start_pos, end_pos, yyextra);
 						GetSessionContext()->single_line_trigger_begin = 0;
-						funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
+						funSrc = makeNode(FunctionSources);
 						funSrc->bodySrc   = strbody;
 
 						$$ = funSrc;
@@ -20174,7 +20174,7 @@ b_proc_body:{
 				yyextra->core_yy_extra.query_string_locationlist = 
 					lappend_int(yyextra->core_yy_extra.query_string_locationlist, yylloc);
 
-				funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
+				funSrc = makeNode(FunctionSources);
 				funSrc->bodySrc   = proc_body_str;
 				funSrc->headerSrc = proc_header_str;
 				funSrc->hasReturn = hasReturn;
@@ -21648,7 +21648,7 @@ flow_control_func_body:
 				yyextra->core_yy_extra.query_string_locationlist =
 					lappend_int(yyextra->core_yy_extra.query_string_locationlist, yylloc);
 
-				funSrc = (FunctionSources*)palloc0(sizeof(FunctionSources));
+				funSrc = makeNode(FunctionSources);
 				funSrc->bodySrc   = proc_body_str;
 				funSrc->headerSrc = proc_header_str;
 				funSrc->hasReturn = hasReturn;
