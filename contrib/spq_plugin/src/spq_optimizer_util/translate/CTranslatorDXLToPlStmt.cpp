@@ -63,6 +63,7 @@ using namespace spqmd;
 #define SPQDXL_MOTION_ID_START 1
 #define SPQDXL_PARAM_ID_START 0
 
+#define MASTER_CONTENT_ID (-1)
 
 ULONG CTranslatorDXLToPlStmt::m_external_scan_counter = 0;
 
@@ -284,6 +285,22 @@ CTranslatorDXLToPlStmt::GetPlannedStmtFromDXL(const CDXLNode *dxlnode,
 
 	CDXLTranslateContext dxl_translate_ctxt(m_mp, false);
 
+	PlanSlice *topslice;
+
+	topslice = (PlanSlice *) spqdb::SPQDBAlloc(sizeof(PlanSlice));
+	memset(topslice, 0, sizeof(PlanSlice));
+	topslice->sliceIndex = 0;
+	topslice->parentIndex = -1;
+	topslice->gangType = GANGTYPE_UNALLOCATED;
+	topslice->numsegments = 1;
+	topslice->worker_idx = -1;
+	topslice->directDispatch.isDirectDispatch = false;
+	topslice->directDispatch.contentIds = NIL;
+	topslice->directDispatch.haveProcessedAnyCalculations = false;
+
+	m_dxl_to_plstmt_context->AddSlice(topslice);
+	m_dxl_to_plstmt_context->SetCurrentSlice(topslice);
+
 	CDXLTranslationContextArray *ctxt_translation_prev_siblings =
 		SPQOS_NEW(m_mp) CDXLTranslationContextArray(m_mp);
 	Plan *plan = TranslateDXLOperatorToPlan(dxlnode, &dxl_translate_ctxt,
@@ -331,6 +348,9 @@ CTranslatorDXLToPlStmt::GetPlannedStmtFromDXL(const CDXLNode *dxlnode,
 	/* SPQ: for get param type list */
 	List* paramList =  m_dxl_to_plstmt_context->GetParamTypes();
 	planned_stmt->nParamExec = spqdb::ListLength(paramList);
+	planned_stmt->slices = m_dxl_to_plstmt_context->GetSlices(&planned_stmt->numSlices);
+	planned_stmt->subplan_sliceIds = m_dxl_to_plstmt_context->GetSubplanSliceIdArray();
+ 
 
 	/*SPQOS_ASSERT(plan->nMotionNodes >= 0);
 	if (0 == plan->nMotionNodes && !m_is_tgt_tbl_distributed)
@@ -751,9 +771,9 @@ CTranslatorDXLToPlStmt::TranslateDXLIndexScan(
 	rte->requiredPerms |= ACL_SELECT;
 	m_dxl_to_plstmt_context->AddRTE(rte);
 
-	IndexScan *index_scan = NULL;
-	index_scan = MakeNode(IndexScan);
-	index_scan->scan.scanrelid = index;
+	SpqIndexScan *index_scan = MakeNode(SpqIndexScan);
+	index_scan->scan.scan.scanrelid = index;
+	index_scan->scan.scan.plan.spq_scan_partial = true;
 
 	CMDIdSPQDB *mdid_index = CMDIdSPQDB::CastMdid(
 		physical_idx_scan_dxlop->GetDXLIndexDescr()->MDId());
@@ -761,9 +781,9 @@ CTranslatorDXLToPlStmt::TranslateDXLIndexScan(
 	Oid index_oid = mdid_index->Oid();
 
 	SPQOS_ASSERT(InvalidOid != index_oid);
-	index_scan->indexid = index_oid;
+	index_scan->scan.indexid = index_oid;
 
-	Plan *plan = &(index_scan->scan.plan);
+	Plan *plan = &(index_scan->scan.scan.plan);
 	plan->plan_node_id = m_dxl_to_plstmt_context->GetNextPlanId();
 	//plan->nMotionNodes = 0;
 
@@ -793,7 +813,7 @@ CTranslatorDXLToPlStmt::TranslateDXLIndexScan(
 										 &base_table_context,
 										 ctxt_translation_prev_siblings);
 
-	index_scan->indexorderdir = CTranslatorUtils::GetScanDirection(
+	index_scan->scan.indexorderdir = CTranslatorUtils::GetScanDirection(
 		physical_idx_scan_dxlop->GetIndexScanDir());
 
 	// translate index condition list
@@ -809,12 +829,14 @@ CTranslatorDXLToPlStmt::TranslateDXLIndexScan(
 		ctxt_translation_prev_siblings, &index_cond, &index_orig_cond,
 		&index_strategy_list, &index_subtype_list);
 
-	index_scan->indexqual = index_cond;
-	index_scan->indexqualorig = index_orig_cond;
+	index_scan->scan.indexqual = index_cond;
+	index_scan->scan.indexqualorig = index_orig_cond;
 	/*
 	 * As of 8.4, the indexstrategy and indexsubtype fields are no longer
 	 * available or needed in IndexScan. Ignore them.
 	 */
+	plan->dop = is_execute_on_datanodes(plan) ? SET_DOP(u_sess->opt_cxt.query_dop) : 1;
+	add_distribute_info(plan, plan->qual, rte, orig_query, index);
 	SetParamIds(plan);
 
 	return (Plan *) index_scan;
@@ -893,8 +915,9 @@ CTranslatorDXLToPlStmt::TranslateDXLIndexOnlyScan(
 	rte->requiredPerms |= ACL_SELECT;
 	m_dxl_to_plstmt_context->AddRTE(rte);
 
-	IndexOnlyScan *index_scan = MakeNode(IndexOnlyScan);
-	index_scan->scan.scanrelid = index;
+	SpqIndexOnlyScan *index_scan = MakeNode(SpqIndexOnlyScan);
+	index_scan->scan.scan.scanrelid = index;
+	index_scan->scan.scan.plan.spq_scan_partial = true;
 
 	CMDIdSPQDB *mdid_index = CMDIdSPQDB::CastMdid(
 		physical_idx_scan_dxlop->GetDXLIndexDescr()->MDId());
@@ -902,9 +925,9 @@ CTranslatorDXLToPlStmt::TranslateDXLIndexOnlyScan(
 	Oid index_oid = mdid_index->Oid();
 
 	SPQOS_ASSERT(InvalidOid != index_oid);
-	index_scan->indexid = index_oid;
+	index_scan->scan.indexid = index_oid;
 
-	Plan *plan = &(index_scan->scan.plan);
+	Plan *plan = &(index_scan->scan.scan.plan);
 	plan->plan_node_id = m_dxl_to_plstmt_context->GetNextPlanId();
 
 	// translate operator costs
@@ -926,8 +949,7 @@ CTranslatorDXLToPlStmt::TranslateDXLIndexOnlyScan(
 	CDXLTranslateContextBaseTable index_context(m_mp);
 
 	// translate index targetlist
-	index_scan->indextlist = TranslateDXLIndexTList(md_rel, md_index, index,
-													table_desc, &index_context);
+	index_scan->scan.indextlist = TranslateDXLIndexTList(md_rel, md_index, index, table_desc, &index_context);
 
 	// translate target list
 	plan->targetlist =
@@ -939,7 +961,7 @@ CTranslatorDXLToPlStmt::TranslateDXLIndexOnlyScan(
 		TranslateDXLIndexFilter(filter_dxlnode, output_context, &index_context,
 								ctxt_translation_prev_siblings);
 
-	index_scan->indexorderdir = CTranslatorUtils::GetScanDirection(
+	index_scan->scan.indexorderdir = CTranslatorUtils::GetScanDirection(
 		physical_idx_scan_dxlop->GetIndexScanDir());
 
 	// translate index condition list
@@ -955,8 +977,10 @@ CTranslatorDXLToPlStmt::TranslateDXLIndexOnlyScan(
 		ctxt_translation_prev_siblings, &index_cond, &index_orig_cond,
 		&index_strategy_list, &index_subtype_list);
 
-	index_scan->indexqual = index_cond;
-	index_scan->indexqualorig = index_orig_cond;
+	index_scan->scan.indexqual = index_cond;
+	index_scan->scan.indexqualorig = index_orig_cond;
+	plan->dop = is_execute_on_datanodes(plan) ? SET_DOP(u_sess->opt_cxt.query_dop) : 1;
+	add_distribute_info(plan, plan->qual, rte, orig_query, index);
 	SetParamIds(plan);
 
 	return (Plan *) index_scan;
@@ -1833,7 +1857,8 @@ CTranslatorDXLToPlStmt::TranslateDXLNLJoin(
 	// setting of prefetch_inner to true except for the case of index NLJ where we cannot prefetch inner
 	// because inner child depends on variables coming from outer child
 	join->prefetch_inner = !dxl_nlj->IsIndexNLJ();
-
+	join->prefetch_inner = (SPQOS_FTRACE(EopttraceEnableLeftIndexNLJoin) ? true :
+		!dxl_nlj->IsIndexNLJ());
 	CDXLTranslationContextArray *translation_context_arr_with_siblings =
 		SPQOS_NEW(m_mp) CDXLTranslationContextArray(m_mp);
 	Plan *left_plan = NULL;
@@ -2179,7 +2204,7 @@ CTranslatorDXLToPlStmt::TranslateDXLDuplicateSensitiveMotion(
 {
 	CDXLPhysicalMotion *motion_dxlop =
 		CDXLPhysicalMotion::Cast(motion_dxlnode->GetOperator());
-	if (CTranslatorUtils::IsDuplicateSensitiveMotion(motion_dxlop))
+	if (CTranslatorUtils::IsDuplicateSensitiveMotion(motion_dxlop) && false)
 	{
 		return TranslateDXLRedistributeMotionToResultHashFilters(
 			motion_dxlnode, output_context, ctxt_translation_prev_siblings);
@@ -2210,7 +2235,6 @@ CTranslatorDXLToPlStmt::TranslateDXLMotion(
 
 	Plan *plan = &(motion->plan);
 	plan->plan_node_id = m_dxl_to_plstmt_context->GetNextPlanId();
-	motion->motionID = m_dxl_to_plstmt_context->GetNextMotionId();
 
 	// translate operator costs
 	TranslatePlanCosts(
@@ -2222,6 +2246,54 @@ CTranslatorDXLToPlStmt::TranslateDXLMotion(
 	CDXLNode *project_list_dxlnode = (*motion_dxlnode)[EdxlgmIndexProjList];
 	CDXLNode *filter_dxlnode = (*motion_dxlnode)[EdxlgmIndexFilter];
 	CDXLNode *sort_col_list_dxl = (*motion_dxlnode)[EdxlgmIndexSortColList];
+	PlanSlice *recvslice = m_dxl_to_plstmt_context->GetCurrentSlice();
+	PlanSlice *sendslice = (PlanSlice *) spqdb::SPQDBAlloc(sizeof(PlanSlice));
+	memset(sendslice, 0, sizeof(PlanSlice));
+
+	sendslice->sliceIndex = m_dxl_to_plstmt_context->AddSlice(sendslice);
+	sendslice->parentIndex = recvslice->sliceIndex;
+	m_dxl_to_plstmt_context->SetCurrentSlice(sendslice);
+
+
+	const IntPtrArray *input_segids_array = motion_dxlop->GetInputSegIdsArray();
+
+	if (1 == input_segids_array->Size())
+	{
+		int worker_idx = *((*input_segids_array)[0]);
+
+		// only one segment in total
+		if (worker_idx == MASTER_CONTENT_ID)
+		{
+			// sender is on master, must be singleton gang
+			sendslice->gangType = GANGTYPE_ENTRYDB_READER;
+		}
+		else if (1 == spqdb::GetSPQSegmentCount())
+		{
+			// sender is on segment, can not tell it's singleton or
+			// all-segment gang, so treat it as all-segment reader gang.
+			// It can be promoted to writer gang later if needed.
+			sendslice->gangType = GANGTYPE_PRIMARY_READER;
+		}
+		else
+		{
+			// multiple segments, must be singleton gang
+			sendslice->gangType = GANGTYPE_SINGLETON_READER;
+		}
+		sendslice->numsegments = 1;
+		sendslice->worker_idx = worker_idx;
+	}
+	else
+	{
+		// Mark it as reader for now. Will be overwritten into WRITER, if we
+		// encounter a DML node.
+		sendslice->gangType = GANGTYPE_PRIMARY_READER;
+		sendslice->numsegments = m_num_of_segments;
+		sendslice->worker_idx = 0;
+	}
+	sendslice->directDispatch.isDirectDispatch = false;
+	sendslice->directDispatch.contentIds = NIL;
+	sendslice->directDispatch.haveProcessedAnyCalculations = false;
+	motion->motionID = sendslice->sliceIndex;
 
 	// translate motion child
 	// child node is in the same position in broadcast and gather motion nodes
@@ -2334,43 +2406,8 @@ CTranslatorDXLToPlStmt::TranslateDXLMotion(
 
 	// cleanup
 	child_contexts->Release();
-	// TODO SPQ undef FLOW
-	// create flow for child node to distinguish between singleton flows and all-segment flows
-	/*Flow *flow = MakeNode(Flow);
-
-	const IntPtrArray *input_segids_array = motion_dxlop->GetInputSegIdsArray();
-
-
-	// only one sender
-	if (1 == input_segids_array->Size())
-	{
-		flow->segindex = *((*input_segids_array)[0]);
-
-		// only one segment in total
-		if (1 == spqdb::GetSPQSegmentCount())
-		{
-			if (flow->segindex == MASTER_CONTENT_ID)
-				// sender is on master, must be singleton flow
-				flow->flotype = FLOW_SINGLETON;
-			else
-				// sender is on segment, can not tell it's singleton or
-				// all-segment flow, just treat it as all-segment flow so
-				// it can be promoted to writer gang later if needed.
-				flow->flotype = FLOW_UNDEFINED;
-		}
-		else
-		{
-			// multiple segments, must be singleton flow
-			flow->flotype = FLOW_SINGLETON;
-		}
-	}
-	else
-	{
-		flow->flotype = FLOW_UNDEFINED;
-	}
-
-	child_plan->flow = flow;*/
-
+	m_dxl_to_plstmt_context->SetCurrentSlice(recvslice);
+	
 	plan->lefttree = child_plan;
 	//plan->nMotionNodes = child_plan->nMotionNodes + 1;
 	
@@ -5868,7 +5905,7 @@ CTranslatorDXLToPlStmt::TranslateDXLBitmapTblScan(
 
 	m_dxl_to_plstmt_context->AddRTE(rte);
 
-	BitmapHeapScan *bitmap_tbl_scan = NULL;
+	SpqBitmapHeapScan *bitmap_tbl_scan = NULL;
 
 	if (is_dynamic)
 	{
@@ -5882,11 +5919,12 @@ CTranslatorDXLToPlStmt::TranslateDXLBitmapTblScan(
 	}
 	else
 	{
-		bitmap_tbl_scan = MakeNode(BitmapHeapScan);
+		bitmap_tbl_scan = MakeNode(SpqBitmapHeapScan);
 	}
-	bitmap_tbl_scan->scan.scanrelid = index;
+	bitmap_tbl_scan->scan.scan.scanrelid = index;
+	bitmap_tbl_scan->scan.scan.plan.spq_scan_partial = true;
 
-	Plan *plan = &(bitmap_tbl_scan->scan.plan);
+	Plan *plan = &(bitmap_tbl_scan->scan.scan.plan);
 	plan->plan_node_id = m_dxl_to_plstmt_context->GetNextPlanId();
 	//plan->nMotionNodes = 0;
 
@@ -5913,13 +5951,16 @@ CTranslatorDXLToPlStmt::TranslateDXLBitmapTblScan(
 		output_context);
 	plan->qual = quals_list;
 
-	bitmap_tbl_scan->bitmapqualorig = TranslateDXLFilterToQual(
+	bitmap_tbl_scan->scan.bitmapqualorig = TranslateDXLFilterToQual(
 		recheck_cond_dxlnode, &base_table_context,
 		ctxt_translation_prev_siblings, output_context);
 
-	bitmap_tbl_scan->scan.plan.lefttree = TranslateDXLBitmapAccessPath(
+	bitmap_tbl_scan->scan.scan.plan.lefttree = TranslateDXLBitmapAccessPath(
 		bitmap_access_path_dxlnode, output_context, md_rel, table_descr,
-		&base_table_context, ctxt_translation_prev_siblings, bitmap_tbl_scan);
+		&base_table_context, ctxt_translation_prev_siblings, &bitmap_tbl_scan->scan);
+
+	plan->dop = is_execute_on_datanodes(plan) ? SET_DOP(u_sess->opt_cxt.query_dop) : 1;
+	add_distribute_info(plan, plan->qual, rte, orig_query, index);
 	SetParamIds(plan);
 
 	return (Plan *) bitmap_tbl_scan;
@@ -6062,6 +6103,7 @@ CTranslatorDXLToPlStmt::TranslateDXLBitmapIndexProbe(
 		bitmap_idx_scan = MakeNode(BitmapIndexScan);
 	}
 	bitmap_idx_scan->scan.scanrelid = bitmap_tbl_scan->scan.scanrelid;
+	bitmap_idx_scan->scan.plan.spq_scan_partial = true;
 
 	CMDIdSPQDB *mdid_index = CMDIdSPQDB::CastMdid(
 		sc_bitmap_idx_probe_dxlop->GetDXLIndexDescr()->MDId());
@@ -6352,6 +6394,8 @@ CTranslatorDXLToPlStmt::TranslateDXLShareIndexScan(
      * As of 8.4, the indexstrategy and indexsubtype fields are no longer
      * available or needed in ShareIndexScan. Ignore them.
      */
+    plan->dop = is_execute_on_datanodes(plan) ? SET_DOP(u_sess->opt_cxt.query_dop) : 1;
+    add_distribute_info(plan, plan->qual, rte, orig_query, index);
     SetParamIds(plan);
 
     return (Plan *) index_scan;

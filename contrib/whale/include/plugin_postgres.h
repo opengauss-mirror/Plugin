@@ -109,7 +109,7 @@ typedef  struct ASqlPluginContext {
     int	scanbuflen;
     /* sqlscan.l */
     int	xcdepth = 0;	/* depth of nesting in slash-star comments */
-    char *dolqstart;      /* current $foo$ quote start string */
+    char *dolqstart;	/* current $foo$ quote start string */
     bool extended_string = false;
     /* plvsubst.c */
     text *c_subst = NULL;

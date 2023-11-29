@@ -9,6 +9,6 @@ override CPPFLAGS := -I$(abs_top_srcdir)/contrib/ndpplugin/component/thread \
                      -I$(abs_top_srcdir)/src/include \
                      $(CPPFLAGS)
 
-OBJS = spq_seqscan.o
+OBJS = spq_seqscan.o spq_indexscan.o spq_indexonlyscan.o spq_bitmapheapscan.o
 
 include $(top_srcdir)/src/gausskernel/common.mk

@@ -117,6 +117,10 @@ private:
 
 	// list of all subplan entries
 	List **m_subplan_entries_list;
+	List *m_subplan_sliceids_list;
+
+	List *m_slices_list;
+	PlanSlice *m_current_slice;
 
 	// index of the target relation in the rtable or 0 if not a DML statement
 	ULONG m_result_relation_index;
@@ -199,6 +203,20 @@ public:
 	void IncrementPartitionSelectors(ULONG scan_id);
 
 	void AddSubplan(Plan *);
+	PlanSlice *GetSlices(int *numSlices_p);
+				// add a slice table entry
+	int AddSlice(PlanSlice *);
+	int *GetSubplanSliceIdArray();
+
+	PlanSlice *GetCurrentSlice() const
+	{
+		return m_current_slice;
+	}
+
+	void SetCurrentSlice(PlanSlice *slice)
+	{
+		m_current_slice = slice;
+	}
 
 	// add CTAS information
 	void AddCtasInfo(IntoClause *into_clause, GpPolicy *distribution_policy);

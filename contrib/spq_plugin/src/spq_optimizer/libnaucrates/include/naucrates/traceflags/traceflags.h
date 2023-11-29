@@ -228,8 +228,11 @@ enum EOptTraceFlag
 	// Discard HashJoin with RedistributeMotion nodes
 	EopttraceDiscardRedistributeHashJoin = 103044,
 
-    // Do not keep an order-by
-    EopttraceRemoveSuperfluousOrder = 103045,
+	// Do not keep an order-by
+	EopttraceRemoveSuperfluousOrder = 103045,
+
+	// enable left index nestloop join
+	EopttraceEnableLeftIndexNLJoin = 104040,
 
 	///////////////////////////////////////////////////////
 	///////////////////// statistics flags ////////////////

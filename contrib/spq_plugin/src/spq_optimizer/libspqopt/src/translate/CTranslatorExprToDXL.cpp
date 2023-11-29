@@ -1623,19 +1623,20 @@ CTranslatorExprToDXL::PdxlnIndexScanWithInlinedCondition(
 			CPhysicalIndexScan::PopConvert(pexprIndexScan->Pop());
 		isGist = (indexScan->Pindexdesc()->IndexType() == IMDIndex::EmdindGist);
 	}
+	/* SPQ: for shareindexscan */
+	else if (COperator::EopPhysicalShareIndexScan == op_id)
+	{
+		CPhysicalShareIndexScan *indexScan =
+			CPhysicalShareIndexScan::PopConvert(pexprIndexScan->Pop());
+		isGist = (indexScan->Pindexdesc()->IndexType() == IMDIndex::EmdindGist);
+	}
 	else if (COperator::EopPhysicalIndexOnlyScan != op_id)
 	{
 		CPhysicalDynamicIndexScan *indexScan =
 			CPhysicalDynamicIndexScan::PopConvert(pexprIndexScan->Pop());
 		isGist = (indexScan->Pindexdesc()->IndexType() == IMDIndex::EmdindGist);
 	}
-    /* SPQ: for shareindexscan */
-    else if (COperator::EopPhysicalShareIndexScan == op_id)
-    {
-        CPhysicalShareIndexScan *indexScan =
-            CPhysicalShareIndexScan::PopConvert(pexprIndexScan->Pop());
-        isGist = (indexScan->Pindexdesc()->IndexType() == IMDIndex::EmdindGist);
-    }
+
 
 	// inline scalar condition in index scan, if it is not the same as index lookup condition
 	// Exception: most GiST indexes require a recheck condition since they are lossy: re-add the lookup
