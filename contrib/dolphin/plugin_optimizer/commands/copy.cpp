@@ -2654,8 +2654,21 @@ static CopyState BeginCopy(bool is_from, Relation rel, Node* raw_query, const ch
         Assert(query->commandType == CMD_SELECT);
         Assert(query->utilityStmt == NULL);
 
-        /* plan the query */
-        plan = planner(query, 0, NULL);
+        bool old_smp_enabled = u_sess->opt_cxt.smp_enabled;
+        u_sess->opt_cxt.smp_enabled = false;
+
+        PG_TRY();
+        {
+            /* plan the query */
+            plan = planner(query, 0, NULL);
+        }
+        PG_CATCH();
+        {
+            u_sess->opt_cxt.smp_enabled = old_smp_enabled;
+            PG_RE_THROW();
+        }
+        PG_END_TRY();
+        u_sess->opt_cxt.smp_enabled = old_smp_enabled;
 
         /*
          * Use a snapshot with an updated command ID to ensure this query sees
@@ -5859,9 +5872,6 @@ static int CopyFromCompressAndInsertBatch(PageCompress* pcState, EState* estate,
 //
 bool IsTypeAcceptEmptyStr(Oid typeOid)
 {
-    if (type_is_set(typeOid)) {
-        return true;
-    }
     switch (typeOid) {
         case VARCHAROID:
         case NVARCHAR2OID:
@@ -5878,6 +5888,9 @@ bool IsTypeAcceptEmptyStr(Oid typeOid)
         case CHAROID:
             return true;
         default:
+            if (type_is_set(typeOid)) {
+                return true;
+            }
             return false;
     }
 }

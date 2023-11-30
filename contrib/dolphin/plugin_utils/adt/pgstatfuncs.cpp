@@ -14917,7 +14917,6 @@ Datum gs_get_index_status(PG_FUNCTION_ARGS)
     }
     SRF_RETURN_DONE(funcctx);
 }
-
 #endif
 
 TupleDesc create_query_node_reform_info_tupdesc()

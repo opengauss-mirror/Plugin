@@ -2919,8 +2919,12 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
     if (!IsInitdb && (relkind == RELKIND_RELATION) && !IsSystemNamespace(namespaceId) &&
         !IsCStoreNamespace(namespaceId) && (pg_strcasecmp(storeChar, ORIENTATION_ROW) == 0) &&
         (stmt->relation->relpersistence == RELPERSISTENCE_PERMANENT) && !u_sess->attr.attr_storage.enable_recyclebin) {
-        if (u_sess->attr.attr_storage.enable_segment || bucketinfo != NULL) {
+        bool isSegmentType = (storage_type == SEGMENT_PAGE);
+        if (!isSegmentType && (u_sess->attr.attr_storage.enable_segment || bucketinfo != NULL)) {
             storage_type = SEGMENT_PAGE;
+            DefElem *storage_def = makeDefElem("segment", (Node *)makeString("on"));
+            stmt->options = lappend(stmt->options, storage_def);
+            reloptions = transformRelOptions((Datum)0, stmt->options, NULL, validnsps, true, false);
         }
     } else if (storage_type == SEGMENT_PAGE) {
         if (u_sess->attr.attr_storage.enable_recyclebin) {
@@ -2961,6 +2965,12 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
                 "Foreign table, matview, temp table or unlogged table is not supported.\nCompression is not "
                 "supported.")));
         }
+    }
+
+    if (!IsInitdb && u_sess->attr.attr_storage.enable_segment && storage_type == SEGMENT_PAGE &&
+        !CheckSegmentStorageOption(stmt->options)) {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                        errmsg("Only support segment storage type while parameter enable_segment is ON.")));
     }
 
     /*
@@ -10038,12 +10048,12 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
         newslot = MakeSingleTupleTableSlot(newTupDesc, false, oldrel->rd_tam_ops);
 
         /* Preallocate values/isnull arrays */
-        i = Max(newTupDesc->natts, oldTupDesc->natts);
-        values = (Datum*)palloc(i * sizeof(Datum));
-        isnull = (bool*)palloc(i * sizeof(bool));
-        rc = memset_s(values, i * sizeof(Datum), 0, i * sizeof(Datum));
+        int n = Max(newTupDesc->natts, oldTupDesc->natts);
+        values = (Datum*)palloc(n * sizeof(Datum));
+        isnull = (bool*)palloc(n * sizeof(bool));
+        rc = memset_s(values, n * sizeof(Datum), 0, n * sizeof(Datum));
         securec_check(rc, "\0", "\0");
-        rc = memset_s(isnull, i * sizeof(bool), true, i * sizeof(bool));
+        rc = memset_s(isnull, n * sizeof(bool), true, n * sizeof(bool));
         securec_check(rc, "\0", "\0");
 
         /*
@@ -10257,6 +10267,12 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                 }
 
                 CHECK_FOR_INTERRUPTS();
+                if (tab->is_first_after) {
+                    rc = memset_s(values, n * sizeof(Datum), 0, n * sizeof(Datum));
+                    securec_check(rc, "\0", "\0");
+                    rc = memset_s(isnull, n * sizeof(bool), true, n * sizeof(bool));
+                    securec_check(rc, "\0", "\0");
+                }
             }
         } else {
             ((HeapScanDesc) scan)->rs_tupdesc = oldTupDesc;
@@ -10406,6 +10422,12 @@ static void ATRewriteTableInternal(AlteredTableInfo* tab, Relation oldrel, Relat
                 ResetExprContext(econtext);
 
                 CHECK_FOR_INTERRUPTS();
+                if (tab->is_first_after) {
+                    rc = memset_s(values, n * sizeof(Datum), 0, n * sizeof(Datum));
+                    securec_check(rc, "\0", "\0");
+                    rc = memset_s(isnull, n * sizeof(bool), true, n * sizeof(bool));
+                    securec_check(rc, "\0", "\0");
+                }
             }
         }
 
