@@ -4,7 +4,7 @@ set role user1 password 'Show@123';
 -- 1 and 1+ locks waiting on table
 lock tables show_open_tables_test_1 read;
 SHOW OPEN TABLES IN show_open_tables_scm;
-select pg_sleep(2);
+select pg_sleep(3);
 SHOW OPEN TABLES IN show_open_tables_scm;
 unlock tables;
 SHOW OPEN TABLES IN show_open_tables_scm;
