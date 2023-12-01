@@ -52,6 +52,73 @@ drop table if exists tb_db_b_parser_0002;
 drop table if exists tb_default_float;
 drop table if exists tb_default_double;
 drop table if exists tb_real_float;
+--bconst
+select 0b01;
+ ?column? 
+----------
+ 01
+(1 row)
+
+select 0b01+1;
+ ?column? 
+----------
+ 2
+(1 row)
+
+select 1+0b01;
+ ?column? 
+----------
+ 2
+(1 row)
+
+select 0b01 = b'01';
+ ?column? 
+----------
+ t
+(1 row)
+
+select 0b01+1 = b'01'+1;
+ ?column? 
+----------
+ t
+(1 row)
+
+select 1+0b01 = 1+b'01';
+ ?column? 
+----------
+ t
+(1 row)
+
+--wrong usage
+select 0b02;
+ERROR:  syntax error at or near "2"
+LINE 1: select 0b02;
+                  ^
+select 0b2;
+ b2 
+----
+  0
+(1 row)
+
+--not report error, but not bconst actually
+select 0b; -- same as select 0 b;
+ b 
+---
+ 0
+(1 row)
+
+select 0bf; -- same as select 0 bf;
+ bf 
+----
+  0
+(1 row)
+
+select 0b0f; -- same as select 0b0 f;
+ f 
+---
+ 0
+(1 row)
+
 drop schema db_b_parser4 cascade;
 NOTICE:  drop cascades to table tb_db_b_parser_0001
 reset current_schema;
