@@ -739,6 +739,23 @@ select length(''),length(' '),length(NULL);
       0 |      1 |       
 (1 row)
 
+set dolphin.sql_mode='treat_bxconst_as_binary';
+create table t_binary(a binary, b varbinary(10), c binary(10));
+insert into t_binary values(null,null,null);
+insert into t_binary values(b'1',b'111',b'111');
+insert into t_binary values(b'1',b'11111',b'111');
+insert into t_binary values(b'1',b'111111111',b'111');
+select *,length(a),length(b),length(c) from t_binary order by 1,2,3;
+  a   |   b    |           c            | length | length | length 
+------+--------+------------------------+--------+--------+--------
+ \x01 | \x01ff | \x07000000000000000000 |      1 |      2 |     10
+ \x01 | \x07   | \x07000000000000000000 |      1 |      1 |     10
+ \x01 | \x1f   | \x07000000000000000000 |      1 |      1 |     10
+      |        |                        |        |        |       
+(4 rows)
+
+drop table t_binary;
+reset dolphin.sql_mode;
 create table fchar_test(fchar char(10));
 insert into fchar_test values('零一二三四五六七八九');
 insert into fchar_test values('零一二三四五六七八九0');

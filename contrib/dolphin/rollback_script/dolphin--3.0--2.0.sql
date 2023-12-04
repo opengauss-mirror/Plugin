@@ -128,6 +128,9 @@ $$
 DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(text);
 DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
 
+drop function if EXISTS pg_catalog.length(binary);
+drop function if EXISTS pg_catalog.length(varbinary);
+
 drop CAST IF EXISTS (timestamptz as boolean);
 drop CAST IF EXISTS (timestamp(0) without time zone as boolean);
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_bool(timestamptz);
