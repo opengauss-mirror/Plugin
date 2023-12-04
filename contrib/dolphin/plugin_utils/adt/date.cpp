@@ -1816,7 +1816,7 @@ Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
                     if (time_cast_type == TEXT_TIME_EXPLICIT || time_cast_type == TIME_IN) {
                         DateTimeParseError(dterr, str, "time", true);
                         tm = &tt; // switch to M*'s parsing result
-                        if (dterr != DTERR_TZDISP_OVERFLOW) {
+                        if (dterr != DTERR_TZDISP_OVERFLOW && null_func_result) {
                             *time_error_type = TIME_INCORRECT;
                         }
                     } else if (time_cast_type == TIME_CAST) {
@@ -1834,6 +1834,7 @@ Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
     /*
      * the following logic is unified for time parsing.
      */
+    *time_error_type = null_func_result ? TIME_INCORRECT : *time_error_type;
     tm2time(tm, fsec, &result);
     AdjustTimeForTypmod(&result, typmod);
     result *= timeSign;

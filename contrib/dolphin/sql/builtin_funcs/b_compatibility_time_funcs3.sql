@@ -250,6 +250,14 @@ select time('0:0:0');
 select time('-1:-1:-1');
 select time('23:55:56.1234');
 
+select cast('5555555' as time);
+select cast('55555555' as time);
+select cast('555555555' as time);
+select cast('5555555555' as time);
+
+select cast('6666666' as time);
+select cast('66666666' as time);
+select cast('6666666666' as time);
 
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test1 values('23:65:66');
