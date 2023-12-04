@@ -204,3 +204,6 @@ DROP FUNCTION IF EXISTS pg_catalog.bit_cast_time(bit);
 DROP FUNCTION IF EXISTS pg_catalog.bit_cast_timestamp(bit);
 DROP FUNCTION IF EXISTS pg_catalog.bit_cast_datetime(bit);
 DROP FUNCTION IF EXISTS pg_catalog.bit_cast_date(bit);
+
+drop function if EXISTS pg_catalog.length(binary);
+drop function if EXISTS pg_catalog.length(varbinary);

@@ -83,9 +83,6 @@ DROP FUNCTION IF EXISTS pg_catalog.random_bytes(json);
 DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(text);
 DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
 
-drop function if EXISTS pg_catalog.length(binary);
-drop function if EXISTS pg_catalog.length(varbinary);
-
 drop function IF EXISTS pg_catalog."user"();
 
 DROP OPERATOR IF EXISTS pg_catalog.>(timestamp without time zone, double precision);

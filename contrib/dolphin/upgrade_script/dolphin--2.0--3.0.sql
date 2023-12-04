@@ -61,11 +61,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(anyenum) returns blob LANGUAG
 CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(anyset) returns blob LANGUAGE SQL volatile as 'select random_bytes($1::int4)';
 CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(json) returns blob LANGUAGE SQL volatile as 'select random_bytes($1::int4)';
 
-drop function if EXISTS pg_catalog.length(binary);
-drop function if EXISTS pg_catalog.length(varbinary);
-CREATE OR REPLACE FUNCTION pg_catalog.length(binary) returns int4 LANGUAGE C immutable strict as '$libdir/dolphin', 'binary_length';
-CREATE OR REPLACE FUNCTION pg_catalog.length(varbinary) returns int4 LANGUAGE C immutable strict as '$libdir/dolphin', 'binary_length';
-
 CREATE OR REPLACE FUNCTION pg_catalog.int8_cast_time(int1)
 RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int8_cast_time';
 CREATE OR REPLACE FUNCTION pg_catalog.int16_cast_time(int2)

@@ -10581,4 +10581,12 @@ Datum Varlena2Float8(PG_FUNCTION_ARGS)
     pfree_ext(data);
     PG_RETURN_FLOAT8(result);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(binary_length);
+extern "C" DLL_PUBLIC Datum binary_length(PG_FUNCTION_ARGS);
+Datum binary_length(PG_FUNCTION_ARGS)
+{
+    bytea* vlena = PG_GETARG_BYTEA_PP(0);
+    PG_RETURN_INT32(VARSIZE_ANY_EXHDR(vlena));
+}
 #endif
