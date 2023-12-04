@@ -39321,6 +39321,7 @@ parser_init(base_yy_extra_type *yyext)
 	yyext->core_yy_extra.paren_depth = 0;
 	GetSessionContext()->isUpsert = false;
 	GetSessionContext()->is_schema_name = false;
+	GetSessionContext()->is_create_alter_stmt = false;
 }
 
 static Expr *

@@ -1971,7 +1971,7 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
                 tempFuncName = TextDatumGetCString(adsrcVal);
                 char* firstLocation = strchr(tempFuncName, '(');
                 bool temp_result = false;
-                if (firstLocation != NULL) {
+                if (firstLocation != NULL && firstLocation - tempFuncName > 0) {
                     int funcNameLength = firstLocation - tempFuncName;
                     char* funcName = (char*)palloc0(funcNameLength + 1);
                     errno_t rc = memcpy_s(funcName, funcNameLength, tempFuncName, funcNameLength);
