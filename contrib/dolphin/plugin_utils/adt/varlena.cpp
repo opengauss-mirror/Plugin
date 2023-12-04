@@ -664,6 +664,7 @@ extern "C" DLL_PUBLIC Datum dolphin_binaryin(PG_FUNCTION_ARGS);
 Datum dolphin_binaryin(PG_FUNCTION_ARGS)
 {
     char* inputText = PG_GETARG_CSTRING(0);
+    int32 atttypmod = PG_NARGS() == 3 ? PG_GETARG_INT32(2) : -1;
     char* tp = NULL;
     char* rp = NULL;
     int bc;
@@ -673,12 +674,19 @@ Datum dolphin_binaryin(PG_FUNCTION_ARGS)
     /* Recognize hex input */
     if (inputText[0] == '\\' && inputText[1] == 'x') {
         size_t len = strlen(inputText);
+        if (atttypmod < VARHDRSZ) {
+            bc = (len - 2) / 2 + VARHDRSZ; /* maximum possible length */
+            result = (bytea*)palloc(bc);
+        } else {
+            if (len > (size_t)(atttypmod - VARHDRSZ)) {
+                ereport(ERROR, (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                            errmsg("value too long for type binary(%d)", atttypmod - VARHDRSZ)));
+            }
+            result = (bytea*)palloc0(atttypmod); /* palloc0, pad with zero */
+        }
 
-        bc = (len - 2) / 2 + VARHDRSZ; /* maximum possible length */
-        result = (bytea*)palloc(bc);
         bc = hex_decode(inputText + 2, len - 2, VARDATA(result));
-        SET_VARSIZE(result, bc + VARHDRSZ); /* actual length */
-
+        SET_VARSIZE(result, atttypmod < VARHDRSZ ? bc + VARHDRSZ : atttypmod);
         PG_RETURN_BYTEA_P(result);
     }
 
@@ -712,10 +720,18 @@ Datum dolphin_binaryin(PG_FUNCTION_ARGS)
         }
     }
 
-    bc += VARHDRSZ;
-
-    result = (bytea*)palloc(bc);
-    SET_VARSIZE(result, bc);
+    if (atttypmod < VARHDRSZ) {
+        bc += VARHDRSZ;
+        result = (bytea*)palloc(bc);
+        SET_VARSIZE(result, bc);
+    } else {
+        if (bc > atttypmod - VARHDRSZ) {
+            ereport(ERROR, (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                        errmsg("value too long for type binary(%d)", atttypmod - VARHDRSZ)));
+        }
+        result = (bytea*)palloc0(atttypmod); /* palloc0, pad with zero */
+        SET_VARSIZE(result, atttypmod);
+    }
 
     tp = inputText;
     rp = VARDATA(result);
