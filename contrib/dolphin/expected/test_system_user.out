@@ -1,26 +1,14 @@
 create schema test_system_user;
 set current_schema to 'test_system_user';
-select session_user;
- session_user 
---------------
---?.*
-(1 row)
-
 select session_user();
  session_user 
 --------------
 --?.*
 (1 row)
 
-select user;
- current_user 
---------------
---?.*
-(1 row)
-
 select user();
- current_user 
---------------
+--?.*
+--?.*
 --?.*
 (1 row)
 

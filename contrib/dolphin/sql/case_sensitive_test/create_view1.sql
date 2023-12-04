@@ -9,7 +9,7 @@ set dolphin.lower_case_table_names TO 0;
 
 CREATE VIEW street AS
    SELECT r.name, r.thepath, c.cname AS cname
-   FROM ONLY Road r, Real_City c
+   FROM ONLY (Road) r, Real_City c
    WHERE c.outline ## r.thepath;
 
 CREATE VIEW iexit AS
