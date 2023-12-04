@@ -6340,7 +6340,15 @@ ProcessUtilitySlow(Node *parse_tree,
                 EventTriggerUndoInhibitCommandCollection();
             } break;
  
-            case T_CreateTrigStmt:
+            case T_CreateTrigStmt: 
+#ifdef DOLPHIN
+            {
+                CreateTrigStmt* createTrigStmt = (CreateTrigStmt*)parse_tree;
+                if (pg_strncasecmp(createTrigStmt->trigname, "user", strlen(createTrigStmt->trigname)) == 0) {
+                    ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("%s cannot be trigger name",
+                                                                                   createTrigStmt->trigname)));
+                }
+#endif
                 address = CreateTrigger(
                         (CreateTrigStmt*)parse_tree, query_string, InvalidOid, InvalidOid, InvalidOid, InvalidOid, false);
 #ifdef PGXC
@@ -6356,7 +6364,9 @@ ProcessUtilitySlow(Node *parse_tree,
                 }
 #endif
                 break;
-
+#ifdef DOLPHIN
+            }
+#endif
             case T_CreatePLangStmt:
                 if (!IsInitdb && strncmp(((CreatePLangStmt*)parse_tree)->plname, "plpython", strlen("plpython")) != 0)
                     ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("new language is not yet supported.")));

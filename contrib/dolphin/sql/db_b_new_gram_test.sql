@@ -481,7 +481,6 @@ insert into authid_t1(c1) values(1);
 select c1 as authid from authid_t1 as authid;
 drop table authid;
 drop table authid_t1;
-create table body(body int);
 
 CREATE TABLE `Student` (
     `Sno` varchar(3) NOT NULL,

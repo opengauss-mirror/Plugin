@@ -12,7 +12,7 @@ select xxxx.column_name_case_test.t1.bBb from column_name_case_test.t1;
 drop table if exists a1;
 drop table if exists a2;
 select currenT_User into a1;
-select session_UsEr into a2;
+select current_UsEr into a2;
 
 --create use some index
 drop table if exists warehouse_t22;
@@ -503,7 +503,7 @@ select xxxx.column_name_case_test.t1.bBb from column_name_case_test.t1;
 drop table if exists a1;
 drop table if exists a2;
 select currenT_User into a1;
-select session_UsEr into a2;
+select current_UsEr into a2;
 
 --create use some index
 drop table if exists warehouse_t22;
