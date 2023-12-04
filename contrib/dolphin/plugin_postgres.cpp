@@ -43,6 +43,7 @@
 #include "catalog/gs_db_privilege.h"
 #include "catalog/pg_extension.h"
 #include "catalog/pg_operator.h"
+#include "catalog/pg_attribute.h"
 #include "executor/spi_priv.h"
 #include "tcop/utility.h"
 #include "gs_ledger/ledger_utils.h"
@@ -51,6 +52,13 @@
 #include "utils/lsyscache.h"
 #include "utils/acl.h"
 #include "utils/knl_catcache.h"
+#include "plugin_utils/date.h"
+#include "utils/nabstime.h"
+#include "utils/geo_decls.h"
+#include "utils/varbit.h"
+#include "utils/json.h"
+#include "utils/jsonb.h"
+#include "utils/xml.h"
 #include "pgxc/groupmgr.h"
 #include "libpq/pqformat.h"
 #include "optimizer/nodegroups.h"
@@ -191,8 +199,10 @@ extern "C" DLL_PUBLIC void _PG_fini(void);
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_types);
 extern "C" DLL_PUBLIC Datum dolphin_types();
+extern "C" Datum dolphin_binaryin(PG_FUNCTION_ARGS);
 static void InitDolphinTypeId(BSqlPluginContext* cxt);
 static void InitDolphinOperator(BSqlPluginContext* cxt);
+static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup);
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_invoke);
 void dolphin_invoke(void)
@@ -303,8 +313,9 @@ void init_plugin_object()
     u_sess->hook_cxt.coreYYlexHook = (void*)core_yylex;
     u_sess->hook_cxt.pluginProcDestReciverHook = (void*)CreateSqlProcSpiDestReciver;
     u_sess->hook_cxt.pluginSpiReciverParamHook = (void*)SetSqlProcSpiStmtParams;
-    u_sess->hook_cxt.pluginSpiExecuteMultiResHook =(void*)SpiIsExecMultiSelect;
-    u_sess->hook_cxt.pluginMultiResExceptionHook =(void*)SpiMultiSelectException;
+    u_sess->hook_cxt.pluginSpiExecuteMultiResHook = (void*)SpiIsExecMultiSelect;
+    u_sess->hook_cxt.pluginMultiResExceptionHook = (void*)SpiMultiSelectException;
+    u_sess->hook_cxt.getTypeZeroValueHook = (void*)DolphinGetTypeZeroValue;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
@@ -1424,3 +1435,175 @@ static void InitDolphinOperator(BSqlPluginContext* cxt)
     cxt->dolphin_oprs[AEXPR_DIV_INT8][UINT_OP] = NUMERICDIVOID;
     InitUintOprs(cxt);
 }
+
+/* copy from openGauss-server's execUtils.cpp GetTypeZeroValue */
+static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup)
+{
+    Datum result;
+    switch (att_tup->atttypid) {
+        case TIMESTAMPOID: {
+            result = (Datum)DirectFunctionCall3(timestamp_in, CStringGetDatum("now"), ObjectIdGetDatum(InvalidOid),
+                                                Int32GetDatum(-1));
+            break;
+        }
+        case TIMESTAMPTZOID: {
+            result = clock_timestamp(NULL);
+            break;
+        }
+        case TIMETZOID: {
+            result = (Datum)DirectFunctionCall3(
+                timetz_in, CStringGetDatum("00:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1));
+            break;
+        }
+        case INTERVALOID: {
+            result = (Datum)DirectFunctionCall3(
+                interval_in, CStringGetDatum("00:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1));
+            break;
+        }
+        case TINTERVALOID: {
+            Datum epoch = (Datum)DirectFunctionCall1(timestamp_abstime, (TimestampGetDatum(SetEpochTimestamp())));
+            result = (Datum)DirectFunctionCall2(mktinterval, epoch, epoch);
+            break;
+        }
+        case SMALLDATETIMEOID: {
+            result = (Datum)DirectFunctionCall3(
+                smalldatetime_in, CStringGetDatum("1970-01-01 00:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1));
+            break;
+        }
+        case DATEOID: {
+            result = timestamp2date(SetEpochTimestamp());
+            break;
+        }
+        case UUIDOID: {
+            result = (Datum)DirectFunctionCall3(uuid_in, CStringGetDatum("00000000-0000-0000-0000-000000000000"),
+                                                ObjectIdGetDatum(0), Int32GetDatum(-1));
+            break;
+        }
+        case NAMEOID: {
+            result = (Datum)DirectFunctionCall1(namein, CStringGetDatum(""));
+            break;
+        }
+        case POINTOID: {
+            result = (Datum)DirectFunctionCall1(point_in, CStringGetDatum("(0,0)"));
+            break;
+        }
+        case PATHOID: {
+            result = (Datum)DirectFunctionCall1(path_in, CStringGetDatum("0,0"));
+            break;
+        }
+        case POLYGONOID: {
+            result = (Datum)DirectFunctionCall1(poly_in, CStringGetDatum("(0,0)"));
+            break;
+        }
+        case CIRCLEOID: {
+            result = (Datum)DirectFunctionCall1(circle_in, CStringGetDatum("0,0,0"));
+            break;
+        }
+        case LSEGOID:
+        case BOXOID: {
+            result = (Datum)DirectFunctionCall1(box_in, CStringGetDatum("0,0,0,0"));
+            break;
+        }
+        case JSONOID: {
+            result = (Datum)DirectFunctionCall1(json_in, CStringGetDatum("null"));
+            break;
+        }
+        case JSONBOID: {
+            result = (Datum)DirectFunctionCall1(jsonb_in, CStringGetDatum("null"));
+            break;
+        }
+        case XMLOID: {
+            result = (Datum)DirectFunctionCall1(xml_in, CStringGetDatum("null"));
+            break;
+        }
+        case BITOID: {
+            result = (Datum)DirectFunctionCall3(bit_in, CStringGetDatum(""), ObjectIdGetDatum(0), Int32GetDatum(-1));
+            /* for dolphin, use att_tup's typmod, to do extra padding */
+            result = (Datum)DirectFunctionCall2(bit, result, Int32GetDatum(att_tup->atttypmod));
+            break;
+        }
+        case VARBITOID: {
+            result = (Datum)DirectFunctionCall3(varbit_in, CStringGetDatum(""), ObjectIdGetDatum(0), Int32GetDatum(-1));
+            break;
+        }
+        case NUMERICOID: {
+            result =
+                (Datum)DirectFunctionCall3(numeric_in, CStringGetDatum("0"), ObjectIdGetDatum(0), Int32GetDatum(0));
+            break;
+        }
+        case CIDROID: {
+            result = DirectFunctionCall1(cidr_in, CStringGetDatum("0.0.0.0"));
+            break;
+        }
+        case INETOID: {
+            result = DirectFunctionCall1(inet_in, CStringGetDatum("0.0.0.0"));
+            break;
+        }
+        case MACADDROID: {
+            result = (Datum)DirectFunctionCall1(macaddr_in, CStringGetDatum("00:00:00:00:00:00"));
+            break;
+        }
+        case NUMRANGEOID:
+        case INT8RANGEOID:
+        case INT4RANGEOID: {
+            Type targetType = typeidType(att_tup->atttypid);
+            result = stringTypeDatum(targetType, "(0,0)", att_tup->atttypmod, true);
+            ReleaseSysCache(targetType);
+            break;
+        }
+        case TSRANGEOID:
+        case TSTZRANGEOID: {
+            Type targetType = typeidType(att_tup->atttypid);
+            result = stringTypeDatum(targetType, "(1970-01-01 00:00:00,1970-01-01 00:00:00)", att_tup->atttypmod, true);
+            ReleaseSysCache(targetType);
+            break;
+        }
+        case DATERANGEOID: {
+            Type targetType = typeidType(att_tup->atttypid);
+            result = stringTypeDatum(targetType, "(1970-01-01,1970-01-01)", att_tup->atttypmod, true);
+            ReleaseSysCache(targetType);
+            break;
+        }
+        case HASH16OID: {
+            Type targetType = typeidType(att_tup->atttypid);
+            result = stringTypeDatum(targetType, "0", att_tup->atttypmod, true);
+            ReleaseSysCache(targetType);
+            break;
+        }
+        case HASH32OID: {
+            Type targetType = typeidType(att_tup->atttypid);
+            result = stringTypeDatum(targetType, "00000000000000000000000000000000", att_tup->atttypmod, true);
+            ReleaseSysCache(targetType);
+            break;
+        }
+        case TSVECTOROID: {
+            Type targetType = typeidType(att_tup->atttypid);
+            result = stringTypeDatum(targetType, "", att_tup->atttypmod, true);
+            ReleaseSysCache(targetType);
+            break;
+        }
+        case BPCHAROID: {
+            /* for dolphin, bpchar should use att_tup's typmod, to do extea padding */
+            result = (Datum)DirectFunctionCall3(bpcharin, CStringGetDatum(""),
+                ObjectIdGetDatum(0), Int32GetDatum(att_tup->atttypmod));
+            break;
+        }
+        default: {
+            if (att_tup->atttypid == BINARYOID) {
+                /* binary should use att_tup's typmod, to do extra padding */
+                result = (Datum)DirectFunctionCall3(dolphin_binaryin, CStringGetDatum(""),
+                    ObjectIdGetDatum(0), Int32GetDatum(att_tup->atttypmod));
+                break;
+            }
+            bool typeIsVarlena = (!att_tup->attbyval) && (att_tup->attlen == -1);
+            if (typeIsVarlena) {
+                result = CStringGetTextDatum("");
+            } else {
+                result = (Datum)0;
+            }
+            break;
+        }
+    }
+    return result;
+}
+
