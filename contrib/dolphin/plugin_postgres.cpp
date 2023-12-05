@@ -136,6 +136,9 @@ extern void initBSQLBuiltinFuncs();
 extern struct HTAB* b_nameHash;
 extern struct HTAB* b_oidHash;
 extern RegExternFunc b_plpgsql_function_table[3];
+extern int tmp_b_fmgr_nbuiltins;
+extern FmgrBuiltin tmp_b_fmgr_builtins[];
+
 extern bool isAllTempObjects(Node* parse_tree, const char* query_string, bool sent_to_remote);
 extern void ts_check_feature_disable();
 extern void ExecAlterDatabaseSetStmt(Node* parse_tree, const char* query_string, bool sent_to_remote);
@@ -299,7 +302,11 @@ void _PG_init(void)
     if (b_oidHash == NULL || b_nameHash == NULL) {
         initBSQLBuiltinFuncs();
     }
-
+    if (b_fmgr_builtins == NULL) {
+        b_fmgr_builtins = tmp_b_fmgr_builtins;
+        pg_memory_barrier(); /* make sure b_fmgr_builtins has been assigned before b_fmgr_nbuiltins */
+        b_fmgr_nbuiltins = tmp_b_fmgr_nbuiltins;
+    }
     AutoMutexLock nameHashLock(&gNameHashLock);
     nameHashLock.lock();
     if (lockNameHash == NULL)

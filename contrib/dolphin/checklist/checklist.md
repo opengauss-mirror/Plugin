@@ -98,6 +98,7 @@
 |plugin_utils\adt|windowfuncs.cpp   |src\common\backend\utils\adt\windowfuncs.cpp   |
 |plugin_utils\fmgr|fmgr.cpp |src\common\backend\utils\fmgr\fmgr.cpp|
 |plugin_utils\mb|mbutils.cpp   |src\common\backend\utils\mb\mbutils.cpp   |
+|plugin_utils|Gen_fmgrtab.pl   |src\common\backend\utils\Gen_fmgrtab.pl   |
 |plugin_vector|date.inl   |src\gausskernel\runtime\vecexecutor\vecprimitive\date.inl   |
 |plugin_vector|float.inl   |src\gausskernel\runtime\vecexecutor\vecprimitive\float.inl   |
 |plugin_vector|int4.inl   |src\gausskernel\runtime\vecexecutor\vecprimitive\int4.inl   |
