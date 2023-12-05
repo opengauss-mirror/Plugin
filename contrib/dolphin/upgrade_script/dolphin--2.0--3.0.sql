@@ -61,31 +61,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(anyenum) returns blob LANGUAG
 CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(anyset) returns blob LANGUAGE SQL volatile as 'select random_bytes($1::int4)';
 CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(json) returns blob LANGUAGE SQL volatile as 'select random_bytes($1::int4)';
 
-CREATE OR REPLACE FUNCTION pg_catalog.int8_cast_time(int1)
-RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int8_cast_time';
-CREATE OR REPLACE FUNCTION pg_catalog.int16_cast_time(int2)
-RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int16_cast_time';
-CREATE OR REPLACE FUNCTION pg_catalog.int32_cast_time(int4)
-RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_cast_time';
-CREATE OR REPLACE FUNCTION pg_catalog.int64_cast_time(int8)
-RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_cast_time';
-
-CREATE OR REPLACE FUNCTION pg_catalog.uint8_cast_time(uint1)
-RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint8_cast_time';
-CREATE OR REPLACE FUNCTION pg_catalog.uint16_cast_time(uint2)
-RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint16_cast_time';
-CREATE OR REPLACE FUNCTION pg_catalog.uint32_cast_time(uint4)
-RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint32_cast_time';
-CREATE OR REPLACE FUNCTION pg_catalog.uint64_cast_time(uint8)
-RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint64_cast_time';
-
-CREATE OR REPLACE FUNCTION pg_catalog.float4_cast_time(float4)
-RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float4_cast_time';
-CREATE OR REPLACE FUNCTION pg_catalog.float8_cast_time(float8)
-RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float8_cast_time';
-CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_time(numeric)
-RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_time';
-create or replace function pg_catalog."user"() returns name as 'select current_user' LANGUAGE 'sql' IMMUTABLE;
 create or replace function pg_catalog."user"() returns name as 'select current_user' LANGUAGE 'sql' IMMUTABLE;
 
 DROP FUNCTION IF EXISTS pg_catalog.hour (text);

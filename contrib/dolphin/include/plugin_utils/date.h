@@ -117,6 +117,7 @@ typedef enum
 
 
 extern Datum time_internal(PG_FUNCTION_ARGS, char* str, int is_time_sconst, TimeErrorType* time_error_type);
+extern Datum int_cast_time_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull);
 char* parser_function_input(Datum txt, Oid oid);
 
 #endif

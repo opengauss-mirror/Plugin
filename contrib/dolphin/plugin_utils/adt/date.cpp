@@ -72,6 +72,32 @@ PG_FUNCTION_INFO_V1_PUBLIC(int64_b_format_time);
 extern "C" DLL_PUBLIC Datum int64_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_time);
 extern "C" DLL_PUBLIC Datum numeric_b_format_time(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(int8_cast_time);
+extern "C" DLL_PUBLIC Datum int8_cast_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int16_cast_time);
+extern "C" DLL_PUBLIC Datum int16_cast_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int32_cast_time);
+extern "C" DLL_PUBLIC Datum int32_cast_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int64_cast_time);
+extern "C" DLL_PUBLIC Datum int64_cast_time(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint8_cast_time);
+extern "C" DLL_PUBLIC Datum uint8_cast_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint16_cast_time);
+extern "C" DLL_PUBLIC Datum uint16_cast_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint32_cast_time);
+extern "C" DLL_PUBLIC Datum uint32_cast_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint64_cast_time);
+extern "C" DLL_PUBLIC Datum uint64_cast_time(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(float4_cast_time);
+extern "C" DLL_PUBLIC Datum float4_cast_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_cast_time);
+extern "C" DLL_PUBLIC Datum float8_cast_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_time);
+extern "C" DLL_PUBLIC Datum numeric_cast_time(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_date);
 extern "C" DLL_PUBLIC Datum int32_b_format_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(negetive_time);
@@ -1570,7 +1596,9 @@ char* parser_function_input(Datum txt, Oid oid)
  */
 Datum text_time_explicit(PG_FUNCTION_ARGS)
 {
-    char* input_str = parser_function_input(PG_GETARG_DATUM(0), fcinfo->argTypes[0]);
+    char* input_str = fcinfo->argTypes[0] ?
+                      parser_function_input(PG_GETARG_DATUM(0), fcinfo->argTypes[0]) :
+                      PG_GETARG_CSTRING(0);
     TimeErrorType time_error_type = TIME_CORRECT;
     Datum datum_internal = time_internal(fcinfo, input_str, TEXT_TIME_EXPLICIT, &time_error_type);
     if (time_error_type == TIME_INCORRECT) {
@@ -1838,10 +1866,106 @@ Datum numeric_b_format_time(PG_FUNCTION_ARGS)
     return DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
 }
 
+Datum numeric_cast_time(PG_FUNCTION_ARGS)
+{
+    Numeric n = PG_GETARG_NUMERIC(0);
+    char *str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
+    TimeErrorType time_error_type = TIME_CORRECT;
+    Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
+    if (time_error_type == TIME_INCORRECT) {
+        PG_RETURN_NULL();
+    }
+    return datum_internal;
+}
+
+Datum float8_cast_time(PG_FUNCTION_ARGS)
+{
+    float8 n = PG_GETARG_FLOAT8(0);
+    char *str = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(n)));
+    TimeErrorType time_error_type = TIME_CORRECT;
+    Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
+    if (time_error_type == TIME_INCORRECT) {
+        PG_RETURN_NULL();
+    }
+    return datum_internal;
+}
+
+Datum float4_cast_time(PG_FUNCTION_ARGS)
+{
+    float4 n = PG_GETARG_FLOAT4(0);
+    char *str = DatumGetCString(DirectFunctionCall1(float4out, Float4GetDatum(n)));
+    TimeErrorType time_error_type = TIME_CORRECT;
+    Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
+    if (time_error_type == TIME_INCORRECT) {
+        PG_RETURN_NULL();
+    }
+    return datum_internal;
+}
+
+Datum uint8_cast_time(PG_FUNCTION_ARGS)
+{
+    uint64 number = (uint64)PG_GETARG_UINT8(0);
+    bool isnull = false;
+    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
+    if (isnull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
+}
+
+Datum uint16_cast_time(PG_FUNCTION_ARGS)
+{
+    uint64 number = (uint64)PG_GETARG_UINT16(0);
+    bool isnull = false;
+    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
+    if (isnull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
+}
+
+Datum uint32_cast_time(PG_FUNCTION_ARGS)
+{
+    uint64 number = (uint64)PG_GETARG_UINT32(0);
+    bool isnull = false;
+    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
+    if (isnull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
+}
+
+Datum uint64_cast_time(PG_FUNCTION_ARGS)
+{
+    uint64 number = (uint64)PG_GETARG_UINT64(0);
+    bool isnull = false;
+    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
+    if (isnull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
+}
+
+Datum uint_cast_time_internal(PG_FUNCTION_ARGS, uint64 number, bool* isnull)
+{
+    char *str = DatumGetCString(DirectFunctionCall1(uint8out, UInt64GetDatum(number)));
+    TimeErrorType time_error_type = TIME_CORRECT;
+    Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
+    if (time_error_type == TIME_INCORRECT) {
+        *isnull = true;
+    }
+    return datum_internal;
+}
+
 /* int4(hhmmss) convert to b format time */
 Datum int32_b_format_time(PG_FUNCTION_ARGS)
 {
     int4 time = PG_GETARG_INT32(0);
+    int errlevel = (SQL_MODE_STRICT() && !fcinfo->can_ignore) ? ERROR : WARNING;
     TimeADT result;
     fsec_t fsec = 0;
     int dterr;
@@ -1850,7 +1974,7 @@ Datum int32_b_format_time(PG_FUNCTION_ARGS)
     time *= sign;
     dterr = int32_b_format_time_internal(tm, false, time, &fsec);
     if (dterr) {
-        ereport(ERROR,
+        ereport(errlevel,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
     }
     tm2time(tm, 0, &result);
@@ -1858,13 +1982,77 @@ Datum int32_b_format_time(PG_FUNCTION_ARGS)
 }
 
 /* int8(hhmmss) convert to b format time */
-Datum int64_b_format_time(PG_FUNCTION_ARGS) {
+Datum int64_b_format_time(PG_FUNCTION_ARGS)
+{
     int64 number = PG_GETARG_INT64(0);
     if (number >= (int64)pow_of_10[10]) { /* datetime: 0001-00-00 00-00-00 */
         Datum datetime = DirectFunctionCall1(int64_b_format_datetime, Int64GetDatum(number));
         return DirectFunctionCall1(timestamp_time, datetime);
     }
     return DirectFunctionCall1(int32_b_format_time, Int32GetDatum((int32)number));
+}
+
+Datum int8_cast_time(PG_FUNCTION_ARGS)
+{
+    int64 number = (int64)PG_GETARG_INT8(0);
+    bool isnull = false;
+    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
+    if (isnull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
+}
+
+Datum int16_cast_time(PG_FUNCTION_ARGS)
+{
+    int64 number = (int64)PG_GETARG_INT16(0);
+    bool isnull = false;
+    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
+    if (isnull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
+}
+
+Datum int32_cast_time(PG_FUNCTION_ARGS)
+{
+    int64 number = (int64)PG_GETARG_INT32(0);
+    bool isnull = false;
+    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
+    if (isnull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
+}
+
+Datum int64_cast_time(PG_FUNCTION_ARGS)
+{
+    int64 number = PG_GETARG_INT64(0);
+    bool isnull = false;
+    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
+    if (isnull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
+}
+
+Datum int_cast_time_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull)
+{
+    if (number >= (int64)pow_of_10[10]) { /* datetime: 0001-00-00 00-00-00 */
+        Datum datetime = DirectFunctionCall1(int64_b_format_datetime, Int64GetDatum(number));
+        return DirectFunctionCall1(timestamp_time, datetime);
+    }
+    char *str = DatumGetCString(DirectFunctionCall1(int8out, Int64GetDatum(number)));
+    TimeErrorType time_error_type = TIME_CORRECT;
+    Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
+    if (time_error_type == TIME_INCORRECT) {
+        *isnull = true;
+    }
+    return datum_internal;
 }
 
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD)

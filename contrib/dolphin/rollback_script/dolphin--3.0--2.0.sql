@@ -21,20 +21,6 @@ DROP FUNCTION IF EXISTS pg_catalog.bool_cast_date(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.bool_cast_datetime(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.bool_cast_timestamptz(boolean);
 
-DROP FUNCTION IF EXISTS pg_catalog.int8_cast_time(int1);
-DROP FUNCTION IF EXISTS pg_catalog.int16_cast_time(int2);
-DROP FUNCTION IF EXISTS pg_catalog.int32_cast_time(int4);
-DROP FUNCTION IF EXISTS pg_catalog.int64_cast_time(int8);
-
-DROP FUNCTION IF EXISTS pg_catalog.uint8_cast_time(uint1);
-DROP FUNCTION IF EXISTS pg_catalog.uint16_cast_time(uint2);
-DROP FUNCTION IF EXISTS pg_catalog.uint32_cast_time(uint4);
-DROP FUNCTION IF EXISTS pg_catalog.uint64_cast_time(uint8);
-
-DROP FUNCTION IF EXISTS pg_catalog.float4_cast_time(float4);
-DROP FUNCTION IF EXISTS pg_catalog.float8_cast_time(float8);
-DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_time(numeric);
-
 DROP FUNCTION IF EXISTS pg_catalog.dolphin_invoke();
 CREATE FUNCTION pg_catalog.dolphin_invoke()
     RETURNS VOID AS '$libdir/dolphin','dolphin_invoke' LANGUAGE C STRICT;

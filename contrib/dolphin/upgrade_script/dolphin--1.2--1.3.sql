@@ -429,3 +429,28 @@ drop function if EXISTS pg_catalog.length(binary);
 drop function if EXISTS pg_catalog.length(varbinary);
 CREATE OR REPLACE FUNCTION pg_catalog.length(binary) returns int4 LANGUAGE C immutable strict as '$libdir/dolphin', 'binary_length';
 CREATE OR REPLACE FUNCTION pg_catalog.length(varbinary) returns int4 LANGUAGE C immutable strict as '$libdir/dolphin', 'binary_length';
+
+CREATE OR REPLACE FUNCTION pg_catalog.int8_cast_time(int1)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int8_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.int16_cast_time(int2)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int16_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.int32_cast_time(int4)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.int64_cast_time(int8)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_cast_time';
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_cast_time(uint1)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint8_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.uint16_cast_time(uint2)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint16_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.uint32_cast_time(uint4)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint32_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.uint64_cast_time(uint8)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint64_cast_time';
+
+CREATE OR REPLACE FUNCTION pg_catalog.float4_cast_time(float4)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float4_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.float8_cast_time(float8)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float8_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_time(numeric)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_time';
