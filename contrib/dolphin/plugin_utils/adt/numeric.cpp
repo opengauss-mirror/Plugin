@@ -21152,7 +21152,25 @@ Datum conv_num(PG_FUNCTION_ARGS)
 
 Datum bin_bit(PG_FUNCTION_ARGS)
 {
-    PG_RETURN_TEXT_P(cstring_to_text("0"));
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+    int len = VARBITLEN(arg);
+    char* result = (char*)palloc(len + 9);
+    int cnt = 0;
+    for (bits8* r = VARBITS(arg); r < VARBITEND(arg); r++) {
+        bits8 tmp = *r;
+        for (int i = BITS_PER_BYTE - 1; i >= 0; --i) {
+            result[cnt++] = ((tmp & (1 << i)) != 0) ? '1' : '0';
+        }
+    }
+    int cntzero = 0;
+    while (result[cntzero] == '0') {
+        cntzero++;
+    }
+    if (cntzero >= len) cntzero = len - 1;
+    result[len] = '\0';
+    text* ret = cstring_to_text(result+cntzero);
+    pfree_ext(result);
+    PG_RETURN_TEXT_P(ret);
 }
 
 Datum bin_integer(PG_FUNCTION_ARGS)

@@ -140,5 +140,24 @@ select BIN(-13/4);
  1111111111111111111111111111111111111111111111111111111111111101
 (1 row)
 
+-- 测试bit类型,b''默认为bit类型
+select bin(b'101');
+ bin 
+-----
+ 101
+(1 row)
+
+select bin(b'0001101');
+ bin  
+------
+ 1101
+(1 row)
+
+select bin(b'0000000');
+ bin 
+-----
+ 0
+(1 row)
+
 drop schema db_bin cascade;
 reset current_schema;
