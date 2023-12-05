@@ -70,5 +70,24 @@ drop table t5;
 drop table t6;
 drop table t7;
 
+CREATE FUNCTION tt.mode_b_default(i integer) RETURNS integer AS
+$$
+BEGIN
+	RETURN i + 1;
+END;
+$$ LANGUAGE plpgsql;
+
+set current_schema = 'tt';
+
+select mode_b_default(b) from public.a;
+select tt.mode_b_default(b) from public.a;
+select pg_catalog.mode_b_default(b) from public.a;
+
+reset current_schema;
+
+select mode_b_default(b) from a;
+select tt.mode_b_default(b) from a;
+select pg_catalog.mode_b_default(b) from a;
+
 \c postgres
 drop database if exists db_default;

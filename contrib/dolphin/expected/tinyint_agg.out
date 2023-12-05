@@ -45,9 +45,9 @@ select min(a), min(b) from u1;
 (1 row)
 
 select stddev(a), stddev(b) from u1;
-      stddev      |      stddev      
-------------------+------------------
- 127.500326796967 | 127.500326796967
+        stddev        |        stddev        
+----------------------+----------------------
+ 104.1035808968911288 | 104.1035808968911288
 (1 row)
 
 select stddev_pop(a), stddev_pop(b) from u1;
@@ -81,9 +81,9 @@ select var_samp(a), var_samp(b) from u1;
 (1 row)
 
 select variance(a), variance(b) from u1;
-      variance      |      variance      
---------------------+--------------------
- 16256.333333333333 | 16256.333333333333
+        variance        |        variance        
+------------------------+------------------------
+ 10837.5555555555555556 | 10837.5555555555555556
 (1 row)
 
 select listagg(a) within group(order by a) from u1;
@@ -208,14 +208,14 @@ explain(costs off, verbose) select min(a)from smp_test;
 (8 rows)
 
 explain(costs off, verbose) select stddev(a) from smp_test;
-                          QUERY PLAN                          
---------------------------------------------------------------
+                     QUERY PLAN                     
+----------------------------------------------------
  Aggregate
-   Output: pg_catalog.stddev((stddev((a)::double precision)))
+   Output: pg_catalog.stddev_pop((stddev_pop(a)))
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: (stddev((a)::double precision))
+         Output: (stddev_pop(a))
          ->  Aggregate
-               Output: stddev((a)::double precision)
+               Output: stddev_pop(a)
                ->  Seq Scan on tinyint_agg.smp_test
                      Output: a
 (8 rows)
@@ -289,11 +289,11 @@ explain(costs off, verbose) select variance(a)from smp_test;
                      QUERY PLAN                     
 ----------------------------------------------------
  Aggregate
-   Output: pg_catalog.variance((variance(a)))
+   Output: pg_catalog.var_pop((var_pop(a)))
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: (variance(a))
+         Output: (var_pop(a))
          ->  Aggregate
-               Output: variance(a)
+               Output: var_pop(a)
                ->  Seq Scan on tinyint_agg.smp_test
                      Output: a
 (8 rows)
