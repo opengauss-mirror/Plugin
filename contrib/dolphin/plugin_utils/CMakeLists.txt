@@ -17,7 +17,7 @@ add_subdirectory(fmgr)
 add_subdirectory(mb)
 
 execute_process(
-    COMMAND perl ${PROJECT_SRC_DIR}/common/backend/utils/Gen_fmgrtab.pl ${CMAKE_CURRENT_SOURCE_DIR}/../include/builtin_funcs.ini
+    COMMAND perl ${CMAKE_CURRENT_SOURCE_DIR}/Gen_fmgrtab.pl ${CMAKE_CURRENT_SOURCE_DIR}/../include/builtin_funcs.ini
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 

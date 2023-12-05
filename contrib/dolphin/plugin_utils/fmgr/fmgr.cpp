@@ -48,6 +48,17 @@ THR_LOCAL PGDLLIMPORT needs_fmgr_hook_type needs_fmgr_hook = NULL;
 THR_LOCAL PGDLLIMPORT fmgr_hook_type fmgr_hook = NULL;
 extern void InitFuncCallUDFInfo(FunctionCallInfoData* fcinfo, int argN, bool setFuncPtr);
 
+#ifdef DOLPHIN
+extern int tmp_b_fmgr_nbuiltins;
+extern FmgrBuiltin tmp_b_fmgr_builtins[];
+#else
+/* for dolphin and whale plugin */
+int a_fmgr_nbuiltins = -1;
+int b_fmgr_nbuiltins = -1;
+FmgrBuiltin *a_fmgr_builtins = NULL;
+FmgrBuiltin *b_fmgr_builtins = NULL;
+#endif
+
 /*
  * Declaration for old-style function pointer type.  This is now used only
  * in fmgr_oldstyle() and is no longer exported.
@@ -202,14 +213,30 @@ const FmgrBuiltin* fmgr_isbuiltin(Oid id)
  */
 static const FmgrBuiltin* fmgr_lookupByName(const char* name)
 {
+#ifdef DOLPHIN
+    int nbuiltins = tmp_b_fmgr_nbuiltins;
+    const FmgrBuiltin *builtinfunc = tmp_b_fmgr_builtins;
+#else
+    int nbuiltins = fmgr_nbuiltins;
+    const FmgrBuiltin *builtinfunc = fmgr_builtins;
+    if (CUR_THR_IS_WORKER() && IsNormalProcessingMode()) {
+        if (a_fmgr_nbuiltins > 0 && DB_IS_CMPT(A_FORMAT)) {
+            nbuiltins = a_fmgr_nbuiltins;
+            builtinfunc = a_fmgr_builtins;
+        } else if (b_fmgr_nbuiltins > 0 && DB_IS_CMPT(B_FORMAT)) {
+            nbuiltins = b_fmgr_nbuiltins;
+            builtinfunc = b_fmgr_builtins;
+        }
+    }
+#endif
     int low = 0;
-    int high = fmgr_nbuiltins - 1;
+    int high = nbuiltins - 1;
     int ret;
     while (low <= high) {
         int i = (high + low) / 2;
-        ret = strcmp(name, fmgr_builtins[i].funcName);
+        ret = strcmp(name, builtinfunc[i].funcName);
         if (ret == 0) {
-            return fmgr_builtins + i;
+            return builtinfunc + i;
         } else if (ret > 0) {
             low = i + 1;
         } else {

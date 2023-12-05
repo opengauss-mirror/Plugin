@@ -56,7 +56,7 @@ OBJS += $(vector)/vecfuncache.o
 
 OBJS += $(mb)/mbutils.o
 
-OBJS += $(fmgr)/fmgr.o
+OBJS += $(fmgr)/fmgr.o $(utils)/fmgrtab.o
 
 OBJS += $(executor)/execQual.o $(executor)/functions.o
 
