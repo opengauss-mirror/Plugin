@@ -7592,7 +7592,7 @@ Oid getPartitionIdFromTuple(Relation rel, void *tuple, EState* estate, TupleTabl
 {
     char* partExprKeyStr = NULL;
     Oid targetOid = InvalidOid;
-    bool partExprKeyIsNull = PartExprKeyIsNull(rel, NULL, &partExprKeyStr);
+    bool partExprKeyIsNull = PartExprKeyIsNull(rel, &partExprKeyStr);
     if (partExprKeyIsNull) {
         targetOid = heapTupleGetPartitionId(rel, tuple, partitionno, isDDL, canIgnore);
     } else {

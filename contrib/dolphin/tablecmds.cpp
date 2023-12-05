@@ -9116,6 +9116,14 @@ static void sqlcmd_alter_exec_convert_charset(AlteredTableInfo* tab, Relation re
     heap_close(attrelation, RowExclusiveLock);
 }
 
+static bool sqlcmd_partition_index_ddl_cmd(AlterTableType cmd)
+{
+    /* AT_UnusableAllIndexOnSubPartition is not supported */
+    return ((cmd) == AT_UnusableIndexPartition || (cmd) == AT_UnusableAllIndexOnPartition ||
+            (cmd) == AT_UnusableIndex || (cmd) == AT_AddIndex || (cmd) == AT_ReAddIndex ||
+            (cmd) == AT_AddIndexConstraint);
+}
+
 static void ATCreateColumComments(Oid relOid, ColumnDef* columnDef)
 {
     List *columnOptions = columnDef->columnOptions;
@@ -9140,10 +9148,17 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
     elog(ES_LOGLEVEL, "[ATExecCmd] cmd subtype: %d", cmd->subtype);
 
     if (PARTITION_DDL_CMD(cmd->subtype) && RELATION_IS_PARTITIONED(rel)) {
+        /* Register invalidation of the relation's relcache entry. */
+        CacheInvalidateRelcache(rel);
         int partitionno = -GetCurrentPartitionNo(RelOidGetPartitionTupleid(rel->rd_id));
         if (!PARTITIONNO_IS_VALID(partitionno)) {
             RelationResetPartitionno(rel->rd_id, ShareUpdateExclusiveLock);
         }
+    }
+    
+    if (sqlcmd_partition_index_ddl_cmd(cmd->subtype) && RelationIsIndex(rel)) {
+        Oid rel_id = IndexGetRelation(rel->rd_id, false);
+        CacheInvalidateRelcacheByRelid(rel_id);
     }
 
     switch (cmd->subtype) {
@@ -22044,6 +22059,14 @@ void AlterTableNamespaceInternal(Relation rel, Oid oldNspOid, Oid nspOid, Object
     Relation classRel;
 
     Assert(objsMoved != NULL);
+
+    if (enable_plpgsql_gsdependency_guc() &&
+        gsplsql_is_object_depend(rel->rd_rel->reltype, GSDEPEND_OBJECT_TYPE_TYPE)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_DEPENDENT_OBJECTS_STILL_EXIST),
+                errmsg("The set schema operator of %s is not allowed, "
+                        "because it is referenced by another object.", NameStr(rel->rd_rel->relname))));
+    }
 
     /* OK, modify the pg_class row and pg_depend entry */
     classRel = heap_open(RelationRelationId, RowExclusiveLock);
