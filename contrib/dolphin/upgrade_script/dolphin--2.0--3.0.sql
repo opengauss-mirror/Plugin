@@ -233,3 +233,28 @@ RETURNS timestamptz LANGUAGE SQL IMMUTABLE STRICT as
 CREATE OR REPLACE FUNCTION pg_catalog.bit_cast_time(bit) 
 RETURNS time without time zone LANGUAGE SQL IMMUTABLE STRICT as 
 'select cast(cast($1 as text) as time without time zone)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.int8_cast_time(int1)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int8_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.int16_cast_time(int2)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int16_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.int32_cast_time(int4)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.int64_cast_time(int8)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_cast_time';
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_cast_time(uint1)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint8_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.uint16_cast_time(uint2)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint16_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.uint32_cast_time(uint4)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint32_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.uint64_cast_time(uint8)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint64_cast_time';
+
+CREATE OR REPLACE FUNCTION pg_catalog.float4_cast_time(float4)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float4_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.float8_cast_time(float8)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float8_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_time(numeric)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_time';
