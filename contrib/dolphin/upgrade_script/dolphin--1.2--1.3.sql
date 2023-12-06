@@ -409,3 +409,18 @@ RETURNS timestamptz LANGUAGE SQL IMMUTABLE STRICT as
 CREATE OR REPLACE FUNCTION pg_catalog.bit_cast_time(bit) 
 RETURNS time without time zone LANGUAGE SQL IMMUTABLE STRICT as 
 'select cast(cast($1 as text) as time without time zone)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromDate';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromDate';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromDate';
+CREATE OR REPLACE FUNCTION pg_catalog.second (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromDate';
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (timetz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromTimeTz';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (timetz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromTimeTz';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (timetz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromTimeTz';
+CREATE OR REPLACE FUNCTION pg_catalog.second (timetz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromTimeTz';
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromTimestampTz';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromTimestampTz';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromTimestampTz';
+CREATE OR REPLACE FUNCTION pg_catalog.second (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromTimestampTz';

@@ -150,6 +150,30 @@ PG_FUNCTION_INFO_V1_PUBLIC(GetMinute);
 extern "C" DLL_PUBLIC Datum GetMinute(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(GetSecond);
 extern "C" DLL_PUBLIC Datum GetSecond(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetHourFromDate);
+extern "C" DLL_PUBLIC Datum GetHourFromDate(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetMicrosecondFromDate);
+extern "C" DLL_PUBLIC Datum GetMicrosecondFromDate(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetMinuteFromDate);
+extern "C" DLL_PUBLIC Datum GetMinuteFromDate(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetSecondFromDate);
+extern "C" DLL_PUBLIC Datum GetSecondFromDate(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetHourFromTimeTz);
+extern "C" DLL_PUBLIC Datum GetHourFromTimeTz(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetMicrosecondFromTimeTz);
+extern "C" DLL_PUBLIC Datum GetMicrosecondFromTimeTz(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetMinuteFromTimeTz);
+extern "C" DLL_PUBLIC Datum GetMinuteFromTimeTz(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetSecondFromTimeTz);
+extern "C" DLL_PUBLIC Datum GetSecondFromTimeTz(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetHourFromTimestampTz);
+extern "C" DLL_PUBLIC Datum GetHourFromTimestampTz(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetMicrosecondFromTimestampTz);
+extern "C" DLL_PUBLIC Datum GetMicrosecondFromTimestampTz(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetMinuteFromTimestampTz);
+extern "C" DLL_PUBLIC Datum GetMinuteFromTimestampTz(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(GetSecondFromTimestampTz);
+extern "C" DLL_PUBLIC Datum GetSecondFromTimestampTz(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(get_format);
 extern "C" DLL_PUBLIC Datum get_format(PG_FUNCTION_ARGS);
@@ -5443,7 +5467,7 @@ Datum adddate_time_interval(PG_FUNCTION_ARGS)
     PG_RETURN_NULL();
 }
 
-static inline Datum GetSepecificPartOfTime(PG_FUNCTION_ARGS, const char *part)
+static inline Datum GetSpecificPartOfTime(PG_FUNCTION_ARGS, int part)
 {
     char *tString = text_to_cstring(PG_GETARG_TEXT_PP(0));
     int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
@@ -5453,37 +5477,210 @@ static inline Datum GetSepecificPartOfTime(PG_FUNCTION_ARGS, const char *part)
                     errmsg("invalid input syntax for type time: \"%s\"", tString)));
         PG_RETURN_NULL();
     }
-    TimeADT tm;
-    if (time_in_without_overflow(tString, &tm, fcinfo->can_ignore)) {
-        if (tm < 0) {
-            tm *= -1;
-        }
-        return DirectFunctionCall2(time_part, CStringGetTextDatum(part), TimeADTGetDatum(tm));
+    struct pg_tm tt;
+    struct pg_tm *tm = &tt;
+    fsec_t fsec = 0;
+    int timeSign = 1;
+    bool warnings;
+    int tm_type;
+    bool null_func_result = false;
+    float8 result = 0;
+    if (!cstring_to_time(tString, tm, fsec, timeSign, tm_type, warnings, &null_func_result) || null_func_result) {
+        PG_RETURN_NULL();
     }
-    Timestamp ts = DatumGetTimestamp(
-        DirectFunctionCall3(timestamp_in, CStringGetDatum(tString), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
-    pfree(tString);
-    return DirectFunctionCall2(timestamp_part, CStringGetTextDatum(part), TimestampGetDatum(ts));
+    if (warnings) {
+        int errlevel = (SQL_MODE_STRICT() || null_func_result) ? ERROR : WARNING;
+        ereport(errlevel,
+                (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", tString)));
+    }
+    switch (part) {
+        case HOUR:
+            result = tm->tm_hour;
+            break;
+        case MINUTE:
+            result = tm->tm_min;
+            break;
+        case SECOND:
+            result = tm->tm_sec;
+            break;
+        case MICROSECOND:
+            result = fsec;
+            break;
+        default:
+            break;
+    }
+    PG_RETURN_FLOAT8(result);
 }
 
 Datum GetHour(PG_FUNCTION_ARGS)
 {
-    return GetSepecificPartOfTime(fcinfo, "hour");
+    return GetSpecificPartOfTime(fcinfo, HOUR);
 }
 
 Datum GetMicrosecond(PG_FUNCTION_ARGS)
 {
-    return GetSepecificPartOfTime(fcinfo, "microsecond");
+    return GetSpecificPartOfTime(fcinfo, MICROSECOND);
 }
 
 Datum GetMinute(PG_FUNCTION_ARGS)
 {
-    return GetSepecificPartOfTime(fcinfo, "minute");
+    return GetSpecificPartOfTime(fcinfo, MINUTE);
 }
 
 Datum GetSecond(PG_FUNCTION_ARGS)
 {
-    return GetSepecificPartOfTime(fcinfo, "second");
+    return GetSpecificPartOfTime(fcinfo, SECOND);
+}
+
+static Datum GetSpecificPartOfTimeInDate(PG_FUNCTION_ARGS, int part)
+{
+    DateADT dateVal = PG_GETARG_DATEADT(0);
+    fsec_t fsec;
+    pg_tm tt;
+    pg_tm* tm = &tt;
+    float8 result = 0;
+
+    if (timestamp2tm(date2timestamp(dateVal), NULL, tm, &fsec, NULL, NULL) == 0) {
+        switch (part) {
+            case HOUR:
+                result = tm->tm_hour;
+                break;
+            case MINUTE:
+                result = tm->tm_min;
+                break;
+            case SECOND:
+                result = tm->tm_sec;
+                break;
+            case MICROSECOND:
+                result = fsec;
+                break;
+            default:
+                break;
+        }
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+    PG_RETURN_FLOAT8(result);
+}
+
+Datum GetHourFromDate(PG_FUNCTION_ARGS)
+{
+    return GetSpecificPartOfTimeInDate(fcinfo, HOUR);
+}
+
+Datum GetMicrosecondFromDate(PG_FUNCTION_ARGS)
+{
+    return GetSpecificPartOfTimeInDate(fcinfo, MICROSECOND);
+}
+
+Datum GetMinuteFromDate(PG_FUNCTION_ARGS)
+{
+    return GetSpecificPartOfTimeInDate(fcinfo, MINUTE);
+}
+
+Datum GetSecondFromDate(PG_FUNCTION_ARGS)
+{
+    return GetSpecificPartOfTimeInDate(fcinfo, SECOND);
+}
+
+static Datum GetSpecificPartOfTimeInTimeTz(PG_FUNCTION_ARGS, int part)
+{
+    TimeTzADT* time = PG_GETARG_TIMETZADT_P(0);
+    pg_tm tt;
+    pg_tm* tm = &tt;
+    fsec_t fsec;
+    int tz;
+    timetz2tm(time, tm, &fsec, &tz);
+    float8 result = 0;
+
+    switch (part) {
+        case HOUR:
+            result = tm->tm_hour;
+            break;
+        case MINUTE:
+            result = tm->tm_min;
+            break;
+        case SECOND:
+            result = tm->tm_sec;
+            break;
+        case MICROSECOND:
+            result = fsec;
+            break;
+        default:
+            break;
+    }
+    PG_RETURN_FLOAT8(result);
+}
+
+Datum GetHourFromTimeTz(PG_FUNCTION_ARGS)
+{
+    return GetSpecificPartOfTimeInTimeTz(fcinfo, HOUR);
+}
+
+Datum GetMicrosecondFromTimeTz(PG_FUNCTION_ARGS)
+{
+    return GetSpecificPartOfTimeInTimeTz(fcinfo, MICROSECOND);
+}
+
+Datum GetMinuteFromTimeTz(PG_FUNCTION_ARGS)
+{
+    return GetSpecificPartOfTimeInTimeTz(fcinfo, MINUTE);
+}
+
+Datum GetSecondFromTimeTz(PG_FUNCTION_ARGS)
+{
+    return GetSpecificPartOfTimeInTimeTz(fcinfo, SECOND);
+}
+
+static Datum GetSpecificPartOfTimeInTimestampTz(PG_FUNCTION_ARGS, int part)
+{
+    TimestampTz time = PG_GETARG_TIMESTAMPTZ(0);
+    pg_tm tt;
+    pg_tm* tm = &tt;
+    fsec_t fsec;
+    int tz;
+    float8 result = 0;
+    if (timestamp2tm(time, &tz, tm, &fsec, NULL, NULL) == 0) {
+        switch (part) {
+            case HOUR:
+                result = tm->tm_hour;
+                break;
+            case MINUTE:
+                result = tm->tm_min;
+                break;
+            case SECOND:
+                result = tm->tm_sec;
+                break;
+            case MICROSECOND:
+                result = fsec;
+                break;
+            default:
+                break;
+        }
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+    PG_RETURN_FLOAT8(result);
+}
+
+Datum GetHourFromTimestampTz(PG_FUNCTION_ARGS)
+{
+    return GetSpecificPartOfTimeInTimestampTz(fcinfo, HOUR);
+}
+
+Datum GetMicrosecondFromTimestampTz(PG_FUNCTION_ARGS)
+{
+    return GetSpecificPartOfTimeInTimestampTz(fcinfo, MICROSECOND);
+}
+
+Datum GetMinuteFromTimestampTz(PG_FUNCTION_ARGS)
+{
+    return GetSpecificPartOfTimeInTimestampTz(fcinfo, MINUTE);
+}
+
+Datum GetSecondFromTimestampTz(PG_FUNCTION_ARGS)
+{
+    return GetSpecificPartOfTimeInTimestampTz(fcinfo, SECOND);
 }
 
 bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag, bool vertify_time)

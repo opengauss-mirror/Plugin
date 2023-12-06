@@ -103,23 +103,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.microsecond (text) RETURNS int8 LANGUAGE C
 CREATE OR REPLACE FUNCTION pg_catalog.minute (text) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinute';
 CREATE OR REPLACE FUNCTION pg_catalog.second (text) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecond';
 
-
-CREATE OR REPLACE FUNCTION pg_catalog.hour (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromDate';
-CREATE OR REPLACE FUNCTION pg_catalog.microsecond (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromDate';
-CREATE OR REPLACE FUNCTION pg_catalog.minute (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromDate';
-CREATE OR REPLACE FUNCTION pg_catalog.second (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromDate';
-
-CREATE OR REPLACE FUNCTION pg_catalog.hour (timetz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromTimeTz';
-CREATE OR REPLACE FUNCTION pg_catalog.microsecond (timetz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromTimeTz';
-CREATE OR REPLACE FUNCTION pg_catalog.minute (timetz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromTimeTz';
-CREATE OR REPLACE FUNCTION pg_catalog.second (timetz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromTimeTz';
-
-CREATE OR REPLACE FUNCTION pg_catalog.hour (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromTimestampTz';
-CREATE OR REPLACE FUNCTION pg_catalog.microsecond (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromTimestampTz';
-CREATE OR REPLACE FUNCTION pg_catalog.minute (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromTimestampTz';
-CREATE OR REPLACE FUNCTION pg_catalog.second (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromTimestampTz';
-
-
 CREATE OR REPLACE FUNCTION pg_catalog.hour (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT hour($1::time)';
 CREATE OR REPLACE FUNCTION pg_catalog.minute (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT minute($1::time)';
 CREATE OR REPLACE FUNCTION pg_catalog.second (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT second($1::time)';
