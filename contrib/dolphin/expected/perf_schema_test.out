@@ -74,12 +74,14 @@ SELECT * FROM performance_schema.events_waits_current limit 1;
 (1 row)
 
 SELECT COUNT(*) FROM performance_schema.events_waits_summary_global_by_event_name;
+WARNING:  [SS] dms not init!
  count 
 -------
 --?.*
 (1 row)
 
 SELECT * FROM performance_schema.events_waits_summary_global_by_event_name limit 1;
+WARNING:  [SS] dms not init!
 --?.*
 --?.*
 --?.*
@@ -98,12 +100,14 @@ SELECT * FROM performance_schema.events_waits_current limit 1;
 (1 row)
 
 SELECT COUNT(*) FROM performance_schema.events_waits_summary_global_by_event_name;
+WARNING:  [SS] dms not init!
  count 
 -------
 --?.*
 (1 row)
 
 SELECT * FROM performance_schema.events_waits_summary_global_by_event_name limit 1;
+WARNING:  [SS] dms not init!
 --?.*
 --?.*
 --?.*
@@ -159,6 +163,7 @@ SELECT COUNT(*) FROM performance_schema.events_waits_current;
 (1 row)
 
 SELECT COUNT(*) FROM performance_schema.events_waits_summary_global_by_event_name;
+WARNING:  [SS] dms not init!
  count 
 -------
 --?.*
@@ -171,6 +176,7 @@ SELECT COUNT(*) FROM performance_schema.events_waits_current;
 (1 row)
 
 SELECT COUNT(*) FROM performance_schema.events_waits_summary_global_by_event_name;
+WARNING:  [SS] dms not init!
  count 
 -------
 --?.*
