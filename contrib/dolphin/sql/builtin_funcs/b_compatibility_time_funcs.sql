@@ -316,6 +316,30 @@ select timestamp'2022-05';
 select timestamp'2022-15-05 16:20:10';
 select timestamp'2022-05-05 16:60:10';
 
+SET dolphin.sql_mode TO 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
+SET dolphin.b_compatibility_mode TO on;
+\pset null '<NULL>'
+CREATE TABLE t1 (f1 date);
+INSERT INTO t1 values('2007-07-19'), (NULL);
+SELECT * FROM t1;
+SELECT HOUR(f1), MINUTE(f1), SECOND(f1), MICROSECOND(f1) FROM t1;
+DROP TABLE t1;
+select hour('11:11:11.234'), minute('11:11:11.234'), second('11:11:11.234'), microsecond('11:11:11.234');
+select hour('11:11:11.234-7'), minute('11:11:11.234-7'), second('11:11:11.234-7'), microsecond('11:11:11.234-7');
+select hour(timetz '11:11:11.234-7'), minute(timetz '11:11:11.234-7'), second(timetz '11:11:11.234-7'), microsecond(timetz '11:11:11.234-7');
+select hour('2007-07-19'), minute('2007-07-19'), second('2007-07-19'), microsecond('2007-07-19');
+select hour('2007-07-19 11:11:11.234'), minute('2007-07-19 11:11:11.234'), second('2007-07-19 11:11:11.234'), microsecond('2007-07-19 11:11:11.234');
+select hour('2007-07-19 11:11:11.234-7'), minute('2007-07-19 11:11:11.234-7'), second('2007-07-19 11:11:11.234-7'), microsecond('2007-07-19 11:11:11.234-7');
+select hour(timestamptz '2007-07-19 11:11:11.234-7'), minute(timestamptz '2007-07-19 11:11:11.234-7'), second(timestamptz '2007-07-19 11:11:11.234-7'), microsecond(timestamptz '2007-07-19 11:11:11.234-7');
+select hour('-2007-07-19'), minute('-2007-07-19'), second('-2007-07-19'), microsecond('-2007-07-19');
+select hour('-2007-07-19 11:11:11.234'), minute('-2007-07-19 11:11:11.234'), second('-2007-07-19 11:11:11.234'), microsecond('-2007-07-19 11:11:11.234');
+select hour('-2007-07-19 11:11:11.234-7'), minute('-2007-07-19 11:11:11.234-7'), second('-2007-07-19 11:11:11.234-7'), microsecond('-2007-07-19 11:11:11.234-7');
+select hour(timestamptz '-2007-07-19 11:11:11.234-7'), minute(timestamptz '-2007-07-19 11:11:11.234-7'), second(timestamptz '-2007-07-19 11:11:11.234-7'), microsecond(timestamptz '-2007-07-19 11:11:11.234-7');
+select hour('202014'), minute('202014'), second('202014'), microsecond('202014');
+select hour('209614'), minute('209614'), second('209614'), microsecond('209614');
+select hour('abcdefg'), minute('abcdefg'), second('abcdefg'), microsecond('abcdefg');
+select hour('abcdefghijklmnopqrstuv'), minute('abcdefghijklmnopqrstuv'), second('abcdefghijklmnopqrstuv'), microsecond('abcdefghijklmnopqrstuv');
+
 reset dolphin.sql_mode;
 
 drop schema b_time_funcs cascade;
