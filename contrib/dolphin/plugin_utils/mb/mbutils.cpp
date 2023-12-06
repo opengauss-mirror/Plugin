@@ -415,11 +415,25 @@ Datum pg_convert_to(PG_FUNCTION_ARGS)
     PG_RETURN_DATUM(result);
 }
 
+/*
+ * pg_convert_to_text is designed to be compatible with the function convert('str' using 'encoding') in Mysql
+ * TEXT pg_convert_to_text(TEXT string, NAME dest_encoding_name)
+ *
+ * If a character in the input string has a corresponding encoding in both the original and
+ * destination encodings, the character remains unchanged. If there is no corresponding encoding
+ * in the destination encoding, the character is replaced with '?'.
+*/
 Datum pg_convert_to_text(PG_FUNCTION_ARGS)
 {
     char* string = PG_GETARG_CSTRING(0);
     char* dest_encoding_name = NameStr(*PG_GETARG_NAME(1));
     int dest_encoding = pg_char_to_encoding(dest_encoding_name);
+    bool old_bulkload_compatible_illegal_chars = u_sess->cmd_cxt.bulkload_compatible_illegal_chars;
+    char* dest_str;
+    char* result_str;
+    int rc;
+    Datum result;
+
     if (dest_encoding < 0) {
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -428,16 +442,28 @@ Datum pg_convert_to_text(PG_FUNCTION_ARGS)
 
     int src_encoding = GetDatabaseEncoding();
     const char* src_str = VARDATA_ANY(string);
-    int len_src = VARSIZE_ANY_EXHDR(string);;
+    int len_src = VARSIZE_ANY_EXHDR(string);
 
-    char* dest_str = (char*)pg_do_encoding_conversion((unsigned char*)src_str, len_src, src_encoding, dest_encoding);
-    char* result = (char*)palloc(len_src + 1);
-    int rc = memcpy_s(result, len_src + 1, dest_str, len_src);
-    securec_check_c(rc, "\0", "\0");
-    result[len_src] = '\0';
-    text* ret = cstring_to_text(result);
-    if (NULL != ret) {
-        PG_RETURN_TEXT_P(ret);
+    u_sess->cmd_cxt.bulkload_compatible_illegal_chars = true;
+    PG_TRY();
+    {
+        dest_str = (char*)pg_do_encoding_conversion((unsigned char*)src_str, len_src, src_encoding, dest_encoding);
+        result_str = (char*)palloc(len_src + 1);
+        rc = memcpy_s(result_str, len_src + 1, dest_str, len_src);
+        securec_check_c(rc, "\0", "\0");
+        result_str[len_src] = '\0';
+        result = DirectFunctionCall2(pg_convert_from,
+            CStringGetTextDatum((const char*)result_str), CStringGetDatum(dest_encoding_name));
+    }
+    PG_CATCH();
+    {
+        u_sess->cmd_cxt.bulkload_compatible_illegal_chars = old_bulkload_compatible_illegal_chars;
+    }
+    PG_END_TRY();
+    u_sess->cmd_cxt.bulkload_compatible_illegal_chars = old_bulkload_compatible_illegal_chars;
+
+    if (NULL != result) {
+        PG_RETURN_TEXT_P(result);
     }
     else {
         PG_RETURN_NULL();
