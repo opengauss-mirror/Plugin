@@ -200,7 +200,7 @@ ERROR:  CREATE TABLE ... INHERITS is not yet supported.
 \d "Constraint_Rename_Test2"
 ALTER TABLE `Constraint_Rename_Test2` RENAME CONSTRAINT `con1` TO `con1foo`; -- fail
 ERROR:  relation "Constraint_Rename_Test2" does not exist
-ALTER TABLE ONLY `Constraint_Rename_Test` RENAME CONSTRAINT `con1` TO `con1foo`; -- fail
+ALTER TABLE ONLY (`Constraint_Rename_Test`) RENAME CONSTRAINT `con1` TO `con1foo`; -- fail
 ALTER TABLE `Constraint_Rename_Test` RENAME CONSTRAINT `con1` TO `con1foo`; -- ok
 ERROR:  constraint "con1" for table "Constraint_Rename_Test" does not exist
 \d "Constraint_Rename_Test"
@@ -215,7 +215,7 @@ Check constraints:
 
 \d "Constraint_Rename_Test2"
 ALTER TABLE `Constraint_Rename_Test` ADD CONSTRAINT `con2` CHECK (`b` > 0) NO InheRIT;
-ALTER TABLE ONLY `Constraint_Rename_Test` RENAME CONSTRAINT `con2` TO `con2foo`; -- ok
+ALTER TABLE ONLY (`Constraint_Rename_Test`) RENAME CONSTRAINT `con2` TO `con2foo`; -- ok
 ALTER TABLE `Constraint_Rename_Test` RENAME CONSTRAINT `con2foo` TO `con2bar`; -- ok
 \d "Constraint_Rename_Test"
 Table "public.Constraint_Rename_Test"

@@ -416,12 +416,6 @@ ERROR:  Too-big precision 7 specified for 'now'. Maximum is 6.
 CONTEXT:  referenced column: now(7)
 set dolphin.b_db_timestamp = 0.0;
 -- test sysdate(precision)
-select sysdate;
-       sysdate       
----------------------
---?.*
-(1 row)
-
 select sysdate();
       sysdate()      
 ---------------------

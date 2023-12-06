@@ -233,3 +233,5 @@ RETURNS timestamptz LANGUAGE SQL IMMUTABLE STRICT as
 CREATE OR REPLACE FUNCTION pg_catalog.bit_cast_time(bit) 
 RETURNS time without time zone LANGUAGE SQL IMMUTABLE STRICT as 
 'select cast(cast($1 as text) as time without time zone)';
+
+create or replace function pg_catalog."user"() returns name as 'select current_user' LANGUAGE 'sql' IMMUTABLE;

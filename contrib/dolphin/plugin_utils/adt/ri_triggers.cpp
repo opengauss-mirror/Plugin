@@ -339,8 +339,13 @@ static Datum RI_FKey_check(PG_FUNCTION_ARGS)
             quoteRelationName(pkrelname, pk_rel);
 
             rc = snprintf_s(querystr, sizeof(querystr), sizeof(querystr) - 1,
+#ifndef DOLPHIN
                 IsShareLockForForeignKey(pk_rel) ? "SELECT 1 FROM ONLY %s x FOR SHARE OF x" :
                 "SELECT 1 FROM ONLY %s x FOR KEY SHARE OF x", pkrelname);
+#else
+                IsShareLockForForeignKey(pk_rel) ? "SELECT 1 FROM ONLY (%s) x FOR SHARE OF x" :
+                "SELECT 1 FROM ONLY (%s) x FOR KEY SHARE OF x", pkrelname);
+#endif
             securec_check_ss(rc, "\0", "\0");
 
             /* Prepare and save the plan */
@@ -465,7 +470,11 @@ static Datum RI_FKey_check(PG_FUNCTION_ARGS)
          */
         initStringInfo(&querybuf);
         quoteRelationName(pkrelname, pk_rel);
+#ifndef DOLPHIN
         appendStringInfo(&querybuf, "SELECT 1 FROM ONLY %s x", pkrelname);
+#else
+        appendStringInfo(&querybuf, "SELECT 1 FROM ONLY (%s) x", pkrelname);
+#endif
         querysep = "WHERE";
         for (i = 0; i < riinfo.nkeys; i++) {
             Oid pk_type = RIAttType(pk_rel, riinfo.pk_attnums[i]);
@@ -615,7 +624,11 @@ static bool ri_Check_Pk_Match(Relation pk_rel, Relation fk_rel, HeapTuple old_ro
          */
         initStringInfo(&querybuf);
         quoteRelationName(pkrelname, pk_rel);
+#ifndef DOLPHIN
         appendStringInfo(&querybuf, "SELECT 1 FROM ONLY %s x", pkrelname);
+#else
+        appendStringInfo(&querybuf, "SELECT 1 FROM ONLY (%s) x", pkrelname);
+#endif
         querysep = "WHERE";
         int iRet = -1;
         for (i = 0; i < riinfo->nkeys; i++) {
@@ -787,7 +800,11 @@ Datum RI_FKey_noaction(PG_FUNCTION_ARGS)
                  */
                 initStringInfo(&querybuf);
                 quoteRelationName(fkrelname, fk_rel);
+#ifndef DOLPHIN
                 appendStringInfo(&querybuf, "SELECT 1 FROM ONLY %s x", fkrelname);
+#else
+                appendStringInfo(&querybuf, "SELECT 1 FROM ONLY (%s) x", fkrelname);
+#endif
                 querysep = "WHERE";
                 for (i = 0; i < riinfo.nkeys; i++) {
                     Oid pk_type = RIAttType(pk_rel, riinfo.pk_attnums[i]);
@@ -971,7 +988,11 @@ Datum RI_FKey_cascade_del(PG_FUNCTION_ARGS)
                  */
                 initStringInfo(&querybuf);
                 quoteRelationName(fkrelname, fk_rel);
+#ifndef DOLPHIN
                 appendStringInfo(&querybuf, "DELETE FROM ONLY %s", fkrelname);
+#else
+                appendStringInfo(&querybuf, "DELETE FROM ONLY (%s)", fkrelname);
+#endif
                 querysep = "WHERE";
                 for (i = 0; i < riinfo.nkeys; i++) {
                     Oid pk_type = RIAttType(pk_rel, riinfo.pk_attnums[i]);
@@ -1146,7 +1167,11 @@ Datum RI_FKey_cascade_upd(PG_FUNCTION_ARGS)
                 initStringInfo(&querybuf);
                 initStringInfo(&qualbuf);
                 quoteRelationName(fkrelname, fk_rel);
+#ifndef DOLPHIN
                 appendStringInfo(&querybuf, "UPDATE ONLY %s SET", fkrelname);
+#else
+                appendStringInfo(&querybuf, "UPDATE ONLY (%s) SET", fkrelname);
+#endif
                 querysep = "";
                 qualsep = "WHERE";
                 for (i = 0, j = riinfo.nkeys; i < riinfo.nkeys; i++, j++) {
@@ -1324,7 +1349,11 @@ Datum RI_FKey_restrict(PG_FUNCTION_ARGS)
                  */
                 initStringInfo(&querybuf);
                 quoteRelationName(fkrelname, fk_rel);
+#ifndef DOLPHIN
                 appendStringInfo(&querybuf, "SELECT 1 FROM ONLY %s x", fkrelname);
+#else
+                appendStringInfo(&querybuf, "SELECT 1 FROM ONLY (%s) x", fkrelname);
+#endif
                 querysep = "WHERE";
                 for (i = 0; i < riinfo.nkeys; i++) {
                     Oid pk_type = RIAttType(pk_rel, riinfo.pk_attnums[i]);
@@ -1521,7 +1550,11 @@ Datum RI_FKey_setnull_del(PG_FUNCTION_ARGS)
                 initStringInfo(&querybuf);
                 initStringInfo(&qualbuf);
                 quoteRelationName(fkrelname, fk_rel);
+#ifndef DOLPHIN
                 appendStringInfo(&querybuf, "UPDATE ONLY %s SET", fkrelname);
+#else
+                appendStringInfo(&querybuf, "UPDATE ONLY (%s) SET", fkrelname);
+#endif
                 querysep = "";
                 qualsep = "WHERE";
                 for (i = 0; i < riinfo.nkeys; i++) {
@@ -1712,7 +1745,11 @@ Datum RI_FKey_setnull_upd(PG_FUNCTION_ARGS)
                 initStringInfo(&querybuf);
                 initStringInfo(&qualbuf);
                 quoteRelationName(fkrelname, fk_rel);
+#ifndef DOLPHIN
                 appendStringInfo(&querybuf, "UPDATE ONLY %s SET", fkrelname);
+#else
+                appendStringInfo(&querybuf, "UPDATE ONLY (%s) SET", fkrelname);
+#endif
                 querysep = "";
                 qualsep = "WHERE";
                 for (i = 0; i < riinfo.nkeys; i++) {
@@ -1902,7 +1939,11 @@ Datum RI_FKey_setdefault(PG_FUNCTION_ARGS)
                 initStringInfo(&querybuf);
                 initStringInfo(&qualbuf);
                 quoteRelationName(fkrelname, fk_rel);
+#ifndef DOLPHIN
                 appendStringInfo(&querybuf, "UPDATE ONLY %s SET", fkrelname);
+#else
+                appendStringInfo(&querybuf, "UPDATE ONLY (%s) SET", fkrelname);
+#endif
                 querysep = "";
                 qualsep = "WHERE";
                 for (i = 0; i < riinfo.nkeys; i++) {
@@ -2188,8 +2229,11 @@ bool RI_Initial_Check(Trigger* trigger, Relation fk_rel, Relation pk_rel)
 
     quoteRelationName(pkrelname, pk_rel);
     quoteRelationName(fkrelname, fk_rel);
+#ifndef DOLPHIN
     appendStringInfo(&querybuf, " FROM ONLY %s fk LEFT OUTER JOIN ONLY %s pk ON", fkrelname, pkrelname);
-
+#else
+    appendStringInfo(&querybuf, " FROM ONLY (%s) fk LEFT OUTER JOIN ONLY (%s) pk ON", fkrelname, pkrelname);
+#endif
     rc = strcpy_s(pkattname, sizeof(pkattname), "pk.");
     securec_check_ss(rc, "\0", "\0");
     rc = strcpy_s(fkattname, sizeof(fkattname), "fk.");

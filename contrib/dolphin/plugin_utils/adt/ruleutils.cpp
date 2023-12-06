@@ -3849,7 +3849,11 @@ static char* pg_get_constraintdef_worker(Oid constraintId, bool fullCommand, int
     initStringInfo(&buf);
 
     if (fullCommand && OidIsValid(conForm->conrelid)) {
+#ifndef DOLPHIN
         appendStringInfo(&buf, "ALTER TABLE ONLY %s ADD CONSTRAINT %s ",
+#else
+        appendStringInfo(&buf, "ALTER TABLE ONLY (%s) ADD CONSTRAINT %s ",
+#endif
             generate_relation_name(conForm->conrelid, NIL), quote_identifier(NameStr(conForm->conname)));
     }
 

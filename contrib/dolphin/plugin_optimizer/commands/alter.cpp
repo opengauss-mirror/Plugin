@@ -376,9 +376,8 @@ ExecRenameStmt(RenameStmt *stmt)
         case OBJECT_RLSPOLICY:
             return RenameRlsPolicy(stmt);
 
-        case OBJECT_ROLE:
+        case OBJECT_ROLE: 
             return RenameRole(stmt->subname, stmt->newname);
-
         case OBJECT_USER: {
             address = RenameRole(stmt->subname, stmt->newname);
 
@@ -411,8 +410,17 @@ ExecRenameStmt(RenameStmt *stmt)
             return renameatt(stmt);
 
         case OBJECT_TRIGGER:
-            return renametrig(stmt);
+        {
 
+#ifdef DOLPHIN
+            RenameStmt *renameStmt = (RenameStmt *)stmt;
+            if (pg_strncasecmp(renameStmt->newname, "user", strlen(renameStmt->newname)) == 0) {
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                errmsg("%s cannot be trigger name", renameStmt->newname)));
+            }
+#endif
+            return renametrig(stmt);
+        }
         case OBJECT_DOMAIN:
         case OBJECT_TYPE:
             return RenameType(stmt);

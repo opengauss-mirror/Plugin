@@ -129,6 +129,7 @@ BEGIN
     RETURN 0;
 END;
 $$
+LANGUAGE plpgsql;
 
 DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(text);
 DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
@@ -140,3 +141,5 @@ DROP FUNCTION IF EXISTS pg_catalog.timestamp_bool(timestamp(0) without time zone
 
 DROP FUNCTION IF EXISTS pg_catalog.date_format (time without time zone, text);
 DROP FUNCTION IF EXISTS pg_catalog.to_char(time without time zone, text);
+
+drop function IF EXISTS pg_catalog."user"();
