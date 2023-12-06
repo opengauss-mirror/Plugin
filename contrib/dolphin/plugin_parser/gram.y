@@ -27463,7 +27463,6 @@ policy_label_name:
 
 opt_add_resources_to_label:
         ADD_P resources_to_label_list { $$ = $2; }
-        | /* EMPTY */ { $$ = NULL; }
         ;
 
 resources_to_label_list:
