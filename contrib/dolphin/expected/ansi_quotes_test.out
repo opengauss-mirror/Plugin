@@ -143,6 +143,45 @@ select * from test_quotes where a = "test1";
  test1
 (1 row)
 
+-- test ctas
+set dolphin.sql_mode TO 'treat_bxconst_as_binary';
+create table ctas_test1 select convert(0x21, unsigned);
+WARNING:  invalid input syntax for type double precision: "!"
+CONTEXT:  referenced column: uint8
+\d ctas_test1
+Table "test_ansi_quotes.ctas_test1"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ uint8  | uint8 | 
+
+create table ctas_test3 select convert(0x21, binary);
+\d ctas_test3
+Table "test_ansi_quotes.ctas_test3"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ binary | `binary` | 
+
+set dolphin.sql_mode TO 'treat_bxconst_as_binary,ansi_quotes';
+create table ctas_test2 select convert(0x21, unsigned);
+WARNING:  invalid input syntax for type double precision: "!"
+CONTEXT:  referenced column: uint8
+\d ctas_test2
+Table "test_ansi_quotes.ctas_test2"
+ Column | Type  | Modifiers 
+--------+-------+-----------
+ uint8  | uint8 | 
+
+create table ctas_test4 select convert(0x21, binary);
+\d ctas_test4
+Table "test_ansi_quotes.ctas_test4"
+ Column |   Type   | Modifiers 
+--------+----------+-----------
+ binary | "binary" | 
+
+drop table ctas_test1;
+drop table ctas_test2;
+drop table ctas_test3;
+drop table ctas_test4;
 drop schema test_ansi_quotes cascade;
 NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table test_quotes

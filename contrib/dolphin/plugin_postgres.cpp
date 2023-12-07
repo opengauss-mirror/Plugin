@@ -142,7 +142,8 @@ extern struct HTAB* b_oidHash;
 extern RegExternFunc b_plpgsql_function_table[3];
 extern int tmp_b_fmgr_nbuiltins;
 extern FmgrBuiltin tmp_b_fmgr_builtins[];
-
+extern void deparse_query(Query* query, StringInfo buf, List* parentnamespace, bool finalise_aggs, bool sortgroup_colno,
+    void* parserArg, bool qrw_phase, bool is_fqs);
 extern bool isAllTempObjects(Node* parse_tree, const char* query_string, bool sent_to_remote);
 extern void ts_check_feature_disable();
 extern void ExecAlterDatabaseSetStmt(Node* parse_tree, const char* query_string, bool sent_to_remote);
@@ -293,6 +294,7 @@ void init_plugin_object()
         global_hook_inited = true;
     }
 
+    u_sess->hook_cxt.deparseQueryHook = (void*)deparse_query;
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
     u_sess->hook_cxt.execInitExprHook = (void*)ExecInitExpr;
     u_sess->hook_cxt.computeHashHook  = (void*)compute_hash_default;
