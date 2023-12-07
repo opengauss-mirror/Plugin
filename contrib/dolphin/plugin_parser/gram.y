@@ -525,6 +525,12 @@ static SelectStmt *MakeShowGrantStmt(char *arg, int location, core_yyscan_t yysc
 static List* handleCreateDolphinFuncOptions(List* input_options);
 static char* appendString(char* source, char* target, int offset);
 static inline void ChangeBpcharCastType(TypeName* typname);
+/**
+ * ANY KEYWORD
+ */
+static inline List* NakeLikeOpList();
+static inline List* MakeNotLikeOpList();
+static inline Node* MakeSubLinkWithOp(SubLinkType subType, Node* testExpr, char* op, Node* subSelect, int location);
 %}
 
 %define api.pure
@@ -640,7 +646,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 		DropOwnedStmt ReassignOwnedStmt
 		AlterTSConfigurationStmt AlterTSDictionaryStmt AnonyBlockStmt
 		BarrierStmt AlterNodeStmt CreateNodeStmt DropNodeStmt AlterCoordinatorStmt
-		CreateNodeGroupStmt AlterNodeGroupStmt DropNodeGroupStmt 
+		AlterNodeGroupStmt DropNodeGroupStmt
 		CreatePolicyLabelStmt AlterPolicyLabelStmt DropPolicyLabelStmt 
 		CreateAuditPolicyStmt AlterAuditPolicyStmt DropAuditPolicyStmt 
 		CreateMaskingPolicyStmt AlterMaskingPolicyStmt DropMaskingPolicyStmt
@@ -670,7 +676,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 /* </DB4AI> */
 
 %type <node>	select_no_parens select_no_parens_without_withclause select_with_parens select_clause
-				simple_select values_clause insert_empty_values
+				simple_select values_clause insert_empty_values insert_mysql_rest_selectStmt
 
 %type <node>	alter_column_default opclass_item opclass_drop alter_using AutoIncrementValue
 %type <ival>	add_drop opt_asc_desc opt_nulls_order con_asc_desc
@@ -699,7 +705,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <list>	createdb_opt_list alterdb_opt_list copy_opt_list
 				transaction_mode_list weak_password_string_list
 				create_extension_opt_list alter_extension_opt_list
-				pgxcnode_list pgxcnodes bucket_maps bucket_list lines_options_fin
+				pgxcnode_list pgxcnodes bucket_list lines_options_fin
 				opt_pgxcnodes fields_options_list fields_options_fin lines_options_list
 %type <defelt>	createdb_opt_item alterdb_opt_item copy_opt_item characterset_option
 				transaction_mode_item lines_option_item fields_options_item
@@ -734,6 +740,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <list>	TriggerEvents TriggerOneEvent
 %type <value>	TriggerFuncArg
 %type <node>	TriggerWhen
+%type <node>	opt_values_reference
 %type <list>   event_trigger_when_list event_trigger_value_list
 %type <defelt> event_trigger_when_item
 %type <chr>        enable_trigger
@@ -744,7 +751,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 				index_name cluster_index_specification dolphin_index_name
 				pgxcnode_name pgxcgroup_name resource_pool_name workload_group_name
 				application_name password_string hint_string dolphin_force_index_name
-%type <list>	func_name func_name_opt_arg dolphin_func_name_opt_arg pkg_name  handler_name qual_Op qual_all_Op subquery_Op dolphin_func_name
+%type <list>	func_name func_name_opt_arg dolphin_func_name_opt_arg pkg_name  handler_name qual_Op qual_all_Op dolphin_func_name
 				opt_class opt_inline_handler opt_validator validator_clause
 				opt_collation collate_option
 
@@ -856,8 +863,8 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <node>	overlay_placing substr_from substr_for optional_precision get_format_time_type
 
 %type <boolean> opt_instead opt_incremental
-%type <boolean> opt_unique opt_concurrently opt_verbose opt_full opt_deltamerge opt_compact opt_hdfsdirectory opt_verify opt_global OptQuickExt
-%type <boolean> opt_freeze opt_default opt_recheck opt_cascade
+%type <boolean> opt_unique opt_concurrently opt_verbose opt_verbose_empty opt_verbose_with_brance opt_full opt_deltamerge opt_compact opt_hdfsdirectory opt_verify opt_global OptQuickExt
+%type <boolean> opt_freeze opt_freeze_empty opt_default opt_recheck opt_cascade
 %type <defelt>	opt_oids copy_delimiter opt_noescaping
 %type <defelt>	OptCopyLogError OptCopyRejectLimit opt_load
 
@@ -882,7 +889,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <defelt>	SeqOptElem
 
 /* INSERT */
-%type <istmt>	insert_rest insert_mysql_rest
+%type <istmt>	insert_rest insert_mysql_rest insert_rest_without_select insert_mysql_rest_normal insert_mysql_rest_upsert insert_mysql_rest_ignore
 %type <node>	upsert_clause
 
 %type <mergewhen>	merge_insert merge_update
@@ -1163,16 +1170,16 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 /* ordinary key words in alphabetical order */
 /* PGXC - added DISTRIBUTE, DIRECT, COORDINATOR, CLEAN,  NODE, BARRIER, SLICE, DATANODE */
 %token <keyword> ABORT_P ABSOLUTE_P ACCESS ACCOUNT ACTION ADD_P ADMIN AFTER
-	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYSE ANALYZE AND ANY APP APPEND ARCHIVE ARRAY AS ASC ASCII
+	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYZE AND ANY APP APPEND ARCHIVE ARRAY AS ASC ASCII
         ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOEXTEND_SIZE AUTOMAPPED AUTO_INCREMENT AVG_ROW_LENGTH AGAINST
 
 	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_INTEGER BIT BLANKS
-	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BUCKETS BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
+	BLOB_P BLOCKCHAIN BODY_P BOGUS BOOLEAN_P BOTH BUCKETCNT BY BYTEAWITHOUTORDER BYTEAWITHOUTORDERWITHEQUAL
 
 	CACHE CALL CALLED CANCELABLE CASCADE CASCADED CASE CAST CATALOG_P CATALOG_NAME CHAIN CHANGE CHANNEL CHAR_P
 	CHARACTER CHARACTERISTICS CHARACTERSET CHARSET CHECK CHECKPOINT CHECKSUM CLASS CLASS_ORIGIN CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
 	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMN_NAME COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COLUMNS COMMENT COMMENTS COMMIT CONSISTENT
-	COMMITTED COMPACT COMPATIBLE_ILLEGAL_CHARS COMPILE COMPLETE COMPLETION COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINT_CATALOG CONSTRAINT_NAME CONSTRAINT_SCHEMA CONSTRAINTS
+	COMMITTED COMPATIBLE_ILLEGAL_CHARS COMPILE COMPLETE COMPLETION COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINT_CATALOG CONSTRAINT_NAME CONSTRAINT_SCHEMA CONSTRAINTS
 	CONTAINS CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
 	CROSS CSN CSV CUBE CURRENT_P
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
@@ -1187,7 +1194,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 	DROP DUPLICATE DISCONNECT DUMPFILE
 
 	EACH ELASTIC ELSE ENABLE_P ENCLOSED ENCODING ENCRYPTED ENCRYPTED_VALUE ENCRYPTION ENCRYPTION_TYPE END_P ENDS ENFORCED ENGINE_ATTRIBUTE ENGINE_P ENGINES ENUM_P ERRORS ESCAPE ESCAPED EOL ESCAPING EVENT EVENTS EVERY EXCEPT EXCHANGE
-	EXCLUDE EXCLUDED EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPANSION EXPIRED_P EXPLAIN
+	EXCLUDE EXCLUDING EXCLUSIVE EXECUTE EXISTS EXPANSION EXPIRED_P EXPLAIN
 	EXTENDED EXTENSION EXTERNAL EXTRACT
 
 	FALSE_P FAMILY FAST FENCED FETCH FIELDS FILEHEADER_P FILL_MISSING_FIELDS FILLER FILTER FIRST_P FIXED_P FLOAT_P FLUSH FOLLOWING FOLLOWS_P FOR FORCE FOREIGN FORMATTER FORWARD
@@ -1211,7 +1218,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 	LABEL LANGUAGE LARGE_P LAST_DAY_FUNC LAST_P LC_COLLATE_P LC_CTYPE_P LEADING LEAKPROOF
 	LEAST LESS LEFT LEVEL LIKE LINES LIMIT LIST LISTEN LOAD LOCAL LOCALTIME LOCALTIMESTAMP
 	LOCATE LOCATION LOCK_P LOCKED LOG_P LOGGING LOGIN_ANY LOGIN_FAILURE LOGIN_SUCCESS LOGOUT LOGS LOOP LOW_PRIORITY
-	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS  MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MEMORY MERGE MESSAGE_TEXT MICROSECOND_P MID MIN_ROWS MINUS_P MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MODE
+	MAPPING MASKING MASTER MATCH MATERIALIZED MATCHED MAXEXTENTS  MAXSIZE MAXTRANS MAXVALUE MEDIUMINT MEMORY MERGE MESSAGE_TEXT MICROSECOND_P MID MIN_ROWS MINUTE_P MINUTE_MICROSECOND_P MINUTE_SECOND_P MINVALUE MINEXTENTS MODE
 	MODEL MODIFY_P MONTH_P MOVE MOVEMENT MYSQL_ERRNO
 	MOD MODIFIES MAX_ROWS
 	// DB4AI
@@ -1237,7 +1244,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 	RANDOMIZED RANGE RATIO RAW READ READS REAL REASSIGN REBUILD RECHECK RECURSIVE RECYCLEBIN REDISANYVALUE REF REFERENCES REFRESH REINDEX REJECT_P
 	RELATIVE_P RELEASE RELOPTIONS REMOTE_P REMOVE RENAME REPEAT REPEATABLE REPLACE REPLICA REPLICAS REGEXP REORGANIZE REPAIR
 	RESET RESIZE RESOURCE RESTART RESTRICT RETURN RETURNED_SQLSTATE RETURNING RETURNS REUSE REVOKE RIGHT ROLE ROLES ROLLBACK ROLLUP
-	ROTATION ROW ROW_COUNT ROWNUM ROWS ROWTYPE_P RULE
+	ROTATION ROW ROW_COUNT ROWS ROWTYPE_P RULE
 	RESIGNAL RLIKE ROUTINE ROW_FORMAT SCHEMAS
 	SAMPLE SAVEPOINT SCHEDULE SCHEMA SCHEMA_NAME SCROLL SEARCH SECONDARY_ENGINE_ATTRIBUTE SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS SIGNAL SIGNED
@@ -1300,6 +1307,8 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 			LABEL_LOOP LABEL_REPEAT LABEL_WHILE WITH_PARSER
 
 /* Precedence: lowest to highest */
+%nonassoc AUTHID /* AUTHID has lower priority than the BODY_P */
+%nonassoc BODY_P /* BODY_P has higher priority than the AUTHID */
 %nonassoc COMMENT
 %nonassoc   FIRST_P AFTER
 %nonassoc lower_than_key
@@ -1317,7 +1326,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %right      PRIOR SEPARATOR_P
 %nonassoc   LEVEL
 %right      FEATURES TARGET // DB4AI
-%left		UNION EXCEPT MINUS_P
+%left		UNION EXCEPT
 %left		INTERSECT
 %left		OR XOR
 %left		AND
@@ -1325,7 +1334,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %right		'=' CmpNullOp COLON_EQUALS
 %left		'<' '>' CmpOp
 %nonassoc	BINARY
-%nonassoc	LIKE ILIKE SIMILAR SOUNDS NOT_LIKE NOT_ILIKE NOT_SIMILAR
+%nonassoc	LIKE ILIKE SIMILAR SOUNDS NOT_LIKE NOT_ILIKE NOT_SIMILAR ANY DO END_P
 %nonassoc	ESCAPE
 %nonassoc	OVERLAPS
 %nonassoc	BETWEEN NOT_BETWEEN
@@ -1567,7 +1576,6 @@ stmt :
 			| CreateGroupStmt
 			| CreateMatViewStmt
 			| CreateModelStmt  // DB4AI
-			| CreateNodeGroupStmt
 			| CreateNodeStmt
 			| CreateOpClassStmt
 			| CreateOpFamilyStmt
@@ -4192,7 +4200,7 @@ VariableShowStmt:
 		    SelectStmt *n = MakeShowCharacterQuery(NIL, $3->like_or_where, $3->is_like);
 		    $$ = (Node *) n;
 		}
-	    | SHOW COLLATION OptLikeOrWhere
+	    | SHOW COLLATION LikeOrWhere
 		{
 		    SelectStmt *n = MakeShowCollationQuery(NIL, $3->like_or_where, $3->is_like);
 		    $$ = (Node *) n;
@@ -5812,8 +5820,12 @@ alter_table_cmd:
 			| ENABLE_P TRIGGER name
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_EnableTrig;
-					n->name = $3;
+					if (pg_strncasecmp($3, "user", strlen($3)) == 0) {
+						n->subtype = AT_EnableTrigUser;
+					} else {
+						n->subtype = AT_EnableTrig;
+						n->name = $3;
+					}
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> ENABLE ALWAYS TRIGGER <trig> */
@@ -5839,19 +5851,16 @@ alter_table_cmd:
 					n->subtype = AT_EnableTrigAll;
 					$$ = (Node *)n;
 				}
-			/* ALTER TABLE <name> ENABLE TRIGGER USER */
-			| ENABLE_P TRIGGER USER
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_EnableTrigUser;
-					$$ = (Node *)n;
-				}
 			/* ALTER TABLE <name> DISABLE TRIGGER <trig> */
 			| DISABLE_P TRIGGER name
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_DisableTrig;
-					n->name = $3;
+					if (pg_strncasecmp($3, "user", strlen($3)) == 0) {
+						n->subtype = AT_DisableTrigUser;
+					} else {
+						n->subtype = AT_DisableTrig;
+						n->name = $3;
+					}
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> DISABLE TRIGGER ALL */
@@ -5859,13 +5868,6 @@ alter_table_cmd:
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_DisableTrigAll;
-					$$ = (Node *)n;
-				}
-			/* ALTER TABLE <name> DISABLE TRIGGER USER */
-			| DISABLE_P TRIGGER USER
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_DisableTrigUser;
 					$$ = (Node *)n;
 				}
 			/* ALTER TABLE <name> ENABLE RULE <rule> */
@@ -8692,10 +8694,6 @@ row_format_option:
 			$$ = NULL;
 		}
 	| ROW_FORMAT opt_equal DEFAULT
-		{
-			$$ = NULL;
-		}
-	| ROW_FORMAT opt_equal COMPACT
 		{
 			$$ = NULL;
 		}
@@ -14038,7 +14036,6 @@ CreateUserMappingStmt: CREATE USER MAPPING FOR auth_ident SERVER name create_gen
 /* User mapping authorization identifier */
 auth_ident:
 			CURRENT_USER opt_bracket			{ $$ = "current_user"; }
-		|	USER								{ $$ = "current_user"; }
 		|	DolphinRoleIdWithOutCurrentUser		{ $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? NULL : $1->str; }
 		;
 
@@ -14335,6 +14332,7 @@ row_level_security_role:
 			DolphinRoleIdWithOutCurrentUser		{ char* result = "public"; $$ = DolphinObjNameCmp($1->str, "public", $1->is_quoted) ? result : $1->str; }
 		|	CURRENT_USER opt_bracket			{ $$ = pstrdup($1); }
 		|	SESSION_USER						{ $$ = pstrdup($1); }
+
 		;
 
 RLSDefaultPermissive:
@@ -25901,7 +25899,7 @@ CreateConversionStmt:
  *****************************************************************************/
 
 ClusterStmt:
-			CLUSTER opt_verbose dolphin_qualified_name cluster_index_specification
+			CLUSTER opt_verbose_with_brance dolphin_qualified_name cluster_index_specification
 				{
 					ClusterStmt *n = makeNode(ClusterStmt);
 					$3->partitionname = NULL;
@@ -25910,7 +25908,7 @@ ClusterStmt:
 					n->verbose = $2;
 					$$ = (Node*)n;
 				}
-			| CLUSTER opt_verbose dolphin_qualified_name PARTITION '(' name ')' cluster_index_specification
+			| CLUSTER opt_verbose_with_brance dolphin_qualified_name PARTITION '(' name ')' cluster_index_specification
 				{
 					ClusterStmt *n = makeNode(ClusterStmt);
 					$3->partitionname = $6;
@@ -25919,7 +25917,7 @@ ClusterStmt:
 					n->verbose = $2;
 					$$ = (Node*)n;
 				}
-			| CLUSTER opt_verbose
+			| CLUSTER opt_verbose_with_brance
 				{
 					ClusterStmt *n = makeNode(ClusterStmt);
 					n->relation = NULL;
@@ -25928,7 +25926,7 @@ ClusterStmt:
 					$$ = (Node*)n;
 				}
 			/* kept for pre-8.3 compatibility, dolphin_index_name used to deal with the conflict*/
-			| CLUSTER opt_verbose dolphin_index_name ON dolphin_qualified_name
+			| CLUSTER opt_verbose_with_brance dolphin_index_name ON dolphin_qualified_name
 				{
 					ClusterStmt *n = makeNode(ClusterStmt);
 					n->relation = $5;
@@ -25989,7 +25987,7 @@ VacuumStmt:
 					n->relation = $3;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_full opt_freeze opt_verbose opt_compact
+			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM;
@@ -26024,7 +26022,7 @@ VacuumStmt:
 					n->va_cols = NIL;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_full opt_freeze opt_verbose opt_compact dolphin_qualified_name
+			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact dolphin_qualified_name
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM;
@@ -26059,7 +26057,7 @@ VacuumStmt:
 					n->va_cols = NIL;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_full opt_freeze opt_verbose opt_compact dolphin_qualified_name PARTITION '('name')'
+			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact dolphin_qualified_name PARTITION '('name')'
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM;
@@ -26081,7 +26079,7 @@ VacuumStmt:
 					$6->partitionname = $9;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_full opt_freeze opt_verbose opt_compact dolphin_qualified_name SUBPARTITION '('name')'
+			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact dolphin_qualified_name SUBPARTITION '('name')'
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_VACUUM;
@@ -26103,7 +26101,7 @@ VacuumStmt:
 					$6->subpartitionname = $9;
 					$$ = (Node *)n;
 				}
-			| VACUUM opt_full opt_freeze opt_verbose opt_compact AnalyzeStmt
+			| VACUUM opt_full opt_freeze_empty opt_verbose_empty opt_compact AnalyzeStmt
 				{
 					VacuumStmt *n = (VacuumStmt *) $6;
 					n->options |= VACOPT_VACUUM;
@@ -26193,7 +26191,7 @@ vacuum_option_elem:
 		;
 
 AnalyzeStmt:
-			analyze_keyword opt_verbose
+			analyze_keyword opt_verbose_with_brance
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_ANALYZE;
@@ -26205,7 +26203,7 @@ AnalyzeStmt:
 					n->va_cols = NIL;
 					$$ = (Node *)n;
 				}
-			| analyze_keyword opt_verbose dolphin_qualified_name opt_analyze_column_define
+			| analyze_keyword opt_verbose_with_brance dolphin_qualified_name opt_analyze_column_define
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_ANALYZE;
@@ -26217,7 +26215,7 @@ AnalyzeStmt:
 					n->va_cols = $4;
 					$$ = (Node *)n;
 				}
-			| analyze_keyword opt_verbose dolphin_qualified_name opt_name_list PARTITION '('name')'
+			| analyze_keyword opt_verbose_with_brance dolphin_qualified_name opt_name_list PARTITION '('name')'
 				{
 					VacuumStmt *n = makeNode(VacuumStmt);
 					n->options = VACOPT_ANALYZE;
@@ -26233,7 +26231,7 @@ AnalyzeStmt:
 			/*
 			 * @hdfs Support command "analyze [verbose] foreign tables"
 			 */
-			| analyze_keyword opt_verbose FOREIGN TABLES
+			| analyze_keyword opt_verbose_with_brance FOREIGN TABLES
 				{
 					VacuumStmt *n = (VacuumStmt*)makeNode(VacuumStmt);
 					n->options = VACOPT_ANALYZE;
@@ -26247,7 +26245,7 @@ AnalyzeStmt:
 					$$ = (Node *)n;
 
 				}
-			| analyze_keyword opt_verbose opt_no_write_to_binlog TABLE qualified_name_list
+			| analyze_keyword opt_verbose_with_brance opt_no_write_to_binlog TABLE qualified_name_list
 				{
 					SelectStmt *n = makeNode(SelectStmt);
 
@@ -26318,7 +26316,6 @@ VerifyStmt:
 
 analyze_keyword:
 			ANALYZE									{}
-			| ANALYSE /* British */					{}
 		;
 
 opt_verify_options:
@@ -26330,13 +26327,19 @@ opt_verbose:
 			VERBOSE									{ $$ = TRUE; }
 			| /*EMPTY*/								{ $$ = FALSE; }
 		;
+opt_verbose_empty:
+			/*EMPTY*/								{ $$ = FALSE; }
+		;
+opt_verbose_with_brance:
+			'(' VERBOSE ')'									{ $$ = TRUE; }
+			| /*EMPTY*/								{ $$ = FALSE; }
+		;
 
 opt_full:	FULL									{ $$ = TRUE; }
 			| /*EMPTY*/								{ $$ = FALSE; }
 		;
 
-opt_compact:	COMPACT								{ $$ = TRUE; }
-			| /*EMPTY*/								{ $$ = FALSE; }
+opt_compact:	/*EMPTY*/								{ $$ = FALSE; }
 		;
 
 opt_hdfsdirectory:	HDFSDIRECTORY 					{ $$ = TRUE; }
@@ -26344,6 +26347,9 @@ opt_hdfsdirectory:	HDFSDIRECTORY 					{ $$ = TRUE; }
 
 opt_freeze: FREEZE									{ $$ = TRUE; }
 			| /*EMPTY*/								{ $$ = FALSE; }
+		;
+		
+opt_freeze_empty:  /*EMPTY*/								{ $$ = FALSE; }
 		;
 
 opt_deltamerge: DELTAMERGE 							{$$ = TRUE;}
@@ -26441,11 +26447,6 @@ pgxcnodes:
 pgxcnode_list:
 			pgxcnode_list ',' pgxcnode_name		{ $$ = lappend($1, makeString($3)); }
 			| pgxcnode_name						{ $$ = list_make1(makeString($1)); }
-		;
-
-bucket_maps:
-			BUCKETS '(' bucket_list ')'			{ $$ = $3; }
-			| /*EMPTY*/ 			            { $$ = NIL; }
 		;
 
 bucket_list:
@@ -26560,29 +26561,6 @@ opt_pgxcnodes:	WITH pgxcnodes
 					$$ = NIL;
 				}
 		;
-
-/*****************************************************************************
- *
- *		QUERY:
- *				CREATE NODE GROUP groupname WITH (node1,...,nodeN) [BUCKETS (0,1,2,...)]
- *
- *****************************************************************************/
-
-CreateNodeGroupStmt: CREATE NODE GROUP_P pgxcgroup_name opt_pgxcnodes bucket_maps opt_vcgroup opt_redistributed bucket_cnt pgxcgroup_parent
-				{
-					CreateGroupStmt *n = makeNode(CreateGroupStmt);
-					IsValidGroupname($4);
-					n->group_name = $4;
-					n->nodes = $5;
-					n->buckets = $6;
-					n->vcgroup = $7;
-					n->src_group_name = $8;
-					n->bucketcnt = $9;
-					n->group_parent = $10;
-					$$ = (Node *)n;
-				}
-		;
-
 /*****************************************************************************
  *
  *		QUERY:
@@ -26619,14 +26597,6 @@ AlterNodeGroupStmt: ALTER NODE GROUP_P pgxcgroup_name SET DEFAULT
 					n->group_name = $4;
 					n->install_name = $8;
 					n->alter_type = AG_SET_TABLE_GROUP;
-					$$ = (Node *)n;
-				}
-				| ALTER NODE GROUP_P pgxcgroup_name COPY BUCKETS FROM pgxcgroup_name
-				{
-					AlterGroupStmt *n = makeNode(AlterGroupStmt);
-					n->group_name = $4;
-					n->install_name = $8;
-					n->alter_type = AG_SET_BUCKETS;
 					$$ = (Node *)n;
 				}
 				| ALTER NODE GROUP_P pgxcgroup_name ADD_P NODE pgxcnodes
@@ -27493,7 +27463,6 @@ policy_label_name:
 
 opt_add_resources_to_label:
         ADD_P resources_to_label_list { $$ = $2; }
-        | /* EMPTY */ { $$ = NULL; }
         ;
 
 resources_to_label_list:
@@ -27975,7 +27944,6 @@ explain_option_elem:
 explain_option_name:
 			ColId					{ $$ = $1; }
 			| analyze_keyword		{ $$ = "analyze"; }
-			| VERBOSE				{ $$ = "verbose"; }
 		;
 
 explain_option_arg:
@@ -28320,7 +28288,7 @@ update_delete_partition_clause: PARTITION '(' name ')'
  *
  *****************************************************************************/
 
-InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_mysql_rest returning_clause
+InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_mysql_rest_ignore returning_clause
 			{
 				$7->relation = $6;
 				$7->returningList = $8;
@@ -28381,9 +28349,9 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
                 }
 
             }
-			| opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_mysql_rest upsert_clause returning_clause
+			| opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_mysql_rest_upsert opt_values_reference upsert_clause returning_clause
 				{
-					if ($9 != NIL) {
+					if ($10 != NIL) {
 						const char* message = "RETURNING clause is not yet supported whithin INSERT ON DUPLICATE KEY UPDATE statement.";
     					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 						ereport(errstate,
@@ -28399,7 +28367,7 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 							 errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							 errmsg("WITH clause is not yet supported whithin INSERT ON DUPLICATE KEY UPDATE statement.")));
 					}
-
+					/* enable_upsert_to_merge is always false */ 
 					if (u_sess->attr.attr_sql.enable_upsert_to_merge
 #ifdef ENABLE_MULTIPLE_NODES					
 					    ||t_thrd.proc->workingVersionNum < UPSERT_ROW_STORE_VERSION_NUM
@@ -28431,17 +28399,17 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 
 						/* for UPSERT, keep the INSERT statement as well */
 						$7->relation = $6;
-						$7->returningList = $9;
+						$7->returningList = $10;
 						$7->isReplace = false;
 						$7->withClause = $1;
 						$7->hasIgnore = $4;
 #ifdef ENABLE_MULTIPLE_NODES						
 						if (t_thrd.proc->workingVersionNum >= UPSERT_ROW_STORE_VERSION_NUM) {
 							UpsertClause *uc = makeNode(UpsertClause);
-							if ($8 == NULL)
+							if ($9 == NULL)
 								uc->targetList = NIL;
 							else
-								uc->targetList = ((MergeWhenClause *)$8)->targetList;
+								uc->targetList = ((MergeWhenClause *)$9)->targetList;
 							$7->upsertClause = uc;
 						}
 #endif						
@@ -28453,9 +28421,8 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						Alias *a1 = makeAlias(($6->relname), NIL);
 						$6->alias = a1;
 
-						Alias *a2 = makeAlias("excluded", NIL);
 						RangeSubselect *r = makeNode(RangeSubselect);
-						r->alias = a2;
+						r->alias = GetSessionContext()->upSertAliasName;
 						r->subquery = (Node *) ($7->selectStmt);
 						m->source_relation = (Node *) r;
 
@@ -28466,20 +28433,24 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						n->values = NULL;
 
 						m->mergeWhenClauses = list_make1((Node *) n);
-						if ($8 != NULL)
-							m->mergeWhenClauses = list_concat(list_make1($8), m->mergeWhenClauses);
+						if ($9 != NULL)
+							m->mergeWhenClauses = list_concat(list_make1($9), m->mergeWhenClauses);
 
 						m->hintState = create_hintstate($3);
-
+						GetSessionContext()->upSertAliasName = NULL;
+						GetSessionContext()->isUpsert = false;
 						$$ = (Node *)m;
 					} else {
 						$7->relation = $6;
-						$7->returningList = $9;
+						$7->returningList = $10;
 						$7->withClause = $1;
-						$7->upsertClause = (UpsertClause *)$8;
+						$7->upsertClause = (UpsertClause *)$9;
+						$7->upsertClause->aliasName = GetSessionContext()->upSertAliasName;
 						$7->isReplace = false;
 						$7->hintState = create_hintstate($3);
 						$7->hasIgnore = $4;
+						GetSessionContext()->upSertAliasName = NULL;
+						GetSessionContext()->isUpsert = false;
 						$$ = (Node *) $7;
 					}
 				}
@@ -28536,10 +28507,37 @@ insert_target:
 				}
 		;
 
-insert_mysql_rest:
+opt_values_reference:
+	/* EMPTY */ 
+	{
+		GetSessionContext()->upSertAliasName = makeAlias("delay", NIL);
+		$$ =(Node *)NULL;
+	}
+	| AS DolphinColId '(' insert_column_list ')'
+	{
+		Alias *a2 = makeAlias(GetDolphinObjName($2->str, $2->is_quoted), $4);
+		GetSessionContext()->upSertAliasName = a2;
+		$$ = (Node *) a2;
+	}
+	| AS DolphinColId
+	{
+		Alias *a2 = makeAlias(GetDolphinObjName($2->str, $2->is_quoted), NIL);
+		GetSessionContext()->upSertAliasName = a2;
+		$$ = (Node *) a2;
+	}
+
+insert_mysql_rest_upsert:
+	insert_mysql_rest_normal
+		{ $$ = $1; }
+	| insert_mysql_rest
+		{ $$ = $1; }
+insert_mysql_rest_ignore:
 	insert_rest
 		{ $$ = $1; }
-	| SET insert_set_list
+	| insert_mysql_rest
+		{ $$ = $1; }
+insert_mysql_rest:
+	SET insert_set_list
 		{
 			$$ = makeNode(InsertStmt);
 			SelectStmt *n = makeNode(SelectStmt);
@@ -28556,6 +28554,35 @@ insert_mysql_rest:
 			$$->isRewritten = false;
 		}
 	;
+
+insert_mysql_rest_selectStmt: select_with_parens		{ $$ = (Node*)$1; } 
+			| values_clause			{ $$ = $1; }
+
+insert_mysql_rest_normal: insert_mysql_rest_selectStmt
+				{
+					$$ = makeNode(InsertStmt);
+					$$->cols = NIL;
+					$$->selectStmt = (Node*)$1;
+					$$->isRewritten = false;
+				}
+			| '(' insert_column_list ')' insert_mysql_rest_selectStmt
+				{
+					$$ = makeNode(InsertStmt);
+					$$->cols = $2;
+					$$->selectStmt = (Node*)$4;
+					$$->isRewritten = false;
+				}
+			| '(' ')' insert_mysql_rest_selectStmt
+				{
+					$$ = makeNode(InsertStmt);
+					$$->cols = NIL;
+					$$->selectStmt = (Node*)$3;
+					$$->isRewritten = false;
+				}
+			| insert_rest_without_select
+				{
+					$$ = $1;
+				}
 
 insert_rest:
 			SelectStmt
@@ -28579,7 +28606,12 @@ insert_rest:
 					$$->selectStmt = $3;
 					$$->isRewritten = false;
 				}
-			| DEFAULT VALUES
+			| insert_rest_without_select
+				{
+					$$ = $1;
+				}
+insert_rest_without_select:
+			DEFAULT VALUES
 				{
 					$$ = makeNode(InsertStmt);
 					$$->cols = NIL;
@@ -29592,10 +29624,6 @@ simple_select:
 				{
 					$$ = makeSetOp(SETOP_EXCEPT, $3, $1, $4);
 				}
-			| select_clause MINUS_P opt_all select_clause
-				{
-					$$ = makeSetOp(SETOP_EXCEPT, $3, $1, $4);
-				}
 		;
 
 hint_string:
@@ -30438,12 +30466,6 @@ table_ref:	relation_expr		%prec UMINUS
 					$1->issubpartition = true;
 					$$ = (Node *)$1;
 				}
-			| relation_expr BUCKETS '(' bucket_list ')'
-				{
-					$1->buckets = $4;
-					$1->isbucket = true;
-					$$ = (Node *)$1;
-				}
 			| relation_expr PARTITION_FOR '(' expr_list ')'
 				{
 					$1->partitionKeyValuesList = $4;
@@ -30466,13 +30488,6 @@ table_ref:	relation_expr		%prec UMINUS
 				{
 					$1->subpartitionname = $4;
 					$1->issubpartition = true;
-					$1->indexhints = $6;
-					$$ = (Node *)$1;
-				}
-			| relation_expr BUCKETS '(' bucket_list ')' index_hint_list
-				{
-					$1->buckets = $4;
-					$1->isbucket = true;
 					$1->indexhints = $6;
 					$$ = (Node *)$1;
 				}
@@ -30876,13 +30891,7 @@ relation_expr:
 					$$->inhOpt = INH_YES;
 					$$->alias = NULL;
 				}
-			| ONLY dolphin_qualified_name
-				{
-					/* no inheritance */
-					$$ = $2;
-					$$->inhOpt = INH_NO;
-					$$->alias = NULL;
-				}
+			/* remove ONLY dolphin_qualified_name: RESERVED_KEYWORD(only)->UNRESERVED_KEYWORD */
 			| ONLY '(' dolphin_qualified_name ')'
 				{
 					/* no inheritance, SQL99-style syntax */
@@ -33123,7 +33132,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 						$$ = (Node *) makeSimpleA_Expr(AEXPR_IN, "<>", $1, $3, @2);
 					}
 				}
-			| a_expr subquery_Op sub_type select_with_parens	%prec Op
+			| a_expr qual_Op sub_type select_with_parens	%prec Op
 				{
 					SubLink *n = makeNode(SubLink);
 					n->subLinkType = (SubLinkType)$3;
@@ -33133,12 +33142,201 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 					n->location = @2;
 					$$ = (Node *)n;
 				}
-			| a_expr subquery_Op sub_type '(' a_expr ')'		%prec Op
+			| a_expr qual_Op sub_type '(' a_expr ')'		%prec Op
 				{
 					if ($3 == ANY_SUBLINK)
 						$$ = (Node *) makeA_Expr(AEXPR_OP_ANY, $2, $1, $5, @2);
 					else
 						$$ = (Node *) makeA_Expr(AEXPR_OP_ALL, $2, $1, $5, @2);
+				}
+			| a_expr LIKE sub_type select_with_parens	%prec Op
+				{
+					SubLink *n = makeNode(SubLink);
+					n->subLinkType = (SubLinkType)$3;
+					n->operName = NakeLikeOpList();
+					n->testexpr = $1;
+					n->operName = NakeLikeOpList();
+					n->subselect = $4;
+					n->location = @2;
+					$$ = (Node *)n;
+				}
+			| a_expr LIKE sub_type '(' a_expr ')'		%prec Op
+				{
+					if ($3 == ANY_SUBLINK)
+						$$ = (Node *) makeA_Expr(AEXPR_OP_ANY, NakeLikeOpList(), $1, $5, @2);
+					else
+						$$ = (Node *) makeA_Expr(AEXPR_OP_ALL, NakeLikeOpList(), $1, $5, @2);
+				}
+			| a_expr NOT_LIKE sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, "!~~*", $4, @2);
+				}
+			| a_expr NOT_LIKE sub_type '(' a_expr ')'		%prec Op
+				{
+					if ($3 == ANY_SUBLINK)
+						$$ = (Node *) makeA_Expr(AEXPR_OP_ANY, MakeNotLikeOpList(), $1, $5, @2);
+					else
+						$$ = (Node *) makeA_Expr(AEXPR_OP_ALL, MakeNotLikeOpList(), $1, $5, @2);
+				}
+			| a_expr ILIKE sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, "~~*", $4, @2);
+				}
+			| a_expr ILIKE sub_type '(' a_expr ')'		%prec Op
+				{
+					if ($3 == ANY_SUBLINK)
+						$$ = (Node *) makeA_Expr(AEXPR_OP_ANY, list_make1(makeString("~~*")), $1, $5, @2);
+					else
+						$$ = (Node *) makeA_Expr(AEXPR_OP_ALL, list_make1(makeString("~~*")), $1, $5, @2);
+				}
+			| a_expr NOT_ILIKE sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, "!~~*", $4, @2);
+				}
+			| a_expr NOT_ILIKE sub_type '(' a_expr ')'		%prec Op
+				{
+					if ($3 == ANY_SUBLINK)
+						$$ = (Node *) makeA_Expr(AEXPR_OP_ANY, list_make1(makeString("!~~*")), $1, $5, @2);
+					else
+						$$ = (Node *) makeA_Expr(AEXPR_OP_ALL, list_make1(makeString("!~~*")), $1, $5, @2);
+				}
+			| a_expr CmpOp sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, $2, $4, @2);
+				}
+			| a_expr CmpNullOp sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, $2, $4, @2);
+				}
+			| a_expr '+' sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, "+", $4, @2);
+				}
+			| a_expr '-' sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, "-", $4, @2);
+				}
+			| a_expr '*' sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, "*", $4, @2);
+				}
+			| a_expr '/' sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, "/", $4, @2);
+				}
+			| a_expr '%' sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, "%", $4, @2);
+				}
+			| a_expr '^' sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, "^", $4, @2);
+				}
+			| a_expr '<' sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, "<", $4, @2);
+				}
+			| a_expr '>' sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, ">", $4, @2);
+				}
+			| a_expr '=' sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, "=", $4, @2);
+				}
+			| a_expr '@' sub_type select_with_parens	%prec Op
+				{
+					$$ = MakeSubLinkWithOp((SubLinkType)$3, $1, "@", $4, @2);
+				}
+			| a_expr CmpOp sub_type '(' a_expr ')'		%prec Op
+				{
+					$$ = (Node *) makeA_Expr($3 == ANY_SUBLINK ? AEXPR_OP_ANY : AEXPR_OP_ALL,
+						list_make1(makeString($2)), $1, $5, @2);
+				}
+			| a_expr CmpNullOp sub_type '(' a_expr ')'	%prec Op
+				{
+					$$ = (Node *) makeA_Expr($3 == ANY_SUBLINK ? AEXPR_OP_ANY : AEXPR_OP_ALL,
+						list_make1(makeString($2)), $1, $5, @2);
+				}
+			| a_expr '+' sub_type '(' a_expr ')'		%prec Op
+				{
+					$$ = (Node *) makeA_Expr($3 == ANY_SUBLINK ? AEXPR_OP_ANY : AEXPR_OP_ALL,
+						list_make1(makeString("+")), $1, $5, @2);
+				}
+			| a_expr '-' sub_type '(' a_expr ')'		%prec Op
+				{
+					$$ = (Node *) makeA_Expr($3 == ANY_SUBLINK ? AEXPR_OP_ANY : AEXPR_OP_ALL,
+						list_make1(makeString("-")), $1, $5, @2);
+				}
+			| a_expr '*' sub_type '(' a_expr ')'		%prec Op
+				{
+					$$ = (Node *) makeA_Expr($3 == ANY_SUBLINK ? AEXPR_OP_ANY : AEXPR_OP_ALL,
+						list_make1(makeString("*")), $1, $5, @2);
+				}
+			| a_expr '/' sub_type '(' a_expr ')'		%prec Op
+				{
+					$$ = (Node *) makeA_Expr($3 == ANY_SUBLINK ? AEXPR_OP_ANY : AEXPR_OP_ALL,
+						list_make1(makeString("/")), $1, $5, @2);
+				}
+			| a_expr '%' sub_type '(' a_expr ')'		%prec Op
+				{
+					$$ = (Node *) makeA_Expr($3 == ANY_SUBLINK ? AEXPR_OP_ANY : AEXPR_OP_ALL,
+						list_make1(makeString("%")), $1, $5, @2);
+				}
+			| a_expr '^' sub_type '(' a_expr ')'		%prec Op
+				{
+					$$ = (Node *) makeA_Expr($3 == ANY_SUBLINK ? AEXPR_OP_ANY : AEXPR_OP_ALL,
+						list_make1(makeString("^")), $1, $5, @2);
+				}
+			| a_expr '<' sub_type '(' a_expr ')'		%prec Op
+				{
+					$$ = (Node *) makeA_Expr($3 == ANY_SUBLINK ? AEXPR_OP_ANY : AEXPR_OP_ALL,
+						list_make1(makeString("<")), $1, $5, @2);
+				}
+			| a_expr '=' sub_type '(' a_expr ')'		%prec Op
+				{
+					$$ = (Node *) makeA_Expr($3 == ANY_SUBLINK ? AEXPR_OP_ANY : AEXPR_OP_ALL,
+						list_make1(makeString("=")), $1, $5, @2);
+				}
+			| a_expr '@' sub_type '(' a_expr ')'		%prec Op
+
+				{
+					$$ = (Node *) makeA_Expr($3 == ANY_SUBLINK ? AEXPR_OP_ANY : AEXPR_OP_ALL,
+						list_make1(makeString("@")), $1, $5, @2);
+				}
+			| a_expr LIKE BINARY sub_type select_with_parens	%prec Op
+				{
+					SubLink *n = makeNode(SubLink);
+					n->subLinkType = (SubLinkType)$4;
+					n->testexpr = $1;
+					n->operName = list_make1(makeString("~~"));
+					n->subselect = $5;
+					n->location = @2;
+					$$ = (Node *)n;
+				}
+			| a_expr LIKE BINARY sub_type '(' a_expr ')'		%prec Op
+				{
+					if ($4 == ANY_SUBLINK)
+						$$ = (Node *) makeA_Expr(AEXPR_OP_ANY, list_make1(makeString("~~")), $1, $6, @2);
+					else
+						$$ = (Node *) makeA_Expr(AEXPR_OP_ALL, list_make1(makeString("~~")), $1, $6, @2);
+				}
+			| a_expr NOT_LIKE BINARY sub_type select_with_parens	%prec Op
+				{
+					SubLink *n = makeNode(SubLink);
+					n->subLinkType = (SubLinkType)$4;
+					n->testexpr = $1;
+					n->operName = list_make1(makeString("!~~"));
+					n->subselect = $5;
+					n->location = @2;
+					$$ = (Node *)n;
+				}
+			| a_expr NOT_LIKE BINARY sub_type '(' a_expr ')'		%prec Op
+				{
+					if ($4 == ANY_SUBLINK)
+						$$ = (Node *) makeA_Expr(AEXPR_OP_ANY, list_make1(makeString("!~~")), $1, $6, @2);
+					else
+						$$ = (Node *) makeA_Expr(AEXPR_OP_ALL, list_make1(makeString("!~~")), $1, $6, @2);
 				}
 			| UNIQUE select_with_parens
 				{
@@ -33218,7 +33416,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 								 parser_errposition(@3)));
 					}
 
-					c->fields = lcons((Node *)makeString("excluded"), c->fields);
+					c->fields = lcons((Node *)makeString(GetSessionContext()->upSertAliasName->aliasname), c->fields);
 					$$ = (Node *) $3;
 				}
 			| MATCH_FUNC fulltext_match_params ')' AGAINST '(' SCONST search_modifier ')'
@@ -34018,21 +34216,7 @@ func_expr_windowless:
  * Special expressions that are considered to be functions;
  */
 func_expr_common_subexpr:
-			COLLATION FOR '(' a_expr ')'
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("pg_collation_for");
-					n->args = list_make1($4);
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| current_date_func
+			current_date_func
 				{
 					/*
 					 * Translate as "text_date('now'::text)".
@@ -34449,21 +34633,6 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| SYSDATE
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("a_sysdate");
-					n->colname = pstrdup("sysdate");
-					n->args = NIL;
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
 			| SYSDATE '(' optional_precision ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -34486,18 +34655,6 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| ROWNUM 
-				{
-#ifdef ENABLE_MULTIPLE_NODES
-        				const char* message = "ROWNUM is not yet supported.";
-    					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-    					ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-							errmsg("ROWNUM is not yet supported.")));
-#endif
-					Rownum *r = makeNode(Rownum);
-				    	r->location = @1;
-					$$ = (Node *)r;
-				}			
 			| CURRENT_ROLE
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -34607,20 +34764,6 @@ func_expr_common_subexpr:
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("session_user");
-					n->args = NIL;
-					n->agg_order = NIL;
-					n->agg_star = FALSE;
-					n->agg_distinct = FALSE;
-					n->func_variadic = FALSE;
-					n->over = NULL;
-					n->location = @1;
-					n->call_func = false;
-					$$ = (Node *)n;
-				}
-			| USER opt_bracket
-				{
-					FuncCall *n = makeNode(FuncCall);
-					n->funcname = SystemFuncName("current_user");
 					n->args = NIL;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
@@ -35708,28 +35851,6 @@ qual_all_Op:
 			| OPERATOR '(' any_operator ')'
 					{ $$ = $3; }
 		;
-
-subquery_Op:
-			all_Op
-					{ $$ = list_make1(makeString($1)); }
-			| OPERATOR '(' any_operator ')'
-					{ $$ = $3; }
-			| LIKE
-					{
-						$$ = list_make1(makeString("~~"));
-					}
-			| NOT_LIKE	%prec NOT_LIKE
-					{
-						$$ = list_make1(makeString("!~~"));
-					}
-			| LIKE BINARY
-					{ $$ = list_make1(makeString("~~")); }
-			| NOT_LIKE BINARY	%prec NOT_LIKE
-					{ $$ = list_make1(makeString("!~~")); }
-			| ILIKE
-					{ $$ = list_make1(makeString("~~*")); }
-			| NOT_ILIKE	%prec NOT_ILIKE
-					{ $$ = list_make1(makeString("!~~*")); }
 /* cannot put SIMILAR TO here, because SIMILAR TO is a hack.
  * the regular expression is preprocessed by a function (similar_escape),
  * and the ~ operator for posix regular expressions is used.
@@ -35738,7 +35859,6 @@ subquery_Op:
  * however the SubLink structure which handles any/some/all stuff
  * is not ready for such a thing.
  */
-			;
 
 expr_list:	a_expr
 				{
@@ -36154,10 +36274,6 @@ columnref:	DolphinColId
 						}
 					}
 					$$ = makeColumnRef(first_word, result, @1, yyscanner);
-				}
-			| EXCLUDED indirection
-				{
-					$$ = makeColumnRef("excluded", $2, @2, yyscanner);
 				}
 		;
 
@@ -37478,15 +37594,6 @@ ColLabel:	normal_ident							{ $$ = $1; }
 			| type_func_name_keyword				{ $$ = downcase_str(pstrdup($1), false); }
 			| reserved_keyword
 				{
-					/* ROWNUM can not be used as alias */
-					if (DolphinObjNameCmp($1, "rownum", false)) {
-						const char* message = "ROWNUM cannot be used as an alias";
-						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-						ereport(errstate,
-							(errcode(ERRCODE_SYNTAX_ERROR),
-								errmsg("ROWNUM cannot be used as an alias"),
-										parser_errposition(@1)));
-					}
 					$$ = downcase_str(pstrdup($1), false);
 				}
 		;
@@ -37538,15 +37645,6 @@ DolphinColLabel:	DOLPHINIDENT									{ $$ = MakeDolphinStringByChar($1->str, $1
 					| type_func_name_keyword				{ $$ = MakeDolphinStringByChar(pstrdup($1), false); }
 					| reserved_keyword
 						{
-							/* ROWNUM can not be used as alias */
-							if (DolphinObjNameCmp($1, "rownum", false)) {
-								const char* message = "ROWNUM cannot be used as an alias";
-								InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-								ereport(errstate,
-									(errcode(ERRCODE_SYNTAX_ERROR),
-										errmsg("ROWNUM cannot be used as an alias"),
-												parser_errposition(@1)));
-							}
 							$$ = MakeDolphinStringByChar(pstrdup($1), false);
 						}
 					| SCONST
@@ -37595,16 +37693,25 @@ unreserved_keyword_without_key:
 			  ABORT_P
 			| ABSOLUTE_P
 			| ACCESS
+			| USER
+			| REJECT_P
 			| ACCOUNT
+			| COLLATION
 			| ACTION
+			| RECYCLEBIN
 			| ADD_P
 			| ADMIN
 			| AFTER
+			| VERBOSE
 			| AGGREGATE
+			| MODIFY_P
 			| ALGORITHM
 			| ALSO
 			| ALTER
+			| FREEZE
+
 			| ALWAYS
+			| NOTNULL
 			| APP
 			| APPEND
 			| ARCHIVE
@@ -37612,6 +37719,7 @@ unreserved_keyword_without_key:
 			| ASSERTION
 			| ASSIGNMENT
 			| AT
+			| LESS
 			| ATTRIBUTE
 			| AUDIT
 			| AUTOEXTEND
@@ -37629,6 +37737,7 @@ unreserved_keyword_without_key:
 			| BLANKS
 			| BLOB_P
 			| BLOCKCHAIN
+			| BODY_P
 			| BY
 			| CACHE
 			| CALL
@@ -37732,6 +37841,7 @@ unreserved_keyword_without_key:
 			| DISTRIBUTE
 			| DISTRIBUTION
 /* PGXC_END */
+			| DO
 			| DOCUMENT_P
 			| DOMAIN_P
 			| DOUBLE_P
@@ -37747,6 +37857,7 @@ unreserved_keyword_without_key:
             | ENCRYPTED_VALUE
 			| ENCRYPTION
             | ENCRYPTION_TYPE
+			| END_P
 			| ENDS
 			| ENGINE_ATTRIBUTE
 			| ENGINE_P
@@ -38168,17 +38279,21 @@ unreserved_keyword_without_key:
  */
 col_name_keyword:
 			  col_name_keyword_nonambiguous { $$ = $1; }
+			| CAST
 			| CHAR_P %prec IDENT
 			| COALESCE
+			| ONLY
 			| CONVERT
 			| DATE_P %prec IDENT
 			| DB_B_FORMAT
+			| SYSDATE
 			| DB_B_JSOBJ
 			| EXTRACT
 			| GET_FORMAT
 			| GREATEST
 			| IFNULL
 			| INTERVAL	%prec UNBOUNDED
+			| LAST_DAY_FUNC
 			| LEAST
 			| LOCATE
 			| MID
@@ -38221,6 +38336,7 @@ col_name_keyword_nonambiguous:
 			| BIT %prec IDENT
 			| BOOLEAN_P %prec IDENT
 			| BUCKETCNT
+			| ANY
 			| BYTEAWITHOUTORDER
 			| BYTEAWITHOUTORDERWITHEQUAL
 			| CHARACTER %prec IDENT
@@ -38267,14 +38383,11 @@ col_name_keyword_nonambiguous:
 type_func_name_keyword_without_current_schema:
 			 AGAINST
 			| AUTHORIZATION
-			| COLLATION
-			| COMPACT
 			| CONCURRENTLY
 			| CROSS
 			| CSN
 			| DELTAMERGE
 			| DIV
-			| FREEZE
 			| FULL
 			| FULLTEXT
 			| HDFSDIRECTORY
@@ -38285,17 +38398,14 @@ type_func_name_keyword_without_current_schema:
 			| LEFT
 			| LIKE
 			| NATURAL
-			| NOTNULL
 			| OUTER_P
 			| OVERLAPS
-			| RECYCLEBIN
 			| REGEXP
 			| RIGHT
 			| RLIKE
 			| SIMILAR
 			| TABLESAMPLE
 			| TIMECAPSULE
-			| VERBOSE
 			| XOR
 		;
 
@@ -38322,19 +38432,14 @@ type_func_name_keyword:
  */
 reserved_keyword:
 			  ALL
-			| ANALYSE
 			| ANALYZE
 			| AND
-			| ANY
 			| ARRAY
 			| AS
 			| ASC
 			| ASYMMETRIC
-			| BODY_P
 			| BOTH
-			| BUCKETS
 			| CASE
-			| CAST
 			| CHECK
 			| COLLATE
 			| COLUMN
@@ -38353,13 +38458,10 @@ reserved_keyword:
 			| DESC
 			| DISTINCT
 			| DISTINCTROW
-			| DO
 			| DUAL_P
 			| ELSE
-			| END_P
 			| ENUM_P
 			| EXCEPT
-			| EXCLUDED
 			| FALSE_P
 			| FETCH
 			| FOR
@@ -38374,23 +38476,18 @@ reserved_keyword:
 			| INTERSECT
 			| INTO
 			| IS
-			| LAST_DAY_FUNC
 			| LEADING
-			| LESS
 			| LIMIT
 			| LOCALTIME
 			| LOCALTIMESTAMP
 			| LOW_PRIORITY
 			| MAXVALUE
-			| MINUS_P
-			| MODIFY_P
 			| NOCYCLE
 			| NOT
 			| NOW_FUNC
 			| NULL_P
 			| OFFSET
 			| ON
-			| ONLY
 			| OR
 			| ORDER
 			| PERFORMANCE
@@ -38398,15 +38495,12 @@ reserved_keyword:
 			| PRIMARY
 			| PROCEDURE
 			| REFERENCES
-			| REJECT_P
 			| RETURNING
-			| ROWNUM
 			| SELECT
 			| SESSION_USER
 			| SHRINK
 			| SOME
 			| SYMMETRIC
-			| SYSDATE
 			| TABLE
 			| THEN
 			| TO
@@ -38414,7 +38508,6 @@ reserved_keyword:
 			| TRUE_P
 			| UNION
 			| UNIQUE
-			| USER
 			| USING
 			| UTC_DATE
 			| UTC_TIME
@@ -38431,6 +38524,31 @@ reserved_keyword:
 normal_ident:		DOLPHINIDENT							{ $$ = downcase_str($1->str, $1->is_quoted); };
 
 %%
+
+
+static List* NakeLikeOpList() {
+    if (GetSessionContext()->enableBCmptMode) {
+    	return list_make1(makeString("~~*"));
+    } else {
+    	return list_make1(makeString("~~"));
+    }
+}
+
+static List* MakeNotLikeOpList() {
+    return GetSessionContext()->enableBCmptMode ? list_make1(makeString("!~~*")) : list_make1(makeString("!~~"));
+}
+
+static Node* MakeSubLinkWithOp(SubLinkType subType, Node* testExpr, char* op, Node* subSelect, int location)
+{
+	SubLink *n = makeNode(SubLink);
+	n->subLinkType = subType;
+	n->testexpr = testExpr;
+	n->operName = list_make1(makeString(op));
+	n->subselect = subSelect;
+	n->location = location;
+	return (Node*)n;
+}
+
 
 /*
  * The signature of this function is required by bison.  However, we
@@ -39320,7 +39438,9 @@ parser_init(base_yy_extra_type *yyext)
 	yyext->core_yy_extra.query_string_locationlist = NIL;
 	yyext->core_yy_extra.paren_depth = 0;
 	GetSessionContext()->isUpsert = false;
+	GetSessionContext()->upSertAliasName = (Alias*)NULL;
 	GetSessionContext()->is_schema_name = false;
+	GetSessionContext()->is_create_alter_stmt = false;
 }
 
 static Expr *
@@ -40684,11 +40804,15 @@ static void CheckPartitionExpr(Node* expr, int* colCount)
 	if (expr == NULL)
 		ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("The expr can't be NULL")));
 	if (expr->type == T_A_Expr) {
-		char* name = strVal(linitial(((A_Expr*)expr)->name));
+		A_Expr* a_expr = (A_Expr*)expr;
+		if (a_expr->name == NULL) {
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The expr is not supported for Partition Expr")));
+		}
+		char* name = strVal(linitial(a_expr->name));
 		if (strcmp(name, "+") != 0 && strcmp(name, "-") != 0 && strcmp(name, "*") != 0)
 			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The %s operator is not supported for Partition Expr", name)));
-		CheckPartitionExpr(((A_Expr*)expr)->lexpr, colCount);
-		CheckPartitionExpr(((A_Expr*)expr)->rexpr, colCount);
+		CheckPartitionExpr(a_expr->lexpr, colCount);
+		CheckPartitionExpr(a_expr->rexpr, colCount);
 	} else if (expr->type == T_FuncCall) {
 		char* validFuncName[MAX_SUPPORTED_FUNC_FOR_PART_EXPR] = {"abs","ceiling","datediff","day","dayofmonth","dayofweek","dayofyear","extract","floor","hour",
 		"microsecond","minute","mod","month","quarter","second","time_to_sec","to_days","to_seconds","unix_timestamp","weekday","year","yearweek","date_part","div"};

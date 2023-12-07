@@ -28,6 +28,22 @@ drop table if exists tb_default_float;
 drop table if exists tb_default_double;
 drop table if exists tb_real_float;
 
+--bconst
+select 0b01;
+select 0b01+1;
+select 1+0b01;
+
+select 0b01 = b'01';
+select 0b01+1 = b'01'+1;
+select 1+0b01 = 1+b'01';
+
+--wrong usage
+select 0b02;
+select 0b2;
+--not report error, but not bconst actually
+select 0b; -- same as select 0 b;
+select 0bf; -- same as select 0 bf;
+select 0b0f; -- same as select 0b0 f;
 
 drop schema db_b_parser4 cascade;
 reset current_schema;

@@ -2763,7 +2763,11 @@ static UpsertExpr* transformUpsertClause(ParseState* pstate, UpsertClause* upser
     if (upsertClause->targetList != NIL) {
         pstate->p_is_insert = false;
         action = UPSERT_UPDATE;
+#ifdef DOLPHIN
+        exclRte = addRangeTableEntryForRelation(pstate, targetrel, upsertClause->aliasName, false, false);
+#else
         exclRte = addRangeTableEntryForRelation(pstate, targetrel, makeAlias("excluded", NIL), false, false);
+#endif
         exclRte->isexcluded = true;
         exclRelIndex = list_length(pstate->p_rtable);
 

@@ -35,6 +35,16 @@ bool optimizer_trace_fallback = false;
 
 extern MemoryContext MessageContext;
 
+void DelCException(CException **exception)
+{
+	if (exception == NULL || *exception == NULL)
+	{
+		return;
+	}
+	delete *exception;
+	*exception = NULL;
+}
+
 //---------------------------------------------------------------------------
 //	@function:
 //		SPQOptimizer::PlstmtOptimize
@@ -54,6 +64,7 @@ SPQOptimizer::SPQOPTOptimizedPlan(
 	PlannedStmt *plStmt = NULL;
 
 	*had_unexpected_failure = false;
+	CException *exception = NULL;
 
 	SPQOS_TRY
 	{
@@ -63,6 +74,12 @@ SPQOptimizer::SPQOPTOptimizedPlan(
 	}
 	SPQOS_CATCH_EX(ex)
 	{
+		exception = new CException(ex.Major(), ex.Minor(), ex.Filename(), ex.Line());
+	}
+	SPQOS_CATCH_END;
+	if (exception == NULL) {
+		return plStmt;
+	}
 		// clone the error message before context free.
 		CHAR *serialized_error_msg =
 			spqopt_context.CloneErrorMsg(t_thrd.mem_cxt.msg_mem_cxt);
@@ -74,37 +91,42 @@ SPQOptimizer::SPQOPTOptimizedPlan(
 		// tries to do something smart with them. Also, ERRCODE_INTERNAL_ERROR
 		// is handled specially in elog.c, and we don't want that for "normal"
 		// application errors.
-		if (SPQOS_MATCH_EX(ex, spqdxl::ExmaDXL,
+		if (SPQOS_MATCH_EX((*exception), spqdxl::ExmaDXL,
 						  spqdxl::ExmiQuery2DXLNotNullViolation))
 		{
-			errstart(ERROR, ex.Filename(), ex.Line(), NULL, TEXTDOMAIN);
+			errstart(ERROR, exception->Filename(), exception->Line(), NULL, TEXTDOMAIN);
+			DelCException(&exception);
 			errfinish(errcode(ERRCODE_NOT_NULL_VIOLATION),
 					  errmsg("%s", serialized_error_msg));
 		}
 
-		else if (SPQOS_MATCH_EX(ex, spqdxl::ExmaDXL, spqdxl::ExmiOptimizerError) ||
+		else if (SPQOS_MATCH_EX((*exception), spqdxl::ExmaDXL, spqdxl::ExmiOptimizerError) ||
 				 spqopt_context.m_should_error_out)
 		{
 			Assert(NULL != serialized_error_msg);
-			errstart(ERROR, ex.Filename(), ex.Line(), NULL, TEXTDOMAIN);
+			errstart(ERROR, exception->Filename(), exception->Line(), NULL, TEXTDOMAIN);
+			DelCException(&exception);
 			errfinish(errcode(ERRCODE_INTERNAL_ERROR),
 					  errmsg("%s", serialized_error_msg));
 		}
-		else if (SPQOS_MATCH_EX(ex, spqdxl::ExmaSPQDB, spqdxl::ExmiSPQDBError))
+		else if (SPQOS_MATCH_EX((*exception), spqdxl::ExmaSPQDB, spqdxl::ExmiSPQDBError))
 		{
+			DelCException(&exception);
 			PG_RE_THROW();
 		}
-		else if (SPQOS_MATCH_EX(ex, spqdxl::ExmaDXL,
+		else if (SPQOS_MATCH_EX((*exception), spqdxl::ExmaDXL,
 							   spqdxl::ExmiNoAvailableMemory))
 		{
-			errstart(ERROR, ex.Filename(), ex.Line(), NULL, TEXTDOMAIN);
+			errstart(ERROR, exception->Filename(), exception->Line(), NULL, TEXTDOMAIN);
+			DelCException(&exception);
 			errfinish(errcode(ERRCODE_INTERNAL_ERROR),
 					  errmsg("no available memory to allocate string buffer"));
 		}
-		else if (SPQOS_MATCH_EX(ex, spqdxl::ExmaDXL,
+		else if (SPQOS_MATCH_EX((*exception), spqdxl::ExmaDXL,
 							   spqdxl::ExmiInvalidComparisonTypeCode))
 		{
-			errstart(ERROR, ex.Filename(), ex.Line(), NULL, TEXTDOMAIN);
+			errstart(ERROR, exception->Filename(), exception->Line(), NULL, TEXTDOMAIN);
+			DelCException(&exception);
 			errfinish(
 				errcode(ERRCODE_INTERNAL_ERROR),
 				errmsg(
@@ -118,7 +140,8 @@ SPQOptimizer::SPQOPTOptimizedPlan(
 
 		if (optimizer_trace_fallback)
 		{
-			errstart(INFO, ex.Filename(), ex.Line(), NULL, TEXTDOMAIN);
+			errstart(INFO, exception->Filename(), exception->Line(), NULL, TEXTDOMAIN);
+			DelCException(&exception);
 			errfinish(
 				errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 				errmsg(
@@ -131,9 +154,9 @@ SPQOptimizer::SPQOPTOptimizedPlan(
 
 		if (serialized_error_msg)
 			pfree(serialized_error_msg);
-	}
-	SPQOS_CATCH_END;
-	return plStmt;
+		DelCException(&exception);
+
+	return NULL;
 }
 
 
@@ -148,17 +171,20 @@ SPQOptimizer::SPQOPTOptimizedPlan(
 char *
 SPQOptimizer::SerializeDXLPlan(Query *query)
 {
+	CException *exception = NULL;
 	SPQOS_TRY;
 	{
 		return COptTasks::Optimize(query);
 	}
 	SPQOS_CATCH_EX(ex);
 	{
-		errstart(ERROR, ex.Filename(), ex.Line(), NULL, TEXTDOMAIN);
-		errfinish(errcode(ERRCODE_INTERNAL_ERROR),
-				  errmsg("optimizer failed to produce plan"));
+		exception = new CException(ex.Major(), ex.Minor(), ex.Filename(), ex.Line());
 	}
 	SPQOS_CATCH_END;
+	errstart(ERROR, exception->Filename(), exception->Line(), NULL, TEXTDOMAIN);
+	DelCException(&exception);
+	errfinish(errcode(ERRCODE_INTERNAL_ERROR),
+				  errmsg("optimizer failed to produce plan"));
 	return NULL;
 }
 
@@ -248,18 +274,22 @@ SerializeDXLPlan(Query *query)
 void
 InitSPQOPT()
 {
+	CException *exception = NULL;
 	SPQOS_TRY
 	{
 		return SPQOptimizer::InitSPQOPT();
 	}
 	SPQOS_CATCH_EX(ex)
 	{
-		if (SPQOS_MATCH_EX(ex, spqdxl::ExmaSPQDB, spqdxl::ExmiSPQDBError))
-		{
-			PG_RE_THROW();
-		}
+		exception = new CException(ex.Major(), ex.Minor(), ex.Filename(), ex.Line());
 	}
 	SPQOS_CATCH_END;
+	if (exception != NULL && SPQOS_MATCH_EX((*exception), spqdxl::ExmaSPQDB, spqdxl::ExmiSPQDBError))
+	{
+		DelCException(&exception);
+		PG_RE_THROW();
+	}
+	DelCException(&exception);
 }
 
 //---------------------------------------------------------------------------
@@ -273,18 +303,22 @@ InitSPQOPT()
 void
 TerminateSPQOPT()
 {
+	CException *exception = NULL;
 	SPQOS_TRY
 	{
 		return SPQOptimizer::TerminateSPQOPT();
 	}
 	SPQOS_CATCH_EX(ex)
 	{
-		if (SPQOS_MATCH_EX(ex, spqdxl::ExmaSPQDB, spqdxl::ExmiSPQDBError))
-		{
-			PG_RE_THROW();
-		}
+		exception = new CException(ex.Major(), ex.Minor(), ex.Filename(), ex.Line());
 	}
 	SPQOS_CATCH_END;
+	if (exception != NULL && SPQOS_MATCH_EX((*exception), spqdxl::ExmaSPQDB, spqdxl::ExmiSPQDBError))
+	{
+		DelCException(&exception);
+		PG_RE_THROW();
+	}
+	DelCException(&exception);
 }
 
 void UnInitSPQOPT(int status, Datum arg)

@@ -238,6 +238,47 @@ call proc_def_2(@out);
 
 call proc_def_2(@out,11);
 
+
+set b_format_behavior_compat_options=enable_set_variables;
+
+drop table if exists t_tinyint0009 cascade;
+create table t_tinyint0009 (
+c1 tinyint auto_increment primary key,
+c2 tinyint(1) default '0',
+c3 tinyint(10) not null default '0',
+c4 int default '0',
+c5 text
+);
+
+drop procedure if exists insertdata;
+create procedure insertdata(num int) as
+begin
+    set @x = 1;
+    truncate t_tinyint0009;
+    repeat
+        set @c1 = @x;
+        set @c2 = floor(0.1*(127-18+1))+18;
+        set @c3 = floor(0.1*(127-100+1))+100;
+        set @c4 = floor(0.1*(10000-127+1))+127;
+        set @c5 = concat('amy', @x);
+        select @c1;
+        select @c2;
+        select @c3;
+        select @c4;
+        select @c5;
+        insert into t_tinyint0009 values (@c1, @c2, @c3, @c4, @c5);
+        set @x = @x + 1;
+        select @x;
+    until @x > num end repeat;
+end;
+/
+
+call insertdata(4);
+
+call insertdata(4);
+
+select * from t_tinyint0009 order by c2;
+
 set  dolphin.sql_mode=default;
 
 drop schema multi_select_proc cascade;

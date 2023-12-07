@@ -1461,6 +1461,7 @@ static Node* transformAExprOp(ParseState* pstate, A_Expr* a)
 
 static Node* transformAExprAnd(ParseState* pstate, A_Expr* a)
 {
+    a->rexpr = (Node *)copyObject(a->rexpr);
     Node* lexpr = transformExprRecurse(pstate, a->lexpr);
     Node* rexpr = transformExprRecurse(pstate, a->rexpr);
 #ifdef DOLPHIN
@@ -1970,7 +1971,7 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
                 tempFuncName = TextDatumGetCString(adsrcVal);
                 char* firstLocation = strchr(tempFuncName, '(');
                 bool temp_result = false;
-                if (firstLocation != NULL) {
+                if (firstLocation != NULL && firstLocation - tempFuncName > 0) {
                     int funcNameLength = firstLocation - tempFuncName;
                     char* funcName = (char*)palloc0(funcNameLength + 1);
                     errno_t rc = memcpy_s(funcName, funcNameLength, tempFuncName, funcNameLength);

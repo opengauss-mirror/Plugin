@@ -224,12 +224,12 @@ CREATE TABLE `Constraint_Rename_Test` (`a` int CONSTRAINT `con1` CHECK (`a` > 0)
 CREATE TABLE `Constraint_Rename_Test2` (`a` int CONSTRAINT `con1` CHECK (`a` > 0), `d` int) InheRITS (`Constraint_Rename_Test`);
 \d "Constraint_Rename_Test2"
 ALTER TABLE `Constraint_Rename_Test2` RENAME CONSTRAINT `con1` TO `con1foo`; -- fail
-ALTER TABLE ONLY `Constraint_Rename_Test` RENAME CONSTRAINT `con1` TO `con1foo`; -- fail
+ALTER TABLE ONLY (`Constraint_Rename_Test`) RENAME CONSTRAINT `con1` TO `con1foo`; -- fail
 ALTER TABLE `Constraint_Rename_Test` RENAME CONSTRAINT `con1` TO `con1foo`; -- ok
 \d "Constraint_Rename_Test"
 \d "Constraint_Rename_Test2"
 ALTER TABLE `Constraint_Rename_Test` ADD CONSTRAINT `con2` CHECK (`b` > 0) NO InheRIT;
-ALTER TABLE ONLY `Constraint_Rename_Test` RENAME CONSTRAINT `con2` TO `con2foo`; -- ok
+ALTER TABLE ONLY (`Constraint_Rename_Test`) RENAME CONSTRAINT `con2` TO `con2foo`; -- ok
 ALTER TABLE `Constraint_Rename_Test` RENAME CONSTRAINT `con2foo` TO `con2bar`; -- ok
 \d "Constraint_Rename_Test"
 \d "Constraint_Rename_Test2"

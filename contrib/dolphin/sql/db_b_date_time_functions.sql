@@ -96,7 +96,6 @@ select now(7);
 set dolphin.b_db_timestamp = 0.0;
 
 -- test sysdate(precision)
-select sysdate;
 select sysdate();
 select sysdate(0);
 select sysdate(1);

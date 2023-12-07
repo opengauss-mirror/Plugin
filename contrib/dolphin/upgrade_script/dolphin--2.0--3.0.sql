@@ -258,3 +258,4 @@ CREATE OR REPLACE FUNCTION pg_catalog.float8_cast_time(float8)
 RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float8_cast_time';
 CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_time(numeric)
 RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_time';
+create or replace function pg_catalog."user"() returns name as 'select current_user' LANGUAGE 'sql' IMMUTABLE;

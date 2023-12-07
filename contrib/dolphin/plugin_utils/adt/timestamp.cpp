@@ -9068,30 +9068,30 @@ static inline bool convert_tz_internal(Timestamp raw_datetime, text *expr2, text
     {
         if (from_ok == 0) { // if expr2 is zone
             if (!calc_timestamp_internal(expr2, datetime, &datetime)) {
-                return false;
+                PG_TRY_RETURN(false);
             }
         } else {    // if expr2 is izone
             if (!is_izone_in_range(str2, &interval1)) {
-                return false;
+                PG_TRY_RETURN(false);
             }
             datetime = (Timestamp)DirectFunctionCall2(timestamp_izone, PointerGetDatum(interval1), TimestampGetDatum(datetime));
         }
         if (!datetime_in_unixtimestmap(datetime)) {
             *result = raw_datetime;
-            return true;
+            PG_TRY_RETURN(true);
         }
         if (to_ok == 0) {   // if expr3 is zone
              if (!calc_timestamptz_internal(expr3, datetime, &datetime)) {
-                return false;
+                PG_TRY_RETURN(false);
             }
         } else {    // if expr3 is izone
              if (!is_izone_in_range(str3, &interval2)) {
-                return false;
+                PG_TRY_RETURN(false);
             }
             datetime = (Timestamp)DirectFunctionCall2(timestamptz_izone, PointerGetDatum(interval2), TimestampGetDatum(datetime));
         }
         *result = datetime;
-        return true;
+        PG_TRY_RETURN(true);
     }
     PG_CATCH();
     {

@@ -66,6 +66,7 @@
 #include "utils/rel_gs.h"
 #include "utils/syscache.h"
 #include "gs_policy/gs_policy_masking.h"
+#include "catalog/gs_dependencies_fn.h"
 
 /*
  * Executes an ALTER OBJECT / RENAME TO statement.	Based on the object
@@ -375,9 +376,8 @@ ExecRenameStmt(RenameStmt *stmt)
         case OBJECT_RLSPOLICY:
             return RenameRlsPolicy(stmt);
 
-        case OBJECT_ROLE:
+        case OBJECT_ROLE: 
             return RenameRole(stmt->subname, stmt->newname);
-
         case OBJECT_USER: {
             address = RenameRole(stmt->subname, stmt->newname);
 
@@ -410,8 +410,17 @@ ExecRenameStmt(RenameStmt *stmt)
             return renameatt(stmt);
 
         case OBJECT_TRIGGER:
-            return renametrig(stmt);
+        {
 
+#ifdef DOLPHIN
+            RenameStmt *renameStmt = (RenameStmt *)stmt;
+            if (pg_strncasecmp(renameStmt->newname, "user", strlen(renameStmt->newname)) == 0) {
+                ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                                errmsg("%s cannot be trigger name", renameStmt->newname)));
+            }
+#endif
+            return renametrig(stmt);
+        }
         case OBJECT_DOMAIN:
         case OBJECT_TYPE:
             return RenameType(stmt);
@@ -736,6 +745,21 @@ AlterObjectNamespace_internal(Relation rel, Oid objid, Oid nspOid)
         
         IsThereFunctionInNamespace(NameStr(proc->proname), proc->pronargs,
                                     &proc->proargtypes, nspOid);
+
+        if (enable_plpgsql_gsdependency_guc()) {
+            const char* old_func_format = format_procedure_no_visible(objid);
+            const char* old_func_name = NameStr(proc->proname);
+            bool is_null = false;
+            Datum package_oid_datum = SysCacheGetAttr(PROCOID, tup, Anum_pg_proc_packageid, &is_null);
+            Oid pkg_oid = DatumGetObjectId(package_oid_datum);
+            if (gsplsql_exists_func_obj(oldNspOid, pkg_oid, old_func_format, old_func_name)) {
+                ereport(ERROR,
+                    (errcode(ERRCODE_DEPENDENT_OBJECTS_STILL_EXIST),
+                        errmsg("The set schema operator of %s is not allowed, "
+                               "because it is referenced by the other object.",
+                            NameStr(proc->proname))));
+            }
+        }
     }
     else if (classId == CollationRelationId) {
         Form_pg_collation coll = (Form_pg_collation) GETSTRUCT(tup);

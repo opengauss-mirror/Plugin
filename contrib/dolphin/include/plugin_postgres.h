@@ -165,6 +165,8 @@ typedef struct BSqlPluginContext {
     bool is_binary_proto;
     bool is_ast_stmt;
     bool group_by_error;
+    bool is_create_alter_stmt;
+    Alias *upSertAliasName;
 #endif
 } bSqlPluginContext;
 

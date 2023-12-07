@@ -94,6 +94,14 @@
 #include "catalog/gs_collation.h"
 #include "replication/libpqsw.h"
 
+#ifndef DOLPHIN
+/* Hook for plugins to get control in planner() */
+THR_LOCAL ndp_pushdown_hook_type ndp_pushdown_hook = NULL;
+#ifdef USE_SPQ
+THR_LOCAL spq_planner_hook_type spq_planner_hook = NULL;
+#endif
+#endif
+
 #ifndef MIN
 #define MIN(A, B) ((B) < (A) ? (B) : (A))
 #endif
@@ -1269,6 +1277,24 @@ static inline bool contain_system_column(Node *var_list)
     return result;
 }
 
+static inline bool contain_placeholdervar(Node *var_list)
+{
+    List* vars = pull_var_clause(var_list, PVC_RECURSE_AGGREGATES, PVC_INCLUDE_PLACEHOLDERS);
+    ListCell* lc = NULL;
+    bool result = false;
+
+    foreach (lc, vars) {
+        Node* var = (Node*)lfirst(lc);
+        if (IsA(var, PlaceHolderVar)) {
+            result = true;
+            break;
+        }
+    }
+
+    list_free_ext(vars);
+    return result;
+}
+
 /* --------------------
  * subquery_planner
  *	  Invokes the planner on a subquery.  We recurse to here for each
@@ -1828,6 +1854,10 @@ Plan* subquery_planner(PlannerGlobal* glob, Query* parse, PlannerInfo* parent_ro
             bool support_rewrite = true;
             do {
                 if (contain_system_column((Node*)root->parse->targetList)) {
+                    support_rewrite = false;
+                    break;
+                }
+                if (root->parse->jointree != NULL && contain_placeholdervar(root->parse->jointree->quals)) {
                     support_rewrite = false;
                     break;
                 }

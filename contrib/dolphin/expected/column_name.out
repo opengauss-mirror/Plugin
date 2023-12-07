@@ -28,7 +28,7 @@ NOTICE:  table "a1" does not exist, skipping
 drop table if exists a2;
 NOTICE:  table "a2" does not exist, skipping
 select currenT_User into a1;
-select session_UsEr into a2;
+select current_UsEr into a2;
 --create use some index
 drop table if exists warehouse_t22;
 NOTICE:  table "warehouse_t22" does not exist, skipping
@@ -804,7 +804,7 @@ NOTICE:  table "a1" does not exist, skipping
 drop table if exists a2;
 NOTICE:  table "a2" does not exist, skipping
 select currenT_User into a1;
-select session_UsEr into a2;
+select current_UsEr into a2;
 --create use some index
 drop table if exists warehouse_t22;
 NOTICE:  table "warehouse_t22" does not exist, skipping

@@ -446,6 +446,15 @@ select varlena2numeric(1);
 select Varlena2Bpchar(1);
 select Varlena2Varchar(1);
 select Varlena2Text(1);
+select varlena2bit(1,10);
+
+create OR REPLACE procedure t_p(out ret varchar) as
+begin
+select '{"a":"b"}'::json into ret;
+end;
+/
+select t_p();
+drop procedure t_p;
 
 drop schema uint_cast2 cascade;
 reset current_schema;

@@ -46,6 +46,7 @@
 #include "parser/parse_agg.h"
 #include "spqos/error/CAutoExceptionStack.h"
 #include "parser/parse_coerce.h"
+#include "utils/inval.h"
 
 #define SPQ_WRAP_START                                                             \
     sigjmp_buf local_sigjmp_buf;                                                   \
@@ -1936,11 +1937,11 @@ spqdb::RelPartIsNone(Oid relid)
 {
 	SPQ_WRAP_START;
 	{
-	    //spq partition support
-		//return PART_STATUS_NONE == rel_part_status(relid);
+		// spq partition support
+		return spq_relation_not_partitioned(relid);
 	}
 	SPQ_WRAP_END;
-	return false;
+	return true;
 }
 
 bool
@@ -2591,8 +2592,7 @@ static bool mdcache_invalidation_counter_registered = false;
 static int64 mdcache_invalidation_counter = 0;
 static int64 last_mdcache_invalidation_counter = 0;
 
-// TODO SPQ not used
-/*static void
+static void
 mdsyscache_invalidation_counter_callback(Datum arg, int cacheid,
 										 uint32 hashvalue)
 {
@@ -2602,7 +2602,7 @@ static void
 mdrelcache_invalidation_counter_callback(Datum arg, Oid relid)
 {
 	mdcache_invalidation_counter++;
-}*/
+}
 
 static void
 register_mdcache_invalidation_callbacks(void)
@@ -2662,14 +2662,12 @@ register_mdcache_invalidation_callbacks(void)
 
 	for (i = 0; i < lengthof(metadata_caches); i++)
 	{
-		//CacheRegisterSyscacheCallback(metadata_caches[i],
-		//							  &mdsyscache_invalidation_counter_callback,
-		//							  (Datum) 0);
+		CacheRegisterSessionSyscacheCallback(metadata_caches[i],
+				&mdsyscache_invalidation_counter_callback, (Datum) 0);
 	}
 
 	/* also register the relcache callback */
-	//CacheRegisterRelcacheCallback(&mdrelcache_invalidation_counter_callback,
-	//							  (Datum) 0);
+	CacheRegisterSessionRelcacheCallback(&mdrelcache_invalidation_counter_callback, (Datum) 0);
 }
 
 // Has there been any catalog changes since last call?

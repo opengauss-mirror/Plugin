@@ -50,11 +50,11 @@ WARNING:  TEST is not a valid encoding name. default value set
 ALTER SCHEMA test_1 WITHOUT BLOCKCHAIN;
 ALTER SCHEMA Test_1 WITHOUT BLOCKCHAIN;
 ALTER SCHEMA test_1 CHARSET DEFAULT;
-ERROR:  syntax error at or near "DEFAULT;"
+ERROR:  syntax error at or near "DEFAULT"
 LINE 1: ALTER SCHEMA test_1 CHARSET DEFAULT;
                                     ^
 ALTER SCHEMA Test_1 CHARSET DEFAULT;
-ERROR:  syntax error at or near "DEFAULT;"
+ERROR:  syntax error at or near "DEFAULT"
 LINE 1: ALTER SCHEMA Test_1 CHARSET DEFAULT;
                                     ^
 ALTER SCHEMA test_1 RENAME TO Test_1_BAK;

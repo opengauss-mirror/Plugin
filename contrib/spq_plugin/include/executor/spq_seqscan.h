@@ -20,4 +20,5 @@ void ExecReScanSpqSeqScan(SpqSeqScanState* node);
 void init_spqseqscan_hook();
 void restore_spqseqscan_hook();
 
+extern void GetInstanceIDAndSliceNumber(PlannedStmt* stmt, int totaldop, int &sliceNumber, int &instanceID);
 #endif  // SPQ_SEQSCAN_H

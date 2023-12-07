@@ -10,7 +10,7 @@ SHOW OPEN TABLES IN show_open_tables_scm;
  show_open_tables_scm | show_open_tables_test_2 |      0 |           0
 (2 rows)
 
-select pg_sleep(2);
+select pg_sleep(3);
  pg_sleep 
 ----------
  

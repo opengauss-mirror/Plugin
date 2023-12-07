@@ -330,7 +330,24 @@ Node *plan_tree_mutator(Node *node, Node *(*mutator)(Node *, void *), void *cont
             // 				return (Node *) newDynamicSeqScan;
             // 			}
             // 			break;
+        case T_SpqIndexScan: {
+            SpqIndexScan *spqindexscan = (SpqIndexScan *)node;
+            SpqIndexScan *newspqindexscan;
 
+            FLATCOPY(newspqindexscan, spqindexscan, SpqIndexScan);
+            SCANMUTATE(newspqindexscan, spqindexscan);
+            return (Node *)newspqindexscan;
+            break;
+        }
+        case T_SpqIndexOnlyScan: {
+            SpqIndexOnlyScan *spqindexonlyscan = (SpqIndexOnlyScan *)node;
+            SpqIndexOnlyScan *newspqindexonlyscan;
+
+            FLATCOPY(newspqindexonlyscan, spqindexonlyscan, SpqIndexOnlyScan);
+            SCANMUTATE(newspqindexonlyscan, spqindexonlyscan);
+            return (Node *)newspqindexonlyscan;
+            break;
+        }
         case T_IndexScan:
             // 		case T_DynamicIndexScan:
             {
@@ -402,8 +419,18 @@ Node *plan_tree_mutator(Node *node, Node *(*mutator)(Node *, void *), void *cont
             }
             break;
 
+        case T_SpqBitmapHeapScan:
+            {
+                SpqBitmapHeapScan *spqbitmapheapscan = (SpqBitmapHeapScan *)node;
+                SpqBitmapHeapScan *newspqbitmapheapscan;
+
+                FLATCOPY(newspqbitmapheapscan, spqbitmapheapscan, SpqBitmapHeapScan);
+                SCANMUTATE(newspqbitmapheapscan, spqbitmapheapscan);
+                return (Node *)newspqbitmapheapscan;
+            }
+            break;
+
         case T_BitmapHeapScan:
-            // 		case T_DynamicBitmapHeapScan:
             {
                 BitmapHeapScan *bmheapscan = (BitmapHeapScan *)node;
                 BitmapHeapScan *newbmheapscan;

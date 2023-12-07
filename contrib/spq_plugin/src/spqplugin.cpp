@@ -17,6 +17,9 @@
 #include "access/transam.h"
 #include "optimizer/planner.h"
 #include "executor/spq_seqscan.h"
+#include "executor/spq_indexscan.h"
+#include "executor/spq_indexonlyscan.h"
+#include "executor/spq_bitmapheapscan.h"
 #include "spq_optimizer_util/SPQOptimizer.h"
 #include "spq_opt.h"
 #include "guc_spq.h"
@@ -242,6 +245,9 @@ void _PG_init(void)
         backup_spq_planner_hook = spq_planner_hook;
         spq_planner_hook = spq_optimize_query;
         init_spqseqscan_hook();
+        init_spqindexscan_hook();
+        init_spqindexonlyscan_hook();
+        init_spqbitmapheapscan_hook();
 		spq_guc_init(&u_sess->spq_cxt);
     }
     HOOK_INIT = true;
@@ -252,6 +258,9 @@ void _PG_fini(void)
     spq_planner_hook = backup_spq_planner_hook;
     MemoryContextDelete(u_sess->spq_cxt.spq_worker_context);
     restore_spqseqscan_hook();
+    restore_spqindexscan_hook();
+    restore_spqindexonlyscan_hook();
+    restore_spqbitmapheapscan_hook();
 }
 
 void spqplugin_invoke(void)

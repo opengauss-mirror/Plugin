@@ -337,9 +337,6 @@ static void get_opclass_name(Oid opclass, Oid actual_datatype, StringInfo buf);
 static Node* processIndirection(Node* node, deparse_context* context, bool printit);
 static void printSubscripts(ArrayRef* aref, deparse_context* context);
 static char* get_relation_name(Oid relid);
-#ifdef DOLPHIN
-static bool getHasDefault(char* exprstr, TupleDesc tupdesc, AttrDefault* defval);
-#endif
 static char* generate_relation_name(Oid relid, List* namespaces);
 static char* generate_function_name(
     Oid funcid, int nargs, List* argnames, Oid* argtypes, bool was_variadic, bool* use_variadic_p);
@@ -3852,7 +3849,11 @@ static char* pg_get_constraintdef_worker(Oid constraintId, bool fullCommand, int
     initStringInfo(&buf);
 
     if (fullCommand && OidIsValid(conForm->conrelid)) {
+#ifndef DOLPHIN
         appendStringInfo(&buf, "ALTER TABLE ONLY %s ADD CONSTRAINT %s ",
+#else
+        appendStringInfo(&buf, "ALTER TABLE ONLY (%s) ADD CONSTRAINT %s ",
+#endif
             generate_relation_name(conForm->conrelid, NIL), quote_identifier(NameStr(conForm->conname)));
     }
 
@@ -4277,45 +4278,8 @@ Datum pg_get_expr(PG_FUNCTION_ARGS)
     } else
         relname = NULL;
 
-#ifdef DOLPHIN
-    char* exprstr = NULL;
-    Relation rel = NULL;
-    TupleDesc tupdesc = NULL;
-    AttrDefault* defval = NULL;
-    bool hasDefault = false;
-
-    if (OidIsValid(relid)) {
-        exprstr = text_to_cstring(expr);
-        rel = heap_open(relid, AccessShareLock);
-        tupdesc = RelationGetDescr(rel);
-        if (tupdesc->constr != NULL && tupdesc->constr->defval != NULL) {
-            defval = tupdesc->constr->defval;
-            hasDefault = getHasDefault(exprstr, tupdesc, defval);
-        }
-        pfree_ext(exprstr);
-        heap_close(rel, AccessShareLock);
-    }
-    PG_RETURN_TEXT_P(pg_get_expr_worker(expr, relid, relname, hasDefault ? 1 : 0));
-#else
     PG_RETURN_TEXT_P(pg_get_expr_worker(expr, relid, relname, 0));
-#endif
 }
-
-#ifdef DOLPHIN
-static bool getHasDefault(char* exprstr, TupleDesc tupdesc, AttrDefault* defval)
-{
-    for (size_t i = 0; i < tupdesc->constr->num_defval; i++) {
-        /* Determine whether the column is a generated column */
-        if (defval[i].adbin != NULL && defval[i].generatedCol != ATTRIBUTE_GENERATED_STORED &&
-                /* Determine whether the default value expression of the table is the same as the expr */
-                strcmp(defval[i].adbin, exprstr) == 0) {
-            return true;
-        }
-    }
-
-    return false;
-}
-#endif
 
 Datum pg_get_expr_ext(PG_FUNCTION_ARGS)
 {
@@ -5442,6 +5406,10 @@ static void set_deparse_planstate(deparse_namespace* dpns, PlanState* ps)
     /* index_tlist is set only if it's an IndexOnlyScan */
     if (IsA(ps->plan, IndexOnlyScan))
         dpns->index_tlist = ((IndexOnlyScan*)ps->plan)->indextlist;
+#ifdef USE_SPQ
+    else if IsA(ps->plan, SpqIndexOnlyScan)
+        dpns->index_tlist = ((IndexOnlyScan*)ps->plan)->indextlist;
+#endif
     else if (IsA(ps->plan, ForeignScan))
         dpns->index_tlist = ((ForeignScan *)ps->plan)->fdw_scan_tlist;
     else if (IsA(ps->plan, ExtensiblePlan))
@@ -6843,7 +6811,23 @@ static void get_setop_query(Node* setOp, Query* query, deparse_context* context,
             if (context->qrw_phase)
                 get_setop_query(subquery->setOperations, subquery, context, resultDesc);
             else
-                Assert(false);
+                get_query_def(subquery,
+                    buf,
+                    context->namespaces,
+                    resultDesc,
+                    context->prettyFlags,
+                    context->wrapColumn,
+                    context->indentLevel
+#ifdef PGXC
+                    ,
+                    context->finalise_aggs,
+                    context->sortgroup_colno,
+                    context->parser_arg
+#endif /* PGXC */
+                    ,
+                    context->qrw_phase,
+                    context->viewdef,
+                    context->is_fqs);
         }
 
         if (need_paren)
@@ -7050,6 +7034,24 @@ static void get_rule_groupingset(GroupingSet* gset, List* targetlist, deparse_co
     }
 
     appendStringInfoString(buf, ")");
+}
+
+static void get_rule_separator(Const* con, StringInfo buf)
+{
+    Oid typoutput;
+    char* extval = NULL;
+    bool typIsVarlena = false;
+    
+    appendStringInfoString(buf, "\'");
+    if (u_sess->exec_cxt.under_auto_explain) {
+        appendStringInfoString(buf, "***");
+    } else if (!con->constisnull) {
+        getTypeOutputInfo(con->consttype, &typoutput, &typIsVarlena);
+        extval = OidOutputFunctionCall(typoutput, con->constvalue);
+        appendStringInfoString(buf, extval);
+        pfree_ext(extval);
+    }
+    appendStringInfoChar(buf, '\'');
 }
 
 /*
@@ -10891,18 +10893,9 @@ static void get_agg_expr(Aggref* aggref, deparse_context* context)
         }
 
         if (pg_strcasecmp(funcname, "group_concat") == 0) {
-            Oid typoutput;
-            char* extval = NULL;
-            bool typIsVarlena = false;
-            /* parse back the first argument as separator */
-            TargetEntry* tle = (TargetEntry*)lfirst(list_head(aggref->args));
-            getTypeOutputInfo(((Const*)tle->expr)->consttype, &typoutput, &typIsVarlena);
-            extval = OidOutputFunctionCall(typoutput, ((Const*)tle->expr)->constvalue);
-
-            appendStringInfoString(buf, " SEPARATOR '");
-            appendStringInfoString(buf, extval);
-            appendStringInfoChar(buf, '\'');
-            pfree_ext(extval);
+            appendStringInfoString(buf, " SEPARATOR ");
+            Const* con = (Const*)(((TargetEntry*)lfirst(list_head(aggref->args)))->expr);
+            get_rule_separator(con, buf);
         }
     }
 
@@ -11190,11 +11183,6 @@ static void get_const_expr(Const* constval, deparse_context* context, int showty
     bool isfloat = false;
     bool needlabel = false;
     bool skip_collation = false;
-#ifdef DOLPHIN
-    bool without_cast = false;
-    const char *left_bracket = PRETTY_PAREN(context) ? "" : "(";
-    const char *right_bracket = PRETTY_PAREN(context) ? "" : ")";
-#endif
     if (constval->constisnull || constval->ismaxvalue) {
         /*
          * Always label the type of a NULL/MAXVALUE constant to
@@ -11270,23 +11258,13 @@ static void get_const_expr(Const* constval, deparse_context* context, int showty
             if (strspn(extval, "0123456789+-eE.") == strlen(extval)) {
                 if (!iseq) {
                     if (extval[0] == '+' || extval[0] == '-') {
-#ifdef DOLPHIN
-                        without_cast = PRETTY_PAREN(context);
-                        appendStringInfo(buf, "%s%s%s", left_bracket, priStr, right_bracket);
-#else
                         appendStringInfo(buf, "(%s)", priStr);
-#endif
                     } else {
                         appendStringInfoString(buf, priStr);
                     }
                 } else {
                     if (extval[0] == '+' || extval[0] == '-') {
-#ifdef DOLPHIN
-                        without_cast = PRETTY_PAREN(context);
-                        appendStringInfo(buf, "%s%s%s", left_bracket, extval, right_bracket);
-#else
                         appendStringInfo(buf, "(%s)", extval);
-#endif
                     } else {
                         appendStringInfoString(buf, extval);
                     }
@@ -11324,12 +11302,7 @@ static void get_const_expr(Const* constval, deparse_context* context, int showty
              */
             if (strspn(extval, "0123456789+-eE.") == strlen(extval)) {
                 if (extval[0] == '+' || extval[0] == '-') {
-#ifdef DOLPHIN
-                    without_cast = PRETTY_PAREN(context);
-                    appendStringInfo(buf, "%s%s%s", left_bracket, extval, right_bracket);
-#else
                     appendStringInfo(buf, "(%s)", extval);
-#endif
                 } else {
                     appendStringInfoString(buf, extval);
                 }
@@ -11396,11 +11369,7 @@ static void get_const_expr(Const* constval, deparse_context* context, int showty
             needlabel = true;
             break;
     }
-    if (
-#ifdef DOLPHIN
-        !without_cast &&
-#endif
-        (needlabel || showtype > 0))
+    if (needlabel || showtype > 0)
     {
         appendStringInfo(buf, "::%s", format_type_with_typemod(constval->consttype, constval->consttypmod));
     }

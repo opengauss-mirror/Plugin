@@ -107,7 +107,7 @@ static char *litbuf_udeescape(unsigned char escape, core_yyscan_t yyscanner);
 static unsigned char unescape_single_char(unsigned char c, core_yyscan_t yyscanner);
 static int	process_integer_literal(const char *token, YYSTYPE *lval);
 #ifdef DOLPHIN
-static int process_hex_number(char *token, int len, core_yyscan_t yyscanner, YYSTYPE *lval);
+static int process_special_number(char *token, int len, core_yyscan_t yyscanner, YYSTYPE *lval);
 #endif
 static bool is_utf16_surrogate_first(pg_wchar c);
 static bool is_utf16_surrogate_second(pg_wchar c);
@@ -251,6 +251,7 @@ quotefail		{quote}{whitespace}*"-"
  */
 xbstart			[bB]{quote}
 xbinside		[^']*
+xbstring		0b[0-1]+
 
 /* Hexadecimal number */
 xhstart			[xX]{quote}
@@ -503,6 +504,18 @@ other			.
 
 <xc><<EOF>>		{ yyerror("unterminated /* comment"); return 0;}
 
+{xbstring}		{
+					/* Binary bit type.
+					* At some point we should simply pass the string
+					* forward to the parser and label it there.
+					* In the meantime, place a leading "b" on the string
+					* to mark it for the input routine as a binary string.
+					*/
+					SET_YYLLOC();
+					yyextra->is_hint_str = false;
+					/* skip first '0', remain 'b' and other bit number */
+					return process_special_number(yytext + 1, yyleng - 1, yyscanner, yylval);
+				}
 {xbstart}		{
 					/* Binary bit type.
 					 * At some point we should simply pass the string
@@ -1210,7 +1223,7 @@ other			.
 					SET_YYLLOC();
 					yyextra->is_hint_str = false;
 					/* skip first '0', remain 'x' and other hex number */
-					return process_hex_number(yytext + 1, yyleng - 1, yyscanner, yylval);
+					return process_special_number(yytext + 1, yyleng - 1, yyscanner, yylval);
 				}
 {integer}		{
 					SET_YYLLOC();
@@ -1753,12 +1766,14 @@ litbufdup(core_yyscan_t yyscanner)
 }
 
 #ifdef DOLPHIN
-static int process_hex_number(char *token, int len, core_yyscan_t yyscanner, YYSTYPE *lval)
+static int process_special_number(char *token, int len, core_yyscan_t yyscanner, YYSTYPE *lval)
 {
+	/* first char is b means BCONST(don't support upper case 'B'), otherwise, it must be 'x' or 'X', which is XCONST */
+	int ret_type = *token == 'b' ? BCONST : XCONST;
 	startlit();
 	addlit(token, len, yyscanner);
 	lval->str = litbufdup(yyscanner);
-	return XCONST;
+	return ret_type;
 }
 #endif
 
