@@ -38,5 +38,21 @@ select "test" != "test";
 select * from test_quotes where a like "%test%";
 select * from test_quotes where a = "test1";
 
+-- test ctas
+set dolphin.sql_mode TO 'treat_bxconst_as_binary';
+create table ctas_test1 select convert(0x21, unsigned);
+\d ctas_test1
+create table ctas_test3 select convert(0x21, binary);
+\d ctas_test3
+set dolphin.sql_mode TO 'treat_bxconst_as_binary,ansi_quotes';
+create table ctas_test2 select convert(0x21, unsigned);
+\d ctas_test2
+create table ctas_test4 select convert(0x21, binary);
+\d ctas_test4
+drop table ctas_test1;
+drop table ctas_test2;
+drop table ctas_test3;
+drop table ctas_test4;
+
 drop schema test_ansi_quotes cascade;
 reset current_schema;
