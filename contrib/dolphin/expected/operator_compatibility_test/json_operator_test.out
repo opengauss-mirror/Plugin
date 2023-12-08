@@ -3317,7 +3317,11 @@ CONTEXT:  referenced column: char&json
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: char&json
 UPDATE test_json_type, test_json_table SET test_json_type.`char||json` = test_json_table.`char` || test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: char||json
 UPDATE test_json_type, test_json_table SET test_json_type.`char&&json` = test_json_table.`char` && test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: char&&json
 UPDATE test_json_type, test_json_table SET test_json_type.`char_div_json` = test_json_table.`char` div test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
@@ -3342,7 +3346,11 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(anyelement,json) line 3 at RETURN
 referenced column: char_xor_json
 UPDATE test_json_type, test_json_table SET test_json_type.`char_and_json` = test_json_table.`char` and test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: char_and_json
 UPDATE test_json_type, test_json_table SET test_json_type.`char_or_json` = test_json_table.`char` or test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: char_or_json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar+json` = test_json_table.`varchar` + test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varchar+json
@@ -3392,7 +3400,11 @@ CONTEXT:  referenced column: varchar&json
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: varchar&json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar||json` = test_json_table.`varchar` || test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varchar||json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar&&json` = test_json_table.`varchar` && test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varchar&&json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar_div_json` = test_json_table.`varchar` div test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
@@ -3417,7 +3429,11 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(anyelement,json) line 3 at RETURN
 referenced column: varchar_xor_json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar_and_json` = test_json_table.`varchar` and test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varchar_and_json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar_or_json` = test_json_table.`varchar` or test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varchar_or_json
 UPDATE test_json_type, test_json_table SET test_json_type.`binary+json` = test_json_table.`binary` + test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: binary+json
@@ -5232,6 +5248,8 @@ CONTEXT:  referenced column: json&char
 WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: json&char
 UPDATE test_json_type, test_json_table SET test_json_type.`json||char` = test_json_table.`json` || test_json_table.`char`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: json||char
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&char` = test_json_table.`json` && test_json_table.`char`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_char` = test_json_table.`json` div test_json_table.`char`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -5258,6 +5276,8 @@ PL/pgSQL function "xor"(json,anyelement) line 3 at RETURN
 referenced column: json_xor_char
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_char` = test_json_table.`json` and test_json_table.`char`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_char` = test_json_table.`json` or test_json_table.`char`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: json_or_char
 UPDATE test_json_type, test_json_table SET test_json_type.`json+varchar` = test_json_table.`json` + test_json_table.`varchar`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+varchar
@@ -5307,6 +5327,8 @@ CONTEXT:  referenced column: json&varchar
 WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: json&varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json||varchar` = test_json_table.`json` || test_json_table.`varchar`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: json||varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&varchar` = test_json_table.`json` && test_json_table.`varchar`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_varchar` = test_json_table.`json` div test_json_table.`varchar`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -5333,6 +5355,8 @@ PL/pgSQL function "xor"(json,anyelement) line 3 at RETURN
 referenced column: json_xor_varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_varchar` = test_json_table.`json` and test_json_table.`varchar`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_varchar` = test_json_table.`json` or test_json_table.`varchar`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: json_or_varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json+binary` = test_json_table.`json` + test_json_table.`binary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+binary

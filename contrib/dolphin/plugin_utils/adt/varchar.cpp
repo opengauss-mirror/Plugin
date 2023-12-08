@@ -2157,6 +2157,25 @@ ScalarVector* vbpcharlen(PG_FUNCTION_ARGS)
 
 #ifdef DOLPHIN
 
+static double ProcessStrval(char* str, int len, PG_FUNCTION_ARGS)
+{
+    if (!ENABLE_B_CMPT_MODE) {
+        return atof(str);
+    }
+    double resval = 0.0;
+    char* newstr = (char*)palloc0(len + 1);
+    errno_t rc = memcpy_s(newstr, len + 1, str, len);
+    securec_check(rc, "\0", "\0");
+    newstr[len] = '\0';
+    char* stopstring = NULL;
+    resval = strtod(newstr, &stopstring);
+    if (stopstring) {
+        ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+                (errmsg("Truncated incorrect DOUBLE value: %s", newstr)));
+    }
+    pfree_ext(newstr);
+    return resval;
+}
 
 PG_FUNCTION_INFO_V1_PUBLIC(text_bool);
 extern "C" DLL_PUBLIC Datum text_bool(PG_FUNCTION_ARGS);
@@ -2169,9 +2188,11 @@ Datum text_bool(PG_FUNCTION_ARGS)
 
     a1p = VARDATA_ANY(input);
     tmp = atof(a1p);
-    bool result = false;
-    if (parse_bool_with_len(a1p, len, &result)) {
-        PG_RETURN_BOOL((tmp ? true : false) || result);
+    if (!ENABLE_B_CMPT_MODE) {
+        bool result = false;
+        if (parse_bool_with_len(a1p, len, &result)) {
+            PG_RETURN_BOOL((tmp ? true : false) || result);
+        }
     }
     PG_RETURN_BOOL(tmp ? true : false);
 }
@@ -2186,7 +2207,7 @@ Datum varchar_bool(PG_FUNCTION_ARGS)
     double tmp;
 
     a1p = VARDATA_ANY(input);
-    tmp = atof(a1p);
+    tmp = ProcessStrval(a1p, VARSIZE_ANY_EXHDR(input), fcinfo);
 
     PG_RETURN_BOOL(tmp ? true : false);
 }
@@ -2201,7 +2222,7 @@ Datum char_bool(PG_FUNCTION_ARGS)
     double tmp;
 
     a1p = VARDATA_ANY(input);
-    tmp = atof(a1p);
+    tmp = ProcessStrval(a1p, VARSIZE_ANY_EXHDR(input), fcinfo);
 
     PG_RETURN_BOOL(tmp ? true : false);
 }
