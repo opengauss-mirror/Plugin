@@ -3085,12 +3085,6 @@ CTranslatorQueryToDXL::TranslateFromClauseToDXL(Node *node)
 			(RangeTblEntry *) spqdb::ListNth(m_query->rtable, rt_index - 1);
 		SPQOS_ASSERT(NULL != rte);
 
-		if (rte->forceDistRandom)
-		{
-			SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiQuery2DXLUnsupportedFeature,
-					   SPQOS_WSZ_LIT("spq_dist_random"));
-		}
-
 		if (rte->lateral)
 		{
 			SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiQuery2DXLUnsupportedFeature,

@@ -244,7 +244,7 @@ PlannedStmt *spq_planner(Query *parse, ParamListInfo boundParams)
     collect_shareinput_producers(root, result->planTree);
 
     /* Post-process ShareInputScan nodes */
-    (void)apply_shareinput_xslice(result->planTree, root);
+    (void)apply_shareinput_xslice(result->planTree, root, result->slices);
 
     /*
      * Fix ShareInputScans for EXPLAIN, like in standard_planner(). For all

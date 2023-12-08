@@ -794,7 +794,7 @@ COptTasks::PrintMissingStatsWarning(CMemoryPool *mp, CMDAccessor *md_accessor,
 			"One or more columns in the following table(s) do not have statistics: %s",
 			CreateMultiByteCharStringFromWCString(wcstr.GetBuffer()));
 		GpdbEreport(
-			ERRCODE_SUCCESSFUL_COMPLETION, NOTICE, msgbuf,
+			ERRCODE_SUCCESSFUL_COMPLETION, LOG, msgbuf,
 			"For non-partitioned tables, run analyze <table_name>(<column_list>)."
 			" For partitioned tables, run analyze rootpartition <table_name>(<column_list>)."
 			" See log for columns missing statistics.");

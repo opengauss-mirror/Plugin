@@ -453,6 +453,19 @@ static bool shareinput_mutator_xslice_1(Node *node, PlannerInfo *root, bool fPop
         if (shared) {
             ctxt->shared_inputs[sisc->share_id].producer_slice_id = motId;
             sisc->is_producer = true;
+        } else {
+            int producer_slice_id = ctxt->shared_inputs[sisc->share_id].producer_slice_id;
+            PlanSlice *producer_slice = &(ctxt->slices[producer_slice_id]);
+            PlanSlice *consumer_slice = &(ctxt->slices[motId]);
+            if (producer_slice->numsegments != consumer_slice->numsegments) {
+                ereport(ERROR, (errmsg("ShareInputScan check dop fail share_id[%d] producer(%d, %d) consumer(%d, %d) ",
+                sisc->share_id, producer_slice_id, producer_slice->numsegments,
+                motId, consumer_slice->numsegments)));
+            } else {
+                ereport(DEBUG2, (errmsg("ShareInputScan check dop SUCCESS share_id[%d] producer(%d, %d) consumer(%d, %d) ",
+                sisc->share_id, producer_slice_id, producer_slice->numsegments,
+                motId, consumer_slice->numsegments)));
+            }
         }
         share_info->participant_slices = bms_add_member(share_info->participant_slices, motId);
  
@@ -506,19 +519,17 @@ static bool shareinput_mutator_xslice_2(Node *node, PlannerInfo *root, bool fPop
  * Scan through the plan tree and make note of which Share Input Scans
  * are cross-slice.
  */
-Plan *apply_shareinput_xslice(Plan *plan, PlannerInfo *root)
+Plan *apply_shareinput_xslice(Plan *plan, PlannerInfo *root, PlanSlice *slices)
 {
     PlannerGlobal *glob = root->glob;
     ApplyShareInputContext *ctxt = &glob->share;
-    ListCell *lp, *lr;
-    int subplan_id;
  
     ctxt->motStack = NULL;
     ctxt->qdShares = NULL;
  
     ctxt->shared_inputs =
         (ApplyShareInputContextPerShare *)palloc0(ctxt->shared_input_count * sizeof(ApplyShareInputContextPerShare));
- 
+    ctxt->slices = slices;
     shareinput_pushmot(ctxt, 0);
  
     /*
@@ -664,14 +675,14 @@ Plan* make_stream(PlannerInfo* root, Plan *subplan, Motion *motion)
         stream->consumer_nodes = ng_convert_to_exec_nodes(distribution, LOCATOR_TYPE_REPLICATED, RELATION_ACCESS_READ);
     } else if (motion->motionType == MOTIONTYPE_HASH ||
                 motion->motionType == MOTIONTYPE_EXPLICIT) {
-        stream->smpDesc.distriType = plan->dop == 1 ? REMOTE_DISTRIBUTE : REMOTE_SPLIT_DISTRIBUTE;
+        stream->smpDesc.distriType = REMOTE_SPLIT_DISTRIBUTE;
         stream->type = STREAM_REDISTRIBUTE;
         stream->consumer_nodes = ng_convert_to_exec_nodes(distribution, LOCATOR_TYPE_HASH, RELATION_ACCESS_READ);
         if (stream->distribute_keys == nullptr) {
             stream->smpDesc.distriType = REMOTE_ROUNDROBIN;
         }
     } else {
-        ereport(LOG,(errmsg("unknown motion type [%d]", motion->motionType)));
+        ereport(ERROR,(errmsg("unknown motion type [%d]", motion->motionType)));
     }
     stream->streamID = motion->motionID;
     return (Plan*)stream;
@@ -805,6 +816,9 @@ Plan *replace_motion_stream_recurse(PlannerInfo* root, Plan *plan, bool &top)
 
     if (plan == NULL)
         return NULL;
+    if (plan->exec_nodes == NULL || plan->exec_nodes->nodeList == NULL) {
+        ereport(ERROR, (errmsg("exec_nodes check fail plan type[%d]", plan->type)));
+    }
 
     /* replace motion stream for subplan */
     List* subplans = root->glob->subplans;
@@ -839,6 +853,9 @@ Plan *replace_motion_stream_recurse(PlannerInfo* root, Plan *plan, bool &top)
     }  
 
     if (IsA(plan, Sequence)) {
+        if (top == true) {
+            ereport(ERROR, (errmsg("There's no gather on sequence curentIndex[%d]", cxt->curentIndex)));
+        }
         Sequence* node = (Sequence*)plan;
         foreach(lc, node->subplans) {
             Plan* subplan = (Plan*)lfirst(lc);

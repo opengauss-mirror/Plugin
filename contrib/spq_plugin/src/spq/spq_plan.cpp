@@ -767,7 +767,6 @@ Node *plan_tree_mutator(Node *node, Node *(*mutator)(Node *, void *), void *cont
                     case RTE_RELATION: /* ordinary relation reference */
                     case RTE_VOID:     /* deleted entry */
                     case RTE_RESULT:
-                    case RTE_NAMEDTUPLESTORE:
                         /* No extras. */
                         break;
 
@@ -787,20 +786,14 @@ Node *plan_tree_mutator(Node *node, Node *(*mutator)(Node *, void *), void *cont
                         newrte->joinaliasvars = (List *)copyObject(rte->joinaliasvars);
                         break;
 
-                    case RTE_FUNCTION: /* functions in FROM */
-                                       // 						MUTATE(newrte->funcexpr, rte->funcexpr, List *);
+                    case RTE_FUNCTION:
+                        MUTATE(newrte->funcexpr, rte->funcexpr, Node*);
                         break;
 
                     case RTE_TABLEFUNCTION:
-                        // 						newrte->subquery = (Query*)copyObject(rte->subquery);
-                        // 						MUTATE(newrte->funcexpr, rte->funcexpr, List *);
+                        newrte->subquery = (Query*)copyObject(rte->subquery);
+                        MUTATE(newrte->funcexpr, rte->funcexpr, Node*);
                         break;
-
-                    case RTE_TABLEFUNC:
-                        // 						newrte->tablefunc = copyObject(rte->tablefunc);
-                        // 						MUTATE(newrte->tablefunc, rte->tablefunc, TableFunc *);
-                        break;
-
                     case RTE_VALUES:
                         MUTATE(newrte->values_lists, rte->values_lists, List *);
                         break;
@@ -812,20 +805,20 @@ Node *plan_tree_mutator(Node *node, Node *(*mutator)(Node *, void *), void *cont
             }
             break;
 
-            // 		case T_RangeTblFunction:
-            // 			{
-            // 				RangeTblFunction *rtfunc = (RangeTblFunction *) node;
-            // 				RangeTblFunction *newrtfunc;
-            //
-            // 				FLATCOPY(newrtfunc, rtfunc, RangeTblFunction);
-            // 				MUTATE(newrtfunc->funcexpr, rtfunc->funcexpr, Node *);
-            //
-            // 				/*
-            // 				 * TODO is this right? //newrte->coldeflist = (List *)
-            // 				 * copyObject(rte->coldeflist);
-            // 				 */
-            // 			}
-            // 			break;
+        case T_RangeTblFunction:
+            {
+                RangeTblFunction *rtfunc = (RangeTblFunction *) node;
+                RangeTblFunction *newrtfunc;
+
+                FLATCOPY(newrtfunc, rtfunc, RangeTblFunction);
+                MUTATE(newrtfunc->funcexpr, rtfunc->funcexpr, Node *);
+
+                /*
+                 * TODO is this right? //newrte->coldeflist = (List *)
+                 * copyObject(rte->coldeflist);
+                 */
+            }
+            break;
 
         case T_ForeignScan: {
             ForeignScan *fdwscan = (ForeignScan *)node;

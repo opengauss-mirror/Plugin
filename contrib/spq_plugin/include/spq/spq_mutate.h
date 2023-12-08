@@ -21,7 +21,7 @@
 
 extern void collect_shareinput_producers(PlannerInfo *root, Plan *plan);
 extern Plan *replace_shareinput_targetlists(PlannerInfo *root, Plan *plan);
-extern Plan *apply_shareinput_xslice(Plan *plan, PlannerInfo *root);
+extern Plan *apply_shareinput_xslice(Plan *plan, PlannerInfo *root, PlanSlice *slices);
 extern void remove_subquery_in_RTEs(Node *node);
 extern bool is_plan_node(Node *node);
 extern void make_spq_remote_query(PlannerInfo *root, PlannedStmt *result, PlannerGlobal *glob);
