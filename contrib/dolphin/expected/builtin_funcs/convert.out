@@ -64,6 +64,18 @@ select convert('测试' using utf8);
  测试
 (1 row)
 
+select convert('测试' using gbk);
+ convert 
+---------
+ 测试
+(1 row)
+
+select convert('测试' using latin1);
+ convert 
+---------
+ ??
+(1 row)
+
 select convert(11.1, decimal(10,3));
  numeric 
 ---------
