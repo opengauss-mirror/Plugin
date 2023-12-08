@@ -176,7 +176,7 @@ select second('373839');
 (1 row)
 
 select second('2022-10-09');
-WARNING:  invalid input syntax for type time: "2022-10-09"
+WARNING:  Truncated incorrect time value: "2022-10-09"
 CONTEXT:  referenced column: second
  second 
 --------
@@ -220,7 +220,7 @@ select minute('373839');
 (1 row)
 
 select minute('2022-10-09');
-WARNING:  invalid input syntax for type time: "2022-10-09"
+WARNING:  Truncated incorrect time value: "2022-10-09"
 CONTEXT:  referenced column: minute
  minute 
 --------
@@ -264,7 +264,7 @@ select microsecond('373839');
 (1 row)
 
 select microsecond('2022-10-09');
-WARNING:  invalid input syntax for type time: "2022-10-09"
+WARNING:  Truncated incorrect time value: "2022-10-09"
 CONTEXT:  referenced column: microsecond
  microsecond 
 -------------
@@ -308,7 +308,7 @@ select hour('373839');
 (1 row)
 
 select hour('2022-10-09');
-WARNING:  invalid input syntax for type time: "2022-10-09"
+WARNING:  Truncated incorrect time value: "2022-10-09"
 CONTEXT:  referenced column: hour
  hour 
 ------
