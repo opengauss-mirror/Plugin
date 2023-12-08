@@ -2588,20 +2588,17 @@ spqdb::CountLeafPartTables(Oid rel_oid)
  * anything fetched via the wrapper functions in this file can end up in the
  * metadata cache and hence need to have an invalidation callback registered.
  */
-static bool mdcache_invalidation_counter_registered = false;
-static int64 mdcache_invalidation_counter = 0;
-static int64 last_mdcache_invalidation_counter = 0;
 
 static void
 mdsyscache_invalidation_counter_callback(Datum arg, int cacheid,
 										 uint32 hashvalue)
 {
-	mdcache_invalidation_counter++;
+	u_sess->spq_cxt.mdcache_invalidation_counter++;
 }
 static void
 mdrelcache_invalidation_counter_callback(Datum arg, Oid relid)
 {
-	mdcache_invalidation_counter++;
+	u_sess->spq_cxt.mdcache_invalidation_counter++;
 }
 
 static void
@@ -2676,16 +2673,16 @@ spqdb::MDCacheNeedsReset(void)
 {
 	SPQ_WRAP_START;
 	{
-		if (!mdcache_invalidation_counter_registered)
+		if (!u_sess->spq_cxt.mdcache_invalidation_counter_registered)
 		{
 			register_mdcache_invalidation_callbacks();
-			mdcache_invalidation_counter_registered = true;
+			u_sess->spq_cxt.mdcache_invalidation_counter_registered = true;
 		}
-		if (last_mdcache_invalidation_counter == mdcache_invalidation_counter)
+		if (u_sess->spq_cxt.last_mdcache_invalidation_counter == u_sess->spq_cxt.mdcache_invalidation_counter)
 			return false;
 		else
 		{
-			last_mdcache_invalidation_counter = mdcache_invalidation_counter;
+			u_sess->spq_cxt.last_mdcache_invalidation_counter = u_sess->spq_cxt.mdcache_invalidation_counter;
 			return true;
 		}
 	}
