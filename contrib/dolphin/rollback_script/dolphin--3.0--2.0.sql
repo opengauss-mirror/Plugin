@@ -157,3 +157,18 @@ DROP FUNCTION IF EXISTS pg_catalog.date_format (time without time zone, text);
 DROP FUNCTION IF EXISTS pg_catalog.to_char(time without time zone, text);
 
 drop function IF EXISTS pg_catalog."user"();
+
+DROP FUNCTION IF EXISTS pg_catalog.hour(date);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond(date);
+DROP FUNCTION IF EXISTS pg_catalog.minute(date);
+DROP FUNCTION IF EXISTS pg_catalog.second(date);
+
+DROP FUNCTION IF EXISTS pg_catalog.hour(timetz);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond(timetz);
+DROP FUNCTION IF EXISTS pg_catalog.minute(timetz);
+DROP FUNCTION IF EXISTS pg_catalog.second(timetz);
+
+DROP FUNCTION IF EXISTS pg_catalog.hour(timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond(timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.minute(timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.second(timestamptz);

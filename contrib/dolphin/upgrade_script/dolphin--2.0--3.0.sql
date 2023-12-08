@@ -259,3 +259,19 @@ RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'f
 CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_time(numeric)
 RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_time';
 create or replace function pg_catalog."user"() returns name as 'select current_user' LANGUAGE 'sql' IMMUTABLE;
+create or replace function pg_catalog."user"() returns name as 'select current_user' LANGUAGE 'sql' IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (date) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromDate';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (date) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromDate';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (date) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromDate';
+CREATE OR REPLACE FUNCTION pg_catalog.second (date) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromDate';
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (timetz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromTimeTz';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (timetz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromTimeTz';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (timetz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromTimeTz';
+CREATE OR REPLACE FUNCTION pg_catalog.second (timetz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromTimeTz';
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (timestamptz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromTimestampTz';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (timestamptz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromTimestampTz';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (timestamptz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromTimestampTz';
+CREATE OR REPLACE FUNCTION pg_catalog.second (timestamptz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromTimestampTz';
