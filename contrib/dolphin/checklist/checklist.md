@@ -130,6 +130,7 @@
 |plugin_pl\plpgsql\src\pl_reserved_kwlist.h|src\common\pl\plpgsql\src\pl_reserved_kwlist.h |
 |plugin_pl\plpgsql\src\pl_unreserved_kwlist.h|src\common\pl\plpgsql\src\pl_unreserved_kwlist.h |
 |plugin_catalog|heap.cpp   |src\common\backend\catalog\heap.cpp  |
+|plugin_catalog|pg_enum.cpp   |src\common\backend\catalog\pg_enum.cpp  |
 |llvmir|openGauss_expr_dolphin_aarch64.ir   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr_aarch64.ir   |
 |llvmir|openGauss_expr_dolphin_aarch64.ll   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr_aarch64.ll   |
 |llvmir|openGauss_expr_dolphin_x86_64.ir   |src\gausskernel\runtime\codegen\llvmir\GaussDB_expr.ir   |

@@ -5,11 +5,13 @@ set current_schema = 'test_enum_collation';
 drop table if exists test_enum_key1;
 NOTICE:  table "test_enum_key1" does not exist, skipping
 create table test_enum_key1(a enum('', '  '));
+ERROR:  duplicate key value violates unique constraint "pg_enum_typid_label_index"
+--?.*
 create table test_enum_key1(a enum('', '  ') collate utf8_bin);
 ERROR:  enum has duplicate key value "" = "  "
 create table test_enum_key1(a enum('a', 'a  '));
-ERROR:  relation "test_enum_key1" already exists in schema "test_enum_collation"
-DETAIL:  creating new table with existing name in the same schema
+ERROR:  duplicate key value violates unique constraint "pg_enum_typid_label_index"
+--?.*
 create table test_enum_key1(a enum('a', 'a  ') collate utf8_bin);
 ERROR:  enum has duplicate key value "a" = "a  "
 create table test_enum_key1(a enum('aaa', 'AAA  ') collate utf8_general_ci);
@@ -17,8 +19,6 @@ ERROR:  enum has duplicate key value "aaa" = "AAA  "
 create table test_enum_key1(a enum('高斯sS', '高斯ŠŠ  ') collate utf8_general_ci);
 ERROR:  enum has duplicate key value "高斯sS" = "高斯ŠŠ  "
 create table test_enum_key1(a enum('aaa', 'aaA   ') charset 'utf8');
-ERROR:  relation "test_enum_key1" already exists in schema "test_enum_collation"
-DETAIL:  creating new table with existing name in the same schema
 create table test_enum_key1(a enum('aaa', 'aaA   ') charset 'gbk');
 ERROR:  difference between the charset and the database encoding has not supported
 create table test_enum_key1(a enum('aaa', 'aaA   ') charset 'gb18030');
