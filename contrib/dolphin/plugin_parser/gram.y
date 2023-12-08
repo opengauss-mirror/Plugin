@@ -36867,6 +36867,7 @@ unreserved_keyword_without_key:
 			| ARCHIVE
 			| ASSERTION
 			| ASSIGNMENT
+			| AST
 			| AT
 			| LESS
 			| ATTRIBUTE
@@ -37170,6 +37171,7 @@ unreserved_keyword_without_key:
 			| PARSER
 			| PARTIAL %prec PARTIAL_EMPTY_PREC
 			| PARTITION
+			| PARTITIONING
 			| PARTITIONS
 			| PASSING
 			| PASSWORD
@@ -37228,6 +37230,7 @@ unreserved_keyword_without_key:
 			| REMOVE
 			| RENAME
 			| REORGANIZE
+			| REPAIR
 			| REPEAT
 			| REPEATABLE
 			| REPLACE
@@ -37246,6 +37249,7 @@ unreserved_keyword_without_key:
 			| ROLLBACK
 			| ROLLUP
 			| ROTATION
+			| ROWTYPE_P
 			| ROUTINE
 			| ROWS
 			| RULE
@@ -37427,6 +37431,7 @@ col_name_keyword:
 			| TEXT_P
 			| TIME %prec IDENT
 			| TIMESTAMP %prec IDENT
+			| TIMESTAMPADD
 			| TIMESTAMPDIFF
 			| TREAT
 			| TRIM
@@ -37523,6 +37528,7 @@ type_func_name_keyword_without_current_schema:
 			| RIGHT
 			| RLIKE
 			| SIMILAR
+			| SOUNDS
 			| TABLESAMPLE
 			| TIMECAPSULE
 			| XOR
