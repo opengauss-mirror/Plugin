@@ -132,6 +132,8 @@ typedef struct DefaultFuncType {
     Oid tableOid = InvalidOid;
     int colNumber = 0;
 } DefaultFuncType;
+
+#define SYSTEM_SCHEMA_NAME(schemaname) ((schemaname) == NULL || strcmp((schemaname), "pg_catalog") == 0)
 #endif
 
 #define OrientedIsCOLorPAX(rte) ((rte)->orientation == REL_COL_ORIENTED || (rte)->orientation == REL_PAX_ORIENTED)
@@ -2126,14 +2128,13 @@ static inline bool IsSameCategory(Oid type1, Oid type2)
  *      make aexpr and do transform, return the result.
  * 2. otherwise, all arg's type is common, use logical in between_and function, just like MySQL. return NULL in this case
  */
-static Node* HandleBetweenAnd(ParseState* pstate, FuncCall* fn, List* targs)
+static Node* HandleBetweenAnd(ParseState* pstate, FuncCall* fn, List* targs, const char* funcname)
 {
     /* sanity check, between args muse be 3 */
-    if (list_length(fn->funcname) > 2 || list_length(targs) != 3) {
+    if (list_length(fn->funcname) > 3 || list_length(targs) != 3) {
         return NULL;
     }
 
-    const char* funcname = list_length(fn->funcname) == 1 ? strVal(linitial(fn->funcname)) : strVal(lsecond(fn->funcname));
     bool b_a = strcmp(funcname, "b_between_and") == 0;
     bool b_n_a = strcmp(funcname, "b_not_between_and") == 0;
     bool b_s_a = strcmp(funcname, "b_sym_between_and") == 0;
@@ -2207,6 +2208,32 @@ static Node* HandleBetweenAnd(ParseState* pstate, FuncCall* fn, List* targs)
 
     return transformExprRecurse(pstate, node);
 }
+
+void ReplaceBCmptFuncName(List* names, char* objname, char* defaultname, char* replacename)
+{
+    int length = list_length(names);
+    Assert(length <= 3);
+
+    if (strcmp(objname, defaultname) == 0) {
+        /*
+         * 1. obj
+         * 2. pkg.obj/schema.pkg/schema.obj
+         * 3. schema.pkg.obj/catalog.schema.obj
+         * 4. catalog.schema.pkg.obj
+         * Package only allowed create in A compatibility
+         */
+        if (length == 1) {
+            strVal(linitial(names)) = replacename;
+        } else if (length == 2) {
+            strVal(lsecond(names)) = replacename;
+        } else if (length == 3) {
+            strVal(lthird(names)) = replacename;
+        } else {
+            /* should not happen */
+        }
+        pfree(objname);
+    }
+}
 #endif
 
 static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
@@ -2216,8 +2243,12 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
     ListCell* args = NULL;
     Node* result = NULL;
 #ifdef DOLPHIN
+    char* schemaname = NULL;
+    char* objname = NULL;
+    char* pkgname = NULL;
+    DeconstructQualifiedName(fn->funcname, &schemaname, &objname, &pkgname);
     /* For DEFAULT function, while transform, replace it to the default expr for col*/
-    if (strcmp(strVal(linitial(fn->funcname)), "mode_b_default") == 0) {
+    if (strcmp(objname, "mode_b_default") == 0 && SYSTEM_SCHEMA_NAME(schemaname)) {
         return HandleDefaultFunction(pstate, fn);
     }
 #endif
@@ -2236,12 +2267,16 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
         }
     }
 #ifdef DOLPHIN
-    result = HandleBetweenAnd(pstate, fn, targs);
-    if (PointerIsValid(result)) {
-        return result;
+    if (SYSTEM_SCHEMA_NAME(schemaname)) {
+        result = HandleBetweenAnd(pstate, fn, targs, objname);
+        if (PointerIsValid(result)) {
+            return result;
+        }
+        ReplaceBCmptFuncName(fn->funcname, objname, "stddev", "stddev_pop");
+        ReplaceBCmptFuncName(fn->funcname, objname, "variance", "var_pop");
     }
 
-    if (strcmp(strVal(linitial(fn->funcname)), "name_const") == 0 && list_length(targs) == 2) {
+    if (strcmp(objname, "name_const") == 0 && list_length(targs) == 2 && SYSTEM_SCHEMA_NAME(schemaname)) {
         Node *name_arg = (Node *)linitial(targs);
         Node *const_arg = (Node *)llast(targs);
 
