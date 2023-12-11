@@ -334,6 +334,22 @@ Node *const_expression_to_const(Node *node)
     return eval_const_expression_value(NULL, result, NULL);
 }
 
+#ifdef DOLPHIN
+static bool hasTextCoercePath(Oid* srcoid, Oid destoid, CoercionContext ccontext, bool* changed)
+{
+    if (ccontext == COERCION_EXPLICIT &&
+        (destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
+        destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
+        destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
+        destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8"))) {
+        *srcoid = TEXTOID;
+        *changed = true;
+        return true;
+    }
+    return false;
+}
+#endif
+
 /*
  * coerce_type()
  *		Convert an expression to a different type.
@@ -362,6 +378,9 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
     Node* result = NULL;
     CoercionPathType pathtype;
     Oid funcId;
+#ifdef DOLPHIN
+    bool change_unknown = false;
+#endif
 
     if (targetTypeId == inputTypeId || node == NULL) {
         /* no conversion needed */
@@ -410,7 +429,12 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
         }
     }
 
+#ifdef DOLPHIN
+    if (inputTypeId == UNKNOWNOID && IsA(node, Const) &&
+        !hasTextCoercePath(&inputTypeId, targetTypeId, ccontext, &change_unknown)) {
+#else
     if (inputTypeId == UNKNOWNOID && IsA(node, Const)) {
+#endif
         /*
          * Input is a string constant with previously undetermined type. Apply
          * the target type's typinput function to it to produce a constant of
@@ -547,6 +571,12 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
         ccontext = COERCION_ASSIGNMENT;
     }
     pathtype = find_coercion_pathway(targetTypeId, inputTypeId, ccontext, &funcId);
+#ifdef DOLPHIN
+    if (change_unknown) {
+        inputTypeId = UNKNOWNOID;
+        change_unknown = false;
+    }
+#endif
     if (pathtype != COERCION_PATH_NONE) {
         if (pathtype != COERCION_PATH_RELABELTYPE) {
             /*
