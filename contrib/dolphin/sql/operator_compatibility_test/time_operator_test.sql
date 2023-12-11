@@ -552,6 +552,106 @@ select date '2022-02-01' - 2 AS result;
 select date '2022-02-01' * 2 AS result;
 select date '2022-02-01' / 2 AS result;
 
+-- test timestamp>,>=,<,<=,=,<> with int/uint
+set dolphin.sql_mode='sql_mode_strict,sql_mode_full_group,pipes_as_concat,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+create table t1 (id int, dt datetime, dt1 timestamp);
+insert into t1 values (1,"2001-08-14 00:00:00","2001-08-14 00:00:00"),(2,"2001-08-15 00:00:00","2001-08-15 00:00:00"),(3,"2001-08-16 00:00:00","2001-08-16 00:00:00"),(4,"2003-09-15 01:20:30","2003-09-15 01:20:30");
+select * from t1 where dt > 20021020 and dt1 > 20021020 order by dt;
+select * from t1 where dt > 20 and dt1 > 20 order by dt;
+select * from t1 where dt > 20000000000000 and dt1 > 20000000000000 order by dt;
+select * from t1 where dt > 200000000000000 and dt1 > 200000000000000 order by dt;
+select * from t1 where dt >= 20021020 and dt1 >= 20021020 order by dt;
+select * from t1 where dt >= 20 and dt1 >= 20 order by dt;
+select * from t1 where dt >= 20000000000000 and dt1 >= 20000000000000 order by dt;
+select * from t1 where dt >= 200000000000000 and dt1 >= 200000000000000 order by dt;
+select * from t1 where dt < 20030915 and dt1 < 20030915 order by dt;
+select * from t1 where dt < 2003 and dt < 2003 order by dt;
+select * from t1 where dt < 200000000000000 and dt < 200000000000000 order by dt;
+select * from t1 where dt <= 20030915 and dt <= 20030915 order by dt;
+select * from t1 where dt <= 2003 and dt <= 2003 order by dt;
+select * from t1 where dt <= 200000000000000 and dt <= 200000000000000 order by dt;
+select * from t1 where dt <> 20010814 and dt <> 20010814 order by dt;
+select * from t1 where dt = 20010814;
+
+select * from t1 where dt > 20021020::uint4 and dt1 > 20021020::uint4 order by dt;
+select * from t1 where dt > 20::uint4 and dt1 > 20::uint4 order by dt;
+select * from t1 where dt > 20000000000000::uint4 and dt1 > 20000000000000::uint4 order by dt;
+select * from t1 where dt > 200000000000000::uint4 and dt1 > 200000000000000::uint4 order by dt;
+select * from t1 where dt >= 20021020::uint4 and dt1 >= 20021020::uint4 order by dt;
+select * from t1 where dt >= 20::uint4 and dt1 >= 20::uint4 order by dt;
+select * from t1 where dt >= 20000000000000::uint4 and dt1 >= 20000000000000::uint4 order by dt;
+select * from t1 where dt >= 200000000000000::uint4 and dt1 >= 200000000000000::uint4 order by dt;
+select * from t1 where dt < 20030915::uint4 and dt1 < 20030915::uint4 order by dt;
+select * from t1 where dt < 2003::uint4 and dt1 < 2003::uint4 order by dt;
+select * from t1 where dt < 200000000000000::uint4 and dt1 < 200000000000000::uint4 order by dt;
+select * from t1 where dt <= 20030915::uint4 and dt1 <= 20030915::uint4 order by dt;
+select * from t1 where dt <= 2003::uint4 and dt1 <= 2003::uint4 order by dt;
+select * from t1 where dt <= 200000000000000::uint4 and dt1 <= 200000000000000::uint4 order by dt;
+select * from t1 where dt <> 20010814::uint4 and dt1 <> 20010814::uint4 order by dt;
+						 
+select * from t1 where dt > 20021020::int8 and dt1 > 20021020::int8 order by dt;
+select * from t1 where dt > 20::int8 and dt1 > 20::int8 order by dt;
+select * from t1 where dt > 20000000000000::int8 and dt1 > 20000000000000::int8 order by dt;
+select * from t1 where dt > 200000000000000::int8 and dt1 > 200000000000000::int8 order by dt;
+select * from t1 where dt >= 20021020::int8 and dt1 >= 20021020::int8 order by dt;
+select * from t1 where dt >= 20::int8 and dt1 >= 20::int8 order by dt;
+select * from t1 where dt >= 20000000000000::int8 and dt1 >= 20000000000000::int8 order by dt;
+select * from t1 where dt >= 200000000000000::int8 and dt1 >= 200000000000000::int8 order by dt;
+select * from t1 where dt < 20030915::int8 and dt1 < 20030915::int8 order by dt;
+select * from t1 where dt < 2003::int8 and dt1 < 2003::int8 order by dt;
+select * from t1 where dt < 200000000000000::int8 and dt1 < 200000000000000::int8 order by dt;
+select * from t1 where dt <= 20030915::int8 and dt1 <= 20030915::int8 order by dt;
+select * from t1 where dt <= 2003::int8 and dt1 <= 2003::int8 order by dt;
+select * from t1 where dt <= 200000000000000::int8 and dt1 <= 200000000000000::int8 order by dt;
+select * from t1 where dt <> 20010814::int8 and dt1 <> 20010814::int8 order by dt;
+						 
+select * from t1 where dt > 20021020::uint8 and dt1 > 20021020::uint8 order by dt;
+select * from t1 where dt > 20::uint8 and dt1 > 20::uint8 order by dt;
+select * from t1 where dt > 20000000000000::uint8 and dt1 > 20000000000000::uint8 order by dt;
+select * from t1 where dt > 200000000000000::uint8 and dt1 > 200000000000000::uint8 order by dt;
+select * from t1 where dt >= 20021020::uint8 and dt1 >= 20021020::uint8 order by dt;
+select * from t1 where dt >= 20::uint8 and dt1 >= 20::uint8 order by dt;
+select * from t1 where dt >= 20000000000000::uint8 and dt1 >= 20000000000000::uint8 order by dt;
+select * from t1 where dt >= 200000000000000::uint8 and dt1 >= 200000000000000::uint8 order by dt;
+select * from t1 where dt < 20030915::uint8 and dt1 < 20030915::uint8 order by dt;
+select * from t1 where dt < 2003::uint8 and dt1 < 2003::uint8 order by dt;
+select * from t1 where dt < 200000000000000::uint8 and dt1 < 200000000000000::uint8 order by dt;
+select * from t1 where dt <= 20030915::uint8 and dt1 <= 20030915::uint8 order by dt;
+select * from t1 where dt <= 2003::uint8 and dt1 <= 2003::uint8 order by dt;
+select * from t1 where dt <= 200000000000000::uint8 and dt1 <= 200000000000000::uint8 order by dt;
+select * from t1 where dt <> 20010814::uint8 and dt1 <> 20010814::uint8 order by dt;
+						 
+select * from t1 where dt > 20::int1 and dt1 > 20::int1 order by dt;
+select * from t1 where dt >= 20::int1 and dt1 >= 20::int1 order by dt;
+select * from t1 where dt < 20::int1 and dt1 < 20::int1 order by dt;
+select * from t1 where dt <= 20::int1 and dt1 <= 20::int1 order by dt;
+select * from t1 where dt <> 20::int1 and dt1 <> 20::int1 order by dt;
+select * from t1 where dt > 2000::int2 and dt1 > 2000::int2 order by dt;
+select * from t1 where dt >= 2000::int2 and dt1 >= 2000::int2 order by dt;
+select * from t1 where dt < 2000::int2 and dt1 < 2000::int2 order by dt;
+select * from t1 where dt <= 2000::int2 and dt1 <= 2000::int2 order by dt;
+select * from t1 where dt <> 2000::int2 and dt1 <> 2000::int2 order by dt;
+select * from t1 where dt > 20::uint1 and dt1 > 20::uint1 order by dt;
+select * from t1 where dt >= 20::uint1 and dt1 >= 20::uint1 order by dt;
+select * from t1 where dt < 20::uint1 and dt1 < 20::uint1 order by dt;
+select * from t1 where dt <= 20::uint1 and dt1 <= 20::uint1 order by dt;
+select * from t1 where dt <> 20::uint1 and dt1 <> 20::uint1 order by dt;
+select * from t1 where dt > 2000::uint2 and dt1 > 2000::uint2 order by dt;
+select * from t1 where dt >= 2000::uint2 and dt1 >= 2000::uint2 order by dt;
+select * from t1 where dt < 2000::uint2 and dt1 < 2000::uint2 order by dt;
+select * from t1 where dt <= 2000::uint2 and dt1 <= 2000::uint2 order by dt;
+select * from t1 where dt <> 2000::uint2 and dt1 <> 2000::uint2  order by dt;
+
+
+select * from t1 where dt > 20021020::float and dt1 > 20021020::float order by dt;
+select * from t1 where dt > 20021020::double and dt1 > 20021020::double order by dt;
+select * from t1 where dt > 20021020::numeric and dt1 > 20021020::numeric order by dt;
+select * from t1 where dt <> 20021020::float and dt1 <> 20021020::float order by dt;
+select * from t1 where dt <> 20021020::double and dt1 <> 20021020::double order by dt;
+select * from t1 where dt <> 20021020::numeric and dt1 <> 20021020::numeric order by dt;
+
+drop table t1;
+
 ---------- tail ----------
 drop schema time_operator_test_schema cascade;
 reset current_schema;
