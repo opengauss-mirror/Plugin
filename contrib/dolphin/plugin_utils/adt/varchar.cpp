@@ -348,6 +348,10 @@ Datum bpchar(PG_FUNCTION_ARGS)
                     }
                 }
             }
+         } else {
+            ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+                (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                    errmsg("value too long for type character(%d)", maxlen)));
         }
 
         len = maxmblen;
