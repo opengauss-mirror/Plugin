@@ -115,12 +115,16 @@ SELECT HEX(COMPRESS('string for test compress function '::name));
 (1 row)
 
 SELECT HEX(COMPRESS('string for test compress function '::character(15)));
+WARNING:  value too long for type character(15)
+CONTEXT:  referenced column: hex
                           hex                           
 --------------------------------------------------------
  0f000000789c2b2e29cacc4b5748cb2f5228492d2e01002f9805df
 (1 row)
 
 SELECT HEX(COMPRESS('string for test compress function '::char(10)));
+WARNING:  value too long for type character(10)
+CONTEXT:  referenced column: hex
                      hex                      
 ----------------------------------------------
  0a000000789c2b2e29cacc4b5748cb2f020016a403ff
@@ -236,10 +240,15 @@ SELECT HEX(COMPRESS(1E+1000));
 (1 row)
 
 SELECT HEX(COMPRESS(1E+1001)); --ERROR
-ERROR:  invalid input syntax for type numeric: "1E+1001"
+WARNING:  invalid input syntax for type numeric: "1E+1001"
 LINE 1: SELECT HEX(COMPRESS(1E+1001));
                             ^
 CONTEXT:  referenced column: hex
+                    hex                     
+--------------------------------------------
+ ea030000789c33341805a360140c7f000028b4bbe2
+(1 row)
+
 SELECT HEX(COMPRESS(RPAD('a', 1024, 'a')));
                     hex                     
 --------------------------------------------
@@ -395,12 +404,16 @@ SELECT UNCOMPRESS(COMPRESS('string for test compress function '::name));
 (1 row)
 
 SELECT UNCOMPRESS(COMPRESS('string for test compress function '::character(15)));
+WARNING:  value too long for type character(15)
+CONTEXT:  referenced column: uncompress
    uncompress    
 -----------------
  string for test
 (1 row)
 
 SELECT UNCOMPRESS(COMPRESS('string for test compress function '::char(10)));
+WARNING:  value too long for type character(10)
+CONTEXT:  referenced column: uncompress
  uncompress 
 ------------
  string for
@@ -560,10 +573,17 @@ CONTEXT:  referenced column: uncompress
 (1 row)
 
 SELECT UNCOMPRESS(1E+1001); --ERROR
-ERROR:  invalid input syntax for type numeric: "1E+1001"
+WARNING:  invalid input syntax for type numeric: "1E+1001"
 LINE 1: SELECT UNCOMPRESS(1E+1001);
                           ^
 CONTEXT:  referenced column: uncompress
+WARNING:  ZLIB: Input data corrupted
+CONTEXT:  referenced column: uncompress
+ uncompress 
+------------
+ 
+(1 row)
+
 SELECT UNCOMPRESS(COMPRESS(RPAD('a', 1024, 'a')));
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             uncompress                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -729,12 +749,16 @@ SELECT UNCOMPRESSED_LENGTH(COMPRESS('string for test compress function '::name))
 (1 row)
 
 SELECT UNCOMPRESSED_LENGTH(COMPRESS('string for test compress function '::character(15)));
+WARNING:  value too long for type character(15)
+CONTEXT:  referenced column: uncompressed_length
  uncompressed_length 
 ---------------------
  15
 (1 row)
 
 SELECT UNCOMPRESSED_LENGTH(COMPRESS('string for test compress function '::char(10)));
+WARNING:  value too long for type character(10)
+CONTEXT:  referenced column: uncompressed_length
  uncompressed_length 
 ---------------------
  10
@@ -875,10 +899,15 @@ SELECT UNCOMPRESSED_LENGTH(COMPRESS(RPAD('a', 1000000, 'a')));
 (1 row)
 
 SELECT UNCOMPRESSED_LENGTH(1E+1001); --ERROR
-ERROR:  invalid input syntax for type numeric: "1E+1001"
+WARNING:  invalid input syntax for type numeric: "1E+1001"
 LINE 1: SELECT UNCOMPRESSED_LENGTH(1E+1001);
                                    ^
 CONTEXT:  referenced column: uncompressed_length
+ uncompressed_length 
+---------------------
+ 808464433
+(1 row)
+
 SELECT UNCOMPRESSED_LENGTH(COMPRESS(RPAD('a', 1024, 'a')));
  uncompressed_length 
 ---------------------

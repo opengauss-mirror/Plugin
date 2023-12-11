@@ -265,17 +265,22 @@ static void alloc_var(NumericVar* var, int ndigits);
 static void zero_var(NumericVar* var);
 
 static void init_ro_var_from_var(const NumericVar* value, NumericVar* dest);
-
+#ifdef DOLPHIN
+static const char* set_var_from_str(const char* str, const char* cp, NumericVar* dest, bool can_ignore);
+#else
 static const char* set_var_from_str(const char* str, const char* cp, NumericVar* dest);
+#endif
 static void set_var_from_num(Numeric value, NumericVar* dest);
 static void set_var_from_var(const NumericVar* value, NumericVar* dest);
 static void init_var_from_var(const NumericVar *value, NumericVar *dest);
 static char* get_str_from_var(NumericVar* var);
 static char* output_get_str_from_var(NumericVar* var);
 static char* get_str_from_var_sci(NumericVar* var, int rscale);
-
+#ifdef DOLPHIN
+static void apply_typmod(NumericVar* var, int32 typmod, bool can_ignore);
+#else
 static void apply_typmod(NumericVar* var, int32 typmod);
-
+#endif
 static int32 numericvar_to_int32(const NumericVar* var, bool can_ignore = false);
 static double numericvar_to_double_no_overflow(NumericVar* var);
 
@@ -504,8 +509,11 @@ Datum numeric_in(PG_FUNCTION_ARGS)
         NumericVar value;
 
         init_var(&value);
-
+#ifdef DOLPHIN
+        cp = set_var_from_str(str, cp, &value, fcinfo->can_ignore);
+#else
         cp = set_var_from_str(str, cp, &value);
+#endif
 
         /*
          * We duplicate a few lines of code here because we would like to
@@ -525,8 +533,11 @@ Datum numeric_in(PG_FUNCTION_ARGS)
             }
             cp++;
         }
-
+#ifdef DOLPHIN
+        apply_typmod(&value, typmod, fcinfo->can_ignore);
+#else
         apply_typmod(&value, typmod);
+#endif
 
         res = make_result(&value);
         free_var(&value);
@@ -803,8 +814,11 @@ Datum numeric_recv(PG_FUNCTION_ARGS)
                     errmsg("invalid digit in external \"numeric\" value")));
         value.digits[i] = d;
     }
-
+#ifdef DOLPHIN
+    apply_typmod(&value, typmod, fcinfo->can_ignore);
+#else
     apply_typmod(&value, typmod);
+#endif
 
     res = make_result(&value);
     free_var(&value);
@@ -963,7 +977,11 @@ Datum numeric(PG_FUNCTION_ARGS)
     init_var(&var);
 
     set_var_from_num(num, &var);
+#ifdef DOLPHIN
+    apply_typmod(&var, typmod, fcinfo->can_ignore);
+#else
     apply_typmod(&var, typmod);
+#endif
     newm = make_result(&var);
 
     free_var(&var);
@@ -3572,7 +3590,11 @@ Datum float8_numeric(PG_FUNCTION_ARGS)
     init_var(&result);
 
     /* Assume we need not worry about leading/trailing spaces */
+#ifdef DOLPHIN
+    (void)set_var_from_str(buf, buf, &result, fcinfo->can_ignore);
+#else
     (void)set_var_from_str(buf, buf, &result);
+#endif
 
     res = make_result(&result);
 
@@ -3649,7 +3671,11 @@ Datum float4_numeric(PG_FUNCTION_ARGS)
     init_var(&result);
 
     /* Assume we need not worry about leading/trailing spaces */
+#ifdef DOLPHIN
+    (void)set_var_from_str(buf, buf, &result, fcinfo->can_ignore);
+#else
     (void)set_var_from_str(buf, buf, &result);
+#endif
 
     res = make_result(&result);
 
@@ -4784,7 +4810,11 @@ static void zero_var(NumericVar* var)
  * cp is the place to actually start parsing; str is what to use in error
  * reports.  (Typically cp would be the same except advanced over spaces.)
  */
+#ifdef DOLPHIN
+static const char* set_var_from_str(const char* str, const char* cp, NumericVar* dest, bool can_ignore)
+#else
 static const char* set_var_from_str(const char* str, const char* cp, NumericVar* dest)
+#endif
 {
     bool have_dp = FALSE;
     int i;
@@ -4822,6 +4852,11 @@ static const char* set_var_from_str(const char* str, const char* cp, NumericVar*
     }
 
     if (!isdigit((unsigned char)*cp) && u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+#ifdef DOLPHIN
+        ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for type numeric: \"%s\"", str)));
+#endif
         char* cp = (char*)palloc0(sizeof(char));
         return cp;
     }
@@ -4847,7 +4882,11 @@ static const char* set_var_from_str(const char* str, const char* cp, NumericVar*
                 dscale++;
         } else if (*cp == '.') {
             if (have_dp)
+#ifdef DOLPHIN
+                ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+#else
                 ereport(ERROR,
+#endif
                     (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                         errmsg("invalid input syntax for type numeric: \"%s\"", str)));
             have_dp = TRUE;
@@ -4869,12 +4908,20 @@ static const char* set_var_from_str(const char* str, const char* cp, NumericVar*
         cp++;
         exponent = strtol(cp, &endptr, 10);
         if (endptr == cp)
+#ifdef DOLPHIN
+            ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+#else
             ereport(ERROR,
+#endif
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type numeric: \"%s\"", str)));
         cp = endptr;
         if (exponent > NUMERIC_MAX_PRECISION || exponent < -NUMERIC_MAX_PRECISION)
+#ifdef DOLPHIN
+            ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+#else
             ereport(ERROR,
+#endif
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type numeric: \"%s\"", str)));
         dweight += (int)exponent;
@@ -5538,7 +5585,11 @@ Numeric makeNumeric(NumericVar* var)
  *	Do bounds checking and rounding according to the attributes
  *	typmod field.
  */
+#ifdef DOLPHIN
+static void apply_typmod(NumericVar* var, int32 typmod, bool can_ignore)
+#else
 static void apply_typmod(NumericVar* var, int32 typmod)
+#endif
 {
     int precision;
     int scale;
@@ -5588,8 +5639,13 @@ static void apply_typmod(NumericVar* var, int32 typmod)
 #else
 #error unsupported NBASE
 #endif
+#ifdef DOLPHIN
+                if (ddigits > maxdigits) {
+                    ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+#else
                 if (ddigits > maxdigits)
                     ereport(ERROR,
+#endif
                         (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                             errmsg("numeric field overflow"),
                             errdetail(
@@ -5599,6 +5655,25 @@ static void apply_typmod(NumericVar* var, int32 typmod)
                                 /* Display 10^0 as 1 */
                                 maxdigits ? "10^" : "",
                                 maxdigits ? maxdigits : 1)));
+#ifdef DOLPHIN
+                    errno_t rc;
+                    size_t maxlen = precision + 2;
+                    char str[maxlen] = {};
+                    while (maxdigits-- > 0) {
+                        rc = strcat_s(str, maxlen, "9");
+                        securec_check(rc, "\0", "\0");
+                    }
+                    if (scale > 0) {
+                        rc = strcat_s(str, maxlen, ".");
+                        securec_check(rc, "\0", "\0");
+                        while (scale-- > 0) {
+                            rc = strcat_s(str, maxlen, "9");
+                            securec_check(rc, "\0", "\0");
+                        }
+                    }
+                    (void)set_var_from_str(str, str, var, can_ignore);
+                }
+#endif
                 break;
             }
             ddigits -= DEC_DIGITS;

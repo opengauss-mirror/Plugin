@@ -2615,6 +2615,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`float4/json` = test_j
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: float4/json
 UPDATE test_json_type, test_json_table SET test_json_type.`float4%json` = test_json_table.`float4` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: float4%json
 UPDATE test_json_type, test_json_table SET test_json_type.`float4^json` = test_json_table.`float4` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: float4^json
@@ -2660,6 +2662,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`float8/json` = test_j
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: float8/json
 UPDATE test_json_type, test_json_table SET test_json_type.`float8%json` = test_json_table.`float8` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: float8%json
 UPDATE test_json_type, test_json_table SET test_json_type.`float8^json` = test_json_table.`float8` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: float8^json
@@ -2705,6 +2709,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`numeric/json` = test_
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: numeric/json
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric%json` = test_json_table.`numeric` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: numeric%json
 UPDATE test_json_type, test_json_table SET test_json_type.`numeric^json` = test_json_table.`numeric` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: numeric^json
@@ -2750,6 +2756,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`bit1/json` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: bit1/json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1%json` = test_json_table.`bit1` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: bit1%json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit1^json` = test_json_table.`bit1` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: bit1^json
@@ -2795,6 +2803,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`bit64/json` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: bit64/json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64%json` = test_json_table.`bit64` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: bit64%json
 UPDATE test_json_type, test_json_table SET test_json_type.`bit64^json` = test_json_table.`bit64` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: bit64^json
@@ -2840,6 +2850,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`boolean/json` = test_
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: boolean/json
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean%json` = test_json_table.`boolean` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: boolean%json
 UPDATE test_json_type, test_json_table SET test_json_type.`boolean^json` = test_json_table.`boolean` ^ test_json_table.`json`;
 ERROR:  failed to find conversion function from boolean to double precision
 CONTEXT:  referenced column: test_json_type
@@ -2881,6 +2893,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`date/json` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: date/json
 UPDATE test_json_type, test_json_table SET test_json_type.`date%json` = test_json_table.`date` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: date%json
 UPDATE test_json_type, test_json_table SET test_json_type.`date^json` = test_json_table.`date` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: date^json
@@ -2926,6 +2940,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`time/json` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: time/json
 UPDATE test_json_type, test_json_table SET test_json_type.`time%json` = test_json_table.`time` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: time%json
 UPDATE test_json_type, test_json_table SET test_json_type.`time^json` = test_json_table.`time` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: time^json
@@ -2971,6 +2987,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`time(4)/json` = test_
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: time(4)/json
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)%json` = test_json_table.`time(4)` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: time(4)%json
 UPDATE test_json_type, test_json_table SET test_json_type.`time(4)^json` = test_json_table.`time(4)` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: time(4)^json
@@ -3016,6 +3034,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`datetime/json` = test
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: datetime/json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime%json` = test_json_table.`datetime` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: datetime%json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime^json` = test_json_table.`datetime` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: datetime^json
@@ -3067,6 +3087,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`datetime(4)/json` = t
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: datetime(4)/json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime(4)%json` = test_json_table.`datetime(4)` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: datetime(4)%json
 UPDATE test_json_type, test_json_table SET test_json_type.`datetime(4)^json` = test_json_table.`datetime(4)` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: datetime(4)^json
@@ -3118,6 +3140,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`timestamp/json` = tes
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: timestamp/json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp%json` = test_json_table.`timestamp` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: timestamp%json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp^json` = test_json_table.`timestamp` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: timestamp^json
@@ -3169,6 +3193,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`timestamp(4)/json` = 
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: timestamp(4)/json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp(4)%json` = test_json_table.`timestamp(4)` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: timestamp(4)%json
 UPDATE test_json_type, test_json_table SET test_json_type.`timestamp(4)^json` = test_json_table.`timestamp(4)` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: timestamp(4)^json
@@ -3220,6 +3246,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`year/json` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: year/json
 UPDATE test_json_type, test_json_table SET test_json_type.`year%json` = test_json_table.`year` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: year%json
 UPDATE test_json_type, test_json_table SET test_json_type.`year^json` = test_json_table.`year` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: year^json
@@ -3290,6 +3318,8 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: char/json
 UPDATE test_json_type, test_json_table SET test_json_type.`char%json` = test_json_table.`char` % test_json_table.`json`;
 WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: char%json
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: char%json
 UPDATE test_json_type, test_json_table SET test_json_type.`char^json` = test_json_table.`char` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -3365,6 +3395,8 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varchar/json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar%json` = test_json_table.`varchar` % test_json_table.`json`;
 WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: varchar%json
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varchar%json
 UPDATE test_json_type, test_json_table SET test_json_type.`varchar^json` = test_json_table.`varchar` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -3939,6 +3971,8 @@ CONTEXT:  referenced column: text/json
 UPDATE test_json_type, test_json_table SET test_json_type.`text%json` = test_json_table.`text` % test_json_table.`json`;
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: text%json
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: text%json
 UPDATE test_json_type, test_json_table SET test_json_type.`text^json` = test_json_table.`text` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text^json
@@ -4004,6 +4038,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`enum_t/json` = test_j
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: enum_t/json
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t%json` = test_json_table.`enum_t` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: enum_t%json
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t^json` = test_json_table.`enum_t` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: enum_t^json
@@ -4065,6 +4101,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`set_t/json` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: set_t/json
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t%json` = test_json_table.`set_t` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: set_t%json
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t^json` = test_json_table.`set_t` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: set_t^json
@@ -4502,6 +4540,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/float4` = test_j
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/float4
 UPDATE test_json_type, test_json_table SET test_json_type.`json%float4` = test_json_table.`json` % test_json_table.`float4`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%float4
 UPDATE test_json_type, test_json_table SET test_json_type.`json^float4` = test_json_table.`json` ^ test_json_table.`float4`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^float4
@@ -4547,6 +4587,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/float8` = test_j
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/float8
 UPDATE test_json_type, test_json_table SET test_json_type.`json%float8` = test_json_table.`json` % test_json_table.`float8`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%float8
 UPDATE test_json_type, test_json_table SET test_json_type.`json^float8` = test_json_table.`json` ^ test_json_table.`float8`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^float8
@@ -4592,6 +4634,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/numeric` = test_
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/numeric
 UPDATE test_json_type, test_json_table SET test_json_type.`json%numeric` = test_json_table.`json` % test_json_table.`numeric`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%numeric
 UPDATE test_json_type, test_json_table SET test_json_type.`json^numeric` = test_json_table.`json` ^ test_json_table.`numeric`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^numeric
@@ -4637,6 +4681,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/bit1` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/bit1
 UPDATE test_json_type, test_json_table SET test_json_type.`json%bit1` = test_json_table.`json` % test_json_table.`bit1`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%bit1
 UPDATE test_json_type, test_json_table SET test_json_type.`json^bit1` = test_json_table.`json` ^ test_json_table.`bit1`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^bit1
@@ -4688,6 +4734,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/bit64` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/bit64
 UPDATE test_json_type, test_json_table SET test_json_type.`json%bit64` = test_json_table.`json` % test_json_table.`bit64`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%bit64
 UPDATE test_json_type, test_json_table SET test_json_type.`json^bit64` = test_json_table.`json` ^ test_json_table.`bit64`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^bit64
@@ -4739,6 +4787,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/boolean` = test_
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/boolean
 UPDATE test_json_type, test_json_table SET test_json_type.`json%boolean` = test_json_table.`json` % test_json_table.`boolean`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%boolean
 UPDATE test_json_type, test_json_table SET test_json_type.`json^boolean` = test_json_table.`json` ^ test_json_table.`boolean`;
 ERROR:  failed to find conversion function from boolean to double precision
 CONTEXT:  referenced column: test_json_type
@@ -4780,6 +4830,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/date` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/date
 UPDATE test_json_type, test_json_table SET test_json_type.`json%date` = test_json_table.`json` % test_json_table.`date`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%date
 UPDATE test_json_type, test_json_table SET test_json_type.`json^date` = test_json_table.`json` ^ test_json_table.`date`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^date
@@ -4825,6 +4877,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/time` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/time
 UPDATE test_json_type, test_json_table SET test_json_type.`json%time` = test_json_table.`json` % test_json_table.`time`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%time
 UPDATE test_json_type, test_json_table SET test_json_type.`json^time` = test_json_table.`json` ^ test_json_table.`time`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^time
@@ -4870,6 +4924,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/time(4)` = test_
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/time(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json%time(4)` = test_json_table.`json` % test_json_table.`time(4)`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%time(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json^time(4)` = test_json_table.`json` ^ test_json_table.`time(4)`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^time(4)
@@ -4915,6 +4971,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/datetime` = test
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/datetime
 UPDATE test_json_type, test_json_table SET test_json_type.`json%datetime` = test_json_table.`json` % test_json_table.`datetime`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%datetime
 UPDATE test_json_type, test_json_table SET test_json_type.`json^datetime` = test_json_table.`json` ^ test_json_table.`datetime`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^datetime
@@ -4970,6 +5028,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/datetime(4)` = t
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/datetime(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json%datetime(4)` = test_json_table.`json` % test_json_table.`datetime(4)`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%datetime(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json^datetime(4)` = test_json_table.`json` ^ test_json_table.`datetime(4)`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^datetime(4)
@@ -5025,6 +5085,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/timestamp` = tes
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/timestamp
 UPDATE test_json_type, test_json_table SET test_json_type.`json%timestamp` = test_json_table.`json` % test_json_table.`timestamp`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%timestamp
 UPDATE test_json_type, test_json_table SET test_json_type.`json^timestamp` = test_json_table.`json` ^ test_json_table.`timestamp`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^timestamp
@@ -5080,6 +5142,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/timestamp(4)` = 
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/timestamp(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json%timestamp(4)` = test_json_table.`json` % test_json_table.`timestamp(4)`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%timestamp(4)
 UPDATE test_json_type, test_json_table SET test_json_type.`json^timestamp(4)` = test_json_table.`json` ^ test_json_table.`timestamp(4)`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^timestamp(4)
@@ -5135,6 +5199,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/year` = test_jso
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/year
 UPDATE test_json_type, test_json_table SET test_json_type.`json%year` = test_json_table.`json` % test_json_table.`year`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%year
 UPDATE test_json_type, test_json_table SET test_json_type.`json^year` = test_json_table.`json` ^ test_json_table.`year`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^year
@@ -5204,6 +5270,8 @@ CONTEXT:  referenced column: json/char
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/char
 UPDATE test_json_type, test_json_table SET test_json_type.`json%char` = test_json_table.`json` % test_json_table.`char`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%char
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: json%char
 UPDATE test_json_type, test_json_table SET test_json_type.`json^char` = test_json_table.`json` ^ test_json_table.`char`;
@@ -5279,6 +5347,8 @@ CONTEXT:  referenced column: json/varchar
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json%varchar` = test_json_table.`json` % test_json_table.`varchar`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%varchar
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: json%varchar
 UPDATE test_json_type, test_json_table SET test_json_type.`json^varchar` = test_json_table.`json` ^ test_json_table.`varchar`;
@@ -5852,6 +5922,8 @@ CONTEXT:  referenced column: json/text
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/text
 UPDATE test_json_type, test_json_table SET test_json_type.`json%text` = test_json_table.`json` % test_json_table.`text`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%text
 WARNING:  invalid input syntax for type numeric: "1.23a"
 CONTEXT:  referenced column: json%text
 UPDATE test_json_type, test_json_table SET test_json_type.`json^text` = test_json_table.`json` ^ test_json_table.`text`;
@@ -5919,6 +5991,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/enum_t` = test_j
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/enum_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json%enum_t` = test_json_table.`json` % test_json_table.`enum_t`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%enum_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json^enum_t` = test_json_table.`json` ^ test_json_table.`enum_t`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^enum_t
@@ -5980,6 +6054,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json/set_t` = test_js
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/set_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json%set_t` = test_json_table.`json` % test_json_table.`set_t`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%set_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json^set_t` = test_json_table.`json` ^ test_json_table.`set_t`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^set_t
@@ -6049,6 +6125,10 @@ CONTEXT:  referenced column: json/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json/json
 UPDATE test_json_type, test_json_table SET test_json_type.`json%json` = test_json_table.`json` % test_json_table.`json`;
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%json
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: json%json
 UPDATE test_json_type, test_json_table SET test_json_type.`json^json` = test_json_table.`json` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json^json

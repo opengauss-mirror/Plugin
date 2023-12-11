@@ -331,6 +331,7 @@ Datum bpchar_launch(bool can_ignore, BpChar* source, int32 &maxlen, bool isExpli
                              errmsg("value too long for type character(%d)", maxlen)));
                     break;
                 }
+        }
 #else
             for (i = maxmblen; i < len; i++) {
                 if (s[i] != ' ') {
@@ -354,8 +355,12 @@ Datum bpchar_launch(bool can_ignore, BpChar* source, int32 &maxlen, bool isExpli
                     }
                 }
             }
-#endif
+        } else {
+            ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+                (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                    errmsg("value too long for type character(%d)", maxlen)));
         }
+#endif
 
         len = maxmblen;
 

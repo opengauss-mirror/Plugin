@@ -1275,6 +1275,24 @@ select (a.Sno+1) as no,a.Sname as name , (select  Degree from Score where Cno= '
 
 --multi var
 select (a.Sno+a.Sname) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
+WARNING:  invalid input syntax for type numeric: "李军"
+CONTEXT:  referenced column: no
+WARNING:  invalid input syntax for type numeric: "李军"
+CONTEXT:  referenced column: Degree
+WARNING:  invalid input syntax for type numeric: "李军"
+CONTEXT:  referenced column: Degree
+WARNING:  invalid input syntax for type numeric: "陆君"
+CONTEXT:  referenced column: no
+WARNING:  invalid input syntax for type numeric: "陆君"
+CONTEXT:  referenced column: Degree
+WARNING:  invalid input syntax for type numeric: "陆君"
+CONTEXT:  referenced column: Degree
+WARNING:  invalid input syntax for type numeric: "匡明"
+CONTEXT:  referenced column: no
+WARNING:  invalid input syntax for type numeric: "匡明"
+CONTEXT:  referenced column: Degree
+WARNING:  invalid input syntax for type numeric: "匡明"
+CONTEXT:  referenced column: Degree
  no  | name | Degree 
 -----+------+--------
  101 | 李军 |   64.0
