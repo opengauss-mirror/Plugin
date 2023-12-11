@@ -119,11 +119,9 @@ static bool check_disable_spq_planner_walker(Node *node, void *context)
             case RTE_JOIN:
             case RTE_CTE:
                 break;
-            case RTE_TABLEFUNC:
             case RTE_VALUES:
             case RTE_TABLEFUNCTION:
             case RTE_VOID:
-            case RTE_NAMEDTUPLESTORE:
             default:
                 CHECK_RETURN_HELP_LOG(true, "the RTEKIND is not supported");
         }     

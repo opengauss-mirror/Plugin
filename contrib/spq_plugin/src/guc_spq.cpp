@@ -56,7 +56,6 @@ static bool spq_check_scan_unit_size(int *newval, void **extra, GucSource source
 static const char* spq_show_scan_unit_size(void);
 static bool check_spq_cluster_map(char **newval, void **extra, GucSource source);
 static const char *show_spq_cluster_map(void);
-static bool check_spq_nodes(char **newval, void **extra, GucSource source);
 void assign_spq_nodes(const char *newval, void *extra);
 
 static const struct config_enum_entry spq_optimizer_minidump_options[] = {

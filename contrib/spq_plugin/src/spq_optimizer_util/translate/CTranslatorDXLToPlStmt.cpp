@@ -143,6 +143,10 @@ static void add_distribute_info(Plan* scanPlan, List* scanClauses, RangeTblEntry
  
                 execNodes = makeNode(ExecNodes);
                 Distribution* distribution = ng_get_installation_group_distribution();
+                if (distribution->bms_data_nodeids == NULL) {
+                    List* nodeid_list = lappend_int(NIL, 0);
+                    distribution->bms_data_nodeids = ng_convert_to_nodeids(nodeid_list);
+                }
                 ng_set_distribution(&execNodes->distribution, distribution);
                 execNodes->nodeList = ng_convert_to_nodeid_list(execNodes->distribution.bms_data_nodeids);
             }
@@ -157,7 +161,11 @@ static void add_distribute_info(Plan* scanPlan, List* scanClauses, RangeTblEntry
         }
         scanPlan->exec_type = EXEC_ON_DATANODES;
     }
- 
+
+    if (execNodes == NULL || list_length(execNodes->nodeList) == 0) {
+        SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiExpr2DXLUnsupportedFeature,
+                SPQOS_WSZ_LIT("add_distribute_info exec_nodes cannot be NULL"));
+    }
     scanPlan->exec_nodes = execNodes;
     // not support(build_baserel_distributekey return null)
     //scanPlan->distributed_keys = bestPath->parent->distribute_keys;
@@ -3568,7 +3576,7 @@ CTranslatorDXLToPlStmt::TranslateDXLAppend(
 			SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiExpr2DXLUnsupportedFeature,
 				SPQOS_WSZ_LIT("exec_nodes cannot be NULL"));
 		}
-		if (max_num_exec_nodes < list_length(child_plan->exec_nodes->nodeList)) {
+		if (plan->exec_nodes == NULL || max_num_exec_nodes < list_length(child_plan->exec_nodes->nodeList)) {
 			plan->exec_nodes = ng_get_dest_execnodes(child_plan);
 			max_num_exec_nodes = list_length(plan->exec_nodes->nodeList);
 		}
@@ -4008,6 +4016,10 @@ CTranslatorDXLToPlStmt::TranslateDXLCTEConsumerToSharedScan(
     /* SPQ: add exec_nodes for plan */
     ExecNodes*  execNodes = makeNode(ExecNodes);
     Distribution* distribution = ng_get_installation_group_distribution();
+    if (distribution->bms_data_nodeids == NULL) {
+        List* nodeid_list = lappend_int(NIL, 0);
+        distribution->bms_data_nodeids = ng_convert_to_nodeids(nodeid_list);
+    }
     ng_set_distribution(&execNodes->distribution, distribution);
     execNodes->nodeList = ng_convert_to_nodeid_list(execNodes->distribution.bms_data_nodeids);
 	execNodes->baselocatortype = LOCATOR_TYPE_HASH;
@@ -4095,7 +4107,7 @@ CTranslatorDXLToPlStmt::TranslateDXLSequence(
 			SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiExpr2DXLUnsupportedFeature,
 				SPQOS_WSZ_LIT("exec_nodes cannot be NULL in Sequence"));
 		}
-		if (max_num_exec_nodes < list_length(child_plan->exec_nodes->nodeList)) {
+		if (plan->exec_nodes == NULL || max_num_exec_nodes < list_length(child_plan->exec_nodes->nodeList)) {
 			plan->exec_nodes = ng_get_dest_execnodes(child_plan);
 			max_num_exec_nodes = list_length(plan->exec_nodes->nodeList);
 		}
@@ -6137,6 +6149,16 @@ CTranslatorDXLToPlStmt::TranslateDXLBitmapIndexProbe(
 	 * As of 8.4, the indexstrategy and indexsubtype fields are no longer
 	 * available or needed in IndexScan. Ignore them.
 	 */
+    ExecNodes*  execNodes = makeNode(ExecNodes);
+    Distribution* distribution = ng_get_installation_group_distribution();
+    if (distribution->bms_data_nodeids == NULL) {
+        List* nodeid_list = lappend_int(NIL, 0);
+        distribution->bms_data_nodeids = ng_convert_to_nodeids(nodeid_list);
+    }
+    ng_set_distribution(&execNodes->distribution, distribution);
+    execNodes->nodeList = ng_convert_to_nodeid_list(execNodes->distribution.bms_data_nodeids);
+    execNodes->baselocatortype = LOCATOR_TYPE_HASH;
+    plan->exec_nodes = execNodes;
 	SetParamIds(plan);
 
 	/*

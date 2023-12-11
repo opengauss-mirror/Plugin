@@ -364,50 +364,17 @@ public:
             .type = SPQ_QC_CONNECTION,
         };
 
-        constexpr int MAX_RETRY_TIME = 100000;
         bool found = false;
         QCConnEntry* entry;
-        int retry = 0;
-        while (!found && retry < MAX_RETRY_TIME) {
-            pthread_rwlock_wrlock(&g_instance.spq_cxt.adp_connects_lock);
-            entry = (QCConnEntry*)hash_search(g_instance.spq_cxt.adp_connects, (void*)&key, HASH_FIND, &found);
-            if (!found) {
-                pthread_rwlock_unlock(&g_instance.spq_cxt.adp_connects_lock);
-                pg_usleep(100);
-                ++retry;
-                continue;
-            }
-            backward_conn = entry->backward;
-            BackConnInfo fcmsg;
-            if (entry->forward.idx == 0) {
-                fcmsg.node_idx = backward_conn.idx;
-                fcmsg.version = backward_conn.ver;
-                fcmsg.streamcap = entry->streamcap;
-                fcmsg.query_id = u_sess->debug_query_id;
-                fcmsg.stream_key = {
-                    .queryId = entry->key.query_id,
-                    .planNodeId = entry->key.plan_node_id,
-                    .producerSmpId = 0,
-                    .consumerSmpId = 0,
-                };
-                fcmsg.backward = &backward_conn;
-                int error = gs_r_build_reply_connection(&fcmsg, backward_conn.ver, &entry->forward.sid);
-                if (error != 0) {
-                    gs_close_gsocket(&entry->forward);
-                    ereport(ERROR, ((errmsg("spq try build dual channel backward direction failed"))));
-                }
-                entry->forward.idx = backward_conn.idx;
-                entry->forward.ver = backward_conn.ver;
-                entry->forward.type = GSOCK_PRODUCER;
-            }
-            forward_conn = entry->forward;
+        pthread_rwlock_rdlock(&g_instance.spq_cxt.adp_connects_lock);
+        entry = (QCConnEntry*)hash_search(g_instance.spq_cxt.adp_connects, (void*)&key, HASH_FIND, &found);
+        if (!found) {
             pthread_rwlock_unlock(&g_instance.spq_cxt.adp_connects_lock);
-            break;
+            ereport(ERROR, (errmsg("spq seq scan: can not found adaptive connection")));
         }
-        if (backward_conn.idx == 0) {
-            gs_close_gsocket(&backward_conn);
-            ereport(ERROR, ((errmsg("spq try build dual channel forward direction failed"))));
-        }
+        backward_conn = entry->backward;
+        forward_conn = entry->forward;
+        pthread_rwlock_unlock(&g_instance.spq_cxt.adp_connects_lock);
     }
 
     SpqAdpScanPagesRes adps_get_adps_response(uint32 nblocks, int64_t iter_no)
