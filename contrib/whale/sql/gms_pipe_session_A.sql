@@ -194,6 +194,12 @@ SELECT notifyDropTemp();
 -- tests unique_session_name()
 SELECT checkUniqueSessionNameA();
 
+-- test about date
+select gms_pipe.pack_message(date '2023-12-6 00:00:00');
+select gms_pipe.send_message('PipeTest');
+select gms_pipe.receive_message('PipeTest');
+select gms_pipe.unpack_message_date();
+
 DROP FUNCTION createImplicitPipe();
 DROP FUNCTION createExplicitPipe(text,integer);
 DROP FUNCTION createPipe(text,integer);

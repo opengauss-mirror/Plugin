@@ -533,7 +533,7 @@ Datum gms_pipe_pack_message_text(PG_FUNCTION_ARGS)
 
 Datum gms_pipe_pack_message_date(PG_FUNCTION_ARGS)
 {
-    DateADT dt = PG_GETARG_DATEADT(0);
+    Timestamp dt = PG_GETARG_TIMESTAMP(0);
 
     GetSessionContext()->output_buffer = check_buffer(GetSessionContext()->output_buffer, LOCALMSGSZ);
     pack_field(GetSessionContext()->output_buffer, IT_DATE, sizeof(dt), &dt, InvalidOid);
@@ -661,7 +661,7 @@ static Datum gms_pipe_unpack_message(PG_FUNCTION_ARGS, message_data_type dtype)
             result = TimestampTzGetDatum(*(TimestampTz *)ptr);
             break;
         case IT_DATE:
-            result = DateADTGetDatum(*(DateADT *)ptr);
+            result = TimestampGetDatum(*(TimestampTz *)ptr);
             break;
         case IT_VARCHAR:
         case IT_NUMBER:
@@ -720,11 +720,7 @@ Datum gms_pipe_unpack_message_text(PG_FUNCTION_ARGS)
 
 Datum gms_pipe_unpack_message_date(PG_FUNCTION_ARGS)
 {
-    if (DB_IS_CMPT(A_FORMAT)) {
-        return gms_pipe_unpack_message(fcinfo, IT_TIMESTAMPTZ);
-    } else {
-        return gms_pipe_unpack_message(fcinfo, IT_DATE);
-    }
+    return gms_pipe_unpack_message(fcinfo, IT_DATE);
 }
 
 Datum gms_pipe_unpack_message_timestamp(PG_FUNCTION_ARGS)

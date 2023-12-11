@@ -101,6 +101,31 @@ SELECT checkUniqueSessionNameA();
  
 (1 row)
 
+-- test about date
+select gms_pipe.pack_message(date '2023-12-6 00:00:00');
+ pack_message 
+--------------
+ 
+(1 row)
+
+select gms_pipe.send_message('PipeTest');
+ send_message 
+--------------
+            0
+(1 row)
+
+select gms_pipe.receive_message('PipeTest');
+ receive_message 
+-----------------
+               0
+(1 row)
+
+select gms_pipe.unpack_message_date();
+   unpack_message_date    
+--------------------------
+ Wed Dec 06 00:00:00 2023
+(1 row)
+
 DROP FUNCTION createImplicitPipe();
 DROP FUNCTION createExplicitPipe(text,integer);
 DROP FUNCTION createPipe(text,integer);
