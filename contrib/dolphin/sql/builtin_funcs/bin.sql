@@ -28,5 +28,11 @@ SELECT BIN(9.6);
 SELECT BIN(-9.2);
 SELECT BIN(-9.6);
 select BIN(-13/4);
+
+-- 测试bit类型,b''默认为bit类型
+select bin(b'101');
+select bin(b'0001101');
+select bin(b'0000000');
+
 drop schema db_bin cascade;
 reset current_schema;
