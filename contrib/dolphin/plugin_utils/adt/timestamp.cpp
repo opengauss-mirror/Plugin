@@ -314,14 +314,26 @@ PG_FUNCTION_INFO_V1_PUBLIC(timestamp_agg_finalfn);
 extern "C" DLL_PUBLIC Datum timestamp_agg_finalfn(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(timestamp_cast);
 extern "C" DLL_PUBLIC Datum timestamp_cast(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(convert_datetime_double);
+extern "C" DLL_PUBLIC Datum convert_datetime_double(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(convert_timestamptz_double);
+extern "C" DLL_PUBLIC Datum convert_timestamptz_double(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(convert_datetime_uint64);
+extern "C" DLL_PUBLIC Datum convert_datetime_uint64(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(convert_timestamptz_uint64);
+extern "C" DLL_PUBLIC Datum convert_timestamptz_uint64(PG_FUNCTION_ARGS);
 #endif
 
 /* b format datetime and timestamp type */
 #ifdef DOLPHIN
 static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec,
-    bool can_ignore, TimeErrorType* time_error_type);
+    bool can_ignore, TimeErrorType* time_error_type, int* ts_cnt = NULL);
 static int64 integer_b_format_timestamp(bool hasTz, int64 ts,
-    bool can_ignore, TimeErrorType* time_error_type);
+    bool can_ignore, TimeErrorType* time_error_type, int* ts_cnt = NULL);
 #else
 static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec, bool can_ignore);
 static int64 integer_b_format_timestamp(bool hasTz, int64 ts, bool can_ignore);
@@ -731,7 +743,7 @@ int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec)
 
 #ifdef DOLPHIN
 static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec, bool can_ignore,
-    TimeErrorType* time_error_type)
+    TimeErrorType* time_error_type, int* ts_cnt)
 #else
 static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t fsec, bool can_ignore)
 #endif
@@ -757,9 +769,19 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
         ++cnt;
         tmp /= 10;
     }
+
+#ifdef DOLPHIN
+    if (ts_cnt != NULL) {
+        *ts_cnt = cnt;
+    }
+#endif
+    
     if (cnt > TIMESTAMP_YYYYMMDDhhmmss_LEN) {
         ereport(level,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+#ifdef DOLPHIN
+                *time_error_type = TIME_INCORRECT;
+#endif
         return TIMESTAMP_ZERO;
     }
     /* has time field : YYYYMMDDhhmmss or YYMMDDhhmmss */
@@ -801,10 +823,11 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
 }
 
 #ifdef DOLPHIN
-static int64 integer_b_format_timestamp(bool hasTz, int64 ts, bool can_ignore, TimeErrorType* time_error_type)
+static int64 integer_b_format_timestamp(bool hasTz, int64 ts, bool can_ignore, TimeErrorType* time_error_type,
+    int* ts_cnt)
 {
     TimestampTz result;
-    result = int64_b_format_timestamp_internal(hasTz, ts, 0, can_ignore, time_error_type);
+    result = int64_b_format_timestamp_internal(hasTz, ts, 0, can_ignore, time_error_type, ts_cnt);
     PG_RETURN_TIMESTAMP(result);
 }
 #else
@@ -823,6 +846,17 @@ Datum timestamp_to_datum(PG_FUNCTION_ARGS, bool hasTz, int64 ts)
     int64 result = integer_b_format_timestamp(hasTz, ts, fcinfo->can_ignore, &time_error_type);
     if (fcinfo->ccontext == COERCION_IMPLICIT && time_error_type == TIME_INCORRECT && ENABLE_B_CMPT_MODE) {
         PG_RETURN_NULL();
+    }
+    PG_RETURN_TIMESTAMP(result);
+}
+
+Datum timestamp_to_datum_with_null_result(PG_FUNCTION_ARGS, bool hasTz, int64 ts)
+{
+    TimeErrorType time_error_type = TIME_CORRECT;
+    int ts_cnt = 0;
+    int64 result = integer_b_format_timestamp(hasTz, ts, fcinfo->can_ignore, &time_error_type, &ts_cnt);
+    if (ts_cnt > TIMESTAMP_YYYYMMDDhhmmss_LEN) {
+        PG_RETURN_TIMESTAMP(B_FORMAT_TIMESTAMP_MAX_VALUE);
     }
     PG_RETURN_TIMESTAMP(result);
 }
@@ -849,6 +883,30 @@ Datum int64_b_format_timestamp(PG_FUNCTION_ARGS)
 {
     int64 ts = PG_GETARG_INT64(0);
     return timestamp_to_datum(fcinfo, true, ts);
+}
+
+Datum convert_datetime_double(PG_FUNCTION_ARGS)
+{
+    int64 ts = (int64)PG_GETARG_FLOAT8(0);
+    return timestamp_to_datum_with_null_result(fcinfo, false, ts);
+}
+
+Datum convert_timestamptz_double(PG_FUNCTION_ARGS)
+{
+    int64 ts = (int64)PG_GETARG_FLOAT8(0);
+    return timestamp_to_datum_with_null_result(fcinfo, true, ts);
+}
+
+Datum convert_datetime_uint64(PG_FUNCTION_ARGS)
+{
+    int64 ts = (uint64)PG_GETARG_UINT64(0);
+    return timestamp_to_datum_with_null_result(fcinfo, false, ts);
+}
+
+Datum convert_timestamptz_uint64(PG_FUNCTION_ARGS)
+{
+    int64 ts = (uint64)PG_GETARG_UINT64(0);
+    return timestamp_to_datum_with_null_result(fcinfo, true, ts);
 }
 
 #else
@@ -2399,6 +2457,11 @@ int timestamp2tm(Timestamp dt, int* tzp, struct pg_tm* tm, fsec_t* fsec, const c
     Timestamp date;
     Timestamp time;
     pg_time_t utime;
+
+
+    error_t rc = EOK;
+    rc = memset_s(tm, sizeof(pg_tm), 0, sizeof(pg_tm));
+    securec_check(rc, "\0", "\0");
 
     /*
      * If u_sess->time_cxt.HasCTZSet is true then we have a brute force time zone specified. Go
