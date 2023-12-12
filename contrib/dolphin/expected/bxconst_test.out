@@ -3,101 +3,463 @@ set current_schema to 'bxconst_test';
 
 set dolphin.b_compatibility_mode to on;
 
+-- 将bxconst当作bit处理
+set dolphin.sql_mode = sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero;
+
 create table t_bit(a bit(16));
 create table t_bin(a binary(6));
 
 select b'11100000111000';
-    ?column?
+    ?column?    
 ----------------
  11100000111000
 (1 row)
 
 select pg_typeof(b'11100000111000');
- pg_typeof
+ pg_typeof 
 -----------
  bit
 (1 row)
 
 select x'4c';
- ?column?
+ ?column? 
 ----------
  01001100
 (1 row)
 
 select pg_typeof(x'4c');
- pg_typeof
+ pg_typeof 
 -----------
  bit
 (1 row)
+
 
 insert into t_bit values(b'11100000111000'), (x'4c');
 insert into t_bin values(b'11100000111000'), (x'4c');
 
 select * from t_bit;
-        a
+        a         
 ------------------
  0011100000111000
  0000000001001100
 (2 rows)
 
 select * from t_bin;
-       a
+       a        
 ----------------
  \x313433393200
  \x373600000000
 (2 rows)
 
+
 drop table t_bit;
 drop table t_bin;
 
-set dolphin.sql_mode = treat_bxconst_as_binary;
+select 0x01 | 2;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 0x01 | (2::int1);
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 0x01 | (2::int2);
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 0x01 | (2::int4);
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 0x01 | (2::int8);
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 0x01 | (2::uint1);
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 0x01 | (2::uint2);
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 0x01 | (2::uint4);
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 0x01 | (2::uint8);
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 0x01 | (2::float4);
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 0x01 | (2::float8);
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 0x01 | (2::numeric);
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 2 | 0x01;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (2::int1) | 0x01;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (2::int2) | 0x01;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (2::int4) | 0x01;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (2::int8) | 0x01;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (2::uint1) | 0x01;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (2::uint2) | 0x01;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (2::uint4) | 0x01;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (2::uint8) | 0x01;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (2::float4) | 0x01;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (2::float8) | 0x01;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select (2::numeric) | 0x01;
+ ?column? 
+----------
+ 3
+(1 row)
+
+select 0x01 | 0x02;
+ ?column? 
+----------
+ 00000011
+(1 row)
+
+
+-- 将bxconst当作binary处理
+set dolphin.sql_mode = sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero,treat_bxconst_as_binary;
 
 create table t_bit(a bit(16));
 create table t_bin(a binary(6));
 
 select b'11100000111000';
- ?column?
+ ?column? 
 ----------
  \x3838
 (1 row)
 
 select pg_typeof(b'11100000111000');
- pg_typeof
+ pg_typeof 
 -----------
  "binary"
 (1 row)
 
 select x'4c';
- ?column?
+ ?column? 
 ----------
  \x4c
 (1 row)
 
 select pg_typeof(x'4c');
- pg_typeof
+ pg_typeof 
 -----------
  "binary"
 (1 row)
 
-insert into t_bit values(b'11000100110001'), (x'3130');
-insert into t_bin values(b'11000100110001'), (x'3130');
+
+insert into t_bit values(b'11100000111000'), (x'4c');
+insert into t_bin values(b'11100000111000'), (x'4c');
 
 select * from t_bit;
-        a
+        a         
 ------------------
- 0000000000000011
- 0000000000000010
+ 0011100000111000
+ 0000000001001100
 (2 rows)
 
 select * from t_bin;
-       a
+       a        
 ----------------
- \x313100000000
- \x313000000000
+ \x383800000000
+ \x4c0000000000
 (2 rows)
+
 
 drop table t_bit;
 drop table t_bin;
+
+select 0x01 | 2;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_double" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select 0x01 | (2::int1);
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_double" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select 0x01 | (2::int2);
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_double" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select 0x01 | (2::int4);
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_double" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select 0x01 | (2::int8);
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_double" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select 0x01 | (2::uint1);
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_uint8" statement 1
+ ?column? 
+----------
+ 2
+(1 row)
+
+select 0x01 | (2::uint2);
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_uint8" statement 1
+ ?column? 
+----------
+ 2
+(1 row)
+
+select 0x01 | (2::uint4);
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_uint8" statement 1
+ ?column? 
+----------
+ 2
+(1 row)
+
+select 0x01 | (2::uint8);
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_uint8" statement 1
+ ?column? 
+----------
+ 2
+(1 row)
+
+select 0x01 | (2::float4);
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_double" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select 0x01 | (2::float8);
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_double" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select 0x01 | (2::numeric);
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_double" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select 2 | 0x01;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "double_or_binary" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select (2::int1) | 0x01;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "double_or_binary" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select (2::int2) | 0x01;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "double_or_binary" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select (2::int4) | 0x01;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "double_or_binary" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select (2::int8) | 0x01;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "double_or_binary" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select (2::uint1) | 0x01;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "uint8_or_binary" statement 1
+ ?column? 
+----------
+ 2
+(1 row)
+
+select (2::uint2) | 0x01;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "uint8_or_binary" statement 1
+ ?column? 
+----------
+ 2
+(1 row)
+
+select (2::uint4) | 0x01;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "uint8_or_binary" statement 1
+ ?column? 
+----------
+ 2
+(1 row)
+
+select (2::uint8) | 0x01;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "uint8_or_binary" statement 1
+ ?column? 
+----------
+ 2
+(1 row)
+
+select (2::float4) | 0x01;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "double_or_binary" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select (2::float8) | 0x01;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "double_or_binary" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select (2::numeric) | 0x01;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "double_or_binary" statement 1
+ ?column? 
+----------
+        2
+(1 row)
+
+select 0x01 | 0x02;
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_binary" statement 1
+WARNING:  invalid input syntax for type numeric: ""
+CONTEXT:  SQL function "binary_or_binary" statement 1
+ ?column? 
+----------
+        0
+(1 row)
+
 
 reset dolphin.sql_mode;
 
