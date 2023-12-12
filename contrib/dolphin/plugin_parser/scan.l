@@ -1564,10 +1564,24 @@ scanner_yyerror(const char *message, core_yyscan_t yyscanner)
 		}
 		else
 		{
+			/* for syntax error, if the error string is digit + alpha, add notice to user the database object nameing rule */
+			int len = strlen(loc);
+			bool digit = true;
+			if (t_thrd.postgres_cxt.debug_query_string != NULL && isalpha(t_thrd.postgres_cxt.debug_query_string[*yylloc + len])) {
+				for (int i = 0; i < len; i++) {
+					if (!isdigit((unsigned char)(loc[i]))) {
+						digit = false;
+						break;
+					}
+				}
+			} else {
+				digit = false;
+			}
 			ereport(errstate,
 				(errcode(ERRCODE_SYNTAX_ERROR),
 				 /* translator: first %s is typically the translation of "syntax error" */
-				 errmsg("%s at or near \"%s\"", _(message), loc),
+				  errmsg("%s at or near \"%s\"%s", _(message), loc,
+				  digit ? ". Please note that database object name should start with a letter or underscore (_)." : ""),
 				 lexer_errposition()));
 		}
 	}
