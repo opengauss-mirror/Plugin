@@ -145,11 +145,14 @@ SELECT _utf8mb4 B'111010011010101110011000111001101001011010101111高斯'; -- ER
 ERROR:  "�" is not a valid binary digit
 LINE 1: SELECT _utf8mb4 B'111010011010101110011000111001101001011010...
                         ^
-SELECT _binary X'000D' | X'0BC0'; -- ERROR not support yet
-ERROR:  operator does not exist: "varbinary" | bit
-LINE 1: SELECT _binary X'000D' | X'0BC0';
-                               ^
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+SELECT _binary X'000D' | X'0BC0';
+WARNING:  invalid input syntax for numeric: ""
+CONTEXT:  SQL function "binary_or_double" during inlining
+ ?column? 
+----------
+     3008
+(1 row)
+
 -- ------------------------------------------
 -- SET NAMES utf8mb4;
 SET NAMES 'utf8mb4';

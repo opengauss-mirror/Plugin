@@ -71,17 +71,6 @@ DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
 
 drop function IF EXISTS pg_catalog."user"();
 
-DROP OPERATOR IF EXISTS pg_catalog.|(double precision, binary) CASCADE;
-DROP OPERATOR IF EXISTS pg_catalog.|(binary, double precision) CASCADE;
-DROP OPERATOR IF EXISTS pg_catalog.|(uint8, binary) CASCADE;
-DROP OPERATOR IF EXISTS pg_catalog.|(binary, uint8) CASCADE;
-DROP OPERATOR IF EXISTS pg_catalog.|(binary, binary) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.double_or_binary(double precision, binary) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.binary_or_double(binary, double precision) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.uint8_or_binary(uint8, binary) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.binary_or_uint8(binary, uint8) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.binary_or_binary(binary, binary) CASCADE;
-
 DROP FUNCTION IF EXISTS pg_catalog.div(binary, double precision);
 DROP FUNCTION IF EXISTS pg_catalog.div(double precision, binary);
 DROP FUNCTION IF EXISTS pg_catalog.div(binary, binary);
