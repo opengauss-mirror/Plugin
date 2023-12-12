@@ -262,7 +262,7 @@ stmt:
 
             estmt = makeNode(ExplainStmt);
             estmt->query = NULL;
-            estmt->options = list_make1(makeDefElem("verbose", NULL, @2));;
+            estmt->options = list_make1(makeDefElem("verbose", NULL));;
             extra->extra = (Node *)estmt;
         }
     | EXPLAIN ANALYZE query_list semicolon_opt
@@ -276,7 +276,7 @@ stmt:
 
             estmt = makeNode(ExplainStmt);
             estmt->query = NULL;
-            estmt->options = list_make1(makeDefElem("analyze", NULL, @2));;
+            estmt->options = list_make1(makeDefElem("analyze", NULL));;
             extra->extra = (Node *)estmt;
         }
     | EXPLAIN ANALYZE VERBOSE query_list semicolon_opt
@@ -290,8 +290,8 @@ stmt:
 
             estmt = makeNode(ExplainStmt);
             estmt->query = NULL;
-            estmt->options = list_make2(makeDefElem("analyze", NULL, @2),
-                                        makeDefElem("verbose", NULL, @3));;
+            estmt->options = list_make2(makeDefElem("analyze", NULL),
+                                        makeDefElem("verbose", NULL));;
             extra->extra = (Node *)estmt;
         }
     ;
@@ -427,7 +427,7 @@ cypher_varlen_opt:
                 if (lidx->val.val.ival > uidx->val.val.ival)
                     ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR),
                                     errmsg("invalid range"),
-                                    ag_scanner_errposition(@2, scanner)));
+                                   ag_scanner_errposition(@2,  (void **)scanner)));
             }
             $$ = (Node *) n;
         }
@@ -443,7 +443,7 @@ cypher_range_opt:
             A_Indices  *n;
 
             n = makeNode(A_Indices);
-            n->lidx = copyObject($1);
+            n->lidx = (Node *)copyObject($1);
             n->uidx = $1;
             $$ = (Node *) n;
         }
@@ -594,7 +594,7 @@ sort_item:
 
             n = makeNode(SortBy);
             n->node = $1;
-            n->sortby_dir = $2;
+            n->sortby_dir = (SortByDir)$2;
             n->sortby_nulls = SORTBY_NULLS_DEFAULT;
             n->useOp = NIL;
             n->location = -1; // no operator
@@ -657,7 +657,7 @@ with:
             // check expressions are aliased
             foreach (li, $3)
             {
-                ResTarget *item = lfirst(li);
+                ResTarget *item = (ResTarget *)lfirst(li);
 
                 // variable does not have to be aliased
                 if (IsA(item->val, ColumnRef) || item->name)
@@ -667,7 +667,7 @@ with:
                         (errcode(ERRCODE_SYNTAX_ERROR),
                          errmsg("expression item must be aliased"),
                          errhint("Items can be aliased by using AS."),
-                         ag_scanner_errposition(item->location, scanner)));
+                         ag_scanner_errposition(item->location, (void **)scanner)));
             }
 
             n = make_ag_node(cypher_with);
@@ -689,7 +689,7 @@ with:
             // check expressions are aliased
             foreach (li, $2)
             {
-                ResTarget *item = lfirst(li);
+                ResTarget *item = (ResTarget *)lfirst(li);
 
                 // variable does not have to be aliased
                 if (IsA(item->val, ColumnRef) || item->name)
@@ -699,7 +699,7 @@ with:
                         (errcode(ERRCODE_SYNTAX_ERROR),
                          errmsg("expression item must be aliased"),
                          errhint("Items can be aliased by using AS."),
-                         ag_scanner_errposition(item->location, scanner)));
+                        ag_scanner_errposition(item->location,  (void **)scanner)));
             }
 
             n = make_ag_node(cypher_with);
@@ -1334,7 +1334,6 @@ expr:
             n = makeNode(NullTest);
             n->arg = (Expr *)$1;
             n->nulltesttype = IS_NULL;
-            n->location = @2;
 
             $$ = (Node *)n;
         }
@@ -1345,7 +1344,6 @@ expr:
             n = makeNode(NullTest);
             n->arg = (Expr *)$1;
             n->nulltesttype = IS_NOT_NULL;
-            n->location = @2;
 
             $$ = (Node *)n;
         }
@@ -1435,13 +1433,13 @@ expr:
              *       may need to be removed.
              */
             if (IsA($3, ColumnRef) &&
-                (IsA($1, ExtensibleNode) ||
+                (IsA($1, EXTENSIBLE_NODE) ||
                  IsA($1, ColumnRef) ||
                  IsA($1, A_Indirection)))
             {
                 ColumnRef *cr = (ColumnRef*)$3;
                 List *fields = cr->fields;
-                Value *string = linitial(fields);
+                Value *string = (Value *) linitial(fields);
 
                 $$ = append_indirection($1, (Node*)string);
             }
@@ -1456,7 +1454,7 @@ expr:
                 FuncCall *fc = (FuncCall*)$3;
                 ColumnRef *cr = (ColumnRef*)$1;
                 List *fields = cr->fields;
-                Value *string = linitial(fields);
+                Value *string = (Value *) linitial(fields);
 
                 /*
                  * A function can only be qualified with a single schema. So, we
@@ -1473,7 +1471,7 @@ expr:
                     ereport(ERROR,
                             (errcode(ERRCODE_SYNTAX_ERROR),
                              errmsg("function already qualified"),
-                             ag_scanner_errposition(@1, scanner)));
+                             ag_scanner_errposition(@1, (void **)scanner)));
             }
             /*
              * All other types of expression indirections are currently not
@@ -1483,7 +1481,7 @@ expr:
                 ereport(ERROR,
                         (errcode(ERRCODE_SYNTAX_ERROR),
                          errmsg("invalid indirection syntax"),
-                         ag_scanner_errposition(@1, scanner)));
+                         ag_scanner_errposition(@1, (void **)scanner)));
         }
     | expr TYPECAST symbolic_name
         {
@@ -1580,7 +1578,6 @@ expr_func_subexpr:
 
             n = makeNode(SubLink);
             n->subLinkType = EXISTS_SUBLINK;
-            n->subLinkId = 0;
             n->testexpr = NULL;
             n->operName = NIL;
             n->subselect = (Node *) sub;
@@ -1977,8 +1974,13 @@ static void do_negate_float(Value *v)
 
     if (v->val.str[0] == '-')
         v->val.str = v->val.str + 1; // just strip the '-'
-    else
-        v->val.str = psprintf("-%s", v->val.str);
+    else {
+         char   *oldval = v->val.str;
+         char   *newval = (char *) palloc(strlen(oldval) + 2);
+		*newval = '-';
+		strcpy(newval+1, oldval);
+		v->val.str = newval;
+    }
 }
 
 /*
@@ -2153,7 +2155,7 @@ static char *create_unique_name(char *prefix_name)
     nlen = snprintf(NULL, 0, "%s_%lu", prefix, unique_counter);
 
     /* allocate the space */
-    name = palloc0(nlen + 1);
+    name = (char *)palloc0(nlen + 1);
 
     /* create the name */
     snprintf(name, nlen + 1, "%s_%lu", prefix, unique_counter);

@@ -28,13 +28,13 @@
 #define DELETE_PATH_NAME "Cypher Delete"
 #define MERGE_PATH_NAME "Cypher Merge"
 
-CustomPath *create_cypher_create_path(PlannerInfo *root, RelOptInfo *rel,
-                                      List *custom_private);
-CustomPath *create_cypher_set_path(PlannerInfo *root, RelOptInfo *rel,
-                                   List *custom_private);
-CustomPath *create_cypher_delete_path(PlannerInfo *root, RelOptInfo *rel,
-                                      List *custom_private);
-CustomPath *create_cypher_merge_path(PlannerInfo *root, RelOptInfo *rel,
-                                     List *custom_private);
+ExtensiblePath *create_cypher_create_path(PlannerInfo *root, RelOptInfo *rel,
+                                          List *custom_private);
+ExtensiblePath *create_cypher_set_path(PlannerInfo *root, RelOptInfo *rel,
+                                       List *custom_private);
+ExtensiblePath *create_cypher_delete_path(PlannerInfo *root, RelOptInfo *rel,
+                                          List *custom_private);
+ExtensiblePath *create_cypher_merge_path(PlannerInfo *root, RelOptInfo *rel,
+                                         List *custom_private);
 
 #endif

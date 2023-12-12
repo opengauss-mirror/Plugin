@@ -21,7 +21,6 @@
 #define AG_CYPHER_UTILS_H
 
 #include "nodes/execnodes.h"
-#include "nodes/extensible.h"
 #include "nodes/nodes.h"
 #include "nodes/plannodes.h"
 
@@ -49,8 +48,10 @@
 
 typedef struct cypher_create_custom_scan_state
 {
-    CustomScanState css;
-    CustomScan *cs;
+    ExtensiblePlanState css;
+
+    ExtensiblePlan *cs;
+
     List *pattern;
     List *path_values;
     uint32 flags;
@@ -60,16 +61,20 @@ typedef struct cypher_create_custom_scan_state
 
 typedef struct cypher_set_custom_scan_state
 {
-    CustomScanState css;
-    CustomScan *cs;
+    ExtensiblePlanState css;
+
+    ExtensiblePlan *cs;
+
     cypher_update_information *set_list;
     int flags;
 } cypher_set_custom_scan_state;
 
 typedef struct cypher_delete_custom_scan_state
 {
-    CustomScanState css;
-    CustomScan *cs;
+    ExtensiblePlanState css;
+
+    ExtensiblePlan *cs;
+
     cypher_delete_information *delete_data;
     int flags;
     List *edge_labels;
@@ -77,8 +82,10 @@ typedef struct cypher_delete_custom_scan_state
 
 typedef struct cypher_merge_custom_scan_state
 {
-    CustomScanState css;
-    CustomScan *cs;
+    ExtensiblePlanState css;
+
+    ExtensiblePlan *cs;
+
     cypher_merge_information *merge_information;
     int flags;
     cypher_create_path *path;

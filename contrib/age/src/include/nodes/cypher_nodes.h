@@ -22,7 +22,7 @@
 
 #include "postgres.h"
 
-#include "nodes/extensible.h"
+#include "nodes/ag_extensible.h"
 #include "nodes/parsenodes.h"
 #include "nodes/pg_list.h"
 
