@@ -82,7 +82,12 @@ typedef unsigned int GS_UINT32;
 typedef unsigned long GS_UINT32;
 #endif
 
+#ifdef DOLPHIN
+/* use value in openGauss-server's user.cpp, don't redefine in dolphin */
+extern MemoryContext WaitCountGlobalContext;
+#else
 MemoryContext WaitCountGlobalContext = NULL;
+#endif
 
 #define CREATE_PG_AUTH_ROLE 1
 #define ALTER_PG_AUTH_ROLE 2
