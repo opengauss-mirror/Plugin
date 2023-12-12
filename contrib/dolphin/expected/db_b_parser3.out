@@ -535,6 +535,10 @@ WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' div 'null';
                ^
 CONTEXT:  referenced column: div
+WARNING:  invalid input syntax for type numeric: "null"
+LINE 1: select '-12.3abc' div 'null';
+                              ^
+CONTEXT:  referenced column: div
  div 
 -----
     
@@ -2382,6 +2386,10 @@ select '-12.3abc' mod 'null';
 WARNING:  invalid input syntax for type numeric: "-12.3abc"
 LINE 1: select '-12.3abc' mod 'null';
                ^
+CONTEXT:  referenced column: b_mod
+WARNING:  invalid input syntax for type numeric: "null"
+LINE 1: select '-12.3abc' mod 'null';
+                              ^
 CONTEXT:  referenced column: b_mod
 WARNING:  division by zero
 CONTEXT:  SQL function "b_mod" statement 1

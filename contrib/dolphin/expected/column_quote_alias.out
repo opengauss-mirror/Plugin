@@ -11,6 +11,8 @@ select character varying 'keyword_test' from t_alias_case0001_1;
 (1 row)
 
 select character 'keyword_test' from t_alias_case0001_1;
+WARNING:  value too long for type character(1)
+CONTEXT:  referenced column: bpchar
  bpchar 
 --------
  k
@@ -47,18 +49,24 @@ select VARCHAR2 'keyword_test' from t_alias_case0001_1;
 (1 row)
 
 select NATIONAL CHARACTER 'keyword_test' from t_alias_case0001_1;
+WARNING:  value too long for type character(1)
+CONTEXT:  referenced column: bpchar
  bpchar 
 --------
  k
 (1 row)
 
 select NATIONAL CHAR 'keyword_test' from t_alias_case0001_1;
+WARNING:  value too long for type character(1)
+CONTEXT:  referenced column: bpchar
  bpchar 
 --------
  k
 (1 row)
 
 select NCHAR 'keyword_test' from t_alias_case0001_1;
+WARNING:  value too long for type character(1)
+CONTEXT:  referenced column: bpchar
  bpchar 
 --------
  k
@@ -71,6 +79,8 @@ select NCHAR VARYING 'keyword_test' from t_alias_case0001_1;
 (1 row)
 
 select CHAR 'keyword_test' from t_alias_case0001_1;
+WARNING:  value too long for type character(1)
+CONTEXT:  referenced column: bpchar
  bpchar 
 --------
  k
@@ -89,6 +99,8 @@ select TEXT 'keyword_test' from t_alias_case0001_1;
 (1 row)
 
 select character(2) 'keyword_test' from t_alias_case0001_1;
+WARNING:  value too long for type character(2)
+CONTEXT:  referenced column: bpchar
  bpchar 
 --------
  ke
@@ -101,6 +113,8 @@ select text(2) 'keyword_test' from t_alias_case0001_1;
 (1 row)
 
 select char(1) 'keyword_test' from t_alias_case0001_1;
+WARNING:  value too long for type character(1)
+CONTEXT:  referenced column: bpchar
  bpchar 
 --------
  k
@@ -225,30 +239,50 @@ CONTEXT:  referenced column: int4
 (1 row)
 
 select decimal 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for type numeric: "keyword_test"
+LINE 1: select decimal 'keyword_test' from t_alias_case0001_1;
+                       ^
+CONTEXT:  referenced column: numeric
  numeric 
 ---------
        0
 (1 row)
 
 select number 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for type numeric: "keyword_test"
+LINE 1: select number 'keyword_test' from t_alias_case0001_1;
+                      ^
+CONTEXT:  referenced column: numeric
  numeric 
 ---------
        0
 (1 row)
 
 select dec 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for type numeric: "keyword_test"
+LINE 1: select dec 'keyword_test' from t_alias_case0001_1;
+                   ^
+CONTEXT:  referenced column: numeric
  numeric 
 ---------
        0
 (1 row)
 
 select numeric 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for type numeric: "keyword_test"
+LINE 1: select numeric 'keyword_test' from t_alias_case0001_1;
+                       ^
+CONTEXT:  referenced column: numeric
  numeric 
 ---------
        0
 (1 row)
 
 select fixed 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for type numeric: "keyword_test"
+LINE 1: select fixed 'keyword_test' from t_alias_case0001_1;
+                     ^
+CONTEXT:  referenced column: numeric
  numeric 
 ---------
        0
