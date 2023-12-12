@@ -56,7 +56,6 @@
 
 TYPCATEGORY get_value_type(Oid val_type, Oid typoutput)
 {
-    TYPCATEGORY tcategory;
     Oid castfunc = InvalidOid;
 
     if (val_type == InvalidOid) {
@@ -76,18 +75,27 @@ TYPCATEGORY get_value_type(Oid val_type, Oid typoutput)
         }
     }
     if (castfunc != InvalidOid) {
-        tcategory = TYPCATEGORY_JSON_CAST;
-    } else if (val_type == RECORDARRAYOID) {
-        tcategory = TYPCATEGORY_ARRAY;
-    } else if (val_type == RECORDOID) {
-        tcategory = TYPCATEGORY_COMPOSITE;
-    } else if (val_type == JSONOID) {
-        tcategory = TYPCATEGORY_JSON;
-    } else {
-        tcategory = TypeCategory(val_type);
+        return TYPCATEGORY_JSON_CAST;
     }
-
-    return tcategory;
+    switch (val_type) {
+        case RECORDARRAYOID:
+            return TYPCATEGORY_ARRAY;
+        case RECORDOID:
+            return TYPCATEGORY_COMPOSITE;
+        case JSONOID:
+            return TYPCATEGORY_JSON;
+        case REGPROCOID:
+        case REGCLASSOID:
+        case REGOPERATOROID:
+        case REGOPEROID:
+        case REGPROCEDUREOID:
+        case REGTYPEOID:
+        case REGCONFIGOID:
+        case REGDICTIONARYOID:
+            return TYPCATEGORY_STRING;
+        default:
+            return TypeCategory(val_type);
+    }
 }
 
 typedef enum {
