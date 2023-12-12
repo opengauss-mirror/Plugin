@@ -175,3 +175,83 @@ DROP FUNCTION IF EXISTS pg_catalog.hour(timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.microsecond(timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.minute(timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.second(timestamptz);
+
+
+DROP OPERATOR IF EXISTS pg_catalog.>(timestamp without time zone, double precision);
+drop function if exists pg_catalog.datetime_double_gt(timestamp without time zone, double precision);
+
+DROP OPERATOR IF EXISTS pg_catalog.>=(timestamp without time zone, double precision);
+drop function if exists pg_catalog.datetime_double_ge(timestamp without time zone, double precision);
+
+DROP OPERATOR IF EXISTS pg_catalog.<(timestamp without time zone, double precision);
+drop function if exists pg_catalog.datetime_double_lt(timestamp without time zone, double precision);
+
+DROP OPERATOR IF EXISTS pg_catalog.<=(timestamp without time zone, double precision);
+drop function if exists pg_catalog.datetime_double_le(timestamp without time zone, double precision);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(timestamp without time zone, double precision);
+drop function if exists pg_catalog.datetime_double_eq(timestamp without time zone, double precision);
+
+DROP OPERATOR IF EXISTS pg_catalog.<>(timestamp without time zone, double precision);
+drop function if exists pg_catalog.datetime_double_ne(timestamp without time zone, double precision);
+
+DROP OPERATOR IF EXISTS pg_catalog.>(timestamptz, double precision);
+drop function if exists pg_catalog.timestamp_double_gt(timestamptz, double precision);
+
+DROP OPERATOR IF EXISTS pg_catalog.>=(timestamp, double);
+drop function if exists pg_catalog.timestamp_double_ge(timestamptz, double precision);
+
+DROP OPERATOR IF EXISTS pg_catalog.<(timestamp, double);
+drop function if exists pg_catalog.timestamp_double_lt(timestamptz, double precision);
+
+DROP OPERATOR IF EXISTS pg_catalog.<=(timestamp, double);
+drop function if exists pg_catalog.timestamp_double_le(timestamptz, double precision);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(timestamp, double);
+drop function if exists pg_catalog.timestamp_double_eq(timestamptz, double precision);
+
+DROP OPERATOR IF EXISTS pg_catalog.<>(timestamp, double);
+drop function if exists pg_catalog.timestamp_double_ne(timestamptz, double precision);
+
+DROP OPERATOR IF EXISTS pg_catalog.>(timestamp without time zone, uint8);
+drop function if exists pg_catalog.datetime_uint8_gt(timestamp without time zone, uint8);
+
+DROP OPERATOR IF EXISTS pg_catalog.>=(timestamp without time zone, uint8);
+drop function if exists pg_catalog.datetime_uint8_ge(timestamp without time zone, uint8);
+
+DROP OPERATOR IF EXISTS pg_catalog.<(timestamp without time zone, uint8);
+drop function if exists pg_catalog.datetime_uint8_lt(timestamp without time zone, uint8);
+
+DROP OPERATOR IF EXISTS pg_catalog.<=(timestamp without time zone, uint8);
+drop function if exists pg_catalog.datetime_uint8_le(timestamp without time zone, uint8);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(timestamp without time zone, uint8);
+drop function if exists pg_catalog.datetime_uint8_eq(timestamp without time zone, uint8);
+
+DROP OPERATOR IF EXISTS pg_catalog.<>(timestamp without time zone, uint8);
+drop function if exists pg_catalog.datetime_uint8_ne(timestamp without time zone, uint8);
+
+DROP OPERATOR IF EXISTS pg_catalog.>(timestamptz, uint8);
+drop function if exists pg_catalog.timestamp_uint8_gt(timestamptz, uint8);
+
+DROP OPERATOR IF EXISTS pg_catalog.>=(timestamptz, uint8);
+drop function if exists pg_catalog.timestamp_uint8_ge(timestamptz, uint8);
+
+DROP OPERATOR IF EXISTS pg_catalog.<(timestamptz, uint8);
+drop function if exists pg_catalog.timestamp_uint8_lt(timestamptz, uint8);
+
+DROP OPERATOR IF EXISTS pg_catalog.<=(timestamptz, uint8);
+drop function if exists pg_catalog.timestamp_uint8_le(timestamptz, uint8);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(timestamptz, uint8);
+drop function if exists pg_catalog.timestamp_uint8_eq(timestamptz, uint8);
+
+DROP OPERATOR IF EXISTS pg_catalog.<>(timestamptz, uint8);
+drop function if exists pg_catalog.timestamp_uint8_ne(timestamptz, uint8);
+
+drop function if exists pg_catalog.convert_datetime_double(double precision);
+drop function if exists pg_catalog.convert_timestamptz_double(double precision);
+drop function if exists pg_catalog.convert_datetime_uint8(uint8);
+drop function if exists pg_catalog.convert_timestamptz_uint8(uint8);
+
+
