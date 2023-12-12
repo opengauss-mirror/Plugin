@@ -170,6 +170,16 @@ analyze verbose foreign tables; --unsupported
 
 create index verbose_index on verbose(verbose);
 
+-- unreserved keyword: ast, PARTITIONING, REPAIR, ROWTYPE_P, 
+create table ast(ast int);
+create table PARTITIONING(PARTITIONING int);
+create table REPAIR(REPAIR int);
+create table ROWTYPE(ROWTYPE int);
+-- col_name_keyword
+create table ttt_test(TIMESTAMPADD int);
+--type func keyword
+create FUNCTION sounds() RETURNS int as 'select 1' language sql;
+
 /* excluded */
 create table excluded(excluded int);
 insert into excluded values(1);
