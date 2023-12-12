@@ -2732,11 +2732,11 @@ AS '$libdir/whale','gms_pipe_remove_pipe'
 LANGUAGE C VOLATILE STRICT;
 COMMENT ON FUNCTION gms_pipe.remove_pipe(text) IS 'Destroy pipe';
 
-CREATE FUNCTION gms_pipe.pack_message(pg_catalog.date)
+CREATE FUNCTION gms_pipe.pack_message(date)
 RETURNS void
 AS '$libdir/whale','gms_pipe_pack_message_date'
 LANGUAGE C VOLATILE STRICT;
-COMMENT ON FUNCTION gms_pipe.pack_message(pg_catalog.date) IS 'Add date field to message';
+COMMENT ON FUNCTION gms_pipe.pack_message(date) IS 'Add date field to message';
 
 CREATE FUNCTION gms_pipe.unpack_message_date()
 RETURNS date

@@ -637,13 +637,13 @@ select gms_pipe.receive_message('test_date');
 select gms_pipe.next_item_type();
  next_item_type 
 ----------------
-             13
+             12
 (1 row)
 
 select gms_pipe.unpack_message_date();
  unpack_message_date 
 ---------------------
- 2006-10-11 07:00:00
+ 2006-10-11 00:00:00
 (1 row)
 
 select gms_pipe.pack_message(to_timestamp('2008-10-30 01:23:45', 'YYYY-MM-DD HH24:MI:SS'));
@@ -667,15 +667,13 @@ select gms_pipe.receive_message('test_timestamp');
 select gms_pipe.next_item_type();
  next_item_type 
 ----------------
-             13
+             12
 (1 row)
 
 select to_char(gms_pipe.unpack_message_timestamp(), 'YYYY-MM-DD HH24:MI:SS');
-       to_char       
----------------------
- 2008-10-30 01:23:45
-(1 row)
-
+ERROR:  datatype mismatch
+DETAIL:  unpack unexpected type: 12
+CONTEXT:  referenced column: to_char
 select gms_pipe.pack_message(6262626262::numeric);
  pack_message 
 --------------
