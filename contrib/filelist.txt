@@ -253,3 +253,4 @@ windowfuncs.cpp
 year.cpp
 year.h
 alter.cpp
+Gen_fmgrtab.pl
