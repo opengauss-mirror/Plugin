@@ -61,5 +61,15 @@ insert into json_table values (json_object('name', 'Jim', 'age', 20, 'name', 'Ti
 insert into json_table values ('{"Number": 123, "Bool": false}', null);
 select json_objectagg(a, b) from json_table;
 
+-- special type, type typcategory is N(numeric), but out result is string actually
+select pg_catalog.json_objectagg(1, cast(1247 as regclass));
+select pg_catalog.json_objectagg(1, cast(598 as regproc));
+select pg_catalog.json_objectagg(1, cast(15 as regoperator));
+select pg_catalog.json_objectagg(1, cast(15 as regoper));
+select pg_catalog.json_objectagg(1, cast(598 as regprocedure));
+select pg_catalog.json_objectagg(1, cast(23 as regtype));
+select pg_catalog.json_objectagg(1, cast(3748 as regconfig));
+select pg_catalog.json_objectagg(1, cast(3765 as regdictionary));
+
 drop schema json_objectagg_test cascade;
 reset current_schema;

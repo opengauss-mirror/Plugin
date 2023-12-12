@@ -141,6 +141,55 @@ select json_objectagg(a, b) from json_table;
  {"{\"a\": \"b\"}": "Json", "{\"age\": 20, \"name\": \"Jim\"}": "Text", "{\"Number\": 123, \"Bool\": false}": null}
 (1 row)
 
+-- special type, type typcategory is N(numeric), but out result is string actually
+select pg_catalog.json_objectagg(1, cast(1247 as regclass));
+  json_objectagg  
+------------------
+ {"1": "pg_type"}
+(1 row)
+
+select pg_catalog.json_objectagg(1, cast(598 as regproc));
+       json_objectagg       
+----------------------------
+ {"1": "pg_catalog.abbrev"}
+(1 row)
+
+select pg_catalog.json_objectagg(1, cast(15 as regoperator));
+       json_objectagg       
+----------------------------
+ {"1": "=(integer,bigint)"}
+(1 row)
+
+select pg_catalog.json_objectagg(1, cast(15 as regoper));
+    json_objectagg     
+-----------------------
+ {"1": "pg_catalog.="}
+(1 row)
+
+select pg_catalog.json_objectagg(1, cast(598 as regprocedure));
+    json_objectagg     
+-----------------------
+ {"1": "abbrev(inet)"}
+(1 row)
+
+select pg_catalog.json_objectagg(1, cast(23 as regtype));
+  json_objectagg  
+------------------
+ {"1": "integer"}
+(1 row)
+
+select pg_catalog.json_objectagg(1, cast(3748 as regconfig));
+ json_objectagg  
+-----------------
+ {"1": "simple"}
+(1 row)
+
+select pg_catalog.json_objectagg(1, cast(3765 as regdictionary));
+ json_objectagg  
+-----------------
+ {"1": "simple"}
+(1 row)
+
 drop schema json_objectagg_test cascade;
 NOTICE:  drop cascades to table city
 reset current_schema;
