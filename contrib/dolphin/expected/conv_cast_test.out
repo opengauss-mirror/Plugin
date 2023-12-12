@@ -261,17 +261,15 @@ select '65535'::uint2::time;
 select '4294967295'::uint4::time;
 WARNING:  invalid input syntax for type time: "4294967295"
 CONTEXT:  referenced column: time
-     time     
---------------
- 429497:13:35
+ time 
+------
+ 
 (1 row)
 
 select '18446744073709551615'::uint8::time;
-WARNING:  invalid input syntax for type time: "18446744073709551615"
-CONTEXT:  referenced column: time
-   time   
-----------
- 00:00:00
+   time    
+-----------
+ -00:00:01
 (1 row)
 
 select '4294967295'::uint1::time;
@@ -293,17 +291,17 @@ CONTEXT:  referenced column: time
 select '4294967295'::uint4::time;
 WARNING:  invalid input syntax for type time: "4294967295"
 CONTEXT:  referenced column: time
-     time     
---------------
- 429497:13:35
+ time 
+------
+ 
 (1 row)
 
 select '4294967295'::uint8::time;
 WARNING:  invalid input syntax for type time: "4294967295"
 CONTEXT:  referenced column: time
-     time     
---------------
- 429497:13:35
+ time 
+------
+ 
 (1 row)
 
 select '4294967295'::int1::time;
@@ -321,21 +319,31 @@ WARNING:  value "4294967295" is out of range for type smallint
 LINE 1: select '4294967295'::int2::time;
                ^
 CONTEXT:  referenced column: time
-ERROR:  time out of range
+WARNING:  invalid input syntax for type time: "32767"
 CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
 select '4294967295'::int4::time;
 WARNING:  value "4294967295" is out of range for type integer
 LINE 1: select '4294967295'::int4::time;
                ^
 CONTEXT:  referenced column: time
-ERROR:  time out of range
+WARNING:  invalid input syntax for type time: "2147483647"
 CONTEXT:  referenced column: time
+   time    
+-----------
+ 838:59:59
+(1 row)
+
 select '4294967295'::int8::time;
 WARNING:  invalid input syntax for type time: "4294967295"
 CONTEXT:  referenced column: time
-     time     
---------------
- 429497:13:35
+ time 
+------
+ 
 (1 row)
 
 select conv('-211111111111111111111111111111111111111111111111111111111177777',10,8);

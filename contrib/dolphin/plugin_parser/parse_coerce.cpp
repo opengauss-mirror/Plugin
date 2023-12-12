@@ -87,6 +87,7 @@ static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others
 #define CAST_ENUM_IDX 22
 #define ENUM_CAST_IDX 19
 #define CAST_SIGNED_IDX 16
+#define NUM_CAST_TIME_IDX 11
 
 static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1_cast_ui1", "i1_cast_ui2", "i1_cast_ui4", "i1_cast_ui8"},
                                                                             {"i2_cast_ui1", "i2_cast_ui2", "i2_cast_ui4", "i2_cast_ui8"},
@@ -118,6 +119,11 @@ static const char* enumCastFunction[ENUM_CAST_IDX] = {"enum_bit", "enum_int1", "
                                                       "enum_date", "enum_timestamp", "enum_timestamptz", "enum_time",
                                                       "enum_set", "enum_uint1", "enum_uint2", "enum_uint4",
                                                       "enum_uint8", "enum_year", "enum_varlena"};
+
+static const char* numCastTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_time", "int16_cast_time", "int32_cast_time",
+                                                             "int64_cast_time", "uint8_cast_time", "uint16_cast_time",
+                                                             "uint32_cast_time", "uint64_cast_time", "float4_cast_time",
+                                                             "float8_cast_time", "numeric_cast_time"};
 
 typedef enum {
     INVALID_COLUMN = -1,
@@ -188,6 +194,21 @@ typedef enum {
     S_TEXT,
     S_VARLENA
 } CastSignedIdx;
+
+typedef enum {
+    N_INVALID_IDX = -1,
+    N_INT1,
+    N_INT2,
+    N_INT4,
+    N_INT8,
+    N_UINT1,
+    N_UINT2,
+    N_UINT4,
+    N_UINT8,
+    N_FLOAT4,
+    N_FLOAT8,
+    N_NUMERIC
+} NumCastIdx;
 #endif
 /*
  * @Description: same as get_element_type() except this reports error
@@ -3314,6 +3335,45 @@ Oid findSignedExplicitCastFunction(Oid sourceTypeId, Oid funcid)
     return (idx == INVALID_IDX) ? funcid : get_func_oid(castSignedFunction[idx], PG_CATALOG_NAMESPACE, NULL);
 }
 
+int findNumTimeFunctionIdx(Oid typeId)
+{
+    switch (typeId) {
+        case INT1OID:
+            return N_INT1;
+        case INT2OID:
+            return N_INT2;
+        case INT4OID:
+            return N_INT4;
+        case INT8OID:
+            return N_INT8;
+        case FLOAT4OID:
+            return N_FLOAT4;
+        case FLOAT8OID:
+            return N_FLOAT8;
+        case NUMERICOID:
+            return N_NUMERIC;
+        default:
+            break;
+    }
+    if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")) {
+        return N_UINT1;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
+        return N_UINT2;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+        return N_UINT4;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+        return N_UINT8;
+    } else {
+        return N_INVALID_IDX;
+    }
+}
+
+Oid findNumTimeExplicitCastFunction(Oid sourceTypeId, Oid funcid)
+{
+    int idx = findNumTimeFunctionIdx(sourceTypeId);
+    return (idx == INVALID_IDX) ? funcid : get_func_oid(numCastTimeFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+}
+
 int findEnumFunctionIdx(Oid typeId)
 {
     switch (typeId) {
@@ -3482,6 +3542,8 @@ void TryFindSpecifiedCastFunction(const Oid sourceTypeId, const Oid targetTypeId
         *funcId = findSignedExplicitCastFunction(sourceTypeId, defaultFuncId);
     } else if (sourceTypeId == BITOID) {
         *funcId = findBitCastTimeFunction(targetTypeId, defaultFuncId);
+    } else if (targetTypeId == TIMEOID) {
+        *funcId = findNumTimeExplicitCastFunction(sourceTypeId, defaultFuncId);
     } else {
         *funcId = findUnsignedExplicitCastFunction(targetTypeId, sourceTypeId, defaultFuncId);
     }

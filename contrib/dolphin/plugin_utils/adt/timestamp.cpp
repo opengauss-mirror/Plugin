@@ -1593,7 +1593,7 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, bool is_timestamptz_sconst, TimeErr
 #endif
 {
     char* str = PG_GETARG_CSTRING(0);
-
+    int errlevel = (SQL_MODE_STRICT() && !fcinfo->can_ignore) ? ERROR : WARNING;
 #ifdef NOT_USED
     Oid typelem = PG_GETARG_OID(1);
 #endif
@@ -1655,7 +1655,7 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, bool is_timestamptz_sconst, TimeErr
         switch (dtype) {
             case DTK_DATE:
                 if (tm2timestamp(tm, fsec, &tz, &result) != 0)
-                    ereport(ERROR,
+                    ereport(errlevel,
                         (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
                 break;
 
