@@ -57,5 +57,12 @@ create table bytea_to_hex_test(c1 bytea);
 insert into bytea_to_hex_test values (E'\\xDEADBEEF');
 select hex(c1) from bytea_to_hex_test;
 
+-- test for blob with hex format
+set dolphin.b_compatibility_mode to on;
+create table t1 (c1 tinyblob, c2 blob, c3 mediumblob, c4 longblob);
+insert into t1 values('aa', 'aa', 'aa', 'aa');
+insert into t1 values(12312, 12312, 12312, 12312);
+select hex(c1) as "tinyblob_result", hex(c2) as "blob_result", hex(c3) as "mediumblob_result", hex(c4) as "longblob_result" from t1;
+
 drop schema db_b_hex cascade;
 reset current_schema;

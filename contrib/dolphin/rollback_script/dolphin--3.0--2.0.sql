@@ -254,4 +254,7 @@ drop function if exists pg_catalog.convert_timestamptz_double(double precision);
 drop function if exists pg_catalog.convert_datetime_uint8(uint8);
 drop function if exists pg_catalog.convert_timestamptz_uint8(uint8);
 
-
+DROP FUNCTION IF EXISTS pg_catalog.hex(tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.hex(blob);
+DROP FUNCTION IF EXISTS pg_catalog.hex(mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.hex(longblob);
