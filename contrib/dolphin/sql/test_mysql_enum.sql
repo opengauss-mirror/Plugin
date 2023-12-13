@@ -262,3 +262,17 @@ drop view my_view;
 drop table t_drop_view;
 drop schema db_b_new_gram_test3 cascade;
 reset current_schema;
+
+--
+--test tailing blank for enum value
+--
+--expect failure with with duplicate values
+create table tabenum(a enum ('a','a ') );
+--expect success
+create table tabenum(a enum ('a ',' a'));
+drop table tabenum;
+--expect failure
+CREATE TYPE typenum AS ENUM ( 'a', 'a ');
+--expect success
+CREATE TYPE typenum AS ENUM ( 'a', ' a');
+DROP TYPE typenum;

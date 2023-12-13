@@ -171,6 +171,7 @@ partitionfuncs.h
 password.cpp
 password.h
 pg_builtin_proc.cpp
+pg_enum.cpp
 pg_locale.cpp
 pg_wchar.h
 pgstatfuncs.cpp
