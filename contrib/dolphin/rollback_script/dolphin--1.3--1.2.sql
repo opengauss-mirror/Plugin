@@ -298,3 +298,8 @@ DROP FUNCTION IF EXISTS pg_catalog.uint64_cast_time(uint8);
 DROP FUNCTION IF EXISTS pg_catalog.float4_cast_time(float4);
 DROP FUNCTION IF EXISTS pg_catalog.float8_cast_time(float8);
 DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_time(numeric);
+
+DROP FUNCTION IF EXISTS pg_catalog.hex(tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.hex(blob);
+DROP FUNCTION IF EXISTS pg_catalog.hex(mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.hex(longblob);

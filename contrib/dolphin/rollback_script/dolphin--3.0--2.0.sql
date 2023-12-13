@@ -71,11 +71,6 @@ DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
 
 drop function IF EXISTS pg_catalog."user"();
 
-DROP FUNCTION IF EXISTS pg_catalog.hex(tinyblob);
-DROP FUNCTION IF EXISTS pg_catalog.hex(blob);
-DROP FUNCTION IF EXISTS pg_catalog.hex(mediumblob);
-DROP FUNCTION IF EXISTS pg_catalog.hex(longblob);
-
 CREATE OR REPLACE FUNCTION pg_catalog.binary_out (binary) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
 
 CREATE OR REPLACE FUNCTION pg_catalog.varbinary_out (varbinary) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';

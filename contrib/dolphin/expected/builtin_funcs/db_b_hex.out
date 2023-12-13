@@ -226,6 +226,20 @@ select hex(c1) from bytea_to_hex_test;
  deadbeef
 (1 row)
 
+-- test for blob with hex format
+set dolphin.b_compatibility_mode to on;
+create table t1 (c1 tinyblob, c2 blob, c3 mediumblob, c4 longblob);
+insert into t1 values('aa', 'aa', 'aa', 'aa');
+insert into t1 values(12312, 12312, 12312, 12312);
+select hex(c1) as "tinyblob_result", hex(c2) as "blob_result", hex(c3) as "mediumblob_result", hex(c4) as "longblob_result" from t1;
+ tinyblob_result | blob_result | mediumblob_result | longblob_result 
+-----------------+-------------+-------------------+-----------------
+ 6161            | 6161        | 6161              | 6161
+ 3132333132      | 3132333132  | 3132333132        | 3132333132
+(2 rows)
+
 drop schema db_b_hex cascade;
-NOTICE:  drop cascades to table bytea_to_hex_test
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table bytea_to_hex_test
+drop cascades to table t1
 reset current_schema;
