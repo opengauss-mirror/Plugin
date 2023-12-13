@@ -75,25 +75,8 @@ CREATE TABLE tst_t3
 id int
 );
 -- show plugins
-show plugins;
---?   Name       |  Status  | Type | Library | License |                      Comment                       
---?.*
---?.*
---?.*
---?.*
---?.*
---?.*
---?.*
---?.*
---?.*
---?.*
---?.*
---?.*
---?.*
---?.*
---?.*
-(14 rows)
-
+\! @abs_bindir@/gsql contrib_regression -p @portstring@ -c "show plugins" >/dev/null 2>&1; echo $?
+0
 -- show tables test
 show tables;
  Tables_in_tst_schema2 

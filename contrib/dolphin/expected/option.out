@@ -85,7 +85,7 @@ CREATE TABLE test10
   );
 create table test11 nocompress as select * from test4;
 create table test12() inherits (test11);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 create table if not exists test13(a int);
 create index idx1 on test1 using ubtree(a) with(fillfactor = 30) INCLUDE(b);
 ERROR:  ubtree index is only supported for ustore

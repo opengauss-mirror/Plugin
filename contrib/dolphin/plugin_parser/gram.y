@@ -11293,11 +11293,12 @@ key_action:
 
 OptInherit_without_empty: INHERITS '(' dolphin_qualified_name_list ')'
 			{
-        		const char* message = "CREATE TABLE ... INHERITS is not yet supported.";
-    			InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
-				ereport(errstate,
-					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-					errmsg("CREATE TABLE ... INHERITS is not yet supported.")));
+				if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+					const char* message = "inherits is not support in B-format database, it conflicts with multi-relation update";
+					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+					ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						errmsg("inherits is not support in B-format database, it conflicts with multi-relation update")));
+				}
 				$$ = $3;
 			}
 		;
@@ -36773,7 +36774,15 @@ dolphin_func_name_opt_arg:
 
 DOLPHINIDENT: IDENT
 				{
-					$$ = $1;
+					if (u_sess->attr.attr_sql.enable_ignore_case_in_dquotes 
+					    && (pg_yyget_extra(yyscanner))->core_yy_extra.ident_quoted)
+					{
+						$$ = CreateDolphinIdent(pg_strtolower(pstrdup($1->str)), false);
+					}
+					else
+					{
+						$$ = $1;
+					}
 				}
 			| DB_B_JSON
 				{

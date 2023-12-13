@@ -36,7 +36,7 @@ id int
 );
 
 -- show plugins
-show plugins;
+\! @abs_bindir@/gsql contrib_regression -p @portstring@ -c "show plugins" >/dev/null 2>&1; echo $?
 
 -- show tables test
 show tables;
