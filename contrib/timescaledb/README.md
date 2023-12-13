@@ -1,76 +1,81 @@
-|Linux/macOS|Windows|Coverity|Code Coverage|
-|:---:|:---:|:---:|:---:|
-|[![Build Status](https://travis-ci.org/timescale/timescaledb.svg?branch=master)](https://travis-ci.org/timescale/timescaledb/builds)|[![Windows build status](https://ci.appveyor.com/api/projects/status/15sqkl900t04hywu/branch/master?svg=true)](https://ci.appveyor.com/project/timescale/timescaledb/branch/master)|[![Coverity Scan Build Status](https://scan.coverity.com/projects/timescale-timescaledb/badge.svg)](https://scan.coverity.com/projects/timescale-timescaledb)|[![Code Coverage](https://codecov.io/gh/timescale/timescaledb/branch/master/graphs/badge.svg?branch=master)](https://codecov.io/gh/timescale/timescaledb)
+目录
+
+[Toc]
+
+# **1.** 概述
+
+## **1.1.** 目的
+
+本文旨在指导如何安装、使用TimescaleDB。
+
+## **1.2.** TimescaleDB介绍
+
+TimescaleDB是一个开源的时间序列数据库，专门用于高性能和可扩展的时间序列数据存储和分析。它结合了关系型数据库的功能和优势，以及时间序列数据库的特性，提供了一套强大的功能来处理大规模时间序列数据。基于以上描述，TimescaleDB 在以下场景中非常适用：
+
+1. 物联网（IoT）应用：物联网应用通常会产生大量的时间序列数据，例如传感器数据、设备监控数据等。TimescaleDB 的高性能和数据分区功能可以有效地处理这些数据，并支持快速的实时查询和分析。
+2. 金融和交易数据：金融行业需要对交易数据进行高效的存储和分析。TimescaleDB 的连续聚合和数据保留策略功能可以方便地计算和维护聚合数据，同时自动删除过期的数据。
+3. 日志和监控数据：在日志和监控系统中，需要对大量的事件和指标数据进行存储和分析。TimescaleDB 的数据连续性和数据压缩功能可以满足高并发的写入需求，并减少存储空间的使用。
+4. 时间序列分析：对于需要进行时间序列分析的场景，TimescaleDB 提供了 SQL 接口和丰富的时间序列函数，可以方便地进行复杂的查询和分析操作。
+
+TimescaleDB能够以插件化的形式，很方便的处理时序数据，随着openGauss的发展，对时序数据的处理能力也成为了开发组重点考虑的功能，而且openGauss基于PostgreSQL 9.2.4版本优化，所以从PostgreSQL数据库将TimescaleDB扩展迁移过来是一项满足经济性和科学性的决定。
+
+## **1.3.** 注意事项
+
+### 1.3.1. 一般性限制
+
+- 不支持非编译安装版本；
+- 目前TimescaleDB安装之后，不支持删除TimescaleDB插件；
+- TimescaleDB插件依赖于public schema，因此不支持使用drop schema的方式删除public schema；
+- TimescaleDB创建的超表需要使用drop table CASCADE;进行删除,会同时删除其附加表；
+- 在不同数据库创建插件需要重启数据库；
+
+# **2.** TimescaleDB安装方法
 
 
-## TimescaleDB
+## **2.1.** 源码安装
 
-TimescaleDB is an open-source database designed to make SQL scalable for
-time-series data.  It is engineered up from PostgreSQL and packaged as a
-PostgreSQL extension, providing automatic partitioning across time and space
-(partitioning key), as well as full SQL support.
 
-[Timescale Cloud](https://tsdb.co/GitHubTimescaleCloud) is our fully managed,
-hosted version of TimescaleDB, available in the cloud of your choice
-(pay-as-you-go, with free trial credits to start).  To determine which option
-is best for you, see [Timescale
-Products](https://tsdb.co/GitHubTimescaleProducts) for more information about
-our Apache-2 version, TimescaleDB Community (self-hosted) and Timescale Cloud
-(hosted), including: feature comparisons, FAQ, documentation, and support.
+从Plugin仓下载好TimescaleDB源码，解压完成后，放入openGauss-server/contrib目录下，在脚本所在目录执行离线安装脚本 ./run_to_build.sh
 
-Below is an introduction to TimescaleDB. For more information, please check out 
-these other resources:
-- [Developer Documentation](https://tsdb.co/GitHubTimescaleDocs)
-- [Slack Channel](https://slack-login.timescale.com)
-- [Timescale Release Notes & Future Plans](https://tsdb.co/GitHubTimescaleReleaseNotes)
+```
+cd cd contrib/timescaledb
+sudo ./run_to_build.sh
+```
 
-For reference and clarity, all code files in this repository reference
-licensing in their header (either Apache License, Version 2.0 or [Timescale
-License
-(TSL)](https://github.com/timescale/timescaledb/blob/master/tsl/LICENSE-TIMESCALE)). Apache-2
-licensed binaries can be built by passing `-DAPACHE_ONLY=1` to `bootstrap`.
+进入`./build`文件夹中，执行`make && make install`
 
-[Contributors welcome.](https://github.com/timescale/timescaledb/blob/master/CONTRIBUTING.md)
+在执行make install之后，需要主文件夹下的`og-timescaledb1.7.4.sql`的内容替换到openGauss-server安装路径下的`share/postgresql/extension/timescaledb--1.7.4.sql`文件中。
 
-(To build TimescaleDB from source, see instructions in [_Building from source_](https://github.com/timescale/timescaledb/blob/master/docs/BuildSource.md).)
+在对应数据库配置文件（比如data/postgresql.conf）中的最后一行写入`shared_preload_libraries = '$libdir/timescaledb'`
 
-### Using TimescaleDB
+启动数据库，进入到sql命令行界面，执行`create extension timescaledb;`，若出现以下结果，则说明安装成功
 
-TimescaleDB scales PostgreSQL for time-series data via automatic
-partitioning across time and space (partitioning key), yet retains
-the standard PostgreSQL interface.
+```sql
+openguass=# create extension timescaledb;
+WELCOME TO
+ _____ _                               _     ____________  
+|_   _(_)                             | |    |  _  \ ___ \ 
+  | |  _ _ __ ___   ___  ___  ___ __ _| | ___| | | | |_/ / 
+  | | | |  _ ` _ \ / _ \/ __|/ __/ _` | |/ _ \ | | | ___ \ 
+  | | | | | | | | |  __/\__ \ (_| (_| | |  __/ |/ /| |_/ /
+  |_| |_|_| |_| |_|\___||___/\___\__,_|_|\___|___/ \____/
+               Running version 1.7.4
+For more information on TimescaleDB, please visit the following links:
 
-In other words, TimescaleDB exposes what look like regular tables, but
-are actually only an
-abstraction (or a virtual view) of many individual tables comprising the
-actual data. This single-table view, which we call a
-[hypertable](https://tsdb.co/GitHubTimescaleHypertable),
-is comprised of many chunks, which are created by partitioning
-the hypertable's data in either one or two dimensions: by a time
-interval, and by an (optional) "partition key" such as
-device id, location, user id, etc. ([Architecture discussion](https://tsdb.co/GitHubTimescaleArchitecture))
+ 1. Getting started: https://docs.timescale.com/getting-started
+ 2. API reference documentation: https://docs.timescale.com/api
+ 3. How TimescaleDB is designed: https://docs.timescale.com/introduction/architecture
 
-Virtually all user interactions with TimescaleDB are with
-hypertables. Creating tables and indexes, altering tables, inserting
-data, selecting data, etc., can (and should) all be executed on the
-hypertable.
+Note: TimescaleDB collects anonymous reports to better understand and assist our users.
+For more information and how to disable, please see our docs https://docs.timescaledb.com/using-timescaledb/telemetry.
+CREATE EXTENSION
+```
 
-From the perspective of both use and management, TimescaleDB just
-looks and feels like PostgreSQL, and can be managed and queried as
-such.
-
-#### Before you start
-
-PostgreSQL's out-of-the-box settings are typically too conservative for modern
-servers and TimescaleDB. You should make sure your `postgresql.conf`
-settings are tuned, either by using [timescaledb-tune](https://github.com/timescale/timescaledb-tune) 
-or doing it manually.
-
-#### Creating a hypertable
+## **2.2.** 创建超表 
 
 ```sql
 -- Do not forget to create timescaledb extension
-CREATE EXTENSION timescaledb;
+-- CREATE EXTENSION timescaledb;
 
 -- We start by creating a regular SQL table
 CREATE TABLE conditions (
@@ -84,10 +89,8 @@ CREATE TABLE conditions (
 SELECT create_hypertable('conditions', 'time');
 ```
 
-- [Quick start: Creating hypertables](https://tsdb.co/GitHubTimescaleCreateHypertables)
-- [Reference examples](https://tsdb.co/GitHubTimescaleHypertableReference)
 
-#### Inserting and querying data
+## **2.3.** 插入和查询数据
 
 Inserting data into the hypertable is done via normal SQL commands:
 
@@ -107,72 +110,27 @@ SELECT time_bucket('15 minutes', time) AS fifteen_min,
   ORDER BY fifteen_min DESC, max_temp DESC;
 ```
 
-In addition, TimescaleDB includes additional functions for time-series
-analysis that are not present in vanilla PostgreSQL. (For example, the `time_bucket` function above.)
 
-- [Quick start: Basic operations](https://tsdb.co/GitHubTimescaleBasicOperations)
-- [Reference examples](https://tsdb.co/GitHubTimescaleWriteData)
-- [TimescaleDB API](https://tsdb.co/GitHubTimescaleAPI)
-
-### Installation
-
-TimescaleDB is available pre-packaged for several platforms:
-
-- Linux:
-    - [RedHat / CentOS](https://tsdb.co/GitHubTimescaleRedHatCentOS)
-    - [Ubuntu](https://tsdb.co/GitHubTimescaleUbuntu)
-    - [Debian](https://tsdb.co/GitHubTimescaleDebian)
-- [Docker](https://tsdb.co/GitHubTimescaleDocker)
-- [MacOS (Homebrew)](https://tsdb.co/GitHubTimescaleMacOS)
-- [Windows](https://tsdb.co/GitHubTimescaleWindows)
-
-[Timescale Cloud](https://tsdb.co/GitHubTimescaleInstallCloud)
-(database-as-a-service) is available via free trial. You create database
-instances in the cloud of your choice and use TimescaleDB to power your
-queries, automating common operational tasks and reducing management overhead.
-
-We recommend following our detailed [installation instructions](https://tsdb.co/GitHubTimescaleInstall).
-
-To build from source, see instructions
-[here](https://github.com/timescale/timescaledb/blob/master/docs/BuildSource.md).
-
-
-## Resources
-
-### Useful tools
-
-- [timescaledb-tune](https://github.com/timescale/timescaledb-tune): Helps
-set your PostgreSQL configuration settings based on your system's resources.
-- [timescaledb-parallel-copy](https://github.com/timescale/timescaledb-parallel-copy):
-Parallelize your initial bulk loading by using PostgreSQL's `COPY` across
-multiple workers.
-
-### Additional documentation
-
-- [Why use TimescaleDB?](https://tsdb.co/GitHubTimescaleIntro)
-- [Migrating from PostgreSQL](https://tsdb.co/GitHubTimescalePostgresMigrate)
-- [Writing data](https://tsdb.co/GitHubTimescaleWriteData)
-- [Querying and data analytics](https://tsdb.co/GitHubTimescaleReadData)
-- [Tutorials and sample data](https://tsdb.co/GitHubTimescaleTutorials)
-
-### Community & help
-
-- [Slack Channel](https://slack.timescale.com)
-- [Github Issues](https://github.com/timescale/timescaledb/issues)
-- [Timescale Support](https://tsdb.co/GitHubTimescaleSupport): see support options (community & subscription)
-
-### Releases & updates
-
- - [Timescale Release Notes & Future
-   Plans](https://tsdb.co/GitHubTimescaleReleaseNotes): see planned and
-   in-progress updates and detailed information about current and past
-   releases.
- - [Subscribe to Timescale Release
-   Notes](https://tsdb.co/GitHubTimescaleGetReleaseNotes) to get notified about
-   new releases, fixes, and early access/beta programs.
-
-### Contributing
-
-- [Contributor instructions](https://github.com/timescale/timescaledb/blob/master/CONTRIBUTING.md)
-- [Code style guide](https://github.com/timescale/timescaledb/blob/master/docs/StyleGuide.md)
-
+# **3.** TimescaleDB可用接口
+| 序号 | 接口名称                                                     | 说明                                                         |
+| ---- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 1    | chunk_relation_size                                          | 获取超表块的关系大小                                         |
+| 2    | chunk_relation_size_pretty                                   | 获取超表块的关系大小                                         |
+| 3    | drop_chunks                                                  | 删除时间范围完全在指定时间之前（或之后）的数据区块，跨所有超级表或针对特定超级表运行。 |
+| 4    | hypertable_relation_size                                     | 获取超级表的关系大小                                         |
+| 5    | hypertable_relation_size_pretty                              | 获取超级表的关系大小                                         |
+| 6    | indexes_relation_size                                        | 获取超表上的索引大小                                         |
+| 7    | indexes_relation_size_pretty                                 | 获取超表上的索引大小                                         |
+| 8    | set_number_partitions                                        | 设置超表上空间维度的分区（片）数                             |
+| 9    | show_chunks                                                  | 获取与超表关联的区块列表                                     |
+| 10   | add_dimension()空间分区                                      | 向超表添加额外的分区维度。选择作为维度的列可以使用间隔分区或哈希分区。 |
+| 11   | attach_tablespace（）将表空间附加到超表                      | 将表空间附加到超表并使用它来存储块                           |
+| 12   | create_hypertable（）创建超表                                | 创建超表                                                     |
+| 13   | detach_tablespace（）从一个或多个超级表中分离表空间。        | 从一个或多个超级表中分离表空间                               |
+| 14   | detach_tablespaces（）从超表中分离所有表空间。               | 从超表中分离所有表空间                                       |
+| 15   | set_chunk_time_interval（）设置超表上的chunk_time_interval。 | 设置超表上的区块时间间隔                                     |
+| 16   | set_integer_now_func（）设置整数超表当前时间函数             | 只适用于整数类超表，它设置一个函数，该函数以时间列的单位返回now（）值（当前时间） |
+| 17   | time_bucket()函数                                            | time_bucket用于分析任意时间间隔的数据                        |
+| 18   | timescaledb_information.hypertable获取超表信息               | 获取超表的相关信息或者查看一个表是否为超表                   |
+| 19   | timescaledb_information.license获取许可信息                  | 获取有关当前许可证的信息                                     |
+| 20   | show_tablespaces（）将显示附加到超表的表空间。               | 将显示附加到超表的表空间。                                   |
