@@ -966,9 +966,9 @@ insert ignore into t_binaryn values (null);
 WARNING:  null value in column "c" violates not-null constraint
 DETAIL:  Failing row contains (null).
 select *,hex(c) from t_binaryn;
-       c        |     hex      
-----------------+--------------
- \x000000000000 | 000000000000
+      c       |     hex      
+--------------+--------------
+ \0\0\0\0\0\0 | 000000000000
 (1 row)
 
 insert into t_binaryn values(b'01');
@@ -978,10 +978,10 @@ DETAIL:  Failing row contains (null).
 WARNING:  null value in column "c" violates not-null constraint
 DETAIL:  Failing row contains (null).
 select *,hex(c) from t_binaryn;
-       c        |     hex      
-----------------+--------------
- \x000000000000 | 000000000000
- \x000000000000 | 000000000000
+      c       |     hex      
+--------------+--------------
+ \0\0\0\0\0\0 | 000000000000
+ \0\0\0\0\0\0 | 000000000000
 (2 rows)
 
 -- mixture

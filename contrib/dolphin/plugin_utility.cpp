@@ -18,6 +18,7 @@
 #include "postgres.h"
 #include "knl/knl_variable.h"
 
+#include "plugin_postgres.h"
 #include "plugin_nodes/parsenodes_common.h"
 #include "plugin_commands/defrem.h"
 #include "nodes/print.h"
@@ -3245,7 +3246,22 @@ void standard_ProcessUtility(processutility_context* processutility_cxt,
             uint64 processed;
             uint64 histhash;
             bool has_histhash;
+#ifdef DOLPHIN
+            GetSessionContext()->isDoCopy = true;
+            PG_TRY();
+            {
+                DoCopy((CopyStmt*)parse_tree, query_string, &processed);
+            }
+            PG_CATCH();
+            {
+                GetSessionContext()->isDoCopy = false;
+                PG_RE_THROW();
+            }
+            PG_END_TRY();
+            GetSessionContext()->isDoCopy = false;
+#else
             DoCopy((CopyStmt*)parse_tree, query_string, &processed);
+#endif
             has_histhash = ((CopyStmt*)parse_tree)->hashstate.has_histhash;
             histhash = ((CopyStmt*)parse_tree)->hashstate.histhash;
             if (completion_tag != NULL) {

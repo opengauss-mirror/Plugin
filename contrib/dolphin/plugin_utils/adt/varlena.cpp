@@ -90,6 +90,7 @@
 #define MYSQL_SUPPORT_MINUS_MAX_LENGTH 65
 #define MAX_UINT32_STR "0xffffffff"
 #define MAXBI64LEN 25
+#define BINARY_LEN(len) ((len - 2) / 2)
 
 static long convert_bit_to_int (PG_FUNCTION_ARGS, int idx);
 static TimestampTz temporal_to_timestamptz(Oid type, int index, PG_FUNCTION_ARGS);
@@ -402,6 +403,9 @@ extern "C" DLL_PUBLIC Datum Varlena2Text(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(Varlena2Bit);
 extern "C" DLL_PUBLIC Datum Varlena2Bit(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_binaryout);
+extern "C" DLL_PUBLIC Datum dolphin_binaryout(PG_FUNCTION_ARGS);
+
 #endif
 
 /*****************************************************************************
@@ -698,7 +702,7 @@ Datum dolphin_binaryin(PG_FUNCTION_ARGS)
             bc = (len - 2) / 2 + VARHDRSZ; /* maximum possible length */
             result = (bytea*)palloc(bc);
         } else {
-            if (len > (size_t)(atttypmod - VARHDRSZ)) {
+            if (BINARY_LEN(len) > (size_t)(atttypmod - VARHDRSZ)) {
                 ereport(ERROR, (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
                             errmsg("value too long for type binary(%d)", atttypmod - VARHDRSZ)));
             }
@@ -10942,5 +10946,71 @@ Datum binary_length(PG_FUNCTION_ARGS)
 {
     bytea* vlena = PG_GETARG_BYTEA_PP(0);
     PG_RETURN_INT32(VARSIZE_ANY_EXHDR(vlena));
+}
+
+static Datum normal_dolphin_binaryout(PG_FUNCTION_ARGS)
+{
+    bytea* vlena = PG_GETARG_BYTEA_PP(0);
+    char* result = NULL;
+    char* rp = NULL;
+    char* vp = NULL;
+    int len;
+    int i;
+
+    len = 1;
+    vp = VARDATA_ANY(vlena);
+    for (i = VARSIZE_ANY_EXHDR(vlena); i != 0; i--, vp++) {
+        if (*vp == '\0') {
+            len += 2;
+        } else {
+            len++;
+        }
+    }
+    rp = result = (char*)palloc(len);
+    vp = VARDATA_ANY(vlena);
+    for (i = VARSIZE_ANY_EXHDR(vlena); i != 0; i--, vp++) {
+        if (*vp == '\0') {
+            *rp++ = '\\';
+            *rp++ = '0';
+        } else {
+            *rp++ = *vp;
+        }
+    }
+    *rp = '\0';
+
+    /* free memory if allocated by the toaster */
+    PG_FREE_IF_COPY(vlena, 0);
+
+    PG_RETURN_CSTRING(result);
+}
+
+static Datum hex_dolphin_binaryout(PG_FUNCTION_ARGS)
+{
+    bytea* vlena = PG_GETARG_BYTEA_PP(0);
+    char* result = NULL;
+    char* rp = NULL;
+
+    /* Print hex format */
+    rp = result = (char*)palloc(VARSIZE_ANY_EXHDR(vlena) * 2 + 2 + 1);
+    *rp++ = '\\';
+    *rp++ = 'x';
+    rp += hex_encode(VARDATA_ANY(vlena), VARSIZE_ANY_EXHDR(vlena), rp);
+    *rp = '\0';
+
+    /* free memory if allocated by the toaster */
+    PG_FREE_IF_COPY(vlena, 0);
+
+    PG_RETURN_CSTRING(result);
+}
+
+Datum dolphin_binaryout(PG_FUNCTION_ARGS)
+{
+    if (strcmp(u_sess->attr.attr_common.application_name, "gs_dump") == 0 ||
+        strcmp(u_sess->attr.attr_common.application_name, "gs_dumpall") == 0 ||
+        GetSessionContext()->isDoCopy) {
+        return hex_dolphin_binaryout(fcinfo);
+    } else {
+        return normal_dolphin_binaryout(fcinfo);
+    }
 }
 #endif
