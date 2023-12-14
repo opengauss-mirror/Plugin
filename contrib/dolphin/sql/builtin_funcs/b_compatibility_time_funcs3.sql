@@ -414,5 +414,18 @@ select date_format(t, '%H%i%s.%f') from test_time;
 select to_char(t, 'hh24miss') from test_time;
 
 drop table test_time;
+
+set dolphin.b_compatibility_mode = true;
+set dolphin.sql_mode='';
+create table t1(c1 int1, c2 int2, c3 int4, c4 int8, c5 uint1, c6 uint2, c7 uint8);
+create table t2(c1 time, c2 time, c3 time, c4 time, c5 time, c6 time, c7 time);
+insert into t1 values('-69', '-32769', '-32769', '-32769', '69', '32769', '32769');
+insert into t2  select c1, c2, c3, c4, c5, c6, c7 from t1;
+reset dolphin.sql_mode;
+insert ignore into t2  select c1, c2, c3, c4, c5, c6, c7 from t1;
+select * from t2;
+drop table if exists t1;
+drop table if exists t2;
+
 drop schema b_time_funcs3 cascade;
 reset current_schema;

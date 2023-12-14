@@ -3597,11 +3597,21 @@ void DateTimeParseErrorInternal(int dterr, const char* str, const char* datatype
 }
 
 /*
+ * check if the the time oveflow.
+ *
+ * return values: true: overflow, false : normal time
+ */
+bool IsTimeOverFlow(pg_tm tm)
+{
+    return tm.tm_min > TIME_MAX_MINUTE || tm.tm_sec > TIME_MAX_SECOND;
+}
+
+/*
  * ignore the error on unstrict mode.
  *
  * return values: need to reset the time value or not
  */
-bool IsResetUnavailableDataTime(int dterr, bool is_support_reset_unavailable_datatime)
+bool IsResetUnavailableDataTime(int dterr, pg_tm tm, bool is_support_reset_unavailable_datatime)
 {
     switch (dterr) {
         case DTERR_FIELD_OVERFLOW:
@@ -3615,6 +3625,9 @@ bool IsResetUnavailableDataTime(int dterr, bool is_support_reset_unavailable_dat
         case DTERR_ZERO_DATE:
             break;
         case DTERR_BAD_FORMAT:
+            /* some case overflow will be parserd as bad format error,
+               such as insert into xx as select 32769 */
+            return is_support_reset_unavailable_datatime && IsTimeOverFlow(tm);
         default:
             break;
     }

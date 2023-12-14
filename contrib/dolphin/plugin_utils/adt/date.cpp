@@ -1682,7 +1682,6 @@ Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
                     }
                     int trunc_val = getStartingDigits(field_str);
                     if (trunc_val < 0 || trunc_val >= 60) {
-                        *time_error_type = TIME_INCORRECT;
                         PG_RETURN_TIMEADT(0);
                     }
                     *time_error_type = TIME_INCORRECT;
@@ -1690,9 +1689,7 @@ Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
                 } else if (SQL_MODE_NOT_STRICT_ON_INSERT()) {
                     /* for case insert unavailable data, need to set the unavailable data to 0 to compatible with M */
                     DateTimeParseError(dterr, str, "time", true);
-                    if (IsResetUnavailableDataTime(dterr, !CMD_TAG_IS_SELECT() &&
-                            time_cast_type != TIME_CAST_IMPLICIT)) {
-                        *time_error_type = TIME_IGNORED_INCORRECT;
+                    if (IsResetUnavailableDataTime(dterr, tt, time_cast_type != TIME_CAST_IMPLICIT)) {
                         PG_RETURN_TIMEADT(0);
                     } else {
                         tm = &tt; // switch to M*'s parsing result
@@ -1976,6 +1973,9 @@ Datum int32_b_format_time(PG_FUNCTION_ARGS)
     if (dterr) {
         ereport(errlevel,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
+        if (fcinfo->can_ignore || (SQL_MODE_NOT_STRICT_ON_INSERT())) {
+            PG_RETURN_TIMEADT(0);
+        }
     }
     tm2time(tm, 0, &result);
     PG_RETURN_TIMEADT(result * sign);
@@ -1989,7 +1989,7 @@ Datum int64_b_format_time(PG_FUNCTION_ARGS)
         Datum datetime = DirectFunctionCall1(int64_b_format_datetime, Int64GetDatum(number));
         return DirectFunctionCall1(timestamp_time, datetime);
     }
-    return DirectFunctionCall1(int32_b_format_time, Int32GetDatum((int32)number));
+    return DirectFunctionCall1Coll(int32_b_format_time, InvalidOid, Int32GetDatum((int32)number), fcinfo->can_ignore);
 }
 
 Datum int8_cast_time(PG_FUNCTION_ARGS)
