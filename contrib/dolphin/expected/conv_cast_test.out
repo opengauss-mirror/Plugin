@@ -688,7 +688,7 @@ set dolphin.sql_mode = treat_bxconst_as_binary;
 select b'11100000111000';
  ?column? 
 ----------
- \x3838
+ 88
 (1 row)
 
 select conv(b'11100000111000', 10, 8);
@@ -712,7 +712,7 @@ select conv(b'11100000111000'::int8, 20, 8);
 select x'4c';
  ?column? 
 ----------
- \x4c
+ L
 (1 row)
 
 select conv(x'4c', 10, 8);

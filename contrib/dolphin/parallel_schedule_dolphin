@@ -132,7 +132,7 @@ test: like_default_test conv_cast_test read_only_guc_test b_database_guc union_a
 
 test: string_func_test/db_b_to_base64_test string_func_test/db_b_unhex_test bit_count test_current_user
 
-test: test_schema connection_id test_system_user test_bit_xor union column_quote_alias
+test: test_schema connection_id test_system_user test_bit_xor union column_quote_alias binary_export_test
 
 test: builtin_funcs/cast any_value_test default_function get_b_database union2 sconst_sconst
 

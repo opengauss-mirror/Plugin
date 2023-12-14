@@ -855,6 +855,7 @@ void init_session_vars(void)
     cxt->is_schema_name = false;
     cxt->group_by_error = false;
     cxt->is_create_alter_stmt = false;
+    cxt->isDoCopy = false;
 
     DefineCustomBoolVariable("dolphin.b_compatibility_mode",
                              "Enable mysql behavior override opengauss's when collision happens.",
@@ -1164,6 +1165,16 @@ void init_session_vars(void)
                             NULL,
                             NULL,
                             NULL);
+    DefineCustomStringVariable("performance_schema",
+                               gettext_noop("CUSTOM_OPTIONS"),
+                               NULL,
+                               &GetSessionContext()->performance_schema,
+                               "",
+                               PGC_USERSET,
+                               GUC_LIST_INPUT | GUC_REPORT,
+                               NULL,
+                               NULL,
+                               NULL);
 #endif
 
 }

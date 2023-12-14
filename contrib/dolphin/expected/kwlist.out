@@ -270,9 +270,9 @@ LINE 1: select case when end then binary else (binary) end from end;
                                   ^
 CONTEXT:  referenced column: binary
 select case when end then binary end else binary end end from end;
- end  
-------
- \x31
+ end 
+-----
+ 1
 (1 row)
 
 /* only */

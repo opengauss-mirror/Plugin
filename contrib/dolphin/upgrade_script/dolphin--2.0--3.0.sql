@@ -91,9 +91,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.year(anyenum) RETURNS int8 LANGUAGE SQL ST
 CREATE OR REPLACE FUNCTION pg_catalog.year(json) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
 CREATE OR REPLACE FUNCTION pg_catalog.year(time) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::timestamp(0) without time zone)';
 
-CREATE OR REPLACE FUNCTION pg_catalog.binary_out (binary) RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'dolphin_binaryout';
-CREATE OR REPLACE FUNCTION pg_catalog.varbinary_out (varbinary) RETURNS cstring LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'dolphin_binaryout';
-
 DROP FUNCTION IF EXISTS pg_catalog.double_or_binary(double precision, binary) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.double_or_binary(double precision, binary) RETURNS bigint LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT $1 | $2::numeric $$;
 CREATE OPERATOR pg_catalog.|(leftarg = double precision, rightarg = binary, procedure = pg_catalog.double_or_binary);

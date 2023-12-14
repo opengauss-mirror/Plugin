@@ -71,10 +71,6 @@ DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
 
 drop function IF EXISTS pg_catalog."user"();
 
-CREATE OR REPLACE FUNCTION pg_catalog.binary_out (binary) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
-
-CREATE OR REPLACE FUNCTION pg_catalog.varbinary_out (varbinary) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
-
 DROP OPERATOR IF EXISTS pg_catalog.|(double precision, binary) CASCADE;
 DROP OPERATOR IF EXISTS pg_catalog.|(binary, double precision) CASCADE;
 DROP OPERATOR IF EXISTS pg_catalog.|(uint8, binary) CASCADE;
