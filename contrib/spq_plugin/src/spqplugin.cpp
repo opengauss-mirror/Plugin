@@ -80,6 +80,23 @@ static bool check_disable_spq_planner_walker(Node *node, void *context)
     /* Query node */
     query = (Query *)node;
 
+    /* openGauss spq: ordered sensitive */
+    if ((query->sortClause || !query->rtable) && query->commandType == CMD_INSERT) {
+        if (u_sess->attr.attr_spq.spq_enable_insert_order_sensitive && 1 != u_sess->attr.attr_spq.spq_insert_dop_num) {
+            elog(DEBUG1,"spq multi insert Failed: spq_enable_insert_order_sensitive is on. One writer worker should be used");
+            u_sess->attr.attr_spq.spq_insert_dop_num = 1;
+        }
+    }
+    /* openGauss end */
+
+    /* check insert select from tableless_scan */
+    if (query->commandType == CMD_INSERT && !query->rtable) {
+        CHECK_RETURN_HELP_LOG(1 == u_sess->attr.attr_spq.spq_insert_dop_num,
+            "Insert worker is only one, select from tableless doesn't use spq");
+        CHECK_RETURN_HELP_LOG(!u_sess->attr.attr_spq.spq_enable_insert_from_tableless,
+            "gauss_spq_enable_insert_from_tableless is off");
+    }
+
     if (u_sess->attr.attr_spq.spq_enable_pre_optimizer_check) {
         CHECK_RETURN_HELP_LOG(query->groupingSets, "sql with groupingsets was not allowed in spq");
     }
@@ -160,9 +177,43 @@ static bool should_spq_planner(Query *parse)
         elog(ERROR, "parse should not be null.");
     }
 
-    if (parse->commandType != CMD_SELECT) {
-        elog(DEBUG1, "spq can not support this commandType.");
-        return false;
+    if (CMD_INSERT == parse->commandType) {
+        /* If spq_enable_insert_select is off, no use SPQOPT */
+        if (!u_sess->attr.attr_spq.spq_enable_insert_select) {
+            elog(DEBUG1, "spq Failed: param spq_enable_insert_select is off");
+            return false;
+        }
+
+        /* Insert into .. VALUES(only one node) Case */
+        if (1 == parse->rtable->length) {
+            if (1 == u_sess->attr.attr_spq.spq_insert_dop_num) {
+                elog(DEBUG1, "spq Failed: Insert worker is only one, select from tableless doesn't use spq");
+                return false;
+            }
+            if (!u_sess->attr.attr_spq.spq_enable_insert_from_tableless) {
+                elog(DEBUG1, "gauss_spq_enable_insert_from_tableless is off");
+                return false;
+            }
+        }
+    } else if (CMD_UPDATE == parse->commandType) {
+        if (!u_sess->attr.attr_spq.spq_enable_update) {
+            elog(DEBUG1, "spq Failed: param spq_enable_update is off");
+            return false;
+        }
+    } else if(CMD_DELETE == parse->commandType) {
+        if (!u_sess->attr.attr_spq.spq_enable_delete) {
+            elog(DEBUG1, "spq Failed: param spq_enable_delete is off");
+            return false;
+        }
+        if (parse->hasModifyingCTE) {
+            elog(DEBUG1, "spq Failed: parallel delete can't support ModifyingCTE");
+            return false;
+        }
+    } else {
+        if (parse->commandType != CMD_SELECT) {
+            elog(DEBUG1, "spq can not support this commandType.");
+            return false;
+        }
     }
 
     if (!u_sess->attr.attr_spq.spq_enable_transaction && IsTransactionBlock()) {

@@ -31,6 +31,6 @@ extern Plan *apply_shareinput_xslice(Plan *plan, PlannerInfo *root, PlanSlice *s
 extern void remove_subquery_in_RTEs(Node *node);
 extern bool is_plan_node(Node *node);
 extern void make_spq_remote_query(PlannerInfo *root, PlannedStmt *result, PlannerGlobal *glob);
-extern Plan *replace_motion_stream_recurse(PlannerInfo *root, SpqSliceContext *result, Plan *plan, bool &top);
+extern Plan *replace_motion_stream_recurse(PlannerInfo* root, SpqSliceContext *result, Plan *plan, bool &top, bool fromdml = false);
 
 #endif /* SPQ_MUTATE_H */

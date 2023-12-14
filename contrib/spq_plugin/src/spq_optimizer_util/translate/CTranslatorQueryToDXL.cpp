@@ -1104,6 +1104,7 @@ CTranslatorQueryToDXL::GetCtidAndSegmentId(ULONG *ctid, ULONG *segment_id)
 	*ctid = CTranslatorUtils::GetColId(m_query_level, m_query->resultRelation,
 									   SelfItemPointerAttributeNumber, mdid,
 									   m_var_to_colid_map);
+	*segment_id = *ctid;
 	mdid->Release();
 }
 

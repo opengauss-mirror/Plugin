@@ -378,6 +378,11 @@ private:
 			ctxt_translation_prev_siblings	// translation contexts of previous siblings
 	);
 
+    // add a target entry for a junk column with given colid to the target list
+    static void AddJunkTargetEntryForColId(
+            List **target_list, CDXLTranslateContext *dxl_translate_ctxt,
+            ULONG colid, const char *resname);
+
 	// translate a Split operator
 	Plan *TranslateDXLSplit(
 		const CDXLNode *split_dxlnode, CDXLTranslateContext *output_context,

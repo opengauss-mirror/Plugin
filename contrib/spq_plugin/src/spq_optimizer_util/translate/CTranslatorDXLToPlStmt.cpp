@@ -4316,14 +4316,12 @@ CTranslatorDXLToPlStmt::TranslateDXLDml(
 	const CDXLNode *dml_dxlnode, CDXLTranslateContext *output_context,
 	CDXLTranslationContextArray *ctxt_translation_prev_siblings)
 {
-	// TODO SPQ undef DML
-#if 0
 	// translate table descriptor into a range table entry
 	CDXLPhysicalDML *phy_dml_dxlop =
 		CDXLPhysicalDML::Cast(dml_dxlnode->GetOperator());
 
-	// create DML node
-	DML *dml = MakeNode(DML);
+	// create ModifyTable node
+	ModifyTable *dml = MakeNode(ModifyTable);
 	Plan *plan = &(dml->plan);
 	AclMode acl_mode = ACL_NO_RIGHTS;
 
@@ -4333,12 +4331,14 @@ CTranslatorDXLToPlStmt::TranslateDXLDml(
 		{
 			m_cmd_type = CMD_DELETE;
 			acl_mode = ACL_DELETE;
+			acl_mode |= ACL_SELECT;
 			break;
 		}
 		case spqdxl::Edxldmlupdate:
 		{
 			m_cmd_type = CMD_UPDATE;
 			acl_mode = ACL_UPDATE;
+			acl_mode |= ACL_SELECT;
 			break;
 		}
 		case spqdxl::Edxldmlinsert:
@@ -4370,7 +4370,6 @@ CTranslatorDXLToPlStmt::TranslateDXLDml(
 	// add the new range table entry as the last element of the range table
 	Index index =
 		spqdb::ListLength(m_dxl_to_plstmt_context->GetRTableEntriesList()) + 1;
-	dml->scanrelid = index;
 
 	m_result_rel_list = spqdb::LAppendInt(m_result_rel_list, index);
 
@@ -4382,7 +4381,7 @@ CTranslatorDXLToPlStmt::TranslateDXLDml(
 		table_descr, index, &base_table_context);
 	SPQOS_ASSERT(NULL != rte);
 	rte->requiredPerms |= acl_mode;
-	m_dxl_to_plstmt_context->AddRTE(rte);
+	m_dxl_to_plstmt_context->AddRTE(rte, true);
 
 	CDXLNode *project_list_dxlnode = (*dml_dxlnode)[0];
 	CDXLNode *child_dxlnode = (*dml_dxlnode)[1];
@@ -4400,54 +4399,95 @@ CTranslatorDXLToPlStmt::TranslateDXLDml(
 	// translate proj list
 	List *dml_target_list =
 		TranslateDXLProjList(project_list_dxlnode,
-							 NULL,	// translate context for the base table
-							 child_contexts, output_context);
+			NULL,	// translate context for the base table
+			child_contexts, output_context);
 
-	if (md_rel->HasDroppedColumns())
+	List *target_list_with_dropped_cols =
+		CreateTargetListWithNullsForDroppedCols(dml_target_list, md_rel);
+	spqdb::SPQDBFree(dml_target_list);
+	dml_target_list = target_list_with_dropped_cols;
+
+	// Add junk columns to the target list for the 'action', 'ctid',
+	// , and tuple's 'oid'. The ModifyTable node will find
+	// these based on the resnames. ORCA also includes a similar column for
+	// partition Oid in the child's target list, but we don't use it for
+	// anything in GPDB.
+	if (m_cmd_type == CMD_UPDATE)
+		(void) AddJunkTargetEntryForColId(&dml_target_list, &child_context,
+			phy_dml_dxlop->ActionColId(),
+			"DMLAction");
+
+	if (m_cmd_type == CMD_UPDATE || m_cmd_type == CMD_DELETE)
 	{
-		// pad DML target list with NULLs for dropped columns for all DML operator types
-		List *target_list_with_dropped_cols =
-			CreateTargetListWithNullsForDroppedCols(dml_target_list, md_rel);
-		spqdb::SPQDBFree(dml_target_list);
-		dml_target_list = target_list_with_dropped_cols;
+		AddJunkTargetEntryForColId(&dml_target_list, &child_context,
+			phy_dml_dxlop->GetCtIdColId(), "ctid");
+	}
+	if (m_cmd_type == CMD_UPDATE && phy_dml_dxlop->IsOidsPreserved())
+		AddJunkTargetEntryForColId(&dml_target_list, &child_context,
+			phy_dml_dxlop->GetTupleOid(), "oid");
+
+	// Add a Result node on top of the child plan, to coerce the target
+	// list to match the exact physical layout of the target table,
+	// including dropped columns.  Often, the Result node isn't really
+	// needed, as the child node could do the projection, but we don't have
+	// the information to determine that here. There's a step in the
+	// backend optimize_query() function to eliminate unnecessary Results
+	// throught the plan, hopefully this Result gets eliminated there.
+	Result *result = MakeNode(Result);
+	Plan *result_plan = &(result->plan);
+
+	result_plan->plan_node_id = m_dxl_to_plstmt_context->GetNextPlanId();
+	result_plan->lefttree = child_plan;
+	if (result_plan->lefttree != NULL) {
+		inherit_plan_locator_info(result_plan, result_plan->lefttree);
 	}
 
-	// Extract column numbers of the action and ctid columns from the
-	// target list.
-	dml->actionColIdx = AddTargetEntryForColId(&dml_target_list, &child_context,
-											   phy_dml_dxlop->ActionColId(),
-											   true /*is_resjunk*/);
-	dml->ctidColIdx = AddTargetEntryForColId(&dml_target_list, &child_context,
-											 phy_dml_dxlop->GetCtIdColId(),
-											 true /*is_resjunk*/);
-	if (phy_dml_dxlop->IsOidsPreserved())
-	{
-		dml->tupleoidColIdx = AddTargetEntryForColId(
-			&dml_target_list, &child_context, phy_dml_dxlop->GetTupleOid(),
-			true /*is_resjunk*/);
-	}
-	else
-	{
-		dml->tupleoidColIdx = 0;
-	}
+	result_plan->targetlist = target_list_with_dropped_cols;
+	SetParamIds(result_plan);
 
-	SPQOS_ASSERT(0 != dml->actionColIdx);
+	child_plan = (Plan *) result;
 
-	plan->targetlist = dml_target_list;
+	dml->operation = m_cmd_type;
+	dml->canSetTag = true;	// FIXME
+	dml->resultRelations = ListMake1Int(index);
+	dml->resultRelIndex = list_length(m_result_rel_list) - 1;
+	dml->plans = ListMake1(child_plan);
 
-	plan->lefttree = child_plan;
-	//plan->nMotionNodes = child_plan->nMotionNodes;
+	m_result_rel_list = lappend(NIL, m_result_rel_list);
+	dml->resultRelations = m_result_rel_list;
+
+	dml->fdwPrivLists = ListMake1(NIL);
+	if (m_cmd_type == CMD_UPDATE)
+		dml->isSplitUpdates = ListMake1Int((int) true);
+
+	plan->targetlist = NIL;
 	plan->plan_node_id = m_dxl_to_plstmt_context->GetNextPlanId();
-
-	if (CMD_INSERT == m_cmd_type && 0 == //plan->nMotionNodes)
-	{
-		List *direct_dispatch_segids = TranslateDXLDirectDispatchInfo(
-			phy_dml_dxlop->GetDXLDirectDispatchInfo());
-		plan->directDispatch.contentIds = direct_dispatch_segids;
-		plan->directDispatch.isDirectDispatch = (NIL != direct_dispatch_segids);
+	/* SPQ: add exec_nodes for plan */
+	if (child_plan != NULL) {
+		inherit_plan_locator_info(plan, child_plan);
 	}
 
 	SetParamIds(plan);
+
+	// Should be m_is_tgt_tbl_distributed
+	if (m_is_tgt_tbl_distributed)
+	{
+		PlanSlice *current_slice = m_dxl_to_plstmt_context->GetCurrentSlice();
+		current_slice->gangType = GANGTYPE_PRIMARY_WRITER;
+		if (CMD_UPDATE == m_cmd_type)
+		{
+			current_slice->numsegments = u_sess->attr.attr_spq.spq_update_dop_num;
+		}
+		else if (CMD_INSERT == m_cmd_type)
+		{
+			current_slice->numsegments = u_sess->attr.attr_spq.spq_insert_dop_num;
+		}
+		else
+		{
+			/* Delete */
+			current_slice->numsegments = u_sess->attr.attr_spq.spq_delete_dop_num;
+		}
+	}
 
 	// cleanup
 	child_contexts->Release();
@@ -4461,8 +4501,44 @@ CTranslatorDXLToPlStmt::TranslateDXLDml(
 		&(plan->plan_width));
 
 	return (Plan *) dml;
-#endif
-	return nullptr;
+}
+
+//---------------------------------------------------------------------------
+//	@function:
+//		CTranslatorDXLToPlStmt::AddJunkTargetEntryForColId
+//
+//	@doc:
+//		Add a new target entry for the given colid to the given target list
+//
+//---------------------------------------------------------------------------
+void
+CTranslatorDXLToPlStmt::AddJunkTargetEntryForColId(
+	List **target_list, CDXLTranslateContext *dxl_translate_ctxt, ULONG colid,
+	const char *resname)
+{
+	SPQOS_ASSERT(nullptr != target_list);
+
+	const TargetEntry *target_entry = dxl_translate_ctxt->GetTargetEntry(colid);
+
+	if (nullptr == target_entry)
+	{
+	// colid not found in translate context
+	SPQOS_RAISE(spqdxl::ExmaDXL, spqdxl::ExmiDXL2PlStmtAttributeNotFound, colid);
+	}
+
+	// TODO: Oct 29, 2012; see if entry already exists in the target list
+
+	OID expr_oid = spqdb::ExprType((Node *) target_entry->expr);
+	INT type_modifier = spqdb::ExprTypeMod((Node *) target_entry->expr);
+	Var *var =
+		spqdb::MakeVar(OUTER_VAR, target_entry->resno, expr_oid, type_modifier,
+		0	 // varlevelsup
+		);
+	ULONG resno = spqdb::ListLength(*target_list) + 1;
+	CHAR *resname_str = PStrDup(resname);
+	TargetEntry *te_new = spqdb::MakeTargetEntry(
+	    (Expr *) var, resno, resname_str, true /* resjunk */);
+	*target_list = spqdb::LAppend(*target_list, te_new);
 }
 
 //---------------------------------------------------------------------------
@@ -4672,6 +4748,11 @@ CTranslatorDXLToPlStmt::TranslateDXLSplit(
 	plan->plan_node_id = m_dxl_to_plstmt_context->GetNextPlanId();
 
 	SetParamIds(plan);
+
+	if (NULL != plan->lefttree)
+	{
+		inherit_plan_locator_info(plan, plan->lefttree);
+	}
 
 	// cleanup
 	child_contexts->Release();
