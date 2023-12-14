@@ -867,7 +867,7 @@ DETAIL:  Key columns "ptest4" and "ptest1" are of incompatible types: inet and i
 -- Basic 2 table case: 1 column of matching types.
 create table pktable_base (base1 int not null);
 create table PKTABLE (ptest1 int, primary key(base1), unique(base1, ptest1)) Inherits (pktable_base);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 create table FKTABLE (ftest1 int references PKTABLE(base1));
 ERROR:  relation "PKTABLE" does not exist
 -- now some ins, upd, del
@@ -978,7 +978,7 @@ drop table pktable_base;
 create table pktable_base(base1 int not null, base2 int);
 create table PKTABLE(ptest1 int, ptest2 int, primary key(base1, ptest1), foreign key(base2, ptest2) references
                                              PKTABLE(base1, ptest1)) Inherits (pktable_base);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 insert into PKTABLE (base1, ptest1, base2, ptest2) values (1, 1, 1, 1);
 ERROR:  relation "PKTABLE" does not exist on datanode1
 LINE 1: insert into PKTABLE (base1, ptest1, base2, ptest2) values (1...
@@ -1025,7 +1025,7 @@ drop table pktable_base;
 -- 2 columns (2 tables), mismatched types
 create table pktable_base(base1 int not null);
 create table PKTABLE(ptest1 inet, primary key(base1, ptest1)) Inherits (pktable_base);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 -- just generally bad types (with and without column references on the referenced table)
 create table FKTABLE(ftest1 cidr, ftest2 int[], foreign key (ftest1, ftest2) references PKTABLE);
 ERROR:  relation "PKTABLE" does not exist
@@ -1045,16 +1045,16 @@ drop table pktable_base;
 create table pktable_base(base1 int not null, base2 int);
 create table PKTABLE(ptest1 inet, ptest2 inet[], primary key(base1, ptest1), foreign key(base2, ptest2) references
                                              PKTABLE(base1, ptest1)) Inherits (pktable_base);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 create table PKTABLE(ptest1 inet, ptest2 inet, primary key(base1, ptest1), foreign key(base2, ptest2) references
                                              PKTABLE(ptest1, base1)) Inherits (pktable_base);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 create table PKTABLE(ptest1 inet, ptest2 inet, primary key(base1, ptest1), foreign key(ptest2, base2) references
                                              PKTABLE(base1, ptest1)) Inherits (pktable_base);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 create table PKTABLE(ptest1 inet, ptest2 inet, primary key(base1, ptest1), foreign key(ptest2, base2) references
                                              PKTABLE(base1, ptest1)) Inherits (pktable_base);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 drop table PKTABLE;
 ERROR:  table "PKTABLE" does not exist
 drop table pktable_base;

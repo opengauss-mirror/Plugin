@@ -1,8 +1,8 @@
 --create procedure测试
 drop database if exists dump_procedure_db;
 drop database if exists restore_procedure_db;
-create database dump_procedure_db with dbcompatibility = 'B';
-create database restore_procedure_db with dbcompatibility = 'B';
+create database dump_procedure_db lc_collate='C' dbcompatibility = 'B';
+create database restore_procedure_db lc_collate='C' dbcompatibility = 'B';
 \c dump_procedure_db
 
 create user test_procedure_definer password 'Test@123';

@@ -196,7 +196,7 @@ Check constraints:
     "con1" CHECK (a > 0)
 
 CREATE TABLE `Constraint_Rename_Test2` (`a` int CONSTRAINT `con1` CHECK (`a` > 0), `d` int) InheRITS (`Constraint_Rename_Test`);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 \d "Constraint_Rename_Test2"
 ALTER TABLE `Constraint_Rename_Test2` RENAME CONSTRAINT `con1` TO `con1foo`; -- fail
 ERROR:  relation "Constraint_Rename_Test2" does not exist
@@ -310,9 +310,9 @@ select * from `Tmp3`;
 (1 row)
 
 CREATE TABLE `Tmp6` () INHERITS (`Tmp3`);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 CREATE TABLE `Tmp7` () INHERITS (`Tmp3`);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 INSERT INTO `Tmp6` VALUES (6, 30), (7, 16);
 ERROR:  relation "Tmp6" does not exist on datanode1
 LINE 1: INSERT INTO `Tmp6` VALUES (6, 30), (7, 16);
@@ -355,9 +355,9 @@ DROP TABLE `Tmp2`;
 set constraint_exclusion TO 'partition';
 create table `NV_Parent` (`d` date);
 create table `NV_Child_2010` () Inherits (`NV_Parent`);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 create table `NV_Child_2011` () Inherits (`NV_Parent`);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 alter table `NV_Child_2010` add check (`d` between '2010-01-01'::date and '2010-12-31'::date) not valid;
 ERROR:  relation "NV_Child_2010" does not exist
 alter table `NV_Child_2011` add check (`d` between '2011-01-01'::date and '2011-12-31'::date) not valid;
@@ -370,7 +370,7 @@ explain (costs off) select * from `NV_Parent` where `d` between '2011-08-01' and
 (2 rows)
 
 create table `NV_Child_2009` (check (`d` between '2009-01-01'::date and '2009-12-31'::date)) Inherits (`NV_Parent`);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 explain (costs off) select * from `NV_Parent` where `d` between '2011-08-01'::date and '2011-08-31'::date;
                              QUERY PLAN                              
 ---------------------------------------------------------------------

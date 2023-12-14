@@ -15,6 +15,7 @@
  */
 
 #include "plugin_utils/plpgsql.h"
+#include "utils/plpgsql_domain.h"
 #include "utils/fmgroids.h"
 #include "utils/pl_package.h"
 #include "auditfuncs.h"

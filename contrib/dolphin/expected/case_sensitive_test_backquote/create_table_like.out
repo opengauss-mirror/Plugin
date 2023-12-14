@@ -13,13 +13,13 @@ CREATE TABLE `Inhx` (`xx` text DEFAULT 'text');
  */
 CREATE TABLE `Ctla` (`aa` TEXT);
 CREATE TABLE `Ctlb` (`bb` TEXT) InheRITS (`Ctla`);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 CREATE TABLE `Foo` (LIKE `nonexistent`);
 ERROR:  Table (null).nonexistent does not exist in current datanode.
 LINE 1: CREATE TABLE `Foo` (LIKE `nonexistent`);
                                  ^
 CREATE TABLE `Inhe` (`ee` text, LIKE `Inhx`) Inherits (`Ctlb`);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 INSERT INTO `Inhe` VALUES ('ee-col1', 'ee-col2', DEFAULT, 'ee-col4');
 ERROR:  relation "Inhe" does not exist on datanode1
 LINE 1: INSERT INTO `Inhe` VALUES ('ee-col1', 'ee-col2', DEFAULT, 'e...
@@ -164,17 +164,17 @@ Has OIDs: no
 Options: orientation=row, compression=no
 
 CREATE TABLE `Ctlt1_inh` (LIKE `Ctlt1` INCLUDING CONSTRAINTS INCLUDING COMMENTS) InheRITS (`Ctlt1`);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 \d+ "Ctlt1_inh"
 SELECT `description` FROM `pg_description`, `pg_constraint` c WHERE `classoid` = 'pg_constraint'::regclass AND `objoid` = `c`.`oid` AND `c`.`conrelid` = 'Ctlt1_inh'::regclass;
 ERROR:  relation "ctlt1_inh" does not exist
 LINE 1: ...ass AND `objoid` = `c`.`oid` AND `c`.`conrelid` = 'Ctlt1_inh...
                                                              ^
 CREATE TABLE `Ctlt13_inh` () InheRITS (`Ctlt1`, `Ctlt3`);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 \d+ "Ctlt13_inh"
 CREATE TABLE `ctlt13_like` (LIKE `Ctlt3` INCLUDING CONSTRAINTS INCLUDING COMMENTS INCLUDING STORAGE) InheRITS (`Ctlt1`);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 \d+ "ctlt13_like"
 SELECT `description` FROM `pg_description`, `pg_constraint` c WHERE `classoid` = 'pg_constraint'::regclass AND `objoid` = `c`.`oid` AND `c`.`conrelid` = 'ctlt13_like'::regclass;
 ERROR:  relation "ctlt13_like" does not exist
@@ -202,9 +202,9 @@ ERROR:  relation "ctlt_all" does not exist
 LINE 1: ...`c`.`oid` = `i`.`indexrelid` AND `i`.`indrelid` = 'Ctlt_all'...
                                                              ^
 CREATE TABLE `Inh_error1` () InheRITS (`Ctlt1`, `Ctlt4`);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 CREATE TABLE `Inh_error2` (LIKE `Ctlt4` INCLUDING STORAGE) InheRITS (`Ctlt1`);
-ERROR:  CREATE TABLE ... INHERITS is not yet supported.
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 DROP TABLE if exists `Ctlt1`, `Ctlt2`, `Ctlt3`, `Ctlt4`, `Ctlt12_storage`, `Ctlt12_comments`, `Ctlt1_inh`, `Ctlt13_inh`, `ctlt13_like`, `Ctlt_all`, `Ctla`, `Ctlb` CASCADE;
 NOTICE:  table "Ctlt1_inh" does not exist, skipping
 NOTICE:  table "Ctlt13_inh" does not exist, skipping
