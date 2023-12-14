@@ -2422,5 +2422,3 @@ END IF;
 
 END;
 $$;
-
-select _timescaledb_internal.print_license_expiration_info();

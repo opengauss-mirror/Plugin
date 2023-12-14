@@ -269,4 +269,8 @@ extern char func_parallel(Oid funcid);
 extern Relids find_childrel_parents(PlannerInfo *root, RelOptInfo *rel); 
 
 
+extern void set_extension_index(uint32 index);
+extern void init_session_vars(void);
+
+extern  tsdb_session_context* get_session_context(bool is_from_PG_init=false);
 #endif

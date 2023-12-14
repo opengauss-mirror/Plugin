@@ -66,6 +66,9 @@
 #define on_level (get_session_context()->tsdb_on_level)
 #define telemetry_level_options (get_session_context()->tsdb_telemetry_level_options)
 #define tsdb_first_start (get_session_context(true)->tsdb_first_start)
+
+#define loaded (get_session_context()->tsdb_loaded)
+#define loader_present (get_session_context()->tsdb_loader_present)
 /*
  * The following are compatibility functions for different versions of
  * PostgreSQL. Each compatibility function (or group) has its own logic for

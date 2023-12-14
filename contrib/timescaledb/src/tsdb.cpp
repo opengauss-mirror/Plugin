@@ -1,5 +1,12 @@
 #include "compat.h"
 
+#include "chunk_append/exec.h"
+#include "constraint_aware_append.h"
+#include "hypertable_cache.h"
+#include "cache_invalidate.h"
+#include "chunk_append/planner.h"
+#include "process_utility.h"
+
 #include "commands/cluster.h"
 #include "utils.h"
 #include "plan_agg_bookend.cpp"
@@ -3484,3 +3491,93 @@ ts_preprocess_first_last_aggregates(PlannerInfo *root, List *tlist)
 }
 
 
+static uint32 tsdb_index;
+
+void set_extension_index(uint32 index)
+{
+    tsdb_index = index;  
+}
+
+tsdb_session_context* get_session_context(bool is_from_PG_init)  
+{   
+	if (NULL == u_sess || NULL == u_sess->attr.attr_common.extension_session_vars_array) 
+	{
+		tsdb_session_context* psc = (tsdb_session_context*)MemoryContextAllocZero(u_sess->self_mem_cxt, sizeof(tsdb_session_context));
+		psc->tsdb_pinned_caches = NIL;
+		psc->tsdb_pinned_caches_mctx = NULL;
+		psc->tsdb_hypertable_cache_current = NULL;     
+		psc->tsdb_planner_hcaches = NIL;
+		psc->tsdb_TS_CTE_EXPAND= "ts_expand";
+	
+		psc->tsdb_chunk_append_plan_methods = {
+			.ExtensibleName = "ChunkAppend",
+			.CreateExtensiblePlanState = ts_chunk_append_state_create,
+		};
+
+		psc->tsdb_telemetry_level_options[0] = { "off", TELEMETRY_OFF, false };
+		psc->tsdb_telemetry_level_options[1] = { "basic", TELEMETRY_BASIC, false };
+		psc->tsdb_telemetry_level_options[2] = { NULL, 0, false };
+		psc->tsdb_on_level = TELEMETRY_BASIC;
+
+		psc->tsdb_expect_chunk_modification = false;
+		psc->tsdb_ts_guc_license_key = "CommunityLicense";
+
+		psc->tsdb_loaded = false;
+		psc->tsdb_loader_present = true;
+		
+		return psc;
+	}
+	
+	if (u_sess->attr.attr_common.extension_session_vars_array[tsdb_index] == NULL && !is_from_PG_init) 
+	{
+		init_session_vars();
+	}
+	return  (tsdb_session_context*)u_sess->attr.attr_common.extension_session_vars_array[tsdb_index];  
+}
+
+void init_session_vars(void) 
+{
+	if (u_sess->attr.attr_common.extension_session_vars_array[tsdb_index]!=NULL)
+		return
+	
+	RepallocSessionVarsArrayIfNecessary(); 
+	tsdb_session_context* psc = (tsdb_session_context*)MemoryContextAllocZero(u_sess->self_mem_cxt, sizeof(tsdb_session_context));
+	u_sess->attr.attr_common.extension_session_vars_array[tsdb_index] = psc;  
+	psc->tsdb_pinned_caches = NIL;
+	psc->tsdb_pinned_caches_mctx = NULL;
+	psc->tsdb_hypertable_cache_current = NULL;     
+	psc->tsdb_planner_hcaches = NIL;
+	psc->tsdb_TS_CTE_EXPAND= "ts_expand";
+	
+	psc->tsdb_chunk_append_plan_methods = {
+		.ExtensibleName = "ChunkAppend",
+		.CreateExtensiblePlanState = ts_chunk_append_state_create,
+	};
+
+	psc->tsdb_telemetry_level_options[0] = { "off", TELEMETRY_OFF, false };
+	psc->tsdb_telemetry_level_options[1] = { "basic", TELEMETRY_BASIC, false };
+	psc->tsdb_telemetry_level_options[2] = { NULL, 0, false };
+	psc->tsdb_on_level = TELEMETRY_BASIC;
+
+	psc->tsdb_expect_chunk_modification = false;
+	psc->tsdb_ts_guc_license_key = "CommunityLicense";
+
+	psc->tsdb_loaded = false;
+	psc->tsdb_loader_present = true;
+	
+	_constraint_aware_append_init();
+
+	if (!ts_extension_is_loaded())
+		return;
+
+	if (!tsdb_first_start)
+	{
+		_cache_init();
+		_hypertable_cache_init();
+		_cache_invalidate_init();
+
+		_planner_init();
+		_chunk_append_init();
+		_process_utility_init();
+	}
+}
