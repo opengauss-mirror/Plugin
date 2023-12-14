@@ -124,6 +124,17 @@ select 'abc1' || null;
 select '0.0100abc' || 1;
 select '0.0100abc' || 0;
 select '0.0100abc' || null;
+select true and 'true' AS false;
+select true and 'false' AS false;
+select true and '1.0 false' AS true;
+select true and '0.0 true' AS false;
+select false or 'true' AS false;
+select false or 'false' AS false;
+select false or '1.0 false' AS true;
+select false or '0.0 true' AS false;
+select true and 'true'::text AS false;
+select true and 'true'::char AS false;
+select true and 'true'::varchar AS false;
 
 drop schema test_char cascade;
 reset current_schema;

@@ -225,6 +225,12 @@ select a||b from testfortime;
 (10 rows)
 
 select a&&b from testforstring;
+WARNING:  Truncated incorrect DOUBLE value: 10
+WARNING:  Truncated incorrect DOUBLE value: 10
+WARNING:  Truncated incorrect DOUBLE value: -10
+WARNING:  Truncated incorrect DOUBLE value: +01
+WARNING:  Truncated incorrect DOUBLE value: 123a
+WARNING:  Truncated incorrect DOUBLE value: 123a
  ?column? 
 ----------
  t
@@ -233,6 +239,9 @@ select a&&b from testforstring;
 (3 rows)
 
 select a||b from testforstring;
+WARNING:  Truncated incorrect DOUBLE value: 10
+WARNING:  Truncated incorrect DOUBLE value: -10
+WARNING:  Truncated incorrect DOUBLE value: 123a
  ?column? 
 ----------
  t

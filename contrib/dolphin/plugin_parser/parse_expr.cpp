@@ -58,6 +58,9 @@
 #include "utils/guc_tables.h"
 #include "utils/varbit.h"
 #include "plugin_parser/parse_utilcmd.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 extern Node* build_column_default(Relation rel, int attrno, bool isInsertCmd = false, bool needOnUpdate = false);
 extern Node* makeAConst(Value* v, int location);
@@ -1461,6 +1464,22 @@ static Node* transformAExprOp(ParseState* pstate, A_Expr* a)
     return result;
 }
 
+static void CheckUnknownConstNode(Node* node, bool can_ignore)
+{
+    if (!ENABLE_B_CMPT_MODE || node->type != T_Const || ((Const*)node)->constisnull) {
+        return;
+    }
+    Const* cons = (Const*)node;
+    double resval = 0.0;
+    char* newval = DatumGetCString(cons->constvalue);
+    char* stopstring = NULL;
+    resval = strtod(newval, &stopstring);
+    if (stopstring) {
+        ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+                (errmsg("Truncated incorrect DOUBLE value: %s", newval)));
+    }
+}
+
 static Node* transformAExprAnd(ParseState* pstate, A_Expr* a)
 {
     a->rexpr = (Node *)copyObject(a->rexpr);
@@ -1468,6 +1487,7 @@ static Node* transformAExprAnd(ParseState* pstate, A_Expr* a)
     Node* rexpr = transformExprRecurse(pstate, a->rexpr);
 #ifdef DOLPHIN
     if (exprType(lexpr) == UNKNOWNOID) {
+        CheckUnknownConstNode(lexpr, pstate->p_has_ignore);
         lexpr = coerce_to_target_type(
             pstate, lexpr, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
         lexpr = coerce_to_boolean(pstate, lexpr, "AND");
@@ -1477,6 +1497,7 @@ static Node* transformAExprAnd(ParseState* pstate, A_Expr* a)
         lexpr = coerce_to_boolean(pstate, lexpr, "AND");
 #ifdef DOLPHIN
     if (exprType(rexpr) == UNKNOWNOID) {
+        CheckUnknownConstNode(rexpr, pstate->p_has_ignore);
         rexpr = coerce_to_target_type(
             pstate, rexpr, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
         rexpr = coerce_to_boolean(pstate, rexpr, "AND");
@@ -1494,6 +1515,7 @@ static Node* transformAExprOr(ParseState* pstate, A_Expr* a)
     Node* rexpr = transformExprRecurse(pstate, a->rexpr);
 #ifdef DOLPHIN
     if (exprType(lexpr) == UNKNOWNOID) {
+        CheckUnknownConstNode(lexpr, pstate->p_has_ignore);
         lexpr = coerce_to_target_type(
             pstate, lexpr, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
         lexpr = coerce_to_boolean(pstate, lexpr, "OR");
@@ -1503,6 +1525,7 @@ static Node* transformAExprOr(ParseState* pstate, A_Expr* a)
         lexpr = coerce_to_boolean(pstate, lexpr, "OR");
 #ifdef DOLPHIN
     if (exprType(rexpr) == UNKNOWNOID) {
+        CheckUnknownConstNode(rexpr, pstate->p_has_ignore);
         rexpr = coerce_to_target_type(
             pstate, rexpr, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
         rexpr = coerce_to_boolean(pstate, rexpr, "OR");
