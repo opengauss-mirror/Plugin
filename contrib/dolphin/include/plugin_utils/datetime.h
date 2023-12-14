@@ -132,7 +132,7 @@ bool CheckDatetimeRange(const pg_tm *tm, const fsec_t fsec, const int tm_type);
 extern bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano);
 extern bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec, int* tzp = NULL, int* invalid_tz = NULL);
 
-extern bool IsResetUnavailableDataTime(int dterr, bool is_support_reset_unavailable_datatime = false);
+extern bool IsResetUnavailableDataTime(int dterr, pg_tm tm, bool is_support_reset_unavailable_datatime = false);
 
 #define tmfsec2float(tm, fsec) ((tm)->tm_hour * 10000 + (tm)->tm_min * 100 + (tm)->tm_sec + (fsec) / 1000000.0)
 
