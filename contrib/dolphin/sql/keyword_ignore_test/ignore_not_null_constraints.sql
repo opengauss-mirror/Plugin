@@ -210,11 +210,11 @@ select * from t_jsonb;
 select * from t_jsonb where c::text = 'null';
 
 -- bit
-create table t_bit(c bit not null);
-insert ignore into t_bit values (null);
+create table t_bit(c bit not null, d bit(10) not null);
+insert ignore into t_bit values (null, null);
 select * from t_bit;
-insert into t_bit values('1');
-update ignore t_bit set c = null;
+insert into t_bit values(b'1', b'111');
+update ignore t_bit set c = null, d = null;
 select * from t_bit;
 
 -- tinyint
@@ -313,6 +313,14 @@ select * from t_text;
 insert into t_text values('xxxxxx');
 update ignore t_text set c = null;
 select * from t_text;
+
+-- binary
+create table t_binaryn(c binary(6) not null);
+insert ignore into t_binaryn values (null);
+select *,hex(c) from t_binaryn;
+insert into t_binaryn values(b'01');
+update ignore t_binaryn set c = null;
+select *,hex(c) from t_binaryn;
 
 -- mixture
 drop table if exists t_mix;

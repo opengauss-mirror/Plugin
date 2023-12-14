@@ -648,27 +648,27 @@ select * from t_jsonb where c::text = 'null';
 (2 rows)
 
 -- bit
-create table t_bit(c bit not null);
-insert ignore into t_bit values (null);
+create table t_bit(c bit not null, d bit(10) not null);
+insert ignore into t_bit values (null, null);
 WARNING:  null value in column "c" violates not-null constraint
-DETAIL:  Failing row contains (null).
+DETAIL:  Failing row contains (null, null).
 select * from t_bit;
- c 
----
- 
+ c |     d      
+---+------------
+ 0 | 0000000000
 (1 row)
 
-insert into t_bit values('1');
-update ignore t_bit set c = null;
+insert into t_bit values(b'1', b'111');
+update ignore t_bit set c = null, d = null;
 WARNING:  null value in column "c" violates not-null constraint
-DETAIL:  Failing row contains (null).
+DETAIL:  Failing row contains (null, null).
 WARNING:  null value in column "c" violates not-null constraint
-DETAIL:  Failing row contains (null).
+DETAIL:  Failing row contains (null, null).
 select * from t_bit;
- c 
----
- 
- 
+ c |     d      
+---+------------
+ 0 | 0000000000
+ 0 | 0000000000
 (2 rows)
 
 -- tinyint
@@ -894,9 +894,9 @@ insert ignore into t_charn values (null);
 WARNING:  null value in column "c" violates not-null constraint
 DETAIL:  Failing row contains (null).
 select * from t_charn;
- c 
----
- 
+   c    
+--------
+       
 (1 row)
 
 insert into t_charn values('abc');
@@ -906,10 +906,10 @@ DETAIL:  Failing row contains (null).
 WARNING:  null value in column "c" violates not-null constraint
 DETAIL:  Failing row contains (null).
 select * from t_charn;
- c 
----
- 
- 
+   c    
+--------
+       
+       
 (2 rows)
 
 -- varchar(n)
@@ -958,6 +958,30 @@ select * from t_text;
 ---
  
  
+(2 rows)
+
+-- binary
+create table t_binaryn(c binary(6) not null);
+insert ignore into t_binaryn values (null);
+WARNING:  null value in column "c" violates not-null constraint
+DETAIL:  Failing row contains (null).
+select *,hex(c) from t_binaryn;
+       c        |     hex      
+----------------+--------------
+ \x000000000000 | 000000000000
+(1 row)
+
+insert into t_binaryn values(b'01');
+update ignore t_binaryn set c = null;
+WARNING:  null value in column "c" violates not-null constraint
+DETAIL:  Failing row contains (null).
+WARNING:  null value in column "c" violates not-null constraint
+DETAIL:  Failing row contains (null).
+select *,hex(c) from t_binaryn;
+       c        |     hex      
+----------------+--------------
+ \x000000000000 | 000000000000
+ \x000000000000 | 000000000000
 (2 rows)
 
 -- mixture
@@ -1541,7 +1565,7 @@ drop table if exists t_ignore;
 reset dolphin.sql_mode;
 -- restore context
 drop schema sql_ignore_not_null_test cascade;
-NOTICE:  drop cascades to 32 other objects
+NOTICE:  drop cascades to 33 other objects
 DETAIL:  drop cascades to table t_from
 drop cascades to table t_timestamp
 drop cascades to table t_timetz
@@ -1572,6 +1596,7 @@ drop cascades to table t_bool
 drop cascades to table t_charn
 drop cascades to table t_varcharn
 drop cascades to table t_text
+drop cascades to table t_binaryn
 drop cascades to table t_not_null_key_partition
 drop cascades to table ignore_range_range
 reset current_schema;
