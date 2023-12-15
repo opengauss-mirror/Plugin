@@ -6035,7 +6035,7 @@ static AttrNumber  renameatt_internal(Oid myrelid, const char* oldattname, const
     );
 
     /* new name should not conflict with system columns */
-    if (CHCHK_PSORT_RESERVE_COLUMN(newattname)) {
+    if (RelationIsColStore(targetrelation) && CHCHK_PSORT_RESERVE_COLUMN(newattname)) {
         ereport(ERROR,
             (errcode(ERRCODE_DUPLICATE_COLUMN),
                 errmsg("column name \"%s\" conflicts with a system column name", newattname)));

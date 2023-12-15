@@ -400,6 +400,26 @@ static void ConvertAnonymousEnum(TypeName* type)
 }
 #endif
 
+static bool is_create_as_col_store(CreateStmt* stmt)
+{
+    ListCell *cell = NULL;
+    char* storeTypeStr = NULL;
+    foreach(cell, stmt->options) {
+        DefElem *def = (DefElem *)lfirst(cell);
+        if (pg_strcasecmp(def->defname, "orientation") == 0) {
+            if (nodeTag(def->arg) == T_String) {
+                storeTypeStr = strVal(def->arg);
+            } else if (nodeTag(def->arg) == T_TypeName) {
+                storeTypeStr = TypeNameToString((TypeName *)def->arg);
+            } else {
+                Assert(false);
+            }
+        }
+    }
+    return storeTypeStr && (pg_strcasecmp(storeTypeStr, ORIENTATION_COLUMN) == 0 ||
+        pg_strcasecmp(storeTypeStr, ORIENTATION_ORC) == 0);
+}
+
 List* transformCreateStmt(CreateStmt* stmt, const char* queryString, const List* uuids, bool preCheck,
 Oid *namespaceid, bool isFirstNode)
 {
@@ -919,9 +939,11 @@ Oid *namespaceid, bool isFirstNode)
     checkClusterConstraints(&cxt);
 
     /*
-     * Check reserve column
+     * Check reserve column if the table is column store
      */
-    checkReserveColumn(&cxt);
+    if (is_create_as_col_store(stmt)) {
+        checkReserveColumn(&cxt);
+    }
 
     /*
      * Output results.
@@ -5543,9 +5565,11 @@ List* transformAlterTableStmt(Oid relid, AlterTableStmt* stmt, const char* query
     checkClusterConstraints(&cxt);
 
     /*
-     * Check reserve column
+     * Check reserve column if the table is column store
      */
-    checkReserveColumn(&cxt);
+    if (RelationIsColStore(rel)) {
+        checkReserveColumn(&cxt);
+    }
 
     if ((stmt->relkind == OBJECT_FOREIGN_TABLE || stmt->relkind == OBJECT_STREAM) && cxt.alist != NIL) {
         Oid relationId;
