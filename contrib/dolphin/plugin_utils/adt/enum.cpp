@@ -29,6 +29,7 @@
 #include "utils/typcache.h"
 #ifdef DOLPHIN
 #include "plugin_postgres.h"
+#include "plugin_commands/mysqlmode.h"
 #endif
 
 static Oid enum_endpoint(Oid enumtypoid, ScanDirection direction);
@@ -50,10 +51,18 @@ Datum enum_in(PG_FUNCTION_ARGS)
                 errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), name)));
 
     tup = SearchSysCache2(ENUMTYPOIDNAME, ObjectIdGetDatum(enumtypoid), CStringGetDatum(name));
-    if (!HeapTupleIsValid(tup))
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), name)));
+    if (!HeapTupleIsValid(tup)) {
+        /* In non-strict mode, allow enum values to be empty strings */
+#ifdef DOLPHIN
+        int elevel = (fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
+        ereport(elevel, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                        errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), name)));
+        return (Datum)0;
+#else
+        ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                        errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), name)));
+#endif
+    }
 
     /*
      * This comes from pg_enum.oid and stores system oids in user tables. This
@@ -72,6 +81,15 @@ Datum enum_out(PG_FUNCTION_ARGS)
     char* result = NULL;
     HeapTuple tup;
     Form_pg_enum en;
+
+    /* In non-strict mode,
+    * insertion of empty strings will be treated as a normal case and output accordingly.
+    */
+    if (enumval == 0) {
+        /* this variable will be manually released in the subsequent process. */
+        result = pstrdup("");
+        PG_RETURN_CSTRING(result);
+    }
 
     tup = SearchSysCache1(ENUMOID, ObjectIdGetDatum(enumval));
     if (!HeapTupleIsValid(tup))
@@ -535,6 +553,12 @@ Datum Enum2Float8(PG_FUNCTION_ARGS)
     HeapTuple tup;
     Form_pg_enum en;
 
+    /* In non-strict mode,
+    * insertion of empty strings will be treated as a normal case and output accordingly.
+    */
+    if (enumval == 0) {
+        PG_RETURN_FLOAT8(result);
+    }
     tup = SearchSysCache1(ENUMOID, ObjectIdGetDatum(enumval));
     if (!HeapTupleIsValid(tup))
         ereport(ERROR,
