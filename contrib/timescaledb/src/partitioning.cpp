@@ -161,8 +161,7 @@ find_text_coercion_func(Oid type)
 	 */
 	cpt = find_coercion_pathway(TEXTOID, type, COERCION_EXPLICIT, &funcid);
 
-	if (cpt != COERCION_PATH_FUNC)
-		getTypeOutputInfo(type, &funcid, &is_varlena);
+	getTypeOutputInfo(type, &funcid, &is_varlena);
 
 	return funcid;
 }
