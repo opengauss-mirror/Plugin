@@ -813,15 +813,20 @@ DECLARE
     dimension_row    record;
     ret              TEXT;
 BEGIN
+    SELECT COUNT(*)
+    INTO v_count
+    FROM _timescaledb_catalog.hypertable AS h
+    WHERE h.table_name = get_create_command.table_name;
+
+    IF v_count = 0 THEN
+        RAISE EXCEPTION 'hypertable "%" not found', table_name
+        USING ERRCODE = 'TS101';
+    END IF;
+
     SELECT h.id, h.schema_name
     FROM _timescaledb_catalog.hypertable AS h
     WHERE h.table_name = get_create_command.table_name
     INTO h_id, schema_name;
-
-    IF h_id IS NULL THEN
-        RAISE EXCEPTION 'hypertable "%" not found', table_name
-        USING ERRCODE = 'TS101';
-    END IF;
 
     SELECT COUNT(*)
     FROM _timescaledb_catalog.dimension d

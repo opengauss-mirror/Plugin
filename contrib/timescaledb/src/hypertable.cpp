@@ -1516,9 +1516,6 @@ insert_blocker_trigger_add(Oid relid)
 	 */
 	objaddr = CreateTriggerCompat(&stmt, NULL, relid, InvalidOid, InvalidOid, InvalidOid, false,0);
 
-	if (!OidIsValid(objaddr.objectId))
-		elog(ERROR, "could not create insert blocker trigger");
-
 	return objaddr.objectId;
 }
 
