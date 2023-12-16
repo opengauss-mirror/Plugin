@@ -81,9 +81,11 @@ typedef struct tsdb_session_context {
 	struct config_enum_entry tsdb_telemetry_level_options[3];
 	TelemetryLevel tsdb_on_level;
 	bool tsdb_first_start;
+
+	char *tsdb_ts_guc_license_key;
+	bool tsdb_loaded;
+	bool tsdb_loader_present;
 } tsdb_session_context; 
-
-
 
 extern void ts_cache_init(Cache *cache);
 extern void ts_cache_invalidate(Cache *cache);
@@ -95,14 +97,7 @@ extern MemoryContext ts_cache_memory_ctx(Cache *cache);
 extern Cache *ts_cache_pin(Cache *cache);
 extern TSDLLEXPORT int ts_cache_release(Cache *cache);
 
-
-
 extern void _cache_init(void);
 extern void _cache_fini(void);
-
-extern "C" void set_extension_index(uint32 index);
-extern "C" void init_session_vars(void);
-
-extern tsdb_session_context* get_session_context(bool is_from_PG_init=false);
 
 #endif /* TIMESCALEDB_CACHE_H */

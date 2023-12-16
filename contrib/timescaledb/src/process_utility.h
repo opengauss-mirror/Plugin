@@ -33,4 +33,6 @@ typedef bool (*ts_process_utility_handler_t)(ProcessUtilityArgs *args);
 
 extern void ts_process_utility_set_expect_chunk_modification(bool expect);
 
+extern void _process_utility_init(void);
+extern void _process_utility_fini(void);
 #endif /* TIMESCALEDB_PROCESS_UTILITY_H */

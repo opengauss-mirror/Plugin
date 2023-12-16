@@ -25,6 +25,7 @@
 #include "extension_utils.cpp"
 #include "export.h"
 #include "compat.h"
+#include "cache.h"
 #include "extension_constants.h"
 
 #include "loader/loader.h"
@@ -103,8 +104,6 @@ extern void TSDLLEXPORT _PG_init(void);
 extern void TSDLLEXPORT _PG_fini(void);
 
 /* was the versioned-extension loaded*/
-static bool loaded = false;
-static bool loader_present = true;
 
 static char soversion[MAX_VERSION_LEN];
 
