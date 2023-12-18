@@ -1559,7 +1559,7 @@ static bool spq_verify_gauss_cluster_map_syntax(const char *liststring)
     if (!SplitIdentifierString(rawname, ',', &nodelist)) {
         pfree(rawname);
         /* syntax error in name list */
-        GUC_check_errdetail("spq cluster map is invalid, name|ip|port|oid|cport|sport,...");
+        GUC_check_errdetail("spq cluster map is invalid, name|ip|port,...");
         MemoryContextSwitchTo(oldContext);
         return false;
     }
@@ -1569,11 +1569,11 @@ static bool spq_verify_gauss_cluster_map_syntax(const char *liststring)
     foreach_cell(lnode, nodelist) {
         node = &nodesDefinition[idx];
         List *itemlist;
-        char *name, *ip, *port, *nodeoid, *ctlport, *sctpport;
+        char *name, *ip, *port;
         char *nodestring = pstrdup((char *)lfirst(lnode));
         (void)SplitIdentifierString(nodestring, '|', &itemlist);
-        if (list_length(itemlist) != 6) {
-            GUC_check_errdetail("spq cluster map is invalid, name|ip|port|oid|cport|sport,...");
+        if (list_length(itemlist) != 3) {
+            GUC_check_errdetail("spq cluster map is invalid, name|ip|port,...");
             pfree(rawname);
             pfree(nodestring);
             list_free(nodelist);
@@ -1585,9 +1585,6 @@ static bool spq_verify_gauss_cluster_map_syntax(const char *liststring)
         name = (char *)list_nth(itemlist, 0);
         ip = (char *)list_nth(itemlist, 1);
         port = (char *)list_nth(itemlist, 2);
-        nodeoid = (char *)list_nth(itemlist, 3);
-        ctlport = (char *)list_nth(itemlist, 4);
-        sctpport = (char *)list_nth(itemlist, 5);
         node->nodeid = idx;
         rc = strncpy_s(node->nodename.data, NAMEDATALEN, name, NAMEDATALEN);
         securec_check_c(rc, "\0", "\0");
@@ -1596,9 +1593,6 @@ static bool spq_verify_gauss_cluster_map_syntax(const char *liststring)
         rc = strncpy_s(node->nodehost1.data, NAMEDATALEN, ip, NAMEDATALEN);
         securec_check_c(rc, "\0", "\0");
         node->nodeport = (int)strtol(port, NULL, 10);
-        node->nodeoid = (Oid)strtol(nodeoid, NULL, 10);
-        node->nodectlport = (int)strtol(ctlport, NULL, 10);
-        node->nodesctpport = (int)strtol(sctpport, NULL, 10);
         idx++;
         pfree(nodestring);
         list_free(itemlist);
