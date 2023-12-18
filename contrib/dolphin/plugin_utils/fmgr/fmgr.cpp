@@ -1322,7 +1322,7 @@ Datum DirectFunctionCall2Coll(PGFunction func, Oid collation, Datum arg1, Datum 
     fcinfo.argnull[0] = false;
     fcinfo.argnull[1] = false;
     fcinfo.can_ignore = can_ignore;
-
+	
     result = (*func)(&fcinfo);
 
     /* Check for null result, since caller is clearly not expecting one */
@@ -1390,7 +1390,8 @@ Datum DirectFunctionCall4Coll(PGFunction func, Oid collation, Datum arg1, Datum 
 }
 
 Datum DirectFunctionCall5Coll(
-    PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3, Datum arg4, Datum arg5, bool can_ignore)
+    PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3, Datum arg4, Datum arg5,
+    bool can_ignore)
 {
     FunctionCallInfoData fcinfo;
     Datum result;

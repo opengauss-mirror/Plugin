@@ -1150,7 +1150,7 @@ static void createSeqOwnedByTable(CreateStmtContext* cxt, ColumnDef* column, boo
     seqstmt = makeNode(CreateSeqStmt);
     seqstmt->sequence = makeRangeVar(snamespace, sname, -1);
     seqstmt->options = is_autoinc ? GetAutoIncSeqOptions(cxt) : NULL;
-
+    seqstmt->is_autoinc = is_autoinc;
 #ifdef PGXC
     seqstmt->is_serial = true;
 #endif
@@ -1199,6 +1199,7 @@ static void createSeqOwnedByTable(CreateStmtContext* cxt, ColumnDef* column, boo
     attnamelist = list_make3(makeString(snamespace), makeString(cxt->relation->relname), makeString(column->colname));
     altseqstmt->options = list_make1(makeDefElem("owned_by", (Node*)attnamelist));
     altseqstmt->is_large = large;
+    altseqstmt->is_autoinc = is_autoinc;
 
     cxt->alist = lappend(cxt->alist, altseqstmt);
 
@@ -4165,6 +4166,10 @@ static IndexStmt* transformIndexConstraint(Constraint* constraint, CreateStmtCon
         ReleaseSysCache(tup_idx);
 
         index->indexOid = index_oid;
+
+        /* save the original index name, it wll be replace by constraint */
+        DefElem *def = makeDefElem("origin_indexname", (Node*)makeString(constraint->indexname));
+        index->options = lappend(index->options, def);
     }
 
     /*

@@ -32,6 +32,7 @@
 #include "catalog/pg_type.h"
 #include "catalog/pg_partition_fn.h"
 #include "catalog/pg_namespace.h"
+#include "catalog/pg_publication.h"
 #include "commands/dbcommands.h"
 #include "commands/user.h"
 #include "commands/vacuum.h"
@@ -3418,6 +3419,28 @@ Datum locktag_decode(PG_FUNCTION_ARGS)
 
     text* result = cstring_to_text(tag);
     pfree_ext(tag);
+    PG_RETURN_TEXT_P(result);
+}
+
+Datum pubddl_decode(PG_FUNCTION_ARGS)
+{
+    int64 pubddl = DatumGetInt64(PG_GETARG_DATUM(0));
+    StringInfoData tmpbuf;
+    initStringInfo(&tmpbuf);
+    if (pubddl == PUBDDL_NONE) {
+        appendStringInfo(&tmpbuf, "%s", "none");
+    } else if (pubddl == PUBDDL_ALL) {
+        appendStringInfo(&tmpbuf, "%s", "all");
+    } else {
+        bool first = true;
+        if (ENABLE_PUBDDL_TYPE(pubddl, PUBDDL_TABLE)) {
+            appendStringInfo(&tmpbuf, "%s", "table");
+            first = false;
+        }
+    }
+    text *result = cstring_to_text(tmpbuf.data);
+    
+    FreeStringInfo(&tmpbuf);
     PG_RETURN_TEXT_P(result);
 }
 
@@ -15419,8 +15442,8 @@ void fill_drc_info_to_values(dv_drc_buf_info *drc_info, Datum *values)
     values[13] = UInt32GetDatum((uint32)drc_info->recovery_skip);
     values[14] = UInt32GetDatum((uint32)drc_info->recycling);
     values[15] = UInt32GetDatum((uint32)drc_info->converting_req_info_inst_id);
-    values[16] = UInt32GetDatum((uint32)drc_info->converting_req_info_curr_mod);
-    values[17] = UInt32GetDatum((uint32)drc_info->converting_req_info_req_mod);
+    values[16] = UInt32GetDatum((uint32)drc_info->converting_req_info_curr_mode);
+    values[17] = UInt32GetDatum((uint32)drc_info->converting_req_info_req_mode);
 }
 
 Datum query_all_drc_info(PG_FUNCTION_ARGS)
