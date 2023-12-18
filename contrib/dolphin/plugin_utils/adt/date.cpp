@@ -1847,7 +1847,6 @@ Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
                     }
                     int trunc_val = getStartingDigits(field_str);
                     if (trunc_val < 0 || trunc_val >= 60) {
-                        *time_error_type = TIME_INCORRECT;
                         PG_RETURN_TIMEADT(0);
                     }
                     *time_error_type = TIME_INCORRECT;
@@ -1855,9 +1854,7 @@ Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
                 } else if (SQL_MODE_NOT_STRICT_ON_INSERT()) {
                     /* for case insert unavailable data, need to set the unavailable data to 0 to compatible with M */
                     DateTimeParseError(dterr, str, "time", true);
-                    if (IsResetUnavailableDataTime(dterr, !CMD_TAG_IS_SELECT() &&
-                            time_cast_type != TIME_CAST_IMPLICIT)) {
-                        *time_error_type = TIME_IGNORED_INCORRECT;
+                    if (IsResetUnavailableDataTime(dterr, tt, time_cast_type != TIME_CAST_IMPLICIT)) {
                         PG_RETURN_TIMEADT(0);
                     } else {
                         tm = &tt; // switch to M*'s parsing result
@@ -2076,24 +2073,28 @@ Datum float4_cast_time(PG_FUNCTION_ARGS)
 
 Datum uint8_b_format_time(PG_FUNCTION_ARGS)
 {
-    return DirectFunctionCall1(uint64_b_format_time, UInt64GetDatum((uint64)PG_GETARG_UINT8(0)));
+    return DirectFunctionCall1Coll(uint64_b_format_time, InvalidOid, UInt64GetDatum((uint64)PG_GETARG_UINT8(0)),
+        fcinfo->can_ignore);
 }
 
 Datum uint16_b_format_time(PG_FUNCTION_ARGS)
 {
-    return DirectFunctionCall1(uint64_b_format_time, UInt64GetDatum((uint64)PG_GETARG_UINT16(0)));
+    return DirectFunctionCall1Coll(uint64_b_format_time, InvalidOid, UInt64GetDatum((uint64)PG_GETARG_UINT16(0)),
+        fcinfo->can_ignore);
 }
 
 Datum uint32_b_format_time(PG_FUNCTION_ARGS)
 {
-    return DirectFunctionCall1(uint64_b_format_time, UInt64GetDatum((uint64)PG_GETARG_UINT32(0)));
+    return DirectFunctionCall1Coll(uint64_b_format_time, InvalidOid, UInt64GetDatum((uint64)PG_GETARG_UINT32(0)),
+        fcinfo->can_ignore);
 }
 
 Datum uint64_b_format_time(PG_FUNCTION_ARGS)
 {
     uint64 number = PG_GETARG_UINT64(0);
     char *str = DatumGetCString(DirectFunctionCall1(uint8out, UInt64GetDatum(number)));
-    return DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    return DirectFunctionCall3Coll(time_in, InvalidOid, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid),
+        Int32GetDatum(-1), fcinfo->can_ignore);
 }
 
 Datum uint8_cast_time(PG_FUNCTION_ARGS)
@@ -2157,12 +2158,14 @@ Datum uint_cast_time_internal(PG_FUNCTION_ARGS, uint64 number, bool* isnull)
 
 Datum int8_b_format_time(PG_FUNCTION_ARGS)
 {
-    return DirectFunctionCall1(int32_b_format_time, Int32GetDatum((int32)PG_GETARG_INT8(0)));
+    return DirectFunctionCall1Coll(int32_b_format_time, InvalidOid, Int32GetDatum((int32)PG_GETARG_INT8(0)),
+        fcinfo->can_ignore);
 }
 
 Datum int16_b_format_time(PG_FUNCTION_ARGS)
 {
-    return DirectFunctionCall1(int32_b_format_time, Int32GetDatum((int32)PG_GETARG_INT16(0)));
+    return DirectFunctionCall1Coll(int32_b_format_time, InvalidOid, Int32GetDatum((int32)PG_GETARG_INT16(0)),
+        fcinfo->can_ignore);
 }
 
 /* int4(hhmmss) convert to b format time */
@@ -2180,6 +2183,9 @@ Datum int32_b_format_time(PG_FUNCTION_ARGS)
     if (dterr) {
         ereport(errlevel,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
+        if (fcinfo->can_ignore || (SQL_MODE_NOT_STRICT_ON_INSERT())) {
+            PG_RETURN_TIMEADT(0);
+        }
     }
     tm2time(tm, 0, &result);
     PG_RETURN_TIMEADT(result * sign);
@@ -2194,7 +2200,8 @@ Datum int64_b_format_time(PG_FUNCTION_ARGS)
         return DirectFunctionCall1(timestamp_time, datetime);
     }
     char *str = DatumGetCString(DirectFunctionCall1(int8out, UInt64GetDatum(number)));
-    return DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    return DirectFunctionCall3Coll(time_in, InvalidOid, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid),
+        Int32GetDatum(-1), fcinfo->can_ignore);
 }
 
 Datum int8_cast_time(PG_FUNCTION_ARGS)
