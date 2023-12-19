@@ -167,6 +167,8 @@ typedef struct BSqlPluginContext {
     bool group_by_error;
     bool is_create_alter_stmt;
     Alias *upSertAliasName;
+    bool isDoCopy;
+    char* performance_schema;
 #endif
 } bSqlPluginContext;
 
