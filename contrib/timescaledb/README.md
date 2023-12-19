@@ -23,11 +23,14 @@ TimescaleDB能够以插件化的形式，很方便的处理时序数据，随着
 
 ### 1.3.1. 一般性限制
 
+- 在兼容pg库下创建插件
+- chunk功能暂不支持
 - 不支持非编译安装版本；
 - 目前TimescaleDB安装之后，不支持删除TimescaleDB插件；
 - TimescaleDB插件依赖于public schema，因此不支持使用drop schema的方式删除public schema；
 - TimescaleDB创建的超表需要使用drop table CASCADE;进行删除,会同时删除其附加表；
 - 在不同数据库创建插件需要重启数据库；
+
 
 # **2.** TimescaleDB安装方法
 
@@ -128,7 +131,7 @@ SELECT time_bucket('15 minutes', time) AS fifteen_min,
 | 12   | create_hypertable（）创建超表                                | 创建超表                                                     |
 | 13   | detach_tablespace（）从一个或多个超级表中分离表空间。        | 从一个或多个超级表中分离表空间                               |
 | 14   | detach_tablespaces（）从超表中分离所有表空间。               | 从超表中分离所有表空间                                       |
-| 15   | set_chunk_time_interval（）设置超表上的chunk_time_interval。 | 设置超表上的区块时间间隔                                     |
+| 15   | set_chunk_time_interval（）设置超表上的chunk_time_interval。 | 设置超表上的区块时间间隔，默认单位为天                                     |
 | 16   | set_integer_now_func（）设置整数超表当前时间函数             | 只适用于整数类超表，它设置一个函数，该函数以时间列的单位返回now（）值（当前时间） |
 | 17   | time_bucket()函数                                            | time_bucket用于分析任意时间间隔的数据                        |
 | 18   | timescaledb_information.hypertable获取超表信息               | 获取超表的相关信息或者查看一个表是否为超表                   |
