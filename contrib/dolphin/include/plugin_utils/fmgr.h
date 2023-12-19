@@ -457,8 +457,7 @@ typedef const Pg_magic_struct* (*PGModuleMagicFunction)(void);
  * are allowed to be NULL.
  */
 extern Datum DirectFunctionCall1Coll(PGFunction func, Oid collation, Datum arg1, bool can_ignore = false);
-extern Datum DirectFunctionCall2Coll(PGFunction func, Oid collation, Datum arg1, Datum arg2,
-    bool can_ignore = false);
+extern Datum DirectFunctionCall2Coll(PGFunction func, Oid collation, Datum arg1, Datum arg2, bool can_ignore = false);
 extern Datum DirectFunctionCall3Coll(PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3,
     bool can_ignore = false);
 extern Datum DirectFunctionCall4Coll(PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3, Datum arg4,
