@@ -2490,12 +2490,19 @@ bytea* OidSendFunctionCall(Oid functionId, Datum val)
     return SendFunctionCall(&flinfo, val);
 }
 
-Datum OidInputFunctionCallColl(Oid functionId, char* str, Oid typioparam, int32 typmod, Oid collation)
+Datum OidInputFunctionCallColl(Oid functionId, char *str, Oid typioparam, int32 typmod, Oid collation
+#ifdef DOLPHIN
+    , bool ignore
+#endif
+)
 {
     FmgrInfo flinfo;
-
+    bool can_ignore = false;
+#ifdef DOLPHIN
+    can_ignore = ignore;
+#endif
     fmgr_info(functionId, &flinfo);
-    return InputFunctionCall(&flinfo, str, typioparam, typmod, false, collation);
+    return InputFunctionCall(&flinfo, str, typioparam, typmod, can_ignore, collation);
 }
 /*
  * !!! OLD INTERFACE !!!

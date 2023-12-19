@@ -583,7 +583,11 @@ extern Datum ReceiveFunctionCall(FmgrInfo* flinfo, fmStringInfo buf, Oid typiopa
 extern Datum OidReceiveFunctionCall(Oid functionId, fmStringInfo buf, Oid typioparam, int32 typmod);
 extern bytea* SendFunctionCall(FmgrInfo* flinfo, Datum val);
 extern bytea* OidSendFunctionCall(Oid functionId, Datum val);
-extern Datum OidInputFunctionCallColl(Oid functionId, char* str, Oid typioparam, int32 typmod, Oid collation);
+extern Datum OidInputFunctionCallColl(Oid functionId, char *str, Oid typioparam, int32 typmod, Oid collation
+#ifdef DOLPHIN
+    , bool ignore
+#endif
+);
 
 /*
  * Routines in fmgr.c

@@ -35,6 +35,7 @@
 #include "plugin_utils/int8.h"
 #include "plugin_utils/varbit.h"
 #include "catalog/gs_collation.h"
+#include "plugin_commands/mysqlmode.h"
 #endif
 
 static Oid enum_endpoint(Oid enumtypoid, ScanDirection direction);
@@ -69,10 +70,18 @@ Datum enum_in(PG_FUNCTION_ARGS)
 #endif
 
     tup = SearchSysCache2(ENUMTYPOIDNAME, ObjectIdGetDatum(enumtypoid), CStringGetDatum(name));
-    if (!HeapTupleIsValid(tup))
-        ereport(ERROR,
-            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), name)));
+    if (!HeapTupleIsValid(tup)) {
+        /* In non-strict mode, allow enum values to be empty strings */
+#ifdef DOLPHIN
+        int elevel = (fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
+        ereport(elevel, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                        errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), name)));
+        return (Datum)0;
+#else
+        ereport(ERROR, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                        errmsg("invalid input value for enum %s: \"%s\"", format_type_be(enumtypoid), name)));
+#endif
+    }
 
     /*
     * This comes from pg_enum.oid and stores system oids in user tables. This
@@ -249,6 +258,11 @@ Datum int4_enum(PG_FUNCTION_ARGS)
     char* tmp = "";
     if (order != 0) {
         tmp = getEnumLableByOrder(PG_GETARG_OID(1), PG_GETARG_INT32(0));
+    } else {
+        int elevel = ((SQL_MODE_STRICT()) && !fcinfo->can_ignore) ? ERROR : WARNING;
+        ereport(elevel, (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                         errmsg("Invalid input value for enum. In strict sql_mode, do not allow the value 0.")));
+        return (Datum)0;
     }
     Datum result = DirectFunctionCall2(enum_in, CStringGetDatum(tmp), PG_GETARG_DATUM(1));
     PG_RETURN_OID(result);
@@ -382,6 +396,15 @@ Datum enum_out(PG_FUNCTION_ARGS)
     char* result = NULL;
     HeapTuple tup;
     Form_pg_enum en;
+
+    /* In non-strict mode,
+    * insertion of empty strings will be treated as a normal case and output accordingly.
+    */
+    if (enumval == 0) {
+        /* this variable will be manually released in the subsequent process. */
+        result = pstrdup("");
+        PG_RETURN_CSTRING(result);
+    }
 
     tup = SearchSysCache1(ENUMOID, ObjectIdGetDatum(enumval));
     if (!HeapTupleIsValid(tup))
@@ -883,6 +906,12 @@ Datum Enum2Float8(PG_FUNCTION_ARGS)
     HeapTuple tup;
     Form_pg_enum en;
 
+    /* In non-strict mode,
+    * insertion of empty strings will be treated as a normal case and output accordingly.
+    */
+    if (enumval == 0) {
+        PG_RETURN_FLOAT8(result);
+    }
     tup = SearchSysCache1(ENUMOID, ObjectIdGetDatum(enumval));
     if (!HeapTupleIsValid(tup))
         ereport(ERROR,

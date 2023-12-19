@@ -14,6 +14,9 @@
  * -------------------------------------------------------------------------
  */
 #include "postgres.h"
+#ifdef DOLPHIN
+#include "plugin_utils/fmgr.h"
+#endif
 #include "knl/knl_variable.h"
 #include "utils/fmgroids.h"
 #include "catalog/pg_cast.h"
@@ -1684,7 +1687,12 @@ CoercionContext ccontext, CoercionForm cformat, int location, Oid collation)
         Form_pg_type typform = (Form_pg_type)GETSTRUCT(target);
         Oid typinput = typform->typinput;
         Oid typioparam = getTypeIOParam(target);
-        newcon->constvalue = OidInputFunctionCallColl(typinput, DatumGetCString(con->constvalue), typioparam, inputTypeMod, collation);
+        newcon->constvalue =
+            OidInputFunctionCallColl(typinput, DatumGetCString(con->constvalue), typioparam, inputTypeMod, collation
+#ifdef DOLPHIN
+            , pstate != NULL && pstate->p_has_ignore
+#endif
+            );
 
         cancel_parser_errposition_callback(&pcbstate);
         result = (Node*)newcon;
