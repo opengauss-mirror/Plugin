@@ -71,10 +71,6 @@ DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
 
 drop function IF EXISTS pg_catalog."user"();
 
-DROP FUNCTION IF EXISTS pg_catalog.div(binary, double precision);
-DROP FUNCTION IF EXISTS pg_catalog.div(double precision, binary);
-DROP FUNCTION IF EXISTS pg_catalog.div(binary, binary);
-
 DROP CAST IF EXISTS (year AS boolean);
 DROP FUNCTION IF EXISTS pg_catalog.year_to_bool(year);
 

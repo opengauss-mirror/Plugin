@@ -149,9 +149,8 @@ LINE 1: select div 1;
                    ^
 select '-12.3abc' div null;
 WARNING:  invalid input syntax for type numeric: "-12.3abc"
-LINE 1: select '-12.3abc' div null;
-               ^
-CONTEXT:  referenced column: div
+CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
+referenced column: div
  div 
 -----
     
@@ -169,9 +168,8 @@ CONTEXT:  referenced column: div
 
 select '-12.3abc' div 0;
 WARNING:  invalid input syntax for type numeric: "-12.3abc"
-LINE 1: select '-12.3abc' div 0;
-               ^
-CONTEXT:  referenced column: div
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
+referenced column: div
  div 
 -----
     
@@ -179,9 +177,8 @@ CONTEXT:  referenced column: div
 
 select '-12.3abc' div 5;
 WARNING:  invalid input syntax for type numeric: "-12.3abc"
-LINE 1: select '-12.3abc' div 5;
-               ^
-CONTEXT:  referenced column: div
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
+referenced column: div
  div 
 -----
   -2
@@ -229,13 +226,11 @@ CONTEXT:  referenced column: div
 
 select '-12.3abc' div 'null';
 WARNING:  invalid input syntax for type numeric: "-12.3abc"
-LINE 1: select '-12.3abc' div 'null';
-               ^
-CONTEXT:  referenced column: div
+CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
+referenced column: div
 WARNING:  invalid input syntax for type numeric: "null"
-LINE 1: select '-12.3abc' div 'null';
-                              ^
-CONTEXT:  referenced column: div
+CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
+referenced column: div
  div 
 -----
     
@@ -533,11 +528,11 @@ select c1 div c12 from div_test;
 (1 row)
 
 select c1 div c13 from div_test;
-ERROR:  function pg_catalog.div(tinyint, `binary`) does not exist
-LINE 1: select c1 div c13 from div_test;
-                  ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: div
+ div 
+-----
+    
+(1 row)
+
 select c1 div c14 from div_test;
  div 
 -----
@@ -612,11 +607,9 @@ HINT:  No function matches the given name and argument types. You might need to 
 CONTEXT:  referenced column: div
 insert into tmp_res select c1 div c14 from div_test;
 insert into tmp_res select c1 div c15 from div_test;
-ERROR:  function pg_catalog.div(tinyint, json) does not exist
-LINE 1: insert into tmp_res select c1 div c15 from div_test;
-                                      ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: div
+ERROR:  invalid input syntax for type double precision: "{"0":"0"}"
+CONTEXT:  PL/pgSQL function `div`(anyelement,json) line 3 at RETURN
+referenced column: div
 -- non-strict mode and non-err_division_by_zero, no warning and error
 set dolphin.sql_mode = '';
 select c1/c1 from div_test;
@@ -885,11 +878,14 @@ select c1 div c14 from div_test;
 (1 row)
 
 select c1 div c15 from div_test;
-ERROR:  function pg_catalog.div(tinyint, json) does not exist
-LINE 1: select c1 div c15 from div_test;
-                  ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: div
+WARNING:  invalid input syntax for type double precision: "{"0":"0"}"
+CONTEXT:  PL/pgSQL function `div`(anyelement,json) line 3 at RETURN
+referenced column: div
+ div 
+-----
+    
+(1 row)
+
 insert into tmp_res select c1/c1 from div_test;
 insert into tmp_res select c1/c2 from div_test;
 insert into tmp_res select c1/c3 from div_test;
@@ -945,11 +941,6 @@ insert into tmp_res select c1 div c10 from div_test;
 insert into tmp_res select c1 div c11 from div_test;
 insert into tmp_res select c1 div c12 from div_test;
 insert into tmp_res select c1 div c13 from div_test;
-ERROR:  function pg_catalog.div(tinyint, `binary`) does not exist
-LINE 1: insert into tmp_res select c1 div c13 from div_test;
-                                      ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: div
 insert into tmp_res select c1 div c14 from div_test;
 insert into tmp_res select c1 div c15 from div_test;
 ERROR:  function pg_catalog.div(tinyint, json) does not exist
@@ -1252,11 +1243,14 @@ CONTEXT:  referenced column: div
 (1 row)
 
 select c1 div c13 from div_test;
-ERROR:  function pg_catalog.div(tinyint, `binary`) does not exist
-LINE 1: select c1 div c13 from div_test;
-                  ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: div
+WARNING:  division by zero
+CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
+referenced column: div
+ div 
+-----
+    
+(1 row)
+
 select c1 div c14 from div_test;
 WARNING:  division by zero
 CONTEXT:  referenced column: div
@@ -1377,11 +1371,6 @@ insert into tmp_res select c1 div c12 from div_test;
 ERROR:  division by zero
 CONTEXT:  referenced column: div
 insert into tmp_res select c1 div c13 from div_test;
-ERROR:  function pg_catalog.div(tinyint, `binary`) does not exist
-LINE 1: insert into tmp_res select c1 div c13 from div_test;
-                                      ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: div
 insert into tmp_res select c1 div c14 from div_test;
 ERROR:  division by zero
 CONTEXT:  referenced column: a
@@ -1686,11 +1675,13 @@ CONTEXT:  referenced column: div
 (1 row)
 
 select c1 div c13 from div_test;
-ERROR:  function pg_catalog.div(tinyint, `binary`) does not exist
-LINE 1: select c1 div c13 from div_test;
-                  ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: div
+WARNING:  division by zero
+CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
+referenced column: div
+ div 
+-----
+    
+(1 row)
 select c1 div c14 from div_test;
 WARNING:  division by zero
 CONTEXT:  referenced column: div
@@ -1813,11 +1804,9 @@ insert into tmp_res select c1 div c12 from div_test;
 WARNING:  division by zero
 CONTEXT:  referenced column: div
 insert into tmp_res select c1 div c13 from div_test;
-ERROR:  function pg_catalog.div(tinyint, `binary`) does not exist
-LINE 1: insert into tmp_res select c1 div c13 from div_test;
-                                      ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: div
+WARNING:  division by zero
+CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
+referenced column: div
 insert into tmp_res select c1 div c14 from div_test;
 WARNING:  division by zero
 CONTEXT:  referenced column: a
@@ -1830,13 +1819,13 @@ CONTEXT:  referenced column: div
 select count(*) from tmp_res;
  count 
 -------
-   135
+   138
 (1 row)
 
 select count(*) from tmp_res where a is null;
  count 
 -------
-   135
+   138
 (1 row)
 
 drop table tmp_res;
