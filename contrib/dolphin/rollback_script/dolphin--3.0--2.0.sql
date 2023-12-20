@@ -273,3 +273,7 @@ DROP FUNCTION IF EXISTS pg_catalog.binary_or_double(binary, double precision) CA
 DROP FUNCTION IF EXISTS pg_catalog.uint8_or_binary(uint8, binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.binary_or_uint8(binary, uint8) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.binary_or_binary(binary, binary) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.div(binary, double precision);
+DROP FUNCTION IF EXISTS pg_catalog.div(double precision, binary);
+DROP FUNCTION IF EXISTS pg_catalog.div(binary, binary);

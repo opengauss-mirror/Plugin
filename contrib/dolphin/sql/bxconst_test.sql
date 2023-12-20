@@ -49,6 +49,32 @@ select (2::float8) | 0x01;
 select (2::numeric) | 0x01;
 select 0x01 | 0x02;
 
+select 5::binary div 2;
+select 5::binary div (2::int1);
+select 5::binary div (2::int2);
+select 5::binary div (2::int4);
+select 5::binary div (2::int8);
+select 5::binary div (2::uint1);
+select 5::binary div (2::uint2);
+select 5::binary div (2::uint4);
+select 5::binary div (2::uint8);
+select 5::binary div (2::float4);
+select 5::binary div (2::float8);
+select 5::binary div (2::numeric);
+select 5 div 2::binary;
+select (5::int1) div 2::binary;
+select (5::int2) div 2::binary;
+select (5::int4) div 2::binary;
+select (5::int8) div 2::binary;
+select (5::uint1) div 2::binary;
+select (5::uint2) div 2::binary;
+select (5::uint4) div 2::binary;
+select (5::uint8) div 2::binary;
+select (5::float4) div 2::binary;
+select (5::float8) div 2::binary;
+select (5::numeric) div 2::binary;
+select 5::binary div 2::binary;
+
 -- 将bxconst当作binary处理
 set dolphin.sql_mode = sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero,treat_bxconst_as_binary;
 
@@ -94,6 +120,32 @@ select (2::float4) | 0x01;
 select (2::float8) | 0x01;
 select (2::numeric) | 0x01;
 select 0x01 | 0x02;
+
+select 0x01 div 2;
+select 0x01 div (2::int1);
+select 0x01 div (2::int2);
+select 0x01 div (2::int4);
+select 0x01 div (2::int8);
+select 0x01 div (2::uint1);
+select 0x01 div (2::uint2);
+select 0x01 div (2::uint4);
+select 0x01 div (2::uint8);
+select 0x01 div (2::float4);
+select 0x01 div (2::float8);
+select 0x01 div (2::numeric);
+select 2 div 0x01;
+select (2::int1) div 0x01;
+select (2::int2) div 0x01;
+select (2::int4) div 0x01;
+select (2::int8) div 0x01;
+select (2::uint1) div 0x01;
+select (2::uint2) div 0x01;
+select (2::uint4) div 0x01;
+select (2::uint8) div 0x01;
+select (2::float4) div 0x01;
+select (2::float8) div 0x01;
+select (2::numeric) div 0x01;
+select 0x01 div 0x02;
 
 reset dolphin.sql_mode;
 

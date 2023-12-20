@@ -455,3 +455,34 @@ CREATE OPERATOR pg_catalog.|(leftarg = binary, rightarg = uint8, procedure = pg_
 DROP FUNCTION IF EXISTS pg_catalog.binary_or_binary(binary, binary) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.binary_or_binary(binary, binary) RETURNS bigint LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT $1::numeric | $2::numeric $$;
 CREATE OPERATOR pg_catalog.|(leftarg = binary, rightarg = binary, procedure = pg_catalog.binary_or_binary);
+
+DROP FUNCTION IF EXISTS pg_catalog.div(binary, double precision);
+CREATE OR REPLACE FUNCTION pg_catalog.div(binary, double precision)
+returns numeric language plpgsql as
+$$
+declare
+    quotient double precision := $1::numeric / $2;
+begin
+    return sign(quotient) * floor(abs(quotient));
+end;
+$$;
+DROP FUNCTION IF EXISTS pg_catalog.div(double precision, binary);
+CREATE OR REPLACE FUNCTION pg_catalog.div(double precision, binary)
+returns numeric language plpgsql as
+$$
+declare
+    quotient double precision := $1 / $2::numeric;
+begin
+    return sign(quotient) * floor(abs(quotient));
+end;
+$$;
+DROP FUNCTION IF EXISTS pg_catalog.div(binary, binary);
+CREATE OR REPLACE FUNCTION pg_catalog.div(binary, binary)
+returns numeric language plpgsql as
+$$
+declare
+    quotient double precision := $1::numeric / $2::numeric;
+begin
+    return sign(quotient) * floor(abs(quotient));
+end;
+$$;
