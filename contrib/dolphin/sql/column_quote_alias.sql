@@ -140,6 +140,7 @@ SELECT a as 'SSSS' from t_alias_case0001_1;
 SELECT a 'SSSS' from t_alias_case0001_1;
 select atan(point '(1,1)',point '(2,1)');
 select hex(compress(point '(1,1)'));
+select cidr'10.1.0.0/16';
 DROP TABLE t_alias_case0001_1;
 drop schema column_quote_alias cascade;
 reset current_schema;

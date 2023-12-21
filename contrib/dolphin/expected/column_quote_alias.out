@@ -896,6 +896,12 @@ LINE 1: select hex(compress(point '(1,1)'));
                    ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: hex
+select cidr'10.1.0.0/16';
+    cidr     
+-------------
+ 10.1.0.0/16
+(1 row)
+
 DROP TABLE t_alias_case0001_1;
 drop schema column_quote_alias cascade;
 reset current_schema;

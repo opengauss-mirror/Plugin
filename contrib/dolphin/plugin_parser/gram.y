@@ -37023,7 +37023,7 @@ AexprConst_without_Sconst: Iconst
 				}
 			| DB_B_CIDR SCONST
 				{
-					TypeName * tmp = SystemTypeName("point");
+					TypeName * tmp = SystemTypeName("cidr");
 					tmp->location = @1;
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
