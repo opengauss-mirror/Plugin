@@ -2278,10 +2278,9 @@ CTranslatorDXLToScalar::TranslateDXLScalarDMLActionToScalar(
 	SPQOS_ASSERT(NULL != dml_action_node);
 	SPQOS_ASSERT(EdxlopScalarDMLAction ==
 				dml_action_node->GetOperator()->GetDXLOperator());
-	//DMLActionExpr *expr = MakeNode(DMLActionExpr);
+	DMLActionExpr *expr = MakeNode(DMLActionExpr);
 
-	//return (Expr *) expr;
-	return (Expr *)nullptr;
+	return (Expr *) expr;
 }
 
 

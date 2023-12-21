@@ -660,6 +660,7 @@ bool check_slice_dop(PlanSlice *slices, Plan *subplan, PlannedStmt *result)
     }
     return producerDop == subplan->dop;
 }
+
 Plan* make_stream(PlannerInfo* root, Plan *subplan, Motion *motion, PlannedStmt *result)
 {
     PlanSlice *slices = &(result->slices[motion->motionID]);
@@ -729,6 +730,41 @@ Plan* make_sort(Motion *motion, Plan *subplan)
     node->nullsFirst = motion->nullsFirst;
     return (Plan*)node;
 }
+
+Plan* make_dml_stream(PlannerInfo* root, Plan *subplan, Motion *motion, PlannedStmt *result)
+{
+    Stream* stream = makeNode(Stream);
+    Plan* plan = &stream->scan.plan;
+    Distribution* distribution = ng_get_dest_distribution(subplan);
+    stream->distribute_keys = make_distributed_key_by_groupingset(root, subplan, motion->hashExprs);
+    stream->is_sorted = false;
+    stream->sort = NULL;
+    copy_plan_costsize(plan, &motion->plan);
+    plan->distributed_keys = stream->distribute_keys;
+    plan->targetlist = list_copy(motion->plan.targetlist);
+    plan->lefttree = subplan;
+    plan->righttree = NULL;
+    plan->exec_nodes = ng_get_dest_execnodes(subplan);
+    plan->hasUniqueResults = subplan->hasUniqueResults;
+    plan->multiple = 1.0;
+
+    // set by redistribute_keys?
+    stream->smpDesc.producerDop = subplan->dop;
+    stream->smpDesc.consumerDop = 1;
+
+    plan->dop = stream->smpDesc.consumerDop;
+
+    stream->smpDesc.distriType = REMOTE_DML_WRITE_NODE;
+    stream->type = STREAM_REDISTRIBUTE;
+    stream->consumer_nodes = ng_convert_to_exec_nodes(distribution, LOCATOR_TYPE_HASH, RELATION_ACCESS_READ);
+
+    stream->streamID = motion->motionID;
+    if (motion->sendSorted) {
+        return make_sort(motion, (Plan*)stream);
+    }
+    return (Plan*)stream;
+}
+
 Plan* create_spq_local_gather(PlannerInfo* root, Plan* plan, Motion *motion)
 {
     if (IsA(plan, Stream)) {
@@ -838,7 +874,29 @@ Plan* make_gather_stream(PlannerInfo* root, Plan *subplan, Motion *motion, Plann
     }
     return (Plan*)stream_node;
 }
-Plan* tran_motion_to_stream(PlannerInfo* root, SpqSliceContext *cxt, Plan *plan, bool &top)
+Plan *make_gather_remote_top(Plan *lefttree, PlannedStmt *result)
+{
+    PlanSlice *slices = &(result->slices[0]);
+    RemoteQuery* remote_query = makeNode(RemoteQuery);
+    remote_query->combine_type = COMBINE_TYPE_NONE;
+    remote_query->base_tlist = NIL;
+    remote_query->sql_statement = NULL;
+    remote_query->exec_nodes = lefttree->exec_nodes;
+    remote_query->read_only = true;
+
+    remote_query->scan.plan.exec_nodes = remote_query->exec_nodes;
+    remote_query->scan.plan.lefttree = lefttree;
+    remote_query->scan.plan.exec_type = EXEC_ON_COORDS;
+    remote_query->is_simple = true;
+    remote_query->rq_need_proj = false;
+    remote_query->scan.plan.plan_width = lefttree->plan_width;
+    remote_query->sort = NULL;
+    remote_query->scan.plan.dop = 1;
+    remote_query->nodeCount = slices->numsegments > 1 ? t_thrd.spq_ctx.num_nodes : 1;
+    return (Plan*)remote_query;
+}
+
+Plan *tran_motion_to_stream(PlannerInfo* root, SpqSliceContext *cxt, Plan *plan, bool &top, bool fromdml)
 {
     bool backtop = top;
     top = false;
@@ -860,6 +918,11 @@ Plan* tran_motion_to_stream(PlannerInfo* root, SpqSliceContext *cxt, Plan *plan,
         ereport(LOG,(errmsg("[SliceInfo] sliceIndex[%d] slicetype[%d] worker_idx[%d] parentIndex[%d]",
         slices->sliceIndex, slices->gangType, slices->worker_idx, slices->parentIndex)));
     }
+    if (fromdml && backtop) {
+        top = backtop;
+        return make_dml_stream(root, subplan, motion, cxt->result);
+    }
+
     // no need check motion->motionID again in below func;
     if (motion->motionType == MOTIONTYPE_GATHER) {
         if (backtop) {
@@ -874,7 +937,7 @@ Plan* tran_motion_to_stream(PlannerInfo* root, SpqSliceContext *cxt, Plan *plan,
     }
 }
 //TODO SPQ need fix: dops and multiple gather  
-Plan *replace_motion_stream_recurse(PlannerInfo *root, SpqSliceContext *cxt, Plan *plan, bool &top)
+Plan *replace_motion_stream_recurse(PlannerInfo *root, SpqSliceContext *cxt, Plan *plan, bool &top, bool fromdml)
 {
 
     ListCell* lc = NULL;
@@ -896,7 +959,7 @@ Plan *replace_motion_stream_recurse(PlannerInfo *root, SpqSliceContext *cxt, Pla
             if (IsA(node, SubPlan)) {
                 subplan = (SubPlan*)lfirst(lc);
                 initNode = (Plan*)list_nth(subplans, subplan->plan_id - 1);
-                lfirst(lc) = replace_motion_stream_recurse(root, cxt, initNode, top);
+                lfirst(lc) = replace_motion_stream_recurse(root, cxt, initNode, top, fromdml);
             }
         }
         list_free_ext(subplan_list);
@@ -906,14 +969,14 @@ Plan *replace_motion_stream_recurse(PlannerInfo *root, SpqSliceContext *cxt, Pla
     List* initplans = plan->initPlan;
     foreach (lc, initplans) {
         Plan* initplan = (Plan*)lfirst(lc);
-        lfirst(lc) = replace_motion_stream_recurse(root, cxt, initplan, top);
+        lfirst(lc) = replace_motion_stream_recurse(root, cxt, initplan, top, fromdml);
     }
 
     if (IsA(plan, Append)) {
         Append* node = (Append*)plan;
         foreach(lc, node->appendplans) {
             Plan* initNode = (Plan*)lfirst(lc);
-            lfirst(lc) = replace_motion_stream_recurse(root, cxt, initNode, top);
+            lfirst(lc) = replace_motion_stream_recurse(root, cxt, initNode, top, fromdml);
         }
     }  
 
@@ -921,22 +984,25 @@ Plan *replace_motion_stream_recurse(PlannerInfo *root, SpqSliceContext *cxt, Pla
         if (top == true) {
             ereport(ERROR, (errmsg("There's no gather on sequence curentIndex[%d]", cxt->curentIndex)));
         }
+	if (fromdml) {
+            ereport(ERROR, (errmsg("not support SPQ DML with ShareInputScan")));
+        }
         Sequence* node = (Sequence*)plan;
         foreach(lc, node->subplans) {
             Plan* subplan = (Plan*)lfirst(lc);
-            lfirst(lc) = replace_motion_stream_recurse(root, cxt, subplan, top);
+            lfirst(lc) = replace_motion_stream_recurse(root, cxt, subplan, top, fromdml); 
         }
     }
 
     if (IsA(plan, Motion)) {
-        return tran_motion_to_stream(root, cxt, plan, top);
+        return tran_motion_to_stream(root, cxt, plan, top, fromdml);
     } else {
         if (plan->lefttree) {
-            plan->lefttree = replace_motion_stream_recurse(root, cxt, plan->lefttree, top);
+            plan->lefttree = replace_motion_stream_recurse(root, cxt, plan->lefttree, top, fromdml);
             plan->dop = plan->lefttree->dop;
         }   
         if (plan->righttree) {
-            plan->righttree = replace_motion_stream_recurse(root, cxt, plan->righttree, top);
+            plan->righttree = replace_motion_stream_recurse(root, cxt, plan->righttree, top, fromdml);
         }
         if (plan->lefttree == nullptr && plan->righttree == nullptr) {
             if (cxt->curentIndex >= cxt->result->numSlices) {
@@ -964,6 +1030,36 @@ static void InitRemoteNodeDefinition(PlannedStmt* planstmt)
     planstmt->nodesDefinition = (NodeDefinition *)palloc0(nodes_size);
     memcpy_s(planstmt->nodesDefinition, nodes_size,  t_thrd.spq_ctx.nodesDefinition, nodes_size); 
 }
+Plan *replace_motion_dml(PlannerInfo* root, SpqSliceContext *cxt, Plan *plan, bool &top)
+{
+    if (!IsA(plan, ModifyTable)) {
+        ereport(ERROR, (errmsg("replace_motion_dml is %d",  (int)nodeTag(plan))));
+        return NULL;
+    }
+    PlannerGlobal *glob = root->glob;
+    int subplan_id = 0;
+    ListCell *lp;
+    foreach (lp, glob->subplans) {
+        if (cxt->result->subplan_sliceIds[subplan_id] == 0) {
+            ereport(ERROR, (errmsg("not support SPQ DML when DML_STREAM in subplan")));
+        }
+        subplan_id++;
+    }
+    Plan *remote_query_plan = make_gather_remote_top(plan, cxt->result);
+    ModifyTable* node = (ModifyTable*)plan;
+    ListCell* l = NULL;
+    foreach (l, node->plans) {
+        Plan *subplan = (Plan*)lfirst(l);
+        if (subplan) {
+            subplan = replace_motion_stream_recurse(root, cxt, subplan, top, true);
+            lfirst(l) = subplan;
+        }
+    }
+    plan->dop = 1;
+    plan->parallel_enabled = (plan->dop > 1);
+    return remote_query_plan;
+}
+
 void make_spq_remote_query(PlannerInfo *root, PlannedStmt *result, PlannerGlobal *glob)
 {
     bool top = true;
@@ -977,7 +1073,13 @@ void make_spq_remote_query(PlannerInfo *root, PlannedStmt *result, PlannerGlobal
     SpqSliceContext sliceCxt;
     sliceCxt.result = result;
     sliceCxt.curentIndex = 0;
-    result->planTree = replace_motion_stream_recurse(root, &sliceCxt, result->planTree, top);
+    /* whether select's part top stream has appeared,
+     * top stream is to send scaning data to qc to modify table*/
+    if (root->parse->commandType == CMD_SELECT) {
+        result->planTree = replace_motion_stream_recurse(root, &sliceCxt, result->planTree, top);
+    } else {
+        result->planTree = replace_motion_dml(root, &sliceCxt, result->planTree, top);
+    }    
     // should fix all?
     //result->planTree = set_plan_references(root, result->planTree);
     int parent_node_id = INITIAL_PARENT_NODE_ID; /* beginning with INITIAL_PARENT_NODE_ID */
