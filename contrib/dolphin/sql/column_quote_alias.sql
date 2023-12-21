@@ -138,6 +138,7 @@ SELECT a as 'ssss' from t_alias_case0001_1;
 SELECT a 'ssss' from t_alias_case0001_1;
 SELECT a as 'SSSS' from t_alias_case0001_1;
 SELECT a 'SSSS' from t_alias_case0001_1;
+select cidr'10.1.0.0/16';
 DROP TABLE t_alias_case0001_1;
 drop schema column_quote_alias cascade;
 reset current_schema;

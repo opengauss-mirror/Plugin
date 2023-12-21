@@ -864,6 +864,12 @@ SELECT a 'SSSS' from t_alias_case0001_1;
     1
 (1 row)
 
+select cidr'10.1.0.0/16';
+    cidr     
+-------------
+ 10.1.0.0/16
+(1 row)
+
 DROP TABLE t_alias_case0001_1;
 drop schema column_quote_alias cascade;
 reset current_schema;
