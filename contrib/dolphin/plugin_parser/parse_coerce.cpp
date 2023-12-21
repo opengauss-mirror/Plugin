@@ -3379,7 +3379,9 @@ int findNumTimeFunctionIdx(Oid typeId)
 Oid findNumTimeExplicitCastFunction(Oid sourceTypeId, Oid funcid)
 {
     int idx = findNumTimeFunctionIdx(sourceTypeId);
-    return (idx == INVALID_IDX) ? funcid : get_func_oid(numCastTimeFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+    Oid cast_oid = (idx == INVALID_IDX) ? InvalidOid :
+                                          get_func_oid(numCastTimeFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+    return (cast_oid != InvalidOid) ? cast_oid : funcid;
 }
 
 int findEnumFunctionIdx(Oid typeId)
