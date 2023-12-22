@@ -244,7 +244,7 @@ drop view testforboolean_v;
 
 --- test for function
 select count(tem) from (select a&&b tem from testforboolean);
-select a&&b,b from testforboolean order by b;
+select a&&b,b from testforboolean order by b nulls last;
 
 select char_length('asbjhc')&&char_length('askjdhkj');
 select left('1023jasdzlxc',5)&&left('1023jasdnzxc',5);
@@ -252,7 +252,7 @@ select substring('as1dz34lcas',3)&&substring('zxcbkj1shd',5);
 select replace('123456789','234','asd')&&replace('123456789','234','asd');
 
 select count(tem) from (select a||b tem from testforboolean);
-select a||b,b from testforboolean order by b;
+select a||b,b from testforboolean order by b nulls last;
 
 select char_length('asbjhc')||char_length('askjdhkj');
 select left('1023jasdzlxc',5)||left('1023jasdnzxc',5);
