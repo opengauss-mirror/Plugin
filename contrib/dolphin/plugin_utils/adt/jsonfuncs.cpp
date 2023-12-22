@@ -6896,7 +6896,18 @@ Datum json_objectagg_mysql_transfn(PG_FUNCTION_ARGS)
         arg = PG_GETARG_DATUM(2);
         value = get_json_value(val_type, arg, typIsVarlena, typOutput);
     }
-    cJSON_AddItemToObject(state->root, keyString, value);
+
+    char* pathString = (char *)palloc((strlen(keyString) + 5) * sizeof(char));
+    rc = snprintf_s(pathString, strlen(keyString) + 5, strlen(keyString) + 4, "$.\"%s\"", keyString);
+    securec_check_ss_c(rc, "\0", "\0");
+    int error_pos = -1;
+    cJSON_JsonPath *jp = jp_parse(pathString, error_pos);
+    pfree(pathString);
+    bool invalidPath = false;
+    /* If there are duplicate keys, replace value with new one */
+    if (!cJSON_JsonReplace(state->root, jp, value, invalidPath)) {
+        cJSON_AddItemToObject(state->root, keyString, value);
+    }
     pfree(keyString);
     MemoryContextSwitchTo(oldcontext);
 
