@@ -180,6 +180,7 @@ insert into test_binary1 (f2) values('ppp'),('PpP'),('PPP'),('AAA'),('Aaa'),('aa
 select distinct f2 from test_binary1 order by f2;
     f2    
 ----------
+ 
  AAA
  Aaa
  PPP
@@ -188,7 +189,6 @@ select distinct f2 from test_binary1 order by f2;
  aaa
  ppp
  \305\240
- 
 (9 rows)
 
 select f2 from test_binary1 where f2 = 'ppp'::blob collate 'binary';
