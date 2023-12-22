@@ -608,7 +608,7 @@ select count(tem) from (select a&&b tem from testforboolean);
      5
 (1 row)
 
-select a&&b,b from testforboolean order by b;
+select a&&b,b from testforboolean order by b nulls last;
  ?column? | b 
 ----------+---
  f        | f
@@ -650,7 +650,7 @@ select count(tem) from (select a||b tem from testforboolean);
      5
 (1 row)
 
-select a||b,b from testforboolean order by b;
+select a||b,b from testforboolean order by b nulls last;
  ?column? | b 
 ----------+---
  f        | f

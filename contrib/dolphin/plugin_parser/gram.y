@@ -531,6 +531,8 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 static inline List* NakeLikeOpList();
 static inline List* MakeNotLikeOpList();
 static inline Node* MakeSubLinkWithOp(SubLinkType subType, Node* testExpr, char* op, Node* subSelect, int location);
+/* null is the minimum value in sortby */
+static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRule);
 %}
 
 %define api.pure
@@ -29959,7 +29961,7 @@ sortby:		a_expr USING qual_all_Op opt_nulls_order
 					$$ = makeNode(SortBy);
 					$$->node = $1;
 					$$->sortby_dir = (SortByDir)$2;
-					$$->sortby_nulls = (SortByNulls)$3;
+					$$->sortby_nulls = GetNullOrderRule($$->sortby_dir, (SortByNulls)$3);;
 					$$->useOp = NIL;
 					$$->location = -1;		/* no operator */
 				}
@@ -41729,6 +41731,20 @@ static inline void ChangeBpcharCastType(TypeName* typname)
 		((Value*)lsecond(typname->names))->val.str = "varchar";
 	}
 }
+
+static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRule)
+{
+	if (!ENABLE_B_CMPT_MODE) {
+		return nullRule;
+	}
+	if (sortBy == SORTBY_DESC && nullRule == SORTBY_NULLS_DEFAULT) {
+		return SORTBY_NULLS_LAST;
+	} else if ((sortBy == SORTBY_ASC || sortBy == SORTBY_DEFAULT) && nullRule == SORTBY_NULLS_DEFAULT) {
+		return SORTBY_NULLS_FIRST;
+	}
+	return nullRule;
+}
+
 
 /*
  * Must undefine this stuff before including scan.c, since it has different

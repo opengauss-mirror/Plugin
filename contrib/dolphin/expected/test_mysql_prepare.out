@@ -192,7 +192,7 @@ explain (costs off, verbose on) execute p5;
    Output: "*SELECT* 1".a, (0)
    ->  Sort
          Output: "*SELECT* 1".a, (0)
-         Sort Key: "*SELECT* 1".a
+         Sort Key: "*SELECT* 1".a NULLS FIRST
          ->  HashSetOp Intersect
                Output: "*SELECT* 1".a, (0)
                ->  Append
@@ -869,12 +869,12 @@ explain (costs off, verbose on) execute s0 using @a;
    Merge Cond: (t1.id1 = t2.id1)
    ->  Sort
          Output: t1.id1, t1.id2, t1.num
-         Sort Key: t1.id1
+         Sort Key: t1.id1 NULLS FIRST
          ->  Seq Scan on test_mysql_prepare.t1_xc_fqs t1
                Output: t1.id1, t1.id2, t1.num
    ->  Sort
          Output: t2.id1, t2.id2, t2.num
-         Sort Key: t2.id1
+         Sort Key: t2.id1 NULLS FIRST
          ->  Seq Scan on test_mysql_prepare.t2_xc_fqs t2
                Output: t2.id1, t2.id2, t2.num
                Filter: (t2.id1 = $1)
@@ -885,7 +885,7 @@ explain (costs off, verbose on) execute s1 using 1;
 ------------------------------------------------------------------------
  Sort
    Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num, t2.id1
-   Sort Key: t2.id1
+   Sort Key: t2.id1 NULLS FIRST
    ->  Hash Left Join
          Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num, t2.id1
          Hash Cond: (t2.id1 = t1.id1)
@@ -903,7 +903,7 @@ explain (costs off, verbose on) execute s2 using 1;
 --------------------------------------------------------------------------------
  Sort
    Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num, t1.id1, t2.id1
-   Sort Key: t1.id1, t2.id1
+   Sort Key: t1.id1 NULLS FIRST, t2.id1 NULLS FIRST
    ->  Hash Full Join
          Output: t1.id1, t1.id2, t1.num, t2.id1, t2.id2, t2.num, t1.id1, t2.id1
          Hash Cond: (t1.id1 = t2.id1)
@@ -939,15 +939,15 @@ execute s1 using @a;
 execute s2 using 1;
  id1 | id2 | num | id1 | id2 | num 
 -----+-----+-----+-----+-----+-----
+     |     |     |   2 |   3 |  22
+     |     |     |   3 |   4 |  32
+     |     |     |   4 |   5 |  42
+     |     |     |   5 |   6 |  52
    1 |   1 |  11 |   1 |   2 |  12
    2 |   2 |  21 |     |     |    
    3 |   3 |  31 |     |     |    
    4 |   4 |  41 |     |     |    
    5 |   5 |  51 |     |     |    
-     |     |     |   2 |   3 |  22
-     |     |     |   3 |   4 |  32
-     |     |     |   4 |   5 |  42
-     |     |     |   5 |   6 |  52
 (9 rows)
 
 deallocate s0;
