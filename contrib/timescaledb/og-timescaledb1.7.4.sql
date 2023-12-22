@@ -812,6 +812,7 @@ DECLARE
     dimension_cnt    INTEGER;
     dimension_row    record;
     ret              TEXT;
+    v_count          INTEGER;
 BEGIN
     SELECT COUNT(*)
     INTO v_count
