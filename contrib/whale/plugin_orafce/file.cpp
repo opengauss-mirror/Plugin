@@ -702,8 +702,6 @@ Datum utl_file_fclose_all(PG_FUNCTION_ARGS)
  */
 static void check_secure_locality(const char *path)
 {
-    static SPIPlanPtr plan = NULL;
-
     Oid argtypes[] = {TEXTOID};
     Datum values[1];
     char nulls[1] = {' '};
@@ -722,7 +720,7 @@ static void check_secure_locality(const char *path)
     if (SPI_connect() < 0)
         ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("SPI_connect failed")));
 
-    if (!plan) {
+    if (!GetSessionContext()->check_secure_locality_plan) {
         /* Don't use LIKE not to escape '_' and '%' */
         SPIPlanPtr p = SPI_prepare("SELECT 1 FROM utl_file.utl_file_dir"
                                    " WHERE CASE WHEN substring(dir from '.$') = '/' THEN"
@@ -732,11 +730,11 @@ static void check_secure_locality(const char *path)
                                    " END",
                                    1, argtypes);
 
-        if (p == NULL || (plan = SPI_saveplan(p)) == NULL)
+        if (p == NULL || (GetSessionContext()->check_secure_locality_plan = SPI_saveplan(p)) == NULL)
             ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("SPI_prepare_failed")));
     }
 
-    if (SPI_OK_SELECT != SPI_execute_plan(plan, values, nulls, false, 1))
+    if (SPI_OK_SELECT != SPI_execute_plan(GetSessionContext()->check_secure_locality_plan, values, nulls, false, 1))
         ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("can't execute sql")));
 
     if (SPI_processed == 0)
@@ -761,15 +759,15 @@ static char *safe_named_location(text *location)
     if (SPI_connect() < 0)
         ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("SPI_connect failed")));
 
-    if (!GetSessionContext()->plan) {
+    if (!GetSessionContext()->safe_named_location_plan) {
         /* Don't use LIKE not to escape '_' and '%' */
         SPIPlanPtr p = SPI_prepare("SELECT dir FROM utl_file.utl_file_dir WHERE dirname = $1", 1, argtypes);
 
-        if (p == NULL || (GetSessionContext()->plan = SPI_saveplan(p)) == NULL)
+        if (p == NULL || (GetSessionContext()->safe_named_location_plan = SPI_saveplan(p)) == NULL)
             ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("SPI_prepare_failed")));
     }
 
-    if (SPI_OK_SELECT != SPI_execute_plan(GetSessionContext()->plan, values, nulls, false, 1))
+    if (SPI_OK_SELECT != SPI_execute_plan(GetSessionContext()->safe_named_location_plan, values, nulls, false, 1))
         ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("can't execute sql")));
 
     if (SPI_processed > 0) {

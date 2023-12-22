@@ -86,7 +86,8 @@ typedef  struct ASqlPluginContext {
     /* file.c */
     OraFileSlot	slots[MAX_SLOTS];	/* initilaized with zeros */
     int32	slotid = 0;	/* next slot id */
-    SPIPlanPtr plan = NULL;
+    SPIPlanPtr safe_named_location_plan = NULL;
+    SPIPlanPtr check_secure_locality_plan = NULL;
     /* others.c */
     char *lc_collate_cache = NULL;
     size_t multiplication = 1;
