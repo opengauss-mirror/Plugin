@@ -660,3 +660,10 @@ begin
     return sign(quotient) * floor(abs(quotient));
 end;
 $$;
+
+DROP CAST IF EXISTS (year AS boolean);
+DROP FUNCTION IF EXISTS pg_catalog.year_to_bool(year);
+CREATE OR REPLACE FUNCTION pg_catalog.year_to_bool(year)
+RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as
+'select cast(cast($1 as text) as boolean)';
+CREATE CAST (year AS boolean) WITH FUNCTION year_to_bool(year) AS IMPLICIT;

@@ -71,9 +71,6 @@ DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
 
 drop function IF EXISTS pg_catalog."user"();
 
-DROP CAST IF EXISTS (year AS boolean);
-DROP FUNCTION IF EXISTS pg_catalog.year_to_bool(year);
-
 -- not operator
 DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, int1);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_int1not(int1);

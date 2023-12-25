@@ -91,13 +91,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.year(anyenum) RETURNS int8 LANGUAGE SQL ST
 CREATE OR REPLACE FUNCTION pg_catalog.year(json) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
 CREATE OR REPLACE FUNCTION pg_catalog.year(time) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::timestamp(0) without time zone)';
 
-DROP CAST IF EXISTS (year AS boolean);
-DROP FUNCTION IF EXISTS pg_catalog.year_to_bool(year);
-CREATE OR REPLACE FUNCTION pg_catalog.year_to_bool(year)
-RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as
-'select cast(cast($1 as text) as boolean)';
-CREATE CAST (year AS boolean) WITH FUNCTION year_to_bool(year) AS IMPLICIT;
-
 -- not operator
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_int1not(int1) CASCADE;
 CREATE OR REPLACE FUNCTION dolphin_catalog.dolphin_int1not(int1) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'dolphin_int1not';

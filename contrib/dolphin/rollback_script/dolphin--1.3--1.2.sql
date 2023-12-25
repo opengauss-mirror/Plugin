@@ -322,3 +322,6 @@ DROP FUNCTION IF EXISTS pg_catalog.binary_or_binary(binary, binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.div(binary, double precision);
 DROP FUNCTION IF EXISTS pg_catalog.div(double precision, binary);
 DROP FUNCTION IF EXISTS pg_catalog.div(binary, binary);
+
+DROP CAST IF EXISTS (year AS boolean);
+DROP FUNCTION IF EXISTS pg_catalog.year_to_bool(year);
