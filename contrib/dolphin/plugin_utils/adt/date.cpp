@@ -65,6 +65,7 @@ bool check_pg_tm_time_part(pg_tm *tm, fsec_t fsec);
 extern const char* extract_numericstr(const char* str);
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
 int DatetimeDate(char *str, pg_tm *tm, bool is_date_sconst = false);
+static float8 getPartFromTm(pg_tm* tm, fsec_t fsec, int part);
 
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_time);
 extern "C" DLL_PUBLIC Datum int32_b_format_time(PG_FUNCTION_ARGS);
@@ -5655,6 +5656,28 @@ Datum adddate_time_interval(PG_FUNCTION_ARGS)
     PG_RETURN_NULL();
 }
 
+static float8 getPartFromTm(pg_tm* tm, fsec_t fsec, int part)
+{
+    float8 result = 0;
+    switch (part) {
+        case HOUR:
+            result = tm->tm_hour;
+            break;
+        case MINUTE:
+            result = tm->tm_min;
+            break;
+        case SECOND:
+            result = tm->tm_sec;
+            break;
+        case MICROSECOND:
+            result = fsec;
+            break;
+        default:
+            break;
+    }
+    return result;
+}
+
 static inline Datum GetSpecificPartOfTime(PG_FUNCTION_ARGS, int part)
 {
     char *tString = text_to_cstring(PG_GETARG_TEXT_PP(0));
@@ -5672,7 +5695,6 @@ static inline Datum GetSpecificPartOfTime(PG_FUNCTION_ARGS, int part)
     bool warnings;
     int tm_type;
     bool null_func_result = false;
-    float8 result = 0;
     if (!cstring_to_time(tString, tm, fsec, timeSign, tm_type, warnings, &null_func_result) || null_func_result) {
         PG_RETURN_NULL();
     }
@@ -5681,23 +5703,7 @@ static inline Datum GetSpecificPartOfTime(PG_FUNCTION_ARGS, int part)
         ereport(errlevel,
                 (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", tString)));
     }
-    switch (part) {
-        case HOUR:
-            result = tm->tm_hour;
-            break;
-        case MINUTE:
-            result = tm->tm_min;
-            break;
-        case SECOND:
-            result = tm->tm_sec;
-            break;
-        case MICROSECOND:
-            result = fsec;
-            break;
-        default:
-            break;
-    }
-    PG_RETURN_FLOAT8(result);
+    PG_RETURN_FLOAT8(getPartFromTm(tm, fsec, part));
 }
 
 Datum GetHour(PG_FUNCTION_ARGS)
@@ -5726,29 +5732,13 @@ static Datum GetSpecificPartOfTimeInDate(PG_FUNCTION_ARGS, int part)
     fsec_t fsec;
     pg_tm tt;
     pg_tm* tm = &tt;
-    float8 result = 0;
 
     if (timestamp2tm(date2timestamp(dateVal), NULL, tm, &fsec, NULL, NULL) == 0) {
-        switch (part) {
-            case HOUR:
-                result = tm->tm_hour;
-                break;
-            case MINUTE:
-                result = tm->tm_min;
-                break;
-            case SECOND:
-                result = tm->tm_sec;
-                break;
-            case MICROSECOND:
-                result = fsec;
-                break;
-            default:
-                break;
-        }
+        PG_RETURN_FLOAT8(getPartFromTm(tm, fsec, part));
     } else {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
     }
-    PG_RETURN_FLOAT8(result);
+    PG_RETURN_FLOAT8(0);
 }
 
 Datum GetHourFromDate(PG_FUNCTION_ARGS)
@@ -5779,25 +5769,7 @@ static Datum GetSpecificPartOfTimeInTimeTz(PG_FUNCTION_ARGS, int part)
     fsec_t fsec;
     int tz;
     timetz2tm(time, tm, &fsec, &tz);
-    float8 result = 0;
-
-    switch (part) {
-        case HOUR:
-            result = tm->tm_hour;
-            break;
-        case MINUTE:
-            result = tm->tm_min;
-            break;
-        case SECOND:
-            result = tm->tm_sec;
-            break;
-        case MICROSECOND:
-            result = fsec;
-            break;
-        default:
-            break;
-    }
-    PG_RETURN_FLOAT8(result);
+    PG_RETURN_FLOAT8(getPartFromTm(tm, fsec, part));
 }
 
 Datum GetHourFromTimeTz(PG_FUNCTION_ARGS)
