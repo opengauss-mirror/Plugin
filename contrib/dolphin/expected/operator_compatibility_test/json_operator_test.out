@@ -427,13 +427,13 @@ CREATE TABLE test_json_type AS SELECT
 `year` << `json` AS `year<<json`,
 `year` | `json` AS `year|json`,
 `year` & `json` AS `year&json`,
--- `year` || `json` AS `year||json`,
--- `year` && `json` AS `year&&json`,
+`year` || `json` AS `year||json`,
+`year` && `json` AS `year&&json`,
 `year` div `json` AS `year_div_json`,
 `year` mod `json` AS `year_mod_json`,
 `year` xor `json` AS `year_xor_json`,
--- `year` and `json` AS `year_and_json`,
--- `year` or `json` AS `year_or_json`,
+`year` and `json` AS `year_and_json`,
+`year` or `json` AS `year_or_json`,
 `char` + `json` AS `char+json`,
 `char` - `json` AS `char-json`,
 `char` * `json` AS `char*json`,
@@ -988,13 +988,13 @@ CREATE TABLE test_json_type AS SELECT
 `json` << `year` AS `json<<year`,
 `json` | `year` AS `json|year`,
 `json` & `year` AS `json&year`,
--- `json` || `year` AS `json||year`,
--- `json` && `year` AS `json&&year`,
+`json` || `year` AS `json||year`,
+`json` && `year` AS `json&&year`,
 `json` div `year` AS `json_div_year`,
 `json` mod `year` AS `json_mod_year`,
 `json` xor `year` AS `json_xor_year`,
--- `json` and `year` AS `json_and_year`,
--- `json` or `year` AS `json_or_year`,
+`json` and `year` AS `json_and_year`,
+`json` or `year` AS `json_or_year`,
 `json` + `char` AS `json+char`,
 `json` - `char` AS `json-char`,
 `json` * `char` AS `json*char`,
@@ -1574,9 +1574,13 @@ SHOW COLUMNS FROM test_json_type;
  year<<json            | bigint           | YES  |     | NULL    | 
  year|json             | bigint           | YES  |     | NULL    | 
  year&json             | bigint           | YES  |     | NULL    | 
+ year||json            | boolean          | YES  |     | NULL    | 
+ year&&json            | boolean          | YES  |     | NULL    | 
  year_div_json         | numeric          | YES  |     | NULL    | 
  year_mod_json         | numeric          | YES  |     | NULL    | 
  year_xor_json         | integer          | YES  |     | NULL    | 
+ year_and_json         | boolean          | YES  |     | NULL    | 
+ year_or_json          | boolean          | YES  |     | NULL    | 
  char+json             | double precision | YES  |     | NULL    | 
  char-json             | double precision | YES  |     | NULL    | 
  char*json             | double precision | YES  |     | NULL    | 
@@ -2063,9 +2067,13 @@ SHOW COLUMNS FROM test_json_type;
  json<<year            | bigint           | YES  |     | NULL    | 
  json|year             | bigint           | YES  |     | NULL    | 
  json&year             | bigint           | YES  |     | NULL    | 
+ json||year            | boolean          | YES  |     | NULL    | 
+ json&&year            | boolean          | YES  |     | NULL    | 
  json_div_year         | numeric          | YES  |     | NULL    | 
  json_mod_year         | numeric          | YES  |     | NULL    | 
  json_xor_year         | integer          | YES  |     | NULL    | 
+ json_and_year         | boolean          | YES  |     | NULL    | 
+ json_or_year          | boolean          | YES  |     | NULL    | 
  json+char             | double precision | YES  |     | NULL    | 
  json-char             | double precision | YES  |     | NULL    | 
  json*char             | double precision | YES  |     | NULL    | 
@@ -2214,7 +2222,7 @@ SHOW COLUMNS FROM test_json_type;
  @json                 | double precision | YES  |     | NULL    | 
  !json                 | boolean          | YES  |     | NULL    | 
  not_json              | boolean          | YES  |     | NULL    | 
-(1005 rows)
+(1013 rows)
 
 -- test value
 delete from test_json_type;
@@ -3264,15 +3272,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`year&json` = test_jso
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: year&json
 UPDATE test_json_type, test_json_table SET test_json_type.`year||json` = test_json_table.`year` || test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type year
-LINE 1: ...test_json_table SET test_json_type.`year||json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`year&&json` = test_json_table.`year` && test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type year
-LINE 1: ...test_json_table SET test_json_type.`year&&json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`year_div_json` = test_json_table.`year` div test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
@@ -3287,15 +3287,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(anyelement,json) line 3 at RETURN
 referenced column: year_xor_json
 UPDATE test_json_type, test_json_table SET test_json_type.`year_and_json` = test_json_table.`year` and test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type year
-LINE 1: ...t_json_table SET test_json_type.`year_and_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`year_or_json` = test_json_table.`year` or test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type year
-LINE 1: ...st_json_table SET test_json_type.`year_or_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`char+json` = test_json_table.`char` + test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: char+json
@@ -5233,15 +5225,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json&year` = test_jso
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json&year
 UPDATE test_json_type, test_json_table SET test_json_type.`json||year` = test_json_table.`json` || test_json_table.`year`;
-ERROR:  argument of OR must be type boolean, not type year
-LINE 1: ...son_type.`json||year` = test_json_table.`json` || test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&year` = test_json_table.`json` && test_json_table.`year`;
-ERROR:  argument of AND must be type boolean, not type year
-LINE 1: ...son_type.`json&&year` = test_json_table.`json` && test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_year` = test_json_table.`json` div test_json_table.`year`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
@@ -5256,15 +5240,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(json,anyelement) line 3 at RETURN
 referenced column: json_xor_year
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_year` = test_json_table.`json` and test_json_table.`year`;
-ERROR:  argument of AND must be type boolean, not type year
-LINE 1: ...type.`json_and_year` = test_json_table.`json` and test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_year` = test_json_table.`json` or test_json_table.`year`;
-ERROR:  argument of OR must be type boolean, not type year
-LINE 1: ...n_type.`json_or_year` = test_json_table.`json` or test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json+char` = test_json_table.`json` + test_json_table.`char`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+char
@@ -6585,9 +6561,13 @@ year>>json            | 2023
 year<<json            | 2023
 year|json             | 2023
 year&json             | 0
+year||json            | t
+year&&json            | f
 year_div_json         | 
 year_mod_json         | 
 year_xor_json         | 2023
+year_and_json         | f
+year_or_json          | t
 char+json             | 1.23
 char-json             | 1.23
 char*json             | 0
@@ -7074,9 +7054,13 @@ json>>year            | 0
 json<<year            | 0
 json|year             | 2023
 json&year             | 0
+json||year            | t
+json&&year            | f
 json_div_year         | 0
 json_mod_year         | 0
 json_xor_year         | 2023
+json_and_year         | f
+json_or_year          | t
 json+char             | 1.23
 json-char             | -1.23
 json*char             | 0
