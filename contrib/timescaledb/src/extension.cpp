@@ -32,7 +32,6 @@
 
 #define TS_UPDATE_SCRIPT_CONFIG_VAR "timescaledb.update_script_stage"
 #define POST_UPDATE "post"
-static Oid extension_proxy_oid = InvalidOid;
 
 /*
  * ExtensionState tracks the state of extension metadata in the backend.
