@@ -91,6 +91,7 @@ typedef struct GetDolphinOperatorTupInfo {
 } GetDolphinOperatorTupInfo;
 
 static Operator GetDolphinOperatorTup(GetDolphinOperatorTupInfo* info);
+static Operator GetDolphinRightOperatorTup(GetDolphinOperatorTupInfo* info);
 static Operator GetNumericDolphinOperatorTup(
     ParseState* pstate, List* opername, Oid ltypeId, Oid rtypeId, int location, bool inNumeric);
 static void TransformDolphinType(Oid& type, int32& typmod);
@@ -927,7 +928,24 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
         /* left operator */
         rtypeId = exprType(rtree);
         ltypeId = InvalidOid;
+#ifdef DOLPHIN
+        info.pstate = pstate;
+        info.opname = opname;
+        info.ltypeId = ltypeId;
+        info.rtypeId = rtypeId;
+        info.ltree = ltree;
+        info.rtree = rtree;
+        info.location = location;
+        info.inNumeric = inNumeric;
+        tup = GetDolphinRightOperatorTup(&info);
+        if (!HeapTupleIsValid(tup)) {
+            tup = left_oper(pstate, opname, rtypeId, false, location);
+        } else {
+            newRightTree = CreateCastForType(pstate, rtypeId, rtree, tup, location, false);
+        }
+#else
         tup = left_oper(pstate, opname, rtypeId, false, location);
+#endif  
     } else {
         /* otherwise, binary operator */
         ltypeId = exprType(ltree);
@@ -1313,6 +1331,49 @@ static Operator GetNumericDolphinOperatorTup(
     return (Operator)tup;
 }
 
+static Operator GetDolphinRightOperatorTup(GetDolphinOperatorTupInfo* info)
+{
+    if (!GetSessionContext()->enableBCmptMode) {
+        return NULL;
+    }
+    ParseState* pstate = info->pstate;
+    List* opname = info->opname;
+    Oid rightType = info->rtypeId;
+    int location = info->location;
+    bool inNumeric = info->inNumeric;
+    char* schemaname = NULL;
+    char* opername = NULL;
+    Operator tup = NULL;
+    DeconstructQualifiedName(opname, &schemaname, &opername);
+    List *newOpList = list_make2(makeString(DOLPHIN_CATALOG_STR), makeString(opername));
+    if (schemaname == NULL) {
+        tup = GetNumericDolphinOperatorTup(pstate, newOpList, InvalidOid, rightType, location, inNumeric);
+        if (tup != NULL) {
+            return tup;
+        }
+    }
+    Oid nspOid = InvalidOid;
+    Oid oprOid = InvalidOid;
+    Oid rightOid = rightType;
+    nspOid = get_namespace_oid(DOLPHIN_CATALOG_STR, true);
+    if (!OidIsValid(nspOid)) {
+        return NULL;
+    }
+    char rightTypType = get_typtype(rightType);
+    if (IsBinaryType(rightType)) {
+        rightOid = ANYELEMENTOID;
+    } else if (rightTypType == TYPTYPE_ENUM) {
+        rightOid = ANYENUMOID;
+    } else if (rightTypType == TYPTYPE_SET) {
+        rightOid = ANYSETOID;
+    }
+    oprOid = get_operator_oid(opername, nspOid, InvalidOid, rightOid);
+    if (!OidIsValid(oprOid)) {
+        return NULL;
+    }
+    return SearchSysCache1(OPEROID, ObjectIdGetDatum(oprOid));
+}
+
 static Operator GetDolphinOperatorTup(GetDolphinOperatorTupInfo* info)
 {
     if (!GetSessionContext()->enableBCmptMode) {
@@ -1329,7 +1390,7 @@ static Operator GetDolphinOperatorTup(GetDolphinOperatorTupInfo* info)
     char* schemaname = NULL;
     char* opername = NULL;
     DeconstructQualifiedName(opname, &schemaname, &opername);
-    List *newOpList = list_make2(makeString("dolphin_catalog"), makeString(opername));
+    List *newOpList = list_make2(makeString(DOLPHIN_CATALOG_STR), makeString(opername));
     if (IsNumericCatalogByOid(leftType) && IsNumericCatalogByOid(rightType) && schemaname == NULL) {
         Operator tup = GetNumericDolphinOperatorTup(pstate, newOpList, leftType, rightType, location, inNumeric);
         if (tup != NULL) {

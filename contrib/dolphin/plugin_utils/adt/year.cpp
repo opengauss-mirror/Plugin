@@ -20,7 +20,7 @@
 #define TYPMODOUT_LEN 64
 
 static int year_fastcmp(Datum x, Datum y, SortSupport ssup);
-static YearADT int32_to_YearADT(int4 year);
+static YearADT int32_to_YearADT(int4 year, bool canIgnore = false);
 
 PG_FUNCTION_INFO_V1_PUBLIC(year_in);
 extern "C" DLL_PUBLIC Datum year_in(PG_FUNCTION_ARGS);
@@ -233,8 +233,12 @@ Datum yeartypmodout(PG_FUNCTION_ARGS)
     PG_RETURN_CSTRING(ret);
 }
 
-static YearADT int32_to_YearADT(int4 year)
+static YearADT int32_to_YearADT(int4 year, bool canIgnore)
 {
+#ifdef DOLPHIN
+    int errlevel = (!canIgnore && SQL_MODE_STRICT() ? ERROR : WARNING);
+#endif
+
     if (year) {
         if (YEAR_VALID(year)) {
             if (YEAR2_IN_RANGE(year))
@@ -318,7 +322,7 @@ Datum year_smaller(PG_FUNCTION_ARGS)
 Datum int32_year(PG_FUNCTION_ARGS)
 {
     int4 year = PG_GETARG_INT32(0);
-    PG_RETURN_YEARADT(int32_to_YearADT(year));
+    PG_RETURN_YEARADT(int32_to_YearADT(year, fcinfo->can_ignore));
 }
 
 Datum year_integer(PG_FUNCTION_ARGS) {
@@ -544,5 +548,12 @@ extern "C" DLL_PUBLIC Datum year_any_value(PG_FUNCTION_ARGS);
 Datum year_any_value(PG_FUNCTION_ARGS)
 {
     return PG_GETARG_DATUM(0);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_yearnot);
+extern "C" DLL_PUBLIC Datum dolphin_yearnot(PG_FUNCTION_ARGS);
+Datum dolphin_yearnot(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_UINT64(~year_uint8(fcinfo));
 }
 #endif
