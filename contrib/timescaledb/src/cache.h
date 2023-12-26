@@ -85,6 +85,29 @@ typedef struct tsdb_session_context {
 	char *tsdb_ts_guc_license_key;
 	bool tsdb_loaded;
 	bool tsdb_loader_present;
+
+	char tsdb_base64[64];
+
+	int64 tsdb_fixed_memory_cache_size;
+	FmgrInfo tsdb_ddl_commands_fmgrinfo;
+	FmgrInfo tsdb_dropped_objects_fmgrinfo;
+
+	Oid tsdb_extension_proxy_oid;
+	HTAB *tsdb_func_hash;
+	bool tsdb_downgrade_to_apache_enabled;
+	void *tsdb_tsl_handle;
+	PGFunction tsdb_tsl_validate_license_fn;
+	PGFunction tsdb_tsl_startup_fn;
+	bool tsdb_can_load;
+	GucSource tsdb_load_source;
+
+	bool tsdb_dsm_init_done;
+
+	dsm_handle tsdb_dsm_control_handle;
+	
+	Size tsdb_dsm_control_mapped_size;
+	void *tsdb_dsm_control_impl_private;
+
 } tsdb_session_context; 
 
 extern void ts_cache_init(Cache *cache);

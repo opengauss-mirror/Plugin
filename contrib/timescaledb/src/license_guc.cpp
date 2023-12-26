@@ -23,12 +23,6 @@ TS_FUNCTION_INFO_V1(ts_license_expiration_time);
 TS_FUNCTION_INFO_V1(ts_license_edition);
 TS_FUNCTION_INFO_V1(ts_allow_downgrade_to_apache);
 
-static bool downgrade_to_apache_enabled = false;
-static void *tsl_handle = NULL;
-static PGFunction tsl_validate_license_fn = NULL;
-static PGFunction tsl_startup_fn = NULL;
-static bool can_load = false;
-static GucSource load_source = PGC_S_DEFAULT;
 
 #define TS_LICENSE_APACHE_ONLY_PRINT_TEXT "apache"
 #define TS_LICENSE_COMMUNITY_PRINT_TEXT "community"

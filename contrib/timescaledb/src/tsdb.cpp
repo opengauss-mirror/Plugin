@@ -3564,6 +3564,24 @@ void init_session_vars(void)
 
 	psc->tsdb_loaded = false;
 	psc->tsdb_loader_present = true;
+
+	strcpy(psc->tsdb_base64, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+
+	psc->tsdb_fixed_memory_cache_size=-1;
+	psc->tsdb_extension_proxy_oid = InvalidOid;
+	psc->tsdb_func_hash = NULL;
+	
+	psc->tsdb_downgrade_to_apache_enabled = false;
+	psc->tsdb_tsl_handle = NULL;
+	psc->tsdb_tsl_validate_license_fn = NULL;
+	psc->tsdb_tsl_startup_fn = NULL;
+	psc->tsdb_can_load = false;
+	psc->tsdb_load_source = PGC_S_DEFAULT;
+
+	psc->tsdb_dsm_init_done = false;
+
+	psc->tsdb_dsm_control_mapped_size = 0;
+	psc->tsdb_dsm_control_impl_private = NULL;
 	
 	_constraint_aware_append_init();
 

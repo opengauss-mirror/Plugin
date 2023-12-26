@@ -296,7 +296,6 @@ static FuncInfo funcinfo[] = {
 
 #define _MAX_CACHE_FUNCTIONS (sizeof(funcinfo) / sizeof(funcinfo[0]))
 
-static HTAB *func_hash = NULL;
 
 static Oid
 proc_get_oid(HeapTuple tuple)

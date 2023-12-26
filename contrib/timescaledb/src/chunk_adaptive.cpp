@@ -32,7 +32,6 @@
 /* This can be set to a positive number (and non-zero) value from tests to
  * simulate memory cache size. This makes it possible to run tests
  * deterministically. */
-static int64 fixed_memory_cache_size = -1;
 
 /*
  * Takes a PostgreSQL text representation of data (e.g., 40MB) and converts it

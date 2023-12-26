@@ -22,8 +22,6 @@
 /* Function manager info for the event "pg_event_trigger_ddl_commands", which is
  * used to retrieve information on executed DDL commands in an event
  * trigger. The function manager info is initialized on extension load. */
-static FmgrInfo ddl_commands_fmgrinfo;
-static FmgrInfo dropped_objects_fmgrinfo;
 
 /*
  * Get a list of executed DDL commands in an event trigger.
