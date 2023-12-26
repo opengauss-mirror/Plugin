@@ -28,9 +28,7 @@ TimescaleDB能够以插件化的形式，很方便的处理时序数据，随着
 - 不支持非编译安装版本；
 - 目前TimescaleDB安装之后，不支持删除TimescaleDB插件；
 - TimescaleDB插件依赖于public schema，因此不支持使用drop schema的方式删除public schema；
-- TimescaleDB创建的超表需要使用drop table CASCADE;进行删除,会同时删除其附加表；
 - 在不同数据库创建插件需要重启数据库；
-
 
 # **2.** TimescaleDB安装方法
 
@@ -115,29 +113,19 @@ SELECT time_bucket('15 minutes', time) AS fifteen_min,
 
 
 # **3.** TimescaleDB可用接口
-| 序号 | 接口名称                                                     | 说明                                                         |
-| ---- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| 1    | chunk_relation_size                                          | 获取超表块的关系大小                                         |
-| 2    | chunk_relation_size_pretty                                   | 获取超表块的关系大小                                         |
-| 3    | drop_chunks                                                  | 删除时间范围完全在指定时间之前（或之后）的数据区块，跨所有超级表或针对特定超级表运行。 |
-| 4    | hypertable_relation_size                                     | 获取超级表的关系大小                                         |
-| 5    | hypertable_relation_size_pretty                              | 获取超级表的关系大小                                         |
-| 6    | indexes_relation_size                                        | 获取超表上的索引大小                                         |
-| 7    | indexes_relation_size_pretty                                 | 获取超表上的索引大小                                         |
-| 8    | set_number_partitions                                        | 设置超表上空间维度的分区（片）数                             |
-| 9    | show_chunks                                                  | 获取与超表关联的区块列表                                     |
-| 10   | add_dimension()空间分区                                      | 向超表添加额外的分区维度。选择作为维度的列可以使用间隔分区或哈希分区。 |
-| 11   | attach_tablespace（）将表空间附加到超表                      | 将表空间附加到超表并使用它来存储块                           |
-| 12   | create_hypertable（）创建超表                                | 创建超表                                                     |
-| 13   | detach_tablespace（）从一个或多个超级表中分离表空间。        | 从一个或多个超级表中分离表空间                               |
-| 14   | detach_tablespaces（）从超表中分离所有表空间。               | 从超表中分离所有表空间                                       |
-| 15   | set_chunk_time_interval（）设置超表上的chunk_time_interval。 | 设置超表上的区块时间间隔，默认单位为天                                     |
-| 16   | set_integer_now_func（）设置整数超表当前时间函数             | 只适用于整数类超表，它设置一个函数，该函数以时间列的单位返回now（）值（当前时间） |
-| 17   | time_bucket()函数                                            | time_bucket用于分析任意时间间隔的数据                        |
-| 18   | timescaledb_information.hypertable获取超表信息               | 获取超表的相关信息或者查看一个表是否为超表                   |
-| 19   | timescaledb_information.license获取许可信息                  | 获取有关当前许可证的信息                                     |
-| 20   | show_tablespaces（）将显示附加到超表的表空间。               | 将显示附加到超表的表空间。                                   |
-
+| 序号 |                           接口名称                           |                                        说明                                       |
+|:----:|:------------------------------------------------------------:|:---------------------------------------------------------------------------------:|
+| 1    | add_dimension()空间分区                                      | 向超表添加额外的分区维度。选择作为维度的列可以使用间隔分区或哈希分区。            |
+| 2    | attach_tablespace（）将表空间附加到超表                      | 将表空间附加到超表并使用它来存储块                                                |
+| 3    | create_hypertable（）创建超表                                | 创建超表                                                                          |
+| 4    | detach_tablespace（）从一个或多个超级表中分离表空间。        | 从一个或多个超级表中分离表空间                                                    |
+| 5    | detach_tablespaces（）从超表中分离所有表空间。               | 从超表中分离所有表空间                                                            |
+| 6   | set_chunk_time_interval（）设置超表上的chunk_time_interval。 | 设置超表上的区块时间间隔，默认单位为天                                            |
+| 7   | set_integer_now_func（）设置整数超表当前时间函数             | 只适用于整数类超表，它设置一个函数，该函数以时间列的单位返回now（）值（当前时间） |
+| 8   | time_bucket()函数                                            | time_bucket用于分析任意时间间隔的数据                                             |
+| 9   | timescaledb_information.hypertable获取超表信息               | 获取超表的相关信息或者查看一个表是否为超表                                        |
+| 10   | timescaledb_information.license获取许可信息                  | 获取有关当前许可证的信息                                                          |
+| 11   | show_tablespaces（）将显示附加到超表的表空间。               | 将显示附加到超表的表空间。                                                        |
 
 # **4.** TimescaleDB不可用接口
 
