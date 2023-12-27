@@ -897,7 +897,7 @@ Datum rawin(PG_FUNCTION_ARGS)
 
         return result;
     } else {
-        return byteain(fcinfo);
+        return dolphin_binaryin(fcinfo);
     }
 }
 
@@ -10666,12 +10666,6 @@ static Datum hex_dolphin_binaryout(PG_FUNCTION_ARGS)
 
 Datum dolphin_binaryout(PG_FUNCTION_ARGS)
 {
-    if (strcmp(u_sess->attr.attr_common.application_name, "gs_dump") == 0 ||
-        strcmp(u_sess->attr.attr_common.application_name, "gs_dumpall") == 0 ||
-        GetSessionContext()->isDoCopy) {
-        return hex_dolphin_binaryout(fcinfo);
-    } else {
-        return normal_dolphin_binaryout(fcinfo);
-    }
+    return byteaout(fcinfo);
 }
 #endif

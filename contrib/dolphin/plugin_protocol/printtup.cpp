@@ -197,10 +197,19 @@ void printtup(TupleTableSlot *slot, DestReceiver *self)
          */
         attr = thisState->typisvarlena ? PointerGetDatum(PG_DETOAST_DATUM(origattr)) : origattr;
 
-        outputstr = OutputFunctionCall(&thisState->finfo, attr);
-        dq_append_string_lenenc(buf, outputstr);
+        Oid typeOid = slot->tts_tupleDescriptor->attrs[i].atttypid;
+        if (typeOid == BINARYOID || typeOid == VARBINARYOID ||
+            typeOid == TINYBLOBOID || typeOid == MEDIUMBLOBOID ||
+            typeOid == LONGBLOBOID || typeOid == BLOBOID ||
+            typeOid == RAWOID || typeOid == BYTEAOID) {
+            bytea* barg = DatumGetByteaPP(attr);
+            dq_append_string_lenenc(buf, VARDATA_ANY(barg), VARSIZE_ANY_EXHDR(barg));
+        } else {
+            outputstr = OutputFunctionCall(&thisState->finfo, attr);
+            dq_append_string_lenenc(buf, outputstr);
 
-        pfree(outputstr);
+            pfree(outputstr);
+        }
 
         /* Clean up detoasted copy, if any */
         if (DatumGetPointer(attr) != DatumGetPointer(origattr)) {
