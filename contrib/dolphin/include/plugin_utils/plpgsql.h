@@ -1854,7 +1854,8 @@ extern THR_LOCAL PLpgSQL_execstate* plpgsql_estate;
  */
 #define BULK_COLLECT_MAX ((Size)0x3FFFFFF)    /* maximum number of rows can be bulk collected (by 3FFFFFFF/16) */
 
-extern Datum plpgsql_exec_function(PLpgSQL_function* func, FunctionCallInfo fcinfo, bool dynexec_anonymous_block);
+extern Datum plpgsql_exec_function(PLpgSQL_function* func, FunctionCallInfo fcinfo,
+                                   bool dynexec_anonymous_block, int* coverage = NULL);
 extern Datum plpgsql_exec_autonm_function(PLpgSQL_function* func, FunctionCallInfo fcinfo, char* source_text);
 extern HeapTuple plpgsql_exec_trigger(PLpgSQL_function* func, TriggerData* trigdata);
 extern void plpgsql_xact_cb(XactEvent event, void* arg);
