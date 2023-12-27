@@ -539,9 +539,9 @@ select `binary`, `json`,
        `binary` < `json` as `binary<json`, `binary` <= `json` as `binary<=json`,
        `binary` != `json` as `binary!=json`, `binary` <> `json` as `binary<>json`,
        `binary` = `json` as `binary=json`, `binary` <=> `json` as `binary<=>json` from test_json_table;
-                                                                                               binary                                                                                                |       json       | binary>json | binary>=json | binary<json | binary<=json | binary!=json | binary<>json | binary=json | binary<=>json 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+-------------+--------------+-------------+--------------+--------------+--------------+-------------+---------------
- 1.23a\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0 | {"a": 1, "b": 2} | f           | f            | t           | t            | t            | t            | f           | f
+                                                                                                   binary                                                                                                   |       json       | binary>json | binary>=json | binary<json | binary<=json | binary!=json | binary<>json | binary=json | binary<=>json 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+-------------+--------------+-------------+--------------+--------------+--------------+-------------+---------------
+ \x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 | {"a": 1, "b": 2} | f           | f            | t           | t            | t            | t            | f           | f
 (1 row)
 
 select `binary`, `json`,
@@ -549,9 +549,9 @@ select `binary`, `json`,
        `json` < `binary` as `json<binary`, `json` <= `binary` as `json<=binary`,
        `json` != `binary` as `json!=binary`, `json` <> `binary` as `json<>binary`,
        `json` = `binary` as `json=binary`, `json` <=> `binary` as `json<=>binary` from test_json_table;
-                                                                                               binary                                                                                                |       json       | json>binary | json>=binary | json<binary | json<=binary | json!=binary | json<>binary | json=binary | json<=>binary 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+-------------+--------------+-------------+--------------+--------------+--------------+-------------+---------------
- 1.23a\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0 | {"a": 1, "b": 2} | t           | t            | f           | f            | t            | t            | f           | f
+                                                                                                   binary                                                                                                   |       json       | json>binary | json>=binary | json<binary | json<=binary | json!=binary | json<>binary | json=binary | json<=>binary 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+-------------+--------------+-------------+--------------+--------------+--------------+-------------+---------------
+ \x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 | {"a": 1, "b": 2} | t           | t            | f           | f            | t            | t            | f           | f
 (1 row)
 
 select `varbinary`, `json`,
@@ -559,9 +559,9 @@ select `varbinary`, `json`,
        `varbinary` < `json` as `varbinary<json`, `varbinary` <= `json` as `varbinary<=json`,
        `varbinary` != `json` as `varbinary!=json`, `varbinary` <> `json` as `varbinary<>json`,
        `varbinary` = `json` as `varbinary=json`, `varbinary` <=> `json` as `varbinary<=>json` from test_json_table;
- varbinary |       json       | varbinary>json | varbinary>=json | varbinary<json | varbinary<=json | varbinary!=json | varbinary<>json | varbinary=json | varbinary<=>json 
------------+------------------+----------------+-----------------+----------------+-----------------+-----------------+-----------------+----------------+------------------
- 1.23a     | {"a": 1, "b": 2} | f              | f               | t              | t               | t               | t               | f              | f
+  varbinary   |       json       | varbinary>json | varbinary>=json | varbinary<json | varbinary<=json | varbinary!=json | varbinary<>json | varbinary=json | varbinary<=>json 
+--------------+------------------+----------------+-----------------+----------------+-----------------+-----------------+-----------------+----------------+------------------
+ \x312e323361 | {"a": 1, "b": 2} | f              | f               | t              | t               | t               | t               | f              | f
 (1 row)
 
 select `varbinary`, `json`,
@@ -569,9 +569,9 @@ select `varbinary`, `json`,
        `json` < `varbinary` as `json<varbinary`, `json` <= `varbinary` as `json<=varbinary`,
        `json` != `varbinary` as `json!=varbinary`, `json` <> `varbinary` as `json<>varbinary`,
        `json` = `varbinary` as `json=varbinary`, `json` <=> `varbinary` as `json<=>varbinary` from test_json_table;
- varbinary |       json       | json>varbinary | json>=varbinary | json<varbinary | json<=varbinary | json!=varbinary | json<>varbinary | json=varbinary | json<=>varbinary 
------------+------------------+----------------+-----------------+----------------+-----------------+-----------------+-----------------+----------------+------------------
- 1.23a     | {"a": 1, "b": 2} | t              | t               | f              | f               | t               | t               | f              | f
+  varbinary   |       json       | json>varbinary | json>=varbinary | json<varbinary | json<=varbinary | json!=varbinary | json<>varbinary | json=varbinary | json<=>varbinary 
+--------------+------------------+----------------+-----------------+----------------+-----------------+-----------------+-----------------+----------------+------------------
+ \x312e323361 | {"a": 1, "b": 2} | t              | t               | f              | f               | t               | t               | f              | f
 (1 row)
 
 select `tinyblob`, `json`,
