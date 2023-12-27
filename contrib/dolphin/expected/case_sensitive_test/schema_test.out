@@ -28,6 +28,7 @@ WARNING:  TEST is not a valid encoding name. default value set
  Test_Schema_User     | Test_Schema_User
  Test_Schema_User_bak | Test_Schema_User_bak
 --? blockchain           | .*
+--? coverage             | .*
 --? cstore               | .*
 --? db4ai                | .*
 --? dbe_perf             | .*
@@ -45,7 +46,7 @@ WARNING:  TEST is not a valid encoding name. default value set
 --? test_2               | .*
 --? test_3               | .*
 --? test_temp            | .*
-(24 rows)
+(25 rows)
 
 ALTER SCHEMA test_1 WITHOUT BLOCKCHAIN;
 ALTER SCHEMA Test_1 WITHOUT BLOCKCHAIN;
@@ -72,6 +73,7 @@ ALTER SCHEMA Test_1_BAK OWNER TO Test_Schema_User;
  Test_Schema_User     | Test_Schema_User
  Test_Schema_User_bak | Test_Schema_User_bak
 --? blockchain           | .*
+--? coverage             | .*
 --? cstore               | .*
 --? db4ai                | .*
 --? dbe_perf             | .*
@@ -89,7 +91,7 @@ ALTER SCHEMA Test_1_BAK OWNER TO Test_Schema_User;
 --? test_2               | .*
 --? test_3               | .*
 --? test_temp            | .*
-(24 rows)
+(25 rows)
 
 SET SEARCH_PATH TO test_1, Test1;
 SHOW SEARCH_PATH;
@@ -124,6 +126,7 @@ DROP SCHEMA test_1_bak, Test_1_BAK;
  Test_Schema_User     | Test_Schema_User
  Test_Schema_User_bak | Test_Schema_User_bak
 --? blockchain           | .*
+--? coverage             | .*
 --? cstore               | .*
 --? db4ai                | .*
 --? dbe_perf             | .*
@@ -140,7 +143,7 @@ DROP SCHEMA test_1_bak, Test_1_BAK;
 --? test_2               | .*
 --? test_3               | .*
 --? test_temp            | .*
-(22 rows)
+(23 rows)
 
 -- dolphin_any_name
 DROP SCHEMA IF EXISTS Test_Schema_User CASCADE;
@@ -155,6 +158,7 @@ CREATE SCHEMA AUTHORIZATION Test_Schema_User;
  Test_Schema_User     | Test_Schema_User
  Test_Schema_User_bak | Test_Schema_User_bak
 --? blockchain           | .*
+--? coverage             | .*
 --? cstore               | .*
 --? db4ai                | .*
 --? dbe_perf             | .*
@@ -171,7 +175,7 @@ CREATE SCHEMA AUTHORIZATION Test_Schema_User;
 --? test_2               | .*
 --? test_3               | .*
 --? test_temp            | .*
-(22 rows)
+(23 rows)
 
 -- dolphin_qualified_name
 CREATE TABLE test_1_table (a int);

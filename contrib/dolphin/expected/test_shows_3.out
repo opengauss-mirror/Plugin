@@ -5,6 +5,7 @@ show databases;
 --------------------
  information_schema
  blockchain
+ coverage
  cstore
  db4ai
  db_show_3
@@ -21,7 +22,7 @@ show databases;
  sc
  snapshot
  sqladvisor
-(18 rows)
+(19 rows)
 
 create schema aa1;
 create schema aa2;
