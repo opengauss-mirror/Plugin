@@ -240,15 +240,9 @@ SELECT HEX(COMPRESS(1E+1000));
 (1 row)
 
 SELECT HEX(COMPRESS(1E+1001)); --ERROR
-WARNING:  invalid input syntax for type numeric: "1E+1001"
+ERROR:  invalid input syntax for type numeric: "1E+1001"
 LINE 1: SELECT HEX(COMPRESS(1E+1001));
                             ^
-CONTEXT:  referenced column: hex
-                    hex                     
---------------------------------------------
- ea030000789c33341805a360140c7f000028b4bbe2
-(1 row)
-
 SELECT HEX(COMPRESS(RPAD('a', 1024, 'a')));
                     hex                     
 --------------------------------------------
@@ -573,17 +567,9 @@ CONTEXT:  referenced column: uncompress
 (1 row)
 
 SELECT UNCOMPRESS(1E+1001); --ERROR
-WARNING:  invalid input syntax for type numeric: "1E+1001"
+ERROR:  invalid input syntax for type numeric: "1E+1001"
 LINE 1: SELECT UNCOMPRESS(1E+1001);
                           ^
-CONTEXT:  referenced column: uncompress
-WARNING:  ZLIB: Input data corrupted
-CONTEXT:  referenced column: uncompress
- uncompress 
-------------
- 
-(1 row)
-
 SELECT UNCOMPRESS(COMPRESS(RPAD('a', 1024, 'a')));
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             uncompress                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -899,15 +885,9 @@ SELECT UNCOMPRESSED_LENGTH(COMPRESS(RPAD('a', 1000000, 'a')));
 (1 row)
 
 SELECT UNCOMPRESSED_LENGTH(1E+1001); --ERROR
-WARNING:  invalid input syntax for type numeric: "1E+1001"
+ERROR:  invalid input syntax for type numeric: "1E+1001"
 LINE 1: SELECT UNCOMPRESSED_LENGTH(1E+1001);
                                    ^
-CONTEXT:  referenced column: uncompressed_length
- uncompressed_length 
----------------------
- 808464433
-(1 row)
-
 SELECT UNCOMPRESSED_LENGTH(COMPRESS(RPAD('a', 1024, 'a')));
  uncompressed_length 
 ---------------------

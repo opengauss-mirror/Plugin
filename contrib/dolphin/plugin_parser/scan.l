@@ -134,6 +134,7 @@ static void dealSahrpComment(core_yyscan_t yyscanner);
 extern int	core_yyget_column(yyscan_t yyscanner);
 extern void core_yyset_column(int column_no, yyscan_t yyscanner);
 #ifdef DOLPHIN
+static void interceptReal(char* str, core_yyscan_t yyscanner);
 static char* CopyIdentifier(const char* ident, int len, bool warn);
 #endif
 %}
@@ -1246,6 +1247,9 @@ other			.
 {real}			{
 					SET_YYLLOC();
 					yylval->str = pstrdup(yytext);
+#ifdef DOLPHIN
+					interceptReal(yylval->str, yyscanner);
+#endif
 					yyextra->is_hint_str = false;
 					return FCONST;
 				}
@@ -2304,6 +2308,26 @@ dealSahrpComment(core_yyscan_t yyscanner)
                 }
 
         }
+}
+
+static void interceptReal(char* str, core_yyscan_t yyscanner)
+{
+	char* tmp;
+	long exponent;
+	char* endptr = NULL;
+
+	tmp = str;
+	while (*tmp != 'e' && *tmp != 'E') {
+		tmp++;
+	}
+
+	tmp++;
+	exponent = strtol(tmp, &endptr, 10);
+	if (exponent > NUMERIC_MAX_PRECISION || exponent < -NUMERIC_MAX_PRECISION)
+		ereport(ERROR,
+			(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+				errmsg("invalid input syntax for type numeric: \"%s\"", str),
+					lexer_errposition()));
 }
 
 static char* CopyIdentifier(const char* ident, int len, bool warn)
