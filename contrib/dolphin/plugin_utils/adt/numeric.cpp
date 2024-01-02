@@ -5615,8 +5615,12 @@ static void apply_typmod(NumericVar* var, int32 typmod)
                                 maxdigits ? maxdigits : 1)));
 #ifdef DOLPHIN
                     errno_t rc;
-                    size_t maxlen = precision + 2;
+                    size_t maxlen = precision + 3;
                     char str[maxlen] = {};
+                    if (var->sign == NUMERIC_NEG) {
+                        rc = strcat_s(str, maxlen, "-");
+                        securec_check(rc, "\0", "\0");
+                    }
                     while (maxdigits-- > 0) {
                         rc = strcat_s(str, maxlen, "9");
                         securec_check(rc, "\0", "\0");
