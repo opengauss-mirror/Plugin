@@ -136,6 +136,24 @@ CONTEXT:  referenced column: numeric
  99999999.99
 (1 row)
 
+SELECT CONVERT('-1111111111111111111111111111111111111111111', decimal);
+WARNING:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: numeric
+   numeric   
+-------------
+ -9999999999
+(1 row)
+
+SELECT CONVERT('-1111111111111111111111111111111111111111111', decimal(10, 2));
+WARNING:  numeric field overflow
+DETAIL:  A field with precision 10, scale 2 must round to an absolute value less than 10^8.
+CONTEXT:  referenced column: numeric
+   numeric    
+--------------
+ -99999999.99
+(1 row)
+
 SELECT CONVERT(b'11111111111111111111111111111111111111111111111111111111111111111111111111111111111', decimal);
 WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: bittouint8
