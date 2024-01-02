@@ -2181,7 +2181,6 @@ void ReplaceBCmptFuncName(List* names, char* objname, char* defaultname, char* r
         } else {
             /* should not happen */
         }
-        pfree(objname);
     }
 }
 #endif
