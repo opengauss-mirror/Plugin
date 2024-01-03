@@ -62,13 +62,13 @@ SELECT _gbk'ABCD' = _GbK'ABCD';
 SELECT _binary E'', _binary E'' IS NULL;
  ?column? | ?column? 
 ----------+----------
-          | f
+ \x       | f
 (1 row)
 
 SELECT _binary E'\\xe9ab98e696af';
- ?column? 
-----------
- 高斯
+    ?column?    
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT _utf8mb4 E'\\xe9ab98e696af';
@@ -90,13 +90,13 @@ LINE 1: SELECT _utf8mb4 X'\\xe9ab98e696af';
 SELECT _binary X'', _binary X'' IS NULL;
  ?column? | ?column? 
 ----------+----------
-          | f
+ \x       | f
 (1 row)
 
 SELECT _binary X'E9AB98E696AF';
- ?column? 
-----------
- 高斯
+    ?column?    
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT _utf8mb4 X'E9AB98E696AF';
@@ -114,19 +114,19 @@ SELECT _gbk X'E9AB98E696AF';
 SELECT _binary B'', _binary B'' IS NULL;
  ?column? | ?column? 
 ----------+----------
-          | f
+ \x       | f
 (1 row)
 
 SELECT _binary B'0';
  ?column? 
 ----------
- \0
+ \x00
 (1 row)
 
 SELECT _binary B'111010011010101110011000111001101001011010101111';
- ?column? 
-----------
- 高斯
+    ?column?    
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT _utf8mb4 B'111010011010101110011000111001101001011010101111';
@@ -250,9 +250,9 @@ ERROR:  COLLATION "gbk_chinese_ci" is not valid for binary type
 LINE 1: SELECT _binary'高斯' COLLATE gbk_chinese_ci;
                              ^
 SELECT _binary'高斯' COLLATE 'binary';
- ?column? 
-----------
- 高斯
+    ?column?    
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT _binary'高斯' COLLATE "zh_CN.utf8"; -- ERROR
@@ -340,9 +340,9 @@ LINE 1: SELECT CAST('高斯' AS binary) COLLATE "utf8mb4_unicode_ci";
                                       ^
 CONTEXT:  referenced column: binary
 SELECT CAST('高斯' AS binary) COLLATE "binary";
- binary 
---------
- 高斯
+     binary     
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT CAST('E9AB98E696AF' AS blob) COLLATE "utf8mb4_unicode_ci"; -- ERROR
@@ -437,33 +437,33 @@ WARNING:  invalid input syntax for type bigint: "b"
 DROP TABLE t_collate_expr;
 -- 中文 const charset
 SELECT CAST('高斯' AS binary);
- binary 
---------
- 高斯
+     binary     
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT CAST(_binary'高斯' AS binary);
- binary 
---------
- 高斯
+     binary     
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT CAST(_utf8mb4'高斯' AS binary);
- binary 
---------
- 高斯
+     binary     
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT CAST(_gbk'高斯' AS binary);
- binary 
---------
- 楂樻柉
+     binary     
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT _binary'高斯';
- ?column? 
-----------
- 高斯
+    ?column?    
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT _utf8mb4'高斯';
@@ -1054,9 +1054,9 @@ LINE 1: ...斯DB' COLLATE gb18030_bin) result, pg_collation_for(result);
                                                                        ^
 -- -- -- diff charset & implicit collation
 SELECT CONCAT(_utf8mb4'高斯DB' , _binary'高斯DB') result, pg_collation_for(result);
-    result    |  pg_collation_for  
---------------+--------------------
- 高斯DB高斯DB | utf8mb4_general_ci
+          result          |  pg_collation_for  
+--------------------------+--------------------
+ 高斯DB\xe9ab98e696af4442 | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' , _gbk'高斯DB') result, pg_collation_for(result);
@@ -1078,9 +1078,9 @@ SELECT CONCAT(_gbk'高斯DB' , '高斯DB') result, pg_collation_for(result);
 (1 row)
 
 SELECT CONCAT(_gbk'高斯DB' , _binary'高斯DB') result, pg_collation_for(result);
-    result    |  pg_collation_for  
---------------+--------------------
- 高斯DB高斯DB | utf8mb4_general_ci
+          result          |  pg_collation_for  
+--------------------------+--------------------
+ 高斯DB\xe9ab98e696af4442 | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT(_gbk'高斯DB' , _gb18030'高斯DB') result, pg_collation_for(result); -- ERROR
@@ -1094,21 +1094,21 @@ SELECT CONCAT(_gb18030'高斯DB' , '高斯DB') result, pg_collation_for(result);
 (1 row)
 
 SELECT CONCAT(_gb18030'高斯DB' , _binary'高斯DB') result, pg_collation_for(result);
-    result    |  pg_collation_for  
---------------+--------------------
- 高斯DB高斯DB | utf8mb4_general_ci
+          result          |  pg_collation_for  
+--------------------------+--------------------
+ 高斯DB\xe9ab98e696af4442 | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT( _binary'高斯DB', _utf8mb4'高斯DB') result, pg_collation_for(result);
-    result    |  pg_collation_for  
---------------+--------------------
- 高斯DB高斯DB | utf8mb4_general_ci
+          result          |  pg_collation_for  
+--------------------------+--------------------
+ \xe9ab98e696af4442高斯DB | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT( _binary'高斯DB', '高斯DB') result, pg_collation_for(result);
-    result    |  pg_collation_for  
---------------+--------------------
- 高斯DB高斯DB | utf8mb4_general_ci
+          result          |  pg_collation_for  
+--------------------------+--------------------
+ \xe9ab98e696af4442高斯DB | utf8mb4_general_ci
 (1 row)
 
 -- -- -- explicit & implicit
@@ -1179,9 +1179,9 @@ SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , '高斯DB') result
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _binary'高斯DB') result, pg_collation_for(result);
-    result    |  pg_collation_for  
---------------+--------------------
- 高斯DB高斯DB | utf8mb4_unicode_ci
+          result          |  pg_collation_for  
+--------------------------+--------------------
+ 高斯DB\xe9ab98e696af4442 | utf8mb4_unicode_ci
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gbk'高斯DB') result, pg_collation_for(result);
@@ -1203,9 +1203,9 @@ SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , '高斯DB') result, pg_co
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _binary'高斯DB') result, pg_collation_for(result);
-    result    | pg_collation_for 
---------------+------------------
- 高斯DB高斯DB | utf8mb4_bin
+          result          | pg_collation_for 
+--------------------------+------------------
+ 高斯DB\xe9ab98e696af4442 | utf8mb4_bin
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gbk'高斯DB') result, pg_collation_for(result);
@@ -1257,28 +1257,28 @@ SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_bin , _gb18030'高斯DB') result, pg_co
 (1 row)
 
 SELECT CONCAT(_binary'高斯DB', _utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci) result, pg_collation_for(result);
-    result    |  pg_collation_for  
---------------+--------------------
- 高斯DB高斯DB | utf8mb4_unicode_ci
+          result          |  pg_collation_for  
+--------------------------+--------------------
+ \xe9ab98e696af4442高斯DB | utf8mb4_unicode_ci
 (1 row)
 
 SELECT CONCAT(_binary'高斯DB' COLLATE 'binary', _gbk'高斯DB') result, pg_collation_for(result);
-    result    |  pg_collation_for  
---------------+--------------------
- 高斯DB高斯DB | utf8mb4_general_ci
+          result          |  pg_collation_for  
+--------------------------+--------------------
+ \xe9ab98e696af4442高斯DB | utf8mb4_general_ci
 (1 row)
 
 -- -- -- concat 3 args
 SELECT CONCAT(_binary'高斯DB', _gb18030'高斯DB', _gbk'高斯DB') result, pg_collation_for(result);
-       result       |  pg_collation_for  
---------------------+--------------------
- 高斯DB高斯DB高斯DB | utf8mb4_general_ci
+             result             |  pg_collation_for  
+--------------------------------+--------------------
+ \xe9ab98e696af4442高斯DB高斯DB | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT(_binary'高斯DB', _gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk_chinese_ci) result, pg_collation_for(result);
-          result          | pg_collation_for 
---------------------------+------------------
- 楂樻柉DB楂樻柉DB楂樻柉DB | gbk_chinese_ci
+               result               | pg_collation_for 
+------------------------------------+------------------
+ \xe9ab98e696af4442楂樻柉DB楂樻柉DB | gbk_chinese_ci
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _gbk'高斯DB') result, pg_collation_for(result);
@@ -1294,15 +1294,15 @@ SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _binary'高斯DB') result, pg_collation_for(result);
-       result       |  pg_collation_for  
---------------------+--------------------
- 高斯DB高斯DB高斯DB | utf8mb4_general_ci
+             result             |  pg_collation_for  
+--------------------------------+--------------------
+ 高斯DB高斯DB\xe9ab98e696af4442 | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB' COLLATE gb18030_chinese_ci, _binary'高斯DB') result, pg_collation_for(result);
-         result         |  pg_collation_for  
-------------------------+--------------------
- 高斯DB楂樻柉DB楂樻柉DB | gb18030_chinese_ci
+              result              |  pg_collation_for  
+----------------------------------+--------------------
+ 高斯DB楂樻柉DB\xe9ab98e696af4442 | gb18030_chinese_ci
 (1 row)
 
 SELECT CONCAT(_gb18030'高斯DB', _gbk'高斯DB', _utf8mb4'高斯DB') result, pg_collation_for(result); -- ERROR
@@ -1320,9 +1320,9 @@ SELECT CONCAT(_gb18030'高斯DB' COLLATE gb18030_chinese_ci, _gbk'高斯DB', _ut
 (1 row)
 
 SELECT CONCAT(_gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk_chinese_ci, _binary'高斯DB') result, pg_collation_for(result);
-          result          | pg_collation_for 
---------------------------+------------------
- 楂樻柉DB楂樻柉DB楂樻柉DB | gbk_chinese_ci
+               result               | pg_collation_for 
+------------------------------------+------------------
+ 楂樻柉DB楂樻柉DB\xe9ab98e696af4442 | gbk_chinese_ci
 (1 row)
 
 -- -- -- const compare CONCAT
@@ -1709,9 +1709,9 @@ SELECT futf8_bin,
        fgb18030_bin,
        fgb18030_chi,
        fbin FROM t_diff_charset_columns;
- futf8_bin | futf8_uni | fgbk_bin | fgbk_chi | fgb18030_bin | fgb18030_chi |  fbin  
------------+-----------+----------+----------+--------------+--------------+--------
- 高斯DB    | 高斯db    | 高斯DB   | 高斯db   | 高斯DB       | 高斯db       | 高斯DB
+ futf8_bin | futf8_uni | fgbk_bin | fgbk_chi | fgb18030_bin | fgb18030_chi |        fbin        
+-----------+-----------+----------+----------+--------------+--------------+--------------------
+ 高斯DB    | 高斯db    | 高斯DB   | 高斯db   | 高斯DB       | 高斯db       | \xe9ab98e696af4442
 (1 row)
 
 SELECT char_length(futf8_bin),
@@ -1905,9 +1905,9 @@ LINE 1: SELECT fbin COLLATE gbk_chinese_ci FROM t_diff_charset_colum...
                     ^
 CONTEXT:  referenced column: fbin
 SELECT fbin COLLATE 'binary' FROM t_diff_charset_columns;
-  fbin  
---------
- 高斯DB
+        fbin        
+--------------------
+ \xe9ab98e696af4442
 (1 row)
 
 SELECT fbin COLLATE "zh_CN.utf8" FROM t_diff_charset_columns; -- ERROR
@@ -2197,9 +2197,9 @@ LINE 1: ...esult, pg_collation_for(result) FROM t_diff_charset_columns;
                                                                        ^
 -- -- -- with binary & implicit collation
 SELECT CONCAT(futf8_bin, fbin) result, pg_collation_for(result) FROM t_diff_charset_columns;
-    result    |  pg_collation_for  
---------------+--------------------
- 高斯DB高斯DB | utf8mb4_general_ci
+          result          |  pg_collation_for  
+--------------------------+--------------------
+ 高斯DB\xe9ab98e696af4442 | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT(futf8_bin, fblob) result, pg_collation_for(result) FROM t_diff_charset_columns;
@@ -2209,9 +2209,9 @@ SELECT CONCAT(futf8_bin, fblob) result, pg_collation_for(result) FROM t_diff_cha
 (1 row)
 
 SELECT CONCAT(futf8_uni, fbin) result, pg_collation_for(result) FROM t_diff_charset_columns;
-    result    |  pg_collation_for  
---------------+--------------------
- 高斯db高斯DB | utf8mb4_general_ci
+          result          |  pg_collation_for  
+--------------------------+--------------------
+ 高斯db\xe9ab98e696af4442 | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT(futf8_uni, fblob) result, pg_collation_for(result) FROM t_diff_charset_columns;
@@ -2221,9 +2221,9 @@ SELECT CONCAT(futf8_uni, fblob) result, pg_collation_for(result) FROM t_diff_cha
 (1 row)
 
 SELECT CONCAT(fgbk_bin, fbin) result, pg_collation_for(result) FROM t_diff_charset_columns;
-  result   |  pg_collation_for  
------------+--------------------
- ˹DB高斯DB | utf8mb4_general_ci
+        result         |  pg_collation_for  
+-----------------------+--------------------
+ ˹DB\xe9ab98e696af4442 | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT(fgbk_bin, fblob) result, pg_collation_for(result) FROM t_diff_charset_columns;
@@ -2233,9 +2233,9 @@ SELECT CONCAT(fgbk_bin, fblob) result, pg_collation_for(result) FROM t_diff_char
 (1 row)
 
 SELECT CONCAT(fgb18030_bin, fbin) result, pg_collation_for(result) FROM t_diff_charset_columns;
-  result   |  pg_collation_for  
------------+--------------------
- ˹DB高斯DB | utf8mb4_general_ci
+        result         |  pg_collation_for  
+-----------------------+--------------------
+ ˹DB\xe9ab98e696af4442 | utf8mb4_general_ci
 (1 row)
 
 SELECT CONCAT(fgb18030_bin, fblob) result, pg_collation_for(result) FROM t_diff_charset_columns;
@@ -2245,9 +2245,9 @@ SELECT CONCAT(fgb18030_bin, fblob) result, pg_collation_for(result) FROM t_diff_
 (1 row)
 
 SELECT CONCAT(fbin, fblob) result, pg_collation_for(result) FROM t_diff_charset_columns;
-       result       |  pg_collation_for  
---------------------+--------------------
- 高斯DBE9AB98E696AF | utf8mb4_general_ci
+             result             |  pg_collation_for  
+--------------------------------+--------------------
+ \xe9ab98e696af4442E9AB98E696AF | utf8mb4_general_ci
 (1 row)
 
 -- -- concat column and @uservar
@@ -3164,9 +3164,9 @@ ERROR:  COLLATION "binary" is not valid for CHARACTER SET "UTF8"
 LINE 1: SELECT CONCAT(fbin, futf8_uni) COLLATE "binary" result, pg_c...
                                        ^
 SELECT CONCAT(fbin, futf8_uni) COLLATE utf8mb4_general_ci result, pg_collation_for(result) FROM t_diff_charset_columns; -- return datatype still text
-    result    |  pg_collation_for  
---------------+--------------------
- 高斯DB高斯db | utf8mb4_general_ci
+          result          |  pg_collation_for  
+--------------------------+--------------------
+ \xe9ab98e696af4442高斯db | utf8mb4_general_ci
 (1 row)
 
 -- -- test explicit collate on blob result
@@ -3735,9 +3735,9 @@ ERROR:  COLLATION "binary" is not valid for CHARACTER SET "UTF8"
 LINE 1: SELECT CONCAT(_utf8mb4'高斯DB', _binary'高斯DB') COLLATE "bi...
                                                          ^
 SELECT CONCAT(_utf8mb4'高斯DB', _binary'高斯DB') COLLATE utf8mb4_unicode_ci result, pg_collation_for(result);
-    result    |  pg_collation_for  
---------------+--------------------
- 高斯DB高斯DB | utf8mb4_unicode_ci
+          result          |  pg_collation_for  
+--------------------------+--------------------
+ 高斯DB\xe9ab98e696af4442 | utf8mb4_unicode_ci
 (1 row)
 
 SELECT CONCAT(futf8_uni, fbin) COLLATE "binary" result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
@@ -3881,43 +3881,43 @@ SELECT @id_res,@a_res;
 
 -- -- -- -- test condition
 SELECT * FROM t_charset_utf8mb4 WHERE a='楂樻柉' ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  2 | 楂樻柉 | 楂樻柉
+ id |   a    |          b           
+----+--------+----------------------
+  2 | 楂樻柉 | \xe6a582e6a8bbe69f89
 (1 row)
 
 SELECT * FROM t_charset_utf8mb4 WHERE a=_utf8mb4'高斯' ORDER BY id;
- id |  a   |  b   
-----+------+------
-  1 | 高斯 | 高斯
+ id |  a   |       b        
+----+------+----------------
+  1 | 高斯 | \xe9ab98e696af
 (1 row)
 
 SELECT * FROM t_charset_utf8mb4 WHERE a=_utf8mb4'高斯db' COLLATE utf8mb4_unicode_ci ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  3 | 高斯DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  3 | 高斯DB | \xe9ab98e696af4442
 (1 row)
 
 SELECT * FROM t_charset_utf8mb4 WHERE a=_binary'高斯DB' ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  3 | 高斯DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  3 | 高斯DB | \xe9ab98e696af4442
 (1 row)
 
 SELECT * FROM t_charset_utf8mb4 WHERE a=_gbk'高斯DB' ORDER BY id;
- id |    a     |   b    
-----+----------+--------
-  4 | 楂樻柉DB | 高斯DB
-  5 | 楂樻柉DB | 高斯DB
-  6 | 楂樻柉DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  4 | 楂樻柉DB | \xe9ab98e696af4442
+  5 | 楂樻柉DB | \xe9ab98e696af4442
+  6 | 楂樻柉DB | \xe9ab98e696af4442
 (3 rows)
 
 SELECT * FROM t_charset_utf8mb4 WHERE a=_gbk'高斯db' COLLATE gbk_chinese_ci ORDER BY id;
- id |    a     |   b    
-----+----------+--------
-  4 | 楂樻柉DB | 高斯DB
-  5 | 楂樻柉DB | 高斯DB
-  6 | 楂樻柉DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  4 | 楂樻柉DB | \xe9ab98e696af4442
+  5 | 楂樻柉DB | \xe9ab98e696af4442
+  6 | 楂樻柉DB | \xe9ab98e696af4442
 (3 rows)
 
 UPDATE t_charset_utf8mb4 SET a='高斯DB', b='高斯DB'
@@ -3927,14 +3927,14 @@ UPDATE t_charset_utf8mb4 SET a=_gbk'高斯DB', b=(_gbk'高斯DB')::varbinary(16)
 UPDATE t_charset_utf8mb4 SET a=_utf8mb4'高斯DB', b=(_utf8mb4'高斯DB')::varbinary(16)
 	WHERE a=_gbk'高斯DB';
 SELECT * FROM t_charset_utf8mb4 ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  1 | 高斯   | 高斯
-  2 | 高斯DB | 高斯DB
-  3 | 高斯DB | 高斯DB
-  4 | 高斯DB | 高斯DB
-  5 | 高斯DB | 高斯DB
-  6 | 高斯DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  1 | 高斯   | \xe9ab98e696af
+  2 | 高斯DB | \xe9ab98e696af4442
+  3 | 高斯DB | \xe9ab98e696af4442
+  4 | 高斯DB | \xe9ab98e696af4442
+  5 | 高斯DB | \xe9ab98e696af4442
+  6 | 高斯DB | \xe9ab98e696af4442
 (6 rows)
 
 DELETE FROM t_charset_utf8mb4 WHERE a=_utf8mb4'高斯';
@@ -3948,27 +3948,27 @@ SELECT * FROM t_charset_utf8mb4 ORDER BY id;
 INSERT INTO t_charset_utf8mb4(a,b) VALUES(CONCAT('高斯','DB'), (CONCAT('高斯','DB'))::varbinary(16));
 INSERT INTO t_charset_utf8mb4 SELECT 0, CONCAT('高斯','DB'), (CONCAT('高斯','DB'))::varbinary(16);
 SELECT * FROM t_charset_utf8mb4 ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  7 | 高斯DB | 高斯DB
-  8 | 高斯DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  7 | 高斯DB | \xe9ab98e696af4442
+  8 | 高斯DB | \xe9ab98e696af4442
 (2 rows)
 
 INSERT INTO t_charset_utf8mb4(id,a,b) VALUES(7, CONCAT('高斯','DB'), (CONCAT('高斯','DB'))::varbinary(16)) ON DUPLICATE KEY UPDATE a=CONCAT('高斯','db');
 SELECT * FROM t_charset_utf8mb4 ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  7 | 高斯db | 高斯DB
-  8 | 高斯DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  7 | 高斯db | \xe9ab98e696af4442
+  8 | 高斯DB | \xe9ab98e696af4442
 (2 rows)
 
 UPDATE t_charset_utf8mb4 SET a=CONCAT('DB','高斯'), b=(CONCAT('DB','高斯'))::varbinary(16)
 	WHERE a=CONCAT('高斯','DB');
 SELECT * FROM t_charset_utf8mb4 ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  7 | 高斯db | 高斯DB
-  8 | DB高斯 | DB高斯
+ id |   a    |         b          
+----+--------+--------------------
+  7 | 高斯db | \xe9ab98e696af4442
+  8 | DB高斯 | \x4442e9ab98e696af
 (2 rows)
 
 DROP TABLE IF EXISTS t_charset_utf8mb4;
@@ -4075,51 +4075,51 @@ SELECT @id_res,@a_res;
 
 -- -- -- -- test condition
 SELECT * FROM t_charset_gbk WHERE a=_utf8mb4'高斯' ORDER BY id;
- id |  a   |  b   
-----+------+------
-  1 | 高斯 | 高斯
+ id |  a   |       b        
+----+------+----------------
+  1 | 高斯 | \xe9ab98e696af
 (1 row)
 
 SELECT * FROM t_charset_gbk WHERE a=_utf8mb4'高斯db' COLLATE utf8mb4_unicode_ci ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  2 | 高斯DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  2 | 高斯DB | \xe9ab98e696af4442
 (1 row)
 
 SELECT * FROM t_charset_gbk WHERE a=_binary'高斯DB' ORDER BY id;
- id |    a     |   b    
-----+----------+--------
-  3 | 楂樻柉DB | 高斯DB
-  4 | 楂樻柉DB | 高斯DB
-  6 | 楂樻柉DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  3 | 楂樻柉DB | \xe9ab98e696af4442
+  4 | 楂樻柉DB | \xe9ab98e696af4442
+  6 | 楂樻柉DB | \xe9ab98e696af4442
 (3 rows)
 
 SELECT * FROM t_charset_gbk WHERE a=_gbk'高斯DB' ORDER BY id;
- id |    a     |   b    
-----+----------+--------
-  3 | 楂樻柉DB | 高斯DB
-  4 | 楂樻柉DB | 高斯DB
-  6 | 楂樻柉DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  3 | 楂樻柉DB | \xe9ab98e696af4442
+  4 | 楂樻柉DB | \xe9ab98e696af4442
+  6 | 楂樻柉DB | \xe9ab98e696af4442
 (3 rows)
 
 SELECT * FROM t_charset_gbk WHERE a=_gbk'高斯db' COLLATE gbk_chinese_ci ORDER BY id;
- id |    a     |   b    
-----+----------+--------
-  3 | 楂樻柉DB | 高斯DB
-  4 | 楂樻柉DB | 高斯DB
-  6 | 楂樻柉DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  3 | 楂樻柉DB | \xe9ab98e696af4442
+  4 | 楂樻柉DB | \xe9ab98e696af4442
+  6 | 楂樻柉DB | \xe9ab98e696af4442
 (3 rows)
 
 SELECT * FROM t_charset_gbk WHERE a=_gbk'高斯' ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  5 | 楂樻柉 | 楂樻柉
+ id |   a    |          b           
+----+--------+----------------------
+  5 | 楂樻柉 | \xe6a582e6a8bbe69f89
 (1 row)
 
 SELECT * FROM t_charset_gbk WHERE a='楂樻柉' ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  5 | 楂樻柉 | 楂樻柉
+ id |   a    |          b           
+----+--------+----------------------
+  5 | 楂樻柉 | \xe6a582e6a8bbe69f89
 (1 row)
 
 UPDATE t_charset_gbk SET a='高斯DB', b='高斯DB'
@@ -4129,14 +4129,14 @@ UPDATE t_charset_gbk SET a=_gbk'高斯DB', b=(_gbk'高斯DB')::varbinary(16)
 UPDATE t_charset_gbk SET a=_utf8mb4'高斯DB', b=(_utf8mb4'高斯DB')::varbinary(16)
 	WHERE a=_gbk'高斯DB';
 SELECT * FROM t_charset_gbk ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  1 | 高斯   | 高斯
-  2 | 高斯DB | 高斯DB
-  3 | 高斯DB | 高斯DB
-  4 | 高斯DB | 高斯DB
-  5 | 高斯DB | 高斯DB
-  6 | 高斯DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  1 | 高斯   | \xe9ab98e696af
+  2 | 高斯DB | \xe9ab98e696af4442
+  3 | 高斯DB | \xe9ab98e696af4442
+  4 | 高斯DB | \xe9ab98e696af4442
+  5 | 高斯DB | \xe9ab98e696af4442
+  6 | 高斯DB | \xe9ab98e696af4442
 (6 rows)
 
 DELETE FROM t_charset_gbk WHERE a=_utf8mb4'高斯';
@@ -4151,27 +4151,27 @@ SELECT * FROM t_charset_gbk ORDER BY id;
 INSERT INTO t_charset_gbk(a,b) VALUES(CONCAT('高斯','DB'), (CONCAT('高斯','DB'))::varbinary(16));
 INSERT INTO t_charset_gbk SELECT 0, CONCAT('高斯','DB'), (CONCAT('高斯','DB'))::varbinary(16);
 SELECT * FROM t_charset_gbk ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  7 | 高斯DB | 高斯DB
-  8 | 高斯DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  7 | 高斯DB | \xe9ab98e696af4442
+  8 | 高斯DB | \xe9ab98e696af4442
 (2 rows)
 
 INSERT INTO t_charset_gbk(id,a,b) VALUES(7, CONCAT('高斯','DB'), (CONCAT('高斯','DB'))::varbinary(16)) ON DUPLICATE KEY UPDATE a=CONCAT('高斯','db');
 SELECT * FROM t_charset_gbk ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  7 | 高斯db | 高斯DB
-  8 | 高斯DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  7 | 高斯db | \xe9ab98e696af4442
+  8 | 高斯DB | \xe9ab98e696af4442
 (2 rows)
 
 UPDATE t_charset_gbk SET a=CONCAT('DB','高斯'), b=(CONCAT('DB','高斯'))::varbinary(16)
 	WHERE a=CONCAT('高斯','DB');
 SELECT * FROM t_charset_gbk ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  7 | 高斯db | 高斯DB
-  8 | DB高斯 | DB高斯
+ id |   a    |         b          
+----+--------+--------------------
+  7 | 高斯db | \xe9ab98e696af4442
+  8 | DB高斯 | \x4442e9ab98e696af
 (2 rows)
 
 DROP TABLE IF EXISTS t_charset_gbk;
@@ -4633,33 +4633,33 @@ SHOW collation_connection;
 
 -- 中文
 SELECT CAST('高斯' AS binary);
- binary 
---------
- ��˹
+     binary     
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT CAST(_binary'高斯' AS binary);
- binary 
---------
- 高斯
+     binary     
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT CAST(_utf8mb4'高斯' AS binary);
- binary 
---------
- ��˹
+     binary     
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT CAST(_gbk'高斯' AS binary);
- binary 
---------
- 高斯
+     binary     
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT _binary'高斯';
- ?column? 
-----------
- 高斯
+    ?column?    
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT _utf8mb4'高斯';
@@ -4675,9 +4675,9 @@ SELECT _gbk'高斯';
 (1 row)
 
 SELECT _binary X'E9AB98E696AF';
- ?column? 
-----------
- 高斯
+    ?column?    
+----------------
+ \xe9ab98e696af
 (1 row)
 
 SELECT _utf8mb4 X'E9AB98E696AF';
@@ -4805,39 +4805,39 @@ SELECT @id_res,@a_res;
 SELECT * FROM t_charset_utf8mb4 WHERE a='楂樻柉' ORDER BY id; -- ERROR
 ERROR:  invalid byte sequence for encoding "GBK": 0x89 0x27
 SELECT * FROM t_charset_utf8mb4 WHERE a=_gbk'高斯' ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  1 | 高斯 | 高斯
+ id |   a    |       b        
+----+--------+----------------
+  1 | 高斯 | \xe9ab98e696af
 (1 row)
 
 SELECT * FROM t_charset_utf8mb4 WHERE a=_gbk'高斯db' COLLATE gbk_chinese_ci ORDER BY id;
- id |    a     |    b     
-----+----------+----------
-  2 | 高斯DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  2 | 高斯DB | \xe9ab98e696af4442
 (1 row)
 
 SELECT * FROM t_charset_utf8mb4 WHERE a=_binary'高斯DB' ORDER BY id; -- ERROR
- id |   a    |    b     
-----+--------+----------
-  3 | ��˹DB | 高斯DB
-  4 | ��˹DB | 高斯DB
-  6 | ��˹DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  3 | ��˹DB | \xe9ab98e696af4442
+  4 | ��˹DB | \xe9ab98e696af4442
+  6 | ��˹DB | \xe9ab98e696af4442
 (3 rows)
 
 SELECT * FROM t_charset_utf8mb4 WHERE a=_utf8mb4'高斯DB' ORDER BY id;
- id |   a    |    b     
-----+--------+----------
-  3 | ��˹DB | 高斯DB
-  4 | ��˹DB | 高斯DB
-  6 | ��˹DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  3 | ��˹DB | \xe9ab98e696af4442
+  4 | ��˹DB | \xe9ab98e696af4442
+  6 | ��˹DB | \xe9ab98e696af4442
 (3 rows)
 
 SELECT * FROM t_charset_utf8mb4 WHERE a=_utf8mb4'高斯db' COLLATE utf8mb4_unicode_ci ORDER BY id;
- id |   a    |    b     
-----+--------+----------
-  3 | ��˹DB | 高斯DB
-  4 | ��˹DB | 高斯DB
-  6 | ��˹DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  3 | ��˹DB | \xe9ab98e696af4442
+  4 | ��˹DB | \xe9ab98e696af4442
+  6 | ��˹DB | \xe9ab98e696af4442
 (3 rows)
 
 UPDATE t_charset_utf8mb4 SET a='高斯DB', b='高斯DB'
@@ -4848,13 +4848,13 @@ ERROR:  invalid byte sequence for encoding "GBK": 0x89 0x27
 UPDATE t_charset_utf8mb4 SET a=_utf8mb4'高斯DB', b=(_utf8mb4'高斯DB')::varbinary(16)
 	WHERE a=_utf8mb4'高斯DB';
 SELECT * FROM t_charset_utf8mb4 ORDER BY id;
- id |    a     |    b     
-----+----------+----------
-  1 | 高斯   | 高斯
-  2 | 高斯DB | 高斯DB
-  3 | 高斯DB | 高斯DB
-  4 | 高斯DB | 高斯DB
-  6 | 高斯DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  1 | 高斯   | \xe9ab98e696af
+  2 | 高斯DB | \xe9ab98e696af4442
+  3 | 高斯DB | \xe9ab98e696af4442
+  4 | 高斯DB | \xe9ab98e696af4442
+  6 | 高斯DB | \xe9ab98e696af4442
 (5 rows)
 
 DELETE FROM t_charset_utf8mb4 WHERE a='高斯';
@@ -4868,27 +4868,27 @@ SELECT * FROM t_charset_utf8mb4 ORDER BY id;
 INSERT INTO t_charset_utf8mb4(a,b) VALUES(CONCAT('高斯','DB'), (CONCAT('高斯','DB'))::varbinary(16));
 INSERT INTO t_charset_utf8mb4 SELECT 0, CONCAT('高斯','DB'), (CONCAT('高斯','DB'))::varbinary(16);
 SELECT * FROM t_charset_utf8mb4 ORDER BY id;
- id |    a     |    b     
-----+----------+----------
-  7 | 高斯DB | 高斯DB
-  8 | 高斯DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  7 | 高斯DB | \xe9ab98e696af4442
+  8 | 高斯DB | \xe9ab98e696af4442
 (2 rows)
 
 INSERT INTO t_charset_utf8mb4(id,a,b) VALUES(7, CONCAT('高斯','DB'), (CONCAT('高斯','DB'))::varbinary(16)) ON DUPLICATE KEY UPDATE a=CONCAT('高斯','db');
 SELECT * FROM t_charset_utf8mb4 ORDER BY id;
- id |    a     |    b     
-----+----------+----------
-  7 | 高斯db | 高斯DB
-  8 | 高斯DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  7 | 高斯db | \xe9ab98e696af4442
+  8 | 高斯DB | \xe9ab98e696af4442
 (2 rows)
 
 UPDATE t_charset_utf8mb4 SET a=CONCAT('DB','高斯'), b=(CONCAT('DB','高斯'))::varbinary(16)
 	WHERE a=CONCAT('高斯','DB');
 SELECT * FROM t_charset_utf8mb4 ORDER BY id;
- id |    a     |    b     
-----+----------+----------
-  7 | 高斯db | 高斯DB
-  8 | DB高斯 | DB高斯
+ id |    a     |         b          
+----+----------+--------------------
+  7 | 高斯db | \xe9ab98e696af4442
+  8 | DB高斯 | \x4442e9ab98e696af
 (2 rows)
 
 DROP TABLE IF EXISTS t_charset_utf8mb4;
@@ -4994,37 +4994,37 @@ SELECT @id_res,@a_res;
 
 -- -- -- -- test condition
 SELECT * FROM t_charset_gbk WHERE a=_gbk'高斯' ORDER BY id;
- id |   a    |   b    
-----+--------+--------
-  1 | 高斯 | 高斯
+ id |   a    |       b        
+----+--------+----------------
+  1 | 高斯 | \xe9ab98e696af
 (1 row)
 
 SELECT * FROM t_charset_gbk WHERE a=_gbk'高斯db' COLLATE gbk_chinese_ci ORDER BY id;
- id |    a     |    b     
-----+----------+----------
-  2 | 高斯DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  2 | 高斯DB | \xe9ab98e696af4442
 (1 row)
 
 SELECT * FROM t_charset_gbk WHERE a=_binary'高斯DB' ORDER BY id; -- ERROR
- id |    a     |    b     
-----+----------+----------
-  2 | 高斯DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  2 | 高斯DB | \xe9ab98e696af4442
 (1 row)
 
 SELECT * FROM t_charset_gbk WHERE a=_utf8mb4'高斯DB' ORDER BY id;
- id |   a    |    b     
-----+--------+----------
-  3 | ��˹DB | 高斯DB
-  4 | ��˹DB | 高斯DB
-  6 | ��˹DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  3 | ��˹DB | \xe9ab98e696af4442
+  4 | ��˹DB | \xe9ab98e696af4442
+  6 | ��˹DB | \xe9ab98e696af4442
 (3 rows)
 
 SELECT * FROM t_charset_gbk WHERE a=_utf8mb4'高斯db' COLLATE utf8mb4_unicode_ci ORDER BY id;
- id |   a    |    b     
-----+--------+----------
-  3 | ��˹DB | 高斯DB
-  4 | ��˹DB | 高斯DB
-  6 | ��˹DB | 高斯DB
+ id |   a    |         b          
+----+--------+--------------------
+  3 | ��˹DB | \xe9ab98e696af4442
+  4 | ��˹DB | \xe9ab98e696af4442
+  6 | ��˹DB | \xe9ab98e696af4442
 (3 rows)
 
 SELECT * FROM t_charset_gbk WHERE a=_utf8mb4'高斯' ORDER BY id;
@@ -5042,13 +5042,13 @@ ERROR:  invalid byte sequence for encoding "GBK": 0x89 0x27
 UPDATE t_charset_gbk SET a=_utf8mb4'高斯DB', b=(_utf8mb4'高斯DB')::varbinary(16)
 	WHERE a=_utf8mb4'高斯DB';
 SELECT * FROM t_charset_gbk ORDER BY id;
- id |    a     |    b     
-----+----------+----------
-  1 | 高斯   | 高斯
-  2 | 高斯DB | 高斯DB
-  3 | 高斯DB | 高斯DB
-  4 | 高斯DB | 高斯DB
-  6 | 高斯DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  1 | 高斯   | \xe9ab98e696af
+  2 | 高斯DB | \xe9ab98e696af4442
+  3 | 高斯DB | \xe9ab98e696af4442
+  4 | 高斯DB | \xe9ab98e696af4442
+  6 | 高斯DB | \xe9ab98e696af4442
 (5 rows)
 
 DELETE FROM t_charset_gbk WHERE a='高斯';
@@ -5062,27 +5062,27 @@ SELECT * FROM t_charset_gbk ORDER BY id;
 INSERT INTO t_charset_gbk(a,b) VALUES(CONCAT('高斯','DB'), (CONCAT('高斯','DB'))::varbinary(16));
 INSERT INTO t_charset_gbk SELECT 0, CONCAT('高斯','DB'), (CONCAT('高斯','DB'))::varbinary(16);
 SELECT * FROM t_charset_gbk ORDER BY id;
- id |    a     |    b     
-----+----------+----------
-  7 | 高斯DB | 高斯DB
-  8 | 高斯DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  7 | 高斯DB | \xe9ab98e696af4442
+  8 | 高斯DB | \xe9ab98e696af4442
 (2 rows)
 
 INSERT INTO t_charset_gbk(id,a,b) VALUES(7, CONCAT('高斯','DB'), (CONCAT('高斯','DB'))::varbinary(16)) ON DUPLICATE KEY UPDATE a=CONCAT('高斯','db');
 SELECT * FROM t_charset_gbk ORDER BY id;
- id |    a     |    b     
-----+----------+----------
-  7 | 高斯db | 高斯DB
-  8 | 高斯DB | 高斯DB
+ id |    a     |         b          
+----+----------+--------------------
+  7 | 高斯db | \xe9ab98e696af4442
+  8 | 高斯DB | \xe9ab98e696af4442
 (2 rows)
 
 UPDATE t_charset_gbk SET a=CONCAT('DB','高斯'), b=(CONCAT('DB','高斯'))::varbinary(16)
 	WHERE a=CONCAT('高斯','DB');
 SELECT * FROM t_charset_gbk ORDER BY id;
- id |    a     |    b     
-----+----------+----------
-  7 | 高斯db | 高斯DB
-  8 | DB高斯 | DB高斯
+ id |    a     |         b          
+----+----------+--------------------
+  7 | 高斯db | \xe9ab98e696af4442
+  8 | DB高斯 | \x4442e9ab98e696af
 (2 rows)
 
 DROP TABLE IF EXISTS t_charset_gbk;
@@ -5109,9 +5109,9 @@ SELECT futf8_bin,
        fgb18030_bin,
        fgb18030_chi,
        fbin FROM t_diff_charset_columns;
- futf8_bin | futf8_uni | fgbk_bin | fgbk_chi | fgb18030_bin | fgb18030_chi |   fbin   
------------+-----------+----------+----------+--------------+--------------+----------
- 高斯DB  | 高斯db  | 高斯DB | 高斯db | 高斯DB     | 高斯db     | 高斯DB
+ futf8_bin | futf8_uni | fgbk_bin | fgbk_chi | fgb18030_bin | fgb18030_chi |        fbin        
+-----------+-----------+----------+----------+--------------+--------------+--------------------
+ 高斯DB  | 高斯db  | 高斯DB | 高斯db | 高斯DB     | 高斯db     | \xe9ab98e696af4442
 (1 row)
 
 SELECT char_length(futf8_bin),

@@ -45,10 +45,10 @@ select * from t_bit;
 (2 rows)
 
 select * from t_bin;
-     a      
-------------
- 14392\0
- 76\0\0\0\0
+       a        
+----------------
+ \x313433393200
+ \x373600000000
 (2 rows)
 
 
@@ -366,7 +366,7 @@ create table t_bin(a binary(6));
 select b'11100000111000';
  ?column? 
 ----------
- 88
+ \x3838
 (1 row)
 
 select pg_typeof(b'11100000111000');
@@ -378,7 +378,7 @@ select pg_typeof(b'11100000111000');
 select x'4c';
  ?column? 
 ----------
- L
+ \x4c
 (1 row)
 
 select pg_typeof(x'4c');
@@ -399,10 +399,10 @@ select * from t_bit;
 (2 rows)
 
 select * from t_bin;
-      a      
--------------
- 88\0\0\0\0
- L\0\0\0\0\0
+       a        
+----------------
+ \x383800000000
+ \x4c0000000000
 (2 rows)
 
 
