@@ -256,18 +256,18 @@ begin
     set @x = 1;
     truncate t_tinyint0009;
     repeat
-        set @c1 = @x;
-        set @c2 = floor(0.1*(127-18+1))+18;
-        set @c3 = floor(0.1*(127-100+1))+100;
-        set @c4 = floor(0.1*(10000-127+1))+127;
-        set @c5 = concat('amy', @x);
+        set @c1=@x;
+        set @c2=floor(0.1*(127-18+1))+18;
+        set @c3=floor(0.1*(127-100+1))+100;
+        set @c4=floor(0.1*(10000-127+1))+127;
+        set @c5=concat('amy', @x);
         select @c1;
         select @c2;
         select @c3;
         select @c4;
         select @c5;
         insert into t_tinyint0009 values (@c1, @c2, @c3, @c4, @c5);
-        set @x = @x + 1;
+        set @x=@x+1;
         select @x;
     until @x > num end repeat;
 end;
