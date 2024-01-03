@@ -38,6 +38,7 @@ select json_object_field_text(json_object('Name','Adam','Age',23,'Address','Chen
 select json_object_field_text(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
 select json_extract_path(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
 select json_extract_path_op(json_object('Name','Adam','Age',23,'Address','Chengdu'),'{Name}');
+select pg_catalog.json_extract_path_op(cast('[0, 0, 0, 0]' as json), cast(pg_catalog.dolphin_types() as _text));
 select json_extract_path_text(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
 select json_extract_path_text_op(json_object('Name','Adam','Age',23,'Address','Chengdu'),'{Name}');
 select * from json_each(json_object('Name','Adam','Age',23,'Address','Chengdu'));
