@@ -206,4 +206,72 @@ show lower_case_table_names;
  0
 (1 row)
 
+set @ta=@@license;
+set @tb=@ta;
+select @ta;
+     @ta      
+--------------
+ MulanPSL-2.0
+(1 row)
+
+select @ta=@@license;
+ ?column? 
+----------
+ t
+(1 row)
+
+select @ta!=@@license;
+ ?column? 
+----------
+ f
+(1 row)
+
+select @ta<>@@license;
+ ?column? 
+----------
+ f
+(1 row)
+
+select @ta>@@license;
+ ?column? 
+----------
+ f
+(1 row)
+
+select @ta<@@license;
+ ?column? 
+----------
+ f
+(1 row)
+
+select @ta=@tb;
+ ?column? 
+----------
+ t
+(1 row)
+
+select @ta!=@tb;
+ ?column? 
+----------
+ f
+(1 row)
+
+select @ta<>@tb;
+ ?column? 
+----------
+ f
+(1 row)
+
+select @ta>@tb;
+ ?column? 
+----------
+ f
+(1 row)
+
+select @ta<@tb;
+ ?column? 
+----------
+ f
+(1 row)
+
 drop schema test_guc_select_and_set cascade;
