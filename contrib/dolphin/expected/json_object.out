@@ -146,6 +146,12 @@ select json_extract_path_op(json_object('Name','Adam','Age',23,'Address','Chengd
  "Adam"
 (1 row)
 
+select pg_catalog.json_extract_path_op(cast('[0, 0, 0, 0]' as json), cast(pg_catalog.dolphin_types() as _text));
+ json_extract_path_op 
+----------------------
+ 
+(1 row)
+
 select json_extract_path_text(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
  json_extract_path_text 
 ------------------------

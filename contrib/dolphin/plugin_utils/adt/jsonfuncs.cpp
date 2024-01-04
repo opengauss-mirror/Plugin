@@ -65,6 +65,9 @@
 /* fake category for types that have a cast to json */
 #define TYPCATEGORY_JSON_CAST 'c'
 
+#define CSTRING_ELMLEN -2
+#define TEXT_ELMLEN -1
+
 TYPCATEGORY get_value_type(Oid val_type, Oid typoutput)
 {
     Oid castfunc = InvalidOid;
@@ -1143,7 +1146,20 @@ static inline Datum get_path_all(FunctionCallInfo fcinfo, bool as_text)
                  errmsg("cannot call function with null path elements")));
     }
 
+#ifdef DOLPHIN
+    // set the json element info as text type by default
+    Oid elmtype = TEXTOID;
+    int elmlen = TEXT_ELMLEN;
+    char elmalign = 'i';
+    if (path->elemtype == CSTRINGOID) {
+        elmtype =  CSTRINGOID;
+        elmlen = CSTRING_ELMLEN;
+        elmalign = 'c';
+    }
+    deconstruct_array(path, elmtype, elmlen, false, elmalign, &pathtext, &pathnulls, &npath);
+#else
     deconstruct_array(path, TEXTOID, -1, false, 'i', &pathtext, &pathnulls, &npath);
+#endif
     /*
      * If the array is empty, return NULL; this is dubious but it's what 9.3
      * did.
@@ -1155,7 +1171,15 @@ static inline Datum get_path_all(FunctionCallInfo fcinfo, bool as_text)
     ipath = (int *)palloc(npath * sizeof(int));
 
     for (i = 0; i < npath; i++) {
+#ifdef DOLPHIN
+        if (path->elemtype == CSTRINGOID) {
+            tpath[i] = DatumGetCString(pathtext[i]);
+        } else {
+            tpath[i] = TextDatumGetCString(pathtext[i]);
+        }
+#else
         tpath[i] = TextDatumGetCString(pathtext[i]);
+#endif
         if (*tpath[i] == '\0') {
             ereport(ERROR,
                     (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
