@@ -1636,9 +1636,8 @@ static void AppendTablespaceInfo(const char *spcname, StringInfo buf, tableInfo 
 {
     if (spcname != NULL) {
         appendStringInfo(buf, " TABLESPACE %s", quote_identifier(spcname));
-    } else {
-        appendStringInfo(buf, " TABLESPACE pg_default");
     }
+    /* If the tablespace is null, the table uses the default tablespace of the database or schema. */
 }
 
 /*
@@ -8900,7 +8899,7 @@ static char* get_variable(
     if (attnum == InvalidAttrNumber)
         attname = NULL;
     else
-        attname = get_rte_attribute_name(rte, attnum);
+        attname = get_rte_attribute_name(rte, attnum, true);
 
     if (refname && (context->varprefix || attname == NULL)) {
         if (schemaname != NULL)
@@ -10691,6 +10690,11 @@ static void get_rule_expr(Node* node, deparse_context* context, bool showimplici
             appendStringInfo(buf, "(%d)", pkey->length);
         } break;
 
+#ifdef USE_SPQ
+        case T_DMLActionExpr:
+            appendStringInfo(buf, "DMLAction");
+            break;
+#endif
         default:
             if (context->qrw_phase)
                 appendStringInfo(buf, "<unknown %d>", (int)nodeTag(node));

@@ -1201,6 +1201,7 @@ bool ValidateDependView(Oid view_oid, char objType)
     /* create or replace view */
     if (objType == OBJECT_TYPE_VIEW) {
         ReplaceViewQueryFirstAfter(query_str);
+        CommandCounterIncrement();
     }
     return isValid;
 }
@@ -1360,6 +1361,7 @@ Relation parserOpenTable(ParseState *pstate, const RangeVar *relation, int lockm
                 errmsg("relation \"%s\" has data only in database \"postgres\"", relation->relname),
                 errhint("please use database \"postgres\"")));
     }
+    
     if (RelationGetRelkind(rel) == RELKIND_VIEW &&
         RelationGetRelid(rel) >= FirstNormalObjectId &&
         !ValidateDependView(RelationGetRelid(rel), OBJECT_TYPE_VIEW)) {
@@ -1369,7 +1371,7 @@ Relation parserOpenTable(ParseState *pstate, const RangeVar *relation, int lockm
                        RelationGetRelationName(rel)),
                     errhint("Please re-add missing table fields.")));
     }
-
+    
     if (!u_sess->attr.attr_common.XactReadOnly && rel->rd_id == UserStatusRelationId) {
         TryUnlockAllAccounts();
     }
@@ -2670,7 +2672,7 @@ List* expandRelAttrs(ParseState* pstate, RangeTblEntry* rte, int rtindex, int su
  *
  * Must free the pointer after usage!!!
  */
-char* get_rte_attribute_name(RangeTblEntry* rte, AttrNumber attnum)
+char* get_rte_attribute_name(RangeTblEntry* rte, AttrNumber attnum, bool allowDropped)
 {
     if (attnum == InvalidAttrNumber) {
         return pstrdup("*");
@@ -2690,7 +2692,7 @@ char* get_rte_attribute_name(RangeTblEntry* rte, AttrNumber attnum)
      * built (which can easily happen for rules).
      */
     if (rte->rtekind == RTE_RELATION) {
-        return get_relid_attribute_name(rte->relid, attnum);
+        return get_relid_attribute_name(rte->relid, attnum, allowDropped);
     }
 
     /*

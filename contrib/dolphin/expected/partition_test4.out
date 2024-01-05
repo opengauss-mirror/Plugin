@@ -76,22 +76,22 @@ select pg_get_tabledef('test_range_subpart');
  WITH (orientation=row, compression=no)                                                                                +
  PARTITION BY RANGE (a) SUBPARTITION BY HASH (b)                                                                       +
  (                                                                                                                     +
-     PARTITION m1 VALUES LESS THAN (100) TABLESPACE pg_default                                                         +
+     PARTITION m1 VALUES LESS THAN (100)                                                                               +
      (                                                                                                                 +
-         SUBPARTITION m1_subpartdefault1 TABLESPACE pg_default                                                         +
+         SUBPARTITION m1_subpartdefault1                                                                               +
      ),                                                                                                                +
-     PARTITION m2 VALUES LESS THAN (500) TABLESPACE pg_default                                                         +
+     PARTITION m2 VALUES LESS THAN (500)                                                                               +
      (                                                                                                                 +
-         SUBPARTITION m21 TABLESPACE pg_default,                                                                       +
-         SUBPARTITION m22 TABLESPACE pg_default                                                                        +
+         SUBPARTITION m21,                                                                                             +
+         SUBPARTITION m22                                                                                              +
      ),                                                                                                                +
-     PARTITION p3 VALUES LESS THAN (800) TABLESPACE pg_default                                                         +
+     PARTITION p3 VALUES LESS THAN (800)                                                                               +
      (                                                                                                                 +
-         SUBPARTITION p3_subpartdefault1 TABLESPACE pg_default                                                         +
+         SUBPARTITION p3_subpartdefault1                                                                               +
      ),                                                                                                                +
-     PARTITION p4 VALUES LESS THAN (1200) TABLESPACE pg_default                                                        +
+     PARTITION p4 VALUES LESS THAN (1200)                                                                              +
      (                                                                                                                 +
-         SUBPARTITION s41 TABLESPACE pg_default                                                                        +
+         SUBPARTITION s41                                                                                              +
      )                                                                                                                 +
  )                                                                                                                     +
  ENABLE ROW MOVEMENT;                                                                                                  +
@@ -148,10 +148,10 @@ select pg_get_tabledef('test_range_part');
  WITH (orientation=row, compression=no)                                                       +
  PARTITION BY RANGE (a)                                                                       +
  (                                                                                            +
-     PARTITION m1 VALUES LESS THAN (100) TABLESPACE pg_default,                               +
-     PARTITION m2 VALUES LESS THAN (500) TABLESPACE pg_default,                               +
-     PARTITION p3 VALUES LESS THAN (800) TABLESPACE pg_default,                               +
-     PARTITION p4 VALUES LESS THAN (1200) TABLESPACE pg_default                               +
+     PARTITION m1 VALUES LESS THAN (100),                                                     +
+     PARTITION m2 VALUES LESS THAN (500),                                                     +
+     PARTITION p3 VALUES LESS THAN (800),                                                     +
+     PARTITION p4 VALUES LESS THAN (1200)                                                     +
  )                                                                                            +
  ENABLE ROW MOVEMENT;                                                                         +
  ALTER TABLE test_range_part ADD CONSTRAINT test_range_part_pkey PRIMARY KEY USING btree  (a);
@@ -207,9 +207,9 @@ select pg_get_tabledef('test_list_part');
  WITH (orientation=row, compression=no)                                                     +
  PARTITION BY LIST (a)                                                                      +
  (                                                                                          +
-     PARTITION m2 VALUES (1,4,7) TABLESPACE pg_default,                                     +
-     PARTITION m1 VALUES (2,3,5,13) TABLESPACE pg_default,                                  +
-     PARTITION p3 VALUES (9,10,11,12) TABLESPACE pg_default                                 +
+     PARTITION m2 VALUES (1,4,7),                                                           +
+     PARTITION m1 VALUES (2,3,5,13),                                                        +
+     PARTITION p3 VALUES (9,10,11,12)                                                       +
  )                                                                                          +
  ENABLE ROW MOVEMENT;                                                                       +
  ALTER TABLE test_list_part ADD CONSTRAINT test_list_part_pkey PRIMARY KEY USING btree  (a);
@@ -264,18 +264,18 @@ select pg_get_tabledef('test_list_subpart');
  WITH (orientation=row, compression=no)                                                                              +
  PARTITION BY LIST (a) SUBPARTITION BY HASH (b)                                                                      +
  (                                                                                                                   +
-     PARTITION m2 VALUES (1,4,7) TABLESPACE pg_default                                                               +
+     PARTITION m2 VALUES (1,4,7)                                                                                     +
      (                                                                                                               +
-         SUBPARTITION m2_subpartdefault1 TABLESPACE pg_default                                                       +
+         SUBPARTITION m2_subpartdefault1                                                                             +
      ),                                                                                                              +
-     PARTITION m1 VALUES (2,3,5,13) TABLESPACE pg_default                                                            +
+     PARTITION m1 VALUES (2,3,5,13)                                                                                  +
      (                                                                                                               +
-         SUBPARTITION m11 TABLESPACE pg_default,                                                                     +
-         SUBPARTITION m12 TABLESPACE pg_default                                                                      +
+         SUBPARTITION m11,                                                                                           +
+         SUBPARTITION m12                                                                                            +
      ),                                                                                                              +
-     PARTITION p3 VALUES (9,10,11,12) TABLESPACE pg_default                                                          +
+     PARTITION p3 VALUES (9,10,11,12)                                                                                +
      (                                                                                                               +
-         SUBPARTITION p13 TABLESPACE pg_default                                                                      +
+         SUBPARTITION p13                                                                                            +
      )                                                                                                               +
  )                                                                                                                   +
  ENABLE ROW MOVEMENT;                                                                                                +
@@ -355,10 +355,10 @@ select pg_get_tabledef('test_part_ustore');
  WITH (orientation=row, storage_type=ustore, compression=no)                                                                +
  PARTITION BY RANGE (a)                                                                                                     +
  (                                                                                                                          +
-     PARTITION m1 VALUES LESS THAN (100) TABLESPACE pg_default,                                                             +
-     PARTITION m2 VALUES LESS THAN (500) TABLESPACE pg_default,                                                             +
-     PARTITION p3 VALUES LESS THAN (800) TABLESPACE pg_default,                                                             +
-     PARTITION p4 VALUES LESS THAN (1200) TABLESPACE pg_default                                                             +
+     PARTITION m1 VALUES LESS THAN (100),                                                                                   +
+     PARTITION m2 VALUES LESS THAN (500),                                                                                   +
+     PARTITION p3 VALUES LESS THAN (800),                                                                                   +
+     PARTITION p4 VALUES LESS THAN (1200)                                                                                   +
  )                                                                                                                          +
  ENABLE ROW MOVEMENT;                                                                                                       +
  ALTER TABLE test_part_ustore ADD CONSTRAINT test_part_ustore_pkey PRIMARY KEY USING ubtree  (a) WITH (storage_type=USTORE);
@@ -426,10 +426,10 @@ select pg_get_tabledef('test_part_segment');
  WITH (orientation=row, segment=on, compression=no)                                               +
  PARTITION BY RANGE (a)                                                                           +
  (                                                                                                +
-     PARTITION m1 VALUES LESS THAN (100) TABLESPACE pg_default,                                   +
-     PARTITION m2 VALUES LESS THAN (500) TABLESPACE pg_default,                                   +
-     PARTITION p3 VALUES LESS THAN (800) TABLESPACE pg_default,                                   +
-     PARTITION p4 VALUES LESS THAN (1200) TABLESPACE pg_default                                   +
+     PARTITION m1 VALUES LESS THAN (100),                                                         +
+     PARTITION m2 VALUES LESS THAN (500),                                                         +
+     PARTITION p3 VALUES LESS THAN (800),                                                         +
+     PARTITION p4 VALUES LESS THAN (1200)                                                         +
  )                                                                                                +
  ENABLE ROW MOVEMENT;                                                                             +
  ALTER TABLE test_part_segment ADD CONSTRAINT test_part_segment_pkey PRIMARY KEY USING btree  (a);
@@ -504,20 +504,20 @@ select pg_get_tabledef('b_range_hash_t01');
  WITH (orientation=row, compression=no)                                                                             +
  PARTITION BY RANGE (c1) SUBPARTITION BY HASH (c2)                                                                  +
  (                                                                                                                  +
-     PARTITION p1 VALUES LESS THAN (100) TABLESPACE pg_default                                                      +
+     PARTITION p1 VALUES LESS THAN (100)                                                                            +
      (                                                                                                              +
-         SUBPARTITION p1_1 TABLESPACE pg_default,                                                                   +
-         SUBPARTITION p1_2 TABLESPACE pg_default                                                                    +
+         SUBPARTITION p1_1,                                                                                         +
+         SUBPARTITION p1_2                                                                                          +
      ),                                                                                                             +
-     PARTITION p2 VALUES LESS THAN (200) TABLESPACE pg_default                                                      +
+     PARTITION p2 VALUES LESS THAN (200)                                                                            +
      (                                                                                                              +
-         SUBPARTITION p2_1 TABLESPACE pg_default,                                                                   +
-         SUBPARTITION p2_2 TABLESPACE pg_default                                                                    +
+         SUBPARTITION p2_1,                                                                                         +
+         SUBPARTITION p2_2                                                                                          +
      ),                                                                                                             +
-     PARTITION p3 VALUES LESS THAN (300) TABLESPACE pg_default                                                      +
+     PARTITION p3 VALUES LESS THAN (300)                                                                            +
      (                                                                                                              +
-         SUBPARTITION p3_1 TABLESPACE pg_default,                                                                   +
-         SUBPARTITION p3_2 TABLESPACE pg_default                                                                    +
+         SUBPARTITION p3_1,                                                                                         +
+         SUBPARTITION p3_2                                                                                          +
      )                                                                                                              +
  )                                                                                                                  +
  ENABLE ROW MOVEMENT;                                                                                               +
@@ -552,25 +552,25 @@ select pg_get_tabledef('b_range_hash_t01');
  WITH (orientation=row, compression=no)                                                                             +
  PARTITION BY RANGE (c1) SUBPARTITION BY HASH (c2)                                                                  +
  (                                                                                                                  +
-     PARTITION m1 VALUES LESS THAN (50) TABLESPACE pg_default                                                       +
+     PARTITION m1 VALUES LESS THAN (50)                                                                             +
      (                                                                                                              +
-         SUBPARTITION m1_1 TABLESPACE pg_default,                                                                   +
-         SUBPARTITION m1_2 TABLESPACE pg_default,                                                                   +
-         SUBPARTITION m1_3 TABLESPACE pg_default                                                                    +
+         SUBPARTITION m1_1,                                                                                         +
+         SUBPARTITION m1_2,                                                                                         +
+         SUBPARTITION m1_3                                                                                          +
      ),                                                                                                             +
-     PARTITION m2 VALUES LESS THAN (100) TABLESPACE pg_default                                                      +
+     PARTITION m2 VALUES LESS THAN (100)                                                                            +
      (                                                                                                              +
-         SUBPARTITION m2_subpartdefault1 TABLESPACE pg_default                                                      +
+         SUBPARTITION m2_subpartdefault1                                                                            +
      ),                                                                                                             +
-     PARTITION p2 VALUES LESS THAN (200) TABLESPACE pg_default                                                      +
+     PARTITION p2 VALUES LESS THAN (200)                                                                            +
      (                                                                                                              +
-         SUBPARTITION p2_1 TABLESPACE pg_default,                                                                   +
-         SUBPARTITION p2_2 TABLESPACE pg_default                                                                    +
+         SUBPARTITION p2_1,                                                                                         +
+         SUBPARTITION p2_2                                                                                          +
      ),                                                                                                             +
-     PARTITION p3 VALUES LESS THAN (300) TABLESPACE pg_default                                                      +
+     PARTITION p3 VALUES LESS THAN (300)                                                                            +
      (                                                                                                              +
-         SUBPARTITION p3_1 TABLESPACE pg_default,                                                                   +
-         SUBPARTITION p3_2 TABLESPACE pg_default                                                                    +
+         SUBPARTITION p3_1,                                                                                         +
+         SUBPARTITION p3_2                                                                                          +
      )                                                                                                              +
  )                                                                                                                  +
  ENABLE ROW MOVEMENT;                                                                                               +
@@ -615,96 +615,96 @@ create table part_key_range_t1(col1 date, col2 int) partition by range(year(col1
     partition p2 values less than(3000)
 );
 select pg_get_tabledef('part_key_range_t1');
-                         pg_get_tabledef                         
------------------------------------------------------------------
- SET search_path = partition_test4;                             +
- CREATE TABLE part_key_range_t1 (                               +
-     col1 date,                                                 +
-     col2 integer                                               +
- )                                                              +
- WITH (orientation=row, compression=no)                         +
- PARTITION BY RANGE (year((col1)::timestamp without time zone)) +
- (                                                              +
-     PARTITION p1 VALUES LESS THAN (2000) TABLESPACE pg_default,+
-     PARTITION p2 VALUES LESS THAN (3000) TABLESPACE pg_default +
- )                                                              +
+                        pg_get_tabledef                         
+----------------------------------------------------------------
+ SET search_path = partition_test4;                            +
+ CREATE TABLE part_key_range_t1 (                              +
+     col1 date,                                                +
+     col2 integer                                              +
+ )                                                             +
+ WITH (orientation=row, compression=no)                        +
+ PARTITION BY RANGE (year((col1)::timestamp without time zone))+
+ (                                                             +
+     PARTITION p1 VALUES LESS THAN (2000),                     +
+     PARTITION p2 VALUES LESS THAN (3000)                      +
+ )                                                             +
  ENABLE ROW MOVEMENT;
 (1 row)
 
 alter table part_key_range_t1 add partition p3 values less than(4000);
 select pg_get_tabledef('part_key_range_t1');
-                         pg_get_tabledef                         
------------------------------------------------------------------
- SET search_path = partition_test4;                             +
- CREATE TABLE part_key_range_t1 (                               +
-     col1 date,                                                 +
-     col2 integer                                               +
- )                                                              +
- WITH (orientation=row, compression=no)                         +
- PARTITION BY RANGE (year((col1)::timestamp without time zone)) +
- (                                                              +
-     PARTITION p1 VALUES LESS THAN (2000) TABLESPACE pg_default,+
-     PARTITION p2 VALUES LESS THAN (3000) TABLESPACE pg_default,+
-     PARTITION p3 VALUES LESS THAN (4000) TABLESPACE pg_default +
- )                                                              +
+                        pg_get_tabledef                         
+----------------------------------------------------------------
+ SET search_path = partition_test4;                            +
+ CREATE TABLE part_key_range_t1 (                              +
+     col1 date,                                                +
+     col2 integer                                              +
+ )                                                             +
+ WITH (orientation=row, compression=no)                        +
+ PARTITION BY RANGE (year((col1)::timestamp without time zone))+
+ (                                                             +
+     PARTITION p1 VALUES LESS THAN (2000),                     +
+     PARTITION p2 VALUES LESS THAN (3000),                     +
+     PARTITION p3 VALUES LESS THAN (4000)                      +
+ )                                                             +
  ENABLE ROW MOVEMENT;
 (1 row)
 
 alter table part_key_range_t1 split partition p1 into (partition m1 values less than(1000), partition m2 values less than(2000));
 select pg_get_tabledef('part_key_range_t1');
-                         pg_get_tabledef                         
------------------------------------------------------------------
- SET search_path = partition_test4;                             +
- CREATE TABLE part_key_range_t1 (                               +
-     col1 date,                                                 +
-     col2 integer                                               +
- )                                                              +
- WITH (orientation=row, compression=no)                         +
- PARTITION BY RANGE (year((col1)::timestamp without time zone)) +
- (                                                              +
-     PARTITION m1 VALUES LESS THAN (1000) TABLESPACE pg_default,+
-     PARTITION m2 VALUES LESS THAN (2000) TABLESPACE pg_default,+
-     PARTITION p2 VALUES LESS THAN (3000) TABLESPACE pg_default,+
-     PARTITION p3 VALUES LESS THAN (4000) TABLESPACE pg_default +
- )                                                              +
+                        pg_get_tabledef                         
+----------------------------------------------------------------
+ SET search_path = partition_test4;                            +
+ CREATE TABLE part_key_range_t1 (                              +
+     col1 date,                                                +
+     col2 integer                                              +
+ )                                                             +
+ WITH (orientation=row, compression=no)                        +
+ PARTITION BY RANGE (year((col1)::timestamp without time zone))+
+ (                                                             +
+     PARTITION m1 VALUES LESS THAN (1000),                     +
+     PARTITION m2 VALUES LESS THAN (2000),                     +
+     PARTITION p2 VALUES LESS THAN (3000),                     +
+     PARTITION p3 VALUES LESS THAN (4000)                      +
+ )                                                             +
  ENABLE ROW MOVEMENT;
 (1 row)
 
 alter table part_key_range_t1 merge partitions m1,m2 into partition p1;
 select pg_get_tabledef('part_key_range_t1');
-                         pg_get_tabledef                         
------------------------------------------------------------------
- SET search_path = partition_test4;                             +
- CREATE TABLE part_key_range_t1 (                               +
-     col1 date,                                                 +
-     col2 integer                                               +
- )                                                              +
- WITH (orientation=row, compression=no)                         +
- PARTITION BY RANGE (year((col1)::timestamp without time zone)) +
- (                                                              +
-     PARTITION p1 VALUES LESS THAN (2000) TABLESPACE pg_default,+
-     PARTITION p2 VALUES LESS THAN (3000) TABLESPACE pg_default,+
-     PARTITION p3 VALUES LESS THAN (4000) TABLESPACE pg_default +
- )                                                              +
+                        pg_get_tabledef                         
+----------------------------------------------------------------
+ SET search_path = partition_test4;                            +
+ CREATE TABLE part_key_range_t1 (                              +
+     col1 date,                                                +
+     col2 integer                                              +
+ )                                                             +
+ WITH (orientation=row, compression=no)                        +
+ PARTITION BY RANGE (year((col1)::timestamp without time zone))+
+ (                                                             +
+     PARTITION p1 VALUES LESS THAN (2000),                     +
+     PARTITION p2 VALUES LESS THAN (3000),                     +
+     PARTITION p3 VALUES LESS THAN (4000)                      +
+ )                                                             +
  ENABLE ROW MOVEMENT;
 (1 row)
 
 alter table part_key_range_t1 reorganize partition p1,p2 into (partition m1 values less than(1000),partition m2 values less than(3000));
 select pg_get_tabledef('part_key_range_t1');
-                         pg_get_tabledef                         
------------------------------------------------------------------
- SET search_path = partition_test4;                             +
- CREATE TABLE part_key_range_t1 (                               +
-     col1 date,                                                 +
-     col2 integer                                               +
- )                                                              +
- WITH (orientation=row, compression=no)                         +
- PARTITION BY RANGE (year((col1)::timestamp without time zone)) +
- (                                                              +
-     PARTITION m1 VALUES LESS THAN (1000) TABLESPACE pg_default,+
-     PARTITION m2 VALUES LESS THAN (3000) TABLESPACE pg_default,+
-     PARTITION p3 VALUES LESS THAN (4000) TABLESPACE pg_default +
- )                                                              +
+                        pg_get_tabledef                         
+----------------------------------------------------------------
+ SET search_path = partition_test4;                            +
+ CREATE TABLE part_key_range_t1 (                              +
+     col1 date,                                                +
+     col2 integer                                              +
+ )                                                             +
+ WITH (orientation=row, compression=no)                        +
+ PARTITION BY RANGE (year((col1)::timestamp without time zone))+
+ (                                                             +
+     PARTITION m1 VALUES LESS THAN (1000),                     +
+     PARTITION m2 VALUES LESS THAN (3000),                     +
+     PARTITION p3 VALUES LESS THAN (4000)                      +
+ )                                                             +
  ENABLE ROW MOVEMENT;
 (1 row)
 
@@ -724,8 +724,8 @@ select pg_get_tabledef('part_key_range_t2');
  WITH (orientation=row, compression=no)                           +
  PARTITION BY RANGE (to_days((col1)::timestamp without time zone))+
  (                                                                +
-     PARTITION p1 VALUES LESS THAN (60000) TABLESPACE pg_default, +
-     PARTITION p2 VALUES LESS THAN (80000) TABLESPACE pg_default  +
+     PARTITION p1 VALUES LESS THAN (60000),                       +
+     PARTITION p2 VALUES LESS THAN (80000)                        +
  )                                                                +
  ENABLE ROW MOVEMENT;
 (1 row)
@@ -742,9 +742,9 @@ select pg_get_tabledef('part_key_range_t2');
  WITH (orientation=row, compression=no)                           +
  PARTITION BY RANGE (to_days((col1)::timestamp without time zone))+
  (                                                                +
-     PARTITION p1 VALUES LESS THAN (60000) TABLESPACE pg_default, +
-     PARTITION p2 VALUES LESS THAN (80000) TABLESPACE pg_default, +
-     PARTITION p3 VALUES LESS THAN (90000) TABLESPACE pg_default  +
+     PARTITION p1 VALUES LESS THAN (60000),                       +
+     PARTITION p2 VALUES LESS THAN (80000),                       +
+     PARTITION p3 VALUES LESS THAN (90000)                        +
  )                                                                +
  ENABLE ROW MOVEMENT;
 (1 row)
@@ -761,10 +761,10 @@ select pg_get_tabledef('part_key_range_t2');
  WITH (orientation=row, compression=no)                           +
  PARTITION BY RANGE (to_days((col1)::timestamp without time zone))+
  (                                                                +
-     PARTITION m1 VALUES LESS THAN (50000) TABLESPACE pg_default, +
-     PARTITION m2 VALUES LESS THAN (60000) TABLESPACE pg_default, +
-     PARTITION p2 VALUES LESS THAN (80000) TABLESPACE pg_default, +
-     PARTITION p3 VALUES LESS THAN (90000) TABLESPACE pg_default  +
+     PARTITION m1 VALUES LESS THAN (50000),                       +
+     PARTITION m2 VALUES LESS THAN (60000),                       +
+     PARTITION p2 VALUES LESS THAN (80000),                       +
+     PARTITION p3 VALUES LESS THAN (90000)                        +
  )                                                                +
  ENABLE ROW MOVEMENT;
 (1 row)
@@ -781,9 +781,9 @@ select pg_get_tabledef('part_key_range_t2');
  WITH (orientation=row, compression=no)                           +
  PARTITION BY RANGE (to_days((col1)::timestamp without time zone))+
  (                                                                +
-     PARTITION p1 VALUES LESS THAN (60000) TABLESPACE pg_default, +
-     PARTITION p2 VALUES LESS THAN (80000) TABLESPACE pg_default, +
-     PARTITION p3 VALUES LESS THAN (90000) TABLESPACE pg_default  +
+     PARTITION p1 VALUES LESS THAN (60000),                       +
+     PARTITION p2 VALUES LESS THAN (80000),                       +
+     PARTITION p3 VALUES LESS THAN (90000)                        +
  )                                                                +
  ENABLE ROW MOVEMENT;
 (1 row)
@@ -800,9 +800,9 @@ select pg_get_tabledef('part_key_range_t2');
  WITH (orientation=row, compression=no)                           +
  PARTITION BY RANGE (to_days((col1)::timestamp without time zone))+
  (                                                                +
-     PARTITION m1 VALUES LESS THAN (70000) TABLESPACE pg_default, +
-     PARTITION m2 VALUES LESS THAN (80000) TABLESPACE pg_default, +
-     PARTITION p3 VALUES LESS THAN (90000) TABLESPACE pg_default  +
+     PARTITION m1 VALUES LESS THAN (70000),                       +
+     PARTITION m2 VALUES LESS THAN (80000),                       +
+     PARTITION p3 VALUES LESS THAN (90000)                        +
  )                                                                +
  ENABLE ROW MOVEMENT;
 (1 row)
@@ -823,8 +823,8 @@ select pg_get_tabledef('part_key_list_t1');
  WITH (orientation=row, compression=no)                       +
  PARTITION BY LIST (year((col1)::timestamp without time zone))+
  (                                                            +
-     PARTITION p1 VALUES (2000) TABLESPACE pg_default,        +
-     PARTITION p2 VALUES (3000) TABLESPACE pg_default         +
+     PARTITION p1 VALUES (2000),                              +
+     PARTITION p2 VALUES (3000)                               +
  )                                                            +
  ENABLE ROW MOVEMENT;
 (1 row)
@@ -841,9 +841,9 @@ select pg_get_tabledef('part_key_list_t1');
  WITH (orientation=row, compression=no)                       +
  PARTITION BY LIST (year((col1)::timestamp without time zone))+
  (                                                            +
-     PARTITION p1 VALUES (2000) TABLESPACE pg_default,        +
-     PARTITION p2 VALUES (3000) TABLESPACE pg_default,        +
-     PARTITION p3 VALUES (4000) TABLESPACE pg_default         +
+     PARTITION p1 VALUES (2000),                              +
+     PARTITION p2 VALUES (3000),                              +
+     PARTITION p3 VALUES (4000)                               +
  )                                                            +
  ENABLE ROW MOVEMENT;
 (1 row)
@@ -860,9 +860,9 @@ select pg_get_tabledef('part_key_list_t1');
  WITH (orientation=row, compression=no)                       +
  PARTITION BY LIST (year((col1)::timestamp without time zone))+
  (                                                            +
-     PARTITION m1 VALUES (1000,3000) TABLESPACE pg_default,   +
-     PARTITION m2 VALUES (2000,5000) TABLESPACE pg_default,   +
-     PARTITION p3 VALUES (4000) TABLESPACE pg_default         +
+     PARTITION m1 VALUES (1000,3000),                         +
+     PARTITION m2 VALUES (2000,5000),                         +
+     PARTITION p3 VALUES (4000)                               +
  )                                                            +
  ENABLE ROW MOVEMENT;
 (1 row)
@@ -883,8 +883,8 @@ select pg_get_tabledef('part_key_list_t2');
  WITH (orientation=row, compression=no)                          +
  PARTITION BY LIST (to_days((col1)::timestamp without time zone))+
  (                                                               +
-     PARTITION p1 VALUES (60000) TABLESPACE pg_default,          +
-     PARTITION p2 VALUES (80000) TABLESPACE pg_default           +
+     PARTITION p1 VALUES (60000),                                +
+     PARTITION p2 VALUES (80000)                                 +
  )                                                               +
  ENABLE ROW MOVEMENT;
 (1 row)
@@ -901,9 +901,9 @@ select pg_get_tabledef('part_key_list_t2');
  WITH (orientation=row, compression=no)                          +
  PARTITION BY LIST (to_days((col1)::timestamp without time zone))+
  (                                                               +
-     PARTITION p1 VALUES (60000) TABLESPACE pg_default,          +
-     PARTITION p2 VALUES (80000) TABLESPACE pg_default,          +
-     PARTITION p3 VALUES (90000) TABLESPACE pg_default           +
+     PARTITION p1 VALUES (60000),                                +
+     PARTITION p2 VALUES (80000),                                +
+     PARTITION p3 VALUES (90000)                                 +
  )                                                               +
  ENABLE ROW MOVEMENT;
 (1 row)
@@ -920,9 +920,9 @@ select pg_get_tabledef('part_key_list_t2');
  WITH (orientation=row, compression=no)                          +
  PARTITION BY LIST (to_days((col1)::timestamp without time zone))+
  (                                                               +
-     PARTITION m1 VALUES (10000,80000) TABLESPACE pg_default,    +
-     PARTITION m2 VALUES (60000,50000) TABLESPACE pg_default,    +
-     PARTITION p3 VALUES (90000) TABLESPACE pg_default           +
+     PARTITION m1 VALUES (10000,80000),                          +
+     PARTITION m2 VALUES (60000,50000),                          +
+     PARTITION p3 VALUES (90000)                                 +
  )                                                               +
  ENABLE ROW MOVEMENT;
 (1 row)
@@ -950,20 +950,20 @@ partition p2 values less than(63838026065),
 partition p3 values less than(63838026067)
 );
 select pg_get_tabledef('b_range_at1');
-                            pg_get_tabledef                             
-------------------------------------------------------------------------
- SET search_path = partition_test4;                                    +
- CREATE TABLE b_range_at1 (                                            +
-     c1 date,                                                          +
-     c2 integer                                                        +
- )                                                                     +
- WITH (orientation=row, compression=no)                                +
- PARTITION BY RANGE (to_seconds(c1))                                   +
- (                                                                     +
-     PARTITION p1 VALUES LESS THAN (63838026063) TABLESPACE pg_default,+
-     PARTITION p2 VALUES LESS THAN (63838026065) TABLESPACE pg_default,+
-     PARTITION p3 VALUES LESS THAN (63838026067) TABLESPACE pg_default +
- )                                                                     +
+                 pg_get_tabledef                  
+--------------------------------------------------
+ SET search_path = partition_test4;              +
+ CREATE TABLE b_range_at1 (                      +
+     c1 date,                                    +
+     c2 integer                                  +
+ )                                               +
+ WITH (orientation=row, compression=no)          +
+ PARTITION BY RANGE (to_seconds(c1))             +
+ (                                               +
+     PARTITION p1 VALUES LESS THAN (63838026063),+
+     PARTITION p2 VALUES LESS THAN (63838026065),+
+     PARTITION p3 VALUES LESS THAN (63838026067) +
+ )                                               +
  ENABLE ROW MOVEMENT;
 (1 row)
 

@@ -34,6 +34,7 @@
  **********************************************************************/
 
 #define TABLEOFINDEXBUCKETNUM 128
+#define MAX_INT32_LEN 11
 
 /*
  * Compile status mark
@@ -2061,6 +2062,14 @@ typedef struct CursorRecordType {
     Oid type_oid;
 } CursorRecordType;
 
+typedef enum {
+    PRO_NAME_COL,
+    DB_NAME_COL,
+    COVERAGE_ARR_COL,
+    PRO_QUERYS_COL,
+    COVERAGE_COL
+} CoverageColumn;
+
 /* Quick access array state */
 #define IS_ARRAY_STATE(state_list, state) ((state_list && u_sess->attr.attr_sql.sql_compatibility == A_FORMAT) ? \
                                           (linitial_int(state_list) == state) : false)
@@ -2112,6 +2121,7 @@ extern void examine_parameter_list(List* parameters, Oid languageOid, const char
 extern void compute_return_type(
     TypeName* returnType, Oid languageOid, Oid* prorettype_p, bool* returnsSet_p, bool fenced, int startLineNumber,
     TypeDependExtend* type_depend_extend, bool is_refresh_head);
+extern CodeLine* debug_show_code_worker(Oid funcid, uint32* num, int* headerlines);
 void plpgsql_free_override_stack(int depth);
 
 #endif /* PLPGSQL_H */
