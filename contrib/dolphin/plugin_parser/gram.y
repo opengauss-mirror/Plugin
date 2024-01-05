@@ -15603,6 +15603,7 @@ opt_temporary:
 			| /* EMPTY */							{ $$ = NULL; }
 		;
 dolphin_drop_type:	opt_temporary TABLE						{ $$ = OBJECT_TABLE; }
+					| opt_temporary TABLES					{ $$ = OBJECT_TABLE; }
 					| SCHEMA								{ $$ = OBJECT_SCHEMA; }
 					| VIEW									{ $$ = OBJECT_VIEW; }
 
