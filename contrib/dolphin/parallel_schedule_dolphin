@@ -91,7 +91,7 @@ test: case_sensitive_test/alter_table case_sensitive_test/reindex_internal case_
 
 test:  case_sensitive_test/create_view1 case_sensitive_test/create_view2 case_sensitive_test/create_view3 case_sensitive_test/create_view4 case_sensitive_test/create_view5 case_sensitive_test/view_test
 
-test: case_sensitive_test/drop
+test: case_sensitive_test/drop drop_tables
 
 # This use case uses the \dn command to output all the schemas.
 # If not placed in a separate test case group,
