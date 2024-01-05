@@ -159,6 +159,8 @@ static inline bool non_zero_date(const pg_tm *ltime)
 extern TimeADT adjust_time_range_with_warn(TimeADT time, bool can_ignore);
 extern "C" DLL_PUBLIC Datum time_cast_implicit(PG_FUNCTION_ARGS);
 
+extern void check_zero_month_day(pg_tm *tm, bool can_ignore);
+
 #endif
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);
