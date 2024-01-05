@@ -9535,6 +9535,13 @@ get_proc_str(int tok)
             {
                 blocklevel--;
             }
+            if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && blocklevel == 1 && pre_tok == ';' && tok == T_WORD)
+            {
+                curloc = yylloc;
+                plpgsql_append_source_text(&ds, loc, curloc);
+                tok = yylex();
+                break;
+            }
         }
         pre_tok = tok;
 
@@ -11782,8 +11789,10 @@ read_into_array_table_scalar_list(char *initial_name,
 
     if (type_flag == PLPGSQL_TOK_TABLE_VAR) {
         isarrayelem = read_into_using_add_tableelem(fieldnames, varnos, &nfields, tmpdno, &tok);
-    } else {
+    } else if (type_flag == PLPGSQL_TOK_VARRAY_VAR) {
         isarrayelem = read_into_using_add_arrayelem(fieldnames, varnos, &nfields, tmpdno, &tok);
+    } else {
+        isarrayelem = false;
     }
     if (!isarrayelem)
     {

@@ -283,6 +283,7 @@ typedef struct NewColumnValue {
                                > 0 denote modify with first|after */
     char *col_name;
     AttrNumber generate_attnum;
+    bool is_updated;
 } NewColumnValue;
 
 /*
@@ -484,12 +485,12 @@ static void validateCheckConstraintForBucket(Relation rel, Partition part, HeapT
 static void validateForeignKeyConstraint(char* conname, Relation rel, Relation pkrel, Oid pkindOid, Oid constraintOid);
 static void createForeignKeyTriggers(
     Relation rel, Oid refRelOid, Constraint* fkconstraint, Oid constraintOid, Oid indexOid);
-static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bool recurse, LOCKMODE lockmode);
+static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bool recurse, LOCKMODE lockmode, bool fromReplace);
 static bool ATCheckLedgerTableCmd(Relation rel, AlterTableCmd* cmd);
 static void ATPrepCmd(List** wqueue, Relation rel, AlterTableCmd* cmd, bool recurse, bool recursing, LOCKMODE lockmode,
     bool isDeltaTable = false);
-static void ATRewriteCatalogs(List** wqueue, LOCKMODE lockmode);
-static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterTableCmd* cmd, LOCKMODE lockmode);
+static void ATRewriteCatalogs(List** wqueue, LOCKMODE lockmode, bool fromReplace);
+static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterTableCmd* cmd, LOCKMODE lockmode, bool fromReplace);
 static void ATRewriteTables(AlterTableStmt *parsetree, List** wqueue, LOCKMODE lockmode);
 static void ATRewriteTable(AlteredTableInfo* tab, Relation oldrel, Relation newrel);
 static void ATCStoreRewriteTable(AlteredTableInfo* tab, Relation heapRel, LOCKMODE lockMode, Oid targetTblspc);
@@ -529,6 +530,8 @@ static void ExecChangeTableSpaceForCStorePartition(AlteredTableInfo*, LOCKMODE);
 
 static int GetAfterColumnAttnum(Oid attrelid, const char *after_name);
 static Node *UpdateVarattnoAfterAddColumn(Node *node, int startattnum, int endattnum, bool is_increase);
+static void UpdatePgStatisticFirstAfter(Relation rel, int startattnum, int endattnum, bool is_increase);
+static void UpdatePgStatisticExtFirstAfter(Relation rel, int startattnum, int endattnum, bool is_increase);
 static void UpdatePgDescriptionFirstAfter(Relation rel, int startattnum, int endattnum, bool is_increase);
 static void UpdatePgAttributeFirstAfter(Relation attr_rel, Oid attrelid, int startattnum, int endattnum,
     bool is_increase);
@@ -545,7 +548,7 @@ static void UpdatePgPartitionFirstAfter(Relation rel, int startattnum, int endat
 static void UpdatePgTriggerFirstAfter(Relation rel, int startattnum, int endattnum, bool is_increase);
 static void UpdatePgRlspolicyFirstAfter(Relation rel, int startattnum, int endattnum, bool is_increase);
 static ViewInfoForAdd *GetViewInfoFirstAfter(const char *rel_name, Oid objid, bool keep_star = false);
-static List *CheckPgRewriteFirstAfter(Relation rel);
+
 static void UpdateDependRefobjsubidFirstAfter(Relation rel, Oid myrelid, int curattnum, int newattnum,
     bool *has_depend);
 static void UpdateDependRefobjsubidToNewattnum(Relation rel, Oid myrelid, int curattnum, int newattnum);
@@ -589,7 +592,7 @@ static bool CheckLastColumn(Relation rel, AttrNumber attrnum);
 static void ATPrepDropColumn(
     List** wqueue, Relation rel, bool recurse, bool recursing, AlterTableCmd* cmd, LOCKMODE lockmode);
 static ObjectAddress ATExecDropColumn(List** wqueue, Relation rel, const char* colName, DropBehavior behavior, bool recurse,
-    bool recursing, bool missing_ok, LOCKMODE lockmode);
+    bool recursing, bool missing_ok, LOCKMODE lockmode, bool fromReplace);
 static ObjectAddress ATExecAddIndex(AlteredTableInfo* tab, Relation rel, IndexStmt* stmt, bool is_rebuild, LOCKMODE lockmode);
 static ObjectAddress ATExecAddConstraint(List** wqueue, AlteredTableInfo* tab, Relation rel, Constraint* newConstraint,
     bool recurse, bool is_readd, LOCKMODE lockmode);
@@ -2078,6 +2081,25 @@ void UpdatePartKeyExpr(Relation rel, PartitionState *partTableState, Oid partOid
     }
 }
 
+/*Check whether tables or partition stored in segment are created
+in limited tablespaces */
+void CheckSegmentIsInLimitTablespace(char* tablespacename, char* relname) 
+{
+    Oid tablespaceId = InvalidOid;
+    if (tablespacename != NULL) {
+        tablespaceId = get_tablespace_oid(tablespacename, false);
+    }
+    Oid tbspcId = (tablespaceId == InvalidOid) ? u_sess->proc_cxt.MyDatabaseTableSpace : tablespaceId;
+    uint64 tablespaceMaxSize = 0;
+    bool isLimit = TableSpaceUsageManager::IsLimited(tbspcId, &tablespaceMaxSize);
+    if (isLimit) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmodule(MOD_SEGMENT_PAGE),
+            errmsg("The partition %s do not support segment-page storage", relname != NULL ? relname : ""),
+            errdetail("Segment-page storage doest not support limited tablespace \"%s\"", get_tablespace_name(tbspcId)),
+            errhint("use default or unlimited user defined tablespace before using segment-page storage.")));
+    }
+}
+
 /* ----------------------------------------------------------------
  *		DefineRelation
  *				Creates a new relation.
@@ -2946,6 +2968,40 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
                 errmsg("The table %s do not support segment-page storage", stmt->relation->relname),
                 errdetail("Segment-page storage doest not support limited tablespace \"%s\"", get_tablespace_name(tbspcId)),
                 errhint("use default or unlimited user defined tablespace before using segment-page storage.")));
+        }
+        if (stmt->partTableState) {
+            ListCell* cell = NULL;
+            Oid partTablespaceId = InvalidOid;
+            char* partitionName = NULL;
+            char* tablespacename = NULL;
+            foreach (cell, stmt->partTableState->partitionList) {
+                char* partitionName = NULL;
+                char* tablespacename = NULL;
+                if (IsA((lfirst(cell)), IntervalPartitionDefState)) {
+                    IntervalPartitionDefState* partition = (IntervalPartitionDefState*)lfirst(cell);
+                    ListCell* speccell = NULL;
+                    foreach(speccell, partition->intervalTablespaces) {
+                        tablespacename = ((Value*)lfirst(speccell))->val.str;
+                        CheckSegmentIsInLimitTablespace(tablespacename, NULL);                     
+                    }
+                    continue;
+                } else if (IsA((lfirst(cell)), RangePartitionDefState) || IsA((lfirst(cell)), HashPartitionDefState) || IsA((lfirst(cell)), ListPartitionDefState)) {
+                    PartitionDefState* partition = (PartitionDefState*)lfirst(cell);
+                    tablespacename = partition->tablespacename;
+                    partitionName = partition->partitionName;
+                } else if (IsA((lfirst(cell)), RangePartitionStartEndDefState)) {
+                    RangePartitionStartEndDefState* partition = (RangePartitionStartEndDefState*)lfirst(cell);
+                    tablespacename = partition->tableSpaceName;
+                    partitionName = partition->partitionName;
+                } else if (IsA((lfirst(cell)), RangePartitionindexDefState)) {
+                    RangePartitionindexDefState* partition = (RangePartitionindexDefState*)lfirst(cell);
+                    tablespacename = partition->tablespace;
+                    partitionName = partition->name;
+                } else {
+                    Assert(false);
+                }
+                CheckSegmentIsInLimitTablespace(tablespacename, partitionName);
+            }
         }
     }
 
@@ -8039,7 +8095,7 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
     // Next version remove hack patch for 'ALTER FOREIGN TABLE ... ADD NODE'
     if (stmt->cmds != NIL) {
         /* process 'ALTER TABLE' cmd */
-        ATController(stmt, rel, stmt->cmds, interpretInhOption(stmt->relation->inhOpt), lockmode);
+        ATController(stmt, rel, stmt->cmds, interpretInhOption(stmt->relation->inhOpt), lockmode, stmt->fromReplace);
         if (enable_plpgsql_gsdependency_guc()) {
             (void)gsplsql_build_ref_type_dependency(get_rel_type_id(relid));
         }
@@ -8058,7 +8114,7 @@ void AlterTable(Oid relid, LOCKMODE lockmode, AlterTableStmt* stmt)
             /* open error table releation, closed in ATController */
             Relation errtablerel = relation_open(errtableid, lockmode);
 
-            ATController(stmt, errtablerel, addNodeCmds, interpretInhOption(stmt->relation->inhOpt), lockmode);
+            ATController(stmt, errtablerel, addNodeCmds, interpretInhOption(stmt->relation->inhOpt), lockmode, stmt->fromReplace);
         }
         list_free_ext(addNodeCmds);
     }
@@ -8093,7 +8149,7 @@ void AlterTableInternal(Oid relid, List* cmds, bool recurse)
     rel = relation_open(relid, lockmode);
 
     EventTriggerAlterTableRelid(relid);
-    ATController(NULL, rel, cmds, recurse, lockmode);
+    ATController(NULL, rel, cmds, recurse, lockmode, false);
 }
 
 static LOCKMODE set_lockmode(LOCKMODE mode, LOCKMODE cmd_mode)
@@ -8197,7 +8253,7 @@ LOCKMODE AlterTableGetLockLevel(List* cmds)
     return lockmode;
 }
 
-static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bool recurse, LOCKMODE lockmode)
+static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bool recurse, LOCKMODE lockmode, bool fromReplace)
 {
     List* wqueue = NIL;
     ListCell* lcmd = NULL;
@@ -8287,7 +8343,7 @@ static void ATController(AlterTableStmt *parsetree, Relation rel, List* cmds, bo
     relation_close(rel, NoLock);
 
     /* Phase 2: update system catalogs */
-    ATRewriteCatalogs(&wqueue, lockmode);
+    ATRewriteCatalogs(&wqueue, lockmode, fromReplace);
 
 #ifdef PGXC
     /* Invalidate cache for redistributed relation */
@@ -8893,7 +8949,7 @@ static void UpdateGeneratedExpr(AlteredTableInfo* tab)
  * dispatched in a "safe" execution order (designed to avoid unnecessary
  * conflicts).
  */
-static void ATRewriteCatalogs(List** wqueue, LOCKMODE lockmode)
+static void ATRewriteCatalogs(List** wqueue, LOCKMODE lockmode, bool fromReplace)
 {
     int pass;
     ListCell* ltab = NULL;
@@ -8922,7 +8978,7 @@ static void ATRewriteCatalogs(List** wqueue, LOCKMODE lockmode)
             rel = relation_open(tab->relid, NoLock);
 
             foreach (lcmd, subcmds)
-                ATExecCmd(wqueue, tab, rel, (AlterTableCmd*)lfirst(lcmd), lockmode);
+                ATExecCmd(wqueue, tab, rel, (AlterTableCmd*)lfirst(lcmd), lockmode, fromReplace);
 
             /*
              * After the ALTER TYPE pass, do cleanup work (this is not done in
@@ -9142,7 +9198,7 @@ static void ATCreateColumComments(Oid relOid, ColumnDef* columnDef)
 /*
  * ATExecCmd: dispatch a subcommand to appropriate execution routine
  */
-static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterTableCmd* cmd, LOCKMODE lockmode)
+static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterTableCmd* cmd, LOCKMODE lockmode, bool fromReplace)
 {
     ObjectAddress address = InvalidObjectAddress;
     elog(ES_LOGLEVEL, "[ATExecCmd] cmd subtype: %d", cmd->subtype);
@@ -9206,10 +9262,10 @@ static void ATExecCmd(List** wqueue, AlteredTableInfo* tab, Relation rel, AlterT
             address = ATExecSetStorage(rel, cmd->name, cmd->def, lockmode);
             break;
         case AT_DropColumn: /* DROP COLUMN */
-            address = ATExecDropColumn(wqueue, rel, cmd->name, cmd->behavior, false, false, cmd->missing_ok, lockmode);
+            address = ATExecDropColumn(wqueue, rel, cmd->name, cmd->behavior, false, false, cmd->missing_ok, lockmode, fromReplace);
             break;
         case AT_DropColumnRecurse: /* DROP COLUMN with recursion */
-            address = ATExecDropColumn(wqueue, rel, cmd->name, cmd->behavior, true, false, cmd->missing_ok, lockmode);
+            address = ATExecDropColumn(wqueue, rel, cmd->name, cmd->behavior, true, false, cmd->missing_ok, lockmode, fromReplace);
             break;
         case AT_DropPartition: /* drop partition */
             ATExecDropPartition(rel, cmd);
@@ -11391,6 +11447,111 @@ static Node *UpdateVarattnoAfterAddColumn(Node *node, int startattnum, int endat
 }
 
 /*
+ * update pg_statistic
+ * 1. add column with first or after column
+ * 2. modify column to first or after column
+ */
+static void UpdatePgStatisticFirstAfter(Relation rel, int startattnum, int endattnum, bool is_increase)
+{
+    Relation stat_rel;
+    HeapTuple stat_tuple;
+    ScanKeyData key[3];
+    SysScanDesc scan;
+    Form_pg_statistic stat_form;
+
+    stat_rel = heap_open(StatisticRelationId, RowExclusiveLock);
+
+    for (int i = (is_increase ? endattnum : startattnum);
+        (is_increase ? i >= startattnum : i <= endattnum); (is_increase ? i-- : i++)) {
+        ScanKeyInit(&key[0], Anum_pg_statistic_starelid, BTEqualStrategyNumber, F_OIDEQ,
+            ObjectIdGetDatum(RelationGetRelid(rel)));
+        ScanKeyInit(&key[1], Anum_pg_statistic_starelkind, BTEqualStrategyNumber, F_CHAREQ, ObjectIdGetDatum(STARELKIND_CLASS));
+        ScanKeyInit(&key[2], Anum_pg_statistic_staattnum, BTEqualStrategyNumber, F_INT2EQ, Int16GetDatum(i));
+
+        scan = systable_beginscan(stat_rel, StatisticRelidKindAttnumInhIndexId, true, NULL, 3, key);
+
+       while (HeapTupleIsValid(stat_tuple = systable_getnext(scan))) {
+            Datum values[Natts_pg_statistic] = { 0 };
+            bool nulls[Natts_pg_statistic] = { 0 };
+            bool replaces[Natts_pg_statistic] = { 0 };
+            HeapTuple new_stat_tuple;
+
+            stat_form = (Form_pg_statistic)GETSTRUCT(stat_tuple);
+
+            values[Anum_pg_statistic_staattnum - 1] = is_increase ? Int16GetDatum(stat_form->staattnum + 1) :
+                Int16GetDatum(stat_form->staattnum - 1);
+            replaces[Anum_pg_statistic_staattnum - 1] = true;
+
+            new_stat_tuple = heap_modify_tuple(stat_tuple, RelationGetDescr(stat_rel), values, nulls, replaces);
+            simple_heap_update(stat_rel, &new_stat_tuple->t_self, new_stat_tuple);
+            CatalogUpdateIndexes(stat_rel, new_stat_tuple);
+
+            heap_freetuple_ext(new_stat_tuple);
+        }
+        systable_endscan(scan);
+    }
+    heap_close(stat_rel, RowExclusiveLock);
+}
+
+/*
+ * update pg_statistic_ext
+ * 1. add column with first or after column
+ * 2. modify column to first or after column
+ */
+static void UpdatePgStatisticExtFirstAfter(Relation rel, int startattnum, int endattnum, bool is_increase)
+{
+    Relation stat_ext_rel;
+    HeapTuple stat_ext_tuple;
+    ScanKeyData key[2];
+    SysScanDesc scan;
+    int curattnum = is_increase ? endattnum + 1 : startattnum - 1;
+    int newattnum = is_increase ? startattnum : endattnum;
+
+    ScanKeyInit(&key[0], Anum_pg_statistic_ext_starelid, BTEqualStrategyNumber, F_OIDEQ,
+        ObjectIdGetDatum(RelationGetRelid(rel)));
+    ScanKeyInit(&key[1], Anum_pg_statistic_ext_starelkind, BTEqualStrategyNumber, F_CHAREQ, ObjectIdGetDatum(STARELKIND_CLASS));
+    stat_ext_rel = heap_open(StatisticExtRelationId, RowExclusiveLock);
+    scan = systable_beginscan(stat_ext_rel, StatisticExtRelidKindInhKeyIndexId, true, NULL, 2, key);
+
+    while (HeapTupleIsValid(stat_ext_tuple = systable_getnext(scan))) {
+        bool is_null = false;
+        Datum values[Natts_pg_statistic_ext] = { 0 };
+        bool nulls[Natts_pg_statistic_ext] = { 0 };
+        bool replaces[Natts_pg_statistic_ext] = { 0 };
+        int2vector *stakey = NULL;
+        int2vector *new_stakey = NULL;
+        HeapTuple new_stat_ext_tuple;
+
+        Datum stakey_datum = fastgetattr(stat_ext_tuple, Anum_pg_statistic_ext_stakey, RelationGetDescr(stat_ext_rel), &is_null);
+        stakey = (int2vector *)DatumGetPointer(stakey_datum);
+        int2 *stakey_values = (int2 *)palloc0(stakey->dim1 * sizeof(int2));
+        for (int i = 0; i < stakey->dim1; i++) {
+            if (stakey->values[i] >= startattnum && stakey->values[i] <= endattnum) {
+                stakey_values[i] = is_increase ? (stakey->values[i] + 1) : (stakey->values[i] - 1);
+            } else if (stakey->values[i] == curattnum) {
+                stakey_values[i] = newattnum;
+            } else {
+                stakey_values[i] = stakey->values[i];
+            }
+        }
+        new_stakey = buildint2vector(stakey_values, stakey->dim1);
+        values[Anum_pg_statistic_ext_stakey - 1] = PointerGetDatum(new_stakey);
+        replaces[Anum_pg_statistic_ext_stakey - 1] = true;
+
+        new_stat_ext_tuple = heap_modify_tuple(stat_ext_tuple, RelationGetDescr(stat_ext_rel), values, nulls, replaces);
+        simple_heap_update(stat_ext_rel, &new_stat_ext_tuple->t_self, new_stat_ext_tuple);
+        CatalogUpdateIndexes(stat_ext_rel, new_stat_ext_tuple);
+
+        pfree_ext(new_stakey);
+        pfree_ext(stakey_values);
+        heap_freetuple_ext(new_stat_ext_tuple);
+    }
+
+    systable_endscan(scan);
+    heap_close(stat_ext_rel, RowExclusiveLock);
+}
+
+/*
  * update pg_description
  * 1. add column with first or after col_name.
  * 2. modify column to first or after column.
@@ -11545,16 +11706,17 @@ static void UpdatePgIndexFirstAfter(Relation rel, int startattnum, int endattnum
         AssertEreport(!is_null, MOD_OPT, "");
         indkey = (int2vector *)DatumGetPointer(indkey_datum);
         Assert(indkey->dim1 == numatts);
-        new_indkey = buildint2vector(NULL, numatts);
+        int2 *indkey_values = (int2 *)palloc0(numatts * sizeof(int2));
         for (int i = 0; i < numatts; i++) {
             if (indkey->values[i] >= startattnum && indkey->values[i] <= endattnum) {
-                new_indkey->values[i] = is_increase ? (indkey->values[i] + 1) : (indkey->values[i] - 1);
+                indkey_values[i] = is_increase ? (indkey->values[i] + 1) : (indkey->values[i] - 1);
             } else if (indkey->values[i] == curattnum) {
-                new_indkey->values[i] = newattnum;
+                indkey_values[i] = newattnum;
             } else {
-                new_indkey->values[i] = indkey->values[i];
+                indkey_values[i] = indkey->values[i];
             }
         }
+        new_indkey = buildint2vector(indkey_values, numatts);
         values[Anum_pg_index_indkey - 1] = PointerGetDatum(new_indkey);
         replaces[Anum_pg_index_indkey - 1] = true;
 
@@ -11603,6 +11765,7 @@ static void UpdatePgIndexFirstAfter(Relation rel, int startattnum, int endattnum
         CatalogUpdateIndexes(index_rel, new_index_tuple);
 
         pfree_ext(new_indkey);
+        pfree_ext(indkey_values);
         heap_freetuple_ext(new_index_tuple);
     }
 
@@ -11843,7 +12006,7 @@ static void UpdateIndexFirstAfter(Relation rel)
     HeapTuple index_tuple;
     ScanKeyData key;
     SysScanDesc scan;
-    Form_pg_index index_form;
+    MemoryContext oldcontext;
 
     /* Prepare to scan pg_index for entries having indrelid = this rel. */
     ScanKeyInit(&key, Anum_pg_index_indrelid, BTEqualStrategyNumber, F_OIDEQ,
@@ -11852,11 +12015,15 @@ static void UpdateIndexFirstAfter(Relation rel)
     scan = systable_beginscan(pg_index_rel, IndexIndrelidIndexId, true, NULL, 1, &key);
 
     while (HeapTupleIsValid(index_tuple = systable_getnext(scan))) {
-        index_form = (Form_pg_index)GETSTRUCT(index_tuple);
+        Form_pg_index index_form = (Form_pg_index)GETSTRUCT(index_tuple);
 
         table_index_rel = index_open(index_form->indexrelid, RowExclusiveLock);
 
-        table_index_rel->rd_index = index_form;
+        oldcontext = MemoryContextSwitchTo(LocalMyDBCacheMemCxt());
+        pfree_ext(table_index_rel->rd_indextuple);
+        table_index_rel->rd_indextuple = heap_copytuple(index_tuple);
+        table_index_rel->rd_index = (Form_pg_index)GETSTRUCT(table_index_rel->rd_indextuple);
+        (void)MemoryContextSwitchTo(oldcontext);
 
         index_close(table_index_rel, RowExclusiveLock);
     }
@@ -12039,23 +12206,25 @@ static void UpdatePgPartitionFirstAfter(Relation rel, int startattnum, int endat
             HeapTuple new_par_tuple;
 
             partkey = (int2vector *)DatumGetPointer(partkey_datum);
-            new_partKey = buildint2vector(NULL, partkey->dim1);
+            int2 *partkey_values = (int2 *)palloc0(partkey->dim1 * sizeof(int2));
+            
             for (int i = 0; i < partkey->dim1; i++) {
                 if (partkey->values[i] >= startattnum && partkey->values[i] <= endattnum) {
-                    new_partKey->values[i] = is_increase ? (partkey->values[i] + 1) : (partkey->values[i] - 1);
+                    partkey_values[i] = is_increase ? (partkey->values[i] + 1) : (partkey->values[i] - 1);
                 } else if (partkey->values[i] == curattnum) {
                     if (is_modified) {
                         if (has_partition != NULL) {
                             *has_partition = true;
                         }
-                        new_partKey->values[i] = 0;
+                        partkey_values[i] = 0;
                     } else {
-                        new_partKey->values[i] = newattnum;
+                        partkey_values[i] = newattnum;
                     }
                 } else {
-                    new_partKey->values[i] = partkey->values[i];
+                    partkey_values[i] = partkey->values[i];
                 }
             }
+            new_partKey = buildint2vector(partkey_values, partkey->dim1);
             values[Anum_pg_partition_partkey - 1] = PointerGetDatum(new_partKey);
             replaces[Anum_pg_partition_partkey - 1] = true;
 
@@ -12064,6 +12233,7 @@ static void UpdatePgPartitionFirstAfter(Relation rel, int startattnum, int endat
             CatalogUpdateIndexes(par_rel, new_par_tuple);
 
             pfree_ext(new_partKey);
+            pfree_ext(partkey_values);
             heap_freetuple_ext(new_par_tuple);
         }
     }
@@ -12197,6 +12367,7 @@ static List *CheckPgRewriteFirstAfter(Relation rel)
     return query_str;
 }
 
+
 void CheckPgRewriteWithDroppedColumn(Oid rel_oid, Oid rw_oid, Form_pg_attribute attForm,
     int2 old_attnum, char** attName, List **old_query_str)
 {
@@ -12226,18 +12397,42 @@ void CheckPgRewriteWithDroppedColumn(Oid rel_oid, Oid rw_oid, Form_pg_attribute 
         char *evActionString = TextDatumGetCString(evActiomDatum);
         List *evAction = (List *)stringToNode(evActionString);
         Query* query = (Query*)linitial(evAction);
-        // change query targetEntry
+        // change querytree's targetEntry and RTE
         ListCell* lc = NULL;
         foreach (lc, query->targetList) {
             TargetEntry* tle = (TargetEntry*)lfirst(lc);
+            Index rtevarno = 0;
+            AttrNumber rtevarattno = 0;
             if (nodeTag((Node*)tle->expr) == T_Var && tle->resorigtbl == rel_oid &&
-                ((Var*)tle->expr)->varoattno == old_attnum) {
+                tle->resorigcol == old_attnum) {
+                ListCell* rtelc = NULL;
+                tle->resorigcol = attForm->attnum;
+                Var *var = (Var *)tle->expr;
+                rtevarno = var->varno;
+                rtevarattno = var->varattno;
+                var->vartype = attForm->atttypid;
+                var->vartypmod = attForm->atttypmod;
+                var->varcollid = attForm->attcollation;
+                *attName = pstrdup(tle->resname);
+            }
+            // change rtable entry
+            if (rtevarno == 0 || rtevarattno == 0) {
+                continue;
+            }
+            RangeTblEntry* rte = rt_fetch(rtevarno, query->rtable);
+            if (!rte || rte->alias != NULL || rte->rtekind != RTE_JOIN || rte->joinaliasvars == NIL) {
                 Var *var = (Var *)tle->expr;
                 var->varattno = attForm->attnum;
                 var->varoattno = attForm->attnum;
-                var->vartype = attForm->atttypid;
-                var->vartypmod = attForm->atttypmod;
-                *attName = pstrdup(tle->resname);
+                continue;
+            }
+            Var* aliasvar = (Var*)list_nth(rte->joinaliasvars, rtevarattno - 1);
+            if (IsA(aliasvar, Var)) {
+                aliasvar->varattno = attForm->attnum;
+                aliasvar->varoattno = attForm->attnum;
+                aliasvar->vartype = attForm->atttypid;
+                aliasvar->vartypmod = attForm->atttypmod;
+                aliasvar->varcollid = attForm->attcollation;
             }
         }
         char* actiontree = nodeToString((Node*)evAction);
@@ -12337,21 +12532,24 @@ static void UpdatePgTriggerFirstAfter(Relation rel, int startattnum, int endattn
         bool nulls[Natts_pg_trigger] = { 0 };
         bool replaces[Natts_pg_trigger] = { 0 };
         HeapTuple new_tri_tuple;
+        int2vector *new_tgattr = NULL;
+        int2 *tgattr_values = NULL;
 
         Datum tgattr_datum = fastgetattr(tri_tuple, Anum_pg_trigger_tgattr, tri_rel->rd_att, &is_null);
         if (!is_null) {
             int2vector *tgattr = (int2vector *)DatumGetPointer(tgattr_datum);
-            int2vector *new_tgattr = buildint2vector(NULL, tgattr->dim1);
+            int2 *tgattr_values = (int2 *)palloc0(tgattr->dim1 * sizeof(int2));
             for (int i = 0; i < tgattr->dim1; i++) {
                 if (tgattr->values[i] >= startattnum && tgattr->values[i] <= endattnum) {
-                    new_tgattr->values[i] = is_increase ? (tgattr->values[i] + 1) : (tgattr->values[i] - 1);
+                    tgattr_values[i] = is_increase ? (tgattr->values[i] + 1) : (tgattr->values[i] - 1);
                 } else if (tgattr->values[i] == curattnum) {
-                    new_tgattr->values[i] = newattnum;
+                    tgattr_values[i] = newattnum;
                 } else {
-                    new_tgattr->values[i] = tgattr->values[i];
+                    tgattr_values[i] = tgattr->values[i];
                 }
             }
 
+            new_tgattr = buildint2vector(tgattr_values, tgattr->dim1);
             values[Anum_pg_trigger_tgattr - 1] = PointerGetDatum(new_tgattr);
             replaces[Anum_pg_trigger_tgattr - 1] = true;
         }
@@ -12375,6 +12573,10 @@ static void UpdatePgTriggerFirstAfter(Relation rel, int startattnum, int endattn
         new_tri_tuple = heap_modify_tuple(tri_tuple, RelationGetDescr(tri_rel), values, nulls, replaces);
         simple_heap_update(tri_rel, &new_tri_tuple->t_self, new_tri_tuple);
         CatalogUpdateIndexes(tri_rel, new_tri_tuple);
+
+        pfree_ext(tgattr_values);
+        pfree_ext(new_tgattr);
+        heap_freetuple_ext(new_tri_tuple);
     }
 
     systable_endscan(scan);
@@ -12425,6 +12627,8 @@ static void UpdatePgRlspolicyFirstAfter(Relation rel, int startattnum, int endat
         new_rls_tuple = heap_modify_tuple(rls_tuple, RelationGetDescr(rls_rel), values, nulls, replaces);
         simple_heap_update(rls_rel, &new_rls_tuple->t_self, new_rls_tuple);
         CatalogUpdateIndexes(rls_rel, new_rls_tuple);
+
+        heap_freetuple_ext(new_rls_tuple);
     }
 
     systable_endscan(scan);
@@ -12671,6 +12875,8 @@ static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relat
     if (is_addloc) {
         UpdatePgAttributeFirstAfter(attrdesc, myrelid, newattnum, currattnum, true);
         UpdatePgDescriptionFirstAfter(rel, newattnum, currattnum, true);
+        UpdatePgStatisticFirstAfter(rel, newattnum, currattnum, true);
+        UpdatePgStatisticExtFirstAfter(rel, newattnum, currattnum, true);
         UpdatePgIndexFirstAfter(rel, newattnum, currattnum, true);
         UpdatePgConstraintFirstAfter(rel, newattnum, currattnum, true);
         UpdatePgConstraintConfkeyFirstAfter(rel, newattnum, currattnum, true);
@@ -13814,7 +14020,7 @@ static void ResetTempAutoIncrement(Relation rel, AttrNumber attnum)
  * Return value is that of the dropped column.
  */
 static ObjectAddress  ATExecDropColumn(List** wqueue, Relation rel, const char* colName, DropBehavior behavior, bool recurse,
-    bool recursing, bool missing_ok, LOCKMODE lockmode)
+    bool recursing, bool missing_ok, LOCKMODE lockmode, bool fromReplace)
 {
     HeapTuple tuple;
     Form_pg_attribute targetatt;
@@ -13877,7 +14083,7 @@ static ObjectAddress  ATExecDropColumn(List** wqueue, Relation rel, const char* 
      * We have to check if the drop column is the last column.
      * If it is, not allow to drop it.
      */
-    if (GetLocatorType(rel->rd_id) != LOCATOR_TYPE_HASH) {
+    if (!fromReplace && GetLocatorType(rel->rd_id) != LOCATOR_TYPE_HASH) {
         bool lastColumn = CheckLastColumn(rel, attnum);
         if (lastColumn) {
             ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("must have at least one column")));
@@ -13956,7 +14162,7 @@ static ObjectAddress  ATExecDropColumn(List** wqueue, Relation rel, const char* 
                     /*
                      * Delete this column of the delta table.
                      */
-                    ATExecDropColumn(wqueue, childrel, colName, behavior, true, true, false, lockmode);
+                    ATExecDropColumn(wqueue, childrel, colName, behavior, true, true, false, lockmode, fromReplace);
                 } else if (childatt->attinhcount == 1 && !childatt->attislocal) {
                     /*
                      * If the child column has other definition sources, just
@@ -13965,7 +14171,7 @@ static ObjectAddress  ATExecDropColumn(List** wqueue, Relation rel, const char* 
                      * Time to delete this child column, too
                      */
 
-                    ATExecDropColumn(wqueue, childrel, colName, behavior, true, true, false, lockmode);
+                    ATExecDropColumn(wqueue, childrel, colName, behavior, true, true, false, lockmode, fromReplace);
                 } else {
                     /* Child column must survive my deletion */
                     childatt->attinhcount--;
@@ -14051,7 +14257,7 @@ static ObjectAddress  ATExecDropColumn(List** wqueue, Relation rel, const char* 
             Oid tag_relid = get_tag_relid(RelationGetRelationName(rel), rel->rd_rel->relnamespace);
             Relation tagrel = heap_open(tag_relid, lockmode);
             CheckTableNotInUse(tagrel, "ALTER TABLE");
-            ATExecDropColumn(wqueue, tagrel, colName, behavior, false, false, true, lockmode);
+            ATExecDropColumn(wqueue, tagrel, colName, behavior, false, false, true, lockmode, fromReplace);
             TagsCacheMgr::GetInstance().clear();
 
             heap_close(tagrel, NoLock);
@@ -14059,7 +14265,7 @@ static ObjectAddress  ATExecDropColumn(List** wqueue, Relation rel, const char* 
             /* if drop TSField columns, update delta table simultaneously */
             Relation delta_rel = Tsdb::RelationGetDeltaRelation(rel, lockmode);
             CheckTableNotInUse(delta_rel, "ALTER TABLE");
-            ATExecDropColumn(wqueue, delta_rel, colName, behavior, false, false, true, lockmode);
+            ATExecDropColumn(wqueue, delta_rel, colName, behavior, false, false, true, lockmode, fromReplace);
             heap_close(delta_rel, NoLock);
         }
     }
@@ -16298,6 +16504,7 @@ static void ATPrepAlterColumnType(List** wqueue, AlteredTableInfo* tab, Relation
         newval->newattnum = 0;
         newval->col_name = pstrdup(colName);
         newval->generate_attnum = 0;
+        newval->is_updated = false;
 
         tab->newvals = lappend(tab->newvals, newval);
         if (ATColumnChangeRequiresRewrite(transform, attnum))
@@ -16725,6 +16932,8 @@ static void AlterColumnToFirstAfter(AlteredTableInfo* tab, Relation rel, AlterTa
     UpdatePgPartitionFirstAfter(rel, startattnum, endattnum, is_increase, true, &has_partition);
     UpdatePgAttributeFirstAfter(attr_rel, myrelid, startattnum, endattnum, is_increase);
     UpdatePgDescriptionFirstAfter(rel, startattnum, endattnum, is_increase);
+    UpdatePgStatisticFirstAfter(rel, startattnum, endattnum, is_increase);
+    UpdatePgStatisticExtFirstAfter(rel, startattnum, endattnum, is_increase);
     UpdatePgIndexFirstAfter(rel, startattnum, endattnum, is_increase);
     UpdatePgConstraintFirstAfter(rel, startattnum, endattnum, is_increase);
     UpdatePgConstraintConfkeyFirstAfter(rel, startattnum, endattnum, is_increase);
@@ -16815,7 +17024,7 @@ static void UpdateNewvalsAttnum(AlteredTableInfo* tab, Relation rel, AlterTableC
             continue;
         }
 
-        if (strcmp(ex->col_name, col_name) == 0) {
+        if (strcmp(ex->col_name, col_name) == 0 && !ex->is_updated) {
             HeapTuple heap_tup;
             Form_pg_attribute att_tup;
 
@@ -16827,8 +17036,10 @@ static void UpdateNewvalsAttnum(AlteredTableInfo* tab, Relation rel, AlterTableC
             att_tup = (Form_pg_attribute)GETSTRUCT(heap_tup);
             ex->attnum = att_tup->attnum;
             ex->newattnum = GetNewattnumFirstAfter(rel, cmd, ex->attnum);
+            ex->is_updated = true;
 
             tableam_tops_free_tuple(heap_tup);
+            return;
         }
     }
 }
@@ -17251,6 +17462,10 @@ static ObjectAddress ATExecAlterColumnType(AlteredTableInfo* tab, Relation rel, 
     DelDependencONDataType(rel, depRel, attTup);
 
     heap_close(depRel, RowExclusiveLock);
+
+    if (tab->is_first_after) {
+        UpdateNewvalsAttnum(tab, rel, cmd, colName);
+    }
 
     /*
      * Here we go --- change the recorded column type and collation.  (Note
@@ -33713,7 +33928,7 @@ static void ATExecAlterModifyColumn(AlteredTableInfo* tab, Relation rel, AlterTa
         tab->new_notnull = true;
     }
 
-    if (is_first_after) {
+    if (is_first_after || tab->is_first_after) {
         UpdateNewvalsAttnum(tab, rel, cmd, col_name);
     }
 

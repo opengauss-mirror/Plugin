@@ -15235,14 +15235,34 @@ DefineStmt:
 
 					/* can't use qualified_name, sigh */
 					n->typevar = makeRangeVarFromAnyName($3, @3, yyscanner);
+					n->replace = false;
 					n->coldeflist = $6;
+					$$ = (Node *)n;
+				}
+			| CREATE OR REPLACE TYPE_P any_name as_is '(' OptTableFuncElementList ')'
+				{
+					CompositeTypeStmt *n = makeNode(CompositeTypeStmt);
+
+					/* can't use qualified_name, sigh */
+					n->typevar = makeRangeVarFromAnyName($5, @5, yyscanner);
+					n->replace = true;
+					n->coldeflist = $8;
 					$$ = (Node *)n;
 				}
 			| CREATE TYPE_P any_name as_is TABLE OF func_type
 				{
 					TableOfTypeStmt *n = makeNode(TableOfTypeStmt);
+					n->replace = false;
 					n->typname = $3;
 					n->reftypname = $7;
+					$$ = (Node *)n;
+				}
+			| CREATE OR REPLACE TYPE_P any_name as_is TABLE OF func_type
+				{
+					TableOfTypeStmt *n = makeNode(TableOfTypeStmt);
+					n->replace = true;
+					n->typname = $5;
+					n->reftypname = $9;
 					$$ = (Node *)n;
 				}
 			| CREATE TYPE_P any_name as_is ENUM_P '(' opt_enum_val_list ')'
@@ -21136,7 +21156,8 @@ pkg_body_subprogram: {
 						} else if (block_level == 0 && tok != ';') {
 							in_procedure = false;
 						}
-                        if (tok == ';')
+                        if (tok == ';' || 
+							(u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && pre_tok == ';' && tok == IDENT && in_procedure))
                         {
                             block_level = block_level - 1;
                             if (block_level == 0)
@@ -21796,6 +21817,11 @@ subprogram_body: 	{
 							&& tok != WHILE_P
 							&& tok != REPEAT)
 						{
+							if (u_sess->attr.attr_sql.sql_compatibility == A_FORMAT && blocklevel == 1 && pre_tok == ';')
+							{
+								proc_e = yylloc;
+								break;
+							}
 							tok = END_P;
 							continue;
 						}

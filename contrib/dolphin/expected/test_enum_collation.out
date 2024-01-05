@@ -971,8 +971,8 @@ select pg_get_tabledef('test_part_tab1');
  WITH (orientation=row, compression=no)                                         +
  PARTITION BY RANGE (c1)                                                        +
  (                                                                              +
-     PARTITION test_enum_tab_p1 VALUES LESS THAN (5) TABLESPACE pg_default,     +
-     PARTITION test_enum_tab_p2 VALUES LESS THAN (10) TABLESPACE pg_default     +
+     PARTITION test_enum_tab_p1 VALUES LESS THAN (5),                           +
+     PARTITION test_enum_tab_p2 VALUES LESS THAN (10)                           +
  )                                                                              +
  ENABLE ROW MOVEMENT;
 (1 row)
