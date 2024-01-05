@@ -1965,6 +1965,10 @@ WARNING:  date/time field value out of range: "2000-00-00 10:01"
 LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('2000-00-00 10...
                                                       ^
 CONTEXT:  referenced column: v
+ERROR:  The value of month or day cannot be zero.
+LINE 1: INSERT INTO t_NO_ZERO_DATE_datetime(v) VALUES('2000-00-00 10...
+                                                      ^
+CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-00 10:01');
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-00-01 10:01');
 WARNING:  date/time field value out of range: "0000-00-01 10:01"
@@ -1978,6 +1982,10 @@ LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('0000-01-00 1...
 CONTEXT:  referenced column: v
 INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 10:01');
 WARNING:  date/time field value out of range: "2000-00-00 10:01"
+LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 1...
+                                                       ^
+CONTEXT:  referenced column: v
+ERROR:  The value of month or day cannot be zero.
 LINE 1: INSERT INTO t_NO_ZERO_DATE_timestamp(v) VALUES('2000-00-00 1...
                                                        ^
 CONTEXT:  referenced column: v
@@ -2048,20 +2056,18 @@ SELECT * FROM t_NO_ZERO_DATE_datetime order by v;
 ---------------------
  0000-00-00 00:00:00
  0000-00-00 00:00:00
- 0000-00-00 00:00:00
  0000-00-00 10:01:00
  0000-00-00 10:01:00
-(5 rows)
+(4 rows)
 
 SELECT * FROM t_NO_ZERO_DATE_timestamp order by v;
               v               
 ------------------------------
  0000-00-00 00:00:00+08:05:43
  0000-00-00 00:00:00+08:05:43
- 0000-00-00 00:00:00+08:05:43
  0000-00-00 10:01:00+08:05:43
  0000-00-00 10:01:00+08:05:43
-(5 rows)
+(4 rows)
 
 DROP TABLE t_NO_ZERO_DATE_date;
 DROP TABLE t_NO_ZERO_DATE_datetime;

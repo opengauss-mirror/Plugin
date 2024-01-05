@@ -1620,6 +1620,67 @@ select * from t2;
 
 drop table if exists t1;
 drop table if exists t2;
+-- 0 day or 0 month
+select cast(10000 as datetime);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamp
+ERROR:  The value of month or day cannot be zero.
+CONTEXT:  referenced column: timestamp
+select cast(10100 as datetime);
+ERROR:  The value of month or day cannot be zero.
+CONTEXT:  referenced column: timestamp
+select cast(10001 as datetime);
+ERROR:  The value of month or day cannot be zero.
+CONTEXT:  referenced column: timestamp
+select cast(10000 as timestamp with time zone);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamptz
+ERROR:  The value of month or day cannot be zero.
+CONTEXT:  referenced column: timestamptz
+select cast(10100 as timestamp with time zone);
+ERROR:  The value of month or day cannot be zero.
+CONTEXT:  referenced column: timestamptz
+select cast(10001 as timestamp with time zone);
+ERROR:  The value of month or day cannot be zero.
+CONTEXT:  referenced column: timestamptz
+select cast('10000' as datetime);
+WARNING:  date/time field value out of range: "10000"
+LINE 1: select cast('10000' as datetime);
+                    ^
+CONTEXT:  referenced column: timestamp
+ERROR:  The value of month or day cannot be zero.
+LINE 1: select cast('10000' as datetime);
+                    ^
+CONTEXT:  referenced column: timestamp
+select cast('10100' as datetime);
+ERROR:  The value of month or day cannot be zero.
+LINE 1: select cast('10100' as datetime);
+                    ^
+CONTEXT:  referenced column: timestamp
+select cast('10001' as datetime);
+ERROR:  The value of month or day cannot be zero.
+LINE 1: select cast('10001' as datetime);
+                    ^
+CONTEXT:  referenced column: timestamp
+select cast('10000' as timestamp with time zone);
+WARNING:  date/time field value out of range: "10000"
+LINE 1: select cast('10000' as timestamp with time zone);
+                    ^
+CONTEXT:  referenced column: timestamptz
+ERROR:  The value of month or day cannot be zero.
+LINE 1: select cast('10000' as timestamp with time zone);
+                    ^
+CONTEXT:  referenced column: timestamptz
+select cast('10100' as timestamp with time zone);
+ERROR:  The value of month or day cannot be zero.
+LINE 1: select cast('10100' as timestamp with time zone);
+                    ^
+CONTEXT:  referenced column: timestamptz
+select cast('10001' as timestamp with time zone);
+ERROR:  The value of month or day cannot be zero.
+LINE 1: select cast('10001' as timestamp with time zone);
+                    ^
+CONTEXT:  referenced column: timestamptz
 drop schema b_time_funcs3 cascade;
 NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table func_test3

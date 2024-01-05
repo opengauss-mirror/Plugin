@@ -487,6 +487,11 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, bool is_date_sconst)
     Timestamp result;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
+#ifdef DOLPHIN
+    error_t rc = EOK;
+    rc = memset_s(tm, sizeof(pg_tm), 0, sizeof(pg_tm));
+    securec_check(rc, "\0", "\0");
+#endif
     int tz;
     int dtype;
     int nf;
@@ -543,8 +548,14 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, bool is_date_sconst)
             }
             if (dterr != 0) {
                 DateTimeParseErrorWithFlag(dterr, str, "timestamp", fcinfo->can_ignore, is_date_sconst);
+#ifdef DOLPHIN
+                check_zero_month_day(tm, fcinfo->can_ignore);
+#endif
                 PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
             }
+#ifdef DOLPHIN
+            check_zero_month_day(tm, fcinfo->can_ignore);
+#endif
             switch (dtype) {
                 case DTK_DATE:
                     if (tm2timestamp(tm, fsec, NULL, &result) != 0)
@@ -750,6 +761,11 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
 {
     Timestamp result;
     struct pg_tm tt, *tm = &tt;
+#ifdef DOLPHIN
+    error_t rc = EOK;
+    rc = memset_s(tm, sizeof(pg_tm), 0, sizeof(pg_tm));
+    securec_check(rc, "\0", "\0");
+#endif
     int tz;
     int level = can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
     if (ts < B_FORMAT_DATE_INT_MIN) {
@@ -789,14 +805,19 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
         time = ts % 1000000; /* extract time: hhmmss */
         date = ts / 1000000; /* extract date: YYMMDD or YYYYMMDD */
     } 
-    if (int32_b_format_time_internal(tm, true, time, &fsec) || int32_b_format_date_internal(tm, date, true)){
+    if (int32_b_format_time_internal(tm, true, time, &fsec) || int32_b_format_date_internal(tm, date, true)) {
         ereport(level,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
 #ifdef DOLPHIN
         *time_error_type = TIME_INCORRECT;
+        check_zero_month_day(tm, can_ignore);
 #endif
         return TIMESTAMP_ZERO;
     }
+
+#ifdef DOLPHIN
+    check_zero_month_day(tm, can_ignore);
+#endif
 
     if (hasTz) {
         /* b format timestamp type */
@@ -854,7 +875,8 @@ Datum timestamp_to_datum_with_null_result(PG_FUNCTION_ARGS, bool hasTz, int64 ts
 {
     TimeErrorType time_error_type = TIME_CORRECT;
     int ts_cnt = 0;
-    int64 result = integer_b_format_timestamp(hasTz, ts, fcinfo->can_ignore, &time_error_type, &ts_cnt);
+    /* only when datetime cmp will access here, so can_ignore can be set as true defaultly*/
+    int64 result = integer_b_format_timestamp(hasTz, ts, true, &time_error_type, &ts_cnt);
     if (ts_cnt > TIMESTAMP_YYYYMMDDhhmmss_LEN) {
         PG_RETURN_TIMESTAMP(B_FORMAT_TIMESTAMP_MAX_VALUE);
     }
@@ -1483,6 +1505,11 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, bool is_timestamptz_sconst, TimeErr
     TimestampTz result;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
+#ifdef DOLPHIN
+    error_t rc = EOK;
+    rc = memset_s(tm, sizeof(pg_tm), 0, sizeof(pg_tm));
+    securec_check(rc, "\0", "\0");
+#endif
     int tz;
     int invalid_tz;
     int dtype;
@@ -1531,9 +1558,13 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, bool is_timestamptz_sconst, TimeErr
             DateTimeParseError(dterr, str, "timestamp", is_timestamptz_sconst || fcinfo->can_ignore);
 #ifdef DOLPHIN
             *time_error_type = TIME_INCORRECT;
+            check_zero_month_day(tm, fcinfo->can_ignore);
 #endif
             PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
         }
+#ifdef DOLPHIN
+        check_zero_month_day(tm, fcinfo->can_ignore);
+#endif
         switch (dtype) {
             case DTK_DATE:
                 if (tm2timestamp(tm, fsec, &tz, &result) != 0)
@@ -11537,5 +11568,15 @@ Datum timestamptz_ge_time(PG_FUNCTION_ARGS)
     TimestampTz dt2 = time2timestamptz(time1);
     
     PG_RETURN_BOOL(timestamptz_cmp_internal(dt1, dt2) >= 0);
+}
+
+void check_zero_month_day(pg_tm *tm, bool can_ignore)
+{
+    if (!can_ignore && (tm->tm_mon == 0 || tm->tm_mday == 0)
+        && tm->tm_year != 0) {
+        ereport(ERROR,
+            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                errmsg("The value of month or day cannot be zero.")));
+    }
 }
 #endif

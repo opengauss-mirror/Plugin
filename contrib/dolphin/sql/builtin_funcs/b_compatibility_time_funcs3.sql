@@ -427,5 +427,20 @@ select * from t2;
 drop table if exists t1;
 drop table if exists t2;
 
+-- 0 day or 0 month
+select cast(10000 as datetime);
+select cast(10100 as datetime);
+select cast(10001 as datetime);
+select cast(10000 as timestamp with time zone);
+select cast(10100 as timestamp with time zone);
+select cast(10001 as timestamp with time zone);
+
+select cast('10000' as datetime);
+select cast('10100' as datetime);
+select cast('10001' as datetime);
+select cast('10000' as timestamp with time zone);
+select cast('10100' as timestamp with time zone);
+select cast('10001' as timestamp with time zone);
+
 drop schema b_time_funcs3 cascade;
 reset current_schema;

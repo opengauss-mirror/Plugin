@@ -771,13 +771,8 @@ select time_bool('-838:59:59');
 select timestamp('2022-05');
 WARNING:  invalid input syntax for type timestamp: "2022-05"
 CONTEXT:  referenced column: timestamp
-WARNING:  date/time field value out of range
+ERROR:  The value of month or day cannot be zero.
 CONTEXT:  referenced column: timestamp
- timestamp 
------------
- 
-(1 row)
-
 select timestamp('2022-05-05');
       timestamp      
 ---------------------
