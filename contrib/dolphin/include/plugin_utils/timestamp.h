@@ -44,6 +44,8 @@ do {                                                                            
 #define FRAC_PRECISION 6
 #define TIMESTAMP_MAX_PRECISION 6
 
+#define TIMESTAMP_WITH_FORMAT_ARG_LEN 4
+
 #ifdef DOLPHIN
 #define B_MAX_NUMBER_DATETIME INT64CONST(99991231235959)    /* 9999-12-31 23:59:59 */
 #define B_NORMAL_NUMBER_DATETIME INT64CONST(10000101000000) /* 1000-01-01 00:00:00 */
@@ -136,7 +138,6 @@ extern bool datetime_in_with_sql_mode_internal(char *str, struct pg_tm *tm, fsec
 extern bool datetime_in_range(Timestamp datetime);
 extern int128 timestamp_int128(Timestamp timestamp);
 extern int128 timestamptz_int128(TimestampTz timestampTz);
-extern Datum timestamp_internal(PG_FUNCTION_ARGS, bool is_timestamptz_sconst);
 extern TimestampTz time2timestamptz(TimeADT timeVal);
 extern TimestampTz timetz2timestamptz(TimeTzADT* timetzVal);
 typedef enum {
@@ -145,8 +146,8 @@ typedef enum {
     TIME_INCORRECT
 } TimeErrorType;
 
-
-Datum timestamptz_internal(PG_FUNCTION_ARGS, bool is_timestamptz_sconst, TimeErrorType* time_error_type);
+extern Datum timestamp_internal(PG_FUNCTION_ARGS, int time_cast_type, TimeErrorType* time_error_type);
+extern Datum timestamptz_internal(PG_FUNCTION_ARGS, int time_cast_type, TimeErrorType* time_error_type);
 
 extern "C" DLL_PUBLIC Datum int64_b_format_datetime(PG_FUNCTION_ARGS);
 

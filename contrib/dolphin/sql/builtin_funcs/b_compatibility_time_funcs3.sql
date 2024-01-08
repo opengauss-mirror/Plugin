@@ -442,5 +442,20 @@ select cast('10000' as timestamp with time zone);
 select cast('10100' as timestamp with time zone);
 select cast('10001' as timestamp with time zone);
 
+set dolphin.b_compatibility_mode = true;
+select cast(3.1415926 as datetime);
+select cast(3.1415926::float8 as datetime);
+select cast('3.1415926' as datetime);
+select cast(3.1415926 as timestamp with time zone);
+select cast(3.1415926::float8 as timestamp with time zone);
+select cast('3.1415926' as timestamp with time zone);
+
+create table t1(a datetime, b timestamp with time zone);
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into t1 values ('3.1415926', '3.1415926');
+select * from t1;
+drop table if exists t1;
+
+
 drop schema b_time_funcs3 cascade;
 reset current_schema;
