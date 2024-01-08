@@ -1675,6 +1675,77 @@ ERROR:  The value of month or day cannot be zero.
 LINE 1: select cast('10001' as timestamp with time zone);
                     ^
 CONTEXT:  referenced column: timestamptz
+set dolphin.b_compatibility_mode = true;
+select cast(3.1415926 as datetime);
+WARNING:  invalid input syntax for type timestamp: "000003.1415926"
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast(3.1415926::float8 as datetime);
+WARNING:  invalid input syntax for type timestamp: "000003.1415926"
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast('3.1415926' as datetime);
+WARNING:  invalid input syntax for type timestamp: "3.1415926"
+LINE 1: select cast('3.1415926' as datetime);
+                    ^
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast(3.1415926 as timestamp with time zone);
+WARNING:  invalid input syntax for type timestamp: "000003.1415926"
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast(3.1415926::float8 as timestamp with time zone);
+WARNING:  invalid input syntax for type timestamp: "000003.1415926"
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast('3.1415926' as timestamp with time zone);
+WARNING:  invalid input syntax for type timestamp: "3.1415926"
+LINE 1: select cast('3.1415926' as timestamp with time zone);
+                    ^
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+create table t1(a datetime, b timestamp with time zone);
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into t1 values ('3.1415926', '3.1415926');
+WARNING:  invalid input syntax for type timestamp: "3.1415926"
+LINE 1: insert into t1 values ('3.1415926', '3.1415926');
+                               ^
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type timestamp: "3.1415926"
+LINE 1: insert into t1 values ('3.1415926', '3.1415926');
+                                            ^
+CONTEXT:  referenced column: b
+select * from t1;
+          a          |           b            
+---------------------+------------------------
+ 0000-00-00 00:00:00 | 0000-00-00 00:00:00-08
+(1 row)
+
+drop table if exists t1;
 drop schema b_time_funcs3 cascade;
 NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table func_test3
