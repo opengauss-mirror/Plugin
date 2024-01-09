@@ -103,5 +103,25 @@ select '65536'::text::uint2;
 select '4294967296'::text::uint4;
 select '18446744073709551616'::text::uint8;
 
+select cast(1 as signed int);
+select cast(1 as unsigned int);
+select convert(1 , signed int);
+select convert(1 , unsigned int);
+
+select cast(1 as signed integer);
+select cast(1 as unsigned integer);
+select convert(1 , signed integer);
+select convert(1 , unsigned integer);
+
+select cast(1 as integer signed);
+select cast(1 as integer unsigned);
+select convert(1 , integer signed);
+select convert(1 , integer unsigned);
+
+select cast(1 as  signed);
+select cast(1 as unsigned);
+select convert(1 , signed);
+select convert(1 , unsigned);
+
 drop schema uint_cast3 cascade;
 reset current_schema;
