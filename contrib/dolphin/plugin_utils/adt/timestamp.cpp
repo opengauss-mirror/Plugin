@@ -333,6 +333,12 @@ extern "C" DLL_PUBLIC Datum timestamp_agg_finalfn(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(timestamp_cast);
 extern "C" DLL_PUBLIC Datum timestamp_cast(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_explicit);
+extern "C" DLL_PUBLIC Datum timestamp_explicit(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_explicit);
+extern "C" DLL_PUBLIC Datum timestamptz_explicit(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(convert_datetime_double);
 extern "C" DLL_PUBLIC Datum convert_datetime_double(PG_FUNCTION_ARGS);
 
@@ -540,19 +546,39 @@ bool TimestampTypeCheck(char* str, bool can_ignore, struct pg_tm* tm, Timestamp 
 
 /* timestamp_in()
  * Convert a string to internal form.
+ * timestamp_in case: cast('xx' as datetime),datetime(xxx),xx::datetime
+ * timestamp_cast case: dattime'xxx'
+ * text_time_explicit case: cast(xx as datetime)
  */
 Datum timestamp_in(PG_FUNCTION_ARGS)
 #ifdef DOLPHIN
 {
-    return timestamp_internal(fcinfo, false);
+    TimeErrorType time_error_type = TIME_CORRECT;
+    Datum datum_internal = timestamp_internal(fcinfo, TIME_IN, &time_error_type);
+    if ((fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT) &&
+        time_error_type == TIME_INCORRECT) {
+        PG_RETURN_NULL();
+    }
+    return datum_internal;
 }
 
 Datum timestamp_cast(PG_FUNCTION_ARGS)
 {
-    return timestamp_internal(fcinfo, true);
+    TimeErrorType time_error_type = TIME_CORRECT;
+    return timestamp_internal(fcinfo, TIME_CAST, &time_error_type);
 }
 
-Datum timestamp_internal(PG_FUNCTION_ARGS, bool is_date_sconst)
+Datum timestamp_explicit(PG_FUNCTION_ARGS)
+{
+    TimeErrorType time_error_type = TIME_CORRECT;
+    Datum datum_internal = timestamp_internal(fcinfo, TEXT_TIME_EXPLICIT, &time_error_type);
+    if (time_error_type == TIME_INCORRECT) {
+        PG_RETURN_NULL();
+    }
+    return datum_internal;
+}
+
+Datum timestamp_internal(PG_FUNCTION_ARGS, int time_cast_type, TimeErrorType* time_error_type)
 #endif
 {
     char* str = PG_GETARG_CSTRING(0);
@@ -581,7 +607,7 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, bool is_date_sconst)
     /*
      * this case is used for timestamp format is specified.
      */
-    if (4 == PG_NARGS() && !is_date_sconst) {
+    if (TIMESTAMP_WITH_FORMAT_ARG_LEN == PG_NARGS() && time_cast_type == TIME_IN) {
         timestamp_fmt = PG_GETARG_CSTRING(3);
         if (timestamp_fmt == NULL) {
             ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT), errmsg("specified timestamp format is null")));
@@ -611,7 +637,11 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, bool is_date_sconst)
             */
             dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
             if (dterr != 0) {
-                DateTimeParseErrorWithFlag(dterr, str, "timestamp", fcinfo->can_ignore, is_date_sconst);
+                DateTimeParseErrorWithFlag(dterr, str, "timestamp", fcinfo->can_ignore, time_cast_type == TIME_CAST);
+#ifdef DOLPHIN
+                *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ?
+                    TIME_CORRECT : TIME_INCORRECT;
+#endif
                 /*
                  * if error ignorable, function DateTimeParseError reports warning instead, then return current timestamp.
                  */
@@ -627,9 +657,11 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, bool is_date_sconst)
                 }
             }
             if (dterr != 0) {
-                DateTimeParseErrorWithFlag(dterr, str, "timestamp", fcinfo->can_ignore, is_date_sconst);
+                DateTimeParseErrorWithFlag(dterr, str, "timestamp", fcinfo->can_ignore, time_cast_type == TIME_CAST);
 #ifdef DOLPHIN
                 check_zero_month_day(tm, fcinfo->can_ignore);
+                *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ?
+                    TIME_CORRECT : TIME_INCORRECT;
 #endif
                 PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
             }
@@ -759,7 +791,14 @@ Datum float8_b_format_datetime(PG_FUNCTION_ARGS)
     char *str = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(n)));
     char buf[MAXDATELEN + 1];
     fillZeroBeforeNumericTimestamp(str, buf);
-    return DirectFunctionCall3(timestamp_in, CStringGetDatum(buf), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    bool isRetNull = false;
+    Datum result = DirectCall3(&isRetNull, timestamp_explicit, InvalidOid, CStringGetDatum(buf),
+        ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    if (isRetNull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
 }
 
 Datum float8_b_format_timestamp(PG_FUNCTION_ARGS)
@@ -768,7 +807,14 @@ Datum float8_b_format_timestamp(PG_FUNCTION_ARGS)
     char *str = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(n)));
     char buf[MAXDATELEN + 1];
     fillZeroBeforeNumericTimestamp(str, buf);
-    return DirectFunctionCall3(timestamptz_in, CStringGetDatum(buf), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    bool isRetNull = false;
+    Datum result = DirectCall3(&isRetNull, timestamptz_explicit, InvalidOid, CStringGetDatum(buf),
+        ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    if (isRetNull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
 }
 
 Datum numeric_b_format_date(PG_FUNCTION_ARGS)
@@ -785,7 +831,14 @@ Datum numeric_b_format_datetime(PG_FUNCTION_ARGS)
     char *str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
     char buf[MAXDATELEN + 1];
     fillZeroBeforeNumericTimestamp(str, buf);
-    return DirectFunctionCall3(timestamp_in, CStringGetDatum(buf), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    bool isRetNull = false;
+    Datum result = DirectCall3(&isRetNull, timestamp_explicit, InvalidOid, CStringGetDatum(buf),
+        ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    if (isRetNull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
 }
 
 Datum numeric_b_format_timestamp(PG_FUNCTION_ARGS)
@@ -794,7 +847,14 @@ Datum numeric_b_format_timestamp(PG_FUNCTION_ARGS)
     char *str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
     char buf[MAXDATELEN + 1];
     fillZeroBeforeNumericTimestamp(str, buf);
-    return DirectFunctionCall3(timestamptz_in, CStringGetDatum(buf), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    bool isRetNull = false;
+    Datum result = DirectCall3(&isRetNull, timestamptz_explicit, InvalidOid, CStringGetDatum(buf),
+        ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    if (isRetNull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
 }
 
 #ifdef DOLPHIN
@@ -813,7 +873,12 @@ int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec)
     }
     /* validate len */
     if (len > TIMESTAMP_YYYYMMDDhhmmss_LEN) {
-        ereport(ERROR,
+#ifdef DOLPHIN
+        if (ENABLE_B_CMPT_MODE)
+            return DTERR_FIELD_OVERFLOW;
+        else
+#endif
+            ereport(ERROR,
                 (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
     }
     /* treat as date */
@@ -885,6 +950,11 @@ int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec)
     *tcp = '\0';
     dterr = NumberTime(true, time_str, tm, fsec);
     if (dterr) {
+#ifdef DOLPHIN
+        if (ENABLE_B_CMPT_MODE)
+            return dterr;
+        else
+#endif
         ereport(ERROR,
                 (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
     }
@@ -1651,7 +1721,7 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
 #ifdef DOLPHIN
 {
     TimeErrorType time_error_type = TIME_CORRECT;
-    Datum result = timestamptz_internal(fcinfo, false, &time_error_type);
+    Datum result = timestamptz_internal(fcinfo, TIME_IN, &time_error_type);
     if (time_error_type == TIME_INCORRECT &&
         (fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT)) {
         PG_RETURN_NULL();
@@ -1659,17 +1729,17 @@ Datum timestamptz_in(PG_FUNCTION_ARGS)
     return result;
 }
 
-Datum timestamptz_implicit(PG_FUNCTION_ARGS)
+Datum timestamptz_explicit(PG_FUNCTION_ARGS)
 {
     TimeErrorType time_error_type = TIME_CORRECT;
-    Datum result = timestamptz_internal(fcinfo, true, &time_error_type);
+    Datum result = timestamptz_internal(fcinfo, TEXT_TIME_EXPLICIT, &time_error_type);
     if (time_error_type == TIME_INCORRECT) {
         PG_RETURN_NULL();
     }
     return result;
 }
 
-Datum timestamptz_internal(PG_FUNCTION_ARGS, bool is_timestamptz_sconst, TimeErrorType* time_error_type)
+Datum timestamptz_internal(PG_FUNCTION_ARGS, int time_cast_type, TimeErrorType* time_error_type)
 #endif
 {
     char* str = PG_GETARG_CSTRING(0);
@@ -1711,12 +1781,12 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, bool is_timestamptz_sconst, TimeErr
     } else {
         dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
         if (dterr != 0) {
-            DateTimeParseError(dterr, str, "timestamp", is_timestamptz_sconst || fcinfo->can_ignore);
+            DateTimeParseError(dterr, str, "timestamp", (time_cast_type == TIME_CAST_IMPLICIT) || fcinfo->can_ignore);
             /*
              * if error ignorable, function DateTimeParseError reports warning instead, then return current timestamp.
              */
 #ifdef DOLPHIN
-             *time_error_type = TIME_INCORRECT;
+             *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ? TIME_CORRECT : TIME_INCORRECT;
 #endif
              PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
         }
@@ -1731,10 +1801,10 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, bool is_timestamptz_sconst, TimeErr
             }
         }
         if (dterr != 0) {
-            DateTimeParseError(dterr, str, "timestamp", is_timestamptz_sconst || fcinfo->can_ignore);
+            DateTimeParseError(dterr, str, "timestamp", (time_cast_type == TIME_CAST_IMPLICIT) || fcinfo->can_ignore);
 #ifdef DOLPHIN
-            *time_error_type = TIME_INCORRECT;
             check_zero_month_day(tm, fcinfo->can_ignore);
+            *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ? TIME_CORRECT : TIME_INCORRECT;
 #endif
             PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
         }
@@ -1743,9 +1813,12 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, bool is_timestamptz_sconst, TimeErr
 #endif
         switch (dtype) {
             case DTK_DATE:
-                if (tm2timestamp(tm, fsec, &tz, &result) != 0)
+                if (tm2timestamp(tm, fsec, &tz, &result) != 0) {
                     ereport(errlevel,
                         (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
+                    *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ?
+                        TIME_CORRECT : TIME_INCORRECT;
+                    }
                 break;
 
             case DTK_EPOCH:
