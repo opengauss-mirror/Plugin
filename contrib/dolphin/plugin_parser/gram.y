@@ -34340,30 +34340,38 @@ func_expr_common_subexpr:
 			{
 			        $$ = makeTypeCast($3, $5, @1);
 			}
-                        | CONVERT '(' a_expr ',' UNSIGNED INTEGER ')'
-                        {
-                                $$ = makeTypeCast($3, SystemTypeName("uint8"), @1);
-                        }
-                        | CONVERT '(' a_expr ',' SIGNED INTEGER ')'
-                        {
-                                $$ = makeTypeCast($3, SystemTypeName("int8"), @1);
-                        }
-                        | CONVERT '(' a_expr ',' INTEGER UNSIGNED ')'
-                        {
-                                $$ = makeTypeCast($3, SystemTypeName("uint8"), @1);
-                        }
-                        | CONVERT '(' a_expr ',' INTEGER SIGNED ')'
-                        {
-                                $$ = makeTypeCast($3, SystemTypeName("int8"), @1);
-                        }
-                        | CONVERT '(' a_expr ',' UNSIGNED ')'
-                        {
-                                $$ = makeTypeCast($3, SystemTypeName("uint8"), @1);
-                        }
-                        | CONVERT '(' a_expr ',' SIGNED ')'
-                        {
-                                $$ = makeTypeCast($3, SystemTypeName("int8"), @1);
-                        }
+			| CONVERT '(' a_expr ',' UNSIGNED INTEGER ')'
+			{
+			        $$ = makeTypeCast($3, SystemTypeName("uint8"), @1);
+			}
+			| CONVERT '(' a_expr ',' SIGNED INTEGER ')'
+			{
+			        $$ = makeTypeCast($3, SystemTypeName("int8"), @1);
+			}
+			| CONVERT '(' a_expr ',' INTEGER UNSIGNED ')'
+			{
+			        $$ = makeTypeCast($3, SystemTypeName("uint8"), @1);
+			}
+			| CONVERT '(' a_expr ',' INTEGER SIGNED ')'
+			{
+			        $$ = makeTypeCast($3, SystemTypeName("int8"), @1);
+			}
+			| CONVERT '(' a_expr ',' UNSIGNED INT_P ')'
+			{
+			        $$ = makeTypeCast($3, SystemTypeName("uint8"), @1);
+			}
+			| CONVERT '(' a_expr ',' SIGNED INT_P ')'
+			{
+			        $$ = makeTypeCast($3, SystemTypeName("int8"), @1);
+			}
+			| CONVERT '(' a_expr ',' UNSIGNED ')'
+			{
+			        $$ = makeTypeCast($3, SystemTypeName("uint8"), @1);
+			}
+			| CONVERT '(' a_expr ',' SIGNED ')'
+			{
+			        $$ = makeTypeCast($3, SystemTypeName("int8"), @1);
+			}
 			| CURRENT_TIME
 				{
 					FuncCall *n = makeNode(FuncCall);
@@ -34860,14 +34868,18 @@ func_expr_common_subexpr:
 				{ $$ = makeTypeCast($3, SystemTypeName("uint8"), @1); }
 			| CAST '(' a_expr AS SIGNED ')'
 				{ $$ = makeTypeCast($3, SystemTypeName("int8"), @1); }
-                        | CAST '(' a_expr AS UNSIGNED INTEGER ')'
-                                { $$ = makeTypeCast($3, SystemTypeName("uint8"), @1); }
-                        | CAST '(' a_expr AS SIGNED INTEGER ')'
-                                { $$ = makeTypeCast($3, SystemTypeName("int8"), @1); }
-                        | CAST '(' a_expr AS INTEGER UNSIGNED ')'
-                                { $$ = makeTypeCast($3, SystemTypeName("uint8"), @1); }
-                        | CAST '(' a_expr AS INTEGER SIGNED ')'
-                                { $$ = makeTypeCast($3, SystemTypeName("int8"), @1); }
+			| CAST '(' a_expr AS UNSIGNED INTEGER ')'
+				{ $$ = makeTypeCast($3, SystemTypeName("uint8"), @1); }
+			| CAST '(' a_expr AS SIGNED INTEGER ')'
+				{ $$ = makeTypeCast($3, SystemTypeName("int8"), @1); }
+			| CAST '(' a_expr AS UNSIGNED INT_P ')'
+				{ $$ = makeTypeCast($3, SystemTypeName("uint8"), @1); }
+			| CAST '(' a_expr AS SIGNED INT_P ')'
+				{ $$ = makeTypeCast($3, SystemTypeName("int8"), @1); }
+			| CAST '(' a_expr AS INTEGER UNSIGNED ')'
+				{ $$ = makeTypeCast($3, SystemTypeName("uint8"), @1); }
+			| CAST '(' a_expr AS INTEGER SIGNED ')'
+				{ $$ = makeTypeCast($3, SystemTypeName("int8"), @1); }
 			| EXTRACT '(' extract_list ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
