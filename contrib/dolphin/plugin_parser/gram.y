@@ -403,11 +403,11 @@ static List *mergeTableFuncParameters(List *func_args, List *columns);
 static TypeName *TableFuncTypeName(List *columns);
 static RangeVar *makeRangeVarFromAnyName(List *names, int position, core_yyscan_t yyscanner);
 static void SplitColQualList(List *qualList,
-							 List **constraintList, CollateClause **collClause,
+							 List **constraintList, CollateClause **collClause, List **columnOptions,
 							 core_yyscan_t yyscanner);
 static void SplitColQualList(List *qualList,
 							 List **constraintList, CollateClause **collClause, ClientLogicColumnRef **clientLogicColumnRef,
-							 core_yyscan_t yyscanner);
+							 List **columnOptions, core_yyscan_t yyscanner);
 static void processCASbits(int cas_bits, int location, const char *constrType,
 			   bool *deferrable, bool *initdeferred, bool *not_valid,
 			   bool *no_inherit, core_yyscan_t yyscanner);
@@ -4497,10 +4497,10 @@ modify_column_cmds:
 			| modify_column_cmds ',' modify_column_cmd	{ $$ = lappend($$, $3); }
 			;
 modify_column_cmd:
-			DolphinColColId Typename opt_charset ColQualList opt_column_options add_column_first_after
+			DolphinColColId Typename opt_charset ColQualList add_column_first_after
 				{
-					AlterTableCmd *n = (AlterTableCmd *)$6;
-					if ($4 == NULL && $5 == NULL && n->is_first == false && n->after_name == NULL && !ENABLE_MODIFY_COLUMN) {
+					AlterTableCmd *n = (AlterTableCmd *)$5;
+					if ($4 == NULL && n->is_first == false && n->after_name == NULL && !ENABLE_MODIFY_COLUMN) {
 						ColumnDef *def = makeNode(ColumnDef);
 						n->subtype = AT_AlterColumnType;
 						n->name = $1;
@@ -4533,7 +4533,6 @@ modify_column_cmd:
 						def->colname = $1;
 						def->typname = $2;
 						def->typname->charset = $3;
-						def->columnOptions = $5;
 						def->kvtype = ATT_KV_UNDEFINED;
 						def->inhcount = 0;
 						def->is_local = true;
@@ -4546,7 +4545,7 @@ modify_column_cmd:
 						def->collOid = InvalidOid;
 						def->fdwoptions = NULL;
 						def->update_default = NULL;
-						SplitColQualList($4, &def->constraints, &def->collClause, &def->clientLogicColumnRef, yyscanner);
+						SplitColQualList($4, &def->constraints, &def->collClause, &def->clientLogicColumnRef, &def->columnOptions, yyscanner);
 						n->subtype = AT_ModifyColumn;
 						n->name = $1;
 						n->def = (Node *)def;
@@ -5423,7 +5422,7 @@ alter_table_cmd:
 				{
 					$$ = $2;
 				}
-			| MODIFY_P COLUMN DolphinColColId Typename opt_charset ColQualList opt_column_options add_column_first_after
+			| MODIFY_P COLUMN DolphinColColId Typename opt_charset ColQualList add_column_first_after
 				{
 #ifdef ENABLE_MULTIPLE_NODES
 					const char* message = "Un-support feature";
@@ -5444,7 +5443,6 @@ alter_table_cmd:
 					def->colname = $3;
 					def->typname = $4;
 					def->typname->charset = $5;
-					def->columnOptions = $7;
 					def->kvtype = ATT_KV_UNDEFINED;
 					def->inhcount = 0;
 					def->is_local = true;
@@ -5457,14 +5455,14 @@ alter_table_cmd:
 					def->cooked_default = NULL;
 					def->collOid = InvalidOid;
 					def->fdwoptions = NULL;
-					SplitColQualList($6, &def->constraints, &def->collClause, &def->clientLogicColumnRef, yyscanner);
-					AlterTableCmd *n = (AlterTableCmd *)$8;
+					SplitColQualList($6, &def->constraints, &def->collClause, &def->clientLogicColumnRef, &def->columnOptions, yyscanner);
+					AlterTableCmd *n = (AlterTableCmd *)$7;
 					n->subtype = AT_ModifyColumn;
 					n->name = $3;
 					n->def = (Node *)def;
 					$$ = (Node *)n;
 				}
-			| CHANGE opt_column DolphinColColId DolphinColColId Typename opt_charset ColQualList opt_column_options add_column_first_after
+			| CHANGE opt_column DolphinColColId DolphinColColId Typename opt_charset ColQualList add_column_first_after
 				{
 #ifdef ENABLE_MULTIPLE_NODES
 					const char* message = "Un-support feature";
@@ -5498,8 +5496,8 @@ alter_table_cmd:
 					def->cooked_default = NULL;
 					def->collOid = InvalidOid;
 					def->fdwoptions = NULL;
-					SplitColQualList($7, &def->constraints, &def->collClause, &def->clientLogicColumnRef, yyscanner);
-					AlterTableCmd *n = (AlterTableCmd *)$9;
+					SplitColQualList($7, &def->constraints, &def->collClause, &def->clientLogicColumnRef, &def->columnOptions, yyscanner);
+					AlterTableCmd *n = (AlterTableCmd *)$8;
 					n->subtype = AT_ModifyColumn;
 					n->name = $3;
 					n->def = (Node *)def;
@@ -9627,7 +9625,7 @@ ColIdForTableElement:	DOLPHINIDENT				{ $$ = $1->str; }
 			| col_name_keyword				{ $$ = pstrdup($1); }
 		;
 
-columnDefForTableElement:	ColIdForTableElement Typename opt_charset KVType ColCmprsMode create_generic_options ColQualList opt_column_options
+columnDefForTableElement:	ColIdForTableElement Typename opt_charset KVType ColCmprsMode create_generic_options ColQualList
 				{
 					ColumnDef *n = makeNode(ColumnDef);
 					n->colname = $1;
@@ -9646,18 +9644,17 @@ columnDefForTableElement:	ColIdForTableElement Typename opt_charset KVType ColCm
 					n->collOid = InvalidOid;
 					n->fdwoptions = $6;
 					if ($4 == ATT_KV_UNDEFINED) {
-						SplitColQualList($7, &n->constraints, &n->collClause, &n->clientLogicColumnRef,
+						SplitColQualList($7, &n->constraints, &n->collClause, &n->clientLogicColumnRef, &n->columnOptions,
 									 yyscanner);
 					} else {
-						SplitColQualList($7, &n->constraints, &n->collClause,
+						SplitColQualList($7, &n->constraints, &n->collClause, &n->columnOptions,
 										yyscanner);
 					}
-					n->columnOptions = $8;
 					$$ = (Node *)n;
 				}
 		;
 
-columnDef:	DolphinColColId Typename opt_charset KVType ColCmprsMode create_generic_options ColQualList opt_column_options
+columnDef:	DolphinColColId Typename opt_charset KVType ColCmprsMode create_generic_options ColQualList
 				{
 					ColumnDef *n = makeNode(ColumnDef);
 					n->colname = $1;
@@ -9676,10 +9673,10 @@ columnDef:	DolphinColColId Typename opt_charset KVType ColCmprsMode create_gener
 					n->collOid = InvalidOid;
 					n->fdwoptions = $6;
 					if ($4 == ATT_KV_UNDEFINED) {
-						SplitColQualList($7, &n->constraints, &n->collClause, &n->clientLogicColumnRef,
+						SplitColQualList($7, &n->constraints, &n->collClause, &n->clientLogicColumnRef, &n->columnOptions,
 									 yyscanner);
 					} else {
-						SplitColQualList($7, &n->constraints, &n->collClause,
+						SplitColQualList($7, &n->constraints, &n->collClause, &n->columnOptions,
 										yyscanner);
 					}
 					n->columnOptions = $8;
@@ -9754,7 +9751,7 @@ columnOptions:	ColId WITH OPTIONS ColQualList
 					n->raw_default = NULL;
 					n->cooked_default = NULL;
 					n->collOid = InvalidOid;
-					SplitColQualList($4, &n->constraints, &n->collClause, &n->clientLogicColumnRef,
+					SplitColQualList($4, &n->constraints, &n->collClause, &n->clientLogicColumnRef, &n->columnOptions,
 									 yyscanner);
 					$$ = (Node *)n;
 				}
@@ -9823,6 +9820,10 @@ ColConstraint:
 					n->raw_expr = NULL;
 					n->cooked_expr = NULL;
 					$$ = (Node *)n;
+				}
+			| column_option
+				{
+					$$ = $1;
 				}
 		;	
 with_algorithm:
@@ -13562,7 +13563,7 @@ ForeignColDef: ColId Typename ForeignPosition create_generic_options  ColQualLis
 					n->collOid = InvalidOid;
 					n->fdwoptions = $4;
 					n->clientLogicColumnRef=NULL;
-					SplitColQualList($5, &n->constraints, &n->collClause,
+					SplitColQualList($5, &n->constraints, &n->collClause, &n->columnOptions,
 										yyscanner);
 					if ($3)
 					{
@@ -25187,7 +25188,7 @@ CreateDomainStmt:
 					CreateDomainStmt *n = makeNode(CreateDomainStmt);
 					n->domainname = $3;
 					n->typname = $5;
-					SplitColQualList($6, &n->constraints, &n->collClause,
+					SplitColQualList($6, &n->constraints, &n->collClause, NULL,
 									 yyscanner);
 					$$ = (Node *)n;
 				}
@@ -38376,7 +38377,7 @@ makeRangeVarFromAnyName(List *names, int position, core_yyscan_t yyscanner)
 /* Separate Constraint nodes from COLLATE clauses in a ColQualList */
 static void
 SplitColQualList(List *qualList,
-				 List **constraintList, CollateClause **collClause,
+				 List **constraintList, CollateClause **collClause, List **columnOptions,
 				 core_yyscan_t yyscanner)
 {
 	ListCell   *cell;
@@ -38419,6 +38420,10 @@ SplitColQualList(List *qualList,
 					errcause("client encryption feature is not supported this operation."),
 						erraction("Check client encryption feature whether supported this operation.")));
 		}
+		else if (IsA(n, CommentStmt) && columnOptions != NULL)
+		{
+			*columnOptions = lappend(*columnOptions, n);
+		}
 		else {
 			const char* message = "unexpected node type";
 			InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
@@ -38435,7 +38440,7 @@ SplitColQualList(List *qualList,
 /* Separate Constraint nodes from COLLATE clauses in a ColQualList */
 static void
 SplitColQualList(List *qualList,
-				 List **constraintList, CollateClause **collClause,ClientLogicColumnRef **clientLogicColumnRef,
+				 List **constraintList, CollateClause **collClause,ClientLogicColumnRef **clientLogicColumnRef, List **columnOptions,
 				 core_yyscan_t yyscanner)
 {
 	ListCell   *cell;
@@ -38483,6 +38488,10 @@ SplitColQualList(List *qualList,
 						 parser_errposition(e->location)));
 			}
 			*clientLogicColumnRef = e;
+		}
+		else if (IsA(n, CommentStmt))
+		{
+			*columnOptions = lappend(*columnOptions, n);
 		}
 		else {
 			const char* message = "unexpected node type";
