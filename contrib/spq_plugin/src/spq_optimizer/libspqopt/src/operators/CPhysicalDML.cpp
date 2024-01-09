@@ -255,6 +255,8 @@ CPhysicalDML::PdsRequired(CMemoryPool *mp,
 						  ULONG				 // ulOptReq
 ) const
 {
+	COptimizerConfig *optimizer_config =
+		COptCtxt::PoctxtFromTLS()->GetOptimizerConfig();
 	SPQOS_ASSERT(0 == child_index);
 
 	if (CDistributionSpec::EdtRandom == m_pds->Edt())
@@ -266,9 +268,54 @@ CPhysicalDML::PdsRequired(CMemoryPool *mp,
 		// data inserted
 		if (CLogicalDML::EdmlInsert == m_edmlop)
 		{
-			return SPQOS_NEW(mp) CDistributionSpecStrictRandom();
+			if (ULONG(1) == optimizer_config->GetHint()->UlInsertDopNum())
+				return SPQOS_NEW(mp) CDistributionSpecSingleton();
+			else
+				return SPQOS_NEW(mp) CDistributionSpecStrictRandom();
 		}
-		return SPQOS_NEW(mp) CDistributionSpecRouted(m_pcrSegmentId);
+		else if (CLogicalDML::EdmlUpdate == m_edmlop)
+		{
+			bool remove_redundant_motion = optimizer_config->GetHint()->FRemoveUpdateRedundantMotion();
+			ULONG update_dop_num = optimizer_config->GetHint()->UlUpdateDopNum();
+			ULONG select_dop_num = optimizer_config->GetHint()->UlSelectDopNum();
+			if (!remove_redundant_motion)
+				return SPQOS_NEW(mp) CDistributionSpecStrictRandom();
+			else
+			{
+				if (update_dop_num == select_dop_num)
+				{
+					m_pds->AddRef();
+					return m_pds;
+				}
+				else
+					return SPQOS_NEW(mp) CDistributionSpecStrictRandom();
+			}
+		}
+		else if (CLogicalDML::EdmlDelete == m_edmlop)
+		{
+			/* delete */
+			bool remove_redundant_motion = optimizer_config->GetHint()->FRemoveDeleteRedundantMotion();
+			ULONG delete_dop_num = optimizer_config->GetHint()->UlDeleteDopNum();
+			ULONG select_dop_num = optimizer_config->GetHint()->UlSelectDopNum();
+			if (!remove_redundant_motion)
+				return SPQOS_NEW(mp) CDistributionSpecStrictRandom();
+			else
+			{
+				if (delete_dop_num == select_dop_num)
+				{
+					m_pds->AddRef();
+					return m_pds;
+				}
+				else
+					return SPQOS_NEW(mp) CDistributionSpecStrictRandom();
+			}
+		}
+		else
+		{
+			SPQOS_RAISE(
+				CException::ExmaInvalid, CException::ExmiInvalid,
+				SPQOS_WSZ_LIT("Unknown DML type in CPhysicalDML."));
+		}
 	}
 
 	m_pds->AddRef();

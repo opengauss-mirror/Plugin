@@ -21,6 +21,11 @@
 using namespace spqdxl;
 using namespace spqopt;
 
+#define DEFAULT_INSERT_DOP_NUM ULONG(1)
+#define DEFAULT_UPDATE_DOP_NUM ULONG(1)
+#define DEFAULT_SELECT_DOP_NUM ULONG(1)
+#define DEFAULT_DELETE_DOP_NUM ULONG(1)
+
 XERCES_CPP_NAMESPACE_USE
 
 //---------------------------------------------------------------------------
@@ -116,7 +121,14 @@ CParseHandlerHint::StartElement(const XMLCh *const,	 //element_uri,
 	m_hint = SPQOS_NEW(m_mp) CHint(
 		join_arity_for_associativity_commutativity, array_expansion_threshold,
 		join_order_dp_threshold, broadcast_threshold, enforce_constraint_on_dml,
-		push_group_by_below_setop_threshold, xform_bind_threshold, skew_factor);
+		push_group_by_below_setop_threshold, xform_bind_threshold,
+		DEFAULT_INSERT_DOP_NUM,
+		DEFAULT_UPDATE_DOP_NUM,
+		DEFAULT_SELECT_DOP_NUM,
+		DEFAULT_DELETE_DOP_NUM,
+		true,
+		true,
+        skew_factor);
 }
 
 //---------------------------------------------------------------------------
