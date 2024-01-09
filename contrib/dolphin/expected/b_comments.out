@@ -250,8 +250,36 @@ where pc.relname = 'uq_0034';
  uq_index
 (1 row)
 
+drop table if exists t1;
+NOTICE:  table "t1" does not exist, skipping
+drop table if exists t2;
+NOTICE:  table "t2" does not exist, skipping
+create table t1(id bigint not null comment 'pk' primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+create table t2(id bigint not null primary key comment 'pk' );
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t2_pkey" for table "t2"
+\d+ t1
+                       Table "b_comments.t1"
+ Column |  Type  | Modifiers | Storage | Stats target | Description 
+--------+--------+-----------+---------+--------------+-------------
+ id     | bigint | not null  | plain   |              | pk
+Indexes:
+    "t1_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
+
+\d+ t2
+                       Table "b_comments.t2"
+ Column |  Type  | Modifiers | Storage | Stats target | Description 
+--------+--------+-----------+---------+--------------+-------------
+ id     | bigint | not null  | plain   |              | pk
+Indexes:
+    "t2_pkey" PRIMARY KEY, btree (id) TABLESPACE pg_default
+Has OIDs: no
+Options: orientation=row, compression=no
+
 drop schema b_comments cascade;
-NOTICE:  drop cascades to 16 other objects
+NOTICE:  drop cascades to 18 other objects
 DETAIL:  drop cascades to table test_unsupported
 drop cascades to table test_row
 drop cascades to table test_column
@@ -268,4 +296,6 @@ drop cascades to table t_comment_0058_01
 drop cascades to table fvt_distribute_query_tables_02
 drop cascades to table t_comment_0032
 drop cascades to table t_comment_0034
+drop cascades to table t1
+drop cascades to table t2
 reset search_path;
