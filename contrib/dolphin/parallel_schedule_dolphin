@@ -18,7 +18,7 @@ test: like_index_test_utf8 like_index_test_utf8mb4 like_index_test_gbk like_inde
 # must be single test group, cause other connection will affect the result
 test: test_shows
 
-test: test_shows_1 test_shows_2
+test: test_shows_1 test_shows_2 time_function_test
 
 # must be single test group, cause other connection will affect the result
 test: test_shows_3

@@ -561,6 +561,16 @@ CREATE OR REPLACE FUNCTION pg_catalog.bit_cast_time(bit)
 RETURNS time without time zone LANGUAGE SQL IMMUTABLE STRICT as 
 'select cast(cast($1 as text) as time without time zone)';
 
+DROP FUNCTION IF EXISTS pg_catalog.hour (text);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond (text);
+DROP FUNCTION IF EXISTS pg_catalog.minute (text);
+DROP FUNCTION IF EXISTS pg_catalog.second (text);
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (text) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHour';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (text) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecond';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (text) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinute';
+CREATE OR REPLACE FUNCTION pg_catalog.second (text) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecond';
+
 CREATE OR REPLACE FUNCTION pg_catalog.hour (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromDate';
 CREATE OR REPLACE FUNCTION pg_catalog.microsecond (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromDate';
 CREATE OR REPLACE FUNCTION pg_catalog.minute (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromDate';
@@ -575,6 +585,24 @@ CREATE OR REPLACE FUNCTION pg_catalog.hour (timestamptz) RETURNS int8 LANGUAGE C
 CREATE OR REPLACE FUNCTION pg_catalog.microsecond (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromTimestampTz';
 CREATE OR REPLACE FUNCTION pg_catalog.minute (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromTimestampTz';
 CREATE OR REPLACE FUNCTION pg_catalog.second (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromTimestampTz';
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT hour($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT minute($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.second (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT second($1::time)';
+
+DROP FUNCTION IF EXISTS pg_catalog.year(timestamp(0) without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.year(text);
+CREATE FUNCTION pg_catalog.year (timestamp(0) without time zone) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_year_part';
+CREATE FUNCTION pg_catalog.year (text) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'text_year_part';
+CREATE OR REPLACE FUNCTION pg_catalog.year(year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.year(bit) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.year(boolean) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.year(int4) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.year(longblob) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.year(anyenum) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.year(json) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.year(time) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::timestamp(0) without time zone)';
 
 drop function if EXISTS pg_catalog.length(binary);
 drop function if EXISTS pg_catalog.length(varbinary);
@@ -1285,3 +1313,7 @@ DROP FUNCTION IF EXISTS pg_catalog.floor(json);
 CREATE OR REPLACE FUNCTION pg_catalog.floor(json) 
 RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
 'select pg_catalog.floor(cast($1 as double precision))';
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT hour($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT minute($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.second (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT second($1::time)';

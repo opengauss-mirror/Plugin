@@ -282,6 +282,47 @@ DROP FUNCTION IF EXISTS pg_catalog.bit_cast_timestamp(bit);
 DROP FUNCTION IF EXISTS pg_catalog.bit_cast_datetime(bit);
 DROP FUNCTION IF EXISTS pg_catalog.bit_cast_date(bit);
 
+DROP FUNCTION IF EXISTS pg_catalog.hour(YEAR);
+DROP FUNCTION IF EXISTS pg_catalog.hour(date);
+DROP FUNCTION IF EXISTS pg_catalog.hour(timetz);
+DROP FUNCTION IF EXISTS pg_catalog.hour(timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.hour (text);
+CREATE OR REPLACE FUNCTION pg_catalog.hour (text) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHour';
+
+DROP FUNCTION IF EXISTS pg_catalog.minute(YEAR);
+DROP FUNCTION IF EXISTS pg_catalog.minute(date);
+DROP FUNCTION IF EXISTS pg_catalog.minute(timetz);
+DROP FUNCTION IF EXISTS pg_catalog.minute(timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.minute (text);
+CREATE OR REPLACE FUNCTION pg_catalog.minute (text) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinute';
+
+DROP FUNCTION IF EXISTS pg_catalog.second(YEAR);
+DROP FUNCTION IF EXISTS pg_catalog.second(date);
+DROP FUNCTION IF EXISTS pg_catalog.second(timetz);
+DROP FUNCTION IF EXISTS pg_catalog.second(timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.second (text);
+CREATE OR REPLACE FUNCTION pg_catalog.second (text) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecond';
+
+
+DROP FUNCTION IF EXISTS pg_catalog.microsecond(date);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond(timetz);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond(timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond (text);
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (text) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecond';
+
+DROP FUNCTION IF EXISTS pg_catalog.year(YEAR);
+DROP FUNCTION IF EXISTS pg_catalog.year(timestamp(0) without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.year(text);
+DROP FUNCTION IF EXISTS pg_catalog.year(bit);
+DROP FUNCTION IF EXISTS pg_catalog.year(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.year(int4);
+DROP FUNCTION IF EXISTS pg_catalog.year(longblob);
+DROP FUNCTION IF EXISTS pg_catalog.year(anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.year(json);
+DROP FUNCTION IF EXISTS pg_catalog.year(time);
+CREATE FUNCTION pg_catalog.year (timestamp(0) without time zone) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_year_part';
+CREATE FUNCTION pg_catalog.year (text) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'text_year_part';
+
 drop function if EXISTS pg_catalog.length(binary);
 drop function if EXISTS pg_catalog.length(varbinary);
 

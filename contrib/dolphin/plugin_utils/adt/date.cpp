@@ -5361,6 +5361,32 @@ Datum time_to_sec(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(result);
 }
 
+/**
+ * covert unmber to time
+ * @param input_str: use for print
+ * @param nr: convert time input
+ * @param can_ignore: Indicates whether to report an error when an error occurs.
+ * @param time: timeStamp destination
+ * @param tm: long long tm destination
+ * @return: succss or not
+ */
+bool number_to_time(char* input_str, long long nr, bool can_ignore, TimeADT* time, LongLongTm* tm)
+{
+    int errlevel = (SQL_MODE_STRICT() && !can_ignore) ? ERROR : WARNING;
+    if (nr < -TIME_MAX_VALUE) {
+        ereport(errlevel, (errmsg("Truncated incorrect time value: \"%s\"", input_str)));
+        return false;
+    }
+    return longlong_to_tm(nr, time, tm);
+}
+
+bool number_to_time(long long nr, bool can_ignore, TimeADT* time, LongLongTm* tm)
+{
+    char time_str[MAX_LONGLONG_TO_CHAR_LENGTH] = {0};
+    errno_t errorno = sprintf_s(time_str, sizeof(time_str), "%lld", nr);
+    securec_check_ss(errorno, "\0", "\0");
+    return number_to_time(time_str, nr, can_ignore, time, tm);
+}
 
 /* int64_time_to_sec
  * @param time, type is int
@@ -5368,31 +5394,19 @@ Datum time_to_sec(PG_FUNCTION_ARGS)
  */
 Datum int64_time_to_sec(PG_FUNCTION_ARGS)
 {
-    TimeADT time;
     int64 input_time = PG_GETARG_INT64(0);
-    pg_tm result_tt = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    pg_tm* result_tm = &result_tt;
-    fsec_t fsec;
-    int32 timeSign = 1;
+    TimeADT time;
     int32 result;
-
-    errno_t errorno = EOK;
-    char time_str[MAX_LONGLONG_TO_CHAR_LENGTH] = {0};
-    errorno = sprintf_s(time_str, sizeof(time_str), "%lld", input_time);
-    securec_check_ss(errorno, "\0", "\0");
-
-    if (!check_time_min_value(time_str, input_time, fcinfo->can_ignore)) {
-        PG_RETURN_NULL();
-    }
-    if (!longlong_to_tm(input_time, &time, result_tm, &fsec, &timeSign)) {
-        PG_RETURN_NULL();
-    }
+    LongLongTm longlongTm = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 1};
     
+    if (!number_to_time(input_time, fcinfo->can_ignore, &time, &longlongTm)) {
+        PG_RETURN_NULL();
+    }
+    pg_tm *result_tm = &longlongTm.result_tm;
     result = ((result_tm->tm_hour * MINS_PER_HOUR + result_tm->tm_min) * SECS_PER_MINUTE) + result_tm->tm_sec;
-    result *= timeSign;
+    result *= longlongTm.timeSign;
     PG_RETURN_INT32(result);
 }
-
 
 /* numeric_time_to_sec
  * @param time, type is numeric
@@ -5402,43 +5416,34 @@ Datum numeric_time_to_sec(PG_FUNCTION_ARGS)
 {
     Numeric num1 = PG_GETARG_NUMERIC(0);
     lldiv_t div1;
-    struct pg_tm tt1 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    pg_tm* result_tm = &tt1;
     int32 result;
     TimeADT time;
-    fsec_t fsec;
-    int32 timeSign = 1;
-    
+    LongLongTm longlongTm = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 1};
     Numeric_to_lldiv(num1, &div1);
 
     char* input_str = DatumGetCString(numeric_out_with_zero(fcinfo));
 
-    if (!check_time_min_value(input_str, div1.quot, fcinfo->can_ignore)) {
-        PG_RETURN_NULL();
-    }
-    if (!longlong_to_tm(div1.quot, &time, result_tm, &fsec, &timeSign)) {
+    if (!number_to_time(input_str, div1.quot, fcinfo->can_ignore, &time, &longlongTm)) {
         PG_RETURN_NULL();
     }
     
     div1.rem = div1.rem < 0 ? -div1.rem : div1.rem;
 
-    time_add_nanoseconds_with_round(input_str, result_tm, div1.rem, &fsec, fcinfo->can_ignore);
+    pg_tm* result_tm = &longlongTm.result_tm;
+    time_add_nanoseconds_with_round(input_str, result_tm, div1.rem, &longlongTm.fsec, fcinfo->can_ignore);
     result = ((result_tm->tm_hour * MINS_PER_HOUR + result_tm->tm_min) * SECS_PER_MINUTE) + result_tm->tm_sec;
-    result *= timeSign;
+    result *= longlongTm.timeSign;
     PG_RETURN_INT32(result);
 }
 
-
-bool check_time_min_value(char* input_str, long long nr, bool can_ignore)
+/**
+ * same as longlong_to_tm
+ */
+bool longlong_to_tm(long long nr, TimeADT* time, LongLongTm* tm)
 {
-    int errlevel = (SQL_MODE_STRICT() && !can_ignore) ? ERROR : WARNING;
-    if (nr < -TIME_MAX_VALUE) {
-        ereport(errlevel, (errmsg("Truncated incorrect time value: \"%s\"", input_str)));
-        return false;
-    }
-    return true;
+    return longlong_to_tm(nr, time, &tm->result_tm, &tm->fsec, &tm->timeSign);
 }
-
+    
 bool longlong_to_tm(long long nr, TimeADT* time, pg_tm* result_tm, fsec_t* fsec, int32* timeSign)
 {
     errno_t errorno = EOK;

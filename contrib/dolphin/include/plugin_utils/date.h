@@ -63,6 +63,11 @@
 #define MAX_MICRO_SECOND 1000000
 #define TIME_MAX_NANO_SECOND 99999999
 #define TIME_NANO_SECOND_TO_MICRO_SECOND_RADIX 1000
+struct LongLongTm {
+    pg_tm result_tm; /* yyyy-mm-dd hh:MM:ss timestamp */
+    fsec_t fsec;     /* ms of result_tm */
+    int timeSign;    /* timeSign */
+};
 #endif
 
 /* for b compatibility type*/
@@ -96,7 +101,7 @@ extern bool time_add_nanoseconds_with_round(char* input_str, pg_tm *tm, long lon
 extern long long align_to_nanoseconds(long long src);
 extern bool check_time_mmssff_range(pg_tm *tm, long long microseconds);
 extern bool longlong_to_tm(long long nr, TimeADT* time, pg_tm* result_tm, fsec_t* fsec, int32* timeSign);
-bool check_time_min_value(char* input_str, long long nr, bool can_ignore);
+extern bool longlong_to_tm(long long nr, TimeADT* time, LongLongTm* tm); /* same as longlong_to_tm */
 
 typedef struct DateTimeFormat
 {
