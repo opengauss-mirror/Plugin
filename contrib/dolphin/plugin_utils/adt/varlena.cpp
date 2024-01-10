@@ -7185,8 +7185,23 @@ static text* concat_internal(const char* sepstr, int seplen, int argidx, Functio
             if (!OidIsValid(valtype))
                 ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
                         errmsg("could not determine data type of concat() input")));
+#ifdef DOLPHIN
+            if (valtype == BINARYOID || valtype == VARBINARYOID || valtype == TEXTOID) {
+                bytea* bin = PG_GETARG_BYTEA_PP(i);
+                char* data = VARDATA_ANY(bin);
+                int len = VARSIZE_ANY_EXHDR(bin);
+                /* cannot use appendStringInfoString because of the '\0' */
+                for (int i = 0; i < len; i++) {
+                    appendStringInfoChar(&str, data[i]);
+                }
+            } else {
+                getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+                appendStringInfoString(&str, OidOutputFunctionCall(typOutput, value));
+            }
+#else
             getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
             appendStringInfoString(&str, OidOutputFunctionCall(typOutput, value));
+#endif
         } else if (PG_ARGISNULL(i) && u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && !is_concat_ws) {
             pfree_ext(str.data);
             PG_RETURN_NULL();
