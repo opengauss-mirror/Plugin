@@ -1108,3 +1108,8 @@ DROP FUNCTION IF EXISTS pg_catalog.floor(json);
 CREATE OR REPLACE FUNCTION pg_catalog.floor(json) 
 RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
 'select pg_catalog.floor(cast($1 as double precision))';
+       
+CREATE OR REPLACE FUNCTION pg_catalog.hour (year) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'SELECT hour($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (year) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'SELECT minute($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.second (year) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'SELECT second($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.year (year) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::time)';
