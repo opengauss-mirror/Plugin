@@ -178,9 +178,7 @@ Node *plan_tree_mutator(Node *node, Node *(*mutator)(Node *, void *), void *cont
             FLATCOPY(newmt, mt, ModifyTable);
             PLANMUTATE(newmt, mt);
             MUTATE(newmt->plans, mt->plans, List *);
-            // 				MUTATE(newmt->onConflictSet, mt->onConflictSet, List *);
-            // 				MUTATE(newmt->onConflictWhere, mt->onConflictWhere , Node *);
-            // 				MUTATE(newmt->withCheckOptionLists, mt->withCheckOptionLists, List *);
+            MUTATE(newmt->withCheckOptionLists, mt->withCheckOptionLists, List *);
             MUTATE(newmt->returningLists, mt->returningLists, List *);
             return (Node *)newmt;
         } break;

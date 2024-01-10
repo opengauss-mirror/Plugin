@@ -1199,6 +1199,26 @@ static void InitSpqConfigureNamesBool()
                              NULL,
                              NULL,
                              NULL);
+    DefineCustomBoolVariable("spqplugin.spq_enable_remove_delete_redundant_motion",
+                             "Remove delete redundant motion when delete_dop_num == read_dop_num.",
+                             NULL,
+                             &u_sess->attr.attr_spq.spq_enable_remove_delete_redundant_motion,
+                             false,
+                             PGC_USERSET,
+                             0,
+                             NULL,
+                             NULL,
+                             NULL);
+    DefineCustomBoolVariable("spqplugin.spq_enable_remove_update_redundant_motion",
+                             "Remove update redundant motion when update_dop_num == read_dop_num.",
+                             NULL,
+                             &u_sess->attr.attr_spq.spq_enable_remove_update_redundant_motion,
+                             false,
+                             PGC_USERSET,
+                             0,
+                             NULL,
+                             NULL,
+                             NULL);
 }
 
 static void InitSpqConfigureNamesInt()
@@ -1414,18 +1434,6 @@ static void InitSpqConfigureNamesInt()
                             1,
                             1,
                             1,
-                            PGC_USERSET,
-                            0,
-                            NULL,
-                            NULL,
-                            NULL);
-    DefineCustomIntVariable("spqplugin.spq_wr_node_index",
-                            "DML : Sets the write node' index according to cluster_map",
-                            NULL,
-                            &u_sess->attr.attr_spq.spq_wr_node_index,
-                            0,
-                            0,
-                            128,
                             PGC_USERSET,
                             0,
                             NULL,

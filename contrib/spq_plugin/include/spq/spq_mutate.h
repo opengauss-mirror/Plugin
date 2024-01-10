@@ -23,6 +23,7 @@
 typedef struct SpqSliceContext {
     PlannedStmt *result;
     int curentIndex;
+    int dmlcount;
 } SpqSliceContext;
 
 extern void collect_shareinput_producers(PlannerInfo *root, Plan *plan);

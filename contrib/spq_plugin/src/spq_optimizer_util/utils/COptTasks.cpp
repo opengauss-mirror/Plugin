@@ -32,6 +32,8 @@
 #include "spq_optimizer_util/utils/CConstExprEvaluatorProxy.h"
 #include "spq_optimizer_util/utils/spqdbdefs.h"
 
+#include "spq/spq_util.h"
+
 //#include "cdb/cdbvars.h"
 #include "utils/fmgroids.h"
 #include "utils/guc.h"
@@ -387,6 +389,14 @@ COptTasks::CreateOptimizerConfig(CMemoryPool *mp, ICostModel *cost_model)
 	ULONG push_group_by_below_setop_threshold =
 		(ULONG) u_sess->attr.attr_spq.spq_optimizer_push_group_by_below_setop_threshold;
 	ULONG xform_bind_threshold = (ULONG) u_sess->attr.attr_spq.spq_optimizer_xform_bind_threshold;
+
+	ULONG insert_dop_num = (ULONG) u_sess->attr.attr_spq.spq_insert_dop_num;
+	ULONG update_dop_num = (ULONG) u_sess->attr.attr_spq.spq_update_dop_num;
+	ULONG select_dop_num = (ULONG) getSpqsegmentCount();
+	ULONG delete_dop_num = (ULONG) u_sess->attr.attr_spq.spq_delete_dop_num;
+	BOOL  remove_update_redundant_motion = u_sess->attr.attr_spq.spq_enable_remove_update_redundant_motion;
+	BOOL  remove_delete_redundant_motion = u_sess->attr.attr_spq.spq_enable_remove_delete_redundant_motion;
+
 	ULONG skew_factor = (ULONG) u_sess->attr.attr_spq.spq_optimizer_skew_factor;
 
 	return SPQOS_NEW(mp) COptimizerConfig(
@@ -403,6 +413,12 @@ COptTasks::CreateOptimizerConfig(CMemoryPool *mp, ICostModel *cost_model)
 				  false, /* don't create Assert nodes for constraints, we'll
 								      * enforce them ourselves in the executor */
 				  push_group_by_below_setop_threshold, xform_bind_threshold,
+				  insert_dop_num,
+				  update_dop_num,
+				  select_dop_num,
+				  delete_dop_num,
+				  remove_update_redundant_motion,
+				  remove_delete_redundant_motion,
 				  skew_factor),
 		SPQOS_NEW(mp) CWindowOids(OID(F_WINDOW_ROW_NUMBER), OID(F_WINDOW_RANK)));
 }

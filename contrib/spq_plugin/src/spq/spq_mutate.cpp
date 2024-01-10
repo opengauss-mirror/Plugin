@@ -731,8 +731,14 @@ Plan* make_sort(Motion *motion, Plan *subplan)
     return (Plan*)node;
 }
 
-Plan* make_dml_stream(PlannerInfo* root, Plan *subplan, Motion *motion, PlannedStmt *result)
+Plan* make_dml_stream(PlannerInfo* root, Plan *subplan, Motion *motion, SpqSliceContext *cxt)
 {
+    PlannedStmt *result = cxt->result;
+    PlanSlice *slices = &(result->slices[motion->motionID]);
+    PlanSlice *parentSlices = &(result->slices[slices->parentIndex]);
+    if (check_slice_dop(slices, subplan, result) == false) {
+        ereport(ERROR, (errmsg("check_slice_dop in remote check fail motion[%d]", motion->motionID)));
+    }
     Stream* stream = makeNode(Stream);
     Plan* plan = &stream->scan.plan;
     Distribution* distribution = ng_get_dest_distribution(subplan);
@@ -762,6 +768,7 @@ Plan* make_dml_stream(PlannerInfo* root, Plan *subplan, Motion *motion, PlannedS
     if (motion->sendSorted) {
         return make_sort(motion, (Plan*)stream);
     }
+    cxt->dmlcount = slices->numsegments > 1 ? cxt->dmlcount : 1;
     return (Plan*)stream;
 }
 
@@ -874,9 +881,11 @@ Plan* make_gather_stream(PlannerInfo* root, Plan *subplan, Motion *motion, Plann
     }
     return (Plan*)stream_node;
 }
-Plan *make_gather_remote_top(Plan *lefttree, PlannedStmt *result)
+Plan *make_gather_remote_top(Plan *lefttree, int num_node)
 {
-    PlanSlice *slices = &(result->slices[0]);
+    if (num_node == 0) {
+        ereport(ERROR, (errmsg("make_gather_remote_top num node is 0")));
+    }
     RemoteQuery* remote_query = makeNode(RemoteQuery);
     remote_query->combine_type = COMBINE_TYPE_NONE;
     remote_query->base_tlist = NIL;
@@ -892,7 +901,7 @@ Plan *make_gather_remote_top(Plan *lefttree, PlannedStmt *result)
     remote_query->scan.plan.plan_width = lefttree->plan_width;
     remote_query->sort = NULL;
     remote_query->scan.plan.dop = 1;
-    remote_query->nodeCount = slices->numsegments > 1 ? t_thrd.spq_ctx.num_nodes : 1;
+    remote_query->nodeCount = num_node;
     return (Plan*)remote_query;
 }
 
@@ -920,7 +929,7 @@ Plan *tran_motion_to_stream(PlannerInfo* root, SpqSliceContext *cxt, Plan *plan,
     }
     if (fromdml && backtop) {
         top = backtop;
-        return make_dml_stream(root, subplan, motion, cxt->result);
+        return make_dml_stream(root, subplan, motion, cxt);
     }
 
     // no need check motion->motionID again in below func;
@@ -1025,10 +1034,41 @@ static void InitRemoteNodeDefinition(PlannedStmt* planstmt)
         planstmt->num_nodes = 0;
         return;
     }
-    int nodes_size = sizeof(NodeDefinition) * t_thrd.spq_ctx.num_nodes;
-    planstmt->num_nodes = t_thrd.spq_ctx.num_nodes;
-    planstmt->nodesDefinition = (NodeDefinition *)palloc0(nodes_size);
-    memcpy_s(planstmt->nodesDefinition, nodes_size,  t_thrd.spq_ctx.nodesDefinition, nodes_size); 
+    errno_t rc;
+    if ((planstmt->commandType == CMD_INSERT || planstmt->commandType == CMD_UPDATE || planstmt->commandType == CMD_DELETE) &&
+            planstmt->write_node_index >= 0 && planstmt->write_node_index < t_thrd.spq_ctx.num_nodes &&
+            IsA(planstmt->planTree, RemoteQuery) && ((RemoteQuery*)planstmt->planTree)->nodeCount == 1) {
+        RemoteQuery *remote_query = (RemoteQuery *) planstmt->planTree;
+        int nodes_size = sizeof(NodeDefinition);
+        planstmt->num_nodes = 1;
+        planstmt->nodesDefinition = (NodeDefinition *) palloc0(nodes_size);
+        rc = memcpy_s(planstmt->nodesDefinition, nodes_size, &t_thrd.spq_ctx.nodesDefinition[planstmt->write_node_index],
+                 nodes_size);
+	securec_check_c(rc, "\0", "\0");
+    } else {
+        int nodes_size = sizeof(NodeDefinition) * t_thrd.spq_ctx.num_nodes;
+        planstmt->num_nodes = t_thrd.spq_ctx.num_nodes;
+        planstmt->nodesDefinition = (NodeDefinition *) palloc0(nodes_size);
+        rc = memcpy_s(planstmt->nodesDefinition, nodes_size, t_thrd.spq_ctx.nodesDefinition, nodes_size);
+	securec_check_c(rc, "\0", "\0");
+    }
+}
+
+void set_write_node_index(PlannedStmt* planstmt)
+{
+    const char* write_node_name = GetConfigOption("pgxc_node_name", false, false);
+    int node_count = t_thrd.spq_ctx.num_nodes;
+    for (int i = 0; i < node_count; i++) {
+        const char* node_name = t_thrd.spq_ctx.nodesDefinition[i].nodename.data;
+        if (strcmp(node_name, write_node_name) == 0) {
+            planstmt->write_node_index = i;
+            break;
+        }
+    }
+    if (planstmt->write_node_index == -1) {
+        ereport(ERROR, (errmsg("cannot find write node in cluster_map")));
+    }
+
 }
 Plan *replace_motion_dml(PlannerInfo* root, SpqSliceContext *cxt, Plan *plan, bool &top)
 {
@@ -1045,18 +1085,19 @@ Plan *replace_motion_dml(PlannerInfo* root, SpqSliceContext *cxt, Plan *plan, bo
         }
         subplan_id++;
     }
-    Plan *remote_query_plan = make_gather_remote_top(plan, cxt->result);
     ModifyTable* node = (ModifyTable*)plan;
     ListCell* l = NULL;
     foreach (l, node->plans) {
         Plan *subplan = (Plan*)lfirst(l);
         if (subplan) {
+            cxt->dmlcount = t_thrd.spq_ctx.num_nodes;
             subplan = replace_motion_stream_recurse(root, cxt, subplan, top, true);
             lfirst(l) = subplan;
         }
     }
     plan->dop = 1;
     plan->parallel_enabled = (plan->dop > 1);
+    Plan* remote_query_plan = make_gather_remote_top(plan, cxt->dmlcount);
     return remote_query_plan;
 }
 
@@ -1073,12 +1114,14 @@ void make_spq_remote_query(PlannerInfo *root, PlannedStmt *result, PlannerGlobal
     SpqSliceContext sliceCxt;
     sliceCxt.result = result;
     sliceCxt.curentIndex = 0;
+    result->write_node_index = -1;
     /* whether select's part top stream has appeared,
      * top stream is to send scaning data to qc to modify table*/
     if (root->parse->commandType == CMD_SELECT) {
         result->planTree = replace_motion_stream_recurse(root, &sliceCxt, result->planTree, top);
     } else {
         result->planTree = replace_motion_dml(root, &sliceCxt, result->planTree, top);
+        set_write_node_index(result);
     }    
     // should fix all?
     //result->planTree = set_plan_references(root, result->planTree);
