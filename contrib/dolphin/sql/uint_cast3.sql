@@ -110,6 +110,11 @@ insert into t_uint values('-0', '-0', '-0', '-0');
 select * from t_uint;
 drop table t_uint;
 
+select cast(1 as signed int);
+select cast(1 as unsigned int);
+select convert(1 , signed int);
+select convert(1 , unsigned int);
+
 select cast(1 as signed integer);
 select cast(1 as unsigned integer);
 select convert(1 , signed integer);
