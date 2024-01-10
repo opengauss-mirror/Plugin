@@ -10,6 +10,7 @@
  */
 #include "postgres.h"
 #include <stdint.h>
+#include <unordered_map>
 #include "nodes/nodeFuncs.h"
 #include "catalog/pg_inherits_fn.h"
 #include "commands/explain.h"
@@ -26,13 +27,21 @@
 #include "spqplugin.h"
 #include "storage/ipc.h"
 #include "naucrates/init.h"
+#include "ddes/dms/ss_transaction.h"
+#include "optimizer/planmem_walker.h"
 
 PG_MODULE_MAGIC;
 PG_FUNCTION_INFO_V1(spqplugin_invoke);
 
+THR_LOCAL ExecutorStart_hook_type spq_hook_ExecutorStart = NULL;
 THR_LOCAL spq_planner_hook_type backup_spq_planner_hook = NULL;
 THR_LOCAL bool HOOK_INIT = false;
 THR_LOCAL MemoryContext OptimizerMemoryContext = NULL;
+
+typedef struct SpqDirectReadWalkerContext {
+    MethodPlanWalkerContext cxt;
+    std::unordered_map<Oid, SpqDirectReadEntry>* directMap;
+} SpqDirectReadWalkerContext;
 
 static bool check_rangetbl_support(List* rtable)
 {
@@ -287,10 +296,109 @@ PlannedStmt* spq_optimize_query(Query* parse, int cursorOptions, ParamListInfo b
     return result;
 }
 
+static void TryDirectRead(PlannedStmt* stmt, SpqSeqScan* scan, std::unordered_map<Oid, SpqDirectReadEntry>* directMap)
+{
+    RangeTblEntry *rte = (RangeTblEntry*)list_nth(stmt->rtable, (scan->scan.scanrelid)-1);
+    if (rte->rtekind == RTE_RELATION) {
+        Relation rel = heap_open(rte->relid, AccessShareLock);
+        BlockNumber nblocks = RelationGetNumberOfBlocks(rel);
+        BlockNumber nlimit = NORMAL_SHARED_BUFFER_NUM * u_sess->attr.attr_spq.spq_small_table_threshold;
+        auto it = directMap->find(rel->rd_id);
+        if (it == directMap->end()) {
+            if (SS_STANDBY_MODE || nblocks <= nlimit) {
+                // SS_STANDBY_MODE treat as false, may be change after libpq connected
+                SpqDirectReadEntry tmp;
+                tmp.rel_id = rel->rd_id;
+                tmp.nums = InvalidBlockNumber;
+                tmp.spq_seq_scan_node_list = NIL;
+                if (nblocks > nlimit) {
+                    tmp.spq_seq_scan_node_list = lappend(tmp.spq_seq_scan_node_list, scan);
+                }
+                (*directMap)[rel->rd_id] = tmp;
+                scan->isDirectRead = false;
+                scan->DirectReadBlkNum = InvalidBlockNumber;
+            } else {
+                heap_sync(rel);
+                SpqDirectReadEntry tmp;
+                tmp.rel_id = rel->rd_id;
+                tmp.nums = nblocks;
+                tmp.spq_seq_scan_node_list = NIL;
+                (*directMap)[rel->rd_id] = tmp;
+                scan->isDirectRead = true;
+                scan->DirectReadBlkNum = nblocks;
+            }
+        } else {
+            if (it->second.nums != InvalidBlockNumber) {
+                scan->isDirectRead = true;
+                scan->DirectReadBlkNum = it->second.nums;
+            } else {
+                scan->isDirectRead = false;
+                scan->DirectReadBlkNum = InvalidBlockNumber;
+                if (it->second.spq_seq_scan_node_list != NIL) {
+                    it->second.spq_seq_scan_node_list = lappend(it->second.spq_seq_scan_node_list, scan);
+                }
+            }
+        }
+        heap_close(rel, AccessShareLock);
+    }
+}
+
+static bool TraversePlan(Node* plan, void* cxt)
+{
+    if (plan == nullptr) return false;
+
+    if (IsA(plan, RemoteQuery)) {
+        return walk_plan_node_fields((Plan*)plan, (MethodWalker)TraversePlan, cxt);
+    }
+
+    if (IsA(plan, SpqSeqScan)) {
+        SpqDirectReadWalkerContext* walkerCxt = (SpqDirectReadWalkerContext*)cxt;
+        PlannedStmt* stmt = (PlannedStmt*)walkerCxt->cxt.base.node;
+        TryDirectRead(stmt, castNode(SpqSeqScan, plan), walkerCxt->directMap);
+    }
+
+    return plan_tree_walker(plan, (MethodWalker)TraversePlan, cxt);
+}
+
+static void spq_executor_start(QueryDesc* queryDesc, int eflags)
+{
+    if (t_thrd.spq_ctx.spq_role == ROLE_QUERY_COORDINTOR && !(eflags & EXEC_FLAG_EXPLAIN_ONLY) &&
+        u_sess->attr.attr_spq.spq_enable_direct_read) {
+        u_sess->spq_cxt.direct_read_map = NIL;
+        PlannedStmt *stmt = queryDesc->plannedstmt;
+        std::unordered_map<Oid, SpqDirectReadEntry> directMap;
+        SpqDirectReadWalkerContext cxt;
+        errno_t rc = 0;
+        rc = memset_s(&cxt, sizeof(SpqDirectReadWalkerContext), 0, sizeof(SpqDirectReadWalkerContext));
+        securec_check(rc, "\0", "\0");
+        cxt.cxt.base.init_plans = NIL;
+        cxt.cxt.base.traverse_flag = NULL;
+        exec_init_plan_tree_base(&cxt.cxt.base, stmt);
+        cxt.directMap = &directMap;
+        TraversePlan((Node *)stmt->planTree, (void*)&cxt);
+        for (auto it = directMap.begin(); it != directMap.end(); ++it) {
+            if (it->second.spq_seq_scan_node_list != NIL) {
+                SpqDirectReadEntry* entry = (SpqDirectReadEntry*)palloc0(sizeof(SpqDirectReadEntry));
+                entry->rel_id = it->second.rel_id;
+                entry->nums = it->second.nums;
+                entry->spq_seq_scan_node_list = it->second.spq_seq_scan_node_list;
+                u_sess->spq_cxt.direct_read_map = lappend(u_sess->spq_cxt.direct_read_map, entry);
+            }
+        }
+    }
+
+    if (spq_hook_ExecutorStart)
+        spq_hook_ExecutorStart(queryDesc, eflags);
+    else
+        standard_ExecutorStart(queryDesc, eflags);
+}
+
 void _PG_init(void)
 {
     InitDXLManager();
     if (!HOOK_INIT) {
+        spq_hook_ExecutorStart = ExecutorStart_hook;
+        ExecutorStart_hook = spq_executor_start;
         backup_spq_planner_hook = spq_planner_hook;
         spq_planner_hook = spq_optimize_query;
         init_spqseqscan_hook();
@@ -304,6 +412,7 @@ void _PG_init(void)
 
 void _PG_fini(void)
 {
+    ExecutorStart_hook = spq_hook_ExecutorStart;
     spq_planner_hook = backup_spq_planner_hook;
     MemoryContextDelete(u_sess->spq_cxt.spq_worker_context);
     restore_spqseqscan_hook();

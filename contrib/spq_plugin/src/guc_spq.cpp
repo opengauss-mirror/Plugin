@@ -1199,6 +1199,16 @@ static void InitSpqConfigureNamesBool()
                              NULL,
                              NULL,
                              NULL);
+    DefineCustomBoolVariable("spqplugin.spq_enable_direct_read",
+                             "Enable spq direct read without buffer",
+                             NULL,
+                             &u_sess->attr.attr_spq.spq_enable_direct_read,
+                             false,
+                             PGC_USERSET,
+                             0,
+                             NULL,
+                             NULL,
+                             NULL);
 }
 
 static void InitSpqConfigureNamesInt()
@@ -1550,6 +1560,18 @@ static void InitSpqConfigureNamesReal()
                              1.0,
                              0.0,
                              DBL_MAX,
+                             PGC_USERSET,
+                             0,
+                             NULL,
+                             NULL,
+                             NULL);
+    DefineCustomRealVariable("spqplugin.spq_small_table_threshold",
+                             "Set the threshold for small tables. The actual value is spq_small_table_threshold * NORMAL_SHARED_BUFFER_NUM",
+                             NULL,
+                             &u_sess->attr.attr_spq.spq_small_table_threshold,
+                             0.02,
+                             0.0,
+                             1.0,
                              PGC_USERSET,
                              0,
                              NULL,
