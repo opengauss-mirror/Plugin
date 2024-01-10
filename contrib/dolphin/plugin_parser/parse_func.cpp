@@ -228,6 +228,17 @@ Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, Node* l
         &refSynOid,
         &rettype_orig);
     name_string = NameListToString(funcname);
+
+#ifdef DOLPHIN
+    if (funcid == CONCATFUNCOID) {
+        for (int i = 0; i < nargs; i++) {
+            if (actual_arg_types[i] == BINARYOID || actual_arg_types[i] == VARBINARYOID) {
+                rettype = VARBINARYOID;
+                break;
+            }
+        }
+    }
+#endif
     if (fdresult == FUNCDETAIL_COERCION) {
         /*
          * We interpreted it as a type coercion. coerce_type can handle these
