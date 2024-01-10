@@ -694,23 +694,23 @@ Datum dolphin_binaryin(PG_FUNCTION_ARGS)
     int bc;
     int cl;
     bytea* result = NULL;
+    int binary_length = 0;
 
     /* Recognize hex input */
     if (inputText[0] == '\\' && inputText[1] == 'x') {
         size_t len = strlen(inputText);
         if (atttypmod < VARHDRSZ) {
-            bc = (len - 2) / 2 + VARHDRSZ; /* maximum possible length */
-            result = (bytea*)palloc(bc);
+            binary_length = BINARY_LEN(len) + VARHDRSZ; /* maximum possible length */
         } else {
             if (BINARY_LEN(len) > (size_t)(atttypmod - VARHDRSZ)) {
                 ereport(ERROR, (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
                             errmsg("value too long for type binary(%d)", atttypmod - VARHDRSZ)));
             }
-            result = (bytea*)palloc0(atttypmod); /* palloc0, pad with zero */
+            binary_length = fcinfo->flinfo->fn_rettype == BINARYOID ? atttypmod : BINARY_LEN(len) + VARHDRSZ;
         }
-
-        bc = hex_decode(inputText + 2, len - 2, VARDATA(result));
-        SET_VARSIZE(result, atttypmod < VARHDRSZ ? bc + VARHDRSZ : atttypmod);
+        result = (bytea*)palloc0(binary_length);
+        (void)hex_decode(inputText + 2, len - 2, VARDATA(result));
+        SET_VARSIZE(result, binary_length);
         PG_RETURN_BYTEA_P(result);
     }
 
