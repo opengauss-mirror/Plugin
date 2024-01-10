@@ -1034,6 +1034,7 @@ static void InitRemoteNodeDefinition(PlannedStmt* planstmt)
         planstmt->num_nodes = 0;
         return;
     }
+    errno_t rc;
     if ((planstmt->commandType == CMD_INSERT || planstmt->commandType == CMD_UPDATE || planstmt->commandType == CMD_DELETE) &&
             planstmt->write_node_index >= 0 && planstmt->write_node_index < t_thrd.spq_ctx.num_nodes &&
             IsA(planstmt->planTree, RemoteQuery) && ((RemoteQuery*)planstmt->planTree)->nodeCount == 1) {
@@ -1041,13 +1042,15 @@ static void InitRemoteNodeDefinition(PlannedStmt* planstmt)
         int nodes_size = sizeof(NodeDefinition);
         planstmt->num_nodes = 1;
         planstmt->nodesDefinition = (NodeDefinition *) palloc0(nodes_size);
-        memcpy_s(planstmt->nodesDefinition, nodes_size, &t_thrd.spq_ctx.nodesDefinition[planstmt->write_node_index],
+        rc = memcpy_s(planstmt->nodesDefinition, nodes_size, &t_thrd.spq_ctx.nodesDefinition[planstmt->write_node_index],
                  nodes_size);
+	securec_check_c(rc, "\0", "\0");
     } else {
         int nodes_size = sizeof(NodeDefinition) * t_thrd.spq_ctx.num_nodes;
         planstmt->num_nodes = t_thrd.spq_ctx.num_nodes;
         planstmt->nodesDefinition = (NodeDefinition *) palloc0(nodes_size);
-        memcpy_s(planstmt->nodesDefinition, nodes_size, t_thrd.spq_ctx.nodesDefinition, nodes_size);
+        rc = memcpy_s(planstmt->nodesDefinition, nodes_size, t_thrd.spq_ctx.nodesDefinition, nodes_size);
+	securec_check_c(rc, "\0", "\0");
     }
 }
 
