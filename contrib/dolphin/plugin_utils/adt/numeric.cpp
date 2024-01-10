@@ -8990,9 +8990,10 @@ Datum text_float4(PG_FUNCTION_ARGS)
     Datum txt = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
 
-    result = DirectFunctionCall1(float4in, CStringGetDatum(tmp));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(textout, InvalidOid, txt, fcinfo->can_ignore));
+
+    result = DirectFunctionCall1Coll(float4in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -9003,9 +9004,10 @@ Datum text_float8(PG_FUNCTION_ARGS)
     Datum txt = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
 
-    result = DirectFunctionCall1(float8in, CStringGetDatum(tmp));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(textout, InvalidOid, txt, fcinfo->can_ignore));
+
+    result = DirectFunctionCall1Coll(float8in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -9029,9 +9031,9 @@ Datum bpchar_float4(PG_FUNCTION_ARGS)
     Datum bpcharValue = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, bpcharValue));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(bpcharout, InvalidOid, bpcharValue, fcinfo->can_ignore));
 
-    result = DirectFunctionCall1(float4in, CStringGetDatum(tmp));
+    result = DirectFunctionCall1Coll(float4in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -9042,7 +9044,8 @@ Datum bpchar_float8(PG_FUNCTION_ARGS)
     Datum bpcharValue = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, bpcharValue));
+
+    tmp = DatumGetCString(DirectFunctionCall1Coll(bpcharout, InvalidOid, bpcharValue, fcinfo->can_ignore));
 
     result = DirectFunctionCall1Coll(float8in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
@@ -9055,9 +9058,10 @@ Datum varchar_float4(PG_FUNCTION_ARGS)
     Datum varcharValue = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(varcharout, varcharValue));
 
-    result = DirectFunctionCall1(float4in, CStringGetDatum(tmp));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(varcharout, InvalidOid, varcharValue, fcinfo->can_ignore));
+
+    result = DirectFunctionCall1Coll(float4in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -9068,7 +9072,8 @@ Datum varchar_float8(PG_FUNCTION_ARGS)
     Datum varcharValue = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(varcharout, varcharValue));
+
+    tmp = DatumGetCString(DirectFunctionCall1Coll(varcharout, InvalidOid, varcharValue, fcinfo->can_ignore));
 
     result = DirectFunctionCall1Coll(float8in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);

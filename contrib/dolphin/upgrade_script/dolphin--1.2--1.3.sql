@@ -764,3 +764,10 @@ CREATE OPERATOR dolphin_catalog.~(rightarg = anyenum, procedure = dolphin_catalo
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_setnot(anyset) CASCADE;
 CREATE OR REPLACE FUNCTION dolphin_catalog.dolphin_setnot(anyset) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'dolphin_setnot';
 CREATE OPERATOR dolphin_catalog.~(rightarg = anyset, procedure = dolphin_catalog.dolphin_setnot);
+
+DROP FUNCTION IF EXISTS pg_catalog.degrees(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.degrees(year);
+DROP FUNCTION IF EXISTS pg_catalog.degrees(json);
+CREATE OR REPLACE FUNCTION pg_catalog.degrees(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.degrees(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.degrees(year) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.degrees(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.degrees(json) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.degrees(cast($1 as double precision))';

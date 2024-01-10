@@ -398,3 +398,7 @@ DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_enumnot(anyenum);
 
 DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, anyset);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_setnot(anyset);
+
+DROP FUNCTION IF EXISTS pg_catalog.degrees(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.degrees(year);
+DROP FUNCTION IF EXISTS pg_catalog.degrees(json);
