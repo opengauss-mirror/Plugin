@@ -11848,6 +11848,29 @@ void check_zero_month_day(pg_tm *tm, bool can_ignore)
     }
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_timestampnot);
+extern "C" DLL_PUBLIC Datum dolphin_timestampnot(PG_FUNCTION_ARGS);
+Datum dolphin_timestampnot(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_UINT64(~timestamp_uint8(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_timestamptznot);
+extern "C" DLL_PUBLIC Datum dolphin_timestamptznot(PG_FUNCTION_ARGS);
+Datum dolphin_timestamptznot(PG_FUNCTION_ARGS)
+{
+    TimestampTz dt = PG_GETARG_TIMESTAMPTZ(0);
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    fsec_t fsec;
+    int tz;
+    const char *tzn = NULL;
+    if (timestamp2tm(dt, &tz, tm, &fsec, &tzn, NULL) != 0) {
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+    }
+    PG_RETURN_UINT64(~((uint64)timestamp2int(tm)));
+}
+
 #endif
 
 #endif
