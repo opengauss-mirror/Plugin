@@ -1182,6 +1182,7 @@ bool ValidateDependView(Oid view_oid, char objType)
     /* create or replace view */
     if (objType == OBJECT_TYPE_VIEW) {
         ReplaceViewQueryFirstAfter(query_str);
+        CommandCounterIncrement();
     }
     return isValid;
 }
@@ -2652,7 +2653,7 @@ List* expandRelAttrs(ParseState* pstate, RangeTblEntry* rte, int rtindex, int su
  *
  * Must free the pointer after usage!!!
  */
-char* get_rte_attribute_name(RangeTblEntry* rte, AttrNumber attnum)
+char* get_rte_attribute_name(RangeTblEntry* rte, AttrNumber attnum, bool allowDropped)
 {
     if (attnum == InvalidAttrNumber) {
         return pstrdup("*");
@@ -2672,7 +2673,7 @@ char* get_rte_attribute_name(RangeTblEntry* rte, AttrNumber attnum)
      * built (which can easily happen for rules).
      */
     if (rte->rtekind == RTE_RELATION) {
-        return get_relid_attribute_name(rte->relid, attnum);
+        return get_relid_attribute_name(rte->relid, attnum, allowDropped);
     }
 
     /*
