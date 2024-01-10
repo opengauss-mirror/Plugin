@@ -225,8 +225,8 @@ public:
 			MAX_UPDATE_DOP_NUM,
 			MAX_SELECT_DOP_NUM,
 			MAX_DELETE_DOP_NUM,
-            true,
-            true,
+			true,
+			true,
 			SKEW_FACTOR							 /* skew_factor */
 		);
 	}
