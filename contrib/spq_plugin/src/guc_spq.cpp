@@ -1203,7 +1203,7 @@ static void InitSpqConfigureNamesBool()
                              "Enable spq direct read without buffer",
                              NULL,
                              &u_sess->attr.attr_spq.spq_enable_direct_read,
-                              false,
+                             false,
                              PGC_USERSET,
                              0,
                              NULL,
