@@ -1863,7 +1863,7 @@ Datum bitfromint(int64 a, int32 typmod)
     PG_RETURN_VARBIT_P(result);
 }
 
-Datum bitfrombigint(int128 a, int32 typmod)
+Datum bitfrombigint(int128 a, int32 typmod, bool canIgnore = false)
 {
     VarBit* result = NULL;
     bits8* r = NULL;
@@ -1874,7 +1874,8 @@ Datum bitfrombigint(int128 a, int32 typmod)
         typmod = 1; /* default bit length */
     
     if (typmod < M_BIT_LEN && GetSessionContext()->enableBCmptMode) {
-        return DirectFunctionCall2(bit, bitfrombigint(a, M_BIT_LEN), Int32GetDatum(typmod));
+        return DirectFunctionCall2Coll(bit, InvalidOid, bitfrombigint(a, M_BIT_LEN, canIgnore),
+                                       Int32GetDatum(typmod), canIgnore);
     }
 
     rlen = VARBITTOTALLEN(typmod);
@@ -1999,7 +2000,7 @@ Datum bitfromuint8(PG_FUNCTION_ARGS)
 {
     uint64 a = PG_GETARG_UINT64(0);
     int32 typmod = PG_GETARG_INT32(1);
-    return bitfrombigint(a, typmod);
+    return bitfrombigint(a, typmod, fcinfo->can_ignore);
 }
 
 Datum bittouint8(PG_FUNCTION_ARGS)
@@ -2587,5 +2588,13 @@ Datum bool_bit(PG_FUNCTION_ARGS)
     } else {
         return DirectFunctionCall2(bitfromint8, Int64GetDatum(1), Int32GetDatum(atttypmod));
     }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_bitnot);
+extern "C" DLL_PUBLIC Datum dolphin_bitnot(PG_FUNCTION_ARGS);
+Datum dolphin_bitnot(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+    PG_RETURN_UINT64(~bittobigint(arg, true));
 }
 #endif

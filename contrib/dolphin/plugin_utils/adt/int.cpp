@@ -2400,4 +2400,69 @@ Datum dolphin_int42mul(PG_FUNCTION_ARGS)
     int64 arg2 = PG_GETARG_INT16(1);
     PG_RETURN_INT64(arg1 * arg2);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int1not);
+extern "C" DLL_PUBLIC Datum dolphin_int1not(PG_FUNCTION_ARGS);
+Datum dolphin_int1not(PG_FUNCTION_ARGS)
+{
+    int8 arg1 = PG_GETARG_INT8(0);
+    PG_RETURN_UINT64(~((uint64)arg1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int2not);
+extern "C" DLL_PUBLIC Datum dolphin_int2not(PG_FUNCTION_ARGS);
+Datum dolphin_int2not(PG_FUNCTION_ARGS)
+{
+    int16 arg1 = PG_GETARG_INT16(0);
+    PG_RETURN_UINT64(~((uint64)arg1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int4not);
+extern "C" DLL_PUBLIC Datum dolphin_int4not(PG_FUNCTION_ARGS);
+Datum dolphin_int4not(PG_FUNCTION_ARGS)
+{
+    int32 arg1 = PG_GETARG_INT32(0);
+    PG_RETURN_UINT64(~((uint64)arg1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int8not);
+extern "C" DLL_PUBLIC Datum dolphin_int8not(PG_FUNCTION_ARGS);
+Datum dolphin_int8not(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT64(0);
+    PG_RETURN_UINT64(~((uint64)arg1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint1not);
+extern "C" DLL_PUBLIC Datum dolphin_uint1not(PG_FUNCTION_ARGS);
+Datum dolphin_uint1not(PG_FUNCTION_ARGS)
+{
+    uint8 arg1 = PG_GETARG_UINT8(0);
+    PG_RETURN_UINT64(~((uint64)arg1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint2not);
+extern "C" DLL_PUBLIC Datum dolphin_uint2not(PG_FUNCTION_ARGS);
+Datum dolphin_uint2not(PG_FUNCTION_ARGS)
+{
+    uint16 arg1 = PG_GETARG_UINT16(0);
+    PG_RETURN_UINT64(~((uint64)arg1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint4not);
+extern "C" DLL_PUBLIC Datum dolphin_uint4not(PG_FUNCTION_ARGS);
+Datum dolphin_uint4not(PG_FUNCTION_ARGS)
+{
+    uint32 arg1 = PG_GETARG_UINT32(0);
+    PG_RETURN_UINT64(~((uint64)arg1));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_uint8not);
+extern "C" DLL_PUBLIC Datum dolphin_uint8not(PG_FUNCTION_ARGS);
+Datum dolphin_uint8not(PG_FUNCTION_ARGS)
+{
+    uint64 arg1 = PG_GETARG_UINT64(0);
+    PG_RETURN_UINT64(~((uint64)arg1));
+}
+
 #endif

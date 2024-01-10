@@ -18,6 +18,7 @@
 #include "plugin_parser/parse_node.h"
 
 typedef HeapTuple Operator;
+#define DOLPHIN_CATALOG_STR "dolphin_catalog"
 
 /* Routines to look up an operator given name and exact input type(s) */
 extern Oid LookupOperName(ParseState* pstate, List* opername, Oid oprleft, Oid oprright, bool noError, int location);

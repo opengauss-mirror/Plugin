@@ -774,7 +774,7 @@ Datum int32_b_format_date(PG_FUNCTION_ARGS)
     int4 date = PG_GETARG_INT32(0);
     DateADT result;
     struct pg_tm tt, *tm = &tt;
-    int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
+    int errlevel = !fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING;
     if (int32_b_format_date_internal(tm, date, true)) {
         ereport(errlevel,
                 (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
@@ -807,7 +807,7 @@ Datum int64_b_format_date(PG_FUNCTION_ARGS)
         Datum datetime = DirectFunctionCall1(int64_b_format_datetime, Int64GetDatum(number));
         return DirectFunctionCall1(timestamp_date, datetime);
     }
-    return DirectFunctionCall1(int32_b_format_date, Int32GetDatum((int32)number));
+    return DirectFunctionCall1Coll(int32_b_format_date, InvalidOid, Int32GetDatum((int32)number), fcinfo->can_ignore);
 }
 
 #endif
@@ -7201,6 +7201,22 @@ Datum timestamp_ge_time(PG_FUNCTION_ARGS)
     Timestamp dt2 = time2timestamp(time1);
     
     PG_RETURN_BOOL(timestamp_cmp_internal(dt1, dt2) >= 0);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_datenot);
+extern "C" DLL_PUBLIC Datum dolphin_datenot(PG_FUNCTION_ARGS);
+Datum dolphin_datenot(PG_FUNCTION_ARGS)
+{
+    DateADT date = PG_GETARG_DATEADT(0);
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    if (unlikely(date > 0 && (INT_MAX - date < POSTGRES_EPOCH_JDATE))) {
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                errmsg("input julian date is overflow")));
+    }
+    j2date(date + POSTGRES_EPOCH_JDATE, &(tm->tm_year), &(tm->tm_mon), &(tm->tm_mday));
+    PG_RETURN_UINT64(~((uint64)date2int(tm)));
 }
 #endif
 

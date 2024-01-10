@@ -9086,7 +9086,7 @@ Datum bpchar_float8(PG_FUNCTION_ARGS)
     Datum result;
     tmp = DatumGetCString(DirectFunctionCall1(bpcharout, bpcharValue));
 
-    result = DirectFunctionCall1(float8in, CStringGetDatum(tmp));
+    result = DirectFunctionCall1Coll(float8in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -9112,7 +9112,7 @@ Datum varchar_float8(PG_FUNCTION_ARGS)
     Datum result;
     tmp = DatumGetCString(DirectFunctionCall1(varcharout, varcharValue));
 
-    result = DirectFunctionCall1(float8in, CStringGetDatum(tmp));
+    result = DirectFunctionCall1Coll(float8in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -23117,6 +23117,13 @@ Datum dolphin_uint8div(PG_FUNCTION_ARGS)
     } else {
         PG_RETURN_NULL();
     }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_numericnot);
+extern "C" DLL_PUBLIC Datum dolphin_numericnot(PG_FUNCTION_ARGS);
+Datum dolphin_numericnot(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_UINT64(~numeric_cast_uint8(fcinfo));
 }
 
 Datum numeric_cast_int8(PG_FUNCTION_ARGS)
