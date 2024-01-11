@@ -384,12 +384,7 @@ select excluded from excluded;
 (1 row)
 
 insert into excluded values (1) on duplicate key update excluded = excluded.excluded;
-insert into excluded values (1) as excluded on duplicate key update excluded = excluded.excluded; -- ERROR
-ERROR:  table reference "excluded" is ambiguous
-LINE 1: ...1) as excluded on duplicate key update excluded = excluded.e...
-                                                             ^
-CONTEXT:  referenced column: excluded
-insert into excluded values (1) as t on duplicate key update excluded = excluded.excluded;
+insert into excluded select 1 on duplicate key update excluded = excluded + 1;
 -- name test
 CREATE TABLE x (id int);
 CREATE FUNCTION fn_x_before () RETURNS TRIGGER AS '

@@ -185,8 +185,7 @@ create table excluded(excluded int);
 insert into excluded values(1);
 select excluded from excluded;
 insert into excluded values (1) on duplicate key update excluded = excluded.excluded;
-insert into excluded values (1) as excluded on duplicate key update excluded = excluded.excluded; -- ERROR
-insert into excluded values (1) as t on duplicate key update excluded = excluded.excluded;
+insert into excluded select 1 on duplicate key update excluded = excluded + 1;
 
 -- name test
 CREATE TABLE x (id int);
