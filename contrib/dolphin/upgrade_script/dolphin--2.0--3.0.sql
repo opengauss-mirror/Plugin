@@ -594,6 +594,10 @@ CREATE OPERATOR dolphin_catalog.~(rightarg = anyset, procedure = dolphin_catalog
 DROP FUNCTION IF EXISTS pg_catalog.degrees(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(year);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(json);
+DROP FUNCTION IF EXISTS pg_catalog.exp(year);
+DROP FUNCTION IF EXISTS pg_catalog.exp(json);
 CREATE OR REPLACE FUNCTION pg_catalog.degrees(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.degrees(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.degrees(year) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.degrees(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.degrees(json) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.degrees(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.exp(year) RETURNS numeric LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.exp(cast($1 as numeric))';
+CREATE OR REPLACE FUNCTION pg_catalog.exp(json) RETURNS numeric LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.exp(cast($1 as numeric))';

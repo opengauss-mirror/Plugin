@@ -119,6 +119,104 @@ select * from test_double_degrees order by 1;
  57.2957795130823 | 57.2957795130823 | 57.2957795130823 | 57.2957795130823 | 57.2957795130823 | 57.2957795130823 | 57.2957795130823 | 57.2957795130823 | 57.2957795130823 | 57.2957795130823 | 57.2957795130823 | 57.2957795130823 | 401.070456591576 | 57.2957795130823 | 1159105365.18446 | 10946358.6759744 | 10946378.4773958 | 1.15910537613081e+15 | 1.15910537613084e+15 | 1.15910537613081e+15 | 1.15910537613084e+15 | 115909.361954966 | 70.4738088010913 | 70.4738088010913 | 70.4738088010913 | 70.4738088010913 | 70.4738088010913 | 70.4738088010913 | 70.4738088010913 | 70.4738088010913 | 70.4738088010913 | 57.2957795130823 | 286.478897565412 |   0
 (2 rows)
 
+-- exp math function
+reset dolphin.sql_mode;
+select exp(`int1`), exp(`uint1`), exp(`int2`), exp(`uint2`), exp(`int4`), exp(`uint4`), exp(`int8`), exp(`uint8`), exp(`float4`), exp(`float8`), exp(`numeric`),exp(`bit1`), exp(`bit64`), exp(`boolean`), exp(`date`), exp(`time`), exp(`time(4)`), exp(`datetime`),exp(`datetime(4)`), exp(`timestamp`), exp(`timestamp(4)`), exp(`year`), exp(`char`), exp(`varchar`), exp(`binary`), exp(`varbinary`), exp(`tinyblob`), exp(`blob`), exp(`mediumblob`), exp(`longblob`), exp(`text`), exp(`enum_t`), exp(`set_t`), exp(`json`) from test_type_table;
+ERROR:  value overflows numeric format
+CONTEXT:  referenced column: exp
+select exp(`int1`), exp(`uint1`), exp(`int2`), exp(`uint2`), exp(`int4`), exp(`uint4`), exp(`int8`), exp(`uint8`), exp(`float4`), exp(`float8`), exp(`numeric`), exp(`bit1`), exp(`bit64`), exp(`boolean`), exp(`char`), exp(`varchar`),exp(`binary`), exp(`varbinary`), exp(`tinyblob`), exp(`blob`), exp(`mediumblob`), exp(`longblob`), exp(`text`), exp(`enum_t`), exp(`set_t`), exp(`json`) from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: exp
+       exp        |        exp         |       exp        |        exp         |       exp        |        exp         |       exp        |        exp         |       exp        |       exp        |        exp         |        exp         |        exp         |        exp         |        exp         |        exp         |       exp        |       exp        |       exp        |       exp        |       exp        |       exp        |        exp         |        exp         |        exp         |        exp         
+------------------+--------------------+------------------+--------------------+------------------+--------------------+------------------+--------------------+------------------+------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+------------------+------------------+------------------+------------------+------------------+------------------+--------------------+--------------------+--------------------+--------------------
+ 2.71828182845905 | 2.7182818284590452 | 2.71828182845905 | 2.7182818284590452 | 2.71828182845905 | 2.7182818284590452 | 2.71828182845905 | 2.7182818284590452 | 2.71828182845905 | 2.71828182845905 | 2.7182818284590452 | 2.7182818284590452 | 1096.6331584284586 | 2.7182818284590452 | 3.4212295362896736 | 3.4212295362896736 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.4212295362896736 | 2.7182818284590452 | 148.41315910257660 | 1.0000000000000000
+(1 row)
+
+create table test_double_exp(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double,  d20 double,  d21 double,  d22 double,  d23 double,  d24 double,  d25 double,  d26 double);
+insert ignore into test_double_exp select exp(`int1`), exp(`uint1`), exp(`int2`), exp(`uint2`), exp(`int4`), exp(`uint4`), exp(`int8`), exp(`uint8`), exp(`float4`), exp(`float8`), exp(`numeric`), exp(`bit1`), exp(`bit64`), exp(`boolean`), exp(`char`), exp(`varchar`),exp(`binary`), exp(`varbinary`), exp(`tinyblob`), exp(`blob`), exp(`mediumblob`), exp(`longblob`), exp(`text`), exp(`enum_t`), exp(`set_t`), exp(`json`) from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: exp
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test_double_exp select exp(`int1`), exp(`uint1`), exp(`int2`), exp(`uint2`), exp(`int4`), exp(`uint4`), exp(`int8`), exp(`uint8`), exp(`float4`), exp(`float8`), exp(`numeric`), exp(`bit1`), exp(`bit64`), exp(`boolean`), exp(`char`), exp(`varchar`),exp(`binary`), exp(`varbinary`), exp(`tinyblob`), exp(`blob`), exp(`mediumblob`), exp(`longblob`), exp(`text`), exp(`enum_t`), exp(`set_t`), exp(`json`) from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: exp
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: exp
+select * from test_double_exp order by 1;
+        d1        |        d2        |        d3        |        d4        |        d5        |        d6        |        d7        |        d8        |        d9        |       d10        |       d11        |       d12        |       d13        |       d14        |       d15        |       d16        |       d17        |       d18        |       d19        |       d20        |       d21        |       d22        |       d23        |       d24        |       d25        | d26 
+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+------------------+-----
+ 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 1096.63315842846 | 2.71828182845905 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 2.71828182845905 | 148.413159102577 |   1
+ 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 1096.63315842846 | 2.71828182845905 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 2.71828182845905 | 148.413159102577 |   1
+(2 rows)
+
+select exp(709);
+          exp          
+-----------------------
+ 8.21840746155497e+307
+(1 row)
+
+select exp(710);
+ERROR:  value out of range: overflow
+CONTEXT:  referenced column: exp
+select exp(-1000); 
+ exp 
+-----
+   0
+(1 row)
+
+drop table if exists test_double_exp;
 drop table if exists test_double_degrees;
 drop table if exists test_type_table;
 drop schema test_math_func cascade;
