@@ -282,77 +282,88 @@ DROP CAST IF EXISTS (year AS boolean);
 DROP FUNCTION IF EXISTS pg_catalog.year_to_bool(year);
 
 -- not operator
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = int1);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, int1);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_int1not(int1);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = int2);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, int2);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_int2not(int2);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = int4);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, int4);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_int4not(int4);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = int8);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, int8);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_int8not(int8);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = uint1);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, uint1);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_uint1not(uint1);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = uint2);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, uint2);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_uint2not(uint2);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = uint4);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, uint4);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_uint4not(uint4);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = uint8);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, uint8);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_uint8not(uint8);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = float4);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, float4);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_float4not(float4);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = float8);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, float8);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_float8not(float8);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = numeric);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, numeric);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_numericnot(numeric);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = bit);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, bit);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_bitnot(bit);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = boolean);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, boolean);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_boolnot(boolean);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = date);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, date);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_datenot(date);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = time);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, time);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_timenot(time);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = timestamp);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, timestamp without time zone);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_timestampnot(timestamp without time zone);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = timestamp);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, timestamp with time zone);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_timestamptznot(timestamp with time zone);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = year);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, year);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_yearnot(year);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = char);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, char);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_charnot(char);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = varchar);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, varchar);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_varcharnot(varchar);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = text);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, text);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_textnot(text);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = anyelement);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, anyelement);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_varlenanot(anyelement);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = anyenum);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, anyenum);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_enumnot(anyenum);
 
-DROP OPERATOR IF EXISTS dolphin_catalog.~(rightarg = anyset);
+DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, anyset);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_setnot(anyset);
+
+DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING BTREE;
+DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING HASH;
+DROP OPERATOR CLASS IF EXISTS pg_catalog.binary_ops USING BTREE;
+DROP OPERATOR CLASS IF EXISTS pg_catalog.binary_ops USING HASH;
+DROP OPERATOR FAMILY IF EXISTS pg_catalog.varbinary_ops USING BTREE;
+DROP OPERATOR FAMILY IF EXISTS pg_catalog.varbinary_ops USING HASH;
+DROP OPERATOR FAMILY IF EXISTS pg_catalog.binary_ops USING BTREE;
+DROP OPERATOR FAMILY IF EXISTS pg_catalog.binary_ops USING HASH;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_cmp(varbinary, varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_cmp(binary, binary);
 
 DROP FUNCTION IF EXISTS pg_catalog.degrees(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(year);

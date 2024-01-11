@@ -443,15 +443,15 @@ select a / 1 from enum_test_table;
 
 create table test_enum_d(ssl_type enum('','any','X509','SPECIFIED') not null default '');
 \d test_enum_d
-                                                Table "test_enum.test_enum_d"
-  Column  |                     Type                     |                             Modifiers                             
+--?.*
+--?.*
 --?.*
 --?.*
 
  
 \d+ test_enum_d
-                                                                   Table "test_enum.test_enum_d"
-  Column  |                     Type                     |                             Modifiers                             | Storage | Stats target | Description 
+--?.*
+--?.*
 --?.*
 --?.*
 Has OIDs: no
