@@ -31,6 +31,10 @@
 #include "libpq/pqformat.h"
 #include "libpq/libpq.h"
 #include "executor/spq_seqscan.h"
+#include "access/csnlog.h"
+#include "utils/snapmgr.h"
+#include "storage/procarray.h"
+#include "ddes/dms/ss_transaction.h"
 
 #define DECOMPRESS_HEAP_TUPLE(_isCompressed, _heapTuple, _destTupleData, _rd_att, _heapPage)  \
     do {                                                                                      \
@@ -45,6 +49,7 @@
 #define BLOCKSIZE (8 * 1024)
 
 constexpr int FETCH_BLOCK_NUM = 128;
+constexpr int FETCH_BLOCK_NUM_DIRECT = 512;
 constexpr int MAX_ENQUEUE_TIME = 3;
 constexpr int PAGE_QUEUE_SIZE = 2048;
 enum SpqState {
@@ -100,6 +105,327 @@ public:
     }
 };
 
+static bool DirectReadXidVisibleInSnapshot(TransactionId xid, Snapshot snapshot, bool* sync)
+{
+    volatile CommitSeqNo csn;
+    bool looped = false;
+    TransactionId parentXid = InvalidTransactionId;
+
+#ifdef XIDVIS_DEBUG
+    ereport(DEBUG1,
+            (errmsg("DirectReadXidVisibleInSnapshot xid %ld cur_xid %ld snapshot csn %lu xmax %ld",
+                    xid,
+                    GetCurrentTransactionIdIfAny(),
+                    snapshot->snapshotcsn,
+                    snapshot->xmax)));
+#endif
+
+loop:
+    if (ENABLE_DMS) {
+        /* fetch TXN info locally if either reformer, original primary, or normal primary */
+        if (SS_PRIMARY_MODE || SS_OFFICIAL_PRIMARY) {
+            csn = TransactionIdGetCommitSeqNo(xid, false, true, false, snapshot);
+        } else {
+            csn = SSTransactionIdGetCommitSeqNo(xid, false, true, false, snapshot, sync);
+        }
+    } else {
+        csn = TransactionIdGetCommitSeqNo(xid, false, true, false, snapshot);
+    }
+
+#ifdef XIDVIS_DEBUG
+    ereport(DEBUG1,
+            (errmsg("DirectReadXidVisibleInSnapshot xid %ld cur_xid %ld csn %ld snapshot"
+                    "csn %ld xmax %ld",
+                    xid,
+                    GetCurrentTransactionIdIfAny(),
+                    csn,
+                    snapshot->snapshotcsn,
+                    snapshot->xmax)));
+#endif
+
+    if (COMMITSEQNO_IS_COMMITTED(csn)) {
+        if (csn < snapshot->snapshotcsn)
+            return true;
+        else
+            return false;
+    } else if (COMMITSEQNO_IS_COMMITTING(csn)) {
+        /* SS master node would've already sync-waited, so this should never happen */
+        if (SS_STANDBY_MODE) {
+            ereport(FATAL, (errmsg("SS xid %lu's csn %lu is still COMMITTING after Master txn waited.", xid, csn)));
+        }
+        if (looped) {
+            ereport(DEBUG1, (errmsg("transaction id %lu's csn %ld may ABORT but direct read can't change.", xid, csn)));
+            return false;
+        } else {
+            if (!COMMITSEQNO_IS_SUBTRANS(csn)) {
+                /* If snapshotcsn lower than csn stored in csn log, don't need to wait. */
+                CommitSeqNo latestCSN = GET_COMMITSEQNO(csn);
+                if (latestCSN >= snapshot->snapshotcsn) {
+                    ereport(DEBUG1,
+                            (errmsg(
+                                "snapshotcsn %lu lower than csn %lu stored in csn log, don't need to sync wait, trx id %lu",
+                                snapshot->snapshotcsn,
+                                csn,
+                                xid)));
+                    return false;
+                }
+            } else {
+                parentXid = (TransactionId)GET_PARENTXID(csn);
+            }
+
+            if (u_sess->attr.attr_common.xc_maintenance_mode || t_thrd.xact_cxt.bInAbortTransaction) {
+                return false;
+            }
+
+            /* Wait for txn end and check again. */
+            if (sync != NULL) {
+                *sync = true;
+            }
+            if (TransactionIdIsValid(parentXid))
+                SyncLocalXidWait(parentXid, snapshot);
+            else
+                SyncLocalXidWait(xid, snapshot);
+            looped = true;
+            parentXid = InvalidTransactionId;
+            goto loop;
+        }
+    } else {
+        return false;
+    }
+}
+
+static bool DirectReadCommittedXidVisibleInSnapshot(TransactionId xid, Snapshot snapshot)
+{
+    CommitSeqNo csn;
+    bool looped = false;
+    TransactionId parentXid = InvalidTransactionId;
+
+    /*
+     * Make a quick range check to eliminate most XIDs without looking at the
+     * CSN log.
+     */
+    if (TransactionIdPrecedes(xid, snapshot->xmin))
+        return true;
+
+loop:
+    if (ENABLE_DMS) {
+        /* fetch TXN info locally if either reformer, original primary, or normal primary */
+        if (SS_PRIMARY_MODE || SS_OFFICIAL_PRIMARY) {
+            csn = TransactionIdGetCommitSeqNo(xid, true, true, false, snapshot);
+        } else {
+            csn = SSTransactionIdGetCommitSeqNo(xid, true, true, false, snapshot, NULL);
+        }
+    } else {
+        csn = TransactionIdGetCommitSeqNo(xid, true, true, false, snapshot);
+    }
+
+    if (COMMITSEQNO_IS_COMMITTING(csn)) {
+        /* SS master node would've already sync-waited, so this should never happen */
+        if (SS_STANDBY_MODE) {
+            ereport(FATAL, (errmsg("SS xid %lu's csn %lu is still COMMITTING after Master txn waited.", xid, csn)));
+        }
+        if (looped) {
+            ereport(WARNING, (errmsg("transaction id %lu's csn %ld may frozen but direct read can't change.",
+                                     xid, csn)));
+            return true;
+        } else {
+            if (!COMMITSEQNO_IS_SUBTRANS(csn)) {
+                /* If snapshotcsn lower than csn stored in csn log, don't need to wait. */
+                CommitSeqNo latestCSN = GET_COMMITSEQNO(csn);
+                if (latestCSN >= snapshot->snapshotcsn) {
+                    ereport(DEBUG1,
+                            (errmsg("snapshotcsn %lu lower than csn %lu"
+                                    " stored in csn log, don't need to sync wait, trx id %lu",
+                                    snapshot->snapshotcsn,
+                                    csn,
+                                    xid)));
+                    return false;
+                }
+            } else {
+                parentXid = (TransactionId)GET_PARENTXID(csn);
+            }
+
+            if (u_sess->attr.attr_common.xc_maintenance_mode || t_thrd.xact_cxt.bInAbortTransaction) {
+                return false;
+            }
+
+            /* Wait for txn end and check again. */
+            if (TransactionIdIsValid(parentXid))
+                SyncLocalXidWait(parentXid);
+            else
+                SyncLocalXidWait(xid);
+            looped = true;
+            parentXid = InvalidTransactionId;
+            goto loop;
+        }
+    } else if (!COMMITSEQNO_IS_COMMITTED(csn)) {
+        ereport(WARNING,
+                (errmsg("transaction/csn %lu/%lu was hinted as "
+                        "committed, but was not marked as committed in "
+                        "the transaction log",
+                        xid,
+                        csn)));
+        /*
+         * We have contradicting evidence on whether the transaction committed or
+         * not. Let's assume that it did. That seems better than erroring out.
+         */
+        return true;
+    }
+
+    if (csn < snapshot->snapshotcsn)
+        return true;
+    else
+        return false;
+}
+
+static bool DirectReadHeapTupleSatisfiesVisibility(HeapTuple htup, Snapshot snapshot, Page page)
+{
+    if (snapshot->satisfies != SNAPSHOT_MVCC)
+        ereport(ERROR,
+                (errcode(ERRCODE_SYNTAX_ERROR),
+                 errmsg("DirectRead only support SNAPSHOT_MVCC")));
+    HeapTupleHeader tuple = htup->t_data;
+    Assert(ItemPointerIsValid(&htup->t_self));
+    Assert(htup->t_tableOid != InvalidOid);
+    bool visible = false;
+
+    if (SHOW_DEBUG_MESSAGE()) {
+        ereport(DEBUG1,
+                (errmsg("HeapTupleSatisfiesMVCC self(%d,%d) ctid(%d,%d) cur_xid %ld xmin %ld"
+                        " xmax %ld csn %lu",
+                        ItemPointerGetBlockNumber(&htup->t_self),
+                        ItemPointerGetOffsetNumber(&htup->t_self),
+                        ItemPointerGetBlockNumber(&tuple->t_ctid),
+                        ItemPointerGetOffsetNumber(&tuple->t_ctid),
+                        GetCurrentTransactionIdIfAny(),
+                        HeapTupleHeaderGetXmin(page, tuple),
+                        HeapTupleHeaderGetXmax(page, tuple),
+                        snapshot->snapshotcsn)));
+    }
+
+    /*
+     * Just valid for read-only transaction when u_sess->attr.attr_common.XactReadOnly is true.
+     * Show any tuples including dirty ones when u_sess->attr.attr_storage.enable_show_any_tuples is true.
+     * GUC param u_sess->attr.attr_storage.enable_show_any_tuples is just for analyse or maintenance
+     */
+    if (u_sess->attr.attr_common.XactReadOnly && u_sess->attr.attr_storage.enable_show_any_tuples)
+        return true;
+
+    if (!HeapTupleHeaderXminCommitted(tuple)) {
+        if (HeapTupleHeaderXminInvalid(tuple))
+            return false;
+
+        if (TransactionIdIsCurrentTransactionId(HeapTupleHeaderGetXmin(page, tuple))) {
+            if ((tuple->t_infomask & HEAP_COMBOCID) && CheckStreamCombocid(tuple, snapshot->curcid, page))
+                return true; /* delete after stream producer thread scan started */
+
+            if (HeapTupleHeaderGetCmin(tuple, page) >= snapshot->curcid)
+                return false; /* inserted after scan started */
+
+            if (tuple->t_infomask & HEAP_XMAX_INVALID) /* xid invalid */
+                return true;
+
+            if (HEAP_XMAX_IS_LOCKED_ONLY(tuple->t_infomask, tuple->t_infomask2)) /* not deleter */
+                return true;
+
+            if (tuple->t_infomask & HEAP_XMAX_IS_MULTI) {
+                TransactionId xmax = HeapTupleHeaderMultiXactGetUpdateXid(page, tuple);
+                /* not LOCKED_ONLY, so it has to have an xmax */
+                Assert(TransactionIdIsValid(xmax));
+
+                /* updating subtransaction must have aborted */
+                if (!TransactionIdIsCurrentTransactionId(xmax))
+                    return true;
+                else if (HeapTupleHeaderGetCmax(tuple, page) >= snapshot->curcid)
+                    return true; /* updated after scan started */
+                else
+                    return false; /* updated before scan started */
+            }
+
+            if (!TransactionIdIsCurrentTransactionId(HeapTupleHeaderGetXmax(page, tuple))) {
+                /* deleting subtransaction must have aborted */
+                Assert(!TransactionIdDidCommit(HeapTupleHeaderGetXmax(page, tuple)));
+                return true;
+            }
+
+            if (HeapTupleHeaderGetCmax(tuple, page) >= snapshot->curcid)
+                return true; /* deleted after scan started */
+            else
+                return false; /* deleted before scan started */
+        } else {
+            visible = DirectReadXidVisibleInSnapshot(HeapTupleHeaderGetXmin(page, tuple), snapshot, NULL);
+            if (!visible)
+                return false;
+        }
+    } else {
+        /* xmin is committed, but maybe not according to our snapshot */
+        if (!HeapTupleHeaderXminFrozen(tuple) &&
+            !DirectReadCommittedXidVisibleInSnapshot(HeapTupleHeaderGetXmin(page, tuple), snapshot))
+            return false; /* treat as still in progress */
+    }
+
+recheck_xmax:
+    if (tuple->t_infomask & HEAP_XMAX_INVALID) /* xid invalid or aborted */
+        return true;
+
+    if (HEAP_XMAX_IS_LOCKED_ONLY(tuple->t_infomask, tuple->t_infomask2))
+        return true;
+
+    if (tuple->t_infomask & HEAP_XMAX_IS_MULTI) {
+        TransactionId xmax = HeapTupleHeaderMultiXactGetUpdateXid(page, tuple);
+        /* not LOCKED_ONLY, so it has to have an xmax */
+        Assert(TransactionIdIsValid(xmax));
+        if (TransactionIdIsCurrentTransactionId(xmax)) {
+            if (HeapTupleHeaderGetCmax(tuple, page) >= snapshot->curcid)
+                return true; /* deleted after scan started */
+            else
+                return false; /* deleted before scan started */
+        }
+        if (TransactionIdIsInProgress(xmax))
+            return true;
+        if (TransactionIdDidCommit(xmax)) {
+            /* updating transaction committed, but when? */
+            if (!DirectReadCommittedXidVisibleInSnapshot(xmax, snapshot))
+                return true; /* treat as still in progress */
+            return false;
+        }
+        /* it must have aborted or crashed */
+        return true;
+    }
+
+    if (!(tuple->t_infomask & HEAP_XMAX_COMMITTED)) {
+        bool sync = false;
+        TransactionId xmax = HeapTupleHeaderGetXmax(page, tuple);
+
+        if (TransactionIdIsCurrentTransactionId(HeapTupleHeaderGetXmax(page, tuple))) {
+            if (HeapTupleHeaderGetCmax(tuple, page) >= snapshot->curcid)
+                return true; /* deleted after scan started */
+            else
+                return false; /* deleted before scan started */
+        }
+
+        visible = DirectReadXidVisibleInSnapshot(HeapTupleHeaderGetXmax(page, tuple), snapshot, &sync);
+        /*
+         * If sync wait, xmax may be modified by others. So we need to check xmax again after acquiring the page lock.
+         */
+        if (sync && (xmax != HeapTupleHeaderGetXmax(page, tuple))) {
+            goto recheck_xmax;
+        }
+
+        if (!visible) {
+            if (sync && (xmax != HeapTupleHeaderGetXmax(page, tuple))) {
+                goto recheck_xmax;
+            }
+            return true; /* treat as still in progress */
+        }
+    } else {
+        /* xmax is committed, but maybe not according to our snapshot */
+        if (!DirectReadCommittedXidVisibleInSnapshot(HeapTupleHeaderGetXmax(page, tuple), snapshot))
+            return true; /* treat as still in progress */
+    }
+    return false;
+}
+
 template<bool fromBuffer>
 bool GetNextTupleFromPage(HeapScanDesc scan, Page pageptr, ScanDirection direction, OffsetNumber &lineOff, TupleTableSlot* slot)
 {
@@ -135,7 +461,13 @@ bool GetNextTupleFromPage(HeapScanDesc scan, Page pageptr, ScanDirection directi
             /*
                  * if current tuple qualifies, return it.
              */
-            valid = HeapTupleSatisfiesVisibility(tuple, snapshot, scan->rs_base.rs_cbuf);
+            if (fromBuffer) {
+                valid = HeapTupleSatisfiesVisibility(tuple, snapshot, scan->rs_base.rs_cbuf);
+                CheckForSerializableConflictOut(valid, scan->rs_base.rs_rd, (void *)tuple, scan->rs_base.rs_cbuf,
+                                                snapshot);
+            } else {
+                valid = DirectReadHeapTupleSatisfiesVisibility(tuple, snapshot, dp);
+            }
 
             CheckForSerializableConflictOut(valid, scan->rs_base.rs_rd, (void *)tuple, scan->rs_base.rs_cbuf,
                                             snapshot);
@@ -273,8 +605,112 @@ struct DirectReadBuff {
     uint32 current;
     Page currentPage;
     OffsetNumber lineOff;
-    Buffer bufferid;
     char* buff;
+};
+
+class SpqDirectReadPageManager : public SpqPageManager {
+public:
+    HeapScanDesc scan;
+    MpmcBoundedQueue<DirectReadBuff*> pagequeue;
+    DirectReadBuff *currentPages;
+public:
+    SpqDirectReadPageManager(HeapScanDesc scan, ScanDirection direction)
+        : SpqPageManager(direction), scan(scan), pagequeue(PAGE_QUEUE_SIZE), currentPages(nullptr) {
+        scan->rs_base.rs_cbuf = InvalidBuffer;
+    }
+
+    SpqState FetchBlocks(uint32 start, uint32 end)
+    {
+        uint32 step = 0;
+
+        do {
+            start = start + step;
+            step = seg_direct_read_get_range(start);
+            if (start + step - 1 >= end) {
+                step = end - start + 1;
+            }
+
+            DirectReadBuff *buffer = (DirectReadBuff*)palloc(sizeof(DirectReadBuff) + BLOCKSIZE * step);
+            if (buffer == nullptr) {
+                elog(ERROR, "SpqDirectReadPageManager: try palloc memory failed.");
+            }
+            bool enqueued = false;
+            for (int i = 0; i < MAX_ENQUEUE_TIME; ++i) {
+                if (pagequeue.Enqueue(buffer)) {
+                    enqueued = true;
+                    break;
+                }
+            }
+            if (!enqueued) {
+                pfree(buffer);
+                elog(ERROR, "SpqDirectReadPageManager: try push buffer to page queue failed.");
+            }
+            buffer->buff = (char *)(buffer + 1);
+            // sync read
+            seg_direct_read(scan->rs_base.rs_rd->rd_smgr, MAIN_FORKNUM, start, &step, buffer->buff, &buffer->locStart);
+            buffer->start = start;
+            buffer->size = step;
+            buffer->current = InvalidBlockNumber;
+            buffer->currentPage = buffer->buff;
+        } while (start + step - 1 < end);
+        return SpqState::SPQ_SUCCESS;
+    }
+
+    SpqState GetNewPage()
+    {
+        if (pagequeue.Empty() && currentPages == nullptr) {
+            return SpqState::SPQ_QUEUE_EMPTY;
+        }
+
+        while (true) {
+            // if currentPage is empty, try get a new page from pagequeue
+            if (currentPages == nullptr) {
+                if (!pagequeue.Dequeue(currentPages)) {
+                    return SpqState::SPQ_QUEUE_EMPTY;
+                }
+            }
+
+            if (currentPages->current == InvalidBlockNumber) {
+                currentPages->current = 0;
+            } else {
+                currentPages->current++;
+            }
+            while (currentPages->current < currentPages->size) {
+                currentPages->currentPage = currentPages->buff + BLOCKSIZE * currentPages->current;
+                if (PageIsVerified(currentPages->currentPage, currentPages->locStart + currentPages->current)) {
+                    if (ScanDirectionIsForward(direction)) {
+                        currentPages->lineOff = FirstOffsetNumber;
+                    } else if (ScanDirectionIsBackward(direction)) {
+                        currentPages->lineOff = PageGetMaxOffsetNumber(currentPages->currentPage);
+                    } else {
+                        return SpqState::SPQ_QUERY_END;
+                    }
+                    return SpqState::SPQ_SUCCESS;
+                }
+                currentPages->current++;
+            }
+
+            pfree(currentPages);
+            currentPages = nullptr;
+        }
+    }
+
+    bool GetTupleFromPage(TupleTableSlot* slot)
+    {
+        if (currentPages == nullptr) {
+            return false;
+        }
+
+        return GetNextTupleFromPage<false>(scan, currentPages->currentPage, direction, currentPages->lineOff, slot);
+    }
+
+    void Rescan(TableScanDesc scanDesc)
+    {
+        while (pagequeue.Dequeue(currentPages)) {
+            pfree(currentPages);
+        }
+        currentPages = nullptr;
+    }
 };
 
 class SpqLocalBlockManager : public SpqBlockManager {
@@ -544,26 +980,44 @@ SpqSeqScanState* ExecInitSpqSeqScan(SpqSeqScan* node, EState* estate, int eflags
 
     HeapScanDesc scanDesc = reinterpret_cast<HeapScanDesc>(seqScan->ss_currentScanDesc);
 
+    if (spqScan->ss.ss_currentRelation->rd_tam_ops != TableAmHeap) {
+        ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("error relation type.")));
+    }
+
     if (!node->isDirectRead) {
-        if (spqScan->ss.ss_currentRelation->rd_tam_ops != TableAmHeap) {
-            ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("error relation type.")));
+        seqScan->ss_currentScanDesc->rs_nblocks = RelationGetNumberOfBlocks(seqScan->ss_currentScanDesc->rs_rd);
+    } else if (t_thrd.spq_ctx.spq_role == ROLE_QUERY_COORDINTOR) {
+        if (node->DirectReadBlkNum == InvalidBlockNumber) {
+            node->isDirectRead = false;
         }
+    } else {
+        if (node->DirectReadBlkNum == InvalidBlockNumber) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_SYNTAX_ERROR),
+                     errmsg("DirectRead nblocks error")));
+        }
+        seqScan->ss_currentScanDesc->rs_nblocks = node->DirectReadBlkNum;
+    }
+
+    if (!node->isDirectRead) {
         spqScan->pageManager = New(CurrentMemoryContext) SpqBufmgrPageManager(scanDesc, estate->es_direction);
+    } else {
+        spqScan->pageManager = New(CurrentMemoryContext) SpqDirectReadPageManager(scanDesc, estate->es_direction);
     }
 
     SpqBlockManager* blockManager = nullptr;
-    seqScan->ss_currentScanDesc->rs_nblocks = RelationGetNumberOfBlocks(seqScan->ss_currentScanDesc->rs_rd);
+    int fetchNum = node->isDirectRead ? FETCH_BLOCK_NUM_DIRECT : FETCH_BLOCK_NUM;
     if (node->isFullTableScan) {
         blockManager = New(CurrentMemoryContext) SpqLocalBlockManager(0,
                                                                       1,
                                                                       seqScan->ss_currentScanDesc->rs_nblocks,
                                                                       estate->es_direction,
-                                                                      FETCH_BLOCK_NUM);
+                                                                      fetchNum);
     } else if (node->isAdaptiveScan) {
         blockManager = New(CurrentMemoryContext) SpqAdaptiveBlockManager(seqScan->ss_currentScanDesc->rs_nblocks,
                                                                          estate->es_direction,
                                                                          node->scan.plan.plan_node_id,
-                                                                         FETCH_BLOCK_NUM);
+                                                                         fetchNum);
     } else {
         int sliceNumber;
         int instanceID;
@@ -572,7 +1026,7 @@ SpqSeqScanState* ExecInitSpqSeqScan(SpqSeqScan* node, EState* estate, int eflags
                                                                       sliceNumber,
                                                                       seqScan->ss_currentScanDesc->rs_nblocks,
                                                                       estate->es_direction,
-                                                                      FETCH_BLOCK_NUM);
+                                                                      fetchNum);
     }
     spqScan->blockManager = blockManager;
     spqScan->ss.ScanNextMtd = SpqScanNext;

@@ -639,7 +639,8 @@ CTranslatorDXLToPlStmt::TranslateDXLTblScan(
         spq_scan->scan.scanrelid = index;
         spq_scan->isFullTableScan = false;
         spq_scan->isAdaptiveScan = u_sess->attr.attr_spq.spq_enable_adaptive_scan;
-        spq_scan->isDirectRead = false;
+        spq_scan->isDirectRead = u_sess->attr.attr_spq.spq_enable_direct_read;
+        spq_scan->DirectReadBlkNum = InvalidBlockNumber;
         plan = &(spq_scan->scan.plan);
         plan_return = (Plan *) spq_scan;
 	}
@@ -6369,7 +6370,8 @@ CTranslatorDXLToPlStmt::TranslateDXLTblShareScan(
         spq_scan->scan.scanrelid = index;
         spq_scan->isFullTableScan = true;
         spq_scan->isAdaptiveScan = false;
-        spq_scan->isDirectRead = false;
+        spq_scan->isDirectRead = u_sess->attr.attr_spq.spq_enable_direct_read;
+        spq_scan->DirectReadBlkNum = InvalidBlockNumber;
         plan = &(spq_scan->scan.plan);
         plan_return = (Plan *) spq_scan;
     }
