@@ -238,6 +238,35 @@ SELECT 'ab'::varbinary(2) <> 'ab'::binary;
 select (20220101)::binary(30)::bigint;
 select (-2075)::binary(30)::bigint;
 
+--binary/varbinary index test
+create table t_index_test(a binary(100), b varbinary(100));
+insert into t_index_test select i,i from generate_series(1,10000) i;
+create index i_b on t_index_test(a);
+create index i_vb on t_index_test(b);
+analyze t_index_test;
+explain (costs off) select * from t_index_test where a='1';
+explain (costs off) select * from t_index_test where a>='a1';
+explain (costs off) select * from t_index_test where a>'a1';
+explain (costs off) select * from t_index_test where a<='1';
+explain (costs off) select * from t_index_test where a<'1';
+
+explain (costs off) select * from t_index_test where b='1';
+explain (costs off) select * from t_index_test where b>='a1';
+explain (costs off) select * from t_index_test where b>'a1';
+explain (costs off) select * from t_index_test where b<='1';
+explain (costs off) select * from t_index_test where b<'1';
+
+drop index i_b;
+drop index i_vb;
+create index i_b on t_index_test(a) using hash;
+create index i_vb on t_index_test(b) using hash;
+analyze t_index_test;
+explain (costs off) select * from t_index_test where a='1';
+
+explain (costs off) select * from t_index_test where b='1';
+
+drop table t_index_test;
+
 -- binary about concat
 DROP TABLE IF EXISTS t1;
 SET dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero,treat_bxconst_as_binary';

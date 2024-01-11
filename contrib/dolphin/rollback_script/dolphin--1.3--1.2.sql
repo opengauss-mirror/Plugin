@@ -412,3 +412,14 @@ DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(tinyblob);
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(nvarchar2);
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(year);
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(json);
+
+DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING BTREE;
+DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING HASH;
+DROP OPERATOR CLASS IF EXISTS pg_catalog.binary_ops USING BTREE;
+DROP OPERATOR CLASS IF EXISTS pg_catalog.binary_ops USING HASH;
+DROP OPERATOR FAMILY IF EXISTS pg_catalog.varbinary_ops USING BTREE;
+DROP OPERATOR FAMILY IF EXISTS pg_catalog.varbinary_ops USING HASH;
+DROP OPERATOR FAMILY IF EXISTS pg_catalog.binary_ops USING BTREE;
+DROP OPERATOR FAMILY IF EXISTS pg_catalog.binary_ops USING HASH;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_cmp(varbinary, varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_cmp(binary, binary);

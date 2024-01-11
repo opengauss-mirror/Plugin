@@ -789,3 +789,42 @@ CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (tinyblob) RETURNS text LANGUAGE
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (nvarchar2) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as varchar))';
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (year) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (json) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_cmp(binary, binary) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+
+CREATE OPERATOR FAMILY pg_catalog.binary_ops USING BTREE;
+CREATE OPERATOR FAMILY pg_catalog.binary_ops USING HASH;
+
+CREATE OPERATOR CLASS pg_catalog.binary_ops DEFAULT
+   FOR TYPE binary USING BTREE FAMILY pg_catalog.binary_ops as
+   OPERATOR 1 pg_catalog.<(binary, binary),
+   OPERATOR 2 pg_catalog.<=(binary, binary),
+   OPERATOR 3 pg_catalog.=(binary, binary),
+   OPERATOR 4 pg_catalog.>=(binary, binary),
+   OPERATOR 5 pg_catalog.>(binary, binary),
+   FUNCTION 1 pg_catalog.binary_cmp(binary, binary),
+   FUNCTION 2 pg_catalog.bytea_sortsupport(internal);
+
+CREATE OPERATOR CLASS pg_catalog.binary_ops DEFAULT
+   FOR TYPE binary USING HASH FAMILY binary_ops as
+   OPERATOR 1 pg_catalog.=(binary, binary),
+   FUNCTION 1 (binary, binary) pg_catalog.hashvarlena(internal);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_cmp(varbinary, varbinary) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR FAMILY pg_catalog.varbinary_ops USING BTREE;
+CREATE OPERATOR FAMILY pg_catalog.varbinary_ops USING HASH;
+
+CREATE OPERATOR CLASS pg_catalog.varbinary_ops DEFAULT
+   FOR TYPE varbinary USING BTREE FAMILY pg_catalog.varbinary_ops as
+   OPERATOR 1 pg_catalog.<(varbinary, varbinary),
+   OPERATOR 2 pg_catalog.<=(varbinary, varbinary),
+   OPERATOR 3 pg_catalog.=(varbinary, varbinary),
+   OPERATOR 4 pg_catalog.>=(varbinary, varbinary),
+   OPERATOR 5 pg_catalog.>(varbinary, varbinary),
+   FUNCTION 1 pg_catalog.varbinary_cmp(varbinary, varbinary),
+   FUNCTION 2 pg_catalog.bytea_sortsupport(internal);
+
+CREATE OPERATOR CLASS pg_catalog.varbinary_ops DEFAULT
+   FOR TYPE varbinary USING HASH FAMILY pg_catalog.varbinary_ops as
+   OPERATOR 1 pg_catalog.=(varbinary, varbinary),
+   FUNCTION 1 (varbinary, varbinary) pg_catalog.hashvarlena(internal);
