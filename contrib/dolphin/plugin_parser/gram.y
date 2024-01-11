@@ -798,7 +798,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 				opt_column_list columnList opt_name_list opt_analyze_column_define opt_multi_name_list
 				opt_include_without_empty opt_c_include index_including_params
 				sort_clause opt_sort_clause sortby_list index_params fulltext_index_params table_index_elems constraint_params
-				name_list UserIdList from_clause from_list opt_array_bounds dolphin_schema_name_list
+				name_list UserIdList from_clause from_list from_list_parens opt_array_bounds dolphin_schema_name_list
 				qualified_name_list any_name type_name_list collate_name any_name_or_sconst any_name_list dolphin_qualified_name_list dolphin_any_name dolphin_any_name_list
 				any_operator expr_list attrs callfunc_args callfunc_args_or_empty dolphin_attrs rename_user_clause rename_list
 				target_list insert_column_list set_target_list rename_clause_list rename_clause
@@ -921,7 +921,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <alias>	alias_clause opt_alias_clause dolphin_alias_clause opt_dolphin_alias_clause
 %type <sortby>	sortby
 %type <ielem>	index_elem table_index_elem constraint_elem fulltext_index_elem
-%type <node>	table_ref
+%type <node>	table_ref single_table
 %type <jexpr>	joined_table
 %type <range>	relation_expr
 %type <range>	relation_expr_opt_alias delete_relation_expr_opt_alias
@@ -30415,6 +30415,7 @@ values_clause:
 
 from_clause:
 			FROM from_list							{ $$ = $2; }
+			| FROM from_list_parens						{ $$ = $2; }
 			| FROM DUAL_P							{ $$ = NIL; }
 			| /*EMPTY*/								%prec EMPTY_FROM_CLAUSE
 				{ $$ = NIL; }
@@ -30432,7 +30433,13 @@ from_list:
  * and joined_table := '(' joined_table ')'.  So, we must have the
  * redundant-looking productions here instead.
  */
-table_ref:	relation_expr		%prec UMINUS
+
+from_list_parens:
+			'(' from_list_parens ')' 					{ $$ = $2; }
+			| '(' from_list ',' table_ref ')'				{ $$ = lappend($2, $4); }
+		;
+
+single_table:	relation_expr		%prec UMINUS
 				{
 #ifndef ENABLE_MULTIPLE_NODES
         			StringInfoData detailInfo;
@@ -30577,6 +30584,16 @@ table_ref:	relation_expr		%prec UMINUS
 					$1->issubpartition = true;
 					$1->indexhints = $7;
 					$$ = (Node *)$1;
+				}
+			| '(' single_table ')'
+				{
+					$$ = $2;
+				}
+		;
+
+table_ref:		single_table
+				{
+					$$ = $1;
 				}
 			| func_table		%prec UMINUS
 				{

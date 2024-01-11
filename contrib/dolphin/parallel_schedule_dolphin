@@ -5,7 +5,7 @@ test: string_func_test/db_b_ascii_test string_func_test/db_b_left_right_test str
 
 test: ast b_compatibility_time_type db_b_new_gram_test group_concat_test test_condition vec_engine test_uncommon_table_option add_unique_index
 
-test: db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4 second_microsecond test_set_password_for_user test_timestamp_overflow
+test: db_b_parser1 db_b_parser2 db_b_parser3 db_b_parser4 second_microsecond test_set_password_for_user test_timestamp_overflow select_from_parens
 
 test: db_b_plpgsql_test default_guc describe explain_desc kill set_password network test_dayofweek test_timestampn kwlist empty_enum_value
 
