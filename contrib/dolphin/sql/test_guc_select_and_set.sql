@@ -128,4 +128,18 @@ set lower_case_table_names = 0;
 show dolphin.lower_case_table_names;
 show lower_case_table_names;
 
+set @ta=@@license;
+set @tb=@ta;
+select @ta;
+select @ta=@@license;
+select @ta!=@@license;
+select @ta<>@@license;
+select @ta>@@license;
+select @ta<@@license;
+select @ta=@tb;
+select @ta!=@tb;
+select @ta<>@tb;
+select @ta>@tb;
+select @ta<@tb;
+
 drop schema test_guc_select_and_set cascade;
