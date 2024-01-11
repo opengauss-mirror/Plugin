@@ -402,3 +402,6 @@ DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_setnot(anyset);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(year);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(json);
+
+DROP FUNCTION IF EXISTS pg_catalog.exp(year);
+DROP FUNCTION IF EXISTS pg_catalog.exp(json);

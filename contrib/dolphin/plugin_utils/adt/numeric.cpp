@@ -8910,8 +8910,9 @@ Datum numeric_text(PG_FUNCTION_ARGS)
     if (NUMERIC_IS_BI(num)) {
         num = makeNumericNormal(num);
     }
-    tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
-    result = DirectFunctionCall1(textin, CStringGetDatum(tmp));
+
+    tmp = DatumGetCString(DirectFunctionCall1Coll(numeric_out, InvalidOid, NumericGetDatum(num), fcinfo->can_ignore));
+    result = DirectFunctionCall1Coll(textin, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -8922,9 +8923,11 @@ Datum bpchar_numeric(PG_FUNCTION_ARGS)
     Datum bpcharValue = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, bpcharValue));
 
-    result = DirectFunctionCall3(numeric_in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(bpcharout, InvalidOid, bpcharValue, fcinfo->can_ignore));
+
+    result = DirectFunctionCall3Coll(numeric_in, InvalidOid, CStringGetDatum(tmp), ObjectIdGetDatum(0),
+        Int32GetDatum(-1), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -8935,9 +8938,11 @@ Datum varchar_numeric(PG_FUNCTION_ARGS)
     Datum txt = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
 
-    result = DirectFunctionCall3(numeric_in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(varcharout, InvalidOid, txt, fcinfo->can_ignore));
+
+    result = DirectFunctionCall3Coll(numeric_in, InvalidOid, CStringGetDatum(tmp), ObjectIdGetDatum(0),
+        Int32GetDatum(-1), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -9018,9 +9023,11 @@ Datum text_numeric(PG_FUNCTION_ARGS)
     Datum txt = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
 
-    result = DirectFunctionCall3(numeric_in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(textout, InvalidOid, txt, fcinfo->can_ignore));
+
+    result = DirectFunctionCall3Coll(numeric_in, InvalidOid, CStringGetDatum(tmp), ObjectIdGetDatum(0),
+        Int32GetDatum(-1), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);

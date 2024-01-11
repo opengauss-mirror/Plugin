@@ -1729,8 +1729,13 @@ Datum dexp(PG_FUNCTION_ARGS)
     result = exp(arg1);
     if (errno == ERANGE && result != 0 && !isinf(result))
         result = get_float8_infinity();
-
-    CHECKFLOATVAL(result, isinf(arg1), false);
+#ifdef DOLPHIN
+    /* The Zero value is handled as normal data in mysql*/
+    if (ENABLE_B_CMPT_MODE)
+        CHECKFLOATVAL(result, isinf(arg1), true);
+    else
+#endif
+        CHECKFLOATVAL(result, isinf(arg1), false);
     PG_RETURN_FLOAT8(result);
 }
 

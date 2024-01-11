@@ -464,8 +464,6 @@ CREATE OPERATOR pg_catalog.>=(leftarg = longblob, rightarg = mediumblob, procedu
 DROP FUNCTION IF EXISTS pg_catalog.acos(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.acos(year);
 DROP FUNCTION IF EXISTS pg_catalog.acos(json);
-DROP FUNCTION IF EXISTS pg_catalog.exp(year);
-DROP FUNCTION IF EXISTS pg_catalog.exp(json);
 CREATE OR REPLACE FUNCTION pg_catalog.acos(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.acos(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.acos(year) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.acos(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.acos(json) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.acos(cast($1 as double precision))';
@@ -492,9 +490,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (tinyblob) RETURNS text LANGUAGE
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (nvarchar2) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as varchar))';
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (year) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (json) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
-
-CREATE OR REPLACE FUNCTION pg_catalog.exp(year) RETURNS numeric LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.exp(cast($1 as numeric))';
-CREATE OR REPLACE FUNCTION pg_catalog.exp(json) RETURNS numeric LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.exp(cast($1 as numeric))';
 
 CREATE OR REPLACE FUNCTION pg_catalog.int8_cast_date(int1)
 RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int8_cast_date';
