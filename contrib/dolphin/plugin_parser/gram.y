@@ -678,7 +678,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 /* </DB4AI> */
 
 %type <node>	select_no_parens select_no_parens_without_withclause select_with_parens select_clause
-				simple_select values_clause insert_empty_values insert_mysql_rest_selectStmt
+				simple_select values_clause insert_empty_values
 
 %type <node>	alter_column_default opclass_item opclass_drop alter_using AutoIncrementValue
 %type <ival>	add_drop opt_asc_desc opt_nulls_order con_asc_desc
@@ -742,7 +742,6 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <list>	TriggerEvents TriggerOneEvent
 %type <value>	TriggerFuncArg
 %type <node>	TriggerWhen
-%type <node>	opt_values_reference
 %type <list>   event_trigger_when_list event_trigger_value_list
 %type <defelt> event_trigger_when_item
 %type <chr>        enable_trigger
@@ -891,7 +890,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <defelt>	SeqOptElem
 
 /* INSERT */
-%type <istmt>	insert_rest insert_mysql_rest insert_rest_without_select insert_mysql_rest_normal insert_mysql_rest_upsert insert_mysql_rest_ignore
+%type <istmt>	insert_rest insert_mysql_rest
 %type <node>	upsert_clause
 
 %type <mergewhen>	merge_insert merge_update
@@ -28330,7 +28329,7 @@ update_delete_partition_clause: PARTITION '(' name ')'
  *
  *****************************************************************************/
 
-InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_mysql_rest_ignore returning_clause
+InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_mysql_rest returning_clause
 			{
 				$7->relation = $6;
 				$7->returningList = $8;
@@ -28391,9 +28390,9 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
                 }
 
             }
-			| opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_mysql_rest_upsert opt_values_reference upsert_clause returning_clause
+			| opt_with_clause INSERT hint_string opt_ignore into_empty insert_target insert_mysql_rest upsert_clause returning_clause
 				{
-					if ($10 != NIL) {
+					if ($9 != NIL) {
 						const char* message = "RETURNING clause is not yet supported whithin INSERT ON DUPLICATE KEY UPDATE statement.";
     					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 						ereport(errstate,
@@ -28441,17 +28440,17 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 
 						/* for UPSERT, keep the INSERT statement as well */
 						$7->relation = $6;
-						$7->returningList = $10;
+						$7->returningList = $9;
 						$7->isReplace = false;
 						$7->withClause = $1;
 						$7->hasIgnore = $4;
 #ifdef ENABLE_MULTIPLE_NODES						
 						if (t_thrd.proc->workingVersionNum >= UPSERT_ROW_STORE_VERSION_NUM) {
 							UpsertClause *uc = makeNode(UpsertClause);
-							if ($9 == NULL)
+							if ($8 == NULL)
 								uc->targetList = NIL;
 							else
-								uc->targetList = ((MergeWhenClause *)$9)->targetList;
+								uc->targetList = ((MergeWhenClause *)$8)->targetList;
 							$7->upsertClause = uc;
 						}
 #endif						
@@ -28475,8 +28474,8 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						n->values = NULL;
 
 						m->mergeWhenClauses = list_make1((Node *) n);
-						if ($9 != NULL)
-							m->mergeWhenClauses = list_concat(list_make1($9), m->mergeWhenClauses);
+						if ($8 != NULL)
+							m->mergeWhenClauses = list_concat(list_make1($8), m->mergeWhenClauses);
 
 						m->hintState = create_hintstate($3);
 						GetSessionContext()->upSertAliasName = NULL;
@@ -28484,9 +28483,9 @@ InsertStmt: opt_with_clause INSERT hint_string opt_ignore into_empty insert_targ
 						$$ = (Node *)m;
 					} else {
 						$7->relation = $6;
-						$7->returningList = $10;
+						$7->returningList = $9;
 						$7->withClause = $1;
-						$7->upsertClause = (UpsertClause *)$9;
+						$7->upsertClause = (UpsertClause *)$8;
 						$7->upsertClause->aliasName = GetSessionContext()->upSertAliasName;
 						$7->isReplace = false;
 						$7->hintState = create_hintstate($3);
@@ -28549,37 +28548,10 @@ insert_target:
 				}
 		;
 
-opt_values_reference:
-	/* EMPTY */ 
-	{
-		GetSessionContext()->upSertAliasName = makeAlias("delay", NIL);
-		$$ =(Node *)NULL;
-	}
-	| AS DolphinColId '(' insert_column_list ')'
-	{
-		Alias *a2 = makeAlias(GetDolphinObjName($2->str, $2->is_quoted), $4);
-		GetSessionContext()->upSertAliasName = a2;
-		$$ = (Node *) a2;
-	}
-	| AS DolphinColId
-	{
-		Alias *a2 = makeAlias(GetDolphinObjName($2->str, $2->is_quoted), NIL);
-		GetSessionContext()->upSertAliasName = a2;
-		$$ = (Node *) a2;
-	}
-
-insert_mysql_rest_upsert:
-	insert_mysql_rest_normal
-		{ $$ = $1; }
-	| insert_mysql_rest
-		{ $$ = $1; }
-insert_mysql_rest_ignore:
+insert_mysql_rest:
 	insert_rest
 		{ $$ = $1; }
-	| insert_mysql_rest
-		{ $$ = $1; }
-insert_mysql_rest:
-	SET insert_set_list
+	| SET insert_set_list
 		{
 			$$ = makeNode(InsertStmt);
 			SelectStmt *n = makeNode(SelectStmt);
@@ -28596,35 +28568,6 @@ insert_mysql_rest:
 			$$->isRewritten = false;
 		}
 	;
-
-insert_mysql_rest_selectStmt: select_with_parens		{ $$ = (Node*)$1; } 
-			| values_clause			{ $$ = $1; }
-
-insert_mysql_rest_normal: insert_mysql_rest_selectStmt
-				{
-					$$ = makeNode(InsertStmt);
-					$$->cols = NIL;
-					$$->selectStmt = (Node*)$1;
-					$$->isRewritten = false;
-				}
-			| '(' insert_column_list ')' insert_mysql_rest_selectStmt
-				{
-					$$ = makeNode(InsertStmt);
-					$$->cols = $2;
-					$$->selectStmt = (Node*)$4;
-					$$->isRewritten = false;
-				}
-			| '(' ')' insert_mysql_rest_selectStmt
-				{
-					$$ = makeNode(InsertStmt);
-					$$->cols = NIL;
-					$$->selectStmt = (Node*)$3;
-					$$->isRewritten = false;
-				}
-			| insert_rest_without_select
-				{
-					$$ = $1;
-				}
 
 insert_rest:
 			SelectStmt
@@ -28648,12 +28591,7 @@ insert_rest:
 					$$->selectStmt = $3;
 					$$->isRewritten = false;
 				}
-			| insert_rest_without_select
-				{
-					$$ = $1;
-				}
-insert_rest_without_select:
-			DEFAULT VALUES
+			| DEFAULT VALUES
 				{
 					$$ = makeNode(InsertStmt);
 					$$->cols = NIL;
@@ -28800,7 +28738,10 @@ upsert_clause:
 		;
 
 UPSERT:
-	ON DUPLICATE KEY UPDATE { GetSessionContext()->isUpsert = true; }
+	ON DUPLICATE KEY UPDATE { 
+		GetSessionContext()->isUpsert = true;
+                GetSessionContext()->upSertAliasName = GetSessionContext()->upSertAliasName = makeAlias("delay", NIL);
+	}
 	;
 
 /*****************************************************************************
