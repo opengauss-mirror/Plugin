@@ -10779,7 +10779,8 @@ Datum Varlena2Numeric(PG_FUNCTION_ARGS)
     data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
     Datum result;
 
-    result = DirectFunctionCall3(numeric_in, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    result = DirectFunctionCall3Coll(numeric_in, InvalidOid, CStringGetDatum(data), ObjectIdGetDatum(0),
+        Int32GetDatum(-1), fcinfo->can_ignore);
     pfree_ext(data);
 
     PG_RETURN_DATUM(result);

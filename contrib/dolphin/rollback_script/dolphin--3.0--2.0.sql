@@ -363,3 +363,5 @@ DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(binary);
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(tinyblob);
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(nvarchar2);
 
+DROP FUNCTION IF EXISTS pg_catalog.exp(year);
+DROP FUNCTION IF EXISTS pg_catalog.exp(json);
