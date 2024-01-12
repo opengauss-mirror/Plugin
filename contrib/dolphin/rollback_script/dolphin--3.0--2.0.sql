@@ -80,13 +80,6 @@ DROP FUNCTION IF EXISTS pg_catalog.acos(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.acos(year);
 DROP FUNCTION IF EXISTS pg_catalog.acos(json);
 
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(bit);
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(binary);
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(tinyblob);
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(nvarchar2);
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(year);
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(json);
-
 DROP FUNCTION IF EXISTS pg_catalog.int8_cast_date(int1);
 DROP FUNCTION IF EXISTS pg_catalog.int16_cast_date(int2);
 DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(int4);
