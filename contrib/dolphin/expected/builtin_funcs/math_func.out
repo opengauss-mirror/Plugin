@@ -201,6 +201,68 @@ select * from test_double_exp order by 1;
  2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 1096.63315842846 | 2.71828182845905 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 2.71828182845905 | 148.413159102577 |   1
 (2 rows)
 
+-- ln math function
+select
+ln(`int1`),
+ln(`uint1`),
+ln(`int2`),
+ln(`uint2`),
+ln(`int4`),
+ln(`uint4`),
+ln(`int8`),
+ln(`uint8`),
+ln(`float4`),
+ln(`float8`),
+ln(`numeric`),
+ln(`bit1`),
+ln(`bit64`),
+ln(`boolean`),
+ln(`date`),
+ln(`time`),
+ln(`time(4)`),
+ln(`datetime`),
+ln(`datetime(4)`),
+ln(`timestamp`),
+ln(`timestamp(4)`),
+ln(`year`),
+ln(`char`),
+ln(`varchar`),
+ln(`binary`),
+ln(`varbinary`),
+ln(`tinyblob`),
+ln(`blob`),
+ln(`mediumblob`),
+ln(`longblob`),
+ln(`text`),
+ln(`enum_t`),
+ln(`set_t`),
+ln(`json`)
+from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: ln
+ ln |         ln         | ln |         ln         | ln |         ln         | ln |         ln         | ln | ln |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |        ln        |         ln         |         ln         |        ln         |        ln         |        ln         |        ln         |        ln         |        ln         |         ln         |         ln         |         ln         | ln 
+----+--------------------+----+--------------------+----+--------------------+----+--------------------+----+----+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+------------------+--------------------+--------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+--------------------+--------------------+--------------------+----
+  0 | 0.0000000000000000 |  0 | 0.0000000000000000 |  0 | 0.0000000000000000 |  0 | 0.0000000000000000 |  0 |  0 | 0.0000000000000000 | 0.0000000000000000 | 1.9459101490553133 | 0.0000000000000000 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 7.61233683716775 | 0.2070141693843261 | 0.2070141693843261 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.2070141693843261 | 0.0000000000000000 | 1.6094379124341004 |   
+(1 row)
+
 select exp(709);
           exp          
 -----------------------

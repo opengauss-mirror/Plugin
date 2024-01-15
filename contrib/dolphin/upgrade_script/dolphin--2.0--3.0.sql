@@ -554,16 +554,6 @@ update pg_catalog.pg_type set typreceive = 'year_recv'::regproc, typsend = 'year
 end
 $$;
 
-DROP FUNCTION IF EXISTS pg_catalog.ln(year);
-CREATE OR REPLACE FUNCTION pg_catalog.ln(year) 
-RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
-'select pg_catalog.ln(cast($1 as double precision))';
-
-DROP FUNCTION IF EXISTS pg_catalog.ln(json);
-CREATE OR REPLACE FUNCTION pg_catalog.ln(json) 
-RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
-'select pg_catalog.ln(cast($1 as double precision))';
-
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int1(anyelement) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_int1 (
 anyelement

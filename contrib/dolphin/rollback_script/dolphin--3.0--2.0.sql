@@ -109,9 +109,6 @@ DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_timestamptz(numeric);
 DROP CAST IF EXISTS (TEXT AS timestamp with time zone);
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_explicit(TEXT);
 
-DROP FUNCTION IF EXISTS pg_catalog.ln(year);
-DROP FUNCTION IF EXISTS pg_catalog.ln(json);
-
 DROP FUNCTION IF EXISTS pg_catalog.log(anyelement,anyelement);
 
 DROP FUNCTION IF EXISTS pg_catalog.log(year);
