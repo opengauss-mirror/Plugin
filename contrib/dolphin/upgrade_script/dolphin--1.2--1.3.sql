@@ -828,3 +828,28 @@ CREATE OPERATOR CLASS pg_catalog.varbinary_ops DEFAULT
    FOR TYPE varbinary USING HASH FAMILY pg_catalog.varbinary_ops as
    OPERATOR 1 pg_catalog.=(varbinary, varbinary),
    FUNCTION 1 (varbinary, varbinary) pg_catalog.hashvarlena(internal);
+
+CREATE OR REPLACE FUNCTION pg_catalog.int8_cast_date(int1)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int8_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.int16_cast_date(int2)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int16_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.int32_cast_date(int4)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.int64_cast_date(int8)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_cast_date';
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_cast_date(uint1)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint8_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.uint16_cast_date(uint2)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint16_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.uint32_cast_date(uint4)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint32_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.uint64_cast_date(uint8)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint64_cast_date';
+
+CREATE OR REPLACE FUNCTION pg_catalog.float4_cast_date(float4)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float4_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.float8_cast_date(float8)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float8_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_date(numeric)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_date';

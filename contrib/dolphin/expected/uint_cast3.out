@@ -383,9 +383,9 @@ WARNING:  Cast to tinyint unsigned converted negative integer to it's positive c
 CONTEXT:  referenced column: date
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 select '256'::uint1::date;
@@ -393,17 +393,17 @@ WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: date
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 select 2004::uint2::date;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 select '65536'::uint2::date;
@@ -411,25 +411,25 @@ WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: date
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 select '65535'::uint2::date;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 select 2067::uint8::date;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 select '-1'::uint8::date;
@@ -437,17 +437,17 @@ WARNING:  Cast to bigint unsigned converted negative integer to it's positive co
 CONTEXT:  referenced column: date
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 select '18446744073709551615'::uint8::date;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 select 1999::uint4::year;

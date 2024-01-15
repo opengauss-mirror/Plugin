@@ -423,3 +423,15 @@ DROP OPERATOR FAMILY IF EXISTS pg_catalog.binary_ops USING BTREE;
 DROP OPERATOR FAMILY IF EXISTS pg_catalog.binary_ops USING HASH;
 DROP FUNCTION IF EXISTS pg_catalog.varbinary_cmp(varbinary, varbinary);
 DROP FUNCTION IF EXISTS pg_catalog.binary_cmp(binary, binary);
+
+DROP FUNCTION IF EXISTS pg_catalog.int8_cast_date(int1);
+DROP FUNCTION IF EXISTS pg_catalog.int16_cast_date(int2);
+DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(int4);
+DROP FUNCTION IF EXISTS pg_catalog.int64_cast_date(int8);
+DROP FUNCTION IF EXISTS pg_catalog.uint8_cast_date(uint1);
+DROP FUNCTION IF EXISTS pg_catalog.uint16_cast_date(uint2);
+DROP FUNCTION IF EXISTS pg_catalog.uint32_cast_date(uint4);
+DROP FUNCTION IF EXISTS pg_catalog.uint64_cast_date(uint8);
+DROP FUNCTION IF EXISTS pg_catalog.float4_cast_date(float4);
+DROP FUNCTION IF EXISTS pg_catalog.float8_cast_date(float8);
+DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_date(numeric);

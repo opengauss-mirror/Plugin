@@ -64,6 +64,8 @@ do {                                                                            
 #define ENABLE_ZERO_MONTH 2
 #define ENABLE_ZERO_DATE 0  /* enable date like 0000-00-00, work in cstring_to_datetime */
 #define NO_ZERO_DATE_SET() (SQL_MODE_NO_ZERO_DATE() ? TIME_NO_ZERO_DATE : ENABLE_ZERO_DATE)
+#define EANBLE_ERROR_ON_DATE_LESS_THAN_MIN 128  /* not allow value less than 101 when enable */
+#define ENABLE_ZERO_DATE_BYPASSED 256  /* bypass the zero date check directly if set */
 
 
 #define DTK_DATE_TIME 5

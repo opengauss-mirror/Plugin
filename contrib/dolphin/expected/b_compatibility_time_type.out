@@ -233,9 +233,9 @@ SELECT 990101::date;
 SELECT 100::date;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 SELECT 101::date;
@@ -253,9 +253,9 @@ SELECT 10228::date;
 SELECT 10229::date;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 SELECT 991231::date;
@@ -279,25 +279,25 @@ SELECT 21000228::date;
 SELECT 21000229::date;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 SELECT 100000000::date;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 SELECT 100101231::date;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 -- test time
@@ -2229,6 +2229,111 @@ SELECT * FROM test_timestamp;
 drop table if exists t_date;
 drop table if exists t_datetime;
 drop table if exists test_timestamp;
+set dolphin.b_compatibility_mode = true;
+select cast(true as date) as result;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+SQL function "bool_date" statement 1
+referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(false as date) as result;
+   result   
+------------
+ 0000-00-00
+(1 row)
+
+select cast(100::int1 as date) as result;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::uint1 as date) as result;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::int2 as date) as result;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::uint2 as date) as result;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::int4 as date) as result;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::uint4 as date) as result;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::int4 as date) as result;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::uint8 as date) as result;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::float4 as date) as result;
+WARNING:  date/time field value out of range: "000100"
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::float8 as date) as result;
+WARNING:  date/time field value out of range: "000100"
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::numeric as date) as result;
+WARNING:  date/time field value out of range: "000100"
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;

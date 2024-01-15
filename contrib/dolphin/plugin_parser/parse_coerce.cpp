@@ -110,6 +110,12 @@ static const char* numCastTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_time", "
                                                              "uint32_cast_time", "uint64_cast_time", "float4_cast_time",
                                                              "float8_cast_time", "numeric_cast_time"};
 
+static const char* numCastDateFunction[NUM_CAST_TIME_IDX] = {"int8_cast_date", "int16_cast_date", "int32_cast_date",
+                                                             "int64_cast_date", "uint8_cast_date", "uint16_cast_date",
+                                                             "uint32_cast_date", "uint64_cast_date", "float4_cast_date",
+                                                             "float8_cast_date", "numeric_cast_date"};
+
+
 typedef enum {
     INVALID_COLUMN = -1,
     UINT1,
@@ -3269,6 +3275,14 @@ Oid findNumTimeExplicitCastFunction(Oid sourceTypeId, Oid funcid)
     return (cast_oid != InvalidOid) ? cast_oid : funcid;
 }
 
+Oid findNumDateExplicitCastFunction(Oid sourceTypeId, Oid funcid)
+{
+    int idx = findNumTimeFunctionIdx(sourceTypeId);
+    Oid cast_oid = (idx == INVALID_IDX) ? InvalidOid :
+                                          get_func_oid(numCastDateFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+    return (cast_oid != InvalidOid) ? cast_oid : funcid;
+}
+
 Oid findBitCastTimeFunction(Oid targetTypeId, Oid funcid)
 {
     switch (targetTypeId) {
@@ -3353,7 +3367,10 @@ void TryFindSpecifiedCastFunction(const Oid sourceTypeId, const Oid targetTypeId
         *funcId = findBitCastTimeFunction(targetTypeId, defaultFuncId);
     } else if (targetTypeId == TIMEOID) {
         *funcId = findNumTimeExplicitCastFunction(sourceTypeId, defaultFuncId);
-    } else {
+    } else if (targetTypeId == DATEOID) {
+        *funcId = findNumDateExplicitCastFunction(sourceTypeId, defaultFuncId);
+    }
+    else {
         *funcId = findUnsignedExplicitCastFunction(targetTypeId, sourceTypeId, defaultFuncId);
     }
 }

@@ -80,17 +80,6 @@ DROP FUNCTION IF EXISTS pg_catalog.acos(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.acos(year);
 DROP FUNCTION IF EXISTS pg_catalog.acos(json);
 
-DROP FUNCTION IF EXISTS pg_catalog.int8_cast_date(int1);
-DROP FUNCTION IF EXISTS pg_catalog.int16_cast_date(int2);
-DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(int4);
-DROP FUNCTION IF EXISTS pg_catalog.int64_cast_date(int8);
-DROP FUNCTION IF EXISTS pg_catalog.uint8_cast_date(uint1);
-DROP FUNCTION IF EXISTS pg_catalog.uint16_cast_date(uint2);
-DROP FUNCTION IF EXISTS pg_catalog.uint32_cast_date(uint4);
-DROP FUNCTION IF EXISTS pg_catalog.uint64_cast_date(uint8);
-DROP FUNCTION IF EXISTS pg_catalog.float4_cast_date(float4);
-DROP FUNCTION IF EXISTS pg_catalog.float8_cast_date(float8);
-DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_date(numeric);
 DROP FUNCTION IF EXISTS pg_catalog.text_date_explicit(TEXT);
 
 DROP FUNCTION IF EXISTS pg_catalog.int8_cast_datetime(int1);

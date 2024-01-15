@@ -478,30 +478,6 @@ CREATE FUNCTION pg_catalog.convert(longblob,name) RETURNS text LANGUAGE SQL IMMU
 CREATE FUNCTION pg_catalog.convert(anyenum,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
 CREATE FUNCTION pg_catalog.convert(json,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
 
-CREATE OR REPLACE FUNCTION pg_catalog.int8_cast_date(int1)
-RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int8_cast_date';
-CREATE OR REPLACE FUNCTION pg_catalog.int16_cast_date(int2)
-RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int16_cast_date';
-CREATE OR REPLACE FUNCTION pg_catalog.int32_cast_date(int4)
-RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_cast_date';
-CREATE OR REPLACE FUNCTION pg_catalog.int64_cast_date(int8)
-RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_cast_date';
-
-CREATE OR REPLACE FUNCTION pg_catalog.uint8_cast_date(uint1)
-RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint8_cast_date';
-CREATE OR REPLACE FUNCTION pg_catalog.uint16_cast_date(uint2)
-RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint16_cast_date';
-CREATE OR REPLACE FUNCTION pg_catalog.uint32_cast_date(uint4)
-RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint32_cast_date';
-CREATE OR REPLACE FUNCTION pg_catalog.uint64_cast_date(uint8)
-RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint64_cast_date';
-
-CREATE OR REPLACE FUNCTION pg_catalog.float4_cast_date(float4)
-RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float4_cast_date';
-CREATE OR REPLACE FUNCTION pg_catalog.float8_cast_date(float8)
-RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float8_cast_date';
-CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_date(numeric)
-RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_date';
 CREATE OR REPLACE FUNCTION pg_catalog.text_date_explicit(TEXT)
 RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'text_date_explicit';
 

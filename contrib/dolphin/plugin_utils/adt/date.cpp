@@ -99,6 +99,30 @@ extern "C" DLL_PUBLIC Datum float8_cast_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_time);
 extern "C" DLL_PUBLIC Datum numeric_cast_time(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(int8_cast_date);
+extern "C" DLL_PUBLIC Datum int8_cast_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int16_cast_date);
+extern "C" DLL_PUBLIC Datum int16_cast_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int32_cast_date);
+extern "C" DLL_PUBLIC Datum int32_cast_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int64_cast_date);
+extern "C" DLL_PUBLIC Datum int64_cast_date(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint8_cast_date);
+extern "C" DLL_PUBLIC Datum uint8_cast_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint16_cast_date);
+extern "C" DLL_PUBLIC Datum uint16_cast_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint32_cast_date);
+extern "C" DLL_PUBLIC Datum uint32_cast_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint64_cast_date);
+extern "C" DLL_PUBLIC Datum uint64_cast_date(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(float4_cast_date);
+extern "C" DLL_PUBLIC Datum float4_cast_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_cast_date);
+extern "C" DLL_PUBLIC Datum float8_cast_date(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_date);
+extern "C" DLL_PUBLIC Datum numeric_cast_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_date);
 extern "C" DLL_PUBLIC Datum int32_b_format_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(negetive_time);
@@ -610,10 +634,25 @@ int NumberDate(char *str, pg_tm *tm, unsigned int date_flag)
     return int32_b_format_date_internal(tm, date, strlen(adjusted) != DATE_YYYYMMDD_LEN, date_flag);
 }
 
+inline bool is_flag_enable(unsigned int date_flag, unsigned int flag)
+{
+    return (date_flag & flag) != 0;
+}
+
+inline bool is_enable_zero_date_bypassed(unsigned int date_flag)
+{
+    return is_flag_enable(date_flag, ENABLE_ZERO_DATE_BYPASSED);
+}
+
+inline bool is_enable_error_on_date_less_than_min_value(unsigned int date_flag)
+{
+    return !date_flag || is_flag_enable(date_flag, EANBLE_ERROR_ON_DATE_LESS_THAN_MIN);
+}
+
+
 int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit, unsigned int date_flag)
 {
     int dterr;
-    int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
     /* YYYYMMDD or YYMMDD*/
     tm->tm_mday = date % 100; /* DD */
     tm->tm_mon = date / 100 % 100; /* MM */
@@ -622,16 +661,16 @@ int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit, 
     /* validate b format date */
     if (tm->tm_year > B_FORMAT_MAX_YEAR_OF_DATE) {
         dterr = DTERR_FIELD_OVERFLOW;
+    } else if (is2digits && is_enable_zero_date_bypassed(date_flag) && date == 0) {
+        return 0;
     } else if (is2digits && !date_flag && date == 0 && !(SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
         return 0;
-    } else if (is2digits && !date_flag && date > 0 && date < B_FORMAT_DATE_INT_MIN) {
-        ereport(errlevel,
-                (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
-                            errmsg("Out of range value for date")));
+    } else if (is2digits && is_enable_error_on_date_less_than_min_value(date_flag) &&
+        date > 0 && date < B_FORMAT_DATE_INT_MIN) {
         tm->tm_year = 0;
         tm->tm_mon = 0;
         tm->tm_mday = 0;
-        return 0;
+        return DTERR_FIELD_OVERFLOW;
     } else {
         dterr = ValidateDateForBDatabase(is2digits, tm, date_flag);
     }
@@ -1900,33 +1939,61 @@ Datum float4_cast_time(PG_FUNCTION_ARGS)
     return datum_internal;
 }
 
+Datum numeric_cast_date(PG_FUNCTION_ARGS)
+{
+    Numeric n = PG_GETARG_NUMERIC(0);
+    bool isRetNull = false;
+    Datum datetime = DirectCall1(&isRetNull, numeric_b_format_datetime, InvalidOid, NumericGetDatum(n));
+    if (isRetNull) {
+        PG_RETURN_NULL();
+    }
+    return DirectFunctionCall1(timestamp_date, datetime);
+}
+
+Datum float8_cast_date(PG_FUNCTION_ARGS)
+{
+    float8 n = PG_GETARG_FLOAT8(0);
+    bool isRetNull = false;
+    Datum datetime = DirectCall1(&isRetNull, float8_b_format_datetime, InvalidOid, Float8GetDatum(n));
+    if (isRetNull) {
+        PG_RETURN_NULL();
+    }
+    return DirectFunctionCall1(timestamp_date, datetime);
+}
+
+Datum float4_cast_date(PG_FUNCTION_ARGS)
+{
+    float8 n = (float8)PG_GETARG_FLOAT4(0);
+    bool isRetNull = false;
+    Datum datetime = DirectCall1(&isRetNull, float8_b_format_datetime, InvalidOid, Float8GetDatum(n));
+    if (isRetNull) {
+        PG_RETURN_NULL();
+    }
+    return DirectFunctionCall1(timestamp_date, datetime);
+}
+
 Datum uint8_cast_time(PG_FUNCTION_ARGS)
 {
-    uint64 number = (uint64)PG_GETARG_UINT8(0);
-    bool isnull = false;
-    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
-    if (isnull) {
-        PG_RETURN_NULL();
-    } else {
-        return result;
-    }
+    return uint64_number_cast_time(fcinfo, (uint64)PG_GETARG_UINT8(0));
 }
 
 Datum uint16_cast_time(PG_FUNCTION_ARGS)
 {
-    uint64 number = (uint64)PG_GETARG_UINT16(0);
-    bool isnull = false;
-    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
-    if (isnull) {
-        PG_RETURN_NULL();
-    } else {
-        return result;
-    }
+    return uint64_number_cast_time(fcinfo, (uint64)PG_GETARG_UINT16(0));
 }
 
 Datum uint32_cast_time(PG_FUNCTION_ARGS)
 {
-    uint64 number = (uint64)PG_GETARG_UINT32(0);
+    return uint64_number_cast_time(fcinfo, (uint64)PG_GETARG_UINT32(0));
+}
+
+Datum uint64_cast_time(PG_FUNCTION_ARGS)
+{
+    return uint64_number_cast_time(fcinfo, (uint64)PG_GETARG_UINT64(0));
+}
+
+Datum uint64_number_cast_time(PG_FUNCTION_ARGS, uint64 number)
+{
     bool isnull = false;
     Datum result = int_cast_time_internal(fcinfo, number, &isnull);
     if (isnull) {
@@ -1936,11 +2003,30 @@ Datum uint32_cast_time(PG_FUNCTION_ARGS)
     }
 }
 
-Datum uint64_cast_time(PG_FUNCTION_ARGS)
+Datum uint8_cast_date(PG_FUNCTION_ARGS)
 {
-    uint64 number = (uint64)PG_GETARG_UINT64(0);
+    return uint64_number_cast_date(fcinfo, (uint64)PG_GETARG_UINT8(0));
+}
+
+Datum uint16_cast_date(PG_FUNCTION_ARGS)
+{
+    return uint64_number_cast_date(fcinfo, (uint64)PG_GETARG_UINT16(0));
+}
+
+Datum uint32_cast_date(PG_FUNCTION_ARGS)
+{
+    return uint64_number_cast_date(fcinfo, (uint64)PG_GETARG_UINT32(0));
+}
+
+Datum uint64_cast_date(PG_FUNCTION_ARGS)
+{
+    return uint64_number_cast_date(fcinfo, (uint64)PG_GETARG_UINT64(0));
+}
+
+Datum uint64_number_cast_date(PG_FUNCTION_ARGS, uint64 number)
+{
     bool isnull = false;
-    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
+    Datum result = int_cast_date_internal(fcinfo, number, &isnull);
     if (isnull) {
         PG_RETURN_NULL();
     } else {
@@ -1995,45 +2081,28 @@ Datum int64_b_format_time(PG_FUNCTION_ARGS)
 
 Datum int8_cast_time(PG_FUNCTION_ARGS)
 {
-    int64 number = (int64)PG_GETARG_INT8(0);
-    bool isnull = false;
-    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
-    if (isnull) {
-        PG_RETURN_NULL();
-    } else {
-        return result;
-    }
+    return int64_number_cast_time(fcinfo, (int64)PG_GETARG_INT8(0));
 }
 
 Datum int16_cast_time(PG_FUNCTION_ARGS)
 {
-    int64 number = (int64)PG_GETARG_INT16(0);
-    bool isnull = false;
-    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
-    if (isnull) {
-        PG_RETURN_NULL();
-    } else {
-        return result;
-    }
+    return int64_number_cast_time(fcinfo, (int64)PG_GETARG_INT16(0));
 }
 
 Datum int32_cast_time(PG_FUNCTION_ARGS)
 {
-    int64 number = (int64)PG_GETARG_INT32(0);
-    bool isnull = false;
-    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
-    if (isnull) {
-        PG_RETURN_NULL();
-    } else {
-        return result;
-    }
+    return int64_number_cast_time(fcinfo, (int64)PG_GETARG_INT32(0));
 }
 
 Datum int64_cast_time(PG_FUNCTION_ARGS)
 {
-    int64 number = PG_GETARG_INT64(0);
+    return int64_number_cast_time(fcinfo, PG_GETARG_INT64(0));
+}
+
+Datum int64_number_cast_time(PG_FUNCTION_ARGS, int64 number)
+{
     bool isnull = false;
-    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
+    Datum result = int_cast_date_internal(fcinfo, number, &isnull);
     if (isnull) {
         PG_RETURN_NULL();
     } else {
@@ -2050,6 +2119,83 @@ Datum int_cast_time_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull)
     char *str = DatumGetCString(DirectFunctionCall1(int8out, Int64GetDatum(number)));
     TimeErrorType time_error_type = TIME_CORRECT;
     Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
+    if (time_error_type == TIME_INCORRECT) {
+        *isnull = true;
+    }
+    return datum_internal;
+}
+
+
+Datum int8_cast_date(PG_FUNCTION_ARGS)
+{
+    return int64_number_cast_date(fcinfo, (int64)PG_GETARG_INT8(0));
+}
+
+Datum int16_cast_date(PG_FUNCTION_ARGS)
+{
+    return int64_number_cast_date(fcinfo, (int64)PG_GETARG_INT16(0));
+}
+
+Datum int32_cast_date(PG_FUNCTION_ARGS)
+{
+    return int64_number_cast_date(fcinfo, (int64)PG_GETARG_INT32(0));
+}
+
+Datum int64_cast_date(PG_FUNCTION_ARGS)
+{
+    return int64_number_cast_date(fcinfo, PG_GETARG_INT64(0));
+}
+
+Datum int64_number_cast_date(PG_FUNCTION_ARGS, int64 number)
+{
+    bool isnull = false;
+    Datum result = int_cast_date_internal(fcinfo, number, &isnull);
+    if (isnull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
+}
+
+/* int4 to b format date type conversion */
+Datum int32_b_format_date(int64 number, bool can_ignore, TimeErrorType* time_error_type)
+{
+    int4 date = (int4)number;
+    DateADT result;
+    struct pg_tm tt, *tm = &tt;
+    int errlevel = can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING;
+    if (int32_b_format_date_internal(tm, date, true,
+        (EANBLE_ERROR_ON_DATE_LESS_THAN_MIN | ENABLE_ZERO_DATE_BYPASSED))) {
+        ereport(errlevel,
+            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                errmsg("Out of range value for date")));
+        tm->tm_year = 0;
+        tm->tm_mon = 0;
+        tm->tm_mday = 0;
+        *time_error_type = TIME_INCORRECT;
+    }
+    if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday)) {
+        ereport(errlevel,
+                (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                            errmsg("date out of range: \"%d\"", date)));
+        tm->tm_year = 0;
+        tm->tm_mon = 0;
+        tm->tm_mday = 0;
+        *time_error_type = TIME_INCORRECT;
+    }
+    result = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
+    PG_RETURN_DATEADT(result);
+}
+
+
+Datum int_cast_date_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull)
+{
+    if (number >= (int64)pow_of_10[10]) { /* datetime: 0001-00-00 00-00-00 */
+        Datum datetime = DirectFunctionCall1(int64_b_format_datetime, Int64GetDatum(number));
+        return DirectFunctionCall1(timestamp_date, datetime);
+    }
+    TimeErrorType time_error_type = TIME_CORRECT;
+    Datum datum_internal = int32_b_format_date(number, fcinfo->can_ignore, &time_error_type);
     if (time_error_type == TIME_INCORRECT) {
         *isnull = true;
     }
