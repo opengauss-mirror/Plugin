@@ -650,3 +650,31 @@ CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (nvarchar2) RETURNS text LANGUAG
 
 CREATE OR REPLACE FUNCTION pg_catalog.exp(year) RETURNS numeric LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.exp(cast($1 as numeric))';
 CREATE OR REPLACE FUNCTION pg_catalog.exp(json) RETURNS numeric LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.exp(cast($1 as numeric))';
+
+CREATE OR REPLACE FUNCTION pg_catalog.int8_cast_date(int1)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int8_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.int16_cast_date(int2)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int16_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.int32_cast_date(int4)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.int64_cast_date(int8)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_cast_date';
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_cast_date(uint1)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint8_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.uint16_cast_date(uint2)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint16_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.uint32_cast_date(uint4)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint32_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.uint64_cast_date(uint8)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint64_cast_date';
+
+CREATE OR REPLACE FUNCTION pg_catalog.float4_cast_date(float4)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float4_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.float8_cast_date(float8)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float8_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_date(numeric)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_date';
+
+CREATE OR REPLACE FUNCTION pg_catalog.bool_date(boolean) RETURNS date LANGUAGE SQL IMMUTABLE STRICT as 'select $1::integer::date';
+CREATE CAST (boolean AS date) WITH FUNCTION bool_date(boolean) AS ASSIGNMENT;

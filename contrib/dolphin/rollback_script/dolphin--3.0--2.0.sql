@@ -376,3 +376,18 @@ DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(nvarchar2);
 
 DROP FUNCTION IF EXISTS pg_catalog.exp(year);
 DROP FUNCTION IF EXISTS pg_catalog.exp(json);
+
+DROP CAST IF EXISTS (boolean AS date);
+DROP FUNCTION IF EXISTS pg_catalog.bool_date(boolean);
+DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int8_cast_date(int1);
+DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int16_cast_date(int2);
+DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(int4);
+DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(int8);
+DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(uint1);
+DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(uint2);
+DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(uint4);
+DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(uint8);
+DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(float4);
+DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(float8);
+DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(numeric);
+

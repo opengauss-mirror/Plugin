@@ -122,8 +122,17 @@ typedef enum
 
 
 extern Datum time_internal(PG_FUNCTION_ARGS, char* str, int is_time_sconst, TimeErrorType* time_error_type);
-extern Datum int_cast_time_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull);
+Datum int64_number_cast_time(PG_FUNCTION_ARGS, int64 number);
+Datum int_cast_time_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull);
+Datum uint64_number_cast_time(PG_FUNCTION_ARGS, uint64 number);
+
 char* parser_function_input(Datum txt, Oid oid);
+Datum int64_number_cast_date(PG_FUNCTION_ARGS, int64 number);
+Datum int_cast_date_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull);
+Datum uint64_number_cast_date(PG_FUNCTION_ARGS, uint64 number);
+
+extern "C" DLL_PUBLIC Datum float8_b_format_datetime(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum numeric_b_format_datetime(PG_FUNCTION_ARGS);
 
 #endif
 
