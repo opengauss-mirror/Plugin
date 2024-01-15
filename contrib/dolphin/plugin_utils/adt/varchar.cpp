@@ -656,11 +656,12 @@ Datum varchar(PG_FUNCTION_ARGS)
         ereport(ERROR,
             (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
                 errmsg("value too long for type character varying(%d)", maxlen)));
-
     /* truncate multibyte string preserving multibyte boundary */
     maxmblen = pg_mbcharcliplen(s_data, len, maxlen);
 
+#ifndef DOLPHIN
     if (!isExplicit) {
+#endif
         for (i = maxmblen; i < len; i++) {
             if (s_data[i] != ' ') {
                 /*
@@ -669,21 +670,16 @@ Datum varchar(PG_FUNCTION_ARGS)
                  * 2. With can_ignore == false && SQL_MODE_STRICT() == false, do nothing but break in order to keep functionality integrity of SQL MODE
                  * 3. With can_ignore == false && SQL_MODE_STRICT() == true, we raise ERROR.
                  */
-                if (fcinfo->can_ignore) {
-                    ereport(WARNING,
+                
+                ereport(fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR,
                         (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
                             errmsg("value too long for type character varying(%d)", maxlen)));
-                    break;
-                } else if (!SQL_MODE_STRICT()) {
-                    break;
-                } else {
-                    ereport(ERROR,
-                        (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
-                            errmsg("value too long for type character varying(%d)", maxlen)));
-                }
+                break;
             }
         }
+#ifndef DOLPHIN
     }
+#endif
 
     PG_RETURN_VARCHAR_P((VarChar*)cstring_to_text_with_len(s_data, maxmblen));
 }

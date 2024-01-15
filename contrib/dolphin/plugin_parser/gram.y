@@ -33601,7 +33601,8 @@ func_expr_common_subexpr:
 			}
 			| CONVERT '(' a_expr ',' Typename ')'
 			{
-			        $$ = makeTypeCast($3, $5, @1);
+				ChangeBpcharCastType($5);
+				$$ = makeTypeCast($3, $5, @1);
 			}
 			| CONVERT '(' a_expr ',' UNSIGNED INTEGER ')'
 			{

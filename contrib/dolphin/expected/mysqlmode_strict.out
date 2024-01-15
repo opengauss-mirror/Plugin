@@ -238,8 +238,14 @@ select * from test_char;
 (4 rows)
 
 insert into test_varchar7(a) values('adsfsdaf');
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
 insert into test_varchar7(a) values('-1234998.55');
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
 insert into test_varchar7(a) values(13434.77);
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
 insert into test_varchar7(a) values(13434.8);
 select * from test_varchar7;
     a    
@@ -914,6 +920,20 @@ select * from test_varchar7_1;
 
 delete from test_varchar7_1;
 insert into test_varchar7_1 select * from test_int;
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
 select * from test_varchar7_1;
     a    
 ---------
@@ -934,6 +954,20 @@ select * from test_varchar7_1;
 
 delete from test_varchar7_1;
 insert into test_varchar7_1 select * from test_bint;
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
+WARNING:  value too long for type character varying(7)
+CONTEXT:  referenced column: a
 select * from test_varchar7_1;
     a    
 ---------

@@ -3,10 +3,10 @@ set current_schema = convert_truncated_warning;
 set dolphin.sql_mode = default;
 set dolphin.b_compatibility_mode = on;
 SELECT CONVERT(TIMESTAMP '2004-01-22 21:45:33',CHAR(4));
-WARNING:  value too long for type character(4)
-CONTEXT:  referenced column: bpchar
- bpchar 
---------
+WARNING:  value too long for type character varying(4)
+CONTEXT:  referenced column: varchar
+ varchar 
+---------
  2004
 (1 row)
 
