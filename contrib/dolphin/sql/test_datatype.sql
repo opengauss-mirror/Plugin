@@ -147,5 +147,8 @@ select * from t1 where b = '2000-01-01'::date;
 
 drop table t1;
 
+---
+select pg_catalog.delete(cast('test=>NULL' as hstore), cast(pg_catalog.dolphin_types() as _text));
+
 drop schema b_datatype_test cascade;
 reset current_schema;
