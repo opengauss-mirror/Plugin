@@ -126,5 +126,20 @@ drop table t4;
 drop table t5;
 drop table t6;
 drop table t7;
+create table t1(a int, b int as (a) stored);
+alter table t1 add gc bigint as (a) stored;
+show create table t1;
+ Table |                 Create Table                  
+-------+-----------------------------------------------
+ t1    | SET search_path = test_default;              +
+       | CREATE TABLE t1 (                            +
+       |     a integer,                               +
+       |     b integer GENERATED ALWAYS AS (a) STORED,+
+       |     gc bigint GENERATED ALWAYS AS (a) STORED +
+       | )                                            +
+       | WITH (orientation=row, compression=no);
+(1 row)
+
+drop table t1;
 reset current_schema;
 drop schema test_default cascade;

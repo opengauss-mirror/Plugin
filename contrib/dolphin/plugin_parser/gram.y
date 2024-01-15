@@ -10162,7 +10162,7 @@ ColConstraintElem:
 					}
 #endif
 				}
-			| GENERATED ALWAYS AS '(' a_expr ')' generated_column_option
+			| opt_generated_always AS '(' a_expr ')' generated_column_option
 				{
 #ifdef ENABLE_MULTIPLE_NODES
             		const char* message = "Generated column is not yet supported";
@@ -10173,7 +10173,7 @@ ColConstraintElem:
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_GENERATED;
 					n->generated_when = ATTRIBUTE_IDENTITY_ALWAYS;
-					n->raw_expr = $5;
+					n->raw_expr = $4;
 					n->cooked_expr = NULL;
 					n->location = @1;
 					$$ = (Node *)n;
@@ -10221,7 +10221,12 @@ ColConstraintElem:
 					$$ = (Node *)n;
 				}
 		;
- 
+
+opt_generated_always:
+			GENERATED ALWAYS
+			| /* EMPTY */
+			;
+
 opt_unique_key:
 			UNIQUE { $$ = NULL; }
 			| UNIQUE KEY
