@@ -151,6 +151,8 @@ SELECT * FROM tt1;
 (2 rows)
 
 SELECT a::varchar(3) FROM tt1;
+WARNING:  value too long for type character varying(3)
+CONTEXT:  referenced column: a
   a  
 -----
  abc

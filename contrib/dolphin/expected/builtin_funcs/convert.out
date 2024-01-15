@@ -88,5 +88,30 @@ select convert(1 using decimal(10,3));
    1.000
 (1 row)
 
+select pg_typeof(convert('1', char));
+ pg_typeof 
+-----------
+ character
+(1 row)
+
+select pg_typeof(convert('1', char(10)));
+ pg_typeof 
+-----------
+ character
+(1 row)
+
+set dolphin.b_compatibility_mode = on;
+select pg_typeof(convert('1', char));
+     pg_typeof     
+-------------------
+ character varying
+(1 row)
+
+select pg_typeof(convert('1', char(10)));
+     pg_typeof     
+-------------------
+ character varying
+(1 row)
+
 drop schema db_convert cascade;
 reset current_schema;
