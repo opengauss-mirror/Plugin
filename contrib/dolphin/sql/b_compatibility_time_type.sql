@@ -665,6 +665,21 @@ drop table if exists t_date;
 drop table if exists t_datetime;
 drop table if exists test_timestamp;
 
+set dolphin.b_compatibility_mode = true;
+select cast(true as date) as result;
+select cast(false as date) as result;
+select cast(100::int1 as date) as result;
+select cast(100::uint1 as date) as result;
+select cast(100::int2 as date) as result;
+select cast(100::uint2 as date) as result;
+select cast(100::int4 as date) as result;
+select cast(100::uint4 as date) as result;
+select cast(100::int4 as date) as result;
+select cast(100::uint8 as date) as result;
+select cast(100::float4 as date) as result;
+select cast(100::float8 as date) as result;
+select cast(100::numeric as date) as result;
+
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;
