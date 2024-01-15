@@ -76,6 +76,43 @@ insert into test_double_exp select exp(`int1`), exp(`uint1`), exp(`int2`), exp(`
 
 select * from test_double_exp order by 1;
 
+-- ln math function
+select
+ln(`int1`),
+ln(`uint1`),
+ln(`int2`),
+ln(`uint2`),
+ln(`int4`),
+ln(`uint4`),
+ln(`int8`),
+ln(`uint8`),
+ln(`float4`),
+ln(`float8`),
+ln(`numeric`),
+ln(`bit1`),
+ln(`bit64`),
+ln(`boolean`),
+ln(`date`),
+ln(`time`),
+ln(`time(4)`),
+ln(`datetime`),
+ln(`datetime(4)`),
+ln(`timestamp`),
+ln(`timestamp(4)`),
+ln(`year`),
+ln(`char`),
+ln(`varchar`),
+ln(`binary`),
+ln(`varbinary`),
+ln(`tinyblob`),
+ln(`blob`),
+ln(`mediumblob`),
+ln(`longblob`),
+ln(`text`),
+ln(`enum_t`),
+ln(`set_t`),
+ln(`json`)
+from test_type_table;
 select exp(709);
 select exp(710);
 select exp(-1000); 
