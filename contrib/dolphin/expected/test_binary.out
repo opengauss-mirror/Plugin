@@ -357,8 +357,13 @@ LINE 1: select 'abc'::binary(-1);
                       ^
 CONTEXT:  referenced column: binary
 select 'abc'::binary(1);
-ERROR:  The input length:3 exceeds the maximum length:1.
+WARNING:  The input length:3 exceeds the maximum length:1.
 CONTEXT:  referenced column: binary
+ binary 
+--------
+ \x61
+(1 row)
+
 --binary in like and escape
 select 'abcd' like binary 'abc%';
  ?column? 
@@ -1017,6 +1022,193 @@ SELECT HEX(s1), HEX(s2), HEX('*') FROM t1;
 (1 row)
 
 DROP TABLE t1;
+-- test about set to binary
+set dolphin.b_compatibility_mode=on;
+set bytea_output=escape;
+drop table if exists t_set0004;
+NOTICE:  table "t_set0004" does not exist, skipping
+create table t_set0004(
+c1 int not null auto_increment primary key,
+c2 set('2011-11-11', '2023-02-28 11:23:00', '2024-01', '2025/01/01')
+default null,
+c3 set('red', 'yellow', 'blue') not null,
+c4 set('0', '1', '1.01314'));
+NOTICE:  CREATE TABLE will create implicit sequence "t_set0004_c1_seq" for serial column "t_set0004.c1"
+NOTICE:  CREATE TABLE will create implicit set "t_set0004_c2_set" for column "t_set0004.c2"
+NOTICE:  CREATE TABLE will create implicit set "t_set0004_c3_set" for column "t_set0004.c3"
+NOTICE:  CREATE TABLE will create implicit set "t_set0004_c4_set" for column "t_set0004.c4"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_set0004_pkey" for table "t_set0004"
+insert into t_set0004(c2, c3, c4) values ('2025/01/01', 'blue', '0');
+insert into t_set0004(c2, c3, c4) values (
+'2011-11-11,2023-02-28 11:23:00', 'red,yellow', '0,1');
+insert into t_set0004(c2, c3, c4) values (
+'2024-01,2011-11-11,2025/01/01', 'red,blue', '0,1.01314');
+insert into t_set0004(c2, c3) values ('2023-02-28 11:23:00', 'red');
+insert into t_set0004(c2, c3) values (
+'2023-02-28 11:23:00,2025/01/01,2025/01/01', 'blue,blue,yellow');
+insert into t_set0004(c3) values ('yellow');
+insert into t_set0004(c3) values ('yellow,yellow,yellow,yellow');
+insert into t_set0004(c3) values ('blue,yellow,red,red');
+insert into t_set0004(c3) values ('blue,red');
+insert into t_set0004(c3, c4) values ('red', '1');
+insert into t_set0004(c3, c4) values ('red,red', '1.01314,1.01314');
+insert into t_set0004(c3, c4) values ('red,blue', '0,1,1.01314');
+select cast(c1 as binary(1)), cast(c2 as binary(1)), cast(c3 as binary(1)),
+cast(c4 as binary(1)) from t_set0004 order by 1,2,3,4;
+WARNING:  The input length:10 exceeds the maximum length:1.
+CONTEXT:  referenced column: c2
+WARNING:  The input length:4 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:30 exceeds the maximum length:1.
+CONTEXT:  referenced column: c2
+WARNING:  The input length:10 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:3 exceeds the maximum length:1.
+CONTEXT:  referenced column: c4
+WARNING:  The input length:29 exceeds the maximum length:1.
+CONTEXT:  referenced column: c2
+WARNING:  The input length:8 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:9 exceeds the maximum length:1.
+CONTEXT:  referenced column: c4
+WARNING:  The input length:19 exceeds the maximum length:1.
+CONTEXT:  referenced column: c2
+WARNING:  The input length:3 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:30 exceeds the maximum length:1.
+CONTEXT:  referenced column: c2
+WARNING:  The input length:11 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:6 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:6 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:15 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:8 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:2 exceeds the maximum length:1.
+CONTEXT:  referenced column: c1
+WARNING:  The input length:3 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:2 exceeds the maximum length:1.
+CONTEXT:  referenced column: c1
+WARNING:  The input length:3 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:7 exceeds the maximum length:1.
+CONTEXT:  referenced column: c4
+WARNING:  The input length:2 exceeds the maximum length:1.
+CONTEXT:  referenced column: c1
+WARNING:  The input length:8 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:11 exceeds the maximum length:1.
+CONTEXT:  referenced column: c4
+ c1 | c2 | c3 | c4 
+----+----+----+----
+ 1  |    | r  | 0
+ 1  |    | r  | 1
+ 1  |    | r  | 1
+ 1  | 2  | b  | 0
+ 2  | 2  | r  | 0
+ 3  | 2  | r  | 0
+ 4  | 2  | r  | 
+ 5  | 2  | y  | 
+ 6  |    | y  | 
+ 7  |    | y  | 
+ 8  |    | r  | 
+ 9  |    | r  | 
+(12 rows)
+
+select convert(c1, binary(1)), convert(c2, binary(1)), convert(c3, binary(1)),
+convert(c4, binary(1)) from t_set0004 order by 1,2,3,4;
+WARNING:  The input length:10 exceeds the maximum length:1.
+CONTEXT:  referenced column: c2
+WARNING:  The input length:4 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:30 exceeds the maximum length:1.
+CONTEXT:  referenced column: c2
+WARNING:  The input length:10 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:3 exceeds the maximum length:1.
+CONTEXT:  referenced column: c4
+WARNING:  The input length:29 exceeds the maximum length:1.
+CONTEXT:  referenced column: c2
+WARNING:  The input length:8 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:9 exceeds the maximum length:1.
+CONTEXT:  referenced column: c4
+WARNING:  The input length:19 exceeds the maximum length:1.
+CONTEXT:  referenced column: c2
+WARNING:  The input length:3 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:30 exceeds the maximum length:1.
+CONTEXT:  referenced column: c2
+WARNING:  The input length:11 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:6 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:6 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:15 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:8 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:2 exceeds the maximum length:1.
+CONTEXT:  referenced column: c1
+WARNING:  The input length:3 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:2 exceeds the maximum length:1.
+CONTEXT:  referenced column: c1
+WARNING:  The input length:3 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:7 exceeds the maximum length:1.
+CONTEXT:  referenced column: c4
+WARNING:  The input length:2 exceeds the maximum length:1.
+CONTEXT:  referenced column: c1
+WARNING:  The input length:8 exceeds the maximum length:1.
+CONTEXT:  referenced column: c3
+WARNING:  The input length:11 exceeds the maximum length:1.
+CONTEXT:  referenced column: c4
+ c1 | c2 | c3 | c4 
+----+----+----+----
+ 1  |    | r  | 0
+ 1  |    | r  | 1
+ 1  |    | r  | 1
+ 1  | 2  | b  | 0
+ 2  | 2  | r  | 0
+ 3  | 2  | r  | 0
+ 4  | 2  | r  | 
+ 5  | 2  | y  | 
+ 6  |    | y  | 
+ 7  |    | y  | 
+ 8  |    | r  | 
+ 9  |    | r  | 
+(12 rows)
+
+select cast('2023-1-12' as binary(1));
+WARNING:  The input length:9 exceeds the maximum length:1.
+CONTEXT:  referenced column: binary
+ binary 
+--------
+ 2
+(1 row)
+
+drop table t_set0004;
+drop table if exists test_ignore;
+NOTICE:  table "test_ignore" does not exist, skipping
+create table test_ignore (a binary(1), b varbinary(1));
+insert into test_ignore(a) values(cast('2023-1-12' as binary(1)));
+ERROR:  The input length:9 exceeds the maximum length:1.
+CONTEXT:  referenced column: a
+insert into test_ignore(b) values(cast('2023-1-12' as binary(1)));
+ERROR:  The input length:9 exceeds the maximum length:1.
+CONTEXT:  referenced column: b
+insert ignore into test_ignore values(cast('2023-1-12' as binary(1)), cast('2023-1-12' as varbinary(1)));
+WARNING:  The input length:9 exceeds the maximum length:1.
+CONTEXT:  referenced column: a
+WARNING:  The input length:9 exceeds the maximum length:1.
+CONTEXT:  referenced column: b
+drop table test_ignore;
 drop table if exists binary_operator;
 reset dolphin.b_compatibility_mode;
 drop schema test_binary cascade;

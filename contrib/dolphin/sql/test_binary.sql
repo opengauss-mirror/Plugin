@@ -289,6 +289,44 @@ SELECT HEX(concat('*', s1, '*', s2, '*')) FROM t1;
 SELECT HEX(s1), HEX(s2), HEX('*') FROM t1;
 DROP TABLE t1;
 
+-- test about set to binary
+set dolphin.b_compatibility_mode=on;
+set bytea_output=escape;
+drop table if exists t_set0004;
+create table t_set0004(
+c1 int not null auto_increment primary key,
+c2 set('2011-11-11', '2023-02-28 11:23:00', '2024-01', '2025/01/01')
+default null,
+c3 set('red', 'yellow', 'blue') not null,
+c4 set('0', '1', '1.01314'));
+insert into t_set0004(c2, c3, c4) values ('2025/01/01', 'blue', '0');
+insert into t_set0004(c2, c3, c4) values (
+'2011-11-11,2023-02-28 11:23:00', 'red,yellow', '0,1');
+insert into t_set0004(c2, c3, c4) values (
+'2024-01,2011-11-11,2025/01/01', 'red,blue', '0,1.01314');
+insert into t_set0004(c2, c3) values ('2023-02-28 11:23:00', 'red');
+insert into t_set0004(c2, c3) values (
+'2023-02-28 11:23:00,2025/01/01,2025/01/01', 'blue,blue,yellow');
+insert into t_set0004(c3) values ('yellow');
+insert into t_set0004(c3) values ('yellow,yellow,yellow,yellow');
+insert into t_set0004(c3) values ('blue,yellow,red,red');
+insert into t_set0004(c3) values ('blue,red');
+insert into t_set0004(c3, c4) values ('red', '1');
+insert into t_set0004(c3, c4) values ('red,red', '1.01314,1.01314');
+insert into t_set0004(c3, c4) values ('red,blue', '0,1,1.01314');
+select cast(c1 as binary(1)), cast(c2 as binary(1)), cast(c3 as binary(1)),
+cast(c4 as binary(1)) from t_set0004 order by 1,2,3,4;
+select convert(c1, binary(1)), convert(c2, binary(1)), convert(c3, binary(1)),
+convert(c4, binary(1)) from t_set0004 order by 1,2,3,4;
+select cast('2023-1-12' as binary(1));
+drop table t_set0004;
+drop table if exists test_ignore;
+create table test_ignore (a binary(1), b varbinary(1));
+insert into test_ignore(a) values(cast('2023-1-12' as binary(1)));
+insert into test_ignore(b) values(cast('2023-1-12' as binary(1)));
+insert ignore into test_ignore values(cast('2023-1-12' as binary(1)), cast('2023-1-12' as varbinary(1)));
+drop table test_ignore;
+
 drop table if exists binary_operator;
 reset dolphin.b_compatibility_mode;
 

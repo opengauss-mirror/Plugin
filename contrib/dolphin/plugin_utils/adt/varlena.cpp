@@ -192,7 +192,7 @@ static text* get_result_of_concat(text* result, FunctionCallInfo fcinfo);
 static void check_blob_size(Datum blob, int64 max_size);
 static int32 anybinary_typmodin(ArrayType* ta, const char* typname, uint32 max);
 static char* anybinary_typmodout(int32 typmod);
-static Datum copy_binary(Datum source, int typmod, bool target_is_var);
+static Datum copy_binary(Datum source, int typmod, bool target_is_var, bool can_ignore);
 static bytea* copy_blob(bytea* source, int64 max_size);
 static CmpType get_cmp_type(CmpType a, CmpType b);
 static bool is_unsigned_intType(Oid oid);
@@ -8502,13 +8502,15 @@ Datum text_interval(PG_FUNCTION_ARGS)
 }
 
 #ifdef DOLPHIN
-static Datum copy_binary(Datum source, int typmod, bool target_is_var)
+static Datum copy_binary(Datum source, int typmod, bool target_is_var, bool can_ignore)
 {
     int maxlen = typmod - (int32)VARHDRSZ;
     int length = VARSIZE(source) - VARHDRSZ;
 
     if (maxlen > 0 && length > maxlen) {
-        ereport(ERROR, (errmsg("The input length:%d exceeds the maximum length:%d.", length, maxlen)));
+        int elevel = (SQL_MODE_STRICT() && !can_ignore) ? ERROR : WARNING;
+        ereport(elevel, (errmsg("The input length:%d exceeds the maximum length:%d.", length, maxlen)));
+        length = maxlen;
     }
 
     char* data = NULL;
@@ -8634,14 +8636,14 @@ Datum bytea2binary(PG_FUNCTION_ARGS)
             ereport(ERROR, (errmsg("The input length:%d exceeds the maximum length:0.", length)));
     }
     
-    return copy_binary(PointerGetDatum(source), maxlen, false);
+    return copy_binary(PointerGetDatum(source), maxlen, false, fcinfo->can_ignore);
 }
 
 Datum bytea2var(PG_FUNCTION_ARGS)
 {
     bytea* source = PG_GETARG_BYTEA_P(0);
     int32 maxlen = PG_GETARG_INT32(1);
-    return copy_binary(PointerGetDatum(source), maxlen, true);
+    return copy_binary(PointerGetDatum(source), maxlen, true, fcinfo->can_ignore);
 }
 
 Datum tinyblob_rawin(PG_FUNCTION_ARGS)
