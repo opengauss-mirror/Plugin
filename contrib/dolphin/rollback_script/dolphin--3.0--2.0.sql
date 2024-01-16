@@ -379,17 +379,22 @@ DROP FUNCTION IF EXISTS pg_catalog.exp(json);
 
 DROP CAST IF EXISTS (boolean AS date);
 DROP FUNCTION IF EXISTS pg_catalog.bool_date(boolean);
-DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int8_cast_date(int1);
-DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int16_cast_date(int2);
-DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(int4);
-DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(int8);
-DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(uint1);
-DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(uint2);
-DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(uint4);
-DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(uint8);
-DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(float4);
-DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(float8);
-DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(numeric);
+DROP FUNCTION IF EXISTS pg_catalog.int8_cast_date(int1);
+DROP FUNCTION IF EXISTS pg_catalog.int16_cast_date(int2);
+DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(int4);
+DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(int8);
+DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(uint1);
+DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(uint2);
+DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(uint4);
+DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(uint8);
+DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(float4);
+DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(float8);
+DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(numeric);
 
 DROP FUNCTION IF EXISTS pg_catalog.ln(year);
 DROP FUNCTION IF EXISTS pg_catalog.ln(json);
+
+DROP FUNCTION IF EXISTS pg_catalog.str_to_date(boolean, TEXT);
+DROP FUNCTION IF EXISTS pg_catalog.str_to_date(longblob, TEXT);
+DROP FUNCTION IF EXISTS pg_catalog.str_to_date(anyenum, TEXT);
+DROP FUNCTION IF EXISTS pg_catalog.str_to_date(json, TEXT);

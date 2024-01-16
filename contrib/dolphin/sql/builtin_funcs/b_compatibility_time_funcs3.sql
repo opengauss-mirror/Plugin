@@ -391,7 +391,81 @@ SELECT STR_TO_DATE('31/11/22', '%d/%m/%Y');
 SELECT STR_TO_DATE('2023-02-31','%Y-%m-%d');
 SELECT STR_TO_DATE('2004.09.12 10:61:59','%Y.%m.%d %T');
 SELECT STR_TO_DATE('0000-00-00','%Y-%m-%d');
+select str_to_date(true, '%Y-%m-%d') as result;
+reset dolphin.sql_mode;
+select str_to_date(true, '%Y-%m-%d') as result;
+select str_to_date('2023-10-01'::tinyblob, '%Y-%m-%d');
+select str_to_date('2023-10-01'::blob, '%Y-%m-%d');
+select str_to_date('2023-10-01'::mediumblob, '%Y-%m-%d');
+select str_to_date('2023-10-01'::longblob, '%Y-%m-%d');
+select str_to_date(json_object('2023-10-01', '2023-10-01'), '%Y-%m-%d');
 
+create table test_type_table
+(
+   `int1` tinyint,
+   `uint1` tinyint unsigned,
+   `int2` smallint,
+   `uint2` smallint unsigned,
+   `int4` integer,
+   `uint4` integer unsigned,
+   `int8` bigint,
+   `uint8` bigint unsigned,
+   `float4` float4,
+   `float8` float8,
+   `numeric` decimal(20, 6),
+   `bit1` bit(1),
+   `bit64` bit(64),
+   `boolean` boolean,
+   `date` date,
+   `time` time,
+   `time(4)` time(4),
+   `datetime` datetime,
+   `datetime(4)` datetime(4) default '2022-11-11 11:11:11',
+   `timestamp` timestamp,
+   `timestamp(4)` timestamp(4) default '2022-11-11 11:11:11',
+   `year` year,
+   `char` char(100),
+   `varchar` varchar(100), 
+   `binary` binary(100),
+   `varbinary` varbinary(100),
+   `tinyblob` tinyblob,
+   `blob` blob,
+   `mediumblob` mediumblob,
+   `longblob` longblob,
+   `text` text,
+   `enum_t` enum('2023-01-01', '2024-01-01', '2025-01-01'),
+   `set_t` set('2023-01-01', '2024-01-01', '2025-01-01'),
+   `json` json   
+);
+
+insert into test_type_table values (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, b'1', b'111', true, 
+'2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', 
+'2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456',
+'2023', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a',
+'2023-01-01', '2023-01-01', json_object('a', 1, 'b', 2));
+
+select str_to_date(`int1`, '%Y-%m-%d'), str_to_date(`uint1`, '%Y-%m-%d'), str_to_date(`int2`, '%Y-%m-%d'), str_to_date(`uint2`, '%Y-%m-%d'), str_to_date(`int4`, '%Y-%m-%d'), 
+str_to_date(`uint4`, '%Y-%m-%d'), str_to_date(`int8`, '%Y-%m-%d'), str_to_date(`uint8`, '%Y-%m-%d'), str_to_date(`float4`, '%Y-%m-%d'), str_to_date(`float8`, '%Y-%m-%d'),
+str_to_date(`numeric`, '%Y-%m-%d'), str_to_date(`bit1`, '%Y-%m-%d'), str_to_date(`bit64`, '%Y-%m-%d'), str_to_date(`boolean`, '%Y-%m-%d'), str_to_date(`date`, '%Y-%m-%d'),
+str_to_date(`time`, '%Y-%m-%d'), str_to_date(`time(4)`, '%Y-%m-%d'), str_to_date(`datetime`, '%Y-%m-%d'), str_to_date(`datetime(4)`, '%Y-%m-%d'), str_to_date(`timestamp`, '%Y-%m-%d'), 
+str_to_date(`timestamp(4)`, '%Y-%m-%d'), str_to_date(`year`, '%Y-%m-%d'), str_to_date(`char`, '%Y-%m-%d'), str_to_date(`varchar`, '%Y-%m-%d'), str_to_date(`binary`, '%Y-%m-%d'), 
+str_to_date(`varbinary`, '%Y-%m-%d'), str_to_date(`tinyblob`, '%Y-%m-%d'), str_to_date(`blob`, '%Y-%m-%d'), str_to_date(`mediumblob`, '%Y-%m-%d'), str_to_date(`longblob`, '%Y-%m-%d'), 
+str_to_date(`text`, '%Y-%m-%d'), str_to_date(`enum_t`, '%Y-%m-%d'), str_to_date(`set_t`, '%Y-%m-%d'), str_to_date(`json`, '%Y-%m-%d') from test_type_table;
+
+create table test_str_to_date(col1 text, col2 text, col3 text, col4 text, col5 text, col6 text, col7 text, col8 text, col9 text, col10 text, col11 text, col12 text, col13 text, col14 text, col15 text, col16 text, col17 text, col18 text, col19 text, col20 text, col21 text, col22 text, col23 text, col24 text, col25 text, col26 text, col27 text, col28 text, col29 text, col30 text, col31 text, col32 text,
+col33 text, col34 text);
+
+insert ignore into test_str_to_date select str_to_date(`int1`, '%Y-%m-%d'), str_to_date(`uint1`, '%Y-%m-%d'), str_to_date(`int2`, '%Y-%m-%d'), str_to_date(`uint2`, '%Y-%m-%d'), str_to_date(`int4`, '%Y-%m-%d'), 
+str_to_date(`uint4`, '%Y-%m-%d'), str_to_date(`int8`, '%Y-%m-%d'), str_to_date(`uint8`, '%Y-%m-%d'), str_to_date(`float4`, '%Y-%m-%d'), str_to_date(`float8`, '%Y-%m-%d'),
+str_to_date(`numeric`, '%Y-%m-%d'), str_to_date(`bit1`, '%Y-%m-%d'), str_to_date(`bit64`, '%Y-%m-%d'), str_to_date(`boolean`, '%Y-%m-%d'), str_to_date(`date`, '%Y-%m-%d'),
+str_to_date(`time`, '%Y-%m-%d'), str_to_date(`time(4)`, '%Y-%m-%d'), str_to_date(`datetime`, '%Y-%m-%d'), str_to_date(`datetime(4)`, '%Y-%m-%d'), str_to_date(`timestamp`, '%Y-%m-%d'), 
+str_to_date(`timestamp(4)`, '%Y-%m-%d'), str_to_date(`year`, '%Y-%m-%d'), str_to_date(`char`, '%Y-%m-%d'), str_to_date(`varchar`, '%Y-%m-%d'), str_to_date(`binary`, '%Y-%m-%d'), 
+str_to_date(`varbinary`, '%Y-%m-%d'), str_to_date(`tinyblob`, '%Y-%m-%d'), str_to_date(`blob`, '%Y-%m-%d'), str_to_date(`mediumblob`, '%Y-%m-%d'), str_to_date(`longblob`, '%Y-%m-%d'), 
+str_to_date(`text`, '%Y-%m-%d'), str_to_date(`enum_t`, '%Y-%m-%d'), str_to_date(`set_t`, '%Y-%m-%d'), str_to_date(`json`, '%Y-%m-%d') from test_type_table;
+select * from test_str_to_date;
+
+drop table if exists test_str_to_date;
+drop table if exists test_type_table;
 
 set dolphin.b_compatibility_mode = false;
 select time('23:65:66');
