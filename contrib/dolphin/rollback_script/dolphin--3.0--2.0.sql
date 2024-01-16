@@ -391,3 +391,5 @@ DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(float4);
 DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(float8);
 DROP FUNCTION IF EXISTS FUNCTION pg_catalog.int32_cast_date(numeric);
 
+DROP FUNCTION IF EXISTS pg_catalog.ln(year);
+DROP FUNCTION IF EXISTS pg_catalog.ln(json);

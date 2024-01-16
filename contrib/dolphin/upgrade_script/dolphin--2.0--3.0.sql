@@ -678,3 +678,13 @@ RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_date';
 
 CREATE OR REPLACE FUNCTION pg_catalog.bool_date(boolean) RETURNS date LANGUAGE SQL IMMUTABLE STRICT as 'select $1::integer::date';
 CREATE CAST (boolean AS date) WITH FUNCTION bool_date(boolean) AS ASSIGNMENT;
+
+DROP FUNCTION IF EXISTS pg_catalog.ln(year);
+CREATE OR REPLACE FUNCTION pg_catalog.ln(year) 
+RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
+'select pg_catalog.ln(cast($1 as double precision))';
+
+DROP FUNCTION IF EXISTS pg_catalog.ln(json);
+CREATE OR REPLACE FUNCTION pg_catalog.ln(json) 
+RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
+'select pg_catalog.ln(cast($1 as double precision))';
