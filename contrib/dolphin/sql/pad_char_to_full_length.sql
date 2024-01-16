@@ -134,6 +134,14 @@ select * from t_col where name not like 'test        %';
 select * from t_col where name like 'Test        %';
 select * from t_col where name not like 'Test        %';
 
+--To test the length of a multi-byte character string.
+set dolphin.sql_mode = 'pad_char_to_full_length';
+create table test_mb_char(a char(10));
+insert into test_mb_char values('谢谢你');
+select a, length(a), char_length(a), length(trim(a)) from test_mb_char;
+set dolphin.sql_mode = '';
+select a, length(a), char_length(a), length(trim(a)) from test_mb_char;
+
 set try_vector_engine_strategy='force';
 select char_length(name), length(name) from t_col;
 set try_vector_engine_strategy='off';

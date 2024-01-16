@@ -40,6 +40,9 @@
         }                                                       \
     } while (0)
 
+#define CHAR_LENGTH_FUNC_OID 1372
+#define CHARACTER_LENGTH_FUNC_OID 1367
+
 int bpcharcase(PG_FUNCTION_ARGS);
 
 /* common code for bpchartypmodin and varchartypmodin */
@@ -305,7 +308,9 @@ Datum bpchar(PG_FUNCTION_ARGS)
         PG_RETURN_BPCHAR_P(source);
 
     maxlen -= VARHDRSZ;
-
+#ifdef DOLPHIN
+    int maxCharLen = maxlen;
+#endif
     len = VARSIZE_ANY_EXHDR(source);
     s = VARDATA_ANY(source);
 
@@ -367,7 +372,12 @@ Datum bpchar(PG_FUNCTION_ARGS)
     }
 
     Assert(maxlen >= len);
-
+#ifdef DOLPHIN
+    int padLen = maxCharLen - pg_mbstrlen_with_len(VARDATA_ANY(source), len);
+    if (padLen > 0) {
+        maxlen = len + padLen;
+    }
+#endif
     result = (BpChar*)palloc(maxlen + VARHDRSZ);
     SET_VARSIZE(result, maxlen + VARHDRSZ);
     r = VARDATA(result);
@@ -730,7 +740,7 @@ int bpchartruelen(const char* s, int len)
     return i + 1;
 }
 
-// return number of char in a char(n) type string.
+// return number of char or byte in a char(n) type string.
 // when calculating the length,we do not ignoring the trailing
 // spaces, which is different with pg9.2
 Datum bpcharlen(PG_FUNCTION_ARGS)
@@ -747,11 +757,13 @@ Datum bpcharlen(PG_FUNCTION_ARGS)
         len = bcTruelen(arg);
 
     /* in multibyte encoding, convert to number of characters */
-    if (pg_database_encoding_max_length() != 1)
+    if (pg_database_encoding_max_length() != 1 && (fcinfo->flinfo->fn_oid == CHAR_LENGTH_FUNC_OID ||
+        fcinfo->flinfo->fn_oid == CHARACTER_LENGTH_FUNC_OID))
         len = pg_mbstrlen_with_len(VARDATA_ANY(arg), len);
 
     PG_RETURN_INT32(len);
 }
+
 
 // return number of byte in a char(n) type string.
 // when calculating the length,we do not ignoring the trailing spaces.
