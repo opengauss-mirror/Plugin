@@ -579,7 +579,7 @@ select `tinyblob`, `json`,
        `tinyblob` < `json` as `tinyblob<json`, `tinyblob` <= `json` as `tinyblob<=json`,
        `tinyblob` != `json` as `tinyblob!=json`, `tinyblob` <> `json` as `tinyblob<>json`,
        `tinyblob` = `json` as `tinyblob=json`, `tinyblob` <=> `json` as `tinyblob<=>json` from test_json_table;
-ERROR:  operator does not exist: blob > json
+ERROR:  operator does not exist: tinyblob > json
 LINE 2:        `tinyblob` > `json` as `tinyblob>json`, `tinyblob` >=...
                           ^
 HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
@@ -619,7 +619,7 @@ select `mediumblob`, `json`,
        `mediumblob` < `json` as `mediumblob<json`, `mediumblob` <= `json` as `mediumblob<=json`,
        `mediumblob` != `json` as `mediumblob!=json`, `mediumblob` <> `json` as `mediumblob<>json`,
        `mediumblob` = `json` as `mediumblob=json`, `mediumblob` <=> `json` as `mediumblob<=>json` from test_json_table;
-ERROR:  operator does not exist: blob > json
+ERROR:  operator does not exist: mediumblob > json
 LINE 2:        `mediumblob` > `json` as `mediumblob>json`, `mediumbl...
                             ^
 HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
@@ -639,7 +639,7 @@ select `longblob`, `json`,
        `longblob` < `json` as `longblob<json`, `longblob` <= `json` as `longblob<=json`,
        `longblob` != `json` as `longblob!=json`, `longblob` <> `json` as `longblob<>json`,
        `longblob` = `json` as `longblob=json`, `longblob` <=> `json` as `longblob<=>json` from test_json_table;
-ERROR:  operator does not exist: blob > json
+ERROR:  operator does not exist: longblob > json
 LINE 2:        `longblob` > `json` as `longblob>json`, `longblob` >=...
                           ^
 HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
