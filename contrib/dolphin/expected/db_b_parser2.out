@@ -767,7 +767,7 @@ CONTEXT:  referenced column: fchar
 select fchar,length(fchar) from fchar_test order by 1,2;
         fchar         | length 
 ----------------------+--------
- 零一二三四五六七八九 |     10
+ 零一二三四五六七八九 |     30
 (1 row)
 
 drop table fchar_test;

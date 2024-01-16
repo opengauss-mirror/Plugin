@@ -598,10 +598,10 @@ select a from test_collation2 where a = '高斯ss';
 (0 rows)
 
 select a from test_collation2 where a = '高斯sS' collate utf8_bin;
-    a     
-----------
- 高斯sS  
- 高斯sS  
+      a       
+--------------
+ 高斯sS      
+ 高斯sS      
 (2 rows)
 
 alter table test_collation2 modify a enum('高斯sS', '汉字sS', 'aaa', 'bbb');
