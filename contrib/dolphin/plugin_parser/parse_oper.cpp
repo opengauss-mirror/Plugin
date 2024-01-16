@@ -530,13 +530,6 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
     }
 
 #ifdef DOLPHIN
-    /* Use BLOB like a pseudo types */
-    if (IsBlobClassType(ltypeId)) {
-        ltypeId = BLOBOID;
-    }
-    if (IsBlobClassType(rtypeId)) {
-        rtypeId = BLOBOID;
-    }
     /**
      * If GUC parameter b_compatibility_mode is true,
      * and the expression is adding a string constant and an interval,

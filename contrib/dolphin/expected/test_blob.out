@@ -1262,6 +1262,213 @@ select * from t_blob;
  11
 (1 row)
 
+DROP TABLE IF EXISTS t_index_test;
+NOTICE:  table "t_index_test" does not exist, skipping
+create table t_index_test(a blob, b tinyblob, c mediumblob, d longblob);
+insert into t_index_test select i,i,i,i from generate_series(1,10000) i;
+create index i_a on t_index_test(a);
+create index i_b on t_index_test(b);
+create index i_c on t_index_test(c);
+create index i_d on t_index_test(d);
+analyze t_index_test;
+explain (costs off) select * from t_index_test where a='1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_a on t_index_test
+   Index Cond: (a = '1'::blob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where a>='a1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_a on t_index_test
+   Index Cond: (a >= 'a1'::blob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where a>'a1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_a on t_index_test
+   Index Cond: (a > 'a1'::blob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where a<='0';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_a on t_index_test
+   Index Cond: (a <= '0'::blob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where a<'1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_a on t_index_test
+   Index Cond: (a < '1'::blob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where b='1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_b on t_index_test
+   Index Cond: (b = '1'::tinyblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where b>='a1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_b on t_index_test
+   Index Cond: (b >= 'a1'::tinyblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where b>'a1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_b on t_index_test
+   Index Cond: (b > 'a1'::tinyblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where b<='0';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_b on t_index_test
+   Index Cond: (b <= '0'::tinyblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where b<'1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_b on t_index_test
+   Index Cond: (b < '1'::tinyblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where c='1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_c on t_index_test
+   Index Cond: (c = '1'::mediumblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where c>='a1';
+              QUERY PLAN               
+---------------------------------------
+ [Bypass]
+ Index Scan using i_c on t_index_test
+   Index Cond: (c >= 'a1'::mediumblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where c>'a1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_c on t_index_test
+   Index Cond: (c > 'a1'::mediumblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where c<='0';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_c on t_index_test
+   Index Cond: (c <= '0'::mediumblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where c<'1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_c on t_index_test
+   Index Cond: (c < '1'::mediumblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where d='1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_d on t_index_test
+   Index Cond: (d = '1'::longblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where d>='a1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_d on t_index_test
+   Index Cond: (d >= 'a1'::longblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where d>'a1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_d on t_index_test
+   Index Cond: (d > 'a1'::longblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where d<='0';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_d on t_index_test
+   Index Cond: (d <= '0'::longblob)
+(3 rows)
+
+explain (costs off) select * from t_index_test where d<'1';
+              QUERY PLAN              
+--------------------------------------
+ [Bypass]
+ Index Scan using i_d on t_index_test
+   Index Cond: (d < '1'::longblob)
+(3 rows)
+
+drop index i_a;
+drop index i_b;
+drop index i_c;
+drop index i_d;
+create index i_a on t_index_test(a) using hash;
+create index i_b on t_index_test(b) using hash;
+create index i_c on t_index_test(c) using hash;
+create index i_d on t_index_test(d) using hash;
+analyze t_index_test;
+explain (costs off) select * from t_index_test where a='1';
+              QUERY PLAN              
+--------------------------------------
+ Index Scan using i_a on t_index_test
+   Index Cond: (a = '1'::blob)
+(2 rows)
+
+explain (costs off) select * from t_index_test where b='1';
+              QUERY PLAN              
+--------------------------------------
+ Index Scan using i_b on t_index_test
+   Index Cond: (b = '1'::tinyblob)
+(2 rows)
+
+explain (costs off) select * from t_index_test where c='1';
+              QUERY PLAN              
+--------------------------------------
+ Index Scan using i_c on t_index_test
+   Index Cond: (c = '1'::mediumblob)
+(2 rows)
+
+explain (costs off) select * from t_index_test where d='1';
+              QUERY PLAN              
+--------------------------------------
+ Index Scan using i_d on t_index_test
+   Index Cond: (d = '1'::longblob)
+(2 rows)
+
+DROP TABLE t_index_test;
 drop schema test_blob cascade;
 NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table t_dezebium_0007_02

@@ -868,3 +868,373 @@ CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(boolean, TEXT) RETURNS TEXT LA
 CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(longblob, TEXT) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.str_to_date(cast($1 as TEXT), $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(anyenum, TEXT) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.str_to_date(cast($1 as TEXT), $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(json, TEXT) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.str_to_date(cast($1 as TEXT), $2)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.blob_cmp(blob, blob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR FAMILY pg_catalog.blob_ops USING BTREE;
+CREATE OPERATOR FAMILY pg_catalog.blob_ops USING HASH;
+
+-- about blob op family
+CREATE OPERATOR CLASS pg_catalog.blob_ops DEFAULT
+   FOR TYPE blob USING BTREE FAMILY pg_catalog.blob_ops as
+   OPERATOR 1 pg_catalog.<(blob, blob),
+   OPERATOR 2 pg_catalog.<=(blob, blob),
+   OPERATOR 3 pg_catalog.=(blob, blob),
+   OPERATOR 4 pg_catalog.>=(blob, blob),
+   OPERATOR 5 pg_catalog.>(blob, blob),
+   FUNCTION 1 pg_catalog.blob_cmp(blob, blob),
+   FUNCTION 2 pg_catalog.bytea_sortsupport(internal);
+
+CREATE OPERATOR CLASS pg_catalog.blob_ops DEFAULT
+   FOR TYPE blob USING HASH FAMILY blob_ops as
+   OPERATOR 1 pg_catalog.=(blob, blob),
+   FUNCTION 1 (blob, blob) pg_catalog.hashvarlena(internal);
+
+-- about tinyblob op family
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_eq(arg1 tinyblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_ne(arg1 tinyblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_lt(arg1 tinyblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_le(arg1 tinyblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_gt(arg1 tinyblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_ge(arg1 tinyblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_cmp(tinyblob, tinyblob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = tinyblob, rightarg = tinyblob, procedure = tinyblob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = tinyblob, rightarg = tinyblob, procedure = tinyblob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = tinyblob, rightarg = tinyblob, procedure = tinyblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = tinyblob, rightarg = tinyblob, procedure = tinyblob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = tinyblob, rightarg = tinyblob, procedure = tinyblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = tinyblob, rightarg = tinyblob, procedure = tinyblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_eq_text(arg1 tinyblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT tinyblob_eq($1, $2::tinyblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_ne_text(arg1 tinyblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT tinyblob_ne($1, $2::tinyblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_lt_text(arg1 tinyblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT tinyblob_lt($1, $2::tinyblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_le_text(arg1 tinyblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT tinyblob_le($1, $2::tinyblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_gt_text(arg1 tinyblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT tinyblob_gt($1, $2::tinyblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_ge_text(arg1 tinyblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT tinyblob_ge($1, $2::tinyblob) $$;
+CREATE OPERATOR pg_catalog.=(leftarg = tinyblob, rightarg = text, procedure = tinyblob_eq_text, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = tinyblob, rightarg = text, procedure = tinyblob_ne_text, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = tinyblob, rightarg = text, procedure = tinyblob_lt_text, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = tinyblob, rightarg = text, procedure = tinyblob_le_text, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = tinyblob, rightarg = text, procedure = tinyblob_gt_text, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = tinyblob, rightarg = text, procedure = tinyblob_ge_text, restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_eq_tinyblob(arg1 text, arg2 tinyblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT tinyblob_eq($1::tinyblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.text_ne_tinyblob(arg1 text, arg2 tinyblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT tinyblob_ne($1::tinyblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.text_lt_tinyblob(arg1 text, arg2 tinyblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT tinyblob_lt($1::tinyblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.text_le_tinyblob(arg1 text, arg2 tinyblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT tinyblob_le($1::tinyblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.test_gt_tinyblob(arg1 text, arg2 tinyblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT tinyblob_gt($1::tinyblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.test_ge_tinyblob(arg1 text, arg2 tinyblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT tinyblob_ge($1::tinyblob, $2) $$;
+CREATE OPERATOR pg_catalog.=(leftarg = text, rightarg = tinyblob, procedure = text_eq_tinyblob, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = text, rightarg = tinyblob, procedure = text_ne_tinyblob, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = text, rightarg = tinyblob, procedure = text_lt_tinyblob, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = text, rightarg = tinyblob, procedure = text_le_tinyblob, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = text, rightarg = tinyblob, procedure = test_gt_tinyblob, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = text, rightarg = tinyblob, procedure = test_ge_tinyblob, restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OPERATOR FAMILY pg_catalog.tinyblob_ops USING BTREE;
+CREATE OPERATOR FAMILY pg_catalog.tinyblob_ops USING HASH;
+CREATE OPERATOR CLASS pg_catalog.tinyblob_ops DEFAULT
+   FOR TYPE tinyblob USING BTREE FAMILY pg_catalog.tinyblob_ops as
+   OPERATOR 1 pg_catalog.<(tinyblob, tinyblob),
+   OPERATOR 2 pg_catalog.<=(tinyblob, tinyblob),
+   OPERATOR 3 pg_catalog.=(tinyblob, tinyblob),
+   OPERATOR 4 pg_catalog.>=(tinyblob, tinyblob),
+   OPERATOR 5 pg_catalog.>(tinyblob, tinyblob),
+   FUNCTION 1 pg_catalog.tinyblob_cmp(tinyblob, tinyblob),
+   FUNCTION 2 pg_catalog.bytea_sortsupport(internal);
+
+CREATE OPERATOR CLASS pg_catalog.tinyblob_ops DEFAULT
+   FOR TYPE tinyblob USING HASH FAMILY tinyblob_ops as
+   OPERATOR 1 pg_catalog.=(tinyblob, tinyblob),
+   FUNCTION 1 (tinyblob, tinyblob) pg_catalog.hashvarlena(internal);
+
+-- about mediumblob operator family
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_eq(arg1 mediumblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_ne(arg1 mediumblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_lt(arg1 mediumblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_le(arg1 mediumblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_gt(arg1 mediumblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_ge(arg1 mediumblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_cmp(mediumblob, mediumblob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = mediumblob, rightarg = mediumblob, procedure = mediumblob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = mediumblob, rightarg = mediumblob, procedure = mediumblob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = mediumblob, rightarg = mediumblob, procedure = mediumblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = mediumblob, rightarg = mediumblob, procedure = mediumblob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = mediumblob, rightarg = mediumblob, procedure = mediumblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = mediumblob, rightarg = mediumblob, procedure = mediumblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_eq_text(arg1 mediumblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT mediumblob_eq($1, $2::mediumblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_ne_text(arg1 mediumblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT mediumblob_ne($1, $2::mediumblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_lt_text(arg1 mediumblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT mediumblob_lt($1, $2::mediumblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_le_text(arg1 mediumblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT mediumblob_le($1, $2::mediumblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_gt_text(arg1 mediumblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT mediumblob_gt($1, $2::mediumblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_ge_text(arg1 mediumblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT mediumblob_ge($1, $2::mediumblob) $$;
+CREATE OPERATOR pg_catalog.=(leftarg = mediumblob, rightarg = text, procedure = mediumblob_eq_text, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = mediumblob, rightarg = text, procedure = mediumblob_ne_text, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = mediumblob, rightarg = text, procedure = mediumblob_lt_text, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = mediumblob, rightarg = text, procedure = mediumblob_le_text, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = mediumblob, rightarg = text, procedure = mediumblob_gt_text, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = mediumblob, rightarg = text, procedure = mediumblob_ge_text, restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_eq_mediumblob(arg1 text, arg2 mediumblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT mediumblob_eq($1::mediumblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.text_ne_mediumblob(arg1 text, arg2 mediumblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT mediumblob_ne($1::mediumblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.text_lt_mediumblob(arg1 text, arg2 mediumblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT mediumblob_lt($1::mediumblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.text_le_mediumblob(arg1 text, arg2 mediumblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT mediumblob_le($1::mediumblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.test_gt_mediumblob(arg1 text, arg2 mediumblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT mediumblob_gt($1::mediumblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.test_ge_mediumblob(arg1 text, arg2 mediumblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT mediumblob_ge($1::mediumblob, $2) $$;
+CREATE OPERATOR pg_catalog.=(leftarg = text, rightarg = mediumblob, procedure = text_eq_mediumblob, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = text, rightarg = mediumblob, procedure = text_ne_mediumblob, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = text, rightarg = mediumblob, procedure = text_lt_mediumblob, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = text, rightarg = mediumblob, procedure = text_le_mediumblob, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = text, rightarg = mediumblob, procedure = test_gt_mediumblob, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = text, rightarg = mediumblob, procedure = test_ge_mediumblob, restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OPERATOR FAMILY pg_catalog.mediumblob_ops USING BTREE;
+CREATE OPERATOR FAMILY pg_catalog.mediumblob_ops USING HASH;
+CREATE OPERATOR CLASS pg_catalog.mediumblob_ops DEFAULT
+   FOR TYPE mediumblob USING BTREE FAMILY pg_catalog.mediumblob_ops as
+   OPERATOR 1 pg_catalog.<(mediumblob, mediumblob),
+   OPERATOR 2 pg_catalog.<=(mediumblob, mediumblob),
+   OPERATOR 3 pg_catalog.=(mediumblob, mediumblob),
+   OPERATOR 4 pg_catalog.>=(mediumblob, mediumblob),
+   OPERATOR 5 pg_catalog.>(mediumblob, mediumblob),
+   FUNCTION 1 pg_catalog.mediumblob_cmp(mediumblob, mediumblob),
+   FUNCTION 2 pg_catalog.bytea_sortsupport(internal);
+
+CREATE OPERATOR CLASS pg_catalog.mediumblob_ops DEFAULT
+   FOR TYPE mediumblob USING HASH FAMILY mediumblob_ops as
+   OPERATOR 1 pg_catalog.=(mediumblob, mediumblob),
+   FUNCTION 1 (mediumblob, mediumblob) pg_catalog.hashvarlena(internal);
+
+-- about longblob operator family
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_eq(arg1 longblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_ne(arg1 longblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_lt(arg1 longblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_le(arg1 longblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_gt(arg1 longblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_ge(arg1 longblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_cmp(longblob, longblob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = longblob, rightarg = longblob, procedure = longblob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = longblob, rightarg = longblob, procedure = longblob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = longblob, rightarg = longblob, procedure = longblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = longblob, rightarg = longblob, procedure = longblob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = longblob, rightarg = longblob, procedure = longblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = longblob, rightarg = longblob, procedure = longblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_eq_text(arg1 longblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT longblob_eq($1, $2::longblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_ne_text(arg1 longblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT longblob_ne($1, $2::longblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_lt_text(arg1 longblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT longblob_lt($1, $2::longblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_le_text(arg1 longblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT longblob_le($1, $2::longblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_gt_text(arg1 longblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT longblob_gt($1, $2::longblob) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_ge_text(arg1 longblob, arg2 text) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT longblob_ge($1, $2::longblob) $$;
+CREATE OPERATOR pg_catalog.=(leftarg = longblob, rightarg = text, procedure = longblob_eq_text, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = longblob, rightarg = text, procedure = longblob_ne_text, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = longblob, rightarg = text, procedure = longblob_lt_text, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = longblob, rightarg = text, procedure = longblob_le_text, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = longblob, rightarg = text, procedure = longblob_gt_text, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = longblob, rightarg = text, procedure = longblob_ge_text, restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_eq_longblob(arg1 text, arg2 longblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT longblob_eq($1::longblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.text_ne_longblob(arg1 text, arg2 longblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT longblob_ne($1::longblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.text_lt_longblob(arg1 text, arg2 longblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT longblob_lt($1::longblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.text_le_longblob(arg1 text, arg2 longblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT longblob_le($1::longblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.test_gt_longblob(arg1 text, arg2 longblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT longblob_gt($1::longblob, $2) $$;
+CREATE OR REPLACE FUNCTION pg_catalog.test_ge_longblob(arg1 text, arg2 longblob) RETURNS bool LANGUAGE SQL STRICT AS $$ SELECT longblob_ge($1::longblob, $2) $$;
+CREATE OPERATOR pg_catalog.=(leftarg = text, rightarg = longblob, procedure = text_eq_longblob, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = text, rightarg = longblob, procedure = text_ne_longblob, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = text, rightarg = longblob, procedure = text_lt_longblob, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = text, rightarg = longblob, procedure = text_le_longblob, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = text, rightarg = longblob, procedure = test_gt_longblob, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = text, rightarg = longblob, procedure = test_ge_longblob, restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OPERATOR FAMILY pg_catalog.longblob_ops USING BTREE;
+CREATE OPERATOR FAMILY pg_catalog.longblob_ops USING HASH;
+CREATE OPERATOR CLASS pg_catalog.longblob_ops DEFAULT
+   FOR TYPE longblob USING BTREE FAMILY pg_catalog.longblob_ops as
+   OPERATOR 1 pg_catalog.<(longblob, longblob),
+   OPERATOR 2 pg_catalog.<=(longblob, longblob),
+   OPERATOR 3 pg_catalog.=(longblob, longblob),
+   OPERATOR 4 pg_catalog.>=(longblob, longblob),
+   OPERATOR 5 pg_catalog.>(longblob, longblob),
+   FUNCTION 1 pg_catalog.longblob_cmp(longblob, longblob),
+   FUNCTION 2 pg_catalog.bytea_sortsupport(internal);
+
+CREATE OPERATOR CLASS pg_catalog.longblob_ops DEFAULT
+   FOR TYPE longblob USING HASH FAMILY longblob_ops as
+   OPERATOR 1 pg_catalog.=(longblob, longblob),
+   FUNCTION 1 (longblob, longblob) pg_catalog.hashvarlena(internal);
+
+-- about tinyblob op othersBlob
+-- tinyblob op blob
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_blob_eq(arg1 tinyblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_blob_ne(arg1 tinyblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_blob_lt(arg1 tinyblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_blob_le(arg1 tinyblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_blob_gt(arg1 tinyblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_blob_ge(arg1 tinyblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_blob_cmp(tinyblob, blob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = tinyblob, rightarg = blob, procedure = tinyblob_blob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = tinyblob, rightarg = blob, procedure = tinyblob_blob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = tinyblob, rightarg = blob, procedure = tinyblob_blob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = tinyblob, rightarg = blob, procedure = tinyblob_blob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = tinyblob, rightarg = blob, procedure = tinyblob_blob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = tinyblob, rightarg = blob, procedure = tinyblob_blob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+-- tinyblob op mediumblob
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_mediumblob_eq(arg1 tinyblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_mediumblob_ne(arg1 tinyblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_mediumblob_lt(arg1 tinyblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_mediumblob_le(arg1 tinyblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_mediumblob_gt(arg1 tinyblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_mediumblob_ge(arg1 tinyblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_mediumblob_cmp(tinyblob, mediumblob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = tinyblob, rightarg = mediumblob, procedure = tinyblob_mediumblob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = tinyblob, rightarg = mediumblob, procedure = tinyblob_mediumblob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = tinyblob, rightarg = mediumblob, procedure = tinyblob_mediumblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = tinyblob, rightarg = mediumblob, procedure = tinyblob_mediumblob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = tinyblob, rightarg = mediumblob, procedure = tinyblob_mediumblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = tinyblob, rightarg = mediumblob, procedure = tinyblob_mediumblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+-- tinyblob op longblob
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_longblob_eq(arg1 tinyblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_longblob_ne(arg1 tinyblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_longblob_lt(arg1 tinyblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_longblob_le(arg1 tinyblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_longblob_gt(arg1 tinyblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_longblob_ge(arg1 tinyblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_longblob_cmp(tinyblob, longblob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = tinyblob, rightarg = longblob, procedure = tinyblob_longblob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = tinyblob, rightarg = longblob, procedure = tinyblob_longblob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = tinyblob, rightarg = longblob, procedure = tinyblob_longblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = tinyblob, rightarg = longblob, procedure = tinyblob_longblob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = tinyblob, rightarg = longblob, procedure = tinyblob_longblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = tinyblob, rightarg = longblob, procedure = tinyblob_longblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+
+-- about blob op othersBlob
+-- blob op tinyblob
+CREATE OR REPLACE FUNCTION pg_catalog.blob_tinyblob_eq(arg1 blob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_tinyblob_ne(arg1 blob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_tinyblob_lt(arg1 blob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_tinyblob_le(arg1 blob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_tinyblob_gt(arg1 blob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_tinyblob_ge(arg1 blob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_tinyblob_cmp(blob, tinyblob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = blob, rightarg = tinyblob, procedure = blob_tinyblob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = blob, rightarg = tinyblob, procedure = blob_tinyblob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = blob, rightarg = tinyblob, procedure = blob_tinyblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = blob, rightarg = tinyblob, procedure = blob_tinyblob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = blob, rightarg = tinyblob, procedure = blob_tinyblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = blob, rightarg = tinyblob, procedure = blob_tinyblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+--- blob op mediumblob
+CREATE OR REPLACE FUNCTION pg_catalog.blob_mediumblob_eq(arg1 blob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_mediumblob_ne(arg1 blob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_mediumblob_lt(arg1 blob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_mediumblob_le(arg1 blob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_mediumblob_gt(arg1 blob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_mediumblob_ge(arg1 blob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_mediumblob_cmp(blob, mediumblob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = blob, rightarg = mediumblob, procedure = blob_mediumblob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = blob, rightarg = mediumblob, procedure = blob_mediumblob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = blob, rightarg = mediumblob, procedure = blob_mediumblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = blob, rightarg = mediumblob, procedure = blob_mediumblob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = blob, rightarg = mediumblob, procedure = blob_mediumblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = blob, rightarg = mediumblob, procedure = blob_mediumblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+-- blob op longblob
+CREATE OR REPLACE FUNCTION pg_catalog.blob_longblob_eq(arg1 blob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_longblob_ne(arg1 blob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_longblob_lt(arg1 blob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_longblob_le(arg1 blob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_longblob_gt(arg1 blob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_longblob_ge(arg1 blob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_longblob_cmp(longblob, longblob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = blob, rightarg = longblob, procedure = blob_longblob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = blob, rightarg = longblob, procedure = blob_longblob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = blob, rightarg = longblob, procedure = blob_longblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = blob, rightarg = longblob, procedure = blob_longblob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = blob, rightarg = longblob, procedure = blob_longblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = blob, rightarg = longblob, procedure = blob_longblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+
+-- about mediumblob op othersBlob
+-- mediumblob op tinyblob
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_tinyblob_eq(arg1 mediumblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_tinyblob_ne(arg1 mediumblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_tinyblob_lt(arg1 mediumblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_tinyblob_le(arg1 mediumblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_tinyblob_gt(arg1 mediumblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_tinyblob_ge(arg1 mediumblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_tinyblob_cmp(mediumblob, tinyblob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = mediumblob, rightarg = tinyblob, procedure = mediumblob_tinyblob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = mediumblob, rightarg = tinyblob, procedure = mediumblob_tinyblob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = mediumblob, rightarg = tinyblob, procedure = mediumblob_tinyblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = mediumblob, rightarg = tinyblob, procedure = mediumblob_tinyblob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = mediumblob, rightarg = tinyblob, procedure = mediumblob_tinyblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = mediumblob, rightarg = tinyblob, procedure = mediumblob_tinyblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+-- mediumblob op blob
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_blob_eq(arg1 mediumblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_blob_ne(arg1 mediumblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_blob_lt(arg1 mediumblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_blob_le(arg1 mediumblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_blob_gt(arg1 mediumblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_blob_ge(arg1 mediumblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_blob_cmp(mediumblob, blob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = mediumblob, rightarg = blob, procedure = mediumblob_blob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = mediumblob, rightarg = blob, procedure = mediumblob_blob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = mediumblob, rightarg = blob, procedure = mediumblob_blob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = mediumblob, rightarg = blob, procedure = mediumblob_blob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = mediumblob, rightarg = blob, procedure = mediumblob_blob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = mediumblob, rightarg = blob, procedure = mediumblob_blob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+-- mediumblob op longblob
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_longblob_eq(arg1 mediumblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_longblob_ne(arg1 mediumblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_longblob_lt(arg1 mediumblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_longblob_le(arg1 mediumblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_longblob_gt(arg1 mediumblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_longblob_ge(arg1 mediumblob, arg2 longblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_longblob_cmp(longblob, longblob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = mediumblob, rightarg = longblob, procedure = mediumblob_longblob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = mediumblob, rightarg = longblob, procedure = mediumblob_longblob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = mediumblob, rightarg = longblob, procedure = mediumblob_longblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = mediumblob, rightarg = longblob, procedure = mediumblob_longblob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = mediumblob, rightarg = longblob, procedure = mediumblob_longblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = mediumblob, rightarg = longblob, procedure = mediumblob_longblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+
+-- about mediumblob op othersBlob
+-- longblob op tinyblob
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_tinyblob_eq(arg1 longblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_tinyblob_ne(arg1 longblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_tinyblob_lt(arg1 longblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_tinyblob_le(arg1 longblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_tinyblob_gt(arg1 longblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_tinyblob_ge(arg1 longblob, arg2 tinyblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_tinyblob_cmp(longblob, tinyblob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = longblob, rightarg = tinyblob, procedure = longblob_tinyblob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = longblob, rightarg = tinyblob, procedure = longblob_tinyblob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = longblob, rightarg = tinyblob, procedure = longblob_tinyblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = longblob, rightarg = tinyblob, procedure = longblob_tinyblob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = longblob, rightarg = tinyblob, procedure = longblob_tinyblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = longblob, rightarg = tinyblob, procedure = longblob_tinyblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+-- longblob op blob
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_blob_eq(arg1 longblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_blob_ne(arg1 longblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_blob_lt(arg1 longblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_blob_le(arg1 longblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_blob_gt(arg1 longblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_blob_ge(arg1 longblob, arg2 blob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_blob_cmp(longblob, blob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = longblob, rightarg = blob, procedure = longblob_blob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = longblob, rightarg = blob, procedure = longblob_blob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = longblob, rightarg = blob, procedure = longblob_blob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = longblob, rightarg = blob, procedure = longblob_blob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = longblob, rightarg = blob, procedure = longblob_blob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = longblob, rightarg = blob, procedure = longblob_blob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+-- longblobg op mediumblob
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_mediumblob_eq(arg1 longblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteaeq';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_mediumblob_ne(arg1 longblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteane';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_mediumblob_lt(arg1 longblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'bytealt';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_mediumblob_le(arg1 longblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteale';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_mediumblob_gt(arg1 longblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteagt';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_mediumblob_ge(arg1 longblob, arg2 mediumblob) RETURNS bool LANGUAGE INTERNAL STRICT AS 'byteage';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_mediumblob_cmp(longblob, longblob) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR pg_catalog.=(leftarg = longblob, rightarg = mediumblob, procedure = longblob_mediumblob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OPERATOR pg_catalog.<>(leftarg = longblob, rightarg = mediumblob, procedure = longblob_mediumblob_ne, restrict = neqsel, join = neqjoinsel);
+CREATE OPERATOR pg_catalog.<(leftarg = longblob, rightarg = mediumblob, procedure = longblob_mediumblob_lt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.<=(leftarg = longblob, rightarg = mediumblob, procedure = longblob_mediumblob_le, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>(leftarg = longblob, rightarg = mediumblob, procedure = longblob_mediumblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OPERATOR pg_catalog.>=(leftarg = longblob, rightarg = mediumblob, procedure = longblob_mediumblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
