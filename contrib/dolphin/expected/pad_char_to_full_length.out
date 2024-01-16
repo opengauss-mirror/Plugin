@@ -596,6 +596,23 @@ select * from t_col where name not like 'Test        %';
      test
 (3 rows)
 
+--To test the length of a multi-byte character string.
+set dolphin.sql_mode = 'pad_char_to_full_length';
+create table test_mb_char(a char(10));
+insert into test_mb_char values('谢谢你');
+select a, length(a), char_length(a), length(trim(a)) from test_mb_char;
+       a       | length | char_length | length 
+---------------+--------+-------------+--------
+ 谢谢你        |     16 |          10 |      9
+(1 row)
+
+set dolphin.sql_mode = '';
+select a, length(a), char_length(a), length(trim(a)) from test_mb_char;
+   a    | length | char_length | length 
+--------+--------+-------------+--------
+ 谢谢你 |      9 |           3 |      9
+(1 row)
+
 set try_vector_engine_strategy='force';
 select char_length(name), length(name) from t_col;
  char_length | length 
@@ -617,7 +634,8 @@ select char_length(name), length(name) from t_col;
 (3 rows)
 
 drop schema pad_char_to_full_length cascade;
-NOTICE:  drop cascades to 2 other objects
+NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table t
 drop cascades to table t_col
+drop cascades to table test_mb_char
 reset current_schema;
