@@ -173,10 +173,6 @@ DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int1(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int2(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int4(anyelement) CASCADE;
 
-DROP FUNCTION IF EXISTS pg_catalog.str_to_date(boolean, TEXT);
-DROP FUNCTION IF EXISTS pg_catalog.str_to_date(longblob, TEXT);
-DROP FUNCTION IF EXISTS pg_catalog.str_to_date(anyenum, TEXT);
-DROP FUNCTION IF EXISTS pg_catalog.str_to_date(json, TEXT);
 DROP OPERATOR CLASS IF EXISTS pg_catalog.tinyblob_ops USING BTREE;
 DROP OPERATOR CLASS IF EXISTS pg_catalog.tinyblob_ops USING HASH;
 DROP OPERATOR CLASS IF EXISTS pg_catalog.blob_ops USING BTREE;

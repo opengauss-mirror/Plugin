@@ -438,3 +438,8 @@ DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_date(numeric);
 
 DROP FUNCTION IF EXISTS pg_catalog.ln(year);
 DROP FUNCTION IF EXISTS pg_catalog.ln(json);
+
+DROP FUNCTION IF EXISTS pg_catalog.str_to_date(boolean, TEXT);
+DROP FUNCTION IF EXISTS pg_catalog.str_to_date(longblob, TEXT);
+DROP FUNCTION IF EXISTS pg_catalog.str_to_date(anyenum, TEXT);
+DROP FUNCTION IF EXISTS pg_catalog.str_to_date(json, TEXT);

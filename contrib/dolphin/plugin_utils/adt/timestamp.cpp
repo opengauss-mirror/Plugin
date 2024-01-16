@@ -10115,7 +10115,7 @@ static bool date_should_be_null(int target_type, const pg_tm* time, time_flags f
 */
 Datum str_to_date(PG_FUNCTION_ARGS)
 {
-    int errlevel = (SQL_MODE_STRICT() ? ERROR : WARNING);
+    int errlevel = !fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING;
     if (PG_ARGISNULL(0)) {
         PG_RETURN_NULL();
     }
