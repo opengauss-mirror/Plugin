@@ -706,7 +706,9 @@ Datum dolphin_binaryin(PG_FUNCTION_ARGS)
                 ereport(ERROR, (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
                             errmsg("value too long for type binary(%d)", atttypmod - VARHDRSZ)));
             }
-            binary_length = fcinfo->flinfo->fn_rettype == BINARYOID ? atttypmod : BINARY_LEN(len) + VARHDRSZ;
+            binary_length = (fcinfo->flinfo == NULL || fcinfo->flinfo->fn_rettype == BINARYOID)
+                                ? atttypmod
+                                : BINARY_LEN(len) + VARHDRSZ;
         }
         result = (bytea*)palloc0(binary_length);
         (void)hex_decode(inputText + 2, len - 2, VARDATA(result));
@@ -745,17 +747,16 @@ Datum dolphin_binaryin(PG_FUNCTION_ARGS)
     }
 
     if (atttypmod < VARHDRSZ) {
-        bc += VARHDRSZ;
-        result = (bytea*)palloc(bc);
-        SET_VARSIZE(result, bc);
+        binary_length = bc + VARHDRSZ; /* maximum possible length */
     } else {
         if (bc > atttypmod - VARHDRSZ) {
             ereport(ERROR, (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
                         errmsg("value too long for type binary(%d)", atttypmod - VARHDRSZ)));
         }
-        result = (bytea*)palloc0(atttypmod); /* palloc0, pad with zero */
-        SET_VARSIZE(result, atttypmod);
+        binary_length = (fcinfo->flinfo == NULL || fcinfo->flinfo->fn_rettype == BINARYOID) ? atttypmod : bc + VARHDRSZ;
     }
+    result = (bytea*)palloc0(binary_length);
+    SET_VARSIZE(result, binary_length);
 
     tp = inputText;
     rp = VARDATA(result);
