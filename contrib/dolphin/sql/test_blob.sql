@@ -317,5 +317,53 @@ select * from t_dezebium_0007_02;
 update t_dezebium_0007_02 set c2='101',c5='FG';
 delete from t_dezebium_0007_02 where hex(c23)=6162;
 
+DROP TABLE IF EXISTS t_index_test;
+create table t_index_test(a blob, b tinyblob, c mediumblob, d longblob);
+insert into t_index_test select i,i,i,i from generate_series(1,10000) i;
+create index i_a on t_index_test(a);
+create index i_b on t_index_test(b);
+create index i_c on t_index_test(c);
+create index i_d on t_index_test(d);
+analyze t_index_test;
+explain (costs off) select * from t_index_test where a='1';
+explain (costs off) select * from t_index_test where a>='a1';
+explain (costs off) select * from t_index_test where a>'a1';
+explain (costs off) select * from t_index_test where a<='0';
+explain (costs off) select * from t_index_test where a<'1';
+
+explain (costs off) select * from t_index_test where b='1';
+explain (costs off) select * from t_index_test where b>='a1';
+explain (costs off) select * from t_index_test where b>'a1';
+explain (costs off) select * from t_index_test where b<='0';
+explain (costs off) select * from t_index_test where b<'1';
+
+explain (costs off) select * from t_index_test where c='1';
+explain (costs off) select * from t_index_test where c>='a1';
+explain (costs off) select * from t_index_test where c>'a1';
+explain (costs off) select * from t_index_test where c<='0';
+explain (costs off) select * from t_index_test where c<'1';
+
+explain (costs off) select * from t_index_test where d='1';
+explain (costs off) select * from t_index_test where d>='a1';
+explain (costs off) select * from t_index_test where d>'a1';
+explain (costs off) select * from t_index_test where d<='0';
+explain (costs off) select * from t_index_test where d<'1';
+
+drop index i_a;
+drop index i_b;
+drop index i_c;
+drop index i_d;
+create index i_a on t_index_test(a) using hash;
+create index i_b on t_index_test(b) using hash;
+create index i_c on t_index_test(c) using hash;
+create index i_d on t_index_test(d) using hash;
+analyze t_index_test;
+explain (costs off) select * from t_index_test where a='1';
+explain (costs off) select * from t_index_test where b='1';
+explain (costs off) select * from t_index_test where c='1';
+explain (costs off) select * from t_index_test where d='1';
+
+DROP TABLE t_index_test;
+
 drop schema test_blob cascade;
 reset current_schema;
