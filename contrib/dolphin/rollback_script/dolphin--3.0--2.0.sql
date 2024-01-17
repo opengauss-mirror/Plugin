@@ -354,6 +354,11 @@ DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_enumnot(anyenum);
 DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, anyset);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_setnot(anyset);
 
+DROP FUNCTION IF EXISTS pg_catalog.convert(boolean, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(longblob, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(anyenum, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(json, name);
+
 DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING BTREE;
 DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING HASH;
 DROP OPERATOR CLASS IF EXISTS pg_catalog.binary_ops USING BTREE;

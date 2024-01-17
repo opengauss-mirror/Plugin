@@ -639,6 +639,16 @@ CREATE OR REPLACE FUNCTION pg_catalog.degrees(boolean) RETURNS double precision 
 CREATE OR REPLACE FUNCTION pg_catalog.degrees(year) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.degrees(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.degrees(json) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.degrees(cast($1 as double precision))';
 
+DROP FUNCTION IF EXISTS pg_catalog.convert(boolean, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(longblob, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(anyenum, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(json, name);
+
+CREATE FUNCTION pg_catalog.convert(boolean,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
+CREATE FUNCTION pg_catalog.convert(longblob,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
+CREATE FUNCTION pg_catalog.convert(anyenum,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
+CREATE FUNCTION pg_catalog.convert(json,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
+
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(tinyblob) CASCADE;
