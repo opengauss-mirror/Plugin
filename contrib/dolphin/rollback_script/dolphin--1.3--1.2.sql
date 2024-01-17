@@ -848,3 +848,8 @@ DROP FUNCTION IF EXISTS pg_catalog.repeat(json, integer);
 DROP FUNCTION IF EXISTS pg_catalog.repeat(year, integer);
 DROP FUNCTION IF EXISTS pg_catalog.repeat(binary, integer);
 DROP FUNCTION IF EXISTS pg_catalog.repeat(bit, integer);
+
+DROP FUNCTION IF EXISTS pg_catalog.convert(boolean, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(longblob, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(anyenum, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(json, name);

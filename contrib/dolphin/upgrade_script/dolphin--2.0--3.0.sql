@@ -63,16 +63,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(json) returns blob LANGUAGE S
 
 create or replace function pg_catalog."user"() returns name as 'select current_user' LANGUAGE 'sql' IMMUTABLE;
 
-DROP FUNCTION IF EXISTS pg_catalog.convert(boolean, name);
-DROP FUNCTION IF EXISTS pg_catalog.convert(longblob, name);
-DROP FUNCTION IF EXISTS pg_catalog.convert(anyenum, name);
-DROP FUNCTION IF EXISTS pg_catalog.convert(json, name);
-
-CREATE FUNCTION pg_catalog.convert(boolean,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
-CREATE FUNCTION pg_catalog.convert(longblob,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
-CREATE FUNCTION pg_catalog.convert(anyenum,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
-CREATE FUNCTION pg_catalog.convert(json,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
-
 CREATE OR REPLACE FUNCTION pg_catalog.int8_cast_timestamptz(int1)
 RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int8_cast_timestamptz';
 CREATE OR REPLACE FUNCTION pg_catalog.int16_cast_timestamptz(int2)

@@ -1329,3 +1329,13 @@ CREATE OR REPLACE FUNCTION pg_catalog.repeat(json, integer) RETURNS text LANGUAG
 CREATE OR REPLACE FUNCTION pg_catalog.repeat(year, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.repeat(binary, integer) RETURNS bytea LANGUAGE C STRICT IMMUTABLE AS '$libdir/dolphin', 'repeat_binary';
 CREATE OR REPLACE FUNCTION pg_catalog.repeat(bit, integer) RETURNS bytea LANGUAGE C STRICT IMMUTABLE AS '$libdir/dolphin', 'repeat_bit';
+
+DROP FUNCTION IF EXISTS pg_catalog.convert(boolean, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(longblob, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(anyenum, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(json, name);
+
+CREATE FUNCTION pg_catalog.convert(boolean,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
+CREATE FUNCTION pg_catalog.convert(longblob,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
+CREATE FUNCTION pg_catalog.convert(anyenum,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
+CREATE FUNCTION pg_catalog.convert(json,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';

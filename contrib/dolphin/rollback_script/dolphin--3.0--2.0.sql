@@ -71,11 +71,6 @@ DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
 
 drop function IF EXISTS pg_catalog."user"();
 
-DROP FUNCTION IF EXISTS pg_catalog.convert(boolean, name);
-DROP FUNCTION IF EXISTS pg_catalog.convert(longblob, name);
-DROP FUNCTION IF EXISTS pg_catalog.convert(anyenum, name);
-DROP FUNCTION IF EXISTS pg_catalog.convert(json, name);
-
 DROP FUNCTION IF EXISTS pg_catalog.int8_cast_timestamptz(int1);
 DROP FUNCTION IF EXISTS pg_catalog.int16_cast_timestamptz(int2);
 DROP FUNCTION IF EXISTS pg_catalog.int32_cast_timestamptz(int4);
