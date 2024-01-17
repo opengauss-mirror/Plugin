@@ -1238,3 +1238,10 @@ CREATE OPERATOR pg_catalog.<(leftarg = longblob, rightarg = mediumblob, procedur
 CREATE OPERATOR pg_catalog.<=(leftarg = longblob, rightarg = mediumblob, procedure = longblob_mediumblob_le, restrict = scalarltsel, join = scalarltjoinsel);
 CREATE OPERATOR pg_catalog.>(leftarg = longblob, rightarg = mediumblob, procedure = longblob_mediumblob_gt, restrict = scalarltsel, join = scalarltjoinsel);
 CREATE OPERATOR pg_catalog.>=(leftarg = longblob, rightarg = mediumblob, procedure = longblob_mediumblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
+
+DROP FUNCTION IF EXISTS pg_catalog.acos(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.acos(year);
+DROP FUNCTION IF EXISTS pg_catalog.acos(json);
+CREATE OR REPLACE FUNCTION pg_catalog.acos(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.acos(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.acos(year) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.acos(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.acos(json) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.acos(cast($1 as double precision))';

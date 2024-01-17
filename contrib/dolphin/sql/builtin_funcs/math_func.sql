@@ -76,6 +76,20 @@ insert into test_double_exp select exp(`int1`), exp(`uint1`), exp(`int2`), exp(`
 
 select * from test_double_exp order by 1;
 
+-- acos math function
+reset dolphin.sql_mode;
+select acos(`int1`), acos(`uint1`), acos(`int2`), acos(`uint2`), acos(`int4`), acos(`uint4`), acos(`int8`), acos(`uint8`), acos(`float4`), acos(`float8`), acos(`numeric`),acos(`bit1`), acos(`bit64`), acos(`boolean`), acos(`date`), acos(`time`), acos(`time(4)`), acos(`datetime`),acos(`datetime(4)`), acos(`timestamp`), acos(`timestamp(4)`), acos(`year`), acos(`char`), acos(`varchar`), acos(`binary`), acos(`varbinary`), acos(`tinyblob`), acos(`blob`), acos(`mediumblob`), acos(`longblob`), acos(`text`), acos(`enum_t`), acos(`set_t`), acos(`json`) from test_type_table;   
+
+create table test_double_acos(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double,  d20 double,  d21 double,  d22 double,  d23 double,  d24 double,  d25 double,  d26 double,  d27 double,  d28 double,  d29 double,  d30 double,  d31 double,  d32 double,  d33 double,  d34 double);
+
+insert ignore into test_double_acos  select acos(`int1`), acos(`uint1`), acos(`int2`), acos(`uint2`), acos(`int4`), acos(`uint4`), acos(`int8`), acos(`uint8`), acos(`float4`), acos(`float8`), acos(`numeric`),acos(`bit1`), acos(`bit64`),acos(`boolean`), acos(`date`), acos(`time`), acos(`time(4)`), acos(`datetime`),acos(`datetime(4)`), acos(`timestamp`), acos(`timestamp(4)`), acos(`year`), acos(`char`), acos(`varchar`), acos(`binary`),acos(`varbinary`), acos(`tinyblob`), acos(`blob`), acos(`mediumblob`), acos(`longblob`), acos(`text`), acos(`enum_t`), acos(`set_t`), acos(`json`) from test_type_table;
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+
+insert into test_double_acos  select acos(`int1`), acos(`uint1`), acos(`int2`), acos(`uint2`), acos(`int4`), acos(`uint4`), acos(`int8`), acos(`uint8`), acos(`float4`), acos(`float8`), acos(`numeric`),acos(`bit1`), acos(`bit64`),acos(`boolean`), acos(`date`), acos(`time`), acos(`time(4)`), acos(`datetime`),acos(`datetime(4)`), acos(`timestamp`), acos(`timestamp(4)`), acos(`year`), acos(`char`), acos(`varchar`), acos(`binary`),acos(`varbinary`), acos(`tinyblob`), acos(`blob`), acos(`mediumblob`), acos(`longblob`), acos(`text`), acos(`enum_t`), acos(`set_t`), acos(`json`) from test_type_table;
+
+select * from test_double_acos order by 1;
+
 -- ln math function
 select
 ln(`int1`),
@@ -117,6 +131,7 @@ select exp(709);
 select exp(710);
 select exp(-1000); 
 
+drop table if exists test_double_acos;
 drop table if exists test_double_exp;
 drop table if exists test_double_degrees;
 drop table if exists test_type_table;

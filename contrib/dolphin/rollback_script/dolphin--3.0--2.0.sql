@@ -76,10 +76,6 @@ DROP FUNCTION IF EXISTS pg_catalog.convert(longblob, name);
 DROP FUNCTION IF EXISTS pg_catalog.convert(anyenum, name);
 DROP FUNCTION IF EXISTS pg_catalog.convert(json, name);
 
-DROP FUNCTION IF EXISTS pg_catalog.acos(boolean);
-DROP FUNCTION IF EXISTS pg_catalog.acos(year);
-DROP FUNCTION IF EXISTS pg_catalog.acos(json);
-
 DROP FUNCTION IF EXISTS pg_catalog.text_date_explicit(TEXT);
 
 DROP FUNCTION IF EXISTS pg_catalog.int8_cast_datetime(int1);
