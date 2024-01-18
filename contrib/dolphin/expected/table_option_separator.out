@@ -1,0 +1,19 @@
+create schema table_option_separator;
+set current_schema = table_option_separator;
+create table t1(a int) engine=innodb encryption='n';
+WARNING:  ENCRYPTION for TABLE is not supported for current version. skipped
+alter table t1 min_rows=1 max_rows=2;
+WARNING:  MIN_ROWS for TABLE is not supported for current version. skipped
+WARNING:  MAX_ROWS for TABLE is not supported for current version. skipped
+create table t2(a int) engine=innodb,encryption='n';
+WARNING:  ENCRYPTION for TABLE is not supported for current version. skipped
+alter table t2 min_rows=1,max_rows=2;
+WARNING:  MIN_ROWS for TABLE is not supported for current version. skipped
+WARNING:  MAX_ROWS for TABLE is not supported for current version. skipped
+alter table t1 min_rows=1,max_rows=2;
+WARNING:  MIN_ROWS for TABLE is not supported for current version. skipped
+WARNING:  MAX_ROWS for TABLE is not supported for current version. skipped
+drop table t1;
+drop table t2;
+reset current_schema;
+drop schema table_option_separator;
