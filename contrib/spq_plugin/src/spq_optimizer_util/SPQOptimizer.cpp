@@ -34,6 +34,7 @@
 bool optimizer_trace_fallback = false;
 
 extern MemoryContext MessageContext;
+extern THR_LOCAL bool SPQ_IN_PROCESSING;
 
 void DelCException(CException **exception)
 {
@@ -65,7 +66,7 @@ SPQOptimizer::SPQOPTOptimizedPlan(
 
 	*had_unexpected_failure = false;
 	CException *exception = NULL;
-
+	SPQ_IN_PROCESSING = true;
 	SPQOS_TRY
 	{
 		plStmt = COptTasks::SPQOPTOptimizedPlan(query, &spqopt_context);
@@ -77,6 +78,7 @@ SPQOptimizer::SPQOPTOptimizedPlan(
 		exception = new CException(ex.Major(), ex.Minor(), ex.Filename(), ex.Line());
 	}
 	SPQOS_CATCH_END;
+	SPQ_IN_PROCESSING = false;
 	if (exception == NULL) {
 		return plStmt;
 	}
@@ -320,12 +322,23 @@ TerminateSPQOPT()
 	}
 	DelCException(&exception);
 }
+void RecordBackTrace()
+{
+    if (SPQ_IN_PROCESSING == false) {
+        ereport(LOG, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("SPQ exit normal tid[%d]", gettid())));
+    } else {
+        ereport(LOG, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("SPQ exit error tid[%d]", gettid())));
+    }
+}
 
 void UnInitSPQOPT(int status, Datum arg)
 {
+    if (status != 0) {
+        RecordBackTrace();
+    }
     knl_session_context* session_back = u_sess;
     u_sess = (knl_session_context*) DatumGetPointer(arg);
-	TerminateSPQOPT();
+    TerminateSPQOPT();
     u_sess = session_back;
 }
 

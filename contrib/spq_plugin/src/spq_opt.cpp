@@ -188,12 +188,10 @@ PlannedStmt *spq_planner(Query *parse, ParamListInfo boundParams)
      * transform it such that the grouped query appears as a subquery
      */
     pqueryCopy = (Query *)transformGroupedWindows((Node *)pqueryCopy, NULL);
-
+    CHECK_FOR_INTERRUPTS();
     /* Ok, invoke SPQOPT. */
     result = SPQOPTOptimizedPlan(pqueryCopy, &fUnexpectedFailure);
-
     log_optimizer(result, fUnexpectedFailure);
-
     CHECK_FOR_INTERRUPTS();
 
     /*

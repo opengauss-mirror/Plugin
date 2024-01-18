@@ -17,6 +17,7 @@
 //---------------------------------------------------------------------------
 
 #include "spqos/error/CAutoExceptionStack.h"
+#include "miscadmin.h"
 
 using namespace spqos;
 
@@ -35,6 +36,7 @@ CAutoExceptionStack::CAutoExceptionStack(void **global_exception_stack,
 	  m_global_error_context_stack(global_error_context_stack),
 	  m_error_context_stack(*global_error_context_stack)
 {
+	HOLD_INTERRUPTS();
 }
 
 //---------------------------------------------------------------------------
@@ -49,6 +51,7 @@ CAutoExceptionStack::~CAutoExceptionStack()
 {
 	*m_global_exception_stack = m_exception_stack;
 	*m_global_error_context_stack = m_error_context_stack;
+	RESUME_INTERRUPTS();
 }
 
 //---------------------------------------------------------------------------
