@@ -37,6 +37,7 @@ THR_LOCAL ExecutorStart_hook_type spq_hook_ExecutorStart = NULL;
 THR_LOCAL spq_planner_hook_type backup_spq_planner_hook = NULL;
 THR_LOCAL bool HOOK_INIT = false;
 THR_LOCAL MemoryContext OptimizerMemoryContext = NULL;
+THR_LOCAL bool SPQ_IN_PROCESSING = false;
 
 typedef struct SpqDirectReadWalkerContext {
     MethodPlanWalkerContext cxt;
@@ -248,6 +249,7 @@ PlannedStmt* spq_optimize_query(Query* parse, int cursorOptions, ParamListInfo b
     instr_time starttime;
     double totaltime = 0;
     t_thrd.spq_ctx.spq_role = ROLE_UTILITY;
+    SPQ_IN_PROCESSING = false;
     if ((cursorOptions & CURSOR_OPT_SPQ_OK) && should_spq_planner(parse)) {
         t_thrd.spq_ctx.spq_role = ROLE_QUERY_COORDINTOR;
         t_thrd.spq_ctx.spq_session_id = u_sess->debug_query_id;

@@ -2697,8 +2697,7 @@ spqdb::IsAbortRequested(void)
 {
 	// No SPQ_WRAP_START/END needed here. We just check these global flags,
 	// it cannot throw an ereport().
-	//return (QueryCancelPending || ProcDiePending);
-	return false;
+	return (t_thrd.int_cxt.ProcDiePending || t_thrd.int_cxt.QueryCancelPending || InterruptPending);
 }
 
 GpPolicy *

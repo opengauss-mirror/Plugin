@@ -17,5 +17,6 @@ extern "C" void _PG_init(void);
 extern "C" void _PG_fini(void);
 extern "C" void spqplugin_invoke(void);
 extern THR_LOCAL MemoryContext OptimizerMemoryContext;
+extern THR_LOCAL bool SPQ_IN_PROCESSING;
 
 #endif // SPQPLUGIN_H
