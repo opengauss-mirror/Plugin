@@ -445,7 +445,11 @@ static void extractRemainingColumns(
         foreach (cnames, common_colnames) {
             char* ccolname = strVal(lfirst(cnames));
 
+#ifdef DOLPHIN
+            if (strcasecmp(colname, ccolname) == 0) {
+#else
             if (strcmp(colname, ccolname) == 0) {
+#endif
                 match = true;
                 break;
             }
@@ -1136,7 +1140,11 @@ Node* transformFromClauseItem(ParseState* pstate, Node* n, RangeTblEntry** top_r
                 foreach (rx, r_colnames) {
                     char* r_colname = strVal(lfirst(rx));
 
+#ifdef DOLPHIN
+                    if (strcasecmp(l_colname, r_colname) == 0) {
+#else
                     if (strcmp(l_colname, r_colname) == 0) {
+#endif
                         m_name = makeString(l_colname);
                         break;
                     }
@@ -1183,8 +1191,12 @@ Node* transformFromClauseItem(ParseState* pstate, Node* n, RangeTblEntry** top_r
                 /* Check for USING(foo,foo) */
                 foreach (col, res_colnames) {
                     char* res_colname = strVal(lfirst(col));
-
+#ifdef DOLPHIN
+                    /* match column names in dolphin, should be case insensitive */
+                    if (strcasecmp(res_colname, u_colname) == 0) {
+#else
                     if (strcmp(res_colname, u_colname) == 0) {
+#endif
                         ereport(ERROR,
                             (errcode(ERRCODE_DUPLICATE_COLUMN),
                                 errmsg("column name \"%s\" appears more than once in USING clause", u_colname)));
@@ -1196,7 +1208,11 @@ Node* transformFromClauseItem(ParseState* pstate, Node* n, RangeTblEntry** top_r
                 foreach (col, l_colnames) {
                     char* l_colname = strVal(lfirst(col));
 
+#ifdef DOLPHIN
+                    if (strcasecmp(l_colname, u_colname) == 0) {
+#else
                     if (strcmp(l_colname, u_colname) == 0) {
+#endif
                         if (l_index >= 0)
                             ereport(ERROR,
                                 (errcode(ERRCODE_AMBIGUOUS_COLUMN),
@@ -1217,7 +1233,11 @@ Node* transformFromClauseItem(ParseState* pstate, Node* n, RangeTblEntry** top_r
                 foreach (col, r_colnames) {
                     char* r_colname = strVal(lfirst(col));
 
+#ifdef DOLPHIN
+                    if (strcasecmp(r_colname, u_colname) == 0) {
+#else
                     if (strcmp(r_colname, u_colname) == 0) {
+#endif
                         if (r_index >= 0) {
                             ereport(ERROR,
                                 (errcode(ERRCODE_AMBIGUOUS_COLUMN),
