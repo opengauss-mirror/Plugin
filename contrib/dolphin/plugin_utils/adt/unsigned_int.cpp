@@ -4880,6 +4880,16 @@ Datum dolphin_textnot(PG_FUNCTION_ARGS)
     PG_RETURN_UINT64(~text_cast_uint8(fcinfo));
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui8);
+extern "C" DLL_PUBLIC Datum varlena_cast_ui8(PG_FUNCTION_ARGS);
+Datum varlena_cast_ui8(PG_FUNCTION_ARGS)
+{
+    fcinfo->ccontext = COERCION_EXPLICIT;
+    Datum val = Varlena2Float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui8, val);
+    return DirectFunctionCall1Coll(f8_cast_ui8, InvalidOid, val, fcinfo->can_ignore);
+}
+
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_varlenanot);
 extern "C" DLL_PUBLIC Datum dolphin_varlenanot(PG_FUNCTION_ARGS);
 Datum dolphin_varlenanot(PG_FUNCTION_ARGS)
