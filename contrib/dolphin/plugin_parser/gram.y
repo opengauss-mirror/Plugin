@@ -83,7 +83,7 @@
 #include "plugin_parser/parse_utilcmd.h"
 #include "pgxc/pgxc.h"
 #include "nodes/nodes.h"
-#include "pgxc/poolmgr.h"
+#include "pgxc/poolmgr.h"/
 #include "plugin_parser/parser.h"
 #include "storage/lmgr.h"
 #include "storage/tcap.h"
@@ -432,6 +432,7 @@ static CharsetCollateOptions* MakeCharsetCollateOptions(CharsetCollateOptions *o
 static Node *checkNullNode(Node *n);
 
 static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptions, SingleTableOption *tableOption);
+static CreateTableOptions* MergeCreateTableOptions(CreateTableOptions *frontTableOptions, CreateTableOptions *rearTableOptions);
 static CreateIndexOptions* MakeCreateIndexOptions(CreateIndexOptions *indexOptions, SingleIndexOption *indexOption);
 static SingleTableOption* CreateSingleTableOption(TableOptionType tableOptionType);
 #define  TYPE_LEN     4 /* strlen("TYPE") */
@@ -605,8 +606,11 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	struct CondInfo*	condinfo;
 	struct TypeAttr* typeattr;
 }
-%type <singletableoption> CreateOption CreateIfNotExistsOption CreateAsOption
+%type <singletableoption> CreateOption CreateIfNotExistsOption CreateAsOption CreateTableOption
 %type <createtableoptions> CreateOptionList CreateIfNotExistsOptionList CreateAsOptionList
+		CreateTableOptionList CreateOptionEtcList CreateOptionBeforeList CreateOptionBefore CreateOptionAfterList CreateOptionAfter
+		CreateIfNotExistsOptionEtcList CreateIfNotExistsOptionBeforeList CreateIfNotExistsOptionBefore CreateIfNotExistsOptionAfterList CreateIfNotExistsOptionAfter
+		CreateAsOptionEtcList CreateAsOptionBeforeList CreateAsOptionBefore CreateAsOptionAfterList CreateAsOptionAfter
 %type <singleindexoption> TableIndexOption PartitionTableIndexOption
 %type <createindexoptions> TableIndexOptionList PartitionTableIndexOptionList
 %type <indexmethodrelationclause> index_method_relation_clause fulltext_index_method_relation_clause
@@ -685,10 +689,10 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <ival>	OptNoLog
 %type <str>	unique_name
 
-%type <node>	alter_table_cmd alter_partition_cmd alter_type_cmd opt_collate_clause exchange_partition_cmd move_partition_cmd
+%type <node>	alter_table_cmd alter_table_option alter_partition_cmd alter_type_cmd opt_collate_clause exchange_partition_cmd move_partition_cmd
 				modify_column_cmd reset_partition_cmd
 				replica_identity add_column_first_after event_from_clause 
-%type <list>	alter_table_cmds alter_partition_cmds alter_table_or_partition alter_index_or_partition alter_type_cmds add_column_cmds modify_column_cmds alter_index_rebuild_partition
+%type <list>	alter_table_cmds alter_table_option_list alter_partition_cmds alter_table_or_partition alter_index_or_partition alter_type_cmds add_column_cmds modify_column_cmds alter_index_rebuild_partition
 
 %type <node>	AlterPartitionRebuildStmt AlterPartitionRemoveStmt AlterPartitionCheckStmt AlterPartitionRepairStmt AlterPartitionOptimizeStmt
 
@@ -1306,6 +1310,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 			FORCE_INDEX USE_INDEX IGNORE_INDEX 
 			LOCK_TABLES
 			LABEL_LOOP LABEL_REPEAT LABEL_WHILE WITH_PARSER
+			STORAGE_DISK STORAGE_MEMORY
 
 /* Precedence: lowest to highest */
 %nonassoc AUTHID /* AUTHID has lower priority than the BODY_P */
@@ -4939,6 +4944,14 @@ alter_table_cmds:
 					$$ = list_concat($1, (List*)$3);
 				}
 			}
+			| alter_table_option_list
+				{
+					$$ = $1;
+				}
+			| alter_table_cmds ',' alter_table_option_list
+				{
+					$$ = list_concat($1, $3);
+				}
 		;
 
 /* ALTER TABLE PARTITION sql clauses */
@@ -5995,12 +6008,121 @@ alter_table_cmd:
 					n->def = (Node *)$1;
 					$$ = (Node *) n;
 				}
-			| row_format_option
-			{
-				AlterTableCmd *n = makeNode(AlterTableCmd);
-				n->subtype = AT_SetTableRowFormat;
-				$$ = (Node *) n;
-			}
+/* PGXC_BEGIN */
+			/* ALTER TABLE <name> DISTRIBUTE BY ... */
+			| OptDistributeByInternal
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_DistributeBy;
+					n->def = (Node *)$1;
+					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> TO [ NODE (nodelist) | GROUP groupname ] */
+			| OptSubClusterInternal
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_SubCluster;
+					n->def = (Node *)$1;
+					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> ADD NODE (nodelist) */
+			| ADD_P NODE pgxcnodes
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_AddNodeList;
+					n->def = (Node *)$3;
+					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> DELETE NODE (nodelist) */
+			| DELETE_P NODE pgxcnodes
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_DeleteNodeList;
+					n->def = (Node *)$3;
+					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> UPDATE SLICE LIKE (reftalbename), only used for redis range/list distribution table */
+			| UPDATE SLICE LIKE dolphin_qualified_name
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_UpdateSliceLike;
+					n->exchange_with_rel = $4;
+					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> ENABLE ROW LEVEL SECURITY */
+			| ENABLE_P ROW LEVEL SECURITY
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_EnableRls;
+					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> DISABLE ROW LEVEL SECURITY */
+			| DISABLE_P ROW LEVEL SECURITY
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_DisableRls;
+					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> FORCE ROW LEVEL SECURITY */
+			| FORCE ROW LEVEL SECURITY
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_ForceRls;
+					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> NO FORCE ROW LEVEL SECURITY */
+			| NO FORCE ROW LEVEL SECURITY
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_NoForceRls;
+					$$ = (Node *)n;
+				}
+			/* ALTER TABLE <name> ENCRYPTION KEY ROTATION */
+			| ENCRYPTION KEY ROTATION
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_EncryptionKeyRotation;
+					$$ = (Node *)n;
+				}
+			| CharsetCollate
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_SetCharsetCollate;
+					n->def = (Node *)$1;
+					$$ = (Node*)n;					
+				}
+			| CONVERT TO convert_charset opt_collate
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_ConvertCharset;
+					CharsetCollateOptions *cc = makeNode(CharsetCollateOptions);
+					cc->cctype = OPT_CHARSETCOLLATE;
+					cc->charset = $3;
+					cc->collate = $4;
+					n->def = (Node *)cc;
+					$$ = (Node*)n;
+				}
+/* PGXC_END */
+		;
+
+alter_table_option_list:
+			alter_table_option
+				{
+					$$ = list_make1($1);
+				}
+			| alter_table_option_list alter_table_option
+				{
+					$$ = lappend($1, $2);
+				}
+		;
+
+alter_table_option:
+			row_format_option
+				{
+					AlterTableCmd *n = makeNode(AlterTableCmd);
+					n->subtype = AT_SetTableRowFormat;
+					$$ = (Node *) n;
+				}
 			| autoextend_size_option
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
@@ -6121,7 +6243,7 @@ alter_table_cmd:
 					n->subtype = AT_UNION;
 					$$ = (Node *) n;
 				}
-			| OptTableSpace_without_empty tablespace_storage_option
+			| OptTableSpace_without_empty
 				{
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_TABLESPACE;
@@ -6133,82 +6255,6 @@ alter_table_cmd:
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_TABLESPACE_STORAGE;
 					$$ = (Node *) n;
-				}
-/* PGXC_BEGIN */
-			/* ALTER TABLE <name> DISTRIBUTE BY ... */
-			| OptDistributeByInternal
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_DistributeBy;
-					n->def = (Node *)$1;
-					$$ = (Node *)n;
-				}
-			/* ALTER TABLE <name> TO [ NODE (nodelist) | GROUP groupname ] */
-			| OptSubClusterInternal
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_SubCluster;
-					n->def = (Node *)$1;
-					$$ = (Node *)n;
-				}
-			/* ALTER TABLE <name> ADD NODE (nodelist) */
-			| ADD_P NODE pgxcnodes
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_AddNodeList;
-					n->def = (Node *)$3;
-					$$ = (Node *)n;
-				}
-			/* ALTER TABLE <name> DELETE NODE (nodelist) */
-			| DELETE_P NODE pgxcnodes
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_DeleteNodeList;
-					n->def = (Node *)$3;
-					$$ = (Node *)n;
-				}
-			/* ALTER TABLE <name> UPDATE SLICE LIKE (reftalbename), only used for redis range/list distribution table */
-			| UPDATE SLICE LIKE dolphin_qualified_name
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_UpdateSliceLike;
-					n->exchange_with_rel = $4;
-					$$ = (Node *)n;
-				}
-			/* ALTER TABLE <name> ENABLE ROW LEVEL SECURITY */
-			| ENABLE_P ROW LEVEL SECURITY
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_EnableRls;
-					$$ = (Node *)n;
-				}
-			/* ALTER TABLE <name> DISABLE ROW LEVEL SECURITY */
-			| DISABLE_P ROW LEVEL SECURITY
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_DisableRls;
-					$$ = (Node *)n;
-				}
-			/* ALTER TABLE <name> FORCE ROW LEVEL SECURITY */
-			| FORCE ROW LEVEL SECURITY
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_ForceRls;
-					$$ = (Node *)n;
-				}
-			/* ALTER TABLE <name> NO FORCE ROW LEVEL SECURITY */
-			| NO FORCE ROW LEVEL SECURITY
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_NoForceRls;
-					$$ = (Node *)n;
-				}
-			/* ALTER TABLE <name> ENCRYPTION KEY ROTATION */
-			| ENCRYPTION KEY ROTATION
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_EncryptionKeyRotation;
-					$$ = (Node *)n;
 				}
             | AutoIncrementValue
                 {
@@ -6228,34 +6274,15 @@ alter_table_cmd:
                     n->def = $1;
 					$$ = (Node *)n;
                 }
-			| CharsetCollate
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_SetCharsetCollate;
-					n->def = (Node *)$1;
-					$$ = (Node*)n;					
-				}
-			| CONVERT TO convert_charset opt_collate
-				{
-					AlterTableCmd *n = makeNode(AlterTableCmd);
-					n->subtype = AT_ConvertCharset;
-					CharsetCollateOptions *cc = makeNode(CharsetCollateOptions);
-					cc->cctype = OPT_CHARSETCOLLATE;
-					cc->charset = $3;
-					cc->collate = $4;
-					n->def = (Node *)cc;
-					$$ = (Node*)n;
-				}
-/* PGXC_END */
 /* table comments start */
             | COMMENT opt_equal SCONST
-            {
+            	{
                     BCompatibilityOptionSupportCheck($1);
                     AlterTableCmd *n = makeNode(AlterTableCmd);
                     n->subtype = AT_COMMENTS;
                     n->name = $3;
                     $$ = (Node *)n;
-            }
+            	}
 /* table comments end */
 		;
 
@@ -8050,7 +8077,74 @@ opt_rename:
  *			INTERNAL DATA xxxxxxxx
  *
  *****************************************************************************/
- 
+
+CreateOptionEtcList:
+				CreateOptionList
+					{
+						$$ = $1;
+					}
+				| CreateTableOptionList
+					{
+						$$ = $1;
+					}
+				| CreateOptionBeforeList
+					{
+						$$ = $1;
+					}
+				| CreateOptionAfterList
+					{
+						$$ = $1;
+					}
+				| CreateOptionBeforeList CreateOptionList
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+				| CreateOptionAfterList CreateTableOptionList
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
+
+CreateOptionBeforeList:
+				CreateOptionBefore
+					{
+						$$ = $1;
+					}
+				| CreateOptionBeforeList CreateOptionBefore
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
+
+/*
+ * Before indicates that CreatOptionList comes first, and after indicates that it comes later.
+ * The same goes for the following.
+ */
+CreateOptionBefore:
+				CreateOptionList CreateTableOptionList
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
+
+CreateOptionAfterList:
+				CreateOptionAfter
+					{
+						$$ = $1;
+					}
+				| CreateOptionAfterList CreateOptionAfter
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
+
+CreateOptionAfter:
+				CreateTableOptionList CreateOptionList
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
+
 CreateOptionList:	CreateOption
 					{
 						$$ = MakeCreateTableOptions(NULL, $1);
@@ -8061,6 +8155,11 @@ CreateOptionList:	CreateOption
 					}
 			;
 
+/*
+ * CreateAsOption: 	createAsStmt option
+ * CreateTableOption:	equivalent to table_option of MySQL
+ * CreateOption:	other create option
+ */
 CreateOption:
 			CreateIfNotExistsOption
 				{
@@ -8074,6 +8173,69 @@ CreateOption:
 					$$ = n;
 				}
 		;
+
+CreateIfNotExistsOptionEtcList:
+				CreateIfNotExistsOptionList
+					{
+						$$ = $1;
+					}
+				| CreateTableOptionList
+					{
+						$$ = $1;
+					}
+				| CreateIfNotExistsOptionBeforeList
+					{
+						$$ = $1;
+					}
+				| CreateIfNotExistsOptionAfterList
+					{
+						$$ = $1;
+					}
+				| CreateIfNotExistsOptionBeforeList CreateIfNotExistsOptionList
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+				| CreateIfNotExistsOptionAfterList CreateTableOptionList
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
+
+CreateIfNotExistsOptionBeforeList:
+				CreateIfNotExistsOptionBefore
+					{
+						$$ = $1;
+					}
+				| CreateIfNotExistsOptionBeforeList CreateIfNotExistsOptionBefore
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
+
+CreateIfNotExistsOptionBefore:
+				CreateIfNotExistsOptionList CreateTableOptionList
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
+
+CreateIfNotExistsOptionAfterList:
+				CreateIfNotExistsOptionAfter
+					{
+						$$ = $1;
+					}
+				| CreateIfNotExistsOptionAfterList CreateIfNotExistsOptionAfter
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
+
+CreateIfNotExistsOptionAfter:
+				CreateTableOptionList CreateIfNotExistsOptionList
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
 
 CreateIfNotExistsOptionList:	CreateIfNotExistsOption
 					{
@@ -8136,26 +8298,70 @@ CreateIfNotExistsOption:
 				{
 					$$ = $1;
 				}
-			| OptAutoIncrement_without_empty
-				{
-						SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
-						n->option_type = OPT_AUTO_INC;
-						n->option.autoIncStart = $1;
-						$$ = n;
-				}
-			| COMMENT opt_equal SCONST
-				{
-						SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
-						n->option_type = OPT_COMMENT_TAB;
-						CommentStmt *node = makeNode(CommentStmt);
-						node->objtype = OBJECT_TABLE;
-						node->objname = NIL;
-						node->objargs = NIL;
-						node->comment = $3;
-						n->option.comment = node;
-						$$ = n;
-				}
 		;
+
+CreateAsOptionEtcList:
+				CreateAsOptionList
+					{
+						$$ = $1;
+					}
+				| CreateTableOptionList
+					{
+						$$ = $1;
+					}
+				| CreateAsOptionBeforeList
+					{
+						$$ = $1;
+					}
+				| CreateAsOptionAfterList
+					{
+						$$ = $1;
+					}
+				| CreateAsOptionBeforeList CreateAsOptionList
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+				| CreateAsOptionAfterList CreateTableOptionList
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
+
+CreateAsOptionBeforeList:
+				CreateAsOptionBefore
+					{
+						$$ = $1;
+					}
+				| CreateAsOptionBeforeList CreateAsOptionBefore
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
+
+CreateAsOptionBefore:
+				CreateAsOptionList CreateTableOptionList
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
+
+CreateAsOptionAfterList:
+				CreateAsOptionAfter
+					{
+						$$ = $1;
+					}
+				| CreateAsOptionAfterList CreateAsOptionAfter
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
+
+CreateAsOptionAfter:
+				CreateTableOptionList CreateAsOptionList
+					{
+						$$ = MergeCreateTableOptions($1, $2);
+					}
+			;
 
 CreateAsOptionList:	CreateAsOption
 					{
@@ -8168,14 +8374,7 @@ CreateAsOptionList:	CreateAsOption
 			;
 
 CreateAsOption:
-			OptTableSpace_without_empty
-				{
-					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
-					n->option_type = OPT_TABLESPACE;
-					n->option.char_content = $1;
-					$$ = n;
-				}
-			| OptWith_without_empty
+			OptWith_without_empty
 				{
 					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
 					n->option_type = OPT_WITH;
@@ -8212,6 +8411,27 @@ CreateAsOption:
 					$$ = n;
 				}
 /* PGXC_END */
+			;
+
+CreateTableOptionList:
+			CreateTableOption
+				{
+					$$ = MakeCreateTableOptions(NULL, $1);
+				}
+			| CreateTableOptionList opt_comma CreateTableOption
+				{
+					$$ = MakeCreateTableOptions($1, $3);
+				}
+		;
+
+CreateTableOption:
+			OptTableSpace_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_TABLESPACE;
+					n->option.char_content = $1;
+					$$ = n;
+				}
 			| opt_compression_without_empty
 				{
 					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
@@ -8330,7 +8550,26 @@ CreateAsOption:
 				{
 					$$ = CreateSingleTableOption(OPT_TABLESPACE_STORAGE);
 				}
-			;
+			| OptAutoIncrement_without_empty
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_AUTO_INC;
+					n->option.autoIncStart = $1;
+					$$ = n;
+				}
+			| COMMENT opt_equal SCONST
+				{
+					SingleTableOption *n = (SingleTableOption*)palloc0(sizeof(SingleTableOption));
+					n->option_type = OPT_COMMENT_TAB;
+					CommentStmt *node = makeNode(CommentStmt);
+					node->objtype = OBJECT_TABLE;
+					node->objname = NIL;
+					node->objargs = NIL;
+					node->comment = $3;
+					n->option.comment = node;
+					$$ = n;
+				}
+		;
 
 autoextend_size_option:
 		AUTOEXTEND_SIZE opt_equal Iconst	{}
@@ -8411,13 +8650,13 @@ stats_sample_pages_option:
 		;
 
 tablespace_storage_option_without_empty:
-		STORAGE DISK	{}
-		| STORAGE MEMORY	{}
+		STORAGE_DISK	{}
+		| STORAGE_MEMORY	{}
 		;
 
 tablespace_storage_option:
-		STORAGE DISK	{}
-		| STORAGE MEMORY    {}
+		STORAGE_DISK	{}
+		| STORAGE_MEMORY    {}
 		| /*EMPTY*/	{}
 		;
 
@@ -8427,7 +8666,7 @@ charset_with_opt_equal:
 		;
 
 CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList ')'
-			CreateOptionList
+			CreateOptionEtcList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$4->relpersistence = $2;
@@ -8489,7 +8728,7 @@ CreateStmt:	CREATE OptTemp TABLE dolphin_qualified_name '(' OptTableElementList 
 					$$ = (Node *)n;
 				}
 		| CREATE OptTemp TABLE IF_P NOT EXISTS dolphin_qualified_name '('
-			OptTableElementList ')' CreateIfNotExistsOptionList
+			OptTableElementList ')' CreateIfNotExistsOptionEtcList
 				{
 					CreateStmt *n = makeNode(CreateStmt);
 					$7->relpersistence = $2;
@@ -11945,7 +12184,7 @@ create_as_target:
 		;
 
 create_as_target_dolphin:
-			dolphin_qualified_name opt_column_list CreateAsOptionList
+			dolphin_qualified_name opt_column_list CreateAsOptionEtcList
 				{
 					$$ = makeNode(IntoClause);
 					$$->rel = $1;
@@ -11989,7 +12228,7 @@ create_as_target_dolphin:
 /* PGXC_END */
 					 
 				}
-			| dolphin_qualified_name '(' OptTableElementList ')' OptDuplicate CreateAsOptionList
+			| dolphin_qualified_name '(' OptTableElementList ')' OptDuplicate CreateAsOptionEtcList
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
 						ereport(errstate, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -41118,7 +41357,72 @@ static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptio
 		break;
 	}
 	return tableOptions;
-} 
+}
+
+static CreateTableOptions* MergeCreateTableOptions(CreateTableOptions *frontTableOptions, CreateTableOptions *rearTableOptions) {
+	if (rearTableOptions->inhRelations == NULL) {
+		rearTableOptions->inhRelations = frontTableOptions->inhRelations;
+	}
+
+	if (rearTableOptions->options == NULL) {
+		rearTableOptions->options = frontTableOptions->options;
+	}
+
+	if (rearTableOptions->oncommit == ONCOMMIT_NOOP) {
+		rearTableOptions->oncommit = frontTableOptions->oncommit;
+	}
+
+	if (rearTableOptions->tablespacename == NULL) {
+		rearTableOptions->tablespacename = frontTableOptions->tablespacename;
+	}
+
+	if (rearTableOptions->row_compress == REL_CMPRS_PAGE_PLAIN) {
+		rearTableOptions->row_compress = frontTableOptions->row_compress;
+	}
+
+	if (rearTableOptions->partTableState == NULL) {
+		rearTableOptions->partTableState = frontTableOptions->partTableState;
+	}
+
+	if (rearTableOptions->compress_type == NULL) {
+		rearTableOptions->compress_type = frontTableOptions->compress_type;
+	}
+
+	/* PGXC_BEGIN */
+	if (rearTableOptions->distributeby == NULL) {
+		rearTableOptions->distributeby = frontTableOptions->distributeby; 
+	}
+
+	if (rearTableOptions->subcluster == NULL) {
+		rearTableOptions->subcluster = frontTableOptions->subcluster;
+	}
+	/* PGXC_END */
+	if (rearTableOptions->internalData == NULL) {
+		rearTableOptions->internalData = frontTableOptions->internalData;
+	}
+
+	if (rearTableOptions->relkind == OBJECT_TABLE) {
+		rearTableOptions->relkind = frontTableOptions->relkind;
+	}
+
+	if (rearTableOptions->autoIncStart == NULL) {
+		rearTableOptions->autoIncStart = frontTableOptions->autoIncStart;
+	}
+
+	if (rearTableOptions->comment == NULL) {
+		rearTableOptions->comment = frontTableOptions->comment;
+	}
+
+	if (rearTableOptions->charset == 0) {
+		rearTableOptions->charset = frontTableOptions->charset;
+	}
+
+	if (rearTableOptions->collate == NULL) {
+		rearTableOptions->collate = frontTableOptions->collate;
+	}
+
+	return rearTableOptions;
+}
 
 static CreateIndexOptions *MakeCreateIndexOptions(CreateIndexOptions *indexOptions, SingleIndexOption *indexOption)
 {
