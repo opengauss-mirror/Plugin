@@ -10741,7 +10741,7 @@ Datum blob_any_value(PG_FUNCTION_ARGS)
     PG_RETURN_BYTEA_P(vlena);
 }
 
-static char* AnyElementGetCString(Oid anyOid, Datum anyDatum)
+static char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError = nullptr)
 {
     if (!OidIsValid(anyOid)) {
         return DatumGetCString(DirectFunctionCall1(textout, anyDatum));
@@ -10752,6 +10752,11 @@ static char* AnyElementGetCString(Oid anyOid, Datum anyDatum)
     getTypeOutputInfo(anyOid, &typeOutput, &typIsVarlena);
     if (typIsVarlena) {
         data = DatumGetCString(DirectFunctionCall1(textout, anyDatum));
+        int reallen = VARSIZE_ANY_EXHDR(DatumGetByteaPP(anyDatum));
+        int datalen  = strlen(data);
+        if (hasError && datalen < reallen) {
+            *hasError = true;
+        }
     } else {
         data = DatumGetCString(OidOutputFunctionCall(typeOutput, anyDatum));
     }
@@ -10761,15 +10766,20 @@ static char* AnyElementGetCString(Oid anyOid, Datum anyDatum)
 Datum Varlena2Float8(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
+    bool hasLenError = false;
+    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasLenError);
+    
     bool hasError = false;
     char* endptr = NULL;
-
-    double result = float8in_internal(data, &endptr, &hasError);
+    double result = float8in_internal(data, &endptr, &hasError, fcinfo->ccontext);
     if (hasError || (endptr != NULL && *endptr != '\0')) {
         ereport((!fcinfo->can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", data)));
+    } else if (hasLenError) {
+        ereport((!fcinfo->can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("Data truncated for input data: \"%s\"", data)));
     }
     pfree_ext(data);
     PG_RETURN_FLOAT8(result);

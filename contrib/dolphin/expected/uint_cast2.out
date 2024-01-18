@@ -114,7 +114,7 @@ insert into t1 values('-1'::varchar(10));
 ERROR:  value "-1" is out of range for type bigint unsigned
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::binary(10));
-ERROR:  bigint unsigned out of range
+ERROR:  Data truncated for input data: "-1"
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::varbinary(10));
 ERROR:  bigint unsigned out of range
@@ -154,6 +154,8 @@ insert into t1 values('-1'::varchar(10));
 WARNING:  value "-1" is out of range for type bigint unsigned
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::binary(10));
+WARNING:  Data truncated for input data: "-1"
+CONTEXT:  referenced column: a
 WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::varbinary(10));
@@ -314,7 +316,7 @@ insert into t1 values('-1'::varchar(10));
 ERROR:  value "-1" is out of range for type int unsigned
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::binary(10));
-ERROR:  int unsigned out of range
+ERROR:  Data truncated for input data: "-1"
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::varbinary(10));
 ERROR:  int unsigned out of range
@@ -354,6 +356,8 @@ insert into t1 values('-1'::varchar(10));
 WARNING:  value "-1" is out of range for type int unsigned
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::binary(10));
+WARNING:  Data truncated for input data: "-1"
+CONTEXT:  referenced column: a
 WARNING:  int unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::varbinary(10));
@@ -532,7 +536,7 @@ insert into t1 values('-1'::varchar(10));
 ERROR:  value "-1" is out of range for type smallint unsigned
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::binary(10));
-ERROR:  smallint unsigned out of range
+ERROR:  Data truncated for input data: "-1"
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::varbinary(10));
 ERROR:  smallint unsigned out of range
@@ -572,6 +576,8 @@ insert into t1 values('-1'::varchar(10));
 WARNING:  value "-1" is out of range for type smallint unsigned
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::binary(10));
+WARNING:  Data truncated for input data: "-1"
+CONTEXT:  referenced column: a
 WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::varbinary(10));
@@ -756,7 +762,7 @@ insert into t1 values('-1'::varchar(10));
 ERROR:  value "-1" is out of range for type tinyint unsigned
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::binary(10));
-ERROR:  tinyint unsigned out of range
+ERROR:  Data truncated for input data: "-1"
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::varbinary(10));
 ERROR:  tinyint unsigned out of range
@@ -796,6 +802,8 @@ insert into t1 values('-1'::varchar(10));
 WARNING:  value "-1" is out of range for type tinyint unsigned
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::binary(10));
+WARNING:  Data truncated for input data: "-1"
+CONTEXT:  referenced column: a
 WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: a
 insert into t1 values('-1'::varbinary(10));

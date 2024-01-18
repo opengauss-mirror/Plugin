@@ -832,6 +832,14 @@ set dolphin.b_compatibility_mode to on;
 create table binary_operator(c1 binary(10), c2 numeric(10, 2), c3 time(6), c4 uint1, c5 uint2, c6 uint4, c7 uint8);
 insert into binary_operator values('34', '234.5', '234.5', 234, 234, 234, 234), ('1234', '234.5', '234.5', 234, 234, 234, 234);
 select c1 < c2, c1 > c2, c1 <= c2, c1 >= c2 from binary_operator;
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
  ?column? | ?column? | ?column? | ?column? 
 ----------+----------+----------+----------
  t        | f        | t        | f
@@ -839,6 +847,30 @@ select c1 < c2, c1 > c2, c1 <= c2, c1 >= c2 from binary_operator;
 (2 rows)
 
 select c1 < c3, c1 > c3, c1 <= c3, c1 >= c3 from binary_operator;
+WARNING:  Data truncated for input data: "34"
+CONTEXT:  referenced column: float8lt
+SQL function "binary_time_lt" statement 1
+WARNING:  Data truncated for input data: "34"
+CONTEXT:  referenced column: float8gt
+SQL function "binary_time_gt" statement 1
+WARNING:  Data truncated for input data: "34"
+CONTEXT:  referenced column: float8le
+SQL function "binary_time_le" statement 1
+WARNING:  Data truncated for input data: "34"
+CONTEXT:  referenced column: float8ge
+SQL function "binary_time_ge" statement 1
+WARNING:  Data truncated for input data: "1234"
+CONTEXT:  referenced column: float8lt
+SQL function "binary_time_lt" statement 1
+WARNING:  Data truncated for input data: "1234"
+CONTEXT:  referenced column: float8gt
+SQL function "binary_time_gt" statement 1
+WARNING:  Data truncated for input data: "1234"
+CONTEXT:  referenced column: float8le
+SQL function "binary_time_le" statement 1
+WARNING:  Data truncated for input data: "1234"
+CONTEXT:  referenced column: float8ge
+SQL function "binary_time_ge" statement 1
  ?column? | ?column? | ?column? | ?column? 
 ----------+----------+----------+----------
  t        | f        | t        | f
@@ -846,6 +878,14 @@ select c1 < c3, c1 > c3, c1 <= c3, c1 >= c3 from binary_operator;
 (2 rows)
 
 select c1 < c4, c1 > c4, c1 <= c4, c1 >= c4 from binary_operator;
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
  ?column? | ?column? | ?column? | ?column? 
 ----------+----------+----------+----------
  t        | f        | t        | f
@@ -853,6 +893,14 @@ select c1 < c4, c1 > c4, c1 <= c4, c1 >= c4 from binary_operator;
 (2 rows)
 
 select c1 < c5, c1 > c5, c1 <= c5, c1 >= c5 from binary_operator;
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
  ?column? | ?column? | ?column? | ?column? 
 ----------+----------+----------+----------
  t        | f        | t        | f
@@ -860,6 +908,14 @@ select c1 < c5, c1 > c5, c1 <= c5, c1 >= c5 from binary_operator;
 (2 rows)
 
 select c1 < c6, c1 > c6, c1 <= c6, c1 >= c6 from binary_operator;
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
  ?column? | ?column? | ?column? | ?column? 
 ----------+----------+----------+----------
  t        | f        | t        | f
@@ -867,6 +923,14 @@ select c1 < c6, c1 > c6, c1 <= c6, c1 >= c6 from binary_operator;
 (2 rows)
 
 select c1 < c7, c1 > c7, c1 <= c7, c1 >= c7 from binary_operator;
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "34"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
+WARNING:  Data truncated for input data: "1234"
  ?column? | ?column? | ?column? | ?column? 
 ----------+----------+----------+----------
  t        | f        | t        | f
