@@ -183,6 +183,7 @@
 |plugin_utils|datetime.h  |src\include\utils\datetime.h  |
 |plugin_utils|fmgr.h    |src\include\fmgr.h |
 |plugin_utils|int8.h    |src\include\utils\int8.h |
+|plugin_utils|int16.h    |src\include\utils\int16.h |
 |plugin_utils|timestamp.h  |src\include\utils\timestamp.h   |
 |plugin_utils|plpgsql.h  |src\include\utils\plpgsql.h   |
 |plugin_utils|varbit.h  |src\include\utils\varbit.h   |

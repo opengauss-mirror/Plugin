@@ -416,6 +416,10 @@ DROP FUNCTION IF EXISTS pg_catalog.timestamp_explicit(TEXT);
 DROP FUNCTION IF EXISTS pg_catalog.ln(year);
 DROP FUNCTION IF EXISTS pg_catalog.ln(json);
 
+DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int1(anyelement) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int2(anyelement) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int4(anyelement) CASCADE;
+
 DROP FUNCTION IF EXISTS pg_catalog.str_to_date(boolean, TEXT);
 DROP FUNCTION IF EXISTS pg_catalog.str_to_date(longblob, TEXT);
 DROP FUNCTION IF EXISTS pg_catalog.str_to_date(anyenum, TEXT);

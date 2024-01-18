@@ -10742,7 +10742,7 @@ Datum blob_any_value(PG_FUNCTION_ARGS)
     PG_RETURN_BYTEA_P(vlena);
 }
 
-static char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError = nullptr)
+char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError)
 {
     if (!OidIsValid(anyOid)) {
         return DatumGetCString(DirectFunctionCall1(textout, anyDatum));

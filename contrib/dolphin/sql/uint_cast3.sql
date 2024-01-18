@@ -137,42 +137,23 @@ cast(c5 as unsigned) from t_binary0001 order by 1,2,3,4,5;
 select c1, convert(c2, unsigned), convert(c3, unsigned), convert(c4, unsigned),
 convert(c5, unsigned), convert(c6, unsigned), convert(c7, unsigned) from
 t_binary0001 order by 1,2,3,4,5,6,7;
---- 测试uint1/uint2/uint4/uint8，预期表现和unsigned一致
-select c1, cast(c2 as uint1), cast(c3 as uint1), cast(c4 as uint1),
-cast(c5 as uint1) from t_binary0001 order by 1,2,3,4,5;
-select c1, convert(c2, uint1), convert(c3, uint1), convert(c4, uint1),
-convert(c5, uint1), convert(c6, uint1), convert(c7, uint1) from
-t_binary0001 order by 1,2,3,4,5,6,7;
-select c1, cast(c2 as uint2), cast(c3 as uint2), cast(c4 as uint2),
-cast(c5 as uint2) from t_binary0001 order by 1,2,3,4,5;
-select c1, convert(c2, uint2), convert(c3, uint2), convert(c4, uint2),
-convert(c5, uint2), convert(c6, uint2), convert(c7, uint2) from
-t_binary0001 order by 1,2,3,4,5,6,7;
-select c1, cast(c2 as uint4), cast(c3 as uint4), cast(c4 as uint4),
-cast(c5 as uint4) from t_binary0001 order by 1,2,3,4,5;
-select c1, convert(c2, uint4), convert(c3, uint4), convert(c4, uint4),
-convert(c5, uint4), convert(c6, uint4), convert(c7, uint4) from
-t_binary0001 order by 1,2,3,4,5,6,7;
-select c1, cast(c2 as uint8), cast(c3 as uint8), cast(c4 as uint8),
-cast(c5 as uint8) from t_binary0001 order by 1,2,3,4,5;
-select c1, convert(c2, uint8), convert(c3, uint8), convert(c4, uint8),
-convert(c5, uint8), convert(c6, uint8), convert(c7, uint8) from
-t_binary0001 order by 1,2,3,4,5,6,7;
 
 --- 建表并插入数据
 create table t_binary(a binary(255));
-create table t_unsigned(a int8 unsigned);
+create table t_integer(a1 int8 unsigned, a2 int4 unsigned, a3 int2 unsigned, a4 int1 unsigned,
+	a5 int8, a6 int4, a7 int2, a8 int1);
 insert into t_binary values('2e1');
 insert into t_binary values('1ab');
 insert into t_binary values('0x1ab');
 insert into t_binary values('123');
 --- 测试转换结果
-select cast(a as unsigned) from t_binary;
-insert ignore into t_unsigned select a from t_binary;
-select * from t_unsigned;
+select cast(a as int8 unsigned), cast(a as int4 unsigned), cast(a as int2 unsigned), cast(a as int1 unsigned),
+cast(a as int8), cast(a as int4), cast(a as int2), cast(a as int1) from t_binary;
+insert ignore into t_integer select a, a, a, a, a, a, a, a from t_binary;
+select * from t_integer;
 
 --- 清理
-drop table t_unsigned cascade;
+drop table t_integer cascade;
 drop table t_binary cascade;
 drop table t_binary0001 cascade;
 

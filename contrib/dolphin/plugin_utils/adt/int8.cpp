@@ -27,7 +27,8 @@
 #include "plugin_commands/mysqlmode.h"
 #ifdef DOLPHIN
 #include "plugin_utils/varbit.h"
-#include "utils/int16.h"
+#include "plugin_utils/varlena.h"
+#include "plugin_utils/int16.h"
 #include "plugin_utils/date.h"
 #include "plugin_utils/datetime.h"
 #include "plugin_utils/timestamp.h"
@@ -1803,18 +1804,26 @@ Datum text_cast_int8(PG_FUNCTION_ARGS)
 
 Datum varlena_cast_int8(PG_FUNCTION_ARGS)
 {
-    Datum txt = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     int128 result;
-    Oid typeOutput = InvalidOid;
-    bool typIsVarlena = false;
-    getTypeOutputInfo(fcinfo->argTypes[0], &typeOutput, &typIsVarlena);
-    if (typIsVarlena) {
-        tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
-    } else {
-        tmp = DatumGetCString(OidOutputFunctionCall(typeOutput, txt));
+    bool hasLenError = false;
+    tmp = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasLenError);
+    bool hasError = false;
+    (void)scanint16(tmp, fcinfo->can_ignore || !SQL_MODE_STRICT(), &result, &hasError);
+    if (result > (int128)INT64_MAX || result < (int128)INT64_MIN) {
+        if (result > (int128)UINT64_MAX) {
+            result = -1;
+        } else {
+            result = result > 0 ? (int64)result : INT64_MIN;
+        }
+        ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("bigint out of range")));
+    } else if (!hasError && hasLenError) {
+        ereport((!fcinfo->can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("Data truncated for input data: \"%s\"", tmp)));
     }
-    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
-    PG_RETURN_INT64(checkSignedRange(result, fcinfo));
+    PG_RETURN_INT64((int64)result);
 }
 #endif

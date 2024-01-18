@@ -652,336 +652,168 @@ CONTEXT:  referenced column: c7
   2 | 6  | 61 | 61 | 6  | 61 | 61
 (3 rows)
 
---- 测试uint1/uint2/uint4/uint8，预期表现和unsigned一致
-select c1, cast(c2 as uint1), cast(c3 as uint1), cast(c4 as uint1),
-cast(c5 as uint1) from t_binary0001 order by 1,2,3,4,5;
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c4
- c1 | c2 | c3 | c4 | c5 
-----+----+----+----+----
-  1 | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6
-(3 rows)
-
-select c1, convert(c2, uint1), convert(c3, uint1), convert(c4, uint1),
-convert(c5, uint1), convert(c6, uint1), convert(c7, uint1) from
-t_binary0001 order by 1,2,3,4,5,6,7;
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
-CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
-CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c7
- c1 | c2 | c3 | c4 | c5 | c6 | c7 
-----+----+----+----+----+----+----
-  1 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6  | 61 | 61
-(3 rows)
-
-select c1, cast(c2 as uint2), cast(c3 as uint2), cast(c4 as uint2),
-cast(c5 as uint2) from t_binary0001 order by 1,2,3,4,5;
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c4
- c1 | c2 | c3 | c4 | c5 
-----+----+----+----+----
-  1 | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6
-(3 rows)
-
-select c1, convert(c2, uint2), convert(c3, uint2), convert(c4, uint2),
-convert(c5, uint2), convert(c6, uint2), convert(c7, uint2) from
-t_binary0001 order by 1,2,3,4,5,6,7;
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
-CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
-CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c7
- c1 | c2 | c3 | c4 | c5 | c6 | c7 
-----+----+----+----+----+----+----
-  1 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6  | 61 | 61
-(3 rows)
-
-select c1, cast(c2 as uint4), cast(c3 as uint4), cast(c4 as uint4),
-cast(c5 as uint4) from t_binary0001 order by 1,2,3,4,5;
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c4
- c1 | c2 | c3 | c4 | c5 
-----+----+----+----+----
-  1 | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6
-(3 rows)
-
-select c1, convert(c2, uint4), convert(c3, uint4), convert(c4, uint4),
-convert(c5, uint4), convert(c6, uint4), convert(c7, uint4) from
-t_binary0001 order by 1,2,3,4,5,6,7;
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
-CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
-CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c7
- c1 | c2 | c3 | c4 | c5 | c6 | c7 
-----+----+----+----+----+----+----
-  1 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6  | 61 | 61
-(3 rows)
-
-select c1, cast(c2 as uint8), cast(c3 as uint8), cast(c4 as uint8),
-cast(c5 as uint8) from t_binary0001 order by 1,2,3,4,5;
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c4
- c1 | c2 | c3 | c4 | c5 
-----+----+----+----+----
-  1 | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6
-(3 rows)
-
-select c1, convert(c2, uint8), convert(c3, uint8), convert(c4, uint8),
-convert(c5, uint8), convert(c6, uint8), convert(c7, uint8) from
-t_binary0001 order by 1,2,3,4,5,6,7;
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
-CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
-CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c7
- c1 | c2 | c3 | c4 | c5 | c6 | c7 
-----+----+----+----+----+----+----
-  1 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6  | 61 | 61
-(3 rows)
-
 --- 建表并插入数据
 create table t_binary(a binary(255));
-create table t_unsigned(a int8 unsigned);
+create table t_integer(a1 int8 unsigned, a2 int4 unsigned, a3 int2 unsigned, a4 int1 unsigned,
+	a5 int8, a6 int4, a7 int2, a8 int1);
 insert into t_binary values('2e1');
 insert into t_binary values('1ab');
 insert into t_binary values('0x1ab');
 insert into t_binary values('123');
 --- 测试转换结果
-select cast(a as unsigned) from t_binary;
+select cast(a as int8 unsigned), cast(a as int4 unsigned), cast(a as int2 unsigned), cast(a as int1 unsigned),
+cast(a as int8), cast(a as int4), cast(a as int2), cast(a as int1) from t_binary;
+WARNING:  invalid input syntax for type double precision: "2e1"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type double precision: "2e1"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type double precision: "2e1"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type double precision: "2e1"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type int16: "2e1"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type double precision: "2e1"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type double precision: "2e1"
+CONTEXT:  referenced column: a
 WARNING:  invalid input syntax for type double precision: "2e1"
 CONTEXT:  referenced column: a
 WARNING:  invalid input syntax for type double precision: "1ab"
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type double precision: "0x1ab"
+WARNING:  invalid input syntax for type double precision: "1ab"
 CONTEXT:  referenced column: a
-WARNING:  Data truncated for input data: "123"
+WARNING:  invalid input syntax for type double precision: "1ab"
 CONTEXT:  referenced column: a
-  a  
------
- 2
- 1
- 0
- 123
-(4 rows)
-
-insert ignore into t_unsigned select a from t_binary;
-WARNING:  Data truncated for input data: "2e1"
+WARNING:  invalid input syntax for type double precision: "1ab"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type int16: "1ab"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type double precision: "1ab"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type double precision: "1ab"
 CONTEXT:  referenced column: a
 WARNING:  invalid input syntax for type double precision: "1ab"
 CONTEXT:  referenced column: a
 WARNING:  invalid input syntax for type double precision: "0x1ab"
 CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type int16: "0x1ab"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a
 WARNING:  Data truncated for input data: "123"
 CONTEXT:  referenced column: a
-select * from t_unsigned;
-  a  
------
- 20
- 1
- 0
- 123
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a
+  a  |  a  |  a  |  a  |  a  |  a  |  a  |  a  
+-----+-----+-----+-----+-----+-----+-----+-----
+ 2   | 2   | 2   | 2   |   2 |   2 |   2 | 2
+ 1   | 1   | 1   | 1   |   1 |   1 |   1 | 1
+ 0   | 0   | 0   | 0   |   0 |   0 |   0 | 0
+ 123 | 123 | 123 | 123 | 123 | 123 | 123 | 123
+(4 rows)
+
+insert ignore into t_integer select a, a, a, a, a, a, a, a from t_binary;
+WARNING:  Data truncated for input data: "2e1"
+CONTEXT:  referenced column: a1
+WARNING:  Data truncated for input data: "2e1"
+CONTEXT:  referenced column: a2
+WARNING:  Data truncated for input data: "2e1"
+CONTEXT:  referenced column: a3
+WARNING:  Data truncated for input data: "2e1"
+CONTEXT:  referenced column: a4
+WARNING:  Data truncated for input data: "2e1"
+CONTEXT:  referenced column: a5
+WARNING:  Data truncated for input data: "2e1"
+CONTEXT:  referenced column: a6
+WARNING:  Data truncated for input data: "2e1"
+CONTEXT:  referenced column: a7
+WARNING:  Data truncated for input data: "2e1"
+CONTEXT:  referenced column: a8
+WARNING:  invalid input syntax for type double precision: "1ab"
+CONTEXT:  referenced column: a1
+WARNING:  invalid input syntax for type double precision: "1ab"
+CONTEXT:  referenced column: a2
+WARNING:  invalid input syntax for type double precision: "1ab"
+CONTEXT:  referenced column: a3
+WARNING:  invalid input syntax for type double precision: "1ab"
+CONTEXT:  referenced column: a4
+WARNING:  invalid input syntax for type double precision: "1ab"
+CONTEXT:  referenced column: a5
+WARNING:  invalid input syntax for type double precision: "1ab"
+CONTEXT:  referenced column: a6
+WARNING:  invalid input syntax for type double precision: "1ab"
+CONTEXT:  referenced column: a7
+WARNING:  invalid input syntax for type double precision: "1ab"
+CONTEXT:  referenced column: a8
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a1
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a2
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a3
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a4
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a5
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a6
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a7
+WARNING:  invalid input syntax for type double precision: "0x1ab"
+CONTEXT:  referenced column: a8
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a1
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a2
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a3
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a4
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a5
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a6
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a7
+WARNING:  Data truncated for input data: "123"
+CONTEXT:  referenced column: a8
+select * from t_integer;
+ a1  | a2  | a3  | a4  | a5  | a6  | a7  | a8  
+-----+-----+-----+-----+-----+-----+-----+-----
+ 20  | 20  | 20  | 20  |  20 |  20 |  20 | 20
+ 1   | 1   | 1   | 1   |   1 |   1 |   1 | 1
+ 0   | 0   | 0   | 0   |   0 |   0 |   0 | 0
+ 123 | 123 | 123 | 123 | 123 | 123 | 123 | 123
 (4 rows)
 
 --- 清理
-drop table t_unsigned cascade;
+drop table t_integer cascade;
 drop table t_binary cascade;
 drop table t_binary0001 cascade;
 SET dolphin.sql_mode = '';
