@@ -88,7 +88,7 @@ static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others
 #define CAST_FUNCTION_ROW 12
 #define CAST_FUNCTION_COLUMN 4
 #define CAST_ENUM_IDX 22
-#define ENUM_CAST_IDX 19
+#define ENUM_CAST_IDX 23
 #define CAST_SIGNED_IDX 16
 #define NUM_CAST_TIME_IDX 12
 
@@ -114,14 +114,15 @@ static const char* castEnumFunction[CAST_ENUM_IDX] = {"bit_enum", "int1_enum", "
                                                       "int8_enum", "float4_enum", "float8_enum", "numeric_enum",
                                                       "date_enum", "timestamp_enum", "timestamptz_enum", "time_enum",
                                                       "set_enum", "uint1_enum", "uint2_enum", "uint4_enum",
-                                                      "uint8_enum", "year_enum", "bpchar_enum", "varchar_enum",
-                                                      "text_enum", "varlena_enum"};
+                                                      "uint8_enum", "year_enum", "varlena_enum", "bpchar_enum",
+                                                      "varchar_enum", "text_enum"};
 
 static const char* enumCastFunction[ENUM_CAST_IDX] = {"enum_bit", "enum_int1", "enum_int2", "enum_int4",
                                                       "enum_int8", "enum_float4", "enum_float8", "enum_numeric",
                                                       "enum_date", "enum_timestamp", "enum_timestamptz", "enum_time",
                                                       "enum_set", "enum_uint1", "enum_uint2", "enum_uint4",
-                                                      "enum_uint8", "enum_year", "enum_varlena"};
+                                                      "enum_uint8", "enum_year", "enum_varlena", NULL,
+                                                      NULL, NULL, "enum_boolean"};
 
 static const char* numCastTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_time", "int16_cast_time", "int32_cast_time",
                                                              "int64_cast_time", "uint8_cast_time", "uint16_cast_time",
@@ -191,7 +192,8 @@ typedef enum {
     E_VARLENA,
     E_BPCHAR,
     E_VARCHAR,
-    E_TEXT
+    E_TEXT,
+    E_BOOLEAN
 } CastIdx;
 
 typedef enum {
@@ -3454,6 +3456,8 @@ int findEnumFunctionIdx(Oid typeId)
             return E_VARCHAR;
         case TEXTOID:
             return E_TEXT;
+        case BOOLOID:
+            return E_BOOLEAN;    
         case BYTEAOID:
         case BLOBOID:
         case JSONOID:
@@ -3489,7 +3493,7 @@ Oid findCastEnumFunction(Oid sourceTypeId)
 {
     Oid funcid = InvalidOid;
     int idx = findEnumFunctionIdx(sourceTypeId);
-    if (idx != INVALID_IDX) {
+    if (idx != INVALID_IDX && idx < CAST_ENUM_IDX) {
         return get_func_oid(castEnumFunction[idx], PG_CATALOG_NAMESPACE, NULL);
     }
     return funcid;
@@ -3499,7 +3503,7 @@ Oid findEnumCastFunction(Oid targetTypeId)
 {
     Oid funcid = InvalidOid;
     int idx = findEnumFunctionIdx(targetTypeId);
-    if (idx != INVALID_IDX && idx < ENUM_CAST_IDX) {
+    if (idx != INVALID_IDX && enumCastFunction[idx] != NULL) {
         return get_func_oid(enumCastFunction[idx], PG_CATALOG_NAMESPACE, NULL);
     }
     return funcid;
@@ -3769,7 +3773,7 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
             if (targetTypeId == ANYENUMOID) {
                 *funcid = findCastEnumFunction(sourceTypeId);
                 result = OidIsValid(*funcid) ? COERCION_PATH_FUNC : COERCION_PATH_NONE;
-            } else if (sourceTypeId == ANYENUMOID) {
+            } else if (sourceTypeId == ANYENUMOID) {             
                 *funcid = findEnumCastFunction(targetTypeId);
                 result = OidIsValid(*funcid) ? COERCION_PATH_FUNC : COERCION_PATH_NONE;
             } else {

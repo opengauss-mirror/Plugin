@@ -478,13 +478,13 @@ CREATE TABLE test_json_type AS SELECT
 -- `binary` << `json` AS `binary<<json`,
 -- `binary` | `json` AS `binary|json`,
 -- `binary` & `json` AS `binary&json`,
--- `binary` || `json` AS `binary||json`,
--- `binary` && `json` AS `binary&&json`,
+`binary` || `json` AS `binary||json`,
+`binary` && `json` AS `binary&&json`,
 `binary` div `json` AS `binary_div_json`,
 `binary` mod `json` AS `binary_mod_json`,
 `binary` xor `json` AS `binary_xor_json`,
--- `binary` and `json` AS `binary_and_json`,
--- `binary` or `json` AS `binary_or_json`,
+`binary` and `json` AS `binary_and_json`,
+`binary` or `json` AS `binary_or_json`,
 `varbinary` + `json` AS `varbinary+json`,
 `varbinary` - `json` AS `varbinary-json`,
 `varbinary` * `json` AS `varbinary*json`,
@@ -495,13 +495,13 @@ CREATE TABLE test_json_type AS SELECT
 -- `varbinary` << `json` AS `varbinary<<json`,
 -- `varbinary` | `json` AS `varbinary|json`,
 -- `varbinary` & `json` AS `varbinary&json`,
--- `varbinary` || `json` AS `varbinary||json`,
--- `varbinary` && `json` AS `varbinary&&json`,
+`varbinary` || `json` AS `varbinary||json`,
+`varbinary` && `json` AS `varbinary&&json`,
 `varbinary` div `json` AS `varbinary_div_json`,
 `varbinary` mod `json` AS `varbinary_mod_json`,
 `varbinary` xor `json` AS `varbinary_xor_json`,
--- `varbinary` and `json` AS `varbinary_and_json`,
--- `varbinary` or `json` AS `varbinary_or_json`,
+`varbinary` and `json` AS `varbinary_and_json`,
+`varbinary` or `json` AS `varbinary_or_json`,
 `tinyblob` + `json` AS `tinyblob+json`,
 `tinyblob` - `json` AS `tinyblob-json`,
 `tinyblob` * `json` AS `tinyblob*json`,
@@ -512,13 +512,13 @@ CREATE TABLE test_json_type AS SELECT
 -- `tinyblob` << `json` AS `tinyblob<<json`,
 -- `tinyblob` | `json` AS `tinyblob|json`,
 -- `tinyblob` & `json` AS `tinyblob&json`,
--- `tinyblob` || `json` AS `tinyblob||json`,
--- `tinyblob` && `json` AS `tinyblob&&json`,
+`tinyblob` || `json` AS `tinyblob||json`,
+`tinyblob` && `json` AS `tinyblob&&json`,
 `tinyblob` div `json` AS `tinyblob_div_json`,
 `tinyblob` mod `json` AS `tinyblob_mod_json`,
 `tinyblob` xor `json` AS `tinyblob_xor_json`,
--- `tinyblob` and `json` AS `tinyblob_and_json`,
--- `tinyblob` or `json` AS `tinyblob_or_json`,
+`tinyblob` and `json` AS `tinyblob_and_json`,
+`tinyblob` or `json` AS `tinyblob_or_json`,
 `blob` + `json` AS `blob+json`,
 `blob` - `json` AS `blob-json`,
 `blob` * `json` AS `blob*json`,
@@ -529,13 +529,13 @@ CREATE TABLE test_json_type AS SELECT
 -- `blob` << `json` AS `blob<<json`,
 -- `blob` | `json` AS `blob|json`,
 -- `blob` & `json` AS `blob&json`,
--- `blob` || `json` AS `blob||json`,
--- `blob` && `json` AS `blob&&json`,
+`blob` || `json` AS `blob||json`,
+`blob` && `json` AS `blob&&json`,
 `blob` div `json` AS `blob_div_json`,
 `blob` mod `json` AS `blob_mod_json`,
 `blob` xor `json` AS `blob_xor_json`,
--- `blob` and `json` AS `blob_and_json`,
--- `blob` or `json` AS `blob_or_json`,
+`blob` and `json` AS `blob_and_json`,
+`blob` or `json` AS `blob_or_json`,
 `mediumblob` + `json` AS `mediumblob+json`,
 `mediumblob` - `json` AS `mediumblob-json`,
 `mediumblob` * `json` AS `mediumblob*json`,
@@ -546,13 +546,13 @@ CREATE TABLE test_json_type AS SELECT
 -- `mediumblob` << `json` AS `mediumblob<<json`,
 -- `mediumblob` | `json` AS `mediumblob|json`,
 -- `mediumblob` & `json` AS `mediumblob&json`,
--- `mediumblob` || `json` AS `mediumblob||json`,
--- `mediumblob` && `json` AS `mediumblob&&json`,
+`mediumblob` || `json` AS `mediumblob||json`,
+`mediumblob` && `json` AS `mediumblob&&json`,
 `mediumblob` div `json` AS `mediumblob_div_json`,
 `mediumblob` mod `json` AS `mediumblob_mod_json`,
 `mediumblob` xor `json` AS `mediumblob_xor_json`,
--- `mediumblob` and `json` AS `mediumblob_and_json`,
--- `mediumblob` or `json` AS `mediumblob_or_json`,
+`mediumblob` and `json` AS `mediumblob_and_json`,
+`mediumblob` or `json` AS `mediumblob_or_json`,
 `longblob` + `json` AS `longblob+json`,
 `longblob` - `json` AS `longblob-json`,
 `longblob` * `json` AS `longblob*json`,
@@ -563,13 +563,13 @@ CREATE TABLE test_json_type AS SELECT
 -- `longblob` << `json` AS `longblob<<json`,
 -- `longblob` | `json` AS `longblob|json`,
 -- `longblob` & `json` AS `longblob&json`,
--- `longblob` || `json` AS `longblob||json`,
--- `longblob` && `json` AS `longblob&&json`,
+`longblob` || `json` AS `longblob||json`,
+`longblob` && `json` AS `longblob&&json`,
 `longblob` div `json` AS `longblob_div_json`,
 `longblob` mod `json` AS `longblob_mod_json`,
 `longblob` xor `json` AS `longblob_xor_json`,
--- `longblob` and `json` AS `longblob_and_json`,
--- `longblob` or `json` AS `longblob_or_json`,
+`longblob` and `json` AS `longblob_and_json`,
+`longblob` or `json` AS `longblob_or_json`,
 `text` + `json` AS `text+json`,
 `text` - `json` AS `text-json`,
 `text` * `json` AS `text*json`,
@@ -597,13 +597,13 @@ CREATE TABLE test_json_type AS SELECT
 `enum_t` << `json` AS `enum_t<<json`,
 `enum_t` | `json` AS `enum_t|json`,
 `enum_t` & `json` AS `enum_t&json`,
--- `enum_t` || `json` AS `enum_t||json`,
--- `enum_t` && `json` AS `enum_t&&json`,
+`enum_t` || `json` AS `enum_t||json`,
+`enum_t` && `json` AS `enum_t&&json`,
 `enum_t` div `json` AS `enum_t_div_json`,
 `enum_t` mod `json` AS `enum_t_mod_json`,
 `enum_t` xor `json` AS `enum_t_xor_json`,
--- `enum_t` and `json` AS `enum_t_and_json`,
--- `enum_t` or `json` AS `enum_t_or_json`,
+`enum_t` and `json` AS `enum_t_and_json`,
+`enum_t` or `json` AS `enum_t_or_json`,
 `set_t` + `json` AS `set_t+json`,
 `set_t` - `json` AS `set_t-json`,
 `set_t` * `json` AS `set_t*json`,
@@ -614,13 +614,13 @@ CREATE TABLE test_json_type AS SELECT
 `set_t` << `json` AS `set_t<<json`,
 `set_t` | `json` AS `set_t|json`,
 `set_t` & `json` AS `set_t&json`,
--- `set_t` || `json` AS `set_t||json`,
--- `set_t` && `json` AS `set_t&&json`,
+`set_t` || `json` AS `set_t||json`,
+`set_t` && `json` AS `set_t&&json`,
 `set_t` div `json` AS `set_t_div_json`,
 `set_t` mod `json` AS `set_t_mod_json`,
 `set_t` xor `json` AS `set_t_xor_json`,
--- `set_t` and `json` AS `set_t_and_json`,
--- `set_t` or `json` AS `set_t_or_json`,
+`set_t` and `json` AS `set_t_and_json`,
+`set_t` or `json` AS `set_t_or_json`,
 `json` + `int1` AS `json+int1`,
 `json` - `int1` AS `json-int1`,
 `json` * `int1` AS `json*int1`,
@@ -1039,13 +1039,13 @@ CREATE TABLE test_json_type AS SELECT
 -- `json` << `binary` AS `json<<binary`,
 -- `json` | `binary` AS `json|binary`,
 -- `json` & `binary` AS `json&binary`,
--- `json` || `binary` AS `json||binary`,
--- `json` && `binary` AS `json&&binary`,
+`json` || `binary` AS `json||binary`,
+`json` && `binary` AS `json&&binary`,
 `json` div `binary` AS `json_div_binary`,
 `json` mod `binary` AS `json_mod_binary`,
 `json` xor `binary` AS `json_xor_binary`,
--- `json` and `binary` AS `json_and_binary`,
--- `json` or `binary` AS `json_or_binary`,
+`json` and `binary` AS `json_and_binary`,
+`json` or `binary` AS `json_or_binary`,
 `json` + `varbinary` AS `json+varbinary`,
 `json` - `varbinary` AS `json-varbinary`,
 `json` * `varbinary` AS `json*varbinary`,
@@ -1056,13 +1056,13 @@ CREATE TABLE test_json_type AS SELECT
 -- `json` << `varbinary` AS `json<<varbinary`,
 -- `json` | `varbinary` AS `json|varbinary`,
 -- `json` & `varbinary` AS `json&varbinary`,
--- `json` || `varbinary` AS `json||varbinary`,
--- `json` && `varbinary` AS `json&&varbinary`,
+`json` || `varbinary` AS `json||varbinary`,
+`json` && `varbinary` AS `json&&varbinary`,
 `json` div `varbinary` AS `json_div_varbinary`,
 `json` mod `varbinary` AS `json_mod_varbinary`,
 `json` xor `varbinary` AS `json_xor_varbinary`,
--- `json` and `varbinary` AS `json_and_varbinary`,
--- `json` or `varbinary` AS `json_or_varbinary`,
+`json` and `varbinary` AS `json_and_varbinary`,
+`json` or `varbinary` AS `json_or_varbinary`,
 `json` + `tinyblob` AS `json+tinyblob`,
 `json` - `tinyblob` AS `json-tinyblob`,
 `json` * `tinyblob` AS `json*tinyblob`,
@@ -1073,13 +1073,13 @@ CREATE TABLE test_json_type AS SELECT
 -- `json` << `tinyblob` AS `json<<tinyblob`,
 -- `json` | `tinyblob` AS `json|tinyblob`,
 -- `json` & `tinyblob` AS `json&tinyblob`,
--- `json` || `tinyblob` AS `json||tinyblob`,
--- `json` && `tinyblob` AS `json&&tinyblob`,
+`json` || `tinyblob` AS `json||tinyblob`,
+`json` && `tinyblob` AS `json&&tinyblob`,
 `json` div `tinyblob` AS `json_div_tinyblob`,
 `json` mod `tinyblob` AS `json_mod_tinyblob`,
 `json` xor `tinyblob` AS `json_xor_tinyblob`,
--- `json` and `tinyblob` AS `json_and_tinyblob`,
--- `json` or `tinyblob` AS `json_or_tinyblob`,
+`json` and `tinyblob` AS `json_and_tinyblob`,
+`json` or `tinyblob` AS `json_or_tinyblob`,
 `json` + `blob` AS `json+blob`,
 `json` - `blob` AS `json-blob`,
 `json` * `blob` AS `json*blob`,
@@ -1090,13 +1090,13 @@ CREATE TABLE test_json_type AS SELECT
 -- `json` << `blob` AS `json<<blob`,
 -- `json` | `blob` AS `json|blob`,
 -- `json` & `blob` AS `json&blob`,
--- `json` || `blob` AS `json||blob`,
--- `json` && `blob` AS `json&&blob`,
+`json` || `blob` AS `json||blob`,
+`json` && `blob` AS `json&&blob`,
 `json` div `blob` AS `json_div_blob`,
 `json` mod `blob` AS `json_mod_blob`,
 `json` xor `blob` AS `json_xor_blob`,
--- `json` and `blob` AS `json_and_blob`,
--- `json` or `blob` AS `json_or_blob`,
+`json` and `blob` AS `json_and_blob`,
+`json` or `blob` AS `json_or_blob`,
 `json` + `mediumblob` AS `json+mediumblob`,
 `json` - `mediumblob` AS `json-mediumblob`,
 `json` * `mediumblob` AS `json*mediumblob`,
@@ -1107,13 +1107,13 @@ CREATE TABLE test_json_type AS SELECT
 -- `json` << `mediumblob` AS `json<<mediumblob`,
 -- `json` | `mediumblob` AS `json|mediumblob`,
 -- `json` & `mediumblob` AS `json&mediumblob`,
--- `json` || `mediumblob` AS `json||mediumblob`,
--- `json` && `mediumblob` AS `json&&mediumblob`,
+`json` || `mediumblob` AS `json||mediumblob`,
+`json` && `mediumblob` AS `json&&mediumblob`,
 `json` div `mediumblob` AS `json_div_mediumblob`,
 `json` mod `mediumblob` AS `json_mod_mediumblob`,
 `json` xor `mediumblob` AS `json_xor_mediumblob`,
--- `json` and `mediumblob` AS `json_and_mediumblob`,
--- `json` or `mediumblob` AS `json_or_mediumblob`,
+`json` and `mediumblob` AS `json_and_mediumblob`,
+`json` or `mediumblob` AS `json_or_mediumblob`,
 `json` + `longblob` AS `json+longblob`,
 `json` - `longblob` AS `json-longblob`,
 `json` * `longblob` AS `json*longblob`,
@@ -1124,13 +1124,13 @@ CREATE TABLE test_json_type AS SELECT
 -- `json` << `longblob` AS `json<<longblob`,
 -- `json` | `longblob` AS `json|longblob`,
 -- `json` & `longblob` AS `json&longblob`,
--- `json` || `longblob` AS `json||longblob`,
--- `json` && `longblob` AS `json&&longblob`,
+`json` || `longblob` AS `json||longblob`,
+`json` && `longblob` AS `json&&longblob`,
 `json` div `longblob` AS `json_div_longblob`,
 `json` mod `longblob` AS `json_mod_longblob`,
 `json` xor `longblob` AS `json_xor_longblob`,
--- `json` and `longblob` AS `json_and_longblob`,
--- `json` or `longblob` AS `json_or_longblob`,
+`json` and `longblob` AS `json_and_longblob`,
+`json` or `longblob` AS `json_or_longblob`,
 `json` + `text` AS `json+text`,
 `json` - `text` AS `json-text`,
 `json` * `text` AS `json*text`,
@@ -1158,13 +1158,13 @@ CREATE TABLE test_json_type AS SELECT
 `json` << `enum_t` AS `json<<enum_t`,
 `json` | `enum_t` AS `json|enum_t`,
 `json` & `enum_t` AS `json&enum_t`,
--- `json` || `enum_t` AS `json||enum_t`,
--- `json` && `enum_t` AS `json&&enum_t`,
+`json` || `enum_t` AS `json||enum_t`,
+`json` && `enum_t` AS `json&&enum_t`,
 `json` div `enum_t` AS `json_div_enum_t`,
 `json` mod `enum_t` AS `json_mod_enum_t`,
 `json` xor `enum_t` AS `json_xor_enum_t`,
--- `json` and `enum_t` AS `json_and_enum_t`,
--- `json` or `enum_t` AS `json_or_enum_t`,
+`json` and `enum_t` AS `json_and_enum_t`,
+`json` or `enum_t` AS `json_or_enum_t`,
 `json` + `set_t` AS `json+set_t`,
 `json` - `set_t` AS `json-set_t`,
 `json` * `set_t` AS `json*set_t`,
@@ -1175,13 +1175,13 @@ CREATE TABLE test_json_type AS SELECT
 `json` << `set_t` AS `json<<set_t`,
 `json` | `set_t` AS `json|set_t`,
 `json` & `set_t` AS `json&set_t`,
--- `json` || `set_t` AS `json||set_t`,
--- `json` && `set_t` AS `json&&set_t`,
+`json` || `set_t` AS `json||set_t`,
+`json` && `set_t` AS `json&&set_t`,
 `json` div `set_t` AS `json_div_set_t`,
 `json` mod `set_t` AS `json_mod_set_t`,
 `json` xor `set_t` AS `json_xor_set_t`,
--- `json` and `set_t` AS `json_and_set_t`,
--- `json` or `set_t` AS `json_or_set_t`,
+`json` and `set_t` AS `json_and_set_t`,
+`json` or `set_t` AS `json_or_set_t`,
 `json` + `json` AS `json+json`,
 `json` - `json` AS `json-json`,
 `json` * `json` AS `json*json`,
@@ -1620,49 +1620,73 @@ SHOW COLUMNS FROM test_json_type;
  binary*json           | double precision | YES  |     | NULL    | 
  binary/json           | double precision | YES  |     | NULL    | 
  binary^json           | double precision | YES  |     | NULL    | 
+ binary||json          | boolean          | YES  |     | NULL    | 
+ binary&&json          | boolean          | YES  |     | NULL    | 
  binary_div_json       | numeric          | YES  |     | NULL    | 
  binary_mod_json       | numeric          | YES  |     | NULL    | 
  binary_xor_json       | integer          | YES  |     | NULL    | 
+ binary_and_json       | boolean          | YES  |     | NULL    | 
+ binary_or_json        | boolean          | YES  |     | NULL    | 
  varbinary+json        | double precision | YES  |     | NULL    | 
  varbinary-json        | double precision | YES  |     | NULL    | 
  varbinary*json        | double precision | YES  |     | NULL    | 
  varbinary/json        | double precision | YES  |     | NULL    | 
  varbinary^json        | double precision | YES  |     | NULL    | 
+ varbinary||json       | boolean          | YES  |     | NULL    | 
+ varbinary&&json       | boolean          | YES  |     | NULL    | 
  varbinary_div_json    | numeric          | YES  |     | NULL    | 
  varbinary_mod_json    | numeric          | YES  |     | NULL    | 
  varbinary_xor_json    | integer          | YES  |     | NULL    | 
+ varbinary_and_json    | boolean          | YES  |     | NULL    | 
+ varbinary_or_json     | boolean          | YES  |     | NULL    | 
  tinyblob+json         | double precision | YES  |     | NULL    | 
  tinyblob-json         | double precision | YES  |     | NULL    | 
  tinyblob*json         | double precision | YES  |     | NULL    | 
  tinyblob/json         | double precision | YES  |     | NULL    | 
  tinyblob^json         | double precision | YES  |     | NULL    | 
+ tinyblob||json        | boolean          | YES  |     | NULL    | 
+ tinyblob&&json        | boolean          | YES  |     | NULL    | 
  tinyblob_div_json     | numeric          | YES  |     | NULL    | 
  tinyblob_mod_json     | numeric          | YES  |     | NULL    | 
  tinyblob_xor_json     | integer          | YES  |     | NULL    | 
+ tinyblob_and_json     | boolean          | YES  |     | NULL    | 
+ tinyblob_or_json      | boolean          | YES  |     | NULL    | 
  blob+json             | double precision | YES  |     | NULL    | 
  blob-json             | double precision | YES  |     | NULL    | 
  blob*json             | double precision | YES  |     | NULL    | 
  blob/json             | double precision | YES  |     | NULL    | 
  blob^json             | double precision | YES  |     | NULL    | 
+ blob||json            | boolean          | YES  |     | NULL    | 
+ blob&&json            | boolean          | YES  |     | NULL    | 
  blob_div_json         | numeric          | YES  |     | NULL    | 
  blob_mod_json         | numeric          | YES  |     | NULL    | 
  blob_xor_json         | integer          | YES  |     | NULL    | 
+ blob_and_json         | boolean          | YES  |     | NULL    | 
+ blob_or_json          | boolean          | YES  |     | NULL    | 
  mediumblob+json       | double precision | YES  |     | NULL    | 
  mediumblob-json       | double precision | YES  |     | NULL    | 
  mediumblob*json       | double precision | YES  |     | NULL    | 
  mediumblob/json       | double precision | YES  |     | NULL    | 
  mediumblob^json       | double precision | YES  |     | NULL    | 
+ mediumblob||json      | boolean          | YES  |     | NULL    | 
+ mediumblob&&json      | boolean          | YES  |     | NULL    | 
  mediumblob_div_json   | numeric          | YES  |     | NULL    | 
  mediumblob_mod_json   | numeric          | YES  |     | NULL    | 
  mediumblob_xor_json   | integer          | YES  |     | NULL    | 
+ mediumblob_and_json   | boolean          | YES  |     | NULL    | 
+ mediumblob_or_json    | boolean          | YES  |     | NULL    | 
  longblob+json         | double precision | YES  |     | NULL    | 
  longblob-json         | double precision | YES  |     | NULL    | 
  longblob*json         | double precision | YES  |     | NULL    | 
  longblob/json         | double precision | YES  |     | NULL    | 
  longblob^json         | double precision | YES  |     | NULL    | 
+ longblob||json        | boolean          | YES  |     | NULL    | 
+ longblob&&json        | boolean          | YES  |     | NULL    | 
  longblob_div_json     | numeric          | YES  |     | NULL    | 
  longblob_mod_json     | numeric          | YES  |     | NULL    | 
  longblob_xor_json     | integer          | YES  |     | NULL    | 
+ longblob_and_json     | boolean          | YES  |     | NULL    | 
+ longblob_or_json      | boolean          | YES  |     | NULL    | 
  text+json             | double precision | YES  |     | NULL    | 
  text-json             | double precision | YES  |     | NULL    | 
  text*json             | double precision | YES  |     | NULL    | 
@@ -1690,9 +1714,13 @@ SHOW COLUMNS FROM test_json_type;
  enum_t<<json          | bigint           | YES  |     | NULL    | 
  enum_t|json           | bigint           | YES  |     | NULL    | 
  enum_t&json           | bigint           | YES  |     | NULL    | 
+ enum_t||json          | boolean          | YES  |     | NULL    | 
+ enum_t&&json          | boolean          | YES  |     | NULL    | 
  enum_t_div_json       | numeric          | YES  |     | NULL    | 
  enum_t_mod_json       | numeric          | YES  |     | NULL    | 
  enum_t_xor_json       | integer          | YES  |     | NULL    | 
+ enum_t_and_json       | boolean          | YES  |     | NULL    | 
+ enum_t_or_json        | boolean          | YES  |     | NULL    | 
  set_t+json            | double precision | YES  |     | NULL    | 
  set_t-json            | double precision | YES  |     | NULL    | 
  set_t*json            | double precision | YES  |     | NULL    | 
@@ -1703,9 +1731,13 @@ SHOW COLUMNS FROM test_json_type;
  set_t<<json           | bigint           | YES  |     | NULL    | 
  set_t|json            | bigint           | YES  |     | NULL    | 
  set_t&json            | bigint           | YES  |     | NULL    | 
+ set_t||json           | boolean          | YES  |     | NULL    | 
+ set_t&&json           | boolean          | YES  |     | NULL    | 
  set_t_div_json        | numeric          | YES  |     | NULL    | 
  set_t_mod_json        | numeric          | YES  |     | NULL    | 
  set_t_xor_json        | integer          | YES  |     | NULL    | 
+ set_t_and_json        | boolean          | YES  |     | NULL    | 
+ set_t_or_json         | boolean          | YES  |     | NULL    | 
  json+int1             | double precision | YES  |     | NULL    | 
  json-int1             | double precision | YES  |     | NULL    | 
  json*int1             | double precision | YES  |     | NULL    | 
@@ -2113,49 +2145,73 @@ SHOW COLUMNS FROM test_json_type;
  json*binary           | double precision | YES  |     | NULL    | 
  json/binary           | double precision | YES  |     | NULL    | 
  json^binary           | double precision | YES  |     | NULL    | 
+ json||binary          | boolean          | YES  |     | NULL    | 
+ json&&binary          | boolean          | YES  |     | NULL    | 
  json_div_binary       | numeric          | YES  |     | NULL    | 
  json_mod_binary       | numeric          | YES  |     | NULL    | 
  json_xor_binary       | integer          | YES  |     | NULL    | 
+ json_and_binary       | boolean          | YES  |     | NULL    | 
+ json_or_binary        | boolean          | YES  |     | NULL    | 
  json+varbinary        | double precision | YES  |     | NULL    | 
  json-varbinary        | double precision | YES  |     | NULL    | 
  json*varbinary        | double precision | YES  |     | NULL    | 
  json/varbinary        | double precision | YES  |     | NULL    | 
  json^varbinary        | double precision | YES  |     | NULL    | 
+ json||varbinary       | boolean          | YES  |     | NULL    | 
+ json&&varbinary       | boolean          | YES  |     | NULL    | 
  json_div_varbinary    | numeric          | YES  |     | NULL    | 
  json_mod_varbinary    | numeric          | YES  |     | NULL    | 
  json_xor_varbinary    | integer          | YES  |     | NULL    | 
+ json_and_varbinary    | boolean          | YES  |     | NULL    | 
+ json_or_varbinary     | boolean          | YES  |     | NULL    | 
  json+tinyblob         | double precision | YES  |     | NULL    | 
  json-tinyblob         | double precision | YES  |     | NULL    | 
  json*tinyblob         | double precision | YES  |     | NULL    | 
  json/tinyblob         | double precision | YES  |     | NULL    | 
  json^tinyblob         | double precision | YES  |     | NULL    | 
+ json||tinyblob        | boolean          | YES  |     | NULL    | 
+ json&&tinyblob        | boolean          | YES  |     | NULL    | 
  json_div_tinyblob     | numeric          | YES  |     | NULL    | 
  json_mod_tinyblob     | numeric          | YES  |     | NULL    | 
  json_xor_tinyblob     | integer          | YES  |     | NULL    | 
+ json_and_tinyblob     | boolean          | YES  |     | NULL    | 
+ json_or_tinyblob      | boolean          | YES  |     | NULL    | 
  json+blob             | double precision | YES  |     | NULL    | 
  json-blob             | double precision | YES  |     | NULL    | 
  json*blob             | double precision | YES  |     | NULL    | 
  json/blob             | double precision | YES  |     | NULL    | 
  json^blob             | double precision | YES  |     | NULL    | 
+ json||blob            | boolean          | YES  |     | NULL    | 
+ json&&blob            | boolean          | YES  |     | NULL    | 
  json_div_blob         | numeric          | YES  |     | NULL    | 
  json_mod_blob         | numeric          | YES  |     | NULL    | 
  json_xor_blob         | integer          | YES  |     | NULL    | 
+ json_and_blob         | boolean          | YES  |     | NULL    | 
+ json_or_blob          | boolean          | YES  |     | NULL    | 
  json+mediumblob       | double precision | YES  |     | NULL    | 
  json-mediumblob       | double precision | YES  |     | NULL    | 
  json*mediumblob       | double precision | YES  |     | NULL    | 
  json/mediumblob       | double precision | YES  |     | NULL    | 
  json^mediumblob       | double precision | YES  |     | NULL    | 
+ json||mediumblob      | boolean          | YES  |     | NULL    | 
+ json&&mediumblob      | boolean          | YES  |     | NULL    | 
  json_div_mediumblob   | numeric          | YES  |     | NULL    | 
  json_mod_mediumblob   | numeric          | YES  |     | NULL    | 
  json_xor_mediumblob   | integer          | YES  |     | NULL    | 
+ json_and_mediumblob   | boolean          | YES  |     | NULL    | 
+ json_or_mediumblob    | boolean          | YES  |     | NULL    | 
  json+longblob         | double precision | YES  |     | NULL    | 
  json-longblob         | double precision | YES  |     | NULL    | 
  json*longblob         | double precision | YES  |     | NULL    | 
  json/longblob         | double precision | YES  |     | NULL    | 
  json^longblob         | double precision | YES  |     | NULL    | 
+ json||longblob        | boolean          | YES  |     | NULL    | 
+ json&&longblob        | boolean          | YES  |     | NULL    | 
  json_div_longblob     | numeric          | YES  |     | NULL    | 
  json_mod_longblob     | numeric          | YES  |     | NULL    | 
  json_xor_longblob     | integer          | YES  |     | NULL    | 
+ json_and_longblob     | boolean          | YES  |     | NULL    | 
+ json_or_longblob      | boolean          | YES  |     | NULL    | 
  json+text             | double precision | YES  |     | NULL    | 
  json-text             | double precision | YES  |     | NULL    | 
  json*text             | double precision | YES  |     | NULL    | 
@@ -2183,9 +2239,13 @@ SHOW COLUMNS FROM test_json_type;
  json<<enum_t          | bigint           | YES  |     | NULL    | 
  json|enum_t           | bigint           | YES  |     | NULL    | 
  json&enum_t           | bigint           | YES  |     | NULL    | 
+ json||enum_t          | boolean          | YES  |     | NULL    | 
+ json&&enum_t          | boolean          | YES  |     | NULL    | 
  json_div_enum_t       | numeric          | YES  |     | NULL    | 
  json_mod_enum_t       | numeric          | YES  |     | NULL    | 
  json_xor_enum_t       | integer          | YES  |     | NULL    | 
+ json_and_enum_t       | boolean          | YES  |     | NULL    | 
+ json_or_enum_t        | boolean          | YES  |     | NULL    | 
  json+set_t            | double precision | YES  |     | NULL    | 
  json-set_t            | double precision | YES  |     | NULL    | 
  json*set_t            | double precision | YES  |     | NULL    | 
@@ -2196,9 +2256,13 @@ SHOW COLUMNS FROM test_json_type;
  json<<set_t           | bigint           | YES  |     | NULL    | 
  json|set_t            | bigint           | YES  |     | NULL    | 
  json&set_t            | bigint           | YES  |     | NULL    | 
+ json||set_t           | boolean          | YES  |     | NULL    | 
+ json&&set_t           | boolean          | YES  |     | NULL    | 
  json_div_set_t        | numeric          | YES  |     | NULL    | 
  json_mod_set_t        | numeric          | YES  |     | NULL    | 
  json_xor_set_t        | integer          | YES  |     | NULL    | 
+ json_and_set_t        | boolean          | YES  |     | NULL    | 
+ json_or_set_t         | boolean          | YES  |     | NULL    | 
  json+json             | double precision | YES  |     | NULL    | 
  json-json             | double precision | YES  |     | NULL    | 
  json*json             | double precision | YES  |     | NULL    | 
@@ -2222,7 +2286,7 @@ SHOW COLUMNS FROM test_json_type;
  @json                 | double precision | YES  |     | NULL    | 
  !json                 | boolean          | YES  |     | NULL    | 
  not_json              | boolean          | YES  |     | NULL    | 
-(1013 rows)
+(1077 rows)
 
 -- test value
 delete from test_json_type;
@@ -3499,15 +3563,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`binary&json` = test_j
 ERROR:  failed to find conversion function from "binary" to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`binary||json` = test_json_table.`binary` || test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type "binary"
-LINE 1: ...st_json_table SET test_json_type.`binary||json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`binary&&json` = test_json_table.`binary` && test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type "binary"
-LINE 1: ...st_json_table SET test_json_type.`binary&&json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`binary_div_json` = test_json_table.`binary` div test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
@@ -3532,15 +3588,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(anyelement,json) line 3 at RETURN
 referenced column: binary_xor_json
 UPDATE test_json_type, test_json_table SET test_json_type.`binary_and_json` = test_json_table.`binary` and test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type "binary"
-LINE 1: ...json_table SET test_json_type.`binary_and_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`binary_or_json` = test_json_table.`binary` or test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type "binary"
-LINE 1: ..._json_table SET test_json_type.`binary_or_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary+json` = test_json_table.`varbinary` + test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary+json
@@ -3582,15 +3630,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`varbinary&json` = tes
 ERROR:  failed to find conversion function from "varbinary" to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary||json` = test_json_table.`varbinary` || test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type "varbinary"
-LINE 1: ...json_table SET test_json_type.`varbinary||json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary&&json` = test_json_table.`varbinary` && test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type "varbinary"
-LINE 1: ...json_table SET test_json_type.`varbinary&&json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary_div_json` = test_json_table.`varbinary` div test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
@@ -3615,15 +3655,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(anyelement,json) line 3 at RETURN
 referenced column: varbinary_xor_json
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary_and_json` = test_json_table.`varbinary` and test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type "varbinary"
-LINE 1: ...n_table SET test_json_type.`varbinary_and_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary_or_json` = test_json_table.`varbinary` or test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type "varbinary"
-LINE 1: ...on_table SET test_json_type.`varbinary_or_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob+json` = test_json_table.`tinyblob` + test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: tinyblob+json
@@ -3665,15 +3697,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob&json` = test
 ERROR:  failed to find conversion function from tinyblob to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob||json` = test_json_table.`tinyblob` || test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type tinyblob
-LINE 1: ..._json_table SET test_json_type.`tinyblob||json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob&&json` = test_json_table.`tinyblob` && test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type tinyblob
-LINE 1: ..._json_table SET test_json_type.`tinyblob&&json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob_div_json` = test_json_table.`tinyblob` div test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
@@ -3698,15 +3722,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(anyelement,json) line 3 at RETURN
 referenced column: tinyblob_xor_json
 UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob_and_json` = test_json_table.`tinyblob` and test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type tinyblob
-LINE 1: ...on_table SET test_json_type.`tinyblob_and_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob_or_json` = test_json_table.`tinyblob` or test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type tinyblob
-LINE 1: ...son_table SET test_json_type.`tinyblob_or_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`blob+json` = test_json_table.`blob` + test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: blob+json
@@ -3748,15 +3764,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`blob&json` = test_jso
 ERROR:  failed to find conversion function from blob to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`blob||json` = test_json_table.`blob` || test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type blob
-LINE 1: ...test_json_table SET test_json_type.`blob||json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`blob&&json` = test_json_table.`blob` && test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type blob
-LINE 1: ...test_json_table SET test_json_type.`blob&&json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`blob_div_json` = test_json_table.`blob` div test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
@@ -3781,15 +3789,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(anyelement,json) line 3 at RETURN
 referenced column: blob_xor_json
 UPDATE test_json_type, test_json_table SET test_json_type.`blob_and_json` = test_json_table.`blob` and test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type blob
-LINE 1: ...t_json_table SET test_json_type.`blob_and_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`blob_or_json` = test_json_table.`blob` or test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type blob
-LINE 1: ...st_json_table SET test_json_type.`blob_or_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`mediumblob+json` = test_json_table.`mediumblob` + test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: mediumblob+json
@@ -3831,15 +3831,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`mediumblob&json` = te
 ERROR:  failed to find conversion function from mediumblob to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`mediumblob||json` = test_json_table.`mediumblob` || test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type mediumblob
-LINE 1: ...son_table SET test_json_type.`mediumblob||json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`mediumblob&&json` = test_json_table.`mediumblob` && test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type mediumblob
-LINE 1: ...son_table SET test_json_type.`mediumblob&&json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`mediumblob_div_json` = test_json_table.`mediumblob` div test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
@@ -3864,15 +3856,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(anyelement,json) line 3 at RETURN
 referenced column: mediumblob_xor_json
 UPDATE test_json_type, test_json_table SET test_json_type.`mediumblob_and_json` = test_json_table.`mediumblob` and test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type mediumblob
-LINE 1: ..._table SET test_json_type.`mediumblob_and_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`mediumblob_or_json` = test_json_table.`mediumblob` or test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type mediumblob
-LINE 1: ...n_table SET test_json_type.`mediumblob_or_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`longblob+json` = test_json_table.`longblob` + test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: longblob+json
@@ -3914,15 +3898,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`longblob&json` = test
 ERROR:  failed to find conversion function from longblob to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`longblob||json` = test_json_table.`longblob` || test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type longblob
-LINE 1: ..._json_table SET test_json_type.`longblob||json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`longblob&&json` = test_json_table.`longblob` && test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type longblob
-LINE 1: ..._json_table SET test_json_type.`longblob&&json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`longblob_div_json` = test_json_table.`longblob` div test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
@@ -3947,15 +3923,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(anyelement,json) line 3 at RETURN
 referenced column: longblob_xor_json
 UPDATE test_json_type, test_json_table SET test_json_type.`longblob_and_json` = test_json_table.`longblob` and test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type longblob
-LINE 1: ...on_table SET test_json_type.`longblob_and_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`longblob_or_json` = test_json_table.`longblob` or test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type longblob
-LINE 1: ...son_table SET test_json_type.`longblob_or_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`text+json` = test_json_table.`text` + test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: text+json
@@ -4064,15 +4032,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`enum_t&json` = test_j
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: enum_t&json
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t||json` = test_json_table.`enum_t` || test_json_table.`json`;
---?.*
-LINE 1: ...st_json_table SET test_json_type.`enum_t||json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t&&json` = test_json_table.`enum_t` && test_json_table.`json`;
---?.*
-LINE 1: ...st_json_table SET test_json_type.`enum_t&&json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t_div_json` = test_json_table.`enum_t` div test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
@@ -4087,15 +4047,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(anyelement,json) line 3 at RETURN
 referenced column: enum_t_xor_json
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t_and_json` = test_json_table.`enum_t` and test_json_table.`json`;
---?.*
-LINE 1: ...json_table SET test_json_type.`enum_t_and_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`enum_t_or_json` = test_json_table.`enum_t` or test_json_table.`json`;
---?.*
-LINE 1: ..._json_table SET test_json_type.`enum_t_or_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t+json` = test_json_table.`set_t` + test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: set_t+json
@@ -4127,15 +4079,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`set_t&json` = test_js
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: set_t&json
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t||json` = test_json_table.`set_t` || test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type test_json_table_set_t_set
-LINE 1: ...est_json_table SET test_json_type.`set_t||json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t&&json` = test_json_table.`set_t` && test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type test_json_table_set_t_set
-LINE 1: ...est_json_table SET test_json_type.`set_t&&json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t_div_json` = test_json_table.`set_t` div test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
@@ -4150,15 +4094,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(anyelement,json) line 3 at RETURN
 referenced column: set_t_xor_json
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t_and_json` = test_json_table.`set_t` and test_json_table.`json`;
-ERROR:  argument of AND must be type boolean, not type test_json_table_set_t_set
-LINE 1: ..._json_table SET test_json_type.`set_t_and_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`set_t_or_json` = test_json_table.`set_t` or test_json_table.`json`;
-ERROR:  argument of OR must be type boolean, not type test_json_table_set_t_set
-LINE 1: ...t_json_table SET test_json_type.`set_t_or_json` = test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json+int1` = test_json_table.`json` + test_json_table.`int1`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+int1
@@ -5444,15 +5380,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json&binary` = test_j
 ERROR:  failed to find conversion function from "binary" to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json||binary` = test_json_table.`json` || test_json_table.`binary`;
-ERROR:  argument of OR must be type boolean, not type "binary"
-LINE 1: ...n_type.`json||binary` = test_json_table.`json` || test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&binary` = test_json_table.`json` && test_json_table.`binary`;
-ERROR:  argument of AND must be type boolean, not type "binary"
-LINE 1: ...n_type.`json&&binary` = test_json_table.`json` && test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_binary` = test_json_table.`json` div test_json_table.`binary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
@@ -5477,15 +5405,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(json,anyelement) line 3 at RETURN
 referenced column: json_xor_binary
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_binary` = test_json_table.`json` and test_json_table.`binary`;
-ERROR:  argument of AND must be type boolean, not type "binary"
-LINE 1: ...pe.`json_and_binary` = test_json_table.`json` and test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_binary` = test_json_table.`json` or test_json_table.`binary`;
-ERROR:  argument of OR must be type boolean, not type "binary"
-LINE 1: ...type.`json_or_binary` = test_json_table.`json` or test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json+varbinary` = test_json_table.`json` + test_json_table.`varbinary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+varbinary
@@ -5527,15 +5447,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json&varbinary` = tes
 ERROR:  failed to find conversion function from "varbinary" to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json||varbinary` = test_json_table.`json` || test_json_table.`varbinary`;
-ERROR:  argument of OR must be type boolean, not type "varbinary"
-LINE 1: ...ype.`json||varbinary` = test_json_table.`json` || test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&varbinary` = test_json_table.`json` && test_json_table.`varbinary`;
-ERROR:  argument of AND must be type boolean, not type "varbinary"
-LINE 1: ...ype.`json&&varbinary` = test_json_table.`json` && test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_varbinary` = test_json_table.`json` div test_json_table.`varbinary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
@@ -5560,15 +5472,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(json,anyelement) line 3 at RETURN
 referenced column: json_xor_varbinary
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_varbinary` = test_json_table.`json` and test_json_table.`varbinary`;
-ERROR:  argument of AND must be type boolean, not type "varbinary"
-LINE 1: ...`json_and_varbinary` = test_json_table.`json` and test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_varbinary` = test_json_table.`json` or test_json_table.`varbinary`;
-ERROR:  argument of OR must be type boolean, not type "varbinary"
-LINE 1: ...e.`json_or_varbinary` = test_json_table.`json` or test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json+tinyblob` = test_json_table.`json` + test_json_table.`tinyblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+tinyblob
@@ -5610,15 +5514,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json&tinyblob` = test
 ERROR:  failed to find conversion function from tinyblob to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json||tinyblob` = test_json_table.`json` || test_json_table.`tinyblob`;
-ERROR:  argument of OR must be type boolean, not type tinyblob
-LINE 1: ...type.`json||tinyblob` = test_json_table.`json` || test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&tinyblob` = test_json_table.`json` && test_json_table.`tinyblob`;
-ERROR:  argument of AND must be type boolean, not type tinyblob
-LINE 1: ...type.`json&&tinyblob` = test_json_table.`json` && test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_tinyblob` = test_json_table.`json` div test_json_table.`tinyblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
@@ -5643,15 +5539,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(json,anyelement) line 3 at RETURN
 referenced column: json_xor_tinyblob
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_tinyblob` = test_json_table.`json` and test_json_table.`tinyblob`;
-ERROR:  argument of AND must be type boolean, not type tinyblob
-LINE 1: ....`json_and_tinyblob` = test_json_table.`json` and test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_tinyblob` = test_json_table.`json` or test_json_table.`tinyblob`;
-ERROR:  argument of OR must be type boolean, not type tinyblob
-LINE 1: ...pe.`json_or_tinyblob` = test_json_table.`json` or test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json+blob` = test_json_table.`json` + test_json_table.`blob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+blob
@@ -5693,15 +5581,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json&blob` = test_jso
 ERROR:  failed to find conversion function from blob to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json||blob` = test_json_table.`json` || test_json_table.`blob`;
-ERROR:  argument of OR must be type boolean, not type blob
-LINE 1: ...son_type.`json||blob` = test_json_table.`json` || test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&blob` = test_json_table.`json` && test_json_table.`blob`;
-ERROR:  argument of AND must be type boolean, not type blob
-LINE 1: ...son_type.`json&&blob` = test_json_table.`json` && test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_blob` = test_json_table.`json` div test_json_table.`blob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
@@ -5726,15 +5606,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(json,anyelement) line 3 at RETURN
 referenced column: json_xor_blob
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_blob` = test_json_table.`json` and test_json_table.`blob`;
-ERROR:  argument of AND must be type boolean, not type blob
-LINE 1: ...type.`json_and_blob` = test_json_table.`json` and test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_blob` = test_json_table.`json` or test_json_table.`blob`;
-ERROR:  argument of OR must be type boolean, not type blob
-LINE 1: ...n_type.`json_or_blob` = test_json_table.`json` or test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json+mediumblob` = test_json_table.`json` + test_json_table.`mediumblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+mediumblob
@@ -5776,15 +5648,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json&mediumblob` = te
 ERROR:  failed to find conversion function from mediumblob to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json||mediumblob` = test_json_table.`json` || test_json_table.`mediumblob`;
-ERROR:  argument of OR must be type boolean, not type mediumblob
-LINE 1: ...pe.`json||mediumblob` = test_json_table.`json` || test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&mediumblob` = test_json_table.`json` && test_json_table.`mediumblob`;
-ERROR:  argument of AND must be type boolean, not type mediumblob
-LINE 1: ...pe.`json&&mediumblob` = test_json_table.`json` && test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_mediumblob` = test_json_table.`json` div test_json_table.`mediumblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
@@ -5809,15 +5673,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(json,anyelement) line 3 at RETURN
 referenced column: json_xor_mediumblob
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_mediumblob` = test_json_table.`json` and test_json_table.`mediumblob`;
-ERROR:  argument of AND must be type boolean, not type mediumblob
-LINE 1: ...json_and_mediumblob` = test_json_table.`json` and test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_mediumblob` = test_json_table.`json` or test_json_table.`mediumblob`;
-ERROR:  argument of OR must be type boolean, not type mediumblob
-LINE 1: ....`json_or_mediumblob` = test_json_table.`json` or test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json+longblob` = test_json_table.`json` + test_json_table.`longblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+longblob
@@ -5859,15 +5715,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json&longblob` = test
 ERROR:  failed to find conversion function from longblob to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json||longblob` = test_json_table.`json` || test_json_table.`longblob`;
-ERROR:  argument of OR must be type boolean, not type longblob
-LINE 1: ...type.`json||longblob` = test_json_table.`json` || test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&longblob` = test_json_table.`json` && test_json_table.`longblob`;
-ERROR:  argument of AND must be type boolean, not type longblob
-LINE 1: ...type.`json&&longblob` = test_json_table.`json` && test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_longblob` = test_json_table.`json` div test_json_table.`longblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
@@ -5892,15 +5740,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(json,anyelement) line 3 at RETURN
 referenced column: json_xor_longblob
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_longblob` = test_json_table.`json` and test_json_table.`longblob`;
-ERROR:  argument of AND must be type boolean, not type longblob
-LINE 1: ....`json_and_longblob` = test_json_table.`json` and test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_longblob` = test_json_table.`json` or test_json_table.`longblob`;
-ERROR:  argument of OR must be type boolean, not type longblob
-LINE 1: ...pe.`json_or_longblob` = test_json_table.`json` or test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json+text` = test_json_table.`json` + test_json_table.`text`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+text
@@ -6009,15 +5849,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json&enum_t` = test_j
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json&enum_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json||enum_t` = test_json_table.`json` || test_json_table.`enum_t`;
---?.*
-LINE 1: ...n_type.`json||enum_t` = test_json_table.`json` || test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&enum_t` = test_json_table.`json` && test_json_table.`enum_t`;
---?.*
-LINE 1: ...n_type.`json&&enum_t` = test_json_table.`json` && test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_enum_t` = test_json_table.`json` div test_json_table.`enum_t`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
@@ -6032,15 +5864,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(json,anyelement) line 3 at RETURN
 referenced column: json_xor_enum_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_enum_t` = test_json_table.`json` and test_json_table.`enum_t`;
---?.*
-LINE 1: ...pe.`json_and_enum_t` = test_json_table.`json` and test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_enum_t` = test_json_table.`json` or test_json_table.`enum_t`;
---?.*
-LINE 1: ...type.`json_or_enum_t` = test_json_table.`json` or test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json+set_t` = test_json_table.`json` + test_json_table.`set_t`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+set_t
@@ -6072,15 +5896,7 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json&set_t` = test_js
 WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
 CONTEXT:  referenced column: json&set_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json||set_t` = test_json_table.`json` || test_json_table.`set_t`;
-ERROR:  argument of OR must be type boolean, not type test_json_table_set_t_set
-LINE 1: ...on_type.`json||set_t` = test_json_table.`json` || test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&set_t` = test_json_table.`json` && test_json_table.`set_t`;
-ERROR:  argument of AND must be type boolean, not type test_json_table_set_t_set
-LINE 1: ...on_type.`json&&set_t` = test_json_table.`json` && test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_set_t` = test_json_table.`json` div test_json_table.`set_t`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  PL/pgSQL function "div"(json,anyelement) line 3 at RETURN
@@ -6095,15 +5911,7 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(json,anyelement) line 3 at RETURN
 referenced column: json_xor_set_t
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_set_t` = test_json_table.`json` and test_json_table.`set_t`;
-ERROR:  argument of AND must be type boolean, not type test_json_table_set_t_set
-LINE 1: ...ype.`json_and_set_t` = test_json_table.`json` and test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_set_t` = test_json_table.`json` or test_json_table.`set_t`;
-ERROR:  argument of OR must be type boolean, not type test_json_table_set_t_set
-LINE 1: ..._type.`json_or_set_t` = test_json_table.`json` or test_json_...
-                                                             ^
-CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json+json` = test_json_table.`json` + test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+json
@@ -6607,49 +6415,73 @@ binary-json           | 1.23
 binary*json           | 0
 binary/json           | 
 binary^json           | 1
+binary||json          | t
+binary&&json          | f
 binary_div_json       | 
 binary_mod_json       | 
 binary_xor_json       | 1
+binary_and_json       | f
+binary_or_json        | t
 varbinary+json        | 1.23
 varbinary-json        | 1.23
 varbinary*json        | 0
 varbinary/json        | 
 varbinary^json        | 1
+varbinary||json       | t
+varbinary&&json       | f
 varbinary_div_json    | 
 varbinary_mod_json    | 
 varbinary_xor_json    | 1
+varbinary_and_json    | f
+varbinary_or_json     | t
 tinyblob+json         | 1.23
 tinyblob-json         | 1.23
 tinyblob*json         | 0
 tinyblob/json         | 
 tinyblob^json         | 1
+tinyblob||json        | t
+tinyblob&&json        | f
 tinyblob_div_json     | 
 tinyblob_mod_json     | 
 tinyblob_xor_json     | 1
+tinyblob_and_json     | f
+tinyblob_or_json      | t
 blob+json             | 1.23
 blob-json             | 1.23
 blob*json             | 0
 blob/json             | 
 blob^json             | 1
+blob||json            | t
+blob&&json            | f
 blob_div_json         | 
 blob_mod_json         | 
 blob_xor_json         | 1
+blob_and_json         | f
+blob_or_json          | t
 mediumblob+json       | 1.23
 mediumblob-json       | 1.23
 mediumblob*json       | 0
 mediumblob/json       | 
 mediumblob^json       | 1
+mediumblob||json      | t
+mediumblob&&json      | f
 mediumblob_div_json   | 
 mediumblob_mod_json   | 
 mediumblob_xor_json   | 1
+mediumblob_and_json   | f
+mediumblob_or_json    | t
 longblob+json         | 1.23
 longblob-json         | 1.23
 longblob*json         | 0
 longblob/json         | 
 longblob^json         | 1
+longblob||json        | t
+longblob&&json        | f
 longblob_div_json     | 
 longblob_mod_json     | 
 longblob_xor_json     | 1
+longblob_and_json     | f
+longblob_or_json      | t
 text+json             | 1.23
 text-json             | 1.23
 text*json             | 0
@@ -6677,9 +6509,13 @@ enum_t>>json          | 1
 enum_t<<json          | 1
 enum_t|json           | 1
 enum_t&json           | 0
+enum_t||json          | t
+enum_t&&json          | f
 enum_t_div_json       | 
 enum_t_mod_json       | 
 enum_t_xor_json       | 1
+enum_t_and_json       | f
+enum_t_or_json        | t
 set_t+json            | 5
 set_t-json            | 5
 set_t*json            | 0
@@ -6690,9 +6526,13 @@ set_t>>json           | 5
 set_t<<json           | 5
 set_t|json            | 5
 set_t&json            | 0
+set_t||json           | t
+set_t&&json           | f
 set_t_div_json        | 
 set_t_mod_json        | 
 set_t_xor_json        | 5
+set_t_and_json        | f
+set_t_or_json         | t
 json+int1             | 1
 json-int1             | -1
 json*int1             | 0
@@ -7100,49 +6940,73 @@ json-binary           | -1.23
 json*binary           | 0
 json/binary           | 0
 json^binary           | 1
+json||binary          | t
+json&&binary          | f
 json_div_binary       | 0
 json_mod_binary       | 0.00
 json_xor_binary       | 1
+json_and_binary       | f
+json_or_binary        | t
 json+varbinary        | 1.23
 json-varbinary        | -1.23
 json*varbinary        | 0
 json/varbinary        | 0
 json^varbinary        | 1
+json||varbinary       | t
+json&&varbinary       | f
 json_div_varbinary    | 0
 json_mod_varbinary    | 0.00
 json_xor_varbinary    | 1
+json_and_varbinary    | f
+json_or_varbinary     | t
 json+tinyblob         | 1.23
 json-tinyblob         | -1.23
 json*tinyblob         | 0
 json/tinyblob         | 0
 json^tinyblob         | 1
+json||tinyblob        | t
+json&&tinyblob        | f
 json_div_tinyblob     | 0
 json_mod_tinyblob     | 0.00
 json_xor_tinyblob     | 1
+json_and_tinyblob     | f
+json_or_tinyblob      | t
 json+blob             | 1.23
 json-blob             | -1.23
 json*blob             | 0
 json/blob             | 0
 json^blob             | 1
+json||blob            | t
+json&&blob            | f
 json_div_blob         | 0
 json_mod_blob         | 0.00
 json_xor_blob         | 1
+json_and_blob         | f
+json_or_blob          | t
 json+mediumblob       | 1.23
 json-mediumblob       | -1.23
 json*mediumblob       | 0
 json/mediumblob       | 0
 json^mediumblob       | 1
+json||mediumblob      | t
+json&&mediumblob      | f
 json_div_mediumblob   | 0
 json_mod_mediumblob   | 0.00
 json_xor_mediumblob   | 1
+json_and_mediumblob   | f
+json_or_mediumblob    | t
 json+longblob         | 1.23
 json-longblob         | -1.23
 json*longblob         | 0
 json/longblob         | 0
 json^longblob         | 1
+json||longblob        | t
+json&&longblob        | f
 json_div_longblob     | 0
 json_mod_longblob     | 0.00
 json_xor_longblob     | 1
+json_and_longblob     | f
+json_or_longblob      | t
 json+text             | 1.23
 json-text             | -1.23
 json*text             | 0
@@ -7170,9 +7034,13 @@ json>>enum_t          | 0
 json<<enum_t          | 0
 json|enum_t           | 1
 json&enum_t           | 0
+json||enum_t          | t
+json&&enum_t          | f
 json_div_enum_t       | 0
 json_mod_enum_t       | 0
 json_xor_enum_t       | 1
+json_and_enum_t       | f
+json_or_enum_t        | t
 json+set_t            | 5
 json-set_t            | -5
 json*set_t            | 0
@@ -7183,9 +7051,13 @@ json>>set_t           | 0
 json<<set_t           | 0
 json|set_t            | 5
 json&set_t            | 0
+json||set_t           | t
+json&&set_t           | f
 json_div_set_t        | 0
 json_mod_set_t        | 0
 json_xor_set_t        | 5
+json_and_set_t        | f
+json_or_set_t         | t
 json+json             | 0
 json-json             | 0
 json*json             | 0
