@@ -6102,18 +6102,15 @@ Datum get_format(PG_FUNCTION_ARGS)
 /**
  * parse unit symbol into an enum value
 */
-static inline void resolve_units(char *unit_str, b_units *unit)
+bool resolve_units(char *unit_str, b_units *unit)
 {
     for(int i = 0; i < units_size; i++) {
         if(strcmp(unit_str, unitnms[i]) == 0) {
             *unit = (b_units)i;
-            return;
+            return true;
         }
     }
-    ereport(ERROR, 
-            (errmodule(MOD_FUNCTION),
-            errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-            errmsg("units \"%s\" not supported", unit_str)));
+    return false;
 }
 
 /**
@@ -6350,7 +6347,12 @@ Datum b_extract_text(PG_FUNCTION_ARGS)
     int time_sign = 1;
 
     char *lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
-    resolve_units(lowunits, &enum_unit);
+    if (!resolve_units(lowunits, &enum_unit)) {
+        ereport(ERROR,
+                (errmodule(MOD_FUNCTION),
+                errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("units \"%s\" not supported", lowunits)));
+    }
     if (find_type(enum_unit)) {
         if (!datetime_in_with_sql_mode(str, tm, &fsec, NO_ZERO_DATE_SET())) {
             PG_RETURN_NULL();
@@ -6376,7 +6378,12 @@ Datum b_extract_numeric(PG_FUNCTION_ARGS)
     int date_type = 0;
 
     char *lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
-    resolve_units(lowunits, &enum_unit);
+    if (!resolve_units(lowunits, &enum_unit)) {
+        ereport(ERROR,
+                (errmodule(MOD_FUNCTION),
+                errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                errmsg("units \"%s\" not supported", lowunits)));
+    }
     Numeric_to_lldiv(num, &div);
     if (find_type(enum_unit)) {
         if (IS_ZERO_NUMBER_DATE(div.quot, div.rem)) {

@@ -1,0 +1,131 @@
+create schema extract_units;
+set current_schema = extract_units;
+set dolphin.b_compatibility_mode=on;
+select extract(epoch from timestamp'2019-07-02 12:12:12.12121');
+    date_part     
+------------------
+ 1562069532.12121
+(1 row)
+
+select extract(year from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+    2019
+(1 row)
+
+select extract(quarter from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+       3
+(1 row)
+
+select extract(month from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+       7
+(1 row)
+
+select extract(week from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+      26
+(1 row)
+
+select extract(day from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+       2
+(1 row)
+
+select extract(hour from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+      12
+(1 row)
+
+select extract(minute from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+      12
+(1 row)
+
+select extract(second from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+      12
+(1 row)
+
+select extract(microsecond from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+  121210
+(1 row)
+
+select extract(year_month from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+  201907
+(1 row)
+
+select extract(day_hour from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+     212
+(1 row)
+
+select extract(day_minute from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+   21212
+(1 row)
+
+select extract(day_second from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+ 2121212
+(1 row)
+
+select extract(hour_minute from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+    1212
+(1 row)
+
+select extract(hour_second from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+  121212
+(1 row)
+
+select extract(minute_second from timestamp'2019-07-02 12:12:12.12121');
+ extract 
+---------
+    1212
+(1 row)
+
+select extract(day_microsecond from timestamp'2019-07-02 12:12:12.12121');
+    extract    
+---------------
+ 2121212121210
+(1 row)
+
+select extract(hour_microsecond from timestamp'2019-07-02 12:12:12.12121');
+   extract    
+--------------
+ 121212121210
+(1 row)
+
+select extract(minute_microsecond from timestamp'2019-07-02 12:12:12.12121');
+  extract   
+------------
+ 1212121210
+(1 row)
+
+select extract(second_microsecond from timestamp'2019-07-02 12:12:12.12121');
+ extract  
+----------
+ 12121210
+(1 row)
+
+reset current_schema;
+drop schema extract_units;
