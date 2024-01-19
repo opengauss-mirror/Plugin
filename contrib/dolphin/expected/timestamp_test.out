@@ -40,9 +40,9 @@ WARNING:  invalid input syntax for type timestamp: "ÿÿÿÿÿÿÿÿ"
 CONTEXT:  referenced column: timestamp
 SQL function "bit_cast_datetime" statement 1
 referenced column: timestamp
-      timestamp      
----------------------
- 0000-00-00 00:00:00
+ timestamp 
+-----------
+ 
 (1 row)
 
 select '2022-01-01'::bit(64)::timestamp;
@@ -262,4 +262,227 @@ select datetime '2022-1-12 12:23:23' or  timestamp '00000000000000';
 ----------
  t
 (1 row)
+
+reset dolphin.sql_mode;
+create table t_set0004(c1 int not null auto_increment primary key, c2 set('2011-11-11', '2023-02-28 11:23:00', '2024-01', '2025/01/01') default null, c3 set('red', 'yellow', 'blue') not null, c4 set('0', '1', '1.01314'));
+NOTICE:  CREATE TABLE will create implicit sequence "t_set0004_c1_seq" for serial column "t_set0004.c1"
+NOTICE:  CREATE TABLE will create implicit set "t_set0004_c2_set" for column "t_set0004.c2"
+NOTICE:  CREATE TABLE will create implicit set "t_set0004_c3_set" for column "t_set0004.c3"
+NOTICE:  CREATE TABLE will create implicit set "t_set0004_c4_set" for column "t_set0004.c4"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_set0004_pkey" for table "t_set0004"
+insert into t_set0004(c2, c3, c4) values ('2025/01/01', 'blue', '0');
+insert into t_set0004(c2, c3, c4) values ('2011-11-11,2023-02-28 11:23:00', 'red,yellow', '0,1');
+insert into t_set0004(c2, c3, c4) values ('2024-01,2011-11-11,2025/01/01', 'red,blue', '0,1.01314');
+insert into t_set0004(c2, c3) values ('2023-02-28 11:23:00', 'red');
+insert into t_set0004(c2, c3) values ('2023-02-28 11:23:00,2025/01/01,2025/01/01', 'blue,blue,yellow');
+insert into t_set0004(c3) values ('yellow');
+insert into t_set0004(c3) values ('yellow,yellow,yellow,yellow');
+insert into t_set0004(c3) values ('blue,yellow,red,red');
+insert into t_set0004(c3) values ('blue,red');
+insert into t_set0004(c3, c4) values ('red', '1');
+insert into t_set0004(c3, c4) values ('red,red', '1.01314,1.01314');
+insert into t_set0004(c3, c4) values ('red,blue', '0,1,1.01314');
+select cast(c1 as date), cast(c2 as date), cast(c3 as date), cast(c4 as date) from t_set0004 order by 1,2,3,4;
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type date: "blue"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c3
+WARNING:  invalid input syntax for type timestamp: "0"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c4
+WARNING:  invalid input syntax for type date: "0"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c4
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type date: "2011-11-11,2023-02-28 11:23:00"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c2
+WARNING:  invalid input syntax for type date: "red,yellow"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c3
+WARNING:  date/time field value out of range: "0,1"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c4
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type date: "2011-11-11,2024-01,2025/01/01"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c2
+WARNING:  invalid input syntax for type date: "red,blue"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c3
+WARNING:  invalid input syntax for type date: "0,1.01314"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c4
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type date: "red"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c3
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type date: "yellow,blue"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c3
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type date: "yellow"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c3
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type date: "yellow"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c3
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type date: "red,yellow,blue"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c3
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type date: "red,blue"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c3
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type date: "red"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c3
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c4
+WARNING:  invalid input syntax for type date: "1"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c4
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type date: "red"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c3
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type date: "red,blue"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c3
+WARNING:  invalid input syntax for type date: "0,1,1.01314"
+CONTEXT:  referenced column: date
+SQL function "set_date" statement 1
+referenced column: c4
+ c1 |     c2     | c3 |     c4     
+----+------------+----+------------
+    |            |    | 
+    |            |    | 
+    |            |    | 
+    |            |    | 
+    |            |    | 
+    |            |    | 
+    |            |    | 
+    |            |    | 
+    |            |    | 2001-01-31
+    | 2023-02-28 |    | 
+    | 2023-02-28 |    | 
+    | 2025-01-01 |    | 
+(12 rows)
+
+select cast(c1 as datetime), cast(c2 as datetime), cast(c3 as datetime), cast(c4 as datetime) from t_set0004 order by 1,2,3,4;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type timestamp: "blue"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type timestamp: "0"
+CONTEXT:  referenced column: c4
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type timestamp: "2011-11-11,2023-02-28 11:23:00"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type timestamp: "red,yellow"
+CONTEXT:  referenced column: c3
+WARNING:  date/time field value out of range: "0,1"
+CONTEXT:  referenced column: c4
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type timestamp: "2011-11-11,2024-01,2025/01/01"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type timestamp: "red,blue"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type timestamp: "0,1.01314"
+CONTEXT:  referenced column: c4
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type timestamp: "red"
+CONTEXT:  referenced column: c3
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type timestamp: "yellow,blue"
+CONTEXT:  referenced column: c3
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type timestamp: "yellow"
+CONTEXT:  referenced column: c3
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type timestamp: "yellow"
+CONTEXT:  referenced column: c3
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type timestamp: "red,yellow,blue"
+CONTEXT:  referenced column: c3
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type timestamp: "red,blue"
+CONTEXT:  referenced column: c3
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type timestamp: "red"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: c4
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type timestamp: "red"
+CONTEXT:  referenced column: c3
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c1
+WARNING:  invalid input syntax for type timestamp: "red,blue"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type timestamp: "0,1,1.01314"
+CONTEXT:  referenced column: c4
+ c1 |         c2          | c3 |         c4          
+----+---------------------+----+---------------------
+    |                     |    | 
+    |                     |    | 
+    |                     |    | 
+    |                     |    | 
+    |                     |    | 
+    |                     |    | 
+    |                     |    | 
+    |                     |    | 
+    |                     |    | 2001-01-31 04:00:00
+    | 2023-02-28 11:23:00 |    | 
+    | 2023-02-28 11:23:00 |    | 
+    | 2025-01-01 00:00:00 |    | 
+(12 rows)
 

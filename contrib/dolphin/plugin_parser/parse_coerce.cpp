@@ -90,7 +90,7 @@ static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others
 #define CAST_ENUM_IDX 22
 #define ENUM_CAST_IDX 19
 #define CAST_SIGNED_IDX 16
-#define NUM_CAST_TIME_IDX 11
+#define NUM_CAST_TIME_IDX 12
 
 static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1_cast_ui1", "i1_cast_ui2", "i1_cast_ui4", "i1_cast_ui8"},
                                                                             {"i2_cast_ui1", "i2_cast_ui2", "i2_cast_ui4", "i2_cast_ui8"},
@@ -126,12 +126,22 @@ static const char* enumCastFunction[ENUM_CAST_IDX] = {"enum_bit", "enum_int1", "
 static const char* numCastTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_time", "int16_cast_time", "int32_cast_time",
                                                              "int64_cast_time", "uint8_cast_time", "uint16_cast_time",
                                                              "uint32_cast_time", "uint64_cast_time", "float4_cast_time",
-                                                             "float8_cast_time", "numeric_cast_time"};
+                                                             "float8_cast_time", "numeric_cast_time",
+                                                             "text_time_explicit"};
 
 static const char* numCastDateFunction[NUM_CAST_TIME_IDX] = {"int8_cast_date", "int16_cast_date", "int32_cast_date",
                                                              "int64_cast_date", "uint8_cast_date", "uint16_cast_date",
-                                                             "uint32_cast_date", "uint64_cast_date", "float4_cast_date",
-                                                             "float8_cast_date", "numeric_cast_date"};
+                                                             "uint32_cast_date", "uint64_cast_date",
+                                                             "float4_cast_date", "float8_cast_date",
+                                                             "numeric_cast_date", "text_date_explicit"};
+
+static const char* numCastDateTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_datetime", "int16_cast_datetime",
+                                                                 "int32_cast_datetime", "int64_cast_datetime",
+                                                                 "uint8_cast_datetime", "uint16_cast_datetime",
+                                                                 "uint32_cast_datetime", "uint64_cast_datetime",
+                                                                 "float4_cast_datetime", "float8_cast_datetime",
+                                                                 "numeric_cast_datetime", "timestamp_explicit"};
+
 
 
 typedef enum {
@@ -216,7 +226,8 @@ typedef enum {
     N_UINT8,
     N_FLOAT4,
     N_FLOAT8,
-    N_NUMERIC
+    N_NUMERIC,
+    N_TEXT
 } NumCastIdx;
 #endif
 /*
@@ -3366,6 +3377,8 @@ int findNumTimeFunctionIdx(Oid typeId)
             return N_FLOAT8;
         case NUMERICOID:
             return N_NUMERIC;
+        case TEXTOID:
+            return N_TEXT;
         default:
             break;
     }
@@ -3398,6 +3411,13 @@ Oid findNumDateExplicitCastFunction(Oid sourceTypeId, Oid funcid)
     return (cast_oid != InvalidOid) ? cast_oid : funcid;
 }
 
+Oid findNumDateTimeExplicitCastFunction(Oid sourceTypeId, Oid funcid)
+{
+    int idx = findNumTimeFunctionIdx(sourceTypeId);
+    Oid cast_oid = (idx == INVALID_IDX) ? InvalidOid :
+                                          get_func_oid(numCastDateTimeFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+    return (cast_oid != InvalidOid) ? cast_oid : funcid;
+}
 
 int findEnumFunctionIdx(Oid typeId)
 {
@@ -3571,6 +3591,8 @@ void TryFindSpecifiedCastFunction(const Oid sourceTypeId, const Oid targetTypeId
         *funcId = findNumTimeExplicitCastFunction(sourceTypeId, defaultFuncId);
     } else if (targetTypeId == DATEOID) {
         *funcId = findNumDateExplicitCastFunction(sourceTypeId, defaultFuncId);
+    } else if (targetTypeId == TIMESTAMPOID) {
+         *funcId = findNumDateTimeExplicitCastFunction(sourceTypeId, defaultFuncId);
     }
     else {
         *funcId = findUnsignedExplicitCastFunction(targetTypeId, sourceTypeId, defaultFuncId);
