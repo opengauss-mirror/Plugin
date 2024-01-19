@@ -1345,11 +1345,10 @@ Datum dolphin_types()
     Datum* datums = NULL;
     ArrayType* dolphinTypesArray = NULL;
     int dimension = 2;
-    int cstringLength = -2;
     datums = (Datum*)palloc(DOLPHIN_TYPES_NUM * TYPE_ATTRIBUTES_NUM * sizeof(Datum));
     for (int row = 0; row < DOLPHIN_TYPES_NUM; row++) {
         for (int col = 0; col < TYPE_ATTRIBUTES_NUM; col++) {
-            datums[row * TYPE_ATTRIBUTES_NUM + col] = CStringGetDatum(dolphinTypes[row][col]);
+            datums[row * TYPE_ATTRIBUTES_NUM + col] = CStringGetTextDatum(dolphinTypes[row][col]);
         }
     }
     int dims[dimension];
@@ -1359,7 +1358,7 @@ Datum dolphin_types()
     lbs[0] = 1;
     lbs[1] = 1;
 
-    dolphinTypesArray = construct_md_array(datums, NULL, dimension, dims, lbs, CSTRINGOID, cstringLength, false, 'c');
+    dolphinTypesArray = construct_md_array(datums, NULL, dimension, dims, lbs, TEXTOID, -1, false, 'i');
     pfree_ext(datums);
     PG_RETURN_ARRAYTYPE_P(dolphinTypesArray);
 }
