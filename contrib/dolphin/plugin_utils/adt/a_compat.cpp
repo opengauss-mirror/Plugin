@@ -20,6 +20,7 @@
 #include "plugin_mb/pg_wchar.h"
 #include "plugin_parser/parser.h"
 #include "plugin_postgres.h"
+#include "utils/varbit.h"
 #include "miscadmin.h"
 
 static text* dotrim(const char* string, int stringlen, const char* set, int setlen, bool doltrim, bool dortrim);
@@ -1090,4 +1091,83 @@ Datum repeat(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     } else
         PG_RETURN_TEXT_P(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(repeat_binary);
+extern "C" DLL_PUBLIC Datum repeat_binary(PG_FUNCTION_ARGS);
+Datum repeat_binary(PG_FUNCTION_ARGS)
+{
+    bytea *vlena = PG_GETARG_BYTEA_PP(0);
+    int32 count = PG_GETARG_INT32(1);
+    int32 slen = VARSIZE_ANY_EXHDR(vlena);
+    FUNC_CHECK_HUGE_POINTER(false, vlena, "repeat()");
+    int tlen;
+    /* out of rage check */
+    if (unlikely(pg_mul_s32_overflow(count, slen, &tlen)) || unlikely(pg_add_s32_overflow(tlen, VARHDRSZ, &tlen))) {
+        ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
+    }
+
+    char *source = VARDATA_ANY(vlena);
+    bytea *result = (bytea *)palloc(tlen);
+    /* destination size */
+    int32 resultSize = tlen - VARHDRSZ;
+    SET_VARSIZE(result, resultSize + VARHDRSZ);
+    char *tmp = VARDATA(result);
+    int leftLength = resultSize;
+    while (count--) {
+        errno_t rc = memcpy_s(tmp, leftLength, source, slen);
+        securec_check(rc, "\0", "\0");
+        tmp += slen;
+        leftLength -= slen;
+    }
+    PG_RETURN_BYTEA_P(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(repeat_bit);
+extern "C" DLL_PUBLIC Datum repeat_bit(PG_FUNCTION_ARGS);
+
+Datum repeat_bit(PG_FUNCTION_ARGS)
+{
+    VarBit *s = PG_GETARG_VARBIT_P(0);
+    char *bitsChar = (char *)VARBITS(s);
+    int len = VARBITLEN(s);
+
+    /*
+     * When the length of varbit is not a multiple of 8, varbit uses the first several digits of bits8 as the bit flag.
+     * For example, if the length of var is 13, the actual number of digits is as follows:
+     * | 11111111 | 11111000 |
+     * When we convert the varbit value to bytea, we need to shift all the varbits right.
+     * The length of the shift right operation is BITS_PER_BYTE - length % BITS_PER_BYTE
+     * | 00001111 | 11111111 |
+     * Other examples:
+     * Example 1: length: 18. Shift move: 6
+     * | 10101011 | 00110111 | 01000000 | converts to:
+     * | 00000010 | 10101100 | 11011101 |
+     * Example 2: length 24(=8*3): do nothing
+     * | 10000000 | 10000000 | 10000000 | converts to:
+     * | 10000000 | 10000000 | 10000000 |
+     * We only need to convert the last varbit whose length is not 8.
+     * */
+    int moveCount = BITS_PER_BYTE - (len % BITS_PER_BYTE);
+    if (moveCount != BITS_PER_BYTE) {
+        /* make a copy of varbit */
+        VarBit *varBitCopy = PG_GETARG_VARBIT_P_COPY(0);
+        bits8 *sp = VARBITS(varBitCopy);
+        bitsChar = (char *)sp;
+
+        int varBitSize = len / BITS_PER_BYTE + 1;
+        while (moveCount-- != 0) {
+            bits8 currentRight = 0x00;
+            bits8 lastRight = 0x00;
+#define LOWER_MASK 0x01
+            for (int i = 0; i < varBitSize; i++) {
+                currentRight = sp[i] & LOWER_MASK;
+                sp[i] >>= 1;
+                sp[i] |= (lastRight << 7);
+                lastRight = currentRight;
+            }
+        }
+    }
+    Datum bit_binary = CStringGetByteaDatum(bitsChar, VARBITBYTES(s));
+    return DirectFunctionCall2(repeat_binary, bit_binary, PG_GETARG_INT32(1));
 }

@@ -755,3 +755,12 @@ DROP FUNCTION IF EXISTS pg_catalog.hour(YEAR);
 DROP FUNCTION IF EXISTS pg_catalog.minute(YEAR);
 DROP FUNCTION IF EXISTS pg_catalog.second(YEAR);
 DROP FUNCTION IF EXISTS pg_catalog.year(YEAR);
+
+-- repeat function support
+DROP FUNCTION IF EXISTS pg_catalog.repeat(anyenum, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(boolean, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(tinyblob, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(json, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(year, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(binary, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(bit, integer);
