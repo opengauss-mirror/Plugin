@@ -1763,7 +1763,11 @@ static void SetUpsertAttrnoState(ParseState* pstate, List *targetList)
                 if (attr[ci].attisdropped) {
                     continue;
                 }
+#ifdef DOLPHIN
+                if (pg_strcasecmp(name, attr[ci].attname.data) == 0) {
+#else
                 if (strcmp(name, attr[ci].attname.data) == 0) {
+#endif
                     rstate->usExplicitAttrNos[ni] = ci + 1;
                     break;
                 }

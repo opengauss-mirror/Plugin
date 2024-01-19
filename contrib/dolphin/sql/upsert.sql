@@ -459,6 +459,21 @@ PARTITION BY LIST (col_2) SUBPARTITION BY HASH (col_3)
     ),
     PARTITION p_list_7 VALUES (DEFAULT)
 );
+
+-- Test column name case sensitivity.
+DROP TABLE IF EXISTS "TAB_STUDENT";
+CREATE TABLE "TAB_STUDENT" (
+"DI_ID" int8 NOT NULL,
+"DC_NAME" varchar(100),
+"DC_SEX" text,
+"DI_AGE" int4
+);
+INSERT INTO "TAB_STUDENT" VALUES (1,'first','man',9) ON DUPLICATE KEY UPDATE DI_AGE = 10;
+INSERT INTO "TAB_STUDENT" VALUES (2,'second','woman',9) ON DUPLICATE KEY UPDATE di_age = 10;
+INSERT INTO "TAB_STUDENT" VALUES (3,'third','woman',9) ON DUPLICATE KEY UPDATE DI_age = 10;
+SELECT * FROM "TAB_STUDENT";
+DROP TABLE "TAB_STUDENT";
+
 create unique index subpartition_03_idx1 on subpartition_03(col_2, col_3, col_4) local;
 create index subpartition_03_idx2 on subpartition_03(col_3, col_1) local;
 create index subpartition_03_idx3 on subpartition_03(col_4) global;
