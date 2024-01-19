@@ -258,6 +258,8 @@ create table t1(id bigint not null comment 'pk' primary key);
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
 create table t2(id bigint not null primary key comment 'pk' );
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t2_pkey" for table "t2"
+create table t3(id int comment 'user id' comment 'user_id' comment 'author id');
+create table t4(id int comment 'user id' comment 'user_id');
 \d+ t1
                        Table "b_comments.t1"
  Column |  Type  | Modifiers | Storage | Stats target | Description 
@@ -278,8 +280,24 @@ Indexes:
 Has OIDs: no
 Options: orientation=row, compression=no
 
+\d+ t3
+                        Table "b_comments.t3"
+ Column |  Type   | Modifiers | Storage | Stats target | Description 
+--------+---------+-----------+---------+--------------+-------------
+ id     | integer |           | plain   |              | author id
+Has OIDs: no
+Options: orientation=row, compression=no
+
+\d+ t4
+                        Table "b_comments.t4"
+ Column |  Type   | Modifiers | Storage | Stats target | Description 
+--------+---------+-----------+---------+--------------+-------------
+ id     | integer |           | plain   |              | user_id
+Has OIDs: no
+Options: orientation=row, compression=no
+
 drop schema b_comments cascade;
-NOTICE:  drop cascades to 18 other objects
+NOTICE:  drop cascades to 20 other objects
 DETAIL:  drop cascades to table test_unsupported
 drop cascades to table test_row
 drop cascades to table test_column
@@ -298,4 +316,6 @@ drop cascades to table t_comment_0032
 drop cascades to table t_comment_0034
 drop cascades to table t1
 drop cascades to table t2
+drop cascades to table t3
+drop cascades to table t4
 reset search_path;

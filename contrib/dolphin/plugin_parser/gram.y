@@ -38461,7 +38461,7 @@ SplitColQualList(List *qualList,
 		}
 		else if (IsA(n, CommentStmt) && columnOptions != NULL)
 		{
-			*columnOptions = lappend(*columnOptions, n);
+			*columnOptions = lcons(n, *columnOptions);
 		}
 		else {
 			const char* message = "unexpected node type";
@@ -38530,7 +38530,7 @@ SplitColQualList(List *qualList,
 		}
 		else if (IsA(n, CommentStmt))
 		{
-			*columnOptions = lappend(*columnOptions, n);
+			*columnOptions = lcons(n, *columnOptions);
 		}
 		else {
 			const char* message = "unexpected node type";
