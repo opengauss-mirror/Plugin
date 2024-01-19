@@ -90,7 +90,7 @@ extern void adjust_time_range(pg_tm *tm, fsec_t &fsec, bool &warnings);
 extern bool time_in_with_flag(char *str, unsigned int date_flag, TimeADT* time_adt, bool vertify_time = false);
 extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag, bool vertify_time = false);
 extern bool date_add_interval(DateADT date, Interval *span, DateADT *result);
-extern Datum date_internal(PG_FUNCTION_ARGS, bool is_date_sconst, TimeErrorType* time_error_type);
+eextern Datum date_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type);
 extern Datum textout (PG_FUNCTION_ARGS);
 extern bool time_add_nanoseconds_with_round(char* input_str, pg_tm *tm, long long rem, fsec_t* fsec, bool can_ignore);
 extern long long align_to_nanoseconds(long long src);

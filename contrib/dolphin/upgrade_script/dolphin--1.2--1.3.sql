@@ -1245,3 +1245,33 @@ DROP FUNCTION IF EXISTS pg_catalog.acos(json);
 CREATE OR REPLACE FUNCTION pg_catalog.acos(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.acos(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.acos(year) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.acos(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.acos(json) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.acos(cast($1 as double precision))';
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_date_explicit(TEXT)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'text_date_explicit';
+
+CREATE OR REPLACE FUNCTION pg_catalog.int8_cast_datetime(int1)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int8_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.int16_cast_datetime(int2)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int16_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.int32_cast_datetime(int4)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.int64_cast_datetime(int8)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_cast_datetime';
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_cast_datetime(uint1)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint8_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.uint16_cast_datetime(uint2)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint16_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.uint32_cast_datetime(uint4)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint32_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.uint64_cast_datetime(uint8)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint64_cast_datetime';
+
+CREATE OR REPLACE FUNCTION pg_catalog.float4_cast_datetime(float4)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float4_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.float8_cast_datetime(float8)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float8_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_datetime(numeric)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_explicit(TEXT)
+RETURNS timestamp without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamp_explicit';

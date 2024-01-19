@@ -76,21 +76,6 @@ DROP FUNCTION IF EXISTS pg_catalog.convert(longblob, name);
 DROP FUNCTION IF EXISTS pg_catalog.convert(anyenum, name);
 DROP FUNCTION IF EXISTS pg_catalog.convert(json, name);
 
-DROP FUNCTION IF EXISTS pg_catalog.text_date_explicit(TEXT);
-
-DROP FUNCTION IF EXISTS pg_catalog.int8_cast_datetime(int1);
-DROP FUNCTION IF EXISTS pg_catalog.int16_cast_datetime(int2);
-DROP FUNCTION IF EXISTS pg_catalog.int32_cast_datetime(int4);
-DROP FUNCTION IF EXISTS pg_catalog.int64_cast_datetime(int8);
-DROP FUNCTION IF EXISTS pg_catalog.uint8_cast_datetime(uint1);
-DROP FUNCTION IF EXISTS pg_catalog.uint16_cast_datetime(uint2);
-DROP FUNCTION IF EXISTS pg_catalog.uint32_cast_datetime(uint4);
-DROP FUNCTION IF EXISTS pg_catalog.uint64_cast_datetime(uint8);
-DROP FUNCTION IF EXISTS pg_catalog.float4_cast_datetime(float4);
-DROP FUNCTION IF EXISTS pg_catalog.float8_cast_datetime(float8);
-DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_datetime(numeric);
-DROP FUNCTION IF EXISTS pg_catalog.timestamp_explicit(TEXT);
-
 DROP FUNCTION IF EXISTS pg_catalog.int8_cast_timestamptz(int1);
 DROP FUNCTION IF EXISTS pg_catalog.int16_cast_timestamptz(int2);
 DROP FUNCTION IF EXISTS pg_catalog.int32_cast_timestamptz(int4);

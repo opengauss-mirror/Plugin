@@ -880,13 +880,9 @@ CONTEXT:  referenced column: date
 (1 row)
 
 select cast('2022-05-05 01' as date);
-WARNING:  invalid input syntax for type date: "2022-05-05 01"
-LINE 1: select cast('2022-05-05 01' as date);
-                    ^
-CONTEXT:  referenced column: date
- date 
-------
- 
+    date    
+------------
+ 2022-05-05
 (1 row)
 
 select cast('2022-05-05 20-70' as date);

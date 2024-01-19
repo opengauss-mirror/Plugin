@@ -332,6 +332,32 @@ extern "C" DLL_PUBLIC Datum convert_datetime_uint64(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(convert_timestamptz_uint64);
 extern "C" DLL_PUBLIC Datum convert_timestamptz_uint64(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(int8_cast_datetime);
+extern "C" DLL_PUBLIC Datum int8_cast_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int16_cast_datetime);
+extern "C" DLL_PUBLIC Datum int16_cast_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int32_cast_datetime);
+extern "C" DLL_PUBLIC Datum int32_cast_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(int64_cast_datetime);
+extern "C" DLL_PUBLIC Datum int64_cast_datetime(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(uint8_cast_datetime);
+extern "C" DLL_PUBLIC Datum uint8_cast_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint16_cast_datetime);
+extern "C" DLL_PUBLIC Datum uint16_cast_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint32_cast_datetime);
+extern "C" DLL_PUBLIC Datum uint32_cast_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(uint64_cast_datetime);
+extern "C" DLL_PUBLIC Datum uint64_cast_datetime(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(float4_cast_datetime);
+extern "C" DLL_PUBLIC Datum float4_cast_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_cast_datetime);
+extern "C" DLL_PUBLIC Datum float8_cast_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_datetime);
+extern "C" DLL_PUBLIC Datum numeric_cast_datetime(PG_FUNCTION_ARGS);
+
 #endif
 
 /* b format datetime and timestamp type */
@@ -476,8 +502,9 @@ Datum b_db_statement_start_timestamp(PG_FUNCTION_ARGS)
 Datum timestamp_in(PG_FUNCTION_ARGS)
 #ifdef DOLPHIN
 {
+    char* str = PG_GETARG_CSTRING(0);
     TimeErrorType time_error_type = TIME_CORRECT;
-    Datum datum_internal = timestamp_internal(fcinfo, TIME_IN, &time_error_type);
+    Datum datum_internal = timestamp_internal(fcinfo, str, TIME_IN, &time_error_type);
     if ((fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT) &&
         time_error_type == TIME_INCORRECT) {
         PG_RETURN_NULL();
@@ -487,24 +514,30 @@ Datum timestamp_in(PG_FUNCTION_ARGS)
 
 Datum timestamp_cast(PG_FUNCTION_ARGS)
 {
+    char* str = PG_GETARG_CSTRING(0);
     TimeErrorType time_error_type = TIME_CORRECT;
-    return timestamp_internal(fcinfo, TIME_CAST, &time_error_type);
+    return timestamp_internal(fcinfo, str, TIME_CAST, &time_error_type);
 }
 
 Datum timestamp_explicit(PG_FUNCTION_ARGS)
 {
+    char* input_str = fcinfo->argTypes[0] ?
+                      parser_function_input(PG_GETARG_DATUM(0), fcinfo->argTypes[0]) :
+                      PG_GETARG_CSTRING(0);
     TimeErrorType time_error_type = TIME_CORRECT;
-    Datum datum_internal = timestamp_internal(fcinfo, TEXT_TIME_EXPLICIT, &time_error_type);
+    Datum datum_internal = timestamp_internal(fcinfo, input_str, TEXT_TIME_EXPLICIT, &time_error_type);
     if (time_error_type == TIME_INCORRECT) {
         PG_RETURN_NULL();
     }
     return datum_internal;
 }
 
-Datum timestamp_internal(PG_FUNCTION_ARGS, int time_cast_type, TimeErrorType* time_error_type)
+Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type)
 #endif
 {
+#ifndef DOLPHIN
     char* str = PG_GETARG_CSTRING(0);
+#endif
 
 #ifdef NOT_USED
     Oid typelem = PG_GETARG_OID(1);
@@ -917,11 +950,11 @@ static int64 integer_b_format_timestamp(bool hasTz, int64 ts, bool can_ignore)
 #endif
 
 #ifdef DOLPHIN
-Datum timestamp_to_datum(PG_FUNCTION_ARGS, bool hasTz, int64 ts)
+Datum timestamp_to_datum(PG_FUNCTION_ARGS, bool hasTz, int64 ts, bool is_explicit = false)
 {
     TimeErrorType time_error_type = TIME_CORRECT;
     int64 result = integer_b_format_timestamp(hasTz, ts, fcinfo->can_ignore, &time_error_type);
-    if (fcinfo->ccontext == COERCION_IMPLICIT && time_error_type == TIME_INCORRECT && ENABLE_B_CMPT_MODE) {
+    if (is_explicit && time_error_type == TIME_INCORRECT) {
         PG_RETURN_NULL();
     }
     PG_RETURN_TIMESTAMP(result);
@@ -11660,5 +11693,82 @@ Datum dolphin_timestamptznot(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
     }
     PG_RETURN_UINT64(~((uint64)timestamp2int(tm)));
+}
+
+Datum int8_cast_datetime(PG_FUNCTION_ARGS)
+{
+    return timestamp_to_datum(fcinfo, false, (int64)PG_GETARG_INT8(0), true);
+}
+
+Datum int16_cast_datetime(PG_FUNCTION_ARGS)
+{
+    return timestamp_to_datum(fcinfo, false, (int64)PG_GETARG_INT16(0), true);
+}
+
+Datum int32_cast_datetime(PG_FUNCTION_ARGS)
+{
+    return timestamp_to_datum(fcinfo, false, (int64)PG_GETARG_INT32(0), true);
+}
+
+Datum int64_cast_datetime(PG_FUNCTION_ARGS)
+{
+    return timestamp_to_datum(fcinfo, false, (int64)PG_GETARG_INT64(0), true);
+}
+
+
+Datum uint8_cast_datetime(PG_FUNCTION_ARGS)
+{
+    return timestamp_to_datum(fcinfo, false, (int64)PG_GETARG_INT8(0), true);
+}
+
+Datum uint16_cast_datetime(PG_FUNCTION_ARGS)
+{
+    return timestamp_to_datum(fcinfo, false, (int64)PG_GETARG_INT16(0), true);
+}
+
+Datum uint32_cast_datetime(PG_FUNCTION_ARGS)
+{
+    return timestamp_to_datum(fcinfo, false, (int64)PG_GETARG_INT32(0), true);
+}
+
+Datum uint64_cast_datetime(PG_FUNCTION_ARGS)
+{
+    return timestamp_to_datum(fcinfo, false, (int64)PG_GETARG_INT64(0), true);
+}
+
+Datum str_cast_datetime(PG_FUNCTION_ARGS, char *str)
+{
+    char buf[MAXDATELEN + 1];
+    fillZeroBeforeNumericTimestamp(str, buf);
+    bool isRetNull = false;
+    Datum result = DirectCall3(&isRetNull, timestamp_explicit, InvalidOid, CStringGetDatum(buf),
+        ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    if (isRetNull) {
+        PG_RETURN_NULL();
+    } else {
+        return result;
+    }
+}
+
+Datum float4_cast_datetime(PG_FUNCTION_ARGS)
+{
+    float8 n = (float8)PG_GETARG_FLOAT4(0);
+    char *str = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(n)));
+    return str_cast_datetime(fcinfo, str);
+}
+
+
+Datum float8_cast_datetime(PG_FUNCTION_ARGS)
+{
+    float8 n = PG_GETARG_FLOAT8(0);
+    char *str = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(n)));
+    return str_cast_datetime(fcinfo, str);
+}
+
+Datum numeric_cast_datetime(PG_FUNCTION_ARGS)
+{
+    Numeric n = PG_GETARG_NUMERIC(0);
+    char *str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
+    return str_cast_datetime(fcinfo, str);
 }
 #endif
