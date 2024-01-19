@@ -91,12 +91,13 @@
 #include "utils/builtins.h"
 #include "utils/date.h"
 #include "utils/datetime.h"
+#include "utils/numeric.h"
 #ifdef DOLPHIN
 #include "plugin_utils/timestamp.h"
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/date.h"
 #endif
 #include "utils/rel.h"
-#include "utils/numeric.h"
 #include "utils/syscache.h"
 #include "utils/xml.h"
 #include "utils/pl_package.h"
@@ -34840,11 +34841,27 @@ func_expr_common_subexpr:
 			| EXTRACT '(' extract_list ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
-					if (GetSessionContext()->enableBCmptMode) {
-						n->funcname = SystemFuncName("b_extract");
-						n->colname = "extract";
+					if (list_length($3) == 2) {
+						A_Const* con = (A_Const*)linitial($3);
+						char* argname = strVal(&con->val);
+						b_units enum_unit;
+						if (resolve_units(argname, &enum_unit)) {
+							if (GetSessionContext()->enableBCmptMode) {
+								n->funcname = SystemFuncName("b_extract");
+								n->colname = "extract";
+							} else {
+								n->funcname = SystemFuncName("date_part");
+							}
+						} else {
+							n->funcname = SystemFuncName("date_part");
+						}
 					} else {
-						n->funcname = SystemFuncName("date_part");
+						if (GetSessionContext()->enableBCmptMode) {
+							n->funcname = SystemFuncName("b_extract");
+							n->colname = "extract";
+						} else {
+							n->funcname = SystemFuncName("date_part");
+						}
 					}
 					n->args = $3;
 					n->agg_order = NIL;

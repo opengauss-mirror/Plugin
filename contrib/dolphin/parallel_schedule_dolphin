@@ -44,7 +44,7 @@ test: uint_agg uint_and uint_cast uint_cast2 uint_cast3 uint_div uint_mi uint_mo
 
 test: uint_procedure_col_bypass uint_smp uint_index uint_sql_mode uint_ignore uint_join signed_unsigned_cast uint_in implicit_cast uint_auto_increment signed_cast
 
-test: tinyint_agg tinyint_cast tinyint_index tinyint_operator tinyint_partition tinyint_smp_join_procedure algorithm_opt
+test: tinyint_agg tinyint_cast tinyint_index tinyint_operator tinyint_partition tinyint_smp_join_procedure algorithm_opt extract_units
 
 test: disable_thread_pool
 

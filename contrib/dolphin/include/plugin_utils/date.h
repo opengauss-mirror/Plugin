@@ -21,6 +21,7 @@
 #include "utils/date.h"
 #include "utils/numeric.h"
 #include "plugin_postgres.h"
+#include "datetime.h"
 
 /* b format date and time type boundaries*/
 #define DATE_YYYYMMDD_LEN 8
@@ -102,6 +103,7 @@ extern long long align_to_nanoseconds(long long src);
 extern bool check_time_mmssff_range(pg_tm *tm, long long microseconds);
 extern bool longlong_to_tm(long long nr, TimeADT* time, pg_tm* result_tm, fsec_t* fsec, int32* timeSign);
 bool check_time_min_value(char* input_str, long long nr, bool can_ignore);
+bool resolve_units(char *unit_str, b_units *unit);
 
 typedef struct DateTimeFormat
 {
