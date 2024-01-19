@@ -368,6 +368,9 @@ DROP FUNCTION IF EXISTS pg_catalog.binary_cmp(binary, binary);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(year);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(json);
+DROP FUNCTION IF EXISTS pg_catalog.acos(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.acos(year);
+DROP FUNCTION IF EXISTS pg_catalog.acos(json);
 
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(bit);
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(binary);
