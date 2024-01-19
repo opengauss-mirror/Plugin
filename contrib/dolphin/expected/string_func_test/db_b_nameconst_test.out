@@ -261,6 +261,8 @@ CONTEXT:  referenced column: name_const
 (1 row)
 
 SELECT NAME_CONST('2023-06-01 00:23:59'::varchar(10), 'test');
+WARNING:  value too long for type character varying(10)
+CONTEXT:  referenced column: name_const
  2023-06-01 
 ------------
  test

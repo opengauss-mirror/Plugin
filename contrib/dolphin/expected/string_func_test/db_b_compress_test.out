@@ -131,6 +131,8 @@ CONTEXT:  referenced column: hex
 (1 row)
 
 SELECT HEX(COMPRESS('string for test compress function '::varchar(10)));
+WARNING:  value too long for type character varying(10)
+CONTEXT:  referenced column: hex
                      hex                      
 ----------------------------------------------
  0a000000789c2b2e29cacc4b5748cb2f020016a403ff
@@ -414,6 +416,8 @@ CONTEXT:  referenced column: uncompress
 (1 row)
 
 SELECT UNCOMPRESS(COMPRESS('string for test compress function '::varchar(10)));
+WARNING:  value too long for type character varying(10)
+CONTEXT:  referenced column: uncompress
  uncompress 
 ------------
  string for
@@ -751,6 +755,8 @@ CONTEXT:  referenced column: uncompressed_length
 (1 row)
 
 SELECT UNCOMPRESSED_LENGTH(COMPRESS('string for test compress function '::varchar(10)));
+WARNING:  value too long for type character varying(10)
+CONTEXT:  referenced column: uncompressed_length
  uncompressed_length 
 ---------------------
  10
