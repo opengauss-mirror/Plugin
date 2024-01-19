@@ -180,15 +180,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.unhex (bytea)  RETURNS text LANGUAGE C STA
 CREATE OR REPLACE FUNCTION pg_catalog.unhex (bit)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bit';
 
 
--- repeat function support
-DROP FUNCTION IF EXISTS pg_catalog.repeat(anyenum, integer);
-DROP FUNCTION IF EXISTS pg_catalog.repeat(boolean, integer);
-DROP FUNCTION IF EXISTS pg_catalog.repeat(tinyblob, integer);
-DROP FUNCTION IF EXISTS pg_catalog.repeat(json, integer);
-DROP FUNCTION IF EXISTS pg_catalog.repeat(year, integer);
-DROP FUNCTION IF EXISTS pg_catalog.repeat(binary, integer);
-DROP FUNCTION IF EXISTS pg_catalog.repeat(bit, integer);
-
 do $$
 begin
 update pg_catalog.pg_cast set castfunc = (select oid from pg_proc where proname = 'bpchar_text'), castowner = 10 where castsource = 1042 and casttarget = 25;

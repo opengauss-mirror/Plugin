@@ -202,18 +202,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.unhex (boolean)  RETURNS longblob LANGUAGE
 CREATE OR REPLACE FUNCTION pg_catalog.unhex (bytea)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bytea';
 CREATE OR REPLACE FUNCTION pg_catalog.unhex (bit)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bit';
 
--- repeat function support
-CREATE OR REPLACE FUNCTION pg_catalog.repeat(anyenum, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
-CREATE OR REPLACE FUNCTION pg_catalog.repeat(boolean, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
-CREATE OR REPLACE FUNCTION pg_catalog.repeat(tinyblob, integer) RETURNS longblob LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)::longblob';
-CREATE OR REPLACE FUNCTION pg_catalog.repeat(blob, integer) RETURNS longblob LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)::longblob';
-CREATE OR REPLACE FUNCTION pg_catalog.repeat(mediumblob, integer) RETURNS longblob LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)::longblob';
-CREATE OR REPLACE FUNCTION pg_catalog.repeat(longblob, integer) RETURNS longblob LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)::longblob';
-CREATE OR REPLACE FUNCTION pg_catalog.repeat(json, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
-CREATE OR REPLACE FUNCTION pg_catalog.repeat(year, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
-CREATE OR REPLACE FUNCTION pg_catalog.repeat(binary, integer) RETURNS bytea LANGUAGE C STRICT IMMUTABLE AS '$libdir/dolphin', 'repeat_binary';
-CREATE OR REPLACE FUNCTION pg_catalog.repeat(bit, integer) RETURNS bytea LANGUAGE C STRICT IMMUTABLE AS '$libdir/dolphin', 'repeat_bit';
-
 DROP CAST IF EXISTS ("binary" AS boolean) CASCADE;
 DROP CAST IF EXISTS ("varbinary" AS boolean) CASCADE;
 DROP CAST IF EXISTS (blob AS boolean) CASCADE;

@@ -1317,3 +1317,15 @@ RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
 CREATE OR REPLACE FUNCTION pg_catalog.hour (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT hour($1::time)';
 CREATE OR REPLACE FUNCTION pg_catalog.minute (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT minute($1::time)';
 CREATE OR REPLACE FUNCTION pg_catalog.second (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT second($1::time)';
+
+-- repeat function support
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(anyenum, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(boolean, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(tinyblob, integer) RETURNS longblob LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)::longblob';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(blob, integer) RETURNS longblob LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)::longblob';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(mediumblob, integer) RETURNS longblob LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)::longblob';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(longblob, integer) RETURNS longblob LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)::longblob';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(json, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(year, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(binary, integer) RETURNS bytea LANGUAGE C STRICT IMMUTABLE AS '$libdir/dolphin', 'repeat_binary';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(bit, integer) RETURNS bytea LANGUAGE C STRICT IMMUTABLE AS '$libdir/dolphin', 'repeat_bit';

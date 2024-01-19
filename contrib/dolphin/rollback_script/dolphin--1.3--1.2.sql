@@ -839,3 +839,12 @@ DROP FUNCTION IF EXISTS pg_catalog.timestamp_explicit(TEXT);
 
 DROP FUNCTION IF EXISTS pg_catalog.floor(year);
 DROP FUNCTION IF EXISTS pg_catalog.floor(json);
+
+-- repeat function support
+DROP FUNCTION IF EXISTS pg_catalog.repeat(anyenum, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(boolean, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(tinyblob, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(json, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(year, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(binary, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(bit, integer);
