@@ -66,7 +66,7 @@ bool check_pg_tm_time_part(pg_tm *tm, fsec_t fsec);
 extern const char* extract_numericstr(const char* str);
 extern "C" DLL_PUBLIC Datum uint8out(PG_FUNCTION_ARGS);
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
-int DatetimeDate(char *str, pg_tm *tm, bool is_date_sconst = false);
+int DatetimeDate(char *str, pg_tm *tm, int time_cast_type);
 static float8 getPartFromTm(pg_tm* tm, fsec_t fsec, int part);
 
 PG_FUNCTION_INFO_V1_PUBLIC(int8_b_format_time);
@@ -275,6 +275,8 @@ extern "C" DLL_PUBLIC Datum date_int(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(date_cast);
 extern "C" DLL_PUBLIC Datum date_cast(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(text_date_explicit);
+extern "C" DLL_PUBLIC Datum text_date_explicit(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(time_cast);
 extern "C" DLL_PUBLIC Datum time_cast(PG_FUNCTION_ARGS);
@@ -536,7 +538,8 @@ Datum date_in(PG_FUNCTION_ARGS)
 {
     Datum result;
     TimeErrorType time_error_type = TIME_CORRECT;
-    result = date_internal(fcinfo, false, &time_error_type);
+    char* str = PG_GETARG_CSTRING(0);
+    result = date_internal(fcinfo, str, TIME_IN, &time_error_type);
     if ((fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT) &&
         time_error_type == TIME_INCORRECT) {
         PG_RETURN_NULL();
@@ -547,13 +550,30 @@ Datum date_in(PG_FUNCTION_ARGS)
 Datum date_cast(PG_FUNCTION_ARGS)
 {
     TimeErrorType time_error_type = TIME_CORRECT;
-    return date_internal(fcinfo, true, &time_error_type);
+    char* str = PG_GETARG_CSTRING(0);
+    return date_internal(fcinfo, str, TIME_CAST, &time_error_type);
 }
 
-Datum date_internal(PG_FUNCTION_ARGS, bool is_date_sconst, TimeErrorType* time_error_type)
+Datum text_date_explicit(PG_FUNCTION_ARGS)
+{
+    Datum result;
+    TimeErrorType time_error_type = TIME_CORRECT;
+    char* str = fcinfo->argTypes[0] ?
+                      parser_function_input(PG_GETARG_DATUM(0), fcinfo->argTypes[0]) :
+                      PG_GETARG_CSTRING(0);
+    result = date_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
+    if (time_error_type == TIME_INCORRECT) {
+        PG_RETURN_NULL();
+    }
+    return result;
+}
+
+Datum date_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type)
 #endif
 {
+#ifndef DOLPHIN
     char* str = PG_GETARG_CSTRING(0);
+#endif
     DateADT date;
     int dterr;
     fsec_t fsec;
@@ -567,7 +587,6 @@ Datum date_internal(PG_FUNCTION_ARGS, bool is_date_sconst, TimeErrorType* time_e
     char* date_fmt = NULL;
 #ifdef DOLPHIN
     errno_t rc = EOK;
-
     rc = memset_s(&tt, sizeof(tt), 0, sizeof(tt));
     securec_check(rc, "\0", "\0");
 #endif
@@ -588,62 +607,62 @@ Datum date_internal(PG_FUNCTION_ARGS, bool is_date_sconst, TimeErrorType* time_e
     }
 #else
     } else {
-        /*
-         * default pg date formatting parsing.
-         */
-        dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
-        if (dterr != 0) {
-            DateTimeParseErrorWithFlag(dterr, str, "date", fcinfo->can_ignore, is_date_sconst);
+        int invalid_tz;
+        bool res = cstring_to_tm(str, tm, fsec, &tzp, &invalid_tz);
+        if (!res) {
             /*
-             * if reporting warning in DateTimeParseError, return 1970-01-01
+             * default pg date formatting parsing.
              */
-#ifdef DOLPHIN
-            *time_error_type = TIME_INCORRECT;
-#endif
-            PG_RETURN_DATEADT(DATE_ALL_ZERO_VALUE);
-        }
-        if (dterr == 0) {
-            if (ftype[0] == DTK_NUMBER && nf == 1) {
-                dterr = DatetimeDate(field[0], tm, is_date_sconst);
-                dtype = DTK_DATE;
-            } else {
-                dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tzp);
+            dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
+            if (dterr != 0) {
+                DateTimeParseErrorWithFlag(dterr, str, "date", fcinfo->can_ignore, time_cast_type == TIME_CAST);
+                /*
+                 * if reporting warning in DateTimeParseError, return 1970-01-01
+                 */
+                *time_error_type = TIME_INCORRECT;
+                PG_RETURN_DATEADT(DATE_ALL_ZERO_VALUE);
             }
-        }
-        if (dterr != 0) {
-            DateTimeParseErrorWithFlag(dterr, str, "date", fcinfo->can_ignore, is_date_sconst);
-#ifdef DOLPHIN
-            *time_error_type = TIME_INCORRECT;
-#endif
-            PG_RETURN_DATEADT(DATE_ALL_ZERO_VALUE);
-        }
-        switch (dtype) {
-            case DTK_DATE:
-                break;
+            if (dterr == 0) {
+                if (ftype[0] == DTK_NUMBER && nf == 1) {
+                    dterr = DatetimeDate(field[0], tm, time_cast_type);
+                    dtype = DTK_DATE;
+                } else {
+                    dterr = DecodeDateTimeForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tzp);
+                }
+            }
+            if (dterr != 0) {
+                DateTimeParseErrorWithFlag(dterr, str, "date", fcinfo->can_ignore, time_cast_type == TIME_CAST);
+                *time_error_type = TIME_INCORRECT;
+                PG_RETURN_DATEADT(DATE_ALL_ZERO_VALUE);
+            }
+            switch (dtype) {
+                case DTK_DATE:
+                    break;
 
-            case DTK_CURRENT:
-                ereport(ERROR,
-                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                        errmsg("date/time value \"current\" is no longer supported")));
+                case DTK_CURRENT:
+                    ereport(ERROR,
+                        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                            errmsg("date/time value \"current\" is no longer supported")));
 
-                GetCurrentDateTime(tm);
-                break;
+                    GetCurrentDateTime(tm);
+                    break;
 
-            case DTK_EPOCH:
-                GetEpochTime(tm);
-                break;
+                case DTK_EPOCH:
+                    GetEpochTime(tm);
+                    break;
 
-            case DTK_LATE:
-                DATE_NOEND(date);
-                PG_RETURN_DATEADT(date);
+                case DTK_LATE:
+                    DATE_NOEND(date);
+                    PG_RETURN_DATEADT(date);
 
-            case DTK_EARLY:
-                DATE_NOBEGIN(date);
-                PG_RETURN_DATEADT(date);
+                case DTK_EARLY:
+                    DATE_NOBEGIN(date);
+                    PG_RETURN_DATEADT(date);
 
-            default:
-                DateTimeParseError(DTERR_BAD_FORMAT, str, "date");
-                break;
+                default:
+                    DateTimeParseError(DTERR_BAD_FORMAT, str, "date");
+                    break;
+            }
         }
     }
 #endif
@@ -698,17 +717,31 @@ Datum input_date_in(char* str, bool can_ignore)
 
 #ifdef DOLPHIN
 extern "C" DLL_PUBLIC Datum timestamp_cast(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum timestamp_explicit(PG_FUNCTION_ARGS);
 
-int DatetimeDate(char *str, pg_tm *tm, bool is_date_sconst)
+int DatetimeDate(char *str, pg_tm *tm, int time_cast_type)
 {
     fsec_t fsec;
     Datum datetime;
-    if (is_date_sconst) {
-        datetime = DirectFunctionCall3(timestamp_cast, CStringGetDatum(str),
-                                       ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
-    } else {
-        datetime = DirectFunctionCall3(timestamp_in, CStringGetDatum(str),
-                                       ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    bool isRetNull = false;
+    switch (time_cast_type) {
+        case TIME_CAST:
+            datetime = DirectFunctionCall3(timestamp_cast, CStringGetDatum(str),
+                ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+            break;
+
+        case TEXT_TIME_EXPLICIT:
+            datetime = DirectCall3(&isRetNull, timestamp_explicit, InvalidOid, CStringGetDatum(str),
+                ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+            if (isRetNull) {
+                return ERRCODE_DATETIME_VALUE_OUT_OF_RANGE;
+            }
+            break;
+
+        default:
+            datetime = DirectFunctionCall3(timestamp_in, CStringGetDatum(str),
+                ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+            break;
     }
 
     if (timestamp2tm(datetime, NULL, tm, &fsec, NULL, NULL) != 0) {
