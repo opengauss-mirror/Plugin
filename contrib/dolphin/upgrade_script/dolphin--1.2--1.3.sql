@@ -1275,3 +1275,13 @@ CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_datetime(numeric)
 RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_datetime';
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_explicit(TEXT)
 RETURNS timestamp without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamp_explicit';
+
+DROP FUNCTION IF EXISTS pg_catalog.floor(year);
+CREATE OR REPLACE FUNCTION pg_catalog.floor(year) 
+RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
+'select pg_catalog.floor(cast($1 as double precision))';
+
+DROP FUNCTION IF EXISTS pg_catalog.floor(json);
+CREATE OR REPLACE FUNCTION pg_catalog.floor(json) 
+RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
+'select pg_catalog.floor(cast($1 as double precision))';

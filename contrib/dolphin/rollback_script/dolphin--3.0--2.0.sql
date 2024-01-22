@@ -154,8 +154,6 @@ DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int1(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int2(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int4(anyelement) CASCADE;
 
-DROP FUNCTION IF EXISTS pg_catalog.floor(year);
-DROP FUNCTION IF EXISTS pg_catalog.floor(json);
 DROP FUNCTION IF EXISTS pg_catalog.substr(longblob, int, int);
 DROP FUNCTION IF EXISTS pg_catalog.substr(longblob, int);
 DROP FUNCTION IF EXISTS pg_catalog.repeat(longblob, int);

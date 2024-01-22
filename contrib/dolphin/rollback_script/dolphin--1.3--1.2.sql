@@ -795,3 +795,6 @@ DROP FUNCTION IF EXISTS pg_catalog.float4_cast_datetime(float4);
 DROP FUNCTION IF EXISTS pg_catalog.float8_cast_datetime(float8);
 DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_datetime(numeric);
 DROP FUNCTION IF EXISTS pg_catalog.timestamp_explicit(TEXT);
+
+DROP FUNCTION IF EXISTS pg_catalog.floor(year);
+DROP FUNCTION IF EXISTS pg_catalog.floor(json);
