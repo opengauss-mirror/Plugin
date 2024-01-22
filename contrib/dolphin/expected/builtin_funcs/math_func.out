@@ -342,6 +342,68 @@ CONTEXT:  referenced column: ln
   0 | 0.0000000000000000 |  0 | 0.0000000000000000 |  0 | 0.0000000000000000 |  0 | 0.0000000000000000 |  0 |  0 | 0.0000000000000000 | 0.0000000000000000 | 1.9459101490553133 | 0.0000000000000000 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 7.61233683716775 | 0.2070141693843261 | 0.2070141693843261 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.2070141693843261 | 0.0000000000000000 | 1.6094379124341004 |   
 (1 row)
 
+-- floor math function
+select
+floor(`int1`),
+floor(`uint1`),
+floor(`int2`),
+floor(`uint2`),
+floor(`int4`),
+floor(`uint4`),
+floor(`int8`),
+floor(`uint8`),
+floor(`float4`),
+floor(`float8`),
+floor(`numeric`),
+floor(`bit1`),
+floor(`bit64`),
+floor(`boolean`),
+floor(`date`),
+floor(`time`),
+floor(`time(4)`),
+floor(`datetime`),
+floor(`datetime(4)`),
+floor(`timestamp`),
+floor(`timestamp(4)`),
+floor(`year`),
+floor(`char`),
+floor(`varchar`),
+floor(`binary`),
+floor(`varbinary`),
+floor(`tinyblob`),
+floor(`blob`),
+floor(`mediumblob`),
+floor(`longblob`),
+floor(`text`),
+floor(`enum_t`),
+floor(`set_t`),
+floor(`json`)
+from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: floor
+ floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor |  floor   | floor  | floor  |     floor      |     floor      |     floor      |     floor      | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor 
+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+----------+--------+--------+----------------+----------------+----------------+----------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------
+     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     7 |     1 | 20230205 | 191050 | 191050 | 20230205191050 | 20230205191050 | 20230205191050 | 20230205191050 |  2023 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     5 |     0
+(1 row)
+
 select exp(709);
           exp          
 -----------------------

@@ -127,6 +127,45 @@ ln(`enum_t`),
 ln(`set_t`),
 ln(`json`)
 from test_type_table;
+
+-- floor math function
+select
+floor(`int1`),
+floor(`uint1`),
+floor(`int2`),
+floor(`uint2`),
+floor(`int4`),
+floor(`uint4`),
+floor(`int8`),
+floor(`uint8`),
+floor(`float4`),
+floor(`float8`),
+floor(`numeric`),
+floor(`bit1`),
+floor(`bit64`),
+floor(`boolean`),
+floor(`date`),
+floor(`time`),
+floor(`time(4)`),
+floor(`datetime`),
+floor(`datetime(4)`),
+floor(`timestamp`),
+floor(`timestamp(4)`),
+floor(`year`),
+floor(`char`),
+floor(`varchar`),
+floor(`binary`),
+floor(`varbinary`),
+floor(`tinyblob`),
+floor(`blob`),
+floor(`mediumblob`),
+floor(`longblob`),
+floor(`text`),
+floor(`enum_t`),
+floor(`set_t`),
+floor(`json`)
+from test_type_table;
+
 select exp(709);
 select exp(710);
 select exp(-1000); 

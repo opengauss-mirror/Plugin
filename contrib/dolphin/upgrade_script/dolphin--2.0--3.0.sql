@@ -1098,3 +1098,13 @@ CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(boolean, TEXT) RETURNS TEXT LA
 CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(longblob, TEXT) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.str_to_date(cast($1 as TEXT), $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(anyenum, TEXT) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.str_to_date(cast($1 as TEXT), $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(json, TEXT) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.str_to_date(cast($1 as TEXT), $2)';
+
+DROP FUNCTION IF EXISTS pg_catalog.floor(year);
+CREATE OR REPLACE FUNCTION pg_catalog.floor(year) 
+RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
+'select pg_catalog.floor(cast($1 as double precision))';
+
+DROP FUNCTION IF EXISTS pg_catalog.floor(json);
+CREATE OR REPLACE FUNCTION pg_catalog.floor(json) 
+RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
+'select pg_catalog.floor(cast($1 as double precision))';

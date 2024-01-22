@@ -747,3 +747,6 @@ DROP FUNCTION IF EXISTS pg_catalog.longblob_mediumblob_le(arg1 longblob, arg2 me
 DROP FUNCTION IF EXISTS pg_catalog.longblob_mediumblob_gt(arg1 longblob, arg2 mediumblob);
 DROP FUNCTION IF EXISTS pg_catalog.longblob_mediumblob_ge(arg1 longblob, arg2 mediumblob);
 DROP FUNCTION IF EXISTS pg_catalog.longblob_mediumblob_cmp(longblob, longblob);
+
+DROP FUNCTION IF EXISTS pg_catalog.floor(year);
+DROP FUNCTION IF EXISTS pg_catalog.floor(json);
