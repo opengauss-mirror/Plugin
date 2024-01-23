@@ -750,3 +750,8 @@ DROP FUNCTION IF EXISTS pg_catalog.longblob_mediumblob_cmp(longblob, longblob);
 
 DROP FUNCTION IF EXISTS pg_catalog.floor(year);
 DROP FUNCTION IF EXISTS pg_catalog.floor(json);
+
+DROP FUNCTION IF EXISTS pg_catalog.hour(YEAR);
+DROP FUNCTION IF EXISTS pg_catalog.minute(YEAR);
+DROP FUNCTION IF EXISTS pg_catalog.second(YEAR);
+DROP FUNCTION IF EXISTS pg_catalog.year(YEAR);
