@@ -236,6 +236,15 @@ deallocate s0;
 deallocate s1;
 deallocate s2;
 
+--prepare replace 
+prepare s0 as select * from t1_xc_fqs t1 left join t2_xc_fqs t2 on t1.id1=t2.id1 and t2.id1=? order by t1.id1;
+execute s0 using 1;
+prepare s0 as 'select * from t1_xc_fqs t1 right join t2_xc_fqs t2 on t1.id1=t2.id1 and t2.id1=? order by t2.id1';
+execute s0 using @a;
+prepare s0 as select * from t1_xc_fqs t1 full join t2_xc_fqs t2 on t1.id1=t2.id1 and t2.id1=? order by t1.id1, t2.id1;
+execute s0 using 1;
+deallocate s0;
+
 reset dolphin.b_compatibility_mode;
 reset enable_set_variable_b_format;
 drop schema test_mysql_prepare cascade;
