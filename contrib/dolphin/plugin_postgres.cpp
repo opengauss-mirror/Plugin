@@ -508,11 +508,14 @@ static void SpiMultiSelectException()
  */
 static bool CheckSqlMode(char** newval, void** extra, GucSource source)
 {
-    char* rawstring = NULL;
-    List* elemlist = NULL;
-    ListCell* cell = NULL;
+    char *rawstring = NULL;
+    List *elemlist = NULL;
+    ListCell *cell = NULL;
     int start = 0;
 
+    if (strlen(*newval) == 0) {
+        return true;
+    }
     /* Need a modifiable copy of string */
     rawstring = pstrdup(*newval);
     /* Parse string into list of identifiers */
@@ -524,19 +527,18 @@ static bool CheckSqlMode(char** newval, void** extra, GucSource source)
 
         return false;
     }
-
+    bool sql_mode_assign[OPT_SQL_MODE_MAX] = {0};
     foreach (cell, elemlist) {
-        const char* item = (const char*)lfirst(cell);
-        bool nfound = true;
+        const char *item = (const char *)lfirst(cell);
 
         for (start = 0; start < OPT_SQL_MODE_MAX; start++) {
             if (strcmp(item, sql_mode_options[start].name) == 0) {
-                nfound = false;
+                sql_mode_assign[start] = true;
                 break;
             }
         }
 
-        if (nfound) {
+        if (start == OPT_SQL_MODE_MAX) {
             GUC_check_errdetail("invalid sql_mode option \"%s\"", item);
             pfree(rawstring);
             list_free(elemlist);
@@ -546,6 +548,23 @@ static bool CheckSqlMode(char** newval, void** extra, GucSource source)
 
     pfree(rawstring);
     list_free(elemlist);
+
+    /* rewrite dolphin sql_mode */
+    StringInfo stringInfo = makeStringInfo();
+    bool firstEnter = false;
+    for (start = 0; start < OPT_SQL_MODE_MAX; start++) {
+        if (sql_mode_assign[start]) {
+            if (firstEnter) {
+                appendStringInfoString(stringInfo, ",");
+            }
+            firstEnter = true;
+            appendStringInfoString(stringInfo, sql_mode_options[start].name);
+        }
+    }
+    /* Obviously, the length of stringInfo must be less than or equal to that of newval. */
+    int ret = strcpy_s(*newval, strlen(*newval) + 1, stringInfo->data);
+    securec_check(ret, "\0", "\0");
+    DestroyStringInfo(stringInfo);
 
     return true;
 }
