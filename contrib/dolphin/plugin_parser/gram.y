@@ -34355,8 +34355,10 @@ func_expr_common_subexpr:
 				Type typtup = LookupTypeName(NULL, typname, NULL);
 				FuncCall *n = makeNode(FuncCall);
 				if (NULL == typtup) {
-				        n->funcname = SystemFuncName("convert");
-					n->args = list_make2($3, makeStringConst(strVal(linitial(typname->names)), -1));
+					n->funcname = SystemFuncName("convert");
+					TypeName * tmp = SystemTypeName("name");
+					tmp->location = @5;
+					n->args = list_make2($3, makeStringConstCast(strVal(linitial(typname->names)), -1, tmp));
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
 					n->agg_distinct = FALSE;
@@ -34375,7 +34377,9 @@ func_expr_common_subexpr:
 			{
 			        FuncCall *n = makeNode(FuncCall);
 				n->funcname = SystemFuncName("convert");
-				n->args = list_make2($3, makeStringConst($5, -1));
+				TypeName * tmp = SystemTypeName("name");
+				tmp->location = @5;
+				n->args = list_make2($3, makeStringConstCast($5, -1, tmp));
 				n->agg_order = NIL;
 				n->agg_star = FALSE;
 				n->agg_distinct = FALSE;
