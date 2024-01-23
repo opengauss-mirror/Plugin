@@ -51,6 +51,7 @@ static const uint32 nan[2] = {0xffffffff, 0x7fffffff};
 /* not sure what the following should be, but better to make it over-sufficient */
 #define MAXFLOATWIDTH 64
 #define MAXDOUBLEWIDTH 128
+#define TENBASE 10
 
 /*
  * check to see if a float4/8 val has underflowed or overflowed
@@ -67,7 +68,11 @@ static const uint32 nan[2] = {0xffffffff, 0x7fffffff};
 /* ========== USER I/O ROUTINES ========== */
 
 static int float4_cmp_internal(float4 a, float4 b);
+#ifdef DOLPHIN
+double float8in_internal(char* str, char** s, bool* hasError, CoercionContext ccontext);
+#else
 double float8in_internal(char* str, char** s, bool* hasError);
+#endif
 
 #ifndef HAVE_CBRT
 /*
@@ -97,8 +102,11 @@ static float8 get_log_result(float8 arg, bool is_log10);
  * place is less well standardized; pre-C99 systems tend not to have C99's
  * INFINITY and NAN macros.  We centralize our workarounds for this here.
  */
-
+#ifdef DOLPHIN
+double float8in_internal(char* str, char** endptr_p, bool* hasError, CoercionContext ccontext)
+#else
 double float8in_internal(char* str, char** endptr_p, bool* hasError)
+#endif
 {
     double val;
     char* endptr = NULL;
@@ -120,7 +128,14 @@ double float8in_internal(char* str, char** endptr_p, bool* hasError)
     }
 
     errno = 0;
-    val = strtod(str, &endptr);
+#ifdef DOLPHIN
+    val = (double)strtoll(str, &endptr, TENBASE);
+    if (ccontext != COERCION_EXPLICIT && (*endptr != 'X' && *endptr != 'x')) {
+#endif
+        val = strtod(str, &endptr);
+#ifdef DOLPHIN
+    }
+#endif
 
     if (endptr == str || errno != 0) {
         int save_errno = errno;
