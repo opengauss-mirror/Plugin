@@ -106,3 +106,46 @@ NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table t1
 drop cascades to table t2
 reset current_schema;
+create schema scott;
+drop table if exists scott.emp;
+NOTICE:  table "emp" does not exist, skipping
+drop table if exists scott.dept;
+NOTICE:  table "dept" does not exist, skipping
+create table scott.dept(DEPTNO number(2) constraint pk_dept primary key,mgr number(4), dname varchar2(14) ,loc varchar2(13) );
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pk_dept" for table "dept"
+create table scott.emp
+(empno number(4) constraint pk_emp primary key,
+dept varchar2(10),
+job varchar2(9),
+mgr number(4),
+hiredate date,
+sal number(7,2),
+comm number(7,2),
+deptno number(2) constraint fk_deptno references scott.dept);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "pk_emp" for table "emp"
+select * from scott.emp join scott.dept on emp.deptno = dept.deptno;
+ empno | dept | job | mgr | hiredate | sal | comm | deptno | DEPTNO | mgr | dname | loc 
+-------+------+-----+-----+----------+-----+------+--------+--------+-----+-------+-----
+(0 rows)
+
+--for converage 
+select * from scott.emp join scott.dept using(deptno);
+ deptno | empno | dept | job | mgr | hiredate | sal | comm | mgr | dname | loc 
+--------+-------+------+-----+-----+----------+-----+------+-----+-------+-----
+(0 rows)
+
+select * from scott.emp join scott.dept using(deptno, mgr);
+ deptno | mgr | empno | dept | job | hiredate | sal | comm | dname | loc 
+--------+-----+-------+------+-----+----------+-----+------+-------+-----
+(0 rows)
+
+select * from scott.emp natural join scott.dept;
+ mgr | deptno | empno | dept | job | hiredate | sal | comm | dname | loc 
+-----+--------+-------+------+-----+----------+-----+------+-------+-----
+(0 rows)
+
+drop schema scott cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table scott.dept
+drop cascades to table scott.emp
+reset current_schema;
