@@ -1152,3 +1152,10 @@ CREATE CAST (tinyblob AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelemen
 CREATE CAST (mediumblob AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
 CREATE CAST (longblob AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
 CREATE CAST (anyset AS boolean) WITH FUNCTION pg_catalog.set_boolean(anyset) AS ASSIGNMENT;
+
+CREATE OR REPLACE FUNCTION pg_catalog.ascii(blob) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
+CREATE OR REPLACE FUNCTION pg_catalog.ascii(year) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
+CREATE OR REPLACE FUNCTION pg_catalog.ascii(json) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
+CREATE OR REPLACE FUNCTION pg_catalog.ascii(boolean) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as integer))';
+CREATE OR REPLACE FUNCTION pg_catalog.ascii(anyenum) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
+CREATE OR REPLACE FUNCTION pg_catalog.ascii(bit) RETURNS integer LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bit_to_ascii';

@@ -30,6 +30,9 @@ extern "C" DLL_PUBLIC Datum byteatrim_leading(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(byteatrim_trailing);
 extern "C" DLL_PUBLIC Datum byteatrim_trailing(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(bit_to_ascii);
+extern "C" DLL_PUBLIC Datum bit_to_ascii(PG_FUNCTION_ARGS);
 #endif
 /********************************************************************
  *
@@ -949,6 +952,34 @@ Datum ascii(PG_FUNCTION_ARGS)
 }
 
 #ifdef DOLPHIN
+/**
+ * convert bit to ascii.
+ */
+Datum bit_to_ascii(PG_FUNCTION_ARGS)
+{
+    VarBit *input = PG_GETARG_VARBIT_P(0);
+
+    int bitLen = VARBITLEN(input);
+    if (bitLen == 0) {
+        PG_RETURN_INT32(0);
+    }
+    bits8 bitVal = VARBITS(input)[0];
+
+    /**
+     * when the bitLen % 8 is equals 0, just return the bitVal;
+     * when the bitLen % b is not equals 0, acutal bitVals is bitVal >> (8 - (bitLen % 8)).
+     * ex:
+     *  use bit6 for 10011, save as 01 0011. except first 8 bits value is 0001 0011,
+     *  but we get first 8 bits value is 0100 1100 -> 76, （76 >> (8 - (6 % 8)）;
+     *  use bit15 for 11110011, save as 000 0000 1111 0011. except first 8 bits value is 0000 0000,
+     *  but we get first 8 bits value 0000 0001 -> 1（1 >> (8 - (15 % 8)）
+     */
+    if (bitLen % BITS_PER_BYTE != 0)
+        bitVal >>= (BITS_PER_BYTE - (bitLen % BITS_PER_BYTE));
+
+    PG_RETURN_INT32((int32)bitVal);
+}
+
 text* _chr(uint32 value, bool flag)
 {
     text* result = NULL;
