@@ -166,6 +166,31 @@ floor(`set_t`),
 floor(`json`)
 from test_type_table;
 
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+
+create table test_floor_cts select  floor(`int1`) as floor_1, floor(`uint1`) as floor_2,
+   floor(`int2`) as floor_3, floor(`uint2`) as floor_4, floor(`int4`) as floor_5, floor(`uint4`) as floor_6,
+   floor(`int8`) as floor_7, floor(`uint8`) as floor_8, floor(`float4`) as floor_9, floor(`float8`) as floor_10,
+   floor(`numeric`) as floor_11, floor(`bit1`) as floor_12, floor(`bit64`) as floor_13, floor(`boolean`) as floor_14,
+   floor(`date`) as floor_15, floor(`time`) as floor_16, floor(`time(4)`) as floor_17, floor(`datetime`) as floor_18,
+   floor(`datetime(4)`) as floor_19, floor(`timestamp`) as floor_20, floor(`timestamp(4)`) as floor_21,
+   floor(`char`) as floor_22, floor(`varchar`) as floor_23,  floor(`binary`) as floor_24,
+   floor(`varbinary`) as floor_25, floor(`tinyblob`) as floor_26, floor(`blob`) as floor_27, floor(`mediumblob`) as floor_28, floor(`longblob`) as floor_29,
+   floor(`text`) as floor_30, floor(`enum_t`) as floor_31, floor(`set_t`) as floor_32 from test_type_table;   
+
+create table test_ln_cts as select 
+   ln(`int1`) as ln_1, ln(`uint1`) as ln_2, ln(`int2`) as ln_3, ln(`uint2`) as ln_4,
+   ln(`int4`) as ln_5, ln(`uint4`) as ln_6, ln(`int8`) as ln_7, ln(`uint8`) as ln_8,
+   ln(`float4`) as ln_9, ln(`float8`) as ln_10, ln(`numeric`) as ln_11, ln(`bit1`) as ln_12,
+   ln(`bit64`) as ln_13, ln(`boolean`) as ln_14, ln(`date`) as ln_15, ln(`time`) as ln_16,
+   ln(`time(4)`) as ln_17, ln(`datetime`) as ln_18, ln(`datetime(4)`) as ln_19, ln(`timestamp`) as ln_20,
+   ln(`timestamp(4)`) as ln_21, ln(`char`) as ln_23, ln(`varchar`) as ln_24,  ln(`binary`) as ln_25,
+   ln(`varbinary`) as ln_26, ln(`tinyblob`) as ln_27, ln(`blob`) as ln_28, ln(`mediumblob`) as ln_29, ln(`longblob`) as ln_30,
+   ln(`text`) as ln_31, ln(`enum_t`) as ln_32, ln(`set_t`) as ln_33 from test_type_table;   
+
+select * from test_floor_cts;
+select * from test_ln_cts;
+
 select exp(709);
 select exp(710);
 select exp(-1000); 
@@ -174,6 +199,8 @@ drop table if exists test_double_acos;
 drop table if exists test_double_exp;
 drop table if exists test_double_degrees;
 drop table if exists test_type_table;
+drop table if exists test_floor_cts;
+drop table if exists test_ln_cts;
 
 drop schema test_math_func cascade;
 reset current_schema;

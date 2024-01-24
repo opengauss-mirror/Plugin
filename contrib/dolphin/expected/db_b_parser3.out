@@ -336,7 +336,7 @@ select 0x; --equal to select 0 x;
 
 --测试点五：验证truncate函数
 select truncate(111.28);--返回111
-ERROR:  function truncate(numeric) does not exist
+ERROR:  function truncate(number) does not exist
 LINE 1: select truncate(111.28);
                ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.

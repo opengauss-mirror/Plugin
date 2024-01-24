@@ -5410,42 +5410,42 @@ select coalesce(dcmal, flt) from typeset;
 (1 row)
 
 select coalesce(dcmal, bt) from typeset;
-ERROR:  COALESCE types numeric and bit cannot be matched
+ERROR:  COALESCE types number and bit cannot be matched
 LINE 1: select coalesce(dcmal, bt) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(dcmal, dt) from typeset;
-ERROR:  COALESCE types numeric and date cannot be matched
+ERROR:  COALESCE types number and date cannot be matched
 LINE 1: select coalesce(dcmal, dt) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(dcmal, tmstp) from typeset;
-ERROR:  COALESCE types numeric and timestamp with time zone cannot be matched
+ERROR:  COALESCE types number and timestamp with time zone cannot be matched
 LINE 1: select coalesce(dcmal, tmstp) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(dcmal, tm) from typeset;
-ERROR:  COALESCE types numeric and time without time zone cannot be matched
+ERROR:  COALESCE types number and time without time zone cannot be matched
 LINE 1: select coalesce(dcmal, tm) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(dcmal, ch) from typeset;
-ERROR:  COALESCE types numeric and character cannot be matched
+ERROR:  COALESCE types number and character cannot be matched
 LINE 1: select coalesce(dcmal, ch) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(dcmal, vch) from typeset;
-ERROR:  COALESCE types numeric and character varying cannot be matched
+ERROR:  COALESCE types number and character varying cannot be matched
 LINE 1: select coalesce(dcmal, vch) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(dcmal, blb) from typeset;
-ERROR:  COALESCE types numeric and blob cannot be matched
+ERROR:  COALESCE types number and blob cannot be matched
 LINE 1: select coalesce(dcmal, blb) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(dcmal, txt) from typeset;
-ERROR:  COALESCE types numeric and text cannot be matched
+ERROR:  COALESCE types number and text cannot be matched
 LINE 1: select coalesce(dcmal, txt) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
@@ -5456,42 +5456,42 @@ select coalesce(nmric, flt) from typeset;
 (1 row)
 
 select coalesce(nmric, bt) from typeset;
-ERROR:  COALESCE types numeric and bit cannot be matched
+ERROR:  COALESCE types number and bit cannot be matched
 LINE 1: select coalesce(nmric, bt) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(nmric, dt) from typeset;
-ERROR:  COALESCE types numeric and date cannot be matched
+ERROR:  COALESCE types number and date cannot be matched
 LINE 1: select coalesce(nmric, dt) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(nmric, tmstp) from typeset;
-ERROR:  COALESCE types numeric and timestamp with time zone cannot be matched
+ERROR:  COALESCE types number and timestamp with time zone cannot be matched
 LINE 1: select coalesce(nmric, tmstp) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(nmric, tm) from typeset;
-ERROR:  COALESCE types numeric and time without time zone cannot be matched
+ERROR:  COALESCE types number and time without time zone cannot be matched
 LINE 1: select coalesce(nmric, tm) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(nmric, ch) from typeset;
-ERROR:  COALESCE types numeric and character cannot be matched
+ERROR:  COALESCE types number and character cannot be matched
 LINE 1: select coalesce(nmric, ch) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(nmric, vch) from typeset;
-ERROR:  COALESCE types numeric and character varying cannot be matched
+ERROR:  COALESCE types number and character varying cannot be matched
 LINE 1: select coalesce(nmric, vch) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(nmric, blb) from typeset;
-ERROR:  COALESCE types numeric and blob cannot be matched
+ERROR:  COALESCE types number and blob cannot be matched
 LINE 1: select coalesce(nmric, blb) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
 select coalesce(nmric, txt) from typeset;
-ERROR:  COALESCE types numeric and text cannot be matched
+ERROR:  COALESCE types number and text cannot be matched
 LINE 1: select coalesce(nmric, txt) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
@@ -6499,13 +6499,13 @@ select pg_typeof(ifnull(tyint, bgint)) from typeset;
 select pg_typeof(ifnull(tyint, dcmal)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(tyint, nmric)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(tyint, flt)) from typeset;
@@ -6517,7 +6517,7 @@ select pg_typeof(ifnull(tyint, flt)) from typeset;
 select pg_typeof(ifnull(tyint, bt)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(tyint, dt)) from typeset;
@@ -6577,13 +6577,13 @@ select pg_typeof(ifnull(smint, bgint)) from typeset;
 select pg_typeof(ifnull(smint, dcmal)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(smint, nmric)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(smint, flt)) from typeset;
@@ -6595,7 +6595,7 @@ select pg_typeof(ifnull(smint, flt)) from typeset;
 select pg_typeof(ifnull(smint, bt)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(smint, dt)) from typeset;
@@ -6649,13 +6649,13 @@ select pg_typeof(ifnull(anint, bgint)) from typeset;
 select pg_typeof(ifnull(anint, dcmal)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(anint, nmric)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(anint, flt)) from typeset;
@@ -6667,7 +6667,7 @@ select pg_typeof(ifnull(anint, flt)) from typeset;
 select pg_typeof(ifnull(anint, bt)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(anint, dt)) from typeset;
@@ -6715,13 +6715,13 @@ select pg_typeof(ifnull(anint, txt)) from typeset;
 select pg_typeof(ifnull(bgint, dcmal)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(bgint, nmric)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(bgint, flt)) from typeset;
@@ -6733,7 +6733,7 @@ select pg_typeof(ifnull(bgint, flt)) from typeset;
 select pg_typeof(ifnull(bgint, bt)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(bgint, dt)) from typeset;
@@ -6781,7 +6781,7 @@ select pg_typeof(ifnull(bgint, txt)) from typeset;
 select pg_typeof(ifnull(dcmal, nmric)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(dcmal, flt)) from typeset;
@@ -6793,7 +6793,7 @@ select pg_typeof(ifnull(dcmal, flt)) from typeset;
 select pg_typeof(ifnull(dcmal, bt)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(dcmal, dt)) from typeset;
@@ -6847,7 +6847,7 @@ select pg_typeof(ifnull(nmric, flt)) from typeset;
 select pg_typeof(ifnull(nmric, bt)) from typeset;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 select pg_typeof(ifnull(nmric, dt)) from typeset;

@@ -1221,8 +1221,8 @@ SHOW COLUMNS FROM test_json_type;
  int1&json             | tinyint          | YES  |     | NULL    | 
  int1||json            | boolean          | YES  |     | NULL    | 
  int1&&json            | boolean          | YES  |     | NULL    | 
- int1_div_json         | numeric          | YES  |     | NULL    | 
- int1_mod_json         | numeric          | YES  |     | NULL    | 
+ int1_div_json         | number           | YES  |     | NULL    | 
+ int1_mod_json         | number           | YES  |     | NULL    | 
  int1_xor_json         | integer          | YES  |     | NULL    | 
  int1_and_json         | boolean          | YES  |     | NULL    | 
  int1_or_json          | boolean          | YES  |     | NULL    | 
@@ -1238,8 +1238,8 @@ SHOW COLUMNS FROM test_json_type;
  uint1&json            | uint1            | YES  |     | NULL    | 
  uint1||json           | boolean          | YES  |     | NULL    | 
  uint1&&json           | boolean          | YES  |     | NULL    | 
- uint1_div_json        | numeric          | YES  |     | NULL    | 
- uint1_mod_json        | numeric          | YES  |     | NULL    | 
+ uint1_div_json        | number           | YES  |     | NULL    | 
+ uint1_mod_json        | number           | YES  |     | NULL    | 
  uint1_xor_json        | integer          | YES  |     | NULL    | 
  uint1_and_json        | boolean          | YES  |     | NULL    | 
  uint1_or_json         | boolean          | YES  |     | NULL    | 
@@ -1255,8 +1255,8 @@ SHOW COLUMNS FROM test_json_type;
  int2&json             | smallint         | YES  |     | NULL    | 
  int2||json            | boolean          | YES  |     | NULL    | 
  int2&&json            | boolean          | YES  |     | NULL    | 
- int2_div_json         | numeric          | YES  |     | NULL    | 
- int2_mod_json         | numeric          | YES  |     | NULL    | 
+ int2_div_json         | number           | YES  |     | NULL    | 
+ int2_mod_json         | number           | YES  |     | NULL    | 
  int2_xor_json         | integer          | YES  |     | NULL    | 
  int2_and_json         | boolean          | YES  |     | NULL    | 
  int2_or_json          | boolean          | YES  |     | NULL    | 
@@ -1272,8 +1272,8 @@ SHOW COLUMNS FROM test_json_type;
  uint2&json            | uint2            | YES  |     | NULL    | 
  uint2||json           | boolean          | YES  |     | NULL    | 
  uint2&&json           | boolean          | YES  |     | NULL    | 
- uint2_div_json        | numeric          | YES  |     | NULL    | 
- uint2_mod_json        | numeric          | YES  |     | NULL    | 
+ uint2_div_json        | number           | YES  |     | NULL    | 
+ uint2_mod_json        | number           | YES  |     | NULL    | 
  uint2_xor_json        | integer          | YES  |     | NULL    | 
  uint2_and_json        | boolean          | YES  |     | NULL    | 
  uint2_or_json         | boolean          | YES  |     | NULL    | 
@@ -1289,8 +1289,8 @@ SHOW COLUMNS FROM test_json_type;
  int4&json             | integer          | YES  |     | NULL    | 
  int4||json            | boolean          | YES  |     | NULL    | 
  int4&&json            | boolean          | YES  |     | NULL    | 
- int4_div_json         | numeric          | YES  |     | NULL    | 
- int4_mod_json         | numeric          | YES  |     | NULL    | 
+ int4_div_json         | number           | YES  |     | NULL    | 
+ int4_mod_json         | number           | YES  |     | NULL    | 
  int4_xor_json         | integer          | YES  |     | NULL    | 
  int4_and_json         | boolean          | YES  |     | NULL    | 
  int4_or_json          | boolean          | YES  |     | NULL    | 
@@ -1306,8 +1306,8 @@ SHOW COLUMNS FROM test_json_type;
  uint4&json            | uint4            | YES  |     | NULL    | 
  uint4||json           | boolean          | YES  |     | NULL    | 
  uint4&&json           | boolean          | YES  |     | NULL    | 
- uint4_div_json        | numeric          | YES  |     | NULL    | 
- uint4_mod_json        | numeric          | YES  |     | NULL    | 
+ uint4_div_json        | number           | YES  |     | NULL    | 
+ uint4_mod_json        | number           | YES  |     | NULL    | 
  uint4_xor_json        | integer          | YES  |     | NULL    | 
  uint4_and_json        | boolean          | YES  |     | NULL    | 
  uint4_or_json         | boolean          | YES  |     | NULL    | 
@@ -1323,8 +1323,8 @@ SHOW COLUMNS FROM test_json_type;
  int8&json             | bigint           | YES  |     | NULL    | 
  int8||json            | boolean          | YES  |     | NULL    | 
  int8&&json            | boolean          | YES  |     | NULL    | 
- int8_div_json         | numeric          | YES  |     | NULL    | 
- int8_mod_json         | numeric          | YES  |     | NULL    | 
+ int8_div_json         | number           | YES  |     | NULL    | 
+ int8_mod_json         | number           | YES  |     | NULL    | 
  int8_xor_json         | integer          | YES  |     | NULL    | 
  int8_and_json         | boolean          | YES  |     | NULL    | 
  int8_or_json          | boolean          | YES  |     | NULL    | 
@@ -1340,8 +1340,8 @@ SHOW COLUMNS FROM test_json_type;
  uint8&json            | uint8            | YES  |     | NULL    | 
  uint8||json           | boolean          | YES  |     | NULL    | 
  uint8&&json           | boolean          | YES  |     | NULL    | 
- uint8_div_json        | numeric          | YES  |     | NULL    | 
- uint8_mod_json        | numeric          | YES  |     | NULL    | 
+ uint8_div_json        | number           | YES  |     | NULL    | 
+ uint8_mod_json        | number           | YES  |     | NULL    | 
  uint8_xor_json        | integer          | YES  |     | NULL    | 
  uint8_and_json        | boolean          | YES  |     | NULL    | 
  uint8_or_json         | boolean          | YES  |     | NULL    | 
@@ -1349,7 +1349,7 @@ SHOW COLUMNS FROM test_json_type;
  float4-json           | double precision | YES  |     | NULL    | 
  float4*json           | double precision | YES  |     | NULL    | 
  float4/json           | double precision | YES  |     | NULL    | 
- float4%json           | numeric          | YES  |     | NULL    | 
+ float4%json           | number           | YES  |     | NULL    | 
  float4^json           | double precision | YES  |     | NULL    | 
  float4>>json          | bigint           | YES  |     | NULL    | 
  float4<<json          | bigint           | YES  |     | NULL    | 
@@ -1357,8 +1357,8 @@ SHOW COLUMNS FROM test_json_type;
  float4&json           | bigint           | YES  |     | NULL    | 
  float4||json          | boolean          | YES  |     | NULL    | 
  float4&&json          | boolean          | YES  |     | NULL    | 
- float4_div_json       | numeric          | YES  |     | NULL    | 
- float4_mod_json       | numeric          | YES  |     | NULL    | 
+ float4_div_json       | number           | YES  |     | NULL    | 
+ float4_mod_json       | number           | YES  |     | NULL    | 
  float4_xor_json       | integer          | YES  |     | NULL    | 
  float4_and_json       | boolean          | YES  |     | NULL    | 
  float4_or_json        | boolean          | YES  |     | NULL    | 
@@ -1366,7 +1366,7 @@ SHOW COLUMNS FROM test_json_type;
  float8-json           | double precision | YES  |     | NULL    | 
  float8*json           | double precision | YES  |     | NULL    | 
  float8/json           | double precision | YES  |     | NULL    | 
- float8%json           | numeric          | YES  |     | NULL    | 
+ float8%json           | number           | YES  |     | NULL    | 
  float8^json           | double precision | YES  |     | NULL    | 
  float8>>json          | bigint           | YES  |     | NULL    | 
  float8<<json          | bigint           | YES  |     | NULL    | 
@@ -1374,8 +1374,8 @@ SHOW COLUMNS FROM test_json_type;
  float8&json           | bigint           | YES  |     | NULL    | 
  float8||json          | boolean          | YES  |     | NULL    | 
  float8&&json          | boolean          | YES  |     | NULL    | 
- float8_div_json       | numeric          | YES  |     | NULL    | 
- float8_mod_json       | numeric          | YES  |     | NULL    | 
+ float8_div_json       | number           | YES  |     | NULL    | 
+ float8_mod_json       | number           | YES  |     | NULL    | 
  float8_xor_json       | integer          | YES  |     | NULL    | 
  float8_and_json       | boolean          | YES  |     | NULL    | 
  float8_or_json        | boolean          | YES  |     | NULL    | 
@@ -1383,7 +1383,7 @@ SHOW COLUMNS FROM test_json_type;
  numeric-json          | double precision | YES  |     | NULL    | 
  numeric*json          | double precision | YES  |     | NULL    | 
  numeric/json          | double precision | YES  |     | NULL    | 
- numeric%json          | numeric          | YES  |     | NULL    | 
+ numeric%json          | number           | YES  |     | NULL    | 
  numeric^json          | double precision | YES  |     | NULL    | 
  numeric>>json         | bigint           | YES  |     | NULL    | 
  numeric<<json         | bigint           | YES  |     | NULL    | 
@@ -1391,8 +1391,8 @@ SHOW COLUMNS FROM test_json_type;
  numeric&json          | bigint           | YES  |     | NULL    | 
  numeric||json         | boolean          | YES  |     | NULL    | 
  numeric&&json         | boolean          | YES  |     | NULL    | 
- numeric_div_json      | numeric          | YES  |     | NULL    | 
- numeric_mod_json      | numeric          | YES  |     | NULL    | 
+ numeric_div_json      | number           | YES  |     | NULL    | 
+ numeric_mod_json      | number           | YES  |     | NULL    | 
  numeric_xor_json      | integer          | YES  |     | NULL    | 
  numeric_and_json      | boolean          | YES  |     | NULL    | 
  numeric_or_json       | boolean          | YES  |     | NULL    | 
@@ -1400,7 +1400,7 @@ SHOW COLUMNS FROM test_json_type;
  bit1-json             | double precision | YES  |     | NULL    | 
  bit1*json             | double precision | YES  |     | NULL    | 
  bit1/json             | double precision | YES  |     | NULL    | 
- bit1%json             | numeric          | YES  |     | NULL    | 
+ bit1%json             | number           | YES  |     | NULL    | 
  bit1^json             | double precision | YES  |     | NULL    | 
  bit1>>json            | "bit"            | YES  |     | NULL    | 
  bit1<<json            | "bit"            | YES  |     | NULL    | 
@@ -1408,8 +1408,8 @@ SHOW COLUMNS FROM test_json_type;
  bit1&json             | uint8            | YES  |     | NULL    | 
  bit1||json            | boolean          | YES  |     | NULL    | 
  bit1&&json            | boolean          | YES  |     | NULL    | 
- bit1_div_json         | numeric          | YES  |     | NULL    | 
- bit1_mod_json         | numeric          | YES  |     | NULL    | 
+ bit1_div_json         | number           | YES  |     | NULL    | 
+ bit1_mod_json         | number           | YES  |     | NULL    | 
  bit1_xor_json         | integer          | YES  |     | NULL    | 
  bit1_and_json         | boolean          | YES  |     | NULL    | 
  bit1_or_json          | boolean          | YES  |     | NULL    | 
@@ -1417,7 +1417,7 @@ SHOW COLUMNS FROM test_json_type;
  bit64-json            | double precision | YES  |     | NULL    | 
  bit64*json            | double precision | YES  |     | NULL    | 
  bit64/json            | double precision | YES  |     | NULL    | 
- bit64%json            | numeric          | YES  |     | NULL    | 
+ bit64%json            | number           | YES  |     | NULL    | 
  bit64^json            | double precision | YES  |     | NULL    | 
  bit64>>json           | "bit"            | YES  |     | NULL    | 
  bit64<<json           | "bit"            | YES  |     | NULL    | 
@@ -1425,8 +1425,8 @@ SHOW COLUMNS FROM test_json_type;
  bit64&json            | uint8            | YES  |     | NULL    | 
  bit64||json           | boolean          | YES  |     | NULL    | 
  bit64&&json           | boolean          | YES  |     | NULL    | 
- bit64_div_json        | numeric          | YES  |     | NULL    | 
- bit64_mod_json        | numeric          | YES  |     | NULL    | 
+ bit64_div_json        | number           | YES  |     | NULL    | 
+ bit64_mod_json        | number           | YES  |     | NULL    | 
  bit64_xor_json        | integer          | YES  |     | NULL    | 
  bit64_and_json        | boolean          | YES  |     | NULL    | 
  bit64_or_json         | boolean          | YES  |     | NULL    | 
@@ -1434,22 +1434,22 @@ SHOW COLUMNS FROM test_json_type;
  boolean-json          | integer          | YES  |     | NULL    | 
  boolean*json          | integer          | YES  |     | NULL    | 
  boolean/json          | double precision | YES  |     | NULL    | 
- boolean%json          | numeric          | YES  |     | NULL    | 
+ boolean%json          | number           | YES  |     | NULL    | 
  boolean>>json         | bigint           | YES  |     | NULL    | 
  boolean<<json         | bigint           | YES  |     | NULL    | 
  boolean|json          | bigint           | YES  |     | NULL    | 
  boolean&json          | bigint           | YES  |     | NULL    | 
  boolean||json         | boolean          | YES  |     | NULL    | 
  boolean&&json         | boolean          | YES  |     | NULL    | 
- boolean_div_json      | numeric          | YES  |     | NULL    | 
- boolean_mod_json      | numeric          | YES  |     | NULL    | 
+ boolean_div_json      | number           | YES  |     | NULL    | 
+ boolean_mod_json      | number           | YES  |     | NULL    | 
  boolean_and_json      | boolean          | YES  |     | NULL    | 
  boolean_or_json       | boolean          | YES  |     | NULL    | 
  date+json             | double precision | YES  |     | NULL    | 
  date-json             | double precision | YES  |     | NULL    | 
  date*json             | double precision | YES  |     | NULL    | 
  date/json             | double precision | YES  |     | NULL    | 
- date%json             | numeric          | YES  |     | NULL    | 
+ date%json             | number           | YES  |     | NULL    | 
  date^json             | double precision | YES  |     | NULL    | 
  date>>json            | bigint           | YES  |     | NULL    | 
  date<<json            | bigint           | YES  |     | NULL    | 
@@ -1457,8 +1457,8 @@ SHOW COLUMNS FROM test_json_type;
  date&json             | bigint           | YES  |     | NULL    | 
  date||json            | boolean          | YES  |     | NULL    | 
  date&&json            | boolean          | YES  |     | NULL    | 
- date_div_json         | numeric          | YES  |     | NULL    | 
- date_mod_json         | numeric          | YES  |     | NULL    | 
+ date_div_json         | number           | YES  |     | NULL    | 
+ date_mod_json         | number           | YES  |     | NULL    | 
  date_xor_json         | integer          | YES  |     | NULL    | 
  date_and_json         | boolean          | YES  |     | NULL    | 
  date_or_json          | boolean          | YES  |     | NULL    | 
@@ -1466,7 +1466,7 @@ SHOW COLUMNS FROM test_json_type;
  time-json             | double precision | YES  |     | NULL    | 
  time*json             | double precision | YES  |     | NULL    | 
  time/json             | double precision | YES  |     | NULL    | 
- time%json             | numeric          | YES  |     | NULL    | 
+ time%json             | number           | YES  |     | NULL    | 
  time^json             | double precision | YES  |     | NULL    | 
  time>>json            | bigint           | YES  |     | NULL    | 
  time<<json            | bigint           | YES  |     | NULL    | 
@@ -1474,8 +1474,8 @@ SHOW COLUMNS FROM test_json_type;
  time&json             | bigint           | YES  |     | NULL    | 
  time||json            | boolean          | YES  |     | NULL    | 
  time&&json            | boolean          | YES  |     | NULL    | 
- time_div_json         | numeric          | YES  |     | NULL    | 
- time_mod_json         | numeric          | YES  |     | NULL    | 
+ time_div_json         | number           | YES  |     | NULL    | 
+ time_mod_json         | number           | YES  |     | NULL    | 
  time_xor_json         | integer          | YES  |     | NULL    | 
  time_and_json         | boolean          | YES  |     | NULL    | 
  time_or_json          | boolean          | YES  |     | NULL    | 
@@ -1483,7 +1483,7 @@ SHOW COLUMNS FROM test_json_type;
  time(4)-json          | double precision | YES  |     | NULL    | 
  time(4)*json          | double precision | YES  |     | NULL    | 
  time(4)/json          | double precision | YES  |     | NULL    | 
- time(4)%json          | numeric          | YES  |     | NULL    | 
+ time(4)%json          | number           | YES  |     | NULL    | 
  time(4)^json          | double precision | YES  |     | NULL    | 
  time(4)>>json         | bigint           | YES  |     | NULL    | 
  time(4)<<json         | bigint           | YES  |     | NULL    | 
@@ -1491,8 +1491,8 @@ SHOW COLUMNS FROM test_json_type;
  time(4)&json          | bigint           | YES  |     | NULL    | 
  time(4)||json         | boolean          | YES  |     | NULL    | 
  time(4)&&json         | boolean          | YES  |     | NULL    | 
- time(4)_div_json      | numeric          | YES  |     | NULL    | 
- time(4)_mod_json      | numeric          | YES  |     | NULL    | 
+ time(4)_div_json      | number           | YES  |     | NULL    | 
+ time(4)_mod_json      | number           | YES  |     | NULL    | 
  time(4)_xor_json      | integer          | YES  |     | NULL    | 
  time(4)_and_json      | boolean          | YES  |     | NULL    | 
  time(4)_or_json       | boolean          | YES  |     | NULL    | 
@@ -1500,7 +1500,7 @@ SHOW COLUMNS FROM test_json_type;
  datetime-json         | double precision | YES  |     | NULL    | 
  datetime*json         | double precision | YES  |     | NULL    | 
  datetime/json         | double precision | YES  |     | NULL    | 
- datetime%json         | numeric          | YES  |     | NULL    | 
+ datetime%json         | number           | YES  |     | NULL    | 
  datetime^json         | double precision | YES  |     | NULL    | 
  datetime>>json        | bigint           | YES  |     | NULL    | 
  datetime<<json        | bigint           | YES  |     | NULL    | 
@@ -1508,8 +1508,8 @@ SHOW COLUMNS FROM test_json_type;
  datetime&json         | bigint           | YES  |     | NULL    | 
  datetime||json        | boolean          | YES  |     | NULL    | 
  datetime&&json        | boolean          | YES  |     | NULL    | 
- datetime_div_json     | numeric          | YES  |     | NULL    | 
- datetime_mod_json     | numeric          | YES  |     | NULL    | 
+ datetime_div_json     | number           | YES  |     | NULL    | 
+ datetime_mod_json     | number           | YES  |     | NULL    | 
  datetime_xor_json     | integer          | YES  |     | NULL    | 
  datetime_and_json     | boolean          | YES  |     | NULL    | 
  datetime_or_json      | boolean          | YES  |     | NULL    | 
@@ -1517,7 +1517,7 @@ SHOW COLUMNS FROM test_json_type;
  datetime(4)-json      | double precision | YES  |     | NULL    | 
  datetime(4)*json      | double precision | YES  |     | NULL    | 
  datetime(4)/json      | double precision | YES  |     | NULL    | 
- datetime(4)%json      | numeric          | YES  |     | NULL    | 
+ datetime(4)%json      | number           | YES  |     | NULL    | 
  datetime(4)^json      | double precision | YES  |     | NULL    | 
  datetime(4)>>json     | bigint           | YES  |     | NULL    | 
  datetime(4)<<json     | bigint           | YES  |     | NULL    | 
@@ -1525,8 +1525,8 @@ SHOW COLUMNS FROM test_json_type;
  datetime(4)&json      | bigint           | YES  |     | NULL    | 
  datetime(4)||json     | boolean          | YES  |     | NULL    | 
  datetime(4)&&json     | boolean          | YES  |     | NULL    | 
- datetime(4)_div_json  | numeric          | YES  |     | NULL    | 
- datetime(4)_mod_json  | numeric          | YES  |     | NULL    | 
+ datetime(4)_div_json  | number           | YES  |     | NULL    | 
+ datetime(4)_mod_json  | number           | YES  |     | NULL    | 
  datetime(4)_xor_json  | integer          | YES  |     | NULL    | 
  datetime(4)_and_json  | boolean          | YES  |     | NULL    | 
  datetime(4)_or_json   | boolean          | YES  |     | NULL    | 
@@ -1534,7 +1534,7 @@ SHOW COLUMNS FROM test_json_type;
  timestamp-json        | double precision | YES  |     | NULL    | 
  timestamp*json        | double precision | YES  |     | NULL    | 
  timestamp/json        | double precision | YES  |     | NULL    | 
- timestamp%json        | numeric          | YES  |     | NULL    | 
+ timestamp%json        | number           | YES  |     | NULL    | 
  timestamp^json        | double precision | YES  |     | NULL    | 
  timestamp>>json       | bigint           | YES  |     | NULL    | 
  timestamp<<json       | bigint           | YES  |     | NULL    | 
@@ -1542,8 +1542,8 @@ SHOW COLUMNS FROM test_json_type;
  timestamp&json        | bigint           | YES  |     | NULL    | 
  timestamp||json       | boolean          | YES  |     | NULL    | 
  timestamp&&json       | boolean          | YES  |     | NULL    | 
- timestamp_div_json    | numeric          | YES  |     | NULL    | 
- timestamp_mod_json    | numeric          | YES  |     | NULL    | 
+ timestamp_div_json    | number           | YES  |     | NULL    | 
+ timestamp_mod_json    | number           | YES  |     | NULL    | 
  timestamp_xor_json    | integer          | YES  |     | NULL    | 
  timestamp_and_json    | boolean          | YES  |     | NULL    | 
  timestamp_or_json     | boolean          | YES  |     | NULL    | 
@@ -1551,7 +1551,7 @@ SHOW COLUMNS FROM test_json_type;
  timestamp(4)-json     | double precision | YES  |     | NULL    | 
  timestamp(4)*json     | double precision | YES  |     | NULL    | 
  timestamp(4)/json     | double precision | YES  |     | NULL    | 
- timestamp(4)%json     | numeric          | YES  |     | NULL    | 
+ timestamp(4)%json     | number           | YES  |     | NULL    | 
  timestamp(4)^json     | double precision | YES  |     | NULL    | 
  timestamp(4)>>json    | bigint           | YES  |     | NULL    | 
  timestamp(4)<<json    | bigint           | YES  |     | NULL    | 
@@ -1559,8 +1559,8 @@ SHOW COLUMNS FROM test_json_type;
  timestamp(4)&json     | bigint           | YES  |     | NULL    | 
  timestamp(4)||json    | boolean          | YES  |     | NULL    | 
  timestamp(4)&&json    | boolean          | YES  |     | NULL    | 
- timestamp(4)_div_json | numeric          | YES  |     | NULL    | 
- timestamp(4)_mod_json | numeric          | YES  |     | NULL    | 
+ timestamp(4)_div_json | number           | YES  |     | NULL    | 
+ timestamp(4)_mod_json | number           | YES  |     | NULL    | 
  timestamp(4)_xor_json | integer          | YES  |     | NULL    | 
  timestamp(4)_and_json | boolean          | YES  |     | NULL    | 
  timestamp(4)_or_json  | boolean          | YES  |     | NULL    | 
@@ -1568,7 +1568,7 @@ SHOW COLUMNS FROM test_json_type;
  year-json             | double precision | YES  |     | NULL    | 
  year*json             | double precision | YES  |     | NULL    | 
  year/json             | double precision | YES  |     | NULL    | 
- year%json             | numeric          | YES  |     | NULL    | 
+ year%json             | number           | YES  |     | NULL    | 
  year^json             | double precision | YES  |     | NULL    | 
  year>>json            | bigint           | YES  |     | NULL    | 
  year<<json            | bigint           | YES  |     | NULL    | 
@@ -1576,8 +1576,8 @@ SHOW COLUMNS FROM test_json_type;
  year&json             | bigint           | YES  |     | NULL    | 
  year||json            | boolean          | YES  |     | NULL    | 
  year&&json            | boolean          | YES  |     | NULL    | 
- year_div_json         | numeric          | YES  |     | NULL    | 
- year_mod_json         | numeric          | YES  |     | NULL    | 
+ year_div_json         | number           | YES  |     | NULL    | 
+ year_mod_json         | number           | YES  |     | NULL    | 
  year_xor_json         | integer          | YES  |     | NULL    | 
  year_and_json         | boolean          | YES  |     | NULL    | 
  year_or_json          | boolean          | YES  |     | NULL    | 
@@ -1585,7 +1585,7 @@ SHOW COLUMNS FROM test_json_type;
  char-json             | double precision | YES  |     | NULL    | 
  char*json             | double precision | YES  |     | NULL    | 
  char/json             | double precision | YES  |     | NULL    | 
- char%json             | numeric          | YES  |     | NULL    | 
+ char%json             | number           | YES  |     | NULL    | 
  char^json             | double precision | YES  |     | NULL    | 
  char>>json            | bigint           | YES  |     | NULL    | 
  char<<json            | bigint           | YES  |     | NULL    | 
@@ -1593,8 +1593,8 @@ SHOW COLUMNS FROM test_json_type;
  char&json             | bigint           | YES  |     | NULL    | 
  char||json            | boolean          | YES  |     | NULL    | 
  char&&json            | boolean          | YES  |     | NULL    | 
- char_div_json         | numeric          | YES  |     | NULL    | 
- char_mod_json         | numeric          | YES  |     | NULL    | 
+ char_div_json         | number           | YES  |     | NULL    | 
+ char_mod_json         | number           | YES  |     | NULL    | 
  char_xor_json         | integer          | YES  |     | NULL    | 
  char_and_json         | boolean          | YES  |     | NULL    | 
  char_or_json          | boolean          | YES  |     | NULL    | 
@@ -1602,7 +1602,7 @@ SHOW COLUMNS FROM test_json_type;
  varchar-json          | double precision | YES  |     | NULL    | 
  varchar*json          | double precision | YES  |     | NULL    | 
  varchar/json          | double precision | YES  |     | NULL    | 
- varchar%json          | numeric          | YES  |     | NULL    | 
+ varchar%json          | number           | YES  |     | NULL    | 
  varchar^json          | double precision | YES  |     | NULL    | 
  varchar>>json         | bigint           | YES  |     | NULL    | 
  varchar<<json         | bigint           | YES  |     | NULL    | 
@@ -1610,8 +1610,8 @@ SHOW COLUMNS FROM test_json_type;
  varchar&json          | bigint           | YES  |     | NULL    | 
  varchar||json         | boolean          | YES  |     | NULL    | 
  varchar&&json         | boolean          | YES  |     | NULL    | 
- varchar_div_json      | numeric          | YES  |     | NULL    | 
- varchar_mod_json      | numeric          | YES  |     | NULL    | 
+ varchar_div_json      | number           | YES  |     | NULL    | 
+ varchar_mod_json      | number           | YES  |     | NULL    | 
  varchar_xor_json      | integer          | YES  |     | NULL    | 
  varchar_and_json      | boolean          | YES  |     | NULL    | 
  varchar_or_json       | boolean          | YES  |     | NULL    | 
@@ -1622,8 +1622,8 @@ SHOW COLUMNS FROM test_json_type;
  binary^json           | double precision | YES  |     | NULL    | 
  binary||json          | boolean          | YES  |     | NULL    | 
  binary&&json          | boolean          | YES  |     | NULL    | 
- binary_div_json       | numeric          | YES  |     | NULL    | 
- binary_mod_json       | numeric          | YES  |     | NULL    | 
+ binary_div_json       | number           | YES  |     | NULL    | 
+ binary_mod_json       | number           | YES  |     | NULL    | 
  binary_xor_json       | integer          | YES  |     | NULL    | 
  binary_and_json       | boolean          | YES  |     | NULL    | 
  binary_or_json        | boolean          | YES  |     | NULL    | 
@@ -1634,8 +1634,8 @@ SHOW COLUMNS FROM test_json_type;
  varbinary^json        | double precision | YES  |     | NULL    | 
  varbinary||json       | boolean          | YES  |     | NULL    | 
  varbinary&&json       | boolean          | YES  |     | NULL    | 
- varbinary_div_json    | numeric          | YES  |     | NULL    | 
- varbinary_mod_json    | numeric          | YES  |     | NULL    | 
+ varbinary_div_json    | number           | YES  |     | NULL    | 
+ varbinary_mod_json    | number           | YES  |     | NULL    | 
  varbinary_xor_json    | integer          | YES  |     | NULL    | 
  varbinary_and_json    | boolean          | YES  |     | NULL    | 
  varbinary_or_json     | boolean          | YES  |     | NULL    | 
@@ -1646,8 +1646,8 @@ SHOW COLUMNS FROM test_json_type;
  tinyblob^json         | double precision | YES  |     | NULL    | 
  tinyblob||json        | boolean          | YES  |     | NULL    | 
  tinyblob&&json        | boolean          | YES  |     | NULL    | 
- tinyblob_div_json     | numeric          | YES  |     | NULL    | 
- tinyblob_mod_json     | numeric          | YES  |     | NULL    | 
+ tinyblob_div_json     | number           | YES  |     | NULL    | 
+ tinyblob_mod_json     | number           | YES  |     | NULL    | 
  tinyblob_xor_json     | integer          | YES  |     | NULL    | 
  tinyblob_and_json     | boolean          | YES  |     | NULL    | 
  tinyblob_or_json      | boolean          | YES  |     | NULL    | 
@@ -1658,8 +1658,8 @@ SHOW COLUMNS FROM test_json_type;
  blob^json             | double precision | YES  |     | NULL    | 
  blob||json            | boolean          | YES  |     | NULL    | 
  blob&&json            | boolean          | YES  |     | NULL    | 
- blob_div_json         | numeric          | YES  |     | NULL    | 
- blob_mod_json         | numeric          | YES  |     | NULL    | 
+ blob_div_json         | number           | YES  |     | NULL    | 
+ blob_mod_json         | number           | YES  |     | NULL    | 
  blob_xor_json         | integer          | YES  |     | NULL    | 
  blob_and_json         | boolean          | YES  |     | NULL    | 
  blob_or_json          | boolean          | YES  |     | NULL    | 
@@ -1670,8 +1670,8 @@ SHOW COLUMNS FROM test_json_type;
  mediumblob^json       | double precision | YES  |     | NULL    | 
  mediumblob||json      | boolean          | YES  |     | NULL    | 
  mediumblob&&json      | boolean          | YES  |     | NULL    | 
- mediumblob_div_json   | numeric          | YES  |     | NULL    | 
- mediumblob_mod_json   | numeric          | YES  |     | NULL    | 
+ mediumblob_div_json   | number           | YES  |     | NULL    | 
+ mediumblob_mod_json   | number           | YES  |     | NULL    | 
  mediumblob_xor_json   | integer          | YES  |     | NULL    | 
  mediumblob_and_json   | boolean          | YES  |     | NULL    | 
  mediumblob_or_json    | boolean          | YES  |     | NULL    | 
@@ -1682,8 +1682,8 @@ SHOW COLUMNS FROM test_json_type;
  longblob^json         | double precision | YES  |     | NULL    | 
  longblob||json        | boolean          | YES  |     | NULL    | 
  longblob&&json        | boolean          | YES  |     | NULL    | 
- longblob_div_json     | numeric          | YES  |     | NULL    | 
- longblob_mod_json     | numeric          | YES  |     | NULL    | 
+ longblob_div_json     | number           | YES  |     | NULL    | 
+ longblob_mod_json     | number           | YES  |     | NULL    | 
  longblob_xor_json     | integer          | YES  |     | NULL    | 
  longblob_and_json     | boolean          | YES  |     | NULL    | 
  longblob_or_json      | boolean          | YES  |     | NULL    | 
@@ -1691,7 +1691,7 @@ SHOW COLUMNS FROM test_json_type;
  text-json             | double precision | YES  |     | NULL    | 
  text*json             | double precision | YES  |     | NULL    | 
  text/json             | double precision | YES  |     | NULL    | 
- text%json             | numeric          | YES  |     | NULL    | 
+ text%json             | number           | YES  |     | NULL    | 
  text^json             | double precision | YES  |     | NULL    | 
  text>>json            | bigint           | YES  |     | NULL    | 
  text<<json            | bigint           | YES  |     | NULL    | 
@@ -1699,8 +1699,8 @@ SHOW COLUMNS FROM test_json_type;
  text&json             | bigint           | YES  |     | NULL    | 
  text||json            | boolean          | YES  |     | NULL    | 
  text&&json            | boolean          | YES  |     | NULL    | 
- text_div_json         | numeric          | YES  |     | NULL    | 
- text_mod_json         | numeric          | YES  |     | NULL    | 
+ text_div_json         | number           | YES  |     | NULL    | 
+ text_mod_json         | number           | YES  |     | NULL    | 
  text_xor_json         | integer          | YES  |     | NULL    | 
  text_and_json         | boolean          | YES  |     | NULL    | 
  text_or_json          | boolean          | YES  |     | NULL    | 
@@ -1708,7 +1708,7 @@ SHOW COLUMNS FROM test_json_type;
  enum_t-json           | double precision | YES  |     | NULL    | 
  enum_t*json           | double precision | YES  |     | NULL    | 
  enum_t/json           | double precision | YES  |     | NULL    | 
- enum_t%json           | numeric          | YES  |     | NULL    | 
+ enum_t%json           | number           | YES  |     | NULL    | 
  enum_t^json           | double precision | YES  |     | NULL    | 
  enum_t>>json          | bigint           | YES  |     | NULL    | 
  enum_t<<json          | bigint           | YES  |     | NULL    | 
@@ -1716,8 +1716,8 @@ SHOW COLUMNS FROM test_json_type;
  enum_t&json           | bigint           | YES  |     | NULL    | 
  enum_t||json          | boolean          | YES  |     | NULL    | 
  enum_t&&json          | boolean          | YES  |     | NULL    | 
- enum_t_div_json       | numeric          | YES  |     | NULL    | 
- enum_t_mod_json       | numeric          | YES  |     | NULL    | 
+ enum_t_div_json       | number           | YES  |     | NULL    | 
+ enum_t_mod_json       | number           | YES  |     | NULL    | 
  enum_t_xor_json       | integer          | YES  |     | NULL    | 
  enum_t_and_json       | boolean          | YES  |     | NULL    | 
  enum_t_or_json        | boolean          | YES  |     | NULL    | 
@@ -1725,7 +1725,7 @@ SHOW COLUMNS FROM test_json_type;
  set_t-json            | double precision | YES  |     | NULL    | 
  set_t*json            | double precision | YES  |     | NULL    | 
  set_t/json            | double precision | YES  |     | NULL    | 
- set_t%json            | numeric          | YES  |     | NULL    | 
+ set_t%json            | number           | YES  |     | NULL    | 
  set_t^json            | double precision | YES  |     | NULL    | 
  set_t>>json           | bigint           | YES  |     | NULL    | 
  set_t<<json           | bigint           | YES  |     | NULL    | 
@@ -1733,8 +1733,8 @@ SHOW COLUMNS FROM test_json_type;
  set_t&json            | bigint           | YES  |     | NULL    | 
  set_t||json           | boolean          | YES  |     | NULL    | 
  set_t&&json           | boolean          | YES  |     | NULL    | 
- set_t_div_json        | numeric          | YES  |     | NULL    | 
- set_t_mod_json        | numeric          | YES  |     | NULL    | 
+ set_t_div_json        | number           | YES  |     | NULL    | 
+ set_t_mod_json        | number           | YES  |     | NULL    | 
  set_t_xor_json        | integer          | YES  |     | NULL    | 
  set_t_and_json        | boolean          | YES  |     | NULL    | 
  set_t_or_json         | boolean          | YES  |     | NULL    | 
@@ -1750,8 +1750,8 @@ SHOW COLUMNS FROM test_json_type;
  json&int1             | tinyint          | YES  |     | NULL    | 
  json||int1            | boolean          | YES  |     | NULL    | 
  json&&int1            | boolean          | YES  |     | NULL    | 
- json_div_int1         | numeric          | YES  |     | NULL    | 
- json_mod_int1         | numeric          | YES  |     | NULL    | 
+ json_div_int1         | number           | YES  |     | NULL    | 
+ json_mod_int1         | number           | YES  |     | NULL    | 
  json_xor_int1         | integer          | YES  |     | NULL    | 
  json_and_int1         | boolean          | YES  |     | NULL    | 
  json_or_int1          | boolean          | YES  |     | NULL    | 
@@ -1767,8 +1767,8 @@ SHOW COLUMNS FROM test_json_type;
  json&uint1            | uint1            | YES  |     | NULL    | 
  json||uint1           | boolean          | YES  |     | NULL    | 
  json&&uint1           | boolean          | YES  |     | NULL    | 
- json_div_uint1        | numeric          | YES  |     | NULL    | 
- json_mod_uint1        | numeric          | YES  |     | NULL    | 
+ json_div_uint1        | number           | YES  |     | NULL    | 
+ json_mod_uint1        | number           | YES  |     | NULL    | 
  json_xor_uint1        | integer          | YES  |     | NULL    | 
  json_and_uint1        | boolean          | YES  |     | NULL    | 
  json_or_uint1         | boolean          | YES  |     | NULL    | 
@@ -1784,8 +1784,8 @@ SHOW COLUMNS FROM test_json_type;
  json&int2             | smallint         | YES  |     | NULL    | 
  json||int2            | boolean          | YES  |     | NULL    | 
  json&&int2            | boolean          | YES  |     | NULL    | 
- json_div_int2         | numeric          | YES  |     | NULL    | 
- json_mod_int2         | numeric          | YES  |     | NULL    | 
+ json_div_int2         | number           | YES  |     | NULL    | 
+ json_mod_int2         | number           | YES  |     | NULL    | 
  json_xor_int2         | integer          | YES  |     | NULL    | 
  json_and_int2         | boolean          | YES  |     | NULL    | 
  json_or_int2          | boolean          | YES  |     | NULL    | 
@@ -1801,8 +1801,8 @@ SHOW COLUMNS FROM test_json_type;
  json&uint2            | uint2            | YES  |     | NULL    | 
  json||uint2           | boolean          | YES  |     | NULL    | 
  json&&uint2           | boolean          | YES  |     | NULL    | 
- json_div_uint2        | numeric          | YES  |     | NULL    | 
- json_mod_uint2        | numeric          | YES  |     | NULL    | 
+ json_div_uint2        | number           | YES  |     | NULL    | 
+ json_mod_uint2        | number           | YES  |     | NULL    | 
  json_xor_uint2        | integer          | YES  |     | NULL    | 
  json_and_uint2        | boolean          | YES  |     | NULL    | 
  json_or_uint2         | boolean          | YES  |     | NULL    | 
@@ -1818,8 +1818,8 @@ SHOW COLUMNS FROM test_json_type;
  json&int4             | integer          | YES  |     | NULL    | 
  json||int4            | boolean          | YES  |     | NULL    | 
  json&&int4            | boolean          | YES  |     | NULL    | 
- json_div_int4         | numeric          | YES  |     | NULL    | 
- json_mod_int4         | numeric          | YES  |     | NULL    | 
+ json_div_int4         | number           | YES  |     | NULL    | 
+ json_mod_int4         | number           | YES  |     | NULL    | 
  json_xor_int4         | integer          | YES  |     | NULL    | 
  json_and_int4         | boolean          | YES  |     | NULL    | 
  json_or_int4          | boolean          | YES  |     | NULL    | 
@@ -1835,8 +1835,8 @@ SHOW COLUMNS FROM test_json_type;
  json&uint4            | uint4            | YES  |     | NULL    | 
  json||uint4           | boolean          | YES  |     | NULL    | 
  json&&uint4           | boolean          | YES  |     | NULL    | 
- json_div_uint4        | numeric          | YES  |     | NULL    | 
- json_mod_uint4        | numeric          | YES  |     | NULL    | 
+ json_div_uint4        | number           | YES  |     | NULL    | 
+ json_mod_uint4        | number           | YES  |     | NULL    | 
  json_xor_uint4        | integer          | YES  |     | NULL    | 
  json_and_uint4        | boolean          | YES  |     | NULL    | 
  json_or_uint4         | boolean          | YES  |     | NULL    | 
@@ -1852,8 +1852,8 @@ SHOW COLUMNS FROM test_json_type;
  json&int8             | bigint           | YES  |     | NULL    | 
  json||int8            | boolean          | YES  |     | NULL    | 
  json&&int8            | boolean          | YES  |     | NULL    | 
- json_div_int8         | numeric          | YES  |     | NULL    | 
- json_mod_int8         | numeric          | YES  |     | NULL    | 
+ json_div_int8         | number           | YES  |     | NULL    | 
+ json_mod_int8         | number           | YES  |     | NULL    | 
  json_xor_int8         | integer          | YES  |     | NULL    | 
  json_and_int8         | boolean          | YES  |     | NULL    | 
  json_or_int8          | boolean          | YES  |     | NULL    | 
@@ -1869,8 +1869,8 @@ SHOW COLUMNS FROM test_json_type;
  json&uint8            | uint8            | YES  |     | NULL    | 
  json||uint8           | boolean          | YES  |     | NULL    | 
  json&&uint8           | boolean          | YES  |     | NULL    | 
- json_div_uint8        | numeric          | YES  |     | NULL    | 
- json_mod_uint8        | numeric          | YES  |     | NULL    | 
+ json_div_uint8        | number           | YES  |     | NULL    | 
+ json_mod_uint8        | number           | YES  |     | NULL    | 
  json_xor_uint8        | integer          | YES  |     | NULL    | 
  json_and_uint8        | boolean          | YES  |     | NULL    | 
  json_or_uint8         | boolean          | YES  |     | NULL    | 
@@ -1878,7 +1878,7 @@ SHOW COLUMNS FROM test_json_type;
  json-float4           | double precision | YES  |     | NULL    | 
  json*float4           | double precision | YES  |     | NULL    | 
  json/float4           | double precision | YES  |     | NULL    | 
- json%float4           | numeric          | YES  |     | NULL    | 
+ json%float4           | number           | YES  |     | NULL    | 
  json^float4           | double precision | YES  |     | NULL    | 
  json>>float4          | bigint           | YES  |     | NULL    | 
  json<<float4          | bigint           | YES  |     | NULL    | 
@@ -1886,8 +1886,8 @@ SHOW COLUMNS FROM test_json_type;
  json&float4           | bigint           | YES  |     | NULL    | 
  json||float4          | boolean          | YES  |     | NULL    | 
  json&&float4          | boolean          | YES  |     | NULL    | 
- json_div_float4       | numeric          | YES  |     | NULL    | 
- json_mod_float4       | numeric          | YES  |     | NULL    | 
+ json_div_float4       | number           | YES  |     | NULL    | 
+ json_mod_float4       | number           | YES  |     | NULL    | 
  json_xor_float4       | integer          | YES  |     | NULL    | 
  json_and_float4       | boolean          | YES  |     | NULL    | 
  json_or_float4        | boolean          | YES  |     | NULL    | 
@@ -1895,7 +1895,7 @@ SHOW COLUMNS FROM test_json_type;
  json-float8           | double precision | YES  |     | NULL    | 
  json*float8           | double precision | YES  |     | NULL    | 
  json/float8           | double precision | YES  |     | NULL    | 
- json%float8           | numeric          | YES  |     | NULL    | 
+ json%float8           | number           | YES  |     | NULL    | 
  json^float8           | double precision | YES  |     | NULL    | 
  json>>float8          | bigint           | YES  |     | NULL    | 
  json<<float8          | bigint           | YES  |     | NULL    | 
@@ -1903,8 +1903,8 @@ SHOW COLUMNS FROM test_json_type;
  json&float8           | bigint           | YES  |     | NULL    | 
  json||float8          | boolean          | YES  |     | NULL    | 
  json&&float8          | boolean          | YES  |     | NULL    | 
- json_div_float8       | numeric          | YES  |     | NULL    | 
- json_mod_float8       | numeric          | YES  |     | NULL    | 
+ json_div_float8       | number           | YES  |     | NULL    | 
+ json_mod_float8       | number           | YES  |     | NULL    | 
  json_xor_float8       | integer          | YES  |     | NULL    | 
  json_and_float8       | boolean          | YES  |     | NULL    | 
  json_or_float8        | boolean          | YES  |     | NULL    | 
@@ -1912,7 +1912,7 @@ SHOW COLUMNS FROM test_json_type;
  json-numeric          | double precision | YES  |     | NULL    | 
  json*numeric          | double precision | YES  |     | NULL    | 
  json/numeric          | double precision | YES  |     | NULL    | 
- json%numeric          | numeric          | YES  |     | NULL    | 
+ json%numeric          | number           | YES  |     | NULL    | 
  json^numeric          | double precision | YES  |     | NULL    | 
  json>>numeric         | bigint           | YES  |     | NULL    | 
  json<<numeric         | bigint           | YES  |     | NULL    | 
@@ -1920,8 +1920,8 @@ SHOW COLUMNS FROM test_json_type;
  json&numeric          | bigint           | YES  |     | NULL    | 
  json||numeric         | boolean          | YES  |     | NULL    | 
  json&&numeric         | boolean          | YES  |     | NULL    | 
- json_div_numeric      | numeric          | YES  |     | NULL    | 
- json_mod_numeric      | numeric          | YES  |     | NULL    | 
+ json_div_numeric      | number           | YES  |     | NULL    | 
+ json_mod_numeric      | number           | YES  |     | NULL    | 
  json_xor_numeric      | integer          | YES  |     | NULL    | 
  json_and_numeric      | boolean          | YES  |     | NULL    | 
  json_or_numeric       | boolean          | YES  |     | NULL    | 
@@ -1929,14 +1929,14 @@ SHOW COLUMNS FROM test_json_type;
  json-bit1             | double precision | YES  |     | NULL    | 
  json*bit1             | double precision | YES  |     | NULL    | 
  json/bit1             | double precision | YES  |     | NULL    | 
- json%bit1             | numeric          | YES  |     | NULL    | 
+ json%bit1             | number           | YES  |     | NULL    | 
  json^bit1             | double precision | YES  |     | NULL    | 
  json|bit1             | uint8            | YES  |     | NULL    | 
  json&bit1             | uint8            | YES  |     | NULL    | 
  json||bit1            | boolean          | YES  |     | NULL    | 
  json&&bit1            | boolean          | YES  |     | NULL    | 
- json_div_bit1         | numeric          | YES  |     | NULL    | 
- json_mod_bit1         | numeric          | YES  |     | NULL    | 
+ json_div_bit1         | number           | YES  |     | NULL    | 
+ json_mod_bit1         | number           | YES  |     | NULL    | 
  json_xor_bit1         | integer          | YES  |     | NULL    | 
  json_and_bit1         | boolean          | YES  |     | NULL    | 
  json_or_bit1          | boolean          | YES  |     | NULL    | 
@@ -1944,14 +1944,14 @@ SHOW COLUMNS FROM test_json_type;
  json-bit64            | double precision | YES  |     | NULL    | 
  json*bit64            | double precision | YES  |     | NULL    | 
  json/bit64            | double precision | YES  |     | NULL    | 
- json%bit64            | numeric          | YES  |     | NULL    | 
+ json%bit64            | number           | YES  |     | NULL    | 
  json^bit64            | double precision | YES  |     | NULL    | 
  json|bit64            | uint8            | YES  |     | NULL    | 
  json&bit64            | uint8            | YES  |     | NULL    | 
  json||bit64           | boolean          | YES  |     | NULL    | 
  json&&bit64           | boolean          | YES  |     | NULL    | 
- json_div_bit64        | numeric          | YES  |     | NULL    | 
- json_mod_bit64        | numeric          | YES  |     | NULL    | 
+ json_div_bit64        | number           | YES  |     | NULL    | 
+ json_mod_bit64        | number           | YES  |     | NULL    | 
  json_xor_bit64        | integer          | YES  |     | NULL    | 
  json_and_bit64        | boolean          | YES  |     | NULL    | 
  json_or_bit64         | boolean          | YES  |     | NULL    | 
@@ -1959,22 +1959,22 @@ SHOW COLUMNS FROM test_json_type;
  json-boolean          | integer          | YES  |     | NULL    | 
  json*boolean          | integer          | YES  |     | NULL    | 
  json/boolean          | double precision | YES  |     | NULL    | 
- json%boolean          | numeric          | YES  |     | NULL    | 
+ json%boolean          | number           | YES  |     | NULL    | 
  json>>boolean         | bigint           | YES  |     | NULL    | 
  json<<boolean         | bigint           | YES  |     | NULL    | 
  json|boolean          | bigint           | YES  |     | NULL    | 
  json&boolean          | bigint           | YES  |     | NULL    | 
  json||boolean         | boolean          | YES  |     | NULL    | 
  json&&boolean         | boolean          | YES  |     | NULL    | 
- json_div_boolean      | numeric          | YES  |     | NULL    | 
- json_mod_boolean      | numeric          | YES  |     | NULL    | 
+ json_div_boolean      | number           | YES  |     | NULL    | 
+ json_mod_boolean      | number           | YES  |     | NULL    | 
  json_and_boolean      | boolean          | YES  |     | NULL    | 
  json_or_boolean       | boolean          | YES  |     | NULL    | 
  json+date             | double precision | YES  |     | NULL    | 
  json-date             | double precision | YES  |     | NULL    | 
  json*date             | double precision | YES  |     | NULL    | 
  json/date             | double precision | YES  |     | NULL    | 
- json%date             | numeric          | YES  |     | NULL    | 
+ json%date             | number           | YES  |     | NULL    | 
  json^date             | double precision | YES  |     | NULL    | 
  json>>date            | bigint           | YES  |     | NULL    | 
  json<<date            | bigint           | YES  |     | NULL    | 
@@ -1982,8 +1982,8 @@ SHOW COLUMNS FROM test_json_type;
  json&date             | bigint           | YES  |     | NULL    | 
  json||date            | boolean          | YES  |     | NULL    | 
  json&&date            | boolean          | YES  |     | NULL    | 
- json_div_date         | numeric          | YES  |     | NULL    | 
- json_mod_date         | numeric          | YES  |     | NULL    | 
+ json_div_date         | number           | YES  |     | NULL    | 
+ json_mod_date         | number           | YES  |     | NULL    | 
  json_xor_date         | integer          | YES  |     | NULL    | 
  json_and_date         | boolean          | YES  |     | NULL    | 
  json_or_date          | boolean          | YES  |     | NULL    | 
@@ -1991,7 +1991,7 @@ SHOW COLUMNS FROM test_json_type;
  json-time             | double precision | YES  |     | NULL    | 
  json*time             | double precision | YES  |     | NULL    | 
  json/time             | double precision | YES  |     | NULL    | 
- json%time             | numeric          | YES  |     | NULL    | 
+ json%time             | number           | YES  |     | NULL    | 
  json^time             | double precision | YES  |     | NULL    | 
  json>>time            | bigint           | YES  |     | NULL    | 
  json<<time            | bigint           | YES  |     | NULL    | 
@@ -1999,8 +1999,8 @@ SHOW COLUMNS FROM test_json_type;
  json&time             | bigint           | YES  |     | NULL    | 
  json||time            | boolean          | YES  |     | NULL    | 
  json&&time            | boolean          | YES  |     | NULL    | 
- json_div_time         | numeric          | YES  |     | NULL    | 
- json_mod_time         | numeric          | YES  |     | NULL    | 
+ json_div_time         | number           | YES  |     | NULL    | 
+ json_mod_time         | number           | YES  |     | NULL    | 
  json_xor_time         | integer          | YES  |     | NULL    | 
  json_and_time         | boolean          | YES  |     | NULL    | 
  json_or_time          | boolean          | YES  |     | NULL    | 
@@ -2008,7 +2008,7 @@ SHOW COLUMNS FROM test_json_type;
  json-time(4)          | double precision | YES  |     | NULL    | 
  json*time(4)          | double precision | YES  |     | NULL    | 
  json/time(4)          | double precision | YES  |     | NULL    | 
- json%time(4)          | numeric          | YES  |     | NULL    | 
+ json%time(4)          | number           | YES  |     | NULL    | 
  json^time(4)          | double precision | YES  |     | NULL    | 
  json>>time(4)         | bigint           | YES  |     | NULL    | 
  json<<time(4)         | bigint           | YES  |     | NULL    | 
@@ -2016,8 +2016,8 @@ SHOW COLUMNS FROM test_json_type;
  json&time(4)          | bigint           | YES  |     | NULL    | 
  json||time(4)         | boolean          | YES  |     | NULL    | 
  json&&time(4)         | boolean          | YES  |     | NULL    | 
- json_div_time(4)      | numeric          | YES  |     | NULL    | 
- json_mod_time(4)      | numeric          | YES  |     | NULL    | 
+ json_div_time(4)      | number           | YES  |     | NULL    | 
+ json_mod_time(4)      | number           | YES  |     | NULL    | 
  json_xor_time(4)      | integer          | YES  |     | NULL    | 
  json_and_time(4)      | boolean          | YES  |     | NULL    | 
  json_or_time(4)       | boolean          | YES  |     | NULL    | 
@@ -2025,7 +2025,7 @@ SHOW COLUMNS FROM test_json_type;
  json-datetime         | double precision | YES  |     | NULL    | 
  json*datetime         | double precision | YES  |     | NULL    | 
  json/datetime         | double precision | YES  |     | NULL    | 
- json%datetime         | numeric          | YES  |     | NULL    | 
+ json%datetime         | number           | YES  |     | NULL    | 
  json^datetime         | double precision | YES  |     | NULL    | 
  json>>datetime        | bigint           | YES  |     | NULL    | 
  json<<datetime        | bigint           | YES  |     | NULL    | 
@@ -2033,8 +2033,8 @@ SHOW COLUMNS FROM test_json_type;
  json&datetime         | bigint           | YES  |     | NULL    | 
  json||datetime        | boolean          | YES  |     | NULL    | 
  json&&datetime        | boolean          | YES  |     | NULL    | 
- json_div_datetime     | numeric          | YES  |     | NULL    | 
- json_mod_datetime     | numeric          | YES  |     | NULL    | 
+ json_div_datetime     | number           | YES  |     | NULL    | 
+ json_mod_datetime     | number           | YES  |     | NULL    | 
  json_xor_datetime     | integer          | YES  |     | NULL    | 
  json_and_datetime     | boolean          | YES  |     | NULL    | 
  json_or_datetime      | boolean          | YES  |     | NULL    | 
@@ -2042,7 +2042,7 @@ SHOW COLUMNS FROM test_json_type;
  json-datetime(4)      | double precision | YES  |     | NULL    | 
  json*datetime(4)      | double precision | YES  |     | NULL    | 
  json/datetime(4)      | double precision | YES  |     | NULL    | 
- json%datetime(4)      | numeric          | YES  |     | NULL    | 
+ json%datetime(4)      | number           | YES  |     | NULL    | 
  json^datetime(4)      | double precision | YES  |     | NULL    | 
  json>>datetime(4)     | bigint           | YES  |     | NULL    | 
  json<<datetime(4)     | bigint           | YES  |     | NULL    | 
@@ -2050,8 +2050,8 @@ SHOW COLUMNS FROM test_json_type;
  json&datetime(4)      | bigint           | YES  |     | NULL    | 
  json||datetime(4)     | boolean          | YES  |     | NULL    | 
  json&&datetime(4)     | boolean          | YES  |     | NULL    | 
- json_div_datetime(4)  | numeric          | YES  |     | NULL    | 
- json_mod_datetime(4)  | numeric          | YES  |     | NULL    | 
+ json_div_datetime(4)  | number           | YES  |     | NULL    | 
+ json_mod_datetime(4)  | number           | YES  |     | NULL    | 
  json_xor_datetime(4)  | integer          | YES  |     | NULL    | 
  json_and_datetime(4)  | boolean          | YES  |     | NULL    | 
  json_or_datetime(4)   | boolean          | YES  |     | NULL    | 
@@ -2059,7 +2059,7 @@ SHOW COLUMNS FROM test_json_type;
  json-timestamp        | double precision | YES  |     | NULL    | 
  json*timestamp        | double precision | YES  |     | NULL    | 
  json/timestamp        | double precision | YES  |     | NULL    | 
- json%timestamp        | numeric          | YES  |     | NULL    | 
+ json%timestamp        | number           | YES  |     | NULL    | 
  json^timestamp        | double precision | YES  |     | NULL    | 
  json>>timestamp       | bigint           | YES  |     | NULL    | 
  json<<timestamp       | bigint           | YES  |     | NULL    | 
@@ -2067,8 +2067,8 @@ SHOW COLUMNS FROM test_json_type;
  json&timestamp        | bigint           | YES  |     | NULL    | 
  json||timestamp       | boolean          | YES  |     | NULL    | 
  json&&timestamp       | boolean          | YES  |     | NULL    | 
- json_div_timestamp    | numeric          | YES  |     | NULL    | 
- json_mod_timestamp    | numeric          | YES  |     | NULL    | 
+ json_div_timestamp    | number           | YES  |     | NULL    | 
+ json_mod_timestamp    | number           | YES  |     | NULL    | 
  json_xor_timestamp    | integer          | YES  |     | NULL    | 
  json_and_timestamp    | boolean          | YES  |     | NULL    | 
  json_or_timestamp     | boolean          | YES  |     | NULL    | 
@@ -2076,7 +2076,7 @@ SHOW COLUMNS FROM test_json_type;
  json-timestamp(4)     | double precision | YES  |     | NULL    | 
  json*timestamp(4)     | double precision | YES  |     | NULL    | 
  json/timestamp(4)     | double precision | YES  |     | NULL    | 
- json%timestamp(4)     | numeric          | YES  |     | NULL    | 
+ json%timestamp(4)     | number           | YES  |     | NULL    | 
  json^timestamp(4)     | double precision | YES  |     | NULL    | 
  json>>timestamp(4)    | bigint           | YES  |     | NULL    | 
  json<<timestamp(4)    | bigint           | YES  |     | NULL    | 
@@ -2084,8 +2084,8 @@ SHOW COLUMNS FROM test_json_type;
  json&timestamp(4)     | bigint           | YES  |     | NULL    | 
  json||timestamp(4)    | boolean          | YES  |     | NULL    | 
  json&&timestamp(4)    | boolean          | YES  |     | NULL    | 
- json_div_timestamp(4) | numeric          | YES  |     | NULL    | 
- json_mod_timestamp(4) | numeric          | YES  |     | NULL    | 
+ json_div_timestamp(4) | number           | YES  |     | NULL    | 
+ json_mod_timestamp(4) | number           | YES  |     | NULL    | 
  json_xor_timestamp(4) | integer          | YES  |     | NULL    | 
  json_and_timestamp(4) | boolean          | YES  |     | NULL    | 
  json_or_timestamp(4)  | boolean          | YES  |     | NULL    | 
@@ -2093,7 +2093,7 @@ SHOW COLUMNS FROM test_json_type;
  json-year             | double precision | YES  |     | NULL    | 
  json*year             | double precision | YES  |     | NULL    | 
  json/year             | double precision | YES  |     | NULL    | 
- json%year             | numeric          | YES  |     | NULL    | 
+ json%year             | number           | YES  |     | NULL    | 
  json^year             | double precision | YES  |     | NULL    | 
  json>>year            | bigint           | YES  |     | NULL    | 
  json<<year            | bigint           | YES  |     | NULL    | 
@@ -2101,8 +2101,8 @@ SHOW COLUMNS FROM test_json_type;
  json&year             | bigint           | YES  |     | NULL    | 
  json||year            | boolean          | YES  |     | NULL    | 
  json&&year            | boolean          | YES  |     | NULL    | 
- json_div_year         | numeric          | YES  |     | NULL    | 
- json_mod_year         | numeric          | YES  |     | NULL    | 
+ json_div_year         | number           | YES  |     | NULL    | 
+ json_mod_year         | number           | YES  |     | NULL    | 
  json_xor_year         | integer          | YES  |     | NULL    | 
  json_and_year         | boolean          | YES  |     | NULL    | 
  json_or_year          | boolean          | YES  |     | NULL    | 
@@ -2110,7 +2110,7 @@ SHOW COLUMNS FROM test_json_type;
  json-char             | double precision | YES  |     | NULL    | 
  json*char             | double precision | YES  |     | NULL    | 
  json/char             | double precision | YES  |     | NULL    | 
- json%char             | numeric          | YES  |     | NULL    | 
+ json%char             | number           | YES  |     | NULL    | 
  json^char             | double precision | YES  |     | NULL    | 
  json>>char            | bigint           | YES  |     | NULL    | 
  json<<char            | bigint           | YES  |     | NULL    | 
@@ -2118,8 +2118,8 @@ SHOW COLUMNS FROM test_json_type;
  json&char             | bigint           | YES  |     | NULL    | 
  json||char            | boolean          | YES  |     | NULL    | 
  json&&char            | boolean          | YES  |     | NULL    | 
- json_div_char         | numeric          | YES  |     | NULL    | 
- json_mod_char         | numeric          | YES  |     | NULL    | 
+ json_div_char         | number           | YES  |     | NULL    | 
+ json_mod_char         | number           | YES  |     | NULL    | 
  json_xor_char         | integer          | YES  |     | NULL    | 
  json_and_char         | boolean          | YES  |     | NULL    | 
  json_or_char          | boolean          | YES  |     | NULL    | 
@@ -2127,7 +2127,7 @@ SHOW COLUMNS FROM test_json_type;
  json-varchar          | double precision | YES  |     | NULL    | 
  json*varchar          | double precision | YES  |     | NULL    | 
  json/varchar          | double precision | YES  |     | NULL    | 
- json%varchar          | numeric          | YES  |     | NULL    | 
+ json%varchar          | number           | YES  |     | NULL    | 
  json^varchar          | double precision | YES  |     | NULL    | 
  json>>varchar         | bigint           | YES  |     | NULL    | 
  json<<varchar         | bigint           | YES  |     | NULL    | 
@@ -2135,8 +2135,8 @@ SHOW COLUMNS FROM test_json_type;
  json&varchar          | bigint           | YES  |     | NULL    | 
  json||varchar         | boolean          | YES  |     | NULL    | 
  json&&varchar         | boolean          | YES  |     | NULL    | 
- json_div_varchar      | numeric          | YES  |     | NULL    | 
- json_mod_varchar      | numeric          | YES  |     | NULL    | 
+ json_div_varchar      | number           | YES  |     | NULL    | 
+ json_mod_varchar      | number           | YES  |     | NULL    | 
  json_xor_varchar      | integer          | YES  |     | NULL    | 
  json_and_varchar      | boolean          | YES  |     | NULL    | 
  json_or_varchar       | boolean          | YES  |     | NULL    | 
@@ -2147,8 +2147,8 @@ SHOW COLUMNS FROM test_json_type;
  json^binary           | double precision | YES  |     | NULL    | 
  json||binary          | boolean          | YES  |     | NULL    | 
  json&&binary          | boolean          | YES  |     | NULL    | 
- json_div_binary       | numeric          | YES  |     | NULL    | 
- json_mod_binary       | numeric          | YES  |     | NULL    | 
+ json_div_binary       | number           | YES  |     | NULL    | 
+ json_mod_binary       | number           | YES  |     | NULL    | 
  json_xor_binary       | integer          | YES  |     | NULL    | 
  json_and_binary       | boolean          | YES  |     | NULL    | 
  json_or_binary        | boolean          | YES  |     | NULL    | 
@@ -2159,8 +2159,8 @@ SHOW COLUMNS FROM test_json_type;
  json^varbinary        | double precision | YES  |     | NULL    | 
  json||varbinary       | boolean          | YES  |     | NULL    | 
  json&&varbinary       | boolean          | YES  |     | NULL    | 
- json_div_varbinary    | numeric          | YES  |     | NULL    | 
- json_mod_varbinary    | numeric          | YES  |     | NULL    | 
+ json_div_varbinary    | number           | YES  |     | NULL    | 
+ json_mod_varbinary    | number           | YES  |     | NULL    | 
  json_xor_varbinary    | integer          | YES  |     | NULL    | 
  json_and_varbinary    | boolean          | YES  |     | NULL    | 
  json_or_varbinary     | boolean          | YES  |     | NULL    | 
@@ -2171,8 +2171,8 @@ SHOW COLUMNS FROM test_json_type;
  json^tinyblob         | double precision | YES  |     | NULL    | 
  json||tinyblob        | boolean          | YES  |     | NULL    | 
  json&&tinyblob        | boolean          | YES  |     | NULL    | 
- json_div_tinyblob     | numeric          | YES  |     | NULL    | 
- json_mod_tinyblob     | numeric          | YES  |     | NULL    | 
+ json_div_tinyblob     | number           | YES  |     | NULL    | 
+ json_mod_tinyblob     | number           | YES  |     | NULL    | 
  json_xor_tinyblob     | integer          | YES  |     | NULL    | 
  json_and_tinyblob     | boolean          | YES  |     | NULL    | 
  json_or_tinyblob      | boolean          | YES  |     | NULL    | 
@@ -2183,8 +2183,8 @@ SHOW COLUMNS FROM test_json_type;
  json^blob             | double precision | YES  |     | NULL    | 
  json||blob            | boolean          | YES  |     | NULL    | 
  json&&blob            | boolean          | YES  |     | NULL    | 
- json_div_blob         | numeric          | YES  |     | NULL    | 
- json_mod_blob         | numeric          | YES  |     | NULL    | 
+ json_div_blob         | number           | YES  |     | NULL    | 
+ json_mod_blob         | number           | YES  |     | NULL    | 
  json_xor_blob         | integer          | YES  |     | NULL    | 
  json_and_blob         | boolean          | YES  |     | NULL    | 
  json_or_blob          | boolean          | YES  |     | NULL    | 
@@ -2195,8 +2195,8 @@ SHOW COLUMNS FROM test_json_type;
  json^mediumblob       | double precision | YES  |     | NULL    | 
  json||mediumblob      | boolean          | YES  |     | NULL    | 
  json&&mediumblob      | boolean          | YES  |     | NULL    | 
- json_div_mediumblob   | numeric          | YES  |     | NULL    | 
- json_mod_mediumblob   | numeric          | YES  |     | NULL    | 
+ json_div_mediumblob   | number           | YES  |     | NULL    | 
+ json_mod_mediumblob   | number           | YES  |     | NULL    | 
  json_xor_mediumblob   | integer          | YES  |     | NULL    | 
  json_and_mediumblob   | boolean          | YES  |     | NULL    | 
  json_or_mediumblob    | boolean          | YES  |     | NULL    | 
@@ -2207,8 +2207,8 @@ SHOW COLUMNS FROM test_json_type;
  json^longblob         | double precision | YES  |     | NULL    | 
  json||longblob        | boolean          | YES  |     | NULL    | 
  json&&longblob        | boolean          | YES  |     | NULL    | 
- json_div_longblob     | numeric          | YES  |     | NULL    | 
- json_mod_longblob     | numeric          | YES  |     | NULL    | 
+ json_div_longblob     | number           | YES  |     | NULL    | 
+ json_mod_longblob     | number           | YES  |     | NULL    | 
  json_xor_longblob     | integer          | YES  |     | NULL    | 
  json_and_longblob     | boolean          | YES  |     | NULL    | 
  json_or_longblob      | boolean          | YES  |     | NULL    | 
@@ -2216,7 +2216,7 @@ SHOW COLUMNS FROM test_json_type;
  json-text             | double precision | YES  |     | NULL    | 
  json*text             | double precision | YES  |     | NULL    | 
  json/text             | double precision | YES  |     | NULL    | 
- json%text             | numeric          | YES  |     | NULL    | 
+ json%text             | number           | YES  |     | NULL    | 
  json^text             | double precision | YES  |     | NULL    | 
  json>>text            | bigint           | YES  |     | NULL    | 
  json<<text            | bigint           | YES  |     | NULL    | 
@@ -2224,8 +2224,8 @@ SHOW COLUMNS FROM test_json_type;
  json&text             | bigint           | YES  |     | NULL    | 
  json||text            | boolean          | YES  |     | NULL    | 
  json&&text            | boolean          | YES  |     | NULL    | 
- json_div_text         | numeric          | YES  |     | NULL    | 
- json_mod_text         | numeric          | YES  |     | NULL    | 
+ json_div_text         | number           | YES  |     | NULL    | 
+ json_mod_text         | number           | YES  |     | NULL    | 
  json_xor_text         | integer          | YES  |     | NULL    | 
  json_and_text         | boolean          | YES  |     | NULL    | 
  json_or_text          | boolean          | YES  |     | NULL    | 
@@ -2233,7 +2233,7 @@ SHOW COLUMNS FROM test_json_type;
  json-enum_t           | double precision | YES  |     | NULL    | 
  json*enum_t           | double precision | YES  |     | NULL    | 
  json/enum_t           | double precision | YES  |     | NULL    | 
- json%enum_t           | numeric          | YES  |     | NULL    | 
+ json%enum_t           | number           | YES  |     | NULL    | 
  json^enum_t           | double precision | YES  |     | NULL    | 
  json>>enum_t          | bigint           | YES  |     | NULL    | 
  json<<enum_t          | bigint           | YES  |     | NULL    | 
@@ -2241,8 +2241,8 @@ SHOW COLUMNS FROM test_json_type;
  json&enum_t           | bigint           | YES  |     | NULL    | 
  json||enum_t          | boolean          | YES  |     | NULL    | 
  json&&enum_t          | boolean          | YES  |     | NULL    | 
- json_div_enum_t       | numeric          | YES  |     | NULL    | 
- json_mod_enum_t       | numeric          | YES  |     | NULL    | 
+ json_div_enum_t       | number           | YES  |     | NULL    | 
+ json_mod_enum_t       | number           | YES  |     | NULL    | 
  json_xor_enum_t       | integer          | YES  |     | NULL    | 
  json_and_enum_t       | boolean          | YES  |     | NULL    | 
  json_or_enum_t        | boolean          | YES  |     | NULL    | 
@@ -2250,7 +2250,7 @@ SHOW COLUMNS FROM test_json_type;
  json-set_t            | double precision | YES  |     | NULL    | 
  json*set_t            | double precision | YES  |     | NULL    | 
  json/set_t            | double precision | YES  |     | NULL    | 
- json%set_t            | numeric          | YES  |     | NULL    | 
+ json%set_t            | number           | YES  |     | NULL    | 
  json^set_t            | double precision | YES  |     | NULL    | 
  json>>set_t           | bigint           | YES  |     | NULL    | 
  json<<set_t           | bigint           | YES  |     | NULL    | 
@@ -2258,8 +2258,8 @@ SHOW COLUMNS FROM test_json_type;
  json&set_t            | bigint           | YES  |     | NULL    | 
  json||set_t           | boolean          | YES  |     | NULL    | 
  json&&set_t           | boolean          | YES  |     | NULL    | 
- json_div_set_t        | numeric          | YES  |     | NULL    | 
- json_mod_set_t        | numeric          | YES  |     | NULL    | 
+ json_div_set_t        | number           | YES  |     | NULL    | 
+ json_mod_set_t        | number           | YES  |     | NULL    | 
  json_xor_set_t        | integer          | YES  |     | NULL    | 
  json_and_set_t        | boolean          | YES  |     | NULL    | 
  json_or_set_t         | boolean          | YES  |     | NULL    | 
@@ -2267,7 +2267,7 @@ SHOW COLUMNS FROM test_json_type;
  json-json             | double precision | YES  |     | NULL    | 
  json*json             | double precision | YES  |     | NULL    | 
  json/json             | double precision | YES  |     | NULL    | 
- json%json             | numeric          | YES  |     | NULL    | 
+ json%json             | number           | YES  |     | NULL    | 
  json^json             | double precision | YES  |     | NULL    | 
  json>>json            | bigint           | YES  |     | NULL    | 
  json<<json            | bigint           | YES  |     | NULL    | 
@@ -2275,8 +2275,8 @@ SHOW COLUMNS FROM test_json_type;
  json&json             | bigint           | YES  |     | NULL    | 
  json||json            | boolean          | YES  |     | NULL    | 
  json&&json            | boolean          | YES  |     | NULL    | 
- json_div_json         | numeric          | YES  |     | NULL    | 
- json_mod_json         | numeric          | YES  |     | NULL    | 
+ json_div_json         | number           | YES  |     | NULL    | 
+ json_mod_json         | number           | YES  |     | NULL    | 
  json_xor_json         | integer          | YES  |     | NULL    | 
  json_and_json         | boolean          | YES  |     | NULL    | 
  json_or_json          | boolean          | YES  |     | NULL    | 
@@ -3543,7 +3543,7 @@ CONTEXT:  referenced column: binary/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: binary/json
 UPDATE test_json_type, test_json_table SET test_json_type.`binary%json` = test_json_table.`binary` % test_json_table.`json`;
-ERROR:  failed to find conversion function from "binary" to numeric
+ERROR:  failed to find conversion function from "binary" to number
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`binary^json` = test_json_table.`binary` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -3610,7 +3610,7 @@ CONTEXT:  referenced column: varbinary/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: varbinary/json
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary%json` = test_json_table.`varbinary` % test_json_table.`json`;
-ERROR:  failed to find conversion function from "varbinary" to numeric
+ERROR:  failed to find conversion function from "varbinary" to number
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary^json` = test_json_table.`varbinary` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -3677,7 +3677,7 @@ CONTEXT:  referenced column: tinyblob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: tinyblob/json
 UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob%json` = test_json_table.`tinyblob` % test_json_table.`json`;
-ERROR:  failed to find conversion function from tinyblob to numeric
+ERROR:  failed to find conversion function from tinyblob to number
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob^json` = test_json_table.`tinyblob` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -3744,7 +3744,7 @@ CONTEXT:  referenced column: blob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: blob/json
 UPDATE test_json_type, test_json_table SET test_json_type.`blob%json` = test_json_table.`blob` % test_json_table.`json`;
-ERROR:  failed to find conversion function from blob to numeric
+ERROR:  failed to find conversion function from blob to number
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`blob^json` = test_json_table.`blob` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -3811,7 +3811,7 @@ CONTEXT:  referenced column: mediumblob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: mediumblob/json
 UPDATE test_json_type, test_json_table SET test_json_type.`mediumblob%json` = test_json_table.`mediumblob` % test_json_table.`json`;
-ERROR:  failed to find conversion function from mediumblob to numeric
+ERROR:  failed to find conversion function from mediumblob to number
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`mediumblob^json` = test_json_table.`mediumblob` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -3878,7 +3878,7 @@ CONTEXT:  referenced column: longblob/json
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: longblob/json
 UPDATE test_json_type, test_json_table SET test_json_type.`longblob%json` = test_json_table.`longblob` % test_json_table.`json`;
-ERROR:  failed to find conversion function from longblob to numeric
+ERROR:  failed to find conversion function from longblob to number
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`longblob^json` = test_json_table.`longblob` ^ test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -5360,7 +5360,7 @@ CONTEXT:  referenced column: json/binary
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/binary
 UPDATE test_json_type, test_json_table SET test_json_type.`json%binary` = test_json_table.`json` % test_json_table.`binary`;
-ERROR:  failed to find conversion function from "binary" to numeric
+ERROR:  failed to find conversion function from "binary" to number
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json^binary` = test_json_table.`json` ^ test_json_table.`binary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -5427,7 +5427,7 @@ CONTEXT:  referenced column: json/varbinary
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/varbinary
 UPDATE test_json_type, test_json_table SET test_json_type.`json%varbinary` = test_json_table.`json` % test_json_table.`varbinary`;
-ERROR:  failed to find conversion function from "varbinary" to numeric
+ERROR:  failed to find conversion function from "varbinary" to number
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json^varbinary` = test_json_table.`json` ^ test_json_table.`varbinary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -5494,7 +5494,7 @@ CONTEXT:  referenced column: json/tinyblob
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/tinyblob
 UPDATE test_json_type, test_json_table SET test_json_type.`json%tinyblob` = test_json_table.`json` % test_json_table.`tinyblob`;
-ERROR:  failed to find conversion function from tinyblob to numeric
+ERROR:  failed to find conversion function from tinyblob to number
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json^tinyblob` = test_json_table.`json` ^ test_json_table.`tinyblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -5561,7 +5561,7 @@ CONTEXT:  referenced column: json/blob
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/blob
 UPDATE test_json_type, test_json_table SET test_json_type.`json%blob` = test_json_table.`json` % test_json_table.`blob`;
-ERROR:  failed to find conversion function from blob to numeric
+ERROR:  failed to find conversion function from blob to number
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json^blob` = test_json_table.`json` ^ test_json_table.`blob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -5628,7 +5628,7 @@ CONTEXT:  referenced column: json/mediumblob
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/mediumblob
 UPDATE test_json_type, test_json_table SET test_json_type.`json%mediumblob` = test_json_table.`json` % test_json_table.`mediumblob`;
-ERROR:  failed to find conversion function from mediumblob to numeric
+ERROR:  failed to find conversion function from mediumblob to number
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json^mediumblob` = test_json_table.`json` ^ test_json_table.`mediumblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -5695,7 +5695,7 @@ CONTEXT:  referenced column: json/longblob
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: json/longblob
 UPDATE test_json_type, test_json_table SET test_json_type.`json%longblob` = test_json_table.`json` % test_json_table.`longblob`;
-ERROR:  failed to find conversion function from longblob to numeric
+ERROR:  failed to find conversion function from longblob to number
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json^longblob` = test_json_table.`json` ^ test_json_table.`longblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
