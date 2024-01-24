@@ -33,7 +33,7 @@ select upper('ABc'), upper('哈哈'), upper('123456'),upper('哈市&%%￥#'),upp
 -- select rand(), random();--显示小数点前的0
 --测试点五：验证truncate函数
 select truncate(111.28);--返回111
-ERROR:  function truncate(numeric) does not exist
+ERROR:  function truncate(number) does not exist
 LINE 1: select truncate(111.28);
                ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.

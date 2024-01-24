@@ -284,259 +284,259 @@ SHOW COLUMNS FROM test_time_type;
  date+date                 | integer | YES  |     | NULL    | 
  date-date                 | integer | YES  |     | NULL    | 
  date*date                 | bigint  | YES  |     | NULL    | 
- date/date                 | numeric | YES  |     | NULL    | 
+ date/date                 | number  | YES  |     | NULL    | 
  date+time                 | integer | YES  |     | NULL    | 
  date-time                 | integer | YES  |     | NULL    | 
  date*time                 | bigint  | YES  |     | NULL    | 
- date/time                 | numeric | YES  |     | NULL    | 
- date+time(4)              | numeric | YES  |     | NULL    | 
- date-time(4)              | numeric | YES  |     | NULL    | 
- date*time(4)              | numeric | YES  |     | NULL    | 
- date/time(4)              | numeric | YES  |     | NULL    | 
+ date/time                 | number  | YES  |     | NULL    | 
+ date+time(4)              | number  | YES  |     | NULL    | 
+ date-time(4)              | number  | YES  |     | NULL    | 
+ date*time(4)              | number  | YES  |     | NULL    | 
+ date/time(4)              | number  | YES  |     | NULL    | 
  date+datetime             | bigint  | YES  |     | NULL    | 
  date-datetime             | bigint  | YES  |     | NULL    | 
  date*datetime             | bigint  | YES  |     | NULL    | 
- date/datetime             | numeric | YES  |     | NULL    | 
- date+datetime(4)          | numeric | YES  |     | NULL    | 
- date-datetime(4)          | numeric | YES  |     | NULL    | 
- date*datetime(4)          | numeric | YES  |     | NULL    | 
- date/datetime(4)          | numeric | YES  |     | NULL    | 
+ date/datetime             | number  | YES  |     | NULL    | 
+ date+datetime(4)          | number  | YES  |     | NULL    | 
+ date-datetime(4)          | number  | YES  |     | NULL    | 
+ date*datetime(4)          | number  | YES  |     | NULL    | 
+ date/datetime(4)          | number  | YES  |     | NULL    | 
  date+timestamp            | bigint  | YES  |     | NULL    | 
  date-timestamp            | bigint  | YES  |     | NULL    | 
  date*timestamp            | bigint  | YES  |     | NULL    | 
- date/timestamp            | numeric | YES  |     | NULL    | 
- date+timestamp(4)         | numeric | YES  |     | NULL    | 
- date-timestamp(4)         | numeric | YES  |     | NULL    | 
- date*timestamp(4)         | numeric | YES  |     | NULL    | 
- date/timestamp(4)         | numeric | YES  |     | NULL    | 
+ date/timestamp            | number  | YES  |     | NULL    | 
+ date+timestamp(4)         | number  | YES  |     | NULL    | 
+ date-timestamp(4)         | number  | YES  |     | NULL    | 
+ date*timestamp(4)         | number  | YES  |     | NULL    | 
+ date/timestamp(4)         | number  | YES  |     | NULL    | 
  date+year                 | uint4   | YES  |     | NULL    | 
  date-year                 | uint4   | YES  |     | NULL    | 
  date*year                 | uint8   | YES  |     | NULL    | 
- date/year                 | numeric | YES  |     | NULL    | 
+ date/year                 | number  | YES  |     | NULL    | 
  time+date                 | integer | YES  |     | NULL    | 
  time-date                 | integer | YES  |     | NULL    | 
  time*date                 | bigint  | YES  |     | NULL    | 
- time/date                 | numeric | YES  |     | NULL    | 
+ time/date                 | number  | YES  |     | NULL    | 
  time+time                 | integer | YES  |     | NULL    | 
  time-time                 | integer | YES  |     | NULL    | 
  time*time                 | bigint  | YES  |     | NULL    | 
- time/time                 | numeric | YES  |     | NULL    | 
- time+time(4)              | numeric | YES  |     | NULL    | 
- time-time(4)              | numeric | YES  |     | NULL    | 
- time*time(4)              | numeric | YES  |     | NULL    | 
- time/time(4)              | numeric | YES  |     | NULL    | 
+ time/time                 | number  | YES  |     | NULL    | 
+ time+time(4)              | number  | YES  |     | NULL    | 
+ time-time(4)              | number  | YES  |     | NULL    | 
+ time*time(4)              | number  | YES  |     | NULL    | 
+ time/time(4)              | number  | YES  |     | NULL    | 
  time+datetime             | bigint  | YES  |     | NULL    | 
  time-datetime             | bigint  | YES  |     | NULL    | 
  time*datetime             | bigint  | YES  |     | NULL    | 
- time/datetime             | numeric | YES  |     | NULL    | 
- time+datetime(4)          | numeric | YES  |     | NULL    | 
- time-datetime(4)          | numeric | YES  |     | NULL    | 
- time*datetime(4)          | numeric | YES  |     | NULL    | 
- time/datetime(4)          | numeric | YES  |     | NULL    | 
+ time/datetime             | number  | YES  |     | NULL    | 
+ time+datetime(4)          | number  | YES  |     | NULL    | 
+ time-datetime(4)          | number  | YES  |     | NULL    | 
+ time*datetime(4)          | number  | YES  |     | NULL    | 
+ time/datetime(4)          | number  | YES  |     | NULL    | 
  time+timestamp            | bigint  | YES  |     | NULL    | 
  time-timestamp            | bigint  | YES  |     | NULL    | 
  time*timestamp            | bigint  | YES  |     | NULL    | 
- time/timestamp            | numeric | YES  |     | NULL    | 
- time+timestamp(4)         | numeric | YES  |     | NULL    | 
- time-timestamp(4)         | numeric | YES  |     | NULL    | 
- time*timestamp(4)         | numeric | YES  |     | NULL    | 
- time/timestamp(4)         | numeric | YES  |     | NULL    | 
+ time/timestamp            | number  | YES  |     | NULL    | 
+ time+timestamp(4)         | number  | YES  |     | NULL    | 
+ time-timestamp(4)         | number  | YES  |     | NULL    | 
+ time*timestamp(4)         | number  | YES  |     | NULL    | 
+ time/timestamp(4)         | number  | YES  |     | NULL    | 
  time+year                 | uint4   | YES  |     | NULL    | 
  time-year                 | uint4   | YES  |     | NULL    | 
  time*year                 | uint8   | YES  |     | NULL    | 
- time/year                 | numeric | YES  |     | NULL    | 
- time(4)+date              | numeric | YES  |     | NULL    | 
- time(4)-date              | numeric | YES  |     | NULL    | 
- time(4)*date              | numeric | YES  |     | NULL    | 
- time(4)/date              | numeric | YES  |     | NULL    | 
- time(4)+time              | numeric | YES  |     | NULL    | 
- time(4)-time              | numeric | YES  |     | NULL    | 
- time(4)*time              | numeric | YES  |     | NULL    | 
- time(4)/time              | numeric | YES  |     | NULL    | 
- time(4)+time(4)           | numeric | YES  |     | NULL    | 
- time(4)-time(4)           | numeric | YES  |     | NULL    | 
- time(4)*time(4)           | numeric | YES  |     | NULL    | 
- time(4)/time(4)           | numeric | YES  |     | NULL    | 
- time(4)+datetime          | numeric | YES  |     | NULL    | 
- time(4)-datetime          | numeric | YES  |     | NULL    | 
- time(4)*datetime          | numeric | YES  |     | NULL    | 
- time(4)/datetime          | numeric | YES  |     | NULL    | 
- time(4)+datetime(4)       | numeric | YES  |     | NULL    | 
- time(4)-datetime(4)       | numeric | YES  |     | NULL    | 
- time(4)*datetime(4)       | numeric | YES  |     | NULL    | 
- time(4)/datetime(4)       | numeric | YES  |     | NULL    | 
- time(4)+timestamp         | numeric | YES  |     | NULL    | 
- time(4)-timestamp         | numeric | YES  |     | NULL    | 
- time(4)*timestamp         | numeric | YES  |     | NULL    | 
- time(4)/timestamp         | numeric | YES  |     | NULL    | 
- time(4)+timestamp(4)      | numeric | YES  |     | NULL    | 
- time(4)-timestamp(4)      | numeric | YES  |     | NULL    | 
- time(4)*timestamp(4)      | numeric | YES  |     | NULL    | 
- time(4)/timestamp(4)      | numeric | YES  |     | NULL    | 
- time(4)+year              | numeric | YES  |     | NULL    | 
- time(4)-year              | numeric | YES  |     | NULL    | 
- time(4)*year              | numeric | YES  |     | NULL    | 
- time(4)/year              | numeric | YES  |     | NULL    | 
+ time/year                 | number  | YES  |     | NULL    | 
+ time(4)+date              | number  | YES  |     | NULL    | 
+ time(4)-date              | number  | YES  |     | NULL    | 
+ time(4)*date              | number  | YES  |     | NULL    | 
+ time(4)/date              | number  | YES  |     | NULL    | 
+ time(4)+time              | number  | YES  |     | NULL    | 
+ time(4)-time              | number  | YES  |     | NULL    | 
+ time(4)*time              | number  | YES  |     | NULL    | 
+ time(4)/time              | number  | YES  |     | NULL    | 
+ time(4)+time(4)           | number  | YES  |     | NULL    | 
+ time(4)-time(4)           | number  | YES  |     | NULL    | 
+ time(4)*time(4)           | number  | YES  |     | NULL    | 
+ time(4)/time(4)           | number  | YES  |     | NULL    | 
+ time(4)+datetime          | number  | YES  |     | NULL    | 
+ time(4)-datetime          | number  | YES  |     | NULL    | 
+ time(4)*datetime          | number  | YES  |     | NULL    | 
+ time(4)/datetime          | number  | YES  |     | NULL    | 
+ time(4)+datetime(4)       | number  | YES  |     | NULL    | 
+ time(4)-datetime(4)       | number  | YES  |     | NULL    | 
+ time(4)*datetime(4)       | number  | YES  |     | NULL    | 
+ time(4)/datetime(4)       | number  | YES  |     | NULL    | 
+ time(4)+timestamp         | number  | YES  |     | NULL    | 
+ time(4)-timestamp         | number  | YES  |     | NULL    | 
+ time(4)*timestamp         | number  | YES  |     | NULL    | 
+ time(4)/timestamp         | number  | YES  |     | NULL    | 
+ time(4)+timestamp(4)      | number  | YES  |     | NULL    | 
+ time(4)-timestamp(4)      | number  | YES  |     | NULL    | 
+ time(4)*timestamp(4)      | number  | YES  |     | NULL    | 
+ time(4)/timestamp(4)      | number  | YES  |     | NULL    | 
+ time(4)+year              | number  | YES  |     | NULL    | 
+ time(4)-year              | number  | YES  |     | NULL    | 
+ time(4)*year              | number  | YES  |     | NULL    | 
+ time(4)/year              | number  | YES  |     | NULL    | 
  datetime+date             | bigint  | YES  |     | NULL    | 
  datetime-date             | bigint  | YES  |     | NULL    | 
  datetime*date             | bigint  | YES  |     | NULL    | 
- datetime/date             | numeric | YES  |     | NULL    | 
+ datetime/date             | number  | YES  |     | NULL    | 
  datetime+time             | bigint  | YES  |     | NULL    | 
  datetime-time             | bigint  | YES  |     | NULL    | 
  datetime*time             | bigint  | YES  |     | NULL    | 
- datetime/time             | numeric | YES  |     | NULL    | 
- datetime+time(4)          | numeric | YES  |     | NULL    | 
- datetime-time(4)          | numeric | YES  |     | NULL    | 
- datetime*time(4)          | numeric | YES  |     | NULL    | 
- datetime/time(4)          | numeric | YES  |     | NULL    | 
+ datetime/time             | number  | YES  |     | NULL    | 
+ datetime+time(4)          | number  | YES  |     | NULL    | 
+ datetime-time(4)          | number  | YES  |     | NULL    | 
+ datetime*time(4)          | number  | YES  |     | NULL    | 
+ datetime/time(4)          | number  | YES  |     | NULL    | 
  datetime+datetime         | bigint  | YES  |     | NULL    | 
  datetime-datetime         | bigint  | YES  |     | NULL    | 
  datetime*datetime         | bigint  | YES  |     | NULL    | 
- datetime/datetime         | numeric | YES  |     | NULL    | 
- datetime+datetime(4)      | numeric | YES  |     | NULL    | 
- datetime-datetime(4)      | numeric | YES  |     | NULL    | 
- datetime*datetime(4)      | numeric | YES  |     | NULL    | 
- datetime/datetime(4)      | numeric | YES  |     | NULL    | 
+ datetime/datetime         | number  | YES  |     | NULL    | 
+ datetime+datetime(4)      | number  | YES  |     | NULL    | 
+ datetime-datetime(4)      | number  | YES  |     | NULL    | 
+ datetime*datetime(4)      | number  | YES  |     | NULL    | 
+ datetime/datetime(4)      | number  | YES  |     | NULL    | 
  datetime+timestamp        | bigint  | YES  |     | NULL    | 
  datetime-timestamp        | bigint  | YES  |     | NULL    | 
  datetime*timestamp        | bigint  | YES  |     | NULL    | 
- datetime/timestamp        | numeric | YES  |     | NULL    | 
- datetime+timestamp(4)     | numeric | YES  |     | NULL    | 
- datetime-timestamp(4)     | numeric | YES  |     | NULL    | 
- datetime*timestamp(4)     | numeric | YES  |     | NULL    | 
- datetime/timestamp(4)     | numeric | YES  |     | NULL    | 
+ datetime/timestamp        | number  | YES  |     | NULL    | 
+ datetime+timestamp(4)     | number  | YES  |     | NULL    | 
+ datetime-timestamp(4)     | number  | YES  |     | NULL    | 
+ datetime*timestamp(4)     | number  | YES  |     | NULL    | 
+ datetime/timestamp(4)     | number  | YES  |     | NULL    | 
  datetime+year             | uint8   | YES  |     | NULL    | 
  datetime-year             | uint8   | YES  |     | NULL    | 
  datetime*year             | uint8   | YES  |     | NULL    | 
- datetime/year             | numeric | YES  |     | NULL    | 
- datetime(4)+date          | numeric | YES  |     | NULL    | 
- datetime(4)-date          | numeric | YES  |     | NULL    | 
- datetime(4)*date          | numeric | YES  |     | NULL    | 
- datetime(4)/date          | numeric | YES  |     | NULL    | 
- datetime(4)+time          | numeric | YES  |     | NULL    | 
- datetime(4)-time          | numeric | YES  |     | NULL    | 
- datetime(4)*time          | numeric | YES  |     | NULL    | 
- datetime(4)/time          | numeric | YES  |     | NULL    | 
- datetime(4)+time(4)       | numeric | YES  |     | NULL    | 
- datetime(4)-time(4)       | numeric | YES  |     | NULL    | 
- datetime(4)*time(4)       | numeric | YES  |     | NULL    | 
- datetime(4)/time(4)       | numeric | YES  |     | NULL    | 
- datetime(4)+datetime      | numeric | YES  |     | NULL    | 
- datetime(4)-datetime      | numeric | YES  |     | NULL    | 
- datetime(4)*datetime      | numeric | YES  |     | NULL    | 
- datetime(4)/datetime      | numeric | YES  |     | NULL    | 
- datetime(4)+datetime(4)   | numeric | YES  |     | NULL    | 
- datetime(4)-datetime(4)   | numeric | YES  |     | NULL    | 
- datetime(4)*datetime(4)   | numeric | YES  |     | NULL    | 
- datetime(4)/datetime(4)   | numeric | YES  |     | NULL    | 
- datetime(4)+timestamp     | numeric | YES  |     | NULL    | 
- datetime(4)-timestamp     | numeric | YES  |     | NULL    | 
- datetime(4)*timestamp     | numeric | YES  |     | NULL    | 
- datetime(4)/timestamp     | numeric | YES  |     | NULL    | 
- datetime(4)+timestamp(4)  | numeric | YES  |     | NULL    | 
- datetime(4)-timestamp(4)  | numeric | YES  |     | NULL    | 
- datetime(4)*timestamp(4)  | numeric | YES  |     | NULL    | 
- datetime(4)/timestamp(4)  | numeric | YES  |     | NULL    | 
- datetime(4)+year          | numeric | YES  |     | NULL    | 
- datetime(4)-year          | numeric | YES  |     | NULL    | 
- datetime(4)*year          | numeric | YES  |     | NULL    | 
- datetime(4)/year          | numeric | YES  |     | NULL    | 
+ datetime/year             | number  | YES  |     | NULL    | 
+ datetime(4)+date          | number  | YES  |     | NULL    | 
+ datetime(4)-date          | number  | YES  |     | NULL    | 
+ datetime(4)*date          | number  | YES  |     | NULL    | 
+ datetime(4)/date          | number  | YES  |     | NULL    | 
+ datetime(4)+time          | number  | YES  |     | NULL    | 
+ datetime(4)-time          | number  | YES  |     | NULL    | 
+ datetime(4)*time          | number  | YES  |     | NULL    | 
+ datetime(4)/time          | number  | YES  |     | NULL    | 
+ datetime(4)+time(4)       | number  | YES  |     | NULL    | 
+ datetime(4)-time(4)       | number  | YES  |     | NULL    | 
+ datetime(4)*time(4)       | number  | YES  |     | NULL    | 
+ datetime(4)/time(4)       | number  | YES  |     | NULL    | 
+ datetime(4)+datetime      | number  | YES  |     | NULL    | 
+ datetime(4)-datetime      | number  | YES  |     | NULL    | 
+ datetime(4)*datetime      | number  | YES  |     | NULL    | 
+ datetime(4)/datetime      | number  | YES  |     | NULL    | 
+ datetime(4)+datetime(4)   | number  | YES  |     | NULL    | 
+ datetime(4)-datetime(4)   | number  | YES  |     | NULL    | 
+ datetime(4)*datetime(4)   | number  | YES  |     | NULL    | 
+ datetime(4)/datetime(4)   | number  | YES  |     | NULL    | 
+ datetime(4)+timestamp     | number  | YES  |     | NULL    | 
+ datetime(4)-timestamp     | number  | YES  |     | NULL    | 
+ datetime(4)*timestamp     | number  | YES  |     | NULL    | 
+ datetime(4)/timestamp     | number  | YES  |     | NULL    | 
+ datetime(4)+timestamp(4)  | number  | YES  |     | NULL    | 
+ datetime(4)-timestamp(4)  | number  | YES  |     | NULL    | 
+ datetime(4)*timestamp(4)  | number  | YES  |     | NULL    | 
+ datetime(4)/timestamp(4)  | number  | YES  |     | NULL    | 
+ datetime(4)+year          | number  | YES  |     | NULL    | 
+ datetime(4)-year          | number  | YES  |     | NULL    | 
+ datetime(4)*year          | number  | YES  |     | NULL    | 
+ datetime(4)/year          | number  | YES  |     | NULL    | 
  timestamp+date            | bigint  | YES  |     | NULL    | 
  timestamp-date            | bigint  | YES  |     | NULL    | 
  timestamp*date            | bigint  | YES  |     | NULL    | 
- timestamp/date            | numeric | YES  |     | NULL    | 
+ timestamp/date            | number  | YES  |     | NULL    | 
  timestamp+time            | bigint  | YES  |     | NULL    | 
  timestamp-time            | bigint  | YES  |     | NULL    | 
  timestamp*time            | bigint  | YES  |     | NULL    | 
- timestamp/time            | numeric | YES  |     | NULL    | 
- timestamp+time(4)         | numeric | YES  |     | NULL    | 
- timestamp-time(4)         | numeric | YES  |     | NULL    | 
- timestamp*time(4)         | numeric | YES  |     | NULL    | 
- timestamp/time(4)         | numeric | YES  |     | NULL    | 
+ timestamp/time            | number  | YES  |     | NULL    | 
+ timestamp+time(4)         | number  | YES  |     | NULL    | 
+ timestamp-time(4)         | number  | YES  |     | NULL    | 
+ timestamp*time(4)         | number  | YES  |     | NULL    | 
+ timestamp/time(4)         | number  | YES  |     | NULL    | 
  timestamp+datetime        | bigint  | YES  |     | NULL    | 
  timestamp-datetime        | bigint  | YES  |     | NULL    | 
  timestamp*datetime        | bigint  | YES  |     | NULL    | 
- timestamp/datetime        | numeric | YES  |     | NULL    | 
- timestamp+datetime(4)     | numeric | YES  |     | NULL    | 
- timestamp-datetime(4)     | numeric | YES  |     | NULL    | 
- timestamp*datetime(4)     | numeric | YES  |     | NULL    | 
- timestamp/datetime(4)     | numeric | YES  |     | NULL    | 
+ timestamp/datetime        | number  | YES  |     | NULL    | 
+ timestamp+datetime(4)     | number  | YES  |     | NULL    | 
+ timestamp-datetime(4)     | number  | YES  |     | NULL    | 
+ timestamp*datetime(4)     | number  | YES  |     | NULL    | 
+ timestamp/datetime(4)     | number  | YES  |     | NULL    | 
  timestamp+timestamp       | bigint  | YES  |     | NULL    | 
  timestamp-timestamp       | bigint  | YES  |     | NULL    | 
  timestamp*timestamp       | bigint  | YES  |     | NULL    | 
- timestamp/timestamp       | numeric | YES  |     | NULL    | 
- timestamp+timestamp(4)    | numeric | YES  |     | NULL    | 
- timestamp-timestamp(4)    | numeric | YES  |     | NULL    | 
- timestamp*timestamp(4)    | numeric | YES  |     | NULL    | 
- timestamp/timestamp(4)    | numeric | YES  |     | NULL    | 
+ timestamp/timestamp       | number  | YES  |     | NULL    | 
+ timestamp+timestamp(4)    | number  | YES  |     | NULL    | 
+ timestamp-timestamp(4)    | number  | YES  |     | NULL    | 
+ timestamp*timestamp(4)    | number  | YES  |     | NULL    | 
+ timestamp/timestamp(4)    | number  | YES  |     | NULL    | 
  timestamp+year            | uint8   | YES  |     | NULL    | 
  timestamp-year            | uint8   | YES  |     | NULL    | 
  timestamp*year            | uint8   | YES  |     | NULL    | 
- timestamp/year            | numeric | YES  |     | NULL    | 
- timestamp(4)+date         | numeric | YES  |     | NULL    | 
- timestamp(4)-date         | numeric | YES  |     | NULL    | 
- timestamp(4)*date         | numeric | YES  |     | NULL    | 
- timestamp(4)/date         | numeric | YES  |     | NULL    | 
- timestamp(4)+time         | numeric | YES  |     | NULL    | 
- timestamp(4)-time         | numeric | YES  |     | NULL    | 
- timestamp(4)*time         | numeric | YES  |     | NULL    | 
- timestamp(4)/time         | numeric | YES  |     | NULL    | 
- timestamp(4)+time(4)      | numeric | YES  |     | NULL    | 
- timestamp(4)-time(4)      | numeric | YES  |     | NULL    | 
- timestamp(4)*time(4)      | numeric | YES  |     | NULL    | 
- timestamp(4)/time(4)      | numeric | YES  |     | NULL    | 
- timestamp(4)+datetime     | numeric | YES  |     | NULL    | 
- timestamp(4)-datetime     | numeric | YES  |     | NULL    | 
- timestamp(4)*datetime     | numeric | YES  |     | NULL    | 
- timestamp(4)/datetime     | numeric | YES  |     | NULL    | 
- timestamp(4)+datetime(4)  | numeric | YES  |     | NULL    | 
- timestamp(4)-datetime(4)  | numeric | YES  |     | NULL    | 
- timestamp(4)*datetime(4)  | numeric | YES  |     | NULL    | 
- timestamp(4)/datetime(4)  | numeric | YES  |     | NULL    | 
- timestamp(4)+timestamp    | numeric | YES  |     | NULL    | 
- timestamp(4)-timestamp    | numeric | YES  |     | NULL    | 
- timestamp(4)*timestamp    | numeric | YES  |     | NULL    | 
- timestamp(4)/timestamp    | numeric | YES  |     | NULL    | 
- timestamp(4)+timestamp(4) | numeric | YES  |     | NULL    | 
- timestamp(4)-timestamp(4) | numeric | YES  |     | NULL    | 
- timestamp(4)*timestamp(4) | numeric | YES  |     | NULL    | 
- timestamp(4)/timestamp(4) | numeric | YES  |     | NULL    | 
- timestamp(4)+year         | numeric | YES  |     | NULL    | 
- timestamp(4)-year         | numeric | YES  |     | NULL    | 
- timestamp(4)*year         | numeric | YES  |     | NULL    | 
- timestamp(4)/year         | numeric | YES  |     | NULL    | 
+ timestamp/year            | number  | YES  |     | NULL    | 
+ timestamp(4)+date         | number  | YES  |     | NULL    | 
+ timestamp(4)-date         | number  | YES  |     | NULL    | 
+ timestamp(4)*date         | number  | YES  |     | NULL    | 
+ timestamp(4)/date         | number  | YES  |     | NULL    | 
+ timestamp(4)+time         | number  | YES  |     | NULL    | 
+ timestamp(4)-time         | number  | YES  |     | NULL    | 
+ timestamp(4)*time         | number  | YES  |     | NULL    | 
+ timestamp(4)/time         | number  | YES  |     | NULL    | 
+ timestamp(4)+time(4)      | number  | YES  |     | NULL    | 
+ timestamp(4)-time(4)      | number  | YES  |     | NULL    | 
+ timestamp(4)*time(4)      | number  | YES  |     | NULL    | 
+ timestamp(4)/time(4)      | number  | YES  |     | NULL    | 
+ timestamp(4)+datetime     | number  | YES  |     | NULL    | 
+ timestamp(4)-datetime     | number  | YES  |     | NULL    | 
+ timestamp(4)*datetime     | number  | YES  |     | NULL    | 
+ timestamp(4)/datetime     | number  | YES  |     | NULL    | 
+ timestamp(4)+datetime(4)  | number  | YES  |     | NULL    | 
+ timestamp(4)-datetime(4)  | number  | YES  |     | NULL    | 
+ timestamp(4)*datetime(4)  | number  | YES  |     | NULL    | 
+ timestamp(4)/datetime(4)  | number  | YES  |     | NULL    | 
+ timestamp(4)+timestamp    | number  | YES  |     | NULL    | 
+ timestamp(4)-timestamp    | number  | YES  |     | NULL    | 
+ timestamp(4)*timestamp    | number  | YES  |     | NULL    | 
+ timestamp(4)/timestamp    | number  | YES  |     | NULL    | 
+ timestamp(4)+timestamp(4) | number  | YES  |     | NULL    | 
+ timestamp(4)-timestamp(4) | number  | YES  |     | NULL    | 
+ timestamp(4)*timestamp(4) | number  | YES  |     | NULL    | 
+ timestamp(4)/timestamp(4) | number  | YES  |     | NULL    | 
+ timestamp(4)+year         | number  | YES  |     | NULL    | 
+ timestamp(4)-year         | number  | YES  |     | NULL    | 
+ timestamp(4)*year         | number  | YES  |     | NULL    | 
+ timestamp(4)/year         | number  | YES  |     | NULL    | 
  year+date                 | uint4   | YES  |     | NULL    | 
  year-date                 | uint4   | YES  |     | NULL    | 
  year*date                 | uint8   | YES  |     | NULL    | 
- year/date                 | numeric | YES  |     | NULL    | 
+ year/date                 | number  | YES  |     | NULL    | 
  year+time                 | uint4   | YES  |     | NULL    | 
  year-time                 | uint4   | YES  |     | NULL    | 
  year*time                 | uint8   | YES  |     | NULL    | 
- year/time                 | numeric | YES  |     | NULL    | 
- year+time(4)              | numeric | YES  |     | NULL    | 
- year-time(4)              | numeric | YES  |     | NULL    | 
- year*time(4)              | numeric | YES  |     | NULL    | 
- year/time(4)              | numeric | YES  |     | NULL    | 
+ year/time                 | number  | YES  |     | NULL    | 
+ year+time(4)              | number  | YES  |     | NULL    | 
+ year-time(4)              | number  | YES  |     | NULL    | 
+ year*time(4)              | number  | YES  |     | NULL    | 
+ year/time(4)              | number  | YES  |     | NULL    | 
  year+datetime             | uint8   | YES  |     | NULL    | 
  year-datetime             | uint8   | YES  |     | NULL    | 
  year*datetime             | uint8   | YES  |     | NULL    | 
- year/datetime             | numeric | YES  |     | NULL    | 
- year+datetime(4)          | numeric | YES  |     | NULL    | 
- year-datetime(4)          | numeric | YES  |     | NULL    | 
- year*datetime(4)          | numeric | YES  |     | NULL    | 
- year/datetime(4)          | numeric | YES  |     | NULL    | 
+ year/datetime             | number  | YES  |     | NULL    | 
+ year+datetime(4)          | number  | YES  |     | NULL    | 
+ year-datetime(4)          | number  | YES  |     | NULL    | 
+ year*datetime(4)          | number  | YES  |     | NULL    | 
+ year/datetime(4)          | number  | YES  |     | NULL    | 
  year+timestamp            | uint8   | YES  |     | NULL    | 
  year-timestamp            | uint8   | YES  |     | NULL    | 
  year*timestamp            | uint8   | YES  |     | NULL    | 
- year/timestamp            | numeric | YES  |     | NULL    | 
- year+timestamp(4)         | numeric | YES  |     | NULL    | 
- year-timestamp(4)         | numeric | YES  |     | NULL    | 
- year*timestamp(4)         | numeric | YES  |     | NULL    | 
- year/timestamp(4)         | numeric | YES  |     | NULL    | 
+ year/timestamp            | number  | YES  |     | NULL    | 
+ year+timestamp(4)         | number  | YES  |     | NULL    | 
+ year-timestamp(4)         | number  | YES  |     | NULL    | 
+ year*timestamp(4)         | number  | YES  |     | NULL    | 
+ year/timestamp(4)         | number  | YES  |     | NULL    | 
  year+year                 | uint4   | YES  |     | NULL    | 
  year-year                 | uint4   | YES  |     | NULL    | 
  year*year                 | uint4   | YES  |     | NULL    | 
- year/year                 | numeric | YES  |     | NULL    | 
+ year/year                 | number  | YES  |     | NULL    | 
 (256 rows)
 
 -- test normal value

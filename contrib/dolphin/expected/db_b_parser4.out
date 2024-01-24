@@ -13,7 +13,7 @@ Table "db_b_parser4.tb_db_b_parser_0002"
  Column |     Type      | Modifiers 
 --------+---------------+-----------
  a      | numeric(10,0) | 
- b      | numeric       | 
+ b      | number        | 
  c      | numeric(10,0) | 
  d      | numeric(10,0) | 
  e      | numeric(10,0) | 
