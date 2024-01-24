@@ -157,6 +157,7 @@ select convert(1 using decimal(10,3));
    1.000
 (1 row)
 
+set dolphin.b_compatibility_mode = off;
 select pg_typeof(convert('1', char));
  pg_typeof 
 -----------

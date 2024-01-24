@@ -769,3 +769,14 @@ DROP FUNCTION IF EXISTS pg_catalog.repeat(json, integer);
 DROP FUNCTION IF EXISTS pg_catalog.repeat(year, integer);
 DROP FUNCTION IF EXISTS pg_catalog.repeat(binary, integer);
 DROP FUNCTION IF EXISTS pg_catalog.repeat(bit, integer);
+
+DROP CAST IF EXISTS ("binary" AS boolean);
+DROP CAST IF EXISTS ("varbinary" AS boolean);
+DROP CAST IF EXISTS (blob AS boolean);
+DROP CAST IF EXISTS (tinyblob AS boolean);
+DROP CAST IF EXISTS (mediumblob AS boolean);
+DROP CAST IF EXISTS (longblob AS boolean);
+DROP CAST IF EXISTS (anyset AS boolean);
+DROP FUNCTION IF EXISTS pg_catalog.any2boolean(anyelement) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.enum_boolean(anyenum) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.set_boolean(anyset) CASCADE;

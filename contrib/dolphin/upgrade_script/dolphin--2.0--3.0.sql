@@ -1132,3 +1132,23 @@ CREATE OR REPLACE FUNCTION pg_catalog.repeat(year, integer) RETURNS text LANGUAG
 CREATE OR REPLACE FUNCTION pg_catalog.repeat(binary, integer) RETURNS bytea LANGUAGE C STRICT IMMUTABLE AS '$libdir/dolphin', 'repeat_binary';
 CREATE OR REPLACE FUNCTION pg_catalog.repeat(bit, integer) RETURNS bytea LANGUAGE C STRICT IMMUTABLE AS '$libdir/dolphin', 'repeat_bit';
 
+DROP FUNCTION IF EXISTS pg_catalog.any2boolean(anyelement) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.enum_boolean(anyenum) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.set_boolean(anyset) CASCADE;
+DROP CAST IF EXISTS ("binary" AS boolean) CASCADE;
+DROP CAST IF EXISTS ("varbinary" AS boolean) CASCADE;
+DROP CAST IF EXISTS (blob AS boolean) CASCADE;
+DROP CAST IF EXISTS (tinyblob AS boolean) CASCADE;
+DROP CAST IF EXISTS (mediumblob AS boolean) CASCADE;
+DROP CAST IF EXISTS (longblob AS boolean) CASCADE;
+DROP CAST IF EXISTS (anyset AS boolean) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.any2boolean(anyelement) RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as text) as boolean)';
+CREATE OR REPLACE FUNCTION pg_catalog.enum_boolean(anyenum) RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int) as boolean)';
+CREATE OR REPLACE FUNCTION pg_catalog.set_boolean(anyset) RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int) as boolean)';
+CREATE CAST ("binary" AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
+CREATE CAST ("varbinary" AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
+CREATE CAST (blob AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
+CREATE CAST (tinyblob AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
+CREATE CAST (mediumblob AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
+CREATE CAST (longblob AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
+CREATE CAST (anyset AS boolean) WITH FUNCTION pg_catalog.set_boolean(anyset) AS ASSIGNMENT;
