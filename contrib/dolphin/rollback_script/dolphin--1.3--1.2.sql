@@ -853,3 +853,10 @@ DROP FUNCTION IF EXISTS pg_catalog.convert(boolean, name);
 DROP FUNCTION IF EXISTS pg_catalog.convert(longblob, name);
 DROP FUNCTION IF EXISTS pg_catalog.convert(anyenum, name);
 DROP FUNCTION IF EXISTS pg_catalog.convert(json, name);
+
+DROP FUNCTION IF EXISTS pg_catalog.ascii(blob);
+DROP FUNCTION IF EXISTS pg_catalog.ascii(year);
+DROP FUNCTION IF EXISTS pg_catalog.ascii(json);
+DROP FUNCTION IF EXISTS pg_catalog.ascii(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.ascii(anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.ascii(bit);

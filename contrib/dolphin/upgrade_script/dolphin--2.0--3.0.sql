@@ -285,13 +285,6 @@ RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin
 CREATE OR REPLACE FUNCTION pg_catalog.bool_cast_timestamptz(boolean)
 RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'bool_cast_timestamptz';
 
-CREATE OR REPLACE FUNCTION pg_catalog.ascii(blob) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
-CREATE OR REPLACE FUNCTION pg_catalog.ascii(year) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
-CREATE OR REPLACE FUNCTION pg_catalog.ascii(json) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
-CREATE OR REPLACE FUNCTION pg_catalog.ascii(boolean) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as integer))';
-CREATE OR REPLACE FUNCTION pg_catalog.ascii(anyenum) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
-CREATE OR REPLACE FUNCTION pg_catalog.ascii(bit) RETURNS integer LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bit_to_ascii';
-
 DROP CAST IF EXISTS (uint4 AS year) CASCADE;
 DROP CAST IF EXISTS (boolean AS year) CASCADE;
 DROP CAST IF EXISTS (char AS year) CASCADE;

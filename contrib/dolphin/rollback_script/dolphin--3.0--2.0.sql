@@ -204,13 +204,6 @@ DROP FUNCTION IF EXISTS pg_catalog.set_boolean(anyset) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.binary2boolean(binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varbinary2boolean(varbinary) CASCADE;
 
-DROP FUNCTION IF EXISTS pg_catalog.ascii(blob);
-DROP FUNCTION IF EXISTS pg_catalog.ascii(year);
-DROP FUNCTION IF EXISTS pg_catalog.ascii(json);
-DROP FUNCTION IF EXISTS pg_catalog.ascii(boolean);
-DROP FUNCTION IF EXISTS pg_catalog.ascii(anyenum);
-DROP FUNCTION IF EXISTS pg_catalog.ascii(bit);
-
 DROP CAST IF EXISTS (uint4 AS year) CASCADE;
 DROP CAST IF EXISTS (boolean AS year) CASCADE;
 DROP CAST IF EXISTS (char AS year) CASCADE;
