@@ -78,13 +78,13 @@ end;
 /
 ALTER PROCEDURE public.pro_1107262(n integer) OWNER TO "Root_Test";
 CREATE VIEW definer_test_view1(log) AS
-    SELECT log((10)::numeric, (1000)::numeric) AS log;
+    SELECT log((10)::number, (1000)::number) AS log;
 ALTER VIEW public.definer_test_view1 OWNER TO "Root_Test";
 CREATE VIEW definer_test_view2(log) AS
-    SELECT log((10)::numeric, (100)::numeric) AS log;
+    SELECT log((10)::number, (100)::number) AS log;
 ALTER VIEW public.definer_test_view2 OWNER TO test_user2;
 CREATE VIEW definer_test_view3(log) AS
-    SELECT log((10)::numeric, (100)::numeric) AS log;
+    SELECT log((10)::number, (100)::number) AS log;
 ALTER VIEW public.definer_test_view3 OWNER TO "Test_User";
 CREATE TABLE tab_1107262 (
     id integer,

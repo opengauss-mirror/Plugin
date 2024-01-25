@@ -201,6 +201,85 @@ select * from test_double_exp order by 1;
  2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 2.71828182845905 | 1096.63315842846 | 2.71828182845905 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 3.42122953628967 | 2.71828182845905 | 148.413159102577 |   1
 (2 rows)
 
+-- acos math function
+reset dolphin.sql_mode;
+select acos(`int1`), acos(`uint1`), acos(`int2`), acos(`uint2`), acos(`int4`), acos(`uint4`), acos(`int8`), acos(`uint8`), acos(`float4`), acos(`float8`), acos(`numeric`),acos(`bit1`), acos(`bit64`), acos(`boolean`), acos(`date`), acos(`time`), acos(`time(4)`), acos(`datetime`),acos(`datetime(4)`), acos(`timestamp`), acos(`timestamp(4)`), acos(`year`), acos(`char`), acos(`varchar`), acos(`binary`), acos(`varbinary`), acos(`tinyblob`), acos(`blob`), acos(`mediumblob`), acos(`longblob`), acos(`text`), acos(`enum_t`), acos(`set_t`), acos(`json`) from test_type_table;   
+WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+CONTEXT:  referenced column: acos
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: acos
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: acos
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: acos
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: acos
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: acos
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: acos
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: acos
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: acos
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: acos
+ acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos |      acos       
+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+-----------------
+    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |      |    0 |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |    0 |      | 1.5707963267949
+(1 row)
+
+create table test_double_acos(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double,  d20 double,  d21 double,  d22 double,  d23 double,  d24 double,  d25 double,  d26 double,  d27 double,  d28 double,  d29 double,  d30 double,  d31 double,  d32 double,  d33 double,  d34 double);
+insert ignore into test_double_acos  select acos(`int1`), acos(`uint1`), acos(`int2`), acos(`uint2`), acos(`int4`), acos(`uint4`), acos(`int8`), acos(`uint8`), acos(`float4`), acos(`float8`), acos(`numeric`),acos(`bit1`), acos(`bit64`),acos(`boolean`), acos(`date`), acos(`time`), acos(`time(4)`), acos(`datetime`),acos(`datetime(4)`), acos(`timestamp`), acos(`timestamp(4)`), acos(`year`), acos(`char`), acos(`varchar`), acos(`binary`),acos(`varbinary`), acos(`tinyblob`), acos(`blob`), acos(`mediumblob`), acos(`longblob`), acos(`text`), acos(`enum_t`), acos(`set_t`), acos(`json`) from test_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+CONTEXT:  referenced column: d23
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d24
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d25
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d26
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d27
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d28
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d29
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d30
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d31
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: d34
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test_double_acos  select acos(`int1`), acos(`uint1`), acos(`int2`), acos(`uint2`), acos(`int4`), acos(`uint4`), acos(`int8`), acos(`uint8`), acos(`float4`), acos(`float8`), acos(`numeric`),acos(`bit1`), acos(`bit64`),acos(`boolean`), acos(`date`), acos(`time`), acos(`time(4)`), acos(`datetime`),acos(`datetime(4)`), acos(`timestamp`), acos(`timestamp(4)`), acos(`year`), acos(`char`), acos(`varchar`), acos(`binary`),acos(`varbinary`), acos(`tinyblob`), acos(`blob`), acos(`mediumblob`), acos(`longblob`), acos(`text`), acos(`enum_t`), acos(`set_t`), acos(`json`) from test_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d23
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d24
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d25
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d26
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d27
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d28
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d29
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d30
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d31
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: d34
+select * from test_double_acos order by 1;
+ d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 | d9 | d10 | d11 | d12 | d13 | d14 | d15 | d16 | d17 | d18 | d19 | d20 | d21 | d22 | d23 | d24 | d25 | d26 | d27 | d28 | d29 | d30 | d31 | d32 | d33 |       d34       
+----+----+----+----+----+----+----+----+----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----------------
+  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |   0 |   0 |   0 |     |   0 |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |   0 |     | 1.5707963267949
+  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |   0 |   0 |   0 |     |   0 |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |   0 |     | 1.5707963267949
+(2 rows)
+
 -- ln math function
 select
 ln(`int1`),
@@ -263,6 +342,135 @@ CONTEXT:  referenced column: ln
   0 | 0.0000000000000000 |  0 | 0.0000000000000000 |  0 | 0.0000000000000000 |  0 | 0.0000000000000000 |  0 |  0 | 0.0000000000000000 | 0.0000000000000000 | 1.9459101490553133 | 0.0000000000000000 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 7.61233683716775 | 0.2070141693843261 | 0.2070141693843261 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.2070141693843261 | 0.0000000000000000 | 1.6094379124341004 |   
 (1 row)
 
+-- floor math function
+select
+floor(`int1`),
+floor(`uint1`),
+floor(`int2`),
+floor(`uint2`),
+floor(`int4`),
+floor(`uint4`),
+floor(`int8`),
+floor(`uint8`),
+floor(`float4`),
+floor(`float8`),
+floor(`numeric`),
+floor(`bit1`),
+floor(`bit64`),
+floor(`boolean`),
+floor(`date`),
+floor(`time`),
+floor(`time(4)`),
+floor(`datetime`),
+floor(`datetime(4)`),
+floor(`timestamp`),
+floor(`timestamp(4)`),
+floor(`year`),
+floor(`char`),
+floor(`varchar`),
+floor(`binary`),
+floor(`varbinary`),
+floor(`tinyblob`),
+floor(`blob`),
+floor(`mediumblob`),
+floor(`longblob`),
+floor(`text`),
+floor(`enum_t`),
+floor(`set_t`),
+floor(`json`)
+from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: floor
+ floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor |  floor   | floor  | floor  |     floor      |     floor      |     floor      |     floor      | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor 
+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+----------+--------+--------+----------------+----------------+----------------+----------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------
+     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     7 |     1 | 20230205 | 191050 | 191050 | 20230205191050 | 20230205191050 | 20230205191050 | 20230205191050 |  2023 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     5 |     0
+(1 row)
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+create table test_floor_cts select  floor(`int1`) as floor_1, floor(`uint1`) as floor_2,
+   floor(`int2`) as floor_3, floor(`uint2`) as floor_4, floor(`int4`) as floor_5, floor(`uint4`) as floor_6,
+   floor(`int8`) as floor_7, floor(`uint8`) as floor_8, floor(`float4`) as floor_9, floor(`float8`) as floor_10,
+   floor(`numeric`) as floor_11, floor(`bit1`) as floor_12, floor(`bit64`) as floor_13, floor(`boolean`) as floor_14,
+   floor(`date`) as floor_15, floor(`time`) as floor_16, floor(`time(4)`) as floor_17, floor(`datetime`) as floor_18,
+   floor(`datetime(4)`) as floor_19, floor(`timestamp`) as floor_20, floor(`timestamp(4)`) as floor_21,
+   floor(`char`) as floor_22, floor(`varchar`) as floor_23,  floor(`binary`) as floor_24,
+   floor(`varbinary`) as floor_25, floor(`tinyblob`) as floor_26, floor(`blob`) as floor_27, floor(`mediumblob`) as floor_28, floor(`longblob`) as floor_29,
+   floor(`text`) as floor_30, floor(`enum_t`) as floor_31, floor(`set_t`) as floor_32 from test_type_table;   
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor_22
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor_23
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor_24
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor_25
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor_26
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor_27
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor_28
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor_29
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor_30
+create table test_ln_cts as select 
+   ln(`int1`) as ln_1, ln(`uint1`) as ln_2, ln(`int2`) as ln_3, ln(`uint2`) as ln_4,
+   ln(`int4`) as ln_5, ln(`uint4`) as ln_6, ln(`int8`) as ln_7, ln(`uint8`) as ln_8,
+   ln(`float4`) as ln_9, ln(`float8`) as ln_10, ln(`numeric`) as ln_11, ln(`bit1`) as ln_12,
+   ln(`bit64`) as ln_13, ln(`boolean`) as ln_14, ln(`date`) as ln_15, ln(`time`) as ln_16,
+   ln(`time(4)`) as ln_17, ln(`datetime`) as ln_18, ln(`datetime(4)`) as ln_19, ln(`timestamp`) as ln_20,
+   ln(`timestamp(4)`) as ln_21, ln(`char`) as ln_23, ln(`varchar`) as ln_24,  ln(`binary`) as ln_25,
+   ln(`varbinary`) as ln_26, ln(`tinyblob`) as ln_27, ln(`blob`) as ln_28, ln(`mediumblob`) as ln_29, ln(`longblob`) as ln_30,
+   ln(`text`) as ln_31, ln(`enum_t`) as ln_32, ln(`set_t`) as ln_33 from test_type_table;   
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ln_23
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ln_24
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln_25
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln_26
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln_27
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln_28
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln_29
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln_30
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ln_31
+select * from test_floor_cts;
+ floor_1 | floor_2 | floor_3 | floor_4 | floor_5 | floor_6 | floor_7 | floor_8 | floor_9 | floor_10 | floor_11 | floor_12 | floor_13 | floor_14 | floor_15 | floor_16 | floor_17 |    floor_18    |    floor_19    |    floor_20    |    floor_21    | floor_22 | floor_23 | floor_24 | floor_25 | floor_26 | floor_27 | floor_28 | floor_29 | floor_30 | floor_31 | floor_32 
+---------+---------+---------+---------+---------+---------+---------+---------+---------+----------+----------+----------+----------+----------+----------+----------+----------+----------------+----------------+----------------+----------------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------
+       1 |       1 |       1 |       1 |       1 |       1 |       1 |       1 |       1 |        1 |        1 |        1 |        7 |        1 | 20230205 |   191050 |   191050 | 20230205191050 | 20230205191050 | 20230205191050 | 20230205191050 |        1 |        1 |        1 |        1 |        1 |        1 |        1 |        1 |        1 |        1 |        5
+(1 row)
+
+select * from test_ln_cts;
+ ln_1 |        ln_2        | ln_3 |        ln_4        | ln_5 |        ln_6        | ln_7 |        ln_8        | ln_9 | ln_10 |       ln_11        |       ln_12        |       ln_13        |       ln_14        |       ln_15        |       ln_16        |       ln_17        |       ln_18        |       ln_19        |       ln_20        |       ln_21        |       ln_23        |       ln_24        |       ln_25       |       ln_26       |       ln_27       |       ln_28       |       ln_29       |       ln_30       |       ln_31        |       ln_32        |       ln_33        
+------+--------------------+------+--------------------+------+--------------------+------+--------------------+------+-------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+--------------------+--------------------+--------------------
+    0 | 0.0000000000000000 |    0 | 0.0000000000000000 |    0 | 0.0000000000000000 |    0 | 0.0000000000000000 |    0 |     0 | 0.0000000000000000 | 0.0000000000000000 | 1.9459101490553133 | 0.0000000000000000 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 0.2070141693843261 | 0.2070141693843261 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.207014169384326 | 0.2070141693843261 | 0.0000000000000000 | 1.6094379124341004
+(1 row)
+
 select exp(709);
           exp          
 -----------------------
@@ -278,8 +486,11 @@ select exp(-1000);
    0
 (1 row)
 
+drop table if exists test_double_acos;
 drop table if exists test_double_exp;
 drop table if exists test_double_degrees;
 drop table if exists test_type_table;
+drop table if exists test_floor_cts;
+drop table if exists test_ln_cts;
 drop schema test_math_func cascade;
 reset current_schema;

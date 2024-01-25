@@ -23,3 +23,29 @@ select /*+ mergejoin(t1 t2)*/ * from t1 join t2;
 
 drop schema uint_join cascade;
 reset current_schema;
+
+create schema scott;
+
+drop table if exists scott.emp;
+drop table if exists scott.dept;
+
+create table scott.dept(DEPTNO number(2) constraint pk_dept primary key,mgr number(4), dname varchar2(14) ,loc varchar2(13) );
+
+create table scott.emp
+(empno number(4) constraint pk_emp primary key,
+dept varchar2(10),
+job varchar2(9),
+mgr number(4),
+hiredate date,
+sal number(7,2),
+comm number(7,2),
+deptno number(2) constraint fk_deptno references scott.dept);
+
+select * from scott.emp join scott.dept on emp.deptno = dept.deptno;
+--for converage 
+select * from scott.emp join scott.dept using(deptno);
+select * from scott.emp join scott.dept using(deptno, mgr);
+select * from scott.emp natural join scott.dept;
+
+drop schema scott cascade;
+reset current_schema;

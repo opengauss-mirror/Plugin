@@ -354,6 +354,11 @@ DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_enumnot(anyenum);
 DROP OPERATOR IF EXISTS dolphin_catalog.~(NONE, anyset);
 DROP FUNCTION IF EXISTS dolphin_catalog.dolphin_setnot(anyset);
 
+DROP FUNCTION IF EXISTS pg_catalog.convert(boolean, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(longblob, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(anyenum, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(json, name);
+
 DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING BTREE;
 DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING HASH;
 DROP OPERATOR CLASS IF EXISTS pg_catalog.binary_ops USING BTREE;
@@ -368,6 +373,9 @@ DROP FUNCTION IF EXISTS pg_catalog.binary_cmp(binary, binary);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(year);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(json);
+DROP FUNCTION IF EXISTS pg_catalog.acos(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.acos(year);
+DROP FUNCTION IF EXISTS pg_catalog.acos(json);
 
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(bit);
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(binary);
@@ -382,14 +390,28 @@ DROP FUNCTION IF EXISTS pg_catalog.bool_date(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.int8_cast_date(int1);
 DROP FUNCTION IF EXISTS pg_catalog.int16_cast_date(int2);
 DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(int4);
-DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(int8);
-DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(uint1);
-DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(uint2);
-DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(uint4);
-DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(uint8);
-DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(float4);
-DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(float8);
-DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(numeric);
+DROP FUNCTION IF EXISTS pg_catalog.int64_cast_date(int8);
+DROP FUNCTION IF EXISTS pg_catalog.uint8_cast_date(uint1);
+DROP FUNCTION IF EXISTS pg_catalog.uint16_cast_date(uint2);
+DROP FUNCTION IF EXISTS pg_catalog.uint32_cast_date(uint4);
+DROP FUNCTION IF EXISTS pg_catalog.uint64_cast_date(uint8);
+DROP FUNCTION IF EXISTS pg_catalog.float4_cast_date(float4);
+DROP FUNCTION IF EXISTS pg_catalog.float8_cast_date(float8);
+DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_date(numeric);
+DROP FUNCTION IF EXISTS pg_catalog.text_date_explicit(TEXT);
+
+DROP FUNCTION IF EXISTS pg_catalog.int8_cast_datetime(int1);
+DROP FUNCTION IF EXISTS pg_catalog.int16_cast_datetime(int2);
+DROP FUNCTION IF EXISTS pg_catalog.int32_cast_datetime(int4);
+DROP FUNCTION IF EXISTS pg_catalog.int64_cast_datetime(int8);
+DROP FUNCTION IF EXISTS pg_catalog.uint8_cast_datetime(uint1);
+DROP FUNCTION IF EXISTS pg_catalog.uint16_cast_datetime(uint2);
+DROP FUNCTION IF EXISTS pg_catalog.uint32_cast_datetime(uint4);
+DROP FUNCTION IF EXISTS pg_catalog.uint64_cast_datetime(uint8);
+DROP FUNCTION IF EXISTS pg_catalog.float4_cast_datetime(float4);
+DROP FUNCTION IF EXISTS pg_catalog.float8_cast_datetime(float8);
+DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_datetime(numeric);
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_explicit(TEXT);
 
 DROP FUNCTION IF EXISTS pg_catalog.ln(year);
 DROP FUNCTION IF EXISTS pg_catalog.ln(json);
@@ -730,3 +752,31 @@ DROP FUNCTION IF EXISTS pg_catalog.longblob_mediumblob_le(arg1 longblob, arg2 me
 DROP FUNCTION IF EXISTS pg_catalog.longblob_mediumblob_gt(arg1 longblob, arg2 mediumblob);
 DROP FUNCTION IF EXISTS pg_catalog.longblob_mediumblob_ge(arg1 longblob, arg2 mediumblob);
 DROP FUNCTION IF EXISTS pg_catalog.longblob_mediumblob_cmp(longblob, longblob);
+
+DROP FUNCTION IF EXISTS pg_catalog.floor(year);
+DROP FUNCTION IF EXISTS pg_catalog.floor(json);
+
+DROP FUNCTION IF EXISTS pg_catalog.hour(YEAR);
+DROP FUNCTION IF EXISTS pg_catalog.minute(YEAR);
+DROP FUNCTION IF EXISTS pg_catalog.second(YEAR);
+DROP FUNCTION IF EXISTS pg_catalog.year(YEAR);
+
+-- repeat function support
+DROP FUNCTION IF EXISTS pg_catalog.repeat(anyenum, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(boolean, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(tinyblob, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(json, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(year, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(binary, integer);
+DROP FUNCTION IF EXISTS pg_catalog.repeat(bit, integer);
+
+DROP CAST IF EXISTS ("binary" AS boolean);
+DROP CAST IF EXISTS ("varbinary" AS boolean);
+DROP CAST IF EXISTS (blob AS boolean);
+DROP CAST IF EXISTS (tinyblob AS boolean);
+DROP CAST IF EXISTS (mediumblob AS boolean);
+DROP CAST IF EXISTS (longblob AS boolean);
+DROP CAST IF EXISTS (anyset AS boolean);
+DROP FUNCTION IF EXISTS pg_catalog.any2boolean(anyelement) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.enum_boolean(anyenum) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.set_boolean(anyset) CASCADE;

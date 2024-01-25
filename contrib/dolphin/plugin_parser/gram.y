@@ -758,7 +758,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 				opt_collation collate_option
 
 %type <range>	qualified_name insert_target OptConstrFromTable opt_index_name insert_partition_clause update_delete_partition_clause dolphin_qualified_name
-				qualified_trigger_name
+				qualified_trigger_name qualified_name_for_delete
 %type <str>		all_Op MathOp OptDbName
 %type <str>		SingleLineProcPart
 %type <list>		proc_arg_no_empty
@@ -923,8 +923,8 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <ielem>	index_elem table_index_elem constraint_elem fulltext_index_elem
 %type <node>	table_ref single_table
 %type <jexpr>	joined_table
-%type <range>	relation_expr
-%type <range>	relation_expr_opt_alias delete_relation_expr_opt_alias
+%type <range>	relation_expr relation_expr_for_delete relation_expr_common
+%type <range>	relation_expr_opt_alias delete_relation_expr_opt_alias relation_expr_opt_alias_for_delete
 %type <target>	target_el single_set_clause set_target insert_column_item connect_by_root_expr
 %type <node>	tablesample_clause timecapsule_clause opt_timecapsule_clause opt_repeatable_clause end_expr start_expr
 
@@ -10449,7 +10449,7 @@ ColConstraintElem:
 					}
 #endif
 				}
-			| GENERATED ALWAYS AS '(' a_expr ')' generated_column_option
+			| opt_generated_always AS '(' a_expr ')' generated_column_option
 				{
 #ifdef ENABLE_MULTIPLE_NODES
             		const char* message = "Generated column is not yet supported";
@@ -10460,7 +10460,7 @@ ColConstraintElem:
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_GENERATED;
 					n->generated_when = ATTRIBUTE_IDENTITY_ALWAYS;
-					n->raw_expr = $5;
+					n->raw_expr = $4;
 					n->cooked_expr = NULL;
 					n->location = @1;
 					$$ = (Node *)n;
@@ -10508,7 +10508,12 @@ ColConstraintElem:
 					$$ = (Node *)n;
 				}
 		;
- 
+
+opt_generated_always:
+			GENERATED ALWAYS
+			| /* EMPTY */
+			;
+
 opt_unique_key:
 			UNIQUE { $$ = NULL; }
 			| UNIQUE KEY
@@ -30885,7 +30890,14 @@ relation_expr:
 					$$->inhOpt = INH_DEFAULT;
 					$$->alias = NULL;
 				}
-			| dolphin_qualified_name '*'
+			| relation_expr_common
+				{
+					$$ = $1;
+				}
+		;
+
+relation_expr_common:
+			 dolphin_qualified_name '*'
 				{
 					/* inheritance query */
 					$$ = $1;
@@ -30902,6 +30914,26 @@ relation_expr:
 				}
 		;
 
+/* used for multi delete stmt, to support writing table's name forms like t.* or schema.t.* */
+relation_expr_for_delete:
+			qualified_name_for_delete OptSnapshotVersion
+				{
+					/* default inheritance */
+					$$ = $1;
+					if ($2 != NULL)
+					{
+						char *snapshot_name = (char *)palloc0(strlen($1->relname) + 1 + strlen($2) + 1);
+						sprintf(snapshot_name, "%s%c%s", $1->relname, DB4AI_SNAPSHOT_VERSION_DELIMITER, $2);
+						$$->relname = snapshot_name;
+					}
+					$$->inhOpt = INH_DEFAULT;
+					$$->alias = NULL;
+				}
+			| relation_expr_common
+				{
+					$$ = $1;
+				}
+		;
 
 relation_expr_list:
 			relation_expr							{ $$ = list_make1($1); }
@@ -30909,7 +30941,7 @@ relation_expr_list:
 		;
 
 delete_relation_expr_opt_alias:
-    relation_expr_opt_alias                 %prec UMINUS
+    relation_expr_opt_alias_for_delete                 %prec UMINUS
         {
             /*
              * When sql_compatibility is B, name in PARTITION(name) can be
@@ -30924,7 +30956,7 @@ delete_relation_expr_opt_alias:
             }
             $$ = $1;
         }
-    | relation_expr PARTITION '(' name ',' name_list ')'
+    | relation_expr_for_delete PARTITION '(' name ',' name_list ')'
         {
 #ifdef ENABLE_MULTIPLE_NODES
         const char* message = "partition syntax is not yet supported";
@@ -30940,7 +30972,7 @@ delete_relation_expr_opt_alias:
             $1->partitionNameList = lcons(makeString($4), $6);
             $$ = $1;
         }
-    | relation_expr ColId PARTITION '(' name_list ')'
+    | relation_expr_for_delete ColId PARTITION '(' name_list ')'
         {
 #ifdef ENABLE_MULTIPLE_NODES
         const char* message = "partition syntax is not yet supported";
@@ -30959,7 +30991,7 @@ delete_relation_expr_opt_alias:
             $1->partitionNameList = $5;
             $$ = $1;
         }
-    | relation_expr AS ColId PARTITION '(' name_list ')'
+    | relation_expr_for_delete AS ColId PARTITION '(' name_list ')'
         {
 #ifdef ENABLE_MULTIPLE_NODES
         const char* message = "partition syntax is not yet supported";
@@ -31033,6 +31065,66 @@ relation_expr_opt_alias: relation_expr					%prec UMINUS
 					$$ = $1;
 				}
 			| relation_expr update_delete_partition_clause AS DolphinColId
+				{
+					if ($2 != NULL) {
+						$1->partitionname = $2->partitionname;
+						$1->ispartition = $2->ispartition;
+						$1->partitionKeyValuesList = $2->partitionKeyValuesList;
+						$1->subpartitionname = $2->subpartitionname;
+						$1->issubpartition = $2->issubpartition;
+					}
+					Alias *alias = makeNode(Alias);
+					alias->aliasname = GetDolphinObjName($4->str, $4->is_quoted);
+					$1->alias = alias;
+					$$ = $1;
+				}
+		;
+
+/* used for multi delete stmt */
+relation_expr_opt_alias_for_delete: relation_expr_for_delete					%prec UMINUS
+				{
+					$$ = $1;
+				}
+			| relation_expr_for_delete DolphinColId
+				{
+					Alias *alias = makeNode(Alias);
+					alias->aliasname = GetDolphinObjName($2->str, $2->is_quoted);
+					$1->alias = alias;
+					$$ = $1;
+				}
+			| relation_expr_for_delete AS DolphinColId
+				{
+					Alias *alias = makeNode(Alias);
+					alias->aliasname = GetDolphinObjName($3->str, $3->is_quoted);
+					$1->alias = alias;
+					$$ = $1;
+				}
+			| relation_expr_for_delete  update_delete_partition_clause 			%prec UMINUS
+				{
+					if ($2 != NULL) {
+						$1->partitionname = $2->partitionname;
+						$1->ispartition = $2->ispartition;
+						$1->partitionKeyValuesList = $2->partitionKeyValuesList;
+						$1->subpartitionname = $2->subpartitionname;
+						$1->issubpartition = $2->issubpartition;
+					}
+					$$ = $1;
+				}
+			| relation_expr_for_delete update_delete_partition_clause DolphinColId
+				{
+					if ($2 != NULL) {
+						$1->partitionname = $2->partitionname;
+						$1->ispartition = $2->ispartition;
+						$1->partitionKeyValuesList = $2->partitionKeyValuesList;
+						$1->subpartitionname = $2->subpartitionname;
+						$1->issubpartition = $2->issubpartition;
+					}
+					Alias *alias = makeNode(Alias);
+					alias->aliasname = GetDolphinObjName($3->str, $3->is_quoted);
+					$1->alias = alias;
+					$$ = $1;
+				}
+			| relation_expr_for_delete update_delete_partition_clause AS DolphinColId
 				{
 					if ($2 != NULL) {
 						$1->partitionname = $2->partitionname;
@@ -34264,8 +34356,10 @@ func_expr_common_subexpr:
 				Type typtup = LookupTypeName(NULL, typname, NULL);
 				FuncCall *n = makeNode(FuncCall);
 				if (NULL == typtup) {
-				        n->funcname = SystemFuncName("convert");
-					n->args = list_make2($3, makeStringConst(strVal(linitial(typname->names)), -1));
+					n->funcname = SystemFuncName("convert");
+					TypeName * tmp = SystemTypeName("name");
+					tmp->location = @5;
+					n->args = list_make2($3, makeStringConstCast(strVal(linitial(typname->names)), -1, tmp));
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
 					n->agg_distinct = FALSE;
@@ -34284,7 +34378,9 @@ func_expr_common_subexpr:
 			{
 			        FuncCall *n = makeNode(FuncCall);
 				n->funcname = SystemFuncName("convert");
-				n->args = list_make2($3, makeStringConst($5, -1));
+				TypeName * tmp = SystemTypeName("name");
+				tmp->location = @5;
+				n->args = list_make2($3, makeStringConstCast($5, -1, tmp));
 				n->agg_order = NIL;
 				n->agg_star = FALSE;
 				n->agg_distinct = FALSE;
@@ -34296,7 +34392,8 @@ func_expr_common_subexpr:
 			}
 			| CONVERT '(' a_expr ',' Typename ')'
 			{
-			        $$ = makeTypeCast($3, $5, @1);
+				ChangeBpcharCastType($5);
+				$$ = makeTypeCast($3, $5, @1);
 			}
 			| CONVERT '(' a_expr ',' UNSIGNED INTEGER ')'
 			{
@@ -36668,6 +36765,65 @@ qualified_name:
 									(errcode(ERRCODE_SYNTAX_ERROR),
 									 errmsg("improper qualified name (too many dotted names): %s",
 											NameListToString(lcons(makeString($1), $2))),
+									 parser_errposition(@1)));
+							break;
+					}
+				}
+		;
+/*
+ * used for multi delete stmt, to support writing table's name forms like t.* or schema.t.*
+ * when modify qualified_name, please check whether need to sync modifications here.
+ */
+qualified_name_for_delete:
+			DolphinColId
+				{
+					$$ = makeRangeVar(NULL, GetDolphinObjName($1->str, $1->is_quoted), @1);
+				}
+			| DolphinColId dolphin_indirection
+				{
+					$$ = makeRangeVar(NULL, NULL, @1);
+					const char* message = "improper qualified name (too many dotted names)";
+					DolphinString* first = NULL;
+					DolphinString* second = NULL;
+					switch (list_length($2))
+					{
+						case 1:
+							if (IsA(linitial($2), A_Star)) {
+								$$->catalogname = NULL;
+								$$->schemaname = NULL;
+								$$->relname = GetDolphinObjName($1->str, $1->is_quoted);;
+							} else {
+								check_dolphin_qualified_name($2, yyscanner);
+								$$->catalogname = NULL;
+								$$->schemaname = GetDolphinSchemaName($1->str, $1->is_quoted);
+								first = (DolphinString*)linitial($2);
+								$$->relname = GetDolphinObjName(first->str, first->is_quoted);
+							}
+							break;
+						case 2:
+							if (IsA(lsecond($2), A_Star)) {
+								$$->catalogname = NULL;
+								$$->schemaname = GetDolphinSchemaName($1->str, $1->is_quoted);;
+								if (!(IsA(linitial($2), String))) {
+									parser_yyerror("syntax error");
+								}
+								first = (DolphinString*)linitial($2);
+								$$->relname = GetDolphinSchemaName(first->str, first->is_quoted);
+							} else {
+								check_dolphin_qualified_name($2, yyscanner);
+								$$->catalogname = downcase_str($1->str, $1->is_quoted);
+								first = (DolphinString*)linitial($2);
+								second = (DolphinString*)lsecond($2);
+								$$->schemaname = GetDolphinSchemaName(first->str, first->is_quoted);
+								$$->relname = GetDolphinObjName(second->str, second->is_quoted);
+							}
+							break;
+						default:
+    						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+									 errmsg("improper qualified name (too many dotted names): %s",
+											NameListToString(lcons(makeString($1->str), GetNameListFromDolphinString($2)))),
 									 parser_errposition(@1)));
 							break;
 					}
@@ -39321,7 +39477,7 @@ SplitColQualList(List *qualList,
 		}
 		else if (IsA(n, CommentStmt) && columnOptions != NULL)
 		{
-			*columnOptions = lappend(*columnOptions, n);
+			*columnOptions = lcons(n, *columnOptions);
 		}
 		else {
 			const char* message = "unexpected node type";
@@ -39390,7 +39546,7 @@ SplitColQualList(List *qualList,
 		}
 		else if (IsA(n, CommentStmt))
 		{
-			*columnOptions = lappend(*columnOptions, n);
+			*columnOptions = lcons(n, *columnOptions);
 		}
 		else {
 			const char* message = "unexpected node type";

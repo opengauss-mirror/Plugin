@@ -198,7 +198,7 @@ LINE 1: ...TE INDEX error_index_fchar ON test_prefix_syntax (fchar(1+1)...
                                                              ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CREATE INDEX error_index_fchar ON test_prefix_syntax (fchar(6.4));
-ERROR:  function fchar(numeric) does not exist
+ERROR:  function fchar(number) does not exist
 LINE 1: ...TE INDEX error_index_fchar ON test_prefix_syntax (fchar(6.4)...
                                                              ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.

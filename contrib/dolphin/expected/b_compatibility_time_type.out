@@ -793,9 +793,9 @@ CONTEXT:  referenced column: timestamp
 SELECT 11::datetime;
 WARNING:  timestamp out of range
 CONTEXT:  referenced column: timestamp
-      timestamp      
----------------------
- 0000-00-00 00:00:00
+ timestamp 
+-----------
+ 
 (1 row)
 
 SELECT 111::datetime;

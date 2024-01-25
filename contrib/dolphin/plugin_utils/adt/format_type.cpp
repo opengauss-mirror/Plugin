@@ -248,7 +248,11 @@ static char* format_type_internal(
             if (with_typemod)
                 buf = printTypmod("numeric", typemod, typeform->typmodout);
             else
+#ifdef DOLPHIN
+                buf = pstrdup("number");
+#else
                 buf = pstrdup("numeric");
+#endif
             break;
 
         case INTERVALOID:

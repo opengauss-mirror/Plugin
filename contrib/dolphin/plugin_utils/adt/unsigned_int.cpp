@@ -5169,32 +5169,36 @@ PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui1);
 extern "C" DLL_PUBLIC Datum varlena_cast_ui1(PG_FUNCTION_ARGS);
 Datum varlena_cast_ui1(PG_FUNCTION_ARGS)
 {
+    fcinfo->ccontext = COERCION_EXPLICIT;
     Datum val = Varlena2Float8(fcinfo);
-    return DirectFunctionCall1(f8_cast_ui1, val);
+    return DirectFunctionCall1Coll(f8_cast_ui1, InvalidOid, val, fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui2);
 extern "C" DLL_PUBLIC Datum varlena_cast_ui2(PG_FUNCTION_ARGS);
 Datum varlena_cast_ui2(PG_FUNCTION_ARGS)
 {
+    fcinfo->ccontext = COERCION_EXPLICIT;
     Datum val = Varlena2Float8(fcinfo);
-    return DirectFunctionCall1(f8_cast_ui2, val);
+    return DirectFunctionCall1Coll(f8_cast_ui2, InvalidOid, val, fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui4);
 extern "C" DLL_PUBLIC Datum varlena_cast_ui4(PG_FUNCTION_ARGS);
 Datum varlena_cast_ui4(PG_FUNCTION_ARGS)
 {
+    fcinfo->ccontext = COERCION_EXPLICIT;
     Datum val = Varlena2Float8(fcinfo);
-    return DirectFunctionCall1(f8_cast_ui4, val);
+    return DirectFunctionCall1Coll(f8_cast_ui4, InvalidOid, val, fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui8);
 extern "C" DLL_PUBLIC Datum varlena_cast_ui8(PG_FUNCTION_ARGS);
 Datum varlena_cast_ui8(PG_FUNCTION_ARGS)
 {
+    fcinfo->ccontext = COERCION_EXPLICIT;
     Datum val = Varlena2Float8(fcinfo);
-    return DirectFunctionCall1(f8_cast_ui8, val);
+    return DirectFunctionCall1Coll(f8_cast_ui8, InvalidOid, val, fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_float4not);

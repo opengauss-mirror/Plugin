@@ -39,5 +39,10 @@ drop table t5;
 drop table t6;
 drop table t7;
 
+create table t1(a int, b int as (a) stored);
+alter table t1 add gc bigint as (a) stored;
+show create table t1;
+drop table t1;
+
 reset current_schema;
 drop schema test_default cascade;

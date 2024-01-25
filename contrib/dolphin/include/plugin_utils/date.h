@@ -64,6 +64,11 @@
 #define MAX_MICRO_SECOND 1000000
 #define TIME_MAX_NANO_SECOND 99999999
 #define TIME_NANO_SECOND_TO_MICRO_SECOND_RADIX 1000
+struct LongLongTm {
+    pg_tm result_tm; /* yyyy-mm-dd hh:MM:ss timestamp */
+    fsec_t fsec;     /* ms of result_tm */
+    int timeSign;    /* timeSign */
+};
 #endif
 
 /* for b compatibility type*/
@@ -93,7 +98,7 @@ extern void adjust_time_range(pg_tm *tm, fsec_t &fsec, bool &warnings);
 extern bool time_in_with_flag(char *str, unsigned int date_flag, TimeADT* time_adt, bool vertify_time = false);
 extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag, bool vertify_time = false);
 extern bool date_add_interval(DateADT date, Interval *span, DateADT *result);
-extern Datum date_internal(PG_FUNCTION_ARGS, bool is_date_sconst, TimeErrorType* time_error_type);
+extern Datum date_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type);
 extern "C" Datum time_float(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum date_enum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum timestamp_enum(PG_FUNCTION_ARGS);
@@ -104,6 +109,7 @@ extern bool check_time_mmssff_range(pg_tm *tm, long long microseconds);
 extern bool longlong_to_tm(long long nr, TimeADT* time, pg_tm* result_tm, fsec_t* fsec, int32* timeSign);
 bool check_time_min_value(char* input_str, long long nr, bool can_ignore);
 bool resolve_units(char *unit_str, b_units *unit);
+extern bool longlong_to_tm(long long nr, TimeADT* time, LongLongTm* tm); /* same as longlong_to_tm */
 
 typedef struct DateTimeFormat
 {

@@ -1003,11 +1003,27 @@ CREATE OPERATOR pg_catalog.>=(leftarg = longblob, rightarg = mediumblob, procedu
 DROP FUNCTION IF EXISTS pg_catalog.degrees(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(year);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(json);
+DROP FUNCTION IF EXISTS pg_catalog.acos(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.acos(year);
+DROP FUNCTION IF EXISTS pg_catalog.acos(json);
 DROP FUNCTION IF EXISTS pg_catalog.exp(year);
 DROP FUNCTION IF EXISTS pg_catalog.exp(json);
 CREATE OR REPLACE FUNCTION pg_catalog.degrees(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.degrees(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.degrees(year) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.degrees(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.degrees(json) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.degrees(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.acos(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.acos(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.acos(year) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.acos(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.acos(json) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.acos(cast($1 as double precision))';
+
+DROP FUNCTION IF EXISTS pg_catalog.convert(boolean, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(longblob, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(anyenum, name);
+DROP FUNCTION IF EXISTS pg_catalog.convert(json, name);
+
+CREATE FUNCTION pg_catalog.convert(boolean,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
+CREATE FUNCTION pg_catalog.convert(longblob,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
+CREATE FUNCTION pg_catalog.convert(anyenum,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
+CREATE FUNCTION pg_catalog.convert(json,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
 
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(binary) CASCADE;
@@ -1045,6 +1061,35 @@ CREATE OR REPLACE FUNCTION pg_catalog.float8_cast_date(float8)
 RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float8_cast_date';
 CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_date(numeric)
 RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.text_date_explicit(TEXT)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'text_date_explicit';
+
+CREATE OR REPLACE FUNCTION pg_catalog.int8_cast_datetime(int1)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int8_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.int16_cast_datetime(int2)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int16_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.int32_cast_datetime(int4)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.int64_cast_datetime(int8)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_cast_datetime';
+
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_cast_datetime(uint1)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint8_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.uint16_cast_datetime(uint2)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint16_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.uint32_cast_datetime(uint4)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint32_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.uint64_cast_datetime(uint8)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint64_cast_datetime';
+
+CREATE OR REPLACE FUNCTION pg_catalog.float4_cast_datetime(float4)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float4_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.float8_cast_datetime(float8)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float8_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_datetime(numeric)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_explicit(TEXT)
+RETURNS timestamp without time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamp_explicit';
 
 CREATE OR REPLACE FUNCTION pg_catalog.bool_date(boolean) RETURNS date LANGUAGE SQL IMMUTABLE STRICT as 'select $1::integer::date';
 CREATE CAST (boolean AS date) WITH FUNCTION bool_date(boolean) AS ASSIGNMENT;
@@ -1063,3 +1108,47 @@ CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(boolean, TEXT) RETURNS TEXT LA
 CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(longblob, TEXT) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.str_to_date(cast($1 as TEXT), $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(anyenum, TEXT) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.str_to_date(cast($1 as TEXT), $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(json, TEXT) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.str_to_date(cast($1 as TEXT), $2)';
+
+DROP FUNCTION IF EXISTS pg_catalog.floor(year);
+CREATE OR REPLACE FUNCTION pg_catalog.floor(year) 
+RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
+'select pg_catalog.floor(cast($1 as double precision))';
+
+DROP FUNCTION IF EXISTS pg_catalog.floor(json);
+CREATE OR REPLACE FUNCTION pg_catalog.floor(json) 
+RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
+'select pg_catalog.floor(cast($1 as double precision))';
+       
+CREATE OR REPLACE FUNCTION pg_catalog.hour (year) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'SELECT hour($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (year) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'SELECT minute($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.second (year) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'SELECT second($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.year (year) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::time)';
+-- repeat function support
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(anyenum, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(boolean, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(tinyblob, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(json, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(year, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(binary, integer) RETURNS bytea LANGUAGE C STRICT IMMUTABLE AS '$libdir/dolphin', 'repeat_binary';
+CREATE OR REPLACE FUNCTION pg_catalog.repeat(bit, integer) RETURNS bytea LANGUAGE C STRICT IMMUTABLE AS '$libdir/dolphin', 'repeat_bit';
+
+DROP FUNCTION IF EXISTS pg_catalog.any2boolean(anyelement) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.enum_boolean(anyenum) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.set_boolean(anyset) CASCADE;
+DROP CAST IF EXISTS ("binary" AS boolean) CASCADE;
+DROP CAST IF EXISTS ("varbinary" AS boolean) CASCADE;
+DROP CAST IF EXISTS (blob AS boolean) CASCADE;
+DROP CAST IF EXISTS (tinyblob AS boolean) CASCADE;
+DROP CAST IF EXISTS (mediumblob AS boolean) CASCADE;
+DROP CAST IF EXISTS (longblob AS boolean) CASCADE;
+DROP CAST IF EXISTS (anyset AS boolean) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.any2boolean(anyelement) RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as text) as boolean)';
+CREATE OR REPLACE FUNCTION pg_catalog.enum_boolean(anyenum) RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int) as boolean)';
+CREATE OR REPLACE FUNCTION pg_catalog.set_boolean(anyset) RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int) as boolean)';
+CREATE CAST ("binary" AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
+CREATE CAST ("varbinary" AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
+CREATE CAST (blob AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
+CREATE CAST (tinyblob AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
+CREATE CAST (mediumblob AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
+CREATE CAST (longblob AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
+CREATE CAST (anyset AS boolean) WITH FUNCTION pg_catalog.set_boolean(anyset) AS ASSIGNMENT;

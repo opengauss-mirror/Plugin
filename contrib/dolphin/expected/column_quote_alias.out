@@ -5,6 +5,8 @@ NOTICE:  table "t_alias_case0001_1" does not exist, skipping
 CREATE TABLE t_alias_case0001_1 (a int);
 INSERT INTO t_alias_case0001_1 SET a=1;
 select character varying 'keyword_test' from t_alias_case0001_1;
+WARNING:  value too long for type character varying(1)
+CONTEXT:  referenced column: varchar
  varchar 
 ---------
  k
@@ -37,12 +39,16 @@ select national varchar 'keyword_test' from t_alias_case0001_1;
 (1 row)
 
 select VARCHAR 'keyword_test' from t_alias_case0001_1;
+WARNING:  value too long for type character varying(1)
+CONTEXT:  referenced column: varchar
  varchar 
 ---------
  k
 (1 row)
 
 select VARCHAR2 'keyword_test' from t_alias_case0001_1;
+WARNING:  value too long for type character varying(1)
+CONTEXT:  referenced column: varchar
  varchar 
 ---------
  k
@@ -73,6 +79,8 @@ CONTEXT:  referenced column: bpchar
 (1 row)
 
 select NCHAR VARYING 'keyword_test' from t_alias_case0001_1;
+WARNING:  value too long for type character varying(1)
+CONTEXT:  referenced column: varchar
  varchar 
 ---------
  k
@@ -121,6 +129,8 @@ CONTEXT:  referenced column: bpchar
 (1 row)
 
 select char varying(1) 'keyword_test' from t_alias_case0001_1;
+WARNING:  value too long for type character varying(1)
+CONTEXT:  referenced column: varchar
  varchar 
 ---------
  k
