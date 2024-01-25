@@ -608,7 +608,8 @@ hypertable_get_min_and_max_time_value(SchemaAndName hypertable, Name time_column
 								NULL,
 								NULL /*=Nulls*/,
 								true /*=read_only*/,
-								0 /*count*/);
+								0 /*count*/,
+								NULL);
 	if (res < 0)
 		elog(ERROR, "could not find the minimum/maximum time value for hypertable");
 
@@ -1530,7 +1531,8 @@ spi_delete_materializations(SchemaAndName materialization_table, Name time_colum
 								NULL,
 								NULL /*=Nulls*/,
 								false /*=read_only*/,
-								0 /*count*/);
+								0 /*count*/,
+								NULL);
 	if (res < 0)
 		elog(ERROR, "could not delete old values from materialization table");
 }
@@ -1569,7 +1571,8 @@ spi_insert_materializations(SchemaAndName partial_view, SchemaAndName materializ
 								NULL /*=Values*/,
 								NULL /*=Nulls*/,
 								false /*=read_only*/,
-								0 /*count*/
+								0 /*count*/,
+								NULL
 	);
 	if (res < 0)
 		elog(ERROR, "could materialize values into the materialization table");

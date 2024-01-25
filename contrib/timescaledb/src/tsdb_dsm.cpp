@@ -29,7 +29,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-#include "compat.h"
 #ifndef WIN32
 #include <sys/mman.h>
 #endif
@@ -102,6 +101,7 @@ static bool dsm_control_segment_sane(dsm_control_header *control,
 static uint64 dsm_control_bytes_needed(uint32 nitems);
 
 /* Has this backend initialized the dynamic shared memory system yet? */
+static bool dsm_init_done = false;
 
 /*
  * List of dynamic shared memory segments used by this backend.
@@ -129,7 +129,10 @@ static dlist_head dsm_segment_list = DLIST_STATIC_INIT(dsm_segment_list);
  * reference counted; instead, it lasts for the postmaster's entire
  * life cycle.  For simplicity, it doesn't have a dsm_segment object either.
  */
+static dsm_handle dsm_control_handle;
 static dsm_control_header *dsm_control;
+static Size dsm_control_mapped_size = 0;
+static void *dsm_control_impl_private = NULL;
 
 /*
  * Start up the dynamic shared memory system.
@@ -402,7 +405,7 @@ dsm_backend_startup(void)
 	if (dynamic_shared_memory_type == DSM_IMPL_NONE)
 		ereport(ERROR,
 				(errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
-				 errmsg("dynamic shared memory is disabled"),
+				 errmsg("Deleting plug-ins timescaledb is temporarily not supported"),
 				 errhint("Set dynamic_shared_memory_type to a value other than \"none\".")));
 
 #ifdef EXEC_BACKEND

@@ -880,9 +880,26 @@ DECLARE
     def TEXT;
     indx_tablespace NAME;
     tablespace_def TEXT;
+    constraint_exists BOOLEAN;
+    index_tablespace_exists BOOLEAN;
+    chunk_exists BOOLEAN;
+    hypertable_exists BOOLEAN;
 BEGIN
-    SELECT * INTO STRICT chunk_row FROM _timescaledb_catalog.chunk c WHERE c.id = chunk_constraint_row.chunk_id;
-    SELECT * INTO STRICT hypertable_row FROM _timescaledb_catalog.hypertable h WHERE h.id = chunk_row.hypertable_id;
+    -- 检查chunk是否存在
+    SELECT EXISTS(SELECT 1 FROM _timescaledb_catalog.chunk c WHERE c.id = chunk_constraint_row.chunk_id) INTO chunk_exists;
+    IF chunk_exists THEN
+        SELECT * INTO chunk_row FROM _timescaledb_catalog.chunk c WHERE c.id = chunk_constraint_row.chunk_id;
+    ELSE
+        RAISE 'No chunk found for chunk_id %', chunk_constraint_row.chunk_id;
+    END IF;
+
+    -- 检查hypertable是否存在
+    SELECT EXISTS(SELECT 1 FROM _timescaledb_catalog.hypertable h WHERE h.id = chunk_row.hypertable_id) INTO hypertable_exists;
+    IF hypertable_exists THEN
+        SELECT * INTO hypertable_row FROM _timescaledb_catalog.hypertable h WHERE h.id = chunk_row.hypertable_id;
+    ELSE
+        RAISE 'No hypertable found for hypertable_id %', chunk_row.hypertable_id;
+    END IF;
 
     IF chunk_constraint_row.dimension_slice_id IS NOT NULL THEN
         check_sql = _timescaledb_internal.dimension_slice_get_constraint_sql(chunk_constraint_row.dimension_slice_id);
@@ -893,15 +910,30 @@ BEGIN
         END IF;
     ELSIF chunk_constraint_row.hypertable_constraint_name IS NOT NULL THEN
 
-        SELECT oid INTO STRICT constraint_oid FROM pg_constraint
-        WHERE conname=chunk_constraint_row.hypertable_constraint_name AND
-              conrelid = format('%I.%I', hypertable_row.schema_name, hypertable_row.table_name)::regclass::oid;
+        SELECT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = chunk_constraint_row.hypertable_constraint_name
+        AND conrelid = format('%I.%I', hypertable_row.schema_name, hypertable_row.table_name)::regclass::oid
+        ) INTO constraint_exists;
 
-        SELECT T.spcname INTO indx_tablespace 
-        FROM pg_constraint C, pg_class I, pg_tablespace T
-        WHERE C.oid = constraint_oid AND I.oid = C.conindid AND I.reltablespace = T.oid;
+        IF constraint_exists THEN
+            SELECT oid INTO constraint_oid FROM pg_constraint
+            WHERE conname = chunk_constraint_row.hypertable_constraint_name
+            AND conrelid = format('%I.%I', hypertable_row.schema_name, hypertable_row.table_name)::regclass::oid;
+        ELSE
+            constraint_oid := NULL;
+        END IF;
 
-        IF indx_tablespace IS NOT NULL THEN
+        SELECT EXISTS (
+        SELECT 1 FROM pg_constraint C, pg_class I, pg_tablespace T
+        WHERE C.oid = constraint_oid AND I.oid = C.conindid AND I.reltablespace = T.oid
+        ) INTO index_tablespace_exists;
+
+        IF index_tablespace_exists THEN
+            SELECT T.spcname INTO indx_tablespace 
+            FROM pg_constraint C, pg_class I, pg_tablespace T
+            WHERE C.oid = constraint_oid AND I.oid = C.conindid AND I.reltablespace = T.oid;
+
             tablespace_def := format(' USING INDEX TABLESPACE %I', indx_tablespace);
         ELSE
             tablespace_def := '';

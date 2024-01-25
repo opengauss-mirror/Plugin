@@ -242,7 +242,7 @@ ssl_errmsg(Connection *conn)
 	return errbuf;
 }
 
-static THR_LOCAL ConnOps ssl_ops = {
+static ConnOps ssl_ops = {
 	.size = sizeof(SSLConnection),
 	.init = NULL,
 	.connect = ssl_connect,

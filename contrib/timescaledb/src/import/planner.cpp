@@ -241,7 +241,7 @@ ts_make_partial_grouping_target(struct PlannerInfo *root, PathTarget *grouping_t
 	 * we are covering the needs of ORDER BY and window specifications.
 	 */
 	non_group_exprs = pull_var_clause((struct Node *) non_group_cols,
-									  PVC_INCLUDE_AGGREGATES | PVC_RECURSE_WINDOWFUNCS |
+									  (PVCAggregateBehavior)(PVC_INCLUDE_AGGREGATES | PVC_RECURSE_WINDOWFUNCS) ,
 										  PVC_INCLUDE_PLACEHOLDERS);
 
 	add_new_columns_to_pathtarget(partial_target, non_group_exprs);
@@ -945,7 +945,7 @@ ts_prepare_sort_from_pathkeys(Plan *lefttree, List *pathkeys, Relids relids,
 
 				sortexpr = em->em_expr;
 				exprvars = pull_var_clause((Node *) sortexpr,
-										   PVC_INCLUDE_AGGREGATES | PVC_INCLUDE_WINDOWFUNCS |
+										  (PVCAggregateBehavior)(PVC_INCLUDE_AGGREGATES | PVC_INCLUDE_WINDOWFUNCS) ,
 											   PVC_INCLUDE_PLACEHOLDERS);
 				foreach (k, exprvars)
 				{
@@ -1014,8 +1014,6 @@ ts_build_path_tlist(PlannerInfo *root, Path *path)
 	Index *sortgrouprefs = 0;
 	int resno = 1;
 	ListCell *v;
-
-	
 	return tlist;
 }
 

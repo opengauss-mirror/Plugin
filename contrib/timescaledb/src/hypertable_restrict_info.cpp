@@ -427,7 +427,7 @@ dimension_values_create(List *values, Oid type, bool use_or)
 static DimensionValues *
 dimension_values_create_from_array(Const *c, bool user_or)
 {
-	ArrayIterator iterator = array_create_iterator(DatumGetArrayTypeP(c->constvalue), 0, NULL);
+	ArrayIterator iterator = array_create_iterator(DatumGetArrayTypeP(c->constvalue), 0);
 	Datum elem = (Datum) NULL;
 	bool isnull;
 	List *values = NIL;

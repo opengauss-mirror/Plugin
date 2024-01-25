@@ -3,6 +3,8 @@
  * Please see the included NOTICE for copyright information and
  * LICENSE-TIMESCALE for a copy of the license.
  */
+#include "utils/int8.h"
+#define Point OG_Point
 #include <postgres.h>
 #include <access/xact.h>
 #include <catalog/namespace.h>

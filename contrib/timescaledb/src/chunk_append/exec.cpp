@@ -53,7 +53,7 @@ static void chunk_append_reinitialize_dsm(ExtensiblePlanState *node, ParallelCon
 static void chunk_append_initialize_worker(ExtensiblePlanState *node, shm_toc *toc, void *coordinate);
 
 static ExtensibleExecMethods chunk_append_state_methods = {
-	.ExtensibleName = "",
+	.ExtensibleName = NULL,
 	.BeginExtensiblePlan = chunk_append_begin,
 	.ExecExtensiblePlan = chunk_append_exec,
 	.EndExtensiblePlan = chunk_append_end,
@@ -126,11 +126,11 @@ do_startup_exclusion(ChunkAppendState *state)
 	 * create skeleton plannerinfo for estimate_expression_value
 	 */
 	PlannerGlobal glob = {
-		.type = {},
+		.type = T_PlannerGlobal,
 		.boundParams = NULL,
 	};
 	PlannerInfo root = {
-		.type = {},
+		.type = T_PlannerInfo,
 		.parse = {},
 		.glob = &glob,
 	};
@@ -259,7 +259,7 @@ chunk_append_begin(ExtensiblePlanState *node, EState *estate, int eflags)
 	foreach (lc, state->filtered_subplans)
 	{
 		/*
-		 * we use an array for the states but put it in extensible_ps as well
+		 * we use an array for the states but put it in custom_ps as well
 		 * so explain and planstate_tree_walker can find it
 		 */
 		state->subplanstates[i] = ExecInitNode((Plan *)lfirst(lc), estate, eflags);
@@ -294,11 +294,11 @@ initialize_runtime_exclusion(ChunkAppendState *state)
 	int i = 0;
 
 	PlannerGlobal glob = {
-		.type = {},
+		.type = T_PlannerGlobal,
 		.boundParams = NULL,
 	};
 	PlannerInfo root = {
-		.type = {},
+		.type = T_PlannerInfo,
 		.parse = {},
 		.glob = &glob,
 	};

@@ -414,14 +414,14 @@ ts_decompress_chunk_generate_paths(PlannerInfo *root, RelOptInfo *chunk_rel, Hyp
 				Path sort_path; /* dummy for result of cost_sort */
 
 				cost_sort(&sort_path,
-						  root,
 						  dcpath->compressed_pathkeys,
 						  child_path->total_cost,
 						  child_path->rows,
 						  0,
 						  0.0,
-						  u_sess->attr.attr_memory.work_mem,
-						  -1);
+						  u_sess->opt_cxt.op_work_mem,
+						  -1,
+						  true);
 				cost_decompress_chunk(&dcpath->cpath.path, &sort_path);
 			}
 			add_path(chunk_rel, &dcpath->cpath.path);
@@ -490,7 +490,7 @@ compressed_rel_setup_reltarget(RelOptInfo *compressed_rel, CompressionInfo *info
 	foreach (lc, info->chunk_rel->reltarget->exprs)
 	{
 		ListCell *lc2;
-		List *chunk_vars = pull_var_clause((Node*)lfirst(lc), PVC_RECURSE_PLACEHOLDERS);
+		List *chunk_vars = pull_var_clause((Node*)lfirst(lc),PVC_INCLUDE_AGGREGATES, PVC_RECURSE_PLACEHOLDERS);
 		foreach (lc2, chunk_vars)
 		{
 			FormData_hypertable_compression *column_info;

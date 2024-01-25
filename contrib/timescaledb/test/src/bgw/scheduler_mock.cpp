@@ -84,7 +84,7 @@ serialize_test_parameters(int32 ttl)
 	result = pushJsonbValue(&parseState, WJB_END_ARRAY, NULL);
 
 	jb = JsonbValueToJsonb(result);
-	(void) JsonbToCString(jtext, VARDATA(jb), VARSIZE(jb));
+	(void) JsonbToCString(jtext, (JsonbSuperHeader)&jb->superheader, VARSIZE(jb));
 	Assert(jtext->len < BGW_EXTRALEN);
 
 	return jtext->data;
@@ -188,7 +188,7 @@ ts_bgw_db_scheduler_test_run_and_wait_for_scheduler_finish(PG_FUNCTION_ARGS)
 			elog(ERROR, "bgw not started");
 
 		status = WaitForBackgroundWorkerShutdown(worker_handle);
-		Assert(BGW_STOPPED == status);
+		Assert(BGW_STARTED == status);
 		if (status != BGW_STOPPED)
 			elog(ERROR, "bgw not stopped");
 	}

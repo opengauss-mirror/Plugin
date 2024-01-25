@@ -6,6 +6,7 @@
 
 #ifndef TIMESCALEDB_COMPAT_H
 #define TIMESCALEDB_COMPAT_H
+
 #include "c.h"
 #include "postgres.h"
 #include <commands/trigger.h>
@@ -239,8 +240,7 @@
 				check_rights,                                                                      \
 				skip_build,                                                                        \
 				quiet)
-#else
-#if PG96
+#elif PG96
 #define DefineIndexCompat DefineIndex
 #elif PG10
 #define DefineIndexCompat(relationId,                                                              \
@@ -276,11 +276,11 @@
 				false,                                                                             \
 				skip_build,                                                                        \
 				quiet)
-#endif
+
 #endif
 #if PG96
 #define DefineRelationCompat(stmt, relkind, ownerid, typaddress, queryString)                      \
-	DefineRelation(stmt, relkind, ownerid, typaddress,0)
+	DefineRelation(stmt, relkind, ownerid, typaddress)
 #else
 #define DefineRelationCompat(stmt, relkind, ownerid, typaddress, queryString)                      \
 	DefineRelation(stmt, relkind, ownerid, typaddress, queryString)
@@ -346,23 +346,13 @@
 /* ExecBuildProjectionInfo */
 #if PG96
 #define ExecBuildProjectionInfoCompat(tl, exprContext, slot, parent, inputdesc)                    \
-	ExecBuildProjectionInfo(((List *) ExecInitExpr((Expr *) tl, NULL)), exprContext, slot, parent, inputdesc)
+	ExecBuildProjectionInfo((List *) ExecInitExpr((Expr *) tl, NULL), exprContext, slot, parent, inputdesc)
 #else
 #define ExecBuildProjectionInfoCompat(tl, exprContext, slot, parent, inputdesc)                    \
 	ExecBuildProjectionInfo(tl, exprContext, slot, parent, inputdesc)
 #endif
 
 #if PG12_LT
-#define TM_Result HTSU_Result
-
-#define TM_Ok HeapTupleMayBeUpdated
-#define TM_SelfModified HeapTupleSelfUpdated
-#define TM_Updated HeapTupleUpdated
-#define TM_BeingModified HeapTupleBeingUpdated
-#define TM_WouldBlock HeapTupleWouldBlock
-#define TM_Invisible HeapTupleInvisible
-
-#define TM_FailureData HeapUpdateFailureData
 #endif
 
 #if PG12_LT
@@ -768,11 +758,13 @@ get_attname_compat(Oid relid, AttrNumber attnum, bool missing_ok)
 #define RVR_MISSING_OK (1 << 0)
 #define RVR_NOWAIT (1 << 1)
 #define RangeVarGetRelidExtendedCompat(relation, lockmode, flags, callback, callback_arg)          \
-	RangeVarGetRelidExtended_tsdb(relation,                                                             \
+	RangeVarGetRelidExtended(relation,                                                             \
 							 lockmode,                                                             \
 							 (flags & RVR_MISSING_OK) != 0,                                        \
+							 false, 															   \
+							 false, 															   \
 							 (flags & RVR_NOWAIT) != 0,                                            \
-							 (RangeVarGetRelidCallback_tsdb)callback,                                                             \
+							 callback,                                                             \
 							 callback_arg)
 #else
 #define RangeVarGetRelidExtendedCompat RangeVarGetRelidExtended
@@ -784,6 +776,7 @@ get_attname_compat(Oid relid, AttrNumber attnum, bool missing_ok)
 #define RenameRelationInternalCompat(relid, name, is_internal, is_index)                           \
 	RenameRelationInternal(relid, name)
 
+	//tsdb 原为 RenameRelationInternal(relid, name, is_internal)
 #else
 #define RenameRelationInternalCompat RenameRelationInternal
 #endif

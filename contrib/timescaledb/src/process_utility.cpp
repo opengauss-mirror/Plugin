@@ -912,7 +912,7 @@ process_drop_hypertable(ProcessUtilityArgs *args, DropStmt *stmt)
 							 errmsg("dropping compressed hypertables not supported"),
 							 errhint("Please drop the corresponding uncompressed hypertable "
 									 "instead.")));
-				
+			
 				/*
 				 *  We need to drop hypertable chunks before the hypertable to avoid the need
 				 *  to CASCADE such drops;
@@ -927,6 +927,7 @@ process_drop_hypertable(ProcessUtilityArgs *args, DropStmt *stmt)
 					Hypertable *compressed_hypertable =
 						ts_hypertable_get_by_id(ht->fd.compressed_hypertable_id);
 					ts_hypertable_drop(compressed_hypertable, DROP_CASCADE);
+					handled = true;
 				}
 				#ifdef OG30
 				if (!TS_HYPERTABLE_HAS_COMPRESSION(ht))
@@ -936,8 +937,6 @@ process_drop_hypertable(ProcessUtilityArgs *args, DropStmt *stmt)
 				}
 				#endif
 			}
-
-			//handled = true;
 		}
 	}
 
@@ -1468,6 +1467,9 @@ process_rename(ProcessUtilityArgs *args)
 			break;
 		case OBJECT_INDEX:
 			process_rename_index(args, hcache, relid, stmt);
+			break;
+		case OBJECT_TABCONSTRAINT:
+			process_rename_constraint(args, hcache, relid, stmt);
 			break;
 		case OBJECT_VIEW:
 			process_rename_view(relid, stmt);
@@ -2245,10 +2247,17 @@ process_cluster_start(ProcessUtilityArgs *args)
 			 * issue if an OID gets reassigned between two subtransactions
 			 */
 			cluster_rel(cim->chunkoid,
+						cim->parent_indexoid,
 						cim->indexoid,
 #if PG12_LT
 						true,
-						stmt->verbose
+						stmt->verbose,
+						0,
+						0,
+						&stmt->memUsage,
+						stmt->relation != NULL
+
+
 #else
 						stmt->options
 #endif
@@ -3445,8 +3454,6 @@ process_ddl_sql_drop(EventTriggerDropObject *obj)
  * ProcessUtility hook for DDL commands that have not yet been processed by
  * PostgreSQL.
 */
-
-
 static void
 timescaledb_ddl_command_start(
 	processutility_context* processutility_cxt,

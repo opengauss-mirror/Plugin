@@ -340,7 +340,6 @@ gapfill_path_create(PlannerInfo *root, Path *subpath, FuncExpr *func)
 	path->cpath.path.param_info = subpath->param_info;
 	path->cpath.flags = 0;
 	path->cpath.path.pathkeys = subpath->pathkeys;
-
 	PathTarget *pat = create_empty_pathtarget();
 	gapfill_build_pathtarget(root->upper_targets[UPPERREL_FINAL],
 							 pat,

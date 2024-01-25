@@ -20,7 +20,6 @@
 #include "compat.h"
 #include "catalog.h"
 #include "extension.h"
-#include "utils/numeric.h"
 
 #if !PG96
 #include <utils/regproc.h>
@@ -567,7 +566,7 @@ ts_catalog_table_next_seq_id(Catalog *catalog, CatalogTable table)
 }
 
 Oid
-ts_catalog_get_cache_proxy_id(Catalog *catalog, CacheTypeTS type)
+ts_catalog_get_cache_proxy_id(Catalog *catalog, TSDB_CacheType type)
 {
 	if (!catalog_is_valid(catalog))
 	{

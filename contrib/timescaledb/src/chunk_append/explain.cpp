@@ -38,12 +38,6 @@ ts_chunk_append_explain(ExtensiblePlanState *node, List *ancestors, ExplainState
 	if (state->sort_options != NIL)
 		show_sort_group_keys(state, ancestors, es);
 
-	if (es->verbose || es->format != EXPLAIN_FORMAT_TEXT)
-		ExplainPropertyBool("Startup Exclusion", state->startup_exclusion, es);
-
-	if (es->verbose || es->format != EXPLAIN_FORMAT_TEXT)
-		ExplainPropertyBool("Runtime Exclusion", state->runtime_exclusion, es);
-
 	if (state->startup_exclusion)
 		ExplainPropertyIntegerCompat("Chunks excluded during startup",
 									 NULL,

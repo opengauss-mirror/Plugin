@@ -216,7 +216,7 @@ get_input_types(ArrayType *input_types, size_t *number_types)
 	*number_types = ARR_DIMS(input_types)[0];
 	type_oids =(Oid *) palloc0(sizeof(*type_oids) * (*number_types));
 
-	iter = array_create_iterator(input_types, 1, &meta);
+	iter = array_create_iterator(input_types, 1);
 
 	while (array_iterate(iter, &slice_datum, &slice_null))
 	{

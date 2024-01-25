@@ -26,7 +26,7 @@ ts_bgw_worker_reserve(void)
 extern void
 ts_bgw_worker_release(void)
 {
-	CFunInfo temp_for_tsdb = load_external_function(EXTENSION_SO, "ts_bgw_worker_reserve", true, NULL);
+	CFunInfo temp_for_tsdb = load_external_function(EXTENSION_SO, "ts_bgw_worker_release", true, NULL);
 	PGFunction release = temp_for_tsdb.user_fn;
 
 	DirectFunctionCall1(release, BoolGetDatum(false)); /* no function call zero */

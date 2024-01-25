@@ -10,7 +10,7 @@
 #include <postgres.h>
 
 /* User-facing API functions */
-extern Datum drop_chunks_add_policy(PG_FUNCTION_ARGS);
+extern "C"  PGDLLEXPORT Datum drop_chunks_add_policy(PG_FUNCTION_ARGS);
 extern Datum drop_chunks_remove_policy(PG_FUNCTION_ARGS);
 
 #endif /* TIMESCALEDB_TSL_BGW_POLICY_DROP_CHUNKS_API_H */

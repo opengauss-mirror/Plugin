@@ -34,11 +34,11 @@ static ExtensiblePlanMethods chunk_dispatch_plan_methods = {
 	.CreateExtensiblePlanState = create_chunk_dispatch_state,
 };
 
-/* Create a chunk dispatch plan node in the form of a CustomScan node. The
+/* Create a chunk dispatch plan node in the form of a ExtensiblePlan node. The
  * purpose of this plan node is to dispatch (route) tuples to the correct chunk
  * in a hypertable.
  *
- * Note that CustomScan nodes cannot be extended (by struct embedding) because
+ * Note that ExtensiblePlan nodes cannot be extended (by struct embedding) because
  * they might be copied, therefore we pass hypertable_relid in the
  * custom_private field.
  *
@@ -72,6 +72,9 @@ chunk_dispatch_plan_create(PlannerInfo *root, RelOptInfo *relopt, ExtensiblePath
 	cscan->scan.scanrelid = 0; /* Indicate this is not a real relation we are
 								* scanning */
 	/* The "input" and "output" target lists should be the same */
+	#ifdef OG30
+	tlist = root->processed_tlist;
+	#endif
 	cscan->extensible_plan_tlist = tlist;
 	cscan->scan.plan.targetlist = tlist;
 
@@ -91,8 +94,13 @@ ts_chunk_dispatch_path_create(ModifyTablePath *mtpath, Path *subpath, Index hype
 
 	memcpy(&path->cpath.path, subpath, sizeof(Path));
 	path->cpath.path.type = T_ExtensiblePath;
-	path->cpath.path.pathtype = T_ExtensiblePath;
+	path->cpath.path.pathtype = T_ExtensiblePlan;
 	path->cpath.methods = &chunk_dispatch_path_methods;
+
+	#ifdef OG30
+	path->cpath.path.parent = mtpath->path.parent;
+	#endif
+	
 	path->cpath.extensible_paths = list_make1(subpath);
 	path->mtpath = mtpath;
 	path->hypertable_rti = hypertable_rti;

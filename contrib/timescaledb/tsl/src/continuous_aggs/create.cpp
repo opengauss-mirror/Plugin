@@ -404,7 +404,7 @@ mattablecolumninfo_add_mattable_index(MatTableColumnInfo *matcolinfo, Hypertable
 	IndexElem timeelem = { .type = T_IndexElem,
 						   .name = matcolinfo->matpartcolname,
 						   .expr = {},
-						   .indexcolname = {},
+						   .indexcolname = NULL,
 						   .collation = NULL,
 						   .opclass = NULL,
 						   .ordering = SORTBY_DESC };
@@ -565,7 +565,6 @@ create_view_for_query(Query *selquery, RangeVar *viewrel)
 
 	/*  Create the view. viewname is in viewrel.
 	 */
-	SWITCH_TO_TS_USER(viewrel->schemaname, uid, saved_uid, sec_ctx);
 	address = DefineRelationCompat(create, RELKIND_VIEW, owner, NULL, NULL);
 	CommandCounterIncrement();
 	StoreViewQuery(address.objectId, selquery, false);

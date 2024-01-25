@@ -64,7 +64,7 @@ ts_trigger_create_on_chunk(Oid trigger_oid, char *chunk_schema_name, char *chunk
 	stmt->relation->relname = chunk_table_name;
 	stmt->relation->schemaname = chunk_schema_name;
 
-	CreateTriggerCompat(stmt, def, InvalidOid, InvalidOid, InvalidOid, InvalidOid, false,0);
+	CreateTriggerCompat(stmt, def, InvalidOid, InvalidOid, InvalidOid, InvalidOid, false);
 
 	CommandCounterIncrement(); /* needed to prevent pg_class being updated
 								* twice */

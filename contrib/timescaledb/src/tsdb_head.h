@@ -26,6 +26,7 @@
 #include "tsdb_shm.h"
 #include "event_trigger.h"
 
+
 static const struct
 {
 	LOCKMODE	hwlock;
@@ -62,32 +63,6 @@ static const struct
 #define DEFAULT_PARALLEL_TUPLE_COST 0.1
 #define DEFAULT_CPU_TUPLE_COST 0.01
 #define REINDEX_REL_FORCE_INDEXES_UNLOGGED	0x08
-#define REINDEX_REL_FORCE_INDEXES_PERMANENT 0x10
-
-#if defined _WIN32 || defined __CYGWIN__
-  #ifdef BUILDING_DLL
-    #ifdef __GNUC__
-      #define DLL_PUBLIC __attribute__ ((dllexport))
-    #else
-      #define DLL_PUBLIC __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
-    #endif
-  #else
-    #ifdef __GNUC__
-      #define DLL_PUBLIC __attribute__ ((dllimport))
-    #else
-      #define DLL_PUBLIC __declspec(dllimport) // Note: actually gcc seems to also supports this syntax.
-    #endif
-  #endif
-  #define DLL_LOCAL
-#else
-  #if __GNUC__ >= 4
-    #define DLL_PUBLIC __attribute__ ((visibility ("default")))
-    #define DLL_LOCAL  __attribute__ ((visibility ("hidden")))
-  #else
-    #define DLL_PUBLIC
-    #define DLL_LOCAL
-  #endif
-#endif
 
 extern bool row_security; 
 
@@ -108,7 +83,6 @@ extern PGDLLIMPORT int old_snapshot_threshold;
 
 
 
-
 #define SizeofTriggerEvent(evt) \
 	(((evt)->ate_flags & AFTER_TRIGGER_TUP_BITS) == AFTER_TRIGGER_2CTID ? \
 	 sizeof(AfterTriggerEventData) : \
@@ -119,8 +93,6 @@ extern PGDLLIMPORT int old_snapshot_threshold;
 #define AFTER_TRIGGER_OFFSET			0x0FFFFFFF
 #define INVALID_CONTROL_SLOT		((uint32) -1) 
 
-typedef void (*RangeVarGetRelidCallback_tsdb) (const RangeVar *relation, Oid relId,
-										   Oid oldRelId, void *callback_arg);
 
 typedef IndexBuildResult *(*ambuild_function) (Relation heapRelation,
 													  Relation indexRelation,
@@ -341,7 +313,6 @@ typedef void (*PG_init_t) (void);
 
 
 #define MAX_UNIT_LEN		3
-
 #define PolicyRelationId	3256 
 #define MQH_INITIAL_BUFSIZE				8192
 #define GUC_UNIT_XSEGS			0x4000 
@@ -455,8 +426,6 @@ typedef ArrayType Acl;
 #define PVC_INCLUDE_WINDOWFUNCS 0x0004	/* include WindowFuncs in output list */
 #define PVC_RECURSE_WINDOWFUNCS 0x0008	/* recurse into WindowFunc arguments */
 
-
-
 typedef uint32 dsm_handle; 
 typedef void (*parallel_worker_main_type) (struct dsm_segment *seg,struct shm_toc *toc); 
 
@@ -487,6 +456,11 @@ typedef void (*parallel_worker_main_type) (struct dsm_segment *seg,struct shm_to
 
 
 
+ /* Timestamp limits */
+ #define MIN_TIMESTAMP   INT64CONST(-211813488000000000)
+ /* == (DATETIME_MIN_JULIAN - POSTGRES_EPOCH_JDATE) * USECS_PER_DAY */
+ #define END_TIMESTAMP   INT64CONST(9223371331200000000)
+ /* == (TIMESTAMP_END_JULIAN - POSTGRES_EPOCH_JDATE) * USECS_PER_DAY */ 
 #define DATETIME_MIN_JULIAN (0)   
 
 typedef void (*pqsigfunc) (int signo); 
@@ -506,8 +480,6 @@ extern pqsigfunc pqsignal(int signo, pqsigfunc func);
 #define BGW_EXTRALEN					128  
 
 
-// #define get_pathtarget_sortgroupref(target, colno) \
-// 	((target)->sortgrouprefs ? (target)->sortgrouprefs[colno] : (Index) 0) 
 
  
 
@@ -599,8 +571,6 @@ extern void RunObjectPostAlterHook(Oid classId, Oid objectId, int subId,
 
 extern void RunObjectPostCreateHook(Oid classId, Oid objectId, int subId,
 						bool is_internal); 
-
-
 #define InvokeObjectPostCreateHook(classId,objectId,subId)			\
 	InvokeObjectPostCreateHookArg((classId),(objectId),(subId),false)
 #define InvokeObjectPostCreateHookArg(classId,objectId,subId,is_internal) \
@@ -696,10 +666,6 @@ extern void RunObjectPostCreateHook(Oid classId, Oid objectId, int subId,
 #define PROGRESS_VACUUM_PHASE					0
 #define PROGRESS_VACUUM_PHASE_FINAL_CLEANUP		6
 
-
-
- 
-
 struct BackgroundWorkerHandle
 {
 	int			slot;
@@ -708,15 +674,6 @@ struct BackgroundWorkerHandle
 
 typedef struct BackgroundWorkerHandle BackgroundWorkerHandle; 
 
-typedef enum
-{
-	HeapTupleMayBeUpdated,
-	HeapTupleInvisible,
-	HeapTupleSelfUpdated,
-	HeapTupleUpdated,
-	HeapTupleBeingUpdated,
-	HeapTupleWouldBlock			/* can be returned by heap_tuple_lock */
-} HTSU_Result;
 
 
 
@@ -729,10 +686,6 @@ typedef void (*create_upper_paths_hook_type) (PlannerInfo *root,
 													 RelOptInfo *output_rel); 
 
 
-typedef PlannedStmt *(*planner_hook_type_tsdb) (Query *parse,
-													   int cursorOptions,
-												  ParamListInfo boundParams);
-extern PGDLLIMPORT planner_hook_type_tsdb planner_hook;
 extern PGDLLIMPORT create_upper_paths_hook_type create_upper_paths_hook;   
 typedef enum OnConflictAction
 {
@@ -741,15 +694,6 @@ typedef enum OnConflictAction
 	ONCONFLICT_UPDATE			/* ON CONFLICT ... DO UPDATE */
 } OnConflictAction;
 
-typedef struct CustomScanState
-{
-	ScanState	ss;
-	uint32		flags;			/* mask of CUSTOMPATH_* flags, see
-								 * nodes/extensible.h */
-	List	   *extensible_ps;		/* list of child PlanState nodes, if any */
-	Size		pscan_len;		/* size of parallel coordination information */
-	const struct CustomExecMethods *methods;
-} CustomScanState;
 
 
 typedef struct ParallelWorkerInfo
@@ -776,59 +720,6 @@ typedef struct ParallelContext
 	ParallelWorkerInfo *worker;
 }ParallelContext; 
 
-typedef struct CustomExecMethods
-{
-	const char *CustomName;
-
-	/* Required executor methods */
-	void		(*BeginCustomScan) (CustomScanState *node,
-												EState *estate,
-												int eflags);
-	TupleTableSlot *(*ExecCustomScan) (CustomScanState *node);
-	void		(*EndCustomScan) (CustomScanState *node);
-	void		(*ReScanCustomScan) (CustomScanState *node);
-
-	/* Optional methods: needed if mark/restore is supported */
-	void		(*MarkPosCustomScan) (CustomScanState *node);
-	void		(*RestrPosCustomScan) (CustomScanState *node);
-
-	/* Optional methods: needed if parallel execution is supported */
-	Size		(*EstimateDSMCustomScan) (CustomScanState *node,
-													  ParallelContext *pcxt);
-	void		(*InitializeDSMCustomScan) (CustomScanState *node,
-														ParallelContext *pcxt,
-														void *coordinate);
-	void		(*InitializeWorkerCustomScan) (CustomScanState *node,
-														   shm_toc *toc,
-														   void *coordinate);
-
-	/* Optional: print additional information in EXPLAIN */
-	void		(*ExplainCustomScan) (CustomScanState *node,
-												  List *ancestors,
-												  ExplainState *es);
-} CustomExecMethods; 
-typedef struct CustomPathMethods
-{
-	const char *CustomName;
-
-	/* Convert Path to a Plan */
-	struct Plan *(*PlanCustomPath) (PlannerInfo *root,
-												RelOptInfo *rel,
-												struct CustomPath *best_path,
-												List *tlist,
-												List *clauses,
-												List *custom_plans);
-}CustomPathMethods; 
-
-typedef struct CustomPath
-{
-	Path		path;
-	uint32		flags;			/* mask of CUSTOMPATH_* flags, see
-								 * nodes/extensible.h */
-	List	   *extensible_paths;	/* list of child Path nodes, if any */
-	List	   *custom_private;
-	const struct CustomPathMethods *methods;
-} CustomPath;
 
 typedef struct OnConflictExpr
 {
@@ -864,34 +755,6 @@ typedef struct ModifyTablePath
 	int			epqParam;		/* ID of Param for EvalPlanQual re-eval */
 } ModifyTablePath;
 
-typedef struct HeapUpdateFailureData
-{
-	ItemPointerData ctid;
-	TransactionId xmax;
-	CommandId	cmax;
-	TM_FailureData tsdb_for_og;
-} HeapUpdateFailureData; 
-typedef struct CustomScan
-{
-	Scan		scan;
-	uint32		flags;			/* mask of CUSTOMPATH_* flags, see
-								 * nodes/extensible.h */
-	List	   *custom_plans;	/* list of Plan nodes, if any */
-	List	   *custom_exprs;	/* expressions that custom code may evaluate */
-	List	   *custom_private; /* private data for custom code */
-	List	   *extensible_plan_tlist;		/* optional tlist describing scan
-										 * tuple */
-	Bitmapset  *custom_relids;	/* RTIs generated by this scan */
-	const struct CustomScanMethods *methods;
-} CustomScan;
-
-typedef struct CustomScanMethods
-{
-	const char *CustomName;
-
-	/* Create execution state (CustomScanState) from a CustomScan plan node */
-	Node	   *(*CreateCustomScanState) (CustomScan *cscan);
-} CustomScanMethods;
 
 enum CheckEnableRlsResult
 {
@@ -927,7 +790,6 @@ typedef enum VolatileFunctionStatus
 #define AGGSPLITOP_SKIPFINAL	0x02 
 #define AGGSPLITOP_SERIALIZE	0x04
 #define AGGSPLITOP_DESERIALIZE	0x08 
-
 
 typedef struct AggPath
 {
@@ -996,7 +858,6 @@ typedef struct RoleSpec
 
 
 
-
 #define AT_REWRITE_ALTER_PERSISTENCE	0x01
 #define AT_REWRITE_DEFAULT_VAL			0x02
 #define AT_REWRITE_COLUMN_REWRITE		0x04
@@ -1025,11 +886,6 @@ typedef enum ReindexObjectType
 
 
 
-typedef void (*ProcessUtility_hook_type_tsdb) (Node *parsetree,
-					  const char *queryString, ProcessUtilityContext context,
-													  ParamListInfo params,
-									DestReceiver *dest, char *completionTag);
-extern PGDLLIMPORT ProcessUtility_hook_type_tsdb ProcessUtility_hook_tsdb; 
 
 
 typedef enum
@@ -1193,7 +1049,6 @@ typedef struct
 	AggSplit	aggsplit;
 	AggClauseCosts *costs;
 } get_agg_clause_costs_context;
-
 
 
 
@@ -1401,19 +1256,6 @@ typedef struct RI_ConstraintInfo
 	dlist_node	valid_link;		/* Link in list of valid entries */
 } RI_ConstraintInfo;
 
-typedef enum
-{
-	ETCS_NEEDS_REBUILD,
-	ETCS_REBUILD_STARTED,
-	ETCS_VALID,
-} EventTriggerCacheStateType; 
-
-typedef struct
-{
-	EventTriggerEvent event;
-	List	   *triggerlist;
-} EventTriggerCacheEntry;
-
 typedef struct NamedLWLockTrancheRequest
 {
 	char		tranche_name[NAMEDATALEN];
@@ -1494,9 +1336,18 @@ static const int MultiXactStatusLock[MaxMultiXactStatus + 1] =
 #define TUPLOCK_from_mxstatus(status) \
 			(MultiXactStatusLock[(status)])
 
+typedef struct
+{
+	EventTriggerEvent event;
+	List	   *triggerlist;
+} EventTriggerCacheEntry;
 
-
-
+typedef enum
+{
+	ETCS_NEEDS_REBUILD,
+	ETCS_REBUILD_STARTED,
+	ETCS_VALID,
+} EventTriggerCacheStateType; 
 
 
 typedef struct ViewOptions
@@ -2360,7 +2211,6 @@ typedef struct OldSnapshotControlData
 	TransactionId xid_by_minute[FLEXIBLE_ARRAY_MEMBER];
 } OldSnapshotControlData;
 
-
 typedef struct BackgroundWorker_TS {
     SHM_QUEUE           links; /* list link if process is in a list */
     uint64              bgw_id;
@@ -2383,6 +2233,4 @@ typedef struct BackgroundWorker_TS {
 #define BackgroundWorker BackgroundWorker_TS 
 
 extern PGDLLIMPORT BackgroundWorker *MyBgworkerEntry;
-
-  
 #endif

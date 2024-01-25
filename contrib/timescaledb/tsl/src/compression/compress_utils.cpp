@@ -137,7 +137,7 @@ chunk_dml_blocker_trigger_add(Oid relid)
 		.timing = TRIGGER_TYPE_BEFORE,	
 		.events = TRIGGER_TYPE_INSERT,
 	};
-	objaddr = CreateTriggerCompat(&stmt, NULL, relid, InvalidOid, InvalidOid, InvalidOid, false,0);
+	objaddr = CreateTriggerCompat(&stmt, NULL, relid, InvalidOid, InvalidOid, InvalidOid, false);
 
 	if (!OidIsValid(objaddr.objectId))
 		elog(ERROR, "could not create DML blocker trigger");

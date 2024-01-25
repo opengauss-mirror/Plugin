@@ -10,7 +10,6 @@
 #include <access/htup.h>
 #include <catalog/pg_cast.h>
 #include <catalog/pg_type.h>
-//#include <nodes/extensible.h>
 #include <nodes/makefuncs.h>
 #include <nodes/nodeFuncs.h>
 #include <nodes/primnodes.h>
@@ -35,6 +34,7 @@
 #include "nodes/gapfill/interpolate.h"
 #include "nodes/gapfill/exec.h"
 #include "time_bucket.h"
+#include "access/tableam.h"
 
 typedef enum GapFillBoundary
 {
@@ -847,7 +847,7 @@ gapfill_state_reset_group(GapFillState *state, TupleTableSlot *slot)
 
 	foreach_column(column.base, i, state)
 	{
-		value = slot_getattr(slot, AttrOffsetGetAttrNumber(i), &isnull);
+		value = tableam_tslot_getattr(slot, AttrOffsetGetAttrNumber(i), &isnull);
 		switch (column.base->ctype)
 		{
 			case INTERPOLATE_COLUMN:
@@ -971,7 +971,7 @@ gapfill_state_is_new_group(GapFillState *state, TupleTableSlot *slot)
 	{
 		if (column.base->ctype == GROUP_COLUMN)
 		{
-			value = slot_getattr(slot, AttrOffsetGetAttrNumber(i), &isnull);
+			value = tableam_tslot_getattr(slot, AttrOffsetGetAttrNumber(i), &isnull);
 			if (isnull && column.group->isnull)
 				continue;
 			if (isnull != column.group->isnull || !datumIsEqual(value,
@@ -1002,7 +1002,7 @@ gapfill_state_return_subplan_slot(GapFillState *state)
 		switch (column.base->ctype)
 		{
 			case LOCF_COLUMN:
-				value = slot_getattr(state->subslot, AttrOffsetGetAttrNumber(i), &isnull);
+				value = tableam_tslot_getattr(state->subslot, AttrOffsetGetAttrNumber(i), &isnull);
 				if (isnull && column.locf->treat_null_as_missing)
 				{
 					gapfill_locf_calculate(column.locf,
@@ -1017,7 +1017,7 @@ gapfill_state_return_subplan_slot(GapFillState *state)
 					gapfill_locf_tuple_returned(column.locf, value, isnull);
 				break;
 			case INTERPOLATE_COLUMN:
-				value = slot_getattr(state->subslot, AttrOffsetGetAttrNumber(i), &isnull);
+				value = tableam_tslot_getattr(state->subslot, AttrOffsetGetAttrNumber(i), &isnull);
 				gapfill_interpolate_tuple_returned(column.interpolate,
 												   state->subslot_time,
 												   value,
@@ -1044,7 +1044,6 @@ gapfill_state_return_subplan_slot(GapFillState *state)
 		if (TTS_SHOULDFREEMIN(state->subslot))
 		{
 			heap_free_minimal_tuple(state->subslot->tts_mintuple);
-
 		}
 		state->subslot->tts_mintuple = NULL;
 
@@ -1075,7 +1074,7 @@ gapfill_state_set_next(GapFillState *state, TupleTableSlot *subslot)
 		/* nothing to do here for locf */
 		if (INTERPOLATE_COLUMN == column.base->ctype)
 		{
-			value = slot_getattr(subslot, AttrOffsetGetAttrNumber(i), &isnull);
+			value = tableam_tslot_getattr(subslot, AttrOffsetGetAttrNumber(i), &isnull);
 			gapfill_interpolate_tuple_fetched(column.interpolate,
 											  state->subslot_time,
 											  value,
@@ -1103,7 +1102,7 @@ gapfill_fetch_next_tuple(GapFillState *state)
 	 */
 	ExecCopySlot(state->subslot, subslot);
 #endif
-	time_value = slot_getattr(subslot, AttrOffsetGetAttrNumber(state->time_index), &isnull);
+	time_value = tableam_tslot_getattr(subslot, AttrOffsetGetAttrNumber(state->time_index), &isnull);
 	if (isnull)
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -1360,7 +1359,7 @@ Expr *
 gapfill_adjust_varnos(GapFillState *state, Expr *expr)
 {
 	ListCell *lc_var, *lc_tle;
-	List *vars = pull_var_clause((Node *) expr, 0);
+	List *vars = pull_var_clause((Node *) expr,PVC_INCLUDE_AGGREGATES,(PVCPlaceHolderBehavior) 0);
 	List *tlist = castNode(ExtensiblePlan, state->csstate.ss.ps.plan)->extensible_plan_tlist;
 
 	foreach (lc_var, vars)

@@ -135,7 +135,6 @@ replace_aggref_in_tlist(MinMaxAggPath *minmaxagg_path)
 
 	context.mm_path = minmaxagg_path;
 
-	
 }
 
 /* Stores function id (FIRST/LAST) with proper comparison strategy */
@@ -596,7 +595,7 @@ first_last_qp_callback(PlannerInfo *root, void *extra)
 	root->distinct_pathkeys = NIL;
 
 	root->sort_pathkeys =
-		make_pathkeys_for_sortclauses(root, root->parse->sortClause, root->parse->targetList);
+		make_pathkeys_for_sortclauses(root, root->parse->sortClause, root->parse->targetList,true);
 
 	root->query_pathkeys = root->sort_pathkeys;
 }

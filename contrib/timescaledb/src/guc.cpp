@@ -13,8 +13,6 @@
 #include "hypertable_cache.h"
 #include "telemetry/telemetry.h"
 
-
-
 /* Define which level means on. We use this object to have at least one object
  * of type TelemetryLevel in the code, otherwise pgindent won't work for the
  * type */

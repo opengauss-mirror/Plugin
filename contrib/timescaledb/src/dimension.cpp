@@ -26,6 +26,8 @@
 #include "utils.h"
 #include "errors.h"
 
+#include "access/tableam.h"
+
 static int
 cmp_dimension_id(const void *left, const void *right)
 {
@@ -634,7 +636,6 @@ dimension_insert_relation(Relation rel, int32 hypertable_id, Name colname, Oid c
 	if (num_slices > 0)
 	{
 		/* Closed (hash) dimension */
-
 		if (!(num_slices > 0 && interval_length <= 0)){
 			ereport(ERROR,
 							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -775,7 +776,7 @@ ts_hyperspace_calculate_point(Hyperspace *hs, TupleTableSlot *slot)
 {
 	Point *p = point_create(hs->num_dimensions);
 	int i;
-
+	
 	for (i = 0; i < hs->num_dimensions; i++)
 	{
 		Dimension *d = &hs->dimensions[i];
@@ -786,8 +787,7 @@ ts_hyperspace_calculate_point(Hyperspace *hs, TupleTableSlot *slot)
 		if (NULL != d->partitioning)
 			datum = ts_partitioning_func_apply_slot(d->partitioning, slot, &isnull);
 		else
-			datum = slot_getattr(slot, d->column_attno, &isnull);
-
+			datum = tableam_tslot_getattr(slot, d->column_attno, &isnull);
 		switch (d->type)
 		{
 			case DIMENSION_TYPE_OPEN:
@@ -799,11 +799,11 @@ ts_hyperspace_calculate_point(Hyperspace *hs, TupleTableSlot *slot)
 							 errmsg("NULL value in column \"%s\" violates not-null constraint",
 									NameStr(d->fd.column_name)),
 							 errhint("Columns used for time partitioning cannot be NULL")));
-
+				
 				p->coordinates[p->num_coords++] = ts_time_value_to_internal(datum, dimtype);
 				break;
 			case DIMENSION_TYPE_CLOSED:
-				p->coordinates[p->num_coords++] = (int64) DatumGetInt32(datum);
+				p->coordinates[p->num_coords++] = (int64) DatumGetInt64(datum);
 				break;
 			case DIMENSION_TYPE_ANY:
 				elog(ERROR, "invalid dimension type when inserting tuple");

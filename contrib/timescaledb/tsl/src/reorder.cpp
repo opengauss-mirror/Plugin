@@ -480,7 +480,7 @@ timescale_rebuild_relation(Relation OldHeap, Oid indexOid, bool verbose, Oid wai
 	MultiXactId cutoffMulti;
 
 	/* Mark the correct index as clustered */
-	mark_index_clustered(OldHeap, indexOid, true);
+	mark_index_clustered(OldHeap, indexOid);
 
 	/* Remember info about rel before closing OldHeap */
 	relpersistence = OldHeap->rd_rel->relpersistence;
@@ -676,7 +676,7 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 
 #if PG12_LT
 	/* Initialize the rewrite operation */
-	rwstate = begin_heap_rewrite(OldHeap, NewHeap, OldestXmin, FreezeXid, MultiXactCutoff, use_wal);
+	rwstate = begin_heap_rewrite(OldHeap, NewHeap, OldestXmin, FreezeXid, use_wal);
 #endif
 
 	/*
@@ -783,11 +783,10 @@ copy_heap_data(Oid OIDNewHeap, Oid OIDOldHeap, Oid OIDOldIndex, bool verbose,
 		else
 		{
 			Assert(heapScan != NULL);
-			tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection);
+			tuple = heap_getnext(heapScan, ForwardScanDirection);
 			if (tuple == NULL)
 				break;
-
-			buf = 0;
+			buf = (heapScan)->rs_cbuf;
 		}
 
 		LockBuffer(buf, BUFFER_LOCK_SHARE);
@@ -1284,7 +1283,7 @@ swap_relation_files(Oid r1, Oid r2, bool swap_toast_by_content, bool is_internal
 			 * The original code disallowed this case for system catalogs. We
 			 * don't allow reordering system catalogs, but Assert anyway
 			 */
-			Assert(!IsSystemClass(r1, relform1));
+			Assert(!IsSystemClass(relform1));
 
 			/* Delete old dependencies */
 			if (relform1->reltoastrelid)

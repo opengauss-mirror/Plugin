@@ -30,6 +30,7 @@
 #include "compat.h"
 #include "catalog.h"
 #include "utils.h"
+#include "access/tableam.h"
 
 #define IS_VALID_CLOSED_PARTITIONING_FUNC(proform, argtype)                                        \
 	((proform)->prorettype == INT4OID && ((proform)->provolatile == PROVOLATILE_IMMUTABLE) &&      \
@@ -161,6 +162,7 @@ find_text_coercion_func(Oid type)
 	 */
 	cpt = find_coercion_pathway(TEXTOID, type, COERCION_EXPLICIT, &funcid);
 
+	
 	getTypeOutputInfo(type, &funcid, &is_varlena);
 
 	return funcid;
@@ -263,7 +265,7 @@ ts_partitioning_func_apply_slot(PartitioningInfo *pinfo, TupleTableSlot *slot, b
 	bool null;
 	Oid collation;
 
-	value = slot_getattr(slot, pinfo->column_attnum, &null);
+	value = tableam_tslot_getattr(slot, pinfo->column_attnum, &null);
 
 	if (NULL != isnull)
 		*isnull = null;

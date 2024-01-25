@@ -1200,12 +1200,12 @@ typedef enum Anum_bgw_policy_compress_chunks_pkey
  */
 #define _MAX_TABLE_INDEXES 5
 
-typedef enum CacheTypeTS
+typedef enum TSDB_CacheType
 {
 	CACHE_TYPE_HYPERTABLE,
 	CACHE_TYPE_BGW_JOB,
 	_MAX_CACHE_TYPES
-} CacheTypeTS;
+} TSDB_CacheType;
 
 typedef struct CatalogTableInfo
 {
@@ -1271,7 +1271,7 @@ catalog_get_index(Catalog *catalog, CatalogTable tableid, int indexid)
 }
 
 extern TSDLLEXPORT int64 ts_catalog_table_next_seq_id(Catalog *catalog, CatalogTable table);
-extern Oid ts_catalog_get_cache_proxy_id(Catalog *catalog, CacheTypeTS type);
+extern Oid ts_catalog_get_cache_proxy_id(Catalog *catalog, TSDB_CacheType type);
 
 /* Functions that modify the actual catalog table on disk */
 extern TSDLLEXPORT bool ts_catalog_database_info_become_owner(CatalogDatabaseInfo *database_info,

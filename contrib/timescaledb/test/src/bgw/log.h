@@ -9,7 +9,6 @@
 extern void ts_bgw_log_set_application_name(char *name);
 extern void ts_register_emit_log_hook(void);
 
-//tsdb
 /* Hook for intercepting messages before they are sent to the server log */
 typedef void (*emit_log_hook_type) (ErrorData *edata);
 extern PGDLLIMPORT emit_log_hook_type emit_log_hook;

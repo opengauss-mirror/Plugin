@@ -13,7 +13,6 @@
 #include "access/skey.h"
 #include "commands/extension.h"
 
-
 #include "knl/knl_session.h"
 #include "knl/knl_guc/knl_session_attr_sql.h"
 #include "knl/knl_guc/knl_instance_attr_common.h"
@@ -52,10 +51,10 @@
 #include "optimizer/prep.h"
 #include "optimizer/predtest.h"
 #include "utils/acl.h"
+#include "catalog/toasting.h"
 
 
 #include "plan_agg_bookend.h"
-
 
 #include "tsdb_dsm.h"
 #include "tsdb_static.cpp"
@@ -67,78 +66,30 @@
 #define NUM_FIXED_LWLOCKS \
 	(PREDICATELOCK_MANAGER_LWLOCK_OFFSET + NUM_PREDICATELOCK_PARTITIONS)
 
-#define REINDEX_REL_FORCE_INDEXES_PERMANENT 0x10
-
-
-CopyState BeginCopyFrom(Relation rel, const char *filename,
-			  bool is_program, List *attnamelist, List *options)
+void NewRelationCreateToastTable(Oid relOid, Datum reloptions)
 {
-	CopyState c;
-	return c;
+	AlterTableCreateToastTable(relOid,reloptions,AccessExclusiveLock);
 }
-ObjectAddress CreateTrigger(CreateTrigStmt *stmt, const char *queryString,
-			  Oid relOid, Oid refRelOid, Oid constraintOid, Oid indexOid,
-			  bool isInternal,int tsdb)
-{
-	ObjectAddress o;
-	return o;
-}
-
-ObjectAddress DefineRelation(CreateStmt *stmt, char relkind, Oid ownerId,
-			   ObjectAddress *typaddress, int tsdb)
-{
-	ObjectAddress o;
-	return o;
-}
-void heap_endscan(HeapScanDescData*& scan)
+void RegisterCustomScanMethods(const ExtensiblePlanMethods *methods)
 {
 
 }
 
-List *make_pathkeys_for_sortclauses(PlannerInfo *root,
-							  List *sortclauses,
-							  List *tlist)
-{
-	List * p;
-	return p;
-}
-RestrictInfo *
-make_restrictinfo(Expr *clause,
-				  bool is_pushed_down,
-				  bool outerjoin_delayed,
-				  bool pseudoconstant,
-				  Relids required_relids,
-				  Relids outer_relids,
-				  Relids nullable_relids)
-{
-	RestrictInfo* r;
-	return r;
-}
-void NewRelationCreateToastTable(Oid relOid, Datum reloptions){}
-void RegisterCustomScanMethods(const ExtensiblePlanMethods *methods){}
-void ExecARInsertTriggers_tsdb(EState *estate,
-					 ResultRelInfo *relinfo,
-					 HeapTuple trigtuple,
-					 List *recheckIndexes)
-{}
-Datum slot_getattr(TupleTableSlot *slot, int attnum, bool *isnull)
-{Datum d; return d;}
 
-HTSU_Result heap_lock_tuple(Relation relation, HeapTuple tuple,
-				CommandId cid, LockTupleMode mode, LockWaitPolicy wait_policy,
-				bool follow_update,
-				Buffer *buffer, HeapUpdateFailureData *hufd)
-{HTSU_Result h; return h;}
-Param *SS_make_initplan_output_param(PlannerInfo *root,
+Param *
+SS_make_initplan_output_param(PlannerInfo *root,
 							  Oid resulttype, int32 resulttypmod,
 							  Oid resultcollation)
-{Param *p; return p;}
-TypeName *typeStringToTypeName(const char *str)
-{TypeName *p; return p;}
-List* pull_var_clause(Node *node, int flags)
 {
-	List* l;
-	return l;
+	return generate_new_param(root, resulttype, resulttypmod, resultcollation);
+}
+
+TableScanDescData *heap_beginscan_catalog(Relation relation, int nkeys,
+					   ScanKey key)
+{	
+	Snapshot	snapshot = RegisterSnapshot(GetCatalogSnapshot());
+	
+	return tableam_scan_begin(relation, snapshot, nkeys, key);;
 }
 
 
@@ -153,38 +104,13 @@ void before_shmem_exit(pg_on_exit_callback function, Datum arg)
 }
 
 
-bool reindex_relation(Oid relid, int flags, int options)
-{
-	return false;
-}
-
-void cluster_rel(Oid tableOid, Oid indexOid, bool recheck,
-			bool verbose)
-{
-
-}
-void ExplainPropertyBool(const char *qlabel, bool value,
-					ExplainState *es)
-{}
-void standard_ProcessUtility(Node *parsetree, const char *queryString,
-						ProcessUtilityContext context, ParamListInfo params,
-						DestReceiver *dest, char *completionTag)
-{}
 void InitPostgres(const char *in_dbname, Oid dboid, const char *username,
  			 Oid useroid, char *out_dbname)
-{}
-
-HeapScanDesc heap_beginscan_catalog(Relation relation, int nkeys,
-					   ScanKey key)
-{	HeapScanDesc a;
-	return a;
+{
+	
 }
 
-void cost_sort(Path *path, PlannerInfo *root,
-		  List *pathkeys, Cost input_cost, double tuples, int width,
-		  Cost comparison_cost, int sort_mem,
-		  double limit_tuples)
-{}
+
 
 int
 namecpy(Name n1, Name n2)
@@ -195,26 +121,6 @@ namecpy(Name n1, Name n2)
 	return 0;
 }
 
-Oid 
-ReindexTable(RangeVar *relation, int options)
-{
-	Oid heapOid;
-
-	/* The lock level used here should match reindex_relation(). */
-	heapOid = RangeVarGetRelidExtended_tsdb(relation,
-									   ShareLock,
-									   false,
-									   false,
-									   (RangeVarGetRelidCallback_tsdb)RangeVarCallbackOwnsTable,
-									   NULL);
-
-	if (!reindex_relation(heapOid,
-						  REINDEX_REL_PROCESS_TOAST | REINDEX_REL_CHECK_CONSTRAINTS,
-						  options))
-		ereport(NOTICE, (errmsg("table \"%s\" has no indexes", relation->relname)));
-
-	return heapOid;
-}
 
 void
 ExecVacuum(VacuumStmt *vacstmt, bool isTopLevel)
@@ -501,116 +407,11 @@ add_partial_path(RelOptInfo *parent_rel, Path *new_path)
 	  * path, but throw out the new path if some existing path dominates it.
 	  */
   p1_prev = NULL;
-	  for (p1 = list_head(parent_rel->partial_pathlist); p1 != NULL;
-    p1 = p1_next)
- 
-	{
-		    Path    *old_path = (Path *) lfirst(p1);
-		    bool    remove_old = false; /* unless new proves superior */
-		    PathKeysComparison keyscmp;
-
-		    p1_next = lnext(p1);
-
-		    /* Compare pathkeys. */
-    keyscmp = compare_pathkeys(new_path->pathkeys, old_path->pathkeys);
-
-		    /* Unless pathkeys are incompable, keep just one of the two paths. */
-    if (keyscmp != PATHKEYS_DIFFERENT)
-   
-		{
-			      if (new_path->total_cost > old_path->total_cost * STD_FUZZ_FACTOR)
-     
-			{
-				        /* New path costs more; keep it only if pathkeys are better. */
-        if (keyscmp != PATHKEYS_BETTER1)
-          accept_new = false;
-				     
-			}
-			      else if (old_path->total_cost > new_path->total_cost
-          * STD_FUZZ_FACTOR)
-     
-			{
-				        /* Old path costs more; keep it only if pathkeys are better. */
-        if (keyscmp != PATHKEYS_BETTER2)
-          remove_old = true;
-				     
-			}
-			      else if (keyscmp == PATHKEYS_BETTER1)
-     
-			{
-				        /* Costs are about the same, new path has better pathkeys. */
-        remove_old = true;
-				     
-			}
-			      else if (keyscmp == PATHKEYS_BETTER2)
-     
-			{
-				        /* Costs are about the same, old path has better pathkeys. */
-        accept_new = false;
-				     
-			}
-			      else if (old_path->total_cost > new_path->total_cost * 1.0000000001)
-     
-			{
-				        /* Pathkeys are the same, and the old path costs more. */
-        remove_old = true;
-				     
-			}
-			      else      
-			{
-				        /*
-				        * Pathkeys are the same, and new path isn't materially
-				        * cheaper.
-				        */
-        accept_new = false;
-				     
-			}
-			   
-		}
-
-		    /*
-		    * Remove current element from partial_pathlist if dominated by new.
-		    */
-    if (remove_old)
-   
-		{
-			      parent_rel->partial_pathlist =
-        list_delete_cell(parent_rel->partial_pathlist, p1, p1_prev);
-			      /* we should not see IndexPaths here, so always safe to delete */
-      Assert(!IsA(old_path, IndexPath));
-			      pfree(old_path);
-			      /* p1_prev does not advance */
-   
-		}
-		    else    
-		{
-			      /* new belongs after this old path if it has cost >= old's */
-      if (new_path->total_cost >= old_path->total_cost)
-        insert_after = p1;
-			      /* p1_prev advances */
-      p1_prev = p1;
-			   
-		}
-
-		    /*
-		    * If we found an old path that dominates new_path, we can quit
-		    * scanning the partial_pathlist; we will not add new_path, and we
-		    * assume new_path cannot dominate any later path.
-		    */
-    if (!accept_new)
-      break;
-		 
-	}
 
 	  if (accept_new)
  
 	{
-		    /* Accept the new path: insert it at proper place */
-    if (insert_after)
-      lappend_cell(parent_rel->partial_pathlist, insert_after, new_path);
-		    else       parent_rel->partial_pathlist =
-        lcons(new_path, parent_rel->partial_pathlist);
-		 
+		// do nothing
 	}
 	  else  
 	{
@@ -633,11 +434,10 @@ create_gather_path(PlannerInfo *root, RelOptInfo *rel, Path *subpath,
 	  pathnode->path.parent = rel;
 	  pathnode->path.param_info = get_baserel_parampathinfo(root, rel,
                              required_outer);
-	  
 	  pathnode->path.pathkeys = NIL;
 	  /* Gather has unordered result */
 
- 	  pathnode->subpath = subpath;
+      pathnode->subpath = subpath;
 	  pathnode->single_copy = false;
 
 	  if (pathnode->num_workers == 0)
@@ -747,7 +547,8 @@ add_path(RelOptInfo *parent_rel, Path *new_path)
 					{
 						              if ((outercmp == BMS_EQUAL ||
                 outercmp == BMS_SUBSET1) &&
-                new_path->rows <= old_path->rows)
+                new_path->rows <= old_path->rows )
+				
                 remove_old = true;
 						  /* new dominates old */
            
@@ -757,7 +558,8 @@ add_path(RelOptInfo *parent_rel, Path *new_path)
 					{
 						              if ((outercmp == BMS_EQUAL ||
                 outercmp == BMS_SUBSET2) &&
-                new_path->rows >= old_path->rows)
+                new_path->rows >= old_path->rows )
+                
                 accept_new = false;
 						  /* old dominates new */
            
@@ -784,30 +586,10 @@ add_path(RelOptInfo *parent_rel, Path *new_path)
 							     * less-fuzzy comparison decides the startup         
 							       * and total costs compare differently.         
 							       */
-                if (0)
-                  remove_old = true;
-							/* new dominates old */
-                else if (0)
-                  accept_new = false;	/* old dominates new */
-							                else if (new_path->rows <
-																	 old_path->rows)
-                  remove_old = true;
-							/* new dominates old */
-                else if (new_path->rows > old_path->rows)
-                  accept_new = false; /* old dominates new */
-							                else if (
-								compare_path_costs_fuzzily(new_path,
-                                  old_path,
-                       1.0000000001) == COSTS_BETTER1)
-                  remove_old = true;
-							/* new dominates old */
-                else                   accept_new =
-								false; /* old equals or
-                            * dominates new */
-							             
+				remove_old = true;
 						}
 						              else if (outercmp == BMS_SUBSET1 &&
-                  new_path->rows <= old_path->rows)
+                  new_path->rows <= old_path->rows )
                 remove_old = true;
 						  /* new dominates old */
               else if (outercmp == BMS_SUBSET2 &&
@@ -842,7 +624,7 @@ add_path(RelOptInfo *parent_rel, Path *new_path)
                          PATH_REQ_OUTER(old_path));
 						              if ((outercmp == BMS_EQUAL ||
                 outercmp == BMS_SUBSET2) &&
-                new_path->rows >= old_path->rows)
+                new_path->rows >= old_path->rows )
                 accept_new = false;
 						  /* old dominates new */
            
@@ -919,73 +701,6 @@ add_path(RelOptInfo *parent_rel, Path *new_path)
 
 
 
-Path *
-apply_projection_to_path(PlannerInfo *root,
-            RelOptInfo *rel,
-            Path *path,
-            PathTarget *target)
-{
-	  QualCost  oldcost;
-
-	  /*
-	  * If given path can't project, we might need a Result node, so make a
-	  * separate ProjectionPath.
-	  */
-  if (!is_projection_capable_path(path))
-    return (Path *) create_projection_path(root, rel, path, target);
-
-	  /*
-	  * We can just jam the desired tlist into the existing path, being sure to
-	  * update its cost estimates appropriately.
-	  */
-  	//oldcost = target;
-
-	  path->startup_cost += target->cost.startup - oldcost.startup;
-	  path->total_cost += target->cost.startup - oldcost.startup +
-    (target->cost.per_tuple - oldcost.per_tuple) * path->rows;
-
-	  /*
-	  * If the path happens to be a Gather path, we'd like to arrange for the
-	  * subpath to return the required target list so that workers can help
-	  * project. But if there is something that is not parallel-safe in the
-	  * target expressions, then we can't.
-	  */
-  if (IsA(path, GatherPath) &&
-    !has_parallel_hazard((Node *) target->exprs, false))
- 
-	{
-		    GatherPath *gpath = (GatherPath *) path;
-
-		    /*
-		    * We always use create_projection_path here, even if the subpath is
-		    * projection-capable, so as to avoid modifying the subpath in place.
-		    * It seems unlikely at present that there could be any other
-		    * references to the subpath, but better safe than sorry.
-		    *
-		    * Note that we don't change the GatherPath's cost estimates; it might
-		    * be appropriate to do so, to reflect the fact that the bulk of the
-		    * target evaluation will happen in workers.
-		    */
-    gpath->subpath = (Path *)
-      create_projection_path(root,
-                 gpath->subpath->parent,
-                 gpath->subpath,
-                 target);
-		 
-	}
-	  else if (has_parallel_hazard((Node *) target->exprs, false))
- 
-	{
-		    /*
-		    * We're inserting a parallel-restricted target list into a path
-		    * currently marked parallel-safe, so we have to mark it as no longer
-		    * safe.
-		    */
-		 
-	}
-
-	  return path;
-}
 
 RelOptInfo *
 fetch_upper_rel(PlannerInfo *root, UpperRelationKind kind, Relids relids)
@@ -1017,7 +732,7 @@ fetch_upper_rel(PlannerInfo *root, UpperRelationKind kind, Relids relids)
 
 	  /* cheap startup cost is interesting iff not all tuples to be retrieved */
 	   /* might get changed later */
- 	  upperrel->reltarget = create_empty_pathtarget();
+  	  upperrel->reltarget = create_empty_pathtarget();
 	  upperrel->pathlist = NIL;
 	  upperrel->cheapest_startup_path = NULL;
 	  upperrel->cheapest_total_path = NULL;
@@ -1046,7 +761,6 @@ create_minmaxagg_path(PlannerInfo *root,
 	  pathnode->path.parent = rel;
 	  /* For now, assume we are above any joins, so no parameterization */
       pathnode->path.param_info = NULL;
-	  
 	  /* Result is one unordered row */
       pathnode->path.rows = 1;
 	  pathnode->path.pathkeys = NIL;
@@ -1072,114 +786,6 @@ create_minmaxagg_path(PlannerInfo *root,
     target->cost.per_tuple +u_sess->attr.attr_sql.cpu_tuple_cost;
 
 	  return pathnode;
-}
-
-PathTarget *
-make_pathtarget_from_tlist(List *tlist)
-{
-	  PathTarget *target = makeNode(PathTarget);
-	  int     i;
-	  ListCell  *lc;
-
-	  target->sortgrouprefs = (Index *) palloc(list_length(tlist) * sizeof(Index));
-
-	  i = 0;
-	  foreach (lc, tlist)
- 
-	{
-		    TargetEntry *tle = (TargetEntry *) lfirst(lc);
-
-		    target->exprs = lappend(target->exprs, tle->expr);
-		    target->sortgrouprefs[i] = tle->ressortgroupref;
-		    i++;
-		 
-	}
-
-	  return target;
-}
-
-PathTarget *
-set_pathtarget_cost_width(PlannerInfo *root, PathTarget *target)
-{
-	  int32    tuple_width = 0;
-	  ListCell  *lc;
-
-	  /* Vars are assumed to have cost zero, but other exprs do not */
-  target->cost.startup = 0;
-	  target->cost.per_tuple = 0;
-
-	  foreach (lc, target->exprs)
- 
-	{
-		    Node    *node = (Node *) lfirst(lc);
-
-		    if (IsA(node, Var))
-   
-		{
-			      Var    *var = (Var *) node;
-			      int32    item_width;
-
-			      /* We should not see any upper-level Vars here */
-      Assert(var->varlevelsup == 0);
-
-			      /* Try to get data from RelOptInfo cache */
-      if (var->varno < root->simple_rel_array_size)
-     
-			{
-				        RelOptInfo *rel = root->simple_rel_array[var->varno];
-
-				        if (rel != NULL &&
-          var->varattno >= rel->min_attr &&
-          var->varattno <= rel->max_attr)
-       
-				{
-					          int     ndx = var->varattno - rel->min_attr;
-
-					          if (rel->attr_widths[ndx] > 0)
-         
-					{
-						            tuple_width += rel->attr_widths[ndx];
-						            continue;
-						         
-					}
-					       
-				}
-				     
-			}
-
-			      /*
-			      * No cached data available, so estimate using just the type info.
-			      */
-      item_width = get_typavgwidth(var->vartype, var->vartypmod);
-			      Assert(item_width > 0);
-			      tuple_width += item_width;
-			   
-		}
-		    else    
-		{
-			      /*
-			      * Handle general expressions using type info.
-			      */
-      int32    item_width;
-			      QualCost  cost;
-
-			      item_width = get_typavgwidth(exprType(node), exprTypmod(node));
-			      Assert(item_width > 0);
-			      tuple_width += item_width;
-
-			      /* Account for cost, too */
-      cost_qual_eval_node(&cost, node, root);
-			      target->cost.startup += cost.startup;
-			      target->cost.per_tuple += cost.per_tuple;
-			   
-		}
-		 
-	}
-
-	  Assert(tuple_width >= 0);
-	  target->width = tuple_width;
-
-	  return target;
 }
 
 void
@@ -1279,50 +885,6 @@ SS_charge_for_initplans(PlannerInfo *root, RelOptInfo *final_rel)
 	  /* We needn't do set_cheapest() here, caller will do it */
 }
 
-PathKey *
-make_canonical_pathkey(PlannerInfo *root,
-           EquivalenceClass *eclass, Oid opfamily,
-           int strategy, bool nulls_first)
-{
-	  PathKey  *pk;
-	  ListCell  *lc;
-	  MemoryContext oldcontext;
-
-	  /* The passed eclass might be non-canonical, so chase up to the top */
-  while (eclass->ec_merged)
-    eclass = eclass->ec_merged;
-
-	  foreach (lc, root->canon_pathkeys)
- 
-	{
-		    pk = (PathKey *) lfirst(lc);
-		    if (eclass == pk->pk_eclass &&
-      opfamily == pk->pk_opfamily &&
-      strategy == pk->pk_strategy &&
-      nulls_first == pk->pk_nulls_first)
-      return pk;
-		 
-	}
-
-	  /*
-	  * Be sure canonical pathkeys are allocated in the main planning context.
-	  * Not an issue in normal planning, but it is for GEQO.
-	  */
-  oldcontext = MemoryContextSwitchTo(root->planner_cxt);
-
-	  pk = makeNode(PathKey);
-	  pk->pk_eclass = eclass;
-	  pk->pk_opfamily = opfamily;
-	  pk->pk_strategy = strategy;
-	  pk->pk_nulls_first = nulls_first;
-
-	  root->canon_pathkeys = lappend(root->canon_pathkeys, pk);
-
-	  MemoryContextSwitchTo(oldcontext);
-
-	  return pk;
-}
-
 Oid
 get_role_oid_or_public(const char *rolname)
 {
@@ -1332,31 +894,6 @@ get_role_oid_or_public(const char *rolname)
 	  return get_role_oid(rolname, false);
 }
 
-char *
-GetUserNameFromId(Oid roleid, bool noerr)
-{
-	  HeapTuple  tuple;
-	  char    *result;
-
-	  tuple = SearchSysCache1(AUTHOID, ObjectIdGetDatum(roleid));
-	  if (!HeapTupleIsValid(tuple))
- 
-	{
-		    if (!noerr)
-      ereport(ERROR,
-          (errcode(ERRCODE_UNDEFINED_OBJECT),
-          errmsg("invalid role OID: %u", roleid)));
-		    result = NULL;
-		 
-	}
-	  else  
-	{
-		    result = pstrdup(NameStr(((Form_pg_authid) GETSTRUCT(tuple))->rolname));
-		    ReleaseSysCache(tuple);
-		 
-	}
-	  return result;
-}
 
 Oid
 get_rolespec_oid(const Node *node, bool missing_ok)
@@ -1400,361 +937,17 @@ get_rolespec_oid(const Node *node, bool missing_ok)
 }
 
 void
-mark_index_clustered(Relation rel, Oid indexOid, bool is_internal)
+CreateCacheMemoryContext(void)
 {
-	HeapTuple indexTuple;
-	Form_pg_index indexForm;
-	Relation pg_index;
-	ListCell *index;
-
-	/*
-	 * If the index is already marked clustered, no need to do anything.
-	 */
-	if (OidIsValid(indexOid))
-	{
-		indexTuple = SearchSysCache1(INDEXRELID, ObjectIdGetDatum(indexOid));
-		if (!HeapTupleIsValid(indexTuple))
-			elog(ERROR, "cache lookup failed for index %u", indexOid);
-		indexForm = (Form_pg_index) GETSTRUCT(indexTuple);
-
-		if (indexForm->indisclustered)
-		{
-			ReleaseSysCache(indexTuple);
-			return;
-		}
-
-		ReleaseSysCache(indexTuple);
-	}
-
-	/*
-	 * Check each index of the relation and set/clear the bit as needed.
-	 */
-	pg_index = heap_open(IndexRelationId, RowExclusiveLock);
-
-	foreach (index, RelationGetIndexList(rel))
-	{
-		Oid thisIndexOid = lfirst_oid(index);
-
-		indexTuple = SearchSysCacheCopy1(INDEXRELID, ObjectIdGetDatum(thisIndexOid));
-		if (!HeapTupleIsValid(indexTuple))
-			elog(ERROR, "cache lookup failed for index %u", thisIndexOid);
-		indexForm = (Form_pg_index) GETSTRUCT(indexTuple);
-
-		/*
-		 * Unset the bit if set.  We know it's wrong because we checked this
-		 * earlier.
-		 */
-		if (indexForm->indisclustered)
-		{
-			indexForm->indisclustered = false;
-			simple_heap_update(pg_index, &indexTuple->t_self, indexTuple);
-			CatalogUpdateIndexes(pg_index, indexTuple);
-		}
-		else if (thisIndexOid == indexOid)
-		{
-			/* this was checked earlier, but let's be real sure */
-			if (!IndexIsValid(indexForm))
-				elog(ERROR, "cannot cluster on invalid index %u", indexOid);
-			indexForm->indisclustered = true;
-			simple_heap_update(pg_index, &indexTuple->t_self, indexTuple);
-			CatalogUpdateIndexes(pg_index, indexTuple);
-		}
-
-		InvokeObjectPostAlterHookArg(IndexRelationId, thisIndexOid, 0, InvalidOid, is_internal);
-
-		heap_freetuple(indexTuple);
-	}
-
-	heap_close(pg_index, RowExclusiveLock);
-}
-
-
-
-ArrayIterator
-array_create_iterator(ArrayType *arr, int slice_ndim, ArrayMetaState *mstate)
-{
-	ArrayIterator iterator =(ArrayIterator) palloc0(sizeof(ArrayIteratorData*));
-
-	/*
-	 * Sanity-check inputs --- caller should have got this right already
-	 */
-	Assert(PointerIsValid(arr));
-	if (slice_ndim < 0 || slice_ndim > ARR_NDIM(arr))
-		elog(ERROR, "invalid arguments to array_create_iterator");
-
-	/*
-	 * Remember basic info about the array and its element type
-	 */
-	iterator->arr = arr;
-	iterator->nullbitmap = ARR_NULLBITMAP(arr);
-	iterator->nitems = ArrayGetNItems(ARR_NDIM(arr), ARR_DIMS(arr));
-
-	if (mstate != NULL)
-	{
-		Assert(mstate->element_type == ARR_ELEMTYPE(arr));
-
-		iterator->typlen = mstate->typlen;
-		iterator->typbyval = mstate->typbyval;
-		iterator->typalign = mstate->typalign;
-	}
-	else
-		get_typlenbyvalalign(ARR_ELEMTYPE(arr),
-							 &iterator->typlen,
-							 &iterator->typbyval,
-							 &iterator->typalign);
-
-	/*
-	 * Remember the slicing parameters.
-	 */
-	iterator->slice_ndim = slice_ndim;
-
-	if (slice_ndim > 0)
-	{
-		/*
-		 * Get pointers into the array's dims and lbound arrays to represent
-		 * the dims/lbound arrays of a slice.  These are the same as the
-		 * rightmost N dimensions of the array.
-		 */
-		iterator->slice_dims = ARR_DIMS(arr) + ARR_NDIM(arr) - slice_ndim;
-		iterator->slice_lbound = ARR_LBOUND(arr) + ARR_NDIM(arr) - slice_ndim;
-
-		/*
-		 * Compute number of elements in a slice.
-		 */
-		iterator->slice_len = ArrayGetNItems(slice_ndim, iterator->slice_dims);
-
-		/*
-		 * Create workspace for building sub-arrays.
-		 */
-		iterator->slice_values = (Datum *) palloc(iterator->slice_len * sizeof(Datum));
-		iterator->slice_nulls = (bool *) palloc(iterator->slice_len * sizeof(bool));
-	}
-
-	/*
-	 * Initialize our data pointer and linear element number.  These will
-	 * advance through the array during array_iterate().
-	 */
-	iterator->data_ptr = ARR_DATA_PTR(arr);
-	iterator->current_item = 0;
-
-	return iterator;
-}
-
-
-
-
-Oid
-RangeVarGetRelidExtended_tsdb(const RangeVar *relation, LOCKMODE lockmode,
-            bool missing_ok, bool nowait,
-           RangeVarGetRelidCallback_tsdb callback, void *callback_arg,int tsdb)
-{
-	  uint64   inval_count;
-	  Oid     relId;
-	  Oid     oldRelId = InvalidOid;
-	  bool    retry = false;
-
 	  /*
-	  * We check the catalog name and then ignore it.
-	  */
-  if (relation->catalogname)
- 
-	{
-		    if (strcmp(relation->catalogname, get_database_name(u_sess->proc_cxt.MyDatabaseId)) != 0)
-      ereport(ERROR,
-          (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-          errmsg("cross-database references are not implemented: \"%s.%s.%s\"",
-              relation->catalogname, relation->schemaname,
-              relation->relname)));
-		 
-	}
+  * Purely for paranoia, check that context doesn't exist; caller probably
+  * did so already.
+  */
+ if (u_sess->cache_mem_cxt == nullptr ) {
+            u_sess->cache_mem_cxt =
+                AllocSetContextCreate(u_sess->top_mem_cxt, "SessionCacheMemoryContext", ALLOCSET_DEFAULT_SIZES);
+        }
 
-	  /*
-	  * DDL operations can change the results of a name lookup. Since all such
-	  * operations will generate invalidation messages, we keep track of
-	  * whether any such messages show up while we're performing the operation,
-	  * and retry until either (1) no more invalidation messages show up or (2)
-	  * the answer doesn't change.
-	  *
-	  * But if lockmode = NoLock, then we assume that either the caller is OK
-	  * with the answer changing under them, or that they already hold some
-	  * appropriate lock, and therefore return the first answer we get without
-	  * checking for invalidation messages. Also, if the requested lock is
-	  * already held, LockRelationOid will not AcceptInvalidationMessages, so
-	  * we may fail to notice a change. We could protect against that case by
-	  * calling AcceptInvalidationMessages() before beginning this loop, but
-	  * that would add a significant amount overhead, so for now we don't.
-	  */
-  for (;;)
- 
-	{
-		    /*
-		    * Remember this value, so that, after looking up the relation name
-		    * and locking its OID, we can check whether any invalidation messages
-		    * have been processed that might require a do-over.
-		    */
-    inval_count = u_sess->inval_cxt.SIMCounter;
-
-		    /*
-		    * Some non-default relpersistence value may have been specified. The
-		    * parser never generates such a RangeVar in simple DML, but it can
-		    * happen in contexts such as "CREATE TEMP TABLE foo (f1 int PRIMARY
-		    * KEY)". Such a command will generate an added CREATE INDEX
-		    * operation, which must be careful to find the temp table, even when
-		    * pg_temp is not first in the search path.
-		    */
-    if (relation->relpersistence == RELPERSISTENCE_TEMP)
-   
-		{
-			      if (!OidIsValid(u_sess->catalog_cxt.myTempNamespace))
-        relId = InvalidOid;
-			  /* this probably can't happen? */
-      else      
-			{
-				        if (relation->schemaname)
-       
-				{
-					          Oid     namespaceId;
-
-					          namespaceId =
-						LookupExplicitNamespace(relation->schemaname, missing_ok);
-
-					          /*
-					          * For missing_ok, allow a non-existent schema name to
-					          * return InvalidOid.
-					          */
-          if (namespaceId != u_sess->catalog_cxt.myTempNamespace)
-            ereport(ERROR,
-                (errcode(ERRCODE_INVALID_TABLE_DEFINITION),
-                errmsg("temporary tables cannot specify a schema name")));
-					       
-				}
-
-				        relId = get_relname_relid(relation->relname, u_sess->catalog_cxt.myTempNamespace);
-				     
-			}
-			   
-		}
-		    else if (relation->schemaname)
-   
-		{
-			      Oid     namespaceId;
-
-			      /* use exact schema given */
-      namespaceId = LookupExplicitNamespace(relation->schemaname, missing_ok);
-			      if (missing_ok && !OidIsValid(namespaceId))
-        relId = InvalidOid;
-			      else         relId =
-				get_relname_relid(relation->relname, namespaceId);
-			   
-		}
-		    else    
-		{
-			      /* search the namespace path */
-      relId = RelnameGetRelid(relation->relname);
-			   
-		}
-
-		    /*
-		    * Invoke caller-supplied callback, if any.
-		    *
-		    * This callback is a good place to check permissions: we haven't
-		    * taken the table lock yet (and it's really best to check permissions
-		    * before locking anything!), but we've gotten far enough to know what
-		    * OID we think we should lock. Of course, concurrent DDL might
-		    * change things while we're waiting for the lock, but in that case
-		    * the callback will be invoked again for the new OID.
-		    */
-    if (callback)
-      callback(relation, relId, oldRelId, callback_arg);
-
-		    /*
-		    * If no lock requested, we assume the caller knows what they're
-		    * doing. They should have already acquired a heavyweight lock on
-		    * this relation earlier in the processing of this same statement, so
-		    * it wouldn't be appropriate to AcceptInvalidationMessages() here, as
-		    * that might pull the rug out from under them.
-		    */
-    if (lockmode == NoLock)
-      break;
-
-		    /*
-		    * If, upon retry, we get back the same OID we did last time, then the
-		    * invalidation messages we processed did not change the final answer.
-		    * So we're done.
-		    *
-		    * If we got a different OID, we've locked the relation that used to
-		    * have this name rather than the one that does now. So release the
-		    * lock.
-		    */
-    if (retry)
-   
-		{
-			      if (relId == oldRelId)
-        break;
-			      if (OidIsValid(oldRelId))
-        UnlockRelationOid(oldRelId, lockmode);
-			   
-		}
-
-		    /*
-		    * Lock relation. This will also accept any pending invalidation
-		    * messages. If we got back InvalidOid, indicating not found, then
-		    * there's nothing to lock, but we accept invalidation messages
-		    * anyway, to flush any negative catcache entries that may be
-		    * lingering.
-		    */
-    if (!OidIsValid(relId))
-      AcceptInvalidationMessages();
-		    else if (!nowait)
-      LockRelationOid(relId, lockmode);
-		    else if (!ConditionalLockRelationOid(relId, lockmode))
-   
-		{
-			      if (relation->schemaname)
-        ereport(ERROR,
-            (errcode(ERRCODE_LOCK_NOT_AVAILABLE),
-            errmsg("could not obtain lock on relation \"%s.%s\"",
-                relation->schemaname, relation->relname)));
-			      else
-        ereport(ERROR,
-            (errcode(ERRCODE_LOCK_NOT_AVAILABLE),
-            errmsg("could not obtain lock on relation \"%s\"",
-                relation->relname)));
-			   
-		}
-
-		    /*
-		    * If no invalidation message were processed, we're done!
-		    */
-    if (inval_count == u_sess->inval_cxt.SIMCounter)
-      break;
-
-		    /*
-		    * Something may have changed. Let's repeat the name lookup, to make
-		    * sure this name still references the same relation it did
-		    * previously.
-		    */
-    retry = true;
-		    oldRelId = relId;
-		 
-	}
-
-	  if (!OidIsValid(relId) && !missing_ok)
- 
-	{
-		    if (relation->schemaname)
-      ereport(ERROR,
-          (errcode(ERRCODE_UNDEFINED_TABLE),
-          errmsg(
-						  "relation \"%s.%s\" does not exist",
-              relation->schemaname, relation->relname)));
-		    else       ereport(ERROR,
-          (errcode(ERRCODE_UNDEFINED_TABLE),
-          errmsg("relation \"%s\" does not exist",
-              relation->relname)));
-		 
-	}
-	  return relId;
 }
 
 AttrNumber *
@@ -2283,102 +1476,11 @@ mark_partial_aggref(Aggref *agg, AggSplit aggsplit)
 }
 
 void
-add_new_columns_to_pathtarget(PathTarget *target, List *exprs)
-{
-	ListCell *lc;
-
-	foreach (lc, exprs)
-	{
-		Expr *expr = (Expr *) lfirst(lc);
-
-		add_new_column_to_pathtarget(target, expr);
-	}
-}
-
-void
-add_column_to_pathtarget(PathTarget *target, Expr *expr, Index sortgroupref)
-{
-	/* Updating the exprs list is easy ... */
-	target->exprs = lappend(target->exprs, expr);
-	/* ... the sortgroupref data, a bit less so */
-	if (target->sortgrouprefs)
-	{
-		int nexprs = list_length(target->exprs);
-
-		/* This might look inefficient, but actually it's usually cheap */
-		target->sortgrouprefs = (Index *) repalloc(target->sortgrouprefs, nexprs * sizeof(Index));
-		target->sortgrouprefs[nexprs - 1] = sortgroupref;
-	}
-	else if (sortgroupref)
-	{
-		/* Adding sortgroupref labeling to a previously unlabeled target */
-		int nexprs = list_length(target->exprs);
-
-		target->sortgrouprefs = (Index *) palloc0(nexprs * sizeof(Index));
-		target->sortgrouprefs[nexprs - 1] = sortgroupref;
-	}
-}
-
-SortGroupClause *
-get_sortgroupref_clause_noerr(Index sortref, List *clauses)
-{
-	ListCell *l;
-
-	foreach (l, clauses)
-	{
-		SortGroupClause *cl = (SortGroupClause *) lfirst(l);
-
-		if (cl->tleSortGroupRef == sortref)
-			return cl;
-	}
-
-	return NULL;
-}
-
-PathTarget *
-create_empty_pathtarget(void)
-{
-	/* This is easy, but we don't want callers to hard-wire this ... */
-	return makeNode(PathTarget);
-}
-
-void
 slot_getallattrs(TupleTableSlot *slot)
 {
 	slot_getsomeattrs(slot, slot->tts_tupleDescriptor->natts);
 }
 
-
-char *
-psprintf(const char *fmt, ...)
-{
-	size_t len = 128; /* initial assumption about buffer size */
-
-	for (;;)
-	{
-		char *result;
-		va_list args;
-		size_t newlen;
-
-		/*
-		 * Allocate result buffer.  Note that in frontend this maps to malloc
-		 * with exit-on-error.
-		 */
-		result = (char *) palloc(len);
-
-		/* Try to format the data. */
-		va_start(args, fmt);
-		newlen = pvsnprintf(result, len, fmt, args);
-		va_end(args);
-
-		if (newlen < len)
-			return result; /* success */
-
-		/* Release buffer and loop around to try again with larger len. */
-		pfree(result);
-		len = newlen;
-	}
-}
 
 List *
 RelationGetFKeyList(Relation relation)
@@ -2590,105 +1692,6 @@ RequestNamedLWLockTranche(const char *tranche_name, int num_lwlocks)
 	NamedLWLockTrancheRequests++;
 }
 
-void
-ApplySetting(Snapshot snapshot, Oid databaseid, Oid roleid, Relation relsetting, GucSource source)
-{
-	SysScanDesc scan;
-	ScanKeyData keys[2];
-	HeapTuple tup;
-
-	ScanKeyInit(&keys[0],
-				Anum_pg_db_role_setting_setdatabase,
-				BTEqualStrategyNumber,
-				F_OIDEQ,
-				ObjectIdGetDatum(databaseid));
-	ScanKeyInit(&keys[1],
-				Anum_pg_db_role_setting_setrole,
-				BTEqualStrategyNumber,
-				F_OIDEQ,
-				ObjectIdGetDatum(roleid));
-
-	scan = systable_beginscan(relsetting, DbRoleSettingDatidRolidIndexId, true, snapshot, 2, keys);
-	while (HeapTupleIsValid(tup = systable_getnext(scan)))
-	{
-		bool isnull;
-		Datum datum;
-
-		datum = heap_getattr_tsdb(tup,
-							 Anum_pg_db_role_setting_setconfig,
-							 RelationGetDescr(relsetting),
-							 &isnull);
-		if (!isnull)
-		{
-			ArrayType *a = DatumGetArrayTypeP(datum);
-
-			/*
-			 * We process all the options at SUSET level.  We assume that the
-			 * right to insert an option into pg_db_role_setting was checked
-			 * when it was inserted.
-			 */
-			ProcessGUCArray(a, PGC_SUSET, source, GUC_ACTION_SET);
-		}
-	}
-
-	systable_endscan(scan);
-}
-
-RewriteState
-begin_heap_rewrite(Relation old_heap, Relation new_heap, TransactionId oldest_xmin,
-				   TransactionId freeze_xid, MultiXactId cutoff_multi, bool use_wal)
-{
-	RewriteState state;
-	MemoryContext rw_cxt;
-	MemoryContext old_cxt;
-	HASHCTL hash_ctl;
-
-	/*
-	 * To ease cleanup, make a separate context that will contain the
-	 * RewriteState struct itself plus all subsidiary data.
-	 */
-	rw_cxt = AllocSetContextCreate(CurrentMemoryContext, "Table rewrite", ALLOCSET_DEFAULT_SIZES);
-	old_cxt = MemoryContextSwitchTo(rw_cxt);
-
-	/* Create and fill in the state struct */
-	state =(RewriteStateData*) palloc0(sizeof(RewriteStateData));
-
-	state->rs_old_rel = old_heap;
-	state->rs_new_rel = new_heap;
-	state->rs_buffer = (Page) palloc(BLCKSZ);
-	/* new_heap needn't be empty, just locked */
-	state->rs_blockno = RelationGetNumberOfBlocks(new_heap);
-	state->rs_buffer_valid = false;
-	state->rs_use_wal = use_wal;
-	state->rs_oldest_xmin = oldest_xmin;
-	state->rs_freeze_xid = freeze_xid;
-	state->rs_cutoff_multi = cutoff_multi;
-	state->rs_cxt = rw_cxt;
-
-	/* Initialize hash tables used to track update chains */
-	memset(&hash_ctl, 0, sizeof(hash_ctl));
-	hash_ctl.keysize = sizeof(TidHashKey);
-	hash_ctl.entrysize = sizeof(UnresolvedTupData);
-	hash_ctl.hcxt = state->rs_cxt;
-
-	state->rs_unresolved_tups = hash_create("Rewrite / Unresolved ctids",
-											128, /* arbitrary initial size */
-											&hash_ctl,
-											HASH_ELEM | HASH_BLOBS | HASH_CONTEXT);
-
-	hash_ctl.entrysize = sizeof(OldToNewMappingData);
-
-	state->rs_old_new_tid_map = hash_create("Rewrite / Old to new tid map",
-											128, /* arbitrary initial size */
-											&hash_ctl,
-											HASH_ELEM | HASH_BLOBS | HASH_CONTEXT);
-
-	MemoryContextSwitchTo(old_cxt);
-
-	logical_begin_heap_rewrite(state);
-
-	return state;
-}
 
 Oid
 toast_get_valid_index(Oid toastoid, LOCKMODE lock)
@@ -2713,40 +1716,6 @@ toast_get_valid_index(Oid toastoid, LOCKMODE lock)
 	return validIndexOid;
 }
 
-
-bool
-IsSystemClass(Oid relid, Form_pg_class reltuple)
-{
-	return IsToastClass(reltuple) || IsCatalogClass(relid, reltuple);
-}
-
-void
-build_aggregate_finalfn_expr(Oid *agg_input_types, int num_finalfn_inputs, Oid agg_state_type,
-							 Oid agg_result_type, Oid agg_input_collation, Oid finalfn_oid,
-							 Expr **finalfnexpr)
-{
-	List *args;
-	int i;
-
-	/*
-	 * Build expr tree for final function
-	 */
-	args = list_make1(make_agg_arg(agg_state_type, agg_input_collation));
-
-	/* finalfn may take additional args, which match agg's input types */
-	for (i = 0; i < num_finalfn_inputs - 1; i++)
-	{
-		args = lappend(args, make_agg_arg(agg_input_types[i], agg_input_collation));
-	}
-
-	*finalfnexpr = (Expr *) makeFuncExpr(finalfn_oid,
-										 agg_result_type,
-										 args,
-										 InvalidOid,
-										 agg_input_collation,
-										 COERCE_EXPLICIT_CALL);
-	/* finalfn is currently never treated as variadic */
-}
 
 ColumnDef *
 makeColumnDef(const char *colname, Oid typeOid, int32 typmod, Oid collOid)
@@ -2796,6 +1765,7 @@ initArrayResultArr(Oid array_type, Oid element_type, MemoryContext rcontext, boo
 	/* Note we initialize all fields to zero */
 	astate = (ArrayBuildStateArr *) MemoryContextAllocZero(arr_context, sizeof(ArrayBuildStateArr));
 	astate->mcontext = arr_context;
+	astate->private_cxt = subcontext;
 
 	/* Save relevant datatype information */
 	astate->array_type = array_type;
@@ -2965,30 +1935,6 @@ accumArrayResultArr(ArrayBuildStateArr *astate, Datum dvalue, bool disnull, Oid 
 	return astate;
 }
 
-Query *
-get_view_query(Relation view)
-{
-	int i;
-
-	Assert(view->rd_rel->relkind == RELKIND_VIEW);
-
-	for (i = 0; i < view->rd_rules->numLocks; i++)
-	{
-		RewriteRule *rule = view->rd_rules->rules[i];
-
-		if (rule->event == CMD_SELECT)
-		{
-			/* A _RETURN rule should have only one action */
-			if (list_length(rule->actions) != 1)
-				elog(ERROR, "invalid _RETURN rule action specification");
-
-			return (Query *) linitial(rule->actions);
-		}
-	}
-
-	elog(ERROR, "failed to find _RETURN rule for view");
-	return NULL; /* keep compiler quiet */
-}
 
 Datum
 makeArrayResultArr(ArrayBuildStateArr *astate, MemoryContext rcontext, bool release)
@@ -3040,137 +1986,13 @@ makeArrayResultArr(ArrayBuildStateArr *astate, MemoryContext rcontext, bool rele
 	/* Clean up all the junk */
 	if (release)
 	{
+		Assert(astate->private_cxt);
 		MemoryContextDelete(astate->mcontext);
 	}
 
 	return PointerGetDatum(result);
 }
 
-int
-SPI_execute_with_args(const char *src, int nargs, Oid *argtypes, Datum *Values, const char *Nulls,
-					  bool read_only, long tcount)
-{
-	int res;
-	_SPI_plan plan;
-	ParamListInfo paramLI;
-
-	if (src == NULL || nargs < 0 || tcount < 0)
-		return SPI_ERROR_ARGUMENT;
-
-	if (nargs > 0 && (argtypes == NULL || Values == NULL))
-		return SPI_ERROR_PARAM;
-
-	res = _SPI_begin_call(true);
-	if (res < 0)
-		return res;
-
-	memset(&plan, 0, sizeof(_SPI_plan));
-	plan.magic = _SPI_PLAN_MAGIC;
-	plan.cursor_options = 0;
-	plan.nargs = nargs;
-	plan.argtypes = argtypes;
-	plan.parserSetup = NULL;
-	plan.parserSetupArg = NULL;
-
-	paramLI = _SPI_convert_params(nargs, argtypes, Values, Nulls);
-
-	_SPI_prepare_oneshot_plan(src, &plan);
-
-	res = _SPI_execute_plan(&plan,
-							paramLI,
-							InvalidSnapshot,
-							InvalidSnapshot,
-							read_only,
-							true,
-							tcount);
-
-	_SPI_end_call(true);
-	return res;
-}
-bool
-scanint8(const char *str, bool errorOK, int64 *result)
-{
-	const char *ptr = str;
-	int64 tmp = 0;
-	int sign = 1;
-
-	/*
-	 * Do our own scan, rather than relying on sscanf which might be broken
-	 * for long long.
-	 */
-
-	/* skip leading spaces */
-	while (*ptr && isspace((unsigned char) *ptr))
-		ptr++;
-
-	/* handle sign */
-	if (*ptr == '-')
-	{
-		ptr++;
-
-		/*
-		 * Do an explicit check for INT64_MIN.  Ugly though this is, it's
-		 * cleaner than trying to get the loop below to handle it portably.
-		 */
-		if (strncmp(ptr, "9223372036854775808", 19) == 0)
-		{
-			tmp = PG_INT64_MIN;
-			ptr += 19;
-			goto gotdigits;
-		}
-		sign = -1;
-	}
-	else if (*ptr == '+')
-		ptr++;
-
-	/* require at least one digit */
-	if (!isdigit((unsigned char) *ptr))
-	{
-		if (errorOK)
-			return false;
-		else
-			ereport(ERROR,
-					(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-					 errmsg("invalid input syntax for integer: \"%s\"", str)));
-	}
-
-	/* process digits */
-	while (*ptr && isdigit((unsigned char) *ptr))
-	{
-		int64 newtmp = tmp * 10 + (*ptr++ - '0');
-
-		if ((newtmp / 10) != tmp) /* overflow? */
-		{
-			if (errorOK)
-				return false;
-			else
-				ereport(ERROR,
-						(errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
-						 errmsg("value \"%s\" is out of range for type bigint", str)));
-		}
-		tmp = newtmp;
-	}
-
-gotdigits:
-
-	/* allow trailing whitespace, but not other trailing chars */
-	while (*ptr != '\0' && isspace((unsigned char) *ptr))
-		ptr++;
-
-	if (*ptr != '\0')
-	{
-		if (errorOK)
-			return false;
-		else
-			ereport(ERROR,
-					(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-					 errmsg("invalid input syntax for integer: \"%s\"", str)));
-	}
-
-	*result = (sign < 0) ? -tmp : tmp;
-
-	return true;
-}
 
 void
 check_index_predicates(PlannerInfo *root, RelOptInfo *rel)
@@ -3300,20 +2122,19 @@ create_sort_path(PlannerInfo *root, RelOptInfo *rel, Path *subpath, List *pathke
 	/* Sort doesn't project, so use source path's pathtarget */
 	/* For now, assume we are above any joins, so no parameterization */
 	pathnode->path.param_info = NULL;
-	
 	pathnode->path.pathkeys = pathkeys;
 
 	pathnode->subpath = subpath;
 
 	cost_sort(&pathnode->path,
-			  root,
 			  pathkeys,
 			  subpath->total_cost,
 			  subpath->rows,
 			  0,
 			  0.0, /* XXX comparison_cost shouldn't be 0? */
-			  u_sess->attr.attr_memory.work_mem,
-			  limit_tuples);
+			  u_sess->opt_cxt.op_work_mem,
+			  limit_tuples,
+			  root->glob->vectorized);
 
 	return pathnode;
 }
@@ -3491,6 +2312,79 @@ ts_preprocess_first_last_aggregates(PlannerInfo *root, List *tlist)
 }
 
 
+ModifyTablePath *
+create_modifytable_path(PlannerInfo *root, RelOptInfo *rel,
+						CmdType operation, bool canSetTag,
+						Index nominalRelation,
+						List *resultRelations, List *subpaths,
+						List *subroots,
+						List *withCheckOptionLists, List *returningLists,
+						List *rowMarks, int epqParam)
+{
+	ModifyTablePath *pathnode = makeNode(ModifyTablePath);
+	double		total_size;
+	ListCell   *lc;
+
+	Assert(list_length(resultRelations) == list_length(subpaths));
+	Assert(list_length(resultRelations) == list_length(subroots));
+	Assert(withCheckOptionLists == NIL ||
+		   list_length(resultRelations) == list_length(withCheckOptionLists));
+	Assert(returningLists == NIL ||
+		   list_length(resultRelations) == list_length(returningLists));
+
+	pathnode->path.pathtype = T_ModifyTable;
+	pathnode->path.parent = rel;
+	/* pathtarget is not interesting, just make it minimally valid */
+	/* For now, assume we are above any joins, so no parameterization */
+	pathnode->path.param_info = NULL;
+	pathnode->path.pathkeys = NIL;
+
+	/*
+	 * Compute cost & rowcount as sum of subpath costs & rowcounts.
+	 *
+	 * Currently, we don't charge anything extra for the actual table
+	 * modification work, nor for the WITH CHECK OPTIONS or RETURNING
+	 * expressions if any.  It would only be window dressing, since
+	 * ModifyTable is always a top-level node and there is no way for the
+	 * costs to change any higher-level planning choices.  But we might want
+	 * to make it look better sometime.
+	 */
+	pathnode->path.startup_cost = 0;
+	pathnode->path.total_cost = 0;
+	pathnode->path.rows = 0;
+	total_size = 0;
+	foreach(lc, subpaths)
+	{
+		Path	   *subpath = (Path *) lfirst(lc);
+
+		if (lc == list_head(subpaths))	/* first node? */
+			pathnode->path.startup_cost = subpath->startup_cost;
+		pathnode->path.total_cost += subpath->total_cost;
+		pathnode->path.rows += subpath->rows;
+	}
+
+	/*
+	 * Set width to the average width of the subpath outputs.  XXX this is
+	 * totally wrong: we should report zero if no RETURNING, else an average
+	 * of the RETURNING tlist widths.  But it's what happened historically,
+	 * and improving it is a task for another day.
+	 */
+	if (pathnode->path.rows > 0)
+		total_size /= pathnode->path.rows;
+
+	pathnode->operation = operation;
+	pathnode->canSetTag = canSetTag;
+	pathnode->nominalRelation = nominalRelation;
+	pathnode->resultRelations = resultRelations;
+	pathnode->subpaths = subpaths;
+	pathnode->subroots = subroots;
+	pathnode->withCheckOptionLists = withCheckOptionLists;
+	pathnode->returningLists = returningLists;
+	pathnode->rowMarks = rowMarks;
+	pathnode->epqParam = epqParam;
+	return pathnode;
+}
+
 static uint32 tsdb_index;
 
 void set_extension_index(uint32 index)
@@ -3572,7 +2466,7 @@ void init_session_vars(void)
 	psc->tsdb_func_hash = NULL;
 	
 	psc->tsdb_downgrade_to_apache_enabled = false;
-	psc->tsdb_tsl_handle = NULL;
+    psc->tsdb_tsl_handle = NULL;
 	psc->tsdb_tsl_validate_license_fn = NULL;
 	psc->tsdb_tsl_startup_fn = NULL;
 	psc->tsdb_can_load = false;

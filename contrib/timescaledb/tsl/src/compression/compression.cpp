@@ -44,6 +44,8 @@
 #include "custom_type_cache.h"
 #include "segment_meta.h"
 
+#include "access/tableam.h"
+
 #define MAX_ROWS_PER_COMPRESSION 1000
 /* gap in sequence id between rows, potential for adding rows in gap later */
 #define SEQUENCE_NUM_GAP 10
@@ -210,7 +212,6 @@ truncate_relation(Oid table_oid)
 		table_close(rel, NoLock);
 	}
 
-	reindex_relation(table_oid, REINDEX_REL_PROCESS_TOAST, 0);
 }
 
 void
@@ -266,7 +267,6 @@ compress_chunk(Oid in_table, Oid out_table, const ColumnCompressionInfo **column
 
 	/* Recreate all indexes on out rel, we already have an exclusive lock on it,
 	 * so the strong locks taken by reindex_relation shouldn't matter. */
-	reindex_relation(out_table, 0, 0);
 
 	table_close(out_rel, NoLock);
 	table_close(in_rel, NoLock);
@@ -359,8 +359,8 @@ compress_chunk_sort_relation(Relation in_rel, int n_keys, const ColumnCompressio
 										  false /*=randomAccess*/);
 
 	heapScan = table_beginscan(in_rel, GetLatestSnapshot(), 0, (ScanKey) NULL);
-	for (tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection); tuple != NULL;
-		 tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection))
+	for (tuple = heap_getnext(heapScan, ForwardScanDirection); tuple != NULL;
+		 tuple = heap_getnext(heapScan, ForwardScanDirection))
 	{
 		if (HeapTupleIsValid(tuple))
 		{
@@ -631,7 +631,7 @@ row_compressor_update_group(RowCompressor *row_compressor, TupleTableSlot *row)
 		Assert(column->compressor == NULL);
 
 		MemoryContextSwitchTo(row_compressor->per_row_ctx->parent);
-		val = slot_getattr(row, AttrOffsetGetAttrNumber(col), &is_null);
+		val = tableam_tslot_getattr(row, AttrOffsetGetAttrNumber(col), &is_null);
 		segment_info_update(column->segment_info, val, is_null);
 		MemoryContextSwitchTo(row_compressor->per_row_ctx);
 	}
@@ -652,7 +652,7 @@ row_compressor_new_row_is_in_new_group(RowCompressor *row_compressor, TupleTable
 
 		Assert(column->compressor == NULL);
 
-		datum = slot_getattr(row, AttrOffsetGetAttrNumber(col), &is_null);
+		datum = tableam_tslot_getattr(row, AttrOffsetGetAttrNumber(col), &is_null);
 
 		if (!segment_info_datum_is_in_group(column->segment_info, datum, is_null))
 			return true;
@@ -675,7 +675,7 @@ row_compressor_append_row(RowCompressor *row_compressor, TupleTableSlot *row)
 		if (compressor == NULL)
 			continue;
 
-		val = slot_getattr(row, AttrOffsetGetAttrNumber(col), &is_null);
+		val = tableam_tslot_getattr(row, AttrOffsetGetAttrNumber(col), &is_null);
 		if (is_null)
 		{
 			compressor->append_null(compressor);
@@ -1014,9 +1014,9 @@ decompress_chunk(Oid in_table, Oid out_table)
 			AllocSetContextCreate(CurrentMemoryContext,
 								  "decompress chunk per-compressed row",
 								  ALLOCSET_DEFAULT_SIZES);
-		for (compressed_tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection);
+		for (compressed_tuple = heap_getnext(heapScan, ForwardScanDirection);
 			 compressed_tuple != NULL;
-			 compressed_tuple = heap_getnext((TableScanDescData *)heapScan, ForwardScanDirection))
+			 compressed_tuple = heap_getnext(heapScan, ForwardScanDirection))
 		{
 			MemoryContext old_ctx;
 
@@ -1041,7 +1041,6 @@ decompress_chunk(Oid in_table, Oid out_table)
 
 	/* Recreate all indexes on out rel, we already have an exclusive lock on it,
 	 * so the strong locks taken by reindex_relation shouldn't matter. */
-	reindex_relation(out_table, 0, 0);
 
 	table_close(out_rel, NoLock);
 	table_close(in_rel, NoLock);

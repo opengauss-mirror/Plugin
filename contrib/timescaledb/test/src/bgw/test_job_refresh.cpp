@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <c.h>
 #include <postgres.h>
 #include <fmgr.h>
 #include <funcapi.h>

@@ -273,7 +273,8 @@ ts_chunk_index_create_post_adjustment(int32 hypertable_id, Relation template_ind
 		flags |= INDEX_CREATE_ADD_CONSTRAINT;
 	if (template_indexrel->rd_index->indisprimary)
 		flags |= INDEX_CREATE_IS_PRIMARY;
-
+	IndexCreateExtraArgs extra;
+	SetIndexCreateExtraArgs(&extra, InvalidOid, false, false);
 	chunk_indexrelid = index_create_compat(chunkrel,
 										   indexname,
 										   InvalidOid,
@@ -290,7 +291,7 @@ ts_chunk_index_create_post_adjustment(int32 hypertable_id, Relation template_ind
 										   0,	  /* constr_flags constant and 0
 													* for now */
 										   false,  /* allow system table mods */
-										   (IndexCreateExtraArgs*)false); /* is internal */
+										   &extra); /* is internal */
 	ReleaseSysCache(tuple);
 
 	return chunk_indexrelid;
@@ -688,8 +689,8 @@ ts_chunk_index_delete(int32 chunk_id, const char *indexname, bool drop_index)
 {
 	ScanKeyData scankey[2];
 	ChunkIndexDeleteData data = {
-		.index_name = "",
-		.schema = "",
+		.index_name = indexname,
+		.schema = NULL,
 		.drop_index = drop_index,
 	};
 
@@ -735,8 +736,8 @@ ts_chunk_index_delete_by_chunk_id(int32 chunk_id, bool drop_index)
 {
 	ScanKeyData scankey[1];
 	ChunkIndexDeleteData data = {
-		.index_name = "",
-		.schema = "",
+		.index_name = NULL,
+		.schema = NULL,
 		.drop_index = drop_index,
 	};
 
@@ -987,7 +988,7 @@ ts_chunk_index_mark_clustered(Oid chunkrelid, Oid indexrelid)
 {
 	Relation rel = table_open(chunkrelid, AccessShareLock);
 
-	mark_index_clustered(rel, indexrelid, true);
+	mark_index_clustered(rel, indexrelid);
 	CommandCounterIncrement();
 	table_close(rel, AccessShareLock);
 }

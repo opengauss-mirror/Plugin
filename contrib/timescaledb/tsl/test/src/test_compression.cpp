@@ -492,7 +492,7 @@ compression_info_from_array(ArrayType *compression_info_arr, Oid form_oid)
 						 &compression_info_arr_meta.typalign);
 
 	compression_info_iter =
-		array_create_iterator(compression_info_arr, 0, &compression_info_arr_meta);
+		array_create_iterator(compression_info_arr, 0);
 
 	while (array_iterate(compression_info_iter, &compression_info_datum, &is_null))
 	{

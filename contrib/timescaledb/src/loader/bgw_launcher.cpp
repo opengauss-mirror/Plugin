@@ -73,7 +73,7 @@ typedef enum SchedulerState
 	 * Scheduler is stopped and should not be started automatically. START and
 	 * RESTART messages can re-enable the scheduler.
 	 */
-	DISABLED
+	DISABLED_Tsdb
 } SchedulerState;
 
 #ifdef TS_DEBUG
@@ -208,7 +208,6 @@ wait_for_background_worker_startup(BackgroundWorkerHandle *handle, pid_t *pidp)
 	 * it. We can't get BGW_NOT_YET_STARTED as that's what we're waiting for.
 	 * We do care if the Postmaster died however.
 	 */
-
 
 	Assert(status == BGW_STOPPED || status == BGW_STARTED);
 	return;
@@ -353,7 +352,7 @@ static void
 populate_database_htab(HTAB *db_htab)
 {
 	Relation rel;
-	TableScanDesc scan;
+	TableScanDescData * scan;
 	HeapTuple tup;
 
 	/*
@@ -365,7 +364,7 @@ populate_database_htab(HTAB *db_htab)
 
 	rel = table_open(DatabaseRelationId, AccessShareLock);
 	scan = table_beginscan_catalog(rel, 0, NULL);
-	while (HeapTupleIsValid(tup = heap_getnext((TableScanDescData *)scan, ForwardScanDirection)))
+	while (HeapTupleIsValid(tup = heap_getnext(scan, ForwardScanDirection)))
 	{
 		Form_pg_database pgdb = (Form_pg_database) GETSTRUCT(tup);
 
@@ -396,7 +395,7 @@ scheduler_modify_state(DbHashEntry *entry, SchedulerState new_state)
 static void
 scheduler_state_trans_disabled_to_enabled(DbHashEntry *entry)
 {
-	Assert(entry->state == DISABLED);
+	Assert(entry->state == DISABLED_Tsdb);
 	Assert(entry->db_scheduler_handle == NULL);
 	scheduler_modify_state(entry, ENABLED);
 }
@@ -455,7 +454,7 @@ scheduler_state_trans_enabled_to_disabled(DbHashEntry *entry)
 {
 	Assert(entry->state == ENABLED);
 	Assert(entry->db_scheduler_handle == NULL);
-	scheduler_modify_state(entry, DISABLED);
+	scheduler_modify_state(entry, DISABLED_Tsdb);
 }
 
 static void
@@ -465,7 +464,7 @@ scheduler_state_trans_allocated_to_disabled(DbHashEntry *entry)
 	Assert(entry->db_scheduler_handle == NULL);
 
 	ts_bgw_total_workers_decrement();
-	scheduler_modify_state(entry, DISABLED);
+	scheduler_modify_state(entry, DISABLED_Tsdb);
 }
 
 static void
@@ -480,7 +479,7 @@ scheduler_state_trans_started_to_disabled(DbHashEntry *entry)
 		pfree(entry->db_scheduler_handle);
 		entry->db_scheduler_handle = NULL;
 	}
-	scheduler_modify_state(entry, DISABLED);
+	scheduler_modify_state(entry, DISABLED_Tsdb);
 }
 
 static void
@@ -500,7 +499,7 @@ scheduler_state_trans_automatic(DbHashEntry *entry)
 			if (get_background_worker_pid(entry->db_scheduler_handle, NULL) == BGW_STOPPED)
 				scheduler_state_trans_started_to_disabled(entry);
 			break;
-		case DISABLED:
+		case DISABLED_Tsdb:
 			break;
 	}
 }
@@ -574,7 +573,7 @@ message_start_action(HTAB *db_htab, BgwMessage *message)
 
 	entry = db_hash_entry_create_if_not_exists(db_htab, message->db_oid);
 
-	if (entry->state == DISABLED)
+	if (entry->state == DISABLED_Tsdb)
 		scheduler_state_trans_disabled_to_enabled(entry);
 
 	scheduler_state_trans_automatic(entry);
@@ -589,7 +588,7 @@ message_stop_action(HTAB *db_htab, BgwMessage *message)
 
 	/*
 	 * If the entry does not exist try to create it so we can put it in the
-	 * DISABLED state. Otherwise, it will be created during the next poll and
+	 * DISABLED_Tsdb state. Otherwise, it will be created during the next poll and
 	 * then will end up in the ENABLED state and proceed to being STARTED. But
 	 * this is not the behavior we want.
 	 */
@@ -608,15 +607,15 @@ message_stop_action(HTAB *db_htab, BgwMessage *message)
 			wait_for_background_worker_shutdown(entry->db_scheduler_handle);
 			scheduler_state_trans_started_to_disabled(entry);
 			break;
-		case DISABLED:
+		case DISABLED_Tsdb:
 			break;
 	}
-	return entry->state == DISABLED ? ACK_SUCCESS : ACK_FAILURE;
+	return entry->state == DISABLED_Tsdb ? ACK_SUCCESS : ACK_FAILURE;
 }
 
 /*
  * This function will stop and restart a scheduler in the STARTED state,  ENABLE
- * a scheduler if it does not exist or is in the DISABLED state and set the vxid
+ * a scheduler if it does not exist or is in the DISABLED_Tsdb state and set the vxid
  * to wait on for a scheduler in any state. It is not idempotent. Additionally,
  * one might think that this function would simply be a combination of stop and
  * start above, but it is not as we maintain the worker's "slot" by never
@@ -647,7 +646,7 @@ message_restart_action(HTAB *db_htab, BgwMessage *message, VirtualTransactionId 
 			wait_for_background_worker_shutdown(entry->db_scheduler_handle);
 			scheduler_state_trans_started_to_allocated(entry);
 			break;
-		case DISABLED:
+		case DISABLED_Tsdb:
 			scheduler_state_trans_disabled_to_enabled(entry);
 	}
 
@@ -874,7 +873,7 @@ process_settings(Oid databaseid)
 	snapshot = RegisterSnapshot(GetCatalogSnapshot());
 
 	/* Later settings are ignored if set earlier. */
-	ApplySetting(snapshot, databaseid, InvalidOid, relsetting, PGC_S_DATABASE);
+	ApplySetting(databaseid, InvalidOid, relsetting, PGC_S_DATABASE);
 
 	UnregisterSnapshot(snapshot);
 	heap_close(relsetting, AccessShareLock);

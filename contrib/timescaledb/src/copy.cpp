@@ -628,10 +628,10 @@ timescaledb_DoCopy(const CopyStmt *stmt, const char *queryString, uint64 *proces
 	if (!pipe && !superuser())
 	{
 		ereport(ERROR,
-				(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
-					errmsg("must be superuser to COPY to or from a file"),
-					errhint("Anyone can COPY to stdout or from stdin. "
-							"psql's \\copy command also works for anyone.")));
+					(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
+						errmsg("must be superuser to COPY to or from a file"),
+						errhint("Anyone can COPY to stdout or from stdin. "
+								"psql's \\copy command also works for anyone.")));
 	}
 
 	if (!stmt->is_from || NULL == stmt->relation)
@@ -653,8 +653,11 @@ timescaledb_DoCopy(const CopyStmt *stmt, const char *queryString, uint64 *proces
 	pstate->p_sourcetext = queryString;
 	copy_constraints_and_check(pstate, rel, attnums);
 
-#if PG96
+#ifdef OG30
 	cstate = BeginCopyFrom(rel, stmt->filename, stmt->attlist, stmt->options, NULL, NULL);
+#else
+#if PG96
+	cstate = BeginCopyFrom(rel, stmt->filename, stmt->is_program, stmt->attlist, stmt->options);
 #else
 	cstate = BeginCopyFrom(pstate,
 						   rel,
@@ -665,6 +668,7 @@ timescaledb_DoCopy(const CopyStmt *stmt, const char *queryString, uint64 *proces
 						   stmt->options);
 #endif
 
+#endif
 #if PG12_GE
 	if (stmt->whereClause)
 	{
@@ -696,7 +700,7 @@ next_copy_from_table_to_chunks(CopyChunkState *ccstate, ExprContext *econtext, D
 	HeapTuple tuple;
 
 	Assert(scandesc != NULL);
-	tuple = heap_getnext((TableScanDescData *)scandesc, ForwardScanDirection);
+	tuple = heap_getnext(scandesc, ForwardScanDirection);
 
 	if (!HeapTupleIsValid(tuple))
 		return false;
@@ -723,7 +727,7 @@ timescaledb_move_from_table_to_chunks(Hypertable *ht, LOCKMODE lockmode)
 	List *attnums = NIL;
 
 	RangeVar rv = {
-		.type = {},
+		.type = T_RangeVar,
 		.catalogname = NULL,
 		.schemaname = NameStr(ht->fd.schema_name),
 		.relname = NameStr(ht->fd.table_name),
@@ -757,7 +761,7 @@ timescaledb_move_from_table_to_chunks(Hypertable *ht, LOCKMODE lockmode)
 	scandesc = table_beginscan(rel, snapshot, 0, NULL);
 	ccstate = copy_chunk_state_create(ht, rel, next_copy_from_table_to_chunks, NULL, scandesc);
 	copyfrom(ccstate, pstate->p_rtable, ht);
-	heap_endscan(scandesc);
+	heap_endscan((TableScanDescData*)scandesc);
 	UnregisterSnapshot(snapshot);
 	table_close(rel, lockmode);
 

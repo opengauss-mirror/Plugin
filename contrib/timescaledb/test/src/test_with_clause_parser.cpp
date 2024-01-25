@@ -58,7 +58,7 @@ def_elems_from_array(ArrayType *with_clause_array)
 						 &with_clause_meta.typlen,
 						 &with_clause_meta.typbyval,
 						 &with_clause_meta.typalign);
-	with_clause_iter = array_create_iterator(with_clause_array, 1, &with_clause_meta);
+	with_clause_iter = array_create_iterator(with_clause_array, 1);
 
 	while (array_iterate(with_clause_iter, &with_clause_datum, &with_clause_null))
 	{

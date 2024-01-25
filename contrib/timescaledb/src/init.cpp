@@ -95,14 +95,8 @@ _PG_init(void)
 	_process_utility_init();
 	_guc_init();
 	_conn_plain_init();
+	_event_trigger_init();
 	}	
-	//
-
-	
-
-	
-	
-
 }
 
 void
@@ -137,3 +131,6 @@ ts_post_load_init(PG_FUNCTION_ARGS)
 
 	PG_RETURN_VOID();
 }
+
+
+

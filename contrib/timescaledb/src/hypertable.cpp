@@ -372,7 +372,7 @@ hypertable_scan_limit_internal(ScanKeyData *scankey, int num_scankeys, int index
 		.index = catalog_get_index(catalog, HYPERTABLE, indexid),
 		.scankey = scankey,
 		.nkeys = num_scankeys,
-		.norderbys = 0,
+		.norderbys = NULL,
 		.limit = limit,
 		.want_itup = false,
 		.lockmode = lock,
@@ -585,7 +585,8 @@ ts_hypertable_create_trigger(Hypertable *ht, CreateTrigStmt *stmt, const char *q
 	/* create the trigger on the root table */
 	/* ACL permissions checks happen within this call */
 	root_trigger_addr =
-		CreateTriggerCompat(stmt, query, InvalidOid, InvalidOid, InvalidOid, InvalidOid, false,0);
+		CreateTriggerCompat(stmt, query, InvalidOid, InvalidOid, InvalidOid, InvalidOid, false);
+
 
 	/* and forward it to the chunks */
 	CommandCounterIncrement();
@@ -1246,7 +1247,7 @@ static bool
 relation_has_tuples(Relation rel)
 {
 	TableScanDesc scandesc = table_beginscan(rel, GetActiveSnapshot(), 0, NULL);
-	bool hastuples = HeapTupleIsValid(heap_getnext((TableScanDescData *)scandesc, ForwardScanDirection));
+	bool hastuples = HeapTupleIsValid(heap_getnext(scandesc, ForwardScanDirection));
 
 	heap_endscan(scandesc);
 	return hastuples;
@@ -1514,7 +1515,10 @@ insert_blocker_trigger_add(Oid relid)
 	 * the hypertable. This call will error out if a trigger with the same
 	 * name already exists. (This is the desired behavior.)
 	 */
-	objaddr = CreateTriggerCompat(&stmt, NULL, relid, InvalidOid, InvalidOid, InvalidOid, false,0);
+	objaddr = CreateTriggerCompat(&stmt, NULL, relid, InvalidOid, InvalidOid, InvalidOid, false);
+
+	if (!OidIsValid(objaddr.objectId))
+		elog(ERROR, "could not create insert blocker trigger");
 
 	return objaddr.objectId;
 }

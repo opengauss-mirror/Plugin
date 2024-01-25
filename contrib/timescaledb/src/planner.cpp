@@ -73,10 +73,12 @@ void _planner_init(void);
 void _planner_fini(void);
 
 static planner_hook_type prev_planner_hook;
-static planner_hook_type_tsdb prev_planner_hook_tsdb;
 static set_rel_pathlist_hook_type prev_set_rel_pathlist_hook;
 static get_relation_info_hook_type prev_get_relation_info_hook;
 static create_upper_paths_hook_type prev_create_upper_paths_hook;
+
+static for_tsdb_hook_type prev_for_tsdb_hook;
+
 static bool contain_param(Node *node);
 static void cagg_reorder_groupby_clause(RangeTblEntry *subq_rte, int rtno, List *outer_sortcl,
 										List *outer_tlist);
@@ -125,6 +127,7 @@ rte_is_marked_for_expansion(const RangeTblEntry *rte)
  * holds the objects it was warmed with. Since the planner can be invoked
  * recursively, we also need to stack and pop cache objects.
  */
+
 
 static Cache *
 planner_hcache_push(void)
@@ -288,11 +291,15 @@ timescaledb_planner(Query *parse, int cursor_opts, ParamListInfo bound_params)
 
 		if (prev_planner_hook != NULL)
 			/* Call any earlier hooks */
-			stmt =(prev_planner_hook_tsdb)(parse, cursor_opts, bound_params);
-		else
+			stmt =(prev_planner_hook)(parse, cursor_opts, bound_params);
+		else{
+			if ((IS_PGXC_COORDINATOR || IS_SINGLE_NODE) && !IsConnFromCoord())
+        	stmt = pgxc_planner(parse, cursor_opts, bound_params);
+			
+			else
 			/* Call the standard planner */
 			stmt = standard_planner(parse, cursor_opts, bound_params);
-
+		}
 		if (ts_extension_is_loaded())
 		{
 			/*
@@ -700,25 +707,6 @@ apply_optimizations(PlannerInfo *root, TsRelType reltype, RelOptInfo *rel, Range
 					break;
 			}
 		}
-
-		foreach (lc, rel->partial_pathlist)
-		{
-			Path **pathptr = (Path **) &lfirst(lc);
-
-			switch (nodeTag(*pathptr))
-			{
-				case T_AppendPath:
-				case T_MergeAppendPath:
-					if (should_chunk_append(root, rel, *pathptr, false, 0))
-						*pathptr =
-							ts_chunk_append_path_create(root, rel, ht, *pathptr, true, false, NIL);
-					else if (ts_constraint_aware_append_possible(*pathptr))
-						*pathptr = ts_constraint_aware_append_path_create(root, ht, *pathptr);
-					break;
-				default:
-					break;
-			}
-		}
 	}
 }
 
@@ -986,6 +974,79 @@ replace_hypertable_insert_paths(PlannerInfo *root, List *pathlist)
 	return new_pathlist;
 }
 
+static List *
+replace_hypertable_insert_paths_forog(PlannerInfo *root,RelOptInfo *rel,
+						CmdType operation, bool canSetTag,
+						Index nominalRelation,
+						List *resultRelations, List *subpaths,
+						List *withCheckOptionLists, List *returningLists,
+						List *rowMarks, int epqParam,List *tlist)
+{
+	if (NULL == planner_hcaches){
+		return NIL;
+	}
+	List *new_pathlist = NIL;
+	ListCell *lc;
+
+	Path *modifytable_path = NULL;
+	List *pathlist = NIL;
+	Oid table_relid;
+
+	ListCell *rta;
+	foreach(rta,root->parse->rtable)
+	{
+		RangeTblEntry* temp = (RangeTblEntry*) lfirst(rta);
+		table_relid = temp->relid;
+		break;
+	}
+	if(!ts_extension_is_loaded() || !ts_is_hypertable(table_relid))
+	return NIL;
+
+	root->processed_tlist = tlist;
+    modifytable_path  =(Path *) create_modifytable_path(root, rel,
+										operation,
+										canSetTag,
+										nominalRelation,
+										resultRelations,
+										subpaths,
+										list_make1(root),
+										NIL,
+										returningLists,
+										rowMarks,
+										epqParam
+										);
+	pathlist= lappend(pathlist,modifytable_path);
+
+	foreach (lc, pathlist)
+	{
+		Path *path =(Path *) lfirst(lc);
+
+		if (IsA(path, ModifyTablePath) && ((ModifyTablePath *) path)->operation == CMD_INSERT)
+		{
+			ModifyTablePath *mt = (ModifyTablePath *) path;
+			RangeTblEntry *rte = planner_rt_fetch(linitial_int(mt->resultRelations), root);
+			Hypertable *ht = get_hypertable(rte->relid, CACHE_FLAG_CHECK);
+
+			if (NULL != ht)
+				path = ts_hypertable_insert_path_create(root, mt);
+		}
+		#ifdef OG30
+		ExtensiblePath *path1 =(ExtensiblePath *) path;
+		ModifyTablePath *path2;
+		ListCell *l1;
+		foreach(l1,path1->extensible_paths){
+			path2 = (ModifyTablePath *) lfirst(l1);
+			break;
+		}
+		path1->extensible_paths = path2->subpaths;
+		path = (Path*)path1;
+		#endif
+		new_pathlist = lappend(new_pathlist, path);
+	}
+
+	return new_pathlist;
+}
+
 static void
 #if PG11_LT
 timescale_create_upper_paths_hook(PlannerInfo *root, UpperRelationKind stage, RelOptInfo *input_rel,
@@ -1174,13 +1235,12 @@ cagg_reorder_groupby_clause(RangeTblEntry *subq_rte, int rtno, List *outer_sortc
 		}
 	}
 }
-PGDLLIMPORT planner_hook_type_tsdb planner_hook;
 PGDLLIMPORT create_upper_paths_hook_type create_upper_paths_hook;  
 void
 _planner_init(void)
 {
-	prev_planner_hook_tsdb = planner_hook;
-	planner_hook = timescaledb_planner;
+	prev_planner_hook =(planner_hook_type) u_sess->hook_cxt.pluginPlannerHook;
+	u_sess->hook_cxt.pluginPlannerHook =(void*) timescaledb_planner;
 	prev_set_rel_pathlist_hook = set_rel_pathlist_hook;
 	set_rel_pathlist_hook = timescaledb_set_rel_pathlist;
 
@@ -1189,13 +1249,20 @@ _planner_init(void)
 
 	prev_create_upper_paths_hook = create_upper_paths_hook;
 	create_upper_paths_hook = timescale_create_upper_paths_hook;
+
+	//for openguass
+	prev_for_tsdb_hook = *(for_tsdb_hook_type)u_sess->hook_cxt.forTsdbHook;
+	u_sess->hook_cxt.forTsdbHook = (void*)replace_hypertable_insert_paths_forog;
 }
 
 void
 _planner_fini(void)
 {
-	planner_hook = prev_planner_hook_tsdb;
+	u_sess->hook_cxt.pluginPlannerHook =(void*) prev_planner_hook;
 	set_rel_pathlist_hook = prev_set_rel_pathlist_hook;
 	get_relation_info_hook = prev_get_relation_info_hook;
 	create_upper_paths_hook = prev_create_upper_paths_hook;
+
+	//for openguass
+	u_sess->hook_cxt.forTsdbHook = (void*)prev_for_tsdb_hook;
 }

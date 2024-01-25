@@ -348,22 +348,19 @@ get_default_confl_tupdesc(ChunkInsertState *state, ChunkDispatch *dispatch)
 static TupleTableSlot *
 get_default_confl_slot(ChunkInsertState *state, ChunkDispatch *dispatch)
 {
-	TupleTableSlot* a;
-	return a;
+	return dispatch->dispatch_state->upsertState->us_updateproj;
 }
 
 static TupleTableSlot *
 get_confl_slot(ChunkInsertState *state, ChunkDispatch *dispatch, TupleDesc projtupdesc)
 {
-	TupleTableSlot* a;
-	return a;
+	return dispatch->dispatch_state->upsertState->us_updateproj;
 }
 
 static TupleTableSlot *
 get_default_existing_slot(ChunkInsertState *state, ChunkDispatch *dispatch)
 {
-	TupleTableSlot* a;
-	return a;
+	return dispatch->dispatch_state->upsertState->us_existing;
 }
 #endif /* PG12_GE */
 

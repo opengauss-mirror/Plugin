@@ -27,6 +27,8 @@
 #include "hypercube.h"
 #include "utils.h"
 
+#include "access/tableam.h"
+
 #define DEFAULT_CHUNK_SIZING_FN_NAME "calculate_chunk_interval"
 
 /* This can be set to a positive number (and non-zero) value from tests to
@@ -150,7 +152,7 @@ minmax_heapscan(Relation rel, Oid atttype, AttrNumber attnum, Datum minmax[2])
 	while (table_scan_getnextslot(scan, ForwardScanDirection, slot))
 	{
 		bool isnull;
-		Datum value = slot_getattr(slot, attnum, &isnull);
+		Datum value = tableam_tslot_getattr(slot, attnum, &isnull);
 
 		if (isnull)
 			continue;
@@ -199,7 +201,7 @@ minmax_indexscan(Relation rel, Relation idxrel, AttrNumber attnum, Datum minmax[
 		if (!found_tuple)
 			break;
 
-		minmax[i] = slot_getattr(slot, attnum, &isnull);
+		minmax[i] = tableam_tslot_getattr(slot, attnum, &isnull);
 		nulls[i] = isnull;
 	}
 
@@ -626,8 +628,9 @@ ts_chunk_sizing_func_validate(regproc func, ChunkSizingInfo *info)
 	if (form->pronargs != CHUNK_SIZING_FUNC_NARGS || typearr[0] != INT4OID ||
 		typearr[1] != INT8OID || typearr[2] != INT8OID || form->prorettype != INT8OID)
 	{
-		ReleaseSysCache(tuple);
+		
 		#ifndef OG30
+		ReleaseSysCache(tuple);
 		ereport(ERROR,
 				(errcode(ERRCODE_INVALID_FUNCTION_DEFINITION),
 				 errmsg("invalid function signature"),
@@ -831,7 +834,6 @@ ts_chunk_sizing_info_get_default_disabled(Oid table_relid)
 		.table_relid = table_relid,
 		.func = get_default_chunk_sizing_fn_oid(),
 		.target_size = NULL,
-		
 		.colname = NULL,
 		.check_for_index = false,
 	};
