@@ -1,0 +1,11 @@
+create schema table_option_separator;
+set current_schema = table_option_separator;
+create table t1(a int) engine=innodb encryption='n';
+alter table t1 min_rows=1 max_rows=2;
+create table t2(a int) engine=innodb,encryption='n';
+alter table t2 min_rows=1,max_rows=2;
+alter table t1 min_rows=1,max_rows=2;
+drop table t1;
+drop table t2;
+reset current_schema;
+drop schema table_option_separator;
