@@ -84,6 +84,7 @@
 #include "plugin_protocol/startup.h"
 #ifdef DOLPHIN
 #include "plugin_utils/my_locale.h"
+#include "plugin_executor/functions.h"
 #endif
 #ifndef WIN32_ONLY_COMPILER
 #include "dynloader.h"
@@ -310,6 +311,7 @@ void init_plugin_object()
     u_sess->hook_cxt.plpgsqlParserSetHook = (void*)b_plpgsql_parser_setup;
     u_sess->hook_cxt.coreYYlexHook = (void*)core_yylex;
     u_sess->hook_cxt.getTypeZeroValueHook = (void*)DolphinGetTypeZeroValue;
+    u_sess->hook_cxt.checkSqlFnRetvalHook = (void*)check_sql_fn_retval;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&

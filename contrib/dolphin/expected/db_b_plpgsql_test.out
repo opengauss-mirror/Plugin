@@ -109,6 +109,35 @@ select @i;
   0
 (1 row)
 
+set dolphin.b_compatibility_mode to on;
+create table t1(c1 varchar(20));
+DO $$ 
+DECLARE
+   hs_sql text;
+BEGIN
+   
+   SELECT 'ALTER TABLE t1 MODIFY COLUMN c1 varchar(40) DEFAULT ''b'' NOT NULL;'
+    INTO hs_sql
+   FROM dual
+   WHERE (
+     SELECT COUNT(1)
+     FROM information_schema.columns
+     WHERE 
+      table_name = 't1'
+     AND column_name = 'c1'
+	 AND DATA_TYPE = 'character varying'
+     AND replace(COLUMN_DEFAULT,'::character varying','') = 'b'
+     AND character_maximum_length=40
+     AND IS_NULLABLE='NO'
+    ) = 0;
+    
+   if hs_sql is not null then 
+     RAISE NOTICE '执行SQL：%', hs_sql;
+     EXECUTE hs_sql;
+   end if; 
+END $$;
+NOTICE:  执行SQL：ALTER TABLE t1 MODIFY COLUMN c1 varchar(40) DEFAULT 'b' NOT NULL;
+drop table t1;
 reset enable_set_variable_b_format;
 drop schema db_b_plpgsql_test cascade;
 NOTICE:  drop cascades to 5 other objects
