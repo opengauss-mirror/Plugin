@@ -37,9 +37,9 @@
 #include "funcapi.h"
 #include "libpq/pqformat.h"
 #include "utils/builtins.h"
-#include "utils/int16.h"
 #include "utils/int8.h"
 #include "utils/numeric.h"
+#include "plugin_utils/int16.h"
 #ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
 #endif
@@ -89,7 +89,11 @@ static inline bool check_trailing_symbol(unsigned char ptr)
     return ptr != '\0' && isspace(ptr);
 }
 
+#ifdef DOLPHIN
+bool scanint16(const char* str, bool errorOK, int128* result, bool* hasError)
+#else
 bool scanint16(const char* str, bool errorOK, int128* result)
+#endif
 {
     const char* ptr = str;
     int128 tmp = 0;
@@ -136,6 +140,9 @@ bool scanint16(const char* str, bool errorOK, int128* result)
                         errcause("invalid input."),
                         erraction("use numeric for large integer value.")));
             *result = neg ? PG_INT128_MIN : PG_INT128_MAX;
+            if (hasError) {
+                *hasError = true;
+            }
             return true;
 #else
             if (errorOK) {
@@ -165,6 +172,9 @@ bool scanint16(const char* str, bool errorOK, int128* result)
                 errdetail("text contain invalid character"),
                 errcause("invalid input."),
                 erraction("check the validity of input.")));
+        if (hasError) {
+            *hasError = true;
+        }
 
 #else
         if (errorOK) {
@@ -193,6 +203,9 @@ bool scanint16(const char* str, bool errorOK, int128* result)
                         errcause("invalid input."),
                         erraction("use numeric for large integer value.")));
             tmp = -(tmp + 1);
+            if (hasError) {
+                *hasError = true;
+            }
         } else {
             tmp = -tmp;
         }

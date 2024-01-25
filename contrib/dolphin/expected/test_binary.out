@@ -939,12 +939,16 @@ WARNING:  Data truncated for input data: "1234"
 
 -- binary to bigint
 select (20220101)::binary(30)::bigint;
+WARNING:  Data truncated for input data: "20220101"
+CONTEXT:  referenced column: int8
    int8   
 ----------
  20220101
 (1 row)
 
 select (-2075)::binary(30)::bigint;
+WARNING:  Data truncated for input data: "-2075"
+CONTEXT:  referenced column: int8
  int8  
 -------
  -2075

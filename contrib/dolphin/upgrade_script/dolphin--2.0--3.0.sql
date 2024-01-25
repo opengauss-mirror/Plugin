@@ -1104,6 +1104,21 @@ CREATE OR REPLACE FUNCTION pg_catalog.ln(json)
 RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
 'select pg_catalog.ln(cast($1 as double precision))';
 
+DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int1(anyelement) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_int1 (
+anyelement
+) RETURNS int1 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'varlena_cast_int1';
+
+DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int2(anyelement) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_int2 (
+anyelement
+) RETURNS int2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'varlena_cast_int2';
+
+DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int4(anyelement) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_int4 (
+anyelement
+) RETURNS int4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'varlena_cast_int4';
+
 CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(boolean, TEXT) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.str_to_date(cast($1 as TEXT), $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(longblob, TEXT) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.str_to_date(cast($1 as TEXT), $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.str_to_date(anyenum, TEXT) RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.str_to_date(cast($1 as TEXT), $2)';

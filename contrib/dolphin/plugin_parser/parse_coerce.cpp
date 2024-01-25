@@ -3585,7 +3585,14 @@ bool IsEquivalentEnums(Oid enumOid1, Oid enumOid2)
 
 void TryFindSpecifiedCastFunction(const Oid sourceTypeId, const Oid targetTypeId, Oid defaultFuncId, Oid* funcId)
 {
-    if (sourceTypeId == TEXTOID && targetTypeId == TIMEOID) {
+    bool sourceIsVarlena = ENABLE_B_CMPT_MODE && findSignedFunctionIdx(sourceTypeId) == S_VARLENA;
+    if (sourceIsVarlena && targetTypeId == INT1OID) {
+        *funcId = get_func_oid("varlena_cast_int1", PG_CATALOG_NAMESPACE, NULL);
+    } else if (sourceIsVarlena && targetTypeId == INT2OID) {
+        *funcId = get_func_oid("varlena_cast_int2", PG_CATALOG_NAMESPACE, NULL);
+    } else if (sourceIsVarlena && targetTypeId == INT4OID) {
+        *funcId = get_func_oid("varlena_cast_int4", PG_CATALOG_NAMESPACE, NULL);
+    } else if (sourceTypeId == TEXTOID && targetTypeId == TIMEOID) {
         *funcId = get_func_oid("text_time_explicit", PG_CATALOG_NAMESPACE, NULL);
     } else if (ENABLE_B_CMPT_MODE && targetTypeId == INT8OID) {
         *funcId = findSignedExplicitCastFunction(sourceTypeId, defaultFuncId);

@@ -5201,6 +5201,33 @@ Datum varlena_cast_ui8(PG_FUNCTION_ARGS)
     return DirectFunctionCall1Coll(f8_cast_ui8, InvalidOid, val, fcinfo->can_ignore);
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_int1);
+extern "C" DLL_PUBLIC Datum varlena_cast_int1(PG_FUNCTION_ARGS);
+Datum varlena_cast_int1(PG_FUNCTION_ARGS)
+{
+    fcinfo->ccontext = COERCION_EXPLICIT;
+    Datum val = Varlena2Float8(fcinfo);
+    PG_RETURN_INT8(DirectFunctionCall1Coll(f8toi1, InvalidOid, val, fcinfo->can_ignore));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_int2);
+extern "C" DLL_PUBLIC Datum varlena_cast_int2(PG_FUNCTION_ARGS);
+Datum varlena_cast_int2(PG_FUNCTION_ARGS)
+{
+    fcinfo->ccontext = COERCION_EXPLICIT;
+    Datum val = Varlena2Float8(fcinfo);
+    PG_RETURN_INT16(DirectFunctionCall1Coll(dtoi2, InvalidOid, val, fcinfo->can_ignore));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_int4);
+extern "C" DLL_PUBLIC Datum varlena_cast_int4(PG_FUNCTION_ARGS);
+Datum varlena_cast_int4(PG_FUNCTION_ARGS)
+{
+    fcinfo->ccontext = COERCION_EXPLICIT;
+    Datum val = Varlena2Float8(fcinfo);
+    PG_RETURN_INT32(DirectFunctionCall1Coll(dtoi4, InvalidOid, val, fcinfo->can_ignore));
+}
+
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_float4not);
 extern "C" DLL_PUBLIC Datum dolphin_float4not(PG_FUNCTION_ARGS);
 Datum dolphin_float4not(PG_FUNCTION_ARGS)
