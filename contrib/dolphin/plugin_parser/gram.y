@@ -34760,7 +34760,7 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
-			| CURRENT_ROLE
+			| CURRENT_ROLE opt_bracket
 				{
 					FuncCall *n = makeNode(FuncCall);
 					n->funcname = SystemFuncName("current_user");

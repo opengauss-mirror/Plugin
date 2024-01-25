@@ -1,0 +1,16 @@
+create schema test_current_role;
+set current_schema to 'test_current_role';
+select current_role;
+ current_user 
+--------------
+--?.*
+(1 row)
+
+select current_role();
+ current_user 
+--------------
+--?.*
+(1 row)
+
+drop schema test_current_role cascade;
+reset current_schema;
