@@ -1393,35 +1393,35 @@ show columns from test_numeric_type_normal;
  int1+int1       | integer          | YES  |     | NULL    | 
  int1-int1       | integer          | YES  |     | NULL    | 
  int1*int1       | integer          | YES  |     | NULL    | 
- int1/int1       | numeric          | YES  |     | NULL    | 
+ int1/int1       | number           | YES  |     | NULL    | 
  int1+uint1      | uint4            | YES  |     | NULL    | 
  int1-uint1      | uint4            | YES  |     | NULL    | 
  int1*uint1      | uint4            | YES  |     | NULL    | 
- int1/uint1      | numeric          | YES  |     | NULL    | 
+ int1/uint1      | number           | YES  |     | NULL    | 
  int1+int2       | integer          | YES  |     | NULL    | 
  int1-int2       | integer          | YES  |     | NULL    | 
  int1*int2       | integer          | YES  |     | NULL    | 
- int1/int2       | numeric          | YES  |     | NULL    | 
+ int1/int2       | number           | YES  |     | NULL    | 
  int1+uint2      | uint4            | YES  |     | NULL    | 
  int1-uint2      | uint4            | YES  |     | NULL    | 
  int1*uint2      | uint4            | YES  |     | NULL    | 
- int1/uint2      | numeric          | YES  |     | NULL    | 
+ int1/uint2      | number           | YES  |     | NULL    | 
  int1+int4       | bigint           | YES  |     | NULL    | 
  int1-int4       | bigint           | YES  |     | NULL    | 
  int1*int4       | bigint           | YES  |     | NULL    | 
- int1/int4       | numeric          | YES  |     | NULL    | 
+ int1/int4       | number           | YES  |     | NULL    | 
  int1+uint4      | uint8            | YES  |     | NULL    | 
  int1-uint4      | uint8            | YES  |     | NULL    | 
  int1*uint4      | uint8            | YES  |     | NULL    | 
- int1/uint4      | numeric          | YES  |     | NULL    | 
+ int1/uint4      | number           | YES  |     | NULL    | 
  int1+int8       | bigint           | YES  |     | NULL    | 
  int1-int8       | bigint           | YES  |     | NULL    | 
  int1*int8       | bigint           | YES  |     | NULL    | 
- int1/int8       | numeric          | YES  |     | NULL    | 
+ int1/int8       | number           | YES  |     | NULL    | 
  int1+uint8      | uint8            | YES  |     | NULL    | 
  int1-uint8      | uint8            | YES  |     | NULL    | 
  int1*uint8      | uint8            | YES  |     | NULL    | 
- int1/uint8      | numeric          | YES  |     | NULL    | 
+ int1/uint8      | number           | YES  |     | NULL    | 
  int1+float4     | double precision | YES  |     | NULL    | 
  int1-float4     | double precision | YES  |     | NULL    | 
  int1*float4     | double precision | YES  |     | NULL    | 
@@ -1430,50 +1430,50 @@ show columns from test_numeric_type_normal;
  int1-float8     | double precision | YES  |     | NULL    | 
  int1*float8     | double precision | YES  |     | NULL    | 
  int1/float8     | double precision | YES  |     | NULL    | 
- int1+numeric    | numeric          | YES  |     | NULL    | 
- int1-numeric    | numeric          | YES  |     | NULL    | 
- int1*numeric    | numeric          | YES  |     | NULL    | 
- int1/numeric    | numeric          | YES  |     | NULL    | 
+ int1+numeric    | number           | YES  |     | NULL    | 
+ int1-numeric    | number           | YES  |     | NULL    | 
+ int1*numeric    | number           | YES  |     | NULL    | 
+ int1/numeric    | number           | YES  |     | NULL    | 
  int1+bit1       | uint4            | YES  |     | NULL    | 
  int1-bit1       | uint4            | YES  |     | NULL    | 
  int1*bit1       | uint4            | YES  |     | NULL    | 
- int1/bit1       | numeric          | YES  |     | NULL    | 
+ int1/bit1       | number           | YES  |     | NULL    | 
  int1+bit64      | uint8            | YES  |     | NULL    | 
  int1-bit64      | uint8            | YES  |     | NULL    | 
  int1*bit64      | uint8            | YES  |     | NULL    | 
- int1/bit64      | numeric          | YES  |     | NULL    | 
+ int1/bit64      | number           | YES  |     | NULL    | 
  uint1+int1      | uint4            | YES  |     | NULL    | 
  uint1-int1      | uint4            | YES  |     | NULL    | 
  uint1*int1      | uint4            | YES  |     | NULL    | 
- uint1/int1      | numeric          | YES  |     | NULL    | 
+ uint1/int1      | number           | YES  |     | NULL    | 
  uint1+uint1     | uint4            | YES  |     | NULL    | 
  uint1-uint1     | uint4            | YES  |     | NULL    | 
  uint1*uint1     | uint4            | YES  |     | NULL    | 
- uint1/uint1     | numeric          | YES  |     | NULL    | 
+ uint1/uint1     | number           | YES  |     | NULL    | 
  uint1+int2      | uint4            | YES  |     | NULL    | 
  uint1-int2      | uint4            | YES  |     | NULL    | 
  uint1*int2      | uint4            | YES  |     | NULL    | 
- uint1/int2      | numeric          | YES  |     | NULL    | 
+ uint1/int2      | number           | YES  |     | NULL    | 
  uint1+uint2     | uint4            | YES  |     | NULL    | 
  uint1-uint2     | uint4            | YES  |     | NULL    | 
  uint1*uint2     | uint4            | YES  |     | NULL    | 
- uint1/uint2     | numeric          | YES  |     | NULL    | 
+ uint1/uint2     | number           | YES  |     | NULL    | 
  uint1+int4      | uint8            | YES  |     | NULL    | 
  uint1-int4      | uint8            | YES  |     | NULL    | 
  uint1*int4      | uint8            | YES  |     | NULL    | 
- uint1/int4      | numeric          | YES  |     | NULL    | 
+ uint1/int4      | number           | YES  |     | NULL    | 
  uint1+uint4     | uint8            | YES  |     | NULL    | 
  uint1-uint4     | uint8            | YES  |     | NULL    | 
  uint1*uint4     | uint8            | YES  |     | NULL    | 
- uint1/uint4     | numeric          | YES  |     | NULL    | 
+ uint1/uint4     | number           | YES  |     | NULL    | 
  uint1+int8      | uint8            | YES  |     | NULL    | 
  uint1-int8      | uint8            | YES  |     | NULL    | 
  uint1*int8      | uint8            | YES  |     | NULL    | 
- uint1/int8      | numeric          | YES  |     | NULL    | 
+ uint1/int8      | number           | YES  |     | NULL    | 
  uint1+uint8     | uint8            | YES  |     | NULL    | 
  uint1-uint8     | uint8            | YES  |     | NULL    | 
  uint1*uint8     | uint8            | YES  |     | NULL    | 
- uint1/uint8     | numeric          | YES  |     | NULL    | 
+ uint1/uint8     | number           | YES  |     | NULL    | 
  uint1+float4    | double precision | YES  |     | NULL    | 
  uint1-float4    | double precision | YES  |     | NULL    | 
  uint1*float4    | double precision | YES  |     | NULL    | 
@@ -1482,50 +1482,50 @@ show columns from test_numeric_type_normal;
  uint1-float8    | double precision | YES  |     | NULL    | 
  uint1*float8    | double precision | YES  |     | NULL    | 
  uint1/float8    | double precision | YES  |     | NULL    | 
- uint1+numeric   | numeric          | YES  |     | NULL    | 
- uint1-numeric   | numeric          | YES  |     | NULL    | 
- uint1*numeric   | numeric          | YES  |     | NULL    | 
- uint1/numeric   | numeric          | YES  |     | NULL    | 
+ uint1+numeric   | number           | YES  |     | NULL    | 
+ uint1-numeric   | number           | YES  |     | NULL    | 
+ uint1*numeric   | number           | YES  |     | NULL    | 
+ uint1/numeric   | number           | YES  |     | NULL    | 
  uint1+bit1      | uint4            | YES  |     | NULL    | 
  uint1-bit1      | uint4            | YES  |     | NULL    | 
  uint1*bit1      | uint4            | YES  |     | NULL    | 
- uint1/bit1      | numeric          | YES  |     | NULL    | 
+ uint1/bit1      | number           | YES  |     | NULL    | 
  uint1+bit64     | uint8            | YES  |     | NULL    | 
  uint1-bit64     | uint8            | YES  |     | NULL    | 
  uint1*bit64     | uint8            | YES  |     | NULL    | 
- uint1/bit64     | numeric          | YES  |     | NULL    | 
+ uint1/bit64     | number           | YES  |     | NULL    | 
  int2+int1       | integer          | YES  |     | NULL    | 
  int2-int1       | integer          | YES  |     | NULL    | 
  int2*int1       | integer          | YES  |     | NULL    | 
- int2/int1       | numeric          | YES  |     | NULL    | 
+ int2/int1       | number           | YES  |     | NULL    | 
  int2+uint1      | uint4            | YES  |     | NULL    | 
  int2-uint1      | uint4            | YES  |     | NULL    | 
  int2*uint1      | uint4            | YES  |     | NULL    | 
- int2/uint1      | numeric          | YES  |     | NULL    | 
+ int2/uint1      | number           | YES  |     | NULL    | 
  int2+int2       | integer          | YES  |     | NULL    | 
  int2-int2       | integer          | YES  |     | NULL    | 
  int2*int2       | bigint           | YES  |     | NULL    | 
- int2/int2       | numeric          | YES  |     | NULL    | 
+ int2/int2       | number           | YES  |     | NULL    | 
  int2+uint2      | uint4            | YES  |     | NULL    | 
  int2-uint2      | uint4            | YES  |     | NULL    | 
  int2*uint2      | uint8            | YES  |     | NULL    | 
- int2/uint2      | numeric          | YES  |     | NULL    | 
+ int2/uint2      | number           | YES  |     | NULL    | 
  int2+int4       | bigint           | YES  |     | NULL    | 
  int2-int4       | bigint           | YES  |     | NULL    | 
  int2*int4       | bigint           | YES  |     | NULL    | 
- int2/int4       | numeric          | YES  |     | NULL    | 
+ int2/int4       | number           | YES  |     | NULL    | 
  int2+uint4      | uint8            | YES  |     | NULL    | 
  int2-uint4      | uint8            | YES  |     | NULL    | 
  int2*uint4      | uint8            | YES  |     | NULL    | 
- int2/uint4      | numeric          | YES  |     | NULL    | 
+ int2/uint4      | number           | YES  |     | NULL    | 
  int2+int8       | bigint           | YES  |     | NULL    | 
  int2-int8       | bigint           | YES  |     | NULL    | 
  int2*int8       | bigint           | YES  |     | NULL    | 
- int2/int8       | numeric          | YES  |     | NULL    | 
+ int2/int8       | number           | YES  |     | NULL    | 
  int2+uint8      | uint8            | YES  |     | NULL    | 
  int2-uint8      | uint8            | YES  |     | NULL    | 
  int2*uint8      | uint8            | YES  |     | NULL    | 
- int2/uint8      | numeric          | YES  |     | NULL    | 
+ int2/uint8      | number           | YES  |     | NULL    | 
  int2+float4     | double precision | YES  |     | NULL    | 
  int2-float4     | double precision | YES  |     | NULL    | 
  int2*float4     | double precision | YES  |     | NULL    | 
@@ -1534,50 +1534,50 @@ show columns from test_numeric_type_normal;
  int2-float8     | double precision | YES  |     | NULL    | 
  int2*float8     | double precision | YES  |     | NULL    | 
  int2/float8     | double precision | YES  |     | NULL    | 
- int2+numeric    | numeric          | YES  |     | NULL    | 
- int2-numeric    | numeric          | YES  |     | NULL    | 
- int2*numeric    | numeric          | YES  |     | NULL    | 
- int2/numeric    | numeric          | YES  |     | NULL    | 
+ int2+numeric    | number           | YES  |     | NULL    | 
+ int2-numeric    | number           | YES  |     | NULL    | 
+ int2*numeric    | number           | YES  |     | NULL    | 
+ int2/numeric    | number           | YES  |     | NULL    | 
  int2+bit1       | uint4            | YES  |     | NULL    | 
  int2-bit1       | uint4            | YES  |     | NULL    | 
  int2*bit1       | uint4            | YES  |     | NULL    | 
- int2/bit1       | numeric          | YES  |     | NULL    | 
+ int2/bit1       | number           | YES  |     | NULL    | 
  int2+bit64      | uint8            | YES  |     | NULL    | 
  int2-bit64      | uint8            | YES  |     | NULL    | 
  int2*bit64      | uint8            | YES  |     | NULL    | 
- int2/bit64      | numeric          | YES  |     | NULL    | 
+ int2/bit64      | number           | YES  |     | NULL    | 
  uint2+int1      | uint4            | YES  |     | NULL    | 
  uint2-int1      | uint4            | YES  |     | NULL    | 
  uint2*int1      | uint4            | YES  |     | NULL    | 
- uint2/int1      | numeric          | YES  |     | NULL    | 
+ uint2/int1      | number           | YES  |     | NULL    | 
  uint2+uint1     | uint4            | YES  |     | NULL    | 
  uint2-uint1     | uint4            | YES  |     | NULL    | 
  uint2*uint1     | uint4            | YES  |     | NULL    | 
- uint2/uint1     | numeric          | YES  |     | NULL    | 
+ uint2/uint1     | number           | YES  |     | NULL    | 
  uint2+int2      | uint4            | YES  |     | NULL    | 
  uint2-int2      | uint4            | YES  |     | NULL    | 
  uint2*int2      | uint8            | YES  |     | NULL    | 
- uint2/int2      | numeric          | YES  |     | NULL    | 
+ uint2/int2      | number           | YES  |     | NULL    | 
  uint2+uint2     | uint4            | YES  |     | NULL    | 
  uint2-uint2     | uint4            | YES  |     | NULL    | 
  uint2*uint2     | uint8            | YES  |     | NULL    | 
- uint2/uint2     | numeric          | YES  |     | NULL    | 
+ uint2/uint2     | number           | YES  |     | NULL    | 
  uint2+int4      | uint8            | YES  |     | NULL    | 
  uint2-int4      | uint8            | YES  |     | NULL    | 
  uint2*int4      | uint8            | YES  |     | NULL    | 
- uint2/int4      | numeric          | YES  |     | NULL    | 
+ uint2/int4      | number           | YES  |     | NULL    | 
  uint2+uint4     | uint8            | YES  |     | NULL    | 
  uint2-uint4     | uint8            | YES  |     | NULL    | 
  uint2*uint4     | uint8            | YES  |     | NULL    | 
- uint2/uint4     | numeric          | YES  |     | NULL    | 
+ uint2/uint4     | number           | YES  |     | NULL    | 
  uint2+int8      | uint8            | YES  |     | NULL    | 
  uint2-int8      | uint8            | YES  |     | NULL    | 
  uint2*int8      | uint8            | YES  |     | NULL    | 
- uint2/int8      | numeric          | YES  |     | NULL    | 
+ uint2/int8      | number           | YES  |     | NULL    | 
  uint2+uint8     | uint8            | YES  |     | NULL    | 
  uint2-uint8     | uint8            | YES  |     | NULL    | 
  uint2*uint8     | uint8            | YES  |     | NULL    | 
- uint2/uint8     | numeric          | YES  |     | NULL    | 
+ uint2/uint8     | number           | YES  |     | NULL    | 
  uint2+float4    | double precision | YES  |     | NULL    | 
  uint2-float4    | double precision | YES  |     | NULL    | 
  uint2*float4    | double precision | YES  |     | NULL    | 
@@ -1586,50 +1586,50 @@ show columns from test_numeric_type_normal;
  uint2-float8    | double precision | YES  |     | NULL    | 
  uint2*float8    | double precision | YES  |     | NULL    | 
  uint2/float8    | double precision | YES  |     | NULL    | 
- uint2+numeric   | numeric          | YES  |     | NULL    | 
- uint2-numeric   | numeric          | YES  |     | NULL    | 
- uint2*numeric   | numeric          | YES  |     | NULL    | 
- uint2/numeric   | numeric          | YES  |     | NULL    | 
+ uint2+numeric   | number           | YES  |     | NULL    | 
+ uint2-numeric   | number           | YES  |     | NULL    | 
+ uint2*numeric   | number           | YES  |     | NULL    | 
+ uint2/numeric   | number           | YES  |     | NULL    | 
  uint2+bit1      | uint4            | YES  |     | NULL    | 
  uint2-bit1      | uint4            | YES  |     | NULL    | 
  uint2*bit1      | uint4            | YES  |     | NULL    | 
- uint2/bit1      | numeric          | YES  |     | NULL    | 
+ uint2/bit1      | number           | YES  |     | NULL    | 
  uint2+bit64     | uint8            | YES  |     | NULL    | 
  uint2-bit64     | uint8            | YES  |     | NULL    | 
  uint2*bit64     | uint8            | YES  |     | NULL    | 
- uint2/bit64     | numeric          | YES  |     | NULL    | 
+ uint2/bit64     | number           | YES  |     | NULL    | 
  int4+int1       | bigint           | YES  |     | NULL    | 
  int4-int1       | bigint           | YES  |     | NULL    | 
  int4*int1       | bigint           | YES  |     | NULL    | 
- int4/int1       | numeric          | YES  |     | NULL    | 
+ int4/int1       | number           | YES  |     | NULL    | 
  int4+uint1      | uint8            | YES  |     | NULL    | 
  int4-uint1      | uint8            | YES  |     | NULL    | 
  int4*uint1      | uint8            | YES  |     | NULL    | 
- int4/uint1      | numeric          | YES  |     | NULL    | 
+ int4/uint1      | number           | YES  |     | NULL    | 
  int4+int2       | bigint           | YES  |     | NULL    | 
  int4-int2       | bigint           | YES  |     | NULL    | 
  int4*int2       | bigint           | YES  |     | NULL    | 
- int4/int2       | numeric          | YES  |     | NULL    | 
+ int4/int2       | number           | YES  |     | NULL    | 
  int4+uint2      | uint8            | YES  |     | NULL    | 
  int4-uint2      | uint8            | YES  |     | NULL    | 
  int4*uint2      | uint8            | YES  |     | NULL    | 
- int4/uint2      | numeric          | YES  |     | NULL    | 
+ int4/uint2      | number           | YES  |     | NULL    | 
  int4+int4       | bigint           | YES  |     | NULL    | 
  int4-int4       | bigint           | YES  |     | NULL    | 
  int4*int4       | bigint           | YES  |     | NULL    | 
- int4/int4       | numeric          | YES  |     | NULL    | 
+ int4/int4       | number           | YES  |     | NULL    | 
  int4+uint4      | uint8            | YES  |     | NULL    | 
  int4-uint4      | uint8            | YES  |     | NULL    | 
  int4*uint4      | uint8            | YES  |     | NULL    | 
- int4/uint4      | numeric          | YES  |     | NULL    | 
+ int4/uint4      | number           | YES  |     | NULL    | 
  int4+int8       | bigint           | YES  |     | NULL    | 
  int4-int8       | bigint           | YES  |     | NULL    | 
  int4*int8       | bigint           | YES  |     | NULL    | 
- int4/int8       | numeric          | YES  |     | NULL    | 
+ int4/int8       | number           | YES  |     | NULL    | 
  int4+uint8      | uint8            | YES  |     | NULL    | 
  int4-uint8      | uint8            | YES  |     | NULL    | 
  int4*uint8      | uint8            | YES  |     | NULL    | 
- int4/uint8      | numeric          | YES  |     | NULL    | 
+ int4/uint8      | number           | YES  |     | NULL    | 
  int4+float4     | double precision | YES  |     | NULL    | 
  int4-float4     | double precision | YES  |     | NULL    | 
  int4*float4     | double precision | YES  |     | NULL    | 
@@ -1638,50 +1638,50 @@ show columns from test_numeric_type_normal;
  int4-float8     | double precision | YES  |     | NULL    | 
  int4*float8     | double precision | YES  |     | NULL    | 
  int4/float8     | double precision | YES  |     | NULL    | 
- int4+numeric    | numeric          | YES  |     | NULL    | 
- int4-numeric    | numeric          | YES  |     | NULL    | 
- int4*numeric    | numeric          | YES  |     | NULL    | 
- int4/numeric    | numeric          | YES  |     | NULL    | 
+ int4+numeric    | number           | YES  |     | NULL    | 
+ int4-numeric    | number           | YES  |     | NULL    | 
+ int4*numeric    | number           | YES  |     | NULL    | 
+ int4/numeric    | number           | YES  |     | NULL    | 
  int4+bit1       | uint8            | YES  |     | NULL    | 
  int4-bit1       | uint8            | YES  |     | NULL    | 
  int4*bit1       | uint8            | YES  |     | NULL    | 
- int4/bit1       | numeric          | YES  |     | NULL    | 
+ int4/bit1       | number           | YES  |     | NULL    | 
  int4+bit64      | uint8            | YES  |     | NULL    | 
  int4-bit64      | uint8            | YES  |     | NULL    | 
  int4*bit64      | uint8            | YES  |     | NULL    | 
- int4/bit64      | numeric          | YES  |     | NULL    | 
+ int4/bit64      | number           | YES  |     | NULL    | 
  uint4+int1      | uint8            | YES  |     | NULL    | 
  uint4-int1      | uint8            | YES  |     | NULL    | 
  uint4*int1      | uint8            | YES  |     | NULL    | 
- uint4/int1      | numeric          | YES  |     | NULL    | 
+ uint4/int1      | number           | YES  |     | NULL    | 
  uint4+uint1     | uint8            | YES  |     | NULL    | 
  uint4-uint1     | uint8            | YES  |     | NULL    | 
  uint4*uint1     | uint8            | YES  |     | NULL    | 
- uint4/uint1     | numeric          | YES  |     | NULL    | 
+ uint4/uint1     | number           | YES  |     | NULL    | 
  uint4+int2      | uint8            | YES  |     | NULL    | 
  uint4-int2      | uint8            | YES  |     | NULL    | 
  uint4*int2      | uint8            | YES  |     | NULL    | 
- uint4/int2      | numeric          | YES  |     | NULL    | 
+ uint4/int2      | number           | YES  |     | NULL    | 
  uint4+uint2     | uint8            | YES  |     | NULL    | 
  uint4-uint2     | uint8            | YES  |     | NULL    | 
  uint4*uint2     | uint8            | YES  |     | NULL    | 
- uint4/uint2     | numeric          | YES  |     | NULL    | 
+ uint4/uint2     | number           | YES  |     | NULL    | 
  uint4+int4      | uint8            | YES  |     | NULL    | 
  uint4-int4      | uint8            | YES  |     | NULL    | 
  uint4*int4      | uint8            | YES  |     | NULL    | 
- uint4/int4      | numeric          | YES  |     | NULL    | 
+ uint4/int4      | number           | YES  |     | NULL    | 
  uint4+uint4     | uint8            | YES  |     | NULL    | 
  uint4-uint4     | uint8            | YES  |     | NULL    | 
  uint4*uint4     | uint8            | YES  |     | NULL    | 
- uint4/uint4     | numeric          | YES  |     | NULL    | 
+ uint4/uint4     | number           | YES  |     | NULL    | 
  uint4+int8      | uint8            | YES  |     | NULL    | 
  uint4-int8      | uint8            | YES  |     | NULL    | 
  uint4*int8      | uint8            | YES  |     | NULL    | 
- uint4/int8      | numeric          | YES  |     | NULL    | 
+ uint4/int8      | number           | YES  |     | NULL    | 
  uint4+uint8     | uint8            | YES  |     | NULL    | 
  uint4-uint8     | uint8            | YES  |     | NULL    | 
  uint4*uint8     | uint8            | YES  |     | NULL    | 
- uint4/uint8     | numeric          | YES  |     | NULL    | 
+ uint4/uint8     | number           | YES  |     | NULL    | 
  uint4+float4    | double precision | YES  |     | NULL    | 
  uint4-float4    | double precision | YES  |     | NULL    | 
  uint4*float4    | double precision | YES  |     | NULL    | 
@@ -1690,50 +1690,50 @@ show columns from test_numeric_type_normal;
  uint4-float8    | double precision | YES  |     | NULL    | 
  uint4*float8    | double precision | YES  |     | NULL    | 
  uint4/float8    | double precision | YES  |     | NULL    | 
- uint4+numeric   | numeric          | YES  |     | NULL    | 
- uint4-numeric   | numeric          | YES  |     | NULL    | 
- uint4*numeric   | numeric          | YES  |     | NULL    | 
- uint4/numeric   | numeric          | YES  |     | NULL    | 
+ uint4+numeric   | number           | YES  |     | NULL    | 
+ uint4-numeric   | number           | YES  |     | NULL    | 
+ uint4*numeric   | number           | YES  |     | NULL    | 
+ uint4/numeric   | number           | YES  |     | NULL    | 
  uint4+bit1      | uint8            | YES  |     | NULL    | 
  uint4-bit1      | uint8            | YES  |     | NULL    | 
  uint4*bit1      | uint8            | YES  |     | NULL    | 
- uint4/bit1      | numeric          | YES  |     | NULL    | 
+ uint4/bit1      | number           | YES  |     | NULL    | 
  uint4+bit64     | uint8            | YES  |     | NULL    | 
  uint4-bit64     | uint8            | YES  |     | NULL    | 
  uint4*bit64     | uint8            | YES  |     | NULL    | 
- uint4/bit64     | numeric          | YES  |     | NULL    | 
+ uint4/bit64     | number           | YES  |     | NULL    | 
  int8+int1       | bigint           | YES  |     | NULL    | 
  int8-int1       | bigint           | YES  |     | NULL    | 
  int8*int1       | bigint           | YES  |     | NULL    | 
- int8/int1       | numeric          | YES  |     | NULL    | 
+ int8/int1       | number           | YES  |     | NULL    | 
  int8+uint1      | uint8            | YES  |     | NULL    | 
  int8-uint1      | uint8            | YES  |     | NULL    | 
  int8*uint1      | uint8            | YES  |     | NULL    | 
- int8/uint1      | numeric          | YES  |     | NULL    | 
+ int8/uint1      | number           | YES  |     | NULL    | 
  int8+int2       | bigint           | YES  |     | NULL    | 
  int8-int2       | bigint           | YES  |     | NULL    | 
  int8*int2       | bigint           | YES  |     | NULL    | 
- int8/int2       | numeric          | YES  |     | NULL    | 
+ int8/int2       | number           | YES  |     | NULL    | 
  int8+uint2      | uint8            | YES  |     | NULL    | 
  int8-uint2      | uint8            | YES  |     | NULL    | 
  int8*uint2      | uint8            | YES  |     | NULL    | 
- int8/uint2      | numeric          | YES  |     | NULL    | 
+ int8/uint2      | number           | YES  |     | NULL    | 
  int8+int4       | bigint           | YES  |     | NULL    | 
  int8-int4       | bigint           | YES  |     | NULL    | 
  int8*int4       | bigint           | YES  |     | NULL    | 
- int8/int4       | numeric          | YES  |     | NULL    | 
+ int8/int4       | number           | YES  |     | NULL    | 
  int8+uint4      | uint8            | YES  |     | NULL    | 
  int8-uint4      | uint8            | YES  |     | NULL    | 
  int8*uint4      | uint8            | YES  |     | NULL    | 
- int8/uint4      | numeric          | YES  |     | NULL    | 
+ int8/uint4      | number           | YES  |     | NULL    | 
  int8+int8       | bigint           | YES  |     | NULL    | 
  int8-int8       | bigint           | YES  |     | NULL    | 
  int8*int8       | bigint           | YES  |     | NULL    | 
- int8/int8       | numeric          | YES  |     | NULL    | 
+ int8/int8       | number           | YES  |     | NULL    | 
  int8+uint8      | uint8            | YES  |     | NULL    | 
  int8-uint8      | uint8            | YES  |     | NULL    | 
  int8*uint8      | uint8            | YES  |     | NULL    | 
- int8/uint8      | numeric          | YES  |     | NULL    | 
+ int8/uint8      | number           | YES  |     | NULL    | 
  int8+float4     | double precision | YES  |     | NULL    | 
  int8-float4     | double precision | YES  |     | NULL    | 
  int8*float4     | double precision | YES  |     | NULL    | 
@@ -1742,50 +1742,50 @@ show columns from test_numeric_type_normal;
  int8-float8     | double precision | YES  |     | NULL    | 
  int8*float8     | double precision | YES  |     | NULL    | 
  int8/float8     | double precision | YES  |     | NULL    | 
- int8+numeric    | numeric          | YES  |     | NULL    | 
- int8-numeric    | numeric          | YES  |     | NULL    | 
- int8*numeric    | numeric          | YES  |     | NULL    | 
- int8/numeric    | numeric          | YES  |     | NULL    | 
+ int8+numeric    | number           | YES  |     | NULL    | 
+ int8-numeric    | number           | YES  |     | NULL    | 
+ int8*numeric    | number           | YES  |     | NULL    | 
+ int8/numeric    | number           | YES  |     | NULL    | 
  int8+bit1       | uint8            | YES  |     | NULL    | 
  int8-bit1       | uint8            | YES  |     | NULL    | 
  int8*bit1       | uint8            | YES  |     | NULL    | 
- int8/bit1       | numeric          | YES  |     | NULL    | 
+ int8/bit1       | number           | YES  |     | NULL    | 
  int8+bit64      | uint8            | YES  |     | NULL    | 
  int8-bit64      | uint8            | YES  |     | NULL    | 
  int8*bit64      | uint8            | YES  |     | NULL    | 
- int8/bit64      | numeric          | YES  |     | NULL    | 
+ int8/bit64      | number           | YES  |     | NULL    | 
  uint8+int1      | uint8            | YES  |     | NULL    | 
  uint8-int1      | uint8            | YES  |     | NULL    | 
  uint8*int1      | uint8            | YES  |     | NULL    | 
- uint8/int1      | numeric          | YES  |     | NULL    | 
+ uint8/int1      | number           | YES  |     | NULL    | 
  uint8+uint1     | uint8            | YES  |     | NULL    | 
  uint8-uint1     | uint8            | YES  |     | NULL    | 
  uint8*uint1     | uint8            | YES  |     | NULL    | 
- uint8/uint1     | numeric          | YES  |     | NULL    | 
+ uint8/uint1     | number           | YES  |     | NULL    | 
  uint8+int2      | uint8            | YES  |     | NULL    | 
  uint8-int2      | uint8            | YES  |     | NULL    | 
  uint8*int2      | uint8            | YES  |     | NULL    | 
- uint8/int2      | numeric          | YES  |     | NULL    | 
+ uint8/int2      | number           | YES  |     | NULL    | 
  uint8+uint2     | uint8            | YES  |     | NULL    | 
  uint8-uint2     | uint8            | YES  |     | NULL    | 
  uint8*uint2     | uint8            | YES  |     | NULL    | 
- uint8/uint2     | numeric          | YES  |     | NULL    | 
+ uint8/uint2     | number           | YES  |     | NULL    | 
  uint8+int4      | uint8            | YES  |     | NULL    | 
  uint8-int4      | uint8            | YES  |     | NULL    | 
  uint8*int4      | uint8            | YES  |     | NULL    | 
- uint8/int4      | numeric          | YES  |     | NULL    | 
+ uint8/int4      | number           | YES  |     | NULL    | 
  uint8+uint4     | uint8            | YES  |     | NULL    | 
  uint8-uint4     | uint8            | YES  |     | NULL    | 
  uint8*uint4     | uint8            | YES  |     | NULL    | 
- uint8/uint4     | numeric          | YES  |     | NULL    | 
+ uint8/uint4     | number           | YES  |     | NULL    | 
  uint8+int8      | uint8            | YES  |     | NULL    | 
  uint8-int8      | uint8            | YES  |     | NULL    | 
  uint8*int8      | uint8            | YES  |     | NULL    | 
- uint8/int8      | numeric          | YES  |     | NULL    | 
+ uint8/int8      | number           | YES  |     | NULL    | 
  uint8+uint8     | uint8            | YES  |     | NULL    | 
  uint8-uint8     | uint8            | YES  |     | NULL    | 
  uint8*uint8     | uint8            | YES  |     | NULL    | 
- uint8/uint8     | numeric          | YES  |     | NULL    | 
+ uint8/uint8     | number           | YES  |     | NULL    | 
  uint8+float4    | double precision | YES  |     | NULL    | 
  uint8-float4    | double precision | YES  |     | NULL    | 
  uint8*float4    | double precision | YES  |     | NULL    | 
@@ -1794,18 +1794,18 @@ show columns from test_numeric_type_normal;
  uint8-float8    | double precision | YES  |     | NULL    | 
  uint8*float8    | double precision | YES  |     | NULL    | 
  uint8/float8    | double precision | YES  |     | NULL    | 
- uint8+numeric   | numeric          | YES  |     | NULL    | 
- uint8-numeric   | numeric          | YES  |     | NULL    | 
- uint8*numeric   | numeric          | YES  |     | NULL    | 
- uint8/numeric   | numeric          | YES  |     | NULL    | 
+ uint8+numeric   | number           | YES  |     | NULL    | 
+ uint8-numeric   | number           | YES  |     | NULL    | 
+ uint8*numeric   | number           | YES  |     | NULL    | 
+ uint8/numeric   | number           | YES  |     | NULL    | 
  uint8+bit1      | uint8            | YES  |     | NULL    | 
  uint8-bit1      | uint8            | YES  |     | NULL    | 
  uint8*bit1      | uint8            | YES  |     | NULL    | 
- uint8/bit1      | numeric          | YES  |     | NULL    | 
+ uint8/bit1      | number           | YES  |     | NULL    | 
  uint8+bit64     | uint8            | YES  |     | NULL    | 
  uint8-bit64     | uint8            | YES  |     | NULL    | 
  uint8*bit64     | uint8            | YES  |     | NULL    | 
- uint8/bit64     | numeric          | YES  |     | NULL    | 
+ uint8/bit64     | number           | YES  |     | NULL    | 
  float4+int1     | double precision | YES  |     | NULL    | 
  float4-int1     | double precision | YES  |     | NULL    | 
  float4*int1     | double precision | YES  |     | NULL    | 
@@ -1910,38 +1910,38 @@ show columns from test_numeric_type_normal;
  float8-bit64    | double precision | YES  |     | NULL    | 
  float8*bit64    | double precision | YES  |     | NULL    | 
  float8/bit64    | double precision | YES  |     | NULL    | 
- numeric+int1    | numeric          | YES  |     | NULL    | 
- numeric-int1    | numeric          | YES  |     | NULL    | 
- numeric*int1    | numeric          | YES  |     | NULL    | 
- numeric/int1    | numeric          | YES  |     | NULL    | 
- numeric+uint1   | numeric          | YES  |     | NULL    | 
- numeric-uint1   | numeric          | YES  |     | NULL    | 
- numeric*uint1   | numeric          | YES  |     | NULL    | 
- numeric/uint1   | numeric          | YES  |     | NULL    | 
- numeric+int2    | numeric          | YES  |     | NULL    | 
- numeric-int2    | numeric          | YES  |     | NULL    | 
- numeric*int2    | numeric          | YES  |     | NULL    | 
- numeric/int2    | numeric          | YES  |     | NULL    | 
- numeric+uint2   | numeric          | YES  |     | NULL    | 
- numeric-uint2   | numeric          | YES  |     | NULL    | 
- numeric*uint2   | numeric          | YES  |     | NULL    | 
- numeric/uint2   | numeric          | YES  |     | NULL    | 
- numeric+int4    | numeric          | YES  |     | NULL    | 
- numeric-int4    | numeric          | YES  |     | NULL    | 
- numeric*int4    | numeric          | YES  |     | NULL    | 
- numeric/int4    | numeric          | YES  |     | NULL    | 
- numeric+uint4   | numeric          | YES  |     | NULL    | 
- numeric-uint4   | numeric          | YES  |     | NULL    | 
- numeric*uint4   | numeric          | YES  |     | NULL    | 
- numeric/uint4   | numeric          | YES  |     | NULL    | 
- numeric+int8    | numeric          | YES  |     | NULL    | 
- numeric-int8    | numeric          | YES  |     | NULL    | 
- numeric*int8    | numeric          | YES  |     | NULL    | 
- numeric/int8    | numeric          | YES  |     | NULL    | 
- numeric+uint8   | numeric          | YES  |     | NULL    | 
- numeric-uint8   | numeric          | YES  |     | NULL    | 
- numeric*uint8   | numeric          | YES  |     | NULL    | 
- numeric/uint8   | numeric          | YES  |     | NULL    | 
+ numeric+int1    | number           | YES  |     | NULL    | 
+ numeric-int1    | number           | YES  |     | NULL    | 
+ numeric*int1    | number           | YES  |     | NULL    | 
+ numeric/int1    | number           | YES  |     | NULL    | 
+ numeric+uint1   | number           | YES  |     | NULL    | 
+ numeric-uint1   | number           | YES  |     | NULL    | 
+ numeric*uint1   | number           | YES  |     | NULL    | 
+ numeric/uint1   | number           | YES  |     | NULL    | 
+ numeric+int2    | number           | YES  |     | NULL    | 
+ numeric-int2    | number           | YES  |     | NULL    | 
+ numeric*int2    | number           | YES  |     | NULL    | 
+ numeric/int2    | number           | YES  |     | NULL    | 
+ numeric+uint2   | number           | YES  |     | NULL    | 
+ numeric-uint2   | number           | YES  |     | NULL    | 
+ numeric*uint2   | number           | YES  |     | NULL    | 
+ numeric/uint2   | number           | YES  |     | NULL    | 
+ numeric+int4    | number           | YES  |     | NULL    | 
+ numeric-int4    | number           | YES  |     | NULL    | 
+ numeric*int4    | number           | YES  |     | NULL    | 
+ numeric/int4    | number           | YES  |     | NULL    | 
+ numeric+uint4   | number           | YES  |     | NULL    | 
+ numeric-uint4   | number           | YES  |     | NULL    | 
+ numeric*uint4   | number           | YES  |     | NULL    | 
+ numeric/uint4   | number           | YES  |     | NULL    | 
+ numeric+int8    | number           | YES  |     | NULL    | 
+ numeric-int8    | number           | YES  |     | NULL    | 
+ numeric*int8    | number           | YES  |     | NULL    | 
+ numeric/int8    | number           | YES  |     | NULL    | 
+ numeric+uint8   | number           | YES  |     | NULL    | 
+ numeric-uint8   | number           | YES  |     | NULL    | 
+ numeric*uint8   | number           | YES  |     | NULL    | 
+ numeric/uint8   | number           | YES  |     | NULL    | 
  numeric+float4  | double precision | YES  |     | NULL    | 
  numeric-float4  | double precision | YES  |     | NULL    | 
  numeric*float4  | double precision | YES  |     | NULL    | 
@@ -1950,50 +1950,50 @@ show columns from test_numeric_type_normal;
  numeric-float8  | double precision | YES  |     | NULL    | 
  numeric*float8  | double precision | YES  |     | NULL    | 
  numeric/float8  | double precision | YES  |     | NULL    | 
- numeric+numeric | numeric          | YES  |     | NULL    | 
- numeric-numeric | numeric          | YES  |     | NULL    | 
- numeric*numeric | numeric          | YES  |     | NULL    | 
- numeric/numeric | numeric          | YES  |     | NULL    | 
- numeric+bit1    | numeric          | YES  |     | NULL    | 
- numeric-bit1    | numeric          | YES  |     | NULL    | 
- numeric*bit1    | numeric          | YES  |     | NULL    | 
- numeric/bit1    | numeric          | YES  |     | NULL    | 
- numeric+bit64   | numeric          | YES  |     | NULL    | 
- numeric-bit64   | numeric          | YES  |     | NULL    | 
- numeric*bit64   | numeric          | YES  |     | NULL    | 
- numeric/bit64   | numeric          | YES  |     | NULL    | 
+ numeric+numeric | number           | YES  |     | NULL    | 
+ numeric-numeric | number           | YES  |     | NULL    | 
+ numeric*numeric | number           | YES  |     | NULL    | 
+ numeric/numeric | number           | YES  |     | NULL    | 
+ numeric+bit1    | number           | YES  |     | NULL    | 
+ numeric-bit1    | number           | YES  |     | NULL    | 
+ numeric*bit1    | number           | YES  |     | NULL    | 
+ numeric/bit1    | number           | YES  |     | NULL    | 
+ numeric+bit64   | number           | YES  |     | NULL    | 
+ numeric-bit64   | number           | YES  |     | NULL    | 
+ numeric*bit64   | number           | YES  |     | NULL    | 
+ numeric/bit64   | number           | YES  |     | NULL    | 
  bit1+int1       | uint4            | YES  |     | NULL    | 
  bit1-int1       | uint4            | YES  |     | NULL    | 
  bit1*int1       | uint4            | YES  |     | NULL    | 
- bit1/int1       | numeric          | YES  |     | NULL    | 
+ bit1/int1       | number           | YES  |     | NULL    | 
  bit1+uint1      | uint4            | YES  |     | NULL    | 
  bit1-uint1      | uint4            | YES  |     | NULL    | 
  bit1*uint1      | uint4            | YES  |     | NULL    | 
- bit1/uint1      | numeric          | YES  |     | NULL    | 
+ bit1/uint1      | number           | YES  |     | NULL    | 
  bit1+int2       | uint4            | YES  |     | NULL    | 
  bit1-int2       | uint4            | YES  |     | NULL    | 
  bit1*int2       | uint4            | YES  |     | NULL    | 
- bit1/int2       | numeric          | YES  |     | NULL    | 
+ bit1/int2       | number           | YES  |     | NULL    | 
  bit1+uint2      | uint4            | YES  |     | NULL    | 
  bit1-uint2      | uint4            | YES  |     | NULL    | 
  bit1*uint2      | uint4            | YES  |     | NULL    | 
- bit1/uint2      | numeric          | YES  |     | NULL    | 
+ bit1/uint2      | number           | YES  |     | NULL    | 
  bit1+int4       | uint8            | YES  |     | NULL    | 
  bit1-int4       | uint8            | YES  |     | NULL    | 
  bit1*int4       | uint8            | YES  |     | NULL    | 
- bit1/int4       | numeric          | YES  |     | NULL    | 
+ bit1/int4       | number           | YES  |     | NULL    | 
  bit1+uint4      | uint8            | YES  |     | NULL    | 
  bit1-uint4      | uint8            | YES  |     | NULL    | 
  bit1*uint4      | uint8            | YES  |     | NULL    | 
- bit1/uint4      | numeric          | YES  |     | NULL    | 
+ bit1/uint4      | number           | YES  |     | NULL    | 
  bit1+int8       | uint8            | YES  |     | NULL    | 
  bit1-int8       | uint8            | YES  |     | NULL    | 
  bit1*int8       | uint8            | YES  |     | NULL    | 
- bit1/int8       | numeric          | YES  |     | NULL    | 
+ bit1/int8       | number           | YES  |     | NULL    | 
  bit1+uint8      | uint8            | YES  |     | NULL    | 
  bit1-uint8      | uint8            | YES  |     | NULL    | 
  bit1*uint8      | uint8            | YES  |     | NULL    | 
- bit1/uint8      | numeric          | YES  |     | NULL    | 
+ bit1/uint8      | number           | YES  |     | NULL    | 
  bit1+float4     | double precision | YES  |     | NULL    | 
  bit1-float4     | double precision | YES  |     | NULL    | 
  bit1*float4     | double precision | YES  |     | NULL    | 
@@ -2002,50 +2002,50 @@ show columns from test_numeric_type_normal;
  bit1-float8     | double precision | YES  |     | NULL    | 
  bit1*float8     | double precision | YES  |     | NULL    | 
  bit1/float8     | double precision | YES  |     | NULL    | 
- bit1+numeric    | numeric          | YES  |     | NULL    | 
- bit1-numeric    | numeric          | YES  |     | NULL    | 
- bit1*numeric    | numeric          | YES  |     | NULL    | 
- bit1/numeric    | numeric          | YES  |     | NULL    | 
+ bit1+numeric    | number           | YES  |     | NULL    | 
+ bit1-numeric    | number           | YES  |     | NULL    | 
+ bit1*numeric    | number           | YES  |     | NULL    | 
+ bit1/numeric    | number           | YES  |     | NULL    | 
  bit1+bit1       | uint4            | YES  |     | NULL    | 
  bit1-bit1       | uint4            | YES  |     | NULL    | 
  bit1*bit1       | uint4            | YES  |     | NULL    | 
- bit1/bit1       | numeric          | YES  |     | NULL    | 
+ bit1/bit1       | number           | YES  |     | NULL    | 
  bit1+bit64      | uint8            | YES  |     | NULL    | 
  bit1-bit64      | uint8            | YES  |     | NULL    | 
  bit1*bit64      | uint8            | YES  |     | NULL    | 
- bit1/bit64      | numeric          | YES  |     | NULL    | 
+ bit1/bit64      | number           | YES  |     | NULL    | 
  bit64+int1      | uint8            | YES  |     | NULL    | 
  bit64-int1      | uint8            | YES  |     | NULL    | 
  bit64*int1      | uint8            | YES  |     | NULL    | 
- bit64/int1      | numeric          | YES  |     | NULL    | 
+ bit64/int1      | number           | YES  |     | NULL    | 
  bit64+uint1     | uint8            | YES  |     | NULL    | 
  bit64-uint1     | uint8            | YES  |     | NULL    | 
  bit64*uint1     | uint8            | YES  |     | NULL    | 
- bit64/uint1     | numeric          | YES  |     | NULL    | 
+ bit64/uint1     | number           | YES  |     | NULL    | 
  bit64+int2      | uint8            | YES  |     | NULL    | 
  bit64-int2      | uint8            | YES  |     | NULL    | 
  bit64*int2      | uint8            | YES  |     | NULL    | 
- bit64/int2      | numeric          | YES  |     | NULL    | 
+ bit64/int2      | number           | YES  |     | NULL    | 
  bit64+uint2     | uint8            | YES  |     | NULL    | 
  bit64-uint2     | uint8            | YES  |     | NULL    | 
  bit64*uint2     | uint8            | YES  |     | NULL    | 
- bit64/uint2     | numeric          | YES  |     | NULL    | 
+ bit64/uint2     | number           | YES  |     | NULL    | 
  bit64+int4      | uint8            | YES  |     | NULL    | 
  bit64-int4      | uint8            | YES  |     | NULL    | 
  bit64*int4      | uint8            | YES  |     | NULL    | 
- bit64/int4      | numeric          | YES  |     | NULL    | 
+ bit64/int4      | number           | YES  |     | NULL    | 
  bit64+uint4     | uint8            | YES  |     | NULL    | 
  bit64-uint4     | uint8            | YES  |     | NULL    | 
  bit64*uint4     | uint8            | YES  |     | NULL    | 
- bit64/uint4     | numeric          | YES  |     | NULL    | 
+ bit64/uint4     | number           | YES  |     | NULL    | 
  bit64+int8      | uint8            | YES  |     | NULL    | 
  bit64-int8      | uint8            | YES  |     | NULL    | 
  bit64*int8      | uint8            | YES  |     | NULL    | 
- bit64/int8      | numeric          | YES  |     | NULL    | 
+ bit64/int8      | number           | YES  |     | NULL    | 
  bit64+uint8     | uint8            | YES  |     | NULL    | 
  bit64-uint8     | uint8            | YES  |     | NULL    | 
  bit64*uint8     | uint8            | YES  |     | NULL    | 
- bit64/uint8     | numeric          | YES  |     | NULL    | 
+ bit64/uint8     | number           | YES  |     | NULL    | 
  bit64+float4    | double precision | YES  |     | NULL    | 
  bit64-float4    | double precision | YES  |     | NULL    | 
  bit64*float4    | double precision | YES  |     | NULL    | 
@@ -2054,18 +2054,18 @@ show columns from test_numeric_type_normal;
  bit64-float8    | double precision | YES  |     | NULL    | 
  bit64*float8    | double precision | YES  |     | NULL    | 
  bit64/float8    | double precision | YES  |     | NULL    | 
- bit64+numeric   | numeric          | YES  |     | NULL    | 
- bit64-numeric   | numeric          | YES  |     | NULL    | 
- bit64*numeric   | numeric          | YES  |     | NULL    | 
- bit64/numeric   | numeric          | YES  |     | NULL    | 
+ bit64+numeric   | number           | YES  |     | NULL    | 
+ bit64-numeric   | number           | YES  |     | NULL    | 
+ bit64*numeric   | number           | YES  |     | NULL    | 
+ bit64/numeric   | number           | YES  |     | NULL    | 
  bit64+bit1      | uint8            | YES  |     | NULL    | 
  bit64-bit1      | uint8            | YES  |     | NULL    | 
  bit64*bit1      | uint8            | YES  |     | NULL    | 
- bit64/bit1      | numeric          | YES  |     | NULL    | 
+ bit64/bit1      | number           | YES  |     | NULL    | 
  bit64+bit64     | uint8            | YES  |     | NULL    | 
  bit64-bit64     | uint8            | YES  |     | NULL    | 
  bit64*bit64     | uint8            | YES  |     | NULL    | 
- bit64/bit64     | numeric          | YES  |     | NULL    | 
+ bit64/bit64     | number           | YES  |     | NULL    | 
 (676 rows)
 
 insert into test_numeric_type_normal values(null);
@@ -2914,7 +2914,7 @@ SELECT `bit64` + `bit64` - `bit64` * `bit64` / `bit64` FROM test_numeric_table_n
 SELECT `int1` + `uint1` - `int4` * `uint4` / `int8` AS result, pg_typeof(result) FROM test_numeric_table_normal;
          result         | pg_typeof 
 ------------------------+-----------
- 1.00000000000000000000 | numeric
+ 1.00000000000000000000 | number
 (1 row)
 
 -- excepted: 1 float8
@@ -2935,7 +2935,7 @@ SELECT `float4` + `float8` - `float4` * `numeric` / `float8` AS result, pg_typeo
 SELECT `int1` + `uint1` - `numeric` * `numeric` / `int8` AS result, pg_typeof(result) FROM test_numeric_table_normal;
          result         | pg_typeof 
 ------------------------+-----------
- 1.00000000000000000000 | numeric
+ 1.00000000000000000000 | number
 (1 row)
 
 -- excepted: 1 uint8
@@ -2956,7 +2956,7 @@ SELECT `int1` + `uint1` - `int4` AS result, pg_typeof(result) FROM test_numeric_
 SELECT `int1` + `numeric` - `int4` AS result, pg_typeof(result) FROM test_numeric_table_normal;
   result  | pg_typeof 
 ----------+-----------
- 1.000000 | numeric
+ 1.000000 | number
 (1 row)
 
 -- excepted: 1 float8

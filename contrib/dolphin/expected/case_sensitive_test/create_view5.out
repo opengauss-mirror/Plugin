@@ -137,7 +137,7 @@ CREATE VIEW tt1 AS
 --------+----------------------+-----------+----------+-------------
  a      | character varying    |           | extended | 
  b      | character varying    |           | extended | 
- c      | numeric              |           | main     | 
+ c      | number               |           | main     | 
  d      | character varying(4) |           | extended | 
 View definition:
  SELECT  *
