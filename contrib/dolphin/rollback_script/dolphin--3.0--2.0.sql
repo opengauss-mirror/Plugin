@@ -784,3 +784,10 @@ DROP CAST IF EXISTS (anyset AS boolean);
 DROP FUNCTION IF EXISTS pg_catalog.any2boolean(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.enum_boolean(anyenum) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.set_boolean(anyset) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.ascii(blob);
+DROP FUNCTION IF EXISTS pg_catalog.ascii(year);
+DROP FUNCTION IF EXISTS pg_catalog.ascii(json);
+DROP FUNCTION IF EXISTS pg_catalog.ascii(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.ascii(anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.ascii(bit);
