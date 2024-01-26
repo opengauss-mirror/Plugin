@@ -854,6 +854,14 @@ DROP FUNCTION IF EXISTS pg_catalog.convert(longblob, name);
 DROP FUNCTION IF EXISTS pg_catalog.convert(anyenum, name);
 DROP FUNCTION IF EXISTS pg_catalog.convert(json, name);
 
+do $$
+begin
+update pg_catalog.pg_cast set castfunc = (select oid from pg_proc where proname = 'bpchar_text'), castowner = 10 where castsource = 1042 and casttarget = 25;
+update pg_catalog.pg_cast set castfunc = (select oid from pg_proc where proname = 'bpchar_text'), castowner = 10 where castsource = 1042 and casttarget = 1043;
+update pg_catalog.pg_cast set castfunc = (select oid from pg_proc where proname = 'bpchar_text'), castowner = 10 where castsource = 1042 and casttarget = 3969;
+end
+$$;
+
 DROP FUNCTION IF EXISTS pg_catalog.ascii(blob);
 DROP FUNCTION IF EXISTS pg_catalog.ascii(year);
 DROP FUNCTION IF EXISTS pg_catalog.ascii(json);

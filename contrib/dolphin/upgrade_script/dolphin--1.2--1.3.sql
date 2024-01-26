@@ -1340,6 +1340,15 @@ CREATE FUNCTION pg_catalog.convert(longblob,name) RETURNS text LANGUAGE SQL IMMU
 CREATE FUNCTION pg_catalog.convert(anyenum,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
 CREATE FUNCTION pg_catalog.convert(json,name) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.convert(cast($1 as TEXT), $2)';
 
+--reset pg_cast content, change the castfunc in code(find_coercion_pathway)
+do $$
+begin
+update pg_catalog.pg_cast set castfunc = 401, castowner = 10 where castsource = 1042 and casttarget = 25;
+update pg_catalog.pg_cast set castfunc = 401, castowner = 10 where castsource = 1042 and casttarget = 1043;
+update pg_catalog.pg_cast set castfunc = 401, castowner = 10 where castsource = 1042 and casttarget = 3969;
+end
+$$;
+
 CREATE OR REPLACE FUNCTION pg_catalog.ascii(blob) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
 CREATE OR REPLACE FUNCTION pg_catalog.ascii(year) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
 CREATE OR REPLACE FUNCTION pg_catalog.ascii(json) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';

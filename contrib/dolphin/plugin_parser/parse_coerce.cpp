@@ -3470,7 +3470,15 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
                 case COERCION_METHOD_FUNCTION: {
                     result = COERCION_PATH_FUNC;
 #ifdef DOLPHIN
-                    if (ccontext == COERCION_EXPLICIT) {
+                    if (sourceTypeId == BPCHAROID &&
+                        (targetTypeId == TEXTOID || targetTypeId == VARCHAROID || targetTypeId == NVARCHAR2OID)) {
+                        /*
+                         * special handle for: bpchar -> text/varchar/nvarchar2, which already exists in pg_cast,
+                         * can't change the func id in plugin's script, so change it here.
+                         */
+                        *funcid = get_func_oid("bpchar_text", PG_CATALOG_NAMESPACE, NULL);
+                        Assert(OidIsValid(*funcid));
+                    } else if (ccontext == COERCION_EXPLICIT) {
                         TryFindSpecifiedCastFunction(sourceTypeId, targetTypeId, castForm->castfunc, funcid);
                     } else
 #endif

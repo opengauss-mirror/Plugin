@@ -92,15 +92,6 @@ RETURNS timestamp with time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin
 
 CREATE CAST(TEXT AS timestamp with time zone) WITH FUNCTION pg_catalog.timestamptz_explicit(TEXT) AS ASSIGNMENT;
 
---reset pg_cast content, change the castfunc in code(find_coercion_pathway)
-do $$
-begin
-update pg_catalog.pg_cast set castfunc = 401, castowner = 10 where castsource = 1042 and casttarget = 25;
-update pg_catalog.pg_cast set castfunc = 401, castowner = 10 where castsource = 1042 and casttarget = 1043;
-update pg_catalog.pg_cast set castfunc = 401, castowner = 10 where castsource = 1042 and casttarget = 3969;
-end
-$$;
-
 drop function pg_catalog.year_recv(bytea);
 CREATE OR REPLACE FUNCTION pg_catalog.year_recv (internal) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'year_recv';
 do $$
