@@ -1971,7 +1971,8 @@ Datum numeric_cast_date(PG_FUNCTION_ARGS)
 {
     Numeric n = PG_GETARG_NUMERIC(0);
     bool isRetNull = false;
-    Datum datetime = DirectCall1(&isRetNull, numeric_b_format_datetime, InvalidOid, NumericGetDatum(n));
+    Datum datetime = DirectCall2(&isRetNull, numeric_b_format_datetime, InvalidOid, NumericGetDatum(n),
+        BoolGetDatum(true));
     if (isRetNull) {
         PG_RETURN_NULL();
     }
@@ -1982,7 +1983,8 @@ Datum float8_cast_date(PG_FUNCTION_ARGS)
 {
     float8 n = PG_GETARG_FLOAT8(0);
     bool isRetNull = false;
-    Datum datetime = DirectCall1(&isRetNull, float8_b_format_datetime, InvalidOid, Float8GetDatum(n));
+    Datum datetime = DirectCall2(&isRetNull, float8_b_format_datetime, InvalidOid, Float8GetDatum(n),
+        BoolGetDatum(true));
     if (isRetNull) {
         PG_RETURN_NULL();
     }
@@ -1993,7 +1995,8 @@ Datum float4_cast_date(PG_FUNCTION_ARGS)
 {
     float8 n = (float8)PG_GETARG_FLOAT4(0);
     bool isRetNull = false;
-    Datum datetime = DirectCall1(&isRetNull, float8_b_format_datetime, InvalidOid, Float8GetDatum(n));
+    Datum datetime = DirectCall2(&isRetNull, float8_b_format_datetime, InvalidOid, Float8GetDatum(n),
+        BoolGetDatum(true));
     if (isRetNull) {
         PG_RETURN_NULL();
     }

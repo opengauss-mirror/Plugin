@@ -63,35 +63,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(json) returns blob LANGUAGE S
 
 create or replace function pg_catalog."user"() returns name as 'select current_user' LANGUAGE 'sql' IMMUTABLE;
 
-CREATE OR REPLACE FUNCTION pg_catalog.int8_cast_timestamptz(int1)
-RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int8_cast_timestamptz';
-CREATE OR REPLACE FUNCTION pg_catalog.int16_cast_timestamptz(int2)
-RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int16_cast_timestamptz';
-CREATE OR REPLACE FUNCTION pg_catalog.int32_cast_timestamptz(int4)
-RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int32_cast_timestamptz';
-CREATE OR REPLACE FUNCTION pg_catalog.int64_cast_timestamptz(int8)
-RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_cast_timestamptz';
-
-CREATE OR REPLACE FUNCTION pg_catalog.uint8_cast_timestamptz(uint1)
-RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint8_cast_timestamptz';
-CREATE OR REPLACE FUNCTION pg_catalog.uint16_cast_timestamptz(uint2)
-RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint16_cast_timestamptz';
-CREATE OR REPLACE FUNCTION pg_catalog.uint32_cast_timestamptz(uint4)
-RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint32_cast_timestamptz';
-CREATE OR REPLACE FUNCTION pg_catalog.uint64_cast_timestamptz(uint8)
-RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'uint64_cast_timestamptz';
-
-CREATE OR REPLACE FUNCTION pg_catalog.float4_cast_timestamptz(float4)
-RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float4_cast_timestamptz';
-CREATE OR REPLACE FUNCTION pg_catalog.float8_cast_timestamptz(float8)
-RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'float8_cast_timestamptz';
-CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_timestamptz(numeric)
-RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'numeric_cast_timestamptz';
-CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_explicit(TEXT)
-RETURNS timestamp with time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamptz_explicit';
-
-CREATE CAST(TEXT AS timestamp with time zone) WITH FUNCTION pg_catalog.timestamptz_explicit(TEXT) AS ASSIGNMENT;
-
 drop function pg_catalog.year_recv(bytea);
 CREATE OR REPLACE FUNCTION pg_catalog.year_recv (internal) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'year_recv';
 do $$
