@@ -413,6 +413,19 @@ DROP FUNCTION IF EXISTS pg_catalog.float8_cast_datetime(float8);
 DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_datetime(numeric);
 DROP FUNCTION IF EXISTS pg_catalog.timestamp_explicit(TEXT);
 
+DROP FUNCTION IF EXISTS pg_catalog.int8_cast_timestamptz(int1);
+DROP FUNCTION IF EXISTS pg_catalog.int16_cast_timestamptz(int2);
+DROP FUNCTION IF EXISTS pg_catalog.int32_cast_timestamptz(int4);
+DROP FUNCTION IF EXISTS pg_catalog.int64_cast_timestamptz(int8);
+DROP FUNCTION IF EXISTS pg_catalog.uint8_cast_timestamptz(uint1);
+DROP FUNCTION IF EXISTS pg_catalog.uint16_cast_timestamptz(uint2);
+DROP FUNCTION IF EXISTS pg_catalog.uint32_cast_timestamptz(uint4);
+DROP FUNCTION IF EXISTS pg_catalog.uint64_cast_timestamptz(uint8);
+DROP FUNCTION IF EXISTS pg_catalog.float4_cast_timestamptz(float4);
+DROP FUNCTION IF EXISTS pg_catalog.float8_cast_timestamptz(float8);
+DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_timestamptz(numeric);
+DROP FUNCTION IF EXISTS pg_catalog.timestamptz_explicit(TEXT);
+
 DROP FUNCTION IF EXISTS pg_catalog.ln(year);
 DROP FUNCTION IF EXISTS pg_catalog.ln(json);
 

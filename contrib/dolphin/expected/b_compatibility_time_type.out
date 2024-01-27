@@ -2419,6 +2419,190 @@ CONTEXT:  referenced column: result
  
 (1 row)
 
+select cast(100::int1 as datetime) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::uint1 as datetime) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::int2 as datetime) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::uint2 as datetime) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::int4 as datetime) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::uint4 as datetime) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::int8 as datetime) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::uint8 as datetime) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::float4 as datetime) as result;
+WARNING:  date/time field value out of range: "000100"
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::float8 as datetime) as result;
+WARNING:  date/time field value out of range: "000100"
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::numeric as datetime) as result;
+WARNING:  date/time field value out of range: "000100"
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::int1 as timestamp with time zone) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::uint1 as timestamp with time zone) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::int2 as timestamp with time zone) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::uint2 as timestamp with time zone) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::int4 as timestamp with time zone) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::uint4 as timestamp with time zone) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::int8 as timestamp with time zone) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::uint8 as timestamp with time zone) as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::float4 as timestamp with time zone) as result;
+WARNING:  date/time field value out of range: "000100"
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::float8 as timestamp with time zone) as result;
+WARNING:  date/time field value out of range: "000100"
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select cast(100::numeric as timestamp with time zone) as result;
+WARNING:  date/time field value out of range: "000100"
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+select unix_timestamp(1.5);
+WARNING:  date/time field value out of range: "000001.5"
+CONTEXT:  referenced column: unix_timestamp
+ unix_timestamp 
+----------------
+              0
+(1 row)
+
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;
