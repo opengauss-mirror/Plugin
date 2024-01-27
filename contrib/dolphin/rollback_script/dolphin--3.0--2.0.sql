@@ -774,6 +774,14 @@ DROP FUNCTION IF EXISTS pg_catalog.repeat(year, integer);
 DROP FUNCTION IF EXISTS pg_catalog.repeat(binary, integer);
 DROP FUNCTION IF EXISTS pg_catalog.repeat(bit, integer);
 
+do $$
+begin
+update pg_catalog.pg_cast set castfunc = (select oid from pg_proc where proname = 'bpchar_text'), castowner = 10 where castsource = 1042 and casttarget = 25;
+update pg_catalog.pg_cast set castfunc = (select oid from pg_proc where proname = 'bpchar_text'), castowner = 10 where castsource = 1042 and casttarget = 1043;
+update pg_catalog.pg_cast set castfunc = (select oid from pg_proc where proname = 'bpchar_text'), castowner = 10 where castsource = 1042 and casttarget = 3969;
+end
+$$;
+
 DROP CAST IF EXISTS ("binary" AS boolean);
 DROP CAST IF EXISTS ("varbinary" AS boolean);
 DROP CAST IF EXISTS (blob AS boolean);
