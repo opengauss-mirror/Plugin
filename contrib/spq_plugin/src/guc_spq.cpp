@@ -1727,9 +1727,6 @@ static bool spq_verify_gauss_cluster_map_syntax(const char *liststring)
     }
     pfree(rawname);
     list_free(nodelist);
-    if (t_thrd.spq_ctx.nodesDefinition != nullptr) {
-        pfree(t_thrd.spq_ctx.nodesDefinition);
-    }
     for (int i = 0; i < array_size; ++i) {
         for (int j = i + 1; j < array_size; ++j) {
             if (strcmp(nodesDefinition[i].nodename.data, nodesDefinition[j].nodename.data) == 0) {
@@ -1739,6 +1736,10 @@ static bool spq_verify_gauss_cluster_map_syntax(const char *liststring)
                 return false;
             }
         }
+    }
+    if (t_thrd.spq_ctx.nodesDefinition != nullptr) {
+        pfree(t_thrd.spq_ctx.nodesDefinition);
+        t_thrd.spq_ctx.nodesDefinition = nullptr;
     }
     t_thrd.spq_ctx.num_nodes = array_size;
     t_thrd.spq_ctx.nodesDefinition = nodesDefinition;
