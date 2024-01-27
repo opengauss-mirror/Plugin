@@ -680,6 +680,33 @@ select cast(100::float4 as date) as result;
 select cast(100::float8 as date) as result;
 select cast(100::numeric as date) as result;
 
+
+select cast(100::int1 as datetime) as result;
+select cast(100::uint1 as datetime) as result;
+select cast(100::int2 as datetime) as result;
+select cast(100::uint2 as datetime) as result;
+select cast(100::int4 as datetime) as result;
+select cast(100::uint4 as datetime) as result;
+select cast(100::int8 as datetime) as result;
+select cast(100::uint8 as datetime) as result;
+select cast(100::float4 as datetime) as result;
+select cast(100::float8 as datetime) as result;
+select cast(100::numeric as datetime) as result;
+
+select cast(100::int1 as timestamp with time zone) as result;
+select cast(100::uint1 as timestamp with time zone) as result;
+select cast(100::int2 as timestamp with time zone) as result;
+select cast(100::uint2 as timestamp with time zone) as result;
+select cast(100::int4 as timestamp with time zone) as result;
+select cast(100::uint4 as timestamp with time zone) as result;
+select cast(100::int8 as timestamp with time zone) as result;
+select cast(100::uint8 as timestamp with time zone) as result;
+select cast(100::float4 as timestamp with time zone) as result;
+select cast(100::float8 as timestamp with time zone) as result;
+select cast(100::numeric as timestamp with time zone) as result;
+
+select unix_timestamp(1.5);
+
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;

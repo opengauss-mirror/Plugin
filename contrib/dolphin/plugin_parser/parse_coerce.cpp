@@ -143,6 +143,12 @@ static const char* numCastDateTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_date
                                                                  "float4_cast_datetime", "float8_cast_datetime",
                                                                  "numeric_cast_datetime", "timestamp_explicit"};
 
+static const char* numCastTimeStampFunction[NUM_CAST_TIME_IDX] = {"int8_cast_timestamptz", "int16_cast_timestamptz",
+                                                                  "int32_cast_timestamptz", "int64_cast_timestamptz",
+                                                                  "uint8_cast_timestamptz", "uint16_cast_timestamptz",
+                                                                  "uint32_cast_timestamptz", "uint64_cast_timestamptz",
+                                                                  "float4_cast_timestamptz", "float8_cast_timestamptz",
+                                                                  "numeric_cast_timestamptz", "timestamptz_explicit"};
 
 
 typedef enum {
@@ -3421,6 +3427,14 @@ Oid findNumDateTimeExplicitCastFunction(Oid sourceTypeId, Oid funcid)
     return (cast_oid != InvalidOid) ? cast_oid : funcid;
 }
 
+Oid findNumTimeStamptzExplicitCastFunction(Oid sourceTypeId, Oid funcid)
+{
+    int idx = findNumTimeFunctionIdx(sourceTypeId);
+    Oid cast_oid = (idx == INVALID_IDX) ? InvalidOid :
+                                          get_func_oid(numCastTimeStampFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+    return (cast_oid != InvalidOid) ? cast_oid : funcid;
+}
+
 int findEnumFunctionIdx(Oid typeId)
 {
     switch (typeId) {
@@ -3592,8 +3606,6 @@ void TryFindSpecifiedCastFunction(const Oid sourceTypeId, const Oid targetTypeId
         *funcId = get_func_oid("varlena_cast_int2", PG_CATALOG_NAMESPACE, NULL);
     } else if (sourceIsVarlena && targetTypeId == INT4OID) {
         *funcId = get_func_oid("varlena_cast_int4", PG_CATALOG_NAMESPACE, NULL);
-    } else if (sourceTypeId == TEXTOID && targetTypeId == TIMEOID) {
-        *funcId = get_func_oid("text_time_explicit", PG_CATALOG_NAMESPACE, NULL);
     } else if (ENABLE_B_CMPT_MODE && targetTypeId == INT8OID) {
         *funcId = findSignedExplicitCastFunction(sourceTypeId, defaultFuncId);
     } else if (sourceTypeId == BITOID) {
@@ -3604,6 +3616,8 @@ void TryFindSpecifiedCastFunction(const Oid sourceTypeId, const Oid targetTypeId
         *funcId = findNumDateExplicitCastFunction(sourceTypeId, defaultFuncId);
     } else if (targetTypeId == TIMESTAMPOID) {
          *funcId = findNumDateTimeExplicitCastFunction(sourceTypeId, defaultFuncId);
+    } else if (targetTypeId == TIMESTAMPTZOID) {
+         *funcId = findNumTimeStamptzExplicitCastFunction(sourceTypeId, defaultFuncId);
     }
     else {
         *funcId = findUnsignedExplicitCastFunction(targetTypeId, sourceTypeId, defaultFuncId);
