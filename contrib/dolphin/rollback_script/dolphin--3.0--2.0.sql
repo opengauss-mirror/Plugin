@@ -812,3 +812,11 @@ DROP FUNCTION IF EXISTS pg_catalog.ascii(json);
 DROP FUNCTION IF EXISTS pg_catalog.ascii(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.ascii(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.ascii(bit);
+
+DROP FUNCTION IF EXISTS pg_catalog.bit_length(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.bit_length(year);
+DROP FUNCTION IF EXISTS pg_catalog.bit_length(blob);
+DROP FUNCTION IF EXISTS pg_catalog.bit_length(anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.bit_length(json);
+DROP FUNCTION IF EXISTS pg_catalog.bit_length(binary);
+DROP FUNCTION IF EXISTS pg_catalog.bit_length(char);
