@@ -135,31 +135,6 @@ DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int1(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int2(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int4(anyelement) CASCADE;
 
-DROP FUNCTION IF EXISTS pg_catalog.substr(longblob, int, int);
-DROP FUNCTION IF EXISTS pg_catalog.substr(longblob, int);
-DROP FUNCTION IF EXISTS pg_catalog.repeat(longblob, int);
-
-DROP CAST IF EXISTS (tinyblob AS binary) ;
-DROP CAST IF EXISTS (tinyblob AS varbinary) ;
-DROP CAST IF EXISTS (blob AS binary) ;
-DROP CAST IF EXISTS (blob AS varbinary) ;
-DROP CAST IF EXISTS (mediumblob AS binary) ;
-DROP CAST IF EXISTS (mediumblob AS varbinary) ;
-DROP CAST IF EXISTS (longblob AS binary) ;
-DROP CAST IF EXISTS (longblob AS varbinary) ;
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(blob) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(mediumblob) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(longblob) CASCADE;
-
-DROP FUNCTION IF EXISTS pg_catalog.unhex (text);
-DROP FUNCTION IF EXISTS pg_catalog.unhex (boolean);
-DROP FUNCTION IF EXISTS pg_catalog.unhex (bytea);
-DROP FUNCTION IF EXISTS pg_catalog.unhex (bit);
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (text)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_text';
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (boolean)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bool';
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (bytea)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bytea';
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (bit)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bit';
-
 drop function pg_catalog.year_recv(internal);
 CREATE OR REPLACE FUNCTION pg_catalog.year_recv (bytea) RETURNS year LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'year_recv';
 do $$

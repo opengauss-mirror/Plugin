@@ -316,5 +316,62 @@ insert into test_ignore(b) values(cast('2023-1-12' as binary(1)));
 insert ignore into test_ignore values(cast('2023-1-12' as binary(1)), cast('2023-1-12' as varbinary(1)));
 drop table test_ignore;
 
+set dolphin.b_compatibility_mode=on;
+set b_format_behavior_compat_options=enable_set_variables;
+set bytea_output=escape;
+drop table if exists t_binary0002 cascade;
+create table t_binary0002(
+c1 int not null,
+c2 binary,
+c3 binary(10),
+c4 binary(255),
+c5 varbinary(1),
+c6 varbinary(10),
+c7 varbinary(255)) charset utf8mb3;
+set @v1='abcdefghijklmnopqrstuvwxyz';
+set @v2='a熊猫竹竹爱吃竹子';
+set @v3=hex(@v2);
+set @v4=unhex(@v3);
+set @v5=bin(121314);
+set @v6=oct(999999);
+insert into t_binary0002 values (
+1, substr(@v1,1,1), substr(@v1,1,10), repeat(@v1, 9),
+substr(@v1,1,1), substr(@v1,1,10), repeat(@v1, 9));
+insert into t_binary0002 values (
+2, substr(@v2,1,1), substr(@v2,1,4), repeat(@v2, 9),
+substr(@v2,1,1), substr(@v2,1,4), repeat(@v2, 9));
+insert into t_binary0002 values (
+3, substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255),
+substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255));
+insert into t_binary0002 values (
+4, substr(@v4,1,1), substr(@v4,1,4), substr(repeat(@v4, 10),1,255),
+substr(@v4,1,1), substr(@v4,1,4), substr(repeat(@v4, 10),1,255));
+insert into t_binary0002 values (
+5, substr(@v5,1,1), substr(@v5,1,4), substr(repeat(@v5, 10),1,255),
+substr(@v5,1,1), substr(@v5,1,4), substr(repeat(@v5, 10),1,255));
+insert into t_binary0002 values (
+6, substr(@v6,1,1), substr(@v6,1,4), substr(repeat(@v6, 10),1,255),
+substr(@v6,1,1), substr(@v6,1,4), substr(repeat(@v6, 10),1,255));
+select c1, cast(c2 as char), cast(c3 as char), cast(c4 as char), cast(c5 as
+char), cast(c6 as char), cast(c7 as char) from t_binary0002 order by
+1,2,3,4,5,6,7;
+
+SELECT repeat('a'::tinyblob, 5)::binary(10);
+SELECT repeat('a'::tinyblob, 100)::binary(10);
+SELECT repeat('a'::tinyblob, 5)::varbinary(10);
+SELECT repeat('a'::tinyblob, 100)::varbinary(10);
+SELECT repeat('a'::blob, 5)::binary(10);
+SELECT repeat('a'::blob, 100)::binary(10);
+SELECT repeat('a'::blob, 5)::varbinary(10);
+SELECT repeat('a'::blob, 100)::varbinary(10);
+SELECT repeat('a'::mediumblob, 5)::binary(10);
+SELECT repeat('a'::mediumblob, 100)::binary(10);
+SELECT repeat('a'::mediumblob, 5)::varbinary(10);
+SELECT repeat('a'::mediumblob, 100)::varbinary(10);
+SELECT repeat('a'::longblob, 5)::binary(10);
+SELECT repeat('a'::longblob, 100)::binary(10);
+SELECT repeat('a'::longblob, 5)::varbinary(10);
+SELECT repeat('a'::longblob, 100)::varbinary(10);
+
 drop schema test_binary cascade;
 reset current_schema;

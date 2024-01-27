@@ -126,34 +126,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.log10(text) RETURNS double precision LANGU
 CREATE OR REPLACE FUNCTION pg_catalog.log10(char) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log10(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.log10(varchar) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log10(cast($1 as double precision))';
 
-CREATE OR REPLACE FUNCTION pg_catalog.substr(arg1 longblob, start int, the_end int) RETURNS longblob LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substrb(arg1::text, start, the_end)::longblob';
-CREATE OR REPLACE FUNCTION pg_catalog.substr(arg1 longblob, start int) RETURNS longblob LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substrb(arg1::text, start)::longblob';
-
-CREATE CAST (tinyblob AS binary) WITHOUT FUNCTION AS IMPLICIT;
-CREATE CAST (tinyblob AS varbinary) WITHOUT FUNCTION AS IMPLICIT;
-CREATE CAST (blob AS binary) WITHOUT FUNCTION AS IMPLICIT;
-CREATE CAST (blob AS varbinary) WITHOUT FUNCTION AS IMPLICIT;
-CREATE CAST (mediumblob AS binary) WITHOUT FUNCTION AS IMPLICIT;
-CREATE CAST (mediumblob AS varbinary) WITHOUT FUNCTION AS IMPLICIT;
-CREATE CAST (longblob AS binary) WITHOUT FUNCTION AS IMPLICIT;
-CREATE CAST (longblob AS varbinary) WITHOUT FUNCTION AS IMPLICIT;
-
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(blob) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(mediumblob) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(longblob) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (blob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
-CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (mediumblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
-CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (longblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
-
-DROP FUNCTION IF EXISTS pg_catalog.unhex (text);
-DROP FUNCTION IF EXISTS pg_catalog.unhex (boolean);
-DROP FUNCTION IF EXISTS pg_catalog.unhex (bytea);
-DROP FUNCTION IF EXISTS pg_catalog.unhex (bit);
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (text)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_text';
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (boolean)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bool';
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (bytea)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bytea';
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (bit)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bit';
-
 DROP CAST IF EXISTS ("binary" AS boolean) CASCADE;
 DROP CAST IF EXISTS ("varbinary" AS boolean) CASCADE;
 DROP CAST IF EXISTS (blob AS boolean) CASCADE;
