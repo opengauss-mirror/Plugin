@@ -138,6 +138,14 @@ select length(random_bytes(`timestamp(4)`)::binary) from test_type_table;
 select length(random_bytes(`year`)::binary)from test_type_table;
 select length(random_bytes(`json`)::binary)from test_type_table;
 
+--error
+Update test_type_table set `year` = rand('{"a":1}'::json);
+Update ignore test_type_table set `year` = rand('{"a":1}'::json);
+--non-strict mode
+set dolphin.sql_mode='';
+Update test_type_table set `year` = rand('{"a":1}'::json);
+reset dolphin.sql_mode;
+
 drop table test_type_table;
 
 reset dolphin.b_compatibility_mode;
