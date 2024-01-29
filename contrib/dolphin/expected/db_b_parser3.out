@@ -289,6 +289,22 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: length
 ERROR:  length value is out of range in 'random_bytes'
 CONTEXT:  referenced column: length
+--error
+Update test_type_table set `year` = rand('{"a":1}'::json);
+ERROR:  Truncated incorrect INTEGER value: '{"a":1}'
+CONTEXT:  SQL function "rand" during inlining
+referenced column: year
+Update ignore test_type_table set `year` = rand('{"a":1}'::json);
+WARNING:  Truncated incorrect INTEGER value: '{"a":1}'
+CONTEXT:  SQL function "rand" during inlining
+referenced column: year
+--non-strict mode
+set dolphin.sql_mode='';
+Update test_type_table set `year` = rand('{"a":1}'::json);
+WARNING:  Truncated incorrect INTEGER value: '{"a":1}'
+CONTEXT:  SQL function "rand" during inlining
+referenced column: year
+reset dolphin.sql_mode;
 drop table test_type_table;
 reset dolphin.b_compatibility_mode;
 --hex number
