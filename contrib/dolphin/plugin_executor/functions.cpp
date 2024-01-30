@@ -1632,6 +1632,12 @@ static bool IsBmodeCoercible(Oid sourceOid, Oid targetOid)
 bool check_sql_fn_retval(Oid func_id, Oid ret_type, List* query_tree_list, bool* modify_target_list,
     JunkFilter** junk_filter, bool plpgsql_validation)
 {
+#ifndef DOLPHIN
+    if (u_sess->hook_cxt.checkSqlFnRetvalHook != NULL) {
+        return ((checkSqlFnRetval)(u_sess->hook_cxt.checkSqlFnRetvalHook))(
+            func_id, ret_type, query_tree_list, modify_target_list, junk_filter, plpgsql_validation);
+    }
+#endif
     Query* parse = NULL;
     List** tlist_ptr;
     List* tlist = NIL;
