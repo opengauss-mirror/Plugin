@@ -1772,7 +1772,7 @@ Datum bpchar_cast_int8(PG_FUNCTION_ARGS)
     char* tmp = NULL;
     int128 result;
     tmp = DatumGetCString(DirectFunctionCall1(bpcharout, txt));
-    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
+    result = DatumGetInt128(DirectFunctionCall1Coll(int16in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore));
     pfree_ext(tmp);
     PG_RETURN_INT64(checkSignedRange(result, fcinfo));
 }
@@ -1783,7 +1783,7 @@ Datum varchar_cast_int8(PG_FUNCTION_ARGS)
     char* tmp = NULL;
     int128 result;
     tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
-    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
+    result = DatumGetInt128(DirectFunctionCall1Coll(int16in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore));
     pfree_ext(tmp);
     PG_RETURN_INT64(checkSignedRange(result, fcinfo));
 }
@@ -1797,7 +1797,7 @@ Datum text_cast_int8(PG_FUNCTION_ARGS)
     bool typIsVarlena;
     getTypeOutputInfo(fcinfo->argTypes[0], &typeOutput, &typIsVarlena);
     tmp = DatumGetCString(OidOutputFunctionCall(typeOutput, txt));
-    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
+    result = DatumGetInt128(DirectFunctionCall1Coll(int16in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore));
     pfree_ext(tmp);
     PG_RETURN_INT64(checkSignedRange(result, fcinfo));
 }

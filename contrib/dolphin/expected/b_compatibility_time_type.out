@@ -1558,8 +1558,10 @@ CONTEXT:  referenced column: year
 (1 row)
 
 select ''::longblob::year;
-WARNING:  invalid input syntax for type double precision: ""
+WARNING:  invalid input syntax for type bigint: ""
 CONTEXT:  referenced column: year
+SQL function "text_year" statement 1
+referenced column: year
 SQL function "varlena2year" statement 1
 referenced column: year
  year 
