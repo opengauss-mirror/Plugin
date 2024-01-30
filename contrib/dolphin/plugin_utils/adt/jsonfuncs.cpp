@@ -14,7 +14,6 @@
  */
 #include "postgres.h"
 #include <limits.h>
-
 #include "fmgr.h"
 #include "funcapi.h"
 #include "miscadmin.h"
@@ -49,6 +48,7 @@
 #include "plugin_utils/json.h"
 #include "plugin_utils/jsonapi.h"
 #include "utils/pg_locale.h"
+#include "plugin_utils/int8.h"
 
 /* for String fuzzy matching and escape conversion */
 #define NextByte(p, plen) ((p)++, (plen)--)
@@ -249,6 +249,9 @@ static void checksign_oper(char *inStr, int &x);
 /* function for json compare */
 static int json_compare(FunctionCallInfo fcinfo, const char *funcName, bool null_save_eq);
 static cJSON *input_to_cjson_cmp(Oid valtype, Datum arg, bool& jsontype);
+
+static char* parseStringToJsonString(Datum othersArg, bool isVarLen);
+static char* getJsonString(Oid othersTypeOid, Datum othersArg);
 #endif
 
 /* semantic action functions for json_object_keys */
@@ -7109,13 +7112,6 @@ static int json_compare(FunctionCallInfo fcinfo, const char *funcName, bool null
     valtype[0] = get_fn_expr_argtype(fcinfo->flinfo, 0);
     valtype[1] = get_fn_expr_argtype(fcinfo->flinfo, 1);
 
-    // TODO: add param to determine if string can be compared with json
-    if (valtype[0] == JSONOID && valtype[1] != JSONOID) {
-        return JSON_GT;
-    } else if (valtype[0] != JSONOID && valtype[1] == JSONOID) {
-        return JSON_LT;
-    }
-
     cJSON **jsondoc = (cJSON **)palloc(json_num * sizeof(cJSON *));
     int result = JSON_INVALID;
     for (jsondoc_iter = 0; jsondoc_iter < json_num; jsondoc_iter++) {
@@ -7180,9 +7176,7 @@ static cJSON *input_to_cjson_cmp(Oid valtype, Datum arg, bool& jsontype) {
     jsontype = true;
 
     if (VALTYPE_IS_JSON(valtype)) {
-        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-        data = OidOutputFunctionCall(typOutput, arg);
-        root = cJSON_ParseWithOpts(data, 0, 1);
+        root = cJSON_ParseWithOpts(getJsonString(valtype, arg), 0, 1);
         if (!root) {
             jsontype = false;
         }
@@ -7292,5 +7286,72 @@ Datum json_le(PG_FUNCTION_ARGS)
     } else {
         PG_RETURN_BOOL(false);
     }
+}
+
+#define INIT_STRING_LENGTH 3
+static char* parseStringToJsonString(Datum othersArg)
+{
+    char* tmp = NULL;
+    struct varlena* v = (struct varlena*)DatumGetPointer(othersArg);
+    char* data = VARDATA_ANY(v);
+    /*
+     * The format of the string is "XXX",
+     * so two bytes are reserved for '"' and one byte is reserved for "\0".
+     */
+    int allocLen = INIT_STRING_LENGTH;
+    int actualLen = VARSIZE_ANY_EXHDR(v);
+    for (int i = 0; i < actualLen; i++) {
+        if (data[i] == '"') {
+            /* We need to transform '"' to '\"' here */
+            allocLen++;
+        }
+        allocLen++;
+    }
+    if (allocLen == INIT_STRING_LENGTH) {
+        return NULL;
+    }
+    tmp = (char*)palloc0(allocLen);
+    tmp[0] = '"';
+    tmp[allocLen - 2] = '"';
+    int count = 1;
+    for (int i = 0; i < actualLen; i++) {
+        if (data[i] == '"') {
+            /* We need to transform '"' to '\"' here */
+            tmp[count++] = '\\';
+        }
+        tmp[count++] = data[i];
+    }
+    return tmp;
+}
+
+static char* getJsonString(Oid othersTypeOid, Datum othersArg)
+{
+    char* tmp = NULL;
+    char* output = NULL;
+    bool typIsVarlena = false;
+    Oid typOutput = InvalidOid;
+    switch (othersTypeOid) {
+        case UNKNOWNOID:
+        case CSTRINGOID:
+            tmp = parseStringToJsonString(CStringGetTextDatum(DatumGetCString(othersArg)));
+            break;
+        case BPCHAROID:
+        case CHAROID:
+            getTypeOutputInfo(othersTypeOid, &typOutput, &typIsVarlena);
+            output = OidOutputFunctionCall(typOutput, othersArg);
+            tmp = parseStringToJsonString(CStringGetTextDatum(output));
+            pfree(output);
+            break;
+        case VARCHAROID:
+        case NVARCHAR2OID:
+        case TEXTOID:
+            tmp = parseStringToJsonString(othersArg);
+            break;
+        default:
+            getTypeOutputInfo(othersTypeOid, &typOutput, &typIsVarlena);
+            tmp = OidOutputFunctionCall(typOutput, othersArg);
+            break;
+    }
+    return tmp;
 }
 #endif

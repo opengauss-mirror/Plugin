@@ -863,6 +863,194 @@ select `id`, `json1`, '{"num": 1, "name": "edf"}' as `jsonc`,
  512 | [1,2,3]                   | {"num": 1, "name": "edf"} | f           | f            | t           | t            | t            | t            | f           | f
 (18 rows)
 
+---------- test about string type ----------
+SET dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,auto_recompile_function,error_for_division_by_zero';
+SELECT `char`, `varchar`, `tinyblob`, `blob`, `mediumblob`, `longblob`, `binary`, `varbinary`, `text` FROM test_json_table;
+ char  | varchar |   tinyblob   |     blob     |  mediumblob  |   longblob   |                                                                                                   binary                                                                                                   |  varbinary   | text  
+-------+---------+--------------+--------------+--------------+--------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------+-------
+ 1.23a | 1.23a   | \x312e323361 | \x312e323361 | \x312e323361 | \x312e323361 | \x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 | \x312e323361 | 1.23a
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') = '1.23a'::cstring;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') > '1.23a'::cstring;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') < '1.23a'::cstring;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') >= '1.23a'::cstring;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') <= '1.23a'::cstring;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') <> '1.23a'::cstring;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') = '1.23a';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') = `char` FROM test_json_table;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') = `varchar` FROM test_json_table;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') = `text` FROM test_json_table;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') > '1.23a';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') > `char` FROM test_json_table;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') > `varchar` FROM test_json_table;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') > `text` FROM test_json_table;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') < '1.23a';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') < `char` FROM test_json_table;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') < `varchar` FROM test_json_table;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') < `text` FROM test_json_table;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') >= '1.23a';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') >= `char` FROM test_json_table;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') >= `varchar` FROM test_json_table;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') >= `text` FROM test_json_table;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') <= '1.23a';
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') <= `char` FROM test_json_table;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') <= `varchar` FROM test_json_table;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') <= `text` FROM test_json_table;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') <> '1.23a';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') <> `char` FROM test_json_table;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') <> `varchar` FROM test_json_table;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT JSON_EXTRACT('{"a":"1.23a", "b":"bar"}', '$.a') <> `text` FROM test_json_table;
+ ?column? 
+----------
+ f
+(1 row)
+
 ---------- tail ----------
 drop schema json_cmp_operator_test_schema cascade;
 NOTICE:  drop cascades to 4 other objects
