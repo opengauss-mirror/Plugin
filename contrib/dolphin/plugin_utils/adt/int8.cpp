@@ -48,6 +48,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(uint8_cast_int8);
 PG_FUNCTION_INFO_V1_PUBLIC(year_cast_int8);
 PG_FUNCTION_INFO_V1_PUBLIC(bpchar_cast_int8);
 PG_FUNCTION_INFO_V1_PUBLIC(varchar_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(nvarchar2_cast_int8);
 PG_FUNCTION_INFO_V1_PUBLIC(text_cast_int8);
 PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_int8);
 
@@ -64,6 +65,7 @@ extern "C" DLL_PUBLIC Datum uint8_cast_int8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum year_cast_int8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum bpchar_cast_int8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum varchar_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum nvarchar2_cast_int8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum text_cast_int8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum varlena_cast_int8(PG_FUNCTION_ARGS);
 #endif
@@ -1783,6 +1785,17 @@ Datum varchar_cast_int8(PG_FUNCTION_ARGS)
     char* tmp = NULL;
     int128 result;
     tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
+    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
+    pfree_ext(tmp);
+    PG_RETURN_INT64(checkSignedRange(result, fcinfo));
+}
+
+Datum nvarchar2_cast_int8(PG_FUNCTION_ARGS)
+{
+    Datum txt = PG_GETARG_DATUM(0);
+    char* tmp = NULL;
+    int128 result;
+    tmp = DatumGetCString(DirectFunctionCall1(nvarchar2out, txt));
     result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
     pfree_ext(tmp);
     PG_RETURN_INT64(checkSignedRange(result, fcinfo));

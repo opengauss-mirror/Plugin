@@ -1204,6 +1204,41 @@ CREATE CAST (mediumblob AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelem
 CREATE CAST (longblob AS boolean) WITH FUNCTION pg_catalog.any2boolean(anyelement) AS ASSIGNMENT;
 CREATE CAST (anyset AS boolean) WITH FUNCTION pg_catalog.set_boolean(anyset) AS ASSIGNMENT;
 
+-- nvarchar2
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_ui1(nvarchar2) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.nvarchar2_cast_ui1 (
+nvarchar2
+) RETURNS uint1 LANGUAGE SQL IMMUTABLE STRICT as
+'select cast(cast($1 as float8) as uint1)';
+
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_ui2(nvarchar2) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.nvarchar2_cast_ui2 (
+nvarchar2
+) RETURNS uint2 LANGUAGE SQL IMMUTABLE STRICT as
+'select cast(cast($1 as float8) as uint2)';
+
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_ui4(nvarchar2) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.nvarchar2_cast_ui4 (
+nvarchar2
+) RETURNS uint4 LANGUAGE SQL IMMUTABLE STRICT as
+'select cast(cast($1 as float8) as uint4)';
+
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_ui8(nvarchar2) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.nvarchar2_cast_ui8 (
+nvarchar2
+) RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as
+'select cast(cast($1 as float8) as uint8)';
+
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_enum(nvarchar2, int4, anyelement) cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.nvarchar2_enum(
+nvarchar2, int4, anyelement
+) RETURNS anyenum LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'nvarchar2_enum';
+
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_int8(nvarchar2) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.nvarchar2_cast_int8 (
+nvarchar2
+) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'nvarchar2_cast_int8';
+
 CREATE OR REPLACE FUNCTION pg_catalog.ascii(blob) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
 CREATE OR REPLACE FUNCTION pg_catalog.ascii(year) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
 CREATE OR REPLACE FUNCTION pg_catalog.ascii(json) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';

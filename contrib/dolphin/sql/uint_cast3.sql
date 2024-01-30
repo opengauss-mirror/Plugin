@@ -184,5 +184,20 @@ select cast(1 as unsigned);
 select convert(1 , signed);
 select convert(1 , unsigned);
 
+select (-1)::nvarchar2::uint1;
+select (-1)::nvarchar2::uint2;
+select (-1)::nvarchar2::uint4;
+select (-1)::nvarchar2::uint8;
+
+select '255'::nvarchar2::uint1;
+select '65535'::nvarchar2::uint2;
+select '4294967295'::nvarchar2::uint4;
+select '18446744073709551615'::nvarchar2::uint8;
+
+select '256'::nvarchar2::uint1;
+select '65536'::nvarchar2::uint2;
+select '4294967296'::nvarchar2::uint4;
+select '18446744073709551616'::nvarchar2::uint8;
+
 drop schema uint_cast3 cascade;
 reset current_schema;

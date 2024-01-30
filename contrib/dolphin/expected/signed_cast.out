@@ -177,6 +177,57 @@ CONTEXT:  referenced column: int8
  -9223372036854775808
 (1 row)
 
+---- nvarchar2_cast_int8
+select cast('123'::nvarchar2 as signed);
+ int8 
+------
+  123
+(1 row)
+
+select cast('18446744073709551615'::nvarchar2 as signed);
+WARNING:  value "18446744073709551615" is out of range for type bigint
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('18446744073709551616'::nvarchar2 as signed);
+WARNING:  value "18446744073709551616" is out of range for type bigint
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775807'::nvarchar2 as signed);
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('9223372036854775808'::nvarchar2 as signed);
+WARNING:  value "9223372036854775808" is out of range for type bigint
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+select cast('-9223372036854775808'::nvarchar2 as signed);
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
+select cast('-9223372036854775809'::nvarchar2 as signed);
+WARNING:  value "-9223372036854775809" is out of range for type bigint
+CONTEXT:  referenced column: int8
+         int8         
+----------------------
+ -9223372036854775808
+(1 row)
+
 ---- timestamp_cast_int8
 select cast('2023-01-01 00:00:00'::timestamp as signed);
       int8      
@@ -558,6 +609,46 @@ select * from test_varchar;
 (6 rows)
 
 select cast(a as signed) from test_varchar;
+WARNING:  value "9223372036854775808" is out of range for type bigint
+CONTEXT:  referenced column: a
+WARNING:  value "-9223372036854775809" is out of range for type bigint
+CONTEXT:  referenced column: a
+WARNING:  value "18446744073709551615" is out of range for type bigint
+CONTEXT:  referenced column: a
+WARNING:  value "18446744073709551616" is out of range for type bigint
+CONTEXT:  referenced column: a
+          a           
+----------------------
+  9223372036854775807
+  9223372036854775807
+ -9223372036854775808
+ -9223372036854775808
+  9223372036854775807
+  9223372036854775807
+(6 rows)
+
+----- NVARCHAR2
+drop table if exists test_nvarchar2;
+NOTICE:  table "test_nvarchar2" does not exist, skipping
+create table test_nvarchar2(a NVARCHAR2(20));
+insert into test_nvarchar2 values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_nvarchar2;
+          a           
+----------------------
+ 9223372036854775807
+ 9223372036854775808
+ -9223372036854775808
+ -9223372036854775809
+ 18446744073709551615
+ 18446744073709551616
+(6 rows)
+
+select cast(a as signed) from test_nvarchar2;
 WARNING:  value "9223372036854775808" is out of range for type bigint
 CONTEXT:  referenced column: a
 WARNING:  value "-9223372036854775809" is out of range for type bigint
@@ -3039,5 +3130,7 @@ drop table if exists test_text;
 drop table if exists test_bpchar;
 drop table if exists test_bit;
 drop schema signed_cast cascade;
-NOTICE:  drop cascades to table test_uint8
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table test_nvarchar2
+drop cascades to table test_uint8
 reset current_schema;

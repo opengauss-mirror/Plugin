@@ -13,6 +13,39 @@ ERROR:  invalid input value for enum t_notnull_c1_2200_anonymous_enum_1: ""
 LINE 1: insert into t_notnull values('');
                                      ^
 CONTEXT:  referenced column: c1
+insert into t_null values(0::int1);
+ERROR:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert into t_null values(0::int2);
+ERROR:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert into t_null values(0::int4);
+ERROR:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert into t_null values(0::int8);
+ERROR:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert into t_null values(0::uint1);
+ERROR:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert into t_null values(0::uint2);
+ERROR:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert into t_null values(0::uint4);
+ERROR:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert into t_null values(0::uint8);
+ERROR:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert into t_null values(0::float4);
+ERROR:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert into t_null values(0::float8);
+ERROR:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert into t_null values(0::numeric);
+ERROR:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
 insert ignore into t_null values(0);
 WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
 CONTEXT:  referenced column: c1
@@ -25,15 +58,90 @@ WARNING:  invalid input value for enum t_notnull_c1_2200_anonymous_enum_1: ""
 LINE 1: insert ignore into t_notnull values('');
                                             ^
 CONTEXT:  referenced column: c1
+insert ignore into t_null values(0::int1);
+WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert ignore into t_null values(0::int2);
+WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert ignore into t_null values(0::int4);
+WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert ignore into t_null values(0::int8);
+WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert ignore into t_null values(0::uint1);
+WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert ignore into t_null values(0::uint2);
+WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert ignore into t_null values(0::uint4);
+WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert ignore into t_null values(0::uint8);
+WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert ignore into t_null values(0::float4);
+WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert ignore into t_null values(0::float8);
+WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
+insert ignore into t_null values(0::numeric);
+WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+CONTEXT:  referenced column: c1
 insert into t_null values('test');
 ERROR:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
 LINE 1: insert into t_null values('test');
                                   ^
 CONTEXT:  referenced column: c1
+insert into t_null values('test'::text);
+ERROR:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
+CONTEXT:  referenced column: c1
+insert into t_null values('test'::bpchar);
+ERROR:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
+CONTEXT:  referenced column: c1
+insert into t_null values('test'::bpchar(10));
+ERROR:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test      "
+CONTEXT:  referenced column: c1
+insert into t_null values('test'::varchar);
+ERROR:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
+CONTEXT:  referenced column: c1
+insert into t_null values('test'::varchar(10));
+ERROR:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
+CONTEXT:  referenced column: c1
+insert into t_null values('test'::nvarchar2);
+ERROR:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
+CONTEXT:  referenced column: c1
+insert into t_null values('test'::nvarchar2(10));
+ERROR:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
+CONTEXT:  referenced column: c1
 insert ignore into t_null values('test');
 WARNING:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
 LINE 1: insert ignore into t_null values('test');
                                          ^
+CONTEXT:  referenced column: c1
+insert ignore into t_null values('test'::text);
+WARNING:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
+CONTEXT:  referenced column: c1
+insert ignore into t_null values('test'::bpchar);
+WARNING:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
+CONTEXT:  referenced column: c1
+insert ignore into t_null values('test'::bpchar(10));
+WARNING:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test      "
+CONTEXT:  referenced column: c1
+insert ignore into t_null values('test'::varchar);
+WARNING:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
+CONTEXT:  referenced column: c1
+insert ignore into t_null values('test'::varchar(10));
+WARNING:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
+CONTEXT:  referenced column: c1
+insert ignore into t_null values('test'::nvarchar2);
+WARNING:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
+CONTEXT:  referenced column: c1
+insert ignore into t_null values('test'::nvarchar2(10));
+WARNING:  invalid input value for enum t_null_c1_2200_anonymous_enum_1: "test"
 CONTEXT:  referenced column: c1
 --non_strict sql_mode
 set dolphin.sql_mode = '';
@@ -62,9 +170,27 @@ select c1, c1+0 from t_null;
     |        2
     |        0
     |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
+    |        0
     |        2
     |        0
-(7 rows)
+(25 rows)
 
 select c1, c1+0 from t_notnull;
  c1 | ?column? 
