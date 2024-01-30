@@ -2597,4 +2597,12 @@ Datum dolphin_bitnot(PG_FUNCTION_ARGS)
     VarBit* arg = PG_GETARG_VARBIT_P(0);
     PG_RETURN_UINT64(~bittobigint(arg, true));
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(mp_bit_length_binary);
+extern "C" DLL_PUBLIC Datum mp_bit_length_binary(PG_FUNCTION_ARGS);
+Datum mp_bit_length_binary(PG_FUNCTION_ARGS)
+{
+    Datum input = PG_GETARG_DATUM(0);
+    PG_RETURN_INT32((toast_raw_datum_size(input) - VARHDRSZ) * BITS_PER_BYTE);
+}
 #endif
