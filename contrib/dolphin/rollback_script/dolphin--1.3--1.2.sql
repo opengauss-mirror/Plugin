@@ -882,3 +882,14 @@ DROP FUNCTION IF EXISTS pg_catalog.float8_cast_timestamptz(float8);
 DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_timestamptz(numeric);
 DROP CAST IF EXISTS (TEXT AS timestamp with time zone);
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_explicit(TEXT);
+
+DROP CAST IF EXISTS (uint4 AS year) CASCADE;
+DROP CAST IF EXISTS (boolean AS year) CASCADE;
+DROP CAST IF EXISTS (char AS year) CASCADE;
+DROP CAST IF EXISTS (varchar AS year) CASCADE;
+DROP CAST IF EXISTS (text AS year) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_year(uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.boolean_year(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.char_year(char) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varchar_year(varchar) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.text_year(text) CASCADE;

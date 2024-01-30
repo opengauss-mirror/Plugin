@@ -1384,3 +1384,24 @@ CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_explicit(TEXT)
 RETURNS timestamp with time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamptz_explicit';
 
 CREATE CAST(TEXT AS timestamp with time zone) WITH FUNCTION pg_catalog.timestamptz_explicit(TEXT) AS ASSIGNMENT;
+
+DROP CAST IF EXISTS (uint4 AS year) CASCADE;
+DROP CAST IF EXISTS (boolean AS year) CASCADE;
+DROP CAST IF EXISTS (char AS year) CASCADE;
+DROP CAST IF EXISTS (varchar AS year) CASCADE;
+DROP CAST IF EXISTS (text AS year) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_year(uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.boolean_year(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.char_year(char) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varchar_year(varchar) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.text_year(text) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint4_year(uint4) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
+CREATE CAST(uint4 AS year) WITH FUNCTION uint4_year(uint4) AS ASSIGNMENT;
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_year(boolean) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
+CREATE CAST(boolean AS year) WITH FUNCTION boolean_year(boolean) AS ASSIGNMENT;
+CREATE OR REPLACE FUNCTION pg_catalog.char_year(char) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
+CREATE CAST(char AS year) WITH FUNCTION char_year(char) AS ASSIGNMENT;
+CREATE OR REPLACE FUNCTION pg_catalog.varchar_year(varchar) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
+CREATE CAST(varchar AS year) WITH FUNCTION varchar_year(varchar) AS ASSIGNMENT;
+CREATE OR REPLACE FUNCTION pg_catalog.text_year (text) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
+CREATE CAST(text AS year) WITH FUNCTION text_year(text) AS ASSIGNMENT;

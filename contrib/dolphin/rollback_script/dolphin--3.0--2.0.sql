@@ -181,17 +181,6 @@ DROP FUNCTION IF EXISTS pg_catalog.set_boolean(anyset) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.binary2boolean(binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varbinary2boolean(varbinary) CASCADE;
 
-DROP CAST IF EXISTS (uint4 AS year) CASCADE;
-DROP CAST IF EXISTS (boolean AS year) CASCADE;
-DROP CAST IF EXISTS (char AS year) CASCADE;
-DROP CAST IF EXISTS (varchar AS year) CASCADE;
-DROP CAST IF EXISTS (text AS year) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.uint4_year(uint4) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.boolean_year(boolean) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.char_year(char) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.varchar_year(varchar) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.text_year(text) CASCADE;
-
 DROP OPERATOR IF EXISTS pg_catalog.=(boolean, binary);
 DROP OPERATOR IF EXISTS pg_catalog.=(binary, boolean);
 DROP OPERATOR IF EXISTS pg_catalog.<>(boolean, binary);
