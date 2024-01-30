@@ -41,6 +41,7 @@ typedef struct ChunkDispatchState
 	 * relations) for each chunk.
 	 */
 	ChunkDispatch *dispatch;
+	UpsertState* upsertState;
 } ChunkDispatchState;
 
 #define CHUNK_DISPATCH_STATE_NAME "ChunkDispatchState"

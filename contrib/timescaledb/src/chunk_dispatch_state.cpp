@@ -9,6 +9,7 @@
 #include <catalog/pg_class.h>
 #include <commands/trigger.h>
 #include <nodes/nodes.h>
+#include <cstdlib>
 
 #include "compat.h"
 #include "chunk_dispatch_state.h"
@@ -69,9 +70,7 @@ on_chunk_insert_state_changed(ChunkInsertState *cis, void *data)
 	 * match the chunk. In PG12, every result relation has its own arbiter
 	 * index list, so no update is needed here.
 	 */
-	
 
-	
 }
 #endif /* PG12_GE */
 
@@ -88,6 +87,11 @@ chunk_dispatch_exec(ExtensiblePlanState *node)
 	EState *estate = node->ss.ps.state;
 	MemoryContext old;
 
+	#ifdef OG30
+	List *tlist = state->cscan_state.ss.ps.targetlist;
+	substate->targetlist = tlist;
+	substate->plan->targetlist = tlist;
+	#endif
 	/* Get the next tuple from the subplan state node */
 	slot = ExecProcNode(substate);
 
@@ -201,6 +205,24 @@ setup_tuple_slots_for_on_conflict_handling(ChunkDispatchState *state)
 	{
 		TupleDesc tupdesc;
 
+		Assert(mtstate->mt_existing != NULL);
+		Assert(mtstate->mt_conflproj != NULL);
+
+		tupdesc = mtstate->mt_existing->tts_tupleDescriptor;
+		mtstate->mt_existing = ExecInitExtraTupleSlot(mtstate->ps.state, NULL);
+		ExecSetSlotDescriptor(mtstate->mt_existing, tupdesc);
+
+		/*
+		 * in this case we must overwrite mt_conflproj because there are
+		 * several pointers to it throughout expressions and other
+		 * evaluations, and the original tuple will otherwise be stored to the
+		 * old slot, whose pointer is saved there.
+		 */
+		tupdesc = mtstate->mt_conflproj->tts_tupleDescriptor;
+		mtstate->mt_conflproj = ExecInitExtraTupleSlot(mtstate->ps.state, NULL);
+		ExecSetSlotDescriptor(mtstate->mt_conflproj, tupdesc);
+		mtstate->resultRelInfo->ri_onConflict->oc_ProjInfo->pi_state.resultslot =
+			mtstate->mt_conflproj;
 	}
 }
 #elif PG11_LT

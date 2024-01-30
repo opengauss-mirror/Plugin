@@ -49,13 +49,26 @@
 #include "catalog/pg_operator.h"
 #include "catalog/pg_largeobject_metadata.h"
 #include "catalog/pg_foreign_server.h"
-
-
 #include "storage/procarray.h"
+#include "parser/parse_agg.h"
 #include "event_trigger.h"
 #include "tsdb_static2.cpp"
 
 
+static Param* generate_new_param(PlannerInfo* root, Oid paramtype, int32 paramtypmod, Oid paramcollation)
+{
+    Param* retval = NULL;
+
+    retval = makeNode(Param);
+    retval->paramkind = PARAM_EXEC;
+    retval->paramid = root->glob->nParamExec++;
+    retval->paramtype = paramtype;
+    retval->paramtypmod = paramtypmod;
+    retval->paramcollid = paramcollation;
+    retval->location = -1;
+
+    return retval;
+}
 
 
 static void
@@ -214,7 +227,7 @@ get_agg_clause_costs_walker(Node *node, get_agg_clause_costs_context *context)
 			int			numArguments;
 
 			/* extract argument types (ignoring any ORDER BY expressions) */
-			numArguments = get_aggregate_argtypes(aggref, inputTypes);
+			numArguments = get_aggregate_argtypes(aggref, inputTypes, FUNC_MAX_ARGS);
 
 			/* resolve actual type of transition state, if polymorphic */
 			aggtranstype = resolve_aggregate_transtype(aggref->aggfnoid,
@@ -554,9 +567,185 @@ ResourceArrayEnlarge(ResourceArray *resarr)
 	Assert(resarr->nitems < resarr->maxitems);
 }
 
+static int
+DecodeTextArrayToCString(Datum array, char ***cstringp)
+{
+	ArrayType  *arr = DatumGetArrayTypeP(array);
+	Datum	   *elems;
+	char	  **cstring;
+	int			i;
+	int			nelems;
 
+	if (ARR_NDIM(arr) != 1 || ARR_HASNULL(arr) || ARR_ELEMTYPE(arr) != TEXTOID)
+		elog(ERROR, "expected 1-D text array");
+	deconstruct_array(arr, TEXTOID, -1, false, 'i', &elems, NULL, &nelems);
 
+	cstring =(char **) palloc(nelems * sizeof(char *));
+	for (i = 0; i < nelems; ++i)
+		cstring[i] = TextDatumGetCString(elems[i]);
 
+	pfree(elems);
+	*cstringp = cstring;
+	return nelems;
+}
+
+static void
+InvalidateEventCacheCallback(Datum arg, int cacheid, uint32 hashvalue)
+{
+	/*
+	 * If the cache isn't valid, then there might be a rebuild in progress, so
+	 * we can't immediately blow it away.  But it's advantageous to do this
+	 * when possible, so as to immediately free memory.
+	 */
+	if (EventTriggerCacheState == ETCS_VALID)
+	{
+		MemoryContextResetAndDeleteChildren(EventTriggerCacheContext);
+		EventTriggerCache = NULL;
+	}
+
+	/* Mark cache for rebuild. */
+	EventTriggerCacheState = ETCS_NEEDS_REBUILD;
+}
+
+static void
+BuildEventTriggerCache(void)
+{
+	HASHCTL		ctl;
+	HTAB	   *cache;
+	MemoryContext oldcontext;
+	Relation	rel;
+	Relation	irel;
+	SysScanDesc scan;
+
+	if (EventTriggerCacheContext != NULL)
+	{
+		/*
+		 * Free up any memory already allocated in EventTriggerCacheContext.
+		 * This can happen either because a previous rebuild failed, or
+		 * because an invalidation happened before the rebuild was complete.
+		 */
+		MemoryContextResetAndDeleteChildren(EventTriggerCacheContext);
+	}
+	else
+	{
+		/*
+		 * This is our first time attempting to build the cache, so we need to
+		 * set up the memory context and register a syscache callback to
+		 * capture future invalidation events.
+		 */
+		if (LocalMyDBCacheMemCxt() == NULL)
+			CreateCacheMemoryContext();
+		EventTriggerCacheContext =
+			AllocSetContextCreate(LocalMyDBCacheMemCxt(),
+								  "EventTriggerCache",
+								  ALLOCSET_DEFAULT_SIZES);
+		CacheRegisterThreadSyscacheCallback(EVENTTRIGGEROID,
+									  InvalidateEventCacheCallback,
+									  (Datum) 0);
+	}
+
+	/* Switch to correct memory context. */
+	oldcontext = MemoryContextSwitchTo(EventTriggerCacheContext);
+
+	/* Prevent the memory context from being nuked while we're rebuilding. */
+	EventTriggerCacheState = ETCS_REBUILD_STARTED;
+
+	/* Create new hash table. */
+	MemSet(&ctl, 0, sizeof(ctl));
+	ctl.keysize = sizeof(EventTriggerEvent);
+	ctl.entrysize = sizeof(EventTriggerCacheEntry);
+	ctl.hcxt = EventTriggerCacheContext;
+	cache = hash_create("Event Trigger Cache", 32, &ctl,
+						HASH_ELEM | HASH_BLOBS | HASH_CONTEXT);
+
+	/*
+	 * Prepare to scan pg_event_trigger in name order.
+	 */
+	rel = relation_open(EventTriggerRelationId, AccessShareLock);
+	irel = index_open(EventTriggerNameIndexId, AccessShareLock);
+	scan = systable_beginscan_ordered(rel, irel, NULL, 0, NULL);
+
+	/*
+	 * Build a cache item for each pg_event_trigger tuple, and append each one
+	 * to the appropriate cache entry.
+	 */
+	for (;;)
+	{
+		HeapTuple	tup;
+		Form_pg_event_trigger form;
+		char	   *evtevent;
+		EventTriggerEvent event;
+		EventTriggerCacheItem *item;
+		Datum		evttags;
+		bool		evttags_isnull;
+		EventTriggerCacheEntry *entry;
+		bool		found;
+
+		/* Get next tuple. */
+		tup = systable_getnext_ordered(scan, ForwardScanDirection);
+		if (!HeapTupleIsValid(tup))
+			break;
+
+		/* Skip trigger if disabled. */
+		form = (Form_pg_event_trigger) GETSTRUCT(tup);
+		if (form->evtenabled == TRIGGER_DISABLED)
+			continue;
+
+		/* Decode event name. */
+		evtevent = NameStr(form->evtevent);
+		if (strcmp(evtevent, "ddl_command_start") == 0)
+			event = EVT_DDLCommandStart;
+		else if (strcmp(evtevent, "ddl_command_end") == 0)
+			event = EVT_DDLCommandEnd;
+		else if (strcmp(evtevent, "sql_drop") == 0)
+			event = EVT_SQLDrop;
+		else if (strcmp(evtevent, "table_rewrite") == 0)
+			event = EVT_TableRewrite;
+		else
+			continue;
+
+		/* Allocate new cache item. */
+		item =(EventTriggerCacheItem*) palloc0(sizeof(EventTriggerCacheItem));
+		item->fnoid = form->evtfoid;
+		item->enabled = form->evtenabled;
+
+		/* Decode and sort tags array. */
+		evttags = heap_getattr_tsdb(tup, Anum_pg_event_trigger_evttags,
+							   RelationGetDescr(rel), &evttags_isnull);
+		if (!evttags_isnull)
+		{
+			item->ntags = DecodeTextArrayToCString(evttags, &item->tag);
+			qsort(item->tag, item->ntags, sizeof(char *), pg_qsort_strcmp);
+		}
+
+		/* Add to cache entry. */
+		entry =(EventTriggerCacheEntry *) hash_search(cache, &event, HASH_ENTER, &found);
+		if (found)
+			entry->triggerlist = lappend(entry->triggerlist, item);
+		else
+			entry->triggerlist = list_make1(item);
+	}
+
+	/* Done with pg_event_trigger scan. */
+	systable_endscan_ordered(scan);
+	index_close(irel, AccessShareLock);
+	relation_close(rel, AccessShareLock);
+
+	/* Restore previous memory context. */
+	MemoryContextSwitchTo(oldcontext);
+
+	/* Install new cache. */
+	EventTriggerCache = cache;
+
+	/*
+	 * If the cache has been invalidated since we entered this routine, we
+	 * still use and return the cache we just finished constructing, to avoid
+	 * infinite loops, but we leave the cache marked stale so that we'll
+	 * rebuild it again on next access.  Otherwise, we mark the cache valid.
+	 */
+	if (EventTriggerCacheState == ETCS_REBUILD_STARTED)
+		EventTriggerCacheState = ETCS_VALID;
+}
 
 static bool index_recheck_constraint(
     Relation index, Oid* constr_procs, Datum* existing_values, const bool* existing_isnull, Datum* new_values)

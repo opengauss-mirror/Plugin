@@ -750,7 +750,7 @@ get_explicit_chunk_oids(CollectQualCtx *ctx, Hypertable *ht)
 	/* function marked as STRICT so argument can't be NULL */
 	Assert(!chunks_arg->constisnull);
 
-	chunk_id_iterator = array_create_iterator(DatumGetArrayTypeP(chunks_arg->constvalue), 0, NULL);
+	chunk_id_iterator = array_create_iterator(DatumGetArrayTypeP(chunks_arg->constvalue), 0);
 
 	while (array_iterate(chunk_id_iterator, &elem, &isnull))
 	{
@@ -1267,7 +1267,10 @@ propagate_join_quals(PlannerInfo *root, RelOptInfo *rel, CollectQualCtx *ctx)
 			{
 				Relids relids = pull_varnos((Node *) propagated);
 				RestrictInfo *restrictinfo;
-
+#ifdef OG30
+Index security_level = 0;
+	restrictinfo = make_restrictinfo((Expr *) propagated, true, false, false,security_level, relids, NULL, NULL);
+#else
 #if PG96
 				restrictinfo =
 					make_restrictinfo((Expr *) propagated, true, false, false, relids, NULL, NULL);
@@ -1280,6 +1283,8 @@ propagate_join_quals(PlannerInfo *root, RelOptInfo *rel, CollectQualCtx *ctx)
 												 relids,
 												 NULL,
 												 NULL);
+#endif
+
 #endif
 				ctx->restrictions = lappend(ctx->restrictions, restrictinfo);
 #if PG12_GE

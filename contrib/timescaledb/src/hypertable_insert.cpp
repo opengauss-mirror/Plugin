@@ -131,12 +131,11 @@ static ExtensiblePlanMethods hypertable_insert_plan_methods = {
 	.CreateExtensiblePlanState = hypertable_insert_state_create,
 };
 
-
 /*
  * Make a targetlist to meet CustomScan expectations.
  *
  * When a CustomScan isn't scanning a real relation (scanrelid=0), it will build
- * a virtual TupleDesc for the scan "input" based on extensible_plan_tlist. The
+ * a virtual TupleDesc for the scan "input" based on custom_scan_tlist. The
  * "output" targetlist is then expected to reference the attributes of the
  * input's TupleDesc. Without projection, the targetlist will be only Vars with
  * varno set to INDEX_VAR (to indicate reference to the TupleDesc instead of a
@@ -206,10 +205,23 @@ hypertable_insert_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath
 							  List *tlist, List *clauses, List *custom_plans)
 {
 	ExtensiblePlan *cscan = makeNode(ExtensiblePlan);
+
+	#ifdef OG30
+	ExtensiblePlan *mt =(ExtensiblePlan *) linitial(custom_plans);
+	Assert(IsA(mt, ExtensiblePlan));
+	cscan->methods = &hypertable_insert_plan_methods;
+	cscan->extensible_plans = list_make1(mt);
+	cscan->scan.scanrelid = 0;
+
+	/* Copy costs, etc., from the original plan */
+	cscan->scan.plan.startup_cost = mt->scan.plan.startup_cost;
+	cscan->scan.plan.total_cost = mt->scan.plan.total_cost;
+	cscan->scan.plan.plan_rows = mt->scan.plan.plan_rows;
+	cscan->scan.plan.plan_width = mt->scan.plan.plan_width;
+
+	#else
 	ModifyTable *mt =(ModifyTable *) linitial(custom_plans);
-
 	Assert(IsA(mt, ModifyTable));
-
 	cscan->methods = &hypertable_insert_plan_methods;
 	cscan->extensible_plans = list_make1(mt);
 	cscan->scan.scanrelid = 0;
@@ -219,17 +231,21 @@ hypertable_insert_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath
 	cscan->scan.plan.total_cost = mt->plan.total_cost;
 	cscan->scan.plan.plan_rows = mt->plan.plan_rows;
 	cscan->scan.plan.plan_width = mt->plan.plan_width;
+	#endif
 
+	
 	/* The tlist is always NIL since the ModifyTable subplan doesn't have its
 	 * targetlist set until set_plan_references (setrefs.c) is run */
+	#ifndef OG30
 	Assert(tlist == NIL);
+	#endif
 
 	/* Target list handling here needs special attention. Intuitively, we'd like
 	 * to adopt the target list of the ModifyTable subplan we wrap without
 	 * further projection. For a CustomScan this means setting the "input"
-	 * extensible_plan_tlist to the ModifyTable's target list and having an "output"
+	 * custom_scan_tlist to the ModifyTable's target list and having an "output"
 	 * targetlist that references the TupleDesc that is created from the
-	 * extensible_plan_tlist at execution time. Now, while this seems
+	 * custom_scan_tlist at execution time. Now, while this seems
 	 * straight-forward, there are several things with how ModifyTable nodes are
 	 * handled in the planner that complicates this:
 	 *
@@ -247,7 +263,7 @@ hypertable_insert_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath
 	 *	 CustomScan and thus not exempted.
 	 *
 	 * - Third, a CustomScan's targetlist should reference the attributes of the
-	 *   TupleDesc that gets created from the extensible_plan_tlist at the start of
+	 *   TupleDesc that gets created from the custom_scan_tlist at the start of
 	 *   execution. This means we need to make the targetlist into all Vars with
 	 *   attribute numbers that correspond to the TupleDesc instead of result
 	 *   relation in the ModifyTable.

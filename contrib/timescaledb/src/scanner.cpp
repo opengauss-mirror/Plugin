@@ -49,7 +49,7 @@ heap_scanner_beginscan(InternalScannerCtx *ctx)
 static bool
 heap_scanner_getnext(InternalScannerCtx *ctx)
 {
-	ctx->tinfo.tuple = heap_getnext((TableScanDescData *)ctx->scan.heap_scan, ctx->sctx->scandirection);
+	ctx->tinfo.tuple = heap_getnext(ctx->scan.heap_scan, ctx->sctx->scandirection);
 	return HeapTupleIsValid(ctx->tinfo.tuple);
 }
 
@@ -223,14 +223,14 @@ ts_scanner_next(ScannerCtx *ctx, InternalScannerCtx *ictx)
 			{
 				Buffer buffer;
 				TM_FailureData hufd;
-				ictx->tinfo.lockresult =(HTSU_Result) heap_lock_tuple(ictx->tablerel,
+				ictx->tinfo.lockresult = heap_lock_tuple(ictx->tablerel,
 														 ictx->tinfo.tuple,
 														 &buffer,
 														 GetCurrentCommandId(false),
 														 ctx->tuplock->lockmode,
 														 ctx->tuplock->waitpolicy,
 														 ctx->tuplock->follow_updates,
-														 &hufd.tsdb_for_og);
+														 &hufd);
 
 				/*
 				 * A tuple lock pins the underlying buffer, so we need to

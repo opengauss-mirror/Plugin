@@ -110,6 +110,8 @@ typedef struct tsdb_session_context {
 
 } tsdb_session_context; 
 
+
+
 extern void ts_cache_init(Cache *cache);
 extern void ts_cache_invalidate(Cache *cache);
 extern void *ts_cache_fetch(Cache *cache, CacheQuery *query);
@@ -120,7 +122,11 @@ extern MemoryContext ts_cache_memory_ctx(Cache *cache);
 extern Cache *ts_cache_pin(Cache *cache);
 extern TSDLLEXPORT int ts_cache_release(Cache *cache);
 
+
+
 extern void _cache_init(void);
 extern void _cache_fini(void);
+
+
 
 #endif /* TIMESCALEDB_CACHE_H */

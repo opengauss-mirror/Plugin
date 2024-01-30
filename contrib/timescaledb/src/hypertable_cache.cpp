@@ -18,7 +18,6 @@
 #include "dimension.h"
 #include "tablespace.h"
 
-
 static void *hypertable_cache_create_entry(Cache *cache, CacheQuery *query);
 static void hypertable_cache_missing_error(const Cache *cache, const CacheQuery *query);
 
@@ -50,7 +49,7 @@ hypertable_cache_valid_result(const void *result)
 	return ((HypertableCacheEntry *) result)->hypertable != NULL;
 }
 
-Cache *
+static Cache *
 hypertable_cache_create()
 {
 	MemoryContext ctx =
@@ -232,14 +231,13 @@ ts_hypertable_cache_get_entry_with_table(Cache *cache, const Oid relid, const ch
 extern TSDLLEXPORT Cache *
 ts_hypertable_cache_pin()
 {
-	
 	return ts_cache_pin(hypertable_cache_current);
 }
 
 void
 _hypertable_cache_init(void)
 {
-	
+	CreateCacheMemoryContext();
 	hypertable_cache_current = hypertable_cache_create();
 }
 

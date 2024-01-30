@@ -5,6 +5,7 @@ set(SOURCES
   telemetry.cpp
   partialize_finalize.cpp
   planner.cpp
+  tsdb_tsl.cpp
   ${PROJECT_SOURCE_DIR}/src/agg_bookend.cpp
   ${PROJECT_SOURCE_DIR}/src/base64_compat.cpp
   ${PROJECT_SOURCE_DIR}/src/cache.cpp
@@ -110,6 +111,7 @@ set(SOURCES
   ${PROJECT_SOURCE_DIR}/src/telemetry/telemetry.cpp
   ${PROJECT_SOURCE_DIR}/src/telemetry/telemetry_metadata.cpp
   ${PROJECT_SOURCE_DIR}/src/telemetry/uuid.cpp
+  
 )
 
 # Add test source code in Debug builds
@@ -147,7 +149,6 @@ add_subdirectory(bgw_policy)
 add_subdirectory(compression)
 add_subdirectory(continuous_aggs)
 add_subdirectory(nodes)
-
 set(PROJECT_TRUNK_DIR ${CMAKE_SOURCE_DIR}/../..)
 set(PROJECT_OPENGS_DIR ${PROJECT_TRUNK_DIR} CACHE INTERNAL "")
 set(PROJECT_SRC_DIR ${PROJECT_OPENGS_DIR}/src CACHE INTERNAL "")

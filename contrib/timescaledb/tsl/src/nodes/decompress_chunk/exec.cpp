@@ -26,6 +26,7 @@
 #include "nodes/decompress_chunk/planner.h"
 #include "hypertable_compression.h"
 
+#include "access/tableam.h"
 typedef enum DecompressChunkColumnType
 {
 	SEGMENTBY_COLUMN,
@@ -210,7 +211,7 @@ constify_tableoid(List *node, Index chunk_index, Oid chunk_relid)
 }
 
 /*
- * Complete initialization of the supplied CustomScanState.
+ * Complete initialization of the supplied ExtensiblePlanState.
  *
  * Standard fields have been initialized by ExecInitCustomScan,
  * but any private fields should be initialized here.
@@ -274,7 +275,7 @@ initialize_batch(DecompressChunkState *state, TupleTableSlot *slot)
 		{
 			case COMPRESSED_COLUMN:
 			{
-				value = slot_getattr(slot, AttrOffsetGetAttrNumber(i), &isnull);
+				value = tableam_tslot_getattr(slot, AttrOffsetGetAttrNumber(i), &isnull);
 				if (!isnull)
 				{
 					CompressedDataHeader *header = (CompressedDataHeader *) PG_DETOAST_DATUM(value);
@@ -290,7 +291,7 @@ initialize_batch(DecompressChunkState *state, TupleTableSlot *slot)
 				break;
 			}
 			case SEGMENTBY_COLUMN:
-				value = slot_getattr(slot, AttrOffsetGetAttrNumber(i), &isnull);
+				value = tableam_tslot_getattr(slot, AttrOffsetGetAttrNumber(i), &isnull);
 				if (!isnull)
 					column->segmentby.value = value;
 				else
@@ -299,7 +300,7 @@ initialize_batch(DecompressChunkState *state, TupleTableSlot *slot)
 				column->segmentby.isnull = isnull;
 				break;
 			case COUNT_COLUMN:
-				value = slot_getattr(slot, AttrOffsetGetAttrNumber(i), &isnull);
+				value = tableam_tslot_getattr(slot, AttrOffsetGetAttrNumber(i), &isnull);
 				state->counter = DatumGetInt32(value);
 				/* count column should never be NULL */
 				Assert(!isnull);

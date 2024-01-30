@@ -43,6 +43,4 @@ ts_get_private_reloptinfo(const RelOptInfo *rel)
 	return (TimescaleDBPrivate *)rel->fdw_private;
 }
 
-extern void _planner_init(void);
-extern void _planner_fini(void);
 #endif /* TIMESCALEDB_PLANNER_H */

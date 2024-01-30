@@ -47,7 +47,7 @@ ts_table_tuple_insert(Relation rel, TupleTableSlot *slot, CommandId cid, int opt
 bool
 ts_table_scan_getnextslot(TableScanDesc scan, const ScanDirection direction, TupleTableSlot *slot)
 {
-	HeapTuple tuple = heap_getnext((TableScanDescData *)scan, direction);
+	HeapTuple tuple = heap_getnext(scan, direction);
 
 	if (HeapTupleIsValid(tuple))
 	{

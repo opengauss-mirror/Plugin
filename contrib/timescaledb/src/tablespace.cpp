@@ -510,7 +510,7 @@ ts_tablespace_attach_internal(Name tspcname, Oid hypertable_oid, bool if_not_att
 					(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
 					 errmsg("permission denied for tablespace \"%s\" by table owner \"%s\"",
 							NameStr(*tspcname),
-							GetUserNameFromId(ownerid, true))));
+							GetUserNameFromId(ownerid))));
 	}
 	ht = ts_hypertable_cache_get_cache_and_entry(hypertable_oid, CACHE_FLAG_NONE, &hcache);
 

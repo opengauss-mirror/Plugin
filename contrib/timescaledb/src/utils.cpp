@@ -44,12 +44,13 @@ ts_pg_timestamp_to_unix_microseconds(PG_FUNCTION_ARGS)
 {
 	TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);
 	int64 microseconds;
+	TimestampTz gap_og2unix_timestamp =END_TIMESTAMP - TS_EPOCH_DIFF_MICROSECONDS;
 
 	if (timestamp < MIN_TIMESTAMP)
 		ereport(ERROR,
 				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
 
-	if (timestamp >= (END_TIMESTAMP - TS_EPOCH_DIFF_MICROSECONDS))
+	if (timestamp >= gap_og2unix_timestamp)
 		ereport(ERROR,
 				(errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
 
@@ -517,15 +518,7 @@ ts_lookup_proc_filtered(const char *schema, const char *funcname, Oid *rettype, 
 	 * that would not allow us to check for functions that take either
 	 * ANYELEMENTOID or a dimension-specific in the same search.
 	 */
-	#ifndef ENABLE_MULTIPLE_NODES
-    if (t_thrd.proc->workingVersionNum < 92470) {
-        catlist = SearchSysCacheList1(PROCNAMEARGSNSP, CStringGetDatum(funcname));
-    } else {
-        catlist = SearchSysCacheList1(PROCALLARGS, CStringGetDatum(funcname));
-    }
-	#else
-    catlist = SearchSysCacheList1(PROCNAMEARGSNSP, CStringGetDatum(funcname));
-	#endif
+	catlist = SearchSysCacheList1(PROCNAMEARGSNSP, CStringGetDatum(funcname));
 
 	for (i = 0; i < catlist->n_members; i++)
 	{

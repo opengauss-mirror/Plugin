@@ -5,7 +5,6 @@
 
 BackgroundWorker *MyBgworkerEntry;
 
-ProcessUtility_hook_type_tsdb ProcessUtility_hook_tsdb;
 bool row_security;  
 PGDLLIMPORT int NamedLWLockTrancheRequests;
 

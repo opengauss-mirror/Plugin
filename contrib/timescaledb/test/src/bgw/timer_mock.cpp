@@ -14,8 +14,6 @@
 #include <utils/rel.h>
 
 #include "compat.h"
-#if PG12_LT
-#endif
 
 #include "timer_mock.h"
 #include "log.h"

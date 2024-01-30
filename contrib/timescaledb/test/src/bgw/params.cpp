@@ -50,7 +50,7 @@ params_register_dsm_handle(dsm_handle handle)
 
 	rel = table_open(get_dsm_handle_table_oid(), RowExclusiveLock);
 	scan = table_beginscan(rel, SnapshotSelf, 0, NULL);
-	tuple = heap_copytuple(heap_getnext((TableScanDescData *)scan, ForwardScanDirection));
+	tuple = heap_copytuple(heap_getnext(scan, ForwardScanDirection));
 	fd = (FormData_bgw_dsm_handle *) GETSTRUCT(tuple);
 	fd->handle = handle;
 	ts_catalog_update(rel, tuple);
@@ -70,7 +70,7 @@ params_load_dsm_handle()
 
 	rel = table_open(get_dsm_handle_table_oid(), RowExclusiveLock);
 	scan = table_beginscan(rel, SnapshotSelf, 0, NULL);
-	tuple = heap_getnext((TableScanDescData *)scan, ForwardScanDirection);
+	tuple = heap_getnext(scan, ForwardScanDirection);
 	Assert(tuple != NULL);
 	tuple = heap_copytuple(tuple);
 	fd = (FormData_bgw_dsm_handle *) GETSTRUCT(tuple);
@@ -249,7 +249,7 @@ ts_bgw_params_create(PG_FUNCTION_ARGS)
 
 	Assert(seg != NULL);
 
-	params = (TestParamsWrapper *)dsm_segment_address(seg);
+	params =(TestParamsWrapper *)dsm_segment_address(seg);
 	*params = (TestParamsWrapper)
 	{
 		.params =

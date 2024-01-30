@@ -53,7 +53,6 @@
 #include "parser/parse_collate.h"
 
 #include "optimizer/pathnode.h"
-#include "utils/evtcache.h"
 
 #include "catalog/storage.h"
 #include "tsdb_static.cpp"
@@ -112,99 +111,6 @@ cost_gather(GatherPath *path, PlannerInfo *root,
 } 
 
 
-bool
-is_projection_capable_path(Path *path)
-{
-	/* Most plan types can project, so just list the ones that can't */
-	switch (path->pathtype)
-	{
-		case T_Hash:
-		case T_Material:
-		case T_Sort:
-		case T_Unique:
-		case T_SetOp:
-		case T_LockRows:
-		case T_Limit:
-		case T_ModifyTable:
-		case T_MergeAppend:
-		case T_RecursiveUnion:
-			return false;
-		case T_Append:
-
-			/*
-			 * Append can't project, but if it's being used to represent a
-			 * dummy path, claim that it can project.  This prevents us from
-			 * converting a rel from dummy to non-dummy status by applying a
-			 * projection to its dummy path.
-			 */
-			return IS_DUMMY_PATH(path);
-		default:
-			break;
-	}
-	return true;
-} 
-
-ProjectionPath *
-create_projection_path(PlannerInfo *root,
-					   RelOptInfo *rel,
-					   Path *subpath,
-					   PathTarget *target)
-{
-	ProjectionPath *pathnode = makeNode(ProjectionPath);
-
-	pathnode->path.pathtype = T_BaseResult;
-	pathnode->path.parent = rel;
-	/* For now, assume we are above any joins, so no parameterization */
-	pathnode->path.param_info = NULL;
-
-	/* Projection does not change the sort order */
-	pathnode->path.pathkeys = subpath->pathkeys;
-
-	pathnode->subpath = subpath;
-
-	/*
-	 * We might not need a separate Result node.  If the input plan node type
-	 * can project, we can just tell it to project something else.  Or, if it
-	 * can't project but the desired target has the same expression list as
-	 * what the input will produce anyway, we can still give it the desired
-	 * tlist (possibly changing its ressortgroupref labels, but nothing else).
-	 * Note: in the latter case, create_projection_plan has to recheck our
-	 * conclusion; see comments therein.
-	 */
-	if (is_projection_capable_path(subpath))
-	{
-		/* No separate Result node needed */
-		pathnode->dummypp = true;
-
-		/*
-		 * Set cost of plan as subpath's cost, adjusted for tlist replacement.
-		 */
-		pathnode->path.rows = subpath->rows;
-		pathnode->path.startup_cost = subpath->startup_cost +
-			(target->cost.startup);
-		pathnode->path.total_cost = subpath->total_cost +
-			(target->cost.startup) +
-			(target->cost.per_tuple) * subpath->rows;
-	}
-	else
-	{
-		/* We really do need the Result node */
-		pathnode->dummypp = false;
-
-		/*
-		 * The Result node's cost is cpu_tuple_cost per row, plus the cost of
-		 * evaluating the tlist.  There is no qual to worry about.
-		 */
-		pathnode->path.rows = subpath->rows;
-		pathnode->path.startup_cost = subpath->startup_cost +
-			target->cost.startup;
-		pathnode->path.total_cost = subpath->total_cost +
-			target->cost.startup +
-			(u_sess->attr.attr_sql.cpu_tuple_cost + target->cost.per_tuple) * subpath->rows;
-	}
-
-	return pathnode;
-} 
 
 bool
 has_parallel_hazard(Node *node, bool allow_restricted)
@@ -214,31 +120,6 @@ has_parallel_hazard(Node *node, bool allow_restricted)
 	context.allow_restricted = allow_restricted;
 	return has_parallel_hazard_walker(node, &context);
 } 
-
-bool
-pg_event_trigger_ownercheck(Oid et_oid, Oid roleid)
-{
-	HeapTuple	tuple;
-	Oid			ownerId;
-
-	/* Superusers bypass all permission checking. */
-	if (superuser_arg(roleid))
-		return true;
-
-	tuple = SearchSysCache1(EVENTTRIGGEROID, ObjectIdGetDatum(et_oid));
-	if (!HeapTupleIsValid(tuple))
-		ereport(ERROR,
-				(errcode(ERRCODE_UNDEFINED_OBJECT),
-				 errmsg("event trigger with OID %u does not exist",
-						et_oid)));
-
-	ownerId = ((Form_pg_event_trigger) GETSTRUCT(tuple))->evtowner;
-
-	ReleaseSysCache(tuple);
-
-	return has_privs_of_role(roleid, ownerId);
-} 
-
 
 
 
@@ -266,34 +147,7 @@ InNoForceRLSOperation(void)
 	return (u_sess->misc_cxt.SecurityRestrictionContext & SECURITY_NOFORCE_RLS) != 0;
 } 
 
-int
-pg_qsort_strcmp(const void *a, const void *b)
-{
-	return strcmp(*(const char *const *) a, *(const char *const *) b);
-} 
 
-int
-get_aggregate_argtypes(Aggref *aggref, Oid *inputTypes)
-{
-	int			numArguments = 0;
-	ListCell   *lc;
-
-	Assert(list_length(aggref->aggargtypes) <= FUNC_MAX_ARGS);
-
-	foreach(lc, aggref->aggargtypes)
-	{
-		inputTypes[numArguments++] = lfirst_oid(lc);
-	}
-
-	return numArguments;
-} 
-
-void
-add_new_column_to_pathtarget(PathTarget *target, Expr *expr)
-{
-	if (!list_member(target->exprs, expr))
-		add_column_to_pathtarget(target, expr, 0);
-}
 
 void
 SpeculativeInsertionWait(TransactionId xid, uint32 token)
@@ -309,94 +163,6 @@ SpeculativeInsertionWait(TransactionId xid, uint32 token)
 	LockRelease(&tag, ShareLock, false);
 } 
 
-size_t
-pvsnprintf(char *buf, size_t len, const char *fmt, va_list args)
-{
-	int			nprinted;
-
-	Assert(len > 0);
-
-	errno = 0;
-
-	/*
-	 * Assert check here is to catch buggy vsnprintf that overruns the
-	 * specified buffer length.  Solaris 7 in 64-bit mode is an example of a
-	 * platform with such a bug.
-	 */
-#ifdef USE_ASSERT_CHECKING
-	buf[len - 1] = '\0';
-#endif
-
-	nprinted = vsnprintf(buf, len, fmt, args);
-
-	Assert(buf[len - 1] == '\0');
-
-	/*
-	 * If vsnprintf reports an error other than ENOMEM, fail.  The possible
-	 * causes of this are not user-facing errors, so elog should be enough.
-	 */
-	if (nprinted < 0 && errno != 0 && errno != ENOMEM)
-	{
-#ifndef FRONTEND
-		elog(ERROR, "vsnprintf failed: %m");
-#else
-		fprintf(stderr, "vsnprintf failed: %s\n", strerror(errno));
-		exit(EXIT_FAILURE);
-#endif
-	}
-
-	/*
-	 * Note: some versions of vsnprintf return the number of chars actually
-	 * stored, not the total space needed as C99 specifies.  And at least one
-	 * returns -1 on failure.  Be conservative about believing whether the
-	 * print worked.
-	 */
-	if (nprinted >= 0 && (size_t) nprinted < len - 1)
-	{
-		/* Success.  Note nprinted does not include trailing null. */
-		return (size_t) nprinted;
-	}
-
-	if (nprinted >= 0 && (size_t) nprinted > len)
-	{
-		/*
-		 * This appears to be a C99-compliant vsnprintf, so believe its
-		 * estimate of the required space.  (If it's wrong, the logic will
-		 * still work, but we may loop multiple times.)  Note that the space
-		 * needed should be only nprinted+1 bytes, but we'd better allocate
-		 * one more than that so that the test above will succeed next time.
-		 *
-		 * In the corner case where the required space just barely overflows,
-		 * fall through so that we'll error out below (possibly after
-		 * looping).
-		 */
-		if ((size_t) nprinted <= MaxAllocSize - 2)
-			return nprinted + 2;
-	}
-
-	/*
-	 * Buffer overrun, and we don't know how much space is needed.  Estimate
-	 * twice the previous buffer size, but not more than MaxAllocSize; if we
-	 * are already at MaxAllocSize, choke.  Note we use this palloc-oriented
-	 * overflow limit even when in frontend.
-	 */
-	if (len >= MaxAllocSize)
-	{
-#ifndef FRONTEND
-		ereport(ERROR,
-				(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
-				 errmsg("out of memory")));
-#else
-		fprintf(stderr, _("out of memory\n"));
-		exit(EXIT_FAILURE);
-#endif
-	}
-
-	if (len >= MaxAllocSize / 2)
-		return MaxAllocSize;
-
-	return len * 2;
-} 
 
 void
 slot_getsomeattrs(TupleTableSlot *slot, int attnum)
@@ -416,14 +182,14 @@ slot_getsomeattrs(TupleTableSlot *slot, int attnum)
 	 * otherwise we had better have a physical tuple (tts_nvalid should equal
 	 * natts in all virtual-tuple cases)
 	 */
-	tuple = (HeapTuple)slot->tts_tuple;
+	tuple =(HeapTuple) slot->tts_tuple;
 	if (tuple == NULL)			/* internal error */
 		elog(ERROR, "cannot extract attribute from empty tuple slot");
 
 	/*
 	 * load up any slots available from physical tuple
 	 */
-	attno = HeapTupleHeaderGetNatts(tuple->t_data,(TupleDesc)tuple);
+	attno = HeapTupleHeaderGetNatts(tuple->t_data,slot->tts_tupleDescriptor);
 	attno = Min(attno, attnum);
 
 	slot_deform_tuple(slot, attno);
@@ -476,36 +242,6 @@ CacheRegisterSyscacheCallback(int cacheid,
 	++inval_cxt->syscache_callback_count;
 }
 
-Oid
-resolve_aggregate_transtype(Oid aggfuncid,
-							Oid aggtranstype,
-							Oid *inputTypes,
-							int numArguments)
-{
-	/* resolve actual type of transition state, if polymorphic */
-	if (IsPolymorphicType(aggtranstype))
-	{
-		/* have to fetch the agg's declared input types... */
-		Oid		   *declaredArgTypes;
-		int			agg_nargs;
-
-		(void) get_func_signature(aggfuncid, &declaredArgTypes, &agg_nargs);
-
-		/*
-		 * VARIADIC ANY aggs could have more actual than declared args, but
-		 * such extra args can't affect polymorphic type resolution.
-		 */
-		Assert(agg_nargs <= numArguments);
-
-		aggtranstype = enforce_generic_type_consistency(inputTypes,
-														declaredArgTypes,
-														agg_nargs,
-														aggtranstype,
-														false);
-		pfree(declaredArgTypes);
-	}
-	return aggtranstype;
-}
 
 bool
 check_functions_in_node(Node *node, check_function_callback checker,

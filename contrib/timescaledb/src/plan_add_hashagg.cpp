@@ -161,7 +161,6 @@ ts_plan_add_hashagg(PlannerInfo *root, RelOptInfo *input_rel, RelOptInfo *output
 		/* Nothing to use as input for partial aggregate. */
 		try_parallel_aggregation = false;
 	}
-	
 	else
 	{
 		/* Everything looks good. */

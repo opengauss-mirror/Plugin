@@ -107,7 +107,7 @@ static Plan *
 get_plans_for_exclusion(Plan *plan)
 {
 	/* Optimization: If we want to be able to prune */
-	/* when the node is a T_BaseResult or T_Sort, then we need to peek */
+	/* when the node is a T_Result or T_Sort, then we need to peek */
 	/* into the subplans of this Result node. */
 
 	switch (nodeTag(plan))
@@ -189,11 +189,11 @@ ca_append_begin(ExtensiblePlanState *node, EState *estate, int eflags)
 		.resultRelation = InvalidOid,
 	};
 	PlannerGlobal glob = {
-		.type = (NodeTag)0,
+		.type = {},
 		.boundParams = NULL,
 	};
 	PlannerInfo root = {
-		.type = (NodeTag)0,
+		.type = {},
 		.parse = &parse,
 		.glob = &glob,
 	};
@@ -437,6 +437,7 @@ constraint_aware_append_state_create(ExtensiblePlan *cscan)
 }
 
 
+
 static Plan *
 constraint_aware_append_plan_create(PlannerInfo *root, RelOptInfo *rel, ExtensiblePath *path,
 									List *tlist, List *clauses, List *custom_plans)
@@ -456,9 +457,9 @@ constraint_aware_append_plan_create(PlannerInfo *root, RelOptInfo *rel, Extensib
 	 * Removing the Result node is only safe if there is no one-time filter
 	 */
 	if (IsA(linitial(custom_plans), BaseResult) &&
-		castNode(Result, linitial(custom_plans))->resconstantqual == NULL)
+		castNode(BaseResult, linitial(custom_plans))->resconstantqual == NULL)
 	{
-		Result *result = castNode(Result, linitial(custom_plans));
+		BaseResult *result = castNode(BaseResult, linitial(custom_plans));
 
 		if (result->plan.righttree != NULL)
 			elog(ERROR, "unexpected right tree below result node in constraint aware append");
@@ -644,14 +645,14 @@ _constraint_aware_append_init(void)
 	.ExtensibleName = "ConstraintAwareAppend",
 	.PlanExtensiblePath = constraint_aware_append_plan_create,
 	};
-
+	
     constraint_aware_append_plan_methods = {
 	.ExtensibleName = "ConstraintAwareAppend",
 	.CreateExtensiblePlanState = constraint_aware_append_state_create,
 	};
 
 	constraint_aware_append_state_methods = {
-	.ExtensibleName = "",
+	.ExtensibleName = NULL,
 	.BeginExtensiblePlan = ca_append_begin,
 	.ExecExtensiblePlan = ca_append_exec,
 	.EndExtensiblePlan = ca_append_end,

@@ -56,7 +56,6 @@
 
 
 
-static THR_LOCAL TransactionState CurrentTransactionState = NULL;
 static MultiXactId *OldestVisibleMXactId;
 
 static SlruCtlData MultiXactOffsetCtlData;
@@ -342,7 +341,6 @@ static int	maxAllocatedDescs = 0;
 
 #define EarlyPruningEnabled(rel) (old_snapshot_threshold >= 0 && RelationAllowsEarlyPruning(rel))
 
-#define REINDEX_REL_FORCE_INDEXES_PERMANENT 0x10
 
 #define UINT32_ALIGN_MASK (sizeof(uint32) - 1)
 
@@ -437,7 +435,6 @@ static void DisplayXidCache(void);
 
 
 
-static ProcArrayStruct *procArray;
 static const FSMAddress FSM_ROOT_ADDRESS = {FSM_ROOT_LEVEL, 0};
 static const uint8 number_of_ones_for_visible[256] = {
 	0, 1, 0, 1, 1, 2, 1, 2, 0, 1, 0, 1, 1, 2, 1, 2,

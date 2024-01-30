@@ -804,8 +804,8 @@ chunk_constraint_rename_on_chunk_table(int32 chunk_id, const char *old_name, con
 	Oid chunk_relid = ts_chunk_get_relid(chunk_id, false);
 	Oid nspid = get_rel_namespace(chunk_relid);
 	RenameStmt rename = {
-		.type = {},
-		.renameType = (ObjectType)12,
+		.type = T_RenameStmt,
+		.renameType = OBJECT_TABCONSTRAINT,
 		.relationType = {},
 		.relation = makeRangeVar(get_namespace_name(nspid), get_rel_name(chunk_relid), 0),
 		.object = NULL,

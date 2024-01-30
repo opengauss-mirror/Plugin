@@ -343,7 +343,6 @@ ts_indexing_root_table_create_index(IndexStmt *stmt, const char *queryString,
 
 	/* ... and do it */
 	EventTriggerAlterTableStart((Node *) stmt);
-	
 	root_table_address = DefineIndexCompat(relid, /* OID of heap relation */
 										   stmt,
 										   InvalidOid, /* no predefined OID */
@@ -351,7 +350,6 @@ ts_indexing_root_table_create_index(IndexStmt *stmt, const char *queryString,
 										   true,	   /* check_rights */
 										   false,	  /* skip_build */
 										   false);	 /* quiet */
-
 	return root_table_address;
 }
 

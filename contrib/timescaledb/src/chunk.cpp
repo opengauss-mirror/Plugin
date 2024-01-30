@@ -731,12 +731,10 @@ ts_chunk_create_table(Chunk *chunk, Hypertable *ht, const char *tablespacename)
 
 	if (uid != saved_uid)
 		SetUserIdAndSecContext(uid, sec_ctx | SECURITY_LOCAL_USERID_CHANGE);
-
 	objaddr = DefineRelation(&stmt,
 							 RELKIND_RELATION,
 							 rel->rd_rel->relowner,
-							 NULL,
-							 0
+							 NULL				 
 #if !PG96
 							 ,
 							 NULL

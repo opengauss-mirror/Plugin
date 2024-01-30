@@ -15,4 +15,7 @@ Scan *ts_chunk_append_get_scan_plan(Plan *plan);
 
 void _chunk_append_init(void);
 
+extern void _planner_init(void);
+extern void _planner_fini(void);
+
 #endif /* TIMESCALEDB_CHUNK_APPEND_PLANNER_H */

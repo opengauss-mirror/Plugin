@@ -27,7 +27,6 @@ add_subdirectory(net)
 add_subdirectory(telemetry)
 
 add_subdirectory(loader)
-
 set(PROJECT_TRUNK_DIR ${CMAKE_SOURCE_DIR}/../..)
 set(PROJECT_OPENGS_DIR ${PROJECT_TRUNK_DIR} CACHE INTERNAL "")
 set(PROJECT_SRC_DIR ${PROJECT_OPENGS_DIR}/src CACHE INTERNAL "")
