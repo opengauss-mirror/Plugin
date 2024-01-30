@@ -436,11 +436,21 @@ select hex(weight_string(RPAD('a', 1000000, 'a') as char(10)));
 (1 row)
 
 select hex(weight_string(RPAD('a', 1000000000, 'a') as char(1000000000))); 
-ERROR:  requested length too large
+WARNING:  requested length too large
 CONTEXT:  referenced column: hex
+ hex 
+-----
+ 
+(1 row)
+
 select hex(weight_string(RPAD('a', 1000000000, 'a') as binary(1000000000))); 
-ERROR:  requested length too large
+WARNING:  requested length too large
 CONTEXT:  referenced column: hex
+ hex 
+-----
+ 
+(1 row)
+
 -- 异常入参测试
 select hex(weight_string('a' as char(-1)));  
 ERROR:  syntax error at or near "-"
