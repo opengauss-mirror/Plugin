@@ -88,6 +88,7 @@ static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others
 #define CAST_FUNCTION_ROW 8
 #define CAST_FUNCTION_COLUMN 4
 #define NUM_CAST_TIME_IDX 12
+#define MAX_FLOAT8_PRECISION 15
 
 static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1_cast_ui1", "i1_cast_ui2", "i1_cast_ui4", "i1_cast_ui8"},
                                                                             {"i2_cast_ui1", "i2_cast_ui2", "i2_cast_ui4", "i2_cast_ui8"},
@@ -372,7 +373,9 @@ Node *type_transfer(Node *node, Oid atttypid, bool isSelect)
             break;
         case FLOAT4OID:
         case FLOAT8OID:
+#ifndef DOLPHIN
         case NUMERICOID:
+#endif
             result = coerce_type(NULL, node, con->consttype,
                 FLOAT8OID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
             break;
@@ -384,6 +387,31 @@ Node *type_transfer(Node *node, Oid atttypid, bool isSelect)
             result = coerce_type(NULL, node, con->consttype,
                 VARBITOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
             break;
+#ifdef DOLPHIN
+        case NUMERICOID: {
+            A_Const* valNode = nullptr;
+            long sigDigits = 0;
+            valNode = (A_Const*)transferConstToAconst(node);
+            if (valNode->type == T_Integer) {
+                long longval = valNode->val.val.ival;
+                do {
+                    sigDigits++;
+                    longval = longval >> 1;
+                } while (longval != 0);
+            } else {
+                char* strVal = valNode->val.val.str;
+                char* dotLoc = strchr(strVal, '.');
+                sigDigits = dotLoc ? strlen(strVal) - 1 : strlen(strVal);
+            }
+            /* If sigDigits exceeds the precision of float8, enter the default branch */
+            if (sigDigits <= MAX_FLOAT8_PRECISION) {
+                result = coerce_type(NULL, node, con->consttype,
+                    FLOAT8OID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+                break;
+            }
+        }
+        /* fall-through */
+#endif
         default:
 #ifdef DOLPHIN
             if (atttypid == LONGBLOBOID) {
