@@ -6174,9 +6174,6 @@ ProcessUtilitySlow(Node *parse_tree,
 
             case T_AlterSeqStmt:
 #ifdef PGXC
-                if (IS_MAIN_COORDINATOR || IS_SINGLE_NODE) {
-                    PreventAlterSeqInTransaction(is_top_level, (AlterSeqStmt*)parse_tree);
-                }
                 if (IS_PGXC_COORDINATOR) {
                     AlterSeqStmt* stmt = (AlterSeqStmt*)parse_tree;
 
@@ -6256,7 +6253,6 @@ ProcessUtilitySlow(Node *parse_tree,
                     address = AlterSequenceWrapper((AlterSeqStmt*)parse_tree);
                 }
 #else
-                PreventAlterSeqInTransaction(is_top_level, (AlterSeqStmt*)parse_tree);
                 address = AlterSequenceWrapper((AlterSeqStmt*)parse_tree);
 #endif
                 break;

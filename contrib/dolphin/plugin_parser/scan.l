@@ -76,6 +76,9 @@ const uint16 ScanKeywordTokens[] = {
                (YYSTYPE * yylval_param, YYLTYPE * yylloc_param , yyscan_t yyscanner)
 #endif
 
+#undef _
+#define _(str) ((!u_sess->attr.attr_common.enable_nls) || in_error_recursion_trouble())?str:gettext(str)
+
 /*
  * Set the type of yyextra.  All state variables used by the scanner should
  * be in yyextra, *not* statically allocated.

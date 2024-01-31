@@ -2083,19 +2083,19 @@ void UpdatePartKeyExpr(Relation rel, PartitionState *partTableState, Oid partOid
 
 /*Check whether tables or partition stored in segment are created
 in limited tablespaces */
-void CheckSegmentIsInLimitTablespace(char* tablespacename, char* relname) 
+void CheckSegmentIsInLimitTablespace(char* tableSpaceName, char* relName) 
 {
-    Oid tablespaceId = InvalidOid;
-    if (tablespacename != NULL) {
-        tablespaceId = get_tablespace_oid(tablespacename, false);
+    Oid tableSpaceId = InvalidOid;
+    if (tableSpaceName != NULL) {
+        tableSpaceId = get_tablespace_oid(tableSpaceName, false);
     }
-    Oid tbspcId = (tablespaceId == InvalidOid) ? u_sess->proc_cxt.MyDatabaseTableSpace : tablespaceId;
-    uint64 tablespaceMaxSize = 0;
-    bool isLimit = TableSpaceUsageManager::IsLimited(tbspcId, &tablespaceMaxSize);
+    Oid tbSpcId = (tableSpaceId == InvalidOid) ? u_sess->proc_cxt.MyDatabaseTableSpace : tableSpaceId;
+    uint64 tableSpaceMaxSize = 0;
+    bool isLimit = TableSpaceUsageManager::IsLimited(tbSpcId, &tableSpaceMaxSize);
     if (isLimit) {
         ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmodule(MOD_SEGMENT_PAGE),
-            errmsg("The partition %s do not support segment-page storage", relname != NULL ? relname : ""),
-            errdetail("Segment-page storage doest not support limited tablespace \"%s\"", get_tablespace_name(tbspcId)),
+            errmsg("The partition %s do not support segment-page storage", relName != NULL ? relName : ""),
+            errdetail("Segment-page storage doest not support limited tablespace \"%s\"", get_tablespace_name(tbSpcId)),
             errhint("use default or unlimited user defined tablespace before using segment-page storage.")));
     }
 }
@@ -2973,34 +2973,41 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
             ListCell* cell = NULL;
             Oid partTablespaceId = InvalidOid;
             char* partitionName = NULL;
-            char* tablespacename = NULL;
+            char* tableSpaceName = NULL;
+            IntervalPartitionDefState* interValPartDef = stmt->partTableState->intervalPartDef;
             foreach (cell, stmt->partTableState->partitionList) {
-                char* partitionName = NULL;
-                char* tablespacename = NULL;
                 if (IsA((lfirst(cell)), IntervalPartitionDefState)) {
                     IntervalPartitionDefState* partition = (IntervalPartitionDefState*)lfirst(cell);
-                    ListCell* speccell = NULL;
-                    foreach(speccell, partition->intervalTablespaces) {
-                        tablespacename = ((Value*)lfirst(speccell))->val.str;
-                        CheckSegmentIsInLimitTablespace(tablespacename, NULL);                     
+                    ListCell* specCell = NULL;
+                    foreach(specCell, partition->intervalTablespaces) {
+                        tableSpaceName = ((Value*)lfirst(specCell))->val.str;
+                        CheckSegmentIsInLimitTablespace(tableSpaceName, NULL);                     
                     }
                     continue;
                 } else if (IsA((lfirst(cell)), RangePartitionDefState) || IsA((lfirst(cell)), HashPartitionDefState) || IsA((lfirst(cell)), ListPartitionDefState)) {
                     PartitionDefState* partition = (PartitionDefState*)lfirst(cell);
-                    tablespacename = partition->tablespacename;
+                    tableSpaceName = partition->tablespacename;
                     partitionName = partition->partitionName;
                 } else if (IsA((lfirst(cell)), RangePartitionStartEndDefState)) {
                     RangePartitionStartEndDefState* partition = (RangePartitionStartEndDefState*)lfirst(cell);
-                    tablespacename = partition->tableSpaceName;
+                    tableSpaceName = partition->tableSpaceName;
                     partitionName = partition->partitionName;
                 } else if (IsA((lfirst(cell)), RangePartitionindexDefState)) {
                     RangePartitionindexDefState* partition = (RangePartitionindexDefState*)lfirst(cell);
-                    tablespacename = partition->tablespace;
+                    tableSpaceName = partition->tablespace;
                     partitionName = partition->name;
                 } else {
                     Assert(false);
                 }
-                CheckSegmentIsInLimitTablespace(tablespacename, partitionName);
+                CheckSegmentIsInLimitTablespace(tableSpaceName, partitionName);
+            }
+
+            /* check for interval limited table for segment */
+            if (interValPartDef && interValPartDef->intervalTablespaces && interValPartDef->intervalTablespaces->length != 0) {
+                foreach (cell, interValPartDef->intervalTablespaces) {
+                    tableSpaceName = ((Value*)lfirst(cell))->val.str;
+                    CheckSegmentIsInLimitTablespace(tableSpaceName, partitionName);
+                }
             }
         }
     }
@@ -19693,7 +19700,16 @@ static void atexecset_table_space_internal(Relation rel, RelFileNode& newrnode, 
 
     /* open rel storage avoid relcache invalided*/
     RelationOpenSmgr(rel);
-
+    
+    /* we should not copy relation to the limited space tablespace */
+    RelFileNode newFileNode = dstrel->smgr_rnode.node;
+    uint64 tablespaceMaxSize = 0;
+    if (IsSegmentFileNode(newFileNode) && TableSpaceUsageManager::IsLimited(newFileNode.spcNode, &tablespaceMaxSize)) {
+        ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmodule(MOD_SEGMENT_PAGE),
+            errmsg("Dont support relation movement to limited tablespace segment-page storage!"),
+            errdetail("Segment-page storage doest not support limited tablespace \"%s\"", get_tablespace_name(newFileNode.spcNode)),
+            errhint("use default or unlimited user defined tablespace before using segment-page storage.")));
+    }
     /* copy main fork */
     copy_relation_data(rel, &dstrel, MAIN_FORKNUM, rel->rd_rel->relpersistence);
 
