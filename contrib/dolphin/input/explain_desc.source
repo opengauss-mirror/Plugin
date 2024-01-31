@@ -19,6 +19,7 @@ describe extended update ed_t set c2 = 'world' where c1 < 5;
 describe extended delete from ed_t where c1 < 5;
 desc format=json select c1, c2, c3 from ed_t;
 describe format=traditional insert into ed_t values(100, 'hello', 100);
+describe format=tree insert into ed_t values(100, 'hello', 100);
 
 -- 3.explain with key world: extended
 explain extended select c1, c2, c3 from ed_t;
@@ -26,7 +27,7 @@ explain extended insert into ed_t values(100, 'hello', 100);
 explain extended update ed_t set c2 = 'world' where c1 < 5;
 explain extended delete from ed_t where c1 < 5;
 
--- 4.explain with specifying format(json or traditional)
+-- 4.explain with specifying format(json or traditional or tree)
 explain format=json select c1, c2, c3 from ed_t;
 explain format=json insert into ed_t values(100, 'hello', 100);
 explain format=JSON update ed_t set c2 = 'world' where c1 < 5;
@@ -43,6 +44,13 @@ explain format=TRaDITiONAL update ed_t set c2 = 'world' where c1 < 5;
 explain format=traditional delete from ed_t where c1 < 5;
 explain format='traditional' delete from ed_t where c1 < 5;
 explain format='TraDitional' delete from ed_t where c1 < 5;
+explain format=TREE select c1, c2, c3 from ed_t;
+explain FORMAT=TREE select c1, c2, c3 from ed_t;
+explain format=TREE insert into ed_t values(100, 'hello', 100);
+explain format=TREE update ed_t set c2 = 'world' where c1 < 5;
+explain format=tree delete from ed_t where c1 < 5;
+explain format='tree' delete from ed_t where c1 < 5;
+explain format='Tree' delete from ed_t where c1 < 5;
 
 drop table ed_t;
 
