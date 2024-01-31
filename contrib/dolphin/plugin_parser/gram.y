@@ -28162,6 +28162,8 @@ ExplainStmt:
 						stmt->options = list_make1(def);
 					} else if (pg_strcasecmp($4, "traditional") == 0) {
                                          	stmt->options = NIL;
+					} else if (pg_strcasecmp($4, "tree") == 0) {
+                                         	stmt->options = NIL;
 					} else {
 						DefElem* def = makeDefElem(downcase_str((char*)$2, false), (Node*)makeString($4));
 						stmt->options = list_make1(def);					
