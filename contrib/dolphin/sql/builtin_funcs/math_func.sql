@@ -90,6 +90,49 @@ insert into test_double_acos  select acos(`int1`), acos(`uint1`), acos(`int2`), 
 
 select * from test_double_acos order by 1;
 
+-- log math function
+reset dolphin.sql_mode;
+set dolphin.sql_mode = 'sql_mode_strict,error_for_division_by_zero';
+create table test_log(value double);
+
+insert into test_log select log(1,10);
+insert ignore into test_log select log(1,10);
+select * from test_log;
+select log(1,10);
+
+drop table if exists test_log;
+
+reset dolphin.sql_mode;
+set dolphin.sql_mode = 'error_for_division_by_zero';
+create table test_log(value double);
+
+insert into test_log select log(1,10);
+insert ignore into test_log select log(1,10);
+select * from test_log;
+select log(1,10);
+
+drop table if exists test_log;
+
+reset dolphin.sql_mode;
+set dolphin.sql_mode = 'sql_mode_strict';
+create table test_log(value double);
+
+insert into test_log select log(1,10);
+insert ignore into test_log select log(1,10);
+select * from test_log;
+select log(1,10);
+
+drop table if exists test_log;
+reset dolphin.sql_mode;
+set dolphin.sql_mode = '';
+create table test_log(value double);
+
+insert into test_log select log(1,10);
+insert ignore into test_log select log(1,10);
+select * from test_log;
+select log(1,10);
+
+drop table if exists test_log;
 -- ln math function
 select
 ln(`int1`),
