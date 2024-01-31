@@ -3072,7 +3072,19 @@ Datum numeric_log(PG_FUNCTION_ARGS)
     int64_to_numericvar((int64)0, &zero_var);
     zero = make_result(&zero_var);
 
+    /* create a numeric that value is one */
+    Numeric one;
+    NumericVar one_var;
+    init_var(&one_var);
+    int64_to_numericvar((int64)1, &one_var);
+    one = make_result(&one_var);
+
     if (cmp_numerics(num1, zero) <= 0 || cmp_numerics(num2, zero) <= 0) {
+        PG_RETURN_NULL();
+    }
+
+    if (cmp_numerics(num1, one) == 0) {
+        CheckErrDivByZero(fcinfo->can_ignore);
         PG_RETURN_NULL();
     }
 #endif
