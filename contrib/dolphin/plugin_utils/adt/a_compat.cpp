@@ -22,6 +22,9 @@
 #include "plugin_postgres.h"
 #include "utils/varbit.h"
 #include "miscadmin.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 static text* dotrim(const char* string, int stringlen, const char* set, int setlen, bool doltrim, bool dortrim);
 #ifdef DOLPHIN
@@ -273,8 +276,12 @@ Datum rpad(PG_FUNCTION_ARGS)
     bytelen = pg_database_encoding_max_length() * len;
 
     /* Check for integer overflow */
-    if (len != 0 && bytelen / pg_database_encoding_max_length() != len)
-        ereport(ERROR, (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED), errmsg("requested length too large")));
+    if (len != 0 && bytelen / pg_database_encoding_max_length() != len) {
+        ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+            (errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
+                errmsg("requested length too large")));
+        PG_RETURN_NULL();
+    }
 
     ret = (text*)palloc(VARHDRSZ + bytelen);
     m = len - s1len;

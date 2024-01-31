@@ -1,0 +1,114 @@
+create schema rpad_integer_overflow;
+set current_schema = rpad_integer_overflow;
+set dolhin.sql_mode = default;
+select rpad('a', 9223372036854775807, 'x');
+WARNING:  integer out of range
+CONTEXT:  referenced column: rpad
+WARNING:  requested length too large
+CONTEXT:  referenced column: rpad
+ rpad 
+------
+ 
+(1 row)
+
+select rpad('a', 2147483647, 'x');
+WARNING:  requested length too large
+CONTEXT:  referenced column: rpad
+ rpad 
+------
+ 
+(1 row)
+
+select rpad('a', 2147483648, 'x');
+WARNING:  integer out of range
+CONTEXT:  referenced column: rpad
+WARNING:  requested length too large
+CONTEXT:  referenced column: rpad
+ rpad 
+------
+ 
+(1 row)
+
+select rpad('a', -2147483648, 'x');
+ rpad 
+------
+ 
+(1 row)
+
+select rpad('a', -2147483649, 'x');
+WARNING:  integer out of range
+CONTEXT:  referenced column: rpad
+ rpad 
+------
+ 
+(1 row)
+
+create table t1(c text);
+insert into t1 values(rpad('a', 9223372036854775807, 'x'));
+ERROR:  integer out of range
+CONTEXT:  referenced column: c
+insert into t1 values(rpad('a', 2147483647, 'x'));
+ERROR:  requested length too large
+CONTEXT:  referenced column: c
+insert into t1 values(rpad('a', 2147483648, 'x'));
+ERROR:  integer out of range
+CONTEXT:  referenced column: c
+insert into t1 values(rpad('a', -2147483648, 'x'));
+insert into t1 values(rpad('a', -2147483649, 'x'));
+ERROR:  integer out of range
+CONTEXT:  referenced column: c
+insert ignore into t1 values(rpad('a', 9223372036854775807, 'x'));
+WARNING:  integer out of range
+CONTEXT:  referenced column: c
+WARNING:  requested length too large
+CONTEXT:  referenced column: c
+insert ignore into t1 values(rpad('a', 2147483647, 'x'));
+WARNING:  requested length too large
+CONTEXT:  referenced column: c
+insert ignore into t1 values(rpad('a', 2147483648, 'x'));
+WARNING:  integer out of range
+CONTEXT:  referenced column: c
+WARNING:  requested length too large
+CONTEXT:  referenced column: c
+insert ignore into t1 values(rpad('a', -2147483648, 'x'));
+insert ignore into t1 values(rpad('a', -2147483649, 'x'));
+WARNING:  integer out of range
+CONTEXT:  referenced column: c
+set dolphin.sql_mode = '';
+insert into t1 values(rpad('a', 9223372036854775807, 'x'));
+WARNING:  integer out of range
+CONTEXT:  referenced column: c
+WARNING:  requested length too large
+CONTEXT:  referenced column: c
+insert into t1 values(rpad('a', 2147483647, 'x'));
+WARNING:  requested length too large
+CONTEXT:  referenced column: c
+insert into t1 values(rpad('a', 2147483648, 'x'));
+WARNING:  integer out of range
+CONTEXT:  referenced column: c
+WARNING:  requested length too large
+CONTEXT:  referenced column: c
+insert into t1 values(rpad('a', -2147483648, 'x'));
+insert into t1 values(rpad('a', -2147483649, 'x'));
+WARNING:  integer out of range
+CONTEXT:  referenced column: c
+insert ignore into t1 values(rpad('a', 9223372036854775807, 'x'));
+WARNING:  integer out of range
+CONTEXT:  referenced column: c
+WARNING:  requested length too large
+CONTEXT:  referenced column: c
+insert ignore into t1 values(rpad('a', 2147483647, 'x'));
+WARNING:  requested length too large
+CONTEXT:  referenced column: c
+insert ignore into t1 values(rpad('a', 2147483648, 'x'));
+WARNING:  integer out of range
+CONTEXT:  referenced column: c
+WARNING:  requested length too large
+CONTEXT:  referenced column: c
+insert ignore into t1 values(rpad('a', -2147483648, 'x'));
+insert ignore into t1 values(rpad('a', -2147483649, 'x'));
+WARNING:  integer out of range
+CONTEXT:  referenced column: c
+drop table t1;
+reset current_schema;
+drop schema rpad_integer_overflow;
