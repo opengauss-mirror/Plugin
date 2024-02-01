@@ -816,6 +816,33 @@ select * from t_integer;
 drop table t_integer cascade;
 drop table t_binary cascade;
 drop table t_binary0001 cascade;
+--- 建表并插入数据
+drop table if exists t_bigint0007;
+NOTICE:  table "t_bigint0007" does not exist, skipping
+create table t_bigint0007(
+c1 int,
+c2 bigint unsigned,
+c3 bigint(1) unsigned,
+c4 bigint(255) unsigned,
+c5 bigint unsigned default '10',
+c6 bigint unsigned auto_increment primary key,
+c7 bigint(1) unsigned default 0,
+c8 bigint(10) unsigned not null default 99,
+c9 bigint unsigned unique);
+NOTICE:  CREATE TABLE will create implicit sequence "t_bigint0007_c6_seq" for serial column "t_bigint0007.c6"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_bigint0007_pkey" for table "t_bigint0007"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t_bigint0007_c9_key" for table "t_bigint0007"
+set @val = 18446744073709551615;
+insert t_bigint0007 values(1, @val, @val, @val, @val, @val, @val, @val, @val);
+--- 测试转换结果
+select * from t_bigint0007;
+ c1 |          c2          |          c3          |          c4          |          c5          |          c6          |          c7          |          c8          |          c9          
+----+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------
+  1 | 18446744073709551615 | 18446744073709551615 | 18446744073709551615 | 18446744073709551615 | 18446744073709551615 | 18446744073709551615 | 18446744073709551615 | 18446744073709551615
+(1 row)
+
+--- 清理
+drop table t_bigint0007 cascade;
 SET dolphin.sql_mode = '';
 select cast('-0' as unsigned);
  uint8 

@@ -157,6 +157,27 @@ drop table t_integer cascade;
 drop table t_binary cascade;
 drop table t_binary0001 cascade;
 
+--- 建表并插入数据
+drop table if exists t_bigint0007;
+create table t_bigint0007(
+c1 int,
+c2 bigint unsigned,
+c3 bigint(1) unsigned,
+c4 bigint(255) unsigned,
+c5 bigint unsigned default '10',
+c6 bigint unsigned auto_increment primary key,
+c7 bigint(1) unsigned default 0,
+c8 bigint(10) unsigned not null default 99,
+c9 bigint unsigned unique);
+set @val = 18446744073709551615;
+insert t_bigint0007 values(1, @val, @val, @val, @val, @val, @val, @val, @val);
+
+--- 测试转换结果
+select * from t_bigint0007;
+
+--- 清理
+drop table t_bigint0007 cascade;
+
 SET dolphin.sql_mode = '';
 select cast('-0' as unsigned);
 create table t_uint(a uint1, b uint2, c uint4, d uint8);
