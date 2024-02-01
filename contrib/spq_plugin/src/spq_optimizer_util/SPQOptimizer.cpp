@@ -34,7 +34,6 @@
 bool optimizer_trace_fallback = false;
 
 extern MemoryContext MessageContext;
-extern THR_LOCAL bool SPQ_IN_PROCESSING;
 
 void DelCException(CException **exception)
 {
@@ -66,7 +65,7 @@ SPQOptimizer::SPQOPTOptimizedPlan(
 
 	*had_unexpected_failure = false;
 	CException *exception = NULL;
-	SPQ_IN_PROCESSING = true;
+	t_thrd.spq_ctx.spq_in_processing = true;
 	SPQOS_TRY
 	{
 		plStmt = COptTasks::SPQOPTOptimizedPlan(query, &spqopt_context);
@@ -78,7 +77,7 @@ SPQOptimizer::SPQOPTOptimizedPlan(
 		exception = new CException(ex.Major(), ex.Minor(), ex.Filename(), ex.Line());
 	}
 	SPQOS_CATCH_END;
-	SPQ_IN_PROCESSING = false;
+	t_thrd.spq_ctx.spq_in_processing = false;
 	if (exception == NULL) {
 		return plStmt;
 	}
@@ -324,7 +323,7 @@ TerminateSPQOPT()
 }
 void RecordBackTrace()
 {
-    if (SPQ_IN_PROCESSING == false) {
+    if (t_thrd.spq_ctx.spq_in_processing == false) {
         ereport(LOG, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("SPQ exit normal tid[%d]", gettid())));
     } else {
         ereport(LOG, (errcode(ERRCODE_INTERNAL_ERROR), errmsg("SPQ exit error tid[%d]", gettid())));
