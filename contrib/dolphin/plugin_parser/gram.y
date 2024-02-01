@@ -83,7 +83,7 @@
 #include "plugin_parser/parse_utilcmd.h"
 #include "pgxc/pgxc.h"
 #include "nodes/nodes.h"
-#include "pgxc/poolmgr.h"/
+#include "pgxc/poolmgr.h"
 #include "plugin_parser/parser.h"
 #include "storage/lmgr.h"
 #include "storage/tcap.h"
