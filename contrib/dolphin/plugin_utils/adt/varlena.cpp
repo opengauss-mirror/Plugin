@@ -9049,8 +9049,11 @@ static text* _m_char(FunctionCallInfo fcinfo)
             long result_l;
             valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
             switch (valtype) {
+                case INT1OID:
+                case INT2OID:
                 case INT4OID:
                 case INT8OID:
+                case OIDOID:
                     quotient = (uint32)value;
                     str = char_deal(str, quotient, remainder, remainders, times);
                     break;
@@ -9109,14 +9112,16 @@ static text* _m_char(FunctionCallInfo fcinfo)
                         str = char_deal(str, quotient, remainder, remainders, times);
                     }
                     break;
-                default:
-                    result_l = strtol((char*)value, &badp, 10);
-                    if ((char*)value == badp) {
+                default: {
+                    char *value_str = AnyElementGetCString(valtype, value);
+                    result_l = strtol((char*)value_str, &badp, 10);
+                    if (value_str == badp) {
                         result_l = 0;
                     }
+                    pfree_ext(value_str);
                     quotient = (uint32)result_l;
                     str = char_deal(str, quotient, remainder, remainders, times);
-                    break;
+                } break;
             }
         }
     }

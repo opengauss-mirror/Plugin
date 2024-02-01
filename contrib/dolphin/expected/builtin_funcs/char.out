@@ -126,5 +126,425 @@ select char('hiu158','测试',125.99,146);
  ~
 (1 row)
 
+select pg_catalog.chara('1'::bool);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::bytea);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::char);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::name);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::int8);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::int2);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::int1);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::int2vector);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('1'::int4);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::regproc);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::text);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::oid);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('(1,1)'::tid);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('1'::xid);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::xid32);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::cid);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::oidvector);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('1'::oidvector_extend);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('1'::int2vector_extend);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('1'::int16);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::raw);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('1'::blob);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('1'::clob);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::json);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::xml);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('(1,1)'::point);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('((-1,0),(1,0))'::lseg);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('((0,0),(1,1),(2,0))'::path);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('((0,0),(1,1))'::box);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('((0,0),(1,1))'::polygon);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('1'::float4);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::float8);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('Mon May 1 00:30:30 1995'::abstime);
+ chara 
+-------
+ Հ
+(1 row)
+
+select pg_catalog.chara('1'::reltime);
+ chara 
+-------
+ \x1D`
+(1 row)
+
+select pg_catalog.chara('["Sep 4, 1983 23:59:12" "Oct4, 1983 23:59:12"]'::tinterval);
+ chara  
+--------
+ \x7F=@
+(1 row)
+
+select pg_catalog.chara('((0,0),10)'::circle);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('1'::money);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('12:34:56:78:90:ab'::macaddr);
+ chara 
+-------
+ \x0C
+(1 row)
+
+select pg_catalog.chara( '192.168.1.5'::inet);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('1'::bpchar);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::varchar);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::nvarchar2);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('2000-11-11'::date);
+  chara  
+---------
+ \x0111W
+(1 row)
+
+select pg_catalog.chara('1'::time);
+ chara  
+--------
+ \x0FB@
+(1 row)
+
+select pg_catalog.chara('2000-11-11 11:11:11'::timestamp);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('2000-11-11 11:11:11'::timestamptz);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('11:11:11'::timetz);
+ chara 
+-------
+ \x14
+(1 row)
+
+select pg_catalog.chara(b'1'::bit);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::varbit);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('1'::numeric);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::regprocedure);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::regoper);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::regoperator);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::regclass);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::regtype);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('1'::regconfig);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::regdictionary);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::jsonb);
+ chara 
+-------
+ 
+(1 row)
+
+select pg_catalog.chara('1'::cstring);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::year);
+ chara 
+-------
+ \x07
+(1 row)
+
+select pg_catalog.chara('1'::uint1);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::uint2);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::uint4);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::uint8);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::binary);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::varbinary);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::tinyblob);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::mediumblob);
+ chara 
+-------
+ \x01
+(1 row)
+
+select pg_catalog.chara('1'::longblob);
+ chara 
+-------
+ \x01
+(1 row)
+
 drop schema db_char cascade;
 reset current_schema;
