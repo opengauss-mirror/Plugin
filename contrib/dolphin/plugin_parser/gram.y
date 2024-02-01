@@ -37060,7 +37060,8 @@ qualified_name_for_delete:
 					switch (list_length($2))
 					{
 						case 1:
-							if (IsA(linitial($2), A_Star)) {
+							first = (DolphinString*)linitial($2);
+							if (IsA(first->node, A_Star)) {
 								$$->catalogname = NULL;
 								$$->schemaname = NULL;
 								$$->relname = GetDolphinObjName($1->str, $1->is_quoted);;
@@ -37068,24 +37069,22 @@ qualified_name_for_delete:
 								check_dolphin_qualified_name($2, yyscanner);
 								$$->catalogname = NULL;
 								$$->schemaname = GetDolphinSchemaName($1->str, $1->is_quoted);
-								first = (DolphinString*)linitial($2);
 								$$->relname = GetDolphinObjName(first->str, first->is_quoted);
 							}
 							break;
 						case 2:
-							if (IsA(lsecond($2), A_Star)) {
+							first = (DolphinString*)linitial($2);
+							second = (DolphinString*)lsecond($2);
+							if (IsA(second->node, A_Star)) {
 								$$->catalogname = NULL;
 								$$->schemaname = GetDolphinSchemaName($1->str, $1->is_quoted);;
-								if (!(IsA(linitial($2), String))) {
+								if (!(IsA(first->node, String))) {
 									parser_yyerror("syntax error");
 								}
-								first = (DolphinString*)linitial($2);
 								$$->relname = GetDolphinSchemaName(first->str, first->is_quoted);
 							} else {
 								check_dolphin_qualified_name($2, yyscanner);
 								$$->catalogname = downcase_str($1->str, $1->is_quoted);
-								first = (DolphinString*)linitial($2);
-								second = (DolphinString*)lsecond($2);
 								$$->schemaname = GetDolphinSchemaName(first->str, first->is_quoted);
 								$$->relname = GetDolphinObjName(second->str, second->is_quoted);
 							}
