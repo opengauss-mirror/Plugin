@@ -189,7 +189,7 @@ Datum text_enum(PG_FUNCTION_ARGS)
 {
     return DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(),
                                    PointerGetDatum(text_to_cstring(PG_GETARG_TEXT_P(0))),
-                                   PG_GETARG_DATUM(1));
+                                   PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(bpchar_enum);
@@ -197,7 +197,8 @@ extern "C" DLL_PUBLIC Datum bpchar_enum(PG_FUNCTION_ARGS);
 Datum bpchar_enum(PG_FUNCTION_ARGS)
 {
     char* tmp = DatumGetCString(DirectFunctionCall1(bpcharout, PG_GETARG_DATUM(0)));
-    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(), CStringGetDatum(tmp), PG_GETARG_DATUM(1));
+    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(),
+                                           CStringGetDatum(tmp), PG_GETARG_DATUM(1), fcinfo->can_ignore);
     pfree_ext(tmp);
     PG_RETURN_OID(result);
 }
@@ -207,7 +208,19 @@ extern "C" DLL_PUBLIC Datum varchar_enum(PG_FUNCTION_ARGS);
 Datum varchar_enum(PG_FUNCTION_ARGS)
 {
     char* tmp = DatumGetCString(DirectFunctionCall1(varcharout, PG_GETARG_DATUM(0)));
-    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(), CStringGetDatum(tmp), PG_GETARG_DATUM(1));
+    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(),
+                                           CStringGetDatum(tmp), PG_GETARG_DATUM(1), fcinfo->can_ignore);
+    pfree_ext(tmp);
+    PG_RETURN_OID(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(nvarchar2_enum);
+extern "C" DLL_PUBLIC Datum nvarchar2_enum(PG_FUNCTION_ARGS);
+Datum nvarchar2_enum(PG_FUNCTION_ARGS)
+{
+    char* tmp = DatumGetCString(DirectFunctionCall1(nvarchar2out, PG_GETARG_DATUM(0)));
+    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(),
+                                           CStringGetDatum(tmp), PG_GETARG_DATUM(1), fcinfo->can_ignore);
     pfree_ext(tmp);
     PG_RETURN_OID(result);
 }
@@ -217,7 +230,8 @@ extern "C" DLL_PUBLIC Datum varlena_enum(PG_FUNCTION_ARGS);
 Datum varlena_enum(PG_FUNCTION_ARGS)
 {
     char* tmp = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
-    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(), CStringGetDatum(tmp), PG_GETARG_DATUM(1));
+    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(),
+                                           CStringGetDatum(tmp), PG_GETARG_DATUM(1), fcinfo->can_ignore);
     pfree_ext(tmp);
     PG_RETURN_OID(result);
 }
@@ -227,7 +241,8 @@ extern "C" DLL_PUBLIC Datum set_enum(PG_FUNCTION_ARGS);
 Datum set_enum(PG_FUNCTION_ARGS)
 {
     char* tmp = DatumGetCString(DirectFunctionCall1(set_out, PG_GETARG_DATUM(0)));
-    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(), CStringGetDatum(tmp), PG_GETARG_DATUM(1));
+    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(),
+                                           CStringGetDatum(tmp), PG_GETARG_DATUM(1), fcinfo->can_ignore);
     pfree_ext(tmp);
     PG_RETURN_OID(result);
 }
@@ -236,7 +251,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(date_enum);
 Datum date_enum(PG_FUNCTION_ARGS)
 {
     char* tmp = DatumGetCString(DirectFunctionCall1(date_out, PG_GETARG_DATUM(0)));
-    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(), CStringGetDatum(tmp), PG_GETARG_DATUM(1));
+    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(),
+                                           CStringGetDatum(tmp), PG_GETARG_DATUM(1), fcinfo->can_ignore);
     pfree_ext(tmp);
     PG_RETURN_OID(result);
 }
@@ -246,7 +262,8 @@ extern "C" DLL_PUBLIC Datum datetime_enum(PG_FUNCTION_ARGS);
 Datum datetime_enum(PG_FUNCTION_ARGS)
 {
     char* tmp = DatumGetCString(DirectFunctionCall1(timestamp_out, PG_GETARG_DATUM(0)));
-    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(), CStringGetDatum(tmp), PG_GETARG_DATUM(1));
+    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(),
+                                           CStringGetDatum(tmp), PG_GETARG_DATUM(1), fcinfo->can_ignore);
     pfree_ext(tmp);
     PG_RETURN_OID(result);
 }
@@ -255,7 +272,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(timestamp_enum);
 Datum timestamp_enum(PG_FUNCTION_ARGS)
 {
     char* tmp = DatumGetCString(DirectFunctionCall1(timestamptz_out, PG_GETARG_DATUM(0)));
-    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(), CStringGetDatum(tmp), PG_GETARG_DATUM(1));
+    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(),
+                                           CStringGetDatum(tmp), PG_GETARG_DATUM(1), fcinfo->can_ignore);
     pfree_ext(tmp);
     PG_RETURN_OID(result);
 }
@@ -265,7 +283,8 @@ extern "C" DLL_PUBLIC Datum time_enum(PG_FUNCTION_ARGS);
 Datum time_enum(PG_FUNCTION_ARGS)
 {
     char* tmp = DatumGetCString(DirectFunctionCall1(time_out, PG_GETARG_DATUM(0)));
-    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(), CStringGetDatum(tmp), PG_GETARG_DATUM(1));
+    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(),
+                                           CStringGetDatum(tmp), PG_GETARG_DATUM(1), fcinfo->can_ignore);
     pfree_ext(tmp);
     PG_RETURN_OID(result);
 }
@@ -284,7 +303,8 @@ Datum int4_enum(PG_FUNCTION_ARGS)
                          errmsg("Invalid input value for enum. In strict sql_mode, do not allow the value 0.")));
         return (Datum)0;
     }
-    Datum result = DirectFunctionCall2(enum_in, CStringGetDatum(tmp), PG_GETARG_DATUM(1));
+    Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(),
+                                           CStringGetDatum(tmp), PG_GETARG_DATUM(1), fcinfo->can_ignore);
     PG_RETURN_OID(result);
 }
 
@@ -292,14 +312,16 @@ PG_FUNCTION_INFO_V1_PUBLIC(int1_enum);
 extern "C" DLL_PUBLIC Datum int1_enum(PG_FUNCTION_ARGS);
 Datum int1_enum(PG_FUNCTION_ARGS)
 {
-    return DirectFunctionCall2(int4_enum, (Datum)PG_GETARG_INT8(0), PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(int4_enum, PG_GET_COLLATION(),
+                                   (Datum)PG_GETARG_INT8(0), PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(int2_enum);
 extern "C" DLL_PUBLIC Datum int2_enum(PG_FUNCTION_ARGS);
 Datum int2_enum(PG_FUNCTION_ARGS)
 {
-    return DirectFunctionCall2(int4_enum, (Datum)PG_GETARG_INT16(0), PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(int4_enum, PG_GET_COLLATION(),
+                                   (Datum)PG_GETARG_INT16(0), PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(int8_enum);
@@ -312,21 +334,24 @@ Datum int8_enum(PG_FUNCTION_ARGS)
             (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                 errmsg("enum order out of the enum value size")));
     }
-    return DirectFunctionCall2(int4_enum, (Datum)num, PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(int4_enum, PG_GET_COLLATION(),
+                                   (Datum)num, PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(uint1_enum);
 extern "C" DLL_PUBLIC Datum uint1_enum(PG_FUNCTION_ARGS);
 Datum uint1_enum(PG_FUNCTION_ARGS)
 {
-    return DirectFunctionCall2(int4_enum, (Datum)PG_GETARG_UINT8(0), PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(int4_enum, PG_GET_COLLATION(),
+                                   (Datum)PG_GETARG_UINT8(0), PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(uint2_enum);
 extern "C" DLL_PUBLIC Datum uint2_enum(PG_FUNCTION_ARGS);
 Datum uint2_enum(PG_FUNCTION_ARGS)
 {
-    return DirectFunctionCall2(int4_enum, (Datum)PG_GETARG_UINT16(0), PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(int4_enum, PG_GET_COLLATION(),
+                                   (Datum)PG_GETARG_UINT16(0), PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(uint4_enum);
@@ -339,7 +364,8 @@ Datum uint4_enum(PG_FUNCTION_ARGS)
             (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                 errmsg("enum order out of the enum value size")));
     }
-    return DirectFunctionCall2(int4_enum, (Datum)num, PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(int4_enum, PG_GET_COLLATION(),
+                                   (Datum)num, PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(uint8_enum);
@@ -352,7 +378,8 @@ Datum uint8_enum(PG_FUNCTION_ARGS)
             (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                 errmsg("enum order out of the enum value size")));
     }
-    return DirectFunctionCall2(int4_enum, (Datum)num, PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(int4_enum, PG_GET_COLLATION(),
+                                   (Datum)num, PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(float4_enum);
@@ -365,8 +392,9 @@ Datum float4_enum(PG_FUNCTION_ARGS)
             (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                 errmsg("enum order out of the enum value size")));
     }
-    Datum val = DirectFunctionCall1(ftoi8_floor, Float4GetDatum(num));
-    return DirectFunctionCall2(int4_enum, val, PG_GETARG_DATUM(1));
+    Datum val = DirectFunctionCall1Coll(ftoi8_floor, PG_GET_COLLATION(), Float4GetDatum(num), fcinfo->can_ignore);
+    return DirectFunctionCall2Coll(int4_enum, PG_GET_COLLATION(),
+                                   val, PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(float8_enum);
@@ -379,8 +407,9 @@ Datum float8_enum(PG_FUNCTION_ARGS)
             (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                 errmsg("enum order out of the enum value size")));
     }
-    Datum val = DirectFunctionCall1(dtoi8_floor, Float8GetDatum(num));
-    return DirectFunctionCall2(int4_enum, val, PG_GETARG_DATUM(1));
+    Datum val = DirectFunctionCall1Coll(dtoi8_floor, PG_GET_COLLATION(), Float8GetDatum(num), fcinfo->can_ignore);
+    return DirectFunctionCall2Coll(int4_enum, PG_GET_COLLATION(),
+                                   val, PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_enum);
@@ -388,8 +417,10 @@ extern "C" DLL_PUBLIC Datum numeric_enum(PG_FUNCTION_ARGS);
 Datum numeric_enum(PG_FUNCTION_ARGS)
 {
     Numeric num = PG_GETARG_NUMERIC(0);
-    Datum res = DirectFunctionCall1(numeric_float8, NumericGetDatum(num));
-    return DirectFunctionCall2(int4_enum, DirectFunctionCall1(dtoi8_floor, res), PG_GETARG_DATUM(1));
+    Datum res = DirectFunctionCall1Coll(numeric_float8, PG_GET_COLLATION(), NumericGetDatum(num), fcinfo->can_ignore);
+    Datum val = DirectFunctionCall1Coll(dtoi8_floor, PG_GET_COLLATION(), res, fcinfo->can_ignore);
+    return DirectFunctionCall2Coll(int4_enum, PG_GET_COLLATION(),
+                                   val, PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(bit_enum);
@@ -397,7 +428,8 @@ extern "C" DLL_PUBLIC Datum bit_enum(PG_FUNCTION_ARGS);
 Datum bit_enum(PG_FUNCTION_ARGS)
 {
     Datum num = bittoint8(fcinfo);
-    return DirectFunctionCall2(int8_enum, num, PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(int8_enum, PG_GET_COLLATION(),
+                                   num, PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 
 extern "C" Datum year_int64(PG_FUNCTION_ARGS);
@@ -406,7 +438,8 @@ extern "C" DLL_PUBLIC Datum year_enum(PG_FUNCTION_ARGS);
 Datum year_enum(PG_FUNCTION_ARGS)
 {
     Datum num = year_int64(fcinfo);
-    return DirectFunctionCall2(int8_enum, num, PG_GETARG_DATUM(1));
+    return DirectFunctionCall2Coll(int8_enum, PG_GET_COLLATION(),
+                                   num, PG_GETARG_DATUM(1), fcinfo->can_ignore);
 }
 #endif
 

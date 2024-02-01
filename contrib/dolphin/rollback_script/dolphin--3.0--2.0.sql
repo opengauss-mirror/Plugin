@@ -1,3 +1,10 @@
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_int8(nvarchar2);
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_enum(nvarchar2, int4, anyelement);
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_ui8(nvarchar2);
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_ui4(nvarchar2);
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_ui2(nvarchar2);
+DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_ui1(nvarchar2);
+
 DROP FUNCTION IF EXISTS pg_catalog.int8_cast_time(int1);
 DROP FUNCTION IF EXISTS pg_catalog.int16_cast_time(int2);
 DROP FUNCTION IF EXISTS pg_catalog.int32_cast_time(int4);

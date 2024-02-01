@@ -8,13 +8,52 @@ insert into t_notnull values(0);
 insert into t_null values('');
 insert into t_notnull values('');
 
+insert into t_null values(0::int1);
+insert into t_null values(0::int2);
+insert into t_null values(0::int4);
+insert into t_null values(0::int8);
+insert into t_null values(0::uint1);
+insert into t_null values(0::uint2);
+insert into t_null values(0::uint4);
+insert into t_null values(0::uint8);
+insert into t_null values(0::float4);
+insert into t_null values(0::float8);
+insert into t_null values(0::numeric);
+
 insert ignore into t_null values(0);
 insert ignore into t_notnull values(0);
 insert ignore into t_null values('');
 insert ignore into t_notnull values('');
 
+insert ignore into t_null values(0::int1);
+insert ignore into t_null values(0::int2);
+insert ignore into t_null values(0::int4);
+insert ignore into t_null values(0::int8);
+insert ignore into t_null values(0::uint1);
+insert ignore into t_null values(0::uint2);
+insert ignore into t_null values(0::uint4);
+insert ignore into t_null values(0::uint8);
+insert ignore into t_null values(0::float4);
+insert ignore into t_null values(0::float8);
+insert ignore into t_null values(0::numeric);
+
 insert into t_null values('test');
+insert into t_null values('test'::text);
+insert into t_null values('test'::bpchar);
+insert into t_null values('test'::bpchar(10));
+insert into t_null values('test'::varchar);
+insert into t_null values('test'::varchar(10));
+insert into t_null values('test'::nvarchar2);
+insert into t_null values('test'::nvarchar2(10));
+
 insert ignore into t_null values('test');
+insert ignore into t_null values('test'::text);
+insert ignore into t_null values('test'::bpchar);
+insert ignore into t_null values('test'::bpchar(10));
+insert ignore into t_null values('test'::varchar);
+insert ignore into t_null values('test'::varchar(10));
+insert ignore into t_null values('test'::nvarchar2);
+insert ignore into t_null values('test'::nvarchar2(10));
 
 --non_strict sql_mode
 set dolphin.sql_mode = '';

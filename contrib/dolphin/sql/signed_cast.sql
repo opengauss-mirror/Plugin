@@ -32,6 +32,14 @@ select cast('9223372036854775807'::text as signed);
 select cast('9223372036854775808'::text as signed);
 select cast('-9223372036854775808'::text as signed);
 select cast('-9223372036854775809'::text as signed);
+---- nvarchar2_cast_int8
+select cast('123'::nvarchar2 as signed);
+select cast('18446744073709551615'::nvarchar2 as signed);
+select cast('18446744073709551616'::nvarchar2 as signed);
+select cast('9223372036854775807'::nvarchar2 as signed);
+select cast('9223372036854775808'::nvarchar2 as signed);
+select cast('-9223372036854775808'::nvarchar2 as signed);
+select cast('-9223372036854775809'::nvarchar2 as signed);
 ---- timestamp_cast_int8
 select cast('2023-01-01 00:00:00'::timestamp as signed);
 ---- time_cast_int8
@@ -115,6 +123,17 @@ insert into test_varchar values('9223372036854775807'),
                                ('18446744073709551616');
 select * from test_varchar;
 select cast(a as signed) from test_varchar;
+----- NVARCHAR2
+drop table if exists test_nvarchar2;
+create table test_nvarchar2(a NVARCHAR2(20));
+insert into test_nvarchar2 values('9223372036854775807'),
+                               ('9223372036854775808'),
+                               ('-9223372036854775808'),
+                               ('-9223372036854775809'),
+                               ('18446744073709551615'),
+                               ('18446744073709551616');
+select * from test_nvarchar2;
+select cast(a as signed) from test_nvarchar2;
 ----- TEXT
 drop table if exists test_text;
 create table test_text(a VARCHAR(20));

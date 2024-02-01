@@ -955,5 +955,97 @@ select convert(1 , unsigned);
  1
 (1 row)
 
+select (-1)::nvarchar2::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select (-1)::nvarchar2::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select (-1)::nvarchar2::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select (-1)::nvarchar2::uint8;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select '255'::nvarchar2::uint1;
+ uint1 
+-------
+ 255
+(1 row)
+
+select '65535'::nvarchar2::uint2;
+ uint2 
+-------
+ 65535
+(1 row)
+
+select '4294967295'::nvarchar2::uint4;
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select '18446744073709551615'::nvarchar2::uint8;
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+SQL function "nvarchar2_cast_ui8" statement 1
+referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select '256'::nvarchar2::uint1;
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+SQL function "nvarchar2_cast_ui1" statement 1
+referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
+select '65536'::nvarchar2::uint2;
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: uint2
+SQL function "nvarchar2_cast_ui2" statement 1
+referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
+select '4294967296'::nvarchar2::uint4;
+WARNING:  int unsigned out of range
+CONTEXT:  referenced column: uint4
+SQL function "nvarchar2_cast_ui4" statement 1
+referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select '18446744073709551616'::nvarchar2::uint8;
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+SQL function "nvarchar2_cast_ui8" statement 1
+referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
 drop schema uint_cast3 cascade;
 reset current_schema;
