@@ -1,0 +1,17 @@
+create schema grant_user_to_user;
+set current_schema = grant_user_to_user;
+set b_compatibility_user_host_auth to on;
+create user user1 identified by 'test-1234';
+create user user2 identified by 'test-1234';
+create user user3 identified by 'test-1234';
+create user `user2`@`localhost` identified by 'test-1234';
+grant 'user1' to user2;
+grant 'user1' to 'user2';
+grant `user1` to `user2`@`localhost`;
+grant `user2`@`localhost` to `user3`;
+drop user user1;
+drop user user2;
+drop user user3;
+drop user `user2`@`localhost`;
+reset current_schema;
+drop schema grant_user_to_user;

@@ -17150,6 +17150,39 @@ privilege:	SELECT opt_column_list
 				n->cols = $2;
 				$$ = n;
 			}
+		| SCONST opt_column_list
+			{
+				if (strchr($1,'@'))
+					ereport(ERROR,(errcode(ERRCODE_INVALID_NAME),errmsg("@ can't be allowed in username")));
+				if (strlen($1) >= NAMEDATALEN) {
+					ereport(ERROR,(errcode(ERRCODE_INVALID_NAME),errmsg("String %s is too long for user name (should be no longer than 64)", $1)));
+				}
+				AccessPriv *n = makeNode(AccessPriv);
+				n->priv_name = $1;
+				n->cols = $2;
+				$$ = n;
+			}
+		| SCONST SET_USER_IDENT
+			{
+				AccessPriv *n = makeNode(AccessPriv);
+				n->priv_name = GetValidUserHostId($1, $2);
+				n->cols = NIL;
+				$$ = n;
+			}
+		| SCONST '@' SCONST
+			{
+				AccessPriv *n = makeNode(AccessPriv);
+				n->priv_name = GetValidUserHostId($1, $3);
+				n->cols = NIL;
+				$$ = n;
+			}
+		| PrivilegeColId SET_USER_IDENT
+			{
+				AccessPriv *n = makeNode(AccessPriv);
+				n->priv_name = GetValidUserHostId($1, $2);
+				n->cols = NIL;
+				$$ = n;
+			}
 		;
 
 index_privilege: INDEX opt_column_list
@@ -17563,7 +17596,7 @@ function_with_argtypes:
  *****************************************************************************/
 
 GrantRoleStmt:
-			GRANT privilege_list TO name_list opt_grant_admin_option opt_granted_by
+			GRANT privilege_list TO UserIdList opt_grant_admin_option opt_granted_by
 				{
 					GrantRoleStmt *n = makeNode(GrantRoleStmt);
 					n->is_grant = true;
