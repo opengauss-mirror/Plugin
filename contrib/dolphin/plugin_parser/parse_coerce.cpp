@@ -516,6 +516,13 @@ Node *type_transfer(Node *node, Oid atttypid, bool isSelect)
                 VARBITOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
             break;
         default:
+#ifdef DOLPHIN
+            if (atttypid == LONGBLOBOID) {
+                result =
+                    coerce_type(NULL, node, con->consttype, atttypid, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+                break;
+            }
+#endif
             if (isSelect) {
                 result = node;
             } else {

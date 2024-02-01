@@ -323,6 +323,7 @@ void init_plugin_object()
     u_sess->hook_cxt.pluginMultiResExceptionHook = (void*)SpiMultiSelectException;
     u_sess->hook_cxt.getTypeZeroValueHook = (void*)DolphinGetTypeZeroValue;
     u_sess->hook_cxt.checkSqlFnRetvalHook = (void*)check_sql_fn_retval;
+    u_sess->hook_cxt.typeTransfer = (void*)type_transfer;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&

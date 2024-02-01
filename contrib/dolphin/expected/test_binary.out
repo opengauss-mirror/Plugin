@@ -1277,11 +1277,175 @@ CONTEXT:  referenced column: a
 WARNING:  The input length:9 exceeds the maximum length:1.
 CONTEXT:  referenced column: b
 drop table test_ignore;
+set dolphin.b_compatibility_mode=on;
+set b_format_behavior_compat_options=enable_set_variables;
+set bytea_output=escape;
+drop table if exists t_binary0002 cascade;
+NOTICE:  table "t_binary0002" does not exist, skipping
+create table t_binary0002(
+c1 int not null,
+c2 binary,
+c3 binary(10),
+c4 binary(255),
+c5 varbinary(1),
+c6 varbinary(10),
+c7 varbinary(255)) charset utf8mb3;
+WARNING:  utf8mb3 is not a valid encoding name. default value set
+set @v1='abcdefghijklmnopqrstuvwxyz';
+set @v2='a熊猫竹竹爱吃竹子';
+set @v3=hex(@v2);
+set @v4=unhex(@v3);
+set @v5=bin(121314);
+set @v6=oct(999999);
+insert into t_binary0002 values (
+1, substr(@v1,1,1), substr(@v1,1,10), repeat(@v1, 9),
+substr(@v1,1,1), substr(@v1,1,10), repeat(@v1, 9));
+insert into t_binary0002 values (
+2, substr(@v2,1,1), substr(@v2,1,4), repeat(@v2, 9),
+substr(@v2,1,1), substr(@v2,1,4), repeat(@v2, 9));
+insert into t_binary0002 values (
+3, substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255),
+substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255));
+insert into t_binary0002 values (
+4, substr(@v4,1,1), substr(@v4,1,4), substr(repeat(@v4, 10),1,255),
+substr(@v4,1,1), substr(@v4,1,4), substr(repeat(@v4, 10),1,255));
+insert into t_binary0002 values (
+5, substr(@v5,1,1), substr(@v5,1,4), substr(repeat(@v5, 10),1,255),
+substr(@v5,1,1), substr(@v5,1,4), substr(repeat(@v5, 10),1,255));
+insert into t_binary0002 values (
+6, substr(@v6,1,1), substr(@v6,1,4), substr(repeat(@v6, 10),1,255),
+substr(@v6,1,1), substr(@v6,1,4), substr(repeat(@v6, 10),1,255));
+select c1, cast(c2 as char), cast(c3 as char), cast(c4 as char), cast(c5 as
+char), cast(c6 as char), cast(c7 as char) from t_binary0002 order by
+1,2,3,4,5,6,7;
+ c1 | c2 |     c3     |                                                                                                                               c4                                                                                                                                | c5 |     c6     |                                                                                                                               c7                                                                                                                                
+----+----+------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----+------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  1 | a  | abcdefghij | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz                      | a  | abcdefghij | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
+  2 | a  | a熊猫竹    | a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子                                                                                                       | a  | a熊猫竹    | a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子
+  3 | 6  | 61e7       | 61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78 | 6  | 61e7       | 61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78
+  4 | a  | a熊        | a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子                                                                                      | a  | a熊        | a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子
+  5 | 1  | 1110       | 11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010                                                                                      | 1  | 1110       | 11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010
+  6 | 3  | 3641       | 3641077364107736410773641077364107736410773641077364107736410773641077                                                                                                                                                                                          | 3  | 3641       | 3641077364107736410773641077364107736410773641077364107736410773641077
+(6 rows)
+
+SELECT repeat('a'::tinyblob, 5)::binary(10);
+          repeat           
+---------------------------
+ aaaaa\000\000\000\000\000
+(1 row)
+
+SELECT repeat('a'::tinyblob, 100)::binary(10);
+WARNING:  The input length:100 exceeds the maximum length:10.
+CONTEXT:  referenced column: repeat
+   repeat   
+------------
+ aaaaaaaaaa
+(1 row)
+
+SELECT repeat('a'::tinyblob, 5)::varbinary(10);
+ repeat 
+--------
+ aaaaa
+(1 row)
+
+SELECT repeat('a'::tinyblob, 100)::varbinary(10);
+WARNING:  The input length:100 exceeds the maximum length:10.
+CONTEXT:  referenced column: repeat
+   repeat   
+------------
+ aaaaaaaaaa
+(1 row)
+
+SELECT repeat('a'::blob, 5)::binary(10);
+          repeat           
+---------------------------
+ aaaaa\000\000\000\000\000
+(1 row)
+
+SELECT repeat('a'::blob, 100)::binary(10);
+WARNING:  The input length:100 exceeds the maximum length:10.
+CONTEXT:  referenced column: repeat
+   repeat   
+------------
+ aaaaaaaaaa
+(1 row)
+
+SELECT repeat('a'::blob, 5)::varbinary(10);
+ repeat 
+--------
+ aaaaa
+(1 row)
+
+SELECT repeat('a'::blob, 100)::varbinary(10);
+WARNING:  The input length:100 exceeds the maximum length:10.
+CONTEXT:  referenced column: repeat
+   repeat   
+------------
+ aaaaaaaaaa
+(1 row)
+
+SELECT repeat('a'::mediumblob, 5)::binary(10);
+          repeat           
+---------------------------
+ aaaaa\000\000\000\000\000
+(1 row)
+
+SELECT repeat('a'::mediumblob, 100)::binary(10);
+WARNING:  The input length:100 exceeds the maximum length:10.
+CONTEXT:  referenced column: repeat
+   repeat   
+------------
+ aaaaaaaaaa
+(1 row)
+
+SELECT repeat('a'::mediumblob, 5)::varbinary(10);
+ repeat 
+--------
+ aaaaa
+(1 row)
+
+SELECT repeat('a'::mediumblob, 100)::varbinary(10);
+WARNING:  The input length:100 exceeds the maximum length:10.
+CONTEXT:  referenced column: repeat
+   repeat   
+------------
+ aaaaaaaaaa
+(1 row)
+
+SELECT repeat('a'::longblob, 5)::binary(10);
+          repeat           
+---------------------------
+ aaaaa\000\000\000\000\000
+(1 row)
+
+SELECT repeat('a'::longblob, 100)::binary(10);
+WARNING:  The input length:100 exceeds the maximum length:10.
+CONTEXT:  referenced column: repeat
+   repeat   
+------------
+ aaaaaaaaaa
+(1 row)
+
+SELECT repeat('a'::longblob, 5)::varbinary(10);
+ repeat 
+--------
+ aaaaa
+(1 row)
+
+SELECT repeat('a'::longblob, 100)::varbinary(10);
+WARNING:  The input length:100 exceeds the maximum length:10.
+CONTEXT:  referenced column: repeat
+   repeat   
+------------
+ aaaaaaaaaa
+(1 row)
+
 drop table if exists binary_operator;
 reset dolphin.b_compatibility_mode;
 drop schema test_binary cascade;
-NOTICE:  drop cascades to 3 other objects
+NOTICE:  drop cascades to 4 other objects
 DETAIL:  drop cascades to table test_bytea
 drop cascades to table test33
 drop cascades to table test34
+drop cascades to table t_binary0002
 reset current_schema;
