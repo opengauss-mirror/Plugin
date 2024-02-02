@@ -221,6 +221,7 @@ typedef struct CreateTableOptions {
   bool stats_sample_pages_option;
   bool union_option;
   bool tablespace_option;
+  bool is_row_compress_modified;
 } CreateTableOptions;
 
 typedef enum {
@@ -40312,6 +40313,7 @@ static CreateTableOptions* MakeCreateTableOptions(CreateTableOptions *tableOptio
 		break;
 	case OPT_COMPRESS:
 		tableOptions->row_compress = tableOption->option.row_compress;
+		tableOptions->is_row_compress_modified = true;
 		break;
 	/* PGXC_BEGIN */
 	case OPT_DISTRIBUTEBY:
@@ -40541,7 +40543,7 @@ static CreateTableOptions* MergeCreateTableOptions(CreateTableOptions *frontTabl
 		rearTableOptions->tablespacename = frontTableOptions->tablespacename;
 	}
 
-	if (rearTableOptions->row_compress == REL_CMPRS_PAGE_PLAIN) {
+	if (rearTableOptions->row_compress == REL_CMPRS_PAGE_PLAIN && !rearTableOptions->is_row_compress_modified) {
 		rearTableOptions->row_compress = frontTableOptions->row_compress;
 	}
 
@@ -40584,6 +40586,10 @@ static CreateTableOptions* MergeCreateTableOptions(CreateTableOptions *frontTabl
 
 	if (rearTableOptions->collate == NULL) {
 		rearTableOptions->collate = frontTableOptions->collate;
+	}
+
+	if (!rearTableOptions->is_row_compress_modified) {
+		rearTableOptions->is_row_compress_modified = frontTableOptions->is_row_compress_modified;
 	}
 
 	return rearTableOptions;
