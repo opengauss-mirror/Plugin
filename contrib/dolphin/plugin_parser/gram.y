@@ -468,7 +468,7 @@ static int64 SequenceStrGetInt64(const char *str);
 static int GetLoadType(int load_type_f, int load_type_s);
 static Node *MakeSqlLoadNode(char *colname);
 static void checkDeleteRelationError();
-static TypeName* parseFloatTypeByPrecision(int ival, int location, core_yyscan_t yyscanner);
+static TypeName* parseFloatTypeByPrecision(int ival, int location, core_yyscan_t yyscanner, bool is_byprecision = true);
 static TypeName* transferFloat4TypeInBFormat(char *typnam, List* list, int location, core_yyscan_t yyscanner);
 
 /* start with .. connect by related utilities */
@@ -30930,9 +30930,14 @@ GenericType:
 					if (($1 != NULL) && (strcmp($1, "float4") == 0 || strcmp($1, "float") == 0)) {
 						$$ = transferFloat4TypeInBFormat($1, $2, @2, yyscanner);
 					} else if (($1 != NULL) && (strcmp($1, "double") == 0) && ($2 != NULL) && (list_length($2) == 2)) {
-						$$ = SystemTypeName("numeric");
-						$$->typmods = $2;
-						$$->location = @1;
+						if ((*(A_Const*)list_nth($2, 1)).val.val.ival == 0) {
+							$$ = parseFloatTypeByPrecision((*(A_Const*)list_nth($2, 0)).val.val.ival, @2, yyscanner, false);
+							$$->location = @1;
+						} else {
+							$$ = SystemTypeName("numeric");
+							$$->typmods = $2;
+							$$->location = @1;
+						}
 						/* for B_FORMAT compatibility, real and double refer to float8 */
 					} else if (($1 != NULL) && ((strcmp($1, "real") == 0 || strcmp($1, "double") == 0))) {
 						$$ = makeTypeName("float8");
@@ -31249,8 +31254,12 @@ Numeric:	NumericNoConflict { $$ = $1; }
 
 dolphin_float: '(' Iconst ',' Iconst ')'
 				{
-					$$ = SystemTypeName("numeric");
-					$$->typmods = list_make2(makeIntConst($2, @2), makeIntConst($4, @4));
+					if ($4 == 0) {
+						$$ = parseFloatTypeByPrecision($2, @2, yyscanner, false);
+					} else {
+						$$ = SystemTypeName("numeric");
+						$$->typmods = list_make2(makeIntConst($2, @2), makeIntConst($4, @4));
+					}
 				}
 		;
 
@@ -39906,9 +39915,10 @@ static void parameter_check_execute_direct(const char* query)
 	}
 }
 
-static TypeName* parseFloatTypeByPrecision(int ival, int location, core_yyscan_t yyscanner)
+static TypeName* parseFloatTypeByPrecision(int ival, int location, core_yyscan_t yyscanner, bool is_byprecision)
 {
     TypeName *typnam = NULL;
+	int max = is_byprecision ? 53 : 255;
     if (ival < 1) {
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
@@ -39916,12 +39926,12 @@ static TypeName* parseFloatTypeByPrecision(int ival, int location, core_yyscan_t
              parser_errposition(location)));
     } else if (ival <= 24) {
         typnam = SystemTypeName("float4");
-    } else if (ival <= 53) {
+    } else if (ival <= max) {
         typnam = SystemTypeName("float8");
     } else {
         ereport(ERROR,
             (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-             errmsg("precision for type float must be less than 54 bits"),
+             errmsg("precision for type float must be less than %d bits", max + 1),
              parser_errposition(location)));
     }
     return typnam;
