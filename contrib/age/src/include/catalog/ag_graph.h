@@ -44,6 +44,10 @@ char *get_graph_namespace_name(const char *graph_name);
 List *get_graphnames(void);
 void drop_graphs(List *graphnames);
 
+Oid CatalogTupleInsert(Relation heapRel, HeapTuple tup);
+void CatalogTupleUpdate(Relation heapRel, ItemPointer otid, HeapTuple tup);
+void CatalogTupleDelete(Relation heapRel, ItemPointer tid);
+
 #define graph_exists(graph_name) OidIsValid(get_graph_oid(graph_name))
 
 #endif

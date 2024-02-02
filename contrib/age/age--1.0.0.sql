@@ -26,7 +26,7 @@
 
 CREATE TABLE ag_graph (
   name name NOT NULL,
-  namespace regnamespace NOT NULL
+  namespaceoid oid NOT NULL
 ) WITH (OIDS);
 
 CREATE UNIQUE INDEX ag_graph_oid_index ON ag_graph USING btree (oid);
@@ -35,7 +35,7 @@ CREATE UNIQUE INDEX ag_graph_name_index ON ag_graph USING btree (name);
 
 CREATE UNIQUE INDEX ag_graph_namespace_index
 ON ag_graph
-USING btree (namespace);
+USING btree (namespaceoid);
 
 -- 0 is an invalid label ID
 CREATE DOMAIN label_id AS int NOT NULL CHECK (VALUE > 0 AND VALUE <= 65535);
@@ -70,17 +70,16 @@ CREATE FUNCTION ag_catalog._label_id(graph_name name, label_name name)
 RETURNS label_id
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 --
 -- utility functions
 --
 
-CREATE FUNCTION ag_catalog.create_graph(graph_name name)
+CREATE FUNCTION ag_catalog.create_graph(name)
 RETURNS void
 LANGUAGE c
-AS 'MODULE_PATHNAME';
+AS 'MODULE_PATHNAME','create_graph';
 
 CREATE FUNCTION ag_catalog.drop_graph(graph_name name, cascade boolean = false)
 RETURNS void
@@ -123,10 +122,10 @@ CREATE FUNCTION ag_catalog.load_edges_from_file(graph_name name,
     LANGUAGE c
     AS 'MODULE_PATHNAME';
 
+
 --
 -- graphid type
 --
-
 -- define graphid as a shell type first
 CREATE TYPE graphid;
 
@@ -135,7 +134,6 @@ RETURNS graphid
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.graphid_out(graphid)
@@ -143,7 +141,6 @@ RETURNS cstring
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- binary I/O functions
@@ -152,7 +149,6 @@ RETURNS bytea
 LANGUAGE c
 IMMUTABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.graphid_recv(internal)
@@ -160,7 +156,6 @@ RETURNS graphid
 LANGUAGE c
 IMMUTABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE TYPE graphid (
@@ -183,11 +178,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE OPERATOR = (
-  FUNCTION = ag_catalog.graphid_eq,
+  PROCEDURE  = ag_catalog.graphid_eq,
   LEFTARG = graphid,
   RIGHTARG = graphid,
   COMMUTATOR = =,
@@ -201,11 +195,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.graphid_ne,
+  PROCEDURE  = ag_catalog.graphid_ne,
   LEFTARG = graphid,
   RIGHTARG = graphid,
   COMMUTATOR = <>,
@@ -219,11 +212,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE OPERATOR < (
-  FUNCTION = ag_catalog.graphid_lt,
+  PROCEDURE  = ag_catalog.graphid_lt,
   LEFTARG = graphid,
   RIGHTARG = graphid,
   COMMUTATOR = >,
@@ -237,11 +229,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE OPERATOR > (
-  FUNCTION = ag_catalog.graphid_gt,
+  PROCEDURE  = ag_catalog.graphid_gt,
   LEFTARG = graphid,
   RIGHTARG = graphid,
   COMMUTATOR = <,
@@ -255,17 +246,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.graphid_le,
+  PROCEDURE  = ag_catalog.graphid_le,
   LEFTARG = graphid,
   RIGHTARG = graphid,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.graphid_ge(graphid, graphid)
@@ -273,17 +263,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.graphid_ge,
+  PROCEDURE  = ag_catalog.graphid_ge,
   LEFTARG = graphid,
   RIGHTARG = graphid,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 --
@@ -296,7 +285,6 @@ RETURNS int
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- sort support
@@ -305,7 +293,6 @@ RETURNS void
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 --
@@ -343,23 +330,19 @@ CREATE FUNCTION ag_catalog._graphid(label_id int, entry_id bigint)
 RETURNS graphid
 LANGUAGE c
 IMMUTABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog._label_name(graph_oid oid, graphid)
 RETURNS cstring
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog._extract_label_id(graphid)
 RETURNS label_id
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
-
 --
 -- agtype type and its support functions
 --
@@ -372,7 +355,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.agtype_out(agtype)
@@ -380,7 +362,6 @@ RETURNS cstring
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- binary I/O functions
@@ -389,7 +370,6 @@ RETURNS bytea
 LANGUAGE c
 IMMUTABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.agtype_recv(internal)
@@ -397,7 +377,6 @@ RETURNS agtype
 LANGUAGE c
 IMMUTABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE TYPE agtype (
@@ -417,11 +396,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR + (
-  FUNCTION = ag_catalog.agtype_add,
+CREATE OPERATOR +(
+  PROCEDURE= ag_catalog.agtype_add,
   LEFTARG = agtype,
   RIGHTARG = agtype,
   COMMUTATOR = +
@@ -432,11 +410,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR + (
-  FUNCTION = ag_catalog.agtype_any_add,
+CREATE OPERATOR +(
+  PROCEDURE= ag_catalog.agtype_any_add,
   LEFTARG = agtype,
   RIGHTARG =  smallint,
   COMMUTATOR = +
@@ -447,11 +424,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR + (
-  FUNCTION = ag_catalog.agtype_any_add,
+CREATE OPERATOR +(
+  PROCEDURE= ag_catalog.agtype_any_add,
   LEFTARG = smallint,
   RIGHTARG =  agtype,
   COMMUTATOR = +
@@ -462,11 +438,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR + (
-  FUNCTION = ag_catalog.agtype_any_add,
+CREATE OPERATOR +(
+  PROCEDURE= ag_catalog.agtype_any_add,
   LEFTARG = agtype,
   RIGHTARG =  integer,
   COMMUTATOR = +
@@ -477,11 +452,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR + (
-  FUNCTION = ag_catalog.agtype_any_add,
+CREATE OPERATOR +(
+  PROCEDURE= ag_catalog.agtype_any_add,
   LEFTARG = integer,
   RIGHTARG =  agtype,
   COMMUTATOR = +
@@ -492,11 +466,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR + (
-  FUNCTION = ag_catalog.agtype_any_add,
+CREATE OPERATOR +(
+  PROCEDURE= ag_catalog.agtype_any_add,
   LEFTARG = agtype,
   RIGHTARG =  bigint,
   COMMUTATOR = +
@@ -507,11 +480,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR + (
-  FUNCTION = ag_catalog.agtype_any_add,
+CREATE OPERATOR +(
+  PROCEDURE= ag_catalog.agtype_any_add,
   LEFTARG = bigint,
   RIGHTARG =  agtype,
   COMMUTATOR = +
@@ -522,11 +494,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR + (
-  FUNCTION = ag_catalog.agtype_any_add,
+CREATE OPERATOR +(
+  PROCEDURE= ag_catalog.agtype_any_add,
   LEFTARG = agtype,
   RIGHTARG =  real,
   COMMUTATOR = +
@@ -537,11 +508,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR + (
-  FUNCTION = ag_catalog.agtype_any_add,
+CREATE OPERATOR +(
+  PROCEDURE= ag_catalog.agtype_any_add,
   LEFTARG = real,
   RIGHTARG =  agtype,
   COMMUTATOR = +
@@ -552,11 +522,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR + (
-  FUNCTION = ag_catalog.agtype_any_add,
+CREATE OPERATOR +(
+  PROCEDURE= ag_catalog.agtype_any_add,
   LEFTARG = agtype,
   RIGHTARG =  double precision,
   COMMUTATOR = +
@@ -567,11 +536,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR + (
-  FUNCTION = ag_catalog.agtype_any_add,
+CREATE OPERATOR +(
+  PROCEDURE= ag_catalog.agtype_any_add,
   LEFTARG = double precision,
   RIGHTARG =  agtype,
   COMMUTATOR = +
@@ -582,11 +550,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR + (
-  FUNCTION = ag_catalog.agtype_any_add,
+CREATE OPERATOR +(
+  PROCEDURE= ag_catalog.agtype_any_add,
   LEFTARG = agtype,
   RIGHTARG =  numeric,
   COMMUTATOR = +
@@ -597,11 +564,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR + (
-  FUNCTION = ag_catalog.agtype_any_add,
+CREATE OPERATOR +(
+  PROCEDURE= ag_catalog.agtype_any_add,
   LEFTARG = numeric,
   RIGHTARG =  agtype,
   COMMUTATOR = +
@@ -612,11 +578,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_sub,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_sub,
   LEFTARG = agtype,
   RIGHTARG = agtype
 );
@@ -626,11 +591,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_any_sub,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_any_sub,
   LEFTARG = agtype,
   RIGHTARG =  smallint
 );
@@ -640,11 +604,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_any_sub,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_any_sub,
   LEFTARG = smallint,
   RIGHTARG =  agtype
 );
@@ -654,11 +617,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_any_sub,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_any_sub,
   LEFTARG = agtype,
   RIGHTARG =  integer
 );
@@ -668,11 +630,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_any_sub,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_any_sub,
   LEFTARG = integer,
   RIGHTARG =  agtype
 );
@@ -682,11 +643,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_any_sub,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_any_sub,
   LEFTARG = agtype,
   RIGHTARG =  bigint
 );
@@ -696,11 +656,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_any_sub,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_any_sub,
   LEFTARG = bigint,
   RIGHTARG =  agtype
 );
@@ -710,11 +669,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_any_sub,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_any_sub,
   LEFTARG = agtype,
   RIGHTARG =  real
 );
@@ -724,11 +682,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_any_sub,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_any_sub,
   LEFTARG = real,
   RIGHTARG =  agtype
 );
@@ -738,11 +695,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_any_sub,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_any_sub,
   LEFTARG = agtype,
   RIGHTARG =  double precision
 );
@@ -752,11 +708,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_any_sub,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_any_sub,
   LEFTARG = double precision,
   RIGHTARG =  agtype
 );
@@ -766,11 +721,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_any_sub,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_any_sub,
   LEFTARG = agtype,
   RIGHTARG =  numeric
 );
@@ -780,11 +734,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_any_sub,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_any_sub,
   LEFTARG = numeric,
   RIGHTARG =  agtype
 );
@@ -794,11 +747,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR - (
-  FUNCTION = ag_catalog.agtype_neg,
+CREATE OPERATOR -(
+  PROCEDURE= ag_catalog.agtype_neg,
   RIGHTARG = agtype
 );
 
@@ -807,11 +759,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR * (
-  FUNCTION = ag_catalog.agtype_mul,
+CREATE OPERATOR *(
+  PROCEDURE= ag_catalog.agtype_mul,
   LEFTARG = agtype,
   RIGHTARG = agtype,
   COMMUTATOR = *
@@ -822,11 +773,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR * (
-  FUNCTION = ag_catalog.agtype_any_mul,
+CREATE OPERATOR *(
+  PROCEDURE= ag_catalog.agtype_any_mul,
   LEFTARG = agtype,
   RIGHTARG =  smallint,
   COMMUTATOR = *
@@ -837,11 +787,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR * (
-  FUNCTION = ag_catalog.agtype_any_mul,
+CREATE OPERATOR *(
+  PROCEDURE= ag_catalog.agtype_any_mul,
   LEFTARG = smallint,
   RIGHTARG =  agtype,
   COMMUTATOR = *
@@ -852,11 +801,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR * (
-  FUNCTION = ag_catalog.agtype_any_mul,
+CREATE OPERATOR *(
+  PROCEDURE= ag_catalog.agtype_any_mul,
   LEFTARG = agtype,
   RIGHTARG =  integer,
   COMMUTATOR = *
@@ -867,11 +815,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR * (
-  FUNCTION = ag_catalog.agtype_any_mul,
+CREATE OPERATOR *(
+  PROCEDURE= ag_catalog.agtype_any_mul,
   LEFTARG = integer,
   RIGHTARG =  agtype,
   COMMUTATOR = *
@@ -882,11 +829,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR * (
-  FUNCTION = ag_catalog.agtype_any_mul,
+CREATE OPERATOR *(
+  PROCEDURE= ag_catalog.agtype_any_mul,
   LEFTARG = agtype,
   RIGHTARG =  bigint,
   COMMUTATOR = *
@@ -897,11 +843,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR * (
-  FUNCTION = ag_catalog.agtype_any_mul,
+CREATE OPERATOR *(
+  PROCEDURE= ag_catalog.agtype_any_mul,
   LEFTARG = bigint,
   RIGHTARG =  agtype,
   COMMUTATOR = *
@@ -912,11 +857,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR * (
-  FUNCTION = ag_catalog.agtype_any_mul,
+CREATE OPERATOR *(
+  PROCEDURE= ag_catalog.agtype_any_mul,
   LEFTARG = agtype,
   RIGHTARG =  real,
   COMMUTATOR = *
@@ -927,11 +871,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR * (
-  FUNCTION = ag_catalog.agtype_any_mul,
+CREATE OPERATOR *(
+  PROCEDURE= ag_catalog.agtype_any_mul,
   LEFTARG = real,
   RIGHTARG =  agtype,
   COMMUTATOR = *
@@ -942,11 +885,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR * (
-  FUNCTION = ag_catalog.agtype_any_mul,
+CREATE OPERATOR *(
+  PROCEDURE= ag_catalog.agtype_any_mul,
   LEFTARG = agtype,
   RIGHTARG =  double precision,
   COMMUTATOR = *
@@ -957,11 +899,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR * (
-  FUNCTION = ag_catalog.agtype_any_mul,
+CREATE OPERATOR *(
+  PROCEDURE= ag_catalog.agtype_any_mul,
   LEFTARG = double precision,
   RIGHTARG =  agtype,
   COMMUTATOR = *
@@ -972,11 +913,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR * (
-  FUNCTION = ag_catalog.agtype_any_mul,
+CREATE OPERATOR *(
+  PROCEDURE= ag_catalog.agtype_any_mul,
   LEFTARG = agtype,
   RIGHTARG =  numeric,
   COMMUTATOR = *
@@ -987,11 +927,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR * (
-  FUNCTION = ag_catalog.agtype_any_mul,
+CREATE OPERATOR *(
+  PROCEDURE= ag_catalog.agtype_any_mul,
   LEFTARG = numeric,
   RIGHTARG =  agtype,
   COMMUTATOR = *
@@ -1002,11 +941,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR / (
-  FUNCTION = ag_catalog.agtype_div,
+CREATE OPERATOR /(
+  PROCEDURE= ag_catalog.agtype_div,
   LEFTARG = agtype,
   RIGHTARG = agtype
 );
@@ -1016,11 +954,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR / (
-  FUNCTION = ag_catalog.agtype_any_div,
+CREATE OPERATOR /(
+  PROCEDURE= ag_catalog.agtype_any_div,
   LEFTARG = agtype,
   RIGHTARG =  smallint
 );
@@ -1030,11 +967,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR / (
-  FUNCTION = ag_catalog.agtype_any_div,
+CREATE OPERATOR /(
+  PROCEDURE= ag_catalog.agtype_any_div,
   LEFTARG = smallint,
   RIGHTARG =  agtype
 );
@@ -1044,11 +980,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR / (
-  FUNCTION = ag_catalog.agtype_any_div,
+CREATE OPERATOR /(
+  PROCEDURE= ag_catalog.agtype_any_div,
   LEFTARG = agtype,
   RIGHTARG =  integer
 );
@@ -1058,11 +993,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR / (
-  FUNCTION = ag_catalog.agtype_any_div,
+CREATE OPERATOR /(
+  PROCEDURE= ag_catalog.agtype_any_div,
   LEFTARG = integer,
   RIGHTARG =  agtype
 );
@@ -1072,11 +1006,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR / (
-  FUNCTION = ag_catalog.agtype_any_div,
+CREATE OPERATOR /(
+  PROCEDURE= ag_catalog.agtype_any_div,
   LEFTARG = agtype,
   RIGHTARG =  bigint
 );
@@ -1086,11 +1019,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR / (
-  FUNCTION = ag_catalog.agtype_any_div,
+CREATE OPERATOR /(
+  PROCEDURE= ag_catalog.agtype_any_div,
   LEFTARG = bigint,
   RIGHTARG =  agtype
 );
@@ -1100,11 +1032,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR / (
-  FUNCTION = ag_catalog.agtype_any_div,
+CREATE OPERATOR /(
+  PROCEDURE= ag_catalog.agtype_any_div,
   LEFTARG = agtype,
   RIGHTARG =  real
 );
@@ -1114,11 +1045,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR / (
-  FUNCTION = ag_catalog.agtype_any_div,
+CREATE OPERATOR /(
+  PROCEDURE= ag_catalog.agtype_any_div,
   LEFTARG = real,
   RIGHTARG =  agtype
 );
@@ -1128,11 +1058,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR / (
-  FUNCTION = ag_catalog.agtype_any_div,
+CREATE OPERATOR /(
+  PROCEDURE= ag_catalog.agtype_any_div,
   LEFTARG = agtype,
   RIGHTARG =  double precision
 );
@@ -1142,11 +1071,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR / (
-  FUNCTION = ag_catalog.agtype_any_div,
+CREATE OPERATOR /(
+  PROCEDURE= ag_catalog.agtype_any_div,
   LEFTARG = double precision,
   RIGHTARG =  agtype
 );
@@ -1156,11 +1084,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR / (
-  FUNCTION = ag_catalog.agtype_any_div,
+CREATE OPERATOR /(
+  PROCEDURE= ag_catalog.agtype_any_div,
   LEFTARG = agtype,
   RIGHTARG =  numeric
 );
@@ -1170,11 +1097,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR / (
-  FUNCTION = ag_catalog.agtype_any_div,
+CREATE OPERATOR /(
+  PROCEDURE= ag_catalog.agtype_any_div,
   LEFTARG = numeric,
   RIGHTARG =  agtype
 );
@@ -1184,11 +1110,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR % (
-  FUNCTION = ag_catalog.agtype_mod,
+CREATE OPERATOR %(
+  PROCEDURE= ag_catalog.agtype_mod,
   LEFTARG = agtype,
   RIGHTARG = agtype
 );
@@ -1198,11 +1123,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR % (
-  FUNCTION = ag_catalog.agtype_any_mod,
+CREATE OPERATOR %(
+  PROCEDURE= ag_catalog.agtype_any_mod,
   LEFTARG = agtype,
   RIGHTARG =  smallint
 );
@@ -1212,11 +1136,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR % (
-  FUNCTION = ag_catalog.agtype_any_mod,
+CREATE OPERATOR %(
+  PROCEDURE= ag_catalog.agtype_any_mod,
   LEFTARG = smallint,
   RIGHTARG =  agtype
 );
@@ -1226,11 +1149,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR % (
-  FUNCTION = ag_catalog.agtype_any_mod,
+CREATE OPERATOR %(
+  PROCEDURE= ag_catalog.agtype_any_mod,
   LEFTARG = agtype,
   RIGHTARG =  integer
 );
@@ -1240,11 +1162,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR % (
-  FUNCTION = ag_catalog.agtype_any_mod,
+CREATE OPERATOR %(
+  PROCEDURE= ag_catalog.agtype_any_mod,
   LEFTARG = integer,
   RIGHTARG =  agtype
 );
@@ -1254,11 +1175,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR % (
-  FUNCTION = ag_catalog.agtype_any_mod,
+CREATE OPERATOR %(
+  PROCEDURE= ag_catalog.agtype_any_mod,
   LEFTARG = agtype,
   RIGHTARG =  bigint
 );
@@ -1268,11 +1188,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR % (
-  FUNCTION = ag_catalog.agtype_any_mod,
+CREATE OPERATOR %(
+  PROCEDURE= ag_catalog.agtype_any_mod,
   LEFTARG = bigint,
   RIGHTARG =  agtype
 );
@@ -1282,11 +1201,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR % (
-  FUNCTION = ag_catalog.agtype_any_mod,
+CREATE OPERATOR %(
+  PROCEDURE= ag_catalog.agtype_any_mod,
   LEFTARG = agtype,
   RIGHTARG =  real
 );
@@ -1296,11 +1214,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR % (
-  FUNCTION = ag_catalog.agtype_any_mod,
+CREATE OPERATOR %(
+  PROCEDURE= ag_catalog.agtype_any_mod,
   LEFTARG = real,
   RIGHTARG =  agtype
 );
@@ -1310,11 +1227,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR % (
-  FUNCTION = ag_catalog.agtype_any_mod,
+CREATE OPERATOR %(
+  PROCEDURE= ag_catalog.agtype_any_mod,
   LEFTARG = agtype,
   RIGHTARG =  double precision
 );
@@ -1324,11 +1240,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR % (
-  FUNCTION = ag_catalog.agtype_any_mod,
+CREATE OPERATOR %(
+  PROCEDURE= ag_catalog.agtype_any_mod,
   LEFTARG = double precision,
   RIGHTARG =  agtype
 );
@@ -1338,11 +1253,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR % (
-  FUNCTION = ag_catalog.agtype_any_mod,
+CREATE OPERATOR %(
+  PROCEDURE= ag_catalog.agtype_any_mod,
   LEFTARG = agtype,
   RIGHTARG =  numeric
 );
@@ -1352,11 +1266,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR % (
-  FUNCTION = ag_catalog.agtype_any_mod,
+CREATE OPERATOR %(
+  PROCEDURE= ag_catalog.agtype_any_mod,
   LEFTARG = numeric,
   RIGHTARG =  agtype
 );
@@ -1366,11 +1279,10 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR ^ (
-  FUNCTION = ag_catalog.agtype_pow,
+CREATE OPERATOR ^(
+  PROCEDURE= ag_catalog.agtype_pow,
   LEFTARG = agtype,
   RIGHTARG = agtype
 );
@@ -1384,11 +1296,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR = (
-  FUNCTION = ag_catalog.agtype_eq,
+CREATE OPERATOR =(
+  PROCEDURE= ag_catalog.agtype_eq,
   LEFTARG = agtype,
   RIGHTARG = agtype,
   COMMUTATOR = =,
@@ -1403,11 +1314,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR = (
-  FUNCTION = ag_catalog.agtype_any_eq,
+CREATE OPERATOR =(
+  PROCEDURE= ag_catalog.agtype_any_eq,
   LEFTARG = agtype,
   RIGHTARG = smallint,
   COMMUTATOR = =,
@@ -1421,11 +1331,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR = (
-  FUNCTION = ag_catalog.agtype_any_eq,
+CREATE OPERATOR =(
+  PROCEDURE= ag_catalog.agtype_any_eq,
   LEFTARG = smallint,
   RIGHTARG = agtype,
   COMMUTATOR = =,
@@ -1439,11 +1348,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR = (
-  FUNCTION = ag_catalog.agtype_any_eq,
+CREATE OPERATOR =(
+  PROCEDURE= ag_catalog.agtype_any_eq,
   LEFTARG = agtype,
   RIGHTARG = integer,
   COMMUTATOR = =,
@@ -1457,11 +1365,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR = (
-  FUNCTION = ag_catalog.agtype_any_eq,
+CREATE OPERATOR =(
+  PROCEDURE= ag_catalog.agtype_any_eq,
   LEFTARG = integer,
   RIGHTARG = agtype,
   COMMUTATOR = =,
@@ -1475,11 +1382,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR = (
-  FUNCTION = ag_catalog.agtype_any_eq,
+CREATE OPERATOR =(
+  PROCEDURE= ag_catalog.agtype_any_eq,
   LEFTARG = agtype,
   RIGHTARG = bigint,
   COMMUTATOR = =,
@@ -1493,11 +1399,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR = (
-  FUNCTION = ag_catalog.agtype_any_eq,
+CREATE OPERATOR =(
+  PROCEDURE= ag_catalog.agtype_any_eq,
   LEFTARG = bigint,
   RIGHTARG = agtype,
   COMMUTATOR = =,
@@ -1511,11 +1416,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR = (
-  FUNCTION = ag_catalog.agtype_any_eq,
+CREATE OPERATOR =(
+  PROCEDURE= ag_catalog.agtype_any_eq,
   LEFTARG = agtype,
   RIGHTARG = real,
   COMMUTATOR = =,
@@ -1529,11 +1433,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR = (
-  FUNCTION = ag_catalog.agtype_any_eq,
+CREATE OPERATOR =(
+  PROCEDURE= ag_catalog.agtype_any_eq,
   LEFTARG = real,
   RIGHTARG = agtype,
   COMMUTATOR = =,
@@ -1547,11 +1450,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR = (
-  FUNCTION = ag_catalog.agtype_any_eq,
+CREATE OPERATOR =(
+  PROCEDURE= ag_catalog.agtype_any_eq,
   LEFTARG = agtype,
   RIGHTARG = double precision,
   COMMUTATOR = =,
@@ -1565,11 +1467,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR = (
-  FUNCTION = ag_catalog.agtype_any_eq,
+CREATE OPERATOR =(
+  PROCEDURE= ag_catalog.agtype_any_eq,
   LEFTARG = double precision,
   RIGHTARG = agtype,
   COMMUTATOR = =,
@@ -1583,11 +1484,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR = (
-  FUNCTION = ag_catalog.agtype_any_eq,
+CREATE OPERATOR =(
+  PROCEDURE= ag_catalog.agtype_any_eq,
   LEFTARG = agtype,
   RIGHTARG = numeric,
   COMMUTATOR = =,
@@ -1601,11 +1501,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR = (
-  FUNCTION = ag_catalog.agtype_any_eq,
+CREATE OPERATOR =(
+  PROCEDURE= ag_catalog.agtype_any_eq,
   LEFTARG = numeric,
   RIGHTARG = agtype,
   COMMUTATOR = =,
@@ -1619,11 +1518,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.agtype_ne,
+CREATE OPERATOR <>(
+  PROCEDURE= ag_catalog.agtype_ne,
   LEFTARG = agtype,
   RIGHTARG = agtype,
   COMMUTATOR = <>,
@@ -1637,11 +1535,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.agtype_any_ne,
+CREATE OPERATOR <>(
+  PROCEDURE= ag_catalog.agtype_any_ne,
   LEFTARG = agtype,
   RIGHTARG = smallint,
   COMMUTATOR = <>,
@@ -1655,11 +1552,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.agtype_any_ne,
+CREATE OPERATOR <>(
+  PROCEDURE= ag_catalog.agtype_any_ne,
   LEFTARG = smallint,
   RIGHTARG = agtype,
   COMMUTATOR = <>,
@@ -1673,11 +1569,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.agtype_any_ne,
+CREATE OPERATOR <>(
+  PROCEDURE= ag_catalog.agtype_any_ne,
   LEFTARG = agtype,
   RIGHTARG = integer,
   COMMUTATOR = <>,
@@ -1691,11 +1586,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.agtype_any_ne,
+CREATE OPERATOR <>(
+  PROCEDURE= ag_catalog.agtype_any_ne,
   LEFTARG = integer,
   RIGHTARG = agtype,
   COMMUTATOR = <>,
@@ -1709,11 +1603,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.agtype_any_ne,
+CREATE OPERATOR <>(
+  PROCEDURE= ag_catalog.agtype_any_ne,
   LEFTARG = agtype,
   RIGHTARG = bigint,
   COMMUTATOR = <>,
@@ -1727,11 +1620,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.agtype_any_ne,
+CREATE OPERATOR <>(
+  PROCEDURE= ag_catalog.agtype_any_ne,
   LEFTARG = bigint,
   RIGHTARG = agtype,
   COMMUTATOR = <>,
@@ -1745,11 +1637,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.agtype_any_ne,
+CREATE OPERATOR <>(
+  PROCEDURE= ag_catalog.agtype_any_ne,
   LEFTARG = agtype,
   RIGHTARG = real,
   COMMUTATOR = <>,
@@ -1763,11 +1654,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.agtype_any_ne,
+CREATE OPERATOR <>(
+  PROCEDURE= ag_catalog.agtype_any_ne,
   LEFTARG = real,
   RIGHTARG = agtype,
   COMMUTATOR = <>,
@@ -1781,11 +1671,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.agtype_any_ne,
+CREATE OPERATOR <>(
+  PROCEDURE= ag_catalog.agtype_any_ne,
   LEFTARG = agtype,
   RIGHTARG = double precision,
   COMMUTATOR = <>,
@@ -1799,11 +1688,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.agtype_any_ne,
+CREATE OPERATOR <>(
+  PROCEDURE= ag_catalog.agtype_any_ne,
   LEFTARG = double precision,
   RIGHTARG = agtype,
   COMMUTATOR = <>,
@@ -1817,11 +1705,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.agtype_any_ne,
+CREATE OPERATOR <>(
+  PROCEDURE= ag_catalog.agtype_any_ne,
   LEFTARG = agtype,
   RIGHTARG = numeric,
   COMMUTATOR = <>,
@@ -1835,11 +1722,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <> (
-  FUNCTION = ag_catalog.agtype_any_ne,
+CREATE OPERATOR <>(
+  PROCEDURE= ag_catalog.agtype_any_ne,
   LEFTARG = numeric,
   RIGHTARG = agtype,
   COMMUTATOR = <>,
@@ -1853,11 +1739,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR < (
-  FUNCTION = ag_catalog.agtype_lt,
+CREATE OPERATOR <(
+  PROCEDURE= ag_catalog.agtype_lt,
   LEFTARG = agtype,
   RIGHTARG = agtype,
   COMMUTATOR = >,
@@ -1871,11 +1756,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR < (
-  FUNCTION = ag_catalog.agtype_any_lt,
+CREATE OPERATOR <(
+  PROCEDURE= ag_catalog.agtype_any_lt,
   LEFTARG = agtype,
   RIGHTARG = smallint,
   COMMUTATOR = >,
@@ -1889,11 +1773,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR < (
-  FUNCTION = ag_catalog.agtype_any_lt,
+CREATE OPERATOR <(
+  PROCEDURE= ag_catalog.agtype_any_lt,
   LEFTARG = smallint,
   RIGHTARG = agtype,
   COMMUTATOR = >,
@@ -1907,11 +1790,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR < (
-  FUNCTION = ag_catalog.agtype_any_lt,
+CREATE OPERATOR <(
+  PROCEDURE= ag_catalog.agtype_any_lt,
   LEFTARG = agtype,
   RIGHTARG = integer,
   COMMUTATOR = >,
@@ -1925,11 +1807,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR < (
-  FUNCTION = ag_catalog.agtype_any_lt,
+CREATE OPERATOR <(
+  PROCEDURE= ag_catalog.agtype_any_lt,
   LEFTARG = integer,
   RIGHTARG = agtype,
   COMMUTATOR = >,
@@ -1943,11 +1824,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR < (
-  FUNCTION = ag_catalog.agtype_any_lt,
+CREATE OPERATOR <(
+  PROCEDURE= ag_catalog.agtype_any_lt,
   LEFTARG = agtype,
   RIGHTARG = bigint,
   COMMUTATOR = >,
@@ -1961,11 +1841,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR < (
-  FUNCTION = ag_catalog.agtype_any_lt,
+CREATE OPERATOR <(
+  PROCEDURE= ag_catalog.agtype_any_lt,
   LEFTARG = bigint,
   RIGHTARG = agtype,
   COMMUTATOR = >,
@@ -1979,11 +1858,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR < (
-  FUNCTION = ag_catalog.agtype_any_lt,
+CREATE OPERATOR <(
+  PROCEDURE= ag_catalog.agtype_any_lt,
   LEFTARG = agtype,
   RIGHTARG = real,
   COMMUTATOR = >,
@@ -1997,11 +1875,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR < (
-  FUNCTION = ag_catalog.agtype_any_lt,
+CREATE OPERATOR <(
+  PROCEDURE= ag_catalog.agtype_any_lt,
   LEFTARG = real,
   RIGHTARG = agtype,
   COMMUTATOR = >,
@@ -2015,11 +1892,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR < (
-  FUNCTION = ag_catalog.agtype_any_lt,
+CREATE OPERATOR <(
+  PROCEDURE= ag_catalog.agtype_any_lt,
   LEFTARG = agtype,
   RIGHTARG = double precision,
   COMMUTATOR = >,
@@ -2033,11 +1909,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR < (
-  FUNCTION = ag_catalog.agtype_any_lt,
+CREATE OPERATOR <(
+  PROCEDURE= ag_catalog.agtype_any_lt,
   LEFTARG = double precision,
   RIGHTARG = agtype,
   COMMUTATOR = >,
@@ -2051,11 +1926,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR < (
-  FUNCTION = ag_catalog.agtype_any_lt,
+CREATE OPERATOR <(
+  PROCEDURE= ag_catalog.agtype_any_lt,
   LEFTARG = agtype,
   RIGHTARG = numeric,
   COMMUTATOR = >,
@@ -2069,11 +1943,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR < (
-  FUNCTION = ag_catalog.agtype_any_lt,
+CREATE OPERATOR <(
+  PROCEDURE= ag_catalog.agtype_any_lt,
   LEFTARG = numeric,
   RIGHTARG = agtype,
   COMMUTATOR = >,
@@ -2087,11 +1960,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR > (
-  FUNCTION = ag_catalog.agtype_gt,
+CREATE OPERATOR >(
+  PROCEDURE= ag_catalog.agtype_gt,
   LEFTARG = agtype,
   RIGHTARG = agtype,
   COMMUTATOR = <,
@@ -2105,11 +1977,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR > (
-  FUNCTION = ag_catalog.agtype_any_gt,
+CREATE OPERATOR >(
+  PROCEDURE= ag_catalog.agtype_any_gt,
   LEFTARG = agtype,
   RIGHTARG = smallint,
   COMMUTATOR = <,
@@ -2123,11 +1994,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR > (
-  FUNCTION = ag_catalog.agtype_any_gt,
+CREATE OPERATOR >(
+  PROCEDURE= ag_catalog.agtype_any_gt,
   LEFTARG = smallint,
   RIGHTARG = agtype,
   COMMUTATOR = <,
@@ -2141,11 +2011,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR > (
-  FUNCTION = ag_catalog.agtype_any_gt,
+CREATE OPERATOR >(
+  PROCEDURE= ag_catalog.agtype_any_gt,
   LEFTARG = agtype,
   RIGHTARG = integer,
   COMMUTATOR = <,
@@ -2159,11 +2028,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR > (
-  FUNCTION = ag_catalog.agtype_any_gt,
+CREATE OPERATOR >(
+  PROCEDURE= ag_catalog.agtype_any_gt,
   LEFTARG = integer,
   RIGHTARG = agtype,
   COMMUTATOR = <,
@@ -2177,11 +2045,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR > (
-  FUNCTION = ag_catalog.agtype_any_gt,
+CREATE OPERATOR >(
+  PROCEDURE= ag_catalog.agtype_any_gt,
   LEFTARG = agtype,
   RIGHTARG = bigint,
   COMMUTATOR = <,
@@ -2195,11 +2062,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR > (
-  FUNCTION = ag_catalog.agtype_any_gt,
+CREATE OPERATOR >(
+  PROCEDURE= ag_catalog.agtype_any_gt,
   LEFTARG = bigint,
   RIGHTARG = agtype,
   COMMUTATOR = <,
@@ -2213,11 +2079,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR > (
-  FUNCTION = ag_catalog.agtype_any_gt,
+CREATE OPERATOR >(
+  PROCEDURE= ag_catalog.agtype_any_gt,
   LEFTARG = agtype,
   RIGHTARG = real,
   COMMUTATOR = <,
@@ -2231,11 +2096,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR > (
-  FUNCTION = ag_catalog.agtype_any_gt,
+CREATE OPERATOR >(
+  PROCEDURE= ag_catalog.agtype_any_gt,
   LEFTARG = real,
   RIGHTARG = agtype,
   COMMUTATOR = <,
@@ -2249,11 +2113,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR > (
-  FUNCTION = ag_catalog.agtype_any_gt,
+CREATE OPERATOR >(
+  PROCEDURE= ag_catalog.agtype_any_gt,
   LEFTARG = agtype,
   RIGHTARG = double precision,
   COMMUTATOR = <,
@@ -2267,11 +2130,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR > (
-  FUNCTION = ag_catalog.agtype_any_gt,
+CREATE OPERATOR >(
+  PROCEDURE= ag_catalog.agtype_any_gt,
   LEFTARG = double precision,
   RIGHTARG = agtype,
   COMMUTATOR = <,
@@ -2285,11 +2147,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR > (
-  FUNCTION = ag_catalog.agtype_any_gt,
+CREATE OPERATOR >(
+  PROCEDURE= ag_catalog.agtype_any_gt,
   LEFTARG = agtype,
   RIGHTARG = numeric,
   COMMUTATOR = <,
@@ -2303,11 +2164,10 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR > (
-  FUNCTION = ag_catalog.agtype_any_gt,
+CREATE OPERATOR >(
+  PROCEDURE= ag_catalog.agtype_any_gt,
   LEFTARG = numeric,
   RIGHTARG = agtype,
   COMMUTATOR = <,
@@ -2321,17 +2181,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.agtype_le,
+CREATE OPERATOR <=(
+  PROCEDURE= ag_catalog.agtype_le,
   LEFTARG = agtype,
   RIGHTARG = agtype,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_le(agtype, smallint)
@@ -2339,17 +2198,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.agtype_any_le,
+CREATE OPERATOR <=(
+  PROCEDURE= ag_catalog.agtype_any_le,
   LEFTARG = agtype,
   RIGHTARG = smallint,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_le(smallint, agtype)
@@ -2357,17 +2215,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.agtype_any_le,
+CREATE OPERATOR <=(
+  PROCEDURE= ag_catalog.agtype_any_le,
   LEFTARG = smallint,
   RIGHTARG = agtype,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_le(agtype, integer)
@@ -2375,17 +2232,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.agtype_any_le,
+CREATE OPERATOR <=(
+  PROCEDURE= ag_catalog.agtype_any_le,
   LEFTARG = agtype,
   RIGHTARG = integer,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_le(integer, agtype)
@@ -2393,17 +2249,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.agtype_any_le,
+CREATE OPERATOR <=(
+  PROCEDURE= ag_catalog.agtype_any_le,
   LEFTARG = integer,
   RIGHTARG = agtype,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_le(agtype, bigint)
@@ -2411,17 +2266,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.agtype_any_le,
+CREATE OPERATOR <=(
+  PROCEDURE= ag_catalog.agtype_any_le,
   LEFTARG = agtype,
   RIGHTARG = bigint,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_le(bigint, agtype)
@@ -2429,17 +2283,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.agtype_any_le,
+CREATE OPERATOR <=(
+  PROCEDURE= ag_catalog.agtype_any_le,
   LEFTARG = bigint,
   RIGHTARG = agtype,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_le(agtype, real)
@@ -2447,17 +2300,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.agtype_any_le,
+CREATE OPERATOR <=(
+  PROCEDURE= ag_catalog.agtype_any_le,
   LEFTARG = agtype,
   RIGHTARG = real,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_le(real, agtype)
@@ -2465,17 +2317,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.agtype_any_le,
+CREATE OPERATOR <=(
+  PROCEDURE= ag_catalog.agtype_any_le,
   LEFTARG = real,
   RIGHTARG = agtype,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_le(agtype, double precision)
@@ -2483,17 +2334,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.agtype_any_le,
+CREATE OPERATOR <=(
+  PROCEDURE= ag_catalog.agtype_any_le,
   LEFTARG = agtype,
   RIGHTARG = double precision,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_le(double precision, agtype)
@@ -2501,17 +2351,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.agtype_any_le,
+CREATE OPERATOR <=(
+  PROCEDURE= ag_catalog.agtype_any_le,
   LEFTARG = double precision,
   RIGHTARG = agtype,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_le(agtype, numeric)
@@ -2519,17 +2368,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.agtype_any_le,
+CREATE OPERATOR <=(
+  PROCEDURE= ag_catalog.agtype_any_le,
   LEFTARG = agtype,
   RIGHTARG = numeric,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_le(numeric, agtype)
@@ -2537,17 +2385,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR <= (
-  FUNCTION = ag_catalog.agtype_any_le,
+CREATE OPERATOR <=(
+  PROCEDURE= ag_catalog.agtype_any_le,
   LEFTARG = numeric,
   RIGHTARG = agtype,
   COMMUTATOR = >=,
   NEGATOR = >,
-  RESTRICT = scalarlesel,
-  JOIN = scalarlejoinsel
+  RESTRICT = scalarltsel,
+  JOIN = scalarltjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_ge(agtype, agtype)
@@ -2555,17 +2402,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.agtype_ge,
+CREATE OPERATOR >=(
+  PROCEDURE= ag_catalog.agtype_ge,
   LEFTARG = agtype,
   RIGHTARG = agtype,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_ge(agtype, smallint)
@@ -2573,17 +2419,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.agtype_any_ge,
+CREATE OPERATOR >=(
+  PROCEDURE= ag_catalog.agtype_any_ge,
   LEFTARG = agtype,
   RIGHTARG = smallint,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_ge(smallint, agtype)
@@ -2591,17 +2436,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.agtype_any_ge,
+CREATE OPERATOR >=(
+  PROCEDURE= ag_catalog.agtype_any_ge,
   LEFTARG = smallint,
   RIGHTARG = agtype,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_ge(agtype, integer)
@@ -2609,17 +2453,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.agtype_any_ge,
+CREATE OPERATOR >=(
+  PROCEDURE= ag_catalog.agtype_any_ge,
   LEFTARG = agtype,
   RIGHTARG = integer,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_ge(integer, agtype)
@@ -2627,17 +2470,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.agtype_any_ge,
+CREATE OPERATOR >=(
+  PROCEDURE= ag_catalog.agtype_any_ge,
   LEFTARG = integer,
   RIGHTARG = agtype,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_ge(agtype, bigint)
@@ -2645,17 +2487,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.agtype_any_ge,
+CREATE OPERATOR >=(
+  PROCEDURE= ag_catalog.agtype_any_ge,
   LEFTARG = agtype,
   RIGHTARG = bigint,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_ge(bigint, agtype)
@@ -2663,17 +2504,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.agtype_any_ge,
+CREATE OPERATOR >=(
+  PROCEDURE= ag_catalog.agtype_any_ge,
   LEFTARG = bigint,
   RIGHTARG = agtype,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_ge(agtype, real)
@@ -2681,17 +2521,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.agtype_any_ge,
+CREATE OPERATOR >=(
+  PROCEDURE= ag_catalog.agtype_any_ge,
   LEFTARG = agtype,
   RIGHTARG = real,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_ge(real, agtype)
@@ -2699,17 +2538,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.agtype_any_ge,
+CREATE OPERATOR >=(
+  PROCEDURE= ag_catalog.agtype_any_ge,
   LEFTARG = real,
   RIGHTARG = agtype,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_ge(agtype, double precision)
@@ -2717,17 +2555,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.agtype_any_ge,
+CREATE OPERATOR >=(
+  PROCEDURE= ag_catalog.agtype_any_ge,
   LEFTARG = agtype,
   RIGHTARG = double precision,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_ge(double precision, agtype)
@@ -2735,17 +2572,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.agtype_any_ge,
+CREATE OPERATOR >=(
+  PROCEDURE= ag_catalog.agtype_any_ge,
   LEFTARG = double precision,
   RIGHTARG = agtype,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_ge(agtype, numeric)
@@ -2753,17 +2589,16 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.agtype_any_ge,
+CREATE OPERATOR >=(
+  PROCEDURE= ag_catalog.agtype_any_ge,
   LEFTARG = agtype,
   RIGHTARG = numeric,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_any_ge(numeric, agtype)
@@ -2771,24 +2606,22 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
-CREATE OPERATOR >= (
-  FUNCTION = ag_catalog.agtype_any_ge,
+CREATE OPERATOR >=(
+  PROCEDURE= ag_catalog.agtype_any_ge,
   LEFTARG = numeric,
   RIGHTARG = agtype,
   COMMUTATOR = <=,
   NEGATOR = <,
-  RESTRICT = scalargesel,
-  JOIN = scalargejoinsel
+  RESTRICT = scalargtsel,
+  JOIN = scalargtjoinsel
 );
 
 CREATE FUNCTION ag_catalog.agtype_btree_cmp(agtype, agtype)
 RETURNS INTEGER
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE OPERATOR CLASS agtype_ops_btree
@@ -2806,7 +2639,6 @@ CREATE FUNCTION ag_catalog.agtype_hash_cmp(agtype)
 RETURNS INTEGER
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE OPERATOR CLASS agtype_ops_hash
@@ -2824,7 +2656,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE CAST (graphid AS agtype)
@@ -2835,13 +2666,11 @@ RETURNS graphid
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE CAST (agtype AS graphid)
 WITH FUNCTION ag_catalog.agtype_to_graphid(agtype)
 AS IMPLICIT;
-
 
 --
 -- agtype - path
@@ -2851,7 +2680,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 CALLED ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 --
@@ -2862,7 +2690,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 CALLED ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 --
@@ -2873,14 +2700,12 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 CALLED ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog._ag_enforce_edge_uniqueness(VARIADIC "any")
 RETURNS bool
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 as 'MODULE_PATHNAME';
 
 --
@@ -2892,7 +2717,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 CALLED ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.agtype_build_map()
@@ -2900,7 +2724,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 CALLED ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME', 'agtype_build_map_noargs';
 
 --
@@ -2916,7 +2739,7 @@ END;
 $return_value$ LANGUAGE plpgsql
 VOLATILE
 CALLED ON NULL INPUT
-PARALLEL SAFE;
+;
 
 --
 -- agtype - list literal (`[expr, ...]`)
@@ -2927,7 +2750,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 CALLED ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.agtype_build_list()
@@ -2935,7 +2757,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 CALLED ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME', 'agtype_build_list_noargs';
 
 --
@@ -2947,7 +2768,6 @@ RETURNS text
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE CAST (agtype AS text)
@@ -2959,7 +2779,6 @@ RETURNS boolean
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE CAST (agtype AS boolean)
@@ -2972,7 +2791,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE CAST (boolean AS agtype)
@@ -2984,7 +2802,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE CAST (float8 AS agtype)
@@ -2996,7 +2813,6 @@ RETURNS float8
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE CAST (agtype AS float8)
@@ -3008,7 +2824,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE CAST (int8 AS agtype)
@@ -3020,7 +2835,6 @@ RETURNS bigint
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE CAST (agtype AS bigint)
@@ -3033,7 +2847,6 @@ RETURNS int
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE CAST (agtype AS int)
@@ -3045,7 +2858,6 @@ RETURNS smallint
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE CAST (agtype AS smallint)
@@ -3057,7 +2869,6 @@ CREATE FUNCTION ag_catalog.agtype_to_int4_array(variadic "any")
     LANGUAGE c
     STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE CAST (agtype AS int[])
@@ -3072,21 +2883,18 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.agtype_access_slice(agtype, agtype, agtype)
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.agtype_in_operator(agtype, agtype)
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 --
@@ -3098,7 +2906,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.agtype_string_match_ends_with(agtype, agtype)
@@ -3106,7 +2913,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.agtype_string_match_contains(agtype, agtype)
@@ -3114,14 +2920,12 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_eq_tilde(agtype, agtype)
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 --
@@ -3165,7 +2969,6 @@ RETURNS SETOF record
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 COST 10
 ROWS 60
 AS 'MODULE_PATHNAME';
@@ -3178,7 +2981,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_start_id(agtype)
@@ -3186,7 +2988,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_end_id(agtype)
@@ -3194,7 +2995,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_head(agtype)
@@ -3202,7 +3002,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_last(agtype)
@@ -3210,7 +3009,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_properties(agtype)
@@ -3218,7 +3016,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_startnode(agtype, agtype)
@@ -3226,7 +3023,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_endnode(agtype, agtype)
@@ -3234,7 +3030,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_length(agtype)
@@ -3242,7 +3037,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_toboolean(variadic "any")
@@ -3250,7 +3044,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_tofloat(variadic "any")
@@ -3258,7 +3051,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_tointeger(variadic "any")
@@ -3266,7 +3058,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_tostring(variadic "any")
@@ -3274,7 +3065,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_size(variadic "any")
@@ -3282,7 +3072,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_type(agtype)
@@ -3290,14 +3079,12 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_exists(agtype)
 RETURNS boolean
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_label(agtype)
@@ -3305,14 +3092,12 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog._property_constraint_check(agtype, agtype)
 RETURNS boolean
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 --
@@ -3323,7 +3108,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_toupper(variadic "any")
@@ -3331,7 +3115,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_tolower(variadic "any")
@@ -3339,7 +3122,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_ltrim(variadic "any")
@@ -3347,7 +3129,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_rtrim(variadic "any")
@@ -3355,7 +3136,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_trim(variadic "any")
@@ -3363,42 +3143,36 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_right(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_left(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_substring(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_split(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_replace(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 --
@@ -3408,147 +3182,126 @@ CREATE FUNCTION ag_catalog.age_sin(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_cos(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_tan(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_cot(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_asin(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_acos(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_atan(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_atan2(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_degrees(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_radians(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_round(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_ceil(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_floor(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_abs(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_sign(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_log(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_log10(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_e()
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_exp(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_sqrt(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_timestamp()
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 --
@@ -3560,7 +3313,6 @@ CREATE FUNCTION ag_catalog.age_float8_stddev_samp_aggfinalfn(_float8)
 RETURNS agtype
 LANGUAGE c
 IMMUTABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- wrapper for the float8_accum to use agtype input
@@ -3569,7 +3321,6 @@ RETURNS _float8
 LANGUAGE c
 IMMUTABLE
 STRICT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- aggregate definition for age_stdev(agtype)
@@ -3578,18 +3329,13 @@ CREATE AGGREGATE ag_catalog.age_stdev(agtype)
    stype = _float8,
    sfunc = ag_catalog.age_agtype_float8_accum,
    finalfunc = ag_catalog.age_float8_stddev_samp_aggfinalfn,
-   combinefunc = float8_combine,
-   finalfunc_modify = read_only,
-   initcond = '{0,0,0}',
-   parallel = safe
-);
+   initcond = '{0,0,0}');
 
 -- wrapper for the stdevp final function to pass 0 instead of null
 CREATE FUNCTION ag_catalog.age_float8_stddev_pop_aggfinalfn(_float8)
 RETURNS agtype
 LANGUAGE c
 IMMUTABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- aggregate definition for age_stdevp(agtype)
@@ -3598,10 +3344,7 @@ CREATE AGGREGATE ag_catalog.age_stdevp(agtype)
    stype = _float8,
    sfunc = age_agtype_float8_accum,
    finalfunc = ag_catalog.age_float8_stddev_pop_aggfinalfn,
-   combinefunc = float8_combine,
-   finalfunc_modify = read_only,
-   initcond = '{0,0,0}',
-   parallel = safe
+   initcond = '{0,0,0}'
 );
 
 --
@@ -3613,11 +3356,7 @@ CREATE AGGREGATE ag_catalog.age_avg(agtype)
    stype = _float8,
    sfunc = ag_catalog.age_agtype_float8_accum,
    finalfunc = float8_avg,
-   combinefunc = float8_combine,
-   finalfunc_modify = read_only,
-   initcond = '{0,0,0}',
-   parallel = safe
-);
+   initcond = '{0,0,0}');
 
 -- sum aggtransfn
 CREATE FUNCTION ag_catalog.age_agtype_sum(agtype, agtype)
@@ -3625,17 +3364,13 @@ RETURNS agtype
 LANGUAGE c
 IMMUTABLE
 STRICT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- aggregate definition for sum(agytpe)
 CREATE AGGREGATE ag_catalog.age_sum(agtype)
 (
    stype = agtype,
-   sfunc = ag_catalog.age_agtype_sum,
-   combinefunc = ag_catalog.age_agtype_sum,
-   finalfunc_modify = read_only,
-   parallel = safe
+   sfunc = ag_catalog.age_agtype_sum
 );
 
 --
@@ -3646,17 +3381,13 @@ CREATE FUNCTION ag_catalog.age_agtype_larger_aggtransfn(agtype, variadic "any")
 RETURNS agtype
 LANGUAGE c
 IMMUTABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- aggregate definition for max(variadic "any")
-CREATE AGGREGATE ag_catalog.age_max(variadic "any")
+CREATE AGGREGATE ag_catalog.age_max("any")
 (
    stype = agtype,
-   sfunc = ag_catalog.age_agtype_larger_aggtransfn,
-   combinefunc = ag_catalog.age_agtype_larger_aggtransfn,
-   finalfunc_modify = read_only,
-   parallel = safe
+   sfunc = ag_catalog.age_agtype_larger_aggtransfn
 );
 
 -- min transfer function
@@ -3664,17 +3395,13 @@ CREATE FUNCTION ag_catalog.age_agtype_smaller_aggtransfn(agtype, variadic "any")
 RETURNS agtype
 LANGUAGE c
 IMMUTABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- aggregate definition for min(variadic "any")
-CREATE AGGREGATE ag_catalog.age_min(variadic "any")
+CREATE AGGREGATE ag_catalog.age_min("any")
 (
    stype = agtype,
-   sfunc = ag_catalog.age_agtype_smaller_aggtransfn,
-   combinefunc = ag_catalog.age_agtype_smaller_aggtransfn,
-   finalfunc_modify = read_only,
-   parallel = safe
+   sfunc = ag_catalog.age_agtype_smaller_aggtransfn
 );
 
 --
@@ -3682,11 +3409,11 @@ CREATE AGGREGATE ag_catalog.age_min(variadic "any")
 -- percentileDisc(internal, agtype)
 --
 -- percentile transfer function
+--CREATE FUNCTION ag_catalog.age_percentile_aggtransfn(internal, agtype, agtype)
 CREATE FUNCTION ag_catalog.age_percentile_aggtransfn(internal, agtype, agtype)
 RETURNS internal
 LANGUAGE c
 IMMUTABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- percentile_cont final function
@@ -3694,7 +3421,6 @@ CREATE FUNCTION ag_catalog.age_percentile_cont_aggfinalfn(internal)
 RETURNS agtype
 LANGUAGE c
 IMMUTABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- percentile_disc final function
@@ -3702,36 +3428,32 @@ CREATE FUNCTION ag_catalog.age_percentile_disc_aggfinalfn(internal)
 RETURNS agtype
 LANGUAGE c
 IMMUTABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- aggregate definition for _percentilecont(agtype, agytpe)
 CREATE AGGREGATE ag_catalog.age_percentilecont(agtype, agtype)
 (
-    stype = internal,
-    sfunc = ag_catalog.age_percentile_aggtransfn,
-    finalfunc = ag_catalog.age_percentile_cont_aggfinalfn,
-    parallel = safe
+   stype = internal,
+   sfunc = ag_catalog.age_percentile_aggtransfn,
+   finalfunc = ag_catalog.age_percentile_cont_aggfinalfn
 );
 
--- aggregate definition for percentiledisc(agtype, agytpe)
+-- -- aggregate definition for percentiledisc(agtype, agytpe)
 CREATE AGGREGATE ag_catalog.age_percentiledisc(agtype, agtype)
 (
-    stype = internal,
-    sfunc = ag_catalog.age_percentile_aggtransfn,
-    finalfunc = ag_catalog.age_percentile_disc_aggfinalfn,
-    parallel = safe
+   stype = internal,
+   sfunc = ag_catalog.age_percentile_aggtransfn,
+   finalfunc = ag_catalog.age_percentile_disc_aggfinalfn
 );
 
 --
 -- aggregate functions for collect(variadic "any")
 --
 -- collect transfer function
-CREATE FUNCTION ag_catalog.age_collect_aggtransfn(internal, variadic "any")
+CREATE FUNCTION ag_catalog.age_collect_aggtransfn(internal, agtype)
 RETURNS internal
 LANGUAGE c
 IMMUTABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- collect final function
@@ -3739,17 +3461,17 @@ CREATE FUNCTION ag_catalog.age_collect_aggfinalfn(internal)
 RETURNS agtype
 LANGUAGE c
 IMMUTABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- aggregate definition for age_collect(variadic "any")
-CREATE AGGREGATE ag_catalog.age_collect(variadic "any")
+CREATE AGGREGATE ag_catalog.age_collect(agtype)
 (
+    --stype = agtype,
     stype = internal,
     sfunc = ag_catalog.age_collect_aggtransfn,
-    finalfunc = ag_catalog.age_collect_aggfinalfn,
-    parallel = safe
+    finalfunc = ag_catalog.age_collect_aggfinalfn
 );
+
 
 --
 -- function for typecasting an agtype value to another agtype value
@@ -3758,42 +3480,36 @@ CREATE FUNCTION ag_catalog.agtype_typecast_int(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.agtype_typecast_numeric(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.agtype_typecast_float(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.agtype_typecast_vertex(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.agtype_typecast_edge(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.agtype_typecast_path(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_vle(IN agtype, IN agtype, IN agtype, IN agtype,
@@ -3803,7 +3519,6 @@ RETURNS SETOF agtype
 LANGUAGE C
 STABLE
 CALLED ON NULL INPUT
-PARALLEL UNSAFE -- might be safe
 AS 'MODULE_PATHNAME';
 
 -- function to build an edge for a VLE match
@@ -3811,7 +3526,6 @@ CREATE FUNCTION ag_catalog.age_build_vle_match_edge(agtype, agtype)
 RETURNS agtype
 LANGUAGE C
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- function to match a terminal vle edge
@@ -3820,9 +3534,7 @@ RETURNS boolean
 LANGUAGE C
 STABLE
 CALLED ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
-
 
 -- function to create an AGTV_PATH from a VLE_path_container
 CREATE FUNCTION ag_catalog.age_materialize_vle_path(agtype)
@@ -3830,7 +3542,6 @@ RETURNS agtype
 LANGUAGE C
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- function to create an AGTV_ARRAY of edges from a VLE_path_container
@@ -3839,7 +3550,6 @@ RETURNS agtype
 LANGUAGE C
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_match_vle_edge_to_id_qual(agtype, agtype, agtype)
@@ -3847,7 +3557,6 @@ RETURNS boolean
 LANGUAGE C
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 
@@ -3856,7 +3565,6 @@ RETURNS boolean
 LANGUAGE C
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 -- list functions
@@ -3864,7 +3572,6 @@ CREATE FUNCTION ag_catalog.age_keys(agtype)
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_labels(agtype)
@@ -3872,7 +3579,6 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_nodes(agtype)
@@ -3880,30 +3586,27 @@ RETURNS agtype
 LANGUAGE c
 STABLE
 RETURNS NULL ON NULL INPUT
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_relationships(agtype)
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_range(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 CREATE FUNCTION ag_catalog.age_unnest(agtype, block_types boolean = false)
     RETURNS SETOF agtype
     LANGUAGE c
     STABLE
-PARALLEL SAFE
 AS 'MODULE_PATHNAME';
 
 --
 -- End
 --
+

@@ -32,7 +32,9 @@
 #define AG_AGTYPE_H
 
 #include "fmgr.h"
-#include "access/htup_details.h"
+
+#include "access/htup.h"
+
 #include "lib/stringinfo.h"
 #include "nodes/pg_list.h"
 #include "utils/array.h"
@@ -551,7 +553,9 @@ void add_agtype(Datum val, bool is_null, agtype_in_state *result, Oid val_type,
 #define AGTYPEARRAYOID \
     (GetSysCacheOid2(TYPENAMENSP, CStringGetDatum("_agtype"), \
                      ObjectIdGetDatum(ag_catalog_namespace_id())))
-#define GRAPHIDOID \
-    (GetSysCacheOid2(TYPENAMENSP, CStringGetDatum("graphid"), \
-                     ObjectIdGetDatum(ag_catalog_namespace_id())))
+
+
+#define AGTYPEOIDSTR "ag_catalog.agtype"
+#define AGTYPEARRAYOIDSTR "ag_catalog._agtype"
+
 #endif

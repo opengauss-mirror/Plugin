@@ -20,7 +20,7 @@
 #ifndef AG_CYPHER_EXECUTOR_H
 #define AG_CYPHER_EXECUTOR_H
 
-#include "nodes/extensible.h"
+#include "nodes/ag_extensible.h"
 #include "nodes/nodes.h"
 #include "nodes/plannodes.h"
 
@@ -29,16 +29,16 @@
 #define CREATE_SCAN_STATE_NAME "Cypher Create"
 #define MERGE_SCAN_STATE_NAME "Cypher Merge"
 
-Node *create_cypher_create_plan_state(CustomScan *cscan);
-extern const CustomExecMethods cypher_create_exec_methods;
 
-Node *create_cypher_set_plan_state(CustomScan *cscan);
-extern const CustomExecMethods cypher_set_exec_methods;
+Node *create_cypher_create_plan_state(ExtensiblePlan *cscan);
+extern const ExtensibleExecMethods cypher_create_exec_methods;
 
-Node *create_cypher_delete_plan_state(CustomScan *cscan);
-extern const CustomExecMethods cypher_delete_exec_methods;
+Node *create_cypher_set_plan_state(ExtensiblePlan *cscan);
+extern const ExtensibleExecMethods cypher_set_exec_methods;
 
-Node *create_cypher_merge_plan_state(CustomScan *cscan);
-extern const CustomExecMethods cypher_merge_exec_methods;
+Node *create_cypher_delete_plan_state(ExtensiblePlan *cscan);
+extern const ExtensibleExecMethods cypher_delete_exec_methods;
 
+Node *create_cypher_merge_plan_state(ExtensiblePlan *cscan);
+extern const ExtensibleExecMethods cypher_merge_exec_methods;
 #endif

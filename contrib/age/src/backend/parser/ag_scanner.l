@@ -30,7 +30,7 @@
 
 #include "postgres.h"
 
-#include "common/string.h"
+#include "lib/string.h"
 #include "mb/pg_wchar.h"
 
 #include "parser/ag_scanner.h"
@@ -763,7 +763,7 @@ void ag_yyfree(void *ptr, yyscan_t yyscanner)
 
 static void strbuf_init(strbuf *sb, int capacity)
 {
-    sb->buffer = palloc(capacity);
+    sb->buffer = (char*)palloc(capacity);
     sb->capacity = capacity;
     sb->length = 0;
 }
@@ -811,7 +811,7 @@ static void strbuf_ensure_capacity(strbuf *sb, int len)
         sb->capacity *= 2;
     } while (sb->capacity <= len);
 
-    sb->buffer = repalloc(sb->buffer, sb->capacity);
+    sb->buffer = (char*)repalloc(sb->buffer, sb->capacity);
 }
 
 static const char *strbuf_get_str(strbuf *sb)
@@ -823,6 +823,15 @@ static const char *strbuf_get_str(strbuf *sb)
 static void strbuf_reset(strbuf *sb)
 {
     sb->length = 0;
+}
+
+int strtoint(const char *pg_restrict 	str,char **pg_restrict 	endptr, int base)
+{
+    long val;
+    val = strtol(str, endptr, base);
+    if (val != (int) val)
+       errno = ERANGE;
+    return (int) val;
 }
 
 static void integer_literal_to_token(const char *s, ag_token *token,
@@ -977,7 +986,7 @@ static void _numstr_to_decimal(const char *numstr, const int base, strbuf *sb)
 
     // prepare "words" to store "numstr" in two's complement representation
     nwords = (ndigits + (ndigits_per_word - 1)) / ndigits_per_word;
-    words = palloc(sizeof(*words) * nwords);
+    words = (uint32*)palloc(sizeof(*words) * nwords);
 
     digitp = numstr;
     word_i = 0;
@@ -1009,7 +1018,7 @@ static void _numstr_to_decimal(const char *numstr, const int base, strbuf *sb)
     }
 
     // At most "ndivisions" divisions are needed to eliminate 1 word.
-    remainders = palloc(sizeof(*remainders) * (ndivisions * nwords));
+    remainders = (uint32*)palloc(sizeof(*remainders) * (ndivisions * nwords));
 
     nremainders = 0;
     word_i = 0;
@@ -1142,7 +1151,7 @@ ag_scanner_t ag_scanner_create(const char *s)
 
     // The last two YY_END_OF_BUFFER_CHAR are required by flex.
     len = strlen(s);
-    buf = palloc(len + 2);
+    buf = (char*)palloc(len + 2);
     memcpy(buf, s, len);
     buf[len] = YY_END_OF_BUFFER_CHAR;
     buf[len + 1] = YY_END_OF_BUFFER_CHAR;

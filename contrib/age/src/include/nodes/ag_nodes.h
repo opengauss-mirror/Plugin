@@ -22,7 +22,7 @@
 
 #include "postgres.h"
 
-#include "nodes/extensible.h"
+#include "nodes/ag_extensible.h"
 #include "nodes/nodes.h"
 
 // This list must match node_names and node_methods.
@@ -86,13 +86,12 @@ ExtensibleNode *_new_ag_node(Size size, ag_node_tag tag);
 
 #define make_ag_node(type) \
     ((type *)new_ag_node(sizeof(type), CppConcat(type, _t)))
+#define make_ag_extensible_node(type) \
+    ((type *)new_ag_node(sizeof(type), CppConcat(type, _t)))
 
 static inline bool _is_ag_node(Node *node, const char *extnodename)
 {
     ExtensibleNode *extnode;
-
-    if (!IsA(node, ExtensibleNode))
-        return false;
 
     extnode = (ExtensibleNode *)node;
     if (strcmp(extnode->extnodename, extnodename) == 0)

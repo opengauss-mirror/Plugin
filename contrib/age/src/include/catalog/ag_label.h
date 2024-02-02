@@ -65,6 +65,15 @@
 
 #define LABEL_KIND_VERTEX 'v'
 #define LABEL_KIND_EDGE 'e'
+#define ObjectAddressSubSet(addr, class_id, object_id, object_sub_id) \
+    do { \
+            (addr).classId = (class_id); \
+            (addr).objectId = (object_id); \
+            (addr).objectSubId = (object_sub_id); \
+    } while (0)
+
+#define ObjectAddressSet(addr, class_id, object_id) \
+    ObjectAddressSubSet(addr, class_id, object_id, 0)
 
 Oid insert_label(const char *label_name, Oid label_graph, int32 label_id,
                  char label_kind, Oid label_relation);
