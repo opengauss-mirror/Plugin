@@ -1023,13 +1023,13 @@ Datum int32_b_format_timestamp(PG_FUNCTION_ARGS)
 Datum int64_b_format_datetime(PG_FUNCTION_ARGS)
 {
     int64 ts = PG_GETARG_INT64(0);
-    return timestamp_to_datum(fcinfo, false, ts);
+    return timestamp_to_datum(fcinfo, false, ts, is_explicit_call(fcinfo));
 }
 
 Datum int64_b_format_timestamp(PG_FUNCTION_ARGS)
 {
     int64 ts = PG_GETARG_INT64(0);
-    return timestamp_to_datum(fcinfo, true, ts);
+    return timestamp_to_datum(fcinfo, true, ts, is_explicit_call(fcinfo));
 }
 
 Datum convert_datetime_double(PG_FUNCTION_ARGS)

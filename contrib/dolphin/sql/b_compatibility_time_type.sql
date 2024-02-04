@@ -714,6 +714,77 @@ select * from t1 order by 1;
 
 drop table t1;
 
+set dolphin.b_compatibility_mode=on;
+set b_format_behavior_compat_options=enable_set_variables;
+create table t_bigint0005(
+    c1 bigint,
+    c2 bigint,
+    c3 bigint(1),
+    c4 bigint(255),
+    c5 bigint default '10',
+    c6 bigint auto_increment primary key,
+    c7 bigint(1) default 0,
+    c8 bigint(10) not null default 99,
+    c9 bigint unique);
+
+set @val = '-9223372036854775808';
+insert t_bigint0005 values(1, @val, @val, @val, @val, @val, @val, @val, @val);
+set @val = '121314' + 1;
+insert t_bigint0005 values(2, @val, @val, @val, @val, @val, @val, @val, @val);
+set @val = cast(1234 as unsigned);
+insert t_bigint0005 values(3, @val, @val, @val, @val, @val, @val, @val, @val);
+set @val = cast(-123456789 as signed);
+insert t_bigint0005 values(4, @val, @val, @val, @val, @val, @val, @val, @val);
+set @val = cast(123456789101112 as char);
+insert t_bigint0005 values(5, @val, @val, @val, @val, @val, @val, @val, @val);
+set @val = 255 * 255 * 255;
+insert t_bigint0005 values(6, @val, @val, @val, @val, @val, @val, @val, @val);
+set @val = 9223372036854775807;
+insert t_bigint0005 values(7, @val, @val, @val, @val, @val, @val, @val, @val);
+
+select c1, cast(c2 as date), cast(c3 as date), cast(c4 as date), cast(c5 as date), cast(c6 as date), cast(c7 as date), cast(c8 as date), cast(c9 as date)
+from t_bigint0005 order by 1,2,3,4,5,6,7,8,9;
+
+select c1, cast(c2 as time), cast(c3 as time), cast(c4 as time), cast(c5 as time), cast(c6 as time), cast(c7 as time), cast(c8 as time), cast(c9 as time)
+from t_bigint0005 order by 1,2,3,4,5,6,7,8,9;
+
+
+select c1, cast(c2 as datetime), cast(c3 as datetime), cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime), cast(c8 as datetime), cast(c9 as datetime)
+from t_bigint0005 order by 1,2,3,4,5,6,7,8,9;
+
+select c1, cast(c2 as timestamp with time zone), cast(c3 as timestamp with time zone), cast(c4 as timestamp with time zone), cast(c5 as timestamp with time zone), cast(c6 as timestamp with time zone), cast(c7 as timestamp with time zone), cast(c8 as timestamp with time zone), cast(c9 as timestamp with time zone)
+from t_bigint0005 order by 1,2,3,4,5,6,7,8,9;
+
+create table t_fixed0005(
+    c1 int,
+    c2 fixed,
+    c3 fixed(10, 0),
+    c4 fixed(7, 2),
+    c5 fixed(30, 10),
+    c6 fixed(65, 8),
+    c7 fixed(65, 30),
+    c8 fixed(10, 3),
+    c9 fixed(5),
+    c10 fixed(12, 6));
+
+set @val = 12.1314;
+insert into t_fixed0005 values (1, @val, @val, @val, @val, @val, @val, @val, @val, @val);
+
+select c1, cast(c2 as date), cast(c3 as date), cast(c4 as date), cast(c5 as date), cast(c6 as date), cast(c7 as date), cast(c8 as date), cast(c9 as date)
+from t_fixed0005 order by 1,2,3,4,5,6,7,8,9;
+
+select c1, cast(c2 as time), cast(c3 as time), cast(c4 as time), cast(c5 as time), cast(c6 as time), cast(c7 as time), cast(c8 as time), cast(c9 as time)
+from t_fixed0005 order by 1,2,3,4,5,6,7,8,9;
+
+select c1, cast(c2 as datetime), cast(c3 as datetime), cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime), cast(c8 as datetime), cast(c9 as datetime)
+from t_fixed0005 order by 1,2,3,4,5,6,7,8,9;
+
+select c1, cast(c2 as timestamp with time zone), cast(c3 as timestamp with time zone), cast(c4 as timestamp with time zone), cast(c5 as timestamp with time zone), cast(c6 as timestamp with time zone), cast(c7 as timestamp with time zone), cast(c8 as timestamp with time zone), cast(c9 as timestamp with time zone)
+from t_fixed0005 order by 1,2,3,4,5,6,7,8,9;
+
+drop table t_bigint0005;
+drop table t_fixed0005;
+
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;
