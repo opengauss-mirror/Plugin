@@ -1,0 +1,22 @@
+create schema blob_with_parameter;
+set current_schema = blob_with_parameter;
+create table t_bb(a blob(255), b blob(256), c blob(65535), d blob(65536));
+\d t_bb;
+create table t1(a blob(0), b blob(16777215), c blob(16777216), d blob(4294967295));
+\d t1;
+create table t2(a blob(4294967295.5));
+\d t2;
+-- error
+create table t3(a blob(-1));
+create table t3(a blob(4294967296));
+create table t3(a blob(-0.1));
+create table t3(a blob(4294967296.1));
+create table t3(a blob('1'));
+create table t3(a blob('1.1'));
+create table t3(a blob(a));
+create table t3(a blob('a'));
+drop table t_bb;
+drop table t1;
+drop table t2;
+reset current_schema;
+drop schema blob_with_parameter;
