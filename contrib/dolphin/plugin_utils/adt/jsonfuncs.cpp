@@ -3766,11 +3766,7 @@ static bool cJSON_JsonArrayInsert(cJSON *root, cJSON_JsonPath *jp, cJSON *value,
         return false;
     }
     cJSON *found = w->head->next->node;
-    if (last->type == cJSON_JsonPath_Index) {
-        if (cJSON_IsArray(found)) {
-            cJSON_InsertItemInArray(found, last->index, value);
-        }
-    } else {
+    if (last->type != cJSON_JsonPath_Index) {
         cJSON_DeleteResultWrapper(w);
         if (last) {
             cJSON_DeleteJsonPath(last);
@@ -3778,6 +3774,13 @@ static bool cJSON_JsonArrayInsert(cJSON *root, cJSON_JsonPath *jp, cJSON *value,
         *isArray = true;
         return false;
     }
+
+    if (cJSON_IsArray(found)) {
+        if (!cJSON_InsertItemInArray(found, last->index, value)) {
+            ereport(ERROR, (errmsg("Insert item to json array failed, index: %d", last->index)));
+        }
+    }
+
     cJSON_DeleteResultWrapper(w);
     if (last) {
         cJSON_DeleteJsonPath(last);
