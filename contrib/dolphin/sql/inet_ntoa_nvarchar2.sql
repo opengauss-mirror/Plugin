@@ -112,6 +112,14 @@ inet_ntoa(`numeric`),
 inet_ntoa(`bit1`),
 inet_ntoa(`bit64`),
 inet_ntoa(`boolean`),
+inet_ntoa(`date`),
+inet_ntoa(`time`),
+inet_ntoa(`time(4)`),
+inet_ntoa(`datetime`),
+inet_ntoa(`datetime(4)`),
+inet_ntoa(`timestamp`),
+inet_ntoa(`timestamp(4)`),
+inet_ntoa(`year`),
 inet_ntoa(`char`),
 inet_ntoa(`varchar`),
 inet_ntoa(`binary`),
@@ -122,7 +130,8 @@ inet_ntoa(`mediumblob`),
 inet_ntoa(`longblob`),
 inet_ntoa(`text`),
 inet_ntoa(`enum_t`),
-inet_ntoa(`set_t`)
+inet_ntoa(`set_t`),
+inet_ntoa(`json`)
 from test_type_table;
 
 drop table test_type_table;
