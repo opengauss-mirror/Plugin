@@ -5230,6 +5230,31 @@ bool CheckDatetimeRange(const pg_tm *tm, const fsec_t fsec, const int tm_type)
 }
 
 /**
+ *  extract if bc or ad date in datetime
+ */
+inline char* extract_datetime_bcinfo(char* str, bool* is_bc)
+{
+    while (*str && isspace(*str)) str++;
+    *is_bc = false;
+    const char* extra_info = pg_strtolower(str);
+    size_t length = strlen(extra_info);
+    if (length < BC_STR_LEN) {
+        return str;
+    }
+    if (extra_info[0] == 'b' && extra_info[1] == 'c')
+    {
+        *is_bc = true;
+        str += BC_STR_LEN;
+    }
+    else if (extra_info[0] == 'a' && extra_info[1] == 'd')
+    {
+        str += BC_STR_LEN;
+    }
+    return str;
+}
+
+
+/**
   @brief Convert a timestamp string to a PG_TIME value.
 
   @param[in] str String to parse
@@ -5415,6 +5440,9 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type, pg_tm
 
     str = last_field_pos;
 
+    bool is_bc = false;
+    str = extract_datetime_bcinfo((char*)str, &is_bc);
+
     number_of_fields = i - start_loop;
     while (i < MAX_DATE_PARTS) {
         date_len[i] = 0;
@@ -5458,8 +5486,15 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type, pg_tm
         fractional_digits = date_len[6];
     }
 
-    if (year_length == 2 && not_zero_date) {
+    if (year_length == SHORT_YEAR_LEN && not_zero_date && !is_bc) {
         tm->tm_year += (tm->tm_year < YY_PART_YEAR ? 2000 : 1900);
+    }
+
+    if (is_bc) {
+        if (tm->tm_year <= 0) {
+            goto ERROR_STRING_DATETIME;
+        }
+        tm->tm_year = -(tm->tm_year - 1);
     }
 
     /*
