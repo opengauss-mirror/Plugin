@@ -2363,8 +2363,10 @@ Datum int64_number_cast_time(PG_FUNCTION_ARGS, int64 number)
 
 Datum int_cast_time_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull)
 {
-    if (number >= (int64)pow_of_10[10]) { /* datetime: 0001-00-00 00-00-00 */
-        Datum datetime = DirectFunctionCall1(int64_b_format_datetime, Int64GetDatum(number));
+    /* datetime: 0001-00-00 00-00-00 */
+    if (number >= (int64)pow_of_10[DATETIME_MIN_LEN] || number <= -(int64)pow_of_10[DATETIME_MIN_LEN]) {
+        Datum datetime = DirectCall2(isnull, int64_b_format_datetime, InvalidOid, Int64GetDatum(number),
+            BoolGetDatum(true));
         return DirectFunctionCall1(timestamp_time, datetime);
     }
     char *str = DatumGetCString(DirectFunctionCall1(int8out, Int64GetDatum(number)));
@@ -2441,8 +2443,10 @@ Datum int32_b_format_date(int64 number, bool can_ignore, TimeErrorType* time_err
 
 Datum int_cast_date_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull)
 {
-    if (number >= (int64)pow_of_10[10]) { /* datetime: 0001-00-00 00-00-00 */
-        Datum datetime = DirectFunctionCall1(int64_b_format_datetime, Int64GetDatum(number));
+    /* datetime: 0001-00-00 00-00-00 */
+    if (number >= (int64)pow_of_10[DATETIME_MIN_LEN] || number <= -(int64)pow_of_10[DATETIME_MIN_LEN]) {
+        Datum datetime = DirectCall2(isnull, int64_b_format_datetime, InvalidOid, Int64GetDatum(number),
+            BoolGetDatum(true));
         return DirectFunctionCall1(timestamp_date, datetime);
     }
     TimeErrorType time_error_type = TIME_CORRECT;
