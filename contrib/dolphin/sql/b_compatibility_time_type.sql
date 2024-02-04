@@ -699,6 +699,21 @@ select cast(100::numeric as timestamp with time zone) as result;
 
 select unix_timestamp(1.5);
 
+select cast('4714-11-24 10:10:10 BC' as date);
+select cast('4714-11-24 10:10:10 BC' as timestamp with time zone);
+select cast('4714-11-24 10:10:10 BC' as datetime);
+select cast('-100-11-24 BC' as date);
+select cast('4715-11-24 10:10:10 BC' as date);
+select cast('4715-11-24 10:10:10 BC' as timestamp with time zone);
+select cast('4715-11-24 10:10:10 BC' as datetime);
+
+create table t1(c1 date, c2 datetime, c3 timestamp with time zone);
+insert into t1 values ('4714-11-24 BC', '4714-11-24 10:10:10 BC', '4714-11-24 10:10:10 BC');
+insert ignore into t1 values ('4715-11-24 BC', '4715-11-24 10:10:10 BC', '4715-11-24 10:10:10 BC');
+select * from t1 order by 1;
+
+drop table t1;
+
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;

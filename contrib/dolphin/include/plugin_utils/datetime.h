@@ -141,6 +141,10 @@ extern bool IsResetUnavailableDataTime(int dterr, pg_tm tm, bool is_support_rese
                            (tm)->tm_hour * 10000 + (tm)->tm_min * 100 + (tm)->tm_sec)
 
 #define DTERR_ZERO_DATE (-6)
+
+#define BC_STR_LEN (2)
+#define SHORT_YEAR_LEN (2)
+
 #endif
 
 #endif // !FRONTEND_PARSER

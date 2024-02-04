@@ -2518,6 +2518,87 @@ CONTEXT:  referenced column: unix_timestamp
               0
 (1 row)
 
+select cast('4714-11-24 10:10:10 BC' as date);
+     date      
+---------------
+ 4714-11-24 BC
+(1 row)
+
+select cast('4714-11-24 10:10:10 BC' as timestamp with time zone);
+        timestamptz        
+---------------------------
+ 4714-11-24 10:10:10+00 BC
+(1 row)
+
+select cast('4714-11-24 10:10:10 BC' as datetime);
+       timestamp        
+------------------------
+ 4714-11-24 10:10:10 BC
+(1 row)
+
+select cast('-100-11-24 BC' as date);
+WARNING:  time zone displacement out of range: "-100-11-24 BC"
+LINE 1: select cast('-100-11-24 BC' as date);
+                    ^
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('4715-11-24 10:10:10 BC' as date);
+WARNING:  date out of range: "4715-11-24 10:10:10 bc"
+LINE 1: select cast('4715-11-24 10:10:10 BC' as date);
+                    ^
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('4715-11-24 10:10:10 BC' as timestamp with time zone);
+WARNING:  timestamp out of range: "4715-11-24 10:10:10 bc"
+LINE 1: select cast('4715-11-24 10:10:10 BC' as timestamp with time ...
+                    ^
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast('4715-11-24 10:10:10 BC' as datetime);
+WARNING:  timestamp out of range: "4715-11-24 10:10:10 bc"
+LINE 1: select cast('4715-11-24 10:10:10 BC' as datetime);
+                    ^
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+create table t1(c1 date, c2 datetime, c3 timestamp with time zone);
+insert into t1 values ('4714-11-24 BC', '4714-11-24 10:10:10 BC', '4714-11-24 10:10:10 BC');
+insert ignore into t1 values ('4715-11-24 BC', '4715-11-24 10:10:10 BC', '4715-11-24 10:10:10 BC');
+WARNING:  date out of range: "4715-11-24 bc"
+LINE 1: insert ignore into t1 values ('4715-11-24 BC', '4715-11-24 1...
+                                      ^
+CONTEXT:  referenced column: c1
+WARNING:  timestamp out of range: "4715-11-24 10:10:10 bc"
+LINE 1: insert ignore into t1 values ('4715-11-24 BC', '4715-11-24 1...
+                                                       ^
+CONTEXT:  referenced column: c2
+WARNING:  timestamp out of range: "4715-11-24 10:10:10 bc"
+LINE 1: ...alues ('4715-11-24 BC', '4715-11-24 10:10:10 BC', '4715-11-2...
+                                                             ^
+CONTEXT:  referenced column: c3
+select * from t1 order by 1;
+      c1       |           c2           |            c3             
+---------------+------------------------+---------------------------
+ 4714-11-24 BC | 4714-11-24 10:10:10 BC | 4714-11-24 10:10:10+00 BC
+ 0000-00-00    | 0000-00-00 00:00:00    | 0000-00-00 00:00:00+00
+(2 rows)
+
+drop table t1;
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;

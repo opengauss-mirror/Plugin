@@ -163,6 +163,18 @@ extern "C" DLL_PUBLIC Datum time_cast_implicit(PG_FUNCTION_ARGS);
 
 extern void check_zero_month_day(pg_tm *tm, bool can_ignore);
 
+
+#define CHECK_TM_TO_TIMESTAMP_RESULT(tm_to_timestamp_result)                       \
+do {                                                                               \
+    if (tm_to_timestamp_result != 0) {                                             \
+        int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;     \
+        ereport(level, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),               \
+            errmsg("timestamp out of range: \"%s\"", str)));                        \
+        *time_error_type = TIME_INCORRECT;                                          \
+        PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);                                        \
+    }                                                                              \
+} while (0)
+
 #endif
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);

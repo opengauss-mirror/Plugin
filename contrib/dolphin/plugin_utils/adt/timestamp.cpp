@@ -608,7 +608,8 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
         flag |= res;
     #endif
         if (flag) {
-            tm2timestamp(tm, fsec, NULL, &result);
+            int tm_to_timestamp_result = tm2timestamp(tm, fsec, NULL, &result);
+            CHECK_TM_TO_TIMESTAMP_RESULT(tm_to_timestamp_result);
         } else {
             /*
             * default pg date formatting parsing.
@@ -616,10 +617,8 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
             dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
             if (dterr != 0) {
                 DateTimeParseErrorWithFlag(dterr, str, "timestamp", fcinfo->can_ignore, time_cast_type == TIME_CAST);
-#ifdef DOLPHIN
                 *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ?
                     TIME_CORRECT : TIME_INCORRECT;
-#endif
                 /*
                  * if error ignorable, function DateTimeParseError reports warning instead, then return current timestamp.
                  */
@@ -636,16 +635,12 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
             }
             if (dterr != 0) {
                 DateTimeParseErrorWithFlag(dterr, str, "timestamp", fcinfo->can_ignore, time_cast_type == TIME_CAST);
-#ifdef DOLPHIN
                 check_zero_month_day(tm, fcinfo->can_ignore);
                 *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ?
                     TIME_CORRECT : TIME_INCORRECT;
-#endif
                 PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
             }
-#ifdef DOLPHIN
             check_zero_month_day(tm, fcinfo->can_ignore);
-#endif
             switch (dtype) {
                 case DTK_DATE:
                     if (tm2timestamp(tm, fsec, NULL, &result) != 0)
@@ -1657,10 +1652,20 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, int time_cast_type, TimeErrorType* 
 
     if (flag) {
         if (invalid_tz) {
+#ifdef DOLPHIN
+            int tm_to_timestamp_result = tm2timestamp(tm, fsec, NULL, &result);
+            CHECK_TM_TO_TIMESTAMP_RESULT(tm_to_timestamp_result);
+#else
             tm2timestamp(tm, fsec, NULL, &result);
+#endif
             result = timestamp2timestamptz(result);
         } else {
+#ifdef DOLPHIN
+            int tm_to_timestamp_result = tm2timestamp(tm, fsec, &tz, &result);
+            CHECK_TM_TO_TIMESTAMP_RESULT(tm_to_timestamp_result);
+#else
             tm2timestamp(tm, fsec, &tz, &result);
+#endif
         }
     } else {
         dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);

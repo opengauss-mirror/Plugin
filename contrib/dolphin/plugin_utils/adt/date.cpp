@@ -518,6 +518,17 @@ Datum date_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
 
         /* the following logic shared from to_date(). */
         to_timestamp_from_format(tm, &fsec, str, (void*)date_fmt);
+#ifndef DOLPHIN
+    } else if (DateTypeCheck(str, fcinfo->can_ignore, tm, date, fsec, dterr)) {
+        PG_RETURN_DATEADT(date);
+    }
+
+    /*
+     * the following logic is unified for date parsing.
+     */
+    if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday))
+        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date out of range: \"%s\"", str)));
+#else
     } else {
         int invalid_tz;
         bool res = cstring_to_tm(str, tm, fsec, &tzp, &invalid_tz);
@@ -581,8 +592,13 @@ Datum date_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
     /*
      * the following logic is unified for date parsing.
      */
-    if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday))
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date out of range: \"%s\"", str)));
+    if (!IS_VALID_JULIAN(tm->tm_year, tm->tm_mon, tm->tm_mday)) {
+        int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+        ereport(level, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date out of range: \"%s\"", str)));
+        *time_error_type = TIME_INCORRECT;
+        PG_RETURN_DATEADT(DATE_ALL_ZERO_VALUE);
+    }
+#endif
 
     date = date2j(tm->tm_year, tm->tm_mon, tm->tm_mday) - POSTGRES_EPOCH_JDATE;
 
