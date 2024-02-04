@@ -106,6 +106,14 @@ describe format=traditional insert into ed_t values(100, 'hello', 100);
    ->  Result  (cost=0.00..0.01 rows=1 width=0)
 (3 rows)
 
+describe format=tree insert into ed_t values(100, 'hello', 100);
+                    QUERY PLAN                    
+--------------------------------------------------
+ [Bypass]
+ Insert on ed_t  (cost=0.00..0.01 rows=1 width=0)
+   ->  Result  (cost=0.00..0.01 rows=1 width=0)
+(3 rows)
+
 -- 3.explain with key world: extended
 explain extended select c1, c2, c3 from ed_t;
                        QUERY PLAN                        
@@ -137,7 +145,7 @@ explain extended delete from ed_t where c1 < 5;
          Filter: (c1 < 5)
 (3 rows)
 
--- 4.explain with specifying format(json or traditional)
+-- 4.explain with specifying format(json or traditional or tree)
 explain format=json select c1, c2, c3 from ed_t;
            QUERY PLAN           
 --------------------------------
@@ -454,6 +462,58 @@ explain format='traditional' delete from ed_t where c1 < 5;
 (3 rows)
 
 explain format='TraDitional' delete from ed_t where c1 < 5;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Delete on ed_t  (cost=0.00..13.99 rows=106 width=6)
+   ->  Seq Scan on ed_t  (cost=0.00..13.99 rows=106 width=6)
+         Filter: (c1 < 5)
+(3 rows)
+
+explain format=TREE select c1, c2, c3 from ed_t;
+                       QUERY PLAN                        
+---------------------------------------------------------
+ Seq Scan on ed_t  (cost=0.00..13.19 rows=319 width=226)
+(1 row)
+
+explain FORMAT=TREE select c1, c2, c3 from ed_t;
+                       QUERY PLAN                        
+---------------------------------------------------------
+ Seq Scan on ed_t  (cost=0.00..13.19 rows=319 width=226)
+(1 row)
+
+explain format=TREE insert into ed_t values(100, 'hello', 100);
+                    QUERY PLAN                    
+--------------------------------------------------
+ [Bypass]
+ Insert on ed_t  (cost=0.00..0.01 rows=1 width=0)
+   ->  Result  (cost=0.00..0.01 rows=1 width=0)
+(3 rows)
+
+explain format=TREE update ed_t set c2 = 'world' where c1 < 5;
+                          QUERY PLAN                          
+--------------------------------------------------------------
+ Update on ed_t  (cost=0.00..13.99 rows=106 width=14)
+   ->  Seq Scan on ed_t  (cost=0.00..13.99 rows=106 width=14)
+         Filter: (c1 < 5)
+(3 rows)
+
+explain format=tree delete from ed_t where c1 < 5;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Delete on ed_t  (cost=0.00..13.99 rows=106 width=6)
+   ->  Seq Scan on ed_t  (cost=0.00..13.99 rows=106 width=6)
+         Filter: (c1 < 5)
+(3 rows)
+
+explain format='tree' delete from ed_t where c1 < 5;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Delete on ed_t  (cost=0.00..13.99 rows=106 width=6)
+   ->  Seq Scan on ed_t  (cost=0.00..13.99 rows=106 width=6)
+         Filter: (c1 < 5)
+(3 rows)
+
+explain format='Tree' delete from ed_t where c1 < 5;
                          QUERY PLAN                          
 -------------------------------------------------------------
  Delete on ed_t  (cost=0.00..13.99 rows=106 width=6)
