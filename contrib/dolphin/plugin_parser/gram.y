@@ -354,6 +354,14 @@ typedef struct DolphinString
 #define parser_errposition(pos)  scanner_errposition(pos, yyscanner)
 
 #define SYS_SCHEMA_COUNT 14
+
+/* Boundary values for the parameter of blob(n) */
+#define MIN_TINYBLOB 0
+#define MIN_BLOB 2 << 7
+#define MIN_MEDIUMBLOB 2 << 15
+#define MIN_LONGBLOB 2 << 23
+#define MAX_LONGBLOB 4294967295
+
 static const char* sys_schemas[SYS_SCHEMA_COUNT] = {
 	"pg_toast",
 	"cstore",
@@ -30942,6 +30950,49 @@ GenericType:
 					} else if (($1 != NULL) && ((strcmp($1, "real") == 0 || strcmp($1, "double") == 0))) {
 						$$ = makeTypeName("float8");
 					$$->typmods = $2;
+					} else if (($1 != NULL) && (strcasecmp($1, "blob") == 0) && ($2 != NULL) && (list_length($2) == 1)) {
+						Node* node = (Node*)linitial($2);
+						if (IsA(node, A_Const)) {
+							A_Const* cnt = (A_Const*)node;
+							uint n;
+							switch (nodeTag(&cnt->val)) {
+								case T_Integer: {
+									long ival = cnt->val.val.ival;
+									if (ival >= MIN_TINYBLOB && ival <= MAX_LONGBLOB) {
+										n = (uint)ival;
+									} else {
+										ereport(ERROR, (errmsg("Out of range for the parameter value of blob(n)")));
+									}
+									break;
+								}
+								case T_Float: {
+									double ft = atof(cnt->val.val.str);
+									if (ft >= MIN_TINYBLOB && ft < MAX_LONGBLOB + 1) {
+										n = (uint)ft;
+									} else {
+										ereport(ERROR, (errmsg("Out of range for the parameter value of blob(n)")));
+									}
+									break;
+								}
+								default:
+									ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+										errmsg("Invalid parameter for blob(n)")));
+									break;
+							}
+
+							if (n < MIN_BLOB) {
+								$$ = makeTypeName("tinyblob");
+							} else if (n < MIN_MEDIUMBLOB) {
+								$$ = makeTypeName("blob");
+							} else if (n < MIN_LONGBLOB) {
+								$$ = makeTypeName("mediumblob");
+							} else {
+								$$ = makeTypeName("longblob");
+							}
+						} else {
+							ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+								errmsg("Invalid parameter for blob(n)")));
+						}
 					} else {
 						$$ = makeTypeName($1);
 						$$->typmods = $2;
