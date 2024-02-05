@@ -90,7 +90,7 @@ static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others
 #define CAST_ENUM_IDX 23
 #define ENUM_CAST_IDX 24
 #define CAST_SIGNED_IDX 17
-#define NUM_CAST_TIME_IDX 12
+#define NUM_CAST_TIME_IDX 13
 #define MAX_FLOAT8_PRECISION 15
 
 static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1_cast_ui1", "i1_cast_ui2", "i1_cast_ui4", "i1_cast_ui8"},
@@ -131,27 +131,30 @@ static const char* numCastTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_time", "
                                                              "int64_cast_time", "uint8_cast_time", "uint16_cast_time",
                                                              "uint32_cast_time", "uint64_cast_time", "float4_cast_time",
                                                              "float8_cast_time", "numeric_cast_time",
-                                                             "text_time_explicit"};
+                                                             "text_time_explicit", "bool_cast_time"};
 
 static const char* numCastDateFunction[NUM_CAST_TIME_IDX] = {"int8_cast_date", "int16_cast_date", "int32_cast_date",
                                                              "int64_cast_date", "uint8_cast_date", "uint16_cast_date",
                                                              "uint32_cast_date", "uint64_cast_date",
                                                              "float4_cast_date", "float8_cast_date",
-                                                             "numeric_cast_date", "text_date_explicit"};
+                                                             "numeric_cast_date", "text_date_explicit",
+                                                             "bool_cast_date"};
 
 static const char* numCastDateTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_datetime", "int16_cast_datetime",
                                                                  "int32_cast_datetime", "int64_cast_datetime",
                                                                  "uint8_cast_datetime", "uint16_cast_datetime",
                                                                  "uint32_cast_datetime", "uint64_cast_datetime",
                                                                  "float4_cast_datetime", "float8_cast_datetime",
-                                                                 "numeric_cast_datetime", "timestamp_explicit"};
+                                                                 "numeric_cast_datetime", "timestamp_explicit",
+                                                                 "bool_cast_datetime"};
 
 static const char* numCastTimeStampFunction[NUM_CAST_TIME_IDX] = {"int8_cast_timestamptz", "int16_cast_timestamptz",
                                                                   "int32_cast_timestamptz", "int64_cast_timestamptz",
                                                                   "uint8_cast_timestamptz", "uint16_cast_timestamptz",
                                                                   "uint32_cast_timestamptz", "uint64_cast_timestamptz",
                                                                   "float4_cast_timestamptz", "float8_cast_timestamptz",
-                                                                  "numeric_cast_timestamptz", "timestamptz_explicit"};
+                                                                  "numeric_cast_timestamptz", "timestamptz_explicit",
+                                                                  "bool_cast_timestamptz"};
 
 
 typedef enum {
@@ -241,7 +244,8 @@ typedef enum {
     N_FLOAT4,
     N_FLOAT8,
     N_NUMERIC,
-    N_TEXT
+    N_TEXT,
+    N_BOOL
 } NumCastIdx;
 #endif
 /*
@@ -3437,6 +3441,8 @@ int findNumTimeFunctionIdx(Oid typeId)
             return N_NUMERIC;
         case TEXTOID:
             return N_TEXT;
+        case BOOLOID:
+            return N_BOOL;
         default:
             break;
     }

@@ -90,6 +90,8 @@ extern "C" DLL_PUBLIC Datum numeric_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(float8_b_format_time);
 extern "C" DLL_PUBLIC Datum float8_b_format_time(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(bool_cast_time);
+extern "C" DLL_PUBLIC Datum bool_cast_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int8_cast_time);
 extern "C" DLL_PUBLIC Datum int8_cast_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int16_cast_time);
@@ -115,7 +117,8 @@ extern "C" DLL_PUBLIC Datum float8_cast_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_time);
 extern "C" DLL_PUBLIC Datum numeric_cast_time(PG_FUNCTION_ARGS);
 
-
+PG_FUNCTION_INFO_V1_PUBLIC(bool_cast_date);
+extern "C" DLL_PUBLIC Datum bool_cast_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int8_cast_date);
 extern "C" DLL_PUBLIC Datum int8_cast_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int16_cast_date);
@@ -141,6 +144,8 @@ extern "C" DLL_PUBLIC Datum float8_cast_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_date);
 extern "C" DLL_PUBLIC Datum numeric_cast_date(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(bool_b_format_date);
+extern "C" DLL_PUBLIC Datum bool_b_format_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int8_b_format_date);
 extern "C" DLL_PUBLIC Datum int8_b_format_date(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int16_b_format_date);
@@ -844,12 +849,20 @@ int int32_b_format_date_internal(struct pg_tm *tm, int4 date, bool mayBe2Digit, 
 
 Datum int8_b_format_date(PG_FUNCTION_ARGS)
 {
-    return DirectFunctionCall1(int32_b_format_date, Int32GetDatum((int32)PG_GETARG_INT8(0)));
+    return DirectFunctionCall1Coll(int32_b_format_date, PG_GET_COLLATION(),
+                                   Int32GetDatum((int32)PG_GETARG_INT8(0)), fcinfo->can_ignore);
 }
 
 Datum int16_b_format_date(PG_FUNCTION_ARGS)
 {
-    return DirectFunctionCall1(int32_b_format_date, Int32GetDatum((int32)PG_GETARG_INT16(0)));
+    return DirectFunctionCall1Coll(int32_b_format_date, PG_GET_COLLATION(),
+                                   Int32GetDatum((int32)PG_GETARG_INT16(0)), fcinfo->can_ignore);
+}
+
+Datum bool_b_format_date(PG_FUNCTION_ARGS)
+{
+    return DirectFunctionCall1Coll(int32_b_format_date, PG_GET_COLLATION(),
+                                   Int32GetDatum((int32)PG_GETARG_BOOL(0)), fcinfo->can_ignore);
 }
 
 /* int4 to b format date type conversion */
@@ -2329,6 +2342,11 @@ Datum int64_b_format_time(PG_FUNCTION_ARGS)
         Int32GetDatum(-1), fcinfo->can_ignore);
 }
 
+Datum bool_cast_time(PG_FUNCTION_ARGS)
+{
+    return int64_number_cast_time(fcinfo, (int64)PG_GETARG_BOOL(0));
+}
+
 Datum int8_cast_time(PG_FUNCTION_ARGS)
 {
     return int64_number_cast_time(fcinfo, (int64)PG_GETARG_INT8(0));
@@ -2378,6 +2396,10 @@ Datum int_cast_time_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull)
     return datum_internal;
 }
 
+Datum bool_cast_date(PG_FUNCTION_ARGS)
+{
+    return int64_number_cast_date(fcinfo, (int64)PG_GETARG_BOOL(0));
+}
 
 Datum int8_cast_date(PG_FUNCTION_ARGS)
 {

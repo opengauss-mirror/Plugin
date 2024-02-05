@@ -1131,9 +1131,6 @@ update pg_catalog.pg_cast set castfunc = 401, castowner = 10 where castsource = 
 end
 $$;
 
-CREATE OR REPLACE FUNCTION pg_catalog.bool_date(boolean) RETURNS date LANGUAGE SQL IMMUTABLE STRICT as 'select $1::integer::date';
-CREATE CAST (boolean AS date) WITH FUNCTION bool_date(boolean) AS ASSIGNMENT;
-
 DROP FUNCTION IF EXISTS pg_catalog.ln(year);
 CREATE OR REPLACE FUNCTION pg_catalog.ln(year) 
 RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
@@ -1272,6 +1269,39 @@ DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_int8(nvarchar2) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.nvarchar2_cast_int8 (
 nvarchar2
 ) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'nvarchar2_cast_int8';
+DROP FUNCTION IF EXISTS pg_catalog.boolean_time(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.boolean_date(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.boolean_datetime(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.boolean_timestamptz(boolean) CASCADE;
+DROP CAST IF EXISTS (boolean as time without time zone) CASCADE;
+DROP CAST IF EXISTS (boolean as date) CASCADE;
+DROP CAST IF EXISTS (boolean as timestamp without time zone) CASCADE;
+DROP CAST IF EXISTS (boolean as timestamptz) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_time(boolean) RETURNS time without time zone
+LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int) as time without time zone)';
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_date(boolean) RETURNS date
+LANGUAGE C STRICT IMMUTABLE AS '$libdir/dolphin', 'bool_b_format_date';
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_datetime(boolean) RETURNS timestamp without time zone
+LANGUAGE C STRICT IMMUTABLE AS '$libdir/dolphin', 'bool_b_format_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_timestamptz(boolean) RETURNS timestamptz
+LANGUAGE C STRICT IMMUTABLE AS '$libdir/dolphin', 'bool_b_format_timestamp';
+CREATE CAST (boolean as time without time zone) WITH FUNCTION pg_catalog.boolean_time(boolean) AS ASSIGNMENT;
+CREATE CAST (boolean as date) WITH FUNCTION pg_catalog.boolean_date(boolean) AS ASSIGNMENT;
+CREATE CAST (boolean as timestamp without time zone) WITH FUNCTION pg_catalog.boolean_datetime(boolean) AS ASSIGNMENT;
+CREATE CAST (boolean as timestamptz) WITH FUNCTION pg_catalog.boolean_timestamptz(boolean) AS ASSIGNMENT;
+
+DROP FUNCTION IF EXISTS pg_catalog.bool_cast_time(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.bool_cast_date(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.bool_cast_datetime(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.bool_cast_timestamptz(boolean) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.bool_cast_time(boolean)
+RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'bool_cast_time';
+CREATE OR REPLACE FUNCTION pg_catalog.bool_cast_date(boolean)
+RETURNS date LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'bool_cast_date';
+CREATE OR REPLACE FUNCTION pg_catalog.bool_cast_datetime(boolean)
+RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'bool_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.bool_cast_timestamptz(boolean)
+RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'bool_cast_timestamptz';
 
 CREATE OR REPLACE FUNCTION pg_catalog.ascii(blob) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
 CREATE OR REPLACE FUNCTION pg_catalog.ascii(year) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.ascii(cast($1 as TEXT))';
