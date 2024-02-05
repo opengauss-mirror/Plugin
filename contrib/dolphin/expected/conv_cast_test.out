@@ -333,9 +333,9 @@ LINE 1: select '4294967295'::int4::time;
 CONTEXT:  referenced column: time
 WARNING:  invalid input syntax for type time: "2147483647"
 CONTEXT:  referenced column: time
-   time    
------------
- 838:59:59
+ time 
+------
+ 
 (1 row)
 
 select '4294967295'::int8::time;
