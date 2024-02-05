@@ -936,3 +936,17 @@ CREATE OR REPLACE FUNCTION pg_catalog.date_year(date) RETURNS year LANGUAGE SQL 
 CREATE CAST (timestamptz AS year) with function pg_catalog.timestamp_year(timestamptz) AS ASSIGNMENT;
 CREATE CAST (timestamp(0) without time zone AS year) with function pg_catalog.datetime_year(timestamp(0) without time zone) AS ASSIGNMENT;
 CREATE CAST (date as year) with function pg_catalog.date_year(date) AS ASSIGNMENT;
+
+DROP CAST IF EXISTS (boolean as time without time zone);
+DROP CAST IF EXISTS (boolean as date);
+DROP CAST IF EXISTS (boolean as timestamp without time zone);
+DROP CAST IF EXISTS (boolean as timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_time(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_date(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_datetime(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_timestamptz(boolean);
+
+DROP FUNCTION IF EXISTS pg_catalog.bool_cast_time(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.bool_cast_date(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.bool_cast_datetime(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.bool_cast_timestamptz(boolean);

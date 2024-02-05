@@ -713,6 +713,49 @@ insert ignore into t1 values ('4715-11-24 BC', '4715-11-24 10:10:10 BC', '4715-1
 select * from t1 order by 1;
 
 drop table t1;
+select cast(0::boolean as time);
+select cast(0::boolean as date);
+select cast(0::boolean as datetime);
+select cast(0::boolean as timestamp);
+
+select cast(1::boolean as time);
+select cast(1::boolean as date);
+select cast(1::boolean as datetime);
+select cast(1::boolean as timestamp);
+
+create table boolean_test_time(a time);
+create table boolean_test_date(a date);
+create table boolean_test_datetime(a datetime);
+create table boolean_test_timestamp(a timestamp);
+
+insert into boolean_test_time values(0::boolean);
+insert into boolean_test_date values(0::boolean);
+insert into boolean_test_datetime values(0::boolean);
+insert into boolean_test_timestamp values(0::boolean);
+
+insert into boolean_test_time values(1::boolean);
+insert into boolean_test_date values(1::boolean);
+insert into boolean_test_datetime values(1::boolean);
+insert into boolean_test_timestamp values(1::boolean);
+
+set dolphin.sql_mode = '';
+
+insert into boolean_test_time values(0::boolean);
+insert into boolean_test_date values(0::boolean);
+insert into boolean_test_datetime values(0::boolean);
+insert into boolean_test_timestamp values(0::boolean);
+
+insert into boolean_test_time values(1::boolean);
+insert into boolean_test_date values(1::boolean);
+insert into boolean_test_datetime values(1::boolean);
+insert into boolean_test_timestamp values(1::boolean);
+
+select * from boolean_test_time;
+select * from boolean_test_date;
+select * from boolean_test_datetime;
+select * from boolean_test_timestamp;
+
+reset dolphin.sql_mode;
 
 set dolphin.b_compatibility_mode=on;
 set b_format_behavior_compat_options=enable_set_variables;
