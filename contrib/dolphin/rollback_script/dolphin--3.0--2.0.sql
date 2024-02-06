@@ -854,6 +854,7 @@ DROP FUNCTION IF EXISTS pg_catalog.bit_length(json);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(binary);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(char);
 
+
 DROP CAST IF EXISTS (uint4 AS year) CASCADE;
 DROP CAST IF EXISTS (boolean AS year) CASCADE;
 DROP CAST IF EXISTS (char AS year) CASCADE;
@@ -864,3 +865,15 @@ DROP FUNCTION IF EXISTS pg_catalog.boolean_year(boolean) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.char_year(char) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varchar_year(varchar) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.text_year(text) CASCADE;
+
+DROP OPERATOR IF EXISTS pg_catalog.~~(varbinary, varbinary);
+DROP OPERATOR IF EXISTS pg_catalog.~~*(varbinary, text);
+DROP OPERATOR IF EXISTS pg_catalog.~~(text, varbinary);
+DROP OPERATOR IF EXISTS pg_catalog.~~*(text, varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.varbinarylike(varbinary, varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.textvarbinarylike(text, varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.varbinarytextlike(varbinary, text);
+DROP OPERATOR IF EXISTS pg_catalog.~~(blob, blob);
+DROP OPERATOR IF EXISTS pg_catalog.~~*(blob, blob);
+DROP FUNCTION IF EXISTS pg_catalog.bloblike(blob, blob);
+
