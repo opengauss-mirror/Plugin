@@ -1308,3 +1308,22 @@ CREATE OR REPLACE FUNCTION pg_catalog.varchar_year(varchar) RETURNS year LANGUAG
 CREATE CAST(varchar AS year) WITH FUNCTION varchar_year(varchar) AS ASSIGNMENT;
 CREATE OR REPLACE FUNCTION pg_catalog.text_year (text) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
 CREATE CAST(text AS year) WITH FUNCTION text_year(text) AS ASSIGNMENT;
+
+create or replace function pg_catalog.varbinarylike(varbinary, varbinary) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+CREATE OPERATOR pg_catalog.~~(leftarg = varbinary, rightarg = varbinary, procedure = pg_catalog.varbinarylike);
+
+create or replace function pg_catalog.varbinarytextlike(varbinary, text) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+CREATE OPERATOR pg_catalog.~~(leftarg = varbinary, rightarg = text, procedure = pg_catalog.varbinarytextlike);
+CREATE OPERATOR pg_catalog.~~*(leftarg = varbinary, rightarg = text, procedure = pg_catalog.varbinarytextlike);
+
+create or replace function pg_catalog.textvarbinarylike(text, varbinary) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+CREATE OPERATOR pg_catalog.~~(leftarg = text, rightarg = varbinary, procedure = pg_catalog.textvarbinarylike);
+CREATE OPERATOR pg_catalog.~~*(leftarg = text, rightarg = varbinary, procedure = pg_catalog.textvarbinarylike);
+
+create or replace function pg_catalog.bloblike(blob, blob) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+CREATE OPERATOR pg_catalog.~~(leftarg = blob, rightarg = blob, procedure = pg_catalog.bloblike);
+CREATE OPERATOR pg_catalog.~~*(leftarg = blob, rightarg = blob, procedure = pg_catalog.bloblike);
+
+create or replace function pg_catalog.binarylike(binary, binary) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+create or replace function pg_catalog.binarytextlike(binary, text) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+create or replace function pg_catalog.textbinarylike(text, binary) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';

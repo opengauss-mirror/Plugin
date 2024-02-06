@@ -32,6 +32,8 @@ test: nvarchar regexp upsert zerofill test_set_charset test_optimize test_charse
 
 test: test_binary test_blob test_datatype test_fixed test_mysql_enum bxconst_test table_option_separator grant_user_to_user compress_modify_flag
 
+test: like_index_test_utf8 like_index_test_utf8mb4 like_index_test_gbk like_index_test_gb18030 like_index_test_binary_and_varbinary
+
 test: test_enum_collation
  
 test: test_char_tail_blank test_char_tail_blank_2 test_char_tail_blank_3
