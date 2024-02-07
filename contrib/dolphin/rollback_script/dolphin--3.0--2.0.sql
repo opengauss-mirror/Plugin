@@ -438,6 +438,8 @@ DROP FUNCTION IF EXISTS pg_catalog.timestamptz_explicit(TEXT);
 DROP FUNCTION IF EXISTS pg_catalog.ln(year);
 DROP FUNCTION IF EXISTS pg_catalog.ln(json);
 
+DROP FUNCTION IF EXISTS pg_catalog.log(anyelement,anyelement);
+
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int1(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int2(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int4(anyelement) CASCADE;
