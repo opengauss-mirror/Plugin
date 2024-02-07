@@ -133,6 +133,60 @@ select * from test_log;
 select log(1,10);
 
 drop table if exists test_log;
+
+select
+log(`int1`,`int1`),
+log(`uint1`,`uint1`),
+log(`int2`,`int2`),
+log(`uint2`,`uint2`),
+log(`int4`,`int4`),
+log(`uint4`,`uint4`),
+log(`int8`,`int8`),
+log(`uint8`,`uint8`),
+log(`float4`,`float4`),
+log(`float8`,`float8`),
+log(`numeric`,`numeric`),
+log(`bit1`,`bit1`),
+log(`bit64`,`bit64`),
+log(`boolean`,`boolean`),
+log(`date`,`date`),
+log(`time`,`time`),
+log(`time(4)`,`time(4)`),
+log(`datetime`,`datetime`),
+log(`datetime(4)`,`datetime(4)`),
+log(`timestamp`,`timestamp`),
+log(`timestamp(4)`,`timestamp(4)`),
+log(`year`,`year`),
+log(`char`,`char`),
+log(`varchar`,`varchar`),
+log(`binary`, `binary`),
+log(`varbinary`, `varbinary`),
+log(`tinyblob`, `tinyblob`),
+log(`blob`, `blob`),
+log(`mediumblob`, `mediumblob`),
+log(`longblob`, `longblob`),
+log(`text`, `text`),
+log(`enum_t`, `enum_t`),
+log(`set_t`, `set_t`),
+log(`json`, `json`)
+from test_type_table;
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+
+create table test_log as select  log(`int1`, `int1`) as log1, 
+log(`uint1`, `uint1`) as log2, log(`int2`, `int2`) as log3,  log(`uint2`, `uint2`) as log4,  log(`int4`, `int4`) as log5, log(`uint4`, `uint4`) as log6,  log(`int8`, `int8`) as log7,  log(`uint8`, `uint8`) as log8, log(`float4`, `float4`) as log9, log(`float8`, `float8`) as log10,  log(`numeric`, `numeric`) as log11, log(`bit1`, `bit1`) as log12,  log(`bit64`, `bit64`) as log13,  log(`boolean`, `boolean`) as log14, log(`date`, `date`) as log15, log(`time`, `time`) as log16, log(`time(4)`, `time(4)`) as log17, log(`datetime`, `datetime`) as log18, log(`datetime(4)`, `datetime(4)`) as log19, log(`timestamp`, `timestamp`) as log20, log(`timestamp(4)`, `timestamp(4)`) as log21, log(`year`, `year`) as log22, log(`char`, `char`) as log23,  log(`varchar`, `varchar`) as log24,  log(`binary`, `binary`) as log25, log(`varbinary`, `varbinary`) as log26, log(`tinyblob`, `tinyblob`) as log27, log(`blob`, `blob`) as log28, log(`mediumblob`, `mediumblob`) as log29, log(`longblob`, `longblob`) as log30, log(`text`, `text`) as log31, log(`enum_t`, `enum_t`) as log32, log(`set_t`, `set_t`) as log33, log(`json`, `json`) as log34 from test_type_table; 
+
+reset dolphin.sql_mode;
+
+insert into test_log select  log(`int1`, `int1`) as log1, 
+log(`uint1`, `uint1`) as log2, log(`int2`, `int2`) as log3,  log(`uint2`, `uint2`) as log4,  log(`int4`, `int4`) as log5, log(`uint4`, `uint4`) as log6,  log(`int8`, `int8`) as log7,  log(`uint8`, `uint8`) as log8, log(`float4`, `float4`) as log9, log(`float8`, `float8`) as log10,  log(`numeric`, `numeric`) as log11, log(`bit1`, `bit1`) as log12,  log(`bit64`, `bit64`) as log13,  log(`boolean`, `boolean`) as log14, log(`date`, `date`) as log15, log(`time`, `time`) as log16, log(`time(4)`, `time(4)`) as log17, log(`datetime`, `datetime`) as log18, log(`datetime(4)`, `datetime(4)`) as log19, log(`timestamp`, `timestamp`) as log20, log(`timestamp(4)`, `timestamp(4)`) as log21, log(`year`, `year`) as log22, log(`char`, `char`) as log23,  log(`varchar`, `varchar`) as log24,  log(`binary`, `binary`) as log25, log(`varbinary`, `varbinary`) as log26, log(`tinyblob`, `tinyblob`) as log27, log(`blob`, `blob`) as log28, log(`mediumblob`, `mediumblob`) as log29, log(`longblob`, `longblob`) as log30, log(`text`, `text`) as log31, log(`enum_t`, `enum_t`) as log32, log(`set_t`, `set_t`) as log33, log(`json`, `json`) as log34 from test_type_table; 
+
+insert ignore into test_log select  log(`int1`, `int1`) as log1, 
+log(`uint1`, `uint1`) as log2, log(`int2`, `int2`) as log3,  log(`uint2`, `uint2`) as log4,  log(`int4`, `int4`) as log5, log(`uint4`, `uint4`) as log6,  log(`int8`, `int8`) as log7,  log(`uint8`, `uint8`) as log8, log(`float4`, `float4`) as log9, log(`float8`, `float8`) as log10,  log(`numeric`, `numeric`) as log11, log(`bit1`, `bit1`) as log12,  log(`bit64`, `bit64`) as log13,  log(`boolean`, `boolean`) as log14, log(`date`, `date`) as log15, log(`time`, `time`) as log16, log(`time(4)`, `time(4)`) as log17, log(`datetime`, `datetime`) as log18, log(`datetime(4)`, `datetime(4)`) as log19, log(`timestamp`, `timestamp`) as log20, log(`timestamp(4)`, `timestamp(4)`) as log21, log(`year`, `year`) as log22, log(`char`, `char`) as log23,  log(`varchar`, `varchar`) as log24,  log(`binary`, `binary`) as log25, log(`varbinary`, `varbinary`) as log26, log(`tinyblob`, `tinyblob`) as log27, log(`blob`, `blob`) as log28, log(`mediumblob`, `mediumblob`) as log29, log(`longblob`, `longblob`) as log30, log(`text`, `text`) as log31, log(`enum_t`, `enum_t`) as log32, log(`set_t`, `set_t`) as log33, log(`json`, `json`) as log34 from test_type_table; 
+
+select * from test_log order by 1,10;
+
+drop table if exists test_log;
 -- ln math function
 select
 ln(`int1`),

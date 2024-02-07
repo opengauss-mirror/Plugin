@@ -918,3 +918,5 @@ DROP FUNCTION IF EXISTS pg_catalog.boolean_year(boolean) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.char_year(char) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varchar_year(varchar) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.text_year(text) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.log(anyelement,anyelement);

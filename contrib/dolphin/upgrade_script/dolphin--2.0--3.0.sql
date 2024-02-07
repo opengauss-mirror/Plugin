@@ -86,8 +86,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_int4 (
 anyelement
 ) RETURNS int4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'varlena_cast_int4';
 
-CREATE OR REPLACE FUNCTION pg_catalog.log(anyelement,anyelement) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as number), cast($2 as number))';
-
 DROP FUNCTION IF EXISTS pg_catalog.log(year);
 DROP FUNCTION IF EXISTS pg_catalog.log(json);
 CREATE OR REPLACE FUNCTION pg_catalog.log(year) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
