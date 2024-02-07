@@ -482,22 +482,6 @@ CREATE OPERATOR pg_catalog.=(leftarg = text, rightarg = binary, COMMUTATOR = ope
 CREATE OR REPLACE FUNCTION pg_catalog.binary_text_eq(binary, text) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1 = $2::binary)';
 CREATE OPERATOR pg_catalog.=(leftarg = binary, rightarg = text, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.binary_text_eq, restrict = eqsel, join = eqjoinsel);
 
-DROP CAST (timestamptz AS year);
-DROP CAST (timestamp(0) without time zone AS year);
-DROP CAST (date AS year);
-
-DROP FUNCTION IF EXISTS pg_catalog.timestamp_year(timestamptz) cascade;
-DROP FUNCTION IF EXISTS pg_catalog.datetime_year(timestamp(0) without time zone) cascade;
-DROP FUNCTION IF EXISTS pg_catalog.date_year(date) cascade;
-
-CREATE OR REPLACE FUNCTION pg_catalog.timestamp_year(timestamptz) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamptz_year';
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_year(timestamp(0) without time zone) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'datetime_year';
-CREATE OR REPLACE FUNCTION pg_catalog.date_year(date) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'date_year';
-
-CREATE CAST (timestamptz AS year) with function pg_catalog.timestamp_year(timestamptz) AS ASSIGNMENT;
-CREATE CAST (timestamp(0) without time zone AS year) with function pg_catalog.datetime_year(timestamp(0) without time zone) AS ASSIGNMENT;
-CREATE CAST (date as year) with function pg_catalog.date_year(date) AS ASSIGNMENT;
-
 DROP CAST IF EXISTS (FLOAT8 AS NVARCHAR2);
 CREATE OR REPLACE FUNCTION pg_catalog.float8_nvarchar2(FLOAT8) RETURNS NVARCHAR2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'float8_nvarchar2';
 CREATE CAST (FLOAT8 AS NVARCHAR2) WITH FUNCTION pg_catalog.float8_nvarchar2(FLOAT8) AS IMPLICIT;

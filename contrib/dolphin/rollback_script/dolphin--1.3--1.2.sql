@@ -920,3 +920,19 @@ DROP FUNCTION IF EXISTS pg_catalog.varchar_year(varchar) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.text_year(text) CASCADE;
 
 DROP FUNCTION IF EXISTS pg_catalog.log(anyelement,anyelement);
+
+DROP CAST (timestamptz AS year);
+DROP CAST (timestamp(0) without time zone AS year);
+DROP CAST (date AS year);
+
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_year(timestamptz) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.datetime_year(timestamp(0) without time zone) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.date_year(date) cascade;
+
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_year(timestamptz) RETURNS year LANGUAGE SQL STABLE STRICT as 'select cast(cast($1 as int8) as year)';
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_year(timestamp(0) without time zone) RETURNS year LANGUAGE SQL STABLE STRICT as 'select cast(cast($1 as int8) as year)';
+CREATE OR REPLACE FUNCTION pg_catalog.date_year(date) RETURNS year LANGUAGE SQL STABLE STRICT as 'select cast(cast($1 as int8) as year)';
+
+CREATE CAST (timestamptz AS year) with function pg_catalog.timestamp_year(timestamptz) AS ASSIGNMENT;
+CREATE CAST (timestamp(0) without time zone AS year) with function pg_catalog.datetime_year(timestamp(0) without time zone) AS ASSIGNMENT;
+CREATE CAST (date as year) with function pg_catalog.date_year(date) AS ASSIGNMENT;

@@ -1435,3 +1435,19 @@ CREATE OR REPLACE FUNCTION pg_catalog.text_year (text) RETURNS year LANGUAGE SQL
 CREATE CAST(text AS year) WITH FUNCTION text_year(text) AS ASSIGNMENT;
 
 CREATE OR REPLACE FUNCTION pg_catalog.log(anyelement,anyelement) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as number), cast($2 as number))';
+
+DROP CAST (timestamptz AS year);
+DROP CAST (timestamp(0) without time zone AS year);
+DROP CAST (date AS year);
+
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_year(timestamptz) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.datetime_year(timestamp(0) without time zone) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.date_year(date) cascade;
+
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_year(timestamptz) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamptz_year';
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_year(timestamp(0) without time zone) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'datetime_year';
+CREATE OR REPLACE FUNCTION pg_catalog.date_year(date) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'date_year';
+
+CREATE CAST (timestamptz AS year) with function pg_catalog.timestamp_year(timestamptz) AS ASSIGNMENT;
+CREATE CAST (timestamp(0) without time zone AS year) with function pg_catalog.datetime_year(timestamp(0) without time zone) AS ASSIGNMENT;
+CREATE CAST (date as year) with function pg_catalog.date_year(date) AS ASSIGNMENT;
