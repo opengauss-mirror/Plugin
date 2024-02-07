@@ -793,6 +793,13 @@ from t_fixed0005 order by 1,2,3,4,5,6,7,8,9;
 drop table t_bigint0005;
 drop table t_fixed0005;
 
+create table t_year_0001(c1 int not null, c2 year default '0000', c3 year default null, c4 year default '1999', c5 year);
+insert into t_year_0001 values (1, now(), now(), now(), now());
+insert into t_year_0001 values (2, curdate(), curdate(), curdate(), curdate());
+insert into t_year_0001 values (3, current_timestamp(), current_timestamp(), current_timestamp(), current_timestamp());
+select * from t_year_0001;
+drop table t_year_0001;
+
 \c postgres
 DROP DATABASE b_time_type;
 DROP TABLESPACE b_time_type_example;

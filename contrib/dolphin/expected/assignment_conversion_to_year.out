@@ -55,8 +55,6 @@ update test_type_table set `year` = `bit1`;
 update test_type_table set `year` = `bit64`;
 update test_type_table set `year` = `boolean`;
 update test_type_table set `year` = `date`;
-ERROR:  Out of range value for year data type!
-CONTEXT:  referenced column: year
 update test_type_table set `year` = `time`;
 ERROR:  Out of range value for year data type!
 CONTEXT:  referenced column: year
@@ -64,17 +62,9 @@ update test_type_table set `year` = `time(4)`;
 ERROR:  Out of range value for year data type!
 CONTEXT:  referenced column: year
 update test_type_table set `year` = `datetime`;
-ERROR:  Out of range value for year data type!
-CONTEXT:  referenced column: year
 update test_type_table set `year` = `datetime(4)`;
-ERROR:  Out of range value for year data type!
-CONTEXT:  referenced column: year
 update test_type_table set `year` = `timestamp`;
-ERROR:  Out of range value for year data type!
-CONTEXT:  referenced column: year
 update test_type_table set `year` = `timestamp(4)`;
-ERROR:  Out of range value for year data type!
-CONTEXT:  referenced column: year
 update test_type_table set `year` = `year`;
 update test_type_table set `year` = `char`;
 ERROR:  invalid input syntax for type int16: "1.23a                                                                                               "
@@ -152,8 +142,6 @@ update ignore test_type_table set `year` = `bit1`;
 update ignore test_type_table set `year` = `bit64`;
 update ignore test_type_table set `year` = `boolean`;
 update ignore test_type_table set `year` = `date`;
-WARNING:  Out of range value for year data type!
-CONTEXT:  referenced column: year
 update ignore test_type_table set `year` = `time`;
 WARNING:  Out of range value for year data type!
 CONTEXT:  referenced column: year
@@ -161,17 +149,9 @@ update ignore test_type_table set `year` = `time(4)`;
 WARNING:  Out of range value for year data type!
 CONTEXT:  referenced column: year
 update ignore test_type_table set `year` = `datetime`;
-WARNING:  Out of range value for year data type!
-CONTEXT:  referenced column: year
 update ignore test_type_table set `year` = `datetime(4)`;
-WARNING:  Out of range value for year data type!
-CONTEXT:  referenced column: year
 update ignore test_type_table set `year` = `timestamp`;
-WARNING:  Out of range value for year data type!
-CONTEXT:  referenced column: year
 update ignore test_type_table set `year` = `timestamp(4)`;
-WARNING:  Out of range value for year data type!
-CONTEXT:  referenced column: year
 update ignore test_type_table set `year` = `year`;
 update ignore test_type_table set `year` = `char`;
 WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
