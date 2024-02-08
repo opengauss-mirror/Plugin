@@ -1173,6 +1173,9 @@ DROP FUNCTION IF EXISTS pg_catalog.floor(json);
 CREATE OR REPLACE FUNCTION pg_catalog.floor(json) 
 RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
 'select pg_catalog.floor(cast($1 as double precision))';
+
+CREATE OR REPLACE FUNCTION pg_catalog.log(anyelement,anyelement) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as number), cast($2 as number))';
+
 CREATE OR REPLACE FUNCTION pg_catalog.substr(arg1 longblob, start int, the_end int) RETURNS longblob LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substrb(arg1::text, start, the_end)::longblob';
 CREATE OR REPLACE FUNCTION pg_catalog.substr(arg1 longblob, start int) RETURNS longblob LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substrb(arg1::text, start)::longblob';
 
