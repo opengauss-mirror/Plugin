@@ -79,6 +79,7 @@
 #define tsl_startup_fn (get_session_context()->tsdb_tsl_startup_fn)
 #define can_load (get_session_context()->tsdb_can_load)
 #define load_source (get_session_context()->tsdb_load_source)
+#define ts_guc_license_key (get_session_context()->tsdb_ts_guc_license_key)
 
 #define dsm_init_done (get_session_context()->tsdb_dsm_init_done)
 #define dsm_control_handle (get_session_context()->tsdb_dsm_control_handle)

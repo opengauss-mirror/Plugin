@@ -1823,20 +1823,18 @@ BEGIN
             WHERE c.OID = main_table;
         END IF;
 
--- Thanks to @fvannee on Github for providing the initial draft
--- of this query
         RETURN QUERY
         SELECT h.schema_name,
             h.table_name,
             row_estimate.row_estimate
         FROM _timescaledb_catalog.hypertable h
-        CROSS JOIN  (
-            SELECT sum(cl.reltuples)::BIGINT AS row_estimate
+        JOIN (
+            SELECT c.hypertable_id,
+                sum(cl.reltuples)::BIGINT AS row_estimate
             FROM _timescaledb_catalog.chunk c
             JOIN pg_class cl ON cl.relname = c.table_name
-            WHERE c.hypertable_id = h.id
-            GROUP BY h.schema_name, h.table_name
-        ) row_estimate
+            GROUP BY c.hypertable_id
+        ) row_estimate ON row_estimate.hypertable_id = h.id
         WHERE (main.table_name IS NULL OR h.table_name = main.table_name)
         AND (main.schema_name IS NULL OR h.schema_name = main.schema_name)
         ORDER BY h.schema_name, h.table_name;

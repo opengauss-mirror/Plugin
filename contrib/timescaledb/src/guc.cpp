@@ -41,7 +41,6 @@ int ts_guc_max_open_chunks_per_insert = 10;
 int ts_guc_max_cached_chunks_per_hypertable = 10;
 int ts_guc_telemetry_level = TELEMETRY_DEFAULT;
 
-TSDLLEXPORT char *ts_guc_license_key = TS_DEFAULT_LICENSE;
 char *ts_last_tune_time = NULL;
 char *ts_last_tune_version = NULL;
 char *ts_telemetry_cloud = NULL;
