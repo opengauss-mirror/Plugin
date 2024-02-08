@@ -79,6 +79,14 @@ extern "C" DLL_PUBLIC Datum period_diff(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(year_xor_transfn);
 extern "C" DLL_PUBLIC Datum year_xor_transfn(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_year);
+extern "C" DLL_PUBLIC Datum timestamptz_year(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_year);
+extern "C" DLL_PUBLIC Datum datetime_year(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(date_year);
+extern "C" DLL_PUBLIC Datum date_year(PG_FUNCTION_ARGS);
 #endif
 
 /*****************************************************************************
@@ -533,6 +541,49 @@ Datum int64_year(PG_FUNCTION_ARGS)
     int64 year = PG_GETARG_INT64(0);
     PG_RETURN_YEARADT(int32_to_YearADT((int32)year, fcinfo->can_ignore));
 }
+
+
+Datum timestamptz_year(PG_FUNCTION_ARGS)
+{
+    TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);
+    int4 year = MIN_YEAR_NUM - 1;
+    fsec_t fsec;
+    int tz;
+    const char* tzn = NULL;
+    pg_tm tt;
+    pg_tm* tm = &tt;
+    if (timestamp2tm(timestamp, &tz, tm, &fsec, &tzn, NULL) == 0) {
+        year = tm->tm_year;
+    }
+    PG_RETURN_YEARADT(int32_to_YearADT(year, fcinfo->can_ignore));
+}
+
+inline Datum datetime_to_year(Timestamp timestamp, bool can_ignore)
+{
+    int4 year = MIN_YEAR_NUM - 1;
+    fsec_t fsec;
+    pg_tm tt;
+    pg_tm *tm = &tt;
+    if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0) {
+        year = tm->tm_year;
+    }
+    PG_RETURN_YEARADT(int32_to_YearADT(year, can_ignore));
+}
+
+
+Datum datetime_year(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    return datetime_to_year(timestamp, fcinfo->can_ignore);
+}
+
+Datum date_year(PG_FUNCTION_ARGS)
+{
+    DateADT date = PG_GETARG_DATEADT(0);
+    Timestamp timestamp = date2timestamp(date);
+    return datetime_to_year(timestamp, fcinfo->can_ignore);
+}
+
 
 PG_FUNCTION_INFO_V1_PUBLIC(year_int8);
 extern "C" DLL_PUBLIC Datum year_int8(PG_FUNCTION_ARGS);

@@ -1330,3 +1330,19 @@ CREATE OPERATOR pg_catalog.~~*(leftarg = blob, rightarg = blob, procedure = pg_c
 create or replace function pg_catalog.binarylike(binary, binary) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
 create or replace function pg_catalog.binarytextlike(binary, text) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
 create or replace function pg_catalog.textbinarylike(text, binary) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+
+DROP CAST (timestamptz AS year);
+DROP CAST (timestamp(0) without time zone AS year);
+DROP CAST (date AS year);
+
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_year(timestamptz) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.datetime_year(timestamp(0) without time zone) cascade;
+DROP FUNCTION IF EXISTS pg_catalog.date_year(date) cascade;
+
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_year(timestamptz) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamptz_year';
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_year(timestamp(0) without time zone) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'datetime_year';
+CREATE OR REPLACE FUNCTION pg_catalog.date_year(date) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'date_year';
+
+CREATE CAST (timestamptz AS year) with function pg_catalog.timestamp_year(timestamptz) AS ASSIGNMENT;
+CREATE CAST (timestamp(0) without time zone AS year) with function pg_catalog.datetime_year(timestamp(0) without time zone) AS ASSIGNMENT;
+CREATE CAST (date as year) with function pg_catalog.date_year(date) AS ASSIGNMENT;
