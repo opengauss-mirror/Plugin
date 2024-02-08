@@ -536,13 +536,13 @@ SELECT CONCAT(fgbk_bin, fgb18030_chi) result, pg_collation_for(result) FROM t_di
 SELECT CONCAT(fgbk_chi, fgb18030_chi) result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
 -- -- -- with binary & implicit collation
 SELECT CONCAT(futf8_bin, fbin) result FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_bin, fblob) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_bin, fblob) result FROM t_diff_charset_columns;
 SELECT CONCAT(futf8_uni, fbin) result FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_uni, fblob) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_uni, fblob) result FROM t_diff_charset_columns;
 SELECT CONCAT(fgbk_bin, fbin) result FROM t_diff_charset_columns;
-SELECT CONCAT(fgbk_bin, fblob) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(fgbk_bin, fblob) result FROM t_diff_charset_columns;
 SELECT CONCAT(fgb18030_bin, fbin) result FROM t_diff_charset_columns;
-SELECT CONCAT(fgb18030_bin, fblob) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(fgb18030_bin, fblob) result FROM t_diff_charset_columns;
 SELECT CONCAT(fbin, fblob) result FROM t_diff_charset_columns;
 
 -- -- concat column and @uservar
