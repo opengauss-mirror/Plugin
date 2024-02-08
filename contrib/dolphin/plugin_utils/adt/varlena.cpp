@@ -7187,7 +7187,16 @@ static text* concat_internal(const char* sepstr, int seplen, int argidx, Functio
                 ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
                         errmsg("could not determine data type of concat() input")));
 #ifdef DOLPHIN
-            if (valtype == BINARYOID || valtype == VARBINARYOID || valtype == TEXTOID) {
+            if (valtype == BITOID) {
+                VarBit *bits = PG_GETARG_VARBIT_P(i);
+                char *c = (char*)bit_to_str(bits);
+                for (int i = 0; i < VARBITBYTES(bits); i++) {
+                    appendStringInfoChar(&str, c[i]);
+                }
+            } else if (valtype == BOOLOID) {
+                appendStringInfoChar(&str, PG_GETARG_BOOL(i) ? '1': '0');
+            } else if (valtype == BINARYOID || valtype == VARBINARYOID || valtype == TEXTOID || valtype == BLOBOID ||
+                valtype == TINYBLOBOID || valtype == MEDIUMBLOBOID || valtype == LONGBLOBOID) {
                 bytea* bin = PG_GETARG_BYTEA_PP(i);
                 char* data = VARDATA_ANY(bin);
                 int len = VARSIZE_ANY_EXHDR(bin);

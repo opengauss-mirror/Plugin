@@ -1054,9 +1054,9 @@ LINE 1: ...斯DB' COLLATE gb18030_bin) result, pg_collation_for(result);
                                                                        ^
 -- -- -- diff charset & implicit collation
 SELECT CONCAT(_utf8mb4'高斯DB' , _binary'高斯DB') result;
-               result               
-------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442
+              result              
+----------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' , _gbk'高斯DB') result, pg_collation_for(result);
@@ -1078,9 +1078,9 @@ SELECT CONCAT(_gbk'高斯DB' , '高斯DB') result, pg_collation_for(result);
 (1 row)
 
 SELECT CONCAT(_gbk'高斯DB' , _binary'高斯DB') result;
-               result               
-------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442
+              result              
+----------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 SELECT CONCAT(_gbk'高斯DB' , _gb18030'高斯DB') result, pg_collation_for(result); -- ERROR
@@ -1094,21 +1094,21 @@ SELECT CONCAT(_gb18030'高斯DB' , '高斯DB') result, pg_collation_for(result);
 (1 row)
 
 SELECT CONCAT(_gb18030'高斯DB' , _binary'高斯DB') result;
-               result               
-------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442
+              result              
+----------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 SELECT CONCAT( _binary'高斯DB', _utf8mb4'高斯DB') result;
-               result               
-------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442
+              result              
+----------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 SELECT CONCAT( _binary'高斯DB', '高斯DB') result;
-               result               
-------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442
+              result              
+----------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 -- -- -- explicit & implicit
@@ -1179,9 +1179,9 @@ SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , '高斯DB') result
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _binary'高斯DB') result;
-               result               
-------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442
+              result              
+----------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gbk'高斯DB') result, pg_collation_for(result);
@@ -1203,9 +1203,9 @@ SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , '高斯DB') result, pg_co
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _binary'高斯DB') result;
-               result               
-------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442
+              result              
+----------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gbk'高斯DB') result, pg_collation_for(result);
@@ -1257,28 +1257,28 @@ SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_bin , _gb18030'高斯DB') result, pg_co
 (1 row)
 
 SELECT CONCAT(_binary'高斯DB', _utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci) result;
-               result               
-------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442
+              result              
+----------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 SELECT CONCAT(_binary'高斯DB' COLLATE 'binary', _gbk'高斯DB') result;
-               result               
-------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442
+              result              
+----------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 -- -- -- concat 3 args
 SELECT CONCAT(_binary'高斯DB', _gb18030'高斯DB', _gbk'高斯DB') result;
-                       result                       
-----------------------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442e9ab98e696af4442
+                      result                      
+--------------------------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 SELECT CONCAT(_binary'高斯DB', _gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk_chinese_ci) result;
-                       result                       
-----------------------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442e9ab98e696af4442
+                      result                      
+--------------------------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _gbk'高斯DB') result, pg_collation_for(result);
@@ -1294,15 +1294,15 @@ SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _binary'高斯DB') result;
-                       result                       
-----------------------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442e9ab98e696af4442
+                      result                      
+--------------------------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB' COLLATE gb18030_chinese_ci, _binary'高斯DB') result;
-                     result                     
-------------------------------------------------
- \xb8dfcbb94442e9ab98e696af4442e9ab98e696af4442
+                    result                    
+----------------------------------------------
+ B8DFCBB94442E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 SELECT CONCAT(_gb18030'高斯DB', _gbk'高斯DB', _utf8mb4'高斯DB') result, pg_collation_for(result); -- ERROR
@@ -1320,9 +1320,9 @@ SELECT CONCAT(_gb18030'高斯DB' COLLATE gb18030_chinese_ci, _gbk'高斯DB', _ut
 (1 row)
 
 SELECT CONCAT(_gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk_chinese_ci, _binary'高斯DB') result;
-                       result                       
-----------------------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442e9ab98e696af4442
+                      result                      
+--------------------------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 -- -- -- const compare CONCAT
@@ -2197,57 +2197,57 @@ LINE 1: ...esult, pg_collation_for(result) FROM t_diff_charset_columns;
                                                                        ^
 -- -- -- with binary & implicit collation
 SELECT CONCAT(futf8_bin, fbin) result FROM t_diff_charset_columns;
-               result               
-------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442
+              result              
+----------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
-SELECT CONCAT(futf8_bin, fblob) result, pg_collation_for(result) FROM t_diff_charset_columns;
-       result       |  pg_collation_for  
---------------------+--------------------
- 高斯DBE9AB98E696AF | utf8mb4_general_ci
+SELECT CONCAT(futf8_bin, fblob) result FROM t_diff_charset_columns;
+            result            
+------------------------------
+ E9AB98E696AF4442E9AB98E696AF
 (1 row)
 
 SELECT CONCAT(futf8_uni, fbin) result FROM t_diff_charset_columns;
-               result               
-------------------------------------
- \xe9ab98e696af6462e9ab98e696af4442
+              result              
+----------------------------------
+ E9AB98E696AF6462E9AB98E696AF4442
 (1 row)
 
-SELECT CONCAT(futf8_uni, fblob) result, pg_collation_for(result) FROM t_diff_charset_columns;
-       result       |  pg_collation_for  
---------------------+--------------------
- 高斯dbE9AB98E696AF | utf8mb4_general_ci
+SELECT CONCAT(futf8_uni, fblob) result FROM t_diff_charset_columns;
+            result            
+------------------------------
+ E9AB98E696AF6462E9AB98E696AF
 (1 row)
 
 SELECT CONCAT(fgbk_bin, fbin) result FROM t_diff_charset_columns;
-             result             
---------------------------------
- \xb8dfcbb94442e9ab98e696af4442
+            result            
+------------------------------
+ B8DFCBB94442E9AB98E696AF4442
 (1 row)
 
-SELECT CONCAT(fgbk_bin, fblob) result, pg_collation_for(result) FROM t_diff_charset_columns;
-     result      |  pg_collation_for  
------------------+--------------------
- ˹DBE9AB98E696AF | utf8mb4_general_ci
+SELECT CONCAT(fgbk_bin, fblob) result FROM t_diff_charset_columns;
+          result          
+--------------------------
+ B8DFCBB94442E9AB98E696AF
 (1 row)
 
 SELECT CONCAT(fgb18030_bin, fbin) result FROM t_diff_charset_columns;
-             result             
---------------------------------
- \xb8dfcbb94442e9ab98e696af4442
+            result            
+------------------------------
+ B8DFCBB94442E9AB98E696AF4442
 (1 row)
 
-SELECT CONCAT(fgb18030_bin, fblob) result, pg_collation_for(result) FROM t_diff_charset_columns;
-     result      |  pg_collation_for  
------------------+--------------------
- ˹DBE9AB98E696AF | utf8mb4_general_ci
+SELECT CONCAT(fgb18030_bin, fblob) result FROM t_diff_charset_columns;
+          result          
+--------------------------
+ B8DFCBB94442E9AB98E696AF
 (1 row)
 
 SELECT CONCAT(fbin, fblob) result FROM t_diff_charset_columns;
-                   result                   
---------------------------------------------
- \xe9ab98e696af4442453941423938453639364146
+            result            
+------------------------------
+ E9AB98E696AF4442E9AB98E696AF
 (1 row)
 
 -- -- concat column and @uservar
@@ -3160,7 +3160,7 @@ LINE 1: SELECT CONCAT(futf8_bin, fgbk_bin) COLLATE gbk_chinese_ci re...
                                            ^
 -- -- -- with binary & implicit collation
 SELECT CONCAT(fbin, futf8_uni) COLLATE "binary" result, pg_collation_for(result) FROM t_diff_charset_columns; -- return datatype still text
-ERROR:  collations are not supported by type "varbinary"
+ERROR:  collations are not supported by type blob
 CONTEXT:  referenced column: pg_collation_for
 SELECT CONCAT(fbin, futf8_uni) COLLATE utf8mb4_general_ci result FROM t_diff_charset_columns; -- return datatype still text
 ERROR:  COLLATION "utf8mb4_general_ci" is not valid for binary type
@@ -3729,9 +3729,9 @@ LINE 1: SELECT CONCAT(futf8_uni , futf8_gen) COLLATE gbk_chinese_ci ...
                                              ^
 -- -- -- for binary argument string function
 SELECT CONCAT(_utf8mb4'高斯DB', _binary'高斯DB') COLLATE "binary" result; -- ERROR
-               result               
-------------------------------------
- \xe9ab98e696af4442e9ab98e696af4442
+              result              
+----------------------------------
+ E9AB98E696AF4442E9AB98E696AF4442
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB', _binary'高斯DB') COLLATE utf8mb4_unicode_ci result;
@@ -3740,9 +3740,9 @@ LINE 1: SELECT CONCAT(_utf8mb4'高斯DB', _binary'高斯DB') COLLATE utf...
                                                          ^
 CONTEXT:  referenced column: result
 SELECT CONCAT(futf8_uni, fbin) COLLATE "binary" result FROM t_diff_charset_columns; -- ERROR
-               result               
-------------------------------------
- \xe9ab98e696af6462e9ab98e696af4442
+              result              
+----------------------------------
+ E9AB98E696AF6462E9AB98E696AF4442
 (1 row)
 
 SELECT CONCAT(futf8_uni, fbin) COLLATE gbk_chinese_ci result FROM t_diff_charset_columns; -- ERROR

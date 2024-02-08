@@ -230,10 +230,20 @@ Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, Node* l
     name_string = NameListToString(funcname);
 
 #ifdef DOLPHIN
-    if (funcid == CONCATFUNCOID) {
+    if (funcid == CONCATFUNCOID || funcid == CONCATWSFUNCOID) {
         for (int i = 0; i < nargs; i++) {
-            if (actual_arg_types[i] == BINARYOID || actual_arg_types[i] == VARBINARYOID) {
-                rettype = VARBINARYOID;
+            /**
+             * if concat param has
+             * (
+             * bit、binary、varbinary、tinyblob、blob、mediumblob、longblob
+             * )
+             * type, changes return type to blob
+             */
+            Oid valtype = actual_arg_types[i];
+            if (valtype == BINARYOID || valtype == VARBINARYOID || valtype == BLOBOID ||
+                valtype == TINYBLOBOID || valtype == MEDIUMBLOBOID || valtype == LONGBLOBOID ||
+                valtype == BITOID) {
+                rettype = BLOBOID;
                 break;
             }
         }

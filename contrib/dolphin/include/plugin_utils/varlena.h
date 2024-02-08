@@ -8,6 +8,7 @@
 extern Datum bit_blob(VarBit* input);
 double float8in_internal(char* str, char** endptr_p, bool* hasError, CoercionContext ccontext);
 char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError = nullptr);
+extern Datum bit_to_str(VarBit *bits);
 #endif
 
 #endif

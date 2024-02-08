@@ -283,7 +283,6 @@ DROP TABLE IF EXISTS t1;
 SET dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero,treat_bxconst_as_binary';
 CREATE TABLE t1 (s1 binary(2), s2 varbinary(2));
 INSERT INTO t1 VALUES (0x4100, 0x4100);
-SELECT LENGTH(concat('*', s1, '*', s2, '*')) FROM t1;
 SELECT HEX(concat('*', s1, '*', s2, '*')) FROM t1;
 SELECT HEX(concat('*', s1, '*', s2, '*')) FROM t1;
 SELECT HEX(s1), HEX(s2), HEX('*') FROM t1;
