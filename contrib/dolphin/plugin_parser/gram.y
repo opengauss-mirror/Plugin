@@ -24927,7 +24927,7 @@ TransactionStmt:
 					n->options = NIL;
 					$$ = (Node *)n;
 				}
-			| UNLOCK TABLES
+			| UNLOCK opt_table_for_b
 				{
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_COMMIT;
@@ -25018,7 +25018,7 @@ TransactionStmt:
 					n->gid = $3;
 					$$ = (Node *)n;
 				}
-			| FLUSH TABLES WITH READ LOCK_P
+			| FLUSH opt_table_for_b WITH READ LOCK_P
 				{
 					TransactionStmt *n = makeNode(TransactionStmt);
 					n->kind = TRANS_STMT_START;
@@ -29102,7 +29102,7 @@ using_clause:
  *
  *****************************************************************************/
 
-LockStmt:	LOCK_P opt_table relation_expr_list opt_lock opt_nowait opt_cancelable
+LockStmt:	LOCK_P TABLE relation_expr_list opt_lock opt_nowait opt_cancelable
 				{
 					LockStmt *n = makeNode(LockStmt);
 
@@ -29110,6 +29110,27 @@ LockStmt:	LOCK_P opt_table relation_expr_list opt_lock opt_nowait opt_cancelable
 					n->mode = $4;
 					n->nowait = $5;
 					n->cancelable = $6;
+					$$ = (Node *)n;
+				}
+			| LOCK_P relation_expr_list opt_lock opt_nowait opt_cancelable
+				{
+					LockStmt *n = makeNode(LockStmt);
+
+					n->relations = $2;
+					n->mode = $3;
+					n->nowait = $4;
+					n->cancelable = $5;
+					$$ = (Node *)n;
+				}
+			| LOCK_P TABLE relation_expr_list opt_lock_for_b opt_nowait opt_cancelable
+				{
+					LockStmt *n = makeNode(LockStmt);
+
+					n->relations = $3;
+					n->mode = $4;
+					n->nowait = $5;
+					n->cancelable = $6;
+					n->isLockTables = true;
 					$$ = (Node *)n;
 				}
 			| LOCK_TABLES relation_expr_list opt_lock_for_b opt_nowait opt_cancelable
@@ -30180,6 +30201,12 @@ OptTempTableName:
 opt_table:	TABLE									{}
 			| /*EMPTY*/								{}
 		;
+
+opt_table_for_b:	
+			TABLE									{}
+			|TABLES									{}
+		;
+
 
 opt_all:	ALL										{ $$ = TRUE; }
 			| DISTINCT								{ $$ = FALSE; }

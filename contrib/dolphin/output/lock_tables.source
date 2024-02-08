@@ -49,3 +49,55 @@ select * from lock_test1;
 insert into lock_test1 values(3);
 ERROR:  cannot execute INSERT in a read-only transaction
 unlock tables;
+-- test TABLE/TABLES synonym
+truncate table lock_test1;
+truncate table lock_test2;
+lock table lock_test1, lock_test2 read;
+insert into lock_test1 values(1);
+insert into lock_test2 values(1); 
+select * from lock_test1;
+ a 
+---
+ 1
+(1 row)
+
+select * from lock_test2;
+ a 
+---
+ 1
+(1 row)
+
+select pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
+unlock table;
+lock table lock_test1 write;
+insert into lock_test1 values(2);
+select * from lock_test1;
+ a 
+---
+ 1
+ 2
+(2 rows)
+
+select pg_sleep(1);
+ pg_sleep 
+----------
+ 
+(1 row)
+
+unlock table;
+flush table with read lock;
+select * from lock_test1;
+ a 
+---
+ 1
+ 2
+(2 rows)
+
+insert into lock_test1 values(3);
+ERROR:  cannot execute INSERT in a read-only transaction
+unlock table;
