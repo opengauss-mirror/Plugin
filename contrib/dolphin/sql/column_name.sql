@@ -1315,6 +1315,11 @@ drop table if exists t1 cascade;
 create table t2 (iDdD int);
 create table t1 (iddD int);
 
+create table t(i int, j int);
+insert into t values(1,1);
+SELECT i, j, STD(i+j) OVER (ROWS UNBOUNDED PRECEDING) STD FROM t ORDER BY std DESC LIMIT 3;
+drop table t;
+
 -- mysql has no create rule grammar not deal yet
 CREATE RULE "_RETURN" AS
   ON UPDATE TO t1
