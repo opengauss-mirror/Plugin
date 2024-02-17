@@ -1,6 +1,7 @@
 create schema test_op_blob;
 set current_schema to 'test_op_blob';
 
+set dolphin.b_compatibility_mode to on;
 select '1'::blob ^ '1'::blob;
 select '1'::blob ^ '1'::char;
 -- error: different length
