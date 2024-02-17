@@ -32,6 +32,7 @@
 #include "libpq/pqformat.h"
 #include "miscadmin.h"
 #include "plugin_parser/scansup.h"
+#include "plugin_parser/parse_type.h"
 #include "port/pg_bswap.h"
 #include "regex/regex.h"
 #include "utils/builtins.h"
@@ -10256,7 +10257,16 @@ extern "C" DLL_PUBLIC Datum blobxor(PG_FUNCTION_ARGS);
 
 Datum blobxor(PG_FUNCTION_ARGS)
 {
-    int32 result = DatumGetInt32(textxor(fcinfo));
+    int i = 0;
+    int32 result = 0;
+    for (i = 0; i < PG_NARGS(); i++) {
+        Datum arg = PG_GETARG_DATUM(i);
+        Oid typoid = get_fn_expr_argtype(fcinfo->flinfo, i);
+        bool hasError = false;
+        char* arg_str = AnyElementGetCString(typoid, arg, &hasError);
+        result ^= atoi(arg_str);
+        pfree_ext(arg_str);
+    }
     PG_RETURN_INT32(result);
 }
 
