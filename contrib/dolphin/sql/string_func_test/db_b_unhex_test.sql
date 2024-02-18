@@ -32,6 +32,10 @@ CREATE TABLE test_unhex (name text);
 INSERT INTO test_unhex values('4142'), ('6f70656e4761757373');
 SELECT UNHEX(name) from test_unhex;
 
+set bytea_output = escape;
+SELECT unhex(32) ^ 3;
+SELECT unhex(35 + 1), unhex(33 - 1), unhex(12 * 3);
+
 -- 严格模式，参数不合法，报error
 set dolphin.sql_mode = 'sql_mode_strict';
 SELECT UNHEX('GG');
