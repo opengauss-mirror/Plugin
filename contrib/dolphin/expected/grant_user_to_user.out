@@ -9,14 +9,19 @@ create user user3 identified by 'test-1234';
 NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 create user `user2`@`localhost` identified by 'test-1234';
 NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+create user `user3`@`LOCALHOST` identified by 'test-1234';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 grant 'user1' to user2;
 grant 'user1' to 'user2';
 NOTICE:  role "user2" is already a member of role "user1"
 grant `user1` to `user2`@`localhost`;
 grant `user2`@`localhost` to `user3`;
+grant `user1` to `user3`@`LOCALHOST`;
+grant `user3`@`LOCALHOST` to `user3`;
 drop user user1;
 drop user user2;
 drop user user3;
 drop user `user2`@`localhost`;
+drop user `user3`@`LOCALHOST`;
 reset current_schema;
 drop schema grant_user_to_user;
