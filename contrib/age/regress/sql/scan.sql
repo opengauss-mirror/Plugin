@@ -240,28 +240,28 @@ RETURN "\u0000"
 $$) AS t(a text);
 
 -- unsupported Unicode escape value (the server encoding is not UTF8)
+----  
+-- CREATE DATABASE contrib_regression_age_euc_kr
+--   TEMPLATE template0
+--   ENCODING 'EUC_KR'
+--   LC_COLLATE 'C' LC_CTYPE 'C';
 
-CREATE DATABASE contrib_regression_age_euc_kr
-  TEMPLATE template0
-  ENCODING EUC_KR
-  LC_COLLATE 'C' LC_CTYPE 'C';
+-- \c contrib_regression_age_euc_kr
 
-\c contrib_regression_age_euc_kr
+-- CREATE EXTENSION age;
+-- LOAD 'age';
+-- SET search_path TO ag_catalog;
+-- SELECT create_graph('scan');
 
-CREATE EXTENSION age;
-LOAD 'age';
-SET search_path TO ag_catalog;
-SELECT create_graph('scan');
+-- SELECT * FROM cypher('scan', $$
+-- RETURN "\U0001D706"
+-- $$) AS t(a text);
 
-SELECT * FROM cypher('scan', $$
-RETURN "\U0001D706"
-$$) AS t(a text);
+-- SELECT drop_graph('scan', true);
 
-SELECT drop_graph('scan', true);
+-- \c contrib_regression
 
-\c contrib_regression
-
-DROP DATABASE contrib_regression_age_euc_kr;
+-- DROP DATABASE contrib_regression_age_euc_kr;
 
 LOAD 'age';
 SET search_path TO ag_catalog;

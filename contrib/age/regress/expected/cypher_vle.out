@@ -19,7 +19,12 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('cypher_vle');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "cypher_vle" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -546,7 +551,9 @@ drop cascades to table cypher_vle."end"
 drop cascades to table cypher_vle.self_loop
 drop cascades to table cypher_vle.alternate_edge
 drop cascades to table cypher_vle.bypass_edge
+CONTEXT:  referenced column: drop_graph
 NOTICE:  graph "cypher_vle" has been dropped
+CONTEXT:  referenced column: drop_graph
  drop_graph 
 ------------
  

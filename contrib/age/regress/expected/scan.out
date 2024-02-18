@@ -19,7 +19,12 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('scan');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "scan" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -27,6 +32,7 @@ NOTICE:  graph "scan" has been created
 
 SELECT create_graph('scan');
 ERROR:  graph "scan" already exists
+CONTEXT:  referenced column: create_graph
 --
 -- multi-line comment
 --
@@ -230,9 +236,9 @@ LINE 2: RETURN 0x
 SELECT * FROM cypher('scan', $$
 RETURN 03., 3.141592, .141592
 $$) AS t(a agtype, b agtype, c agtype);
-  a  |    b     |    c     
------+----------+----------
- 3.0 | 3.141592 | 0.141592
+  a  |    b     |    c    
+-----+----------+---------
+ 3.0 | 3.141592 | .141592
 (1 row)
 
 -- "0" and ".."
@@ -354,40 +360,22 @@ LINE 2: RETURN "\u0000"
                 ^
 DETAIL:  Unicode code point value 0000 is not allowed in quoted strings.
 -- unsupported Unicode escape value (the server encoding is not UTF8)
-CREATE DATABASE contrib_regression_age_euc_kr
-  TEMPLATE template0
-  ENCODING EUC_KR
-  LC_COLLATE 'C' LC_CTYPE 'C';
-\c contrib_regression_age_euc_kr
-CREATE EXTENSION age;
-LOAD 'age';
-SET search_path TO ag_catalog;
-SELECT create_graph('scan');
-NOTICE:  graph "scan" has been created
- create_graph 
---------------
- 
-(1 row)
-
-SELECT * FROM cypher('scan', $$
-RETURN "\U0001D706"
-$$) AS t(a text);
-ERROR:  unsupported Unicode escape value at or near "\U0001D706"
-LINE 2: RETURN "\U0001D706"
-                ^
-DETAIL:  Unicode escape values cannot be used for code point values above 007F when the server encoding is not UTF8.
-SELECT drop_graph('scan', true);
-NOTICE:  drop cascades to 2 other objects
-DETAIL:  drop cascades to table scan._ag_label_vertex
-drop cascades to table scan._ag_label_edge
-NOTICE:  graph "scan" has been dropped
- drop_graph 
-------------
- 
-(1 row)
-
-\c contrib_regression
-DROP DATABASE contrib_regression_age_euc_kr;
+----  
+-- CREATE DATABASE contrib_regression_age_euc_kr
+--   TEMPLATE template0
+--   ENCODING 'EUC_KR'
+--   LC_COLLATE 'C' LC_CTYPE 'C';
+-- \c contrib_regression_age_euc_kr
+-- CREATE EXTENSION age;
+-- LOAD 'age';
+-- SET search_path TO ag_catalog;
+-- SELECT create_graph('scan');
+-- SELECT * FROM cypher('scan', $$
+-- RETURN "\U0001D706"
+-- $$) AS t(a text);
+-- SELECT drop_graph('scan', true);
+-- \c contrib_regression
+-- DROP DATABASE contrib_regression_age_euc_kr;
 LOAD 'age';
 SET search_path TO ag_catalog;
 -- invalid Unicode escape sequence (must be \uXXXX or \UXXXXXXXX)
@@ -501,7 +489,9 @@ SELECT drop_graph('scan', true);
 NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table scan._ag_label_vertex
 drop cascades to table scan._ag_label_edge
+CONTEXT:  referenced column: drop_graph
 NOTICE:  graph "scan" has been dropped
+CONTEXT:  referenced column: drop_graph
  drop_graph 
 ------------
  

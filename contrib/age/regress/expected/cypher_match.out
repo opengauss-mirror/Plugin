@@ -19,7 +19,12 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('cypher_match');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "cypher_match" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -88,8 +93,8 @@ SELECT * FROM cypher('cypher_match', $$
 $$) AS (a agtype);
                                         a                                         
 ----------------------------------------------------------------------------------
- {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex
  {"id": 1125899906842625, "label": "v1", "properties": {"id": "initial"}}::vertex
+ {"id": 1125899906842627, "label": "v1", "properties": {"id": "end"}}::vertex
 (2 rows)
 
 SELECT * FROM cypher('cypher_match', $$
@@ -396,18 +401,18 @@ SELECT * FROM cypher('cypher_match', $$
 $$) AS (i agtype, b agtype, c agtype);
  i |     b     |     c     
 ---+-----------+-----------
-   | "end"     | "middle"
- 0 | "end"     | "middle"
- 1 | "end"     | "middle"
    | "middle"  | "end"
  0 | "middle"  | "end"
  1 | "middle"  | "end"
-   | "middle"  | "initial"
- 0 | "middle"  | "initial"
- 1 | "middle"  | "initial"
+   | "end"     | "middle"
+ 0 | "end"     | "middle"
+ 1 | "end"     | "middle"
    | "initial" | "middle"
  0 | "initial" | "middle"
  1 | "initial" | "middle"
+   | "middle"  | "initial"
+ 0 | "middle"  | "initial"
+ 1 | "middle"  | "initial"
 (12 rows)
 
 --
@@ -790,10 +795,10 @@ SELECT * FROM cypher('cypher_match', $$
 $$) AS (i agtype);
      i     
 -----------
- 
+ "middle"
  "end"
  "initial"
- "middle"
+ 
 (4 rows)
 
 SELECT * FROM cypher('cypher_match', $$
@@ -1074,7 +1079,9 @@ drop cascades to table cypher_match.dup_edge
 drop cascades to table cypher_match.other_v
 drop cascades to table cypher_match.opt_match_v
 drop cascades to table cypher_match.opt_match_e
+CONTEXT:  referenced column: drop_graph
 NOTICE:  graph "cypher_match" has been dropped
+CONTEXT:  referenced column: drop_graph
  drop_graph 
 ------------
  

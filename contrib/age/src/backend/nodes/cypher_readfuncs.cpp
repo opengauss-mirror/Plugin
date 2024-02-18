@@ -125,7 +125,7 @@
 #define READ_NODE_FIELD(fldname) \
         token = pg_strtok(&length);  \
         (void) token; \
-        local_node->fldname = (decltype(local_node->fldname))nodeRead(NULL, 0)
+        local_node->fldname = (decltype(local_node->fldname))nodeRead_AG(NULL, 0)
 
 // Read a bitmapset field
 #define READ_BITMAPSET_FIELD(fldname) \
@@ -188,7 +188,7 @@ void read_cypher_create_target_nodes(struct ExtensibleNode *node)
 
     token = pg_strtok(&length);
     (void) token;
-    local_node->paths = (List *)nodeRead(NULL, 0);
+    local_node->paths = (List *)nodeRead_AG(NULL, 0);
 
     READ_INT_FIELD(flags);
     READ_OID_FIELD(graph_oid);
@@ -204,7 +204,7 @@ void read_cypher_create_path(struct ExtensibleNode *node)
 
     token = pg_strtok(&length);
     (void) token;
-    local_node->target_nodes =  (List *)nodeRead(NULL, 0);
+    local_node->target_nodes =  (List *)nodeRead_AG(NULL, 0);
 
     READ_INT_FIELD(path_attr_num);
 
@@ -227,19 +227,19 @@ void read_cypher_target_node(struct ExtensibleNode *node)
 
     token = pg_strtok(&length);
     (void) token;
-    local_node->id_expr =  (Expr *)nodeRead(NULL, 0);
+    local_node->id_expr =  (Expr *)nodeRead_AG(NULL, 0);
 
     token = pg_strtok(&length);
     (void) token;
-    local_node->id_expr_state =  (ExprState *)nodeRead(NULL, 0);
+    local_node->id_expr_state =  (ExprState *)nodeRead_AG(NULL, 0);
 
     token = pg_strtok(&length);
     (void) token;
-    local_node->prop_expr =  (Expr *)nodeRead(NULL, 0);
+    local_node->prop_expr =  (Expr *)nodeRead_AG(NULL, 0);
 
     token = pg_strtok(&length);
     (void) token;
-    local_node->prop_expr_state = (ExprState *)nodeRead(NULL, 0);
+    local_node->prop_expr_state = (ExprState *)nodeRead_AG(NULL, 0);
 
     READ_INT_FIELD(prop_attr_num);
     READ_NODE_FIELD(resultRelInfo);

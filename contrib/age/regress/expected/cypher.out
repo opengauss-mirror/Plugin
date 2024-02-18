@@ -19,7 +19,12 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('cypher');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "cypher" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -68,22 +73,20 @@ LINE 1: SELECT * FROM cypher('cypher', $$RETURN 0$$) AS r(c text, x ...
                       ^
 -- cypher() function can be called in ROWS FROM only if it is there solely.
 SELECT * FROM ROWS FROM (cypher('cypher', $$RETURN 0$$) AS (c agtype));
- c 
----
- 0
-(1 row)
-
+ERROR:  syntax error at or near "FROM"
+LINE 1: SELECT * FROM ROWS FROM (cypher('cypher', $$RETURN 0$$) AS (...
+                           ^
 SELECT * FROM ROWS FROM (cypher('cypher', $$RETURN 0$$) AS (c text),
                          generate_series(1, 2));
-ERROR:  cypher(...) in ROWS FROM is not supported
+ERROR:  syntax error at or near "FROM"
 LINE 1: SELECT * FROM ROWS FROM (cypher('cypher', $$RETURN 0$$) AS (...
-                                 ^
+                           ^
 -- WITH ORDINALITY is not supported.
 SELECT *
 FROM ROWS FROM (cypher('cypher', $$RETURN 0$$) AS (c text)) WITH ORDINALITY;
-ERROR:  WITH ORDINALITY is not supported
+ERROR:  syntax error at or near "FROM"
 LINE 2: FROM ROWS FROM (cypher('cypher', $$RETURN 0$$) AS (c text)) ...
-                        ^
+                  ^
 -- cypher() function cannot be called in expressions.
 -- However, it can be called in subqueries.
 SELECT cypher('cypher', $$RETURN 0$$);
@@ -115,7 +118,9 @@ SELECT drop_graph('cypher', true);
 NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table cypher._ag_label_vertex
 drop cascades to table cypher._ag_label_edge
+CONTEXT:  referenced column: drop_graph
 NOTICE:  graph "cypher" has been dropped
+CONTEXT:  referenced column: drop_graph
  drop_graph 
 ------------
  

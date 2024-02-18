@@ -50,6 +50,7 @@ OBJS = src/backend/age.o \
        src/backend/parser/cypher_parse_node.o \
        src/backend/parser/cypher_parser.o \
        src/backend/utils/adt/age_graphid_ds.o \
+       src/backend/parser/ag_parse_expr.o \
        src/backend/utils/adt/agtype.o \
        src/backend/utils/adt/agtype_ext.o \
        src/backend/utils/adt/agtype_ops.o \
@@ -82,15 +83,9 @@ top_builddir = ../..
 
 
 #limiao
-#top_builddir = ../..
 FLEX = /bin/flex
 FLEXFLAGS = -CF -b -p -p
 
-#include $(top_srcdir)/src/gausskernel/common.mk
-
-# scan is compiled as part of gram
-#src/backend/parser/ag_scanner.o: src/backend/parser/ag_scanner.cpp
-#ag_scanner.o: ag_scanner.cpp
 
 # sorted in dependency order    expr
 REGRESS = scan\
@@ -115,27 +110,23 @@ REGRESS = scan\
 srcdir=`pwd`
 
 ag_regress_dir = $(srcdir)/regress
-# REGRESS_OPTS = --load-extension=age --inputdir=$(ag_regress_dir) --outputdir=$(ag_regress_dir) --encoding=UTF-8 --temp-install=$(ag_regress_dir)/instance --port=61958 --encoding=UTF-8
 
 top_builddir = ../..
-REGRESS_OPTS =  --load-extension=age  --top-builddir="../.."  --inputdir=$(ag_regress_dir) --outputdir=$(ag_regress_dir) --encoding=UTF-8 --temp-install=$(ag_regress_dir)/instance --port=61958 --encoding=UTF-8 --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node
+REGRESS_OPTS =  --load-extension=age --extra-install='contrib/age' --top-builddir="../.."  --inputdir=$(ag_regress_dir) --outputdir=$(ag_regress_dir) --encoding=UTF-8 --temp-install=$(ag_regress_dir)/instance --port=61958 --encoding=UTF-8 --dlpath=$(top_builddir)/src/test/regress -c 0 -d 1 --single_node
 
 ag_regress_out = instance/ log/ results/ regression.*
 
-EXTRA_CLEAN = src/backend/parser/cypher_gram.cpp src/include/parser/cypher_gram_def.hpp
+EXTRA_CLEAN = src/backend/parser/cypher_gram.cpp src/include/parser/cypher_gram_def.h \
+				src/backend/parser/ag_scanner.cpp \
+                src/include/parser/cypher_kwlist_d.h src/include/parser/kwlist_d.h \
+                regress/regression.diffs regress/regression.out regress/instance/ regress/log/ regress/results/ regress/.sql/
 
-#TOOLSDIR = $(top_srcdir)/src/tools
-TOOLSDIR = ./src/tools
-PERL = /bin/perl
-GEN_KEYWORDLIST = $(PERL) -I $(TOOLSDIR) $(TOOLSDIR)/gen_keywordlist.pl
-GEN_KEYWORDLIST_DEPS = $(TOOLSDIR)/gen_keywordlist.pl $(TOOLSDIR)/PerfectHash.pm
 
 
 
 ag_include_dir = $(srcdir)/src/include
 PG_CPPFLAGS = -I$(ag_include_dir) -I$(ag_include_dir)/parser
 
-#override CPPFLAGS :=$(filter-out -fPIE, $(CPPFLAGS)) -fPIC # fPIC选项
 BISON = /usr/bin/bison
 BISONFLAGS += --defines=src/include/parser/cypher_gram_def.h
 src/include/parser/cypher_gram_def.h: src/backend/parser/cypher_gram.cpp;
@@ -149,26 +140,11 @@ else
 	sed -i 's/YY_NULL nullptr/YY_NULL 0/g' src/backend/parser/cypher_gram.cpp
 endif
 
-src/backend/parser/cypher_keywords.o: src/include/parser/cypher_kwlist_d.h
-
 src/backend/parser/cypher_parser.o: src/backend/parser/cypher_gram.cpp
-src/backend/parser/cypher_keywords.o: src/backend/parser/cypher_gram.cpp kwlist_d.h
+src/backend/parser/cypher_keywords.o: src/backend/parser/cypher_gram.cpp kwlist_d.h src/include/parser/cypher_kwlist_d.h
 
-# compile in og source
-#kwlist_d.h: $(top_builddir)/src/include/parser/kwlist.h $(GEN_KEYWORDLIST_DEPS)
-#	$(GEN_KEYWORDLIST) --extern -o $(top_builddir)/src/include/parser $(top_builddir)/src/include/parser/kwlist.h
-
-kwlist_d.h: ./src/include/parser/kwlist.h $(GEN_KEYWORDLIST_DEPS)
-	$(GEN_KEYWORDLIST) --extern -o ./src/include/parser ./src/include/parser/kwlist.h
-
-#src/backend/parser/ag_scanner.cpp: FLEX_NO_BACKUP=yes
-
-	
-#-------------------added by limiao for generate ag_scanner.cpp byself--------------	
 src/backend/parser/ag_scanner.o: src/backend/parser/ag_scanner.cpp
 src/backend/parser/ag_scanner.cpp: src/backend/parser/ag_scanner.l
-#src/backend/parser/ag_scanner.cpp: FLEX_NO_BACKUP=yes
-
 ifdef FLEX
 	$(FLEX) $(FLEXFLAGS) -o $@ $<
 	#$(FLEX) -CF -b -p -p  -o src/backend/parser/ag_scanner.cpp src/backend/parser/ag_scanner.l
@@ -176,19 +152,16 @@ else
 	@$(missing) flex $< $@
 endif
 
-#----end---------------added by limiao for generate ag_scanner.cpp byself--------------	
+TOOLSDIR_AGE = ./src/tools
+PERL = /bin/perl
+GEN_KEYWORDLIST_AGE = $(PERL) -I $(TOOLSDIR_AGE) $(TOOLSDIR_AGE)/gen_keywordlist.pl
+GEN_KEYWORDLIST_DEPS_AGE = $(TOOLSDIR_AGE)/gen_keywordlist.pl $(TOOLSDIR_AGE)/PerfectHash.pm
 
+kwlist_d.h: ./src/include/parser/kwlist.h $(GEN_KEYWORDLIST_DEPS_AGE)
+	$(GEN_KEYWORDLIST_AGE) --extern -o ./src/include/parser ./src/include/parser/kwlist.h
+src/include/parser/cypher_kwlist_d.h: ./src/include/parser/cypher_kwlist.h $(GEN_KEYWORDLIST_DEPS_AGE)
+	$(GEN_KEYWORDLIST_AGE) --extern --varname CypherKeyword --output ./src/include/parser  $<
 
-# compile in og source
-#src/include/parser/cypher_kwlist_d.h: $(top_builddir)/contrib/age/src/include/parser/cypher_kwlist.h $(GEN_KEYWORDLIST_DEPS)
-#	$(GEN_KEYWORDLIST) --extern --varname CypherKeyword --output $(top_builddir)/contrib/age/src/include/parser  $<
-
-src/include/parser/cypher_kwlist_d.h: ./src/include/parser/cypher_kwlist.h $(GEN_KEYWORDLIST_DEPS)
-	$(GEN_KEYWORDLIST) --extern --varname CypherKeyword --output ./src/include/parser  $<
-
-
-
-#override CPPFLAGS :=$(filter-out -fPIE, $(CPPFLAGS))
 #ifdef USE_PGXS
 PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
@@ -199,10 +172,4 @@ include $(PGXS)
 #	include $(top_builddir)/src/Makefile.global
 #	include $(top_srcdir)/contrib/contrib-global.mk
 #endif
-
-install-data: installdirs
-	$(INSTALL_DATA) $(addprefix $(srcdir)/, $(DATA)) '$(DESTDIR)$(datadir)/extension/'
-
-installdirs:
-	$(MKDIR_P) '$(DESTDIR)$(datadir)/extension'
 
