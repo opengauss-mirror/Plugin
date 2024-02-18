@@ -42235,7 +42235,7 @@ static char* GetValidUserHostId(char* userName, char* hostId)
 	} else {
 		userHostId = hostId;
 	}
-	if (strcmp("localhost", userHostId) != 0)
+	if (strcasecmp("localhost", userHostId) != 0)
 		CheckHostId(userHostId);
 	StringInfoData buf;
 	initStringInfo(&buf);
