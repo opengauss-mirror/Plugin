@@ -491,6 +491,11 @@ Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, Node* l
         newa->location = exprLocation((Node*)vargs);
 
         fargs = lappend(fargs, newa);
+
+	/* We could not have had VARIADIC marking before ... For age */
+        Assert(!func_variadic);
+        /* ... but now, it's a VARIADIC call */
+        func_variadic = true;
     }
 
     /* if it returns a set, check that's OK */
@@ -1665,6 +1670,10 @@ FuncDetailCode func_get_detail(List* funcname, List* fargs, List* fargnames, int
      */
     for (best_candidate = raw_candidates; best_candidate != NULL; best_candidate = best_candidate->next) {
         if (memcmp(argtypes, best_candidate->args, nargs * sizeof(Oid)) == 0) {
+            break;
+        }
+
+        if (CheckTableOfType(best_candidate, argtypes)) {
             break;
         }
     }
