@@ -418,10 +418,10 @@ Datum pg_convert_to(PG_FUNCTION_ARGS)
 /*
  * pg_convert_to_text is designed to be compatible with the function convert('str' using 'encoding') in Mysql
  * TEXT pg_convert_to_text(TEXT string, NAME dest_encoding_name)
- *
- * If a character in the input string has a corresponding encoding in both the original and
- * destination encodings, the character remains unchanged. If there is no corresponding encoding
- * in the destination encoding, the character is replaced with '?'.
+ * If there is no corresponding encoding in the destination encoding, the character is replaced with '?'.
+ * It should be noted that when the client encoding does not match the dest encoding,
+ * the results cannot be displayed correctly on the client side. This is not a bug.
+ * We need to set b_format_behavior_compat_options = enable_multi_charset to enable the correct display of results.
 */
 Datum pg_convert_to_text(PG_FUNCTION_ARGS)
 {
@@ -432,7 +432,7 @@ Datum pg_convert_to_text(PG_FUNCTION_ARGS)
     char* dest_str;
     char* result_str;
     int rc;
-    Datum result;
+    text* result;
 
     if (dest_encoding < 0) {
         ereport(ERROR,
@@ -452,8 +452,7 @@ Datum pg_convert_to_text(PG_FUNCTION_ARGS)
         rc = memcpy_s(result_str, len_src + 1, dest_str, len_src);
         securec_check_c(rc, "\0", "\0");
         result_str[len_src] = '\0';
-        result = DirectFunctionCall2(pg_convert_from,
-            CStringGetTextDatum((const char*)result_str), CStringGetDatum(dest_encoding_name));
+        result = cstring_to_text(result_str);
     }
     PG_CATCH();
     {

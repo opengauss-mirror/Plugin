@@ -3753,15 +3753,15 @@ LINE 1: SELECT CONCAT(futf8_uni, fbin) COLLATE gbk_chinese_ci result...
 CONTEXT:  referenced column: result
 -- -- -- for convert function
 SELECT CONVERT(futf8_uni USING 'GBK') result, pg_collation_for(result) FROM t_diff_charset_columns;
-  result  | pg_collation_for 
-----------+------------------
- 楂樻柉db | gbk_chinese_ci
+ result | pg_collation_for 
+--------+------------------
+ 高斯db | gbk_chinese_ci
 (1 row)
 
 SELECT CONVERT(futf8_uni USING 'GBK') COLLATE gbk_bin result FROM t_diff_charset_columns;
-  result  
-----------
- 楂樻柉db
+ result 
+--------
+ 高斯db
 (1 row)
 
 SELECT CONVERT(futf8_uni USING 'GBK') COLLATE "binary" result FROM t_diff_charset_columns; -- ERROR
@@ -3769,15 +3769,15 @@ ERROR:  COLLATION "binary" is not valid for CHARACTER SET "GBK"
 LINE 1: SELECT CONVERT(futf8_uni USING 'GBK') COLLATE "binary" resul...
                                               ^
 SELECT CONCAT(CONVERT(futf8_uni USING 'GBK'), futf8_uni) result, pg_collation_for(result) FROM t_diff_charset_columns;
-     result     |  pg_collation_for  
-----------------+--------------------
- 楂樻柉db高斯db | utf8mb4_unicode_ci
+    result    |  pg_collation_for  
+--------------+--------------------
+ 高斯db高斯db | utf8mb4_unicode_ci
 (1 row)
 
 SELECT CONCAT(CONVERT(futf8_uni USING 'GBK') COLLATE gbk_bin, futf8_uni) result, pg_collation_for(result) FROM t_diff_charset_columns;
-     result     | pg_collation_for 
-----------------+------------------
- 楂樻柉db高斯db | gbk_bin
+    result    | pg_collation_for 
+--------------+------------------
+ 高斯db高斯db | gbk_bin
 (1 row)
 
 DROP TABLE t_diff_charset_columns;
