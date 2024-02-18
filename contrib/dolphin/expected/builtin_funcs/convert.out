@@ -133,12 +133,26 @@ select convert('测试' using utf8);
  测试
 (1 row)
 
+set b_format_behavior_compat_options = enable_multi_charset;
 select convert('测试' using gbk);
  convert 
 ---------
  测试
 (1 row)
 
+select convert('测试' using gb18030);
+ convert 
+---------
+ 测试
+(1 row)
+
+select convert('测试' using utf8mb4);
+ convert 
+---------
+ 测试
+(1 row)
+
+set b_format_behavior_compat_options = '';
 select convert('测试' using latin1);
  convert 
 ---------
@@ -183,5 +197,17 @@ select pg_typeof(convert('1', char(10)));
  character varying
 (1 row)
 
+create table test_orderby_after_convert(
+col1 varchar(10)
+);
+insert into test_orderby_after_convert values('张'),('臧');
+select * from test_orderby_after_convert order by convert(col1 using gbk) collate gbk_chinese_ci;
+ col1 
+------
+ 臧
+ 张
+(2 rows)
+
 drop schema db_convert cascade;
+NOTICE:  drop cascades to table test_orderby_after_convert
 reset current_schema;

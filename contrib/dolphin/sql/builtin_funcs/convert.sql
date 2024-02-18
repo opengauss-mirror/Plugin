@@ -75,7 +75,11 @@ select convert(1 using 'gbk');
 select convert(1 using 'utf8');
 select convert('测试' using 'utf8');
 select convert('测试' using utf8);
+set b_format_behavior_compat_options = enable_multi_charset;
 select convert('测试' using gbk);
+select convert('测试' using gb18030);
+select convert('测试' using utf8mb4);
+set b_format_behavior_compat_options = '';
 select convert('测试' using latin1);
 select convert(11.1, decimal(10,3));
 select convert(1 using decimal(10,3));
@@ -85,5 +89,12 @@ select pg_typeof(convert('1', char(10)));
 set dolphin.b_compatibility_mode = on;
 select pg_typeof(convert('1', char));
 select pg_typeof(convert('1', char(10)));
+
+create table test_orderby_after_convert(
+col1 varchar(10)
+);
+insert into test_orderby_after_convert values('张'),('臧');
+select * from test_orderby_after_convert order by convert(col1 using gbk) collate gbk_chinese_ci;
+
 drop schema db_convert cascade;
 reset current_schema;
