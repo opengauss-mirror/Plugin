@@ -1672,8 +1672,11 @@ static TargetEntry* findTargetlistEntrySQL92(ParseState* pstate, Node* node, Lis
 
             foreach (tl, *tlist) {
                 TargetEntry* tle = (TargetEntry*)lfirst(tl);
-
+#ifdef DOLPHIN
+                if (!tle->resjunk && strcasecmp(tle->resname, name) == 0) {
+#else
                 if (!tle->resjunk && strcmp(tle->resname, name) == 0) {
+#endif
                     if (target_result != NULL) {
                         if (!equal(target_result->expr, tle->expr)) {
                             ereport(ERROR,
