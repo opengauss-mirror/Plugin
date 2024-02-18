@@ -5,6 +5,20 @@ DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_ui4(nvarchar2);
 DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_ui2(nvarchar2);
 DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_ui1(nvarchar2);
 
+DROP CAST IF EXISTS (boolean as time without time zone);
+DROP CAST IF EXISTS (boolean as date);
+DROP CAST IF EXISTS (boolean as timestamp without time zone);
+DROP CAST IF EXISTS (boolean as timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_time(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_date(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_datetime(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_timestamptz(boolean);
+
+DROP FUNCTION IF EXISTS pg_catalog.bool_cast_time(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.bool_cast_date(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.bool_cast_datetime(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.bool_cast_timestamptz(boolean);
+
 DROP FUNCTION IF EXISTS pg_catalog.int8_cast_time(int1);
 DROP FUNCTION IF EXISTS pg_catalog.int16_cast_time(int2);
 DROP FUNCTION IF EXISTS pg_catalog.int32_cast_time(int4);
@@ -394,8 +408,6 @@ DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(json);
 DROP FUNCTION IF EXISTS pg_catalog.exp(year);
 DROP FUNCTION IF EXISTS pg_catalog.exp(json);
 
-DROP CAST IF EXISTS (boolean AS date);
-DROP FUNCTION IF EXISTS pg_catalog.bool_date(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.int8_cast_date(int1);
 DROP FUNCTION IF EXISTS pg_catalog.int16_cast_date(int2);
 DROP FUNCTION IF EXISTS pg_catalog.int32_cast_date(int4);

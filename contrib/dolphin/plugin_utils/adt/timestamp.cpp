@@ -211,10 +211,14 @@ extern "C" DLL_PUBLIC Datum b_db_statement_start_timestamp(PG_FUNCTION_ARGS);
 
 /* b compatibility time function */
 #ifdef DOLPHIN
+PG_FUNCTION_INFO_V1_PUBLIC(bool_b_format_timestamp);
+extern "C" DLL_PUBLIC Datum bool_b_format_timestamp(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int16_b_format_timestamp);
 extern "C" DLL_PUBLIC Datum int16_b_format_timestamp(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int8_b_format_timestamp);
 extern "C" DLL_PUBLIC Datum int8_b_format_timestamp(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(bool_b_format_datetime);
+extern "C" DLL_PUBLIC Datum bool_b_format_datetime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int16_b_format_datetime);
 extern "C" DLL_PUBLIC Datum int16_b_format_datetime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int8_b_format_datetime);
@@ -351,6 +355,8 @@ extern "C" DLL_PUBLIC Datum convert_datetime_uint64(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(convert_timestamptz_uint64);
 extern "C" DLL_PUBLIC Datum convert_timestamptz_uint64(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(bool_cast_datetime);
+extern "C" DLL_PUBLIC Datum bool_cast_datetime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int8_cast_datetime);
 extern "C" DLL_PUBLIC Datum int8_cast_datetime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int16_cast_datetime);
@@ -376,6 +382,8 @@ extern "C" DLL_PUBLIC Datum float8_cast_datetime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_datetime);
 extern "C" DLL_PUBLIC Datum numeric_cast_datetime(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(bool_cast_timestamptz);
+extern "C" DLL_PUBLIC Datum bool_cast_timestamptz(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int8_cast_timestamptz);
 extern "C" DLL_PUBLIC Datum int8_cast_timestamptz(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int16_cast_timestamptz);
@@ -1164,7 +1172,7 @@ Datum timestamp_to_datum(PG_FUNCTION_ARGS, bool hasTz, int64 ts, bool is_explici
 {
     TimeErrorType time_error_type = TIME_CORRECT;
     int64 result = integer_b_format_timestamp(hasTz, ts, fcinfo->can_ignore, &time_error_type);
-    if (is_explicit && time_error_type == TIME_INCORRECT) {
+    if (is_explicit && time_error_type == TIME_INCORRECT && ts != 0) {
         PG_RETURN_NULL();
     }
     PG_RETURN_TIMESTAMP(result);
@@ -1180,6 +1188,18 @@ Datum timestamp_to_datum_with_null_result(PG_FUNCTION_ARGS, bool hasTz, int64 ts
         PG_RETURN_TIMESTAMP(B_FORMAT_TIMESTAMP_MAX_VALUE);
     }
     PG_RETURN_TIMESTAMP(result);
+}
+
+Datum bool_b_format_datetime(PG_FUNCTION_ARGS)
+{
+    int64 ts = (int64)PG_GETARG_BOOL(0);
+    return timestamp_to_datum(fcinfo, false, ts);
+}
+
+Datum bool_b_format_timestamp(PG_FUNCTION_ARGS)
+{
+    int64 ts = (int64)PG_GETARG_BOOL(0);
+    return timestamp_to_datum(fcinfo, true, ts);
 }
 
 Datum int8_b_format_datetime(PG_FUNCTION_ARGS)
@@ -11959,6 +11979,10 @@ Datum dolphin_timestamptznot(PG_FUNCTION_ARGS)
     PG_RETURN_UINT64(~((uint64)timestamp2int(tm)));
 }
 
+Datum bool_cast_datetime(PG_FUNCTION_ARGS)
+{
+    return timestamp_to_datum(fcinfo, false, (int64)PG_GETARG_BOOL(0), true);
+}
 
 Datum int8_cast_datetime(PG_FUNCTION_ARGS)
 {
@@ -12001,6 +12025,10 @@ Datum uint64_cast_datetime(PG_FUNCTION_ARGS)
     return timestamp_to_datum(fcinfo, false, (int64)PG_GETARG_INT64(0), true);
 }
 
+Datum bool_cast_timestamptz(PG_FUNCTION_ARGS)
+{
+    return timestamp_to_datum(fcinfo, true, (int64)PG_GETARG_BOOL(0), true);
+}
 
 Datum int8_cast_timestamptz(PG_FUNCTION_ARGS)
 {

@@ -2319,9 +2319,7 @@ drop table if exists test_timestamp;
 set dolphin.b_compatibility_mode = true;
 select cast(true as date) as result;
 WARNING:  Out of range value for date
-CONTEXT:  referenced column: date
-SQL function "bool_date" statement 1
-referenced column: result
+CONTEXT:  referenced column: result
  result 
 --------
  
@@ -2686,6 +2684,142 @@ select * from t1 order by 1;
 (2 rows)
 
 drop table t1;
+select cast(0::boolean as time);
+   time   
+----------
+ 00:00:00
+(1 row)
+
+select cast(0::boolean as date);
+    date    
+------------
+ 0000-00-00
+(1 row)
+
+select cast(0::boolean as datetime);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamp
+      timestamp      
+---------------------
+ 0000-00-00 00:00:00
+(1 row)
+
+select cast(0::boolean as timestamp);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamptz
+      timestamptz       
+------------------------
+ 0000-00-00 00:00:00+00
+(1 row)
+
+select cast(1::boolean as time);
+   time   
+----------
+ 00:00:01
+(1 row)
+
+select cast(1::boolean as date);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast(1::boolean as datetime);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast(1::boolean as timestamp);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+create table boolean_test_time(a time);
+create table boolean_test_date(a date);
+create table boolean_test_datetime(a datetime);
+create table boolean_test_timestamp(a timestamp);
+insert into boolean_test_time values(0::boolean);
+insert into boolean_test_date values(0::boolean);
+insert into boolean_test_datetime values(0::boolean);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: a
+insert into boolean_test_timestamp values(0::boolean);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: a
+insert into boolean_test_time values(1::boolean);
+insert into boolean_test_date values(1::boolean);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: a
+insert into boolean_test_datetime values(1::boolean);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: a
+insert into boolean_test_timestamp values(1::boolean);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: a
+set dolphin.sql_mode = '';
+insert into boolean_test_time values(0::boolean);
+insert into boolean_test_date values(0::boolean);
+insert into boolean_test_datetime values(0::boolean);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: a
+insert into boolean_test_timestamp values(0::boolean);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: a
+insert into boolean_test_time values(1::boolean);
+insert into boolean_test_date values(1::boolean);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: a
+insert into boolean_test_datetime values(1::boolean);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: a
+insert into boolean_test_timestamp values(1::boolean);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: a
+select * from boolean_test_time;
+    a     
+----------
+ 00:00:00
+ 00:00:01
+ 00:00:00
+ 00:00:01
+(4 rows)
+
+select * from boolean_test_date;
+     a      
+------------
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+ 0000-00-00
+(4 rows)
+
+select * from boolean_test_datetime;
+          a          
+---------------------
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+ 0000-00-00 00:00:00
+(4 rows)
+
+select * from boolean_test_timestamp;
+           a            
+------------------------
+ 0000-00-00 00:00:00+00
+ 0000-00-00 00:00:00+00
+ 0000-00-00 00:00:00+00
+ 0000-00-00 00:00:00+00
+(4 rows)
+
+reset dolphin.sql_mode;
 set dolphin.b_compatibility_mode=on;
 set b_format_behavior_compat_options=enable_set_variables;
 create table t_bigint0005(
