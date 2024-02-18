@@ -13,7 +13,7 @@ test: empty_value_list empty_value_lists empty_value_support_value create_index 
 
 test: greatest_least join_without_on mysqlmode_fullgroup mysqlmode_strict mysqlmode_strict2 none_strict_warning test_alter_table test_dolphin_catalog inet_ntoa_nvarchar2
 
-test: like_index_test_utf8 like_index_test_utf8mb4 like_index_test_gbk like_index_test_gb18030 like_index_test_binary_and_varbinary
+test: like_index_test_utf8 like_index_test_utf8mb4 like_index_test_gbk like_index_test_gb18030 like_index_test_binary_and_varbinary create_function_core
 
 # must be single test group, cause other connection will affect the result
 test: test_shows
