@@ -380,6 +380,8 @@ static int internal_yylex(TokenAuxData* auxdata)
     int token;
     const char* yytext = NULL;
 
+    errno_t rc = memset_s(auxdata, sizeof(TokenAuxData), 0, sizeof(TokenAuxData));
+    securec_check(rc, "\0", "\0");
     Assert(u_sess->plsql_cxt.curr_compile_context);
     PLpgSQL_compile_context* curr_compile = u_sess->plsql_cxt.curr_compile_context;
     if (curr_compile->num_pushbacks > 0) {
@@ -1054,12 +1056,23 @@ static int plpgsql_parse_declare(int* loc)
         int tok3 = -1;
         tok2 = internal_yylex(&aux2);
         tok3 = internal_yylex(&aux3);
-        if (tok3 != IDENT && !GetSessionContext()->is_b_declare) {
+        if ((tok3 != IDENT || aux3.lval.str == NULL) && !GetSessionContext()->is_b_declare) {
             push_back_token(tok3, &aux3);
             push_back_token(tok2, &aux2);
             push_back_token(tok1, &aux1);
             return token;
         }
+#ifdef DOLPHIN
+        if (aux3.lval.str == NULL && GetSessionContext()->is_b_declare) {
+            u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_DECLARE;
+            token = T_DECLARE;
+            push_back_token(tok3, &aux3);
+            push_back_token(tok2, &aux2);
+            *loc = aux1.lloc;
+            plpgsql_yylval = aux1.lval;
+            return token;
+        }
+#endif
         if (strcasecmp(aux3.lval.str, "cursor") == 0) {
             u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_DECLARE;
             token = T_DECLARE_CURSOR;
@@ -1084,6 +1097,7 @@ static int plpgsql_parse_declare(int* loc)
             /* get the declare attribute location */
             *loc = aux1.lloc;
             plpgsql_yylval = aux1.lval;
+#ifdef DOLPHIN
         } else if (GetSessionContext()->is_b_declare) {
             u_sess->plsql_cxt.curr_compile_context->plpgsql_IdentifierLookup = IDENTIFIER_LOOKUP_DECLARE;
             token = T_DECLARE;
@@ -1092,6 +1106,7 @@ static int plpgsql_parse_declare(int* loc)
             /* get the declare attribute location */
             *loc = aux1.lloc;
             plpgsql_yylval = aux1.lval;
+#endif
         } else {
             push_back_token(tok3, &aux3);
             push_back_token(tok2, &aux2);
