@@ -2279,6 +2279,9 @@ static Oid choose_expr_type(ParseState* pstate, List* exprs, const char* context
                     return InvalidOid;
                 } else if (strcmp(context, "UNION") == 0) {
                     return TEXTOID;
+                } else if (strcmp(context, "JOIN/USING") == 0) {
+                    /* use first expr type as result */
+                    return ptype;
                 }
 #else
                 if (context == NULL)

@@ -1408,8 +1408,13 @@ static Node* buildMergedJoinVar(ParseState* pstate, JoinType jointype, Var* l_co
             l_colvar->vartype,
             outcoltype,
             outcoltypmod,
+#ifdef DOLPHIN
+            COERCION_EXPLICIT,
+            COERCE_EXPLICIT_CAST,
+#else
             COERCION_IMPLICIT,
             COERCE_IMPLICIT_CAST,
+#endif
             -1);
     } else if (l_colvar->vartypmod != outcoltypmod) {
         l_node = (Node*)makeRelabelType((Expr*)l_colvar,
@@ -1426,8 +1431,13 @@ static Node* buildMergedJoinVar(ParseState* pstate, JoinType jointype, Var* l_co
             r_colvar->vartype,
             outcoltype,
             outcoltypmod,
+#ifdef DOLPHIN
+            COERCION_EXPLICIT,
+            COERCE_EXPLICIT_CAST,
+#else
             COERCION_IMPLICIT,
             COERCE_IMPLICIT_CAST,
+#endif
             -1);
     } else if (r_colvar->vartypmod != outcoltypmod) {
         r_node = (Node*)makeRelabelType((Expr*)r_colvar,
