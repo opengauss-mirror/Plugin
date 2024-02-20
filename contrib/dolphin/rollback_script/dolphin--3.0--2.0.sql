@@ -13,23 +13,6 @@ CREATE FUNCTION pg_catalog.dolphin_invoke()
 
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_cast(cstring, oid, integer, boolean);
 
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(json);
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(anyenum);
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(anyset);
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(bit);
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(longblob);
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(year);
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(date);
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(timestamp with time zone);
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(timestamp without time zone);
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(text);
-
-CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(text) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'time_to_sec';
-CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(date) RETURNS int4 AS $$ SELECT pg_catalog.time_to_sec(cast('00:00:00' as text)) $$ LANGUAGE SQL;
-
-DROP FUNCTION IF EXISTS pg_catalog.date_cast_timestamptz(date);
-DROP FUNCTION IF EXISTS pg_catalog.date_cast_datetime(date);
-
 DROP FUNCTION IF EXISTS pg_catalog.rand(int16);
 DROP FUNCTION IF EXISTS pg_catalog.rand(uint4);
 DROP FUNCTION IF EXISTS pg_catalog.rand(timestamp with time zone);

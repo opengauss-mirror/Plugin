@@ -172,6 +172,10 @@ PG_FUNCTION_INFO_V1_PUBLIC(int64_time_to_sec);
 extern "C" DLL_PUBLIC Datum int64_time_to_sec(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_time_to_sec);
 extern "C" DLL_PUBLIC Datum numeric_time_to_sec(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamp_time_to_sec);
+extern "C" DLL_PUBLIC Datum timestamp_time_to_sec(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_time_to_sec);
+extern "C" DLL_PUBLIC Datum timestamptz_time_to_sec(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(datediff_t_t);
 extern "C" DLL_PUBLIC Datum datediff_t_t(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(datediff_t_n);
@@ -5299,7 +5303,7 @@ Datum time_bool(PG_FUNCTION_ARGS)
  * false : there are some warnings on str to time, str is incorrect
  */
 bool time_in_with_flag_internal(char *str, struct pg_tm *result_tm, fsec_t *result_fsec, int *result_timeSign,
-    unsigned int date_flag, bool vertify_time = false)
+    unsigned int date_flag, bool vertify_time = false, bool can_ignore = false)
 {
     struct pg_tm tt1, *tm = &tt1;
     fsec_t fsec = 0;
@@ -5316,7 +5320,7 @@ bool time_in_with_flag_internal(char *str, struct pg_tm *result_tm, fsec_t *resu
     }
 
     if (warnings) {
-        int errlevel = (SQL_MODE_STRICT() || null_func_result) ? ERROR : WARNING;
+        int errlevel = ((SQL_MODE_STRICT() || null_func_result) && !can_ignore) ? ERROR : WARNING;
         ereport(errlevel,
                 (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", str)));
     }
@@ -5328,13 +5332,14 @@ bool time_in_with_flag_internal(char *str, struct pg_tm *result_tm, fsec_t *resu
     return vertify_time ? !warnings : true;
 }
 
-bool time_in_with_flag(char *str, unsigned int date_flag, TimeADT* time_adt, bool vertify_time)
+bool time_in_with_flag(char *str, unsigned int date_flag, TimeADT* time_adt, bool vertify_time, bool can_ignore)
 {
     TimeADT result;
     struct pg_tm tt, *tm = &tt;
     fsec_t fsec;
     int timeSign;
-    bool vertify_time_result = time_in_with_flag_internal(str, tm, &fsec, &timeSign, date_flag, vertify_time);
+    bool vertify_time_result = time_in_with_flag_internal(str, tm, &fsec, &timeSign, date_flag, vertify_time,
+        can_ignore);
     if (!vertify_time_result) {
         return false;
     }
@@ -5390,10 +5395,10 @@ Datum time_to_sec(PG_FUNCTION_ARGS)
     pg_tm result_tt;
     pg_tm* result_tm = &result_tt;
     fsec_t fsec;
-    int32 result;
+    int64 result;
     int32 timeSign = 1;
 
-    if (!time_in_with_sql_mode(time_str, &time, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH))) {
+    if (!time_in_with_sql_mode(time_str, &time, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH), false, fcinfo->can_ignore)) {
         PG_RETURN_NULL();
     }
     if (time < 0) {
@@ -5403,7 +5408,7 @@ Datum time_to_sec(PG_FUNCTION_ARGS)
     time2tm(time, result_tm, &fsec);
     result = ((result_tm->tm_hour * MINS_PER_HOUR + result_tm->tm_min) * SECS_PER_MINUTE) + result_tm->tm_sec;
     result *= timeSign;
-    PG_RETURN_INT32(result);
+    PG_RETURN_INT64(result);
 }
 
 /**
@@ -5422,7 +5427,7 @@ bool number_to_time(char* input_str, long long nr, bool can_ignore, TimeADT* tim
         ereport(errlevel, (errmsg("Truncated incorrect time value: \"%s\"", input_str)));
         return false;
     }
-    return longlong_to_tm(nr, time, tm);
+    return longlong_to_tm(nr, time, tm, can_ignore);
 }
 
 bool number_to_time(long long nr, bool can_ignore, TimeADT* time, LongLongTm* tm)
@@ -5441,7 +5446,7 @@ Datum int64_time_to_sec(PG_FUNCTION_ARGS)
 {
     int64 input_time = PG_GETARG_INT64(0);
     TimeADT time;
-    int32 result;
+    int64 result;
     LongLongTm longlongTm = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 1};
     
     if (!number_to_time(input_time, fcinfo->can_ignore, &time, &longlongTm)) {
@@ -5450,7 +5455,7 @@ Datum int64_time_to_sec(PG_FUNCTION_ARGS)
     pg_tm *result_tm = &longlongTm.result_tm;
     result = ((result_tm->tm_hour * MINS_PER_HOUR + result_tm->tm_min) * SECS_PER_MINUTE) + result_tm->tm_sec;
     result *= longlongTm.timeSign;
-    PG_RETURN_INT32(result);
+    PG_RETURN_INT64(result);
 }
 
 /* numeric_time_to_sec
@@ -5461,7 +5466,7 @@ Datum numeric_time_to_sec(PG_FUNCTION_ARGS)
 {
     Numeric num1 = PG_GETARG_NUMERIC(0);
     lldiv_t div1;
-    int32 result;
+    int64 result;
     TimeADT time;
     LongLongTm longlongTm = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 1};
     Numeric_to_lldiv(num1, &div1);
@@ -5478,25 +5483,80 @@ Datum numeric_time_to_sec(PG_FUNCTION_ARGS)
     time_add_nanoseconds_with_round(input_str, result_tm, div1.rem, &longlongTm.fsec, fcinfo->can_ignore);
     result = ((result_tm->tm_hour * MINS_PER_HOUR + result_tm->tm_min) * SECS_PER_MINUTE) + result_tm->tm_sec;
     result *= longlongTm.timeSign;
-    PG_RETURN_INT32(result);
+    PG_RETURN_INT64(result);
 }
+
+
+/* timestamp_time_to_sec
+ * @param time, type is timestamp
+ * @return seconds of the given time
+ */
+Datum timestamp_time_to_sec(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    fsec_t fsec;
+    pg_tm tt;
+    pg_tm* tm = &tt;
+    int64 result = 0;
+    int errlevel = (SQL_MODE_STRICT() && !fcinfo->can_ignore) ? ERROR : WARNING;
+
+    if (TIMESTAMP_NOT_FINITE(timestamp))
+        PG_RETURN_NULL();
+       
+    if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) != 0) {
+        ereport(errlevel, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+        PG_RETURN_NULL();
+    }
+
+    result = ((tm->tm_hour * MINS_PER_HOUR + tm->tm_min) * SECS_PER_MINUTE) + tm->tm_sec;
+    PG_RETURN_INT64(result);
+}
+
+
+/* timestamptz_time_to_sec
+ * @param time, type is timestamp
+ * @return seconds of the given time
+ */
+Datum timestamptz_time_to_sec(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMPTZ(0);
+    fsec_t fsec;
+    pg_tm tt;
+    pg_tm* tm = &tt;
+    int64 result = 0;
+    int tz;
+    const char *tzn = NULL;
+    int errlevel = (SQL_MODE_STRICT() && !fcinfo->can_ignore) ? ERROR : WARNING;
+
+    if (TIMESTAMP_NOT_FINITE(timestamp))
+        PG_RETURN_NULL();
+       
+    if (timestamp2tm(timestamp, &tz, tm, &fsec, &tzn, NULL) != 0) {
+        ereport(errlevel, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+        PG_RETURN_NULL();
+    }
+
+    result = ((tm->tm_hour * MINS_PER_HOUR + tm->tm_min) * SECS_PER_MINUTE) + tm->tm_sec;
+    PG_RETURN_INT64(result);
+}
+
 
 /**
  * same as longlong_to_tm
  */
-bool longlong_to_tm(long long nr, TimeADT* time, LongLongTm* tm)
+bool longlong_to_tm(long long nr, TimeADT* time, LongLongTm* tm, bool can_ignore)
 {
-    return longlong_to_tm(nr, time, &tm->result_tm, &tm->fsec, &tm->timeSign);
+    return longlong_to_tm(nr, time, &tm->result_tm, &tm->fsec, &tm->timeSign, can_ignore);
 }
     
-bool longlong_to_tm(long long nr, TimeADT* time, pg_tm* result_tm, fsec_t* fsec, int32* timeSign)
+bool longlong_to_tm(long long nr, TimeADT* time, pg_tm* result_tm, fsec_t* fsec, int32* timeSign, bool can_ignore)
 {
     errno_t errorno = EOK;
     char time_str[MAX_LONGLONG_TO_CHAR_LENGTH] = {0};
     errorno = sprintf_s(time_str, sizeof(time_str), "%lld", nr);
     securec_check_ss(errorno, "\0", "\0");
     *timeSign = 1;
-    if (!time_in_with_sql_mode(time_str, time, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH), true)) {
+    if (!time_in_with_sql_mode(time_str, time, (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH), true, can_ignore)) {
         return false;
     }
     if (*time < 0) {
@@ -6067,14 +6127,14 @@ Datum GetSecondFromTimestampTz(PG_FUNCTION_ARGS)
     return GetSpecificPartOfTimeInTimestampTz(fcinfo, SECOND);
 }
 
-bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag, bool vertify_time)
+bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag, bool vertify_time, bool can_ignore)
 {
     bool ret = true;
     int code;
     const char *msg = NULL;
     PG_TRY();
     {
-        ret = time_in_with_flag(str, date_flag, result, vertify_time);
+        ret = time_in_with_flag(str, date_flag, result, vertify_time, can_ignore);
     }
     PG_CATCH();
     {

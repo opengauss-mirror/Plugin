@@ -87,7 +87,7 @@ static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others
 
 #define CAST_FUNCTION_ROW 8
 #define CAST_FUNCTION_COLUMN 4
-#define NUM_CAST_TIME_IDX 13
+#define NUM_CAST_TIME_IDX 14
 #define MAX_FLOAT8_PRECISION 15
 
 static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1_cast_ui1", "i1_cast_ui2", "i1_cast_ui4", "i1_cast_ui8"},
@@ -110,7 +110,7 @@ static const char* numCastDateFunction[NUM_CAST_TIME_IDX] = {"int8_cast_date", "
                                                              "uint32_cast_date", "uint64_cast_date",
                                                              "float4_cast_date", "float8_cast_date",
                                                              "numeric_cast_date", "text_date_explicit",
-                                                             "bool_cast_date"};
+                                                             "bool_cast_date", NULL};
 
 static const char* numCastDateTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_datetime", "int16_cast_datetime",
                                                                  "int32_cast_datetime", "int64_cast_datetime",
@@ -118,7 +118,7 @@ static const char* numCastDateTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_date
                                                                  "uint32_cast_datetime", "uint64_cast_datetime",
                                                                  "float4_cast_datetime", "float8_cast_datetime",
                                                                  "numeric_cast_datetime", "timestamp_explicit",
-                                                                 "bool_cast_datetime"};
+                                                                 "bool_cast_datetime", "date_cast_datetime"};
 
 static const char* numCastTimeStampFunction[NUM_CAST_TIME_IDX] = {"int8_cast_timestamptz", "int16_cast_timestamptz",
                                                                   "int32_cast_timestamptz", "int64_cast_timestamptz",
@@ -126,7 +126,7 @@ static const char* numCastTimeStampFunction[NUM_CAST_TIME_IDX] = {"int8_cast_tim
                                                                   "uint32_cast_timestamptz", "uint64_cast_timestamptz",
                                                                   "float4_cast_timestamptz", "float8_cast_timestamptz",
                                                                   "numeric_cast_timestamptz", "timestamptz_explicit",
-                                                                  "bool_cast_timestamptz"};
+                                                                  "bool_cast_timestamptz", "date_cast_timestamptz"};
 
 
 typedef enum {
@@ -163,7 +163,8 @@ typedef enum {
     N_FLOAT8,
     N_NUMERIC,
     N_TEXT,
-    N_BOOL
+    N_BOOL,
+    N_DATE
 } NumCastIdx;
 #endif
 /*
@@ -3278,6 +3279,8 @@ int findNumTimeFunctionIdx(Oid typeId)
             return N_TEXT;
         case BOOLOID:
             return N_BOOL;
+        case DATEOID:
+            return N_DATE;
         default:
             break;
     }
@@ -3297,32 +3300,32 @@ int findNumTimeFunctionIdx(Oid typeId)
 Oid findNumTimeExplicitCastFunction(Oid sourceTypeId, Oid funcid)
 {
     int idx = findNumTimeFunctionIdx(sourceTypeId);
-    Oid cast_oid = (idx == INVALID_IDX) ? InvalidOid :
-                                          get_func_oid(numCastTimeFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+    Oid cast_oid = (idx == INVALID_IDX || idx >= NUM_CAST_TIME_IDX || numCastTimeFunction[idx] == NULL) ?
+        InvalidOid : get_func_oid(numCastTimeFunction[idx], PG_CATALOG_NAMESPACE, NULL);
     return (cast_oid != InvalidOid) ? cast_oid : funcid;
 }
 
 Oid findNumDateExplicitCastFunction(Oid sourceTypeId, Oid funcid)
 {
     int idx = findNumTimeFunctionIdx(sourceTypeId);
-    Oid cast_oid = (idx == INVALID_IDX) ? InvalidOid :
-                                          get_func_oid(numCastDateFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+    Oid cast_oid = (idx == INVALID_IDX || idx >= NUM_CAST_TIME_IDX || numCastDateFunction[idx] == NULL) ?
+        InvalidOid : get_func_oid(numCastDateFunction[idx], PG_CATALOG_NAMESPACE, NULL);
     return (cast_oid != InvalidOid) ? cast_oid : funcid;
 }
 
 Oid findNumDateTimeExplicitCastFunction(Oid sourceTypeId, Oid funcid)
 {
     int idx = findNumTimeFunctionIdx(sourceTypeId);
-    Oid cast_oid = (idx == INVALID_IDX) ? InvalidOid :
-                                          get_func_oid(numCastDateTimeFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+    Oid cast_oid = (idx == INVALID_IDX || idx >= NUM_CAST_TIME_IDX || numCastDateTimeFunction[idx] == NULL) ?
+        InvalidOid : get_func_oid(numCastDateTimeFunction[idx], PG_CATALOG_NAMESPACE, NULL);
     return (cast_oid != InvalidOid) ? cast_oid : funcid;
 }
 
 Oid findNumTimeStamptzExplicitCastFunction(Oid sourceTypeId, Oid funcid)
 {
     int idx = findNumTimeFunctionIdx(sourceTypeId);
-    Oid cast_oid = (idx == INVALID_IDX) ? InvalidOid :
-                                          get_func_oid(numCastTimeStampFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+    Oid cast_oid = (idx == INVALID_IDX || idx >= NUM_CAST_TIME_IDX || numCastTimeStampFunction[idx] == NULL) ?
+        InvalidOid : get_func_oid(numCastTimeStampFunction[idx], PG_CATALOG_NAMESPACE, NULL);
     return (cast_oid != InvalidOid) ? cast_oid : funcid;
 }
 

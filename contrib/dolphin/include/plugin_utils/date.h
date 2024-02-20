@@ -94,18 +94,21 @@ extern void check_b_format_time_range_with_ereport(TimeADT &time, bool can_ignor
 extern void check_b_format_date_range_with_ereport(DateADT &date);
 extern Oid convert_to_datetime_date(Datum value, Oid valuetypid, Timestamp *datetime, DateADT *date);
 extern void adjust_time_range(pg_tm *tm, fsec_t &fsec, bool &warnings);
-extern bool time_in_with_flag(char *str, unsigned int date_flag, TimeADT* time_adt, bool vertify_time = false);
-extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag, bool vertify_time = false);
+extern bool time_in_with_flag(char *str, unsigned int date_flag, TimeADT* time_adt, bool vertify_time = false,
+    bool can_ignore = false);
+extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag, bool vertify_time = false,
+    bool can_ignore = false);
 extern bool date_add_interval(DateADT date, Interval *span, DateADT *result);
 eextern Datum date_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type);
 extern Datum textout (PG_FUNCTION_ARGS);
 extern bool time_add_nanoseconds_with_round(char* input_str, pg_tm *tm, long long rem, fsec_t* fsec, bool can_ignore);
 extern long long align_to_nanoseconds(long long src);
 extern bool check_time_mmssff_range(pg_tm *tm, long long microseconds);
-extern bool longlong_to_tm(long long nr, TimeADT* time, pg_tm* result_tm, fsec_t* fsec, int32* timeSign);
-extern bool longlong_to_tm(long long nr, TimeADT* time, LongLongTm* tm); /* same as longlong_to_tm */
-bool check_time_min_value(char* input_str, long long nr, bool can_ignore);
+extern bool longlong_to_tm(long long nr, TimeADT* time, pg_tm* result_tm, fsec_t* fsec, int32* timeSign,
+    bool can_ignore = false);
+bool check_time_min_value(char* input_str, long long nr, bool can_ignore = false);
 bool resolve_units(char *unit_str, b_units *unit);
+extern bool longlong_to_tm(long long nr, TimeADT* time, LongLongTm* tm, bool can_ignore = false);
 
 typedef struct DateTimeFormat
 {

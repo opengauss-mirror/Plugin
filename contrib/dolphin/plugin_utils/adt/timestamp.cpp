@@ -390,6 +390,11 @@ PG_FUNCTION_INFO_V1_PUBLIC(float8_cast_timestamptz);
 extern "C" DLL_PUBLIC Datum float8_cast_timestamptz(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_timestamptz);
 extern "C" DLL_PUBLIC Datum numeric_cast_timestamptz(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(date_cast_datetime);
+extern "C" DLL_PUBLIC Datum date_cast_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(date_cast_timestamptz);
+extern "C" DLL_PUBLIC Datum date_cast_timestamptz(PG_FUNCTION_ARGS);
+
 
 #endif
 
@@ -583,6 +588,7 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
     error_t rc = EOK;
     rc = memset_s(tm, sizeof(pg_tm), 0, sizeof(pg_tm));
     securec_check(rc, "\0", "\0");
+    int errlevel = (SQL_MODE_STRICT() && !fcinfo->can_ignore) ? ERROR : WARNING;
 #endif
     int tz;
     int dtype;
@@ -651,9 +657,12 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
             check_zero_month_day(tm, fcinfo->can_ignore);
             switch (dtype) {
                 case DTK_DATE:
-                    if (tm2timestamp(tm, fsec, NULL, &result) != 0)
-                        ereport(ERROR,
+                    if (tm2timestamp(tm, fsec, NULL, &result) != 0) {
+                        ereport(errlevel,
                             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range: \"%s\"", str)));
+                        *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ?
+                            TIME_CORRECT : TIME_INCORRECT;
+                    }
                     break;
 
                 case DTK_EPOCH:
@@ -11890,7 +11899,37 @@ Datum numeric_cast_datetime(PG_FUNCTION_ARGS)
 {
     Numeric n = PG_GETARG_NUMERIC(0);
     char *str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
-    return str_cast_datetime(fcinfo, str， false);
+    return str_cast_datetime(fcinfo, str, false);
+}
+
+Datum date_cast_timestamp(PG_FUNCTION_ARGS, PGFunction func)
+{
+    int code;
+    Datum result;
+    const char *msg = NULL;
+    DateADT dateVal = PG_GETARG_DATEADT(0);
+    PG_TRY();
+    {
+        result = DirectFunctionCall1(func, DateADTGetDatum(dateVal));
+    }
+    PG_CATCH();
+    {
+        code = geterrcode();
+        msg = pstrdup(Geterrmsg());
+        FlushErrorState();
+    }
+    PG_END_TRY();
+    if (msg == NULL) {
+        return result;
+    }
+    ereport(WARNING, (errcode(code), errmsg("%s", msg)));
+    PG_RETURN_NULL();
+}
+
+
+Datum date_cast_datetime(PG_FUNCTION_ARGS)
+{
+    return date_cast_timestamp(fcinfo, date_timestamp);
 }
 
 Datum float4_cast_timestamptz(PG_FUNCTION_ARGS)
@@ -11914,4 +11953,10 @@ Datum numeric_cast_timestamptz(PG_FUNCTION_ARGS)
     char *str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
     return str_cast_datetime(fcinfo, str, false);
 }
+
+Datum date_cast_timestamptz(PG_FUNCTION_ARGS)
+{
+    return date_cast_timestamp(fcinfo, date_timestamptz);
+}
+
 #endif

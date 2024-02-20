@@ -937,6 +937,126 @@ select * from test_year;
        |       |       |       |       |       |       |       |       |        |        |        |        |        |   2023 |   2024 |   2024 |   2023 |   2023 |   2023 |   2023 |        |        |        |        |        |        |        |        |        |        |        |        |       
 (2 rows)
 
+reset dolphin.sql_mode;
+select time_to_sec(`int1`), time_to_sec(`uint1`), time_to_sec(`int2`), time_to_sec(`uint2`), time_to_sec(`int4`), time_to_sec(`uint4`), time_to_sec(`int8`), time_to_sec(`uint8`), time_to_sec(`float4`), time_to_sec(`float8`), time_to_sec(`numeric`), time_to_sec(`bit1`), time_to_sec(`bit64`), time_to_sec(`boolean`), time_to_sec(`date`), time_to_sec(`time`), time_to_sec(`time(4)`), time_to_sec(`datetime`), time_to_sec(`datetime(4)`), time_to_sec(`timestamp`), time_to_sec(`timestamp(4)`), time_to_sec(`year`), time_to_sec(`char`), time_to_sec(`varchar`), time_to_sec(`binary`), time_to_sec(`varbinary`), time_to_sec(`tinyblob`), time_to_sec(`blob`), time_to_sec(`mediumblob`), time_to_sec(`longblob`), time_to_sec(`text`), time_to_sec(`enum_t`), time_to_sec(`set_t`), time_to_sec(`json`), 
+pg_typeof(time_to_sec(`int1`)), pg_typeof(time_to_sec(`uint1`)), pg_typeof(time_to_sec(`int2`)), pg_typeof(time_to_sec(`uint2`)), pg_typeof(time_to_sec(`int4`)), pg_typeof(time_to_sec(`uint4`)), pg_typeof(time_to_sec(`int8`)), pg_typeof(time_to_sec(`uint8`)), pg_typeof(time_to_sec(`float4`)), pg_typeof(time_to_sec(`float8`)), pg_typeof(time_to_sec(`numeric`)), pg_typeof(time_to_sec(`bit1`)), pg_typeof(time_to_sec(`bit64`)), pg_typeof(time_to_sec(`boolean`)), pg_typeof(time_to_sec(`date`)), pg_typeof(time_to_sec(`time`)), pg_typeof(time_to_sec(`time(4)`)), pg_typeof(time_to_sec(`datetime`)), pg_typeof(time_to_sec(`datetime(4)`)), pg_typeof(time_to_sec(`timestamp`)), pg_typeof(time_to_sec(`timestamp(4)`)), pg_typeof(time_to_sec(`year`)), pg_typeof(time_to_sec(`char`)), pg_typeof(time_to_sec(`varchar`)), pg_typeof(time_to_sec(`binary`)), pg_typeof(time_to_sec(`varbinary`)), pg_typeof(time_to_sec(`tinyblob`)), pg_typeof(time_to_sec(`blob`)), pg_typeof(time_to_sec(`mediumblob`)), pg_typeof(time_to_sec(`longblob`)), pg_typeof(time_to_sec(`text`)), pg_typeof(time_to_sec(`enum_t`)), pg_typeof(time_to_sec(`set_t`)), pg_typeof(time_to_sec(`json`)) from test_type_table;
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: time_to_sec
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: time_to_sec
+WARNING:  Truncated incorrect time value: "1.23a                                                                                               "
+CONTEXT:  referenced column: time_to_sec
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: time_to_sec
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: time_to_sec
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: time_to_sec
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: time_to_sec
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: time_to_sec
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: time_to_sec
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: time_to_sec
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: time_to_sec
+WARNING:  Truncated incorrect time value: "a,c"
+CONTEXT:  referenced column: time_to_sec
+WARNING:  invalid input syntax for type timestamp: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: time_to_sec
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: pg_typeof
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: pg_typeof
+WARNING:  Truncated incorrect time value: "1.23a                                                                                               "
+CONTEXT:  referenced column: pg_typeof
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  Truncated incorrect time value: "a,c"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: pg_typeof
+ time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof 
+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           0 |           0 |           1 |           0 |       69050 |       69050 |       69050 |       69050 |       69050 |       69050 |        1223 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           0 |             | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint
+(1 row)
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+create table test_time_to_sec as select time_to_sec(`int1`) as sec_1, time_to_sec(`uint1`) as sec_2, time_to_sec(`int2`) as sec_3, time_to_sec(`uint2`) as sec_4, time_to_sec(`int4`) as sec_5, time_to_sec(`uint4`) as sec_6, time_to_sec(`int8`) as sec_7, time_to_sec(`uint8`) as sec_8, time_to_sec(`float4`) as sec_9, time_to_sec(`float8`) as sec_10, time_to_sec(`numeric`) as sec_11, time_to_sec(`bit1`) as sec_12, time_to_sec(`bit64`) as sec_13, time_to_sec(`boolean`) as sec_14, time_to_sec(`date`) as sec_15, time_to_sec(`time`) as sec_16, time_to_sec(`time(4)`) as sec_17, time_to_sec(`datetime`) as sec_18, time_to_sec(`datetime(4)`) as sec_19, time_to_sec(`timestamp`) as sec_20, time_to_sec(`timestamp(4)`) as sec_21, time_to_sec(`year`) as sec_22, time_to_sec(`char`) as sec_23, time_to_sec(`varchar`) as sec_24, time_to_sec(`binary`) as sec_25, time_to_sec(`varbinary`) as sec_26, time_to_sec(`tinyblob`) as sec_27, time_to_sec(`blob`) as sec_28, time_to_sec(`mediumblob`) as sec_29, time_to_sec(`longblob`) as sec_30, time_to_sec(`text`) as sec_31, time_to_sec(`enum_t`) as sec_32, time_to_sec(`set_t`) as sec_33 from test_type_table;
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: sec_12
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: sec_13
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_23
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_24
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_25
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_26
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_27
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_28
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_29
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_30
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_31
+WARNING:  Truncated incorrect time value: "a,c"
+CONTEXT:  referenced column: sec_33
+reset dolphin.sql_mode;
+insert ignore test_time_to_sec select time_to_sec(`int1`) as sec_1, time_to_sec(`uint1`) as sec_2, time_to_sec(`int2`) as sec_3, time_to_sec(`uint2`) as sec_4, time_to_sec(`int4`) as sec_5, time_to_sec(`uint4`) as sec_6, time_to_sec(`int8`) as sec_7, time_to_sec(`uint8`) as sec_8, time_to_sec(`float4`) as sec_9, time_to_sec(`float8`) as sec_10, time_to_sec(`numeric`) as sec_11, time_to_sec(`bit1`) as sec_12, time_to_sec(`bit64`) as sec_13, time_to_sec(`boolean`) as sec_14, time_to_sec(`date`) as sec_15, time_to_sec(`time`) as sec_16, time_to_sec(`time(4)`) as sec_17, time_to_sec(`datetime`) as sec_18, time_to_sec(`datetime(4)`) as sec_19, time_to_sec(`timestamp`) as sec_20, time_to_sec(`timestamp(4)`) as sec_21, time_to_sec(`year`) as sec_22, time_to_sec(`char`) as sec_23, time_to_sec(`varchar`) as sec_24, time_to_sec(`binary`) as sec_25, time_to_sec(`varbinary`) as sec_26, time_to_sec(`tinyblob`) as sec_27, time_to_sec(`blob`) as sec_28, time_to_sec(`mediumblob`) as sec_29, time_to_sec(`longblob`) as sec_30, time_to_sec(`text`) as sec_31, time_to_sec(`enum_t`) as sec_32, time_to_sec(`set_t`) as sec_33 from test_type_table;
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: sec_12
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: sec_13
+WARNING:  Truncated incorrect time value: "1.23a                                                                                               "
+CONTEXT:  referenced column: sec_23
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_24
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_25
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_26
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_27
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_28
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_29
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_30
+WARNING:  Truncated incorrect time value: "1.23a"
+CONTEXT:  referenced column: sec_31
+WARNING:  Truncated incorrect time value: "a,c"
+CONTEXT:  referenced column: sec_33
+select * from test_time_to_sec;
+ sec_1 | sec_2 | sec_3 | sec_4 | sec_5 | sec_6 | sec_7 | sec_8 | sec_9 | sec_10 | sec_11 | sec_12 | sec_13 | sec_14 | sec_15 | sec_16 | sec_17 | sec_18 | sec_19 | sec_20 | sec_21 | sec_22 | sec_23 | sec_24 | sec_25 | sec_26 | sec_27 | sec_28 | sec_29 | sec_30 | sec_31 | sec_32 | sec_33 
+-------+-------+-------+-------+-------+-------+-------+-------+-------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------
+     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |      1 |      1 |      0 |      0 |      1 |      0 |  69050 |  69050 |  69050 |  69050 |  69050 |  69050 |   1223 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      0
+     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |      1 |      1 |      0 |      0 |      1 |      0 |  69050 |  69050 |  69050 |  69050 |  69050 |  69050 |   1223 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      0
+(2 rows)
+
+drop table if exists test_time_to_sec;
 drop table if exists test_year;
 drop table if exists test_double_acos;
 drop table if exists test_double_exp;

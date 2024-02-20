@@ -527,6 +527,39 @@ DROP FUNCTION IF EXISTS pg_catalog.oct(bit);
 CREATE OR REPLACE FUNCTION pg_catalog.oct(t1 bit)
 RETURNS text AS $$ SELECT pg_catalog.conv(t1, 10, 8) $$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION pg_catalog.date_cast_datetime(date) RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_cast_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.date_cast_timestamptz(date) RETURNS timestamp LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'date_cast_timestamptz';
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(text);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(text) RETURNS int8 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'time_to_sec';
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(timestamp without time zone);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(timestamp without time zone) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamp_time_to_sec';
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(timestamp with time zone);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(timestamp with time zone) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamptz_time_to_sec';
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(date);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(date) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as timestamp without time zone)) $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(year);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(year) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as int8)) $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(longblob);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(longblob) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as text)) $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(bit);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(bit) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as text)) $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(anyset);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(anyset) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as text)) $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(anyenum);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(anyenum) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as text)) $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(json);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(json) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as timestamp without time zone)) $$ LANGUAGE SQL;
+
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(int8);
 CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(int8) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_time_to_sec';
 
