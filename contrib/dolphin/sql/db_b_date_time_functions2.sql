@@ -628,5 +628,49 @@ insert into test values('yearweek(''0000-12-31 22:59:59.9999995'', 0)', yearweek
 -- 结果
 select * from test order by funcname;
 drop table test;
+
+-- cast date as datetime and timestamptz
+set dolphin.b_compatibility_mode = true;
+select cast(cast('294277-01-1' as date) as datetime);
+select cast(cast('294277-01-1' as date) as timestamp);
+select cast(cast('294278-01-1' as date) as datetime);
+select cast(cast('294278-01-1' as date) as timestamp);
+select cast(cast('5874897-01-1' as date) as datetime);
+select cast(cast('5874897-01-1' as date) as timestamp);
+
+-- time_to_sec
+select time_to_sec(cast('999-01-01' as date));
+select time_to_sec(cast('10120-01-01' as date));
+select time_to_sec(cast('2001-2-29' as date));
+select time_to_sec(cast('2100-2-29' as date));
+select time_to_sec(cast('0000-1-1' as date));
+select time_to_sec(cast('01-01' as date));
+select time_to_sec(cast('1000-01-1' as date));
+select time_to_sec(cast('294277-01-1' as date));
+select time_to_sec(cast('294278-01-1' as date));
+select time_to_sec(cast('2001-13-29' as date));
+
+select time_to_sec(cast('999-01-01' as datetime));
+select time_to_sec(cast('10120-01-01' as datetime));
+select time_to_sec(cast('2001-2-29' as datetime));
+select time_to_sec(cast('2100-2-29' as datetime));
+select time_to_sec(cast('0000-1-1' as datetime));
+select time_to_sec(cast('01-01' as datetime));
+select time_to_sec(cast('1000-01-1' as datetime));
+select time_to_sec(cast('294277-01-1' as datetime));
+select time_to_sec(cast('294278-01-1' as datetime));
+select time_to_sec(cast('2001-13-29' as datetime));
+
+select time_to_sec(cast('999-01-01' as timestamp));
+select time_to_sec(cast('10120-01-01' as timestamp));
+select time_to_sec(cast('2001-2-29' as timestamp));
+select time_to_sec(cast('2100-2-29' as timestamp));
+select time_to_sec(cast('0000-1-1' as timestamp));
+select time_to_sec(cast('01-01' as timestamp));
+select time_to_sec(cast('1000-01-1' as timestamp));
+select time_to_sec(cast('294277-01-1' as timestamp));
+select time_to_sec(cast('294278-01-1' as timestamp));
+select time_to_sec(cast('2001-13-29' as timestamp));
+
 \c contrib_regression
 DROP DATABASE b_datetime_func_test2;
