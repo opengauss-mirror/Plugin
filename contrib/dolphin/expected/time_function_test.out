@@ -28,11 +28,11 @@ select HOUR(year) from test_year;
 (3 rows)
 
 select YEAR(year) from test_year;
-WARNING:  invalid input syntax for type timestamp: "00:19:01"
+WARNING:  invalid input syntax for type timestamp: "1901"
 CONTEXT:  referenced column: year
-WARNING:  invalid input syntax for type timestamp: "00:20:00"
+WARNING:  invalid input syntax for type timestamp: "2000"
 CONTEXT:  referenced column: year
-WARNING:  invalid input syntax for type timestamp: "00:20:23"
+WARNING:  invalid input syntax for type timestamp: "2023"
 CONTEXT:  referenced column: year
  year 
 ------
