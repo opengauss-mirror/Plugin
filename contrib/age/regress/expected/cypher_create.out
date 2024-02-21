@@ -19,7 +19,12 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('cypher_create');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "cypher_create" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -538,8 +543,11 @@ cypher('cypher_create', $$
 	CREATE (b)
 	RETURN b
 $$) as t(b agtype);
-ERROR:  cypher create clause cannot be rescaned
-HINT:  its unsafe to use joins in a query with a Cypher CREATE clause
+                               a                                | b 
+----------------------------------------------------------------+---
+ {"id": 281474976710678, "label": "", "properties": {}}::vertex | 
+(1 row)
+
 -- column definition list for CREATE clause must contain a single agtype
 -- attribute
 SELECT * FROM cypher('cypher_create', $$CREATE ()$$) AS (a int);
@@ -660,7 +668,9 @@ drop cascades to table cypher_create.existing_vlabel
 drop cascades to table cypher_create.existing_elabel
 drop cascades to table cypher_create.knows
 drop cascades to table cypher_create."Part"
+CONTEXT:  referenced column: drop_graph
 NOTICE:  graph "cypher_create" has been dropped
+CONTEXT:  referenced column: drop_graph
  drop_graph 
 ------------
  

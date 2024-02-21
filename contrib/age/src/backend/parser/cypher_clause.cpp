@@ -40,6 +40,7 @@
 #include "parser/parse_coerce.h"
 #include "parser/parse_collate.h"
 #include "parser/parse_expr.h"
+#include "parser/ag_parse_expr.h"
 #include "parser/parse_func.h"
 #include "parser/parse_node.h"
 #include "parser/parse_oper.h"
@@ -2513,8 +2514,7 @@ static void transform_match_pattern(cypher_parsestate *cpstate, Query *query,
     if (quals != NIL)
     {
         q = makeBoolExpr(AND_EXPR, quals, -1);
-
-        expr = (Expr *)transformExpr(&cpstate->pstate, (Node *)q, EXPR_KIND_WHERE);
+        expr = (Expr *)ag_transformExpr(&cpstate->pstate, (Node *)q, EXPR_KIND_WHERE);
     }
 
     if (cpstate->property_constraint_quals != NIL)
@@ -3213,7 +3213,7 @@ static Node *create_property_constraint_function(cypher_parsestate *cpstate,
     }
     else
     {
-        prop_expr = transformExpr(pstate, (Node *)cr, EXPR_KIND_WHERE);
+        prop_expr = ag_transformExpr(pstate, (Node *)cr,EXPR_KIND_WHERE);
     }
 
     // use cypher to get the constraints' transform node

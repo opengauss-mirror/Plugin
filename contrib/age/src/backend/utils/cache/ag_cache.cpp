@@ -163,10 +163,8 @@ static void fill_label_cache_data(label_cache_data *cache_data,
 static bool initialized = false;
 static void initialize_caches(void)
 {
-    if (initialized)
-    {
+   if (graph_name_cache_hash &&graph_name_cache_hash->hctl)
         return;
-    }
 
     initialize_graph_caches();
     initialize_label_caches();
@@ -213,7 +211,7 @@ static void initialize_graph_caches(void)
      * A graph is backed by the bound namespace. So, register the invalidation
      * logic of the graph caches for invalidation events of NAMESPACEOID cache.
      */
-    CacheRegisterSessionSyscacheCallback(NAMESPACEOID, invalidate_graph_caches, (Datum)0);
+     CacheRegisterThreadSyscacheCallback(NAMESPACEOID, invalidate_graph_caches, (Datum)0);
 }
 
 static void create_graph_caches(void)
@@ -485,7 +483,7 @@ static void initialize_label_caches(void)
      * A label is backed by the bound relation. So, register the invalidation
      * logic of the label caches for invalidation events of relation cache.
      */
-    CacheRegisterSessionRelcacheCallback((RelcacheCallbackFunction)invalidate_graph_caches, (Datum)0);
+    CacheRegisterThreadRelcacheCallback(invalidate_label_caches, (Datum)0);
 }
 
 static void create_label_caches(void)

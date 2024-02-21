@@ -19,7 +19,12 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('cypher_unwind');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "cypher_unwind" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -77,11 +82,14 @@ SELECT * FROM cypher('cypher_unwind', $$
     RETURN a
 $$) as (i agtype);
 ERROR:  UNWIND clause does not support agtype vertex
+CONTEXT:  referenced column: a
 SELECT drop_graph('cypher_unwind', true);
 NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table cypher_unwind._ag_label_vertex
 drop cascades to table cypher_unwind._ag_label_edge
+CONTEXT:  referenced column: drop_graph
 NOTICE:  graph "cypher_unwind" has been dropped
+CONTEXT:  referenced column: drop_graph
  drop_graph 
 ------------
  

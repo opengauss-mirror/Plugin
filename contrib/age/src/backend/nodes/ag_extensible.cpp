@@ -58,8 +58,6 @@
 #include "nodes/cypher_outfuncs.h"
 #include "nodes/cypher_readfuncs.h"
 #include "nodes/cypher_nodes.h"
-#include "nodes/readfuncs.h"
-
 
 /*
  * Macros to simplify output of different kinds of fields.	Use these
@@ -6634,7 +6632,7 @@ ExtensibleNode *_new_ag_node(Size size, ag_node_tag tag)
     return n;
 }
 
-static HTAB *extensible_node_methods = NULL;
+static THR_LOCAL HTAB *extensible_node_methods = NULL;
 
 void  ag_extensiblecpp_register_ag_nodes()
 {
@@ -6713,7 +6711,7 @@ void* stringToAGNode(char* str)
 
     t_thrd.utils_cxt.pg_strtok_ptr = str; /* point pg_strtok at the string to read */
 
-    retval = nodeRead(NULL, 0); /* do the reading */
+    retval = nodeRead_AG(NULL, 0); /* do the reading */
 
     t_thrd.utils_cxt.pg_strtok_ptr = save_strtok;
 
@@ -6821,7 +6819,26 @@ static char* pg_strtok(int *length)
 
     return ret_str;
 }
+/*
+ * debackslash -
+ *	  create a palloc'd string holding the given token.
+ *	  any protective backslashes in the token are removed.
+ */
+static char* debackslash(const char* token, int length)
+{
+    char* result = (char*)palloc(length + 1);
+    char* ptr = result;
 
+    while (length > 0) {
+        if (*token == '\\' && length > 1) {
+            token++, length--;
+        }
+        *ptr++ = *token++;
+        length--;
+    }
+    *ptr = '\0';
+    return result;
+}
 #define RIGHT_PAREN (1000000 + 1)
 #define LEFT_PAREN (1000000 + 2)
 #define LEFT_BRACE (1000000 + 3)
@@ -6894,4 +6911,152 @@ static NodeTag nodeTokenType(char* token, int length)
     else
         retval = (NodeTag)OTHER_TOKEN;
     return retval;
+}
+void* nodeRead_AG(char* token, int tok_len)
+{
+    Node* result = NULL;
+    NodeTag type;
+    errno_t rc;
+
+    if (token == NULL) { /* need to read a token? */
+        token = pg_strtok(&tok_len);
+
+        if (token == NULL) { /* end of input */
+            return NULL;
+        }
+    }
+
+    type = nodeTokenType(token, tok_len);
+
+    switch ((int)type) {
+        case LEFT_BRACE:
+            result = parseNodeString_AG();
+            token = pg_strtok(&tok_len);
+            if (token == NULL || token[0] != '}') {
+                ereport(
+                    ERROR, (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("did not find '}' at end of input node")));
+            }
+            break;
+        case LEFT_PAREN: {
+            List* l = NIL;
+
+            /* ----------
+             * Could be an integer list:	(i int int ...)
+             * or an OID list:				(o int int ...)
+             * or a list of nodes/values:	(node node ...)
+             * ----------
+             */
+            token = pg_strtok(&tok_len);
+            if (token == NULL) {
+                ereport(ERROR, (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("unterminated List structure")));
+            }
+            if (tok_len == 1 && token[0] == 'i') {
+                /* List of integers */
+                for (;;) {
+                    int val;
+                    char* endptr = NULL;
+
+                    token = pg_strtok(&tok_len);
+                    if (token == NULL) {
+                        ereport(ERROR, (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("unterminated List structure")));
+                    }
+                    if (token[0] == ')') {
+                        break;
+                    }
+                    val = (int)strtol(token, &endptr, 10);
+                    if (endptr != token + tok_len) {
+                        ereport(ERROR,
+                            (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                                errmsg("unrecognized integer: \"%.*s\"", tok_len, token)));
+                    }
+                    l = lappend_int(l, val);
+                }
+            } else if (tok_len == 1 && token[0] == 'o') {
+                /* List of OIDs */
+                for (;;) {
+                    Oid val;
+                    char* endptr = NULL;
+
+                    token = pg_strtok(&tok_len);
+                    if (token == NULL) {
+                        ereport(ERROR, (errcode(ERRCODE_UNEXPECTED_NULL_VALUE), errmsg("unterminated List structure")));
+                    }
+                    if (token[0] == ')') {
+                        break;
+                    }
+                    val = (Oid)strtoul(token, &endptr, 10);
+                    if (endptr != token + tok_len) {
+                        ereport(ERROR,
+                            (errcode(ERRCODE_DATA_EXCEPTION), errmsg("unrecognized OID: \"%.*s\"", tok_len, token)));
+                    }
+                    l = lappend_oid(l, val);
+                }
+            } else {
+                /* List of other node types */
+                for (;;) {
+                    /* We have already scanned next token... */
+                    if (token[0] == ')') {
+                        break;
+                    }
+                    l = lappend(l, nodeRead_AG(token, tok_len));
+                    token = pg_strtok(&tok_len);
+                    if (token == NULL) {
+                        ereport(ERROR,
+                            (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION), errmsg("unterminated List structure")));
+                    }
+                }
+            }
+            result = (Node*)l;
+            break;
+        }
+        case RIGHT_PAREN:
+            ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("unexpected right parenthesis")));
+            result = NULL; /* keep compiler happy */
+            break;
+        case OTHER_TOKEN:
+            if (tok_len == 0) {
+                /* must be "<>" --- represents a null pointer */
+                result = NULL;
+            } else {
+                ereport(
+                    ERROR, (errcode(ERRCODE_DATA_EXCEPTION), errmsg("unrecognized token: \"%.*s\"", tok_len, token)));
+                result = NULL; /* keep compiler happy */
+            }
+            break;
+        case T_Integer:
+
+            /*
+             * we know that the token terminates on a char atol will stop at
+             */
+            result = (Node*)makeInteger(atol(token));
+            break;
+        case T_Float: {
+            char* fval = (char*)palloc(tok_len + 1);
+
+            rc = memcpy_s(fval, tok_len + 1, token, tok_len);
+            securec_check(rc, "", "");
+            fval[tok_len] = '\0';
+            result = (Node*)makeFloat(fval);
+        } break;
+        case T_String:
+            /* need to remove leading and trailing quotes, and backslashes */
+            result = (Node*)makeString(debackslash(token + 1, tok_len - 2));
+            break;
+        case T_BitString: {
+            char* val = (char*)palloc(tok_len);
+
+            /* skip leading 'b' */
+            rc = memcpy_s(val, tok_len, token + 1, tok_len - 1);
+            securec_check(rc, "", "");
+            val[tok_len - 1] = '\0';
+            result = (Node*)makeBitString(val);
+            break;
+        }
+        default:
+            ereport(ERROR, (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE), errmsg("unrecognized node type: %d", (int)type)));
+            result = NULL; /* keep compiler happy */
+            break;
+    }
+
+    return (void*)result;
 }

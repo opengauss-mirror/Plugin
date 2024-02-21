@@ -71,16 +71,18 @@ SET enable_seqscan = OFF;
 EXPLAIN (COSTS FALSE) SELECT * FROM graphid_table WHERE gid = '1';
                           QUERY PLAN                          
 --------------------------------------------------------------
+ [Bypass]
  Index Only Scan using graphid_table_gid_idx on graphid_table
    Index Cond: (gid = '1'::graphid)
-(2 rows)
+(3 rows)
 
 EXPLAIN (COSTS FALSE) SELECT * FROM graphid_table WHERE gid > '0';
                           QUERY PLAN                          
 --------------------------------------------------------------
+ [Bypass]
  Index Only Scan using graphid_table_gid_idx on graphid_table
    Index Cond: (gid > '0'::graphid)
-(2 rows)
+(3 rows)
 
 SET enable_seqscan = ON;
 DROP TABLE graphid_table;

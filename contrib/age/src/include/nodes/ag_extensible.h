@@ -78,6 +78,6 @@ extern void outNode_age(struct StringInfoData *str, const void *obj);
 extern void outToken_age(struct StringInfoData *str, const char *s);
 
 extern void* stringToAGNode(char* str);
-
+extern void* nodeRead_AG(char* token, int tok_len);
 
 #endif							/* AG_EXTENSIBLE_H */

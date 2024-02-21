@@ -1,5 +1,4 @@
-\! cp -r regress/age_load/data regress/instance/data/age_load
-
+\! cp -r regress/age_load/data regress/instance/datanode1/age_load
 LOAD 'age';
 
 SET search_path TO ag_catalog;
@@ -7,15 +6,15 @@ SELECT create_graph('agload_test_graph');
 
 SELECT create_vlabel('agload_test_graph','Country');
 SELECT load_labels_from_file('agload_test_graph', 'Country',
-    'age_load/countries.csv');
+                             'age_load/countries.csv');
 
 SELECT create_vlabel('agload_test_graph','City');
 SELECT load_labels_from_file('agload_test_graph', 'City',
-    'age_load/cities.csv');
+                             'age_load/cities.csv');
 
 SELECT create_elabel('agload_test_graph','has_city');
 SELECT load_edges_from_file('agload_test_graph', 'has_city',
-     'age_load/edges.csv');
+                            'age_load/edges.csv');
 
 SELECT table_catalog, table_schema, lower(table_name) as table_name, table_type
 FROM information_schema.tables

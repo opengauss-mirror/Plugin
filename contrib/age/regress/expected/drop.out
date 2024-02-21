@@ -19,7 +19,12 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT create_graph('drop');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "drop" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -43,7 +48,12 @@ SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'ag_catalog';
 -- Recreate the extension and validate we can recreate a graph
 CREATE EXTENSION age;
 SELECT create_graph('drop');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "drop" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -59,7 +69,7 @@ DETAIL:  drop cascades to table drop._ag_label_vertex
 drop cascades to table drop._ag_label_edge
 NOTICE:  graph "drop" has been dropped
 ERROR:  cannot drop extension age because other objects depend on it
-DETAIL:  column id of table other_schema.tbl depends on type agtype
+DETAIL:  table other_schema.tbl column id depends on type agtype
 HINT:  Use DROP ... CASCADE to drop the dependent objects too.
 -- Check the graph still exist, because the DROP command failed
 SELECT nspname FROM pg_catalog.pg_namespace WHERE nspname = 'drop';
@@ -74,7 +84,7 @@ NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table drop._ag_label_vertex
 drop cascades to table drop._ag_label_edge
 NOTICE:  graph "drop" has been dropped
-NOTICE:  drop cascades to column id of table other_schema.tbl
+NOTICE:  drop cascades to table other_schema.tbl column id
 -- 'other_schema' should exist, 'drop' should be deleted
 SELECT nspname FROM pg_catalog.pg_namespace WHERE nspname IN ('other_schema', 'drop');
    nspname    

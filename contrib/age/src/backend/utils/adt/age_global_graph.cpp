@@ -80,7 +80,7 @@ typedef struct GRAPH_global_context
 } GRAPH_global_context;
 
 /* global variable to hold the per process GRAPH global context */
-static GRAPH_global_context *global_graph_contexts = NULL;
+static THR_LOCAL GRAPH_global_context *global_graph_contexts = NULL;
 
 /* declarations */
 /* GRAPH global context functions */

@@ -389,7 +389,7 @@ bool skip_read_extern_fields = false;
 #define READ_NODE_FIELD(fldname)                                                               \
     do {                                                                                       \
         token = pg_strtok(&length); /* skip :fldname */                                        \
-        void* ptr = nodeRead(NULL, 0);                                                         \
+        void* ptr = nodeRead_AG(NULL, 0);                                                         \
         errno_t reterrno = memcpy_s(&local_node->fldname, sizeof(void*), &ptr, sizeof(void*)); \
         securec_check(reterrno, "\0", "\0");                                                   \
     } while (0)
@@ -3781,7 +3781,7 @@ static SliceBoundary* _readSliceBoundary(void)
     token = pg_strtok(&length); /* skip ":boundary" */
     token = pg_strtok(&length); /* skip "(" */
     for (int i = 0; i < local_node->len; i++) {
-        void *ptr = nodeRead(NULL, 0);
+        void *ptr = nodeRead_AG(NULL, 0);
         errno_t err = memcpy_s(&local_node->boundary[i], sizeof(void *), &ptr, sizeof(void *));
         securec_check(err, "\0", "\0");
     }
@@ -3801,7 +3801,7 @@ static ExecBoundary* _readExecBoundary(void)
     if (local_node->count > 0) {
         local_node->eles = (SliceBoundary**)palloc0(sizeof(SliceBoundary*) * local_node->count);
         for (int i = 0; i < local_node->count; i++) {
-            void *ptr = nodeRead(NULL, 0);
+            void *ptr = nodeRead_AG(NULL, 0);
             errno_t err = memcpy_s(&local_node->eles[i], sizeof(void *), &ptr, sizeof(void *));
             securec_check(err, "\0", "\0");
         }

@@ -19,6 +19,8 @@
 LOAD 'age';
 SET search_path TO ag_catalog;
 SELECT * FROM create_graph('expr');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
 NOTICE:  graph "expr" has been created
  create_graph 
 --------------
@@ -132,6 +134,7 @@ RETURN $var
 $$, $1) AS t(i agtype);
 EXECUTE cypher_parameter_invalid_argument('[1]');
 ERROR:  array index must resolve to an integer value
+CONTEXT:  referenced column: i
 -- missing parameters argument
 PREPARE cypher_missing_params_argument(int) AS
 SELECT $1, * FROM cypher('expr', $$
@@ -321,9 +324,11 @@ SELECT agtype_access_slice('[0]'::agtype, '0'::agtype, 'null'::agtype);
 SELECT * from cypher('expr',
 $$RETURN 0[0..1]$$) as r(a agtype);
 ERROR:  slice must access a list
+CONTEXT:  referenced column: a
 SELECT * from cypher('expr',
 $$RETURN 0[[0]..[1]]$$) as r(a agtype);
 ERROR:  slice must access a list
+CONTEXT:  referenced column: a
 -- should return nothing
 SELECT * from cypher('expr',
 $$RETURN [0][0..-2147483649]$$) as r(a agtype);
@@ -725,7 +730,12 @@ $$) AS r(result agtype);
 -- Test =~ aka regular expression comparisons
 --
 SELECT create_graph('regex');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "regex" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -793,7 +803,12 @@ $$) AS r(result agtype);
 --Coearce to Postgres 3 int types (smallint, int, bigint)
 --
 SELECT create_graph('type_coercion');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "type_coercion" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -859,29 +874,35 @@ $$) AS (i bigint);
 SELECT * FROM cypher('type_coercion', $$
 	RETURN '1.0'
 $$) AS (i bigint);
-ERROR:  invalid input syntax for integer: "1.0"
+ERROR:  invalid input syntax for type bigint: "1.0"
+CONTEXT:  referenced column: i
 -- Casting to ints that will cause overflow
 SELECT * FROM cypher('type_coercion', $$
 	RETURN 10000000000000000000
 $$) AS (i smallint);
 ERROR:  smallint out of range
+CONTEXT:  referenced column: i
 SELECT * FROM cypher('type_coercion', $$
 	RETURN 10000000000000000000
 $$) AS (i int);
 ERROR:  integer out of range
+CONTEXT:  referenced column: i
 --Invalid types
 SELECT * FROM cypher('type_coercion', $$
 	RETURN true
 $$) AS (i bigint);
 ERROR:  cannot cast agtype boolean to type int
+CONTEXT:  referenced column: i
 SELECT * FROM cypher('type_coercion', $$
 	RETURN {key: 1}
 $$) AS (i bigint);
 ERROR:  cannot cast agtype object to type int
+CONTEXT:  referenced column: i
 SELECT * FROM cypher('type_coercion', $$
 	RETURN [1]
 $$) AS (i bigint);
 ERROR:  cannot cast agtype array to type int
+CONTEXT:  referenced column: i
 SELECT * FROM cypher('type_coercion', $$CREATE ()-[:edge]->()$$) AS (result agtype);
  result 
 --------
@@ -892,16 +913,19 @@ SELECT * FROM cypher('type_coercion', $$
 	RETURN v
 $$) AS (i bigint);
 ERROR:  cannot cast agtype vertex to type int
+CONTEXT:  referenced column: i
 SELECT * FROM cypher('type_coercion', $$
 	MATCH ()-[e]-()
 	RETURN e
 $$) AS (i bigint);
 ERROR:  cannot cast agtype edge to type int
+CONTEXT:  referenced column: i
 SELECT * FROM cypher('type_coercion', $$
 	MATCH p=()-[]-()
 	RETURN p
 $$) AS (i bigint);
 ERROR:  cannot cast agtype path to type int
+CONTEXT:  referenced column: i
 --
 -- Test typecasting '::' transform and execution logic
 --
@@ -1028,11 +1052,13 @@ SELECT agtype_in('null::int');
 SELECT * FROM cypher('expr', $$
 RETURN '0.0'::int
 $$) AS r(result agtype);
-ERROR:  invalid input syntax for integer: "0.0"
+ERROR:  invalid input syntax for type bigint: "0.0"
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$
 RETURN '1.5'::int
 $$) AS r(result agtype);
-ERROR:  invalid input syntax for integer: "1.5"
+ERROR:  invalid input syntax for type bigint: "1.5"
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('graph_name', $$
 RETURN "15555555555555555555555555555"::int
 $$) AS (string_result agtype);
@@ -1043,10 +1069,12 @@ SELECT * FROM cypher('expr', $$
 RETURN 'NaN'::float::int
 $$) AS r(result agtype);
 ERROR:  bigint out of range
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$
 RETURN 'infinity'::float::int
 $$) AS r(result agtype);
 ERROR:  bigint out of range
+CONTEXT:  referenced column: result
 -- Test from an agtype value to an agtype numeric
 --
 SELECT * FROM cypher('expr', $$
@@ -1178,14 +1206,17 @@ SELECT * FROM cypher('expr', $$
 RETURN ('2:71'::numeric)::numeric
 $$) AS r(result agtype);
 ERROR:  invalid input syntax for type numeric: "2:71"
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$
 RETURN ('inf'::numeric)::numeric
 $$) AS r(result agtype);
 ERROR:  invalid input syntax for type numeric: "inf"
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$
 RETURN ('infinity'::numeric)::numeric
 $$) AS r(result agtype);
 ERROR:  invalid input syntax for type numeric: "infinity"
+CONTEXT:  referenced column: result
 -- verify that output can be accepted and reproduced correctly via agtype_in
 SELECT agtype_in('2.71::numeric');
    agtype_in   
@@ -1346,10 +1377,12 @@ SELECT * FROM cypher('expr', $$
 RETURN '2:71'::float
 $$) AS r(result agtype);
 ERROR:  invalid input syntax for type double precision: "2:71"
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$
 RETURN 'infi'::float
 $$) AS r(result agtype);
 ERROR:  invalid input syntax for type double precision: "infi"
+CONTEXT:  referenced column: result
 -- verify that output can be accepted and reproduced correctly via agtype_in
 SELECT * FROM cypher('expr', $$
 RETURN ([0, {one: 1::float, pie: 3.1415927, e: 2.718281::numeric}, 2::numeric, null])
@@ -1427,10 +1460,12 @@ SELECT * FROM cypher('expr', $$
 RETURN {edge_0:{id:3, label:"edge 0", properties:{}, startid:0, end_id:1}::edge}
 $$) AS r(result agtype);
 ERROR:  edge typecast object has an invalid or missing start_id
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$
 RETURN {edge_0:{id:3, label:"edge 0", properties:{}, start_id:0, endid:1}::edge}
 $$) AS r(result agtype);
 ERROR:  edge typecast object has an invalid or missing end_id
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$
 RETURN {name:"container 1", edges:[{id:3, label:"edge 0", properties:{}, start_id:0, end_id:1}::edge, {id:4, label:"edge 1", properties:{}, start_id:1, end_id:0}::edge]}
 $$) AS r(result agtype);
@@ -1506,30 +1541,37 @@ SELECT * FROM cypher('expr', $$
 RETURN {id:0, labelz:"vertex 0", properties:{}}::vertex
 $$) AS r(result agtype);
 ERROR:  vertex typecast object has invalid or missing label
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$
 RETURN {id:0, label:"vertex 0"}::vertex
 $$) AS r(result agtype);
 ERROR:  typecast object is not a vertex
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$
 RETURN {id:"0", label:"vertex 0", properties:{}}::vertex
 $$) AS r(result agtype);
 ERROR:  vertex typecast object has invalid or missing id
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$
 RETURN {}::vertex
 $$) AS r(result agtype);
 ERROR:  typecast object is not a vertex
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$
 RETURN {id:3, labelz:"edge 0", properties:{}, start_id:0, end_id:1}::edge
 $$) AS r(result agtype);
 ERROR:  edge typecast object has an invalid or missing label
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$
 RETURN {id:3, label:"edge 0", start_id:0, end_id:1}::edge
 $$) AS r(result agtype);
 ERROR:  typecast object is not an edge
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$
 RETURN {}::edge
 $$) AS r(result agtype);
 ERROR:  typecast object is not an edge
+CONTEXT:  referenced column: result
 -- make sure that output can be read back in and reproduce the output
 SELECT agtype_in('{"name": "container 0", "vertices": [{"vertex_0": {"id": 0, "label": "vertex 0", "properties": {}}::vertex}, {"vertex_0": {"id": 0, "label": "vertex 0", "properties": {}}::vertex}]}');
                                                                                        agtype_in                                                                                       
@@ -1590,14 +1632,19 @@ SELECT agtype_in('{"path": [{"id": 0, "label": "vertex 0", "properties": {}}::ve
 -- invalid paths should fail
 SELECT agtype_in('[{"id": 0, "label": "vertex 0", "properties": {}}::vertex, {"id": 2, "label": "edge 0", "end_id": 1, "start_id": 0, "properties": {}}::edge]::path');
 ERROR:  array is not a valid path
+CONTEXT:  referenced column: agtype_in
 SELECT agtype_in('{"Path" : [{"id": 2, "label": "edge 0", "end_id": 1, "start_id": 0, "properties": {}}::edge, {"id": 0, "label": "vertex 0", "properties": {}}::vertex, {"id": 2, "label": "edge 0", "end_id": 1, "start_id": 0, "properties": {}}::edge, {"id": 1, "label": "vertex 1", "properties": {}}::vertex]::path}');
 ERROR:  array is not a valid path
+CONTEXT:  referenced column: agtype_in
 SELECT * FROM cypher('expr', $$ RETURN [{id: 0, label: "vertex 0", properties: {}}::vertex]::path $$) AS r(result agtype);
 ERROR:  typecast argument is not a valid path
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$ RETURN [{id: 2, label: "edge 0", end_id: 1, start_id: 0, properties: {}}::edge]::path $$) AS r(result agtype);
 ERROR:  typecast argument is not a valid path
+CONTEXT:  referenced column: result
 SELECT * FROM cypher('expr', $$ RETURN []::path $$) AS r(result agtype);
 ERROR:  typecast argument is not a valid path
+CONTEXT:  referenced column: result
 -- should be JSON null
 SELECT agtype_in('null::path');
  agtype_in 
@@ -1704,8 +1751,8 @@ SELECT * FROM cypher('expr', $$
     RETURN id()
 $$) AS (id agtype);
 ERROR:  function ag_catalog.age_id() does not exist
-LINE 2:     RETURN id()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- start_id()
 SELECT * FROM cypher('expr', $$
@@ -1731,12 +1778,13 @@ SELECT * FROM cypher('expr', $$
     MATCH (v) RETURN start_id(v)
 $$) AS (start_id agtype);
 ERROR:  start_id() argument must be an edge or null
+CONTEXT:  referenced column: start_id
 SELECT * FROM cypher('expr', $$
     RETURN start_id()
 $$) AS (start_id agtype);
 ERROR:  function ag_catalog.age_start_id() does not exist
-LINE 2:     RETURN start_id()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- end_id()
 SELECT * FROM cypher('expr', $$
@@ -1762,12 +1810,13 @@ SELECT * FROM cypher('expr', $$
     MATCH (v) RETURN end_id(v)
 $$) AS (end_id agtype);
 ERROR:  end_id() argument must be an edge or null
+CONTEXT:  referenced column: end_id
 SELECT * FROM cypher('expr', $$
     RETURN end_id()
 $$) AS (end_id agtype);
 ERROR:  function ag_catalog.age_end_id() does not exist
-LINE 2:     RETURN end_id()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- startNode()
 SELECT * FROM cypher('expr', $$
@@ -1793,12 +1842,13 @@ SELECT * FROM cypher('expr', $$
     MATCH (v) RETURN startNode(v)
 $$) AS (startNode agtype);
 ERROR:  startNode() argument must be an edge or null
+CONTEXT:  referenced column: startnode
 SELECT * FROM cypher('expr', $$
     RETURN startNode()
 $$) AS (startNode agtype);
 ERROR:  function ag_catalog.age_startnode() does not exist
-LINE 2:     RETURN startNode()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- endNode()
 SELECT * FROM cypher('expr', $$
@@ -1824,12 +1874,13 @@ SELECT * FROM cypher('expr', $$
     MATCH (v) RETURN endNode(v)
 $$) AS (endNode agtype);
 ERROR:  endNode() argument must be an edge or null
+CONTEXT:  referenced column: endnode
 SELECT * FROM cypher('expr', $$
     RETURN endNode()
 $$) AS (endNode agtype);
 ERROR:  function ag_catalog.age_endnode() does not exist
-LINE 2:     RETURN endNode()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- type()
 SELECT * FROM cypher('expr', $$
@@ -1855,12 +1906,13 @@ SELECT * FROM cypher('expr', $$
     MATCH (v) RETURN type(v)
 $$) AS (type agtype);
 ERROR:  type() argument must be an edge or null
+CONTEXT:  referenced column: type
 SELECT * FROM cypher('expr', $$
     RETURN type()
 $$) AS (type agtype);
 ERROR:  function ag_catalog.age_type() does not exist
-LINE 2:     RETURN type()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- label ()
 SELECT * FROM cypher('expr', $$
@@ -1913,18 +1965,22 @@ SELECT * FROM cypher('expr', $$
     MATCH p=()-[]->() RETURN label(p)
 $$) AS (label agtype);
 ERROR:  label() argument must resolve to an edge or vertex
+CONTEXT:  referenced column: label
 SELECT * FROM cypher('expr', $$
     RETURN label(1)
 $$) AS (label agtype);
 ERROR:  label() argument must resolve to an edge or vertex
+CONTEXT:  referenced column: label
 SELECT * FROM cypher('expr', $$
     MATCH (n) RETURN label([n])
 $$) AS (label agtype);
 ERROR:  label() argument must resolve to an edge or vertex
+CONTEXT:  referenced column: label
 SELECT * FROM cypher('expr', $$
     RETURN label({id: 0, label: 'failed', properties: {}})
 $$) AS (label agtype);
 ERROR:  label() argument must resolve to an edge or vertex
+CONTEXT:  referenced column: label
 -- timestamp() can't be done as it will always have a different value
 -- size() of a string
 SELECT * FROM cypher('expr', $$
@@ -1974,12 +2030,13 @@ SELECT * FROM cypher('expr', $$
     RETURN size(1234567890)
 $$) AS (size agtype);
 ERROR:  size() unsupported argument
+CONTEXT:  referenced column: size
 SELECT * FROM cypher('expr', $$
     RETURN size()
 $$) AS (size agtype);
 ERROR:  function ag_catalog.age_size() does not exist
-LINE 2:     RETURN size()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- head() of an array
 SELECT * FROM cypher('expr', $$
@@ -2020,12 +2077,13 @@ SELECT * FROM cypher('expr', $$
     RETURN head(1234567890)
 $$) AS (head agtype);
 ERROR:  head() argument must resolve to a list or null
+CONTEXT:  referenced column: head
 SELECT * FROM cypher('expr', $$
     RETURN head()
 $$) AS (head agtype);
 ERROR:  function ag_catalog.age_head() does not exist
-LINE 2:     RETURN head()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- last()
 SELECT * FROM cypher('expr', $$
@@ -2066,12 +2124,13 @@ SELECT * FROM cypher('expr', $$
     RETURN last(1234567890)
 $$) AS (last agtype);
 ERROR:  last() argument must resolve to a list or null
+CONTEXT:  referenced column: last
 SELECT * FROM cypher('expr', $$
     RETURN last()
 $$) AS (last agtype);
 ERROR:  function ag_catalog.age_last() does not exist
-LINE 2:     RETURN last()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- properties()
 SELECT * FROM cypher('expr', $$
@@ -2110,12 +2169,13 @@ SELECT * FROM cypher('expr', $$
     RETURN properties(1234)
 $$) AS (properties agtype);
 ERROR:  properties() argument must be a vertex, an edge or null
+CONTEXT:  referenced column: properties
 SELECT * FROM cypher('expr', $$
     RETURN properties()
 $$) AS (properties agtype);
 ERROR:  function ag_catalog.age_properties() does not exist
-LINE 2:     RETURN properties()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- coalesce
 SELECT * FROM cypher('expr', $$
@@ -2237,12 +2297,13 @@ SELECT * FROM cypher('expr', $$
     RETURN toBoolean(1)
 $$) AS (toBoolean agtype);
 ERROR:  toBoolean() unsupported argument agtype 3
+CONTEXT:  referenced column: toboolean
 SELECT * FROM cypher('expr', $$
     RETURN toBoolean()
 $$) AS (toBoolean agtype);
 ERROR:  function ag_catalog.age_toboolean() does not exist
-LINE 2:     RETURN toBoolean()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- toFloat()
 SELECT * FROM cypher('expr', $$
@@ -2307,12 +2368,13 @@ SELECT * FROM cypher('expr', $$
     RETURN toFloat(true)
 $$) AS (toFloat agtype);
 ERROR:  toFloat() unsupported argument agtype 5
+CONTEXT:  referenced column: tofloat
 SELECT * FROM cypher('expr', $$
     RETURN toFloat()
 $$) AS (toFloat agtype);
 ERROR:  function ag_catalog.age_tofloat() does not exist
-LINE 2:     RETURN toFloat()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- toInteger()
 SELECT * FROM cypher('expr', $$
@@ -2377,12 +2439,13 @@ SELECT * FROM cypher('expr', $$
     RETURN toInteger(true)
 $$) AS (toInteger agtype);
 ERROR:  toInteger() unsupported argument agtype 5
+CONTEXT:  referenced column: tointeger
 SELECT * FROM cypher('expr', $$
     RETURN toInteger()
 $$) AS (toInteger agtype);
 ERROR:  function ag_catalog.age_tointeger() does not exist
-LINE 2:     RETURN toInteger()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- length() of a path
 SELECT * FROM cypher('expr', $$
@@ -2415,12 +2478,13 @@ SELECT * FROM cypher('expr', $$
     RETURN length(true)
 $$) AS (length agtype);
 ERROR:  length() argument must resolve to a path or null
+CONTEXT:  referenced column: length
 SELECT * FROM cypher('expr', $$
     RETURN length()
 $$) AS (length agtype);
 ERROR:  function ag_catalog.age_length() does not exist
-LINE 2:     RETURN length()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 --
 -- toString()
@@ -2551,7 +2615,7 @@ HINT:  No function matches the given name and argument types. You might need to 
 SELECT * FROM cypher('expr', $$ RETURN toString() $$) AS (results agtype);
 ERROR:  function ag_catalog.age_tostring() does not exist
 LINE 1: SELECT * FROM cypher('expr', $$ RETURN toString() $$) AS (re...
-                                               ^
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 --
 -- reverse(string)
@@ -2687,20 +2751,22 @@ SELECT * FROM cypher('expr', $$
     RETURN reverse(true)
 $$) AS (results agtype);
 ERROR:  reverse() unsupported argument agtype 5
+CONTEXT:  referenced column: results
 SELECT * FROM age_reverse(true);
 ERROR:  reverse() unsupported argument type 16
 SELECT * FROM cypher('expr', $$
     RETURN reverse(3.14)
 $$) AS (results agtype);
 ERROR:  reverse() unsupported argument agtype 4
+CONTEXT:  referenced column: results
 SELECT * FROM age_reverse(3.14);
 ERROR:  reverse() unsupported argument type 1700
 SELECT * FROM cypher('expr', $$
     RETURN reverse()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_reverse() does not exist
-LINE 2:     RETURN reverse()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM age_reverse();
 ERROR:  function age_reverse() does not exist
@@ -2784,23 +2850,25 @@ SELECT * FROM cypher('expr', $$
     RETURN toUpper(true)
 $$) AS (toUpper agtype);
 ERROR:  toUpper() unsupported argument agtype 5
+CONTEXT:  referenced column: toupper
 SELECT * FROM cypher('expr', $$
     RETURN toUpper()
 $$) AS (toUpper agtype);
 ERROR:  function ag_catalog.age_toupper() does not exist
-LINE 2:     RETURN toUpper()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN toLower(true)
 $$) AS (toLower agtype);
 ERROR:  toLower() unsupported argument agtype 5
+CONTEXT:  referenced column: tolower
 SELECT * FROM cypher('expr', $$
     RETURN toLower()
 $$) AS (toLower agtype);
 ERROR:  function ag_catalog.age_tolower() does not exist
-LINE 2:     RETURN toLower()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM age_toupper();
 ERROR:  function age_toupper() does not exist
@@ -2905,34 +2973,37 @@ SELECT * FROM cypher('expr', $$
     RETURN lTrim(true)
 $$) AS (results agtype);
 ERROR:  lTrim() unsupported argument agtype 5
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN rTrim(true)
 $$) AS (results agtype);
 ERROR:  rTrim() unsupported argument agtype 5
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN trim(true)
 $$) AS (results agtype);
 ERROR:  trim() unsupported argument agtype 5
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN lTrim()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_ltrim() does not exist
-LINE 2:     RETURN lTrim()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN rTrim()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_rtrim() does not exist
-LINE 2:     RETURN rTrim()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN trim()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_trim() does not exist
-LINE 2:     RETURN trim()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM age_ltrim();
 ERROR:  function age_ltrim() does not exist
@@ -3010,16 +3081,18 @@ SELECT * FROM cypher('expr', $$
     RETURN left("123456789", null)
 $$) AS (results agtype);
 ERROR:  left() length parameter cannot be null
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN left("123456789", -1)
 $$) AS (results agtype);
 ERROR:  left() negative values are not supported for length
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN left()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_left() does not exist
-LINE 2:     RETURN left()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM age_left('123456789', null);
 ERROR:  left() length parameter cannot be null
@@ -3089,16 +3162,18 @@ SELECT * FROM cypher('expr', $$
     RETURN right("123456789", null)
 $$) AS (results agtype);
 ERROR:  right() length parameter cannot be null
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN right("123456789", -1)
 $$) AS (results agtype);
 ERROR:  right() negative values are not supported for length
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN right()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_right() does not exist
-LINE 2:     RETURN right()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM age_right('123456789', null);
 ERROR:  right() length parameter cannot be null
@@ -3202,18 +3277,22 @@ SELECT * FROM cypher('expr', $$
     RETURN substring("123456789", null)
 $$) AS (results agtype);
 ERROR:  substring() offset or length cannot be null
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN substring("123456789", 0, -1)
 $$) AS (results agtype);
 ERROR:  substring() negative values are not supported for offset or length
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN substring("123456789", -1)
 $$) AS (results agtype);
 ERROR:  substring() negative values are not supported for offset or length
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN substring("123456789")
 $$) AS (results agtype);
 ERROR:  substring() invalid number of arguments
+CONTEXT:  referenced column: results
 SELECT * FROM age_substring('123456789', null);
 ERROR:  substring() offset or length cannot be null
 SELECT * FROM age_substring('123456789', 0, -1);
@@ -3324,20 +3403,23 @@ SELECT * FROM cypher('expr', $$
     RETURN split(123456789, ",")
 $$) AS (results agtype);
 ERROR:  split() unsupported argument agtype 3
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN split("a,b,c,d,e,f", -1)
 $$) AS (results agtype);
 ERROR:  split() unsupported argument agtype 3
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN split("a,b,c,d,e,f")
 $$) AS (results agtype);
 ERROR:  split() invalid number of arguments
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN split()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_split() does not exist
-LINE 2:     RETURN split()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM age_split(123456789, ',');
 ERROR:  split() unsupported argument type 23
@@ -3483,25 +3565,29 @@ SELECT * FROM cypher('expr', $$
     RETURN replace()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_replace() does not exist
-LINE 2:     RETURN replace()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN replace("Hello")
 $$) AS (results agtype);
 ERROR:  replace() invalid number of arguments
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN replace("Hello", null)
 $$) AS (results agtype);
 ERROR:  replace() invalid number of arguments
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN replace("Hello", "e", 1)
 $$) AS (results agtype);
 ERROR:  replace() unsupported argument agtype 3
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN replace("Hello", 1, "e")
 $$) AS (results agtype);
 ERROR:  replace() unsupported argument agtype 3
+CONTEXT:  referenced column: results
 SELECT * FROM age_replace();
 ERROR:  function age_replace() does not exist
 LINE 1: SELECT * FROM age_replace();
@@ -3529,9 +3615,9 @@ $$) AS (results agtype), sin(3.1415);
 SELECT * FROM cypher('expr', $$
     RETURN cos(3.1415)
 $$) AS (results agtype), cos(3.1415);
-      results       |        cos         
---------------------+--------------------
- -0.999999995707656 | -0.999999995707656
+      results      |        cos        
+-------------------+-------------------
+ -.999999995707656 | -.999999995707656
 (1 row)
 
 SELECT * FROM cypher('expr', $$
@@ -3557,9 +3643,9 @@ SELECT * FROM sin(3.1415), age_sin(3.1415);
 (1 row)
 
 SELECT * FROM cos(3.1415), age_cos(3.1415);
-        cos         |      age_cos       
---------------------+--------------------
- -0.999999995707656 | -0.999999995707656
+        cos        |      age_cos      
+-------------------+-------------------
+ -.999999995707656 | -.999999995707656
 (1 row)
 
 SELECT * FROM tan(3.1415), age_tan(3.1415);
@@ -3636,45 +3722,49 @@ SELECT * FROM cypher('expr', $$
     RETURN sin("0")
 $$) AS (results agtype);
 ERROR:  sin() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN cos("0")
 $$) AS (results agtype);
 ERROR:  cos() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN tan("0")
 $$) AS (results agtype);
 ERROR:  tan() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN cot("0")
 $$) AS (results agtype);
 ERROR:  cot() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN sin()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_sin() does not exist
-LINE 2:     RETURN sin()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN cos()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_cos() does not exist
-LINE 2:     RETURN cos()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN tan()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_tan() does not exist
-LINE 2:     RETURN tan()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN cot()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_cot() does not exist
-LINE 2:     RETURN cot()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM age_sin('0');
 ERROR:  sin() unsupported argument type 25
@@ -3752,15 +3842,15 @@ SELECT * FROM acos(0), age_acos(0);
 (1 row)
 
 SELECT * FROM atan(1), age_atan(1);
-       atan        |     age_atan      
--------------------+-------------------
- 0.785398163397448 | 0.785398163397448
+       atan       |     age_atan     
+------------------+------------------
+ .785398163397448 | .785398163397448
 (1 row)
 
 SELECT * FROM atan2(1, 1), age_atan2(1, 1);
-       atan2       |     age_atan2     
--------------------+-------------------
- 0.785398163397448 | 0.785398163397448
+      atan2       |    age_atan2     
+------------------+------------------
+ .785398163397448 | .785398163397448
 (1 row)
 
 -- should return null
@@ -3885,54 +3975,60 @@ SELECT * FROM cypher('expr', $$
     RETURN asin("0")
 $$) AS (results agtype);
 ERROR:  asin() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN acos("0")
 $$) AS (results agtype);
 ERROR:  acos() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN atan("0")
 $$) AS (results agtype);
 ERROR:  atan() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN atan2("0", 1)
 $$) AS (results agtype);
 ERROR:  atan2() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN atan2(0, "1")
 $$) AS (results agtype);
 ERROR:  atan2() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN asin()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_asin() does not exist
-LINE 2:     RETURN asin()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN acos()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_acos() does not exist
-LINE 2:     RETURN acos()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN atan()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_atan() does not exist
-LINE 2:     RETURN atan()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN atan2()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_atan2() does not exist
-LINE 2:     RETURN atan2()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN atan2(null)
 $$) AS (results agtype);
 ERROR:  atan2() invalid number of arguments
+CONTEXT:  referenced column: results
 SELECT * FROM age_asin('0');
 ERROR:  asin() unsupported argument type 25
 SELECT * FROM age_acos('0');
@@ -3987,9 +4083,9 @@ $$) AS (results agtype);
 SELECT * FROM cypher('expr', $$
     RETURN sin(pi()/4)
 $$) AS (results agtype);
-      results      
--------------------
- 0.707106781186547
+     results      
+------------------
+ .707106781186547
 (1 row)
 
 SELECT * FROM cypher('expr', $$
@@ -4021,15 +4117,15 @@ SELECT * FROM cypher('expr', $$
     RETURN pi(null)
 $$) AS (results agtype);
 ERROR:  function pg_catalog.pi(agtype) does not exist
-LINE 2:     RETURN pi(null)
-                     ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN pi(1)
 $$) AS (results agtype);
 ERROR:  function pg_catalog.pi(agtype) does not exist
-LINE 2:     RETURN pi(1)
-                     ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 --
 -- radians() & degrees()
@@ -4120,24 +4216,26 @@ SELECT * FROM cypher('expr', $$
     RETURN radians()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_radians() does not exist
-LINE 2:     RETURN radians()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN degrees()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_degrees() does not exist
-LINE 2:     RETURN degrees()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN radians("1")
 $$) AS (results agtype);
 ERROR:  radians() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN degrees("1")
 $$) AS (results agtype);
 ERROR:  degrees() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 --
 -- abs(), ceil(), floor(), & round()
 --
@@ -4411,57 +4509,62 @@ SELECT * FROM cypher('expr', $$
     RETURN abs()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_abs() does not exist
-LINE 2:     RETURN abs()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN ceil()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_ceil() does not exist
-LINE 2:     RETURN ceil()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN floor()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_floor() does not exist
-LINE 2:     RETURN floor()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN round()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_round() does not exist
-LINE 2:     RETURN round()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN sign()
 $$) AS (results agtype);
 ERROR:  function ag_catalog.age_sign() does not exist
-LINE 2:     RETURN sign()
-                   ^
+LINE 1: SELECT * FROM cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('expr', $$
     RETURN abs("1")
 $$) AS (results agtype);
 ERROR:  abs() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN ceil("1")
 $$) AS (results agtype);
 ERROR:  ceil() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN floor("1")
 $$) AS (results agtype);
 ERROR:  floor() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN round("1")
 $$) AS (results agtype);
 ERROR:  round() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 SELECT * FROM cypher('expr', $$
     RETURN sign("1")
 $$) AS (results agtype);
 ERROR:  sign() unsupported argument agtype 1
+CONTEXT:  referenced column: results
 --
 -- rand()
 --
@@ -4559,15 +4662,15 @@ SELECT * from cypher('expr', $$
     RETURN log()
 $$) as (result agtype);
 ERROR:  function ag_catalog.age_log() does not exist
-LINE 2:     RETURN log()
-                   ^
+LINE 1: SELECT * from cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * from cypher('expr', $$
     RETURN log10()
 $$) as (result agtype);
 ERROR:  function ag_catalog.age_log10() does not exist
-LINE 2:     RETURN log10()
-                   ^
+LINE 1: SELECT * from cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 --
 -- e()
@@ -4621,13 +4724,14 @@ SELECT * from cypher('expr', $$
     RETURN exp()
 $$) as (result agtype);
 ERROR:  function ag_catalog.age_exp() does not exist
-LINE 2:     RETURN exp()
-                   ^
+LINE 1: SELECT * from cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * from cypher('expr', $$
     RETURN exp("1")
 $$) as (result agtype);
 ERROR:  exp() unsupported argument agtype 1
+CONTEXT:  referenced column: result
 --
 -- sqrt()
 --
@@ -4677,13 +4781,14 @@ SELECT * from cypher('expr', $$
     RETURN sqrt()
 $$) as (result agtype);
 ERROR:  function ag_catalog.age_sqrt() does not exist
-LINE 2:     RETURN sqrt()
-                   ^
+LINE 1: SELECT * from cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * from cypher('expr', $$
     RETURN sqrt("1")
 $$) as (result agtype);
 ERROR:  sqrt() unsupported argument agtype 1
+CONTEXT:  referenced column: result
 --
 -- user defined function expressions - using pg functions for these tests
 --
@@ -4717,17 +4822,19 @@ SELECT * from cypher('expr', $$
     RETURN pg_catalog.sqrt()
 $$) as (result agtype);
 ERROR:  function pg_catalog.sqrt() does not exist
-LINE 2:     RETURN pg_catalog.sqrt()
-                              ^
+LINE 1: SELECT * from cypher('expr', $$
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * from cypher('expr', $$
     RETURN pg_catalog.sqrt("1"::pg_float8)
 $$) as (result agtype);
 ERROR:  cannot cast agtype string to type float
+CONTEXT:  referenced column: sqrt
 SELECT * from cypher('expr', $$
     RETURN pg_catalog.sqrt(-1::pg_float8)
 $$) as (result agtype);
 ERROR:  cannot take square root of a negative number
+CONTEXT:  referenced column: sqrt
 SELECT * from cypher('expr', $$
     RETURN something.pg_catalog.sqrt("1"::pg_float8)
 $$) as (result agtype);
@@ -4739,19 +4846,24 @@ SELECT * from cypher('expr', $$
     RETURN distinct.age_sqrt(25)
 $$) as (result agtype);
 ERROR:  schema "distinct" does not exist
-LINE 2:     RETURN distinct.age_sqrt(25)
-                                    ^
+LINE 1: SELECT * from cypher('expr', $$
+                                      ^
 SELECT * from cypher('expr', $$
     RETURN contains.age_sqrt(25)
 $$) as (result agtype);
 ERROR:  schema "contains" does not exist
-LINE 2:     RETURN contains.age_sqrt(25)
-                                    ^
+LINE 1: SELECT * from cypher('expr', $$
+                                      ^
 --
 -- aggregate functions avg(), sum(), count(), & count(*)
 --
 SELECT create_graph('UCSC');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "UCSC" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -4867,17 +4979,17 @@ SELECT * FROM cypher('UCSC', $$ RETURN count(NULL) $$) AS (count agtype);
 SELECT * FROM cypher('UCSC', $$ RETURN avg() $$) AS (avg agtype);
 ERROR:  function ag_catalog.age_avg() does not exist
 LINE 1: SELECT * FROM cypher('UCSC', $$ RETURN avg() $$) AS (avg agt...
-                                               ^
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('UCSC', $$ RETURN sum() $$) AS (sum agtype);
 ERROR:  function ag_catalog.age_sum() does not exist
 LINE 1: SELECT * FROM cypher('UCSC', $$ RETURN sum() $$) AS (sum agt...
-                                               ^
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('UCSC', $$ RETURN count() $$) AS (count agtype);
 ERROR:  pg_catalog.count(*) must be used to call a parameterless aggregate function
 LINE 1: SELECT * FROM cypher('UCSC', $$ RETURN count() $$) AS (count...
-                                               ^
+                                       ^
 --
 -- aggregate functions min() & max()
 --
@@ -4978,31 +5090,33 @@ SELECT age_max(agtype_in('null'));
 SELECT * FROM cypher('UCSC', $$ RETURN min() $$) AS (min agtype);
 ERROR:  function ag_catalog.age_min() does not exist
 LINE 1: SELECT * FROM cypher('UCSC', $$ RETURN min() $$) AS (min agt...
-                                               ^
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('UCSC', $$ RETURN max() $$) AS (max agtype);
 ERROR:  function ag_catalog.age_max() does not exist
 LINE 1: SELECT * FROM cypher('UCSC', $$ RETURN max() $$) AS (max agt...
-                                               ^
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT age_min();
 ERROR:  function age_min() does not exist
 LINE 1: SELECT age_min();
                ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: age_min
 SELECT age_min();
 ERROR:  function age_min() does not exist
 LINE 1: SELECT age_min();
                ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: age_min
 --
 -- aggregate functions stDev() & stDevP()
 --
 SELECT * FROM cypher('UCSC', $$ MATCH (u) RETURN stDev(u.gpa), stDevP(u.gpa) $$)
 AS (stDev agtype, stDevP agtype);
-       stdev       |      stdevp       
--------------------+-------------------
- 0.549566929066705 | 0.508800109100231
+      stdev       |      stdevp      
+------------------+------------------
+ .549566929066705 | .508800109100231
 (1 row)
 
 -- should return 0
@@ -5022,12 +5136,12 @@ SELECT * FROM cypher('UCSC', $$ RETURN stDevP(NULL) $$) AS (stDevP agtype);
 SELECT * FROM cypher('UCSC', $$ RETURN stDev() $$) AS (stDev agtype);
 ERROR:  function ag_catalog.age_stdev() does not exist
 LINE 1: SELECT * FROM cypher('UCSC', $$ RETURN stDev() $$) AS (stDev...
-                                               ^
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 SELECT * FROM cypher('UCSC', $$ RETURN stDevP() $$) AS (stDevP agtype);
 ERROR:  function ag_catalog.age_stdevp() does not exist
 LINE 1: SELECT * FROM cypher('UCSC', $$ RETURN stDevP() $$) AS (stDe...
-                                               ^
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 --
 -- aggregate functions percentileCont() & percentileDisc()
@@ -5112,7 +5226,7 @@ SELECT * FROM cypher('UCSC', $$ RETURN collect(NULL) $$) AS (empty agtype);
 SELECT * FROM cypher('UCSC', $$ RETURN collect() $$) AS (collect agtype);
 ERROR:  function ag_catalog.age_collect() does not exist
 LINE 1: SELECT * FROM cypher('UCSC', $$ RETURN collect() $$) AS (col...
-                                               ^
+                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 -- test DISTINCT inside aggregate functions
 SELECT * FROM cypher('UCSC', $$CREATE (:students {name: "Sven", gpa: 3.2, age: 27, zip: 94110})$$)
@@ -5152,7 +5266,12 @@ AS (age agtype, distinct_age agtype);
 
 -- test AUTO GROUP BY for aggregate functions
 SELECT create_graph('group_by');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "group_by" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -5190,9 +5309,9 @@ SELECT * FROM cypher('group_by', $$MATCH (u:row) RETURN u.i, u.j, u.k$$) AS (i a
 SELECT * FROM cypher('group_by', $$MATCH (u:row) RETURN u.i, u.j, sum(u.k)$$) AS (i agtype, j agtype, sumk agtype);
  i | j | sumk 
 ---+---+------
- 1 | 2 | 7
- 2 | 3 | 6
  1 | 3 | 5
+ 2 | 3 | 6
+ 1 | 2 | 7
 (3 rows)
 
 SELECT * FROM cypher('group_by', $$CREATE (:L {a: 1, b: 2, c:3})$$) AS (result agtype);
@@ -5214,8 +5333,8 @@ SELECT * FROM cypher('group_by', $$MATCH (x:L) RETURN x.a, x.b, x.c, x.a + count
 AS (a agtype, b agtype, c agtype, result agtype);
  a | b | c | result 
 ---+---+---+--------
- 3 | 1 | 2 | 8
  2 | 3 | 1 | 8
+ 3 | 1 | 2 | 8
  1 | 2 | 3 | 8
 (3 rows)
 
@@ -5265,7 +5384,12 @@ LINE 1: ...CT * FROM cypher('group_by', $$MATCH (x:L) RETURN x.a + coun...
                                                              ^
 --ORDER BY
 SELECT create_graph('order_by');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "order_by" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -5354,7 +5478,12 @@ $$) AS (i agtype);
 
 --CASE
 SELECT create_graph('case_statement');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "case_statement" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -5437,7 +5566,12 @@ $$ ) AS (j agtype, case_statement agtype);
 
 -- RETURN * and (u)--(v) optional forms
 SELECT create_graph('opt_forms');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "opt_forms" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -5467,10 +5601,10 @@ SELECT * FROM cypher('opt_forms', $$MATCH (u) RETURN *$$) AS (result agtype);
 SELECT * FROM cypher('opt_forms', $$MATCH (u)--(v) RETURN u.i, v.i$$) AS (u agtype, v agtype);
  u | v 
 ---+---
- 2 | 3
- 3 | 2
  1 | 2
+ 2 | 3
  2 | 1
+ 3 | 2
 (4 rows)
 
 SELECT * FROM cypher('opt_forms', $$MATCH (u)-->(v) RETURN u.i, v.i$$) AS (u agtype, v agtype);
@@ -5528,7 +5662,12 @@ $$) as (result agtype);
 
 -- VLE
 SELECT create_graph('VLE');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "VLE" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -5557,7 +5696,12 @@ SELECT * FROM cypher('VLE', $$MATCH (u)-[*..5]-(v) RETURN u, v$$) AS (u agtype, 
 
 -- list functions relationships(), range(), keys()
 SELECT create_graph('keys');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "keys" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -5629,12 +5773,20 @@ SELECT * FROM cypher('keys', $$RETURN keys(null)$$) AS (keys agtype);
 --should return error
 SELECT * from cypher('keys', $$RETURN keys([1,2,3])$$) as (keys agtype);
 ERROR:  keys() argument must be a vertex, edge, object or null
+CONTEXT:  referenced column: keys
 SELECT * from cypher('keys', $$RETURN keys("string")$$) as (keys agtype);
 ERROR:  keys() argument must be a vertex, edge, object or null
+CONTEXT:  referenced column: keys
 SELECT * from cypher('keys', $$MATCH u=()-[]-() RETURN keys(u)$$) as (keys agtype);
 ERROR:  keys() argument must be a vertex, edge, object or null
+CONTEXT:  referenced column: keys
 SELECT create_graph('list');
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_vertex_pkey" for table "_ag_label_vertex"
+CONTEXT:  referenced column: create_graph
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "_ag_label_edge_pkey" for table "_ag_label_edge"
+CONTEXT:  referenced column: create_graph
 NOTICE:  graph "list" has been created
+CONTEXT:  referenced column: create_graph
  create_graph 
 --------------
  
@@ -5683,12 +5835,16 @@ SELECT * from cypher('list', $$RETURN nodes(NULL)$$) as (nodes agtype);
 -- should return an error
 SELECT * from cypher('list', $$MATCH (u) RETURN nodes([1,2,3])$$) as (nodes agtype);
 ERROR:  nodes() argument must resolve to a scalar value
+CONTEXT:  referenced column: nodes
 SELECT * from cypher('list', $$MATCH (u) RETURN nodes("string")$$) as (nodes agtype);
 ERROR:  nodes() argument must be a path
+CONTEXT:  referenced column: nodes
 SELECT * from cypher('list', $$MATCH (u) RETURN nodes(u)$$) as (nodes agtype);
 ERROR:  nodes() argument must be a path
+CONTEXT:  referenced column: nodes
 SELECT * from cypher('list', $$MATCH (u)-[]->() RETURN nodes(u)$$) as (nodes agtype);
 ERROR:  nodes() argument must be a path
+CONTEXT:  referenced column: nodes
 -- relationships()
 SELECT * from cypher('list', $$MATCH p=()-[]->() RETURN relationships(p)$$) as (relationships agtype);
                                                         relationships                                                        
@@ -5720,12 +5876,16 @@ SELECT * from cypher('list', $$RETURN relationships(NULL)$$) as (relationships a
 -- should return an error
 SELECT * from cypher('list', $$MATCH (u) RETURN relationships([1,2,3])$$) as (relationships agtype);
 ERROR:  relationships() argument must resolve to a scalar value
+CONTEXT:  referenced column: relationships
 SELECT * from cypher('list', $$MATCH (u) RETURN relationships("string")$$) as (relationships agtype);
 ERROR:  relationships() argument must be a path
+CONTEXT:  referenced column: relationships
 SELECT * from cypher('list', $$MATCH (u) RETURN relationships(u)$$) as (relationships agtype);
 ERROR:  relationships() argument must be a path
+CONTEXT:  referenced column: relationships
 SELECT * from cypher('list', $$MATCH ()-[e]->() RETURN relationships(e)$$) as (relationships agtype);
 ERROR:  relationships() argument must be a path
+CONTEXT:  referenced column: relationships
 -- range()
 SELECT * from cypher('list', $$RETURN range(0, 10)$$) as (range agtype);
                range                
@@ -5797,10 +5957,13 @@ SELECT * from cypher('list', $$RETURN range(-10, 10, -1)$$) as (range agtype);
 -- should return an error
 SELECT * from cypher('list', $$RETURN range(null, -10, -3)$$) as (range agtype);
 ERROR:  range(): neither start or end can be NULL
+CONTEXT:  referenced column: range
 SELECT * from cypher('list', $$RETURN range(0, null, -3)$$) as (range agtype);
 ERROR:  range(): neither start or end can be NULL
+CONTEXT:  referenced column: range
 SELECT * from cypher('list', $$RETURN range(0, -10.0, -3.0)$$) as (range agtype);
 ERROR:  range() unsupported argument type
+CONTEXT:  referenced column: range
 -- labels()
 SELECT * from cypher('list', $$CREATE (u:People {name: "John"}) RETURN u$$) as (Vertices agtype);
                                       vertices                                       
@@ -5850,6 +6013,7 @@ SELECT * from cypher('list', $$RETURN labels(NULL)$$) as (Labels agtype);
 -- should return an error
 SELECT * from cypher('list', $$RETURN labels("string")$$) as (Labels agtype);
 ERROR:  labels() argument must be a vertex
+CONTEXT:  referenced column: labels
 --
 -- Cleanup
 --

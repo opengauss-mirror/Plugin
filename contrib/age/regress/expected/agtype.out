@@ -103,28 +103,33 @@ INSERT INTO agtype_table VALUES ('bad integer', '9223372036854775808');
 ERROR:  value "9223372036854775808" is out of range for type bigint
 LINE 1: INSERT INTO agtype_table VALUES ('bad integer', '92233720368...
                                                         ^
+CONTEXT:  referenced column: agtype
 INSERT INTO agtype_table VALUES ('bad integer', '-9223372036854775809');
 ERROR:  value "-9223372036854775809" is out of range for type bigint
 LINE 1: INSERT INTO agtype_table VALUES ('bad integer', '-9223372036...
                                                         ^
+CONTEXT:  referenced column: agtype
 INSERT INTO agtype_table VALUES ('bad float', '-NaN');
 ERROR:  invalid input syntax for type agtype
 LINE 1: INSERT INTO agtype_table VALUES ('bad float', '-NaN');
                                                       ^
 DETAIL:  Token "-NaN" is invalid.
 CONTEXT:  agtype data, line 1: -NaN
+referenced column: agtype
 INSERT INTO agtype_table VALUES ('bad float', 'Infi');
 ERROR:  invalid input syntax for type agtype
 LINE 1: INSERT INTO agtype_table VALUES ('bad float', 'Infi');
                                                       ^
 DETAIL:  Expected agtype value, but found "Infi".
 CONTEXT:  agtype data, line 1: Infi
+referenced column: agtype
 INSERT INTO agtype_table VALUES ('bad float', '-Infi');
 ERROR:  invalid input syntax for type agtype
 LINE 1: INSERT INTO agtype_table VALUES ('bad float', '-Infi');
                                                       ^
 DETAIL:  Token "-Infi" is invalid.
 CONTEXT:  agtype data, line 1: -Infi
+referenced column: agtype
 --
 -- Test agtype mathematical operator functions
 -- +, -, unary -, *, /, %, and ^
@@ -390,7 +395,7 @@ SELECT agtype_pow('-2', '3');
 SELECT agtype_pow('2', '-1.0');
  agtype_pow 
 ------------
- 0.5
+ .5
 (1 row)
 
 SELECT agtype_pow('2.0', '3');
@@ -402,7 +407,7 @@ SELECT agtype_pow('2.0', '3');
 SELECT agtype_pow('2.0', '-1.0');
  agtype_pow 
 ------------
- 0.5
+ .5
 (1 row)
 
 SELECT agtype_pow('2::numeric', '3');
@@ -412,9 +417,9 @@ SELECT agtype_pow('2::numeric', '3');
 (1 row)
 
 SELECT agtype_pow('2::numeric', '-1.0');
-         agtype_pow          
------------------------------
- 0.5000000000000000::numeric
+         agtype_pow         
+----------------------------
+ .5000000000000000::numeric
 (1 row)
 
 SELECT agtype_pow('-2', '3::numeric');
@@ -424,15 +429,15 @@ SELECT agtype_pow('-2', '3::numeric');
 (1 row)
 
 SELECT agtype_pow('2.0', '-1.0::numeric');
-         agtype_pow          
------------------------------
- 0.5000000000000000::numeric
+         agtype_pow         
+----------------------------
+ .5000000000000000::numeric
 (1 row)
 
 SELECT agtype_pow('2.0::numeric', '-1.0::numeric');
-         agtype_pow          
------------------------------
- 0.5000000000000000::numeric
+         agtype_pow         
+----------------------------
+ .5000000000000000::numeric
 (1 row)
 
 --
@@ -564,30 +569,43 @@ SELECT agtype_any_mod('-11.0::numeric', 3);
 --
 SELECT agtype_div('1', '0');
 ERROR:  division by zero
+CONTEXT:  referenced column: agtype_div
 SELECT agtype_div('1', '0.0');
 ERROR:  division by zero
+CONTEXT:  referenced column: agtype_div
 SELECT agtype_div('1.0', '0');
 ERROR:  division by zero
+CONTEXT:  referenced column: agtype_div
 SELECT agtype_div('1.0', '0.0');
 ERROR:  division by zero
+CONTEXT:  referenced column: agtype_div
 SELECT agtype_div('1', '0::numeric');
 ERROR:  division by zero
+CONTEXT:  referenced column: agtype_div
 SELECT agtype_div('1.0', '0::numeric');
 ERROR:  division by zero
+CONTEXT:  referenced column: agtype_div
 SELECT agtype_div('1::numeric', '0');
 ERROR:  division by zero
+CONTEXT:  referenced column: agtype_div
 SELECT agtype_div('1::numeric', '0.0');
 ERROR:  division by zero
+CONTEXT:  referenced column: agtype_div
 SELECT agtype_div('1::numeric', '0::numeric');
 ERROR:  division by zero
+CONTEXT:  referenced column: agtype_div
 SELECT agtype_any_div('1', 0);
 ERROR:  division by zero
+CONTEXT:  referenced column: agtype_any_div
 SELECT agtype_any_div('1.0', 0);
 ERROR:  division by zero
+CONTEXT:  referenced column: agtype_any_div
 SELECT agtype_any_div('-1::numeric', 0);
 ERROR:  division by zero
+CONTEXT:  referenced column: agtype_any_div
 SELECT agtype_any_div('-1.0::numeric', 0);
 ERROR:  division by zero
+CONTEXT:  referenced column: agtype_any_div
 --
 -- Should get Infinity
 --
@@ -608,14 +626,19 @@ SELECT agtype_pow('-0.0', '-1');
 --
 SELECT agtype_pow('0', '-1::numeric');
 ERROR:  zero raised to a negative power is undefined
+CONTEXT:  referenced column: agtype_pow
 SELECT agtype_pow('-0.0', '-1::numeric');
 ERROR:  zero raised to a negative power is undefined
+CONTEXT:  referenced column: agtype_pow
 SELECT agtype_pow('0::numeric', '-1');
 ERROR:  zero raised to a negative power is undefined
+CONTEXT:  referenced column: agtype_pow
 SELECT agtype_pow('-0.0::numeric', '-1');
 ERROR:  zero raised to a negative power is undefined
+CONTEXT:  referenced column: agtype_pow
 SELECT agtype_pow('-0.0::numeric', '-1');
 ERROR:  zero raised to a negative power is undefined
+CONTEXT:  referenced column: agtype_pow
 --
 -- Test operators +, -, unary -, *, /, %, and ^
 --
@@ -739,13 +762,13 @@ SELECT '3'::agtype - 3;
 SELECT '3.14'::agtype - 3;
  ?column? 
 ----------
- 0.14
+ .14
 (1 row)
 
 SELECT '3.14::numeric'::agtype - 3;
-   ?column?    
----------------
- 0.14::numeric
+   ?column?   
+--------------
+ .14::numeric
 (1 row)
 
 SELECT 3 - '3'::agtype;
@@ -757,13 +780,13 @@ SELECT 3 - '3'::agtype;
 SELECT 3 - '3.14'::agtype;
  ?column? 
 ----------
- -0.14
+ -.14
 (1 row)
 
 SELECT 3 - '3.14::numeric'::agtype;
-    ?column?    
-----------------
- -0.14::numeric
+   ?column?    
+---------------
+ -.14::numeric
 (1 row)
 
 SELECT '3'::agtype * 3;
@@ -827,15 +850,15 @@ SELECT 3 / '3'::agtype;
 (1 row)
 
 SELECT 3 / '3.14'::agtype;
-     ?column?      
--------------------
- 0.955414012738854
+     ?column?     
+------------------
+ .955414012738854
 (1 row)
 
 SELECT 3 / '3.14::numeric'::agtype;
-            ?column?             
----------------------------------
- 0.95541401273885350318::numeric
+            ?column?            
+--------------------------------
+ .95541401273885350318::numeric
 (1 row)
 
 SELECT '3'::agtype % 3;
@@ -847,13 +870,13 @@ SELECT '3'::agtype % 3;
 SELECT '3.14'::agtype % 3;
  ?column? 
 ----------
- 0.14
+ .14
 (1 row)
 
 SELECT '3.14::numeric'::agtype % 3;
-   ?column?    
----------------
- 0.14::numeric
+   ?column?   
+--------------
+ .14::numeric
 (1 row)
 
 SELECT 3 % '3'::agtype;
@@ -2080,16 +2103,22 @@ SELECT agtype_to_bool(agtype_in('false'));
 -- These should all fail
 SELECT agtype_to_bool(agtype_in('null'));
 ERROR:  cannot cast agtype null to type boolean
+CONTEXT:  referenced column: agtype_to_bool
 SELECT agtype_to_bool(agtype_in('1'));
 ERROR:  cannot cast agtype integer to type boolean
+CONTEXT:  referenced column: agtype_to_bool
 SELECT agtype_to_bool(agtype_in('1.0'));
 ERROR:  cannot cast agtype float to type boolean
+CONTEXT:  referenced column: agtype_to_bool
 SELECT agtype_to_bool(agtype_in('"string"'));
 ERROR:  cannot cast agtype string to type boolean
+CONTEXT:  referenced column: agtype_to_bool
 SELECT agtype_to_bool(agtype_in('[1,2,3]'));
 ERROR:  cannot cast agtype array to type boolean
+CONTEXT:  referenced column: agtype_to_bool
 SELECT agtype_to_bool(agtype_in('{"bool":true}'));
 ERROR:  cannot cast agtype object to type boolean
+CONTEXT:  referenced column: agtype_to_bool
 --
 -- Test boolean to agtype cast
 --
@@ -2150,6 +2179,7 @@ SELECT agtype_to_int4_array(agtype_in('["6","7",3.66]'));
 --Invalid Map Key (should fail)
 SELECT agtype_build_map('[0]'::agtype, null);
 ERROR:  key value must be scalar, not array, composite, or json
+CONTEXT:  referenced column: agtype_build_map
 --
 -- Test agtype object/array access operators object.property, object["property"], and array[element]
 -- Note: At this point, object.property and object["property"] are equivalent.
@@ -2204,10 +2234,13 @@ SELECT agtype_access_operator('{"bool":false, "int":3, "float":3.14}', 'null');
 -- invalid map key types
 SELECT agtype_access_operator('{"bool":false, "int":3, "float":3.14}', 'true');
 ERROR:  AGTV_BOOL is not a valid key type
+CONTEXT:  referenced column: agtype_access_operator
 SELECT agtype_access_operator('{"bool":false, "int":3, "float":3.14}', '2');
 ERROR:  AGTV_INTEGER is not a valid key type
+CONTEXT:  referenced column: agtype_access_operator
 SELECT agtype_access_operator('{"bool":false, "int":3, "float":3.14}', '2.0');
 ERROR:  AGTV_FLOAT is not a valid key type
+CONTEXT:  referenced column: agtype_access_operator
 --
 -- Vertex
 --
@@ -2241,6 +2274,7 @@ SELECT agtype_access_operator(_agtype_build_vertex('1'::graphid, $$label$$,
 
 SELECT _agtype_build_vertex('1'::graphid, $$label$$, agtype_build_list());
 ERROR:  _agtype_build_vertex() properties argument must be an object
+CONTEXT:  referenced column: _agtype_build_vertex
 --Vertex in a map
 SELECT agtype_build_map(
 	'vertex',
@@ -2379,6 +2413,7 @@ SELECT _agtype_build_path(
 			  $$label$$, agtype_build_map('id', 2))
 );
 ERROR:  a path is of the form: [vertex, (edge, vertex)*i] where i >= 0
+CONTEXT:  referenced column: _agtype_build_path
 SELECT _agtype_build_path(
        _agtype_build_vertex('2'::graphid, $$label_name$$, agtype_build_map()),
        _agtype_build_edge('1'::graphid, '2'::graphid, '3'::graphid,
@@ -2388,6 +2423,7 @@ SELECT _agtype_build_path(
                          $$label$$, agtype_build_map('id', 2))
 );
 ERROR:  a path is of the form: [vertex, (edge, vertex)*i] where i >= 0
+CONTEXT:  referenced column: _agtype_build_path
 SELECT _agtype_build_path(
 	_agtype_build_vertex('2'::graphid, $$label_name$$, agtype_build_map()),
 	_agtype_build_edge('1'::graphid, '2'::graphid, '3'::graphid,
@@ -2395,6 +2431,7 @@ SELECT _agtype_build_path(
 	NULL
 );
 ERROR:  argument 3 must not be null
+CONTEXT:  referenced column: _agtype_build_path
 SELECT _agtype_build_path(
 	_agtype_build_vertex('2'::graphid, $$label_name$$, agtype_build_map()),
 	_agtype_build_edge('1'::graphid, '2'::graphid, '3'::graphid,
@@ -2402,6 +2439,7 @@ SELECT _agtype_build_path(
 	1
 );
 ERROR:  argument 3 must be an agtype
+CONTEXT:  referenced column: _agtype_build_path
 SELECT _agtype_build_path(
 	_agtype_build_vertex('2'::graphid, $$label_name$$, agtype_build_map()),
 	_agtype_build_edge('1'::graphid, '2'::graphid, '3'::graphid,
@@ -2411,6 +2449,7 @@ SELECT _agtype_build_path(
 );
 ERROR:  paths consist of alternating vertices and edges
 HINT:  argument 3 must be an vertex
+CONTEXT:  referenced column: _agtype_build_path
 --
 -- id, startid, endid
 --
@@ -2448,8 +2487,10 @@ SELECT age_id(_agtype_build_path(
 	_agtype_build_vertex('3'::graphid, $$label$$, agtype_build_map('id', 2))
 ));
 ERROR:  id() argument must be a vertex, an edge or null
+CONTEXT:  referenced column: age_id
 SELECT age_id(agtype_in('1'));
 ERROR:  id() argument must be a vertex, an edge or null
+CONTEXT:  referenced column: age_id
 SELECT age_id(NULL);
  age_id 
 --------
