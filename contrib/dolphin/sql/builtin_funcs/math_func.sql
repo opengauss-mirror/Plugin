@@ -170,6 +170,23 @@ select exp(709);
 select exp(710);
 select exp(-1000); 
 
+select year(`int1`), year(`uint1`), year(`int2`), year(`uint2`), year(`int4`), year(`uint4`), year(`int8`), year(`uint8`), year(`float4`), year(`float8`), year(`numeric`), year(`bit1`), year(`bit64`), year(`boolean`), year(`date`), year(`time`), year(`time(4)`), year(`datetime`), year(`datetime(4)`), year(`timestamp`), year(`timestamp(4)`), year(`year`), year(`char`), year(`varchar`), year(`binary`), year(`varbinary`), year(`tinyblob`), year(`blob`), year(`mediumblob`), year(`longblob`), year(`text`), year(`enum_t`), year(`set_t`), year(`json`), 
+pg_typeof(year(`int1`)), pg_typeof(year(`uint1`)), pg_typeof(year(`int2`)), pg_typeof(year(`uint2`)), pg_typeof(year(`int4`)), pg_typeof(year(`uint4`)), pg_typeof(year(`int8`)), pg_typeof(year(`uint8`)), pg_typeof(year(`float4`)), pg_typeof(year(`float8`)), pg_typeof(year(`numeric`)), pg_typeof(year(`bit1`)), pg_typeof(year(`bit64`)), pg_typeof(year(`boolean`)), pg_typeof(year(`date`)), pg_typeof(year(`time`)), pg_typeof(year(`time(4)`)), pg_typeof(year(`datetime`)), pg_typeof(year(`datetime(4)`)), pg_typeof(year(`timestamp`)), pg_typeof(year(`timestamp(4)`)), pg_typeof(year(`year`)), pg_typeof(year(`char`)), pg_typeof(year(`varchar`)), pg_typeof(year(`binary`)), pg_typeof(year(`varbinary`)), pg_typeof(year(`tinyblob`)), pg_typeof(year(`blob`)), pg_typeof(year(`mediumblob`)), pg_typeof(year(`longblob`)), pg_typeof(year(`text`)), pg_typeof(year(`enum_t`)), pg_typeof(year(`set_t`)), pg_typeof(year(`json`)) from test_type_table;
+
+-- should failed
+create table test_year as select year(`int1`) as year1, year(`uint1`) as year2, year(`int2`) as year3, year(`uint2`) as year4, year(`int4`) as year5, year(`uint4`) as year6, year(`int8`) as year7, year(`uint8`) as year8, year(`float4`) as year9, year(`float8`) as year10, year(`numeric`) as year11, year(`bit1`) as year12, year(`bit64`) as year13, year(`boolean`) as year14, year(`date`) as year15, year(`time`) as year16, year(`time(4)`) as year17, year(`datetime`) as year18, year(`datetime(4)`) as year19, year(`timestamp`) as year20, year(`timestamp(4)`) as year21, year(`year`) as year22, year(`char`) as year23, year(`varchar`) as year24, year(`binary`) as year25, year(`varbinary`) as year26, year(`tinyblob`) as year27, year(`blob`) as year28, year(`mediumblob`) as year29, year(`longblob`) as year30, year(`text`) as year31, year(`enum_t`) as year32, year(`set_t`) as year33, year(`json`) as year34 from test_type_table;
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+
+create table test_year as select year(`int1`) as year1, year(`uint1`) as year2, year(`int2`) as year3, year(`uint2`) as year4, year(`int4`) as year5, year(`uint4`) as year6, year(`int8`) as year7, year(`uint8`) as year8, year(`float4`) as year9, year(`float8`) as year10, year(`numeric`) as year11, year(`bit1`) as year12, year(`bit64`) as year13, year(`boolean`) as year14, year(`date`) as year15, year(`time`) as year16, year(`time(4)`) as year17, year(`datetime`) as year18, year(`datetime(4)`) as year19, year(`timestamp`) as year20, year(`timestamp(4)`) as year21, year(`year`) as year22, year(`char`) as year23, year(`varchar`) as year24, year(`binary`) as year25, year(`varbinary`) as year26, year(`tinyblob`) as year27, year(`blob`) as year28, year(`mediumblob`) as year29, year(`longblob`) as year30, year(`text`) as year31, year(`enum_t`) as year32, year(`set_t`) as year33, year(`json`) as year34 from test_type_table;
+
+reset dolphin.sql_mode;
+
+insert ignore into test_year select year(`int1`) as year1, year(`uint1`) as year2, year(`int2`) as year3, year(`uint2`) as year4, year(`int4`) as year5, year(`uint4`) as year6, year(`int8`) as year7, year(`uint8`) as year8, year(`float4`) as year9, year(`float8`) as year10, year(`numeric`) as year11, year(`bit1`) as year12, year(`bit64`) as year13, year(`boolean`) as year14, year(`date`) as year15, year(`time`) as year16, year(`time(4)`) as year17, year(`datetime`) as year18, year(`datetime(4)`) as year19, year(`timestamp`) as year20, year(`timestamp(4)`) as year21, year(`year`) as year22, year(`char`) as year23, year(`varchar`) as year24, year(`binary`) as year25, year(`varbinary`) as year26, year(`tinyblob`) as year27, year(`blob`) as year28, year(`mediumblob`) as year29, year(`longblob`) as year30, year(`text`) as year31, year(`enum_t`) as year32, year(`set_t`) as year33, year(`json`) as year34 from test_type_table;
+
+select * from test_year;
+
+drop table if exists test_year;
 drop table if exists test_double_acos;
 drop table if exists test_double_exp;
 drop table if exists test_double_degrees;

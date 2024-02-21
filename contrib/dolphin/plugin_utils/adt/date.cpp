@@ -65,7 +65,7 @@ bool check_pg_tm_time_part(pg_tm *tm, fsec_t fsec);
 extern const char* extract_numericstr(const char* str);
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
 int DatetimeDate(char *str, pg_tm *tm, int time_cast_type);
-static float8 getPartFromTm(pg_tm* tm, fsec_t fsec, int part);
+static int64 getPartFromTm(pg_tm* tm, fsec_t fsec, int part);
 
 PG_FUNCTION_INFO_V1_PUBLIC(int32_b_format_time);
 extern "C" DLL_PUBLIC Datum int32_b_format_time(PG_FUNCTION_ARGS);
@@ -5835,9 +5835,9 @@ Datum adddate_time_interval(PG_FUNCTION_ARGS)
     PG_RETURN_NULL();
 }
 
-static float8 getPartFromTm(pg_tm* tm, fsec_t fsec, int part)
+static int64 getPartFromTm(pg_tm* tm, fsec_t fsec, int part)
 {
-    float8 result = 0;
+    int64 result = 0;
     switch (part) {
         case HOUR:
             result = tm->tm_hour;
@@ -5882,7 +5882,7 @@ static inline Datum GetSpecificPartOfTime(PG_FUNCTION_ARGS, int part)
         ereport(errlevel,
                 (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", tString)));
     }
-    PG_RETURN_FLOAT8(getPartFromTm(tm, fsec, part));
+    PG_RETURN_INT64(getPartFromTm(tm, fsec, part));
 }
 
 Datum GetHour(PG_FUNCTION_ARGS)
@@ -5913,11 +5913,11 @@ static Datum GetSpecificPartOfTimeInDate(PG_FUNCTION_ARGS, int part)
     pg_tm* tm = &tt;
 
     if (timestamp2tm(date2timestamp(dateVal), NULL, tm, &fsec, NULL, NULL) == 0) {
-        PG_RETURN_FLOAT8(getPartFromTm(tm, fsec, part));
+        PG_RETURN_INT64(getPartFromTm(tm, fsec, part));
     } else {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
     }
-    PG_RETURN_FLOAT8(0);
+    PG_RETURN_INT64(0);
 }
 
 Datum GetHourFromDate(PG_FUNCTION_ARGS)
@@ -5948,7 +5948,7 @@ static Datum GetSpecificPartOfTimeInTimeTz(PG_FUNCTION_ARGS, int part)
     fsec_t fsec;
     int tz;
     timetz2tm(time, tm, &fsec, &tz);
-    PG_RETURN_FLOAT8(getPartFromTm(tm, fsec, part));
+    PG_RETURN_INT64(getPartFromTm(tm, fsec, part));
 }
 
 Datum GetHourFromTimeTz(PG_FUNCTION_ARGS)
@@ -5978,7 +5978,7 @@ static Datum GetSpecificPartOfTimeInTimestampTz(PG_FUNCTION_ARGS, int part)
     pg_tm* tm = &tt;
     fsec_t fsec;
     int tz;
-    float8 result = 0;
+    int64 result = 0;
     if (timestamp2tm(time, &tz, tm, &fsec, NULL, NULL) == 0) {
         switch (part) {
             case HOUR:
@@ -5999,7 +5999,7 @@ static Datum GetSpecificPartOfTimeInTimestampTz(PG_FUNCTION_ARGS, int part)
     } else {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
     }
-    PG_RETURN_FLOAT8(result);
+    PG_RETURN_INT64(result);
 }
 
 Datum GetHourFromTimestampTz(PG_FUNCTION_ARGS)

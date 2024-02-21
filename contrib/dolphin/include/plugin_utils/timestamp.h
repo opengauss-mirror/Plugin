@@ -119,11 +119,11 @@ extern int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec, unsigned int date
 #else
 extern int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec);
 #endif
-extern bool datetime_in_no_ereport(const char *str, Timestamp *datetime);
 extern bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result, bool is_add_func = false);
 extern bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result, bool is_add_func = false);
 
 #ifdef DOLPHIN
+extern bool datetime_in_no_ereport(const char *str, Timestamp *datetime, bool can_ignore = false);
 Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time,
     bool can_ignore = false, bool* result_isnull = NULL);
 extern void check_b_format_datetime_range_with_ereport(Timestamp &datetime);
