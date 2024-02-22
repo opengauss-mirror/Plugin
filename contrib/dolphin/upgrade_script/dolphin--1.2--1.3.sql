@@ -1518,3 +1518,8 @@ CREATE OR REPLACE FUNCTION pg_catalog.bool_cast_datetime(boolean)
 RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'bool_cast_datetime';
 CREATE OR REPLACE FUNCTION pg_catalog.bool_cast_timestamptz(boolean)
 RETURNS timestamp with time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'bool_cast_timestamptz';
+
+DROP FUNCTION IF EXISTS pg_catalog.log(year);
+DROP FUNCTION IF EXISTS pg_catalog.log(json);
+CREATE OR REPLACE FUNCTION pg_catalog.log(year) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log(json) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';

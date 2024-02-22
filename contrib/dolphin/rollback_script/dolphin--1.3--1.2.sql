@@ -967,3 +967,6 @@ DROP FUNCTION IF EXISTS pg_catalog.bool_cast_time(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.bool_cast_date(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.bool_cast_datetime(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.bool_cast_timestamptz(boolean);
+
+DROP FUNCTION IF EXISTS pg_catalog.log(year);
+DROP FUNCTION IF EXISTS pg_catalog.log(json);

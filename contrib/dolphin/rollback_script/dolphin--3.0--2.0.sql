@@ -40,8 +40,6 @@ DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
 
 drop function IF EXISTS pg_catalog."user"();
 
-DROP FUNCTION IF EXISTS pg_catalog.log(year);
-DROP FUNCTION IF EXISTS pg_catalog.log(json);
 DROP FUNCTION IF EXISTS pg_catalog.log(uint1);
 DROP FUNCTION IF EXISTS pg_catalog.log(uint2);
 DROP FUNCTION IF EXISTS pg_catalog.log(uint4);
