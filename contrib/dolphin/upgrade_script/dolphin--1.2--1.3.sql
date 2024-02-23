@@ -1967,3 +1967,92 @@ CREATE OPERATOR CLASS uint4_ops
         OPERATOR        1       =(int8, uint4),
         OPERATOR        1       =(int4, uint4),
         FUNCTION        1       hashuint4(uint4);
+
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(bit) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(year) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(blob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(anyenum) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(json) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.is_ipv4(bit) RETURNS int4 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.is_ipv4(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.is_ipv4(boolean) RETURNS int4 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.is_ipv4(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.is_ipv4(year) RETURNS int4 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.is_ipv4(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.is_ipv4(blob) RETURNS int4 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.is_ipv4(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.is_ipv4(anyenum) RETURNS int4 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.is_ipv4(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.is_ipv4(json) RETURNS int4 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.is_ipv4(cast($1 as text))';
+
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(char);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(varchar);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(binary);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(tinyblob);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(blob);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(mediumblob);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(longblob);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(text);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(json);
+DROP FUNCTION IF EXISTS pg_catalog.binaryand(binary, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_and_binary(varbinary, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinaryand(varbinary, varbinary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.bloband(blob, blob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_and_tinyblob(varbinary, tinyblob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_and_blob(varbinary, blob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_and_mediumblob(varbinary, mediumblob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_and_longblob(varbinary, longblob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.text_and_uint8(uint8, text) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, char) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, varchar) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, json) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.binaryand(binary, binary) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binaryand';
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_and_binary(varbinary, binary) RETURNS varbinary LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'varbinary_and_binary';
+CREATE OR REPLACE FUNCTION pg_catalog.varbinaryand(varbinary, varbinary) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'varbinaryand';
+CREATE OR REPLACE FUNCTION pg_catalog.bloband(blob, blob) RETURNS blob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bloband';
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_and_tinyblob(varbinary, tinyblob) RETURNS varbinary LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'varbinary_and_tinyblob';
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_and_blob(varbinary, blob) RETURNS varbinary LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'varbinary_and_blob';
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_and_mediumblob(varbinary, mediumblob) RETURNS varbinary LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'varbinary_and_mediumblob';
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_and_longblob(varbinary, longblob) RETURNS varbinary LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'varbinary_and_longblob';
+CREATE OR REPLACE FUNCTION pg_catalog.text_and_uint8(uint8, text) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_and_uint8';
+CREATE OR REPLACE FUNCTION pg_catalog.uint8and(uint8, char) RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint8and($1, cast($2 as uint8))';
+CREATE OR REPLACE FUNCTION pg_catalog.uint8and(uint8, varchar) RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint8and($1, cast($2 as uint8))';
+CREATE OR REPLACE FUNCTION pg_catalog.uint8and(uint8, json) RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint8and($1, cast($2 as uint8))';
+CREATE OPERATOR pg_catalog.&(leftarg = binary, rightarg = binary, procedure = pg_catalog.binaryand);
+CREATE OPERATOR pg_catalog.&(leftarg = blob, rightarg = blob, procedure = pg_catalog.bloband);
+CREATE AGGREGATE pg_catalog.bit_and(char) (SFUNC = pg_catalog.uint8and, cFUNC = pg_catalog.uint8and, STYPE = uint8, initcond = '18446744073709551615');
+CREATE AGGREGATE pg_catalog.bit_and(varchar) (SFUNC = pg_catalog.uint8and, cFUNC = pg_catalog.uint8and, STYPE = uint8, initcond = '18446744073709551615');
+CREATE AGGREGATE pg_catalog.bit_and(binary) (SFUNC = pg_catalog.varbinary_and_binary, STYPE = varbinary);
+CREATE AGGREGATE pg_catalog.bit_and(varbinary) (SFUNC = pg_catalog.varbinaryand, STYPE = varbinary);
+CREATE AGGREGATE pg_catalog.bit_and(tinyblob) (SFUNC = pg_catalog.varbinary_and_tinyblob, STYPE = varbinary);
+CREATE AGGREGATE pg_catalog.bit_and(blob) (SFUNC = pg_catalog.varbinary_and_blob, STYPE = varbinary);
+CREATE AGGREGATE pg_catalog.bit_and(mediumblob) (SFUNC = pg_catalog.varbinary_and_mediumblob, STYPE = varbinary);
+CREATE AGGREGATE pg_catalog.bit_and(longblob) (SFUNC = pg_catalog.varbinary_and_longblob, STYPE = varbinary);
+CREATE AGGREGATE pg_catalog.bit_and(text) (SFUNC = pg_catalog.text_and_uint8, STYPE = uint8, initcond = '18446744073709551615');
+CREATE AGGREGATE pg_catalog.bit_and(json) (SFUNC = pg_catalog.uint8and, cFUNC = pg_catalog.uint8and, STYPE = uint8, initcond = '18446744073709551615');
+
+DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(bit) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(year) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(blob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(anyenum) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(json) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.inet6_ntoa(bit) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet6_ntoa(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet6_ntoa(boolean) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet6_ntoa(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet6_ntoa(year) RETURNS varchar LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'inetntop';
+CREATE OR REPLACE FUNCTION pg_catalog.inet6_ntoa(blob) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet6_ntoa(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet6_ntoa(anyenum) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet6_ntoa(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet6_ntoa(json) RETURNS varchar LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'inetntop';
+
+DROP FUNCTION IF EXISTS pg_catalog.md5(bit) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.md5(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.md5(year) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.md5(blob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.md5(anyenum) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.md5(json) CASCADE;
+
+CREATE OR REPLACE FUNCTION pg_catalog.md5(bit) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.md5(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.md5(boolean) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.md5(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.md5(year) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.md5(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.md5(blob) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.md5(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.md5(anyenum) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.md5(cast($1 as text))';
+CREATE OR REPLACE FUNCTION pg_catalog.md5(json) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.md5(cast($1 as text))';

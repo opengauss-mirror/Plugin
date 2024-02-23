@@ -4296,7 +4296,7 @@ int128 text_uintInternal(Datum txt, int128 min, int128 max, char* intType, bool 
     int128 result;
     tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
 
-    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
+    result = DatumGetInt128(DirectFunctionCall1Coll(int16in, InvalidOid, CStringGetDatum(tmp), canIgnore));
     pfree_ext(tmp);
 
      /* keyword IGNORE has higher priority than sql mode */
