@@ -2605,4 +2605,74 @@ Datum mp_bit_length_binary(PG_FUNCTION_ARGS)
     Datum input = PG_GETARG_DATUM(0);
     PG_RETURN_INT32((toast_raw_datum_size(input) - VARHDRSZ) * BITS_PER_BYTE);
 }
+
+static void cp_and_pad_left_zero(char *origin, int originLen, char *target, int targetLen)
+{
+    char *op = origin, *tp =target;
+    int offset = targetLen - originLen;
+
+    int ret = memset_s(tp, targetLen, '0', offset);
+    securec_check_c(ret, "\0", "\0");
+    tp += offset;
+    for (int i = 0; i < originLen; i++) {
+        *tp++ = *op++;
+    }
+}
+
+static void binary_str_to_char(char *str, char *result, int len)
+{
+    char *rp = result, *sp = str;
+    int zero = '0', s = 0, i, k;
+
+    for (i = 0; i < len; i++) {
+        s = 0;
+        for (k = BITS_PER_BYTE; k > 0; k--) {
+            int n = (int)(*sp++) - zero;
+            s = n == 0 ? s : s + (n << (k - 1));
+        }
+        *rp++ = (char) s;
+    }
+}
+
+/**
+ * cast bit value to charater.
+ * - if the length of bit value is not a multiple of 8, pad left 0.
+ * - do not ignore '\0'
+ */
+Datum bit_to_str(VarBit *bits)
+{
+    char *result = NULL, *bitStr = NULL, *bitChars = NULL, *r = NULL;
+    bits8* sp = NULL;
+    bits8 x;
+    int i, k, len = VARBITLEN(bits), byteLen = VARBITBYTES(bits);
+
+    result = (char*)palloc0(byteLen + 1);
+    bitStr = (char*)palloc0(byteLen * BITS_PER_BYTE + 1);
+    bitChars = (char*)palloc0(len + 1);
+
+    sp = VARBITS(bits);
+    r = bitChars;
+    for (i = 0; i <= len - BITS_PER_BYTE; i += BITS_PER_BYTE, sp++) {
+        x = *sp;
+        for (k = 0; k < BITS_PER_BYTE; k++) {
+            *r++ = IS_HIGHBIT_SET(x) ? '1' : '0';
+            x <<= 1;
+        }
+    }
+    if (i < len) {
+        x = *sp;
+        for (k = i; k < len; k++) {
+            *r++ = IS_HIGHBIT_SET(x) ? '1' : '0';
+            x <<= 1;
+        }
+    }
+
+    cp_and_pad_left_zero(bitChars, len, bitStr, byteLen * BITS_PER_BYTE);
+    binary_str_to_char(bitStr, result, byteLen);
+
+    pfree(bitChars);
+    pfree(bitStr);
+
+    PG_RETURN_CSTRING(result);
+}
 #endif
