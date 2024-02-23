@@ -1206,6 +1206,11 @@ RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
 
 CREATE OR REPLACE FUNCTION pg_catalog.log(anyelement,anyelement) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as number), cast($2 as number))';
 
+DROP FUNCTION IF EXISTS pg_catalog.log(year);
+DROP FUNCTION IF EXISTS pg_catalog.log(json);
+CREATE OR REPLACE FUNCTION pg_catalog.log(year) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log(json) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
+
 CREATE OR REPLACE FUNCTION pg_catalog.substr(arg1 longblob, start int, the_end int) RETURNS longblob LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substrb(arg1::text, start, the_end)::longblob';
 CREATE OR REPLACE FUNCTION pg_catalog.substr(arg1 longblob, start int) RETURNS longblob LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substrb(arg1::text, start)::longblob';
 
