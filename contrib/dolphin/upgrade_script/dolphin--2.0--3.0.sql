@@ -299,20 +299,51 @@ RETURNS time without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'n
 create or replace function pg_catalog."user"() returns name as 'select current_user' LANGUAGE 'sql' IMMUTABLE;
 create or replace function pg_catalog."user"() returns name as 'select current_user' LANGUAGE 'sql' IMMUTABLE;
 
-CREATE OR REPLACE FUNCTION pg_catalog.hour (date) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromDate';
-CREATE OR REPLACE FUNCTION pg_catalog.microsecond (date) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromDate';
-CREATE OR REPLACE FUNCTION pg_catalog.minute (date) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromDate';
-CREATE OR REPLACE FUNCTION pg_catalog.second (date) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromDate';
+DROP FUNCTION IF EXISTS pg_catalog.hour (text);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond (text);
+DROP FUNCTION IF EXISTS pg_catalog.minute (text);
+DROP FUNCTION IF EXISTS pg_catalog.second (text);
 
-CREATE OR REPLACE FUNCTION pg_catalog.hour (timetz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromTimeTz';
-CREATE OR REPLACE FUNCTION pg_catalog.microsecond (timetz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromTimeTz';
-CREATE OR REPLACE FUNCTION pg_catalog.minute (timetz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromTimeTz';
-CREATE OR REPLACE FUNCTION pg_catalog.second (timetz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromTimeTz';
+CREATE OR REPLACE FUNCTION pg_catalog.hour (text) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHour';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (text) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecond';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (text) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinute';
+CREATE OR REPLACE FUNCTION pg_catalog.second (text) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecond';
 
-CREATE OR REPLACE FUNCTION pg_catalog.hour (timestamptz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromTimestampTz';
-CREATE OR REPLACE FUNCTION pg_catalog.microsecond (timestamptz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromTimestampTz';
-CREATE OR REPLACE FUNCTION pg_catalog.minute (timestamptz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromTimestampTz';
-CREATE OR REPLACE FUNCTION pg_catalog.second (timestamptz) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromTimestampTz';
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromDate';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromDate';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromDate';
+CREATE OR REPLACE FUNCTION pg_catalog.second (date) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromDate';
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (timetz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromTimeTz';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (timetz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromTimeTz';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (timetz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromTimeTz';
+CREATE OR REPLACE FUNCTION pg_catalog.second (timetz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromTimeTz';
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHourFromTimestampTz';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMicrosecondFromTimestampTz';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromTimestampTz';
+CREATE OR REPLACE FUNCTION pg_catalog.second (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromTimestampTz';
+
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT hour($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT minute($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.second (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT second($1::time)';
+
+DROP FUNCTION IF EXISTS pg_catalog.year(timestamp(0) without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.year(text);
+CREATE FUNCTION pg_catalog.year (timestamp(0) without time zone) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_year_part';
+CREATE FUNCTION pg_catalog.year (text) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'text_year_part';
+CREATE OR REPLACE FUNCTION pg_catalog.year(year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.year(bit) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.year(boolean) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.year(int4) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.year(longblob) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.year(anyenum) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.year(json) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.year(time) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::timestamp(0) without time zone)';
+
 
 CREATE OR REPLACE FUNCTION pg_catalog.convert_datetime_double(double precision) RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'convert_datetime_double';
 CREATE OR REPLACE FUNCTION pg_catalog.convert_timestamptz_double(double precision) RETURNS timestamp LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'convert_timestamptz_double';
@@ -1239,10 +1270,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.unhex (boolean)  RETURNS longblob LANGUAGE
 CREATE OR REPLACE FUNCTION pg_catalog.unhex (bytea)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bytea';
 CREATE OR REPLACE FUNCTION pg_catalog.unhex (bit)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bit';
 
-CREATE OR REPLACE FUNCTION pg_catalog.hour (year) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'SELECT hour($1::time)';
-CREATE OR REPLACE FUNCTION pg_catalog.minute (year) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'SELECT minute($1::time)';
-CREATE OR REPLACE FUNCTION pg_catalog.second (year) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'SELECT second($1::time)';
-CREATE OR REPLACE FUNCTION pg_catalog.year (year) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::time)';
 -- repeat function support
 CREATE OR REPLACE FUNCTION pg_catalog.repeat(anyenum, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.repeat(boolean, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';

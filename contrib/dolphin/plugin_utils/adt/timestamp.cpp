@@ -5432,7 +5432,7 @@ Datum timestamp_part(PG_FUNCTION_ARGS)
 Datum datetime_year_part(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
-    float8 result = 0;
+    int64 result = 0;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
     if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0)
@@ -5440,17 +5440,17 @@ Datum datetime_year_part(PG_FUNCTION_ARGS)
     else {
         ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
     }
-    PG_RETURN_FLOAT8(result);
+    PG_RETURN_INT64(result);
 }
 
 Datum text_year_part(PG_FUNCTION_ARGS)
 {
     Timestamp timestamp;
     char* str = TextDatumGetCString(PG_GETARG_TEXT_PP(0));
-    if (!datetime_in_no_ereport(str, &timestamp) || timestamp == TIMESTAMP_ZERO) {
+    if (!datetime_in_no_ereport(str, &timestamp, fcinfo->can_ignore) || timestamp == TIMESTAMP_ZERO) {
         PG_RETURN_NULL();
     }
-    float8 result = 0;
+    int64 result = 0;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
     if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0 && tm->tm_year <= MAX_YEAR) {
@@ -5458,7 +5458,7 @@ Datum text_year_part(PG_FUNCTION_ARGS)
     } else {
         PG_RETURN_NULL();
     }
-    PG_RETURN_FLOAT8(result);
+    PG_RETURN_INT64(result);
 }
 
 /* timestamptz_part()
@@ -7226,7 +7226,7 @@ bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result
  * false. 
  * @return false if the input string cannot be converted to datetime, otherwise true.
 */
-bool datetime_in_no_ereport(const char *str, Timestamp *datetime)
+bool datetime_in_no_ereport(const char *str, Timestamp *datetime, bool can_ignore)
 {
     bool ret = true;
     MemoryContext current_ctx = CurrentMemoryContext;
@@ -7237,6 +7237,9 @@ bool datetime_in_no_ereport(const char *str, Timestamp *datetime)
     }
     PG_CATCH();
     {
+        if (!can_ignore && SQL_MODE_STRICT()) {
+            PG_RE_THROW();
+        }
         // If catch an error, just empty the error stack and set return value to false.
         (void)MemoryContextSwitchTo(current_ctx);
         FlushErrorState();

@@ -954,6 +954,191 @@ select * from test_time_to_sec;
      1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |      1 |      1 |      0 |      0 |      1 |      0 |  69050 |  69050 |  69050 |  69050 |  69050 |  69050 |   1223 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      0
 (2 rows)
 
+select year(`int1`), year(`uint1`), year(`int2`), year(`uint2`), year(`int4`), year(`uint4`), year(`int8`), year(`uint8`), year(`float4`), year(`float8`), year(`numeric`), year(`bit1`), year(`bit64`), year(`boolean`), year(`date`), year(`time`), year(`time(4)`), year(`datetime`), year(`datetime(4)`), year(`timestamp`), year(`timestamp(4)`), year(`year`), year(`char`), year(`varchar`), year(`binary`), year(`varbinary`), year(`tinyblob`), year(`blob`), year(`mediumblob`), year(`longblob`), year(`text`), year(`enum_t`), year(`set_t`), year(`json`), 
+pg_typeof(year(`int1`)), pg_typeof(year(`uint1`)), pg_typeof(year(`int2`)), pg_typeof(year(`uint2`)), pg_typeof(year(`int4`)), pg_typeof(year(`uint4`)), pg_typeof(year(`int8`)), pg_typeof(year(`uint8`)), pg_typeof(year(`float4`)), pg_typeof(year(`float8`)), pg_typeof(year(`numeric`)), pg_typeof(year(`bit1`)), pg_typeof(year(`bit64`)), pg_typeof(year(`boolean`)), pg_typeof(year(`date`)), pg_typeof(year(`time`)), pg_typeof(year(`time(4)`)), pg_typeof(year(`datetime`)), pg_typeof(year(`datetime(4)`)), pg_typeof(year(`timestamp`)), pg_typeof(year(`timestamp(4)`)), pg_typeof(year(`year`)), pg_typeof(year(`char`)), pg_typeof(year(`varchar`)), pg_typeof(year(`binary`)), pg_typeof(year(`varbinary`)), pg_typeof(year(`tinyblob`)), pg_typeof(year(`blob`)), pg_typeof(year(`mediumblob`)), pg_typeof(year(`longblob`)), pg_typeof(year(`text`)), pg_typeof(year(`enum_t`)), pg_typeof(year(`set_t`)), pg_typeof(year(`json`)) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: ""
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: ""
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "2023"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "5"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: ""
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: ""
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "2023"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "5"
+CONTEXT:  referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: pg_typeof
+ year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof 
+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+      |      |      |      |      |      |      |      |      |      |      |      |      |      | 2023 | 2024 | 2024 | 2023 | 2023 | 2023 | 2023 |      |      |      |      |      |      |      |      |      |      |      |      |      | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint
+(1 row)
+
+-- should failed
+create table test_year as select year(`int1`) as year1, year(`uint1`) as year2, year(`int2`) as year3, year(`uint2`) as year4, year(`int4`) as year5, year(`uint4`) as year6, year(`int8`) as year7, year(`uint8`) as year8, year(`float4`) as year9, year(`float8`) as year10, year(`numeric`) as year11, year(`bit1`) as year12, year(`bit64`) as year13, year(`boolean`) as year14, year(`date`) as year15, year(`time`) as year16, year(`time(4)`) as year17, year(`datetime`) as year18, year(`datetime(4)`) as year19, year(`timestamp`) as year20, year(`timestamp(4)`) as year21, year(`year`) as year22, year(`char`) as year23, year(`varchar`) as year24, year(`binary`) as year25, year(`varbinary`) as year26, year(`tinyblob`) as year27, year(`blob`) as year28, year(`mediumblob`) as year29, year(`longblob`) as year30, year(`text`) as year31, year(`enum_t`) as year32, year(`set_t`) as year33, year(`json`) as year34 from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year1
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+create table test_year as select year(`int1`) as year1, year(`uint1`) as year2, year(`int2`) as year3, year(`uint2`) as year4, year(`int4`) as year5, year(`uint4`) as year6, year(`int8`) as year7, year(`uint8`) as year8, year(`float4`) as year9, year(`float8`) as year10, year(`numeric`) as year11, year(`bit1`) as year12, year(`bit64`) as year13, year(`boolean`) as year14, year(`date`) as year15, year(`time`) as year16, year(`time(4)`) as year17, year(`datetime`) as year18, year(`datetime(4)`) as year19, year(`timestamp`) as year20, year(`timestamp(4)`) as year21, year(`year`) as year22, year(`char`) as year23, year(`varchar`) as year24, year(`binary`) as year25, year(`varbinary`) as year26, year(`tinyblob`) as year27, year(`blob`) as year28, year(`mediumblob`) as year29, year(`longblob`) as year30, year(`text`) as year31, year(`enum_t`) as year32, year(`set_t`) as year33, year(`json`) as year34 from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year1
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year2
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year3
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year4
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year5
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year6
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year7
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year8
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year9
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year10
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year11
+WARNING:  invalid input syntax for type timestamp: ""
+CONTEXT:  referenced column: year12
+WARNING:  invalid input syntax for type timestamp: ""
+CONTEXT:  referenced column: year13
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year14
+WARNING:  invalid input syntax for type timestamp: "2023"
+CONTEXT:  referenced column: year22
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year23
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year24
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year25
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year26
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year27
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year28
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year29
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year30
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: year31
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year32
+WARNING:  invalid input syntax for type timestamp: "5"
+CONTEXT:  referenced column: year33
+WARNING:  invalid input syntax for type timestamp: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: year34
+reset dolphin.sql_mode;
+insert ignore into test_year select year(`int1`) as year1, year(`uint1`) as year2, year(`int2`) as year3, year(`uint2`) as year4, year(`int4`) as year5, year(`uint4`) as year6, year(`int8`) as year7, year(`uint8`) as year8, year(`float4`) as year9, year(`float8`) as year10, year(`numeric`) as year11, year(`bit1`) as year12, year(`bit64`) as year13, year(`boolean`) as year14, year(`date`) as year15, year(`time`) as year16, year(`time(4)`) as year17, year(`datetime`) as year18, year(`datetime(4)`) as year19, year(`timestamp`) as year20, year(`timestamp(4)`) as year21, year(`year`) as year22, year(`char`) as year23, year(`varchar`) as year24, year(`binary`) as year25, year(`varbinary`) as year26, year(`tinyblob`) as year27, year(`blob`) as year28, year(`mediumblob`) as year29, year(`longblob`) as year30, year(`text`) as year31, year(`enum_t`) as year32, year(`set_t`) as year33, year(`json`) as year34 from test_type_table;
+select * from test_year;
+ year1 | year2 | year3 | year4 | year5 | year6 | year7 | year8 | year9 | year10 | year11 | year12 | year13 | year14 | year15 | year16 | year17 | year18 | year19 | year20 | year21 | year22 | year23 | year24 | year25 | year26 | year27 | year28 | year29 | year30 | year31 | year32 | year33 | year34 
+-------+-------+-------+-------+-------+-------+-------+-------+-------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------
+       |       |       |       |       |       |       |       |       |        |        |        |        |        |   2023 |   2024 |   2024 |   2023 |   2023 |   2023 |   2023 |        |        |        |        |        |        |        |        |        |        |        |        |       
+       |       |       |       |       |       |       |       |       |        |        |        |        |        |   2023 |   2024 |   2024 |   2023 |   2023 |   2023 |   2023 |        |        |        |        |        |        |        |        |        |        |        |        |       
+(2 rows)
+
+drop table if exists test_year;
 drop table if exists test_time_to_sec;
 drop table if exists test_double_acos;
 drop table if exists test_double_exp;
