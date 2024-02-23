@@ -1028,3 +1028,48 @@ DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,text,year);
 DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,year,text);
 DROP FUNCTION IF EXISTS pg_catalog.date_add (year, interval);
 DROP FUNCTION IF EXISTS pg_catalog.date_sub (year, interval);
+
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(bit) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(year) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(blob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(anyenum) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(json) CASCADE;
+
+DROP OPERATOR IF EXISTS pg_catalog.&(binary, binary);
+DROP OPERATOR IF EXISTS pg_catalog.&(blob, blob);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(char);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(varchar);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(binary);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(tinyblob);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(blob);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(mediumblob);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(longblob);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(text);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(json);
+DROP FUNCTION IF EXISTS pg_catalog.binaryand(binary, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_and_binary(varbinary, binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinaryand(varbinary, varbinary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.bloband(blob, blob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_and_tinyblob(varbinary, tinyblob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_and_blob(varbinary, blob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_and_mediumblob(varbinary, mediumblob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_and_longblob(varbinary, longblob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.text_and_uint8(uint8, text) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, char) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, varchar) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, json) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(bit) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(year) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(blob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(anyenum) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(json) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.md5(bit) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.md5(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.md5(year) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.md5(blob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.md5(anyenum) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.md5(json) CASCADE;

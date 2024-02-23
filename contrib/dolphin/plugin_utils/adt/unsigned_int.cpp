@@ -4293,7 +4293,7 @@ int128 text_uintInternal(Datum txt, int128 min, int128 max, char* intType, bool 
     int128 result;
     tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
 
-    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
+    result = DatumGetInt128(DirectFunctionCall1Coll(int16in, InvalidOid, CStringGetDatum(tmp), canIgnore));
     pfree_ext(tmp);
 
      /* keyword IGNORE has higher priority than sql mode */
@@ -4896,7 +4896,7 @@ Datum bpchar_uint8(PG_FUNCTION_ARGS)
     Datum result;
     tmp = DatumGetCString(DirectFunctionCall1(bpcharout, txt));
 
-    result = DirectFunctionCall1(uint8in, CStringGetDatum(tmp));
+    result = DirectFunctionCall1Coll(uint8in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -4958,7 +4958,7 @@ Datum varchar_uint8(PG_FUNCTION_ARGS)
     Datum result;
     tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
 
-    result = DirectFunctionCall1(uint8in, CStringGetDatum(tmp));
+    result = DirectFunctionCall1Coll(uint8in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);

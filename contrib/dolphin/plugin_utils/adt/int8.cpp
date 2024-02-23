@@ -1508,7 +1508,11 @@ Datum varchar_int8(PG_FUNCTION_ARGS)
     Datum result;
     tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
 
+#ifdef DOLPHIN
+    result = DirectFunctionCall1Coll(int8in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
+#else
     result = DirectFunctionCall1(int8in, CStringGetDatum(tmp));
+#endif
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -1553,7 +1557,11 @@ Datum text_int8(PG_FUNCTION_ARGS)
     Datum result;
     tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
 
+#ifdef DOLPHIN
+    result = DirectFunctionCall1Coll(int8in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
+#else
     result = DirectFunctionCall1(int8in, CStringGetDatum(tmp));
+#endif
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -1566,7 +1574,11 @@ Datum bpchar_int8(PG_FUNCTION_ARGS)
     Datum result;
     tmp = DatumGetCString(DirectFunctionCall1(bpcharout, txt));
 
+#ifdef DOLPHIN
+    result = DirectFunctionCall1Coll(int8in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
+#else
     result = DirectFunctionCall1(int8in, CStringGetDatum(tmp));
+#endif
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);

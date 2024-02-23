@@ -199,6 +199,8 @@ static CmpType get_cmp_type(CmpType a, CmpType b);
 static bool is_unsigned_intType(Oid oid);
 static uint64 parse_unsigned_val(Oid typeoid, char* str_val);
 static CmpType agg_cmp_type(FunctionCallInfo fcinfo, int argc);
+static bytea* binary_type_and(PG_FUNCTION_ARGS);
+static uint64 bit_and_text_uint8(const char* s, uint64 max, int64 min, const char* typname);
 
 PG_FUNCTION_INFO_V1_PUBLIC(binary_typmodin);
 extern "C" DLL_PUBLIC Datum binary_typmodin(PG_FUNCTION_ARGS);
@@ -10406,6 +10408,199 @@ Datum blobxor(PG_FUNCTION_ARGS)
         pfree_ext(arg_str);
     }
     PG_RETURN_INT32(result);
+}
+
+static bytea* binary_type_and(PG_FUNCTION_ARGS)
+{
+    bytea* arg1 = PG_GETARG_BYTEA_PP(0);
+    bytea* arg2 = PG_GETARG_BYTEA_PP(1);
+    int32 len1 = VARSIZE_ANY_EXHDR(arg1);
+    int32 len2 = VARSIZE_ANY_EXHDR(arg2);
+    if (len1 != len2)
+        ereport(ERROR,
+            (errcode(ERRCODE_STRING_DATA_LENGTH_MISMATCH), errmsg("Cannot and binary type of different sizes")));
+    char* p1 = VARDATA(arg1);
+    char* p2 = VARDATA(arg2);
+    char* ptr = p1;
+    while (*p1) {
+        *p1 &= *p2;
+        p1++;
+        p2++;
+    }
+
+    bytea* result = (bytea*)palloc(VARHDRSZ + len1);
+    SET_VARSIZE(result, VARHDRSZ + len1);
+    if (len1 > 0) {
+        errno_t ss_rc = memcpy_s(VARDATA(result), len1, ptr, len1);
+        securec_check(ss_rc, "\0", "\0");
+    }
+    return result;
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bloband);
+extern "C" DLL_PUBLIC Datum bloband(PG_FUNCTION_ARGS);
+Datum bloband(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(binaryand);
+extern "C" DLL_PUBLIC Datum binaryand(PG_FUNCTION_ARGS);
+Datum binaryand(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbinaryand);
+extern "C" DLL_PUBLIC Datum varbinaryand(PG_FUNCTION_ARGS);
+Datum varbinaryand(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbinary_and_binary);
+extern "C" DLL_PUBLIC Datum varbinary_and_binary(PG_FUNCTION_ARGS);
+Datum varbinary_and_binary(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL();
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(1));
+    }
+
+    if (PG_ARGISNULL(1)) {
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(0));
+    }
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbinary_and_tinyblob);
+extern "C" DLL_PUBLIC Datum varbinary_and_tinyblob(PG_FUNCTION_ARGS);
+Datum varbinary_and_tinyblob(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL();
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(1));
+    }
+
+    if (PG_ARGISNULL(1)) {
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(0));
+    }
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbinary_and_blob);
+extern "C" DLL_PUBLIC Datum varbinary_and_blob(PG_FUNCTION_ARGS);
+Datum varbinary_and_blob(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL();
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(1));
+    }
+
+    if (PG_ARGISNULL(1)) {
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(0));
+    }
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbinary_and_mediumblob);
+extern "C" DLL_PUBLIC Datum varbinary_and_mediumblob(PG_FUNCTION_ARGS);
+Datum varbinary_and_mediumblob(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL();
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(1));
+    }
+
+    if (PG_ARGISNULL(1)) {
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(0));
+    }
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbinary_and_longblob);
+extern "C" DLL_PUBLIC Datum varbinary_and_longblob(PG_FUNCTION_ARGS);
+Datum varbinary_and_longblob(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL();
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(1));
+    }
+
+    if (PG_ARGISNULL(1)) {
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(0));
+    }
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(text_and_uint8);
+extern "C" DLL_PUBLIC Datum text_and_uint8(PG_FUNCTION_ARGS);
+Datum text_and_uint8(PG_FUNCTION_ARGS)
+{
+    uint64 arg1 = PG_GETARG_UINT64(0);
+    char* str = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(1)));
+    uint64 arg2 = bit_and_text_uint8(str, PG_UINT64_MAX, 0, "bigint unsigned");
+    PG_RETURN_UINT64(arg1 & arg2);
+}
+
+static uint64 bit_and_text_uint8(const char* s, uint64 max, int64 min, const char* typname)
+{
+    const char* ptr = s;
+    int128 tmp = 0;
+    bool neg = false;
+    char digitAfterDot = '\0';
+    const int baseDecimal = 10;
+
+    if (*s == 0) {
+        return (uint64)tmp;
+    }
+
+    while (likely(*ptr) && isspace((unsigned char)*ptr)) {
+        ptr++;
+    }
+
+    if (*ptr == '-') {
+        ptr++;
+        neg = true;
+    } else if (*ptr == '+')
+        ptr++;
+
+    if (unlikely(!isdigit((unsigned char)*ptr))) {
+        return (uint64)tmp;
+    }
+
+    while (*ptr && isdigit((unsigned char)*ptr)) {
+        int8 digit = (*ptr++ - '0');
+        tmp = tmp * baseDecimal + digit;
+        if (tmp > max) {
+            return neg ? (uint64)min : max;
+        }
+    }
+
+    CheckSpaceAndDotInternal(digitAfterDot, &ptr);
+    if (neg && tmp > min) {
+        return neg ? (uint64)min : max;
+    }
+
+    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (tmp == max) {
+            return neg ? (uint64)min : max;
+        }
+        if (!neg && tmp < max) {
+            tmp++;
+        }
+    }
+
+    if (unlikely(*ptr != '\0')) {
+        return (uint64)tmp;
+    }
+
+    return (uint64)tmp;
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC (boolxor);
