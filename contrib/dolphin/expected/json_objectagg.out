@@ -231,6 +231,12 @@ select json_objectagg(a, b) from t1 group by a;
  {"2": 2}
 (2 rows)
 
+select distinct (pg_catalog.json_objectagg(0, ref_0.aggfnoid) over (partition by ref_0.aggtranstype order by ref_0.aggfinalfn))::text from pg_catalog.pg_aggregate as ref_0 where aggfnoid::text like '%bit_xor%';
+       json_objectagg        
+-----------------------------
+ {"0": "pg_catalog.bit_xor"}
+(1 row)
+
 drop schema json_objectagg_test cascade;
 NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table city
