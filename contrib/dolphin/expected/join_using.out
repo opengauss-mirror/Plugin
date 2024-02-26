@@ -4527,10 +4527,9 @@ select * from t_v24 natural join t_v29;
 (1 row)
 
 select * from t_v24 natural join t_v30;
- col1  
--------
- 1.23a
-(1 row)
+ col1 
+------
+(0 rows)
 
 select * from t_v24 natural join t_v31;
  col1 
@@ -5546,10 +5545,9 @@ select * from t_v30 natural join t_v23;
 (1 row)
 
 select * from t_v30 natural join t_v24;
- col1  
--------
- 1.23a
-(1 row)
+ col1 
+------
+(0 rows)
 
 select * from t_v30 natural join t_v25;
  col1  

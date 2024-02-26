@@ -386,5 +386,51 @@ SELECT repeat('a'::longblob, 100)::varbinary(10);
 drop table if exists binary_operator;
 reset dolphin.b_compatibility_mode;
 
+create table t_v22(col1 char(100));
+create table t_v23(col1 varchar(100));
+create table t_v30(col1 text);
+create table t_v24(col1 binary(100));
+create table t_v25(col1 varbinary(100));
+create table t_v27(col1 blob);
+
+
+set dolphin.b_compatibility_mode to on;
+
+insert into t_v22 values('1.23a');
+insert into t_v23 values('1.23a');
+insert into t_v30 values('1.23a');
+insert into t_v24 values('1.23a');
+insert into t_v25 values('1.23a');
+insert into t_v27 values('1.23a');
+
+set dolphin.sql_mode=''; -- 关闭pad_char_to_full_length
+select * from t_v22 inner join t_v24 on t_v22.col1=t_v24.col1;
+select * from t_v22 inner join t_v25 on t_v22.col1=t_v25.col1;
+select * from t_v22 inner join t_v27 on t_v22.col1=t_v27.col1;
+
+select * from t_v23 inner join t_v24 on t_v23.col1=t_v24.col1;
+select * from t_v23 inner join t_v25 on t_v23.col1=t_v25.col1;
+select * from t_v23 inner join t_v27 on t_v23.col1=t_v27.col1;
+
+select * from t_v30 inner join t_v24 on t_v30.col1=t_v24.col1;
+select * from t_v30 inner join t_v25 on t_v30.col1=t_v25.col1;
+select * from t_v30 inner join t_v27 on t_v30.col1=t_v27.col1;
+
+set dolphin.sql_mode='pad_char_to_full_length';
+
+select * from t_v22 inner join t_v24 on t_v22.col1=t_v24.col1;
+select * from t_v22 inner join t_v25 on t_v22.col1=t_v25.col1;
+select * from t_v22 inner join t_v27 on t_v22.col1=t_v27.col1;
+
+select * from t_v23 inner join t_v24 on t_v23.col1=t_v24.col1;
+select * from t_v23 inner join t_v25 on t_v23.col1=t_v25.col1;
+select * from t_v23 inner join t_v27 on t_v23.col1=t_v27.col1;
+
+select * from t_v30 inner join t_v24 on t_v30.col1=t_v24.col1;
+select * from t_v30 inner join t_v25 on t_v30.col1=t_v25.col1;
+select * from t_v30 inner join t_v27 on t_v30.col1=t_v27.col1;
+
+reset dolphin.sql_mode;
+
 drop schema test_binary cascade;
 reset current_schema;
