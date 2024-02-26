@@ -69,7 +69,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(text) RETURNS int4 LANGUAGE C 
 CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(date) RETURNS int4 AS $$ SELECT pg_catalog.time_to_sec(cast('00:00:00' as text)) $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(numeric) RETURNS int4 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as text)) $$ LANGUAGE SQL;
 
-DROP FUNCTION IF EXISTS pg_catalog.date_cast_timestamptz(date)
+DROP FUNCTION IF EXISTS pg_catalog.date_cast_timestamptz(date);
 DROP FUNCTION IF EXISTS pg_catalog.date_cast_datetime(date);
 
 DROP OPERATOR IF EXISTS pg_catalog.=(time, timestamp without time zone);
@@ -906,6 +906,56 @@ DROP FUNCTION IF EXISTS pg_catalog.varbinarytextlike(varbinary, text);
 DROP OPERATOR IF EXISTS pg_catalog.~~(blob, blob);
 DROP OPERATOR IF EXISTS pg_catalog.~~*(blob, blob);
 DROP FUNCTION IF EXISTS pg_catalog.bloblike(blob, blob);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(boolean, binary);
+DROP OPERATOR IF EXISTS pg_catalog.=(binary, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<>(boolean, binary);
+DROP OPERATOR IF EXISTS pg_catalog.<>(binary, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.>(boolean, binary);
+DROP OPERATOR IF EXISTS pg_catalog.>(binary, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<(boolean, binary);
+DROP OPERATOR IF EXISTS pg_catalog.<(binary, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.>=(boolean, binary);
+DROP OPERATOR IF EXISTS pg_catalog.>=(binary, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<=(boolean, binary);
+DROP OPERATOR IF EXISTS pg_catalog.<=(binary, boolean);
+DROP function IF EXISTS pg_catalog.boolean_binary_eq(boolean, binary);
+DROP function IF EXISTS pg_catalog.binary_boolean_eq(binary, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_binary_ne(boolean, binary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_boolean_ne(binary, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_binary_gt(boolean, binary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_boolean_gt(binary, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_binary_lt(boolean, binary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_boolean_lt(binary, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_binary_ge(boolean, binary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_boolean_ge(binary, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_binary_le(boolean, binary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_boolean_le(binary, boolean);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(year, binary);
+DROP OPERATOR IF EXISTS pg_catalog.=(binary, year);
+DROP OPERATOR IF EXISTS pg_catalog.<>(year, binary);
+DROP OPERATOR IF EXISTS pg_catalog.<>(binary, year);
+DROP OPERATOR IF EXISTS pg_catalog.>(year, binary);
+DROP OPERATOR IF EXISTS pg_catalog.>(binary, year);
+DROP OPERATOR IF EXISTS pg_catalog.<(year, binary);
+DROP OPERATOR IF EXISTS pg_catalog.<(binary, year);
+DROP OPERATOR IF EXISTS pg_catalog.>=(year, binary);
+DROP OPERATOR IF EXISTS pg_catalog.>=(binary, year);
+DROP OPERATOR IF EXISTS pg_catalog.<=(year, binary);
+DROP OPERATOR IF EXISTS pg_catalog.<=(binary, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_binary_eq(year, binary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_year_eq(binary, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_binary_ne(year, binary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_year_ne(binary, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_binary_gt(year, binary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_year_gt(binary, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_binary_lt(year, binary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_year_lt(binary, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_binary_ge(year, binary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_year_ge(binary, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_binary_le(year, binary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_year_le(binary, year);
 
 DROP CAST (timestamptz AS year);
 DROP CAST (timestamp(0) without time zone AS year);
