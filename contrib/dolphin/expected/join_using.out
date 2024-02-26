@@ -199,11 +199,8 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v1 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
- col1 
-------
-(0 rows)
-
+ERROR:  operator is not unique: tinyint = "binary"
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v1 natural join t_v25;
  col1 
 ------
@@ -384,6 +381,7 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v2 natural join t_v24;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -568,11 +566,8 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v3 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
- col1 
-------
-(0 rows)
-
+ERROR:  operator is not unique: smallint = "binary"
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v3 natural join t_v25;
  col1 
 ------
@@ -753,11 +748,8 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v4 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
- col1 
-------
-(0 rows)
-
+ERROR:  operator is not unique: integer = "binary"
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v4 natural join t_v25;
  col1 
 ------
@@ -926,6 +918,7 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v5 natural join t_v24;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -1295,6 +1288,7 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v7 natural join t_v24;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -1843,6 +1837,7 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 (0 rows)
 
 select * from t_v10 natural join t_v24;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2386,23 +2381,41 @@ WARNING:  Truncated incorrect DOUBLE value: 1.23a
 (1 row)
 
 select * from t_v13 natural join t_v24;
-ERROR:  operator does not exist: boolean = "binary"
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v13 natural join t_v25;
-ERROR:  operator does not exist: boolean = "varbinary"
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v13 natural join t_v26;
-ERROR:  operator does not exist: boolean = tinyblob
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v13 natural join t_v27;
-ERROR:  operator does not exist: boolean = blob
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v13 natural join t_v28;
-ERROR:  operator does not exist: boolean = mediumblob
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v13 natural join t_v29;
-ERROR:  operator does not exist: boolean = longblob
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v13 natural join t_v30;
  col1 
 ------
@@ -2550,8 +2563,6 @@ WARNING:  invalid input syntax for type smallint unsigned: "1.23a"
 
 select * from t_v14 natural join t_v24;
 WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -2722,6 +2733,7 @@ WARNING:  invalid input syntax for type smallint unsigned: "1.23a"
 (0 rows)
 
 select * from t_v15 natural join t_v24;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2888,6 +2900,7 @@ WARNING:  invalid input syntax for type smallint unsigned: "1.23a"
 (0 rows)
 
 select * from t_v16 natural join t_v24;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -3935,23 +3948,47 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (0 rows)
 
 select * from t_v21 natural join t_v24;
-ERROR:  operator does not exist: year = "binary"
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "year_binary_eq" statement 1
+ col1 
+------
+(0 rows)
+
 select * from t_v21 natural join t_v25;
-ERROR:  operator does not exist: year = "varbinary"
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "year_binary_eq" statement 1
+ col1 
+------
+(0 rows)
+
 select * from t_v21 natural join t_v26;
-ERROR:  operator does not exist: year = tinyblob
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "year_binary_eq" statement 1
+ col1 
+------
+(0 rows)
+
 select * from t_v21 natural join t_v27;
-ERROR:  operator does not exist: year = blob
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "year_binary_eq" statement 1
+ col1 
+------
+(0 rows)
+
 select * from t_v21 natural join t_v28;
-ERROR:  operator does not exist: year = mediumblob
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "year_binary_eq" statement 1
+ col1 
+------
+(0 rows)
+
 select * from t_v21 natural join t_v29;
-ERROR:  operator does not exist: year = longblob
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "year_binary_eq" statement 1
+ col1 
+------
+(0 rows)
+
 select * from t_v21 natural join t_v30;
 WARNING:  invalid input syntax for type bigint: "1.23a"
  col1 
@@ -4103,10 +4140,11 @@ select * from t_v22 natural join t_v23;
 (1 row)
 
 select * from t_v22 natural join t_v24;
-                                                 col1                                                 
-------------------------------------------------------------------------------------------------------
- 1.23a                                                                                               
-(1 row)
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
 
 select * from t_v22 natural join t_v25;
  col1 
@@ -4278,10 +4316,11 @@ select * from t_v23 natural join t_v22;
 select * from t_v23 natural join t_v23;
 ERROR:  table name "t_v23" specified more than once
 select * from t_v23 natural join t_v24;
- col1  
--------
- 1.23a
-(1 row)
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
 
 select * from t_v23 natural join t_v25;
  col1  
@@ -4329,29 +4368,22 @@ select * from t_v23 natural join t_enum;
 select * from t_v23 natural join t_set;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_v24 natural join t_v1;
-WARNING:  invalid input syntax for type double precision: "1.23a"
- col1 
-------
-(0 rows)
-
+ERROR:  operator is not unique: "binary" = tinyint
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v24 natural join t_v2;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v3;
-WARNING:  invalid input syntax for type double precision: "1.23a"
- col1 
-------
-(0 rows)
-
+ERROR:  operator is not unique: "binary" = smallint
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v24 natural join t_v4;
-WARNING:  invalid input syntax for type double precision: "1.23a"
- col1 
-------
-(0 rows)
-
+ERROR:  operator is not unique: "binary" = integer
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v24 natural join t_v5;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4363,6 +4395,7 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v24 natural join t_v7;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4380,6 +4413,7 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v24 natural join t_v10;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4397,19 +4431,25 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v24 natural join t_v13;
-ERROR:  operator does not exist: "binary" = boolean
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v24 natural join t_v14;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v15;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v16;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4435,19 +4475,25 @@ select * from t_v24 natural join t_v20;
 (0 rows)
 
 select * from t_v24 natural join t_v21;
-ERROR:  operator does not exist: "binary" = year
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "binary_year_eq" statement 1
+ col1 
+------
+(0 rows)
+
 select * from t_v24 natural join t_v22;
-                                                                                                    col1                                                                                                    
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- \x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(1 row)
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
 
 select * from t_v24 natural join t_v23;
-                                                                                                    col1                                                                                                    
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- \x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(1 row)
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
 
 select * from t_v24 natural join t_v24;
 ERROR:  table name "t_v24" specified more than once
@@ -4560,8 +4606,11 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v25 natural join t_v13;
-ERROR:  operator does not exist: "varbinary" = boolean
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v25 natural join t_v14;
  col1 
 ------
@@ -4598,8 +4647,12 @@ select * from t_v25 natural join t_v20;
 (0 rows)
 
 select * from t_v25 natural join t_v21;
-ERROR:  operator does not exist: "varbinary" = year
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "binary_year_eq" statement 1
+ col1 
+------
+(0 rows)
+
 select * from t_v25 natural join t_v22;
  col1 
 ------
@@ -4722,8 +4775,11 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v26 natural join t_v13;
-ERROR:  operator does not exist: tinyblob = boolean
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v26 natural join t_v14;
  col1 
 ------
@@ -4760,8 +4816,12 @@ select * from t_v26 natural join t_v20;
 (0 rows)
 
 select * from t_v26 natural join t_v21;
-ERROR:  operator does not exist: tinyblob = year
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "binary_year_eq" statement 1
+ col1 
+------
+(0 rows)
+
 select * from t_v26 natural join t_v22;
  col1 
 ------
@@ -4891,8 +4951,11 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v27 natural join t_v13;
-ERROR:  operator does not exist: blob = boolean
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v27 natural join t_v14;
  col1 
 ------
@@ -4929,8 +4992,12 @@ select * from t_v27 natural join t_v20;
 (0 rows)
 
 select * from t_v27 natural join t_v21;
-ERROR:  operator does not exist: blob = year
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "binary_year_eq" statement 1
+ col1 
+------
+(0 rows)
+
 select * from t_v27 natural join t_v22;
  col1 
 ------
@@ -5060,8 +5127,11 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v28 natural join t_v13;
-ERROR:  operator does not exist: mediumblob = boolean
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v28 natural join t_v14;
  col1 
 ------
@@ -5098,8 +5168,12 @@ select * from t_v28 natural join t_v20;
 (0 rows)
 
 select * from t_v28 natural join t_v21;
-ERROR:  operator does not exist: mediumblob = year
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "binary_year_eq" statement 1
+ col1 
+------
+(0 rows)
+
 select * from t_v28 natural join t_v22;
  col1 
 ------
@@ -5229,8 +5303,11 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v29 natural join t_v13;
-ERROR:  operator does not exist: longblob = boolean
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v29 natural join t_v14;
  col1 
 ------
@@ -5267,8 +5344,12 @@ select * from t_v29 natural join t_v20;
 (0 rows)
 
 select * from t_v29 natural join t_v21;
-ERROR:  operator does not exist: longblob = year
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  SQL function "binary_year_eq" statement 1
+ col1 
+------
+(0 rows)
+
 select * from t_v29 natural join t_v22;
  col1 
 ------
