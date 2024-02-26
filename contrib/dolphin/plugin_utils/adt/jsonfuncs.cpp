@@ -6161,9 +6161,6 @@ Datum json_objectagg_finalfn(PG_FUNCTION_ARGS)
 
     result = makeStringInfo();
     json_regular_format(result, state->root);
-    if (state->root != NULL) {
-        cJSON_Delete(state->root);
-    }
 
     /*
      * Make the result.  We cannot release the ObjectState because
