@@ -147,31 +147,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.nvarchar2_cast_int8 (
 nvarchar2
 ) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'nvarchar2_cast_int8';
 
-create or replace function pg_catalog.boolean_binary_eq(boolean, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int = $2::float)';
-CREATE OPERATOR pg_catalog.=(leftarg = boolean, rightarg = binary, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.boolean_binary_eq, restrict = eqsel, join = eqjoinsel);
-create or replace function pg_catalog.binary_boolean_eq(binary, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float = $2::int)';
-CREATE OPERATOR pg_catalog.=(leftarg = binary, rightarg = boolean, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.binary_boolean_eq, restrict = eqsel, join = eqjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.boolean_binary_ne(boolean, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int != $2::float)';
-CREATE OPERATOR pg_catalog.<>(leftarg = boolean, rightarg = binary, COMMUTATOR = operator(pg_catalog.<>), procedure = pg_catalog.boolean_binary_ne,restrict = neqsel, join = neqjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_boolean_ne(binary, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float != $2::int)';
-CREATE OPERATOR pg_catalog.<>(leftarg = binary, rightarg = boolean, COMMUTATOR = operator(pg_catalog.<>), procedure = pg_catalog.binary_boolean_ne,restrict = neqsel, join = neqjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.boolean_binary_gt(boolean, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int > $2::float)';
-CREATE OPERATOR pg_catalog.>(leftarg = boolean, rightarg = binary, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.boolean_binary_gt,restrict = scalargtsel, join = scalargtjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_boolean_gt(binary, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float > $2::int)';
-CREATE OPERATOR pg_catalog.>(leftarg = binary, rightarg = boolean, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.binary_boolean_gt,restrict = scalargtsel, join = scalargtjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.boolean_binary_lt(boolean, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int < $2::float)';
-CREATE OPERATOR pg_catalog.<(leftarg = boolean, rightarg = binary, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.boolean_binary_lt,restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_boolean_lt(binary, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float < $2::int)';
-CREATE OPERATOR pg_catalog.<(leftarg = binary, rightarg = boolean, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.binary_boolean_lt,restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.boolean_binary_ge(boolean, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int >= $2::float)';
-CREATE OPERATOR pg_catalog.>=(leftarg = boolean, rightarg = binary, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.boolean_binary_ge,restrict = scalargtsel, join = scalargtjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_boolean_ge(binary, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float >= $2::int)';
-CREATE OPERATOR pg_catalog.>=(leftarg = binary, rightarg = boolean, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.binary_boolean_ge,restrict = scalargtsel, join = scalargtjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.boolean_binary_le(boolean, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int <= $2::float)';
-CREATE OPERATOR pg_catalog.<=(leftarg = boolean, rightarg = binary, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.boolean_binary_le,restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_boolean_le(binary, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float <= $2::int)';
-CREATE OPERATOR pg_catalog.<=(leftarg = binary, rightarg = boolean, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.binary_boolean_le,restrict = scalarltsel, join = scalarltjoinsel);
-
 CREATE OR REPLACE FUNCTION pg_catalog.boolean_tinyblob_eq(boolean, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
 CREATE OPERATOR pg_catalog.=(LEFTARG = boolean, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.boolean_tinyblob_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
 CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_boolean_eq(tinyblob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
@@ -271,31 +246,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.boolean_longblob_le(boolean, longblob) ret
 CREATE OPERATOR pg_catalog.<=(leftarg = boolean, rightarg = longblob, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.boolean_longblob_le,restrict = scalarltsel, join = scalarltjoinsel);
 CREATE OR REPLACE FUNCTION pg_catalog.longblob_boolean_le(longblob, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text <= $2::text)';
 CREATE OPERATOR pg_catalog.<=(leftarg = longblob, rightarg = boolean, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.longblob_boolean_le,restrict = scalarltsel, join = scalarltjoinsel);
-
-CREATE OR REPLACE FUNCTION pg_catalog.year_binary_eq(year, binary) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::int = $2::float)';
-CREATE OPERATOR pg_catalog.=(LEFTARG = year, RIGHTARG = binary, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.year_binary_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_year_eq(binary, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::float = $2::int)';
-CREATE OPERATOR pg_catalog.=(LEFTARG = binary, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.binary_year_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.year_binary_ne(year, binary) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::int != $2::float)';
-CREATE OPERATOR pg_catalog.<>(LEFTARG = year, RIGHTARG = binary, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.year_binary_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_year_ne(binary, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::float != $2::int)';
-CREATE OPERATOR pg_catalog.<>(LEFTARG = binary, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.binary_year_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.year_binary_gt(year, binary) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::int > $2::float)';
-CREATE OPERATOR pg_catalog.>(LEFTARG = year, RIGHTARG = binary, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.year_binary_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_year_gt(binary, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::float > $2::int)';
-CREATE OPERATOR pg_catalog.>(LEFTARG = binary, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.binary_year_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.year_binary_lt(year, binary) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::int < $2::float)';
-CREATE OPERATOR pg_catalog.<(LEFTARG = year, RIGHTARG = binary, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.year_binary_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_year_lt(binary, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::float < $2::int)';
-CREATE OPERATOR pg_catalog.<(LEFTARG = binary, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.binary_year_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.year_binary_ge(year, binary) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::int >= $2::float)';
-CREATE OPERATOR pg_catalog.>=(LEFTARG = year, RIGHTARG = binary, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.year_binary_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_year_ge(binary, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::float >= $2::int)';
-CREATE OPERATOR pg_catalog.>=(LEFTARG = binary, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.binary_year_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.year_binary_le(year, binary) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::int <= $2::float)';
-CREATE OPERATOR pg_catalog.<=(LEFTARG = year, RIGHTARG = binary, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.year_binary_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_year_le(binary, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::float <= $2::int)';
-CREATE OPERATOR pg_catalog.<=(LEFTARG = binary, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.binary_year_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
 
 CREATE OR REPLACE FUNCTION pg_catalog.year_tinyblob_eq(year, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
 CREATE OPERATOR pg_catalog.=(LEFTARG = year, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.year_tinyblob_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
