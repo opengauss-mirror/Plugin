@@ -6039,7 +6039,7 @@ Datum adddate_datetime_interval_t(PG_FUNCTION_ARGS)
     int tm_type = DTK_NONE;
 
     expr = text_to_cstring(tmp);
-    if (!datetime_in_with_sql_mode_internal(expr, tm, &fsec, tm_type, TIME_NO_ZERO_DATE)) {
+    if (!datetime_in_with_sql_mode_internal(expr, tm, &fsec, tm_type, TIME_NO_ZERO_DATE, fcinfo->can_ignore)) {
         PG_RETURN_NULL();
     }
 
@@ -6668,7 +6668,7 @@ Datum b_extract_text(PG_FUNCTION_ARGS)
                 errmsg("units \"%s\" not supported", lowunits)));
     }
     if (find_type(enum_unit)) {
-        if (!datetime_in_with_sql_mode(str, tm, &fsec, NO_ZERO_DATE_SET())) {
+        if (!datetime_in_with_sql_mode(str, tm, &fsec, NO_ZERO_DATE_SET(), fcinfo->can_ignore)) {
             PG_RETURN_NULL();
         }
     } else {
