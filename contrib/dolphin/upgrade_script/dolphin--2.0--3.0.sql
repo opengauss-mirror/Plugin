@@ -377,23 +377,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_length("any",text) RETURNS int8 LANGU
 CREATE OR REPLACE FUNCTION pg_catalog.json_depth("any") RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_depth';
 CREATE OR REPLACE FUNCTION pg_catalog.json_storage_size("any") RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_storage_size';
 
-DROP FUNCTION IF EXISTS pg_catalog.b_extract (text, year);
-CREATE OR REPLACE FUNCTION pg_catalog.b_extract (text, year) RETURNS int8 LANGUAGE SQL STABLE STRICT as $$ SELECT pg_catalog.b_extract($1, $2::text) $$;
-DROP FUNCTION IF EXISTS pg_catalog.yearweek (year);
-CREATE OR REPLACE FUNCTION pg_catalog.yearweek (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as $$ SELECT pg_catalog.yearweek($1::text) $$;
-DROP FUNCTION IF EXISTS pg_catalog.makedate (year, int8);
-CREATE OR REPLACE FUNCTION pg_catalog.makedate (year, int8) RETURNS date AS $$ SELECT pg_catalog.makedate(cast($1 as int8), cast($2 as int8)) $$ LANGUAGE SQL;
-DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,year,year);
-DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,text,year);
-DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,year,text);
-CREATE OR REPLACE FUNCTION pg_catalog.b_timestampdiff(text,year,year) RETURNS int8 AS $$ SELECT pg_catalog.b_timestampdiff($1, $3::text, $2::text) $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.b_timestampdiff(text,text,year) RETURNS int8 AS $$ SELECT -pg_catalog.b_timestampdiff($1, $3::text, $2) $$ LANGUAGE SQL;
-CREATE OR REPLACE FUNCTION pg_catalog.b_timestampdiff(text,year,text) RETURNS int8 AS $$ SELECT -pg_catalog.b_timestampdiff($1, $3, $2::text) $$ LANGUAGE SQL;
-DROP FUNCTION IF EXISTS pg_catalog.date_add (year, interval);
-CREATE OR REPLACE FUNCTION pg_catalog.date_add (year, interval) RETURNS text AS $$ SELECT pg_catalog.adddate($1::text, $2)  $$ LANGUAGE SQL;
-DROP FUNCTION IF EXISTS pg_catalog.date_sub (year, interval);
-CREATE OR REPLACE FUNCTION pg_catalog.date_sub (year, interval) RETURNS text AS $$ SELECT pg_catalog.adddate($1::text, -$2)  $$ LANGUAGE SQL;
-
 DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(boolean) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(year) CASCADE;

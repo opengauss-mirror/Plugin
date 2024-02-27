@@ -351,15 +351,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_length("any",text) RETURNS int LANGUA
 CREATE OR REPLACE FUNCTION pg_catalog.json_depth("any") RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_depth';
 CREATE OR REPLACE FUNCTION pg_catalog.json_storage_size("any") RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_storage_size';
 
-DROP FUNCTION IF EXISTS pg_catalog.b_extract (text, year);
-DROP FUNCTION IF EXISTS pg_catalog.yearweek (year);
-DROP FUNCTION IF EXISTS pg_catalog.makedate (year, int8);
-DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,year,year);
-DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,text,year);
-DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,year,text);
-DROP FUNCTION IF EXISTS pg_catalog.date_add (year, interval);
-DROP FUNCTION IF EXISTS pg_catalog.date_sub (year, interval);
-
 DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(boolean) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(year) CASCADE;

@@ -133,10 +133,11 @@ extern bool datetime_add_interval(Timestamp datetime, Interval *span, Timestamp 
 extern void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime);
 extern int64 b_db_weekmode(int64 mode);
 extern int b_db_cal_week(struct pg_tm* tm, int64 mode, uint* year);
-extern bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag);
+extern bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag,
+                                      bool can_ignore = false);
 extern void add_currentdate_to_time(TimeADT time, Timestamp *result);
 extern bool datetime_in_with_sql_mode_internal(char *str, struct pg_tm *tm, fsec_t *fsec, int &tm_type,
-    unsigned int date_flag);
+                                               unsigned int date_flag, bool can_ignore = false);
 extern bool datetime_in_range(Timestamp datetime);
 extern int128 timestamp_int128(Timestamp timestamp);
 extern int128 timestamptz_int128(TimestampTz timestampTz);

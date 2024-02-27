@@ -395,7 +395,7 @@ extern "C" DLL_PUBLIC Datum date_cast_datetime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(date_cast_timestamptz);
 extern "C" DLL_PUBLIC Datum date_cast_timestamptz(PG_FUNCTION_ARGS);
 
-
+extern "C" DLL_PUBLIC Datum year_out(PG_FUNCTION_ARGS);
 #endif
 
 /* b format datetime and timestamp type */
@@ -7883,8 +7883,10 @@ bool determine_conversion(int dtk)
  * and timestamp_add_text() function.
  * @return: a date ,datetime or time value (text type).
  */
-Datum timestamp_add_internal(char *lowunits, int unit, int unit_type, Numeric num, Datum expr, Oid expr_type) 
+Datum timestamp_add_internal(PG_FUNCTION_ARGS, char *lowunits, int unit, int unit_type, Numeric num)
 {
+    Oid expr_type = get_fn_expr_argtype(fcinfo->flinfo, 2);
+    Datum expr = PG_GETARG_DATUM(2);
     Timestamp datetime, res_datetime;
     DateADT date, res_date;
     TimeADT time, res_time;
@@ -7911,6 +7913,14 @@ Datum timestamp_add_internal(char *lowunits, int unit, int unit_type, Numeric nu
     span->day = -span->day;
     span->month = -span->month;
 
+    if (expr_type == YEAROID) {
+        // The YEAR type can never be converted to the TIMESTAMP type or DATE type, because its value
+        // range([1901,2155]) is not a valid input for the TIMESTAMP or DATE type
+        char *str = DatumGetCString(DirectFunctionCall1(year_out, expr));
+        int errlevel = !fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING;
+        ereport(errlevel, (errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \"%s\"", str)));
+        PG_RETURN_NULL();
+    }
     switch (expr_type) {
         // when the input type is time or timetz
         case TIMETZOID:
@@ -7960,7 +7970,6 @@ Datum timestamp_add_numeric(PG_FUNCTION_ARGS) {
     text* units = PG_GETARG_TEXT_PP(0);
     char* lowunits = NULL;
     lowunits = downcase_truncate_identifier(VARDATA_ANY(units), VARSIZE_ANY_EXHDR(units), false);
-    Oid expr_type = get_fn_expr_argtype(fcinfo->flinfo, 2);
 
     /* parse unit */
     int unit = 0;
@@ -7970,7 +7979,7 @@ Datum timestamp_add_numeric(PG_FUNCTION_ARGS) {
         unit_type = DecodeSpecial(0, lowunits, &unit);
     }
 
-    return timestamp_add_internal(lowunits, unit, unit_type, PG_GETARG_NUMERIC(1), PG_GETARG_DATUM(2), expr_type);
+    return timestamp_add_internal(fcinfo, lowunits, unit, unit_type, PG_GETARG_NUMERIC(1));
 }
 
 /*
@@ -8016,7 +8025,7 @@ Datum timestamp_add_text(PG_FUNCTION_ARGS)
         num = DatumGetNumeric(DirectFunctionCall1(int8_numeric, Int64GetDatum(ret)));
     }
 
-    return timestamp_add_internal(lowunits, unit, unit_type, num, PG_GETARG_DATUM(2), expr_type);
+    return timestamp_add_internal(fcinfo, lowunits, unit, unit_type, num);
 }
 
 /*
@@ -8735,7 +8744,7 @@ Datum yearweek_text(PG_FUNCTION_ARGS)
     }
 
     char *date_str = text_to_cstring(PG_GETARG_TEXT_PP(0));
-    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, TIME_NO_ZERO_DATE)) {
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, TIME_NO_ZERO_DATE, fcinfo->can_ignore)) {
         PG_RETURN_NULL();
     }
     week_internal(result_tm, &week, mode, &year);
@@ -8817,8 +8826,8 @@ Datum timestampdiff_datetime_tt(PG_FUNCTION_ARGS)
     Timestamp datetime1, datetime2;
     int64 result;
 
-    if (!datetime_in_with_sql_mode(str1, tm1, &fsec1, TIME_NO_ZERO_DATE) ||
-        !datetime_in_with_sql_mode(str2, tm2, &fsec2, TIME_NO_ZERO_DATE)) {
+    if (!datetime_in_with_sql_mode(str1, tm1, &fsec1, TIME_NO_ZERO_DATE, fcinfo->can_ignore) ||
+        !datetime_in_with_sql_mode(str2, tm2, &fsec2, TIME_NO_ZERO_DATE, fcinfo->can_ignore)) {
         PG_RETURN_NULL();
     }
     tm2timestamp(tm1, fsec1, NULL, &datetime1);
@@ -9341,7 +9350,7 @@ Datum addtime_text(PG_FUNCTION_ARGS)
     PG_RETURN_NULL();
 }
 
-bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag)
+bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag, bool can_ignore)
 {
     bool ret = true;
     bool raise_warning = false;
@@ -9355,7 +9364,7 @@ bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsign
     PG_CATCH();
     {
         ret = false;
-        if (SQL_MODE_STRICT()) {
+        if (!can_ignore && SQL_MODE_STRICT()) {
             PG_RE_THROW();
         } else {
             raise_warning = true;
@@ -9371,8 +9380,8 @@ bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsign
     return ret;
 }
 
-bool datetime_in_with_sql_mode_internal(char *str, struct pg_tm *tm, fsec_t *fsec, int &tm_type,
-    unsigned int date_flag)
+bool datetime_in_with_sql_mode_internal(char *str, struct pg_tm *tm, fsec_t *fsec, int &tm_type, unsigned int date_flag,
+                                        bool can_ignore)
 {
     bool ret = true;
     bool raise_warning = false;
@@ -9385,7 +9394,7 @@ bool datetime_in_with_sql_mode_internal(char *str, struct pg_tm *tm, fsec_t *fse
     PG_CATCH();
     {
         ret = false;
-        if (SQL_MODE_STRICT()) {
+        if (!can_ignore && SQL_MODE_STRICT()) {
             PG_RE_THROW();
         } else {
             raise_warning = true;
