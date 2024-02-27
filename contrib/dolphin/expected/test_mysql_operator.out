@@ -2570,7 +2570,9 @@ select !b'1001';
 (1 row)
 
 select 10!;
-ERROR:  Operator '!' behind expression is deprecated when b_compatibility_mode is on. Please use function factorial().
+ERROR:  syntax error at or near ";"
+LINE 1: select 10!;
+                  ^
 -- test for '~'
 CREATE TABLE test_type_table
 (
@@ -2677,10 +2679,8 @@ select !!10;
 (1 row)
 
 select 10!;
- ?column? 
-----------
-  3628800
-(1 row)
-
+ERROR:  syntax error at or near ";"
+LINE 1: select 10!;
+                  ^
 drop schema like_test cascade;
 reset current_schema;

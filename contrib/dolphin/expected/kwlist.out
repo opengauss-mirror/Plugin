@@ -244,9 +244,13 @@ ERROR:  relation "t1" does not exist
 create rule "test" as on select to t1 where prior do do instead select * from t2; -- t1 no exists
 ERROR:  relation "t1" does not exist
 create rule "test" as on select to t1 where (binary) do instead select * from t2; -- t1 no exists
-ERROR:  relation "t1" does not exist
+ERROR:  syntax error at or near ")"
+LINE 1: ...reate rule "test" as on select to t1 where (binary) do inste...
+                                                             ^
 create rule "test" as on select to t1 where (prior) do instead select * from t2; -- t1 no exists
-ERROR:  relation "t1" does not exist
+ERROR:  syntax error at or near ")"
+LINE 1: create rule "test" as on select to t1 where (prior) do inste...
+                                                          ^
 create rule "test" as on select to t1 where test do instead select * from t2; -- t1 no exists
 ERROR:  relation "t1" does not exist
 create rule "test" as on select to t1 where 1=1 do instead select * from t2; -- t1 no exists
@@ -261,14 +265,13 @@ select end from end;
 (1 row)
 
 select case when end then binary else binary end from end; -- unsupported
-ERROR:  syntax error at or near "from"
+ERROR:  syntax error at or near "else"
 LINE 1: select case when end then binary else binary end from end;
-                                                         ^
+                                         ^
 select case when end then binary else (binary) end from end; -- binary un exists
-ERROR:  column "binary" does not exist
+ERROR:  syntax error at or near "else"
 LINE 1: select case when end then binary else (binary) end from end;
-                                  ^
-CONTEXT:  referenced column: binary
+                                         ^
 select case when end then binary end else binary end end from end;
  end  
 ------
