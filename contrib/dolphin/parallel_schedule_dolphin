@@ -80,7 +80,7 @@ test: network2 use_dbname show_create view_definer_test insert_set show_create_d
 
 test: partition_test1 partition_test2 partition_test3 partition_test4 partition_maxvalue_test
 
-test: builtin_funcs/b_compatibility_time_funcs builtin_funcs/b_compatibility_time_funcs2 builtin_funcs/b_compatibility_time_funcs3 builtin_funcs/repeat
+test: builtin_funcs/b_compatibility_time_funcs builtin_funcs/b_compatibility_time_funcs2 builtin_funcs/b_compatibility_time_funcs3 builtin_funcs/repeat builtin_funcs/b_compatibility_time_funcs_year
 
 # case sensitive test, do not insert test case */
 test: case_sensitive_test/create_env

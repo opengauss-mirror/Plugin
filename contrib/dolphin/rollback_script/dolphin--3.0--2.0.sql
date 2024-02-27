@@ -1004,3 +1004,11 @@ DROP FUNCTION IF EXISTS pg_catalog.float4_nvarchar2(FLOAT4);
 CREATE CAST (FLOAT4 AS NVARCHAR2) WITH FUNCTION pg_catalog.TO_NVARCHAR2(FLOAT4) AS IMPLICIT;
 CREATE CAST (FLOAT8 AS NVARCHAR2) WITH FUNCTION pg_catalog.TO_NVARCHAR2(FLOAT8) AS IMPLICIT;
 
+DROP FUNCTION IF EXISTS pg_catalog.b_extract (text, year);
+DROP FUNCTION IF EXISTS pg_catalog.yearweek (year);
+DROP FUNCTION IF EXISTS pg_catalog.makedate (year, int8);
+DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,year,year);
+DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,text,year);
+DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,year,text);
+DROP FUNCTION IF EXISTS pg_catalog.date_add (year, interval);
+DROP FUNCTION IF EXISTS pg_catalog.date_sub (year, interval);
