@@ -361,22 +361,6 @@ CREATE OPERATOR pg_catalog.=(leftarg = text, rightarg = binary, COMMUTATOR = ope
 CREATE OR REPLACE FUNCTION pg_catalog.binary_text_eq(binary, text) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1 = $2::binary)';
 CREATE OPERATOR pg_catalog.=(leftarg = binary, rightarg = text, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.binary_text_eq, restrict = eqsel, join = eqjoinsel);
 
-DROP FUNCTION IF EXISTS pg_catalog.json_contains("any", "any", text);
-DROP FUNCTION IF EXISTS pg_catalog.json_contains("any", "any");
-DROP FUNCTION IF EXISTS pg_catalog.json_valid("any");
-CREATE OR REPLACE FUNCTION pg_catalog.json_contains("any", "any", text) RETURNS int8 LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_contains';
-CREATE OR REPLACE FUNCTION pg_catalog.json_contains("any", "any") RETURNS int8 LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_contains';
-CREATE OR REPLACE FUNCTION pg_catalog.json_valid("any") RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_valid';
-
-DROP FUNCTION pg_catalog.json_length("any");
-DROP FUNCTION pg_catalog.json_length("any",text);
-DROP FUNCTION pg_catalog.json_depth("any");
-DROP FUNCTION pg_catalog.json_storage_size("any");
-CREATE OR REPLACE FUNCTION pg_catalog.json_length("any") RETURNS int8 LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_length';
-CREATE OR REPLACE FUNCTION pg_catalog.json_length("any",text) RETURNS int8 LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_length';
-CREATE OR REPLACE FUNCTION pg_catalog.json_depth("any") RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_depth';
-CREATE OR REPLACE FUNCTION pg_catalog.json_storage_size("any") RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_storage_size';
-
 DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(boolean) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(year) CASCADE;

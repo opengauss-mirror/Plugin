@@ -1598,3 +1598,19 @@ DROP FUNCTION IF EXISTS pg_catalog.date_add (year, interval);
 CREATE OR REPLACE FUNCTION pg_catalog.date_add (year, interval) RETURNS text AS $$ SELECT pg_catalog.adddate($1::text, $2)  $$ LANGUAGE SQL;
 DROP FUNCTION IF EXISTS pg_catalog.date_sub (year, interval);
 CREATE OR REPLACE FUNCTION pg_catalog.date_sub (year, interval) RETURNS text AS $$ SELECT pg_catalog.adddate($1::text, -$2)  $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.json_contains("any", "any", text);
+DROP FUNCTION IF EXISTS pg_catalog.json_contains("any", "any");
+DROP FUNCTION IF EXISTS pg_catalog.json_valid("any");
+CREATE OR REPLACE FUNCTION pg_catalog.json_contains("any", "any", text) RETURNS int8 LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_contains';
+CREATE OR REPLACE FUNCTION pg_catalog.json_contains("any", "any") RETURNS int8 LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_contains';
+CREATE OR REPLACE FUNCTION pg_catalog.json_valid("any") RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_valid';
+
+DROP FUNCTION pg_catalog.json_length("any");
+DROP FUNCTION pg_catalog.json_length("any",text);
+DROP FUNCTION pg_catalog.json_depth("any");
+DROP FUNCTION pg_catalog.json_storage_size("any");
+CREATE OR REPLACE FUNCTION pg_catalog.json_length("any") RETURNS int8 LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_length';
+CREATE OR REPLACE FUNCTION pg_catalog.json_length("any",text) RETURNS int8 LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_length';
+CREATE OR REPLACE FUNCTION pg_catalog.json_depth("any") RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_depth';
+CREATE OR REPLACE FUNCTION pg_catalog.json_storage_size("any") RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_storage_size';

@@ -335,22 +335,6 @@ DROP FUNCTION IF EXISTS pg_catalog.text_binary_eq(text, binary);
 DROP OPERATOR IF EXISTS pg_catalog.=(binary, text);
 DROP FUNCTION IF EXISTS pg_catalog.binary_text_eq(binary, text);
 
-DROP FUNCTION IF EXISTS pg_catalog.json_contains("any", "any", text);
-DROP FUNCTION IF EXISTS pg_catalog.json_contains("any", "any");
-DROP FUNCTION IF EXISTS pg_catalog.json_valid("any");
-CREATE OR REPLACE FUNCTION pg_catalog.json_contains("any", "any", text) RETURNS boolean LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_contains';
-CREATE OR REPLACE FUNCTION pg_catalog.json_contains("any", "any") RETURNS boolean LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_contains';
-CREATE OR REPLACE FUNCTION pg_catalog.json_valid("any") RETURNS boolean LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_valid';
-
-DROP FUNCTION pg_catalog.json_length("any");
-DROP FUNCTION pg_catalog.json_length("any",text);
-DROP FUNCTION pg_catalog.json_depth("any");
-DROP FUNCTION pg_catalog.json_storage_size("any");
-CREATE OR REPLACE FUNCTION pg_catalog.json_length("any") RETURNS int LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_length';
-CREATE OR REPLACE FUNCTION pg_catalog.json_length("any",text) RETURNS int LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_length';
-CREATE OR REPLACE FUNCTION pg_catalog.json_depth("any") RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_depth';
-CREATE OR REPLACE FUNCTION pg_catalog.json_storage_size("any") RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_storage_size';
-
 DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(boolean) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.is_ipv4(year) CASCADE;

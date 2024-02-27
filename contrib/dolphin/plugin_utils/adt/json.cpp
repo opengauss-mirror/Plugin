@@ -2768,7 +2768,7 @@ Datum json_depth(PG_FUNCTION_ARGS)
     /* validate it */
     lex = makeJsonLexContext(json, false);
     sort_json(lex, &nullSemAction, depth);
-    PG_RETURN_INT32(depth);
+    PG_RETURN_INT64((int64)depth);
 }
 
 Datum json_valid(PG_FUNCTION_ARGS)
@@ -2783,7 +2783,7 @@ Datum json_valid(PG_FUNCTION_ARGS)
 
     valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
     if (!VALTYPE_IS_JSON(valtype))
-        PG_RETURN_BOOL(false);
+        PG_RETURN_INT64((int64)false);
 
     arg = PG_GETARG_DATUM(0);
     getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
@@ -2807,7 +2807,7 @@ Datum json_valid(PG_FUNCTION_ARGS)
             FreeErrorData(edata);
 
             MemoryContextSwitchTo(cxt);
-            PG_RETURN_BOOL(false);
+            PG_RETURN_INT64((int64)false);
         } else {
             MemoryContextSwitchTo(cxt);
             ReThrowError(edata);
@@ -2815,7 +2815,7 @@ Datum json_valid(PG_FUNCTION_ARGS)
     }
     PG_END_TRY();
 
-    PG_RETURN_BOOL(true);
+    PG_RETURN_INT64((int64)true);
 }
 
 Datum json_type(PG_FUNCTION_ARGS)
