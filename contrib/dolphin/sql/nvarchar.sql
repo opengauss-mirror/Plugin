@@ -66,5 +66,40 @@ INSERT INTO NVARCHAR_TBL (f1) VALUES ('abcde');
 INSERT INTO NVARCHAR_TBL (f1) VALUES ('abcd    ');
 
 SELECT '' AS four, * FROM NVARCHAR_TBL;
+
+set dolphin.b_compatibility_mode to on;
+set b_format_behavior_compat_options = 'enable_set_variables';
+SET extra_float_digits = 3;
+
+create table t_text0001(
+    c1 int,
+    c2 national varchar(1),
+    c3 national varchar(10),
+    c4 national varchar(255),
+    c5 text,
+    c6 text(1),
+    c7 text(10),
+    c8 text(255),
+    c9 tinytext,
+    c10 mediumtext,
+    c11 longtext,
+    c12 varchar(1),
+    c13 varchar(255),
+    c14 char(10)) charset utf8;
+	
+set @val = 3.14159265;
+
+insert into t_text0001 values (1, substr(@val, 1, 1), @val, @val, @val, substr(@val, 1, 1), @val, @val, @val, @val, @val, substr(@val, 1, 1), @val, @val);
+
+insert into t_text0001 values (1, substr(@val, 1, 1), @val::float4, @val::float4, @val::float4, substr(@val, 1, 1), @val::float4, @val::float4, @val::float4, @val::float4, @val::float4, substr(@val, 1, 1), @val::float4, @val::float4);
+
+
+set @val = -12.1314;
+insert into t_text0001 values (1, substr(@val, 1, 1), @val, @val, @val, substr(@val, 1, 1), @val, @val, @val, @val, @val, substr(@val, 1, 1), @val, @val);
+insert into t_text0001 values (1, substr(@val, 1, 1), @val::float4, @val::float4, @val::float4, substr(@val, 1, 1), @val::float4, @val::float4, @val::float4, @val::float4, @val::float4, substr(@val, 1, 1), @val::float4, @val::float4);
+
+select * from t_text0001;
+drop table t_text0001;
+
 drop schema db_nvarchar cascade;
 reset current_schema;

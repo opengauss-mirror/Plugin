@@ -947,4 +947,10 @@ CREATE CAST (timestamptz AS year) with function pg_catalog.timestamp_year(timest
 CREATE CAST (timestamp(0) without time zone AS year) with function pg_catalog.datetime_year(timestamp(0) without time zone) AS ASSIGNMENT;
 CREATE CAST (date as year) with function pg_catalog.date_year(date) AS ASSIGNMENT;
 
+DROP CAST IF EXISTS (FLOAT8 AS NVARCHAR2);
+DROP CAST IF EXISTS (FLOAT4 AS NVARCHAR2);
+DROP FUNCTION IF EXISTS pg_catalog.float8_nvarchar2(FLOAT8);
+DROP FUNCTION IF EXISTS pg_catalog.float4_nvarchar2(FLOAT4);
+CREATE CAST (FLOAT4 AS NVARCHAR2) WITH FUNCTION pg_catalog.TO_NVARCHAR2(FLOAT4) AS IMPLICIT;
+CREATE CAST (FLOAT8 AS NVARCHAR2) WITH FUNCTION pg_catalog.TO_NVARCHAR2(FLOAT8) AS IMPLICIT;
 
