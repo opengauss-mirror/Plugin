@@ -52,19 +52,55 @@ CONTEXT:  referenced column: time
  
 (1 row)
 
+select cast(8385959 as time);
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select cast(-2147483647 as time);
+WARNING:  invalid input syntax for type time: "-2147483647"
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select cast(-8385959 as time);
+    time    
+------------
+ -838:59:59
+(1 row)
+
 create table test_cast_time(time time);
 insert into test_cast_time select cast(2147483647 as time);
 WARNING:  invalid input syntax for type time: "2147483647"
 CONTEXT:  referenced column: time
+insert into test_cast_time select cast(8385959 as time);
+insert into test_cast_time select cast(-2147483647 as time);
+WARNING:  invalid input syntax for type time: "-2147483647"
+CONTEXT:  referenced column: time
+insert into test_cast_time select cast(-8385959 as time);
 insert ignore into test_cast_time select cast(2147483647 as time);
 WARNING:  invalid input syntax for type time: "2147483647"
 CONTEXT:  referenced column: time
+insert ignore into test_cast_time select cast(8385959 as time);
+insert ignore into test_cast_time select cast(-2147483647 as time);
+WARNING:  invalid input syntax for type time: "-2147483647"
+CONTEXT:  referenced column: time
+insert ignore into test_cast_time select cast(-8385959 as time);
 select * from test_cast_time;
- time 
-------
+    time    
+------------
  
+ 838:59:59
  
-(2 rows)
+ -838:59:59
+ 
+ 838:59:59
+ 
+ -838:59:59
+(8 rows)
 
 drop table if exists test_cast_time;
 drop if exists table test_cast_time;
@@ -80,18 +116,53 @@ CONTEXT:  referenced column: time
  
 (1 row)
 
-create table test_cast_time(time time);
-insert into test_cast_time select cast(2147483647 as time);
-ERROR:  invalid input syntax for type time: "2147483647"
+select cast(8385959 as time);
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select cast(-2147483647 as time);
+WARNING:  invalid input syntax for type time: "-2147483647"
 CONTEXT:  referenced column: time
-insert ignore into test_cast_time select cast(2147483647 as time);
-WARNING:  invalid input syntax for type time: "2147483647"
-CONTEXT:  referenced column: time
-select * from test_cast_time;
  time 
 ------
  
 (1 row)
+
+select cast(-8385959 as time);
+    time    
+------------
+ -838:59:59
+(1 row)
+
+create table test_cast_time(time time);
+insert into test_cast_time select cast(2147483647 as time);
+ERROR:  invalid input syntax for type time: "2147483647"
+CONTEXT:  referenced column: time
+insert into test_cast_time select cast(8385959 as time);
+insert into test_cast_time select cast(-2147483647 as time);
+ERROR:  invalid input syntax for type time: "-2147483647"
+CONTEXT:  referenced column: time
+insert into test_cast_time select cast(-8385959 as time);
+insert ignore into test_cast_time select cast(2147483647 as time);
+WARNING:  invalid input syntax for type time: "2147483647"
+CONTEXT:  referenced column: time
+insert ignore into test_cast_time select cast(8385959 as time);
+insert ignore into test_cast_time select cast(-2147483647 as time);
+WARNING:  invalid input syntax for type time: "-2147483647"
+CONTEXT:  referenced column: time
+insert ignore into test_cast_time select cast(-8385959 as time);
+select * from test_cast_time;
+    time    
+------------
+ 838:59:59
+ -838:59:59
+ 
+ 838:59:59
+ 
+ -838:59:59
+(6 rows)
 
 drop table if exists test_cast_time;
 drop schema time_function_test cascade ;
