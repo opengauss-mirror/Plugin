@@ -12,18 +12,36 @@ reset search_path;
 
 set dolphin.sql_mode = '';
 select cast(2147483647 as time);
+select cast(8385959 as time);
+select cast(-2147483647 as time);
+select cast(-8385959 as time);
 create table test_cast_time(time time);
 insert into test_cast_time select cast(2147483647 as time);
+insert into test_cast_time select cast(8385959 as time);
+insert into test_cast_time select cast(-2147483647 as time);
+insert into test_cast_time select cast(-8385959 as time);
 insert ignore into test_cast_time select cast(2147483647 as time);
+insert ignore into test_cast_time select cast(8385959 as time);
+insert ignore into test_cast_time select cast(-2147483647 as time);
+insert ignore into test_cast_time select cast(-8385959 as time);
 select * from test_cast_time;
 drop table if exists test_cast_time;
 
 drop if exists table test_cast_time;
 reset dolphin.sql_mode;
 select cast(2147483647 as time);
+select cast(8385959 as time);
+select cast(-2147483647 as time);
+select cast(-8385959 as time);
 create table test_cast_time(time time);
 insert into test_cast_time select cast(2147483647 as time);
+insert into test_cast_time select cast(8385959 as time);
+insert into test_cast_time select cast(-2147483647 as time);
+insert into test_cast_time select cast(-8385959 as time);
 insert ignore into test_cast_time select cast(2147483647 as time);
+insert ignore into test_cast_time select cast(8385959 as time);
+insert ignore into test_cast_time select cast(-2147483647 as time);
+insert ignore into test_cast_time select cast(-8385959 as time);
 select * from test_cast_time;
 drop table if exists test_cast_time;
 

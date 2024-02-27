@@ -77,7 +77,6 @@ enum b_units
 #endif
 
 /* Limits for the TIME data type */
-#define TIME_MAX_INT 8385959
 #define TIME_MAX_HOUR 838
 #define TIME_MAX_MINUTE 59
 #define TIME_MAX_SECOND 59
@@ -92,6 +91,8 @@ enum b_units
 #define LLDIV_MAX  1000000000000000000LL
 
 /* Limits for the TIME data type */
+#define TIME_MAX_INT 8385959
+#define TIME_MIN_INT -8385959
 #define TIME_MAX_VALUE (TIME_MAX_HOUR*10000 + TIME_MAX_MINUTE*100 + \
                         TIME_MAX_SECOND)
 #define TIME_MAX_VALUE_SECONDS (TIME_MAX_HOUR * 3600L + \

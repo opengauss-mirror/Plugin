@@ -2394,7 +2394,7 @@ Datum int_cast_time_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull)
     char *str = DatumGetCString(DirectFunctionCall1(int8out, Int64GetDatum(number)));
     TimeErrorType time_error_type = TIME_CORRECT;
     Datum datum_internal = time_internal(fcinfo, str, TEXT_TIME_EXPLICIT, &time_error_type);
-    if (time_error_type == TIME_INCORRECT || number > TIME_MAX_INT) {
+    if (time_error_type == TIME_INCORRECT || number > TIME_MAX_INT || number < TIME_MIN_INT) {
         *isnull = true;
     }
     return datum_internal;
