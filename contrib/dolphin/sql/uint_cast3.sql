@@ -122,6 +122,10 @@ c7 varbinary(255)) charset utf8mb3;
 set @v1='abcdefghijklmnopqrstuvwxyz';
 set @v2='a熊猫竹竹爱吃竹子';
 set @v3=hex(@v2);
+set @v4=unhex(@v3);
+set @v5=bin(121314);
+set @v6=oct(999999);
+
 insert into t_binary0001 values (
 1, substr(@v1,1,1), substr(@v1,1,10), repeat(@v1, 9),
 substr(@v1,1,1), substr(@v1,1,10), repeat(@v1, 9));
@@ -129,8 +133,18 @@ insert into t_binary0001 values (
 2, substr(@v2,1,1), substr(@v2,1,4), repeat(@v2, 9),
 substr(@v2,1,1), substr(@v2,1,4), repeat(@v2, 9));
 insert into t_binary0001 values (
-2, substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255),
+3, substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255),
 substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255));
+insert into t_binary0001 values (
+4, substr(@v4,1,1), substr(@v4,1,4), substr(repeat(@v4, 10),1,255),
+substr(@v4,1,1), substr(@v4,1,4), substr(repeat(@v4, 10),1,255));
+insert into t_binary0001 values (
+5, substr(@v5,1,1), substr(@v5,1,4), substr(repeat(@v5, 10),1,255),
+substr(@v5,1,1), substr(@v5,1,4), substr(repeat(@v5, 10),1,255));
+insert into t_binary0001 values (
+6, substr(@v6,1,1), substr(@v6,1,4), substr(repeat(@v6, 10),1,255),
+substr(@v6,1,1), substr(@v6,1,4), substr(repeat(@v6, 10),1,255));
+
 --- 使用cast/convert函数转换
 select c1, cast(c2 as unsigned), cast(c3 as unsigned), cast(c4 as unsigned),
 cast(c5 as unsigned) from t_binary0001 order by 1,2,3,4,5;
