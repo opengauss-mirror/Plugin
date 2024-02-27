@@ -162,14 +162,13 @@ kwlist_d.h: ./src/include/parser/kwlist.h $(GEN_KEYWORDLIST_DEPS_AGE)
 src/include/parser/cypher_kwlist_d.h: ./src/include/parser/cypher_kwlist.h $(GEN_KEYWORDLIST_DEPS_AGE)
 	$(GEN_KEYWORDLIST_AGE) --extern --varname CypherKeyword --output ./src/include/parser  $<
 
-#ifdef USE_PGXS
+ifdef USE_PGXS
 PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
-#else
-#subdir = contrib/age
-
-#	include $(top_builddir)/src/Makefile.global
-#	include $(top_srcdir)/contrib/contrib-global.mk
-#endif
+else
+subdir = contrib/age
+include $(top_builddir)/src/Makefile.global
+include $(top_srcdir)/contrib/contrib-global.mk
+endif
 
