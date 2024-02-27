@@ -1573,3 +1573,11 @@ CREATE OR REPLACE FUNCTION pg_catalog.year_binary_le(year, binary) RETURNS bool 
 CREATE OPERATOR pg_catalog.<=(LEFTARG = year, RIGHTARG = binary, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.year_binary_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
 CREATE OR REPLACE FUNCTION pg_catalog.binary_year_le(binary, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::float <= $2::int)';
 CREATE OPERATOR pg_catalog.<=(LEFTARG = binary, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.binary_year_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+
+DROP CAST IF EXISTS (FLOAT8 AS NVARCHAR2);
+CREATE OR REPLACE FUNCTION pg_catalog.float8_nvarchar2(FLOAT8) RETURNS NVARCHAR2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'float8_nvarchar2';
+CREATE CAST (FLOAT8 AS NVARCHAR2) WITH FUNCTION pg_catalog.float8_nvarchar2(FLOAT8) AS IMPLICIT;
+
+DROP CAST IF EXISTS (FLOAT4 AS NVARCHAR2);
+CREATE OR REPLACE FUNCTION pg_catalog.float4_nvarchar2(FLOAT4) RETURNS NVARCHAR2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'float4_nvarchar2';
+CREATE CAST (FLOAT4 AS NVARCHAR2) WITH FUNCTION pg_catalog.float4_nvarchar2(FLOAT4) AS IMPLICIT;

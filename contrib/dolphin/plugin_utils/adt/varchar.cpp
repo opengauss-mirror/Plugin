@@ -224,6 +224,30 @@ void trim_trailing_space(char* str)
         *p = '\0';
     }
 }
+
+inline char* run_func_without_extra_float_digits(PGFunction func, Datum arg1)
+{
+    char* tmp;
+    if (u_sess->attr.attr_common.extra_float_digits > 0) {
+        int extra_float_digits_backup = u_sess->attr.attr_common.extra_float_digits;
+        PG_TRY();
+        {
+            u_sess->attr.attr_common.extra_float_digits = 0;
+            tmp = DatumGetCString(DirectFunctionCall1(func, arg1));
+            u_sess->attr.attr_common.extra_float_digits = extra_float_digits_backup;
+        }
+        PG_CATCH();
+        {
+            u_sess->attr.attr_common.extra_float_digits = extra_float_digits_backup;
+            PG_RE_THROW();
+        }
+        PG_END_TRY();
+    } else {
+        tmp = DatumGetCString(DirectFunctionCall1(func, arg1));
+    }
+    return tmp;
+}
+
 #endif
 
 /*
@@ -1009,9 +1033,11 @@ Datum float4_bpchar(PG_FUNCTION_ARGS)
     float4 arg1 = PG_GETARG_FLOAT4(0);
     char* tmp = NULL;
     Datum result;
-
+#ifdef DOLPHIN
+    tmp = run_func_without_extra_float_digits(float4out, Float4GetDatum(arg1));
+#else
     tmp = DatumGetCString(DirectFunctionCall1(float4out, Float4GetDatum(arg1)));
-
+#endif
     result = DirectFunctionCall3(bpcharin, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
     pfree_ext(tmp);
 
@@ -1029,8 +1055,11 @@ Datum float8_bpchar(PG_FUNCTION_ARGS)
     char* tmp = NULL;
     Datum result;
 
+#ifdef DOLPHIN
+    tmp = run_func_without_extra_float_digits(float8out, Float8GetDatum(arg1));
+#else
     tmp = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(arg1)));
-
+#endif
     result = DirectFunctionCall3(bpcharin, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
     pfree_ext(tmp);
 
@@ -1893,6 +1922,33 @@ Datum varchar_timestamp(PG_FUNCTION_ARGS)
     result = DirectFunctionCall3(timestamp_in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
     pfree_ext(tmp);
 
+    PG_RETURN_DATUM(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(float8_nvarchar2);
+extern "C" DLL_PUBLIC Datum float8_nvarchar2(PG_FUNCTION_ARGS);
+Datum float8_nvarchar2(PG_FUNCTION_ARGS)
+{
+    float8 num = PG_GETARG_FLOAT8(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = run_func_without_extra_float_digits(float8out, Float8GetDatum(num));
+    result = DirectFunctionCall3(nvarchar2in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(tmp);
+    PG_RETURN_DATUM(result);
+}
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(float4_nvarchar2);
+extern "C" DLL_PUBLIC Datum float4_nvarchar2(PG_FUNCTION_ARGS);
+Datum float4_nvarchar2(PG_FUNCTION_ARGS)
+{
+    float4 num = PG_GETARG_FLOAT4(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = run_func_without_extra_float_digits(float4out, Float4GetDatum(num));
+    result = DirectFunctionCall3(nvarchar2in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(tmp);
     PG_RETURN_DATUM(result);
 }
 

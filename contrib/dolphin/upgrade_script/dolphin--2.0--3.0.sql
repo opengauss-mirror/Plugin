@@ -361,14 +361,6 @@ CREATE OPERATOR pg_catalog.=(leftarg = text, rightarg = binary, COMMUTATOR = ope
 CREATE OR REPLACE FUNCTION pg_catalog.binary_text_eq(binary, text) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1 = $2::binary)';
 CREATE OPERATOR pg_catalog.=(leftarg = binary, rightarg = text, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.binary_text_eq, restrict = eqsel, join = eqjoinsel);
 
-DROP CAST IF EXISTS (FLOAT8 AS NVARCHAR2);
-CREATE OR REPLACE FUNCTION pg_catalog.float8_nvarchar2(FLOAT8) RETURNS NVARCHAR2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'float8_nvarchar2';
-CREATE CAST (FLOAT8 AS NVARCHAR2) WITH FUNCTION pg_catalog.float8_nvarchar2(FLOAT8) AS IMPLICIT;
-
-DROP CAST IF EXISTS (FLOAT4 AS NVARCHAR2);
-CREATE OR REPLACE FUNCTION pg_catalog.float4_nvarchar2(FLOAT4) RETURNS NVARCHAR2 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'float4_nvarchar2';
-CREATE CAST (FLOAT4 AS NVARCHAR2) WITH FUNCTION pg_catalog.float4_nvarchar2(FLOAT4) AS IMPLICIT;
-
 DROP FUNCTION IF EXISTS pg_catalog.json_contains("any", "any", text);
 DROP FUNCTION IF EXISTS pg_catalog.json_contains("any", "any");
 DROP FUNCTION IF EXISTS pg_catalog.json_valid("any");
