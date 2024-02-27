@@ -571,6 +571,9 @@ WARNING:  utf8mb3 is not a valid encoding name. default value set
 set @v1='abcdefghijklmnopqrstuvwxyz';
 set @v2='a熊猫竹竹爱吃竹子';
 set @v3=hex(@v2);
+set @v4=unhex(@v3);
+set @v5=bin(121314);
+set @v6=oct(999999);
 insert into t_binary0001 values (
 1, substr(@v1,1,1), substr(@v1,1,10), repeat(@v1, 9),
 substr(@v1,1,1), substr(@v1,1,10), repeat(@v1, 9));
@@ -578,8 +581,17 @@ insert into t_binary0001 values (
 2, substr(@v2,1,1), substr(@v2,1,4), repeat(@v2, 9),
 substr(@v2,1,1), substr(@v2,1,4), repeat(@v2, 9));
 insert into t_binary0001 values (
-2, substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255),
+3, substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255),
 substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255));
+insert into t_binary0001 values (
+4, substr(@v4,1,1), substr(@v4,1,4), substr(repeat(@v4, 10),1,255),
+substr(@v4,1,1), substr(@v4,1,4), substr(repeat(@v4, 10),1,255));
+insert into t_binary0001 values (
+5, substr(@v5,1,1), substr(@v5,1,4), substr(repeat(@v5, 10),1,255),
+substr(@v5,1,1), substr(@v5,1,4), substr(repeat(@v5, 10),1,255));
+insert into t_binary0001 values (
+6, substr(@v6,1,1), substr(@v6,1,4), substr(repeat(@v6, 10),1,255),
+substr(@v6,1,1), substr(@v6,1,4), substr(repeat(@v6, 10),1,255));
 --- 使用cast/convert函数转换
 select c1, cast(c2 as unsigned), cast(c3 as unsigned), cast(c4 as unsigned),
 cast(c5 as unsigned) from t_binary0001 order by 1,2,3,4,5;
@@ -603,12 +615,31 @@ WARNING:  invalid input syntax for type double precision: "61e7"
 CONTEXT:  referenced column: c3
 WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
 CONTEXT:  referenced column: c4
- c1 | c2 | c3 | c4 | c5 
-----+----+----+----+----
-  1 | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6
-(3 rows)
+WARNING:  invalid input syntax for type double precision: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type double precision: "a熊"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type double precision: "a"
+CONTEXT:  referenced column: c5
+WARNING:  Data truncated for input data: "1110"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type double precision: "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010"
+CONTEXT:  referenced column: c4
+WARNING:  Data truncated for input data: "3641"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type double precision: "3641077364107736410773641077364107736410773641077364107736410773641077"
+CONTEXT:  referenced column: c4
+ c1 | c2 |  c3  |          c4          | c5 
+----+----+------+----------------------+----
+  1 | 0  | 0    | 0                    | 0
+  2 | 0  | 0    | 0                    | 0
+  3 | 6  | 61   | 61                   | 6
+  4 | 0  | 0    | 0                    | 0
+  5 | 1  | 1110 | 18446744073709551615 | 1
+  6 | 3  | 3641 | 18446744073709551615 | 3
+(6 rows)
 
 select c1, convert(c2, unsigned), convert(c3, unsigned), convert(c4, unsigned),
 convert(c5, unsigned), convert(c6, unsigned), convert(c7, unsigned) from
@@ -645,12 +676,39 @@ WARNING:  invalid input syntax for type double precision: "61e7"
 CONTEXT:  referenced column: c6
 WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
 CONTEXT:  referenced column: c7
- c1 | c2 | c3 | c4 | c5 | c6 | c7 
-----+----+----+----+----+----+----
-  1 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6  | 61 | 61
-(3 rows)
+WARNING:  invalid input syntax for type double precision: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type double precision: "a熊"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type double precision: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for type double precision: "a熊"
+CONTEXT:  referenced column: c6
+WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+CONTEXT:  referenced column: c7
+WARNING:  Data truncated for input data: "1110"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type double precision: "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type double precision: "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010"
+CONTEXT:  referenced column: c7
+WARNING:  Data truncated for input data: "3641"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type double precision: "3641077364107736410773641077364107736410773641077364107736410773641077"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type double precision: "3641077364107736410773641077364107736410773641077364107736410773641077"
+CONTEXT:  referenced column: c7
+ c1 | c2 |  c3  |          c4          | c5 |  c6  |          c7          
+----+----+------+----------------------+----+------+----------------------
+  1 | 0  | 0    | 0                    | 0  | 0    | 0
+  2 | 0  | 0    | 0                    | 0  | 0    | 0
+  3 | 6  | 61   | 61                   | 6  | 61   | 61
+  4 | 0  | 0    | 0                    | 0  | 0    | 0
+  5 | 1  | 1110 | 18446744073709551615 | 1  | 1110 | 18446744073709551615
+  6 | 3  | 3641 | 18446744073709551615 | 3  | 3641 | 18446744073709551615
+(6 rows)
 
 --- 建表并插入数据
 create table t_binary(a binary(255));
