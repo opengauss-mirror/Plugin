@@ -169,6 +169,7 @@ typedef struct BSqlPluginContext {
     Alias *upSertAliasName;
     bool isDoCopy;
     char* performance_schema;
+    bool isInTransformSet;
 #endif
 } bSqlPluginContext;
 

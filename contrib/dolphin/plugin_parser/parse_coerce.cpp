@@ -2568,7 +2568,8 @@ static bool meet_set_type_compatibility(List* exprs, const char* context, Oid *r
  *
  * This is used following select_common_type() to coerce the individual
  * expressions to the desired type.  'context' is a phrase to use in the
- * error message if we fail to coerce.
+ * error message if we fail to coerce. Otherwise in recursive-scene, common
+ * type is determined by non-recursive member, no need to call select_common_type()
  *
  * As with coerce_type, pstate may be NULL if no special unknown-Param
  * processing is wanted.
