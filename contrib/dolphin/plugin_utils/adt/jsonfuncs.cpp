@@ -4783,7 +4783,7 @@ Datum json_contains(PG_FUNCTION_ARGS)
         cJSON_Delete(target_cJSON);
         cJSON_Delete(candidate_cJSON);
         if (resBool)
-            PG_RETURN_BOOL(true);
+            PG_RETURN_INT64((int64)true);
     } else {
         cJSON *result = NULL;
 
@@ -4823,10 +4823,10 @@ Datum json_contains(PG_FUNCTION_ARGS)
         cJSON_Delete(target_cJSON);
         cJSON_Delete(candidate_cJSON);
 
-        PG_RETURN_BOOL(resBool);
+        PG_RETURN_INT64((int64)resBool);
     }
 
-    PG_RETURN_BOOL(false);
+    PG_RETURN_INT64((int64)false);
 }
 
 Datum json_contains_path(PG_FUNCTION_ARGS)
@@ -6781,7 +6781,7 @@ Datum json_length(PG_FUNCTION_ARGS)
 {
     Oid valtype;
     Oid typOutput;
-    int result;
+    int64 result;
     bool typIsVarlena = false;
     Datum arg = 0;
     text *json = NULL;
@@ -6857,7 +6857,7 @@ Datum json_length(PG_FUNCTION_ARGS)
     result = state->result_count;
     pfree(state);
     pfree(sem);
-    PG_RETURN_INT32(result);
+    PG_RETURN_INT64(result);
 }
 
 Datum json_objectagg_mysql_transfn(PG_FUNCTION_ARGS)
@@ -6977,7 +6977,7 @@ Datum json_storage_size(PG_FUNCTION_ARGS)
     arg = PG_GETARG_DATUM(0);
     doc_cJSON = input_to_cjson(valtype, "json_storage_size", 1, arg);
     int32 n = pg_column_size(fcinfo);
-    PG_RETURN_INT32(n);
+    PG_RETURN_INT64((int64)n);
 }
 
 static void newline_and_indent(StringInfo buf, int depth)

@@ -1004,6 +1004,22 @@ DROP FUNCTION IF EXISTS pg_catalog.float4_nvarchar2(FLOAT4);
 CREATE CAST (FLOAT4 AS NVARCHAR2) WITH FUNCTION pg_catalog.TO_NVARCHAR2(FLOAT4) AS IMPLICIT;
 CREATE CAST (FLOAT8 AS NVARCHAR2) WITH FUNCTION pg_catalog.TO_NVARCHAR2(FLOAT8) AS IMPLICIT;
 
+DROP FUNCTION IF EXISTS pg_catalog.json_contains("any", "any", text);
+DROP FUNCTION IF EXISTS pg_catalog.json_contains("any", "any");
+DROP FUNCTION IF EXISTS pg_catalog.json_valid("any");
+CREATE OR REPLACE FUNCTION pg_catalog.json_contains("any", "any", text) RETURNS boolean LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_contains';
+CREATE OR REPLACE FUNCTION pg_catalog.json_contains("any", "any") RETURNS boolean LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_contains';
+CREATE OR REPLACE FUNCTION pg_catalog.json_valid("any") RETURNS boolean LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_valid';
+
+DROP FUNCTION pg_catalog.json_length("any");
+DROP FUNCTION pg_catalog.json_length("any",text);
+DROP FUNCTION pg_catalog.json_depth("any");
+DROP FUNCTION pg_catalog.json_storage_size("any");
+CREATE OR REPLACE FUNCTION pg_catalog.json_length("any") RETURNS int LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_length';
+CREATE OR REPLACE FUNCTION pg_catalog.json_length("any",text) RETURNS int LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'json_length';
+CREATE OR REPLACE FUNCTION pg_catalog.json_depth("any") RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_depth';
+CREATE OR REPLACE FUNCTION pg_catalog.json_storage_size("any") RETURNS int LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'json_storage_size';
+
 DROP FUNCTION IF EXISTS pg_catalog.b_extract (text, year);
 DROP FUNCTION IF EXISTS pg_catalog.yearweek (year);
 DROP FUNCTION IF EXISTS pg_catalog.makedate (year, int8);
