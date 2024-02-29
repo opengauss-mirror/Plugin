@@ -151,3 +151,5 @@ test: lock_tables lock_tables_1
 
 # test user@host
 test: user_host_test sqlmode_having
+
+test: recursive

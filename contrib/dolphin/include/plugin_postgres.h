@@ -164,6 +164,7 @@ typedef struct BSqlPluginContext {
     bool is_create_alter_stmt;
     bool isDoCopy;
     char* performance_schema;
+    bool isInTransformSet;
 #endif
 } bSqlPluginContext;
 
