@@ -407,6 +407,9 @@ extern "C" DLL_PUBLIC Datum Varlena2Bit(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_binaryout);
 extern "C" DLL_PUBLIC Datum dolphin_binaryout(PG_FUNCTION_ARGS);
 
+extern BpChar* bpchar_input(const char* s, size_t len, int32 atttypmod);
+extern VarChar* varchar_input(const char* s, size_t len, int32 atttypmod);
+
 #endif
 
 /*****************************************************************************
@@ -10766,19 +10769,22 @@ Datum blob_any_value(PG_FUNCTION_ARGS)
     PG_RETURN_BYTEA_P(vlena);
 }
 
-char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError)
+char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError, bool* typIsVarlena)
 {
     if (!OidIsValid(anyOid)) {
         return DatumGetCString(DirectFunctionCall1(textout, anyDatum));
     }
     char* data = NULL;
     Oid typeOutput = InvalidOid;
-    bool typIsVarlena = false;
-    getTypeOutputInfo(anyOid, &typeOutput, &typIsVarlena);
-    if (typIsVarlena) {
+    bool isVarlena = false;
+    getTypeOutputInfo(anyOid, &typeOutput, &isVarlena);
+    if (isVarlena) {
         data = DatumGetCString(DirectFunctionCall1(textout, anyDatum));
         int reallen = VARSIZE_ANY_EXHDR(DatumGetByteaPP(anyDatum));
         int datalen  = strlen(data);
+        if (typIsVarlena) {
+            *typIsVarlena = isVarlena;
+        }
         if (hasError && datalen < reallen) {
             *hasError = true;
         }
@@ -10826,10 +10832,16 @@ Datum Varlena2Numeric(PG_FUNCTION_ARGS)
 Datum Varlena2Bpchar(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
+    bool hasError = false;
+    bool typIsVarlena = false;
+    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasError, &typIsVarlena);
     Datum result;
-
-    result = DirectFunctionCall3(bpcharin, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    if (typIsVarlena) {
+        int reallen = VARSIZE_ANY_EXHDR(DatumGetByteaPP(PG_GETARG_DATUM(0)));
+        result = PointerGetDatum(bpchar_input(data, reallen, -1));
+    } else {
+        result = DirectFunctionCall3(bpcharin, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    }
     pfree_ext(data);
 
     PG_RETURN_DATUM(result);
@@ -10838,10 +10850,16 @@ Datum Varlena2Bpchar(PG_FUNCTION_ARGS)
 Datum Varlena2Varchar(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
+    bool hasError = false;
+    bool typIsVarlena = false;
+    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasError, &typIsVarlena);
     Datum result;
-
-    result = DirectFunctionCall3(varcharin, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    if (typIsVarlena) {
+        int reallen = VARSIZE_ANY_EXHDR(DatumGetByteaPP(PG_GETARG_DATUM(0)));
+        result = PointerGetDatum(varchar_input(data, reallen, -1));
+    } else {
+        result = DirectFunctionCall3(varcharin, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    }
     pfree_ext(data);
 
     PG_RETURN_DATUM(result);
@@ -10850,10 +10868,16 @@ Datum Varlena2Varchar(PG_FUNCTION_ARGS)
 Datum Varlena2Text(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
+    bool hasError = false;
+    bool typIsVarlena = false;
+    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasError, &typIsVarlena);
     Datum result;
-
-    result = DirectFunctionCall3(textin, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    if (typIsVarlena) {
+        int reallen = VARSIZE_ANY_EXHDR(DatumGetByteaPP(PG_GETARG_DATUM(0)));
+        result = PointerGetDatum(cstring_to_text_with_len(data, reallen));
+    } else {
+        result = DirectFunctionCall3(textin, CStringGetDatum(data), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    }
     pfree_ext(data);
 
     PG_RETURN_DATUM(result);
