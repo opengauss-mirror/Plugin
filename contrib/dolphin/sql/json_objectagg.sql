@@ -86,5 +86,7 @@ insert into t1 values (1,1), (2,2), (1,2);
 select json_objectagg(a, b) from t1;
 select json_objectagg(a, b) from t1 group by a;
 
+select distinct (pg_catalog.json_objectagg(0, ref_0.aggfnoid) over (partition by ref_0.aggtranstype order by ref_0.aggfinalfn))::text from pg_catalog.pg_aggregate as ref_0 where aggfnoid::text like '%bit_xor%';
+
 drop schema json_objectagg_test cascade;
 reset current_schema;
