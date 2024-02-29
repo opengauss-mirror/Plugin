@@ -6,10 +6,15 @@
 #include "ivfflat.h"
 #include "miscadmin.h"
 #include "pgstat.h"
-#include "storage/bufmgr.h"
+#include "storage/buf/bufmgr.h"
 
+#if PG_VERSION_NUM >= 110000
 #include "catalog/pg_operator_d.h"
 #include "catalog/pg_type_d.h"
+#else
+#include "catalog/pg_operator.h"
+#include "catalog/pg_type.h"
+#endif
 
 /*
  * Compare list distances
@@ -186,13 +191,13 @@ GetScanItems(IndexScanDesc scan, Datum value)
  * Prepare for an index scan
  */
 IndexScanDesc
-ivfflatbeginscan(Relation index, int nkeys, int norderbys)
+ivfflatbeginscan_internal(Relation index, int nkeys, int norderbys)
 {
 	IndexScanDesc scan;
 	IvfflatScanOpaque so;
 	int			lists;
 	AttrNumber	attNums[] = {1};
-	Oid			sortOperators[] = {Float8LessOperator};
+	Oid			sortOperators[] = {FLOAT8LTOID};
 	Oid			sortCollations[] = {InvalidOid};
 	bool		nullsFirstFlags[] = {false};
 	int			probes = ivfflat_probes;
@@ -224,7 +229,7 @@ ivfflatbeginscan(Relation index, int nkeys, int norderbys)
 	TupleDescInitEntry(so->tupdesc, (AttrNumber) 3, "indexblkno", INT4OID, -1, 0);
 
 	/* Prep sort */
-	so->sortstate = tuplesort_begin_heap(so->tupdesc, 1, attNums, sortOperators, sortCollations, nullsFirstFlags, work_mem, NULL, false);
+	so->sortstate = tuplesort_begin_heap(so->tupdesc, 1, attNums, sortOperators, sortCollations, nullsFirstFlags, u_sess->attr.attr_memory.work_mem, NULL, false);
 
 #if PG_VERSION_NUM >= 120000
 	so->slot = MakeSingleTupleTableSlot(so->tupdesc, &TTSOpsMinimalTuple);
@@ -243,7 +248,7 @@ ivfflatbeginscan(Relation index, int nkeys, int norderbys)
  * Start or restart an index scan
  */
 void
-ivfflatrescan(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys)
+ivfflatrescan_internal(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys)
 {
 	IvfflatScanOpaque so = (IvfflatScanOpaque) scan->opaque;
 
@@ -266,7 +271,7 @@ ivfflatrescan(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int
  * Fetch the next tuple in the given scan
  */
 bool
-ivfflatgettuple(IndexScanDesc scan, ScanDirection dir)
+ivfflatgettuple_internal(IndexScanDesc scan, ScanDirection dir)
 {
 	IvfflatScanOpaque so = (IvfflatScanOpaque) scan->opaque;
 
@@ -313,10 +318,10 @@ ivfflatgettuple(IndexScanDesc scan, ScanDirection dir)
 			pfree(DatumGetPointer(value));
 	}
 
-	if (tuplesort_gettupleslot(so->sortstate, true, false, so->slot, NULL))
+	if (tuplesort_gettupleslot(so->sortstate, true, so->slot, NULL))
 	{
-		ItemPointer tid = (ItemPointer) DatumGetPointer(slot_getattr(so->slot, 2, &so->isnull));
-		BlockNumber indexblkno = DatumGetInt32(slot_getattr(so->slot, 3, &so->isnull));
+		ItemPointer tid = (ItemPointer) DatumGetPointer(heap_slot_getattr(so->slot, 2, &so->isnull));
+		BlockNumber indexblkno = DatumGetInt32(heap_slot_getattr(so->slot, 3, &so->isnull));
 
 #if PG_VERSION_NUM >= 120000
 		scan->xs_heaptid = *tid;
@@ -335,7 +340,6 @@ ivfflatgettuple(IndexScanDesc scan, ScanDirection dir)
 		 */
 		so->buf = ReadBuffer(scan->indexRelation, indexblkno);
 
-		scan->xs_recheckorderby = false;
 		return true;
 	}
 
@@ -346,7 +350,7 @@ ivfflatgettuple(IndexScanDesc scan, ScanDirection dir)
  * End a scan and release resources
  */
 void
-ivfflatendscan(IndexScanDesc scan)
+ivfflatendscan_internal(IndexScanDesc scan)
 {
 	IvfflatScanOpaque so = (IvfflatScanOpaque) scan->opaque;
 

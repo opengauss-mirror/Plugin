@@ -2,14 +2,15 @@
 
 #include "commands/vacuum.h"
 #include "ivfflat.h"
-#include "storage/bufmgr.h"
+#include "storage/buf/bufmgr.h"
+
 
 /*
  * Bulk delete tuples from the index
  */
 IndexBulkDeleteResult *
-ivfflatbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
-				  IndexBulkDeleteCallback callback, void *callback_state)
+ivfflatbulkdelete_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
+				  IndexBulkDeleteCallback callback, const void *callback_state)
 {
 	Relation	index = info->index;
 	Buffer		cbuf;
@@ -25,7 +26,6 @@ ivfflatbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
 	BlockNumber nextblkno = IVFFLAT_HEAD_BLKNO;
 	BlockNumber searchPage;
 	BlockNumber insertPage;
-	GenericXLogState *state;
 	OffsetNumber coffno;
 	OffsetNumber cmaxoffno;
 	OffsetNumber offno;
@@ -77,8 +77,7 @@ ivfflatbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
 				 */
 				LockBufferForCleanup(buf);
 
-				state = GenericXLogStart(index);
-				page = GenericXLogRegisterBuffer(state, buf, 0);
+				page = BufferGetPage(buf);
 
 				maxoffno = PageGetMaxOffsetNumber(page);
 				ndeletable = 0;
@@ -89,7 +88,7 @@ ivfflatbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
 					itup = (IndexTuple) PageGetItem(page, PageGetItemId(page, offno));
 					htup = &(itup->t_tid);
 
-					if (callback(htup, callback_state))
+					if (callback(htup, (void *)callback_state, InvalidOid, InvalidBktId))
 					{
 						deletable[ndeletable++] = offno;
 						stats->tuples_removed++;
@@ -110,10 +109,7 @@ ivfflatbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
 					/* Delete tuples */
 					PageIndexMultiDelete(page, deletable, ndeletable);
 					MarkBufferDirty(buf);
-					GenericXLogFinish(state);
 				}
-				else
-					GenericXLogAbort(state);
 
 				UnlockReleaseBuffer(buf);
 			}
@@ -127,7 +123,7 @@ ivfflatbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
 			if (BlockNumberIsValid(insertPage))
 			{
 				listInfo.offno = coffno;
-				IvfflatUpdateList(index, state, listInfo, insertPage, InvalidBlockNumber, InvalidBlockNumber, MAIN_FORKNUM);
+				IvfflatUpdateList(index, listInfo, insertPage, InvalidBlockNumber, InvalidBlockNumber, MAIN_FORKNUM);
 			}
 		}
 	}
@@ -141,7 +137,7 @@ ivfflatbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats,
  * Clean up after a VACUUM operation
  */
 IndexBulkDeleteResult *
-ivfflatvacuumcleanup(IndexVacuumInfo *info, IndexBulkDeleteResult *stats)
+ivfflatvacuumcleanup_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats)
 {
 	Relation	rel = info->index;
 

@@ -3,7 +3,7 @@
 #include <float.h>
 
 #include "ivfflat.h"
-#include "storage/bufmgr.h"
+#include "storage/buf/bufmgr.h"
 #include "utils/memutils.h"
 
 /*
@@ -62,14 +62,13 @@ FindInsertPage(Relation rel, Datum *values, BlockNumber *insertPage, ListInfo * 
  * Insert a tuple into the index
  */
 static void
-InsertTuple(Relation rel, Datum *values, bool *isnull, ItemPointer heap_tid, Relation heapRel)
+InsertTuple(Relation rel, Datum *values, const bool *isnull, ItemPointer heap_tid, Relation heapRel)
 {
 	IndexTuple	itup;
 	Datum		value;
 	FmgrInfo   *normprocinfo;
 	Buffer		buf;
 	Page		page;
-	GenericXLogState *state;
 	Size		itemsz;
 	BlockNumber insertPage = InvalidBlockNumber;
 	ListInfo	listInfo;
@@ -105,8 +104,7 @@ InsertTuple(Relation rel, Datum *values, bool *isnull, ItemPointer heap_tid, Rel
 		buf = ReadBuffer(rel, insertPage);
 		LockBuffer(buf, BUFFER_LOCK_EXCLUSIVE);
 
-		state = GenericXLogStart(rel);
-		page = GenericXLogRegisterBuffer(state, buf, 0);
+		page = BufferGetPage(buf);
 
 		if (PageGetFreeSpace(page) >= itemsz)
 			break;
@@ -115,8 +113,6 @@ InsertTuple(Relation rel, Datum *values, bool *isnull, ItemPointer heap_tid, Rel
 
 		if (BlockNumberIsValid(insertPage))
 		{
-			/* Move to next page */
-			GenericXLogAbort(state);
 			UnlockReleaseBuffer(buf);
 		}
 		else
@@ -135,7 +131,7 @@ InsertTuple(Relation rel, Datum *values, bool *isnull, ItemPointer heap_tid, Rel
 
 			/* Add a new page */
 			newbuf = IvfflatNewBuffer(rel, MAIN_FORKNUM);
-			newpage = GenericXLogRegisterBuffer(state, newbuf, GENERIC_XLOG_FULL_IMAGE);
+			newpage = BufferGetPage(newbuf);
 
 			/* Init new page */
 			IvfflatInitPage(newbuf, newpage);
@@ -149,7 +145,6 @@ InsertTuple(Relation rel, Datum *values, bool *isnull, ItemPointer heap_tid, Rel
 			/* Commit */
 			MarkBufferDirty(newbuf);
 			MarkBufferDirty(buf);
-			GenericXLogFinish(state);
 
 			/* Unlock extend relation lock as early as possible */
 			UnlockReleaseBuffer(metabuf);
@@ -158,9 +153,8 @@ InsertTuple(Relation rel, Datum *values, bool *isnull, ItemPointer heap_tid, Rel
 			UnlockReleaseBuffer(buf);
 
 			/* Prepare new buffer */
-			state = GenericXLogStart(rel);
 			buf = newbuf;
-			page = GenericXLogRegisterBuffer(state, buf, 0);
+			page = BufferGetPage(buf);
 			break;
 		}
 	}
@@ -169,24 +163,19 @@ InsertTuple(Relation rel, Datum *values, bool *isnull, ItemPointer heap_tid, Rel
 	if (PageAddItem(page, (Item) itup, itemsz, InvalidOffsetNumber, false, false) == InvalidOffsetNumber)
 		elog(ERROR, "failed to add index item to \"%s\"", RelationGetRelationName(rel));
 
-	IvfflatCommitBuffer(buf, state);
+	IvfflatCommitBuffer(buf);
 
 	/* Update the insert page */
 	if (insertPage != originalInsertPage)
-		IvfflatUpdateList(rel, state, listInfo, insertPage, originalInsertPage, InvalidBlockNumber, MAIN_FORKNUM);
+		IvfflatUpdateList(rel, listInfo, insertPage, originalInsertPage, InvalidBlockNumber, MAIN_FORKNUM);
 }
 
 /*
  * Insert a tuple into the index
  */
 bool
-ivfflatinsert(Relation index, Datum *values, bool *isnull, ItemPointer heap_tid,
-			  Relation heap, IndexUniqueCheck checkUnique
-#if PG_VERSION_NUM >= 140000
-			  ,bool indexUnchanged
-#endif
-			  ,IndexInfo *indexInfo
-)
+ivfflatinsert_internal(Relation index, Datum *values, const bool *isnull, ItemPointer heap_tid,
+			  Relation heap, IndexUniqueCheck checkUnique)
 {
 	MemoryContext oldCtx;
 	MemoryContext insertCtx;

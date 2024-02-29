@@ -3,15 +3,11 @@
 
 #include "postgres.h"
 
-#if PG_VERSION_NUM < 110000
-#error "Requires PostgreSQL 11+"
-#endif
-
-#include "access/generic_xlog.h"
 #include "access/reloptions.h"
 #include "nodes/execnodes.h"
 #include "port.h"				/* for strtof() and random() */
-#include "utils/sampling.h"
+
+#include "lib/pairingheap.h"
 #include "utils/tuplesort.h"
 #include "vector.h"
 
@@ -80,7 +76,7 @@
 extern int	ivfflat_probes;
 
 /* Exported functions */
-PGDLLEXPORT void _PG_init(void);
+extern "C" void _PG_init(void);
 
 typedef struct VectorArrayData
 {
@@ -137,11 +133,6 @@ typedef struct IvfflatBuildState
 	double	   *listSums;
 	int		   *listCounts;
 #endif
-
-	/* Sampling */
-	BlockSamplerData bs;
-	ReservoirStateData rstate;
-	int			rowstoskip;
 
 	/* Sorting */
 	Tuplesortstate *sortstate;
@@ -224,27 +215,22 @@ void		IvfflatKmeans(Relation index, VectorArray samples, VectorArray centers);
 FmgrInfo   *IvfflatOptionalProcInfo(Relation rel, uint16 procnum);
 bool		IvfflatNormValue(FmgrInfo *procinfo, Oid collation, Datum *value, Vector * result);
 int			IvfflatGetLists(Relation index);
-void		IvfflatUpdateList(Relation index, GenericXLogState *state, ListInfo listInfo, BlockNumber insertPage, BlockNumber originalInsertPage, BlockNumber startPage, ForkNumber forkNum);
-void		IvfflatCommitBuffer(Buffer buf, GenericXLogState *state);
-void		IvfflatAppendPage(Relation index, Buffer *buf, Page *page, GenericXLogState **state, ForkNumber forkNum);
+void		IvfflatUpdateList(Relation index, ListInfo listInfo, BlockNumber insertPage, BlockNumber originalInsertPage, BlockNumber startPage, ForkNumber forkNum);
+void		IvfflatCommitBuffer(Buffer buf);
+void		IvfflatAppendPage(Relation index, Buffer *buf, Page *page, ForkNumber forkNum);
 Buffer		IvfflatNewBuffer(Relation index, ForkNumber forkNum);
 void		IvfflatInitPage(Buffer buf, Page page);
-void		IvfflatInitRegisterPage(Relation index, Buffer *buf, Page *page, GenericXLogState **state);
+void		IvfflatInitRegisterPage(Relation index, Buffer *buf, Page *page);
 
 /* Index access methods */
-IndexBuildResult *ivfflatbuild(Relation heap, Relation index, IndexInfo *indexInfo);
-void		ivfflatbuildempty(Relation index);
-bool		ivfflatinsert(Relation index, Datum *values, bool *isnull, ItemPointer heap_tid, Relation heap, IndexUniqueCheck checkUnique
-#if PG_VERSION_NUM >= 140000
-						  ,bool indexUnchanged
-#endif
-						  ,IndexInfo *indexInfo
-);
-IndexBulkDeleteResult *ivfflatbulkdelete(IndexVacuumInfo *info, IndexBulkDeleteResult *stats, IndexBulkDeleteCallback callback, void *callback_state);
-IndexBulkDeleteResult *ivfflatvacuumcleanup(IndexVacuumInfo *info, IndexBulkDeleteResult *stats);
-IndexScanDesc ivfflatbeginscan(Relation index, int nkeys, int norderbys);
-void		ivfflatrescan(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys);
-bool		ivfflatgettuple(IndexScanDesc scan, ScanDirection dir);
-void		ivfflatendscan(IndexScanDesc scan);
+IndexBuildResult *ivfflatbuild_internal(Relation heap, Relation index, IndexInfo *indexInfo);
+void		ivfflatbuildempty_internal(Relation index);
+bool		ivfflatinsert_internal(Relation index, Datum *values, const bool *isnull, ItemPointer heap_tid, Relation heap, IndexUniqueCheck checkUnique);
+IndexBulkDeleteResult *ivfflatbulkdelete_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats, IndexBulkDeleteCallback callback, const void *callback_state);
+IndexBulkDeleteResult *ivfflatvacuumcleanup_internal(IndexVacuumInfo *info, IndexBulkDeleteResult *stats);
+IndexScanDesc ivfflatbeginscan_internal(Relation index, int nkeys, int norderbys);
+void		ivfflatrescan_internal(IndexScanDesc scan, ScanKey keys, int nkeys, ScanKey orderbys, int norderbys);
+bool		ivfflatgettuple_internal(IndexScanDesc scan, ScanDirection dir);
+void		ivfflatendscan_internal(IndexScanDesc scan);
 
 #endif

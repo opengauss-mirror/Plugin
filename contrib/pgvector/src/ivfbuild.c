@@ -5,7 +5,7 @@
 #include "catalog/index.h"
 #include "ivfflat.h"
 #include "miscadmin.h"
-#include "storage/bufmgr.h"
+#include "storage/buf/bufmgr.h"
 #include "utils/memutils.h"
 
 #if PG_VERSION_NUM >= 140000
@@ -23,8 +23,13 @@
 #define PROGRESS_CREATEIDX_TUPLES_DONE 0
 #endif
 
+#if PG_VERSION_NUM >= 110000
 #include "catalog/pg_operator_d.h"
 #include "catalog/pg_type_d.h"
+#else
+#include "catalog/pg_operator.h"
+#include "catalog/pg_type.h"
+#endif
 
 #if PG_VERSION_NUM >= 130000
 #define CALLBACK_ITEM_POINTER ItemPointer tid
@@ -37,107 +42,6 @@
 #else
 #define UpdateProgress(index, val) ((void)val)
 #endif
-
-/*
- * Add sample
- */
-static void
-AddSample(Datum *values, IvfflatBuildState * buildstate)
-{
-	VectorArray samples = buildstate->samples;
-	int			targsamples = samples->maxlen;
-
-	/* Detoast once for all calls */
-	Datum		value = PointerGetDatum(PG_DETOAST_DATUM(values[0]));
-
-	/*
-	 * Normalize with KMEANS_NORM_PROC since spherical distance function
-	 * expects unit vectors
-	 */
-	if (buildstate->kmeansnormprocinfo != NULL)
-	{
-		if (!IvfflatNormValue(buildstate->kmeansnormprocinfo, buildstate->collation, &value, buildstate->normvec))
-			return;
-	}
-
-	if (samples->length < targsamples)
-	{
-		VectorArraySet(samples, samples->length, DatumGetVector(value));
-		samples->length++;
-	}
-	else
-	{
-		if (buildstate->rowstoskip < 0)
-			buildstate->rowstoskip = reservoir_get_next_S(&buildstate->rstate, samples->length, targsamples);
-
-		if (buildstate->rowstoskip <= 0)
-		{
-#if PG_VERSION_NUM >= 150000
-			int			k = (int) (targsamples * sampler_random_fract(&buildstate->rstate.randstate));
-#else
-			int			k = (int) (targsamples * sampler_random_fract(buildstate->rstate.randstate));
-#endif
-
-			Assert(k >= 0 && k < targsamples);
-			VectorArraySet(samples, k, DatumGetVector(value));
-		}
-
-		buildstate->rowstoskip -= 1;
-	}
-}
-
-/*
- * Callback for sampling
- */
-static void
-SampleCallback(Relation index, CALLBACK_ITEM_POINTER, Datum *values,
-			   bool *isnull, bool tupleIsAlive, void *state)
-{
-	IvfflatBuildState *buildstate = (IvfflatBuildState *) state;
-	MemoryContext oldCtx;
-
-	/* Skip nulls */
-	if (isnull[0])
-		return;
-
-	/* Use memory context since detoast can allocate */
-	oldCtx = MemoryContextSwitchTo(buildstate->tmpCtx);
-
-	/* Add sample */
-	AddSample(values, state);
-
-	/* Reset memory context */
-	MemoryContextSwitchTo(oldCtx);
-	MemoryContextReset(buildstate->tmpCtx);
-}
-
-/*
- * Sample rows with same logic as ANALYZE
- */
-static void
-SampleRows(IvfflatBuildState * buildstate)
-{
-	int			targsamples = buildstate->samples->maxlen;
-	BlockNumber totalblocks = RelationGetNumberOfBlocks(buildstate->heap);
-
-	buildstate->rowstoskip = -1;
-
-	BlockSampler_Init(&buildstate->bs, totalblocks, targsamples, RandomInt());
-
-	reservoir_init_selection_state(&buildstate->rstate, targsamples);
-	while (BlockSampler_HasMore(&buildstate->bs))
-	{
-		BlockNumber targblock = BlockSampler_Next(&buildstate->bs);
-
-#if PG_VERSION_NUM >= 120000
-		table_index_build_range_scan(buildstate->heap, buildstate->index, buildstate->indexInfo,
-									 false, true, false, targblock, 1, SampleCallback, (void *) buildstate, NULL);
-#else
-		IndexBuildHeapRangeScan(buildstate->heap, buildstate->index, buildstate->indexInfo,
-								false, true, targblock, 1, SampleCallback, (void *) buildstate, NULL);
-#endif
-	}
-}
 
 /*
  * Add tuple to sort
@@ -206,7 +110,7 @@ AddTupleToSort(Relation index, ItemPointer tid, Datum *values, IvfflatBuildState
  */
 static void
 BuildCallback(Relation index, CALLBACK_ITEM_POINTER, Datum *values,
-			  bool *isnull, bool tupleIsAlive, void *state)
+			  const bool *isnull, bool tupleIsAlive, void *state)
 {
 	IvfflatBuildState *buildstate = (IvfflatBuildState *) state;
 	MemoryContext oldCtx;
@@ -239,14 +143,14 @@ GetNextTuple(Tuplesortstate *sortstate, TupleDesc tupdesc, TupleTableSlot *slot,
 	Datum		value;
 	bool		isnull;
 
-	if (tuplesort_gettupleslot(sortstate, true, false, slot, NULL))
+	if (tuplesort_gettupleslot(sortstate, true, slot, NULL))
 	{
-		*list = DatumGetInt32(slot_getattr(slot, 1, &isnull));
-		value = slot_getattr(slot, 3, &isnull);
+		*list = DatumGetInt32(heap_slot_getattr(slot, 1, &isnull));
+		value = heap_slot_getattr(slot, 3, &isnull);
 
 		/* Form the index tuple */
 		*itup = index_form_tuple(tupdesc, &value, &isnull);
-		(*itup)->t_tid = *((ItemPointer) DatumGetPointer(slot_getattr(slot, 2, &isnull)));
+		(*itup)->t_tid = *((ItemPointer) DatumGetPointer(heap_slot_getattr(slot, 2, &isnull)));
 	}
 	else
 		*list = -1;
@@ -260,7 +164,6 @@ InsertTuples(Relation index, IvfflatBuildState * buildstate, ForkNumber forkNum)
 {
 	Buffer		buf;
 	Page		page;
-	GenericXLogState *state;
 	int			list;
 	IndexTuple	itup = NULL;	/* silence compiler warning */
 	BlockNumber startPage;
@@ -289,7 +192,7 @@ InsertTuples(Relation index, IvfflatBuildState * buildstate, ForkNumber forkNum)
 		CHECK_FOR_INTERRUPTS();
 
 		buf = IvfflatNewBuffer(index, forkNum);
-		IvfflatInitRegisterPage(index, &buf, &page, &state);
+		IvfflatInitRegisterPage(index, &buf, &page);
 
 		startPage = BufferGetBlockNumber(buf);
 
@@ -299,7 +202,7 @@ InsertTuples(Relation index, IvfflatBuildState * buildstate, ForkNumber forkNum)
 			/* Check for free space */
 			itemsz = MAXALIGN(IndexTupleSize(itup));
 			if (PageGetFreeSpace(page) < itemsz)
-				IvfflatAppendPage(index, &buf, &page, &state, forkNum);
+				IvfflatAppendPage(index, &buf, &page, forkNum);
 
 			/* Add the item */
 			if (PageAddItem(page, (Item) itup, itemsz, InvalidOffsetNumber, false, false) == InvalidOffsetNumber)
@@ -314,10 +217,10 @@ InsertTuples(Relation index, IvfflatBuildState * buildstate, ForkNumber forkNum)
 
 		insertPage = BufferGetBlockNumber(buf);
 
-		IvfflatCommitBuffer(buf, state);
+		IvfflatCommitBuffer(buf);
 
 		/* Set the start and insert pages */
-		IvfflatUpdateList(index, state, buildstate->listInfo[i], insertPage, InvalidBlockNumber, startPage, forkNum);
+		IvfflatUpdateList(index, buildstate->listInfo[i], insertPage, InvalidBlockNumber, startPage, forkNum);
 	}
 }
 
@@ -373,7 +276,7 @@ InitBuildState(IvfflatBuildState * buildstate, Relation heap, Relation index, In
 #endif
 
 	buildstate->centers = VectorArrayInit(buildstate->lists, buildstate->dimensions);
-	buildstate->listInfo = palloc(sizeof(ListInfo) * buildstate->lists);
+	buildstate->listInfo = (ListInfo*)palloc(sizeof(ListInfo) * buildstate->lists);
 
 	/* Reuse for each tuple */
 	buildstate->normvec = InitVector(buildstate->dimensions);
@@ -430,18 +333,6 @@ ComputeCenters(IvfflatBuildState * buildstate)
 	/* Sample rows */
 	/* TODO Ensure within maintenance_work_mem */
 	buildstate->samples = VectorArrayInit(numSamples, buildstate->dimensions);
-	if (buildstate->heap != NULL)
-	{
-		SampleRows(buildstate);
-
-		if (buildstate->samples->length < buildstate->lists)
-		{
-			ereport(NOTICE,
-					(errmsg("ivfflat index created with little data"),
-					 errdetail("This will cause low recall."),
-					 errhint("Drop the index until the table has more data.")));
-		}
-	}
 
 	/* Calculate centers */
 	IvfflatBench("k-means", IvfflatKmeans(buildstate->index, buildstate->samples, buildstate->centers));
@@ -458,11 +349,10 @@ CreateMetaPage(Relation index, int dimensions, int lists, ForkNumber forkNum)
 {
 	Buffer		buf;
 	Page		page;
-	GenericXLogState *state;
 	IvfflatMetaPage metap;
 
 	buf = IvfflatNewBuffer(index, forkNum);
-	IvfflatInitRegisterPage(index, &buf, &page, &state);
+	IvfflatInitRegisterPage(index, &buf, &page);
 
 	/* Set metapage data */
 	metap = IvfflatPageGetMeta(page);
@@ -473,7 +363,7 @@ CreateMetaPage(Relation index, int dimensions, int lists, ForkNumber forkNum)
 	((PageHeader) page)->pd_lower =
 		((char *) metap + sizeof(IvfflatMetaPageData)) - (char *) page;
 
-	IvfflatCommitBuffer(buf, state);
+	IvfflatCommitBuffer(buf);
 }
 
 /*
@@ -486,16 +376,15 @@ CreateListPages(Relation index, VectorArray centers, int dimensions,
 	int			i;
 	Buffer		buf;
 	Page		page;
-	GenericXLogState *state;
 	OffsetNumber offno;
 	Size		itemsz;
 	IvfflatList list;
 
 	itemsz = MAXALIGN(IVFFLAT_LIST_SIZE(dimensions));
-	list = palloc(itemsz);
+	list = (IvfflatList)palloc(itemsz);
 
 	buf = IvfflatNewBuffer(index, forkNum);
-	IvfflatInitRegisterPage(index, &buf, &page, &state);
+	IvfflatInitRegisterPage(index, &buf, &page);
 
 	for (i = 0; i < lists; i++)
 	{
@@ -506,7 +395,7 @@ CreateListPages(Relation index, VectorArray centers, int dimensions,
 
 		/* Ensure free space */
 		if (PageGetFreeSpace(page) < itemsz)
-			IvfflatAppendPage(index, &buf, &page, &state, forkNum);
+			IvfflatAppendPage(index, &buf, &page, forkNum);
 
 		/* Add the item */
 		offno = PageAddItem(page, (Item) list, itemsz, InvalidOffsetNumber, false, false);
@@ -518,7 +407,7 @@ CreateListPages(Relation index, VectorArray centers, int dimensions,
 		(*listInfo)[i].offno = offno;
 	}
 
-	IvfflatCommitBuffer(buf, state);
+	IvfflatCommitBuffer(buf);
 
 	pfree(list);
 }
@@ -590,13 +479,13 @@ static void
 CreateEntryPages(IvfflatBuildState * buildstate, ForkNumber forkNum)
 {
 	AttrNumber	attNums[] = {1};
-	Oid			sortOperators[] = {Int4LessOperator};
+	Oid			sortOperators[] = {INT4LTOID};
 	Oid			sortCollations[] = {InvalidOid};
 	bool		nullsFirstFlags[] = {false};
 
 	UpdateProgress(PROGRESS_CREATEIDX_SUBPHASE, PROGRESS_IVFFLAT_PHASE_SORT);
 
-	buildstate->sortstate = tuplesort_begin_heap(buildstate->tupdesc, 1, attNums, sortOperators, sortCollations, nullsFirstFlags, maintenance_work_mem, NULL, false);
+	buildstate->sortstate = tuplesort_begin_heap(buildstate->tupdesc, 1, attNums, sortOperators, sortCollations, nullsFirstFlags, u_sess->attr.attr_memory.maintenance_work_mem, NULL, false);
 
 	/* Add tuples to sort */
 	if (buildstate->heap != NULL)
@@ -637,7 +526,7 @@ BuildIndex(Relation heap, Relation index, IndexInfo *indexInfo,
  * Build the index for a logged table
  */
 IndexBuildResult *
-ivfflatbuild(Relation heap, Relation index, IndexInfo *indexInfo)
+ivfflatbuild_internal(Relation heap, Relation index, IndexInfo *indexInfo)
 {
 	IndexBuildResult *result;
 	IvfflatBuildState buildstate;
@@ -655,7 +544,7 @@ ivfflatbuild(Relation heap, Relation index, IndexInfo *indexInfo)
  * Build the index for an unlogged table
  */
 void
-ivfflatbuildempty(Relation index)
+ivfflatbuildempty_internal(Relation index)
 {
 	IndexInfo  *indexInfo = BuildIndexInfo(index);
 	IvfflatBuildState buildstate;

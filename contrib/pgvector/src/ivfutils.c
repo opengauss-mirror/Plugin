@@ -1,7 +1,7 @@
 #include "postgres.h"
 
 #include "ivfflat.h"
-#include "storage/bufmgr.h"
+#include "storage/buf/bufmgr.h"
 #include "vector.h"
 
 /*
@@ -10,12 +10,12 @@
 VectorArray
 VectorArrayInit(int maxlen, int dimensions)
 {
-	VectorArray res = palloc(sizeof(VectorArrayData));
+	VectorArray res = (VectorArray)palloc(sizeof(VectorArrayData));
 
 	res->length = 0;
 	res->maxlen = maxlen;
 	res->dim = dimensions;
-	res->items = palloc_extended(maxlen * VECTOR_SIZE(dimensions), MCXT_ALLOC_ZERO | MCXT_ALLOC_HUGE);
+	res->items = (Vector *)palloc_extended(maxlen * VECTOR_SIZE(dimensions), MCXT_ALLOC_ZERO | MCXT_ALLOC_HUGE);
 	return res;
 }
 
@@ -129,10 +129,9 @@ IvfflatInitPage(Buffer buf, Page page)
  * Init and register page
  */
 void
-IvfflatInitRegisterPage(Relation index, Buffer *buf, Page *page, GenericXLogState **state)
+IvfflatInitRegisterPage(Relation index, Buffer *buf, Page *page)
 {
-	*state = GenericXLogStart(index);
-	*page = GenericXLogRegisterBuffer(*state, *buf, GENERIC_XLOG_FULL_IMAGE);
+	*page = BufferGetPage(*buf);
 	IvfflatInitPage(*buf, *page);
 }
 
@@ -140,10 +139,9 @@ IvfflatInitRegisterPage(Relation index, Buffer *buf, Page *page, GenericXLogStat
  * Commit buffer
  */
 void
-IvfflatCommitBuffer(Buffer buf, GenericXLogState *state)
+IvfflatCommitBuffer(Buffer buf)
 {
 	MarkBufferDirty(buf);
-	GenericXLogFinish(state);
 	UnlockReleaseBuffer(buf);
 }
 
@@ -153,11 +151,11 @@ IvfflatCommitBuffer(Buffer buf, GenericXLogState *state)
  * The order is very important!!
  */
 void
-IvfflatAppendPage(Relation index, Buffer *buf, Page *page, GenericXLogState **state, ForkNumber forkNum)
+IvfflatAppendPage(Relation index, Buffer *buf, Page *page, ForkNumber forkNum)
 {
 	/* Get new buffer */
 	Buffer		newbuf = IvfflatNewBuffer(index, forkNum);
-	Page		newpage = GenericXLogRegisterBuffer(*state, newbuf, GENERIC_XLOG_FULL_IMAGE);
+	Page		newpage = BufferGetPage(newbuf);
 
 	/* Update the previous buffer */
 	IvfflatPageGetOpaque(*page)->nextblkno = BufferGetBlockNumber(newbuf);
@@ -168,13 +166,11 @@ IvfflatAppendPage(Relation index, Buffer *buf, Page *page, GenericXLogState **st
 	/* Commit */
 	MarkBufferDirty(*buf);
 	MarkBufferDirty(newbuf);
-	GenericXLogFinish(*state);
 
 	/* Unlock */
 	UnlockReleaseBuffer(*buf);
 
-	*state = GenericXLogStart(index);
-	*page = GenericXLogRegisterBuffer(*state, newbuf, GENERIC_XLOG_FULL_IMAGE);
+	*page = BufferGetPage(newbuf);
 	*buf = newbuf;
 }
 
@@ -182,7 +178,7 @@ IvfflatAppendPage(Relation index, Buffer *buf, Page *page, GenericXLogState **st
  * Update the start or insert page of a list
  */
 void
-IvfflatUpdateList(Relation index, GenericXLogState *state, ListInfo listInfo,
+IvfflatUpdateList(Relation index, ListInfo listInfo,
 				  BlockNumber insertPage, BlockNumber originalInsertPage,
 				  BlockNumber startPage, ForkNumber forkNum)
 {
@@ -193,8 +189,7 @@ IvfflatUpdateList(Relation index, GenericXLogState *state, ListInfo listInfo,
 
 	buf = ReadBufferExtended(index, forkNum, listInfo.blkno, RBM_NORMAL, NULL);
 	LockBuffer(buf, BUFFER_LOCK_EXCLUSIVE);
-	state = GenericXLogStart(index);
-	page = GenericXLogRegisterBuffer(state, buf, 0);
+	page = BufferGetPage(buf);
 	list = (IvfflatList) PageGetItem(page, PageGetItemId(page, listInfo.offno));
 
 	if (BlockNumberIsValid(insertPage) && insertPage != list->insertPage)
@@ -216,10 +211,9 @@ IvfflatUpdateList(Relation index, GenericXLogState *state, ListInfo listInfo,
 
 	/* Only commit if changed */
 	if (changed)
-		IvfflatCommitBuffer(buf, state);
+		IvfflatCommitBuffer(buf);
 	else
 	{
-		GenericXLogAbort(state);
 		UnlockReleaseBuffer(buf);
 	}
 }
