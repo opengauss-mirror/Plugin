@@ -94,6 +94,182 @@ extern "C" DLL_PUBLIC Datum dlog2(PG_FUNCTION_ARGS);
 
 static float8 get_log_result(float8 arg, bool is_log10);
 #endif
+
+#ifdef DOLPHIN
+#define MAX_END_POS 65535
+#define MAX_NEGATIVE_NUMBER ((uint64)0x8000000000000000LL)
+#define LFACTOR 1000000000ULL
+#define LFACTOR1 10000000000ULL
+#define LFACTOR2 100000000000ULL
+#define MAX_DIGITAL 9
+#define INIT_CNT 9
+#define TEN_BASE 10
+#define DIV_FACTOR 100
+static unsigned long lfactor[INIT_CNT] = {
+    1L, 10L, 100L, 1000L, 10000L, 100000L, 1000000L, 10000000L, 100000000L
+};
+
+static int64 my_strtoll10(const char *nptr, char **endptr, int *error)
+{
+    const char *s;
+    const char *end;
+    const char *start;
+    const char *n_end;
+    const char *true_end;
+    char *dummy;
+    unsigned char c;
+    uint64 i;
+    uint64 j;
+    uint64 k;
+    uint64 li;
+    int32 negative;
+    uint32 cutoff;
+    uint32 cutoff2;
+    uint32 cutoff3;
+
+    s = nptr;
+    /* If fixed length string */
+    if (endptr) {
+        end= *endptr;
+        while (s != end && (*s == ' ' || *s == '\t')) {
+            s++;
+        }
+        if (s == end) {
+            goto no_conv;
+        }
+    } else {
+        endptr= &dummy; /* Easier end test */
+        while (*s == ' ' || *s == '\t') {
+            s++;
+        }
+        if (!*s || s >= *endptr) {
+            goto no_conv;
+        }
+        /* This number must be big to guard against a lot of pre-zeros */
+        end= s + MAX_END_POS;
+    }
+    /* Check for a sign. */
+    negative= 0;
+    if (*s == '-') {
+        negative= 1;
+        if (++s == end) {
+            goto no_conv;
+        }
+        cutoff =  MAX_NEGATIVE_NUMBER / LFACTOR2;
+        cutoff2 = (MAX_NEGATIVE_NUMBER % LFACTOR2) / DIV_FACTOR;
+        cutoff3 =  MAX_NEGATIVE_NUMBER % DIV_FACTOR;
+    } else {
+        if (*s == '+') {
+            if (++s == end) {
+                goto no_conv;
+            }
+        }
+        cutoff = UINT64_MAX / LFACTOR2;
+        cutoff2 = UINT64_MAX % LFACTOR2 / DIV_FACTOR;
+        cutoff3 = UINT64_MAX % DIV_FACTOR;
+    }
+    /* Handle case where we have a lot of pre-zero */
+    if (*s == '0') {
+        i = 0;
+        do {
+            if (++s == end) {
+                goto end_i; /* Return 0 */
+            }
+        } while (*s == '0');
+        n_end = s + INIT_CNT;
+    } else {
+        /* Read first digit to check that it's a valid number */
+        if ((c = (*s - '0')) > MAX_DIGITAL) {
+            goto no_conv;
+        }
+        i = c;
+        n_end= ++s + INIT_CNT - 1;
+    }
+    /* Handle first 9 digits and store them in i */
+    if (n_end > end) {
+        n_end = end;
+    }
+    for (; s != n_end; s++) {
+        if ((c = (*s - '0')) > MAX_DIGITAL) {
+            goto end_i;
+        }
+        i = i * TEN_BASE + c;
+    }
+    if (s == end) {
+        goto end_i;
+    }
+    /* Handle next 9 digits and store them in j */
+    j = 0;
+    start = s; /* Used to know how much to shift i */
+    n_end = true_end = s + INIT_CNT;
+    if (n_end > end) {
+        n_end = end;
+    }
+    do {
+        if ((c = (*s - '0')) > MAX_DIGITAL) {
+            goto end_i_and_j;
+        }
+        j = j * TEN_BASE + c;
+    } while (++s != n_end);
+    if (s == end) {
+        if (s != true_end) {
+            goto end_i_and_j;
+        }
+        goto end3;
+    }
+    if ((c = (*s - '0')) > MAX_DIGITAL) {
+        goto end3;
+    }
+    /* Handle the next 1 or 2 digits and store them in k */
+    k = c;
+    if (++s == end || (c = (*s  - '0')) > MAX_DIGITAL) {
+        goto end4;
+    }
+    k = k * TEN_BASE + c;
+    *endptr = (char*)++s;
+    /* number string should have ended here */
+    if (s != end && (c = (*s - '0')) <= MAX_DIGITAL) {
+        goto overflow;
+    }
+    /* Check that we didn't get an overflow with the last digit */
+    if (i > cutoff || (i == cutoff && (j > cutoff2 || (j == cutoff2 && k > cutoff3)))) {
+        goto overflow;
+    }
+    li = i * LFACTOR2 + (uint64)j * DIV_FACTOR + k;
+    return (int64)li;
+
+overflow: /* endptr is set here */
+    *error = ERANGE;
+    return negative ? PG_INT64_MIN : (int64)UINT64_MAX;
+
+end_i:
+    *endptr = (char*)s;
+    return (negative ? ((int64) - (int32)i) : (int64)i);
+end_i_and_j:
+    li = (uint64)i * lfactor[(uint32)(s - start)] + j;
+    *endptr = (char*)s;
+    return (negative ? -((int64)li) : (int64)li);
+end3:
+    li = (uint64)i * LFACTOR + (uint64)j;
+    *endptr = (char*)s;
+    return (negative ? -((int64)li) : (int64)li);
+end4:
+    li = (uint64)i * LFACTOR1 + (uint64)j * TEN_BASE + k;
+    *endptr = (char*)s;
+    if (negative) {
+        if (li > MAX_NEGATIVE_NUMBER) {
+            goto overflow;
+        }
+        return -((int64)li);
+    }
+    return (int64)li;
+no_conv:
+    /* There was no number to convert.  */
+    *endptr = (char *)nptr;
+    return 0;
+}
+#endif
+
 /*
  * Routines to provide reasonably platform-independent handling of
  * infinity and NaN.  We assume that isinf() and isnan() are available
@@ -109,7 +285,7 @@ double float8in_internal(char* str, char** endptr_p, bool* hasError)
 #endif
 {
     double val;
-    char* endptr = NULL;
+    char* endptr = str + strlen(str);
     /* Marking down the initial value of str. */
     const char* orig_num = str;
     const int nanLen = 3;
@@ -129,7 +305,7 @@ double float8in_internal(char* str, char** endptr_p, bool* hasError)
 
     errno = 0;
 #ifdef DOLPHIN
-    val = (double)strtoll(str, &endptr, TENBASE);
+    val = (double)my_strtoll10(str, &endptr, &errno);
     if (ccontext != COERCION_EXPLICIT && (*endptr != 'X' && *endptr != 'x')) {
 #endif
         val = strtod(str, &endptr);
