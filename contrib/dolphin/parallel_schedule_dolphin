@@ -71,7 +71,7 @@ test: b_do_statment revoke option test_table_index test_float_double_real_double
 
 test: alter_function_test/alter_function  alter_function_test/alter_procedure alter_function_test/language_sql replace_test/replace
 
-test: network2 use_dbname show_create view_definer_test insert_set show_create_database show_variables b_auto_increment
+test: network2 use_dbname show_create view_definer_test insert_set show_create_database show_variables b_auto_increment nulls_get_partition
 
 test: partition_test1 partition_test2 partition_test3 partition_test4 partition_maxvalue_test
 
