@@ -199,9 +199,13 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v1 natural join t_v24;
-ERROR:  operator is not unique: tinyint = "binary"
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v1 natural join t_v25;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -566,8 +570,11 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v3 natural join t_v24;
-ERROR:  operator is not unique: smallint = "binary"
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v3 natural join t_v25;
  col1 
 ------
@@ -748,8 +755,11 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v4 natural join t_v24;
-ERROR:  operator is not unique: integer = "binary"
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v4 natural join t_v25;
  col1 
 ------
@@ -2040,25 +2050,21 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v11 natural join t_v26;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v11 natural join t_v27;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v11 natural join t_v28;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v11 natural join t_v29;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2214,25 +2220,21 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v12 natural join t_v26;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v12 natural join t_v27;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v12 natural join t_v28;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v12 natural join t_v29;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2405,25 +2407,21 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v13 natural join t_v26;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v13 natural join t_v27;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v13 natural join t_v28;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v13 natural join t_v29;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2574,7 +2572,6 @@ WARNING:  invalid input syntax for type smallint unsigned: "1.23a"
 (0 rows)
 
 select * from t_v14 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2745,7 +2742,6 @@ WARNING:  invalid input syntax for type smallint unsigned: "1.23a"
 (0 rows)
 
 select * from t_v15 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2912,7 +2908,6 @@ WARNING:  invalid input syntax for type smallint unsigned: "1.23a"
 (0 rows)
 
 select * from t_v16 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -3974,29 +3969,21 @@ CONTEXT:  SQL function "year_binary_eq" statement 1
 (0 rows)
 
 select * from t_v21 natural join t_v26;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  SQL function "year_binary_eq" statement 1
  col1 
 ------
 (0 rows)
 
 select * from t_v21 natural join t_v27;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  SQL function "year_binary_eq" statement 1
  col1 
 ------
 (0 rows)
 
 select * from t_v21 natural join t_v28;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  SQL function "year_binary_eq" statement 1
  col1 
 ------
 (0 rows)
 
 select * from t_v21 natural join t_v29;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  SQL function "year_binary_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -4152,8 +4139,6 @@ select * from t_v22 natural join t_v23;
 (1 row)
 
 select * from t_v22 natural join t_v24;
-WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4328,8 +4313,6 @@ select * from t_v23 natural join t_v22;
 select * from t_v23 natural join t_v23;
 ERROR:  table name "t_v23" specified more than once
 select * from t_v23 natural join t_v24;
-WARNING:  Truncated incorrect DOUBLE value: 1.23a
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4380,8 +4363,11 @@ select * from t_v23 natural join t_enum;
 select * from t_v23 natural join t_set;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_v24 natural join t_v1;
-ERROR:  operator is not unique: "binary" = tinyint
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v24 natural join t_v2;
 WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
@@ -4389,11 +4375,17 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v24 natural join t_v3;
-ERROR:  operator is not unique: "binary" = smallint
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v24 natural join t_v4;
-ERROR:  operator is not unique: "binary" = integer
-HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v24 natural join t_v5;
 WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
@@ -4449,19 +4441,16 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v24 natural join t_v14;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v15;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v16;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4494,15 +4483,11 @@ CONTEXT:  SQL function "binary_year_eq" statement 1
 (0 rows)
 
 select * from t_v24 natural join t_v22;
-WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v23;
-WARNING:  Truncated incorrect DOUBLE value: 1.23a
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4553,6 +4538,7 @@ select * from t_v24 natural join t_enum;
 select * from t_v24 natural join t_set;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_v25 natural join t_v1;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4774,19 +4760,16 @@ select * from t_v26 natural join t_v10;
 (0 rows)
 
 select * from t_v26 natural join t_v11;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v26 natural join t_v12;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v26 natural join t_v13;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4827,8 +4810,6 @@ select * from t_v26 natural join t_v20;
 (0 rows)
 
 select * from t_v26 natural join t_v21;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  SQL function "binary_year_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -4950,19 +4931,16 @@ select * from t_v27 natural join t_v10;
 (0 rows)
 
 select * from t_v27 natural join t_v11;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v27 natural join t_v12;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v27 natural join t_v13;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -5003,8 +4981,6 @@ select * from t_v27 natural join t_v20;
 (0 rows)
 
 select * from t_v27 natural join t_v21;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  SQL function "binary_year_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -5126,19 +5102,16 @@ select * from t_v28 natural join t_v10;
 (0 rows)
 
 select * from t_v28 natural join t_v11;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v28 natural join t_v12;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v28 natural join t_v13;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -5179,8 +5152,6 @@ select * from t_v28 natural join t_v20;
 (0 rows)
 
 select * from t_v28 natural join t_v21;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  SQL function "binary_year_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -5302,19 +5273,16 @@ select * from t_v29 natural join t_v10;
 (0 rows)
 
 select * from t_v29 natural join t_v11;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v29 natural join t_v12;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v29 natural join t_v13;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -5355,8 +5323,6 @@ select * from t_v29 natural join t_v20;
 (0 rows)
 
 select * from t_v29 natural join t_v21;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  SQL function "binary_year_eq" statement 1
  col1 
 ------
 (0 rows)
