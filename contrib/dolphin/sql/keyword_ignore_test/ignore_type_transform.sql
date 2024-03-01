@@ -300,6 +300,7 @@ insert ignore into t_nchar select cont from t_text;
 select * from t_nchar;
 
 -- test for character converting
+set dolphin.b_compatibility_mode to on;
 drop table if exists t_character;
 drop table if exists t_text;
 create table t_character(cont character);
