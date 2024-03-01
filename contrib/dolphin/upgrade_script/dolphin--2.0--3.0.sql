@@ -1516,3 +1516,142 @@ DROP FUNCTION IF EXISTS pg_catalog.date_add (year, interval);
 CREATE OR REPLACE FUNCTION pg_catalog.date_add (year, interval) RETURNS text AS $$ SELECT pg_catalog.adddate($1::text, $2)  $$ LANGUAGE SQL;
 DROP FUNCTION IF EXISTS pg_catalog.date_sub (year, interval);
 CREATE OR REPLACE FUNCTION pg_catalog.date_sub (year, interval) RETURNS text AS $$ SELECT pg_catalog.adddate($1::text, -$2)  $$ LANGUAGE SQL;
+
+DROP OPERATOR CLASS IF EXISTS uint2_ops USING hash;
+DROP OPERATOR CLASS IF EXISTS uint4_ops USING hash;
+DROP OPERATOR CLASS IF EXISTS uint2_ops USING btree;
+DROP OPERATOR CLASS IF EXISTS uint4_ops USING btree;
+
+
+DO $for_upgrade_only$
+DECLARE
+  ans boolean;
+  v_isinplaceupgrade boolean;
+BEGIN
+    select case when count(*)=1 then true else false end as ans from (select setting from pg_settings where name = 'upgrade_mode' and setting != '0') into ans;
+    show isinplaceupgrade into v_isinplaceupgrade;
+    -- we can do drop operator only during upgrade
+    if ans = true and v_isinplaceupgrade = true then
+        drop operator IF EXISTS pg_catalog.=(uint2, int8);
+        CREATE OPERATOR pg_catalog.=(
+        leftarg = uint2, rightarg = int8, procedure = uint2_int8_eq,
+        restrict = eqsel, join = eqjoinsel, commutator = operator(pg_catalog.=),
+        HASHES, MERGES
+        );
+        drop operator IF EXISTS pg_catalog.=(uint4, int8);
+        CREATE OPERATOR pg_catalog.=(
+        leftarg = uint4, rightarg = int8, procedure = uint4_int8_eq,
+        restrict = eqsel, join = eqjoinsel, commutator=operator(pg_catalog.=),
+        HASHES, MERGES
+        );
+    end if;
+END
+$for_upgrade_only$;
+
+CREATE FUNCTION pg_catalog.int8_uint4_eq (
+int8,uint4
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int8_uint4_eq';
+
+CREATE OPERATOR pg_catalog.=(
+leftarg = int8, rightarg = uint4, procedure = int8_uint4_eq, commutator = operator(pg_catalog.=),
+restrict = eqsel, join = eqjoinsel, HASHES, MERGES
+);
+
+CREATE or replace FUNCTION pg_catalog.int8_uint2_eq (
+int8,uint2
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int8_uint2_eq';
+
+CREATE OPERATOR pg_catalog.=(
+leftarg = int8, rightarg = uint2, procedure = int8_uint2_eq, commutator = operator(pg_catalog.=),
+restrict = eqsel, join = eqjoinsel, HASHES, MERGES
+);
+
+CREATE OPERATOR CLASS uint2_ops
+    DEFAULT FOR TYPE uint2 USING btree family integer_ops AS
+        OPERATOR        1       < ,
+        OPERATOR        1       <(uint2, uint4),
+        OPERATOR        1       <(uint2, uint8),
+        OPERATOR        1       <(uint2, int2),
+        OPERATOR        1       <(uint2, int4),
+        OPERATOR        1       <(uint2, int8),
+        OPERATOR        2       <= ,
+        OPERATOR        2       <=(uint2, uint4),
+        OPERATOR        2       <=(uint2, uint8),
+        OPERATOR        2       <=(uint2, int2),
+        OPERATOR        2       <=(uint2, int4),
+        OPERATOR        2       <=(uint2, int8),
+        OPERATOR        3       = ,
+        OPERATOR        3       =(uint2, uint4),
+        OPERATOR        3       =(uint2, uint8),
+        OPERATOR        3       =(uint2, int2),
+        OPERATOR        3       =(uint2, int4),
+        OPERATOR        3       =(uint2, int8),
+        OPERATOR        4       >= ,
+        OPERATOR        4       >=(uint2, uint4),
+        OPERATOR        4       >=(uint2, uint8),
+        OPERATOR        4       >=(uint2, int2),
+        OPERATOR        4       >=(uint2, int4),
+        OPERATOR        4       >=(uint2, int8),
+        OPERATOR        5       > ,
+        OPERATOR        5       >(uint2, uint4),
+        OPERATOR        5       >(uint2, uint8),
+        OPERATOR        5       >(uint2, int2),
+        OPERATOR        5       >(uint2, int4),
+        OPERATOR        5       >(uint2, int8),
+        FUNCTION        1       uint2cmp(uint2, uint2),
+        FUNCTION        1       uint24cmp(uint2, uint4),
+        FUNCTION        1       uint28cmp(uint2, uint8),
+        FUNCTION        1       uint2_int2cmp(uint2, int2),
+        FUNCTION        1       uint2_int4cmp(uint2, int4),
+        FUNCTION        1       uint2_int8cmp(uint2, int8),
+        FUNCTION        2       uint2_sortsupport(internal);
+
+CREATE OPERATOR CLASS uint4_ops
+    DEFAULT FOR TYPE uint4 USING btree family integer_ops AS
+        OPERATOR        1       < ,
+        OPERATOR        1       <(uint4, uint8),
+        OPERATOR        1       <(uint4, int4),
+        OPERATOR        1       <(uint4, int8),
+        OPERATOR        2       <= ,
+        OPERATOR        2       <=(uint4, uint8),
+        OPERATOR        2       <=(uint4, int4),
+        OPERATOR        2       <=(uint4, int8),
+        OPERATOR        3       = ,
+        OPERATOR        3       =(uint4, uint8),
+        OPERATOR        3       =(uint4, int4),
+        OPERATOR        3       =(uint4, int8),
+        OPERATOR        4       >= ,
+        OPERATOR        4       >=(uint4, uint8),
+        OPERATOR        4       >=(uint4, int4),
+        OPERATOR        4       >=(uint4, int8),
+        OPERATOR        5       > ,
+        OPERATOR        5       >(uint4, uint8),
+        OPERATOR        5       >(uint4, int4),
+        OPERATOR        5       >(uint4, int8),
+        FUNCTION        1       uint4cmp(uint4, uint4),
+        FUNCTION        1       uint48cmp(uint4, uint8),
+        FUNCTION        1       uint4_int4cmp(uint4, int4),
+        FUNCTION        1       uint4_int8cmp(uint4, int8),
+        FUNCTION        2       uint4_sortsupport(internal);
+
+CREATE OPERATOR CLASS uint2_ops
+    DEFAULT FOR TYPE uint2 USING hash family integer_ops AS
+        OPERATOR        1       = ,
+        OPERATOR        1       =(uint2, uint4),
+        OPERATOR        1       =(uint2, uint8),
+        OPERATOR        1       =(uint2, int2),
+        OPERATOR        1       =(uint2, int4),
+        OPERATOR        1       =(uint2, int8),
+        OPERATOR        1       =(int8, uint2),
+        OPERATOR        1       =(int2, uint2),
+        FUNCTION        1       hashuint2(uint2);
+
+CREATE OPERATOR CLASS uint4_ops
+    DEFAULT FOR TYPE uint4 USING hash family integer_ops AS
+        OPERATOR        1       = ,
+        OPERATOR        1       =(uint4, uint8),
+        OPERATOR        1       =(uint4, int4),
+        OPERATOR        1       =(uint4, int8),
+        OPERATOR        1       =(int8, uint4),
+        OPERATOR        1       =(int4, uint4),
+        FUNCTION        1       hashuint4(uint4);

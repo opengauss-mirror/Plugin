@@ -801,7 +801,11 @@ select * from t_v4 natural join t_set;
 (1 row)
 
 select * from t_v5 natural join t_v1;
---?ERROR:  could not find commutator for operator .*
+ col1 
+------
+ 1
+(1 row)
+
 select * from t_v5 natural join t_v2;
  col1 
 ------
@@ -809,7 +813,11 @@ select * from t_v5 natural join t_v2;
 (1 row)
 
 select * from t_v5 natural join t_v3;
---?ERROR:  could not find commutator for operator .*
+ col1 
+------
+ 1
+(1 row)
+
 select * from t_v5 natural join t_v4;
  col1 
 ------
@@ -860,7 +868,11 @@ select * from t_v5 natural join t_v12;
 (0 rows)
 
 select * from t_v5 natural join t_v13;
---?ERROR:  could not find commutator for operator .*
+ col1 
+------
+ 1
+(1 row)
+
 select * from t_v5 natural join t_v14;
  col1 
 ------
@@ -4043,8 +4055,8 @@ WARNING:  invalid input syntax for type bigint: "1.23a                          
 (1 row)
 
 select * from t_v22 natural join t_v5;
-WARNING:  invalid input syntax for type integer: "1.23a                                                                                               "
-WARNING:  invalid input syntax for type integer: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
                                                  col1                                                 
 ------------------------------------------------------------------------------------------------------
  1.23a                                                                                               
@@ -4219,8 +4231,8 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v23 natural join t_v5;
-WARNING:  invalid input syntax for type integer: "1.23a"
-WARNING:  invalid input syntax for type integer: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
  col1  
 -------
  1.23a
@@ -5447,8 +5459,8 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v30 natural join t_v5;
-WARNING:  invalid input syntax for type integer: "1.23a"
-WARNING:  invalid input syntax for type integer: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
  col1  
 -------
  1.23a

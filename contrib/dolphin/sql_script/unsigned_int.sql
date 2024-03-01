@@ -3450,7 +3450,7 @@ uint2,int8
 
 CREATE OPERATOR pg_catalog.=(
 leftarg = uint2, rightarg = int8, procedure = uint2_int8_eq,
-restrict = eqsel, join = eqjoinsel,
+restrict = eqsel, join = eqjoinsel, commutator = operator(pg_catalog.=),
 HASHES, MERGES
 );
 COMMENT ON OPERATOR pg_catalog.=(uint2, uint8) IS 'uint2_int8_eq';
@@ -3502,7 +3502,7 @@ uint4,int8
 
 CREATE OPERATOR pg_catalog.=(
 leftarg = uint4, rightarg = int8, procedure = uint4_int8_eq,
-restrict = eqsel, join = eqjoinsel,
+restrict = eqsel, join = eqjoinsel, commutator=operator(pg_catalog.=),
 HASHES, MERGES
 );
 COMMENT ON OPERATOR pg_catalog.=(uint4, uint8) IS 'uint4_int8_eq';
