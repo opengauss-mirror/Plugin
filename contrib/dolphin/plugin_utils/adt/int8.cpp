@@ -49,6 +49,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(bpchar_cast_int8);
 PG_FUNCTION_INFO_V1_PUBLIC(varchar_cast_int8);
 PG_FUNCTION_INFO_V1_PUBLIC(text_cast_int8);
 PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int8xor);
 
 extern "C" DLL_PUBLIC Datum bit_cast_int8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum float4_cast_int8(PG_FUNCTION_ARGS);
@@ -65,7 +66,7 @@ extern "C" DLL_PUBLIC Datum bpchar_cast_int8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum varchar_cast_int8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum text_cast_int8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum varlena_cast_int8(PG_FUNCTION_ARGS);
-
+extern "C" DLL_PUBLIC Datum dolphin_int8xor(PG_FUNCTION_ARGS);
 extern int GetLeadingZeroLen(VarBit* arg);
 #endif
 
@@ -1937,5 +1938,13 @@ Datum varlena_cast_int8(PG_FUNCTION_ARGS)
     }
     result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
     PG_RETURN_INT64(checkSignedRange(result, fcinfo));
+}
+
+Datum dolphin_int8xor(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT64(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_INT64 ((arg1 != 0) ^ (arg2 != 0));
 }
 #endif
