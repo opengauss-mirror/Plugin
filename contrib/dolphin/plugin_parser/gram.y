@@ -10441,6 +10441,11 @@ ColConstraintElem:
 				}
 			| ON_UPDATE_TIME UPDATE b_expr
 				{
+					/*
+					 * Colnames of FuncCall for CURRENT_TIMESTAMP/CURRENT_TIME/CURRENT_DATE/
+					 * LOCALTIME/LOCALTIMESTAMP must be same as themselves, because of logical
+					 * decoding for on update clause(see RelationGetColumnOnUpdate).
+					 */
 #ifndef ENABLE_MULTIPLE_NODES
 					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
 					{
@@ -15426,6 +15431,10 @@ def_list:	def_elem								{ $$ = list_make1($1); }
 def_elem:	ColLabel '=' def_arg
 				{
 					$$ = makeDefElem($1, (Node *) $3);
+				}
+			| BINARY '=' def_arg
+				{
+					$$ = makeDefElem((char *)$1, (Node *) $3);
 				}
 			| ColLabel
 				{
