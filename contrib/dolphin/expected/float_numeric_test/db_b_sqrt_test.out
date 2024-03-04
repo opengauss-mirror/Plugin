@@ -40,9 +40,9 @@ SELECT SQRT(-64::numeric);
 (1 row)
 
 select sqrt(111);
-       sqrt       
-------------------
- 10.5356537528527
+       sqrt        
+-------------------
+ 10.53565375285274
 (1 row)
 
 select sqrt(b'111');
@@ -52,15 +52,15 @@ select sqrt(b'111');
 (1 row)
 
 select sqrt(7);
-       sqrt       
-------------------
- 2.64575131106459
+       sqrt        
+-------------------
+ 2.645751311064591
 (1 row)
 
 select sqrt(b'111'::int);
-       sqrt       
-------------------
- 2.64575131106459
+       sqrt        
+-------------------
+ 2.645751311064591
 (1 row)
 
 drop schema db_b_sqrt_test cascade;
