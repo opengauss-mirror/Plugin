@@ -903,7 +903,11 @@ Datum float8out(PG_FUNCTION_ARGS)
             securec_check(rc, "\0", "\0");
             break;
         default: {
+#ifdef DOLPHIN
+            int ndig = DBL_DIG + u_sess->attr.attr_common.extra_float_digits + 1;
+#else
             int ndig = DBL_DIG + u_sess->attr.attr_common.extra_float_digits;
+#endif
 
             if (ndig < 1)
                 ndig = 1;

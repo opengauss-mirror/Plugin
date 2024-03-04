@@ -427,9 +427,9 @@ select 'abc%' like binary 'abc|_' escape '|';
 
 -- test binary expr gram;
 select binary sin(1);
-                 sin                  
---------------------------------------
- \x302e383431343730393834383037383937
+                  sin                   
+----------------------------------------
+ \x302e38343134373039383438303738393635
 (1 row)
 
 drop table if exists t1;

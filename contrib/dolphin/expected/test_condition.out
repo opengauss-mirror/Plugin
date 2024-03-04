@@ -5975,9 +5975,9 @@ select coalesce(nmric, txt) from typeset;
 (1 row)
 
 select coalesce(flt, bt) from typeset;
-     coalesce     
-------------------
- 127.212997436523
+     coalesce      
+-------------------
+ 127.2129974365234
 (1 row)
 
 select coalesce(flt, dt) from typeset;
@@ -7235,9 +7235,9 @@ select ifnull(nmric, txt) from typeset;
 (1 row)
 
 select ifnull(flt, bt) from typeset;
-      ifnull      
-------------------
- 127.212997436523
+      ifnull       
+-------------------
+ 127.2129974365234
 (1 row)
 
 select ifnull(flt, dt) from typeset;

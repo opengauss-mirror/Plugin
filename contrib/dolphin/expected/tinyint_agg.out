@@ -57,9 +57,9 @@ select stddev_pop(a), stddev_pop(b) from u1;
 (1 row)
 
 select stddev_samp(a), stddev_samp(b) from u1;
-   stddev_samp    |   stddev_samp    
-------------------+------------------
- 127.500326796967 | 127.500326796967
+    stddev_samp    |   stddev_samp    
+-------------------+------------------
+ 127.5003267969668 | 127.500326796967
 (1 row)
 
 select sum(a), sum(b) from u1;
