@@ -1708,6 +1708,102 @@ Datum text_time_explicit(PG_FUNCTION_ARGS)
     return datum_internal;
 }
 
+
+GaussTimeResult* gs_time_internal(PG_FUNCTION_ARGS, char* str, pg_tm *tt, int time_cast_type, bool* null_func_result,
+    fsec_t* fsec, int* timeSign)
+{
+    int tz;
+    int nf;
+    int dtype;
+    int ftype[MAXDATEFIELDS];
+    int dterr;
+    char workbuf[MAXDATELEN + 1];
+    char* field[MAXDATEFIELDS] = {0};
+    int D = 0;
+    bool hasD = false;
+    char *adjusted = adjust_b_format_time(str, timeSign, &D, &hasD);
+    /* tt2 stores openGauss's parsing result while tt stores M*'s parsing result */
+    pg_tm* tt2 = (pg_tm*)palloc(sizeof(pg_tm));
+    error_t rc = EOK;
+    rc = memset_s(tt2, sizeof(pg_tm), 0, sizeof(pg_tm));
+    securec_check(rc, "\0", "\0");
+
+    GaussTimeResult* gs_time_result = (GaussTimeResult*)palloc(sizeof(GaussTimeResult));
+    gs_time_result->handle_continuous = true;
+    gs_time_result->time_error_type = TIME_CORRECT;
+    gs_time_result->tm = tt2;
+    /* check if empty */
+    if (strlen(adjusted) == 0) {
+        gs_time_result->time_error_type = GET_TIME_ERROR_TYPE();
+        gs_time_result->time_adt = 0;
+        gs_time_result->handle_continuous = false;
+        return gs_time_result;
+    }
+    dterr = ParseDateTime(adjusted, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
+    if (dterr == 0) {
+        dterr = DecodeTimeOnlyForBDatabase(field, ftype, nf, &dtype, gs_time_result->tm, fsec, &tz, D);
+    }
+    if (dterr != 0) {
+        /*
+         * If sql mode is strict, then an error had happend,
+         * otherwise we can return tt which stores M*'s parsing result.
+         */
+        if (SQL_MODE_STRICT() && !fcinfo->can_ignore) {
+            DateTimeParseErrorWithFlag(dterr, str, "time", fcinfo->can_ignore, !fcinfo->can_ignore);
+            /*
+             * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
+             * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
+             */
+            char* field_str = field[0];
+            if (field_str == NULL) {
+                gs_time_result->time_error_type = GET_TIME_ERROR_TYPE();
+                gs_time_result->time_adt = 0;
+                gs_time_result->handle_continuous = false;
+                return gs_time_result;
+            }
+            if (*field_str == '+') {
+                field_str++;
+            }
+            int trunc_val = getStartingDigits(field_str);
+            if (trunc_val < 0 || trunc_val >= 60) {
+                gs_time_result->time_error_type = TIME_CORRECT;
+                gs_time_result->time_adt = 0;
+                gs_time_result->handle_continuous = false;
+                return gs_time_result;
+            }
+            gs_time_result->time_error_type = GET_TIME_ERROR_TYPE();
+            gs_time_result->time_adt = trunc_val * TIME_MS_TO_S_RADIX * TIME_MS_TO_S_RADIX;
+            gs_time_result->handle_continuous = false;
+            return gs_time_result;
+        } else if (SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore) {
+            /* for case insert unavailable data, need to set the unavailable data to 0 to compatible with M */
+            DateTimeParseError(dterr, str, "time", true);
+            if (IsResetUnavailableDataTime(dterr, *tt, time_cast_type != TIME_CAST_IMPLICIT)) {
+                gs_time_result->time_error_type = TIME_CORRECT;
+                gs_time_result->time_adt = 0;
+                gs_time_result->handle_continuous = false;
+                return gs_time_result;
+            } else {
+                gs_time_result->tm = tt; // switch to M*'s parsing result
+            }
+        } else {
+            if (time_cast_type == TEXT_TIME_EXPLICIT || time_cast_type == TIME_IN) {
+                DateTimeParseError(dterr, str, "time", true);
+                gs_time_result->tm = tt; // switch to M*'s parsing result
+                gs_time_result->time_error_type = (dterr != DTERR_TZDISP_OVERFLOW && *null_func_result) ?
+                    GET_TIME_ERROR_TYPE() : TIME_CORRECT;
+            } else if (time_cast_type == TIME_CAST) {
+                DateTimeParseErrorWithFlag(dterr, str, "time", fcinfo->can_ignore, !SQL_MODE_STRICT());
+                gs_time_result->tm = tt; // switch to M*'s parsing result
+            } else {
+                DateTimeParseError(dterr, str, "time", !SQL_MODE_STRICT());
+                gs_time_result->tm = tt; // switch to M*'s parsing result
+            }
+        }
+    }
+    return gs_time_result;
+}
+
 Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type)
 {
 #ifdef NOT_USED
@@ -1718,17 +1814,8 @@ Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
     fsec_t fsec;
     struct pg_tm tt;
     struct pg_tm *tm = &tt;
-    int tz;
-    int nf;
-    int dterr;
-    char workbuf[MAXDATELEN + 1];
-    char* field[MAXDATEFIELDS] = {0};
-    int dtype;
-    int ftype[MAXDATEFIELDS];
     char* time_fmt = NULL;
     int timeSign = 1;
-    /* tt2 stores openGauss's parsing result while tt stores M*'s parsing result */
-    struct pg_tm tt2;
     bool null_func_result = false;
     /*
      * this case is used for time format is specified.
@@ -1747,69 +1834,13 @@ Datum time_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
         errno_t rc = memset_s(tm, sizeof(struct pg_tm), 0, sizeof(struct pg_tm));
         securec_check(rc, "\0", "\0");
         cstring_to_time(str, tm, fsec, timeSign, tm_type, warnings, &null_func_result);
-
         if (warnings) {
-            tm = &tt2;
-            int D = 0;
-            bool hasD = false;
-            char *adjusted = adjust_b_format_time(str, &timeSign, &D, &hasD);
-            /* check if empty */
-            if (strlen(adjusted) == 0) {
-                *time_error_type = TIME_INCORRECT;
-                PG_RETURN_TIMEADT(0);
-            }
-            dterr = ParseDateTime(adjusted, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
-            if (dterr == 0) {
-                dterr = DecodeTimeOnlyForBDatabase(field, ftype, nf, &dtype, tm, &fsec, &tz, D);
-            }
-            if (dterr != 0) {
-                /*
-                 * If sql mode is strict, then an error had happend,
-                 * otherwise we can return tt which stores M*'s parsing result.
-                 */
-                if (SQL_MODE_STRICT()) {
-                    DateTimeParseErrorWithFlag(dterr, str, "time", fcinfo->can_ignore, !fcinfo->can_ignore);
-                    /*
-                     * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
-                     * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
-                     */
-                    char* field_str = field[0];
-                    if (field_str == NULL) {
-                        *time_error_type = TIME_INCORRECT;
-                        PG_RETURN_TIMEADT(0);
-                    }
-                    if (*field_str == '+') {
-                        field_str++;
-                    }
-                    int trunc_val = getStartingDigits(field_str);
-                    if (trunc_val < 0 || trunc_val >= 60) {
-                        PG_RETURN_TIMEADT(0);
-                    }
-                    *time_error_type = TIME_INCORRECT;
-                    PG_RETURN_TIMEADT(trunc_val * TIME_MS_TO_S_RADIX * TIME_MS_TO_S_RADIX);
-                } else if (SQL_MODE_NOT_STRICT_ON_INSERT()) {
-                    /* for case insert unavailable data, need to set the unavailable data to 0 to compatible with M */
-                    DateTimeParseError(dterr, str, "time", true);
-                    if (IsResetUnavailableDataTime(dterr, tt, time_cast_type != TIME_CAST_IMPLICIT)) {
-                        PG_RETURN_TIMEADT(0);
-                    } else {
-                        tm = &tt; // switch to M*'s parsing result
-                    }
-                } else {
-                    if (time_cast_type == TEXT_TIME_EXPLICIT || time_cast_type == TIME_IN) {
-                        DateTimeParseError(dterr, str, "time", true);
-                        tm = &tt; // switch to M*'s parsing result
-                        if (dterr != DTERR_TZDISP_OVERFLOW && null_func_result) {
-                            *time_error_type = TIME_INCORRECT;
-                        }
-                    } else if (time_cast_type == TIME_CAST) {
-                        DateTimeParseErrorWithFlag(dterr, str, "time", fcinfo->can_ignore, !SQL_MODE_STRICT());
-                        tm = &tt; // switch to M*'s parsing result
-                    } else {
-                        DateTimeParseError(dterr, str, "time", !SQL_MODE_STRICT());
-                        tm = &tt; // switch to M*'s parsing result
-                    }
-                }
+            GaussTimeResult* gs_result = gs_time_internal(fcinfo, str, tm, time_cast_type,
+                &null_func_result, &fsec, &timeSign);
+            *time_error_type = gs_result->time_error_type;
+            tm = gs_result->tm;
+            if (!gs_result->handle_continuous) {
+                PG_RETURN_TIMEADT(gs_result->time_adt);
             }
         }
     }
