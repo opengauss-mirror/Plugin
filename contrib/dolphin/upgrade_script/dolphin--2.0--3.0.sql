@@ -1451,30 +1451,280 @@ CREATE OPERATOR pg_catalog.<=(leftarg = boolean, rightarg = binary, COMMUTATOR =
 CREATE OR REPLACE FUNCTION pg_catalog.binary_boolean_le(binary, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float <= $2::int)';
 CREATE OPERATOR pg_catalog.<=(leftarg = binary, rightarg = boolean, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.binary_boolean_le,restrict = scalarltsel, join = scalarltjoinsel);
 
-CREATE OR REPLACE FUNCTION pg_catalog.year_binary_eq(year, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int = $2::float)';
-CREATE OPERATOR pg_catalog.=(leftarg = year, rightarg = binary, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.year_binary_eq, restrict = eqsel, join = eqjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_year_eq(binary, year) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float = $2::int)';
-CREATE OPERATOR pg_catalog.=(leftarg = binary, rightarg = year, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.binary_year_eq, restrict = eqsel, join = eqjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.year_binary_ne(year, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int != $2::float)';
-CREATE OPERATOR pg_catalog.<>(leftarg = year, rightarg = binary, COMMUTATOR = operator(pg_catalog.<>), procedure = pg_catalog.year_binary_ne,restrict = neqsel, join = neqjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_year_ne(binary, year) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float != $2::int)';
-CREATE OPERATOR pg_catalog.<>(leftarg = binary, rightarg = year, COMMUTATOR = operator(pg_catalog.<>), procedure = pg_catalog.binary_year_ne,restrict = neqsel, join = neqjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.year_binary_gt(year, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int > $2::float)';
-CREATE OPERATOR pg_catalog.>(leftarg = year, rightarg = binary, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.year_binary_gt,restrict = scalargtsel, join = scalargtjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_year_gt(binary, year) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float > $2::int)';
-CREATE OPERATOR pg_catalog.>(leftarg = binary, rightarg = year, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.binary_year_gt,restrict = scalargtsel, join = scalargtjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.year_binary_lt(year, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int < $2::float)';
-CREATE OPERATOR pg_catalog.<(leftarg = year, rightarg = binary, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.year_binary_lt,restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_year_lt(binary, year) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float < $2::int)';
-CREATE OPERATOR pg_catalog.<(leftarg = binary, rightarg = year, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.binary_year_lt,restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.year_binary_ge(year, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int >= $2::float)';
-CREATE OPERATOR pg_catalog.>=(leftarg = year, rightarg = binary, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.year_binary_ge,restrict = scalargtsel, join = scalargtjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_year_ge(binary, year) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float >= $2::int)';
-CREATE OPERATOR pg_catalog.>=(leftarg = binary, rightarg = year, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.binary_year_ge,restrict = scalargtsel, join = scalargtjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.year_binary_le(year, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int <= $2::float)';
-CREATE OPERATOR pg_catalog.<=(leftarg = year, rightarg = binary, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.year_binary_le,restrict = scalarltsel, join = scalarltjoinsel);
-CREATE OR REPLACE FUNCTION pg_catalog.binary_year_le(binary, year) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float <= $2::int)';
-CREATE OPERATOR pg_catalog.<=(leftarg = binary, rightarg = year, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.binary_year_le,restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_tinyblob_eq(boolean, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = boolean, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.boolean_tinyblob_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_boolean_eq(tinyblob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = tinyblob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.tinyblob_boolean_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_tinyblob_ne(boolean, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = boolean, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.boolean_tinyblob_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_boolean_ne(tinyblob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = tinyblob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.tinyblob_boolean_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_tinyblob_gt(boolean, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = boolean, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.boolean_tinyblob_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_boolean_gt(tinyblob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = tinyblob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.tinyblob_boolean_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_tinyblob_lt(boolean, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = boolean, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.boolean_tinyblob_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_boolean_lt(tinyblob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = tinyblob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.tinyblob_boolean_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_tinyblob_ge(boolean, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = boolean, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.boolean_tinyblob_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_boolean_ge(tinyblob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = tinyblob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.tinyblob_boolean_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_tinyblob_le(boolean, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = boolean, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.boolean_tinyblob_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_boolean_le(tinyblob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = tinyblob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.tinyblob_boolean_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_mediumblob_eq(boolean, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = boolean, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.boolean_mediumblob_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_boolean_eq(mediumblob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = mediumblob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.mediumblob_boolean_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_mediumblob_ne(boolean, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = boolean, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.boolean_mediumblob_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_boolean_ne(mediumblob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = mediumblob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.mediumblob_boolean_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_mediumblob_gt(boolean, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = boolean, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.boolean_mediumblob_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_boolean_gt(mediumblob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = mediumblob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.mediumblob_boolean_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_mediumblob_lt(boolean, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = boolean, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.boolean_mediumblob_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_boolean_lt(mediumblob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = mediumblob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.mediumblob_boolean_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_mediumblob_ge(boolean, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = boolean, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.boolean_mediumblob_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_boolean_ge(mediumblob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = mediumblob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.mediumblob_boolean_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_mediumblob_le(boolean, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = boolean, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.boolean_mediumblob_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_boolean_le(mediumblob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = mediumblob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.mediumblob_boolean_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_blob_eq(boolean, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = boolean, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.boolean_blob_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_boolean_eq(blob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = blob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.blob_boolean_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_blob_ne(boolean, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = boolean, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.boolean_blob_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_boolean_ne(blob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = blob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.blob_boolean_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_blob_gt(boolean, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = boolean, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.boolean_blob_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_boolean_gt(blob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = blob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.blob_boolean_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_blob_lt(boolean, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = boolean, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.boolean_blob_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_boolean_lt(blob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = blob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.blob_boolean_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_blob_ge(boolean, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = boolean, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.boolean_blob_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_boolean_ge(blob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = blob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.blob_boolean_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_blob_le(boolean, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = boolean, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.boolean_blob_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_boolean_le(blob, boolean) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = blob, RIGHTARG = boolean, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.blob_boolean_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_longblob_eq(boolean, longblob) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(leftarg = boolean, rightarg = longblob, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.boolean_longblob_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_boolean_eq(longblob, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(leftarg = longblob, rightarg = boolean, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.longblob_boolean_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_longblob_ne(boolean, longblob) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(leftarg = boolean, rightarg = longblob, COMMUTATOR = operator(pg_catalog.<>), procedure = pg_catalog.boolean_longblob_ne,restrict = neqsel, join = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_boolean_ne(longblob, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(leftarg = longblob, rightarg = boolean, COMMUTATOR = operator(pg_catalog.<>), procedure = pg_catalog.longblob_boolean_ne,restrict = neqsel, join = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_longblob_gt(boolean, longblob) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(leftarg = boolean, rightarg = longblob, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.boolean_longblob_gt,restrict = scalargtsel, join = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_boolean_gt(longblob, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(leftarg = longblob, rightarg = boolean, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.longblob_boolean_gt,restrict = scalargtsel, join = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_longblob_lt(boolean, longblob) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(leftarg = boolean, rightarg = longblob, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.boolean_longblob_lt,restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_boolean_lt(longblob, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(leftarg = longblob, rightarg = boolean, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.longblob_boolean_lt,restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_longblob_ge(boolean, longblob) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(leftarg = boolean, rightarg = longblob, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.boolean_longblob_ge,restrict = scalargtsel, join = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_boolean_ge(longblob, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(leftarg = longblob, rightarg = boolean, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.longblob_boolean_ge,restrict = scalargtsel, join = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_longblob_le(boolean, longblob) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(leftarg = boolean, rightarg = longblob, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.boolean_longblob_le,restrict = scalarltsel, join = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_boolean_le(longblob, boolean) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(leftarg = longblob, rightarg = boolean, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.longblob_boolean_le,restrict = scalarltsel, join = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.year_binary_eq(year, binary) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::int = $2::float)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = year, RIGHTARG = binary, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.year_binary_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.binary_year_eq(binary, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::float = $2::int)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = binary, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.binary_year_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_binary_ne(year, binary) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::int != $2::float)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = year, RIGHTARG = binary, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.year_binary_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.binary_year_ne(binary, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::float != $2::int)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = binary, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.binary_year_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_binary_gt(year, binary) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::int > $2::float)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = year, RIGHTARG = binary, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.year_binary_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.binary_year_gt(binary, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::float > $2::int)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = binary, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.binary_year_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_binary_lt(year, binary) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::int < $2::float)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = year, RIGHTARG = binary, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.year_binary_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.binary_year_lt(binary, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::float < $2::int)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = binary, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.binary_year_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_binary_ge(year, binary) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::int >= $2::float)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = year, RIGHTARG = binary, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.year_binary_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.binary_year_ge(binary, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::float >= $2::int)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = binary, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.binary_year_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_binary_le(year, binary) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::int <= $2::float)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = year, RIGHTARG = binary, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.year_binary_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.binary_year_le(binary, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::float <= $2::int)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = binary, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.binary_year_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.year_tinyblob_eq(year, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = year, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.year_tinyblob_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_year_eq(tinyblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = tinyblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.tinyblob_year_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_tinyblob_ne(year, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = year, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.year_tinyblob_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_year_ne(tinyblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = tinyblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.tinyblob_year_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_tinyblob_gt(year, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = year, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.year_tinyblob_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_year_gt(tinyblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = tinyblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.tinyblob_year_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_tinyblob_lt(year, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = year, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.year_tinyblob_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_year_lt(tinyblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = tinyblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.tinyblob_year_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_tinyblob_ge(year, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = year, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.year_tinyblob_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_year_ge(tinyblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = tinyblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.tinyblob_year_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_tinyblob_le(year, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = year, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.year_tinyblob_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_year_le(tinyblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = tinyblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.tinyblob_year_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.year_mediumblob_eq(year, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = year, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.year_mediumblob_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_year_eq(mediumblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = mediumblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.mediumblob_year_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_mediumblob_ne(year, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = year, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.year_mediumblob_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_year_ne(mediumblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = mediumblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.mediumblob_year_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_mediumblob_gt(year, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = year, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.year_mediumblob_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_year_gt(mediumblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = mediumblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.mediumblob_year_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_mediumblob_lt(year, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = year, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.year_mediumblob_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_year_lt(mediumblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = mediumblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.mediumblob_year_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_mediumblob_ge(year, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = year, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.year_mediumblob_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_year_ge(mediumblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = mediumblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.mediumblob_year_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_mediumblob_le(year, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = year, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.year_mediumblob_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_year_le(mediumblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = mediumblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.mediumblob_year_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.year_blob_eq(year, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = year, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.year_blob_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_year_eq(blob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = blob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.blob_year_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_blob_ne(year, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = year, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.year_blob_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_year_ne(blob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = blob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.blob_year_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_blob_gt(year, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = year, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.year_blob_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_year_gt(blob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = blob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.blob_year_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_blob_lt(year, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = year, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.year_blob_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_year_lt(blob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = blob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.blob_year_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_blob_ge(year, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = year, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.year_blob_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_year_ge(blob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = blob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.blob_year_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_blob_le(year, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = year, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.year_blob_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_year_le(blob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = blob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.blob_year_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.year_longblob_eq(year, longblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = year, RIGHTARG = longblob, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.year_longblob_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_year_eq(longblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = longblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.longblob_year_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_longblob_ne(year, longblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = year, RIGHTARG = longblob, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.year_longblob_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_year_ne(longblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = longblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.longblob_year_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_longblob_gt(year, longblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = year, RIGHTARG = longblob, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.year_longblob_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_year_gt(longblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text > $2::text)';
+CREATE OPERATOR pg_catalog.>(LEFTARG = longblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<), PROCEDURE = pg_catalog.longblob_year_gt, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_longblob_lt(year, longblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = year, RIGHTARG = longblob, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.year_longblob_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_year_lt(longblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text < $2::text)';
+CREATE OPERATOR pg_catalog.<(LEFTARG = longblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.>), PROCEDURE = pg_catalog.longblob_year_lt, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_longblob_ge(year, longblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = year, RIGHTARG = longblob, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.year_longblob_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_year_ge(longblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text >= $2::text)';
+CREATE OPERATOR pg_catalog.>=(LEFTARG = longblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.<=), PROCEDURE = pg_catalog.longblob_year_ge, RESTRICT = scalargtsel, JOIN = scalargtjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.year_longblob_le(year, longblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = year, RIGHTARG = longblob, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.year_longblob_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_year_le(longblob, year) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text <= $2::text)';
+CREATE OPERATOR pg_catalog.<=(LEFTARG = longblob, RIGHTARG = year, COMMUTATOR = OPERATOR(pg_catalog.>=), PROCEDURE = pg_catalog.longblob_year_le, RESTRICT = scalarltsel, JOIN = scalarltjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.int1_binary_eq(int1, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1 = $2::float)';
+CREATE OPERATOR pg_catalog.=(leftarg = int1, rightarg = binary, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.int1_binary_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.binary_int1_eq(binary, int1) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float = $2)';
+CREATE OPERATOR pg_catalog.=(leftarg = binary, rightarg = int1, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.binary_int1_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.int1_binary_ne(int1, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::float != $2)';
+CREATE OPERATOR pg_catalog.<>(leftarg = int1, rightarg = binary, COMMUTATOR = operator(pg_catalog.<>), procedure = pg_catalog.int1_binary_ne,restrict = neqsel, join = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.binary_int1_ne(binary, int1) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1 != $2::float)';
+CREATE OPERATOR pg_catalog.<>(leftarg = binary, rightarg = int1, COMMUTATOR = operator(pg_catalog.<>), procedure = pg_catalog.binary_int1_ne,restrict = neqsel, join = neqjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.int1_tinyblob_eq(int1, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = int1, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.int1_tinyblob_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_int1_eq(tinyblob, int1) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = tinyblob, RIGHTARG = int1, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.tinyblob_int1_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.int1_tinyblob_ne(int1, tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = int1, RIGHTARG = tinyblob, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.int1_tinyblob_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_int1_ne(tinyblob, int1) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = tinyblob, RIGHTARG = int1, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.tinyblob_int1_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.int1_mediumblob_eq(int1, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = int1, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.int1_mediumblob_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_int1_eq(mediumblob, int1) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = mediumblob, RIGHTARG = int1, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.mediumblob_int1_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.int1_mediumblob_ne(int1, mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = int1, RIGHTARG = mediumblob, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.int1_mediumblob_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_int1_ne(mediumblob, int1) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = mediumblob, RIGHTARG = int1, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.mediumblob_int1_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.int1_blob_eq(int1, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = int1, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.int1_blob_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_int1_eq(blob, int1) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = blob, RIGHTARG = int1, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.blob_int1_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.int1_blob_ne(int1, blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = int1, RIGHTARG = blob, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.int1_blob_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.blob_int1_ne(blob, int1) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = blob, RIGHTARG = int1, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.blob_int1_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.int1_longblob_eq(int1, longblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = int1, RIGHTARG = longblob, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.int1_longblob_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_int1_eq(longblob, int1) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text = $2::text)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = longblob, RIGHTARG = int1, COMMUTATOR = OPERATOR(pg_catalog.=), PROCEDURE = pg_catalog.longblob_int1_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.int1_longblob_ne(int1, longblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = int1, RIGHTARG = longblob, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.int1_longblob_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_int1_ne(longblob, int1) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1::text != $2::text)';
+CREATE OPERATOR pg_catalog.<>(LEFTARG = longblob, RIGHTARG = int1, COMMUTATOR = OPERATOR(pg_catalog.<>), PROCEDURE = pg_catalog.longblob_int1_ne, RESTRICT = neqsel, JOIN = neqjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_binary_eq(text, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::binary = $2)';
+CREATE OPERATOR pg_catalog.=(leftarg = text, rightarg = binary, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.text_binary_eq, restrict = eqsel, join = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.binary_text_eq(binary, text) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1 = $2::binary)';
+CREATE OPERATOR pg_catalog.=(leftarg = binary, rightarg = text, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.binary_text_eq, restrict = eqsel, join = eqjoinsel);
 
 DROP CAST (timestamptz AS year);
 DROP CAST (timestamp(0) without time zone AS year);
@@ -1621,3 +1871,141 @@ CREATE OR REPLACE FUNCTION pg_catalog.md5(year) RETURNS varchar LANGUAGE SQL IMM
 CREATE OR REPLACE FUNCTION pg_catalog.md5(blob) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.md5(cast($1 as text))';
 CREATE OR REPLACE FUNCTION pg_catalog.md5(anyenum) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.md5(cast($1 as text))';
 CREATE OR REPLACE FUNCTION pg_catalog.md5(json) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.md5(cast($1 as text))';
+DROP OPERATOR CLASS IF EXISTS uint2_ops USING hash;
+DROP OPERATOR CLASS IF EXISTS uint4_ops USING hash;
+DROP OPERATOR CLASS IF EXISTS uint2_ops USING btree;
+DROP OPERATOR CLASS IF EXISTS uint4_ops USING btree;
+
+
+DO $for_upgrade_only$
+DECLARE
+  ans boolean;
+  v_isinplaceupgrade boolean;
+BEGIN
+    select case when count(*)=1 then true else false end as ans from (select setting from pg_settings where name = 'upgrade_mode' and setting != '0') into ans;
+    show isinplaceupgrade into v_isinplaceupgrade;
+    -- we can do drop operator only during upgrade
+    if ans = true and v_isinplaceupgrade = true then
+        drop operator IF EXISTS pg_catalog.=(uint2, int8);
+        CREATE OPERATOR pg_catalog.=(
+        leftarg = uint2, rightarg = int8, procedure = uint2_int8_eq,
+        restrict = eqsel, join = eqjoinsel, commutator = operator(pg_catalog.=),
+        HASHES, MERGES
+        );
+        drop operator IF EXISTS pg_catalog.=(uint4, int8);
+        CREATE OPERATOR pg_catalog.=(
+        leftarg = uint4, rightarg = int8, procedure = uint4_int8_eq,
+        restrict = eqsel, join = eqjoinsel, commutator=operator(pg_catalog.=),
+        HASHES, MERGES
+        );
+    end if;
+END
+$for_upgrade_only$;
+
+CREATE FUNCTION pg_catalog.int8_uint4_eq (
+int8,uint4
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int8_uint4_eq';
+
+CREATE OPERATOR pg_catalog.=(
+leftarg = int8, rightarg = uint4, procedure = int8_uint4_eq, commutator = operator(pg_catalog.=),
+restrict = eqsel, join = eqjoinsel, HASHES, MERGES
+);
+
+CREATE or replace FUNCTION pg_catalog.int8_uint2_eq (
+int8,uint2
+) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'int8_uint2_eq';
+
+CREATE OPERATOR pg_catalog.=(
+leftarg = int8, rightarg = uint2, procedure = int8_uint2_eq, commutator = operator(pg_catalog.=),
+restrict = eqsel, join = eqjoinsel, HASHES, MERGES
+);
+
+CREATE OPERATOR CLASS uint2_ops
+    DEFAULT FOR TYPE uint2 USING btree family integer_ops AS
+        OPERATOR        1       < ,
+        OPERATOR        1       <(uint2, uint4),
+        OPERATOR        1       <(uint2, uint8),
+        OPERATOR        1       <(uint2, int2),
+        OPERATOR        1       <(uint2, int4),
+        OPERATOR        1       <(uint2, int8),
+        OPERATOR        2       <= ,
+        OPERATOR        2       <=(uint2, uint4),
+        OPERATOR        2       <=(uint2, uint8),
+        OPERATOR        2       <=(uint2, int2),
+        OPERATOR        2       <=(uint2, int4),
+        OPERATOR        2       <=(uint2, int8),
+        OPERATOR        3       = ,
+        OPERATOR        3       =(uint2, uint4),
+        OPERATOR        3       =(uint2, uint8),
+        OPERATOR        3       =(uint2, int2),
+        OPERATOR        3       =(uint2, int4),
+        OPERATOR        3       =(uint2, int8),
+        OPERATOR        4       >= ,
+        OPERATOR        4       >=(uint2, uint4),
+        OPERATOR        4       >=(uint2, uint8),
+        OPERATOR        4       >=(uint2, int2),
+        OPERATOR        4       >=(uint2, int4),
+        OPERATOR        4       >=(uint2, int8),
+        OPERATOR        5       > ,
+        OPERATOR        5       >(uint2, uint4),
+        OPERATOR        5       >(uint2, uint8),
+        OPERATOR        5       >(uint2, int2),
+        OPERATOR        5       >(uint2, int4),
+        OPERATOR        5       >(uint2, int8),
+        FUNCTION        1       uint2cmp(uint2, uint2),
+        FUNCTION        1       uint24cmp(uint2, uint4),
+        FUNCTION        1       uint28cmp(uint2, uint8),
+        FUNCTION        1       uint2_int2cmp(uint2, int2),
+        FUNCTION        1       uint2_int4cmp(uint2, int4),
+        FUNCTION        1       uint2_int8cmp(uint2, int8),
+        FUNCTION        2       uint2_sortsupport(internal);
+
+CREATE OPERATOR CLASS uint4_ops
+    DEFAULT FOR TYPE uint4 USING btree family integer_ops AS
+        OPERATOR        1       < ,
+        OPERATOR        1       <(uint4, uint8),
+        OPERATOR        1       <(uint4, int4),
+        OPERATOR        1       <(uint4, int8),
+        OPERATOR        2       <= ,
+        OPERATOR        2       <=(uint4, uint8),
+        OPERATOR        2       <=(uint4, int4),
+        OPERATOR        2       <=(uint4, int8),
+        OPERATOR        3       = ,
+        OPERATOR        3       =(uint4, uint8),
+        OPERATOR        3       =(uint4, int4),
+        OPERATOR        3       =(uint4, int8),
+        OPERATOR        4       >= ,
+        OPERATOR        4       >=(uint4, uint8),
+        OPERATOR        4       >=(uint4, int4),
+        OPERATOR        4       >=(uint4, int8),
+        OPERATOR        5       > ,
+        OPERATOR        5       >(uint4, uint8),
+        OPERATOR        5       >(uint4, int4),
+        OPERATOR        5       >(uint4, int8),
+        FUNCTION        1       uint4cmp(uint4, uint4),
+        FUNCTION        1       uint48cmp(uint4, uint8),
+        FUNCTION        1       uint4_int4cmp(uint4, int4),
+        FUNCTION        1       uint4_int8cmp(uint4, int8),
+        FUNCTION        2       uint4_sortsupport(internal);
+
+CREATE OPERATOR CLASS uint2_ops
+    DEFAULT FOR TYPE uint2 USING hash family integer_ops AS
+        OPERATOR        1       = ,
+        OPERATOR        1       =(uint2, uint4),
+        OPERATOR        1       =(uint2, uint8),
+        OPERATOR        1       =(uint2, int2),
+        OPERATOR        1       =(uint2, int4),
+        OPERATOR        1       =(uint2, int8),
+        OPERATOR        1       =(int8, uint2),
+        OPERATOR        1       =(int2, uint2),
+        FUNCTION        1       hashuint2(uint2);
+
+CREATE OPERATOR CLASS uint4_ops
+    DEFAULT FOR TYPE uint4 USING hash family integer_ops AS
+        OPERATOR        1       = ,
+        OPERATOR        1       =(uint4, uint8),
+        OPERATOR        1       =(uint4, int4),
+        OPERATOR        1       =(uint4, int8),
+        OPERATOR        1       =(int8, uint4),
+        OPERATOR        1       =(int4, uint4),
+        FUNCTION        1       hashuint4(uint4);

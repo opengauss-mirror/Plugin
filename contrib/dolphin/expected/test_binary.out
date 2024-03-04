@@ -1451,8 +1451,6 @@ insert into t_v25 values('1.23a');
 insert into t_v27 values('1.23a');
 set dolphin.sql_mode=''; -- 关闭pad_char_to_full_length
 select * from t_v22 inner join t_v24 on t_v22.col1=t_v24.col1;
-WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 | col1 
 ------+------
 (0 rows)
@@ -1470,8 +1468,6 @@ select * from t_v22 inner join t_v27 on t_v22.col1=t_v27.col1;
 (1 row)
 
 select * from t_v23 inner join t_v24 on t_v23.col1=t_v24.col1;
-WARNING:  Truncated incorrect DOUBLE value: 1.23a
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 | col1 
 ------+------
 (0 rows)
@@ -1507,8 +1503,6 @@ select * from t_v30 inner join t_v27 on t_v30.col1=t_v27.col1;
 
 set dolphin.sql_mode='pad_char_to_full_length';
 select * from t_v22 inner join t_v24 on t_v22.col1=t_v24.col1;
-WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 | col1 
 ------+------
 (0 rows)
@@ -1524,8 +1518,6 @@ select * from t_v22 inner join t_v27 on t_v22.col1=t_v27.col1;
 (0 rows)
 
 select * from t_v23 inner join t_v24 on t_v23.col1=t_v24.col1;
-WARNING:  Truncated incorrect DOUBLE value: 1.23a
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 | col1 
 ------+------
 (0 rows)

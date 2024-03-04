@@ -956,6 +956,106 @@ DROP FUNCTION IF EXISTS pg_catalog.binary_boolean_ge(binary, boolean);
 DROP FUNCTION IF EXISTS pg_catalog.boolean_binary_le(boolean, binary);
 DROP FUNCTION IF EXISTS pg_catalog.binary_boolean_le(binary, boolean);
 
+DROP OPERATOR IF EXISTS pg_catalog.=(boolean, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.=(tinyblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<>(boolean, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.<>(tinyblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.>(boolean, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.>(tinyblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<(boolean, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.<(tinyblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.>=(boolean, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.>=(tinyblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<=(boolean, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.<=(tinyblob, boolean);
+DROP function IF EXISTS pg_catalog.boolean_tinyblob_eq(boolean, tinyblob);
+DROP function IF EXISTS pg_catalog.tinyblob_boolean_eq(tinyblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_tinyblob_ne(boolean, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_boolean_ne(tinyblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_tinyblob_gt(boolean, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_boolean_gt(tinyblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_tinyblob_lt(boolean, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_boolean_lt(tinyblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_tinyblob_ge(boolean, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_boolean_ge(tinyblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_tinyblob_le(boolean, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_boolean_le(tinyblob, boolean);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(boolean, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.=(mediumblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<>(boolean, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.<>(mediumblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.>(boolean, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.>(mediumblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<(boolean, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.<(mediumblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.>=(boolean, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.>=(mediumblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<=(boolean, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.<=(mediumblob, boolean);
+DROP function IF EXISTS pg_catalog.boolean_mediumblob_eq(boolean, mediumblob);
+DROP function IF EXISTS pg_catalog.mediumblob_boolean_eq(mediumblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_mediumblob_ne(boolean, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.mediumblob_boolean_ne(mediumblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_mediumblob_gt(boolean, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.mediumblob_boolean_gt(mediumblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_mediumblob_lt(boolean, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.mediumblob_boolean_lt(mediumblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_mediumblob_ge(boolean, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.mediumblob_boolean_ge(mediumblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_mediumblob_le(boolean, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.mediumblob_boolean_le(mediumblob, boolean);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(boolean, blob);
+DROP OPERATOR IF EXISTS pg_catalog.=(blob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<>(boolean, blob);
+DROP OPERATOR IF EXISTS pg_catalog.<>(blob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.>(boolean, blob);
+DROP OPERATOR IF EXISTS pg_catalog.>(blob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<(boolean, blob);
+DROP OPERATOR IF EXISTS pg_catalog.<(blob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.>=(boolean, blob);
+DROP OPERATOR IF EXISTS pg_catalog.>=(blob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<=(boolean, blob);
+DROP OPERATOR IF EXISTS pg_catalog.<=(blob, boolean);
+DROP function IF EXISTS pg_catalog.boolean_blob_eq(boolean, blob);
+DROP function IF EXISTS pg_catalog.blob_boolean_eq(blob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_blob_ne(boolean, blob);
+DROP FUNCTION IF EXISTS pg_catalog.blob_boolean_ne(blob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_blob_gt(boolean, blob);
+DROP FUNCTION IF EXISTS pg_catalog.blob_boolean_gt(blob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_blob_lt(boolean, blob);
+DROP FUNCTION IF EXISTS pg_catalog.blob_boolean_lt(blob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_blob_ge(boolean, blob);
+DROP FUNCTION IF EXISTS pg_catalog.blob_boolean_ge(blob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_blob_le(boolean, blob);
+DROP FUNCTION IF EXISTS pg_catalog.blob_boolean_le(blob, boolean);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(boolean, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.=(longblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<>(boolean, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.<>(longblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.>(boolean, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.>(longblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<(boolean, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.<(longblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.>=(boolean, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.>=(longblob, boolean);
+DROP OPERATOR IF EXISTS pg_catalog.<=(boolean, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.<=(longblob, boolean);
+DROP function IF EXISTS pg_catalog.boolean_longblob_eq(boolean, longblob);
+DROP function IF EXISTS pg_catalog.longblob_boolean_eq(longblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_longblob_ne(boolean, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.longblob_boolean_ne(longblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_longblob_gt(boolean, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.longblob_boolean_gt(longblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_longblob_lt(boolean, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.longblob_boolean_lt(longblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_longblob_ge(boolean, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.longblob_boolean_ge(longblob, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.boolean_longblob_le(boolean, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.longblob_boolean_le(longblob, boolean);
+
 DROP OPERATOR IF EXISTS pg_catalog.=(year, binary);
 DROP OPERATOR IF EXISTS pg_catalog.=(binary, year);
 DROP OPERATOR IF EXISTS pg_catalog.<>(year, binary);
@@ -980,6 +1080,156 @@ DROP FUNCTION IF EXISTS pg_catalog.year_binary_ge(year, binary);
 DROP FUNCTION IF EXISTS pg_catalog.binary_year_ge(binary, year);
 DROP FUNCTION IF EXISTS pg_catalog.year_binary_le(year, binary);
 DROP FUNCTION IF EXISTS pg_catalog.binary_year_le(binary, year);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(year, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.=(tinyblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.<>(year, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.<>(tinyblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.>(year, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.>(tinyblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.<(year, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.<(tinyblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.>=(year, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.>=(tinyblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.<=(year, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.<=(tinyblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_tinyblob_eq(year, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_year_eq(tinyblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_tinyblob_ne(year, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_year_ne(tinyblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_tinyblob_gt(year, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_year_gt(tinyblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_tinyblob_lt(year, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_year_lt(tinyblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_tinyblob_ge(year, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_year_ge(tinyblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_tinyblob_le(year, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_year_le(tinyblob, year);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(year, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.=(mediumblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.<>(year, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.<>(mediumblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.>(year, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.>(mediumblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.<(year, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.<(mediumblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.>=(year, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.>=(mediumblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.<=(year, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.<=(mediumblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_mediumblob_eq(year, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.mediumblob_year_eq(mediumblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_mediumblob_ne(year, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.mediumblob_year_ne(mediumblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_mediumblob_gt(year, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.mediumblob_year_gt(mediumblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_mediumblob_lt(year, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.mediumblob_year_lt(mediumblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_mediumblob_ge(year, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.mediumblob_year_ge(mediumblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_mediumblob_le(year, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.mediumblob_year_le(mediumblob, year);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(year, blob);
+DROP OPERATOR IF EXISTS pg_catalog.=(blob, year);
+DROP OPERATOR IF EXISTS pg_catalog.<>(year, blob);
+DROP OPERATOR IF EXISTS pg_catalog.<>(blob, year);
+DROP OPERATOR IF EXISTS pg_catalog.>(year, blob);
+DROP OPERATOR IF EXISTS pg_catalog.>(blob, year);
+DROP OPERATOR IF EXISTS pg_catalog.<(year, blob);
+DROP OPERATOR IF EXISTS pg_catalog.<(blob, year);
+DROP OPERATOR IF EXISTS pg_catalog.>=(year, blob);
+DROP OPERATOR IF EXISTS pg_catalog.>=(blob, year);
+DROP OPERATOR IF EXISTS pg_catalog.<=(year, blob);
+DROP OPERATOR IF EXISTS pg_catalog.<=(blob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_blob_eq(year, blob);
+DROP FUNCTION IF EXISTS pg_catalog.blob_year_eq(blob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_blob_ne(year, blob);
+DROP FUNCTION IF EXISTS pg_catalog.blob_year_ne(blob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_blob_gt(year, blob);
+DROP FUNCTION IF EXISTS pg_catalog.blob_year_gt(blob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_blob_lt(year, blob);
+DROP FUNCTION IF EXISTS pg_catalog.blob_year_lt(blob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_blob_ge(year, blob);
+DROP FUNCTION IF EXISTS pg_catalog.blob_year_ge(blob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_blob_le(year, blob);
+DROP FUNCTION IF EXISTS pg_catalog.blob_year_le(blob, year);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(year, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.=(longblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.<>(year, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.<>(longblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.>(year, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.>(longblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.<(year, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.<(longblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.>=(year, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.>=(longblob, year);
+DROP OPERATOR IF EXISTS pg_catalog.<=(year, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.<=(longblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_longblob_eq(year, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.longblob_year_eq(longblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_longblob_ne(year, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.longblob_year_ne(longblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_longblob_gt(year, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.longblob_year_gt(longblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_longblob_lt(year, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.longblob_year_lt(longblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_longblob_ge(year, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.longblob_year_ge(longblob, year);
+DROP FUNCTION IF EXISTS pg_catalog.year_longblob_le(year, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.longblob_year_le(longblob, year);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(int1, binary);
+DROP FUNCTION IF EXISTS pg_catalog.int1_binary_eq(int1, binary);
+DROP OPERATOR IF EXISTS pg_catalog.=(binary, int1);
+DROP FUNCTION IF EXISTS pg_catalog.binary_int1_eq(binary, int1);
+DROP OPERATOR IF EXISTS pg_catalog.<>(int1, binary);
+DROP FUNCTION IF EXISTS pg_catalog.int1_binary_ne(int1, binary);
+DROP OPERATOR IF EXISTS pg_catalog.<>(binary, int1);
+DROP FUNCTION IF EXISTS pg_catalog.binary_int1_ne(binary, int1);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(int1, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.int1_tinyblob_eq(int1, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.=(tinyblob, int1);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_int1_eq(tinyblob, int1);
+DROP OPERATOR IF EXISTS pg_catalog.<>(int1, tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.int1_tinyblob_ne(int1, tinyblob);
+DROP OPERATOR IF EXISTS pg_catalog.<>(tinyblob, int1);
+DROP FUNCTION IF EXISTS pg_catalog.tinyblob_int1_ne(tinyblob, int1);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(int1, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.int1_mediumblob_eq(int1, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.=(mediumblob, int1);
+DROP FUNCTION IF EXISTS pg_catalog.mediumblob_int1_eq(mediumblob, int1);
+DROP OPERATOR IF EXISTS pg_catalog.<>(int1, mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.int1_mediumblob_ne(int1, mediumblob);
+DROP OPERATOR IF EXISTS pg_catalog.<>(mediumblob, int1);
+DROP FUNCTION IF EXISTS pg_catalog.mediumblob_int1_ne(mediumblob, int1);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(int1, blob);
+DROP FUNCTION IF EXISTS pg_catalog.int1_blob_eq(int1, blob);
+DROP OPERATOR IF EXISTS pg_catalog.=(blob, int1);
+DROP FUNCTION IF EXISTS pg_catalog.blob_int1_eq(blob, int1);
+DROP OPERATOR IF EXISTS pg_catalog.<>(int1, blob);
+DROP FUNCTION IF EXISTS pg_catalog.int1_blob_ne(int1, blob);
+DROP OPERATOR IF EXISTS pg_catalog.<>(blob, int1);
+DROP FUNCTION IF EXISTS pg_catalog.blob_int1_ne(blob, int1);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(int1, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.int1_longblob_eq(int1, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.=(longblob, int1);
+DROP FUNCTION IF EXISTS pg_catalog.longblob_int1_eq(longblob, int1);
+DROP OPERATOR IF EXISTS pg_catalog.<>(int1, longblob);
+DROP FUNCTION IF EXISTS pg_catalog.int1_longblob_ne(int1, longblob);
+DROP OPERATOR IF EXISTS pg_catalog.<>(longblob, int1);
+DROP FUNCTION IF EXISTS pg_catalog.longblob_int1_ne(longblob, int1);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(text, binary);
+DROP FUNCTION IF EXISTS pg_catalog.text_binary_eq(text, binary);
+DROP OPERATOR IF EXISTS pg_catalog.=(binary, text);
+DROP FUNCTION IF EXISTS pg_catalog.binary_text_eq(binary, text);
 
 DROP CAST (timestamptz AS year);
 DROP CAST (timestamp(0) without time zone AS year);
@@ -1073,3 +1323,112 @@ DROP FUNCTION IF EXISTS pg_catalog.md5(year) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.md5(blob) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.md5(anyenum) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.md5(json) CASCADE;
+DROP OPERATOR CLASS IF EXISTS uint2_ops USING hash;
+DROP OPERATOR CLASS IF EXISTS uint4_ops USING hash;
+DROP OPERATOR CLASS IF EXISTS uint2_ops USING btree;
+DROP OPERATOR CLASS IF EXISTS uint4_ops USING btree;
+
+DROP OPERATOR IF EXISTS pg_catalog.=(int8, uint4);
+DROP OPERATOR IF EXISTS pg_catalog.=(int8, uint2);
+DROP FUNCTION IF EXISTS pg_catalog.int8_uint4_eq(int8, uint4);
+DROP FUNCTION IF EXISTS pg_catalog.int8_uint2_eq(int8, uint2);
+
+drop operator IF EXISTS pg_catalog.=(uint2, int8);
+CREATE OPERATOR pg_catalog.=(
+leftarg = uint2, rightarg = int8, procedure = uint2_int8_eq,
+restrict = eqsel, join = eqjoinsel,
+HASHES, MERGES
+);
+drop operator IF EXISTS pg_catalog.=(uint4, int8);
+CREATE OPERATOR pg_catalog.=(
+leftarg = uint4, rightarg = int8, procedure = uint4_int8_eq,
+restrict = eqsel, join = eqjoinsel,
+HASHES, MERGES
+);
+
+CREATE OPERATOR CLASS uint2_ops
+    DEFAULT FOR TYPE uint2 USING hash family integer_ops AS
+        OPERATOR        1       = ,
+        OPERATOR        1       =(uint2, uint4),
+        OPERATOR        1       =(uint2, uint8),
+        OPERATOR        1       =(uint2, int2),
+        OPERATOR        1       =(uint2, int4),
+        OPERATOR        1       =(uint2, int8),
+        OPERATOR        1       =(int2, uint2),
+        FUNCTION        1       hashuint2(uint2);
+CREATE OPERATOR CLASS uint4_ops
+    DEFAULT FOR TYPE uint4 USING hash family integer_ops AS
+        OPERATOR        1       = ,
+        OPERATOR        1       =(uint4, uint8),
+        OPERATOR        1       =(uint4, int4),
+        OPERATOR        1       =(uint4, int8),
+        OPERATOR        1       =(int4, uint4),
+        FUNCTION        1       hashuint4(uint4);
+
+CREATE OPERATOR CLASS uint2_ops
+    DEFAULT FOR TYPE uint2 USING btree family integer_ops AS
+        OPERATOR        1       < ,
+        OPERATOR        1       <(uint2, uint4),
+        OPERATOR        1       <(uint2, uint8),
+        OPERATOR        1       <(uint2, int2),
+        OPERATOR        1       <(uint2, int4),
+        OPERATOR        1       <(uint2, int8),
+        OPERATOR        2       <= ,
+        OPERATOR        2       <=(uint2, uint4),
+        OPERATOR        2       <=(uint2, uint8),
+        OPERATOR        2       <=(uint2, int2),
+        OPERATOR        2       <=(uint2, int4),
+        OPERATOR        2       <=(uint2, int8),
+        OPERATOR        3       = ,
+        OPERATOR        3       =(uint2, uint4),
+        OPERATOR        3       =(uint2, uint8),
+        OPERATOR        3       =(uint2, int2),
+        OPERATOR        3       =(uint2, int4),
+        OPERATOR        3       =(uint2, int8),
+        OPERATOR        4       >= ,
+        OPERATOR        4       >=(uint2, uint4),
+        OPERATOR        4       >=(uint2, uint8),
+        OPERATOR        4       >=(uint2, int2),
+        OPERATOR        4       >=(uint2, int4),
+        OPERATOR        4       >=(uint2, int8),
+        OPERATOR        5       > ,
+        OPERATOR        5       >(uint2, uint4),
+        OPERATOR        5       >(uint2, uint8),
+        OPERATOR        5       >(uint2, int2),
+        OPERATOR        5       >(uint2, int4),
+        OPERATOR        5       >(uint2, int8),
+        FUNCTION        1       uint2cmp(uint2, uint2),
+        FUNCTION        1       uint24cmp(uint2, uint4),
+        FUNCTION        1       uint28cmp(uint2, uint8),
+        FUNCTION        1       uint2_int2cmp(uint2, int2),
+        FUNCTION        1       uint2_int4cmp(uint2, int4),
+        FUNCTION        1       uint2_int8cmp(uint2, int8),
+        FUNCTION        2       uint2_sortsupport(internal);
+
+CREATE OPERATOR CLASS uint4_ops
+    DEFAULT FOR TYPE uint4 USING btree family integer_ops AS
+        OPERATOR        1       < ,
+        OPERATOR        1       <(uint4, uint8),
+        OPERATOR        1       <(uint4, int4),
+        OPERATOR        1       <(uint4, int8),
+        OPERATOR        2       <= ,
+        OPERATOR        2       <=(uint4, uint8),
+        OPERATOR        2       <=(uint4, int4),
+        OPERATOR        2       <=(uint4, int8),
+        OPERATOR        3       = ,
+        OPERATOR        3       =(uint4, uint8),
+        OPERATOR        3       =(uint4, int4),
+        OPERATOR        3       =(uint4, int8),
+        OPERATOR        4       >= ,
+        OPERATOR        4       >=(uint4, uint8),
+        OPERATOR        4       >=(uint4, int4),
+        OPERATOR        4       >=(uint4, int8),
+        OPERATOR        5       > ,
+        OPERATOR        5       >(uint4, uint8),
+        OPERATOR        5       >(uint4, int4),
+        OPERATOR        5       >(uint4, int8),
+        FUNCTION        1       uint4cmp(uint4, uint4),
+        FUNCTION        1       uint48cmp(uint4, uint8),
+        FUNCTION        1       uint4_int4cmp(uint4, int4),
+        FUNCTION        1       uint4_int8cmp(uint4, int8),
+        FUNCTION        2       uint4_sortsupport(internal);
