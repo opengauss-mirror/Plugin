@@ -2100,7 +2100,7 @@ static void binary_str_to_char(char *str, char *result, int len)
  * - if the length of bit value is not a multiple of 8, pad left 0.
  * - do not ignore '\0'
  */
-Datum bit_to_str(VarBit *bits)
+char* bit_to_str(VarBit *bits)
 {
     char *result = NULL, *bitStr = NULL, *bitChars = NULL, *r = NULL;
     bits8* sp = NULL;
@@ -2136,6 +2136,6 @@ Datum bit_to_str(VarBit *bits)
     pfree(bitChars);
     pfree(bitStr);
 
-    PG_RETURN_CSTRING(result);
+    return result;
 }
 #endif

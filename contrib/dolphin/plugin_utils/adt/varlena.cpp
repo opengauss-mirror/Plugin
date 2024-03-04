@@ -7083,7 +7083,7 @@ static text* concat_internal(const char* sepstr, int seplen, int argidx, Functio
 #ifdef DOLPHIN
             if (valtype == BITOID) {
                 VarBit *bits = PG_GETARG_VARBIT_P(i);
-                char *c = (char*)bit_to_str(bits);
+                char *c = bit_to_str(bits);
                 for (int i = 0; i < VARBITBYTES(bits); i++) {
                     appendStringInfoChar(&str, c[i]);
                 }
@@ -8715,8 +8715,6 @@ Datum gs_interval(PG_FUNCTION_ARGS)
 
 Datum gs_strcmp(PG_FUNCTION_ARGS)
 {
-    bool typIsVarlena = false;
-    Oid typOutput;
     Datum dt = 0;
     Oid valtype = 0;
 
@@ -8726,8 +8724,8 @@ Datum gs_strcmp(PG_FUNCTION_ARGS)
     if (!OidIsValid(valtype))
         ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
             errmsg("could not determine data type of strcmp() input")));
-    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-    char* str0 = OidOutputFunctionCall(typOutput, dt);
+    char* str0 = AnyElementGetCString(valtype, dt);
+    trim_trailing_space(str0);
 
     dt = PG_GETARG_DATUM(1);
     valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
@@ -8735,14 +8733,14 @@ Datum gs_strcmp(PG_FUNCTION_ARGS)
     if (!OidIsValid(valtype))
         ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
             errmsg("could not determine data type of strcmp() input")));
-    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-    char* str1 = OidOutputFunctionCall(typOutput, dt);
+    char* str1 = AnyElementGetCString(valtype, dt);
+    trim_trailing_space(str1);
 
     int32 ret = strcmp(str0, str1);
 
-    if (ret>0) {
+    if (ret > 0) {
         ret = 1;
-    } else if (ret<0) {
+    } else if (ret < 0) {
         ret = -1;
     } else {
         ret = 0;
@@ -10815,9 +10813,9 @@ static char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError = n
     Oid typeOutput = InvalidOid;
     bool typIsVarlena = false;
     getTypeOutputInfo(anyOid, &typeOutput, &typIsVarlena);
-    if (typIsVarlena) {
-
-
+    if (anyOid == BITOID || anyOid == VARBITOID) {
+        data = bit_to_str(DatumGetVarBitP(anyDatum));
+    } else if (typIsVarlena && anyOid != NUMERICOID && !type_is_set(anyOid)) {
         data = DatumGetCString(DirectFunctionCall1(textout, anyDatum));
         int reallen = VARSIZE_ANY_EXHDR(DatumGetByteaPP(anyDatum));
         int datalen  = strlen(data);
@@ -10863,5 +10861,15 @@ Datum binary_length(PG_FUNCTION_ARGS)
 Datum dolphin_binaryout(PG_FUNCTION_ARGS)
 {
     return byteaout(fcinfo);
+}
+
+void trim_trailing_space(char* str)
+{
+    char* p = NULL;
+
+    p = str + strlen(str);
+    for (p--; p >= str && *p == ' '; p--) {
+        *p = '\0';
+    }
 }
 #endif

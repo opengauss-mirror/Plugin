@@ -3,11 +3,13 @@
 
 #include "plugin_postgres.h"
 #include "fmgr.h"
+#include "plugin_utils/varbit.h"
 
 #ifdef DOLPHIN
 extern Datum bit_blob(VarBit* input);
 double float8in_internal(char* str, char** endptr_p, bool* hasError, CoercionContext ccontext);
-extern Datum bit_to_str(VarBit *bits);
+extern char* bit_to_str(VarBit *bits);
+extern void trim_trailing_space(char* str);
 #endif
 
 #endif
