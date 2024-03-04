@@ -2029,6 +2029,46 @@ select * from t1;
 (1 row)
 
 drop table if exists t1;
+set dolphin.b_compatibility_mode to on;
+create table t_time(c time);
+insert ignore into t_time values('12a34');
+WARNING:  invalid input syntax for type time: "12a34"
+LINE 1: insert ignore into t_time values('12a34');
+                                         ^
+CONTEXT:  referenced column: c
+insert ignore into t_time values('123a34');
+WARNING:  invalid input syntax for type time: "123a34"
+LINE 1: insert ignore into t_time values('123a34');
+                                         ^
+CONTEXT:  referenced column: c
+insert ignore into t_time values('12aaaaaaa34');
+WARNING:  invalid input syntax for type time: "12aaaaaaa34"
+LINE 1: insert ignore into t_time values('12aaaaaaa34');
+                                         ^
+CONTEXT:  referenced column: c
+insert ignore into t_time values('aaaaaaa12aaaaaaa34');
+WARNING:  invalid input syntax for type time: "aaaaaaa12aaaaaaa34"
+LINE 1: insert ignore into t_time values('aaaaaaa12aaaaaaa34');
+                                         ^
+CONTEXT:  referenced column: c
+insert ignore into t_time values('abcde');
+WARNING:  invalid input syntax for type time: "abcde"
+LINE 1: insert ignore into t_time values('abcde');
+                                         ^
+CONTEXT:  referenced column: c
+insert ignore into t_time values('');
+select * from t_time order by 1;
+    c     
+----------
+ 00:00:00
+ 00:00:00
+ 00:00:00
+ 00:00:12
+ 00:00:12
+ 00:01:23
+(6 rows)
+
+drop table t_time;
 drop schema b_time_funcs3 cascade;
 NOTICE:  drop cascades to 2 other objects
 DETAIL:  drop cascades to table func_test3

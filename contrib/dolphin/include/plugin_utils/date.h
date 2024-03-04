@@ -134,6 +134,18 @@ typedef enum
 }TimeCastType;
 
 
+typedef struct GaussTimeResult {
+    long time_adt;
+    bool handle_continuous;
+    TimeErrorType time_error_type;
+    /* tm2 stores openGauss's parsing result while tt stores M*'s parsing result */
+    pg_tm* tm;
+}GaussTimeResult;
+
+
+#define GET_TIME_ERROR_TYPE() (SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ?  \
+            TIME_CORRECT : TIME_INCORRECT)
+
 extern Datum time_internal(PG_FUNCTION_ARGS, char* str, int is_time_sconst, TimeErrorType* time_error_type);
 Datum int64_number_cast_time(PG_FUNCTION_ARGS, int64 number);
 Datum int_cast_time_internal(PG_FUNCTION_ARGS, int64 number, bool* isnull);
