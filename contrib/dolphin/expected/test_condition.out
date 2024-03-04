@@ -5546,18 +5546,16 @@ create table typeset (
 	blb   BLOB not null,
 	txt   TEXT not null,
 	bin   binary,
-	vbin  varbinary(50)
+	vbin  varbinary(50),
+	bit   bit(64),
+	cset   set('123','124','125')
 );
-insert into typeset (
-tyint,smint,anint,bgint,dcmal,nmric,flt,
-bt,dt,tmstp,tm,
-ch,vch,blb,
-txt,bin,vbin
-) values (
+NOTICE:  CREATE TABLE will create implicit set "typeset_cset_set" for column "typeset.cset"
+insert into typeset values (
 127, 127, 127, 127, 127.234, 127.32, 127.213,
 b'01111111', '2001-04-19','2001-04-19', '22:23:44',
 '2001-04-19 22:23:44', '2001-04-19 22:23:44', '1233454212',
-'2001-04-19 22:23:44', '1', '2001-04-19 22:23:44'
+'2001-04-19 22:23:44', '1', '2001-04-19 22:23:44',0b111111111,'124'
 );
 set dolphin.b_compatibility_mode to on;
 select coalesce(tyint, smint) from typeset;
@@ -9047,6 +9045,7 @@ select interval(blb, txt) from typeset;
         1
 (1 row)
 
+set dolphin.b_compatibility_mode to on; 
 select strcmp(tyint, smint) from typeset;
  strcmp 
 --------
@@ -9086,7 +9085,7 @@ select strcmp(tyint, flt) from typeset;
 select strcmp(tyint, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(tyint, dt) from typeset;
@@ -9164,7 +9163,7 @@ select strcmp(smint, flt) from typeset;
 select strcmp(smint, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(smint, dt) from typeset;
@@ -9236,7 +9235,7 @@ select strcmp(anint, flt) from typeset;
 select strcmp(anint, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(anint, dt) from typeset;
@@ -9302,7 +9301,7 @@ select strcmp(bgint, flt) from typeset;
 select strcmp(bgint, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(bgint, dt) from typeset;
@@ -9362,7 +9361,7 @@ select strcmp(dcmal, flt) from typeset;
 select strcmp(dcmal, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(dcmal, dt) from typeset;
@@ -9416,7 +9415,7 @@ select strcmp(nmric, flt) from typeset;
 select strcmp(nmric, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(nmric, dt) from typeset;
@@ -9464,7 +9463,7 @@ select strcmp(nmric, txt) from typeset;
 select strcmp(flt, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(flt, dt) from typeset;
@@ -9512,43 +9511,43 @@ select strcmp(flt, txt) from typeset;
 select strcmp(bt, dt) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(bt, tmstp) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(bt, tm) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(bt, ch) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(bt, vch) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(bt, blb) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(bt, txt) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(dt, tmstp) from typeset;
@@ -9644,7 +9643,7 @@ select strcmp(tm, txt) from typeset;
 select strcmp(ch, vch) from typeset;
  strcmp 
 --------
-      1
+      0
 (1 row)
 
 select strcmp(ch, blb) from typeset;
@@ -9656,7 +9655,7 @@ select strcmp(ch, blb) from typeset;
 select strcmp(ch, txt) from typeset;
  strcmp 
 --------
-      1
+      0
 (1 row)
 
 select strcmp(vch, blb) from typeset;
@@ -9675,6 +9674,24 @@ select strcmp(blb, txt) from typeset;
  strcmp 
 --------
      -1
+(1 row)
+
+select strcmp(tyint, cset) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(tyint, bit) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp('123   ','123');
+ strcmp 
+--------
+      0
 (1 row)
 
 create table t1 (a int, b bigint unsigned);
@@ -9702,5 +9719,7 @@ join t2 on t1.a=t2.c order by d;
 drop table t1;
 drop table t2;
 drop schema db_test_condition cascade;
-NOTICE:  drop cascades to table typeset
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to type typeset_cset_set
+drop cascades to table typeset
 reset current_schema;
