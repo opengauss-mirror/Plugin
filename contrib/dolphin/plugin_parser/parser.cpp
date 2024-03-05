@@ -682,6 +682,34 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                     break;
             }
             break;
+        
+            case FULL:
+            /*
+             * FULL OUTER must be reduced to one token
+             */
+            GET_NEXT_TOKEN();
+
+            switch (next_token) {
+                case OUTER_P:
+                    cur_token = FULL_OUTER;
+                    break;
+                case JOIN:
+                    cur_token = FULL_OUTER;
+                    /* save the lookahead token for next time */
+                    SET_LOOKAHEAD_TOKEN();
+                    /* and back up the output info to cur_token */
+                    lvalp->core_yystype = cur_yylval;
+                    *llocp = cur_yylloc;
+                    break;
+                default:
+                    /* save the lookahead token for next time */
+                    SET_LOOKAHEAD_TOKEN();
+                    /* and back up the output info to cur_token */
+                    lvalp->core_yystype = cur_yylval;
+                    *llocp = cur_yylloc;
+                    break;
+            }
+            break;
 #endif
         case USE:
         /*
