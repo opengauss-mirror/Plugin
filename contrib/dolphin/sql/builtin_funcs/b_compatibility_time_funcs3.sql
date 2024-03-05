@@ -530,5 +530,16 @@ select * from t1;
 drop table if exists t1;
 
 
+set dolphin.b_compatibility_mode to on;
+
+create table t_time(c time);
+insert ignore into t_time values('12a34');
+insert ignore into t_time values('123a34');
+insert ignore into t_time values('12aaaaaaa34');
+insert ignore into t_time values('aaaaaaa12aaaaaaa34');
+insert ignore into t_time values('abcde');
+insert ignore into t_time values('');
+select * from t_time order by 1;
+drop table t_time;
 drop schema b_time_funcs3 cascade;
 reset current_schema;
