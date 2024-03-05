@@ -3012,6 +3012,8 @@ Datum numeric_ln(PG_FUNCTION_ARGS)
     zero = make_result(&zero_var);
 
     if (cmp_numerics(num, zero) <= 0) {
+        PrintErrInvalidLogarithm(fcinfo->can_ignore,
+                                 DatumGetCString(DirectFunctionCall1(numeric_out_with_zero, NumericGetDatum(num))));
         PG_RETURN_NULL();
     }
 #endif
@@ -3079,12 +3081,21 @@ Datum numeric_log(PG_FUNCTION_ARGS)
     int64_to_numericvar((int64)1, &one_var);
     one = make_result(&one_var);
 
-    if (cmp_numerics(num1, zero) <= 0 || cmp_numerics(num2, zero) <= 0) {
+    if (cmp_numerics(num1, zero) <= 0) {
+        PrintErrInvalidLogarithm(fcinfo->can_ignore,
+                                 DatumGetCString(DirectFunctionCall1(numeric_out_with_zero, NumericGetDatum(num1))));
+        PG_RETURN_NULL();
+    }
+
+    if (cmp_numerics(num2, zero) <= 0) {
+        PrintErrInvalidLogarithm(fcinfo->can_ignore,
+                                 DatumGetCString(DirectFunctionCall1(numeric_out_with_zero, NumericGetDatum(num2))));
         PG_RETURN_NULL();
     }
 
     if (cmp_numerics(num1, one) == 0) {
-        CheckErrDivByZero(fcinfo->can_ignore);
+        PrintErrInvalidLogarithm(fcinfo->can_ignore,
+                                 DatumGetCString(DirectFunctionCall1(numeric_out_with_zero, NumericGetDatum(num1))));
         PG_RETURN_NULL();
     }
 #endif

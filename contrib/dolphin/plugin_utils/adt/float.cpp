@@ -1944,6 +1944,7 @@ Datum dlog1(PG_FUNCTION_ARGS)
      */
 #ifdef DOLPHIN
     if (arg1 <= 0) {
+        PrintErrInvalidLogarithm(fcinfo->can_ignore, arg1);
         PG_RETURN_NULL();
     }
 #else

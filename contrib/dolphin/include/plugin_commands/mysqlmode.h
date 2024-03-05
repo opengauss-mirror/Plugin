@@ -60,4 +60,16 @@ extern inline void CheckErrDivByZero(bool ignore)
     ereport((!ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
         (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
 }
+
+extern inline void PrintErrInvalidLogarithm(bool ignore, float8 errNum)
+{
+    ereport((!ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
+        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("Invalid argument '%f' for logarithm", errNum)));
+}
+
+extern inline void PrintErrInvalidLogarithm(bool ignore, char* errNum)
+{
+    ereport((!ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
+        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("Invalid argument '%s' for logarithm", errNum)));
+}
 #endif /* MYSQLMODE_H */
