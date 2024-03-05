@@ -1138,6 +1138,210 @@ select * from test_year;
        |       |       |       |       |       |       |       |       |        |        |        |        |        |   2023 |   2024 |   2024 |   2023 |   2023 |   2023 |   2023 |        |        |        |        |        |        |        |        |        |        |        |        |       
 (2 rows)
 
+select round(`int1`, 3), round(`uint1`, 3), round(`int2`, 3), round(`uint2`, 3), round(`int4`, 3), round(`uint4`, 3), round(`int8`, 3), round(`uint8`, 3), round(`float4`, 3), round(`float8`, 3), round(`numeric`, 3), round(`bit1`, 3), round(`bit64`, 3), round(`boolean`, 3), round(`date`, 3), round(`time`, 3), round(`time(4)`, 3), round(`datetime`, 3),round(`datetime(4)`, 3), round(`timestamp`, 3), round(`timestamp(4)`, 3), round(`year`, 3), round(`char`, 3), round(`varchar`, 3), round(`binary`, 3), round(`varbinary`, 3), round(`tinyblob`, 3), round(`blob`, 3), round(`mediumblob`, 3), round(`longblob`, 3), round(`text`, 3), round(`enum_t`, 3), round(`set_t`, 3), round(`json`, 3) from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: round
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: round
+ round | round | round | round | round | round | round | round | round | round | round | round | round | round |    round     |   round    |   round    |       round        |       round        |       round        |       round        | round | round | round | round | round | round | round | round | round | round | round | round | round 
+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+--------------+------------+------------+--------------------+--------------------+--------------------+--------------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------
+     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |     1 | 20230205.000 | 191050.000 | 191050.346 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 |  2023 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.000 | 5.000 | 0.000
+(1 row)
+
+select truncate(`int1`, 3), truncate(`uint1`, 3), truncate(`int2`, 3), truncate(`uint2`, 3), truncate(`int4`, 3), truncate(`uint4`, 3), truncate(`int8`, 3), truncate(`uint8`, 3), truncate(`float4`, 3), truncate(`float8`, 3), truncate(`numeric`, 3), truncate(`bit1`, 3), truncate(`bit64`, 3), truncate(`boolean`, 3), truncate(`date`, 3), truncate(`time`, 3), truncate(`time(4)`, 3), truncate(`datetime`, 3),truncate(`datetime(4)`, 3), truncate(`timestamp`, 3), truncate(`timestamp(4)`, 3), truncate(`year`, 3), truncate(`char`, 3), truncate(`varchar`, 3), truncate(`binary`, 3), truncate(`varbinary`, 3), truncate(`tinyblob`, 3), truncate(`blob`, 3), truncate(`mediumblob`, 3), truncate(`longblob`, 3), truncate(`text`, 3), truncate(`enum_t`, 3), truncate(`set_t`, 3), truncate(`json`, 3) from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: truncate
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: truncate
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: truncate
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: truncate
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: truncate
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: truncate
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: truncate
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: truncate
+ truncate | truncate | truncate | truncate | truncate | truncate | truncate | truncate | truncate | truncate | truncate | truncate | truncate | truncate |   truncate   |  truncate  |  truncate  |      truncate      |      truncate      |      truncate      |      truncate      | truncate | truncate | truncate | truncate | truncate | truncate | truncate | truncate | truncate | truncate | truncate | truncate | truncate 
+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+--------------+------------+------------+--------------------+--------------------+--------------------+--------------------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------
+        1 |        1 |        1 |        1 |        1 |        1 |        1 |        1 |    1.000 |    1.000 |    1.000 |    1.000 |    7.000 |        1 | 20230205.000 | 191050.000 | 191050.345 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 |     2023 |    1.230 |    1.230 |    1.230 |    1.230 |    1.230 |    1.230 |    1.230 |    1.230 |    1.230 |    1.000 |    5.000 |    0.000
+(1 row)
+
+select pg_typeof(round(`int1`)), pg_typeof(round(`uint1`)), pg_typeof(round(`int2`)), pg_typeof(round(`uint2`)), pg_typeof(round(`int4`)), pg_typeof(round(`uint4`)), pg_typeof(round(`int8`)), pg_typeof(round(`uint8`)), pg_typeof(round(`boolean`)), pg_typeof(round(`year`)) from test_type_table;
+ pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof 
+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+ bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint
+(1 row)
+
+select pg_typeof(round(`int1`, 3)), pg_typeof(round(`uint1`, 3)), pg_typeof(round(`int2`, 3)), pg_typeof(round(`uint2`, 3)), pg_typeof(round(`int4`, 3)), pg_typeof(round(`uint4`, 3)), pg_typeof(round(`int8`, 3)), pg_typeof(round(`uint8`, 3)), pg_typeof(round(`boolean`, 3)), pg_typeof(round(`year`, 3)) from test_type_table;
+ pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof 
+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+ bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint
+(1 row)
+
+select pg_typeof(truncate(`int1`, 3)), pg_typeof(truncate(`uint1`, 3)), pg_typeof(truncate(`int2`, 3)), pg_typeof(truncate(`uint2`, 3)), pg_typeof(truncate(`int4`, 3)), pg_typeof(truncate(`uint4`, 3)), pg_typeof(truncate(`int8`, 3)), pg_typeof(truncate(`uint8`, 3)), pg_typeof(truncate(`boolean`, 3)), pg_typeof(truncate(`year`, 3)) from test_type_table;
+ pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof 
+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
+ bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint
+(1 row)
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+create table test_round1 as select round(`int1`, 3) as r1, round(`uint1`, 3) as r2, round(`int2`, 3) as r3, round(`uint2`, 3) as r4, round(`int4`, 3) as r5, round(`uint4`, 3) as r6, round(`int8`, 3) as r7, round(`uint8`, 3) as r8, round(`float4`, 3) as r9, round(`float8`, 3) as r10, round(`numeric`, 3) as r11, round(`bit1`, 3) as r12, round(`bit64`, 3) as r13, round(`boolean`, 3) as r14, round(`date`, 3) as r15, round(`time`, 3) as r16, round(`time(4)`, 3) as r17, round(`datetime`, 3) as r18, round(`datetime(4)`, 3) as r19, round(`timestamp`, 3) as r20, round(`timestamp(4)`, 3) as r21, round(`year`, 3) as r22, round(`char`, 3) as r23, round(`varchar`, 3) as r24, round(`binary`, 3) as r25, round(`varbinary`, 3) as r26, round(`tinyblob`, 3) as r27, round(`blob`, 3) as r28, round(`mediumblob`, 3) as r29, round(`longblob`, 3) as r30, round(`text`, 3) as r31, round(`enum_t`, 3) as r32, round(`set_t`, 3) as r33, round(`json`, 3) as r34 from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r23
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r24
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r25
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r26
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r27
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r28
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r29
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r30
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r31
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: r34
+insert into test_round1 select truncate(`int1`, 3) as r1, truncate(`uint1`, 3) as r2, truncate(`int2`, 3) as r3, truncate(`uint2`, 3) as r4, truncate(`int4`, 3) as r5, truncate(`uint4`, 3) as r6, truncate(`int8`, 3) as r7, truncate(`uint8`, 3) as r8, truncate(`float4`, 3) as r9, truncate(`float8`, 3) as r10, truncate(`numeric`, 3) as r11, truncate(`bit1`, 3) as r12, truncate(`bit64`, 3) as r13, truncate(`boolean`, 3) as r14, truncate(`date`, 3) as r15, truncate(`time`, 3) as r16, truncate(`time(4)`, 3) as r17, truncate(`datetime`, 3) as r18, truncate(`datetime(4)`, 3) as r19, truncate(`timestamp`, 3) as r20, round(`timestamp(4)`, 3) as r21, truncate(`year`, 3) as r22, truncate(`char`, 3) as r23, truncate(`varchar`, 3) as r24, truncate(`binary`, 3) as r25, truncate(`varbinary`, 3) as r26, truncate(`tinyblob`, 3) as r27, truncate(`blob`, 3) as r28, truncate(`mediumblob`, 3) as r29, round(`longblob`, 3) as r30, round(`text`, 3) as r31, truncate(`enum_t`, 3) as r32, truncate(`set_t`, 3) as r33, truncate(`json`, 3) as r34 from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r23
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r24
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: r25
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: r26
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: r27
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: r28
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: r29
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r30
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r31
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: r34
+reset dolphin.sql_mode;
+insert ignore into test_round1 select round(`int1`, 3) as r1, round(`uint1`, 3) as r2, round(`int2`, 3) as r3, round(`uint2`, 3) as r4, round(`int4`, 3) as r5, round(`uint4`, 3) as r6, round(`int8`, 3) as r7, round(`uint8`, 3) as r8, round(`float4`, 3) as r9, round(`float8`, 3) as r10, round(`numeric`, 3) as r11, round(`bit1`, 3) as r12, round(`bit64`, 3) as r13, round(`boolean`, 3) as r14, round(`date`, 3) as r15, round(`time`, 3) as r16, round(`time(4)`, 3) as r17, round(`datetime`, 3) as r18, round(`datetime(4)`, 3) as r19, round(`timestamp`, 3) as r20, round(`timestamp(4)`, 3) as r21, round(`year`, 3) as r22, round(`char`, 3) as r23, round(`varchar`, 3) as r24, round(`binary`, 3) as r25, round(`varbinary`, 3) as r26, round(`tinyblob`, 3) as r27, round(`blob`, 3) as r28, round(`mediumblob`, 3) as r29, round(`longblob`, 3) as r30, round(`text`, 3) as r31, round(`enum_t`, 3) as r32, round(`set_t`, 3) as r33, round(`json`, 3) as r34 from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: r23
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r24
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r25
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r26
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r27
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r28
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r29
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r30
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r31
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: r34
+insert ignore into test_round1 select truncate(`int1`, 3) as r1, truncate(`uint1`, 3) as r2, truncate(`int2`, 3) as r3, truncate(`uint2`, 3) as r4, truncate(`int4`, 3) as r5, truncate(`uint4`, 3) as r6, truncate(`int8`, 3) as r7, truncate(`uint8`, 3) as r8, truncate(`float4`, 3) as r9, truncate(`float8`, 3) as r10, truncate(`numeric`, 3) as r11, truncate(`bit1`, 3) as r12, truncate(`bit64`, 3) as r13, truncate(`boolean`, 3) as r14, truncate(`date`, 3) as r15, truncate(`time`, 3) as r16, truncate(`time(4)`, 3) as r17, truncate(`datetime`, 3) as r18, truncate(`datetime(4)`, 3) as r19, truncate(`timestamp`, 3) as r20, round(`timestamp(4)`, 3) as r21, truncate(`year`, 3) as r22, truncate(`char`, 3) as r23, truncate(`varchar`, 3) as r24, truncate(`binary`, 3) as r25, truncate(`varbinary`, 3) as r26, truncate(`tinyblob`, 3) as r27, truncate(`blob`, 3) as r28, truncate(`mediumblob`, 3) as r29, round(`longblob`, 3) as r30, round(`text`, 3) as r31, truncate(`enum_t`, 3) as r32, truncate(`set_t`, 3) as r33, truncate(`json`, 3) as r34 from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: r23
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r24
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: r25
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: r26
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: r27
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: r28
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: r29
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r30
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: r31
+WARNING:  invalid input syntax for type numeric: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: truncate
+SQL function "truncate" statement 1
+referenced column: r34
+select * from test_round1 order by 1;
+ r1 | r2 | r3 | r4 | r5 | r6 | r7 | r8 |  r9   |  r10  |  r11  |  r12  |  r13  | r14 |     r15      |    r16     |    r17     |        r18         |        r19         |        r20         |        r21         | r22  |  r23  |  r24  |  r25  |  r26  |  r27  |  r28  |  r29  |  r30  |  r31  |  r32  |  r33  |  r34  
+----+----+----+----+----+----+----+----+-------+-------+-------+-------+-------+-----+--------------+------------+------------+--------------------+--------------------+--------------------+--------------------+------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |   1 | 20230205.000 | 191050.000 | 191050.346 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 | 2023 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.000 | 5.000 | 0.000
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |   1 | 20230205.000 | 191050.000 | 191050.345 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 | 2023 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.000 | 5.000 | 0.000
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |   1 | 20230205.000 | 191050.000 | 191050.346 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 | 2023 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.000 | 5.000 | 0.000
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 | 1.000 | 1.000 | 1.000 | 1.000 | 7.000 |   1 | 20230205.000 | 191050.000 | 191050.345 | 20230205191050.000 | 20230205191050.456 | 20230205191050.000 | 20230205191050.456 | 2023 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.230 | 1.000 | 5.000 | 0.000
+(4 rows)
+
+drop table if exists test_round1;
 drop table if exists test_year;
 drop table if exists test_time_to_sec;
 drop table if exists test_double_acos;

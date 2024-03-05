@@ -1511,3 +1511,66 @@ begin
 end;
 $$
 language plpgsql;
+
+DROP FUNCTION pg_catalog.round(int1);
+DROP FUNCTION pg_catalog.round(uint1);
+DROP FUNCTION pg_catalog.round(int2);
+DROP FUNCTION pg_catalog.round(uint2);
+DROP FUNCTION pg_catalog.round(int4);
+DROP FUNCTION pg_catalog.round(uint4);
+DROP FUNCTION pg_catalog.round(int8);
+DROP FUNCTION pg_catalog.round(uint8);
+DROP FUNCTION pg_catalog.round(boolean);
+DROP FUNCTION pg_catalog.round(year);
+
+DROP FUNCTION pg_catalog.round(int1, int4);
+DROP FUNCTION pg_catalog.round(uint1, int4);
+DROP FUNCTION pg_catalog.round(int2, int4);
+DROP FUNCTION pg_catalog.round(uint2, int4);
+DROP FUNCTION pg_catalog.round(int4, int4);
+DROP FUNCTION pg_catalog.round(uint4, int4);
+DROP FUNCTION pg_catalog.round(int8, int4);
+DROP FUNCTION pg_catalog.round(uint8, int4);
+DROP FUNCTION pg_catalog.round(boolean, int4);
+DROP FUNCTION pg_catalog.round(year, int4);
+DROP FUNCTION pg_catalog.round(binary, int4);
+DROP FUNCTION pg_catalog.round(json, int4);
+
+DROP FUNCTION pg_catalog.round(int1, uint4);
+DROP FUNCTION pg_catalog.round(uint1, uint4);
+DROP FUNCTION pg_catalog.round(int2, uint4);
+DROP FUNCTION pg_catalog.round(uint2, uint4);
+DROP FUNCTION pg_catalog.round(int4, uint4);
+DROP FUNCTION pg_catalog.round(uint4, uint4);
+DROP FUNCTION pg_catalog.round(int8, uint4);
+DROP FUNCTION pg_catalog.round(uint8, uint4);
+DROP FUNCTION pg_catalog.round(boolean, uint4);
+DROP FUNCTION pg_catalog.round(year, uint4);
+DROP FUNCTION pg_catalog.round(binary, uint4);
+DROP FUNCTION pg_catalog.round(json, uint4);
+
+DROP FUNCTION pg_catalog.truncate(int1, int4);
+DROP FUNCTION pg_catalog.truncate(uint1, int4);
+DROP FUNCTION pg_catalog.truncate(int2, int4);
+DROP FUNCTION pg_catalog.truncate(uint2, int4);
+DROP FUNCTION pg_catalog.truncate(int4, int4);
+DROP FUNCTION pg_catalog.truncate(uint4, int4);
+DROP FUNCTION pg_catalog.truncate(int8, int4);
+DROP FUNCTION pg_catalog.truncate(uint8, int4);
+DROP FUNCTION pg_catalog.truncate(boolean, int4);
+DROP FUNCTION pg_catalog.truncate(year, int4);
+DROP FUNCTION pg_catalog.truncate(binary, int4);
+DROP FUNCTION pg_catalog.truncate(json, int4);
+
+DROP FUNCTION pg_catalog.truncate(int1, uint4);
+DROP FUNCTION pg_catalog.truncate(uint1, uint4);
+DROP FUNCTION pg_catalog.truncate(int2, uint4);
+DROP FUNCTION pg_catalog.truncate(uint2, uint4);
+DROP FUNCTION pg_catalog.truncate(int4, uint4);
+DROP FUNCTION pg_catalog.truncate(uint4, uint4);
+DROP FUNCTION pg_catalog.truncate(int8, uint4);
+DROP FUNCTION pg_catalog.truncate(uint8, uint4);
+DROP FUNCTION pg_catalog.truncate(boolean, uint4);
+DROP FUNCTION pg_catalog.truncate(year, uint4);
+DROP FUNCTION pg_catalog.truncate(binary, uint4);
+DROP FUNCTION pg_catalog.truncate(json, uint4);
