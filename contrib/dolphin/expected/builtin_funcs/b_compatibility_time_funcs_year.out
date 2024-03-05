@@ -129,6 +129,30 @@ CONTEXT:  referenced column: date_sub
   1 |          |          | 
 (1 row)
 
+SELECT timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724') as result;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+SELECT timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724') as result;
+WARNING:  interval out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
+SELECT timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724') as result;
+WARNING:  interval out of range
+CONTEXT:  referenced column: result
+ result 
+--------
+ 
+(1 row)
+
 drop table if exists func_test;
 NOTICE:  table "func_test" does not exist, skipping
 create table func_test(functionName varchar(256), result varchar(256));
@@ -162,6 +186,15 @@ CONTEXT:  referenced column: result
 insert ignore into func_test(functionName, result) values('date_sub(cast(1901 as year), interval ''5'' year)', date_sub(cast(1901 as year), interval '5' year));
 WARNING:  Incorrect datetime value: "1901"
 CONTEXT:  referenced column: result
+insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+10,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724'));
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+30,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724'));
+WARNING:  interval out of range
+CONTEXT:  referenced column: result
+insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+308,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724'));
+WARNING:  interval out of range
+CONTEXT:  referenced column: result
 select * from func_test;
                              functionName                              |   result   
 -----------------------------------------------------------------------+------------
@@ -175,7 +208,10 @@ select * from func_test;
  timestampdiff(year, cast(1901 as year), '2024-01-01')                 | 
  date_add(cast(1901 as year), interval '5' year)                       | 
  date_sub(cast(1901 as year), interval '5' year)                       | 
-(10 rows)
+ timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724')         | 
+ timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724')         | 
+ timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724')        | 
+(13 rows)
 
 truncate table func_test;
 insert into func_test(functionName, result) values('extract(year from cast(1901 as year))', extract(year from cast(1901 as year)));
@@ -207,6 +243,15 @@ ERROR:  Incorrect datetime value: "1901"
 CONTEXT:  referenced column: result
 insert into func_test(functionName, result) values('date_sub(cast(1901 as year), interval ''5'' year)', date_sub(cast(1901 as year), interval '5' year));
 ERROR:  Incorrect datetime value: "1901"
+CONTEXT:  referenced column: result
+insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+10,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724'));
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: result
+insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+30,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724'));
+ERROR:  interval out of range
+CONTEXT:  referenced column: result
+insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+308,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724'));
+ERROR:  interval out of range
 CONTEXT:  referenced column: result
 select * from func_test;
            functionName           |   result   
@@ -247,6 +292,15 @@ CONTEXT:  referenced column: result
 insert ignore into func_test(functionName, result) values('date_sub(cast(1901 as year), interval ''5'' year)', date_sub(cast(1901 as year), interval '5' year));
 WARNING:  Incorrect datetime value: "1901"
 CONTEXT:  referenced column: result
+insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+10,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724'));
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+30,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724'));
+WARNING:  interval out of range
+CONTEXT:  referenced column: result
+insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+308,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724'));
+WARNING:  interval out of range
+CONTEXT:  referenced column: result
 select * from func_test;
                              functionName                              |   result   
 -----------------------------------------------------------------------+------------
@@ -260,7 +314,10 @@ select * from func_test;
  timestampdiff(year, cast(1901 as year), '2024-01-01')                 | 
  date_add(cast(1901 as year), interval '5' year)                       | 
  date_sub(cast(1901 as year), interval '5' year)                       | 
-(10 rows)
+ timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724')         | 
+ timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724')         | 
+ timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724')        | 
+(13 rows)
 
 truncate table func_test;
 insert into func_test(functionName, result) values('extract(year from cast(1901 as year))', extract(year from cast(1901 as year)));
@@ -293,6 +350,15 @@ CONTEXT:  referenced column: result
 insert into func_test(functionName, result) values('date_sub(cast(1901 as year), interval ''5'' year)', date_sub(cast(1901 as year), interval '5' year));
 WARNING:  Incorrect datetime value: "1901"
 CONTEXT:  referenced column: result
+insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+10,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724'));
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: result
+insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+30,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724'));
+WARNING:  interval out of range
+CONTEXT:  referenced column: result
+insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+308,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724'));
+WARNING:  interval out of range
+CONTEXT:  referenced column: result
 select * from func_test;
                              functionName                              |   result   
 -----------------------------------------------------------------------+------------
@@ -306,7 +372,10 @@ select * from func_test;
  timestampdiff(year, cast(1901 as year), '2024-01-01')                 | 
  date_add(cast(1901 as year), interval '5' year)                       | 
  date_sub(cast(1901 as year), interval '5' year)                       | 
-(10 rows)
+ timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724')         | 
+ timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724')         | 
+ timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724')        | 
+(13 rows)
 
 drop table if exists func_test cascade;
 drop table if exists t_year_0002 cascade;

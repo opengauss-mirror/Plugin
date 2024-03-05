@@ -32,6 +32,9 @@ select c1, date_add(c2, interval '5' year), date_add(c3, interval '5' year),
 date_add(c4, interval '5' year) from t_year_0002 order by c1;
 select c1, date_sub(c2, interval '5' year), date_sub(c3, interval '5' year),
 date_sub(c4, interval '5' year) from t_year_0002 order by c1;
+SELECT timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724') as result;
+SELECT timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724') as result;
+SELECT timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724') as result;
 
 drop table if exists func_test;
 create table func_test(functionName varchar(256), result varchar(256));
@@ -45,6 +48,9 @@ insert ignore into func_test(functionName, result) values('timestampdiff(year, '
 insert ignore into func_test(functionName, result) values('timestampdiff(year, cast(1901 as year), ''2024-01-01'')', timestampdiff(year, cast(1901 as year), '2024-01-01'));
 insert ignore into func_test(functionName, result) values('date_add(cast(1901 as year), interval ''5'' year)', date_add(cast(1901 as year), interval '5' year));
 insert ignore into func_test(functionName, result) values('date_sub(cast(1901 as year), interval ''5'' year)', date_sub(cast(1901 as year), interval '5' year));
+insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+10,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724'));
+insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+30,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724'));
+insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+308,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724'));
 select * from func_test;
 truncate table func_test;
 
@@ -58,6 +64,9 @@ insert into func_test(functionName, result) values('timestampdiff(year, ''2024-0
 insert into func_test(functionName, result) values('timestampdiff(year, cast(1901 as year), ''2024-01-01'')', timestampdiff(year, cast(1901 as year), '2024-01-01'));
 insert into func_test(functionName, result) values('date_add(cast(1901 as year), interval ''5'' year)', date_add(cast(1901 as year), interval '5' year));
 insert into func_test(functionName, result) values('date_sub(cast(1901 as year), interval ''5'' year)', date_sub(cast(1901 as year), interval '5' year));
+insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+10,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724'));
+insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+30,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724'));
+insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+308,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724'));
 select * from func_test;
 truncate table func_test;
 
@@ -74,6 +83,9 @@ insert ignore into func_test(functionName, result) values('timestampdiff(year, '
 insert ignore into func_test(functionName, result) values('timestampdiff(year, cast(1901 as year), ''2024-01-01'')', timestampdiff(year, cast(1901 as year), '2024-01-01'));
 insert ignore into func_test(functionName, result) values('date_add(cast(1901 as year), interval ''5'' year)', date_add(cast(1901 as year), interval '5' year));
 insert ignore into func_test(functionName, result) values('date_sub(cast(1901 as year), interval ''5'' year)', date_sub(cast(1901 as year), interval '5' year));
+insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+10,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724'));
+insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+30,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724'));
+insert ignore into func_test(functionName, result) values('timestampadd(year ,1.212208e+308,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724'));
 select * from func_test;
 truncate table func_test;
 
@@ -87,6 +99,9 @@ insert into func_test(functionName, result) values('timestampdiff(year, ''2024-0
 insert into func_test(functionName, result) values('timestampdiff(year, cast(1901 as year), ''2024-01-01'')', timestampdiff(year, cast(1901 as year), '2024-01-01'));
 insert into func_test(functionName, result) values('date_add(cast(1901 as year), interval ''5'' year)', date_add(cast(1901 as year), interval '5' year));
 insert into func_test(functionName, result) values('date_sub(cast(1901 as year), interval ''5'' year)', date_sub(cast(1901 as year), interval '5' year));
+insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+10,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724'));
+insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+30,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724'));
+insert into func_test(functionName, result) values('timestampadd(year ,1.212208e+308,''1995-01-05 06:32:20.859724'')', timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724'));
 select * from func_test;
 
 drop table if exists func_test cascade;

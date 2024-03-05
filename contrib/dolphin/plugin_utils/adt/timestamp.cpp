@@ -8118,9 +8118,7 @@ Datum timestamp_add_internal(PG_FUNCTION_ARGS, char *lowunits, int unit, int uni
         // The YEAR type can never be converted to the TIMESTAMP type or DATE type, because its value
         // range([1901,2155]) is not a valid input for the TIMESTAMP or DATE type
         char *str = DatumGetCString(DirectFunctionCall1(year_out, expr));
-        int errlevel = !fcinfo->can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING;
-        ereport(errlevel, (errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \"%s\"", str)));
-        PG_RETURN_NULL();
+        ereport(ERROR, (errcode(DTERR_BAD_FORMAT), errmsg("Incorrect datetime value: \"%s\"", str)));
     }
     switch (expr_type) {
         // when the input type is time or timetz
@@ -8161,6 +8159,30 @@ Datum timestamp_add_internal(PG_FUNCTION_ARGS, char *lowunits, int unit, int uni
     return (Datum)0;
 }
 
+static Datum timestampadd_internal_with_sql_mode(PG_FUNCTION_ARGS, char *lowunits, int unit, int unit_type, Numeric num)
+{
+    Datum result = (Datum)0;
+    PG_TRY();
+    {
+        result = timestamp_add_internal(fcinfo, lowunits, unit, unit_type, num);
+    }
+    PG_CATCH();
+    {
+        if (!fcinfo->can_ignore && SQL_MODE_STRICT()) {
+            PG_RE_THROW();
+        } else {
+            char *msg = pstrdup(Geterrmsg());
+            ereport(WARNING, (errcode(geterrcode()), errmsg("%s", msg)));
+            FlushErrorState();
+            pfree(msg);
+            fcinfo->isnull = true;
+        }
+    }
+    PG_END_TRY();
+
+    return result;
+}
+
 /*
  * @Description: Compatible with timestampadd(units, interval, expr) function in mysql.
  * Add a period of time 'interval' in units 'units' to a date/datetime expression expr.
@@ -8180,7 +8202,7 @@ Datum timestamp_add_numeric(PG_FUNCTION_ARGS) {
         unit_type = DecodeSpecial(0, lowunits, &unit);
     }
 
-    return timestamp_add_internal(fcinfo, lowunits, unit, unit_type, PG_GETARG_NUMERIC(1));
+    return timestampadd_internal_with_sql_mode(fcinfo, lowunits, unit, unit_type, PG_GETARG_NUMERIC(1));
 }
 
 /*
@@ -8223,7 +8245,7 @@ Datum timestamp_add_string(PG_FUNCTION_ARGS, text *units, text *num_txt)
         num = DatumGetNumeric(DirectFunctionCall1(int8_numeric, Int64GetDatum(ret)));
     }
 
-    return timestamp_add_internal(fcinfo, lowunits, unit, unit_type, num);
+    return timestampadd_internal_with_sql_mode(fcinfo, lowunits, unit, unit_type, num);
 }
 
 Datum timestamp_add_text(PG_FUNCTION_ARGS)
