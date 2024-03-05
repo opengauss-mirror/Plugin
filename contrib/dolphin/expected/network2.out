@@ -488,12 +488,16 @@ SELECT INET6_NTOA(NULL);
 (1 row)
 
 SELECT INET6_NTOA(123);
+WARNING:  Incorrect string value for function inet6_ntoa
+CONTEXT:  referenced column: inet6_ntoa
  inet6_ntoa 
 ------------
  
 (1 row)
 
 SELECT INET6_NTOA(123.456);
+WARNING:  Incorrect string value for function inet6_ntoa
+CONTEXT:  referenced column: inet6_ntoa
  inet6_ntoa 
 ------------
  
