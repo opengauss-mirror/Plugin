@@ -475,6 +475,16 @@ Const* make_const(ParseState* pstate, Value* value, int location)
 
     switch (nodeTag(value)) {
         case T_Integer:
+#ifdef DOLPHIN
+            if (GetSessionContext()->isInTransformSet) {
+                val = Int64GetDatum(intVal(value));
+
+                typid = INT8OID;
+                typelen = sizeof(int64);
+                typebyval = true;
+                break;
+            }
+#endif
             val = Int32GetDatum(intVal(value));
 
             typid = INT4OID;
