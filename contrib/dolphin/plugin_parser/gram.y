@@ -1292,6 +1292,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 			FORCE_INDEX USE_INDEX LOCK_TABLES IGNORE_INDEX
 			LABEL_LOOP LABEL_REPEAT LABEL_WHILE WITH_PARSER
 			STORAGE_DISK STORAGE_MEMORY
+			FULL_OUTER
 
 /* Precedence: lowest to highest */
 %nonassoc AUTHID /* AUTHID has lower priority than the BODY_P */
@@ -1330,6 +1331,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %left		POSTFIXOP		/* dummy for postfix Op rules */
 %nonassoc	lower_than_zerofill
 %nonassoc	ZEROFILL
+%nonassoc   FULL_OUTER
 /*
  * To support target_el without AS, we must give IDENT an explicit priority
  * between POSTFIXOP and Op.  We can safely assign the same priority to
@@ -30508,6 +30510,7 @@ opt_dolphin_alias_clause: dolphin_alias_clause		{ $$ = $1; }
 join_type:	FULL join_outer							{ $$ = JOIN_FULL; }
 			| LEFT join_outer						{ $$ = JOIN_LEFT; }
 			| RIGHT join_outer						{ $$ = JOIN_RIGHT; }
+			| FULL_OUTER                            { $$ = JOIN_FULL; }
 		;
 
 /* OUTER is just noise... */
