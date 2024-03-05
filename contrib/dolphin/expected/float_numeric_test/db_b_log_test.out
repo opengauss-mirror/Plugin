@@ -49,6 +49,7 @@ SELECT LOG2(64::numeric);
 (1 row)
 
 SELECT LOG(0) IS NULL;
+WARNING:  Invalid argument '0.000000' for logarithm
  ?column? 
 ----------
  t
@@ -67,6 +68,7 @@ SELECT LOG2(0) IS NULL;
 (1 row)
 
 SELECT LOG(-1) IS NULL;
+WARNING:  Invalid argument '-1.000000' for logarithm
  ?column? 
 ----------
  t
@@ -85,6 +87,7 @@ SELECT LOG2(-1) IS NULL;
 (1 row)
 
 SELECT LOG(0::numeric) IS NULL;
+WARNING:  Invalid argument '0' for logarithm
  ?column? 
 ----------
  t
@@ -103,6 +106,7 @@ SELECT LOG2(0::numeric) IS NULL;
 (1 row)
 
 SELECT LOG(-1::numeric) IS NULL;
+WARNING:  Invalid argument '-1' for logarithm
  ?column? 
 ----------
  t
@@ -127,24 +131,28 @@ SELECT LOG(2, 64) IS NULL;
 (1 row)
 
 SELECT LOG(-2, 64) IS NULL;
+WARNING:  Invalid argument '-2' for logarithm
  ?column? 
 ----------
  t
 (1 row)
 
 SELECT LOG(2, -64) IS NULL;
+WARNING:  Invalid argument '-64' for logarithm
  ?column? 
 ----------
  t
 (1 row)
 
 SELECT LOG(0, 64) IS NULL;
+WARNING:  Invalid argument '0' for logarithm
  ?column? 
 ----------
  t
 (1 row)
 
 SELECT LOG(2, 0) IS NULL;
+WARNING:  Invalid argument '0' for logarithm
  ?column? 
 ----------
  t
