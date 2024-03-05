@@ -139,5 +139,38 @@ select make_set(3,01/02/03, false, true, false);
  0.166666666666667,0
 (1 row)
 
+set dolphin.b_compatibility_mode = on;
+select castcontext from pg_cast where castsource=(select oid from pg_type where typname = 'tinyblob') and casttarget= (select oid from pg_type where typname = 'anyset');
+ castcontext 
+-------------
+ a
+(1 row)
+
+drop table if exists t_converse_case0001;
+NOTICE:  table "t_converse_case0001" does not exist, skipping
+create table t_converse_case0001(c1 set('6heWuEd1rYf!@#', '1', '0', '2022-01-01', '2022-01-01 23:59:59', '010110', '73'));
+NOTICE:  CREATE TABLE will create implicit set "t_converse_case0001_c1_set" for column "t_converse_case0001.c1"
+insert into t_converse_case0001 values('6heWuEd1rYf!@#'::tinyblob);
+insert into t_converse_case0001 values('1'::tinyblob);
+insert into t_converse_case0001 values('2022-01-01'::tinyblob);
+insert into t_converse_case0001 values('2022-01-01 11:11:11'::tinyblob);
+ERROR:  invalid input value for set t_converse_case0001_c1_set: '2022-01-01 11:11:11'
+CONTEXT:  referenced column: c1
+insert into t_converse_case0001 values('0'::tinyblob);
+insert into t_converse_case0001 values('73'::tinyblob);
+insert into t_converse_case0001 values('010110'::tinyblob);
+select * from t_converse_case0001;
+       c1       
+----------------
+ 6heWuEd1rYf!@#
+ 1
+ 2022-01-01
+ 0
+ 73
+ 010110
+(6 rows)
+
+reset dolphin.b_compatibility_mode;
+drop table if exists t_converse_case0001;
 drop schema make_set cascade;
 reset current_schema;

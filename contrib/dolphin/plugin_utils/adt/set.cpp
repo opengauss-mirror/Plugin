@@ -46,6 +46,7 @@
 #include "plugin_postgres.h"
 #include "plugin_utils/int8.h"
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/varlena.h"
 #else
 #include "utils/int8.h"
 #endif
@@ -1402,10 +1403,8 @@ extern "C" DLL_PUBLIC Datum varlenatoset(PG_FUNCTION_ARGS);
 Datum varlenatoset(PG_FUNCTION_ARGS)
 {
     char* setlabels = NULL;
-    Oid typeOutput = InvalidOid;
-    bool typIsVarlena = false;
-    getTypeOutputInfo(fcinfo->argTypes[0], &typeOutput, &typIsVarlena);
-    setlabels = DatumGetCString(OidOutputFunctionCall(typeOutput, PG_GETARG_DATUM(0)));
+    bool hasLenError = false;
+    setlabels = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasLenError);
     Datum result = (Datum)get_set_in_result(PG_GETARG_OID(1), setlabels, PG_GET_COLLATION());
     pfree_ext(setlabels);
     PG_RETURN_VARBIT_P(result);

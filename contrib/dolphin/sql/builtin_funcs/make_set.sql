@@ -34,6 +34,24 @@ select make_set(-4294967296*1024*1024*1024,'1','2','3','4','5','6','7','8','9','
 select make_set(3, true, false);
 select make_set(3,01/02/03, false, true, false);
 
+set dolphin.b_compatibility_mode = on;
+select castcontext from pg_cast where castsource=(select oid from pg_type where typname = 'tinyblob') and casttarget= (select oid from pg_type where typname = 'anyset');
+drop table if exists t_converse_case0001;
+create table t_converse_case0001(c1 set('6heWuEd1rYf!@#', '1', '0', '2022-01-01', '2022-01-01 23:59:59', '010110', '73'));
+
+insert into t_converse_case0001 values('6heWuEd1rYf!@#'::tinyblob);
+insert into t_converse_case0001 values('1'::tinyblob);
+insert into t_converse_case0001 values('2022-01-01'::tinyblob);
+insert into t_converse_case0001 values('2022-01-01 11:11:11'::tinyblob);
+insert into t_converse_case0001 values('0'::tinyblob);
+insert into t_converse_case0001 values('73'::tinyblob);
+insert into t_converse_case0001 values('010110'::tinyblob);
+
+select * from t_converse_case0001;
+
+reset dolphin.b_compatibility_mode;
+drop table if exists t_converse_case0001;
+
 drop schema make_set cascade;
 reset current_schema;
 
