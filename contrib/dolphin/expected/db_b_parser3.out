@@ -2450,94 +2450,103 @@ select 1 xor 0;
 (1 row)
 
 select '-12.3abc' xor null;
-WARNING:  invalid input syntax for type integer: "-12.3abc"
-LINE 1: select '-12.3abc' xor null;
-               ^
+WARNING:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
  xor 
 -----
     
 (1 row)
 
 select '-12.3abc' xor -100.1;
-WARNING:  invalid input syntax for type integer: "-12.3abc"
-LINE 1: select '-12.3abc' xor -100.1;
-               ^
+WARNING:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
  xor 
 -----
    0
 (1 row)
 
 select '-12.3abc' xor 0;
-WARNING:  invalid input syntax for type integer: "-12.3abc"
-LINE 1: select '-12.3abc' xor 0;
-               ^
+WARNING:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
  xor 
 -----
    1
 (1 row)
 
 select '-12.3abc' xor 5;
-WARNING:  invalid input syntax for type integer: "-12.3abc"
-LINE 1: select '-12.3abc' xor 5;
-               ^
+WARNING:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
  xor 
 -----
    0
 (1 row)
 
 select '-12.3abc' xor 158.3;
-WARNING:  invalid input syntax for type integer: "-12.3abc"
-LINE 1: select '-12.3abc' xor 158.3;
-               ^
+WARNING:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
  xor 
 -----
    0
 (1 row)
 
 select '-12.3abc' xor -8.222e4;
-WARNING:  invalid input syntax for type integer: "-12.3abc"
-LINE 1: select '-12.3abc' xor -8.222e4;
-               ^
+WARNING:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
  xor 
 -----
    0
 (1 row)
 
 select '-12.3abc' xor true;
-WARNING:  invalid input syntax for type integer: "-12.3abc"
-LINE 1: select '-12.3abc' xor true;
-               ^
+WARNING:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
  xor 
 -----
    0
 (1 row)
 
 select '-12.3abc' xor false;
-WARNING:  invalid input syntax for type integer: "-12.3abc"
-LINE 1: select '-12.3abc' xor false;
-               ^
+WARNING:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
  xor 
 -----
    1
 (1 row)
 
 select '-12.3abc' xor 'null';
-WARNING:  invalid input syntax for type integer: "-12.3abc"
-LINE 1: select '-12.3abc' xor 'null';
-               ^
+WARNING:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
 CONTEXT:  referenced column: xor
-WARNING:  invalid input syntax for type integer: "null"
-LINE 1: select '-12.3abc' xor 'null';
-                              ^
+SQL function "xor" statement 1
+referenced column: xor
+WARNING:  Truncated incorrect INTEGER value: 'null'
 CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
  xor 
 -----
    1

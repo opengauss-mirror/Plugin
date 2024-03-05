@@ -51,6 +51,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(varchar_cast_int8);
 PG_FUNCTION_INFO_V1_PUBLIC(nvarchar2_cast_int8);
 PG_FUNCTION_INFO_V1_PUBLIC(text_cast_int8);
 PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_int8);
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_int8xor);
 
 extern "C" DLL_PUBLIC Datum bit_cast_int8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum float4_cast_int8(PG_FUNCTION_ARGS);
@@ -68,6 +69,7 @@ extern "C" DLL_PUBLIC Datum varchar_cast_int8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum nvarchar2_cast_int8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum text_cast_int8(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum varlena_cast_int8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum dolphin_int8xor(PG_FUNCTION_ARGS);
 #endif
 
 #define MAXINT8LEN 25
@@ -1850,5 +1852,13 @@ Datum varlena_cast_int8(PG_FUNCTION_ARGS)
                 errmsg("Data truncated for input data: \"%s\"", tmp)));
     }
     PG_RETURN_INT64((int64)result);
+}
+
+Datum dolphin_int8xor(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT64(0);
+    int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_INT64 ((arg1 != 0) ^ (arg2 != 0));
 }
 #endif
