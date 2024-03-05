@@ -204,6 +204,51 @@ log(`uint1`, `uint1`) as log2, log(`int2`, `int2`) as log3,  log(`uint2`, `uint2
 select * from test_log order by 1,10;
 
 drop table if exists test_log;
+
+select log(-10);
+select log(0);
+select log(-10,10);
+select log(10,-10);
+select log(0,10);
+select log(10,0);
+select log(1,10);
+select log('1.23a');
+select log('-1.23a');
+reset dolphin.sql_mode;
+create table test_log(value double);
+insert into test_log select log(-10);
+insert into test_log select log(0);
+insert into test_log select log(-10,10);
+insert into test_log select log(10,-10);
+insert into test_log select log(0,10);
+insert into test_log select log(10,0);
+insert into test_log select log(1,10);
+insert into test_log select log('1.23a');
+insert into test_log select log('-1.23a');
+insert ignore into test_log select log(-10);
+insert ignore into test_log select log(0);
+insert ignore into test_log select log(-10,10);
+insert ignore into test_log select log(10,-10);
+insert ignore into test_log select log(0,10);
+insert ignore into test_log select log(10,0);
+insert ignore into test_log select log(1,10);
+insert ignore into test_log select log('1.23a');
+insert ignore into test_log select log('-1.23a');
+select * from test_log;
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test_log select log(-10);
+insert into test_log select log(0);
+insert into test_log select log(-10,10);
+insert into test_log select log(10,-10);
+insert into test_log select log(0,10);
+insert into test_log select log(10,0);
+insert into test_log select log(1,10);
+insert into test_log select log('1.23a');
+insert into test_log select log('-1.23a');
+select * from test_log;
+drop table if exists test_log;
+reset dolphin.sql_mode;
+
 -- ln math function
 select
 ln(`int1`),
