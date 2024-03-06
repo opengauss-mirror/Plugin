@@ -905,8 +905,6 @@ DROP FUNCTION IF EXISTS pg_catalog.bit_length(blob);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(json);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(binary);
-DROP FUNCTION IF EXISTS pg_catalog.bit_length(char);
-
 
 DROP CAST IF EXISTS (uint4 AS year) CASCADE;
 DROP CAST IF EXISTS (boolean AS year) CASCADE;
