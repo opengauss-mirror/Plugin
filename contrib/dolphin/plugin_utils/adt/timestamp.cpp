@@ -6816,7 +6816,12 @@ Datum text_timestamp(PG_FUNCTION_ARGS)
     Datum result;
     tmp = DatumGetCString(DirectFunctionCall1(textout, textValue));
 
+#ifdef DOLPHIN
+    result = DirectFunctionCall3Coll(timestamp_in, InvalidOid, CStringGetDatum(tmp), ObjectIdGetDatum(InvalidOid),
+                                     Int32GetDatum(-1), fcinfo->can_ignore);
+#else
     result = DirectFunctionCall3(timestamp_in, CStringGetDatum(tmp), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+#endif
 
     pfree_ext(tmp);
 

@@ -20,45 +20,41 @@ insert into func_test3(functionName,result) values('TO_DAYS(20220101010101.00000
 -- 非法的date/datetime格式
 insert into func_test3(functionName,result) values('TO_DAYS(''2022-1-32'')',TO_DAYS('2022-1-32'));
 ERROR:  date/time field value out of range: "2022-1-32"
-LINE 1: ...e,result) values('TO_DAYS(''2022-1-32'')',TO_DAYS('2022-1-32...
-                                                             ^
 HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  SQL function "to_days" during inlining
+referenced column: result
 insert into func_test3(functionName,result) values('TO_DAYS(''2022-13-1'')',TO_DAYS('2022-13-1'));
 ERROR:  date/time field value out of range: "2022-13-1"
-LINE 1: ...e,result) values('TO_DAYS(''2022-13-1'')',TO_DAYS('2022-13-1...
-                                                             ^
 HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  SQL function "to_days" during inlining
+referenced column: result
 insert into func_test3(functionName,result) values('TO_DAYS(''2022-2-2 2:2:60'')',TO_DAYS('2022-2-2 2:2:60'));
 ERROR:  date/time field value out of range: "2022-2-2 2:2:60"
-LINE 1: ...lt) values('TO_DAYS(''2022-2-2 2:2:60'')',TO_DAYS('2022-2-2 ...
-                                                             ^
+CONTEXT:  SQL function "to_days" during inlining
+referenced column: result
 insert into func_test3(functionName,result) values('TO_DAYS(''2022-2-2 2:60:2'')',TO_DAYS('2022-2-2 2:60:2'));
 ERROR:  date/time field value out of range: "2022-2-2 2:60:2"
-LINE 1: ...lt) values('TO_DAYS(''2022-2-2 2:60:2'')',TO_DAYS('2022-2-2 ...
-                                                             ^
+CONTEXT:  SQL function "to_days" during inlining
+referenced column: result
 insert into func_test3(functionName,result) values('TO_DAYS(''2022-2-2 24:2:2'')',TO_DAYS('2022-2-2 24:2:2'));
 ERROR:  date/time field value out of range: "2022-2-2 24:2:2"
-LINE 1: ...lt) values('TO_DAYS(''2022-2-2 24:2:2'')',TO_DAYS('2022-2-2 ...
-                                                             ^
+CONTEXT:  SQL function "to_days" during inlining
+referenced column: result
 -- 超长参数
 insert into func_test3(functionName,result) values('TO_DAYS(''99999999999-1-1'')',TO_DAYS('99999999999-1-1'));
 ERROR:  date/time field value out of range: "99999999999-1-1"
-LINE 1: ...lt) values('TO_DAYS(''99999999999-1-1'')',TO_DAYS('999999999...
-                                                             ^
+CONTEXT:  SQL function "to_days" during inlining
+referenced column: result
 insert into func_test3(functionName,result) values('TO_DAYS(''00000000000-1-1'')',TO_DAYS('00000000000-1-1'));
 insert into func_test3(functionName,result) values('TO_DAYS(''00000000000-00000000001-1'')',TO_DAYS('00000000000-00000000001-1'));
 insert into func_test3(functionName,result) values('TO_DAYS(''00000000000-00000000001-0000000001'')',TO_DAYS('00000000000-00000000001-0000000001'));
 -- 特殊类型参数
 insert into func_test3(functionName,result) values('TO_DAYS(true)',TO_DAYS(true));
-ERROR:  function to_days(boolean) does not exist
-LINE 1: ...test3(functionName,result) values('TO_DAYS(true)',TO_DAYS(tr...
-                                                             ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: result
 insert into func_test3(functionName,result) values('TO_DAYS(false)',TO_DAYS(false));
-ERROR:  function to_days(boolean) does not exist
-LINE 1: ...est3(functionName,result) values('TO_DAYS(false)',TO_DAYS(fa...
-                                                             ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: result
 insert into func_test3(functionName,result) values('TO_DAYS(null)',TO_DAYS(null));
 insert into func_test3(functionName,result) values('TO_DAYS(date''2000-1-1'')',TO_DAYS(date'2000-1-1'));
 insert into func_test3(functionName,result) values('TO_DAYS(cast(''2022-2-2 2:2:2'' as datetime))',TO_DAYS(cast('2022-2-2 2:2:2' as datetime)));
@@ -93,8 +89,8 @@ insert into func_test3(functionName,result) values('TO_DAYS(''0000-1-1'')',TO_DA
 insert into func_test3(functionName,result) values('TO_DAYS(''0000-1-1 00:00:00'')',TO_DAYS('0000-1-1 00:00:00'));
 insert into func_test3(functionName,result) values('TO_DAYS(''0000-0-0'')',TO_DAYS('0000-0-0'));
 ERROR:  date/time field value out of range: "0000-0-0"
-LINE 1: ...me,result) values('TO_DAYS(''0000-0-0'')',TO_DAYS('0000-0-0'...
-                                                             ^
+CONTEXT:  SQL function "to_days" during inlining
+referenced column: result
 -- 最大值
 insert into func_test3(functionName,result) values('TO_DAYS(''9999-12-31'')',TO_DAYS('9999-12-31'));
 insert into func_test3(functionName,result) values('TO_DAYS(''9999-12-31 23:59:59.999999'')',TO_DAYS('9999-12-31 23:59:59.999999'));

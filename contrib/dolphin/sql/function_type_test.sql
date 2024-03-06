@@ -471,6 +471,115 @@ insert ignore into test_md5 select md5(`enum_t`) from test_type_table;
 insert ignore into test_md5 select md5(`set_t`) from test_type_table;
 insert ignore into test_md5 select md5(`json`) from test_type_table;
 
+select
+to_days(`int1`),
+to_days(`uint1`),
+to_days(`int2`),
+to_days(`uint2`),
+to_days(`int4`),
+to_days(`uint4`),
+to_days(`int8`),
+to_days(`uint8`),
+to_days(`float4`),
+to_days(`float8`),
+to_days(`numeric`),
+to_days(`bit1`),
+to_days(`bit64`),
+to_days(`boolean`),
+to_days(`date`),
+to_days(`datetime`),
+to_days(`datetime(4)`),
+to_days(`timestamp`),
+to_days(`timestamp(4)`),
+to_days(`year`),
+to_days(`char`),
+to_days(`varchar`),
+to_days(`binary`),
+to_days(`varbinary`),
+to_days(`tinyblob`),
+to_days(`blob`),
+to_days(`mediumblob`),
+to_days(`longblob`),
+to_days(`text`),
+to_days(`enum_t`),
+to_days(`set_t`),
+to_days(`json`)
+from test_type_table;
+
+select to_days(`time`) from test_type_table;
+select to_days(`time(4)`) from test_type_table;
+
+create table test_to_days(c int8);
+insert into test_to_days select to_days(`int1`) from test_type_table;
+insert into test_to_days select to_days(`uint1`) from test_type_table;
+insert into test_to_days select to_days(`int2`) from test_type_table;
+insert into test_to_days select to_days(`uint2`) from test_type_table;
+insert into test_to_days select to_days(`int4`) from test_type_table;
+insert into test_to_days select to_days(`uint4`) from test_type_table;
+insert into test_to_days select to_days(`int8`) from test_type_table;
+insert into test_to_days select to_days(`uint8`) from test_type_table;
+insert into test_to_days select to_days(`float4`) from test_type_table;
+insert into test_to_days select to_days(`float8`) from test_type_table;
+insert into test_to_days select to_days(`numeric`) from test_type_table;
+insert into test_to_days select to_days(`bit1`) from test_type_table;
+insert into test_to_days select to_days(`bit64`) from test_type_table;
+insert into test_to_days select to_days(`boolean`) from test_type_table;
+insert into test_to_days select to_days(`date`) from test_type_table;
+insert into test_to_days select to_days(`time`) from test_type_table;
+insert into test_to_days select to_days(`time(4)`) from test_type_table;
+insert into test_to_days select to_days(`datetime`) from test_type_table;
+insert into test_to_days select to_days(`datetime(4)`) from test_type_table;
+insert into test_to_days select to_days(`timestamp`) from test_type_table;
+insert into test_to_days select to_days(`timestamp(4)`) from test_type_table;
+insert into test_to_days select to_days(`year`) from test_type_table;
+insert into test_to_days select to_days(`char`) from test_type_table;
+insert into test_to_days select to_days(`varchar`) from test_type_table;
+insert into test_to_days select to_days(`binary`) from test_type_table;
+insert into test_to_days select to_days(`varbinary`) from test_type_table;
+insert into test_to_days select to_days(`tinyblob`) from test_type_table;
+insert into test_to_days select to_days(`blob`) from test_type_table;
+insert into test_to_days select to_days(`mediumblob`) from test_type_table;
+insert into test_to_days select to_days(`longblob`) from test_type_table;
+insert into test_to_days select to_days(`text`) from test_type_table;
+insert into test_to_days select to_days(`enum_t`) from test_type_table;
+insert into test_to_days select to_days(`set_t`) from test_type_table;
+insert into test_to_days select to_days(`json`) from test_type_table;
+insert ignore into test_to_days select to_days(`int1`) from test_type_table;
+insert ignore into test_to_days select to_days(`uint1`) from test_type_table;
+insert ignore into test_to_days select to_days(`int2`) from test_type_table;
+insert ignore into test_to_days select to_days(`uint2`) from test_type_table;
+insert ignore into test_to_days select to_days(`int4`) from test_type_table;
+insert ignore into test_to_days select to_days(`uint4`) from test_type_table;
+insert ignore into test_to_days select to_days(`int8`) from test_type_table;
+insert ignore into test_to_days select to_days(`uint8`) from test_type_table;
+insert ignore into test_to_days select to_days(`float4`) from test_type_table;
+insert ignore into test_to_days select to_days(`float8`) from test_type_table;
+insert ignore into test_to_days select to_days(`numeric`) from test_type_table;
+insert ignore into test_to_days select to_days(`bit1`) from test_type_table;
+insert ignore into test_to_days select to_days(`bit64`) from test_type_table;
+insert ignore into test_to_days select to_days(`boolean`) from test_type_table;
+insert ignore into test_to_days select to_days(`date`) from test_type_table;
+insert ignore into test_to_days select to_days(`time`) from test_type_table;
+insert ignore into test_to_days select to_days(`time(4)`) from test_type_table;
+insert ignore into test_to_days select to_days(`datetime`) from test_type_table;
+insert ignore into test_to_days select to_days(`datetime(4)`) from test_type_table;
+insert ignore into test_to_days select to_days(`timestamp`) from test_type_table;
+insert ignore into test_to_days select to_days(`timestamp(4)`) from test_type_table;
+insert ignore into test_to_days select to_days(`year`) from test_type_table;
+insert ignore into test_to_days select to_days(`char`) from test_type_table;
+insert ignore into test_to_days select to_days(`varchar`) from test_type_table;
+insert ignore into test_to_days select to_days(`binary`) from test_type_table;
+insert ignore into test_to_days select to_days(`varbinary`) from test_type_table;
+insert ignore into test_to_days select to_days(`tinyblob`) from test_type_table;
+insert ignore into test_to_days select to_days(`blob`) from test_type_table;
+insert ignore into test_to_days select to_days(`mediumblob`) from test_type_table;
+insert ignore into test_to_days select to_days(`longblob`) from test_type_table;
+insert ignore into test_to_days select to_days(`text`) from test_type_table;
+insert ignore into test_to_days select to_days(`enum_t`) from test_type_table;
+insert ignore into test_to_days select to_days(`set_t`) from test_type_table;
+insert ignore into test_to_days select to_days(`json`) from test_type_table;
+select * from test_to_days order by c;
+
 select convert(1, binary) & convert(1, binary);
 select convert(1, binary) & convert(2, binary);
 select convert(1.1, binary) & convert(1.2, binary);
@@ -483,6 +592,7 @@ drop table test_bit_and_1;
 drop table test_bit_and_2;
 drop table test_inet6_ntoa;
 drop table test_md5;
+drop table test_to_days;
 drop table test_type_table;
 reset current_schema;
 drop schema function_type_test;
