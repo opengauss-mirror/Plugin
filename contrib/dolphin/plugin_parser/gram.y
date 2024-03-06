@@ -5647,6 +5647,12 @@ alter_table_cmd:
 			/* ALTER TABLE <name> INHERIT <parent> */
 			| INHERIT dolphin_qualified_name
 				{
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+						const char* message = "inherits is not support in B-format database, it conflicts with multi-relation update";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg(message)));
+					}
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_AddInherit;
 					n->def = (Node *) $2;
@@ -5655,6 +5661,12 @@ alter_table_cmd:
 			/* ALTER TABLE <name> NO INHERIT <parent> */
 			| NO INHERIT dolphin_qualified_name
 				{
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+						const char* message = "inherits is not support in B-format database, it conflicts with multi-relation update";
+						InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+						ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								errmsg(message)));
+					}
 					AlterTableCmd *n = makeNode(AlterTableCmd);
 					n->subtype = AT_DropInherit;
 					n->def = (Node *) $3;

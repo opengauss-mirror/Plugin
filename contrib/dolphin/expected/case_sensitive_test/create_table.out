@@ -264,19 +264,15 @@ CREATE TABLE HW_create_as_test11(C_CHAR CHAR(102400));
 CREATE TABLE HW_create_as_test12(C_CHAR) as SELECT C_CHAR FROM HW_create_as_test11;
 CREATE TABLE HW_create_as_test13 (C_CHAR CHAR(102400));
 ALTER TABLE HW_create_as_test13 InheRIT HW_create_as_test12;
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 DROP TABLE HW_create_as_test12;
-ERROR:  cannot drop table "HW_create_as_test12" because other objects depend on it
-DETAIL:  table "HW_create_as_test13" depends on table "HW_create_as_test12"
-HINT:  Use DROP ... CASCADE to drop the dependent objects too.
 DROP TABLE HW_create_as_test13;
 DROP TABLE HW_create_as_test11;
 CREATE TABLE HW_create_as_test11(C_INT int);
 CREATE TABLE HW_create_as_test12(C_INT) as SELECT C_INT FROM HW_create_as_test11;
-ERROR:  relation "HW_create_as_test12" already exists in schema "public"
-DETAIL:  creating new table with existing name in the same schema
 CREATE TABLE HW_create_as_test13 (C_INT int);
 ALTER TABLE HW_create_as_test13 InheRIT HW_create_as_test12;
-ERROR:  child table is missing column "c_char"
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 DROP TABLE HW_create_as_test13;
 DROP TABLE HW_create_as_test12;
 DROP TABLE HW_create_as_test11;
@@ -284,6 +280,7 @@ CREATE TABLE HW_create_as_test11(COL1 numeric(10,2));
 CREATE TABLE HW_create_as_test12(COL1) as SELECT COL1 FROM HW_create_as_test11;
 CREATE TABLE HW_create_as_test13 (COL1 numeric(10,2));
 ALTER TABLE HW_create_as_test13 InheRIT HW_create_as_test12;
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 DROP TABLE HW_create_as_test13;
 DROP TABLE HW_create_as_test12;
 DROP TABLE HW_create_as_test11;
@@ -291,6 +288,7 @@ CREATE TABLE HW_create_as_test11(COL1 timestamp(1));
 CREATE TABLE HW_create_as_test12(COL1) as SELECT COL1 FROM HW_create_as_test11;
 CREATE TABLE HW_create_as_test13 (COL1 timestamp(1));
 ALTER TABLE HW_create_as_test13 InheRIT HW_create_as_test12;
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 DROP TABLE HW_create_as_test13;
 DROP TABLE HW_create_as_test12;
 DROP TABLE HW_create_as_test11;
@@ -298,6 +296,7 @@ CREATE TABLE HW_create_as_test11(COL1 int[2][2]);
 CREATE TABLE HW_create_as_test12(COL1) as SELECT COL1 FROM HW_create_as_test11;
 CREATE TABLE HW_create_as_test13 (COL1 int[2][2]);
 ALTER TABLE HW_create_as_test13 InheRIT HW_create_as_test12;
+ERROR:  inherits is not support in B-format database, it conflicts with multi-relation update
 DROP TABLE HW_create_as_test13;
 DROP TABLE HW_create_as_test12;
 DROP TABLE HW_create_as_test11;
