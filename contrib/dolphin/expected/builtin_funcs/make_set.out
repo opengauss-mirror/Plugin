@@ -134,9 +134,9 @@ select make_set(3, true, false);
 (1 row)
 
 select make_set(3,01/02/03, false, true, false);
-      make_set       
----------------------
- 0.166666666666667,0
+       make_set       
+----------------------
+ 0.1666666666666667,0
 (1 row)
 
 drop schema make_set cascade;

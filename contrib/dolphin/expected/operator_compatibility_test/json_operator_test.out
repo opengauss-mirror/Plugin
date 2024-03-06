@@ -6308,8 +6308,8 @@ datetime_mod_json     |
 datetime_xor_json     | 2147483647
 datetime_and_json     | f
 datetime_or_json      | t
-datetime(4)+json      | 20230205191050.5
-datetime(4)-json      | 20230205191050.5
+datetime(4)+json      | 20230205191050.46
+datetime(4)-json      | 20230205191050.46
 datetime(4)*json      | 0
 datetime(4)/json      | 
 datetime(4)%json      | 
@@ -6342,8 +6342,8 @@ timestamp_mod_json    |
 timestamp_xor_json    | 2147483647
 timestamp_and_json    | f
 timestamp_or_json     | t
-timestamp(4)+json     | 20230205191050.5
-timestamp(4)-json     | 20230205191050.5
+timestamp(4)+json     | 20230205191050.46
+timestamp(4)-json     | 20230205191050.46
 timestamp(4)*json     | 0
 timestamp(4)/json     | 
 timestamp(4)%json     | 
@@ -6833,8 +6833,8 @@ json_mod_datetime     | 0
 json_xor_datetime     | 2147483647
 json_and_datetime     | f
 json_or_datetime      | t
-json+datetime(4)      | 20230205191050.5
-json-datetime(4)      | -20230205191050.5
+json+datetime(4)      | 20230205191050.46
+json-datetime(4)      | -20230205191050.46
 json*datetime(4)      | 0
 json/datetime(4)      | 0
 json%datetime(4)      | 0.000000
@@ -6867,8 +6867,8 @@ json_mod_timestamp    | 0
 json_xor_timestamp    | 2147483647
 json_and_timestamp    | f
 json_or_timestamp     | t
-json+timestamp(4)     | 20230205191050.5
-json-timestamp(4)     | -20230205191050.5
+json+timestamp(4)     | 20230205191050.46
+json-timestamp(4)     | -20230205191050.46
 json*timestamp(4)     | 0
 json/timestamp(4)     | 0
 json%timestamp(4)     | 0.000000

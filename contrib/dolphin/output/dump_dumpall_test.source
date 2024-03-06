@@ -369,9 +369,9 @@ select distinctrow on (c1, c2) * from normal_test_table;
 
 -- test for functionality of functions
 select log(10);
-       log        
-------------------
- 2.30258509299405
+        log        
+-------------------
+ 2.302585092994046
 (1 row)
 
 select log(10, 100);
@@ -878,9 +878,9 @@ select distinctrow on (c1, c2) * from normal_test_table;
 
 -- test for functionality of functions
 select log(10);
-       log        
-------------------
- 2.30258509299405
+        log        
+-------------------
+ 2.302585092994046
 (1 row)
 
 select log(10, 100);
@@ -1388,9 +1388,9 @@ select distinctrow on (c1, c2) * from normal_test_table;
 
 -- test for functionality of functions
 select log(10);
-       log        
-------------------
- 2.30258509299405
+        log        
+-------------------
+ 2.302585092994046
 (1 row)
 
 select log(10, 100);

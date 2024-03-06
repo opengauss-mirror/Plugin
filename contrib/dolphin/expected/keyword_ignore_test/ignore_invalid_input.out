@@ -479,14 +479,14 @@ LINE 1: insert ignore into t_float8 values ('');
                                             ^
 CONTEXT:  referenced column: c
 select * from t_float8;
-           c            
-------------------------
-                 12.123
-  1.79769313486232e+308
- -1.79769313486232e+308
-                      0
-                      0
-                      0
+            c            
+-------------------------
+                  12.123
+  1.797693134862316e+308
+ -1.797693134862316e+308
+                       0
+                       0
+                       0
 (6 rows)
 
 update ignore t_float8 set c = '12a34';
