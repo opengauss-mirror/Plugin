@@ -2079,3 +2079,67 @@ CREATE OR REPLACE FUNCTION pg_catalog.xor(varbinary, unknown) RETURNS integer LA
 CREATE OR REPLACE FUNCTION pg_catalog.xor(unknown, varbinary) RETURNS integer LANGUAGE SQL IMMUTABLE as 'select pg_catalog.xor($1::text::int8, $2::int8)';
 CREATE OR REPLACE FUNCTION pg_catalog.xor(varchar, unknown) RETURNS integer LANGUAGE SQL IMMUTABLE as 'select pg_catalog.xor($1::int8, $2::text::int8)';
 CREATE OR REPLACE FUNCTION pg_catalog.xor(unknown, varchar) RETURNS integer LANGUAGE SQL IMMUTABLE as 'select pg_catalog.xor($1::text::int8, $2::int8)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.round(int1) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(uint1) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(int2) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(uint2) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(int8) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(uint8) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(boolean) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(year) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number))::int8';
+
+CREATE OR REPLACE FUNCTION pg_catalog.round(int1, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(uint1, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(int2, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(uint2, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(int4, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(uint4, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(int8, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(uint8, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(boolean, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(year, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(binary, int4) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.round(json, int4) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), $2)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.round(int1, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(uint1, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(int2, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(uint2, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(int4, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(uint4, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(int8, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(uint8, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(boolean, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(year, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.round(binary, uint4) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), cast($2 as int4))';
+CREATE OR REPLACE FUNCTION pg_catalog.round(json, uint4) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number), cast($2 as int4))';
+
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(int1, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(uint1, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(int2, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(uint2, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(int4, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(uint4, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(int8, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(uint8, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(boolean, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(year, int4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), $2)::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(binary, int4) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(json, int4) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), $2)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(int1, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(uint1, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(int2, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(uint2, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(int4, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(uint4, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(int8, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(uint8, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(boolean, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(year, uint4) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))::int8';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(binary, uint4) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))';
+CREATE OR REPLACE FUNCTION pg_catalog.truncate(json, uint4) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))';
+
