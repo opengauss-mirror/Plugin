@@ -92,6 +92,7 @@
 #define MAX_UINT32_STR "0xffffffff"
 #define MAXBI64LEN 25
 #define BINARY_LEN(len) ((len - 2) / 2)
+#define SET_OUT_OID 3353
 
 static long convert_bit_to_int (PG_FUNCTION_ARGS, int idx);
 static TimestampTz temporal_to_timestamptz(Oid type, int index, PG_FUNCTION_ARGS);
@@ -10973,7 +10974,8 @@ char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError, bool* typ
     Oid typeOutput = InvalidOid;
     bool isVarlena = false;
     getTypeOutputInfo(anyOid, &typeOutput, &isVarlena);
-    if (isVarlena) {
+    //isVarlena is true for custom set type here, but we need to use set_out
+    if (isVarlena && typeOutput != SET_OUT_OID) {
         data = DatumGetCString(DirectFunctionCall1(textout, anyDatum));
         int reallen = VARSIZE_ANY_EXHDR(DatumGetByteaPP(anyDatum));
         int datalen  = strlen(data);

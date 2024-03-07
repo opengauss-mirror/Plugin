@@ -34,6 +34,7 @@
 #include "plugin_utils/date.h"
 #include "plugin_utils/int8.h"
 #include "plugin_utils/varbit.h"
+#include "plugin_utils/varlena.h"
 #include "catalog/gs_collation.h"
 #include "plugin_commands/mysqlmode.h"
 #endif
@@ -229,7 +230,9 @@ PG_FUNCTION_INFO_V1_PUBLIC(varlena_enum);
 extern "C" DLL_PUBLIC Datum varlena_enum(PG_FUNCTION_ARGS);
 Datum varlena_enum(PG_FUNCTION_ARGS)
 {
-    char* tmp = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    char* tmp = NULL;
+    bool hasLenError = false;
+    tmp = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasLenError);
     Datum result = DirectFunctionCall2Coll(enum_in, PG_GET_COLLATION(),
                                            CStringGetDatum(tmp), PG_GETARG_DATUM(1), fcinfo->can_ignore);
     pfree_ext(tmp);
