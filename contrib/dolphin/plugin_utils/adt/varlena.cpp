@@ -10898,4 +10898,11 @@ Datum blob_left(PG_FUNCTION_ARGS)
 
     return DirectFunctionCall1Coll(texttoraw, PG_GET_COLLATION(), txtResult, fcinfo->can_ignore);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(concat_blob);
+extern "C" DLL_PUBLIC Datum concat_blob(PG_FUNCTION_ARGS);
+Datum concat_blob(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_BYTEA_P(concat_internal("", 0, 0, fcinfo, false));
+}
 #endif
