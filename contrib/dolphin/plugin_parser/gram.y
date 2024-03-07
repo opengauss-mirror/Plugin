@@ -33451,17 +33451,31 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 				}
 			| a_expr IS UNKNOWN							%prec IS
 				{
-					BooleanTest *b = makeNode(BooleanTest);
-					b->arg = (Expr *) $1;
-					b->booltesttype = IS_UNKNOWN;
-					$$ = (Node *)b;
+					if (GetSessionContext()->enableBCmptMode) {
+						NullTest *n = makeNode(NullTest);
+						n->arg = (Expr *) $1;
+						n->nulltesttype = IS_NULL;
+						$$ = (Node *)n;
+					} else {
+						BooleanTest *b = makeNode(BooleanTest);
+						b->arg = (Expr *) $1;
+						b->booltesttype = IS_UNKNOWN;
+						$$ = (Node *)b;
+					}
 				}
 			| a_expr IS NOT UNKNOWN						%prec IS
 				{
-					BooleanTest *b = makeNode(BooleanTest);
-					b->arg = (Expr *) $1;
-					b->booltesttype = IS_NOT_UNKNOWN;
-					$$ = (Node *)b;
+					if (GetSessionContext()->enableBCmptMode) {
+						NullTest *n = makeNode(NullTest);
+						n->arg = (Expr *) $1;
+						n->nulltesttype = IS_NOT_NULL;
+						$$ = (Node *)n;
+					} else {
+						BooleanTest *b = makeNode(BooleanTest);
+						b->arg = (Expr *) $1;
+						b->booltesttype = IS_NOT_UNKNOWN;
+						$$ = (Node *)b;
+					}
 				}
 			| a_expr IS DISTINCT FROM a_expr			%prec IS
 				{
