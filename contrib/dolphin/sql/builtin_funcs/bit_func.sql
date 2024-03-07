@@ -42,19 +42,6 @@ create table test_type_table
 
 insert into test_type_table values
     (
-        1, 1, 1, 1, 1, 1, 1, 1, 1.0, 1.0, 3.14259,
-        1, 10101100, 1,
-        '2024-01-11', '11:47:58', '11:47:58.7896', '2024-01-11 11:49:25', '2024-01-11 11:49:25.1234', '2024-01-11 11:49:25', '2024-01-11 11:49:25.1234', '2024',
-        '62.345*67-89', '62.345*67-89',
-        '67890 - 12345 = 55545', '67890 - 12345 = 55545',
-        '67890 - 12345 = 55545', '67890 - 12345 = 55545', '67890 - 12345 = 55545', '67890 - 12345 = 55545',
-        '67890 - 12345 = 55545',
-        'b',
-        'a,b',
-        json_object('a', 2, 'b', 3)
-    );
-insert into test_type_table values
-    (
         127, 255, 32767, 65535, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 3.402823, 1.79769313486231, 3.141592654,
         1, 0xFFFFFFFFFFFFFFFF, 1,
         '2222-02-22', '11:59:58', '11:59:58.9999', '2222-02-22 11:59:58', '2222-02-22 11:59:58.9999', '2038-01-19 03:14:07', '2038-01-19 03:14:07.9999', '2155',
@@ -79,6 +66,7 @@ insert into test_type_table values
         json_object('a', 0)
     );
 
+set dolphin.sql_mode = 'pad_char_to_full_length';
 SELECT
     bit_length(`int1`),
     bit_length(uint1),
@@ -115,20 +103,64 @@ SELECT
     bit_length(set_t),
     bit_length(json)
 FROM test_type_table;
-drop table test_type_table;
+set dolphin.sql_mode = '';
+SELECT
+    bit_length(`int1`),
+    bit_length(uint1),
+    bit_length(`int2`),
+    bit_length(uint2),
+    bit_length(`int4`),
+    bit_length(uint4),
+    bit_length(`int8`),
+    bit_length(uint8),
+    bit_length(`float4`),
+    bit_length(`float8`),
+    bit_length(`numeric`),
+    bit_length(bit1),
+    bit_length(bit64),
+    bit_length(`boolean`),
+    bit_length(`date`),
+    bit_length(`time`),
+    bit_length(time4),
+    bit_length(`datetime`),
+    bit_length(datetime4),
+    bit_length(`timestamp`),
+    bit_length(timestamp4),
+    bit_length(`year`),
+    bit_length(`char`),
+    bit_length(`varchar`),
+    bit_length(`binary`),
+    bit_length(`varbinary`),
+    bit_length(`tinyblob`),
+    bit_length(`blob`),
+    bit_length(`mediumblob`),
+    bit_length(`longblob`),
+    bit_length(`text`),
+    bit_length(enum_t),
+    bit_length(set_t),
+    bit_length(json)
+FROM test_type_table;
 
 -- valid binary type
 create table binary_test (`binary20` binary(20), `binary45` binary(45), `binary88` binary(88));
 insert into binary_test values ('abcd', '98765 - 43210 = 55555', 'Today is a good day.');
 insert into binary_test values ('  abcd  ', '98765 - 43210 = 55555  ', '');
+set dolphin.sql_mode = 'pad_char_to_full_length';
 select bit_length(`binary20`), bit_length(`binary45`), bit_length(`binary88`) from binary_test;
-drop table binary_test;
+set dolphin.sql_mode = '';
+select bit_length(`binary20`), bit_length(`binary45`), bit_length(`binary88`) from binary_test;
 
 -- valid char type
 create table char_test (char10 char(10), char48 char(48), char97 char(97));
 insert into char_test values ('abcd', '98765 - 43210 = 55555', 'Today is a good day.');
 insert into char_test values ('  abcd  ', '', '   ');
+set dolphin.sql_mode = 'pad_char_to_full_length';
 select bit_length(char10), bit_length(char48), bit_length(char97) from char_test;
+set dolphin.sql_mode = '';
+select bit_length(char10), bit_length(char48), bit_length(char97) from char_test;
+
+drop table binary_test;
+drop table test_type_table;
 drop table char_test;
 
 drop schema db_test_bit cascade;
@@ -136,3 +168,4 @@ reset bytea_output;
 reset dolphin.sql_mode;
 reset dolphin.b_compatibility_mode;
 reset current_schema;
+
