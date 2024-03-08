@@ -31142,6 +31142,10 @@ dolphin_alias_clause:
 				}
 			| DolphinColId '(' name_list ')'
 				{
+					if (ENABLE_B_CMPT_MODE) {
+						ereport(ERROR,(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("syntax error at or near \"%s\"", $1->str), parser_errposition(@1)));
+					}
 					$$ = makeNode(Alias);
 					$$->aliasname = GetDolphinObjName($1->str, $1->is_quoted);
 					$$->colnames = $3;
