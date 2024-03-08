@@ -25955,6 +25955,7 @@ DropdbStmt: DROP DATABASE database_name
 						n->removeType = OBJECT_SCHEMA;
 						n->missing_ok = FALSE;
 						n->objects = list_make1(list_make1(makeString($3)));
+						n->behavior = DROP_CASCADE;
 						n->arguments = NIL;
 						n->concurrent = false;
 						$$ = (Node *)n;
@@ -25973,6 +25974,7 @@ DropdbStmt: DROP DATABASE database_name
 						n->missing_ok = true;
 						n->objects = list_make1(list_make1(makeString($5)));
 						n->arguments = NIL;
+						n->behavior = DROP_CASCADE;
 						n->concurrent = false;
 						$$ = (Node *)n;
 					} else {
