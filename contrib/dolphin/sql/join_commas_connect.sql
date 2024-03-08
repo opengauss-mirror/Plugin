@@ -1,0 +1,15 @@
+create schema join_commas_connect;
+set current_schema = join_commas_connect;
+create table t1(a int, b int);
+insert into t1 values (0,0),(1,1),(2,2);
+create table t2 as select * from t1;
+create table t3 as select * from t1;
+select * from (t1 a, t1 b) left join (t2 c, t2 d) on (a.a=c.a and b.a=d.a) order by 1,2,3 ;
+select * from t1 a left join (t2 c, t2 d) on (a.a=c.a and a.a=d.a) order by 1,2,3;
+select * from (t1 a, t1 b) left join t2 c on (a.a=c.a and b.a=c.a) order by 1,2,3;
+select * from (t1 a join t1 b) left join (t2 c join t2 d) on (a.a=c.a and b.a=d.a) order by 1,2,3;
+select * from t1 a left join (t2 c join t2 d) on (a.a=c.a and a.a=d.a) order by 1,2,3;
+select * from (t1 a join t1 b) left join t2 c on (a.a=c.a and b.a=c.a) order by 1,2,3;
+drop table t1,t2,t3;
+reset current_schema;
+drop schema join_commas_connect;
