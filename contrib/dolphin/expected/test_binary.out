@@ -1068,19 +1068,19 @@ INSERT INTO t1 VALUES (0x4100, 0x4100);
 SELECT HEX(concat('*', s1, '*', s2, '*')) FROM t1;
       hex       
 ----------------
- 2a41002a41002a
+ 2A41002A41002A
 (1 row)
 
 SELECT HEX(concat('*', s1, '*', s2, '*')) FROM t1;
       hex       
 ----------------
- 2a41002a41002a
+ 2A41002A41002A
 (1 row)
 
 SELECT HEX(s1), HEX(s2), HEX('*') FROM t1;
  hex  | hex  | hex 
 ------+------+-----
- 4100 | 4100 | 2a
+ 4100 | 4100 | 2A
 (1 row)
 
 DROP TABLE t1;
@@ -1316,7 +1316,7 @@ char), cast(c6 as char), cast(c7 as char) from t_binary0002 order by
 ----+----+------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----+------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
   1 | a  | abcdefghij | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz                      | a  | abcdefghij | abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
   2 | a  | a熊猫竹    | a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子                                                                                                       | a  | a熊猫竹    | a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子
-  3 | 6  | 61e7       | 61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78 | 6  | 61e7       | 61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78
+  3 | 6  | 61E7       | 61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78 | 6  | 61E7       | 61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78
   4 | a  | a熊        | a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子                                                                                      | a  | a熊        | a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子
   5 | 1  | 1110       | 11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010                                                                                      | 1  | 1110       | 11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010
   6 | 3  | 3641       | 3641077364107736410773641077364107736410773641077364107736410773641077                                                                                                                                                                                          | 3  | 3641       | 3641077364107736410773641077364107736410773641077364107736410773641077
