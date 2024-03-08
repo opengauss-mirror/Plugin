@@ -1,0 +1,30 @@
+create database db_dump dbcompatibility='b';
+create database db_restore dbcompatibility='b';
+
+\c db_dump
+set dolphin.b_compatibility_mode=on;
+create database db1;
+create database db2;
+set search_path=db1;
+create table test(a int);
+set search_path=db2;
+create table test(a int);
+
+create role user password 'Abcdef123';
+set role user password 'Abcdef123';
+drop database db1;
+drop database db2;
+reset role;
+GRANT ALL PRIVILEGES on schema db1 to user;
+GRANT ALL PRIVILEGES on schema db2 to user;
+set role user password 'Abcdef123';
+show databases;
+drop database db1;
+drop database if exists db2;
+
+\! @abs_bindir@/gs_dump db_dump -p @portstring@ -f @abs_bindir@/binary_dump.tar -F t >/dev/null 2>&1; echo $?
+\! @abs_bindir@/gs_restore -d db_restore -p @portstring@ @abs_bindir@/binary_dump.tar >/dev/null 2>&1; echo $?
+
+\c db_restore
+set dolphin.b_compatibility_mode=on;
+show databases;
