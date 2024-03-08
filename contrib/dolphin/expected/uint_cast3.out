@@ -611,9 +611,9 @@ WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃�
 CONTEXT:  referenced column: c4
 WARNING:  invalid input syntax for type double precision: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "61e7"
+WARNING:  invalid input syntax for type double precision: "61E7"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
+WARNING:  invalid input syntax for type double precision: "61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78"
 CONTEXT:  referenced column: c4
 WARNING:  invalid input syntax for type double precision: "a"
 CONTEXT:  referenced column: c2
@@ -668,13 +668,13 @@ WARNING:  invalid input syntax for type double precision: "a熊猫竹"
 CONTEXT:  referenced column: c6
 WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
 CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "61e7"
+WARNING:  invalid input syntax for type double precision: "61E7"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
+WARNING:  invalid input syntax for type double precision: "61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "61e7"
+WARNING:  invalid input syntax for type double precision: "61E7"
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
+WARNING:  invalid input syntax for type double precision: "61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78"
 CONTEXT:  referenced column: c7
 WARNING:  invalid input syntax for type double precision: "a"
 CONTEXT:  referenced column: c2

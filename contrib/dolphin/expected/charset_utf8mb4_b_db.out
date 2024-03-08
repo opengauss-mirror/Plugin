@@ -411,25 +411,25 @@ INSERT INTO t_collate_expr(fint) VALUES('01100001' collate gbk_bin collate utf8m
 INSERT INTO t_collate_expr(fint) VALUES('01100001' collate utf8mb4_general_ci collate gbk_bin); -- do not check collate
 -- -- test limit
 select 1 from t_collate_expr limit(to_hex('11') collate "binary");
-WARNING:  invalid input syntax for type bigint: "b"
+WARNING:  invalid input syntax for type bigint: "B"
  ?column? 
 ----------
 (0 rows)
 
 select 1 from t_collate_expr limit(to_hex('11') collate gbk_bin);
-WARNING:  invalid input syntax for type bigint: "b"
+WARNING:  invalid input syntax for type bigint: "B"
  ?column? 
 ----------
 (0 rows)
 
 select 1 from t_collate_expr limit(to_hex('11') collate utf8mb4_unicode_ci);
-WARNING:  invalid input syntax for type bigint: "b"
+WARNING:  invalid input syntax for type bigint: "B"
  ?column? 
 ----------
 (0 rows)
 
 select 1 from t_collate_expr limit(to_hex('11') collate gbk_bin collate utf8mb4_unicode_ci);  -- do not check collate
-WARNING:  invalid input syntax for type bigint: "b"
+WARNING:  invalid input syntax for type bigint: "B"
  ?column? 
 ----------
 (0 rows)

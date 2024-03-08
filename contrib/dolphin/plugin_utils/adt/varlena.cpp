@@ -5731,7 +5731,11 @@ static text* array_to_text_internal(FunctionCallInfo fcinfo, ArrayType* v, char*
 }
 
 #define HEXBASE 16
+#ifdef DOLPHIN
+#define HEX_CHARS "0123456789ABCDEF"
+#else
 #define HEX_CHARS "0123456789abcdef"
+#endif
 /*
  * Convert a int32 to a string containing a base 16 (hex) representation of
  * the number.
