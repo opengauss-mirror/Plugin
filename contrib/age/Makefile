@@ -172,3 +172,7 @@ include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk
 endif
 
+installcheck:	use_smartmatch
+
+use_smartmatch: 
+	cp $(top_builddir)/src/test/regress/smartmatch.pl $(srcdir)/regress/smartmatch.pl
