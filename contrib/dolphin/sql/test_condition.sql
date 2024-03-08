@@ -686,6 +686,7 @@ drop table test_bccf;
 
 
 --Type Conversion Test--
+set dolphin.b_compatibility_mode to on;
 drop table if exists typeset;
 create table typeset (
 	tyint TINYINT not null,
@@ -716,7 +717,6 @@ b'01111111', '2001-04-19','2001-04-19', '22:23:44',
 '2001-04-19 22:23:44', '1', '2001-04-19 22:23:44',0b111111111,'124'
 );
 
-set dolphin.b_compatibility_mode to on;
 select coalesce(tyint, smint) from typeset;
 select coalesce(tyint, anint) from typeset;
 select coalesce(tyint, bgint) from typeset;

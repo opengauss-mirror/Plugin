@@ -5527,6 +5527,7 @@ select interval(t2, t1) from test_bccf;
 
 drop table test_bccf;
 --Type Conversion Test--
+set dolphin.b_compatibility_mode to on;
 drop table if exists typeset;
 NOTICE:  table "typeset" does not exist, skipping
 create table typeset (
@@ -5557,7 +5558,6 @@ b'01111111', '2001-04-19','2001-04-19', '22:23:44',
 '2001-04-19 22:23:44', '2001-04-19 22:23:44', '1233454212',
 '2001-04-19 22:23:44', '1', '2001-04-19 22:23:44',0b111111111,'124'
 );
-set dolphin.b_compatibility_mode to on;
 select coalesce(tyint, smint) from typeset;
  coalesce 
 ----------
@@ -6183,9 +6183,9 @@ select coalesce(vch, txt) from typeset;
 (1 row)
 
 select coalesce(blb, txt) from typeset;
-   coalesce   
---------------
- \x1233454212
+        coalesce        
+------------------------
+ \x31323333343534323132
 (1 row)
 
 select pg_typeof(coalesce(tyint, smint)) from typeset;
@@ -7443,9 +7443,9 @@ select ifnull(vch, txt) from typeset;
 (1 row)
 
 select ifnull(blb, txt) from typeset;
-    ifnull    
---------------
- \x1233454212
+         ifnull         
+------------------------
+ \x31323333343534323132
 (1 row)
 
 select ifnull(bin, smint) from typeset;
@@ -8454,7 +8454,7 @@ select interval(tyint, flt) from typeset;
 select interval(tyint, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(tyint, dt) from typeset;
@@ -8472,16 +8472,20 @@ select interval(tyint, tmstp) from typeset;
 select interval(tyint, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(tyint, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(tyint, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8494,6 +8498,8 @@ select interval(tyint, blb) from typeset;
 (1 row)
 
 select interval(tyint, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8532,7 +8538,7 @@ select interval(smint, flt) from typeset;
 select interval(smint, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(smint, dt) from typeset;
@@ -8550,16 +8556,20 @@ select interval(smint, tmstp) from typeset;
 select interval(smint, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(smint, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(smint, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8572,6 +8582,8 @@ select interval(smint, blb) from typeset;
 (1 row)
 
 select interval(smint, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8604,7 +8616,7 @@ select interval(anint, flt) from typeset;
 select interval(anint, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(anint, dt) from typeset;
@@ -8622,16 +8634,20 @@ select interval(anint, tmstp) from typeset;
 select interval(anint, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(anint, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(anint, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8644,6 +8660,8 @@ select interval(anint, blb) from typeset;
 (1 row)
 
 select interval(anint, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8670,7 +8688,7 @@ select interval(bgint, flt) from typeset;
 select interval(bgint, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(bgint, dt) from typeset;
@@ -8688,16 +8706,20 @@ select interval(bgint, tmstp) from typeset;
 select interval(bgint, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bgint, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(bgint, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8710,6 +8732,8 @@ select interval(bgint, blb) from typeset;
 (1 row)
 
 select interval(bgint, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8730,7 +8754,7 @@ select interval(dcmal, flt) from typeset;
 select interval(dcmal, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(dcmal, dt) from typeset;
@@ -8748,16 +8772,20 @@ select interval(dcmal, tmstp) from typeset;
 select interval(dcmal, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(dcmal, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(dcmal, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8770,6 +8798,8 @@ select interval(dcmal, blb) from typeset;
 (1 row)
 
 select interval(dcmal, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8784,7 +8814,7 @@ select interval(nmric, flt) from typeset;
 select interval(nmric, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(nmric, dt) from typeset;
@@ -8802,16 +8832,20 @@ select interval(nmric, tmstp) from typeset;
 select interval(nmric, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(nmric, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(nmric, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8824,6 +8858,8 @@ select interval(nmric, blb) from typeset;
 (1 row)
 
 select interval(nmric, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8832,7 +8868,7 @@ select interval(nmric, txt) from typeset;
 select interval(flt, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(flt, dt) from typeset;
@@ -8850,16 +8886,20 @@ select interval(flt, tmstp) from typeset;
 select interval(flt, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(flt, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(flt, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8872,6 +8912,8 @@ select interval(flt, blb) from typeset;
 (1 row)
 
 select interval(flt, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -8880,31 +8922,35 @@ select interval(flt, txt) from typeset;
 select interval(bt, dt) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bt, tmstp) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bt, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bt, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bt, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bt, blb) from typeset;
@@ -8914,15 +8960,17 @@ select interval(bt, blb) from typeset;
 (1 row)
 
 select interval(bt, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(dt, tmstp) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(dt, tm) from typeset;
@@ -8932,12 +8980,16 @@ select interval(dt, tm) from typeset;
 (1 row)
 
 select interval(dt, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
 (1 row)
 
 select interval(dt, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
@@ -8950,6 +9002,8 @@ select interval(dt, blb) from typeset;
 (1 row)
 
 select interval(dt, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
@@ -8962,12 +9016,16 @@ select interval(tmstp, tm) from typeset;
 (1 row)
 
 select interval(tmstp, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
 (1 row)
 
 select interval(tmstp, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
@@ -8976,25 +9034,31 @@ select interval(tmstp, vch) from typeset;
 select interval(tmstp, blb) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(tmstp, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
 (1 row)
 
 select interval(tm, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(tm, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(tm, blb) from typeset;
@@ -9004,42 +9068,62 @@ select interval(tm, blb) from typeset;
 (1 row)
 
 select interval(tm, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(ch, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
 (1 row)
 
 select interval(ch, blb) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(ch, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
 (1 row)
 
 select interval(vch, blb) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(vch, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
 (1 row)
 
 select interval(blb, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
