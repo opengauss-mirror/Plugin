@@ -60,6 +60,7 @@
 #include "plugin_utils/date.h"
 #include "libpq/libpq-int.h"
 #include "plugin_utils/varlena.h"
+#include "catalog/pg_cast.h"
 
 #define BETWEEN_AND_ARGC 3
 #define SUBSTR_WITH_LEN_OFFSET 2
@@ -8658,33 +8659,41 @@ static void truncate_numeric_cstring(char* str)
 }
 
 //Get float8 value for parameters of gs_interval
-static float8 GetValueFromArg(Oid valtype, Datum arg)
+static float8 GetValueFromArg(Oid valtype, Datum arg, bool can_ignore)
 {
-    switch (valtype) {
-        case INT4OID:
-            return DatumGetInt32(arg);
-        case FLOAT8OID:
-            return DatumGetFloat8(arg);
-        case BOOLOID:
-            return DatumGetBool(arg);
-        default:
-            bool typIsVarlena = false;
-            Oid typOutput;
-            check_huge_toast_pointer(arg, valtype);
-            if (!OidIsValid(valtype))
-                ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
-                    errmsg("could not determine data type of gs_interval() input")));
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of gs_interval() input")));
 
-            float8 temp = 0;
-            getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-            char* str0 = OidOutputFunctionCall(typOutput, arg);
-            truncate_numeric_cstring(str0);
-            if (strlen(str0) != 0) {
-                temp = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str0)));
-            }
-            pfree_ext(str0);
-            return temp;
+    Form_pg_cast castForm;
+    HeapTuple tuple = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(valtype), ObjectIdGetDatum(FLOAT8OID));
+    if (!HeapTupleIsValid(tuple)) {
+        check_huge_toast_pointer(arg, valtype);
+
+        float8 temp = 0;
+        char* str0 = AnyElementGetCString(valtype, arg);
+        truncate_numeric_cstring(str0);
+        if (strlen(str0) != 0) {
+            temp = DatumGetFloat8(
+                DirectFunctionCall1Coll(float8in, InvalidOid, CStringGetDatum(str0), can_ignore));
+        }
+        pfree_ext(str0);
+        return temp;
     }
+
+    Oid cast_func_oid = ((Form_pg_cast)GETSTRUCT(tuple))->castfunc;
+    ReleaseSysCache(tuple);
+
+    FmgrInfo flinfo;
+    FunctionCallInfoData fcinfo;
+    fmgr_info(cast_func_oid, &flinfo);
+    InitFunctionCallInfoData(fcinfo, &flinfo, 1, InvalidOid, NULL, NULL);
+    fcinfo.arg[0] = arg;
+    fcinfo.argnull[0] = false;
+    fcinfo.argTypes[0] = valtype;
+    fcinfo.can_ignore = can_ignore;
+
+    return DatumGetFloat8(FunctionCallInvoke(&fcinfo));
 }
 
 Datum gs_interval(PG_FUNCTION_ARGS)
@@ -8695,7 +8704,7 @@ Datum gs_interval(PG_FUNCTION_ARGS)
         PG_RETURN_INT32(-1);
     Datum dt = PG_GETARG_DATUM(0);
     Oid valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
-    float8 first_value = GetValueFromArg(valtype, dt);
+    float8 first_value = GetValueFromArg(valtype, dt, fcinfo->can_ignore);
     int count=0;
     for (int i = 1; i < PG_NARGS(); i++) {
         if (PG_ARGISNULL(i)) {
@@ -8704,7 +8713,7 @@ Datum gs_interval(PG_FUNCTION_ARGS)
         }
         dt = PG_GETARG_DATUM(i);
         valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
-        float8 value = GetValueFromArg(valtype, dt);
+        float8 value = GetValueFromArg(valtype, dt, fcinfo->can_ignore);
         if (value > first_value) {
             break;
         }
