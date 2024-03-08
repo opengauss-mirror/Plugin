@@ -325,6 +325,83 @@ insert into animals (id, name) values(2,'cat');
 select * from animals;
 select id, foodtype  from food;
 
+--bugfix for trigger gram 
+drop table if exists t1;
+drop table if exists t4;
+create table t1 (i int primary key);
+create table t4 (l int primary key);
+insert into t1 values(1);
+
+delimiter |
+create trigger t4_bi before insert on t4 for each row
+begin
+declare k int;
+select i from t1 where i=1 into k;
+set new.l= k+1;
+end|
+
+delimiter ;
+
+insert into t4 values(222);
+select * from t4;
+
+drop table if exists t1 cascade;
+drop table if exists t4 cascade;
+
+--open b_compatibility_mode 
+create table t_create_trigger_001(a int);
+create table t_create_trigger_002(a int);
+
+set dolphin.b_compatibility_mode = 1;
+create trigger trigger004
+after insert on t_create_trigger_001
+for each row
+begin
+        insert into t_create_trigger_002 values(3);
+end;
+/
+
+show create trigger trigger004;
+
+delimiter //
+create trigger trigger005
+after insert on t_create_trigger_001
+for each row
+begin
+        insert into t_create_trigger_002 values(3);
+end;
+//
+delimiter ;
+
+show create trigger trigger005;
+
+drop trigger trigger005;
+drop trigger trigger004;
+--close b_compatibility_mode
+set dolphin.b_compatibility_mode = 0;
+create trigger trigger004
+after insert on t_create_trigger_001
+for each row
+begin
+        insert into t_create_trigger_002 values(3);
+end;
+/
+
+show create trigger trigger004;
+
+delimiter //
+create trigger trigger005
+after insert on t_create_trigger_001
+for each row
+begin
+        insert into t_create_trigger_002 values(3);
+end;
+//
+delimiter ;
+
+show create trigger trigger005;
+drop table t_create_trigger_001;
+drop table t_create_trigger_002;
 
 reset enable_set_variable_b_format;
 

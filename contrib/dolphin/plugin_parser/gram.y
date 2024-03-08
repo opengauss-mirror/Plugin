@@ -739,7 +739,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <boolean>	OptBlockchainWith OptAlterToBlockchain
 
 %type <boolean> TriggerForSpec TriggerForType ForeignTblWritable
-%type <ival>	TriggerActionTime
+%type <ival>	TriggerActionTime DolphinTriggerActionTime
 %type <list>	TriggerEvents TriggerOneEvent
 %type <value>	TriggerFuncArg
 %type <node>	TriggerWhen
@@ -14517,7 +14517,7 @@ DropDataSourceStmt: DROP DATA_P SOURCE_P name opt_drop_behavior
  *****************************************************************************/
 
 CreateTrigStmt:
-			CREATE opt_or_replace definer_user TRIGGER qualified_trigger_name TriggerActionTime TriggerEvents ON
+			CREATE opt_or_replace definer_user TRIGGER qualified_trigger_name DolphinTriggerActionTime TriggerEvents ON
 			dolphin_qualified_name TriggerForSpec TriggerWhen
 			EXECUTE PROCEDURE func_name '(' TriggerFuncArgs ')'
 				{
@@ -14583,7 +14583,7 @@ CreateTrigStmt:
 					n->is_follows = NULL;
 					$$ = (Node *)n;
 				}
-			| CREATE opt_or_replace definer_user TRIGGER qualified_trigger_name TriggerActionTime TriggerEvents ON
+			| CREATE opt_or_replace definer_user TRIGGER qualified_trigger_name DolphinTriggerActionTime TriggerEvents ON
 			dolphin_qualified_name TriggerForSpec TriggerWhen
 			trigger_order
 			{
@@ -14627,7 +14627,7 @@ CreateTrigStmt:
 					n->constrrel = NULL;
 					$$ = (Node *)n;
 				}
-			| CREATE opt_or_replace definer_user TRIGGER IF_P NOT EXISTS qualified_trigger_name TriggerActionTime TriggerEvents ON
+			| CREATE opt_or_replace definer_user TRIGGER IF_P NOT EXISTS qualified_trigger_name DolphinTriggerActionTime TriggerEvents ON
 			dolphin_qualified_name TriggerForSpec TriggerWhen
 			trigger_order
 			{
@@ -14685,11 +14685,6 @@ triggerbody_subprogram_or_single:
 				{
 					GetSessionContext()->single_line_trigger_begin = yylloc;
 				}
-				if (strcmp(";", u_sess->attr.attr_common.delimiter_name) != 0 ||
-					GetSessionContext()->enableBCmptMode)
-				{
-					GetSessionContext()->dolphin_kw_mask = B_KWMASK_CREATE_TRIGGER;
-				}
 			} trigger_body_stmt
 				{
 					Node* node = (Node*)$2;
@@ -14723,7 +14718,7 @@ trigger_body_stmt:
 			| VariableSetStmt { $$ = (Node*)$1; }
 			| CallFuncStmt { $$ = (Node*)$1; }
 			| subprogram_body { $$ = (Node*)$1; }
-			| BEGIN_B_BLOCK b_proc_body {$$ = (Node*)$2;}
+			| BEGIN_B_BLOCK b_proc_body { $$ = (Node*)$2; }
 			;
 
 TriggerActionTime:
@@ -14731,6 +14726,17 @@ TriggerActionTime:
 			| AFTER								{ $$ = TRIGGER_TYPE_AFTER; }
 			| INSTEAD OF						{ $$ = TRIGGER_TYPE_INSTEAD; }
 		;
+
+DolphinTriggerActionTime:
+			TriggerActionTime
+			{
+				/* Notice： Do not use this gram except in create trigger statement */
+				if (strcmp(";", u_sess->attr.attr_common.delimiter_name) != 0 )
+				{
+					GetSessionContext()->dolphin_kw_mask = B_KWMASK_CREATE_TRIGGER;
+				}
+				$$ = $1;
+			}
 
 TriggerEvents:
 			TriggerOneEvent
