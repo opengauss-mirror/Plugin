@@ -84,6 +84,12 @@ c30:DECIMAL
 c31:JSON
 c32:CHAR
 c33:CHAR
+QUERY PLAN:VARCHAR
+Hash Join
+  Hash Cond: (a.c1 = b.c2)
+  ->  Seq Scan on t3 a
+  ->  Hash
+        ->  Seq Scan on t3 b
 res_getBoolean: true
 res_getInt: 1
 res_getString: 1
