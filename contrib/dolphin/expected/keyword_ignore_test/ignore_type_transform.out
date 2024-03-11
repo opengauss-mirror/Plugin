@@ -705,6 +705,7 @@ select * from t_nchar;
 (3 rows)
 
 -- test for character converting
+set dolphin.b_compatibility_mode to on;
 drop table if exists t_character;
 drop table if exists t_text;
 create table t_character(cont character);

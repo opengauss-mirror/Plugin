@@ -32283,7 +32283,7 @@ CharacterWithoutLength:	 character
 					$$ = SystemTypeName($1);
 
 					/* char defaults to char(1), varchar to no limit */
-					if (!ENABLE_B_CMPT_MODE && strcmp($1, "bpchar") == 0) {
+					if (strcmp($1, "bpchar") == 0) {
 						$$->typmods = list_make1(makeIntConst(1, -1));
 					}
 
@@ -32294,9 +32294,7 @@ CharacterWithoutLength:	 character
 					$$ = SystemTypeName((char *)("bpchar"));
 
 					/* char defaults to char(1), varchar to no limit */
-					if (!ENABLE_B_CMPT_MODE) {
-						$$->typmods = list_make1(makeIntConst(1, -1));
-					}
+					$$->typmods = list_make1(makeIntConst(1, -1));
 
 					$$->location = @1;
 				}
@@ -42536,6 +42534,20 @@ static inline void ChangeBpcharCastType(TypeName* typname)
 	if (lnext(list_head(typname->names)) != NULL &&
 		strcmp(((Value*)lsecond(typname->names))->val.str, "bpchar") == 0) {
 		((Value*)lsecond(typname->names))->val.str = "varchar";
+		/*
+		 * something hack. cause the 'Character' gram is for create table and cast at same time.
+		 * In create table case, 'char' means 'char(1)', while in cast case, 'char' means 'varchar'(no limit).
+		 * this function is called in cast/convert case. so we need to change 'char' to 'varchar'.
+		 * but when we enter this function. the 'char' has change to 'char(1)', and we need to distinguish
+		 * the '(1)' is added by user or gram.y. cause in cast case, 'char(1)' means 'char(1)'.
+		 * so I try to use location to distinguish the '(1)' is added by user or gram.y. since the location of
+		 * '(1)' added by gram.y is always -1.
+		*/
+		A_Const* typmods = (A_Const*)lfirst(list_head(typname->typmods));
+		if (typmods->val.val.ival == 1 && typmods->location == -1) {
+			list_free_deep(typname->typmods);
+			typname->typmods = NIL;
+		}
 	}
 }
 
