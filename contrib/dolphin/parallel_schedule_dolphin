@@ -125,7 +125,7 @@ test: test_mysql_operator test_op_xor_unsignedint test_op_blob test_op_xor_boola
 
 test: json_array json_object json_quote json_contains json_contains_path json_extract json_unquote  json_keys json_search json_array_append
 
-test: show b_comments ansi_quotes_start b_system_view test_proxy test_to_days
+test: show b_comments ansi_quotes_start b_system_view test_proxy test_to_days b_format_drop_database
 
 test: pl_debugger_server pl_debugger_client load load2 flush ansi_quotes_test
 

@@ -1,0 +1,72 @@
+create database db_dump dbcompatibility='b';
+create database db_restore dbcompatibility='b';
+\c db_dump
+set dolphin.b_compatibility_mode=on;
+create database db1;
+create database db2;
+set search_path=db1;
+create table test(a int);
+set search_path=db2;
+create table test(a int);
+create role user password 'Abcdef123';
+NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
+set role user password 'Abcdef123';
+drop database db1;
+ERROR:  permission denied for schema db1
+DETAIL:  N/A
+drop database db2;
+ERROR:  permission denied for schema db2
+DETAIL:  N/A
+reset role;
+GRANT ALL PRIVILEGES on schema db1 to user;
+GRANT ALL PRIVILEGES on schema db2 to user;
+set role user password 'Abcdef123';
+show databases;
+      Database      
+--------------------
+ information_schema
+ db1
+ db2
+ db4ai
+ dbe_pldebugger
+ dbe_pldeveloper
+ dbe_sql_util
+ dolphin_catalog
+ performance_schema
+ pg_catalog
+ public
+ sqladvisor
+(12 rows)
+
+drop database db1;
+NOTICE:  drop cascades to table db1.test
+drop database if exists db2;
+NOTICE:  drop cascades to table test
+\! @abs_bindir@/gs_dump db_dump -p @portstring@ -f @abs_bindir@/binary_dump.tar -F t >/dev/null 2>&1; echo $?
+0
+\! @abs_bindir@/gs_restore -d db_restore -p @portstring@ @abs_bindir@/binary_dump.tar >/dev/null 2>&1; echo $?
+0
+\c db_restore
+set dolphin.b_compatibility_mode=on;
+show databases;
+      Database      
+--------------------
+ information_schema
+ blockchain
+ coverage
+ cstore
+ db4ai
+ dbe_perf
+ dbe_pldebugger
+ dbe_pldeveloper
+ dbe_sql_util
+ dolphin_catalog
+ performance_schema
+ pg_catalog
+ pg_toast
+ pkg_service
+ public
+ snapshot
+ sqladvisor
+(17 rows)
+
