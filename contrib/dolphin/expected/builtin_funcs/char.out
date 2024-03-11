@@ -405,7 +405,7 @@ select pg_catalog.chara('2000-11-11 11:11:11'::timestamptz);
 select pg_catalog.chara('11:11:11'::timetz);
  chara 
 -------
- \x14
+ >`-
 (1 row)
 
 select pg_catalog.chara(b'1'::bit);

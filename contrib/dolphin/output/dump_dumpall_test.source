@@ -587,13 +587,13 @@ select substr(E'\\xDEADBEEF'::bytea,2,2);
 select hex(-1);
        hex        
 ------------------
- ffffffffffffffff
+ FFFFFFFFFFFFFFFF
 (1 row)
 
 select hex(9223372036854775807);
        hex        
 ------------------
- 7fffffffffffffff
+ 7FFFFFFFFFFFFFFF
 (1 row)
 
 set dolphin.b_compatibility_mode = 1;
@@ -1096,13 +1096,13 @@ select substr(E'\\xDEADBEEF'::bytea,2,2);
 select hex(-1);
        hex        
 ------------------
- ffffffffffffffff
+ FFFFFFFFFFFFFFFF
 (1 row)
 
 select hex(9223372036854775807);
        hex        
 ------------------
- 7fffffffffffffff
+ 7FFFFFFFFFFFFFFF
 (1 row)
 
 set dolphin.b_compatibility_mode = 1;
@@ -1606,13 +1606,13 @@ select substr(E'\\xDEADBEEF'::bytea,2,2);
 select hex(-1);
        hex        
 ------------------
- ffffffffffffffff
+ FFFFFFFFFFFFFFFF
 (1 row)
 
 select hex(9223372036854775807);
        hex        
 ------------------
- 7fffffffffffffff
+ 7FFFFFFFFFFFFFFF
 (1 row)
 
 set dolphin.b_compatibility_mode = 1;
