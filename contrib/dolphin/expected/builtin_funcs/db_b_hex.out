@@ -7,7 +7,7 @@ SQL function "int1" statement 1
 referenced column: hex
  hex 
 -----
- 7f
+ 7F
 (1 row)
 
 select hex(int1(256));
@@ -17,21 +17,21 @@ SQL function "int1" statement 1
 referenced column: hex
  hex 
 -----
- 7f
+ 7F
 (1 row)
 
 -- max value for int32
 select hex(2147483647);
    hex    
 ----------
- 7fffffff
+ 7FFFFFFF
 (1 row)
 
 -- max value for int64
 select hex(9223372036854775807);
        hex        
 ------------------
- 7fffffffffffffff
+ 7FFFFFFFFFFFFFFF
 (1 row)
 
 -- out of range for int64
@@ -50,26 +50,26 @@ select hex(9223372036854775811);
 select hex(1546546574654561321324564564543453);
        hex        
 ------------------
- ffffffffffffffff
+ FFFFFFFFFFFFFFFF
 (1 row)
 
 -- test for negative numbers
 select hex(-1);
        hex        
 ------------------
- ffffffffffffffff
+ FFFFFFFFFFFFFFFF
 (1 row)
 
 select hex(-2);
        hex        
 ------------------
- fffffffffffffffe
+ FFFFFFFFFFFFFFFE
 (1 row)
 
 select hex(-123123123);
        hex        
 ------------------
- fffffffff8a94a4d
+ FFFFFFFFF8A94A4D
 (1 row)
 
 select hex(-9223372036854775808);
@@ -87,20 +87,20 @@ select hex(-9223372036854775807);
 select hex(-9223372036854775809);
        hex        
 ------------------
- ffffffffffffffff
+ FFFFFFFFFFFFFFFF
 (1 row)
 
 -- test for float
 select hex(12.34);
  hex 
 -----
- c
+ C
 (1 row)
 
 select hex(12.55);
  hex 
 -----
- d
+ D
 (1 row)
 
 -- test for bit
@@ -119,13 +119,13 @@ select hex(b'1');
 select hex(b'1111');
  hex 
 -----
- 0f
+ 0F
 (1 row)
 
 select hex(b'111100');
  hex 
 -----
- 3c
+ 3C
 (1 row)
 
 select hex(B'1110110');
@@ -137,7 +137,7 @@ select hex(B'1110110');
 select hex(B'1110110111111100001110111110111');
    hex    
 ----------
- 76fe1df7
+ 76FE1DF7
 (1 row)
 
 select hex(b'0000');
@@ -197,7 +197,7 @@ select hex('abcde');
 select hex('12.34');
     hex     
 ------------
- 31322e3334
+ 31322E3334
 (1 row)
 
 select hex(NULL);
@@ -229,7 +229,7 @@ insert into bytea_to_hex_test values (E'\\xDEADBEEF');
 select hex(c1) from bytea_to_hex_test;
    hex    
 ----------
- deadbeef
+ DEADBEEF
 (1 row)
 
 -- test for blob with hex format
@@ -244,8 +244,30 @@ select hex(c1) as "tinyblob_result", hex(c2) as "blob_result", hex(c3) as "mediu
  3132333132      | 3132333132  | 3132333132        | 3132333132
 (2 rows)
 
+set b_format_behavior_compat_options=enable_set_variables;
+set bytea_output=escape;
+create table t_binary(
+c1 int not null,
+c2 binary,
+c3 binary(10),
+c4 binary(255),
+c5 varbinary(1),
+c6 varbinary(10),
+c7 varbinary(255)) charset utf8mb3;
+WARNING:  utf8mb3 is not a valid encoding name. default value set
+insert into t_binary values (
+1, substr(hex('a熊猫竹竹爱吃竹子'),1,1), substr(hex('a熊猫竹竹爱吃竹子'),1,4), substr(repeat(hex('a熊猫竹竹爱吃竹子'), 10),1,255),
+substr(hex('a熊猫竹竹爱吃竹子'),1,1), substr(hex('a熊猫竹竹爱吃竹子'),1,4), substr(repeat(hex('a熊猫竹竹爱吃竹子'), 10),1,255));
+select c1, cast(c2 as char), cast(c3 as char), cast(c4 as char), cast(c5 as
+char), cast(c6 as char), cast(c7 as char) from t_binary order by
+1,2,3,4,5,6,7;
+ c1 | c2 |  c3  |                                                                                                                               c4                                                                                                                                | c5 |  c6  |                                                                                                                               c7                                                                                                                                
+----+----+------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----+------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  1 | 6  | 61E7 | 61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78 | 6  | 61E7 | 61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78
+(1 row)
+
+drop table if exists t_binary;
+drop table if exists t1;
 drop schema db_b_hex cascade;
-NOTICE:  drop cascades to 2 other objects
-DETAIL:  drop cascades to table bytea_to_hex_test
-drop cascades to table t1
+NOTICE:  drop cascades to table bytea_to_hex_test
 reset current_schema;
