@@ -3563,7 +3563,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`binary&json` = test_j
 ERROR:  failed to find conversion function from "binary" to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`binary||json` = test_json_table.`binary` || test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary||json
 UPDATE test_json_type, test_json_table SET test_json_type.`binary&&json` = test_json_table.`binary` && test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary&&json
 UPDATE test_json_type, test_json_table SET test_json_type.`binary_div_json` = test_json_table.`binary` div test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
@@ -3588,7 +3592,11 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(anyelement,json) line 3 at RETURN
 referenced column: binary_xor_json
 UPDATE test_json_type, test_json_table SET test_json_type.`binary_and_json` = test_json_table.`binary` and test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_and_json
 UPDATE test_json_type, test_json_table SET test_json_type.`binary_or_json` = test_json_table.`binary` or test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_json
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary+json` = test_json_table.`varbinary` + test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: varbinary+json
@@ -3630,7 +3638,11 @@ UPDATE test_json_type, test_json_table SET test_json_type.`varbinary&json` = tes
 ERROR:  failed to find conversion function from "varbinary" to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary||json` = test_json_table.`varbinary` || test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary||json
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary&&json` = test_json_table.`varbinary` && test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary&&json
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary_div_json` = test_json_table.`varbinary` div test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  PL/pgSQL function "div"(anyelement,json) line 3 at RETURN
@@ -3655,7 +3667,11 @@ CONTEXT:  SQL statement "SELECT (select a ^ b)"
 PL/pgSQL function "xor"(anyelement,json) line 3 at RETURN
 referenced column: varbinary_xor_json
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary_and_json` = test_json_table.`varbinary` and test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_and_json
 UPDATE test_json_type, test_json_table SET test_json_type.`varbinary_or_json` = test_json_table.`varbinary` or test_json_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_json
 UPDATE test_json_type, test_json_table SET test_json_type.`tinyblob+json` = test_json_table.`tinyblob` + test_json_table.`json`;
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: tinyblob+json
@@ -5380,6 +5396,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json&binary` = test_j
 ERROR:  failed to find conversion function from "binary" to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json||binary` = test_json_table.`json` || test_json_table.`binary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: json||binary
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&binary` = test_json_table.`json` && test_json_table.`binary`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_binary` = test_json_table.`json` div test_json_table.`binary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -5406,6 +5424,8 @@ PL/pgSQL function "xor"(json,anyelement) line 3 at RETURN
 referenced column: json_xor_binary
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_binary` = test_json_table.`json` and test_json_table.`binary`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_binary` = test_json_table.`json` or test_json_table.`binary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: json_or_binary
 UPDATE test_json_type, test_json_table SET test_json_type.`json+varbinary` = test_json_table.`json` + test_json_table.`varbinary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+varbinary
@@ -5447,6 +5467,8 @@ UPDATE test_json_type, test_json_table SET test_json_type.`json&varbinary` = tes
 ERROR:  failed to find conversion function from "varbinary" to bigint
 CONTEXT:  referenced column: test_json_type
 UPDATE test_json_type, test_json_table SET test_json_type.`json||varbinary` = test_json_table.`json` || test_json_table.`varbinary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: json||varbinary
 UPDATE test_json_type, test_json_table SET test_json_type.`json&&varbinary` = test_json_table.`json` && test_json_table.`varbinary`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_div_varbinary` = test_json_table.`json` div test_json_table.`varbinary`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
@@ -5473,6 +5495,8 @@ PL/pgSQL function "xor"(json,anyelement) line 3 at RETURN
 referenced column: json_xor_varbinary
 UPDATE test_json_type, test_json_table SET test_json_type.`json_and_varbinary` = test_json_table.`json` and test_json_table.`varbinary`;
 UPDATE test_json_type, test_json_table SET test_json_type.`json_or_varbinary` = test_json_table.`json` or test_json_table.`varbinary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: json_or_varbinary
 UPDATE test_json_type, test_json_table SET test_json_type.`json+tinyblob` = test_json_table.`json` + test_json_table.`tinyblob`;
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: json+tinyblob
