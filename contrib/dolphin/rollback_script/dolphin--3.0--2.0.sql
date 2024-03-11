@@ -108,8 +108,6 @@ update pg_catalog.pg_type set typreceive = '-', typsend = '-'  where oid = 'year
 end
 $$;
 
-DROP CAST IF EXISTS ("binary" AS boolean);
-DROP CAST IF EXISTS ("varbinary" AS boolean);
 DROP CAST IF EXISTS (blob AS boolean);
 DROP CAST IF EXISTS (tinyblob AS boolean);
 DROP CAST IF EXISTS (mediumblob AS boolean);
@@ -118,8 +116,6 @@ DROP CAST IF EXISTS (anyset AS boolean);
 DROP FUNCTION IF EXISTS pg_catalog.any2boolean(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.enum_boolean(anyenum) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.set_boolean(anyset) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.binary2boolean(binary) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.varbinary2boolean(varbinary) CASCADE;
 
 DROP OPERATOR IF EXISTS pg_catalog.=(year, tinyblob);
 DROP OPERATOR IF EXISTS pg_catalog.=(tinyblob, year);

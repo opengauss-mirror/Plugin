@@ -1387,3 +1387,8 @@ begin
 end;
 $$
 language plpgsql;
+
+DROP CAST IF EXISTS ("binary" AS boolean);
+DROP CAST IF EXISTS ("varbinary" AS boolean);
+DROP FUNCTION IF EXISTS pg_catalog.binary2boolean(binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary2boolean(varbinary) CASCADE;

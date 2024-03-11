@@ -124,5 +124,35 @@ WARNING:  Truncated incorrect DOUBLE value: 1.23a
  t        | f        | f        | t        | f        | t        | f        | t
 (1 row)
 
+select `varchar` is true, `varchar` is not true, `varchar` is false, `varchar` is not false, `varchar` is unknown, `varchar` is not unknown, `varchar` is null, `varchar` is not null from test_type_table;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+ ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------+----------+----------+----------+----------
+ t        | f        | f        | t        | f        | t        | f        | t
+(1 row)
+
+select `binary` is true, `binary` is not true, `binary` is false, `binary` is not false, `binary` is unknown, `binary` is not unknown, `binary` is null, `binary` is not null from test_type_table;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+ ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------+----------+----------+----------+----------
+ t        | f        | f        | t        | f        | t        | f        | t
+(1 row)
+
+select `varbinary` is true, `varbinary` is not true, `varbinary` is false, `varbinary` is not false, `varbinary` is unknown, `varbinary` is not unknown, `varbinary` is null, `varbinary` is not null from test_type_table;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+ ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------+----------+----------+----------+----------
+ t        | f        | f        | t        | f        | t        | f        | t
+(1 row)
+
 drop schema is_clause cascade;
 NOTICE:  drop cascades to table test_type_table

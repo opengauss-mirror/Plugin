@@ -2127,3 +2127,12 @@ CREATE OR REPLACE FUNCTION pg_catalog.xor(varbinary, unknown) RETURNS integer LA
 CREATE OR REPLACE FUNCTION pg_catalog.xor(unknown, varbinary) RETURNS integer LANGUAGE SQL IMMUTABLE as 'select pg_catalog.xor($1::text::int8, $2::int8)';
 CREATE OR REPLACE FUNCTION pg_catalog.xor(varchar, unknown) RETURNS integer LANGUAGE SQL IMMUTABLE as 'select pg_catalog.xor($1::int8, $2::text::int8)';
 CREATE OR REPLACE FUNCTION pg_catalog.xor(unknown, varchar) RETURNS integer LANGUAGE SQL IMMUTABLE as 'select pg_catalog.xor($1::text::int8, $2::int8)';
+
+DROP CAST IF EXISTS ("binary" AS boolean) CASCADE;
+DROP CAST IF EXISTS ("varbinary" AS boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.binary2boolean(binary) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary2boolean(varbinary) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.binary2boolean(binary) RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as 'select char_bool($1::char)';
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary2boolean(varbinary) RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as 'select varchar_bool($1::varchar)';
+CREATE CAST ("binary" AS boolean) WITH FUNCTION pg_catalog.binary2boolean(binary) AS ASSIGNMENT;
+CREATE CAST ("varbinary" AS boolean) WITH FUNCTION pg_catalog.varbinary2boolean(varbinary) AS ASSIGNMENT;
