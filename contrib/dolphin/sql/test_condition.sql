@@ -704,19 +704,16 @@ create table typeset (
 	blb   BLOB not null,
 	txt   TEXT not null,
 	bin   binary,
-	vbin  varbinary(50)
+	vbin  varbinary(50),
+	bit   bit(64),
+	cset   set('123','124','125')
 );
 
-insert into typeset (
-tyint,smint,anint,bgint,dcmal,nmric,flt,
-bt,dt,tmstp,tm,
-ch,vch,blb,
-txt,bin,vbin
-) values (
+insert into typeset values (
 127, 127, 127, 127, 127.234, 127.32, 127.213,
 b'01111111', '2001-04-19','2001-04-19', '22:23:44',
 '2001-04-19 22:23:44', '2001-04-19 22:23:44', '1233454212',
-'2001-04-19 22:23:44', '1', '2001-04-19 22:23:44'
+'2001-04-19 22:23:44', '1', '2001-04-19 22:23:44',0b111111111,'124'
 );
 
 set dolphin.b_compatibility_mode to on;
@@ -1310,7 +1307,7 @@ select interval(vch, txt) from typeset;
 select interval(blb, txt) from typeset;
 
 
-
+set dolphin.b_compatibility_mode to on; 
 select strcmp(tyint, smint) from typeset;
 select strcmp(tyint, anint) from typeset;
 select strcmp(tyint, bgint) from typeset;
@@ -1416,6 +1413,9 @@ select strcmp(ch, txt) from typeset;
 select strcmp(vch, blb) from typeset;
 select strcmp(vch, txt) from typeset;
 select strcmp(blb, txt) from typeset;
+select strcmp(tyint, cset) from typeset;
+select strcmp(tyint, bit) from typeset;
+select strcmp('123   ','123');
 
 create table t1 (a int, b bigint unsigned);
 create table t2 (c int);

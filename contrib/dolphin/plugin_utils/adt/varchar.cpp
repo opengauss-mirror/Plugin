@@ -30,6 +30,10 @@
 
 #include "miscadmin.h"
 
+#ifdef DOLPHIN
+#include "plugin_utils/varlena.h"
+#endif
+
 #define NOT_NULL_ARG(n)                                         \
     do {                                                        \
         if (PG_GETARG_POINTER(n) == NULL) {                     \
@@ -228,16 +232,6 @@ Datum input_bpcharin(char* str, Oid typioparam, int32 atttypmod)
 }
 
 #ifdef DOLPHIN
-void trim_trailing_space(char* str)
-{
-    char* p = NULL;
-
-    p = str + strlen(str);
-    for (p--; p >= str && *p == ' '; p--) {
-        *p = '\0';
-    }
-}
-
 inline char* run_func_without_extra_float_digits(PGFunction func, Datum arg1)
 {
     char* tmp;
