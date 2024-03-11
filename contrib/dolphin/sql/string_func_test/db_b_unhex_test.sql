@@ -34,5 +34,7 @@ set bytea_output = escape;
 SELECT unhex(32) ^ 3;
 SELECT unhex(35 + 1), unhex(33 - 1), unhex(12 * 3);
 
+select +unhex(36),-unhex('43');
+
 drop schema unhex_test cascade;
 reset current_schema;

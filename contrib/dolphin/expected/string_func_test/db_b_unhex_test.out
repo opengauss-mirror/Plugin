@@ -112,6 +112,13 @@ SELECT unhex(35 + 1), unhex(33 - 1), unhex(12 * 3);
  6     | 2     | 6
 (1 row)
 
+select +unhex(36),-unhex('43');
+WARNING:  invalid input syntax for type double precision: "C"
+ ?column? | ?column? 
+----------+----------
+        6 |       -0
+(1 row)
+
 drop schema unhex_test cascade;
 NOTICE:  drop cascades to table test_unhex
 reset current_schema;
