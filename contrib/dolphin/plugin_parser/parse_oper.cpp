@@ -570,7 +570,7 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
         } else if (ltypeId == BLOBOID && rtypeId == UNKNOWNOID) {
             rtypeId = BLOBOID;
         } else if (ltypeId == UNKNOWNOID && rtypeId == BLOBOID) {
-            rtypeId = BLOBOID;
+            ltypeId = BLOBOID;
         }
     }
     if (GetSessionContext()->enableBCmptMode) {

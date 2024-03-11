@@ -80,5 +80,106 @@ select '1'::blob ^ 11::numeric;
        10
 (1 row)
 
+-- test blob op numeric
+create table blob_table(`tinyblob` tinyblob,`blob` blob, `mediumblob` mediumblob, `longblob` longblob);
+insert into blob_table values('1.23', '1.23', '1.23', '1.23'), ('1.0', '1.0', '1.0', '1.0'), ('1', '1', '1', '1');
+create table res_table(res boolean);
+select `tinyblob` < 1.1::float8 from blob_table;
+ ?column? 
+----------
+ f
+ t
+ t
+(3 rows)
+
+select `blob` <= 1::int1 from blob_table;
+ ?column? 
+----------
+ f
+ t
+ t
+(3 rows)
+
+select `mediumblob` > 1::numeric from blob_table;
+ ?column? 
+----------
+ t
+ f
+ f
+(3 rows)
+
+insert into res_table select 1<>`longblob` from blob_table;
+select * from res_table;
+ res 
+-----
+ t
+ f
+ f
+(3 rows)
+
+insert into blob_table values('a', 'a', 'a', 'a');
+select `blob` = 1.1 from blob_table;
+WARNING:  invalid input syntax for type double precision: "a"
+ ?column? 
+----------
+ f
+ f
+ f
+ f
+(4 rows)
+
+select `blob` = '1.0' from blob_table;
+ ?column? 
+----------
+ f
+ t
+ f
+ f
+(4 rows)
+
+select `tinyblob` < 1.1::float8 from blob_table;
+WARNING:  invalid input syntax for type double precision: "a"
+ ?column? 
+----------
+ f
+ t
+ t
+ t
+(4 rows)
+
+select `blob` <= 1::int1 from blob_table;
+WARNING:  invalid input syntax for type double precision: "a"
+ ?column? 
+----------
+ f
+ t
+ t
+ t
+(4 rows)
+
+select `mediumblob` > 1::numeric from blob_table;
+WARNING:  invalid input syntax for type double precision: "a"
+ ?column? 
+----------
+ t
+ f
+ f
+ f
+(4 rows)
+
+insert into res_table select 1<>`longblob` from blob_table;
+ERROR:  invalid input syntax for type double precision: "a"
+CONTEXT:  referenced column: res
+select * from res_table;
+ res 
+-----
+ t
+ f
+ f
+(3 rows)
+
 drop schema test_op_blob cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table blob_table
+drop cascades to table res_table
 reset current_schema;
