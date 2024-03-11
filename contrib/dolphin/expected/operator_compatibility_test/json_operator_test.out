@@ -7076,7 +7076,7 @@ json_xor_json         | 0
 json_and_json         | f
 json_or_json          | f
 +json                 | {"a": 1, "b": 2}
--json                 | 0
+-json                 | -0
 ~json                 | 18446744073709551615
 @json                 | 0
 !json                 | t
