@@ -19584,16 +19584,18 @@ constraint_elem: ColId con_asc_desc
 				}
 			| ColId '(' Iconst ')' opt_asc_desc
 				{
-					PrefixKey* pkey = makeNode(PrefixKey);
-					pkey->arg = (Expr*)makeColumnRef(pstrdup($1), NIL, @1, yyscanner);
-					pkey->length = $3;
+					PrefixKey* pk = makeNode(PrefixKey);
+					pk->arg = (Expr*)makeColumnRef(pstrdup($1), NIL, @1, yyscanner);
+					pk->length = $3;
+
 					$$ = makeNode(IndexElem);
 					$$->name = NULL;
-					$$->expr = (Node*)pkey;
+					$$->expr = (Node*)pk;
 					$$->indexcolname = NULL;
-					$$->collation = NULL;
-					$$->opclass = NULL;
+					$$->collation = NIL;
+					$$->opclass = NIL;
 					$$->ordering = (SortByDir)$5;
+					$$->nulls_ordering = SORTBY_NULLS_DEFAULT;
 				}
 			| '(' a_expr ')' opt_asc_desc
 				{
