@@ -1989,6 +1989,15 @@ Datum intervaltypmodin(PG_FUNCTION_ARGS)
             case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE):
             case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
             case INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
+#ifdef DOLPHIN
+            case INTERVAL_MASK(MICROSECOND):
+            case INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND):
+            case INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND):
+            case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND):
+            case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                 INTERVAL_MASK(MICROSECOND):
+            case INTERVAL_MASK(WEEK):
+#endif
             case INTERVAL_FULL_RANGE:
                 /* all OK */
                 break;
@@ -1999,7 +2008,12 @@ Datum intervaltypmodin(PG_FUNCTION_ARGS)
 
     if (n == 1) {
         if (tl[0] != INTERVAL_FULL_RANGE)
-            typmod = INTERVAL_TYPMOD(INTERVAL_FULL_PRECISION, (unsigned int32)tl[0]);
+#ifdef DOLPHIN
+            typmod = tl[0] <= INTERVAL_RANGE_MASK ? INTERVAL_TYPMOD(INTERVAL_FULL_PRECISION, (unsigned int)tl[0])
+                                                  : tl[0];
+#else
+            typmod = INTERVAL_TYPMOD(INTERVAL_FULL_PRECISION, (unsigned int)tl[0]);
+#endif
         else
             typmod = -1;
     } else if (n == 2) {
@@ -2011,9 +2025,18 @@ Datum intervaltypmodin(PG_FUNCTION_ARGS)
             ereport(WARNING,
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                     errmsg("INTERVAL(%d) precision reduced to maximum allowed, %d", tl[1], MAX_INTERVAL_PRECISION)));
-            typmod = INTERVAL_TYPMOD(MAX_INTERVAL_PRECISION, (unsigned int32)tl[0]);
+#ifdef DOLPHIN
+            typmod = tl[0] <= INTERVAL_RANGE_MASK ? INTERVAL_TYPMOD(MAX_INTERVAL_PRECISION, (unsigned int)tl[0])
+                                                  : tl[0];
+#else
+            typmod = INTERVAL_TYPMOD(MAX_INTERVAL_PRECISION, (unsigned int)tl[0]);
+#endif
         } else
-            typmod = INTERVAL_TYPMOD((unsigned int32)tl[1], (unsigned int32)tl[0]);
+#ifdef DOLPHIN
+            typmod = tl[0] <= INTERVAL_RANGE_MASK ? INTERVAL_TYPMOD((unsigned int)tl[1], (unsigned int)tl[0]) : tl[0];
+#else
+            typmod = INTERVAL_TYPMOD((unsigned int)tl[1], (unsigned int)tl[0]);
+#endif
     } else {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("invalid INTERVAL type modifier")));
         typmod = 0; /* keep compiler quiet */
@@ -2250,7 +2273,11 @@ static void AdjustIntervalForTypmod(Interval* interval, int32 typmod)
      * typmod to -1 is the convention for all data types.
      */
     if (typmod >= 0) {
+#ifdef DOLPHIN
+        int range = (typmod == INTERVAL_MASK(WEEK)) ? typmod : INTERVAL_RANGE(typmod);
+#else
         int range = INTERVAL_RANGE(typmod);
+#endif
         int precision = INTERVAL_PRECISION(typmod);
         // mode character decided by typmod
         char type_mode = ' ';
@@ -2335,6 +2362,17 @@ static void AdjustIntervalForTypmod(Interval* interval, int32 typmod)
             /* fractional-second rounding will be dealt with below */
             // set second mode character
             type_mode = 'S';
+#ifdef DOLPHIN
+        } else if (range == INTERVAL_MASK(MICROSECOND) ||
+                   range == (INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)) ||
+                   range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)) ||
+                   range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                             INTERVAL_MASK(MICROSECOND)) ||
+                   range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                             INTERVAL_MASK(MICROSECOND))) {
+        } else if (range == INTERVAL_MASK(WEEK)) {
+            type_mode = 'W';
+#endif
         } else
             ereport(
                 ERROR, (errcode(ERRCODE_UNRECOGNIZED_NODE_TYPE), errmsg("unrecognized interval typmod: %d", typmod)));

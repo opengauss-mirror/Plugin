@@ -29,7 +29,7 @@ test: nvarchar regexp upsert zerofill test_set_charset test_optimize test_charse
 
 test: test_binary test_blob test_datatype test_fixed test_mysql_enum bxconst_test table_option_separator grant_user_to_user compress_modify_flag
 
-test: join_using function_type_test join_commas_connect define_primary_key
+test: join_using function_type_test join_commas_connect define_primary_key interval_units
 
 test: test_char_tail_blank test_char_tail_blank_2 test_char_tail_blank_3
 
