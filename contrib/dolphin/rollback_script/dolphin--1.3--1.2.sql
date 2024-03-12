@@ -1396,3 +1396,5 @@ DROP FUNCTION IF EXISTS pg_catalog.varbinary2boolean(varbinary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.left(bit, integer);
 DROP FUNCTION IF EXISTS pg_catalog.left(blob, integer);
 DROP FUNCTION IF EXISTS pg_catalog.left(boolean, integer);
+
+DROP FUNCTION IF EXISTS pg_catalog.timestamptz_cast(cstring, oid, integer, boolean);

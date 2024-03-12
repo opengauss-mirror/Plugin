@@ -11,8 +11,6 @@ DROP FUNCTION IF EXISTS pg_catalog.dolphin_invoke();
 CREATE FUNCTION pg_catalog.dolphin_invoke()
     RETURNS VOID AS '$libdir/dolphin','dolphin_invoke' LANGUAGE C STRICT;
 
-DROP FUNCTION IF EXISTS pg_catalog.timestamptz_cast(cstring, oid, integer, boolean);
-
 DROP FUNCTION IF EXISTS pg_catalog.rand(int16);
 DROP FUNCTION IF EXISTS pg_catalog.rand(uint4);
 DROP FUNCTION IF EXISTS pg_catalog.rand(timestamp with time zone);

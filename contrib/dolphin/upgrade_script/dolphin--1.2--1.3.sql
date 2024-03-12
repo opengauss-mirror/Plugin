@@ -2140,3 +2140,6 @@ CREATE CAST ("varbinary" AS boolean) WITH FUNCTION pg_catalog.varbinary2boolean(
 CREATE OR REPLACE FUNCTION pg_catalog.left(bit, integer) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bit_left';
 CREATE OR REPLACE FUNCTION pg_catalog.left(blob, integer) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'blob_left';
 CREATE OR REPLACE FUNCTION pg_catalog.left(boolean, integer) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left(cast($1 as text), $2)::varchar';
+
+DROP FUNCTION IF EXISTS pg_catalog.timestamptz_cast(cstring, oid, integer, boolean);
+CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_cast(cstring, oid, integer, boolean) RETURNS timestamp with time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamptz_cast';

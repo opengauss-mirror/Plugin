@@ -2,8 +2,6 @@ DROP FUNCTION IF EXISTS pg_catalog.dolphin_invoke();
 CREATE FUNCTION pg_catalog.dolphin_invoke()
     RETURNS VOID AS '$libdir/dolphin','dolphin_invoke' LANGUAGE C STRICT;
 
-DROP FUNCTION IF EXISTS pg_catalog.timestamptz_cast(cstring, oid, integer, boolean);
-CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_cast(cstring, oid, integer, boolean) RETURNS timestamp with time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'timestamptz_cast';
 
 -- non-strict, accept null input
 CREATE OR REPLACE FUNCTION pg_catalog.rand(int16) returns double precision LANGUAGE C volatile as '$libdir/dolphin', 'rand_seed';

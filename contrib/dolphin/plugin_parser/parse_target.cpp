@@ -1603,6 +1603,9 @@ char* FigureIndexColname(Node* node)
 static int FigureColnameInternal(Node* node, char** name)
 {
     int strength = 0;
+#ifdef DOLPHIN
+    char* funcname;
+#endif
 
     if (node == NULL) {
         return strength;
@@ -1632,9 +1635,11 @@ static int FigureColnameInternal(Node* node, char** name)
             }
 #ifdef DOLPHIN
             /* to make the last displayed column name as the type name instead of the function name. */
-            if (strcmp(strVal(llast(((FuncCall*)node)->funcname)), "time_cast") == 0 ||
-                strcmp(strVal(llast(((FuncCall*)node)->funcname)), "date_cast") == 0 ||
-                strcmp(strVal(llast(((FuncCall*)node)->funcname)), "timestamp_cast") == 0) {
+            funcname = strVal(llast(((FuncCall*)node)->funcname));
+            if (strcmp(funcname, "time_cast") == 0 ||
+                strcmp(funcname, "date_cast") == 0 ||
+                strcmp(funcname, "timestamp_cast") == 0 ||
+                strcmp(funcname, "timestamptz_cast") == 0) {
                 return 1;
             }
 #endif

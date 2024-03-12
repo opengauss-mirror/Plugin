@@ -1491,8 +1491,6 @@ select time_to_sec(cast('10120-01-01' as date));
 
 select time_to_sec(cast('2001-2-29' as date));
 WARNING:  date/time field value out of range: "2001-2-29"
-LINE 1: select time_to_sec(cast('2001-2-29' as date));
-                                ^
 CONTEXT:  referenced column: time_to_sec
  time_to_sec 
 -------------
@@ -1501,8 +1499,6 @@ CONTEXT:  referenced column: time_to_sec
 
 select time_to_sec(cast('2100-2-29' as date));
 WARNING:  date/time field value out of range: "2100-2-29"
-LINE 1: select time_to_sec(cast('2100-2-29' as date));
-                                ^
 CONTEXT:  referenced column: time_to_sec
  time_to_sec 
 -------------
@@ -1517,8 +1513,6 @@ select time_to_sec(cast('0000-1-1' as date));
 
 select time_to_sec(cast('01-01' as date));
 WARNING:  invalid input syntax for type date: "01-01"
-LINE 1: select time_to_sec(cast('01-01' as date));
-                                ^
 CONTEXT:  referenced column: time_to_sec
  time_to_sec 
 -------------
@@ -1547,8 +1541,6 @@ CONTEXT:  referenced column: time_to_sec
 
 select time_to_sec(cast('2001-13-29' as date));
 WARNING:  date/time field value out of range: "2001-13-29"
-LINE 1: select time_to_sec(cast('2001-13-29' as date));
-                                ^
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: time_to_sec
  time_to_sec 
@@ -1570,8 +1562,6 @@ select time_to_sec(cast('10120-01-01' as datetime));
 
 select time_to_sec(cast('2001-2-29' as datetime));
 WARNING:  date/time field value out of range: "2001-2-29"
-LINE 1: select time_to_sec(cast('2001-2-29' as datetime));
-                                ^
 CONTEXT:  referenced column: time_to_sec
  time_to_sec 
 -------------
@@ -1580,8 +1570,6 @@ CONTEXT:  referenced column: time_to_sec
 
 select time_to_sec(cast('2100-2-29' as datetime));
 WARNING:  date/time field value out of range: "2100-2-29"
-LINE 1: select time_to_sec(cast('2100-2-29' as datetime));
-                                ^
 CONTEXT:  referenced column: time_to_sec
  time_to_sec 
 -------------
@@ -1596,12 +1584,8 @@ select time_to_sec(cast('0000-1-1' as datetime));
 
 select time_to_sec(cast('01-01' as datetime));
 WARNING:  invalid input syntax for type timestamp: "01-01"
-LINE 1: select time_to_sec(cast('01-01' as datetime));
-                                ^
 CONTEXT:  referenced column: time_to_sec
 ERROR:  The value of month or day cannot be zero.
-LINE 1: select time_to_sec(cast('01-01' as datetime));
-                                ^
 CONTEXT:  referenced column: time_to_sec
 select time_to_sec(cast('1000-01-1' as datetime));
  time_to_sec 
@@ -1617,8 +1601,6 @@ select time_to_sec(cast('294277-01-1' as datetime));
 
 select time_to_sec(cast('294278-01-1' as datetime));
 WARNING:  timestamp out of range: "294278-01-1"
-LINE 1: select time_to_sec(cast('294278-01-1' as datetime));
-                                ^
 CONTEXT:  referenced column: time_to_sec
  time_to_sec 
 -------------
@@ -1627,8 +1609,6 @@ CONTEXT:  referenced column: time_to_sec
 
 select time_to_sec(cast('2001-13-29' as datetime));
 WARNING:  date/time field value out of range: "2001-13-29"
-LINE 1: select time_to_sec(cast('2001-13-29' as datetime));
-                                ^
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: time_to_sec
  time_to_sec 
@@ -1650,8 +1630,6 @@ select time_to_sec(cast('10120-01-01' as timestamp));
 
 select time_to_sec(cast('2001-2-29' as timestamp));
 WARNING:  date/time field value out of range: "2001-2-29"
-LINE 1: select time_to_sec(cast('2001-2-29' as timestamp));
-                                ^
 CONTEXT:  referenced column: time_to_sec
  time_to_sec 
 -------------
@@ -1660,8 +1638,6 @@ CONTEXT:  referenced column: time_to_sec
 
 select time_to_sec(cast('2100-2-29' as timestamp));
 WARNING:  date/time field value out of range: "2100-2-29"
-LINE 1: select time_to_sec(cast('2100-2-29' as timestamp));
-                                ^
 CONTEXT:  referenced column: time_to_sec
  time_to_sec 
 -------------
@@ -1676,12 +1652,8 @@ select time_to_sec(cast('0000-1-1' as timestamp));
 
 select time_to_sec(cast('01-01' as timestamp));
 WARNING:  invalid input syntax for type timestamp: "01-01"
-LINE 1: select time_to_sec(cast('01-01' as timestamp));
-                                ^
 CONTEXT:  referenced column: time_to_sec
 ERROR:  The value of month or day cannot be zero.
-LINE 1: select time_to_sec(cast('01-01' as timestamp));
-                                ^
 CONTEXT:  referenced column: time_to_sec
 select time_to_sec(cast('1000-01-1' as timestamp));
  time_to_sec 
@@ -1697,8 +1669,6 @@ select time_to_sec(cast('294277-01-1' as timestamp));
 
 select time_to_sec(cast('294278-01-1' as timestamp));
 WARNING:  timestamp out of range: "294278-01-1"
-LINE 1: select time_to_sec(cast('294278-01-1' as timestamp));
-                                ^
 CONTEXT:  referenced column: time_to_sec
  time_to_sec 
 -------------
@@ -1707,8 +1677,6 @@ CONTEXT:  referenced column: time_to_sec
 
 select time_to_sec(cast('2001-13-29' as timestamp));
 WARNING:  date/time field value out of range: "2001-13-29"
-LINE 1: select time_to_sec(cast('2001-13-29' as timestamp));
-                                ^
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: time_to_sec
  time_to_sec 

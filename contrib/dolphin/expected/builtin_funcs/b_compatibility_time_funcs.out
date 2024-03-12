@@ -859,8 +859,6 @@ CONTEXT:  referenced column: date
 
 select cast('2022-15-05' as date);
 WARNING:  date/time field value out of range: "2022-15-05"
-LINE 1: select cast('2022-15-05' as date);
-                    ^
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: date
  date 
@@ -870,8 +868,6 @@ CONTEXT:  referenced column: date
 
 select cast('2022-05-35' as date);
 WARNING:  date/time field value out of range: "2022-05-35"
-LINE 1: select cast('2022-05-35' as date);
-                    ^
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: date
  date 
@@ -887,8 +883,6 @@ select cast('2022-05-05 01' as date);
 
 select cast('2022-05-05 20-70' as date);
 WARNING:  time zone displacement out of range: "2022-05-05 20-70"
-LINE 1: select cast('2022-05-05 20-70' as date);
-                    ^
 CONTEXT:  referenced column: date
  date 
 ------
@@ -897,8 +891,6 @@ CONTEXT:  referenced column: date
 
 select cast('2022-05-05 20:70' as date);
 WARNING:  date/time field value out of range: "2022-05-05 20:70"
-LINE 1: select cast('2022-05-05 20:70' as date);
-                    ^
 CONTEXT:  referenced column: date
  date 
 ------
@@ -907,8 +899,6 @@ CONTEXT:  referenced column: date
 
 select cast('2022-05-05 20:60' as date);
 WARNING:  date/time field value out of range: "2022-05-05 20:60"
-LINE 1: select cast('2022-05-05 20:60' as date);
-                    ^
 CONTEXT:  referenced column: date
  date 
 ------
@@ -1052,27 +1042,8 @@ CONTEXT:  referenced column: microsecond
 (1 row)
 
 select hour(timestamptz '-2007-07-19 11:11:11.234-7'), minute(timestamptz '-2007-07-19 11:11:11.234-7'), second(timestamptz '-2007-07-19 11:11:11.234-7'), microsecond(timestamptz '-2007-07-19 11:11:11.234-7');
-WARNING:  time zone displacement out of range: "-2007-07-19 11:11:11.234-7"
-LINE 1: select hour(timestamptz '-2007-07-19 11:11:11.234-7'), minut...
-                                ^
+ERROR:  time zone displacement out of range: "-2007-07-19 11:11:11.234-7"
 CONTEXT:  referenced column: hour
-WARNING:  time zone displacement out of range: "-2007-07-19 11:11:11.234-7"
-LINE 1: ...'-2007-07-19 11:11:11.234-7'), minute(timestamptz '-2007-07-...
-                                                             ^
-CONTEXT:  referenced column: minute
-WARNING:  time zone displacement out of range: "-2007-07-19 11:11:11.234-7"
-LINE 1: ...'-2007-07-19 11:11:11.234-7'), second(timestamptz '-2007-07-...
-                                                             ^
-CONTEXT:  referenced column: second
-WARNING:  time zone displacement out of range: "-2007-07-19 11:11:11.234-7"
-LINE 1: ...7-07-19 11:11:11.234-7'), microsecond(timestamptz '-2007-07-...
-                                                             ^
-CONTEXT:  referenced column: microsecond
-  hour  | minute | second | microsecond 
---------+--------+--------+-------------
- <NULL> | <NULL> | <NULL> |      <NULL>
-(1 row)
-
 select hour('202014'), minute('202014'), second('202014'), microsecond('202014');
  hour | minute | second | microsecond 
 ------+--------+--------+-------------

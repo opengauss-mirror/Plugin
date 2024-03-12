@@ -541,6 +541,12 @@ insert ignore into t_time values('aaaaaaa12aaaaaaa34');
 insert ignore into t_time values('abcde');
 insert ignore into t_time values('');
 select * from t_time order by 1;
+
+select timestamp with time zone'2007-13-19 11:11:11';
+select timestamptz '-2007-07-19 11:11:11.234-7');
+select timestamp without time zone'2007-13-19 11:11:11';
+select datetime'2007-13-19 11:11:11';
+
 drop table t_time;
 drop schema b_time_funcs3 cascade;
 reset current_schema;

@@ -2536,8 +2536,6 @@ select cast('4714-11-24 10:10:10 BC' as datetime);
 
 select cast('-100-11-24 BC' as date);
 WARNING:  time zone displacement out of range: "-100-11-24 BC"
-LINE 1: select cast('-100-11-24 BC' as date);
-                    ^
 CONTEXT:  referenced column: date
  date 
 ------
@@ -2546,8 +2544,6 @@ CONTEXT:  referenced column: date
 
 select cast('4715-11-24 10:10:10 BC' as date);
 WARNING:  date out of range: "4715-11-24 10:10:10 bc"
-LINE 1: select cast('4715-11-24 10:10:10 BC' as date);
-                    ^
 CONTEXT:  referenced column: date
  date 
 ------
@@ -2556,8 +2552,6 @@ CONTEXT:  referenced column: date
 
 select cast('4715-11-24 10:10:10 BC' as timestamp with time zone);
 WARNING:  timestamp out of range: "4715-11-24 10:10:10 bc"
-LINE 1: select cast('4715-11-24 10:10:10 BC' as timestamp with time ...
-                    ^
 CONTEXT:  referenced column: timestamptz
  timestamptz 
 -------------
@@ -2566,8 +2560,6 @@ CONTEXT:  referenced column: timestamptz
 
 select cast('4715-11-24 10:10:10 BC' as datetime);
 WARNING:  timestamp out of range: "4715-11-24 10:10:10 bc"
-LINE 1: select cast('4715-11-24 10:10:10 BC' as datetime);
-                    ^
 CONTEXT:  referenced column: timestamp
  timestamp 
 -----------

@@ -498,8 +498,8 @@ static Datum stringTypeDatumCompatibleNullResult_with_collation(Type tp, char* s
 static bool hasTextCoercePath(Oid* srcoid, Oid destoid, CoercionContext ccontext, bool* changed)
 {
     if (ccontext == COERCION_EXPLICIT &&
-        ((ENABLE_B_CMPT_MODE && destoid == INT8OID) ||
-         (ENABLE_B_CMPT_MODE && destoid == TIMEOID)  ||
+        ((ENABLE_B_CMPT_MODE && (destoid == INT8OID || destoid == TIMEOID || destoid == TIMESTAMPOID ||
+        destoid == TIMESTAMPTZOID || destoid == DATEOID)) ||
         destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
         destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
         destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
