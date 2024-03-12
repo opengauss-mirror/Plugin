@@ -44,6 +44,7 @@ CREATE FUNCTION pg_catalog.dolphin_invoke()
 
 DROP FUNCTION IF EXISTS pg_catalog.date_cast(cstring, boolean);
 DROP FUNCTION IF EXISTS pg_catalog.timestamp_cast(cstring, oid, integer, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.timestamptz_cast(cstring, oid, integer, boolean);
 
 DROP FUNCTION IF EXISTS pg_catalog.time_cast(cstring, boolean);
 DROP CAST IF EXISTS (TEXT AS time);
@@ -444,6 +445,7 @@ DROP FUNCTION IF EXISTS pg_catalog.uint64_cast_timestamptz(uint8);
 DROP FUNCTION IF EXISTS pg_catalog.float4_cast_timestamptz(float4);
 DROP FUNCTION IF EXISTS pg_catalog.float8_cast_timestamptz(float8);
 DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_timestamptz(numeric);
+DROP CAST IF EXISTS (TEXT AS timestamp with time zone);
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_explicit(TEXT);
 
 DROP FUNCTION IF EXISTS pg_catalog.ln(year);

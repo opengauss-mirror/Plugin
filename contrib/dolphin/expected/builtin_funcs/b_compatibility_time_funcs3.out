@@ -1922,41 +1922,25 @@ ERROR:  The value of month or day cannot be zero.
 CONTEXT:  referenced column: timestamptz
 select cast('10000' as datetime);
 WARNING:  date/time field value out of range: "10000"
-LINE 1: select cast('10000' as datetime);
-                    ^
 CONTEXT:  referenced column: timestamp
 ERROR:  The value of month or day cannot be zero.
-LINE 1: select cast('10000' as datetime);
-                    ^
 CONTEXT:  referenced column: timestamp
 select cast('10100' as datetime);
 ERROR:  The value of month or day cannot be zero.
-LINE 1: select cast('10100' as datetime);
-                    ^
 CONTEXT:  referenced column: timestamp
 select cast('10001' as datetime);
 ERROR:  The value of month or day cannot be zero.
-LINE 1: select cast('10001' as datetime);
-                    ^
 CONTEXT:  referenced column: timestamp
 select cast('10000' as timestamp with time zone);
 WARNING:  date/time field value out of range: "10000"
-LINE 1: select cast('10000' as timestamp with time zone);
-                    ^
 CONTEXT:  referenced column: timestamptz
 ERROR:  The value of month or day cannot be zero.
-LINE 1: select cast('10000' as timestamp with time zone);
-                    ^
 CONTEXT:  referenced column: timestamptz
 select cast('10100' as timestamp with time zone);
 ERROR:  The value of month or day cannot be zero.
-LINE 1: select cast('10100' as timestamp with time zone);
-                    ^
 CONTEXT:  referenced column: timestamptz
 select cast('10001' as timestamp with time zone);
 ERROR:  The value of month or day cannot be zero.
-LINE 1: select cast('10001' as timestamp with time zone);
-                    ^
 CONTEXT:  referenced column: timestamptz
 set dolphin.b_compatibility_mode = true;
 select cast(3.1415926 as datetime);
@@ -1977,8 +1961,6 @@ CONTEXT:  referenced column: timestamp
 
 select cast('3.1415926' as datetime);
 WARNING:  invalid input syntax for type timestamp: "3.1415926"
-LINE 1: select cast('3.1415926' as datetime);
-                    ^
 CONTEXT:  referenced column: timestamp
  timestamp 
 -----------
@@ -2003,8 +1985,6 @@ CONTEXT:  referenced column: timestamptz
 
 select cast('3.1415926' as timestamp with time zone);
 WARNING:  invalid input syntax for type timestamp: "3.1415926"
-LINE 1: select cast('3.1415926' as timestamp with time zone);
-                    ^
 CONTEXT:  referenced column: timestamptz
  timestamptz 
 -------------
@@ -2068,6 +2048,22 @@ select * from t_time order by 1;
  00:01:23
 (6 rows)
 
+select timestamp with time zone'2007-13-19 11:11:11';
+ERROR:  date/time field value out of range: "2007-13-19 11:11:11"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: timestamptz
+select timestamptz '-2007-07-19 11:11:11.234-7');
+ERROR:  syntax error at or near ")"
+LINE 1: select timestamptz '-2007-07-19 11:11:11.234-7');
+                                                       ^
+select timestamp without time zone'2007-13-19 11:11:11';
+ERROR:  date/time field value out of range: "2007-13-19 11:11:11"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: timestamp
+select datetime'2007-13-19 11:11:11';
+ERROR:  date/time field value out of range: "2007-13-19 11:11:11"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: timestamp
 drop table t_time;
 drop schema b_time_funcs3 cascade;
 NOTICE:  drop cascades to 2 other objects

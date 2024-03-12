@@ -151,7 +151,7 @@ typedef enum {
 } TimeErrorType;
 
 extern Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type);
-extern Datum timestamptz_internal(PG_FUNCTION_ARGS, int time_cast_type, TimeErrorType* time_error_type);
+extern Datum timestamptz_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type);
 
 extern "C" DLL_PUBLIC Datum int64_b_format_datetime(PG_FUNCTION_ARGS);
 
