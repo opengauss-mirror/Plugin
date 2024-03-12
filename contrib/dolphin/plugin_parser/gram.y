@@ -1279,7 +1279,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	VACUUM VALID VALIDATE VALIDATION VALIDATOR VALUE_P VALUES VARBINARY VARCHAR VARCHAR2 VARIABLES VARIADIC VARRAY VARYING VCGROUP
 	VERBOSE VERIFY VERSION_P VIEW VISIBLE VOLATILE
 
-	WAIT WARNINGS WEAK WHEN WHERE WHILE_P WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
+	WAIT WARNINGS WEAK WEEK_P WHEN WHERE WHILE_P WHITESPACE_P WINDOW WITH WITHIN WITHOUT WORK WORKLOAD WRAPPER WRITE
 
 	XML_P XMLATTRIBUTES XMLCONCAT XMLELEMENT XMLEXISTS XMLFOREST XMLPARSE XOR
 	XMLPI XMLROOT XMLSERIALIZE
@@ -1356,7 +1356,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %nonassoc	LIKE ILIKE SIMILAR SOUNDS NOT_LIKE NOT_ILIKE NOT_SIMILAR ANY DO END_P
 %nonassoc	ESCAPE
 %nonassoc	OVERLAPS
-%nonassoc	BETWEEN NOT_BETWEEN
+%nonassoc	BETWEEN NOT_BETWEEN WEEK_P MICROSECOND_P DAY_HOUR_P DAY_MICROSECOND_P DAY_MINUTE_P DAY_SECOND_P
 %nonassoc	IN_P NOT_IN
 %left		DIV MOD
 %nonassoc	REGEXP RLIKE
@@ -32969,7 +32969,7 @@ opt_multipart_interval:
 					linitial($$) = makeIntConst(INTERVAL_MASK(MINUTE) |
 												INTERVAL_MASK(SECOND), @1);
 				}
-			| /*EMPTY*/
+			| /*EMPTY*/ %prec OVERLAPS
 				{ $$ = NIL; }
 		;
 
@@ -32992,6 +32992,14 @@ opt_evtime_unit:
 												 INTERVAL_MASK(MINUTE) |
 												 INTERVAL_MASK(SECOND), @1));
 			}
+			| DAY_MICROSECOND_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
+			}
 			| HOUR_MINUTE_P
 			{
 				$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
@@ -33003,10 +33011,28 @@ opt_evtime_unit:
 												 INTERVAL_MASK(MINUTE) |
 												 INTERVAL_MASK(SECOND), @1));
 			}
+			| HOUR_MICROSECOND_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
+			}
 			| MINUTE_SECOND_P
 			{
 				$$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
 												 INTERVAL_MASK(SECOND), @1));
+			}
+			| MINUTE_MICROSECOND_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
+			}
+			| SECOND_MICROSECOND_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
 			}
 			| YEAR_MONTH_P
 			{
@@ -33028,6 +33054,10 @@ opt_interval:
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE), @1)); }
 			| interval_second
 				{ $$ = $1; }
+			| MICROSECOND_P
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MICROSECOND), @1)); }
+			| WEEK_P
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(WEEK), @1)); }
 			| YEAR_P TO MONTH_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
@@ -33052,6 +33082,14 @@ opt_interval:
 												INTERVAL_MASK(MINUTE) |
 												INTERVAL_MASK(SECOND), @1);
 				}
+			| DAY_P TO MICROSECOND_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
+				}
 			| HOUR_P TO MINUTE_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
@@ -33064,11 +33102,29 @@ opt_interval:
 												INTERVAL_MASK(MINUTE) |
 												INTERVAL_MASK(SECOND), @1);
 				}
+			| HOUR_P TO MICROSECOND_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
+				}
 			| MINUTE_P TO interval_second
 				{
 					$$ = $3;
 					linitial($$) = makeIntConst(INTERVAL_MASK(MINUTE) |
 												INTERVAL_MASK(SECOND), @1);
+				}
+			| MINUTE_P TO MICROSECOND_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
+				}
+			| interval_second TO MICROSECOND_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
 				}
 			| YEAR_P '(' Iconst ')'
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR), @1)); }
@@ -33080,6 +33136,10 @@ opt_interval:
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR), @1)); }
 			| MINUTE_P '(' Iconst ')'
 				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE), @1)); }
+			| MICROSECOND_P '(' Iconst ')'
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(MICROSECOND), @1)); }
+			| WEEK_P '(' Iconst ')'
+				{ $$ = list_make1(makeIntConst(INTERVAL_MASK(WEEK), @1)); }
 			| YEAR_P '(' Iconst ')' TO MONTH_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
@@ -33104,6 +33164,14 @@ opt_interval:
 												INTERVAL_MASK(MINUTE) |
 												INTERVAL_MASK(SECOND), @1);
 				}
+			| DAY_P '(' Iconst ')' TO MICROSECOND_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
+				}
 			| HOUR_P '(' Iconst ')'  TO MINUTE_P
 				{
 					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
@@ -33116,13 +33184,26 @@ opt_interval:
 												INTERVAL_MASK(MINUTE) |
 												INTERVAL_MASK(SECOND), @1);
 				}
+			| HOUR_P '(' Iconst ')' TO MICROSECOND_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
+				}
 			| MINUTE_P  '(' Iconst ')'  TO interval_second
 				{
 					$$ = $6;
 					linitial($$) = makeIntConst(INTERVAL_MASK(MINUTE) |
 												INTERVAL_MASK(SECOND), @1);
 				}
-			| /*EMPTY*/
+			| MINUTE_P '(' Iconst ')' TO MICROSECOND_P
+				{
+					$$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
+				}
+			| /*EMPTY*/	%prec OVERLAPS
 				{ $$ = NIL; }
 		;
 
@@ -36696,6 +36777,7 @@ extract_arg:
 			| SECOND_P								{ $$ = "second"; }
 			| QUARTER								{ $$ = "quarter"; }
 			| MICROSECOND_P							{ $$ = "microsecond"; }
+			| WEEK_P								{ $$ = "week"; }
 			| SCONST								{ $$ = $1; }
 		;
 
@@ -36731,6 +36813,7 @@ timestamp_units:
 			| SECOND_P								{ $$ = "second"; }
 			| QUARTER								{ $$ = "quarter"; }
 			| MICROSECOND_P							{ $$ = "microsecond"; }
+			| WEEK_P								{ $$ = "week"; }
 			| SCONST								{ $$ = $1; }
 		;
 
@@ -38333,7 +38416,7 @@ AexprConst_without_Sconst: Iconst
 				{
 					$$ = makeStringConstCast($2, @2, $1);
 				}
-			| INTERVAL SCONST opt_interval
+			| INTERVAL SCONST event_interval_unit
 				{
 					TypeName *t = SystemTypeName("interval");
 					t->location = @1;
@@ -38364,6 +38447,19 @@ AexprConst_without_Sconst: Iconst
 					$$ = makeStringConstCast(pstrdup(buf), @2, t);
 				}
 			| INTERVAL NumericOnly opt_multipart_interval
+				{
+					TypeName *t = SystemTypeName("interval");
+					t->location = @1;
+					t->typmods = $3;
+					if ($2->type == T_Integer) {
+						char buf[64];
+						snprintf(buf, sizeof(buf), "%ld", $2->val.ival);
+						$$ = makeStringConstCast(pstrdup(buf), @2, t);
+					} else if ($2->type == T_Float) {
+						$$ = makeStringConstCast($2->val.str, @2, t);
+					}
+				}
+			| INTERVAL NumericOnly opt_evtime_unit
 				{
 					TypeName *t = SystemTypeName("interval");
 					t->location = @1;
@@ -39093,6 +39189,7 @@ alias_name_unreserved_keyword_without_key:
 			| WAIT
 			/* | WARNINGS */
 			| WEAK
+			| WEEK_P
 			| WHITESPACE_P
 			| WORK
 			| WORKLOAD

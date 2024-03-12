@@ -250,14 +250,18 @@ insert into func_test(functionName, result) values ('subdate(20220101, 1)',subda
 insert into func_test(functionName, result) values ('subdate(''2022-1-1 6:05:05'', INTERVAL ''6'' SECOND)',subdate('2022-1-1 6:05:05', INTERVAL '-6' SECOND)); -- 负interval
 insert into func_test(functionName, result) values ('subdate(''2022-6-1 6:05:05.5555555'', INTERVAL 6.444444 SECOND)',subdate('2022-6-1 6:05:05.5555555', INTERVAL 6.444444 SECOND)); -- 正interval 且 datetime微妙位>interval微妙位
 insert into func_test(functionName, result) values ('subdate(''2022-6-1 6:05:05.444444'', INTERVAL ''6.555555'' HOUR TO SECOND)',subdate('2022-6-1 6:05:05.444444', INTERVAL '1:1:6.555555' HOUR TO SECOND)); -- datetime微妙位>interval微妙位
+ERROR:  invalid input syntax for type interval: "1:1:6.555555"
+LINE 1: ...OND)',subdate('2022-6-1 6:05:05.444444', INTERVAL '1:1:6.555...
+                                                             ^
 insert into func_test(functionName, result) values ('subdate(''0001-1-1 00:00:01.555555'', INTERVAL ''1.555556'' SECOND)',subdate('0001-1-1 00:00:01.555555', INTERVAL '1.555556' SECOND)); -- 返回结果年份=0
 ERROR:  date/time field value out of range
 CONTEXT:  referenced column: result
 insert into func_test(functionName, result) values ('subdate(''0001-1-1 00:00:01'', INTERVAL 1 SECOND)', subdate('0001-1-1 00:00:01', INTERVAL 1 SECOND)); -- 返回结果年份>0
 insert into func_test(functionName, result) values ('subdate(''2020-2-28 23:59:59'', INTERVAL ''-1:1'' MINUTE TO SECOND)',subdate('2020-2-28 23:59:59', INTERVAL '-1:1' MINUTE TO SECOND)); -- 闰年计算
 insert into func_test(functionName, result) values ('subdate(''9999-12-1 22:01:01.111111'', INTERVAL ''-30 1:58:58.888889'' DAY TO SECOND)',subdate('9999-12-1 22:01:01.111111', INTERVAL '-30 1:58:58.888889' DAY TO SECOND)); -- 越界9999-12-31
-ERROR:  date/time field value out of range
-CONTEXT:  referenced column: result
+ERROR:  invalid input syntax for type interval: "30 1:58:58.888889"
+LINE 1: ...D)',subdate('9999-12-1 22:01:01.111111', INTERVAL '-30 1:58:...
+                                                             ^
 insert into func_test(functionName, result) values ('subdate(''0001-1-1 22:01:01'', INTERVAL ''366 22:01:02'' DAY TO SECOND)',subdate('0001-1-1 22:01:01', INTERVAL '366 22:01:02' DAY TO SECOND)); -- 越界0
 ERROR:  date/time field value out of range
 CONTEXT:  referenced column: result
@@ -302,7 +306,13 @@ insert into func_test(functionName, result) values ('subdate(time''22:11:11'', I
 ERROR:  time field value out of range
 CONTEXT:  referenced column: result
 insert into func_test(functionName, result) values ('subdate(time''100:59:59'', INTERVAL ''1 20:50:50.888888'' DAY To SECOND)',subdate(time'100:59:59', INTERVAL '1 20:50:50.888888' DAY TO SECOND)); -- 正interval 不包含 year与month
+ERROR:  invalid input syntax for type interval: "1 20:50:50.888888"
+LINE 1: ...DAY To SECOND)',subdate(time'100:59:59', INTERVAL '1 20:50:5...
+                                                             ^
 insert into func_test(functionName, result) values ('subdate(time''100:59:59'', INTERVAL ''-1 20:50:50.888888'' HOUR To SECOND)',subdate(time'100:59:59', INTERVAL '-20:50:50.888888' HOUR TO SECOND)); -- 负interval
+ERROR:  invalid input syntax for type interval: "20:50:50.888888"
+LINE 1: ...OUR To SECOND)',subdate(time'100:59:59', INTERVAL '-20:50:50...
+                                                             ^
 insert into func_test(functionName, result) values ('subdate(time(6)''100:59:59.555'', 2',subdate(time(6)'100:59:59.555', 2)); -- time包含小数
 insert into func_test(functionName, result) values ('subdate(time''815:0:0'', -1)',subdate(time'815:0:0', -1)); -- 越界838:59:59
 ERROR:  time field value out of range
@@ -321,164 +331,161 @@ create table insert_subdate(date_col date, datetime_col datetime);
 insert into insert_subdate(date_col, datetime_col) values (subdate('2021-1-1', 1), subdate('2021-1-1 01:01:01', 1));
 drop table insert_subdate;
 select * from func_test;
-                              functionName                              |           result           
-------------------------------------------------------------------------+----------------------------
- makedate('2003','61')                                                  | 2003-03-02
- makedate('12.4','12.5')                                                | 2012-01-13
- makedate(12.4,12.5)                                                    | 2012-01-13
- makedate(false, true)                                                  | 2000-01-01
- makedate(B'101', B'101')                                               | 2005-01-05
- makedate(null, 10)                                                     | 
- makedate(2000, null)                                                   | 
- makedate(-1, 20)                                                       | 
- makedate(10000, 20)                                                    | 
- makedate(2000, 0)                                                      | 
- makedate(2000, 60)                                                     | 2000-02-29
- makedate(2000, 380)                                                    | 2001-01-14
- makedate(69, 32)                                                       | 2069-02-01
- makedate(70, 32)                                                       | 1970-02-01
- makedate(100,32)                                                       | 0100-02-01
- makedate(9999,366)                                                     | 
- makedate(pow(2,62),366)                                                | 
- makedate(2001, 9223372036854775807)                                    | 
- maketime('25.5', '30.4', '30')                                         | 26:30:30
- maketime(25.5, 30.4, 30)                                               | 26:30:30
- maketime(false, true, true)                                            | 00:01:01
- maketime(B'111', B'111', B'111')                                       | 07:07:07
- maketime(null, 0, 0)                                                   | 
- maketime(0, null, 0)                                                   | 
- maketime(0, 0, null)                                                   | 
- maketime(0, -1, 0)                                                     | 
- maketime(0, 60, 0)                                                     | 
- maketime(0, 60, 0)                                                     | 
- maketime(0, 0, -1)                                                     | 
- maketime(0, 0, 60)                                                     | 
- maketime(0, 0, pow(10,18))                                             | 
- maketime(4294967295, 1, 1)                                             | 838:59:59
- maketime(-4294967295, 0, 1)                                            | -838:59:59
- maketime(2147483649, 1, 1)                                             | 838:59:59
- maketime(-2147483649, 1, 1)                                            | -838:59:59
- maketime(-9223372036854775808, 0, 0)                                   | 00:00:00
- maketime(0, 0, 59.9999)                                                | 00:00:59.9999
- maketime(0, 0, 59.999999001)                                           | 00:00:59.999999
- maketime(838, 59, 58.999999)                                           | 838:59:58.999999
- maketime(-838, 59, 58.999999)                                          | -838:59:58.999999
- maketime(25, 30, 30)                                                   | 25:30:30
- maketime(-25, 30, 30)                                                  | -25:30:30
- maketime(pow(2, 32),0,0)                                               | 838:59:59
- maketime(-pow(2, 32),0,0)                                              | -838:59:59
- maketime(0, 59, 59.9999994999)                                         | 00:59:59.999999
- maketime(0, 10, 59.999999500)                                          | 00:11:00
- maketime(0, 59, 59.999999500)                                          | 01:00:00
- maketime(0, 59, 59.999998500)                                          | 00:59:59.999999
- maketime(839, 0, 0)                                                    | 838:59:59
- maketime(-839, 0, 0)                                                   | -838:59:59
- maketime(838, 59, 59.000001)                                           | 838:59:59
- maketime(838, 59, 59.000000600)                                        | 838:59:59
- period_add('202101', '10')                                             | 202111
- period_add('202101.4', '10.5')                                         | 202112
- period_add(202101.4, 10.5)                                             | 202112
- period_add(true, false)                                                | 200001
- period_add(B'1111', B'11')                                             | 200106
- period_add(NULL, 1)                                                    | 
- period_add(202205, NULL)                                               | 
- period_add(0, 1)                                                       | 0
- period_add(200000, 0)                                                  | 199912
- period_add(-202205, 1)                                                 | 18611322804
- period_add(202205, pow(2,31))                                          | 17895899301
- period_add(202211, 100)                                                | 203103
- period_add(197005, 7)                                                  | 197012
- period_add(202205, -12)                                                | 202105
- period_add(1,12)                                                       | 200101
- period_add(6901,12)                                                    | 207001
- period_add(7001,12)                                                    | 197101
- period_add(10001,12)                                                   | 10101
- period_add(10001, -12)                                                 | 199901
- period_add(10001, -12*30-1)                                            | 206912
- period_add(pow(2,60), 20)                                              | 25769804412
- period_diff('202101', '202102')                                        | -1
- period_diff('202101.4', '202102.5')                                    | -2
- period_diff(202101.4, 202102.5)                                        | -2
- period_diff(true, false)                                               | 24000
- period_diff(B'1111', B'11111'));                                       | -16
- period_diff(NULL, 200001)                                              | 
- period_diff(202011, NULL)                                              | 
- period_diff(-202011, 200001)                                           | 2213609288845097956
- period_diff(202011, -200001)                                           | -2213609288845097956
- period_diff(707712, 202201)                                            | 60671
- period_diff(6912, 10001)                                               | 23639
- period_diff(7001, 10001)                                               | 22440
- period_diff(10002, 6901)                                               | -23627
- period_diff(10002, 7001)                                               | -22439
- period_diff(0, 30)                                                     | -24029
- period_diff(30, 0)                                                     | 24029
- period_diff(pow(2,62), pow(2,60))                                      | 415051741658464848
- sec_to_time('1000')                                                    | 00:16:40
- sec_to_time('1000.5')                                                  | 00:16:40.5
- sec_to_time('-5231')                                                   | -01:27:11
- sec_to_time(1000.5)                                                    | 00:16:40.5
- sec_to_time('abcd')                                                    | 00:00:00
- sec_to_time(true)                                                      | 00:00:01
- sec_to_time(B'1111')                                                   | 00:00:15
- sec_to_time(NULL)                                                      | 
- sec_to_time(pow(10,18))                                                | 838:59:59
- sec_to_time(pow(10,18)-1)                                              | 838:59:59
- sec_to_time(1000)                                                      | 00:16:40
- sec_to_time(0)                                                         | 00:00:00
- sec_to_time(-1000000)                                                  | -277:46:40
- sec_to_time('2022-12-31 14:25:30')                                     | 00:33:42
- sec_to_time('2012-2-25')                                               | 00:33:32
- sec_to_time('14:25:56')                                                | 00:00:14
- sec_to_time(1000000.499)                                               | 277:46:40.499
- sec_to_time(1000000.4990000)                                           | 277:46:40.499
- sec_to_time(1000000.4999994999)                                        | 277:46:40.499999
- sec_to_time(1000000.499999500)                                         | 277:46:40.5
- sec_to_time(1000000.499998500)                                         | 277:46:40.499999
- sec_to_time(0.999999500)                                               | 00:00:01
- sec_to_time(59.999999600)                                              | 00:01:00
- sec_to_time(3599.999999700)                                            | 01:00:00
- sec_to_time(3020399)                                                   | 838:59:59
- sec_to_time(3020399 + 1)                                               | 838:59:59
- sec_to_time(3020399.000000500)                                         | 838:59:59
- sec_to_time(-100000000)                                                | -838:59:59
- sec_to_time(-999999999)                                                | -838:59:59
- sec_to_time(10000000000000000000)                                      | 838:59:59
- sec_to_time(-10000000000000000000)                                     | -838:59:59
- sec_to_time(-9223372036854775808)                                      | -838:59:59
- subdate('2022-1-1', 20)                                                | 2021-12-12
- subdate('2022-1-1', 20.5)                                              | 2021-12-11
- subdate('2022-1-1', true)                                              | 2021-12-31
- subdate('2022-1-1', B'1111')                                           | 2021-12-17
- subdate(date'2022-1-1', 1)                                             | 2021-12-31
- subdate(cast('2022-1-1 1:1:1' as datetime), 1)                         | 2021-12-31 01:01:01
- subdate(NULL, 20)                                                      | 
- subdate('2022-1-1', NULL)                                              | 
- subdate('2022-1-1 6:05:05', INTERVAL '10 20:20' DAY TO SECOND)         | 2021-12-21 09:45:05
- subdate(20220101010101.555, 1)                                         | 2021-12-31 01:01:01.555
- subdate(20220101, 1)                                                   | 2021-12-31
- subdate('2022-1-1 6:05:05', INTERVAL '6' SECOND)                       | 2022-01-01 06:05:11
- subdate('2022-6-1 6:05:05.5555555', INTERVAL 6.444444 SECOND)          | 2022-06-01 06:04:59.111112
- subdate('2022-6-1 6:05:05.444444', INTERVAL '6.555555' HOUR TO SECOND) | 2022-06-01 05:03:58.888889
- subdate('0001-1-1 00:00:01', INTERVAL 1 SECOND)                        | 0001-01-01 00:00:00
- subdate('2020-2-28 23:59:59', INTERVAL '-1:1' MINUTE TO SECOND)        | 2020-02-29 00:01:00
- subdate('2020-2-29', INTERVAL '366' DAY)                               | 2019-02-28
- subdate('2020-2-29', INTERVAL '-366' DAY)                              | 2021-03-01
- subdate('0001-1-2 1:1:1', INTERVAL '1' DAY)                            | 0001-01-01 01:01:01
- subdate('2020-2-29', INTERVAL '-365' MONTH)                            | 2050-07-29
- subdate('0001-1-31', INTERVAL '1' MONTH)                               | 0000-12-31
- subdate('0001-2-1', INTERVAL '1' MONTH)                                | 0001-01-01
- subdate('2020-2-29', INTERVAL 3 YEAR)                                  | 2017-02-28
- subdate('2020-2-29', INTERVAL -3 YEAR)                                 | 2023-02-28
- subdate('0001-12-31', INTERVAL '1' YEAR)                               | 0000-12-31
- subdate(time'100:59:59', INTERVAL '1 20:50:50.888888' DAY To SECOND)   | 56:09:08.111112
- subdate(time'100:59:59', INTERVAL '-1 20:50:50.888888' HOUR To SECOND) | 121:50:49.888888
- subdate(time(6)'100:59:59.555', 2                                      | 52:59:59.555
- subdate('2022-01-01', interval 21.9 year)                              | 2000-01-01
- subdate('2022-01-01 01:01:01', interval 1.5 month)                     | 2021-11-01 01:01:01
- subdate(time'838:59:59', interval 1.999 hour)                          | 836:59:59
- subdate('2022-01-01 01:01:01', interval 1.999 minute)                  | 2022-01-01 00:59:01
- subdate('2022-01-01 01:01:01', interval 1.999 second)                  | 2022-01-01 01:00:59.001
-(155 rows)
+                          functionName                           |           result           
+-----------------------------------------------------------------+----------------------------
+ makedate('2003','61')                                           | 2003-03-02
+ makedate('12.4','12.5')                                         | 2012-01-13
+ makedate(12.4,12.5)                                             | 2012-01-13
+ makedate(false, true)                                           | 2000-01-01
+ makedate(B'101', B'101')                                        | 2005-01-05
+ makedate(null, 10)                                              | 
+ makedate(2000, null)                                            | 
+ makedate(-1, 20)                                                | 
+ makedate(10000, 20)                                             | 
+ makedate(2000, 0)                                               | 
+ makedate(2000, 60)                                              | 2000-02-29
+ makedate(2000, 380)                                             | 2001-01-14
+ makedate(69, 32)                                                | 2069-02-01
+ makedate(70, 32)                                                | 1970-02-01
+ makedate(100,32)                                                | 0100-02-01
+ makedate(9999,366)                                              | 
+ makedate(pow(2,62),366)                                         | 
+ makedate(2001, 9223372036854775807)                             | 
+ maketime('25.5', '30.4', '30')                                  | 26:30:30
+ maketime(25.5, 30.4, 30)                                        | 26:30:30
+ maketime(false, true, true)                                     | 00:01:01
+ maketime(B'111', B'111', B'111')                                | 07:07:07
+ maketime(null, 0, 0)                                            | 
+ maketime(0, null, 0)                                            | 
+ maketime(0, 0, null)                                            | 
+ maketime(0, -1, 0)                                              | 
+ maketime(0, 60, 0)                                              | 
+ maketime(0, 60, 0)                                              | 
+ maketime(0, 0, -1)                                              | 
+ maketime(0, 0, 60)                                              | 
+ maketime(0, 0, pow(10,18))                                      | 
+ maketime(4294967295, 1, 1)                                      | 838:59:59
+ maketime(-4294967295, 0, 1)                                     | -838:59:59
+ maketime(2147483649, 1, 1)                                      | 838:59:59
+ maketime(-2147483649, 1, 1)                                     | -838:59:59
+ maketime(-9223372036854775808, 0, 0)                            | 00:00:00
+ maketime(0, 0, 59.9999)                                         | 00:00:59.9999
+ maketime(0, 0, 59.999999001)                                    | 00:00:59.999999
+ maketime(838, 59, 58.999999)                                    | 838:59:58.999999
+ maketime(-838, 59, 58.999999)                                   | -838:59:58.999999
+ maketime(25, 30, 30)                                            | 25:30:30
+ maketime(-25, 30, 30)                                           | -25:30:30
+ maketime(pow(2, 32),0,0)                                        | 838:59:59
+ maketime(-pow(2, 32),0,0)                                       | -838:59:59
+ maketime(0, 59, 59.9999994999)                                  | 00:59:59.999999
+ maketime(0, 10, 59.999999500)                                   | 00:11:00
+ maketime(0, 59, 59.999999500)                                   | 01:00:00
+ maketime(0, 59, 59.999998500)                                   | 00:59:59.999999
+ maketime(839, 0, 0)                                             | 838:59:59
+ maketime(-839, 0, 0)                                            | -838:59:59
+ maketime(838, 59, 59.000001)                                    | 838:59:59
+ maketime(838, 59, 59.000000600)                                 | 838:59:59
+ period_add('202101', '10')                                      | 202111
+ period_add('202101.4', '10.5')                                  | 202112
+ period_add(202101.4, 10.5)                                      | 202112
+ period_add(true, false)                                         | 200001
+ period_add(B'1111', B'11')                                      | 200106
+ period_add(NULL, 1)                                             | 
+ period_add(202205, NULL)                                        | 
+ period_add(0, 1)                                                | 0
+ period_add(200000, 0)                                           | 199912
+ period_add(-202205, 1)                                          | 18611322804
+ period_add(202205, pow(2,31))                                   | 17895899301
+ period_add(202211, 100)                                         | 203103
+ period_add(197005, 7)                                           | 197012
+ period_add(202205, -12)                                         | 202105
+ period_add(1,12)                                                | 200101
+ period_add(6901,12)                                             | 207001
+ period_add(7001,12)                                             | 197101
+ period_add(10001,12)                                            | 10101
+ period_add(10001, -12)                                          | 199901
+ period_add(10001, -12*30-1)                                     | 206912
+ period_add(pow(2,60), 20)                                       | 25769804412
+ period_diff('202101', '202102')                                 | -1
+ period_diff('202101.4', '202102.5')                             | -2
+ period_diff(202101.4, 202102.5)                                 | -2
+ period_diff(true, false)                                        | 24000
+ period_diff(B'1111', B'11111'));                                | -16
+ period_diff(NULL, 200001)                                       | 
+ period_diff(202011, NULL)                                       | 
+ period_diff(-202011, 200001)                                    | 2213609288845097956
+ period_diff(202011, -200001)                                    | -2213609288845097956
+ period_diff(707712, 202201)                                     | 60671
+ period_diff(6912, 10001)                                        | 23639
+ period_diff(7001, 10001)                                        | 22440
+ period_diff(10002, 6901)                                        | -23627
+ period_diff(10002, 7001)                                        | -22439
+ period_diff(0, 30)                                              | -24029
+ period_diff(30, 0)                                              | 24029
+ period_diff(pow(2,62), pow(2,60))                               | 415051741658464848
+ sec_to_time('1000')                                             | 00:16:40
+ sec_to_time('1000.5')                                           | 00:16:40.5
+ sec_to_time('-5231')                                            | -01:27:11
+ sec_to_time(1000.5)                                             | 00:16:40.5
+ sec_to_time('abcd')                                             | 00:00:00
+ sec_to_time(true)                                               | 00:00:01
+ sec_to_time(B'1111')                                            | 00:00:15
+ sec_to_time(NULL)                                               | 
+ sec_to_time(pow(10,18))                                         | 838:59:59
+ sec_to_time(pow(10,18)-1)                                       | 838:59:59
+ sec_to_time(1000)                                               | 00:16:40
+ sec_to_time(0)                                                  | 00:00:00
+ sec_to_time(-1000000)                                           | -277:46:40
+ sec_to_time('2022-12-31 14:25:30')                              | 00:33:42
+ sec_to_time('2012-2-25')                                        | 00:33:32
+ sec_to_time('14:25:56')                                         | 00:00:14
+ sec_to_time(1000000.499)                                        | 277:46:40.499
+ sec_to_time(1000000.4990000)                                    | 277:46:40.499
+ sec_to_time(1000000.4999994999)                                 | 277:46:40.499999
+ sec_to_time(1000000.499999500)                                  | 277:46:40.5
+ sec_to_time(1000000.499998500)                                  | 277:46:40.499999
+ sec_to_time(0.999999500)                                        | 00:00:01
+ sec_to_time(59.999999600)                                       | 00:01:00
+ sec_to_time(3599.999999700)                                     | 01:00:00
+ sec_to_time(3020399)                                            | 838:59:59
+ sec_to_time(3020399 + 1)                                        | 838:59:59
+ sec_to_time(3020399.000000500)                                  | 838:59:59
+ sec_to_time(-100000000)                                         | -838:59:59
+ sec_to_time(-999999999)                                         | -838:59:59
+ sec_to_time(10000000000000000000)                               | 838:59:59
+ sec_to_time(-10000000000000000000)                              | -838:59:59
+ sec_to_time(-9223372036854775808)                               | -838:59:59
+ subdate('2022-1-1', 20)                                         | 2021-12-12
+ subdate('2022-1-1', 20.5)                                       | 2021-12-11
+ subdate('2022-1-1', true)                                       | 2021-12-31
+ subdate('2022-1-1', B'1111')                                    | 2021-12-17
+ subdate(date'2022-1-1', 1)                                      | 2021-12-31
+ subdate(cast('2022-1-1 1:1:1' as datetime), 1)                  | 2021-12-31 01:01:01
+ subdate(NULL, 20)                                               | 
+ subdate('2022-1-1', NULL)                                       | 
+ subdate('2022-1-1 6:05:05', INTERVAL '10 20:20' DAY TO SECOND)  | 2021-12-31 19:44:45
+ subdate(20220101010101.555, 1)                                  | 2021-12-31 01:01:01.555
+ subdate(20220101, 1)                                            | 2021-12-31
+ subdate('2022-1-1 6:05:05', INTERVAL '6' SECOND)                | 2022-01-01 06:05:11
+ subdate('2022-6-1 6:05:05.5555555', INTERVAL 6.444444 SECOND)   | 2022-06-01 06:04:59.111112
+ subdate('0001-1-1 00:00:01', INTERVAL 1 SECOND)                 | 0001-01-01 00:00:00
+ subdate('2020-2-28 23:59:59', INTERVAL '-1:1' MINUTE TO SECOND) | 2020-02-29 00:01:00
+ subdate('2020-2-29', INTERVAL '366' DAY)                        | 2019-02-28
+ subdate('2020-2-29', INTERVAL '-366' DAY)                       | 2021-03-01
+ subdate('0001-1-2 1:1:1', INTERVAL '1' DAY)                     | 0001-01-01 01:01:01
+ subdate('2020-2-29', INTERVAL '-365' MONTH)                     | 2050-07-29
+ subdate('0001-1-31', INTERVAL '1' MONTH)                        | 0000-12-31
+ subdate('0001-2-1', INTERVAL '1' MONTH)                         | 0001-01-01
+ subdate('2020-2-29', INTERVAL 3 YEAR)                           | 2017-02-28
+ subdate('2020-2-29', INTERVAL -3 YEAR)                          | 2023-02-28
+ subdate('0001-12-31', INTERVAL '1' YEAR)                        | 0000-12-31
+ subdate(time(6)'100:59:59.555', 2                               | 52:59:59.555
+ subdate('2022-01-01', interval 21.9 year)                       | 2000-01-01
+ subdate('2022-01-01 01:01:01', interval 1.5 month)              | 2021-11-01 01:01:01
+ subdate(time'838:59:59', interval 1.999 hour)                   | 836:59:59
+ subdate('2022-01-01 01:01:01', interval 1.999 minute)           | 2022-01-01 00:59:01
+ subdate('2022-01-01 01:01:01', interval 1.999 second)           | 2022-01-01 01:00:59.001
+(152 rows)
 
 SELECT SUBDATE(time'839:59:59', interval 2 hour);
 ERROR:  date/time field value out of range: "839:59:59"
