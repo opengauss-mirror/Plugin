@@ -1572,3 +1572,7 @@ DROP FUNCTION pg_catalog.truncate(boolean, uint4);
 DROP FUNCTION pg_catalog.truncate(year, uint4);
 DROP FUNCTION pg_catalog.truncate(binary, uint4);
 DROP FUNCTION pg_catalog.truncate(json, uint4);
+
+DROP FUNCTION IF EXISTS pg_catalog.left(bit, integer);
+DROP FUNCTION IF EXISTS pg_catalog.left(blob, integer);
+DROP FUNCTION IF EXISTS pg_catalog.left(boolean, integer);

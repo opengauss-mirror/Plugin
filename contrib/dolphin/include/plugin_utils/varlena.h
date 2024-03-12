@@ -11,6 +11,7 @@ double float8in_internal(char* str, char** endptr_p, bool* hasError, CoercionCon
 extern char* bit_to_str(VarBit *bits);
 char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError = nullptr, bool* typIsVarlena = nullptr);
 extern void trim_trailing_space(char* str);
+extern VarBit* bit_substr_with_byte_align(VarBit *bits, int start, int length, bool length_not_specified);
 #endif
 
 #endif

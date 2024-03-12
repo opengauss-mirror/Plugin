@@ -2675,4 +2675,50 @@ char* bit_to_str(VarBit *bits)
 
     return result;
 }
+
+/**
+ * cast bit as char and substr.
+ * - first pad left 0 if bit length is not multi 8,
+ * - then substr like char, and don't ignore '\0'
+ * - start index from 1
+ * - length can't be negative
+ */
+VarBit* bit_substr_with_byte_align(VarBit *bits, int start, int length, bool length_not_specified)
+{
+    VarBit *result = NULL;
+    char *bitostr = NULL, *sp = NULL;
+    int i, len = length, bitlen = VARBITLEN(bits), bytelen = VARBITBYTES(bits);
+
+    if (length < 0)
+        ereport(ERROR, (errcode(ERRCODE_SUBSTRING_ERROR), errmsg("negative substring length not allowed")));
+
+    if (start > bytelen || start > VARBITMAXLEN) {
+        /* Need to return a zero-length bitstring */
+        len = VARBITTOTALLEN(0);
+        result = (VarBit*)palloc(len);
+        SET_VARSIZE(result, len);
+        VARBITLEN(result) = 0;
+        return result;
+    }
+
+    bitostr = bit_to_str(bits);
+    sp = bitostr + start - 1;
+
+    if (length_not_specified || start + length > bytelen ||
+        start + length < start  // integer overflow, substr to end
+        ) {
+        len = bytelen - start + 1;
+    }
+
+    int resultlen = len + VARHDRSZ + VARBITHDRSZ;
+    result = (VarBit*)palloc0(resultlen);
+    SET_VARSIZE(result, resultlen);
+    VARBITLEN(result) = len * BITS_PER_BYTE;
+    int ret = memcpy_s(VARBITS(result), len, sp, len);
+    securec_check(ret, "\0", "\0");
+
+    pfree_ext(bitostr);
+
+    return result;
+}
 #endif

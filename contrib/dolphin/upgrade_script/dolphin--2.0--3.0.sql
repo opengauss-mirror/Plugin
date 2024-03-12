@@ -2142,3 +2142,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.truncate(year, uint4) RETURNS int8 LANGUAG
 CREATE OR REPLACE FUNCTION pg_catalog.truncate(binary, uint4) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))';
 CREATE OR REPLACE FUNCTION pg_catalog.truncate(json, uint4) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.truncate(cast($1 as number), cast($2 as int4))';
 
+CREATE OR REPLACE FUNCTION pg_catalog.left(bit, integer) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bit_left';
+CREATE OR REPLACE FUNCTION pg_catalog.left(blob, integer) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'blob_left';
+CREATE OR REPLACE FUNCTION pg_catalog.left(boolean, integer) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left(cast($1 as text), $2)::varchar';
