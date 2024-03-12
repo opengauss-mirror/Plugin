@@ -1392,3 +1392,7 @@ DROP CAST IF EXISTS ("binary" AS boolean);
 DROP CAST IF EXISTS ("varbinary" AS boolean);
 DROP FUNCTION IF EXISTS pg_catalog.binary2boolean(binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varbinary2boolean(varbinary) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.left(bit, integer);
+DROP FUNCTION IF EXISTS pg_catalog.left(blob, integer);
+DROP FUNCTION IF EXISTS pg_catalog.left(boolean, integer);

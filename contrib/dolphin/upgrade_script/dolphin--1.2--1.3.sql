@@ -2136,3 +2136,7 @@ CREATE OR REPLACE FUNCTION pg_catalog.binary2boolean(binary) RETURNS boolean LAN
 CREATE OR REPLACE FUNCTION pg_catalog.varbinary2boolean(varbinary) RETURNS boolean LANGUAGE SQL IMMUTABLE STRICT as 'select varchar_bool($1::varchar)';
 CREATE CAST ("binary" AS boolean) WITH FUNCTION pg_catalog.binary2boolean(binary) AS ASSIGNMENT;
 CREATE CAST ("varbinary" AS boolean) WITH FUNCTION pg_catalog.varbinary2boolean(varbinary) AS ASSIGNMENT;
+
+CREATE OR REPLACE FUNCTION pg_catalog.left(bit, integer) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bit_left';
+CREATE OR REPLACE FUNCTION pg_catalog.left(blob, integer) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'blob_left';
+CREATE OR REPLACE FUNCTION pg_catalog.left(boolean, integer) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left(cast($1 as text), $2)::varchar';

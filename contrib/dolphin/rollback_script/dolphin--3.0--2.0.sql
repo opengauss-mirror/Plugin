@@ -403,10 +403,6 @@ DROP FUNCTION pg_catalog.unknown_concat(unknown, unknown);
 DROP FUNCTION pg_catalog.unknown_int_concat(unknown, integer);
 DROP FUNCTION pg_catalog.int_unknown_concat(integer, unknown);
 
-DROP FUNCTION IF EXISTS pg_catalog.left(bit, integer);
-DROP FUNCTION IF EXISTS pg_catalog.left(blob, integer);
-DROP FUNCTION IF EXISTS pg_catalog.left(boolean, integer);
-
 DROP FUNCTION IF EXISTS pg_catalog.lower(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.lower(bit);
 DROP FUNCTION IF EXISTS pg_catalog.lower(tinyblob);
