@@ -611,7 +611,6 @@ HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(MONTH,-1,''2022-01-00'')', TIMESTAMPADD(MONTH,-1,'2022-01-00'));
 ERROR:  date/time field value out of range: "2022-01-00"
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: result
 insert into func_test2(functionName, result) values('TIMESTAMPADD(DAY,1,''2022-02-29'')', TIMESTAMPADD(DAY,1,'2022-02-29'));
 ERROR:  date/time field value out of range: "2022-02-29"

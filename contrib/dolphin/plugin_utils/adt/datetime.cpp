@@ -266,6 +266,34 @@ unsigned long long pow_of_10[20]=
   1000000000000000ULL, 10000000000000000ULL, 100000000000000000ULL,
   1000000000000000000ULL, 10000000000000000000ULL
 };
+
+
+#define ZERO_DAY_PROCESS_MAP_SZIE 16
+
+ZeroDayProcessMap ZeroDayProcessMaps[ZERO_DAY_PROCESS_MAP_SZIE] = 
+{
+    {DTERR_ZERO_DATE, TIME_IN, STRICT_NO_ZERO_DAY, ERROR},
+    {DTERR_ZERO_DATE, TIME_IN, STRICT_CAN_ZERO_DAY, WARNING},
+    {DTERR_ZERO_DATE, TIME_IN, NO_STRICT_NO_ZERO_DAY, WARNING},
+    {DTERR_ZERO_DATE, TIME_IN, NO_STRICT_CAN_ZERO_DAY, WARNING},
+
+    {DTERR_ZERO_DATE, TEXT_TIME_EXPLICIT, STRICT_NO_ZERO_DAY, WARNING},
+    {DTERR_ZERO_DATE, TEXT_TIME_EXPLICIT, STRICT_CAN_ZERO_DAY, WARNING},
+    {DTERR_ZERO_DATE, TEXT_TIME_EXPLICIT, NO_STRICT_NO_ZERO_DAY, WARNING},
+    {DTERR_ZERO_DATE, TEXT_TIME_EXPLICIT, NO_STRICT_CAN_ZERO_DAY, WARNING},
+
+    {DTERR_ZERO_MD, TIME_IN, STRICT_NO_ZERO_DAY, ERROR},
+    {DTERR_ZERO_MD, TIME_IN, STRICT_CAN_ZERO_DAY, ERROR},
+    {DTERR_ZERO_MD, TIME_IN, NO_STRICT_NO_ZERO_DAY, WARNING},
+    {DTERR_ZERO_MD, TIME_IN, NO_STRICT_CAN_ZERO_DAY, WARNING},
+    
+    {DTERR_ZERO_MD, TEXT_TIME_EXPLICIT, STRICT_NO_ZERO_DAY, WARNING},
+    {DTERR_ZERO_MD, TEXT_TIME_EXPLICIT, STRICT_CAN_ZERO_DAY, WARNING},
+    {DTERR_ZERO_MD, TEXT_TIME_EXPLICIT, NO_STRICT_NO_ZERO_DAY, WARNING},
+    {DTERR_ZERO_MD, TEXT_TIME_EXPLICIT, NO_STRICT_CAN_ZERO_DAY, WARNING}
+};
+
+
 #endif
 /*
  * strtoi --- just like strtol, but returns int not long
@@ -2368,10 +2396,7 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
     /* check for valid month */
     if (fmask & DTK_M(MONTH)) {
 #ifdef DOLPHIN
-        if ((date_flag & ENABLE_ZERO_MONTH) || (SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
-            if (tm->tm_mon < 1 || tm->tm_mon > MONTHS_PER_YEAR)
-                return DTERR_MD_FIELD_OVERFLOW;
-        } else if (tm->tm_mon < 0 || tm->tm_mon > MONTHS_PER_YEAR)
+        if (tm->tm_mon < 0 || tm->tm_mon > MONTHS_PER_YEAR)
 #else
         if (tm->tm_mon < 1 || tm->tm_mon > MONTHS_PER_YEAR)
 #endif
@@ -2381,10 +2406,7 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
     /* minimal check for valid day */
     if (fmask & DTK_M(DAY)) {
 #ifdef DOLPHIN
-        if ((date_flag & ENABLE_ZERO_DAY) || (SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
-            if (tm->tm_mday < 1 || tm->tm_mday > 31)
-                return DTERR_MD_FIELD_OVERFLOW;
-        } else if(tm->tm_mday < 0 || tm->tm_mday > 31)
+        if(tm->tm_mday < 0 || tm->tm_mday > 31)
 #else
         if(tm->tm_mday < 1 || tm->tm_mday > 31)
 #endif
@@ -2394,11 +2416,16 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
 #ifdef DOLPHIN
     if ((date_flag & (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH)) == 0 && (fmask & (DTK_M(DAY) | DTK_M(MONTH) | DTK_M(YEAR)))) {
         int zero_cnt = (tm->tm_mon == 0) + (tm->tm_mday == 0) + (tm->tm_year == 0);
-        if (zero_cnt == 3 && SQL_MODE_NO_ZERO_DATE() && !SQL_MODE_STRICT()) {
+        if (zero_cnt == 3 && !SQL_MODE_NO_ZERO_DATE()) {
+            return 0;
+        }
+        
+        if (zero_cnt == 3) {
             return DTERR_ZERO_DATE;
         }
-        if (zero_cnt > 1 && zero_cnt < 3) {
-            return DTERR_FIELD_OVERFLOW;
+        
+        if (tm->tm_mon == 0 || tm->tm_mday == 0) {
+            return DTERR_ZERO_MD;
         }
     }
 #endif
@@ -3547,9 +3574,36 @@ void DateTimeParseError(int dterr, const char* str, const char* datatype, bool c
     DateTimeParseErrorInternal(dterr, str, datatype, level);
 }
 
-void DateTimeParseErrorWithFlag(int dterr, const char* str, const char* datatype, bool can_ignore, bool is_error)
+inline ZERO_DATE_MODE get_zero_date_mode() {
+    if (SQL_MODE_STRICT() && SQL_MODE_NO_ZERO_DATE()) {
+        return STRICT_NO_ZERO_DAY;
+    } else if (SQL_MODE_STRICT() && !SQL_MODE_NO_ZERO_DATE()) {
+        return STRICT_CAN_ZERO_DAY;
+    } else if (!SQL_MODE_STRICT() && SQL_MODE_NO_ZERO_DATE()) {
+        return NO_STRICT_NO_ZERO_DAY;
+    } else {
+        return NO_STRICT_CAN_ZERO_DAY;
+    }
+}
+
+
+void DateTimeParseErrorWithFlag(int dterr, const char* str, const char* datatype, int time_cast_type, bool can_ignore,
+    bool is_error)
 {
     int level = !is_error && (can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
+    if (!can_ignore) {
+        ZERO_DATE_MODE zero_date_mode = get_zero_date_mode();
+        for (int i = 0; i < ZERO_DAY_PROCESS_MAP_SZIE; i++) {
+            ZeroDayProcessMap zero_day_process_map = ZeroDayProcessMaps[i];
+            if (zero_day_process_map.dterr == dterr &&
+                zero_day_process_map.zero_date_mode == zero_date_mode &&
+                zero_day_process_map.time_cast_type == time_cast_type) {
+                    level = zero_day_process_map.level;
+                    break;
+                }
+        }
+    }
+    
     DateTimeParseErrorInternal(dterr, str, datatype, level);
 }
 
@@ -3577,10 +3631,16 @@ void DateTimeParseErrorInternal(int dterr, const char* str, const char* datatype
                 (errcode(ERRCODE_INVALID_TIME_ZONE_DISPLACEMENT_VALUE),
                     errmsg("time zone displacement out of range: \"%s\"", str)));
             break;
+#ifdef DOLPHIN
         case DTERR_ZERO_DATE:
-            ereport(WARNING,
+            ereport(level,
                 (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field value out of range: \"%s\"", str)));
             break;
+        case DTERR_ZERO_MD:
+            ereport(level,
+                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field value out of range: \"%s\"", str)));
+            break;
+#endif
         case DTERR_BAD_FORMAT:
         default:
             ereport(level,

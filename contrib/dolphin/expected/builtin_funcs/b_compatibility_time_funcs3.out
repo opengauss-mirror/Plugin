@@ -95,7 +95,6 @@ insert into func_test3(functionName,result) values('TO_DAYS(''0000-0-0'')',TO_DA
 ERROR:  date/time field value out of range: "0000-0-0"
 LINE 1: ...me,result) values('TO_DAYS(''0000-0-0'')',TO_DAYS('0000-0-0'...
                                                              ^
-HINT:  Perhaps you need a different "datestyle" setting.
 -- 最大值
 insert into func_test3(functionName,result) values('TO_DAYS(''9999-12-31'')',TO_DAYS('9999-12-31'));
 insert into func_test3(functionName,result) values('TO_DAYS(''9999-12-31 23:59:59.999999'')',TO_DAYS('9999-12-31 23:59:59.999999'));
@@ -168,11 +167,9 @@ insert into func_test3(functionName, result) values('TO_SECONDS(''0000-01-01'')'
 insert into func_test3(functionName, result) values('TO_SECONDS(''0000-01-01 00:00:00'')', TO_SECONDS('0000-01-01 00:00:00'));
 insert into func_test3(functionName, result) values('TO_SECONDS(''0000-00-00'')', TO_SECONDS('0000-00-00'));
 ERROR:  date/time field value out of range: "0000-00-00"
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: result
 insert into func_test3(functionName, result) values('TO_SECONDS(''0000-00-00 00:00:00'')', TO_SECONDS('0000-00-00 00:00:00'));
 ERROR:  date/time field value out of range: "0000-00-00 00:00:00"
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: result
 set timezone to 'PRC';
 -- UNIX_TIMESTAMP()
@@ -1901,47 +1898,456 @@ drop table if exists t2;
 select cast(10000 as datetime);
 WARNING:  timestamp out of range
 CONTEXT:  referenced column: timestamp
-ERROR:  The value of month or day cannot be zero.
-CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
 select cast(10100 as datetime);
-ERROR:  The value of month or day cannot be zero.
+WARNING:  timestamp out of range
 CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
 select cast(10001 as datetime);
-ERROR:  The value of month or day cannot be zero.
+WARNING:  timestamp out of range
 CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
 select cast(10000 as timestamp with time zone);
 WARNING:  timestamp out of range
 CONTEXT:  referenced column: timestamptz
-ERROR:  The value of month or day cannot be zero.
-CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
 select cast(10100 as timestamp with time zone);
-ERROR:  The value of month or day cannot be zero.
+WARNING:  timestamp out of range
 CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
 select cast(10001 as timestamp with time zone);
-ERROR:  The value of month or day cannot be zero.
+WARNING:  timestamp out of range
 CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast(10000 as date);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast(10100 as date);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast(10001 as date);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
 select cast('10000' as datetime);
 WARNING:  date/time field value out of range: "10000"
 CONTEXT:  referenced column: timestamp
-ERROR:  The value of month or day cannot be zero.
-CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
 select cast('10100' as datetime);
-ERROR:  The value of month or day cannot be zero.
+WARNING:  date/time field value out of range: "10100"
 CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
 select cast('10001' as datetime);
-ERROR:  The value of month or day cannot be zero.
+WARNING:  date/time field value out of range: "10001"
 CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
 select cast('10000' as timestamp with time zone);
 WARNING:  date/time field value out of range: "10000"
 CONTEXT:  referenced column: timestamptz
-ERROR:  The value of month or day cannot be zero.
-CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
 select cast('10100' as timestamp with time zone);
-ERROR:  The value of month or day cannot be zero.
+WARNING:  date/time field value out of range: "10100"
 CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
 select cast('10001' as timestamp with time zone);
-ERROR:  The value of month or day cannot be zero.
+WARNING:  date/time field value out of range: "10001"
 CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast('10000' as date);
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  referenced column: date
+WARNING:  invalid input syntax for type date: "10000"
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('10100' as date);
+WARNING:  date/time field value out of range: "10100"
+CONTEXT:  referenced column: date
+WARNING:  invalid input syntax for type date: "10100"
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('10001' as date);
+WARNING:  date/time field value out of range: "10001"
+CONTEXT:  referenced column: date
+WARNING:  invalid input syntax for type date: "10001"
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+set dolphin.sql_mode = 'sql_mode_strict';
+select cast(10000 as datetime);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast(10100 as datetime);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast(10001 as datetime);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast(10000 as timestamp with time zone);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast(10100 as timestamp with time zone);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast(10001 as timestamp with time zone);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast(10000 as date);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast(10100 as date);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast(10001 as date);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('10000' as datetime);
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast('10100' as datetime);
+WARNING:  date/time field value out of range: "10100"
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast('10001' as datetime);
+WARNING:  date/time field value out of range: "10001"
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast('10000' as timestamp with time zone);
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast('10100' as timestamp with time zone);
+WARNING:  date/time field value out of range: "10100"
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast('10001' as timestamp with time zone);
+WARNING:  date/time field value out of range: "10001"
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast('10000' as date);
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  referenced column: date
+WARNING:  invalid input syntax for type date: "10000"
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('10100' as date);
+WARNING:  date/time field value out of range: "10100"
+CONTEXT:  referenced column: date
+WARNING:  invalid input syntax for type date: "10100"
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('10001' as date);
+WARNING:  date/time field value out of range: "10001"
+CONTEXT:  referenced column: date
+WARNING:  invalid input syntax for type date: "10001"
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+set dolphin.sql_mode = 'no_zero_date';
+select cast(10000 as datetime);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast(10100 as datetime);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast(10001 as datetime);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast(10000 as timestamp with time zone);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast(10100 as timestamp with time zone);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast(10001 as timestamp with time zone);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast(10000 as date);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast(10100 as date);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast(10001 as date);
+WARNING:  Out of range value for date
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('10000' as datetime);
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast('10100' as datetime);
+WARNING:  date/time field value out of range: "10100"
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast('10001' as datetime);
+WARNING:  date/time field value out of range: "10001"
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast('10000' as timestamp with time zone);
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast('10100' as timestamp with time zone);
+WARNING:  date/time field value out of range: "10100"
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast('10001' as timestamp with time zone);
+WARNING:  date/time field value out of range: "10001"
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast('10000' as date);
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  referenced column: date
+WARNING:  invalid input syntax for type date: "10000"
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('10100' as date);
+WARNING:  date/time field value out of range: "10100"
+CONTEXT:  referenced column: date
+WARNING:  invalid input syntax for type date: "10100"
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+select cast('10001' as date);
+WARNING:  date/time field value out of range: "10001"
+CONTEXT:  referenced column: date
+WARNING:  invalid input syntax for type date: "10001"
+CONTEXT:  referenced column: date
+ date 
+------
+ 
+(1 row)
+
+reset dolphin.sql_mode;
 set dolphin.b_compatibility_mode = true;
 select cast(3.1415926 as datetime);
 WARNING:  invalid input syntax for type timestamp: "000003.1415926"
