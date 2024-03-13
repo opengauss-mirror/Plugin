@@ -22,6 +22,13 @@
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/typcache.h"
+#ifdef DOLPHIN
+#include "catalog/pg_operator.h"
+#include "nodes/makefuncs.h"
+#include "plugin_parser/parse_oper.h"
+#include "plugin_parser/parse_func.h"
+#include "plugin_optimizer/clauses.h"
+#endif
 
 /*
  * structure to cache metadata needed for record I/O
@@ -1017,6 +1024,56 @@ static int record_cmp(FunctionCallInfo fcinfo)
     return result;
 }
 
+#ifdef DOLPHIN
+static Datum GetActualArgDatum(Node* node, Datum value, bool can_ignore)
+{
+    PlannerInfo* pi = makeNode(PlannerInfo);
+    PlannerGlobal* pg = makeNode(PlannerGlobal);
+    Query* q = makeNode(Query);
+    q->hasIgnore = can_ignore;
+    pi->parse = q;
+    pi->glob = pg;
+
+    Node* constNode = eval_const_expressions(pi, node);
+
+    pfree(q);
+    pfree(pg);
+    pfree(pi);
+
+    Datum ret = NULL;
+    if (IsA(constNode, Const)) {
+        ret = ((Const *)constNode)->constvalue;
+    } else if (IsA(constNode, FuncExpr)) {
+        ret = OidFunctionCall1Coll(((FuncExpr *)constNode)->funcid, InvalidOid, value, can_ignore);
+    } else {
+        ereport(ERROR,
+                (errcode(ERRCODE_DATATYPE_MISMATCH),
+                    errmsg("cannot compare dissimilar column types in record_eq")));
+    }
+
+    return ret;
+}
+
+static Datum GetFunctionCallDatum(RegProcedure op_proc, Node* fn_expr, Datum funcArg1,
+    Datum funcArg2, bool can_ignore)
+{
+    FmgrInfo flinfo;
+    FunctionCallInfoData fi;
+
+    fmgr_info(op_proc, &flinfo);
+    flinfo.fn_expr = fn_expr;
+
+    InitFunctionCallInfoData(fi, &flinfo, 2, InvalidOid, NULL, NULL);
+
+    fi.arg[0] = funcArg1;
+    fi.arg[1] = funcArg2;
+    fi.argnull[0] = false;
+    fi.argnull[1] = false;
+    fi.can_ignore = can_ignore;
+    
+    return FunctionCallInvoke(&fi);
+}
+#endif
 /*
  * record_eq :
  *		  compares two records for equality
@@ -1123,6 +1180,9 @@ Datum record_eq(PG_FUNCTION_ARGS)
      * the logical column index.
      */
     i1 = i2 = j = 0;
+#ifdef DOLPHIN
+    bool hasNull = false;
+#endif
     while (i1 < ncolumns1 || i2 < ncolumns2) {
         TypeCacheEntry* typentry = NULL;
         Oid collation;
@@ -1143,6 +1203,52 @@ Datum record_eq(PG_FUNCTION_ARGS)
         if (i1 >= ncolumns1 || i2 >= ncolumns2)
             break; /* we'll deal with mismatch below loop */
 
+#ifdef DOLPHIN
+        if (nulls1[i1] || nulls2[i2]) {
+            hasNull = true;
+            break;
+        }
+
+        List *opname = NIL;
+        Value *op = makeString("=");
+        opname = lappend(opname, op);
+        FormData_pg_attribute attr1 = tupdesc1->attrs[i1];
+        FormData_pg_attribute attr2 = tupdesc2->attrs[i2];
+
+        Operator tup = oper(NULL, opname, attr1.atttypid, attr2.atttypid, false, -1, false);
+
+        if (!HeapTupleIsValid(tup)) {
+            ereport(ERROR, (errmsg("could not identify an equality operator for type %s and %s", format_type_be(attr1.atttypid), format_type_be(attr2.atttypid))));
+        }
+        
+        Oid actualArgTypes[2];
+        Oid declaredArgTypes[2];
+        actualArgTypes[0] = attr1.atttypid;
+        actualArgTypes[1] = attr2.atttypid;
+        Form_pg_operator opform = (Form_pg_operator)GETSTRUCT(tup);
+        RegProcedure op_proc = opform->oprcode;
+        declaredArgTypes[0] = opform->oprleft;
+        declaredArgTypes[1] = opform->oprright;
+        ReleaseSysCache(tup);
+        
+        Node *arg1 = (Node*)makeConst(attr1.atttypid, attr1.atttypmod, attr1.attcollation, attr1.attlen, values1[i1], false, attr1.attbyval);
+        Node *arg2 = (Node*)makeConst(attr2.atttypid, attr2.atttypmod, attr2.attcollation, attr2.attlen, values2[i2], false, attr2.attbyval);
+        List *args = list_make2(arg1, arg2);
+
+        make_fn_arguments(NULL, args, actualArgTypes, declaredArgTypes);
+
+        Datum funcArg1 = GetActualArgDatum((Node*)linitial(args), values1[i1], fcinfo->can_ignore);
+        Datum funcArg2 = GetActualArgDatum((Node*)lsecond(args), values2[i2], fcinfo->can_ignore);
+
+        Node* fn_expr = (Node*)makeFuncExpr(op_proc, opform->oprresult, args, InvalidOid, InvalidOid, COERCE_EXPLICIT_CALL);
+        Datum res = GetFunctionCallDatum(op_proc, fn_expr, funcArg1, funcArg2, fcinfo->can_ignore);
+        oprresult = DatumGetBool(res);
+
+        if (!oprresult) {
+            result = false;
+            break;
+        }
+#else
         /*
          * Have two matching columns, they must be same type
          */
@@ -1198,6 +1304,7 @@ Datum record_eq(PG_FUNCTION_ARGS)
                 break;
             }
         }
+#endif
 
         /* equal, so continue to next column */
         i1++, i2++, j++;
@@ -1208,7 +1315,11 @@ Datum record_eq(PG_FUNCTION_ARGS)
      * mismatch.  (We do not report such mismatch if we found unequal column
      * values; is that a feature or a bug?)
      */
-    if (result) {
+    if (result 
+#ifdef DOLPHIN
+        && !hasNull
+#endif
+    ) {
         if (i1 != ncolumns1 || i2 != ncolumns2)
             ereport(ERROR,
                 (errcode(ERRCODE_DATATYPE_MISMATCH),
@@ -1225,7 +1336,11 @@ Datum record_eq(PG_FUNCTION_ARGS)
     /* Avoid leaking memory when handed toasted input. */
     PG_FREE_IF_COPY(record1, 0);
     PG_FREE_IF_COPY(record2, 1);
-
+#ifdef DOLPHIN
+    if (hasNull) {
+        PG_RETURN_NULL();
+    }
+#endif
     PG_RETURN_BOOL(result);
 }
 

@@ -7124,16 +7124,7 @@ static int json_compare(FunctionCallInfo fcinfo, const char *funcName, bool null
             result = JSON_GT;
         }
     } else {
-        if (jsontype[1]) {
-            result = JSON_LT;
-        } else {
-            for (jsondoc_iter = 0; jsondoc_iter < json_num; jsondoc_iter++) {
-                cJSON_Delete(jsondoc[jsondoc_iter]);
-            }
-            pfree(jsondoc);
-            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                errmsg("Invalid data type for JSON data in arguments to function %s", funcName)));
-        }
+        result = JSON_LT;
     }
 
     if (result == JSON_INVALID) {
@@ -7164,7 +7155,7 @@ static int json_compare(FunctionCallInfo fcinfo, const char *funcName, bool null
     for (jsondoc_iter = 0; jsondoc_iter < json_num; jsondoc_iter++) {
         cJSON_Delete(jsondoc[jsondoc_iter]);
     }
-   pfree(jsondoc);
+    pfree(jsondoc);
     return result;
 }
 

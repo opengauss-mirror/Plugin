@@ -1580,3 +1580,17 @@ DROP FUNCTION pg_catalog.truncate(json, uint4);
 DROP FUNCTION IF EXISTS pg_catalog.left(bit, integer);
 DROP FUNCTION IF EXISTS pg_catalog.left(blob, integer);
 DROP FUNCTION IF EXISTS pg_catalog.left(boolean, integer);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(int, uint2);
+DROP FUNCTION IF EXISTS pg_catalog.int_uint2_eq(int, uint2);
+
+DROP OPERATOR IF EXISTS pg_catalog.=(tinyblob, json);
+DROP FUNCTION IF EXISTS pg_catalog.json_eq(tinyblob, json);
+DROP OPERATOR IF EXISTS pg_catalog.=(blob, json);
+DROP FUNCTION IF EXISTS pg_catalog.json_eq(blob, json);
+DROP OPERATOR IF EXISTS pg_catalog.=(mediumblob, json);
+DROP FUNCTION IF EXISTS pg_catalog.json_eq(mediumblob, json);
+DROP OPERATOR IF EXISTS pg_catalog.=(longblob, json);
+DROP FUNCTION IF EXISTS pg_catalog.json_eq(longblob, json);
+DROP OPERATOR IF EXISTS pg_catalog.=(anyenum, json);
+DROP FUNCTION IF EXISTS pg_catalog.json_eq(anyenum, json);

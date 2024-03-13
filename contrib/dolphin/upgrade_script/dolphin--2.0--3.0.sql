@@ -2154,3 +2154,17 @@ CREATE OR REPLACE FUNCTION pg_catalog.truncate(json, uint4) RETURNS number LANGU
 CREATE OR REPLACE FUNCTION pg_catalog.left(bit, integer) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bit_left';
 CREATE OR REPLACE FUNCTION pg_catalog.left(blob, integer) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'blob_left';
 CREATE OR REPLACE FUNCTION pg_catalog.left(boolean, integer) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left(cast($1 as text), $2)::varchar';
+
+CREATE OR REPLACE FUNCTION pg_catalog.int_uint2_eq(int, uint2) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1 = $2::int4)';
+CREATE OPERATOR pg_catalog.=(LEFTARG = int, RIGHTARG = uint2, COMMUTATOR = operator(pg_catalog.=), PROCEDURE = pg_catalog.int_uint2_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.json_eq(tinyblob, json) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_eq';
+CREATE OPERATOR pg_catalog.=(leftarg = tinyblob, rightarg = json, PROCEDURE = pg_catalog.json_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.json_eq(blob, json) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_eq';
+CREATE OPERATOR pg_catalog.=(leftarg = blob, rightarg = json, PROCEDURE = pg_catalog.json_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.json_eq(mediumblob, json) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_eq';
+CREATE OPERATOR pg_catalog.=(leftarg = mediumblob, rightarg = json, PROCEDURE = pg_catalog.json_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.json_eq(longblob, json) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_eq';
+CREATE OPERATOR pg_catalog.=(leftarg = longblob, rightarg = json, PROCEDURE = pg_catalog.json_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+CREATE OR REPLACE FUNCTION pg_catalog.json_eq(anyenum, json) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_eq';
+CREATE OPERATOR pg_catalog.=(leftarg = anyenum, rightarg = json, PROCEDURE = pg_catalog.json_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
