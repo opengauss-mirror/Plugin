@@ -287,10 +287,6 @@ select * from t0 order by 1,2;
 
 INSERT INTO t0 VALUES (1,'1'),(true,'true'),(false,'false');
 SELECT * FROM t0 WHERE t0.c0 = true order by 1,2;
-WARNING:  Truncated incorrect DOUBLE value: 1
-WARNING:  Truncated incorrect DOUBLE value: 1
-WARNING:  Truncated incorrect DOUBLE value: 1
-WARNING:  Truncated incorrect DOUBLE value: 0
  c0 |  c1  
 ----+------
  1  | 1
@@ -299,10 +295,6 @@ WARNING:  Truncated incorrect DOUBLE value: 0
 (3 rows)
 
 SELECT * FROM t0 WHERE t0.c0 is true order by 1,2;
-WARNING:  Truncated incorrect DOUBLE value: 1
-WARNING:  Truncated incorrect DOUBLE value: 1
-WARNING:  Truncated incorrect DOUBLE value: 1
-WARNING:  Truncated incorrect DOUBLE value: 0
  c0 |  c1  
 ----+------
  1  | 1
@@ -311,10 +303,6 @@ WARNING:  Truncated incorrect DOUBLE value: 0
 (3 rows)
 
 SELECT * FROM t0 WHERE t0.c0 is false order by 1,2;
-WARNING:  Truncated incorrect DOUBLE value: 1
-WARNING:  Truncated incorrect DOUBLE value: 1
-WARNING:  Truncated incorrect DOUBLE value: 1
-WARNING:  Truncated incorrect DOUBLE value: 0
  c0 |  c1   
 ----+-------
  0  | false
@@ -322,7 +310,6 @@ WARNING:  Truncated incorrect DOUBLE value: 0
 
 SELECT * FROM t0 WHERE t0.c1 = true order by 1,2;
 WARNING:  Truncated incorrect DOUBLE value: true
-WARNING:  Truncated incorrect DOUBLE value: 1
 WARNING:  Truncated incorrect DOUBLE value: true
 WARNING:  Truncated incorrect DOUBLE value: false
  c0 | c1 
@@ -332,7 +319,6 @@ WARNING:  Truncated incorrect DOUBLE value: false
 
 SELECT * FROM t0 WHERE t0.c1 is true order by 1,2;
 WARNING:  Truncated incorrect DOUBLE value: true
-WARNING:  Truncated incorrect DOUBLE value: 1
 WARNING:  Truncated incorrect DOUBLE value: true
 WARNING:  Truncated incorrect DOUBLE value: false
  c0 | c1 
@@ -342,7 +328,6 @@ WARNING:  Truncated incorrect DOUBLE value: false
 
 SELECT * FROM t0 WHERE t0.c1 is false order by 1,2;
 WARNING:  Truncated incorrect DOUBLE value: true
-WARNING:  Truncated incorrect DOUBLE value: 1
 WARNING:  Truncated incorrect DOUBLE value: true
 WARNING:  Truncated incorrect DOUBLE value: false
  c0 |  c1   

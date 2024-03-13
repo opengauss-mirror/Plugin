@@ -86,6 +86,19 @@ drop table testfortext;
 drop table testforchar;
 drop table testforvarchar;
 
+set dolphin.b_compatibility_mode to on;
+create table t1(a varchar(10));
+insert into t1 values(1);
+select * from t1 where a=true;
+create table t2(a char(10));
+insert into t2 values(1);
+select * from t2 where a=true;
+create table t3(a text);
+insert into t3 values(1);
+select * from t3 where a=true;
+drop table t1;
+drop table t2;
+drop table t3;
 
 select '00100abc' && 1;
 select '00100abc' && 0;

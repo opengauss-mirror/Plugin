@@ -1302,18 +1302,6 @@ CONTEXT:  referenced column: Degree
 
 --func
 select (a.Sno is null) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
-WARNING:  Truncated incorrect DOUBLE value: 101
-CONTEXT:  referenced column: Degree
-WARNING:  Truncated incorrect DOUBLE value: 103
-CONTEXT:  referenced column: Degree
-WARNING:  Truncated incorrect DOUBLE value: 101
-CONTEXT:  referenced column: Degree
-WARNING:  Truncated incorrect DOUBLE value: 103
-CONTEXT:  referenced column: Degree
-WARNING:  Truncated incorrect DOUBLE value: 101
-CONTEXT:  referenced column: Degree
-WARNING:  Truncated incorrect DOUBLE value: 103
-CONTEXT:  referenced column: Degree
  no | name | Degree 
 ----+------+--------
  f  | 李军 |       
