@@ -4105,25 +4105,46 @@ WARNING:  Truncated incorrect DOUBLE value: 1.23a
 
 select * from t_v22 natural join t_v14;
 WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v22 natural join t_v15;
 WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v22 natural join t_v16;
 WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v22 natural join t_v17;
 WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v22 natural join t_v18;
 WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v22 natural join t_v19;
 WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v22 natural join t_v20;
 WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v22 natural join t_v21;
 WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
  col1 
@@ -4279,25 +4300,46 @@ WARNING:  Truncated incorrect DOUBLE value: 1.23a
 
 select * from t_v23 natural join t_v14;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v23 natural join t_v15;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v23 natural join t_v16;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v23 natural join t_v17;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v23 natural join t_v18;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v23 natural join t_v19;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v23 natural join t_v20;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v23 natural join t_v21;
 WARNING:  invalid input syntax for type bigint: "1.23a"
  col1 
@@ -5486,25 +5528,46 @@ select * from t_v30 natural join t_v13;
 
 select * from t_v30 natural join t_v14;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v30 natural join t_v15;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v30 natural join t_v16;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v30 natural join t_v17;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v30 natural join t_v18;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v30 natural join t_v19;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v30 natural join t_v20;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-ERROR:  The value of month or day cannot be zero.
+ col1 
+------
+(0 rows)
+
 select * from t_v30 natural join t_v21;
 WARNING:  invalid input syntax for type bigint: "1.23a"
  col1 

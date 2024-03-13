@@ -1749,7 +1749,7 @@ GaussTimeResult* gs_time_internal(PG_FUNCTION_ARGS, char* str, pg_tm *tt, int ti
          * otherwise we can return tt which stores M*'s parsing result.
          */
         if (SQL_MODE_STRICT() && !fcinfo->can_ignore) {
-            DateTimeParseErrorWithFlag(dterr, str, "time", fcinfo->can_ignore, !fcinfo->can_ignore);
+            DateTimeParseErrorWithFlag(dterr, str, "time", time_cast_type, fcinfo->can_ignore, !fcinfo->can_ignore);
             /*
              * can_ignore == true means hint string "ignore_error" used. warning report instead of error.
              * then we will return 00:00:xx if the first 1 or 2 character is lower than 60, otherwise return 00:00:00
@@ -1793,7 +1793,7 @@ GaussTimeResult* gs_time_internal(PG_FUNCTION_ARGS, char* str, pg_tm *tt, int ti
                 gs_time_result->time_error_type = (dterr != DTERR_TZDISP_OVERFLOW && *null_func_result) ?
                     GET_TIME_ERROR_TYPE() : TIME_CORRECT;
             } else if (time_cast_type == TIME_CAST) {
-                DateTimeParseErrorWithFlag(dterr, str, "time", fcinfo->can_ignore, !SQL_MODE_STRICT());
+                DateTimeParseErrorWithFlag(dterr, str, "time", time_cast_type, fcinfo->can_ignore, !SQL_MODE_STRICT());
                 gs_time_result->tm = tt; // switch to M*'s parsing result
             } else {
                 DateTimeParseError(dterr, str, "time", !SQL_MODE_STRICT());
@@ -2266,12 +2266,15 @@ Datum int64_number_cast_date(PG_FUNCTION_ARGS, int64 number)
 /* int4 to b format date type conversion */
 Datum int32_b_format_date(int64 number, bool can_ignore, TimeErrorType* time_error_type)
 {
+    int dterr = 0;
     int4 date = (int4)number;
     DateADT result;
     struct pg_tm tt, *tm = &tt;
     int errlevel = can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING;
-    if (int32_b_format_date_internal(tm, date, true,
-        (EANBLE_ERROR_ON_DATE_LESS_THAN_MIN | ENABLE_ZERO_DATE_BYPASSED))) {
+    dterr = int32_b_format_date_internal(tm, date, true,
+        (EANBLE_ERROR_ON_DATE_LESS_THAN_MIN | ENABLE_ZERO_DATE_BYPASSED));
+    if (dterr) {
+        check_zero_month_day("Out of range value for date", dterr, can_ignore);
         ereport(errlevel,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
                 errmsg("Out of range value for date")));

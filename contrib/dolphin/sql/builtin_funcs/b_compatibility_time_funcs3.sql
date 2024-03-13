@@ -508,6 +508,9 @@ select cast(10001 as datetime);
 select cast(10000 as timestamp with time zone);
 select cast(10100 as timestamp with time zone);
 select cast(10001 as timestamp with time zone);
+select cast(10000 as date);
+select cast(10100 as date);
+select cast(10001 as date);
 
 select cast('10000' as datetime);
 select cast('10100' as datetime);
@@ -515,6 +518,53 @@ select cast('10001' as datetime);
 select cast('10000' as timestamp with time zone);
 select cast('10100' as timestamp with time zone);
 select cast('10001' as timestamp with time zone);
+select cast('10000' as date);
+select cast('10100' as date);
+select cast('10001' as date);
+
+set dolphin.sql_mode = 'sql_mode_strict';
+select cast(10000 as datetime);
+select cast(10100 as datetime);
+select cast(10001 as datetime);
+select cast(10000 as timestamp with time zone);
+select cast(10100 as timestamp with time zone);
+select cast(10001 as timestamp with time zone);
+select cast(10000 as date);
+select cast(10100 as date);
+select cast(10001 as date);
+
+select cast('10000' as datetime);
+select cast('10100' as datetime);
+select cast('10001' as datetime);
+select cast('10000' as timestamp with time zone);
+select cast('10100' as timestamp with time zone);
+select cast('10001' as timestamp with time zone);
+select cast('10000' as date);
+select cast('10100' as date);
+select cast('10001' as date);
+
+set dolphin.sql_mode = 'no_zero_date';
+select cast(10000 as datetime);
+select cast(10100 as datetime);
+select cast(10001 as datetime);
+select cast(10000 as timestamp with time zone);
+select cast(10100 as timestamp with time zone);
+select cast(10001 as timestamp with time zone);
+select cast(10000 as date);
+select cast(10100 as date);
+select cast(10001 as date);
+
+select cast('10000' as datetime);
+select cast('10100' as datetime);
+select cast('10001' as datetime);
+select cast('10000' as timestamp with time zone);
+select cast('10100' as timestamp with time zone);
+select cast('10001' as timestamp with time zone);
+select cast('10000' as date);
+select cast('10100' as date);
+select cast('10001' as date);
+
+reset dolphin.sql_mode;
 
 set dolphin.b_compatibility_mode = true;
 select cast(3.1415926 as datetime);
