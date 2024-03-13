@@ -43,5 +43,8 @@ select `bit64` is true, `bit64` is not true, `bit64` is false, `bit64` is not fa
 select `boolean` is true, `boolean` is not true, `boolean` is false, `boolean` is not false, `boolean` is unknown, `boolean` is not unknown, `boolean` is null, `boolean` is not null from test_type_table;
 select `text` is true, `text` is not true, `text` is false, `text` is not false, `text` is unknown, `text` is not unknown, `text` is null, `text` is not null from test_type_table;
 select `char` is true, `char` is not true, `char` is false, `char` is not false, `char` is unknown, `char` is not unknown, `char` is null, `char` is not null from test_type_table;
+select `varchar` is true, `varchar` is not true, `varchar` is false, `varchar` is not false, `varchar` is unknown, `varchar` is not unknown, `varchar` is null, `varchar` is not null from test_type_table;
+select `binary` is true, `binary` is not true, `binary` is false, `binary` is not false, `binary` is unknown, `binary` is not unknown, `binary` is null, `binary` is not null from test_type_table;
+select `varbinary` is true, `varbinary` is not true, `varbinary` is false, `varbinary` is not false, `varbinary` is unknown, `varbinary` is not unknown, `varbinary` is null, `varbinary` is not null from test_type_table;
 
 drop schema is_clause cascade;

@@ -1344,10 +1344,150 @@ WARNING:  Truncated incorrect DOUBLE value: 1.23a
 CONTEXT:  referenced column: varchar_or_set_t
 WARNING:  Truncated incorrect DOUBLE value: 1.23a
 CONTEXT:  referenced column: varchar_or_json
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_int1
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_uint1
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_int2
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_uint2
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_int4
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_uint4
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_int8
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_uint8
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_float4
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_float8
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_numeric
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_bit1
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_bit64
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_boolean
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_date
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_time
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_time(4)
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_datetime
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_datetime(4)
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_timestamp
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_timestamp(4)
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_year
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_char
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_varchar
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_binary
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_varbinary
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_tinyblob
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_blob
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_mediumblob
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_longblob
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_text
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_enum_t
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_set_t
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_json
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_int1
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_uint1
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_int2
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_uint2
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_int4
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_uint4
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_int8
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_uint8
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_float4
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_float8
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_numeric
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_bit1
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_bit64
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_boolean
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_date
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_time
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_time(4)
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_datetime
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_datetime(4)
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_timestamp
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_timestamp(4)
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_year
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_char
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_varchar
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_binary
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_varbinary
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_tinyblob
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_blob
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_mediumblob
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_longblob
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_text
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_enum_t
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_set_t
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_json
 WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
 CONTEXT:  referenced column: json_or_char
 WARNING:  Truncated incorrect DOUBLE value: 1.23a
 CONTEXT:  referenced column: json_or_varchar
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: json_or_binary
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: json_or_varbinary
 SHOW COLUMNS FROM test_multi_type;
             Field             |  Type   | Null | Key | Default | Extra 
 ------------------------------+---------+------+-----+---------+-------
@@ -3472,73 +3612,209 @@ UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_or_js
 WARNING:  Truncated incorrect DOUBLE value: 1.23a
 CONTEXT:  referenced column: varchar_or_json
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_int1` = test_multi_type_table.`binary` or test_multi_type_table.`int1`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_int1
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_uint1` = test_multi_type_table.`binary` or test_multi_type_table.`uint1`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_uint1
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_int2` = test_multi_type_table.`binary` or test_multi_type_table.`int2`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_int2
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_uint2` = test_multi_type_table.`binary` or test_multi_type_table.`uint2`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_uint2
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_int4` = test_multi_type_table.`binary` or test_multi_type_table.`int4`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_int4
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_uint4` = test_multi_type_table.`binary` or test_multi_type_table.`uint4`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_uint4
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_int8` = test_multi_type_table.`binary` or test_multi_type_table.`int8`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_int8
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_uint8` = test_multi_type_table.`binary` or test_multi_type_table.`uint8`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_uint8
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_float4` = test_multi_type_table.`binary` or test_multi_type_table.`float4`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_float4
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_float8` = test_multi_type_table.`binary` or test_multi_type_table.`float8`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_float8
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_numeric` = test_multi_type_table.`binary` or test_multi_type_table.`numeric`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_numeric
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_bit1` = test_multi_type_table.`binary` or test_multi_type_table.`bit1`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_bit1
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_bit64` = test_multi_type_table.`binary` or test_multi_type_table.`bit64`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_bit64
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_boolean` = test_multi_type_table.`binary` or test_multi_type_table.`boolean`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_boolean
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_date` = test_multi_type_table.`binary` or test_multi_type_table.`date`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_date
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_time` = test_multi_type_table.`binary` or test_multi_type_table.`time`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_time
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_time(4)` = test_multi_type_table.`binary` or test_multi_type_table.`time(4)`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_time(4)
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_datetime` = test_multi_type_table.`binary` or test_multi_type_table.`datetime`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_datetime
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_datetime(4)` = test_multi_type_table.`binary` or test_multi_type_table.`datetime(4)`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_datetime(4)
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_timestamp` = test_multi_type_table.`binary` or test_multi_type_table.`timestamp`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_timestamp
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_timestamp(4)` = test_multi_type_table.`binary` or test_multi_type_table.`timestamp(4)`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_timestamp(4)
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_year` = test_multi_type_table.`binary` or test_multi_type_table.`year`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_year
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_char` = test_multi_type_table.`binary` or test_multi_type_table.`char`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_char
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_varchar` = test_multi_type_table.`binary` or test_multi_type_table.`varchar`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_varchar
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_binary` = test_multi_type_table.`binary` or test_multi_type_table.`binary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_binary
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_varbinary` = test_multi_type_table.`binary` or test_multi_type_table.`varbinary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_varbinary
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_tinyblob` = test_multi_type_table.`binary` or test_multi_type_table.`tinyblob`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_tinyblob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_blob` = test_multi_type_table.`binary` or test_multi_type_table.`blob`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_blob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_mediumblob` = test_multi_type_table.`binary` or test_multi_type_table.`mediumblob`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_mediumblob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_longblob` = test_multi_type_table.`binary` or test_multi_type_table.`longblob`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_longblob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_text` = test_multi_type_table.`binary` or test_multi_type_table.`text`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_text
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_enum_t` = test_multi_type_table.`binary` or test_multi_type_table.`enum_t`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_enum_t
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_set_t` = test_multi_type_table.`binary` or test_multi_type_table.`set_t`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_set_t
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_or_json` = test_multi_type_table.`binary` or test_multi_type_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: binary_or_json
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_int1` = test_multi_type_table.`varbinary` or test_multi_type_table.`int1`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_int1
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_uint1` = test_multi_type_table.`varbinary` or test_multi_type_table.`uint1`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_uint1
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_int2` = test_multi_type_table.`varbinary` or test_multi_type_table.`int2`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_int2
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_uint2` = test_multi_type_table.`varbinary` or test_multi_type_table.`uint2`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_uint2
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_int4` = test_multi_type_table.`varbinary` or test_multi_type_table.`int4`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_int4
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_uint4` = test_multi_type_table.`varbinary` or test_multi_type_table.`uint4`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_uint4
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_int8` = test_multi_type_table.`varbinary` or test_multi_type_table.`int8`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_int8
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_uint8` = test_multi_type_table.`varbinary` or test_multi_type_table.`uint8`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_uint8
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_float4` = test_multi_type_table.`varbinary` or test_multi_type_table.`float4`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_float4
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_float8` = test_multi_type_table.`varbinary` or test_multi_type_table.`float8`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_float8
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_numeric` = test_multi_type_table.`varbinary` or test_multi_type_table.`numeric`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_numeric
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_bit1` = test_multi_type_table.`varbinary` or test_multi_type_table.`bit1`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_bit1
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_bit64` = test_multi_type_table.`varbinary` or test_multi_type_table.`bit64`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_bit64
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_boolean` = test_multi_type_table.`varbinary` or test_multi_type_table.`boolean`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_boolean
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_date` = test_multi_type_table.`varbinary` or test_multi_type_table.`date`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_date
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_time` = test_multi_type_table.`varbinary` or test_multi_type_table.`time`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_time
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_time(4)` = test_multi_type_table.`varbinary` or test_multi_type_table.`time(4)`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_time(4)
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_datetime` = test_multi_type_table.`varbinary` or test_multi_type_table.`datetime`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_datetime
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_datetime(4)` = test_multi_type_table.`varbinary` or test_multi_type_table.`datetime(4)`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_datetime(4)
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_timestamp` = test_multi_type_table.`varbinary` or test_multi_type_table.`timestamp`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_timestamp
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_timestamp(4)` = test_multi_type_table.`varbinary` or test_multi_type_table.`timestamp(4)`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_timestamp(4)
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_year` = test_multi_type_table.`varbinary` or test_multi_type_table.`year`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_year
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_char` = test_multi_type_table.`varbinary` or test_multi_type_table.`char`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_char
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_varchar` = test_multi_type_table.`varbinary` or test_multi_type_table.`varchar`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_varchar
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_binary` = test_multi_type_table.`varbinary` or test_multi_type_table.`binary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_binary
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_varbinary` = test_multi_type_table.`varbinary` or test_multi_type_table.`varbinary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_varbinary
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_tinyblob` = test_multi_type_table.`varbinary` or test_multi_type_table.`tinyblob`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_tinyblob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_blob` = test_multi_type_table.`varbinary` or test_multi_type_table.`blob`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_blob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_mediumblob` = test_multi_type_table.`varbinary` or test_multi_type_table.`mediumblob`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_mediumblob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_longblob` = test_multi_type_table.`varbinary` or test_multi_type_table.`longblob`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_longblob
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_text` = test_multi_type_table.`varbinary` or test_multi_type_table.`text`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_text
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_enum_t` = test_multi_type_table.`varbinary` or test_multi_type_table.`enum_t`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_enum_t
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_set_t` = test_multi_type_table.`varbinary` or test_multi_type_table.`set_t`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_set_t
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_or_json` = test_multi_type_table.`varbinary` or test_multi_type_table.`json`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: varbinary_or_json
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`tinyblob_or_int1` = test_multi_type_table.`tinyblob` or test_multi_type_table.`int1`;
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`tinyblob_or_uint1` = test_multi_type_table.`tinyblob` or test_multi_type_table.`uint1`;
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`tinyblob_or_int2` = test_multi_type_table.`tinyblob` or test_multi_type_table.`int2`;
@@ -3806,7 +4082,11 @@ UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`json_or_varch
 WARNING:  Truncated incorrect DOUBLE value: 1.23a
 CONTEXT:  referenced column: json_or_varchar
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`json_or_binary` = test_multi_type_table.`json` or test_multi_type_table.`binary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: json_or_binary
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`json_or_varbinary` = test_multi_type_table.`json` or test_multi_type_table.`varbinary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: json_or_varbinary
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`json_or_tinyblob` = test_multi_type_table.`json` or test_multi_type_table.`tinyblob`;
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`json_or_blob` = test_multi_type_table.`json` or test_multi_type_table.`blob`;
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`json_or_mediumblob` = test_multi_type_table.`json` or test_multi_type_table.`mediumblob`;
