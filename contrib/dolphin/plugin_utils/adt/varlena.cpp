@@ -11239,4 +11239,30 @@ void trim_trailing_space(char* str)
         *p = '\0';
     }
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(bit_left);
+extern "C" DLL_PUBLIC Datum bit_left(PG_FUNCTION_ARGS);
+Datum bit_left(PG_FUNCTION_ARGS)
+{
+    VarBit *bits = PG_GETARG_VARBIT_P(0);
+    int length = PG_GETARG_INT32(1);
+
+    if (length <= 0) {
+        PG_RETURN_BYTEA_P(DirectFunctionCall1(rawin, CStringGetDatum("")));
+    }
+
+    VarBit *result = bit_substr_with_byte_align(bits, 1, length, false);
+
+    return bit_blob(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(blob_left);
+extern "C" DLL_PUBLIC Datum blob_left(PG_FUNCTION_ARGS);
+Datum blob_left(PG_FUNCTION_ARGS)
+{
+    Datum txtResult = DirectFunctionCall2Coll(text_left, PG_GET_COLLATION(),
+                                              PG_GETARG_DATUM(0), PG_GETARG_DATUM(1), fcinfo->can_ignore);
+
+    return DirectFunctionCall1Coll(texttoraw, PG_GET_COLLATION(), txtResult, fcinfo->can_ignore);
+}
 #endif
