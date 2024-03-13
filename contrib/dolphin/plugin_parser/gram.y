@@ -37729,10 +37729,19 @@ AexprConst_without_Sconst: Iconst
 					$$ = makeStringConstCast($2, @2, tmp);
 				}
 			| DB_B_TIMESTAMPTZ SCONST
-				{
-					TypeName * tmp = SystemTypeName("timestamptz");
-					tmp->location = @1;
-					$$ = makeStringConstCast($2, @2, tmp);
+				{					
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("timestamptz_cast");
+					n->colname = pstrdup("timestamptz");
+					n->args = list_make4(makeStringConst($2, @2), makeIntConst(-1, -1), makeIntConst(-1, -1), makeBoolAConst(FALSE, -1));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
 			| DB_B_POINT SCONST
 				{
@@ -37921,16 +37930,34 @@ AexprConst_without_Sconst: Iconst
 					$$ = (Node *)n;
 				}
 			| TIMESTAMP WITH_TIME ZONE SCONST
-				{
-					TypeName * tmp = SystemTypeName("timestamptz");
-					tmp->location = @1;
-					$$ = makeStringConstCast($4, @4, tmp);
+				{	
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("timestamptz_cast");
+					n->colname = pstrdup("timestamptz");
+					n->args = list_make4(makeStringConst($4, @4), makeIntConst(-1, -1), makeIntConst(-1, -1), makeBoolAConst(FALSE, -1));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
 			| TIMESTAMP WITHOUT TIME ZONE SCONST
-				{
-					TypeName * tmp = SystemTypeName("timestamp");
-					tmp->location = @1;
-					$$ = makeStringConstCast($5, @5, tmp);
+				{					
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("timestamp_cast");
+					n->colname = pstrdup("timestamp");
+					n->args = list_make4(makeStringConst($5, @5), makeIntConst(-1, -1), makeIntConst(-1, -1), makeBoolAConst(FALSE, -1));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 				}
 			| TIME SCONST
 				{
@@ -37999,10 +38026,19 @@ AexprConst_without_Sconst: Iconst
 					$$ = makeStringConstCast($5, @5, tmp);
 			    }
 			| DATETIME SCONST
-			    {
-					TypeName * tmp = SystemTypeName("timestamp");
-					tmp->location = @1;
-					$$ = makeStringConstCast($2, @2, tmp);
+			    {					
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("timestamp_cast");
+					n->colname = pstrdup("timestamp");
+					n->args = list_make4(makeStringConst($2, @2), makeIntConst(-1, -1), makeIntConst(-1, -1), makeBoolAConst(FALSE, -1));
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
 			    }
 			/* promote and expand Numeric to AexprConst */
 			| INT_P SCONST

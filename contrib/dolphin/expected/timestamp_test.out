@@ -52,9 +52,9 @@ WARNING:  invalid input syntax for type timestamp: "ÿÿÿÿÿÿÿÿ"
 CONTEXT:  referenced column: timestamptz
 SQL function "bit_cast_timestamp" statement 1
 referenced column: timestamptz
-      timestamptz       
-------------------------
- 0000-00-00 00:00:00-08
+ timestamptz 
+-------------
+ 
 (1 row)
 
 select 8385958.999999::bit(64)::time;
