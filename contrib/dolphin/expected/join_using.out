@@ -4864,8 +4864,10 @@ select * from t_v26 natural join t_v30;
 (1 row)
 
 select * from t_v26 natural join t_v31;
-ERROR:  operator does not exist: tinyblob = json
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_v26 natural join t_enum;
 WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
@@ -5035,8 +5037,10 @@ select * from t_v27 natural join t_v30;
 (1 row)
 
 select * from t_v27 natural join t_v31;
-ERROR:  operator does not exist: blob = json
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_v27 natural join t_enum;
 WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
@@ -5206,8 +5210,10 @@ select * from t_v28 natural join t_v30;
 (1 row)
 
 select * from t_v28 natural join t_v31;
-ERROR:  operator does not exist: mediumblob = json
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_v28 natural join t_enum;
 WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
@@ -5377,8 +5383,10 @@ select * from t_v29 natural join t_v30;
 (1 row)
 
 select * from t_v29 natural join t_v31;
-ERROR:  operator does not exist: longblob = json
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_v29 natural join t_enum;
 WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
@@ -5869,8 +5877,10 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 select * from t_enum natural join t_v30;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_enum natural join t_v31;
---?ERROR:  operator does not exist: .* = json
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_enum natural join t_enum;
 ERROR:  table name "t_enum" specified more than once
 select * from t_enum natural join t_set;
@@ -6021,8 +6031,10 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 select * from t_set natural join t_v30;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_set natural join t_v31;
---?ERROR:  operator does not exist: .* = json
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_set natural join t_enum;
  col1 
 ------
