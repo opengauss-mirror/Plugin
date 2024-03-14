@@ -84,5 +84,18 @@ char), cast(c6 as char), cast(c7 as char) from t_binary order by
 
 drop table if exists t_binary;
 drop table if exists t1;
+
+-- test for enum with hex format
+create table enum_to_hex_test_table(c enum('a', 'b', 'c'));
+insert into enum_to_hex_test_table values(1);
+insert into enum_to_hex_test_table values(2);
+insert into enum_to_hex_test_table values(3);
+select hex(c) from enum_to_hex_test_table;
+create table test_hex as select hex(c) from enum_to_hex_test_table;
+\d test_hex
+
+drop table test_hex;
+drop table enum_to_hex_test_table;
+
 drop schema db_b_hex cascade;
 reset current_schema;

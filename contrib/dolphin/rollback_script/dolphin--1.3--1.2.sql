@@ -1503,3 +1503,5 @@ DROP FUNCTION pg_catalog.bin_varbin_concat(binary,varbinary);
 DROP FUNCTION pg_catalog.unknown_concat(unknown, unknown);
 DROP FUNCTION pg_catalog.unknown_int_concat(unknown, integer);
 DROP FUNCTION pg_catalog.int_unknown_concat(integer, unknown);
+
+DROP FUNCTION IF EXISTS pg_catalog.hex(anyenum);
