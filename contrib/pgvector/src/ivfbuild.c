@@ -14,8 +14,8 @@
 #include "pgstat.h"
 #endif
 
-#if PG_VERSION_NUM >= 120000
 #include "access/tableam.h"
+#if PG_VERSION_NUM >= 120000
 #include "commands/progress.h"
 #else
 #define PROGRESS_CREATEIDX_SUBPHASE 0
@@ -145,12 +145,12 @@ GetNextTuple(Tuplesortstate *sortstate, TupleDesc tupdesc, TupleTableSlot *slot,
 
 	if (tuplesort_gettupleslot(sortstate, true, slot, NULL))
 	{
-		*list = DatumGetInt32(heap_slot_getattr(slot, 1, &isnull));
+		*list = DatumGetInt32(tableam_tslot_getattr(slot, 1, &isnull));
 		value = heap_slot_getattr(slot, 3, &isnull);
 
 		/* Form the index tuple */
 		*itup = index_form_tuple(tupdesc, &value, &isnull);
-		(*itup)->t_tid = *((ItemPointer) DatumGetPointer(heap_slot_getattr(slot, 2, &isnull)));
+		(*itup)->t_tid = *((ItemPointer) DatumGetPointer(tableam_tslot_getattr(slot, 2, &isnull)));
 	}
 	else
 		*list = -1;

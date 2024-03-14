@@ -3,6 +3,7 @@
 #include <float.h>
 
 #include "access/relscan.h"
+#include "access/tableam.h"
 #include "ivfflat.h"
 #include "miscadmin.h"
 #include "pgstat.h"
@@ -320,8 +321,8 @@ ivfflatgettuple_internal(IndexScanDesc scan, ScanDirection dir)
 
 	if (tuplesort_gettupleslot(so->sortstate, true, so->slot, NULL))
 	{
-		ItemPointer tid = (ItemPointer) DatumGetPointer(heap_slot_getattr(so->slot, 2, &so->isnull));
-		BlockNumber indexblkno = DatumGetInt32(heap_slot_getattr(so->slot, 3, &so->isnull));
+		ItemPointer tid = (ItemPointer) DatumGetPointer(tableam_tslot_getattr(so->slot, 2, &so->isnull));
+		BlockNumber indexblkno = DatumGetInt32(tableam_tslot_getattr(so->slot, 3, &so->isnull));
 
 #if PG_VERSION_NUM >= 120000
 		scan->xs_heaptid = *tid;
