@@ -283,9 +283,7 @@ select * from test_double_acos order by 1;
 -- log math function
 reset dolphin.sql_mode;
 select log(`int1`), log(`uint1`), log(`int2`), log(`uint2`), log(`int4`), log(`uint4`), log(`int8`), log(`uint8`), log(`float4`), log(`float8`), log(`numeric`), log(`bit1`), log(`bit64`), log(`boolean`), log(`date`), log(`time`), log(`time(4)`), log(`datetime`), log(`datetime(4)`), log(`timestamp`), log(`timestamp(4)`), log(`year`), log(`char`), log(`varchar`), log(`binary`), log(`varbinary`), log(`tinyblob`), log(`blob`), log(`mediumblob`), log(`longblob`), log(`text`), log(`enum_t`), log(`set_t`), log(`json`) from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
-CONTEXT:  referenced column: log
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
 CONTEXT:  referenced column: log
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log
@@ -299,22 +297,24 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: log
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: log
 WARNING:  Invalid argument '0.000000' for logarithm
 CONTEXT:  referenced column: log
- log |        log         | log |        log         | log |        log         | log |        log         | log | log |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log        |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         | log 
------+--------------------+-----+--------------------+-----+--------------------+-----+--------------------+-----+-----+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-----
-   0 | 0.0000000000000000 |   0 | 0.0000000000000000 |   0 | 0.0000000000000000 |   0 | 0.0000000000000000 |   0 |   0 | 0.0000000000000000 | 0.0000000000000000 | 1.9459101490553133 | 0.0000000000000000 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 7.612336837167746 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.0000000000000000 | 1.6094379124341004 |    
+ log | log | log | log | log | log | log | log | log | log |        log         | log |        log        | log |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log        |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         | log 
+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+--------------------+-----+-------------------+-----+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-----
+   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 | 0.0000000000000000 |   0 | 1.945910149055313 |   0 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 7.612336837167746 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.0000000000000000 | 1.6094379124341004 |    
 (1 row)
 
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 create table test_log as select  log(`int1`) as log1, log(`uint1`) as log2, log(`int2`) as log3,  log(`uint2`) as log4,  log(`int4`) as log5, log(`uint4`) as log6,  log(`int8`) as log7,  log(`uint8`) as log8, log(`float4`) as log9, log(`float8`) as log10,  log(`numeric`) as log11, log(`bit1`) as log12,  log(`bit64`) as log13,  log(`boolean`) as log14, log(`date`) as log15, log(`time`) as log16, log(`time(4)`) as log17, log(`datetime`) as log18, log(`datetime(4)`) as log19, log(`timestamp`) as log20, log(`timestamp(4)`) as log21, log(`year`) as log22, log(`char`) as log23,  log(`varchar`) as log24,  log(`binary`) as log25, log(`varbinary`) as log26, log(`tinyblob`) as log27, log(`blob`) as log28, log(`mediumblob`) as log29, log(`longblob`) as log30, log(`text`) as log31, log(`enum_t`) as log32, log(`set_t`) as log33, log(`json`) as log34 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log23
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log24
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log25
@@ -328,7 +328,7 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log29
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log30
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log31
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: log34
@@ -336,12 +336,12 @@ WARNING:  Invalid argument '0.000000' for logarithm
 CONTEXT:  referenced column: log34
 reset dolphin.sql_mode;
 insert into test_log select  log(`int1`) as log1, log(`uint1`) as log2, log(`int2`) as log3,  log(`uint2`) as log4,  log(`int4`) as log5, log(`uint4`) as log6,  log(`int8`) as log7,  log(`uint8`) as log8, log(`float4`) as log9, log(`float8`) as log10,  log(`numeric`) as log11, log(`bit1`) as log12,  log(`bit64`) as log13,  log(`boolean`) as log14, log(`date`) as log15, log(`time`) as log16, log(`time(4)`) as log17, log(`datetime`) as log18, log(`datetime(4)`) as log19, log(`timestamp`) as log20, log(`timestamp(4)`) as log21, log(`year`) as log22, log(`char`) as log23,  log(`varchar`) as log24,  log(`binary`) as log25, log(`varbinary`) as log26, log(`tinyblob`) as log27, log(`blob`) as log28, log(`mediumblob`) as log29, log(`longblob`) as log30, log(`text`) as log31, log(`enum_t`) as log32, log(`set_t`) as log33, log(`json`) as log34 from test_type_table;
-ERROR:  invalid input syntax for type numeric: "1.23a                                                                                               "
+ERROR:  invalid input syntax for type double precision: "1.23a                                                                                               "
 CONTEXT:  referenced column: log23
 insert ignore into test_log select  log(`int1`) as log1, log(`uint1`) as log2, log(`int2`) as log3,  log(`uint2`) as log4,  log(`int4`) as log5, log(`uint4`) as log6,  log(`int8`) as log7,  log(`uint8`) as log8, log(`float4`) as log9, log(`float8`) as log10,  log(`numeric`) as log11, log(`bit1`) as log12,  log(`bit64`) as log13,  log(`boolean`) as log14, log(`date`) as log15, log(`time`) as log16, log(`time(4)`) as log17, log(`datetime`) as log18, log(`datetime(4)`) as log19, log(`timestamp`) as log20, log(`timestamp(4)`) as log21, log(`year`) as log22, log(`char`) as log23,  log(`varchar`) as log24,  log(`binary`) as log25, log(`varbinary`) as log26, log(`tinyblob`) as log27, log(`blob`) as log28, log(`mediumblob`) as log29, log(`longblob`) as log30, log(`text`) as log31, log(`enum_t`) as log32, log(`set_t`) as log33, log(`json`) as log34 from test_type_table;
-WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
 CONTEXT:  referenced column: log23
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log24
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log25
@@ -355,17 +355,17 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log29
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log30
-WARNING:  invalid input syntax for type numeric: "1.23a"
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log31
 WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: log34
 WARNING:  Invalid argument '0.000000' for logarithm
 CONTEXT:  referenced column: log34
 select * from test_log order by 1,10;
- log1 |        log2        | log3 |        log4        | log5 |        log6        | log7 |        log8        | log9 | log10 |       log11        |       log12        |       log13        |       log14        |       log15        |       log16        |       log17        |       log18        |       log19        |       log20        |       log21        |       log22       |       log23        |       log24        |       log25        |       log26        |       log27        |       log28        |       log29        |       log30        |       log31        |       log32        |       log33        | log34 
-------+--------------------+------+--------------------+------+--------------------+------+--------------------+------+-------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------
-    0 | 0.0000000000000000 |    0 | 0.0000000000000000 |    0 | 0.0000000000000000 |    0 | 0.0000000000000000 |    0 |     0 | 0.0000000000000000 | 0.0000000000000000 | 1.9459101490553133 | 0.0000000000000000 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 7.612336837167746 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.0000000000000000 | 1.6094379124341004 |      
-    0 | 0.0000000000000000 |    0 | 0.0000000000000000 |    0 | 0.0000000000000000 |    0 | 0.0000000000000000 |    0 |     0 | 0.0000000000000000 | 0.0000000000000000 | 1.9459101490553133 | 0.0000000000000000 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 7.612336837167746 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.0000000000000000 | 1.6094379124341004 |      
+ log1 | log2 | log3 | log4 | log5 | log6 | log7 | log8 | log9 | log10 |       log11        | log12 |       log13       | log14 |       log15        |       log16        |       log17        |       log18        |       log19        |       log20        |       log21        |       log22       |       log23        |       log24        |       log25        |       log26        |       log27        |       log28        |       log29        |       log30        |       log31        |       log32        |       log33        | log34 
+------+------+------+------+------+------+------+------+------+-------+--------------------+-------+-------------------+-------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------
+    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |     0 | 0.0000000000000000 |     0 | 1.945910149055313 |     0 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 7.612336837167746 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.0000000000000000 | 1.6094379124341004 |      
+    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |     0 | 0.0000000000000000 |     0 | 1.945910149055313 |     0 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 7.612336837167746 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.0000000000000000 | 1.6094379124341004 |      
 (2 rows)
 
 drop table if exists test_log;
@@ -793,22 +793,24 @@ CONTEXT:  referenced column: log
 (1 row)
 
 select log('1.23a');
-WARNING:  invalid input syntax for type numeric: "1.23a"
-LINE 1: select log('1.23a');
-                   ^
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log
+SQL function "log" statement 1
+referenced column: log
         log         
 --------------------
  0.2070141693843261
 (1 row)
 
 select log('-1.23a');
-WARNING:  invalid input syntax for type numeric: "-1.23a"
-LINE 1: select log('-1.23a');
-                   ^
+WARNING:  invalid input syntax for type double precision: "-1.23a"
 CONTEXT:  referenced column: log
-WARNING:  Invalid argument '-1.23' for logarithm
+SQL function "log" statement 1
+referenced column: log
+WARNING:  Invalid argument '-1.230000' for logarithm
 CONTEXT:  referenced column: log
+SQL function "log" statement 1
+referenced column: log
  log 
 -----
     
@@ -838,15 +840,15 @@ insert into test_log select log(1,10);
 ERROR:  Invalid argument '1' for logarithm
 CONTEXT:  referenced column: log
 insert into test_log select log('1.23a');
-ERROR:  invalid input syntax for type numeric: "1.23a"
-LINE 1: insert into test_log select log('1.23a');
-                                        ^
+ERROR:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log
+SQL function "log" statement 1
+referenced column: log
 insert into test_log select log('-1.23a');
-ERROR:  invalid input syntax for type numeric: "-1.23a"
-LINE 1: insert into test_log select log('-1.23a');
-                                        ^
+ERROR:  invalid input syntax for type double precision: "-1.23a"
 CONTEXT:  referenced column: log
+SQL function "log" statement 1
+referenced column: log
 insert ignore into test_log select log(-10);
 WARNING:  Invalid argument '-10.000000' for logarithm
 CONTEXT:  referenced column: log
@@ -869,17 +871,19 @@ insert ignore into test_log select log(1,10);
 WARNING:  Invalid argument '1' for logarithm
 CONTEXT:  referenced column: log
 insert ignore into test_log select log('1.23a');
-WARNING:  invalid input syntax for type numeric: "1.23a"
-LINE 1: insert ignore into test_log select log('1.23a');
-                                               ^
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log
+SQL function "log" statement 1
+referenced column: log
 insert ignore into test_log select log('-1.23a');
-WARNING:  invalid input syntax for type numeric: "-1.23a"
-LINE 1: insert ignore into test_log select log('-1.23a');
-                                               ^
+WARNING:  invalid input syntax for type double precision: "-1.23a"
 CONTEXT:  referenced column: log
-WARNING:  Invalid argument '-1.23' for logarithm
+SQL function "log" statement 1
+referenced column: log
+WARNING:  Invalid argument '-1.230000' for logarithm
 CONTEXT:  referenced column: log
+SQL function "log" statement 1
+referenced column: log
 select * from test_log;
        value        
 --------------------
@@ -917,17 +921,19 @@ insert into test_log select log(1,10);
 WARNING:  Invalid argument '1' for logarithm
 CONTEXT:  referenced column: log
 insert into test_log select log('1.23a');
-WARNING:  invalid input syntax for type numeric: "1.23a"
-LINE 1: insert into test_log select log('1.23a');
-                                        ^
+WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log
+SQL function "log" statement 1
+referenced column: log
 insert into test_log select log('-1.23a');
-WARNING:  invalid input syntax for type numeric: "-1.23a"
-LINE 1: insert into test_log select log('-1.23a');
-                                        ^
+WARNING:  invalid input syntax for type double precision: "-1.23a"
 CONTEXT:  referenced column: log
-WARNING:  Invalid argument '-1.23' for logarithm
+SQL function "log" statement 1
+referenced column: log
+WARNING:  Invalid argument '-1.230000' for logarithm
 CONTEXT:  referenced column: log
+SQL function "log" statement 1
+referenced column: log
 select * from test_log;
        value        
 --------------------
@@ -950,6 +956,55 @@ select * from test_log;
  0.2070141693843261
                    
 (18 rows)
+
+drop table if exists test_log;
+reset dolphin.sql_mode;
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+create table test_log as select  log(`int1`) as log1, log(`uint1`) as log2, log(`int2`) as log3,  log(`uint2`) as log4,  log(`int4`) as log5, log(`uint4`) as log6,  log(`int8`) as log7,  log(`uint8`) as log8, log(`float4`) as log9, log(`float8`) as log10,  log(`bit1`) as log11,  log(`bit64`) as log12,  log(`boolean`) as log13, log(`char`) as log14,  log(`varchar`) as log15,  log(`binary`) as log16, log(`varbinary`) as log17, log(`tinyblob`) as log18, log(`blob`) as log19, log(`mediumblob`) as log20, log(`longblob`) as log21, log(`text`) as log22 from test_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: log14
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: log15
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: log16
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: log17
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: log18
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: log19
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: log20
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: log21
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: log22
+\d test_log;
+    Table "test_math_func.test_log"
+ Column |       Type       | Modifiers 
+--------+------------------+-----------
+ log1   | double precision | 
+ log2   | double precision | 
+ log3   | double precision | 
+ log4   | double precision | 
+ log5   | double precision | 
+ log6   | double precision | 
+ log7   | double precision | 
+ log8   | double precision | 
+ log9   | double precision | 
+ log10  | double precision | 
+ log11  | double precision | 
+ log12  | double precision | 
+ log13  | double precision | 
+ log14  | double precision | 
+ log15  | double precision | 
+ log16  | double precision | 
+ log17  | double precision | 
+ log18  | double precision | 
+ log19  | double precision | 
+ log20  | double precision | 
+ log21  | double precision | 
+ log22  | double precision | 
 
 drop table if exists test_log;
 reset dolphin.sql_mode;

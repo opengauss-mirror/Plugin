@@ -249,6 +249,11 @@ select * from test_log;
 drop table if exists test_log;
 reset dolphin.sql_mode;
 
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+create table test_log as select  log(`int1`) as log1, log(`uint1`) as log2, log(`int2`) as log3,  log(`uint2`) as log4,  log(`int4`) as log5, log(`uint4`) as log6,  log(`int8`) as log7,  log(`uint8`) as log8, log(`float4`) as log9, log(`float8`) as log10,  log(`bit1`) as log11,  log(`bit64`) as log12,  log(`boolean`) as log13, log(`char`) as log14,  log(`varchar`) as log15,  log(`binary`) as log16, log(`varbinary`) as log17, log(`tinyblob`) as log18, log(`blob`) as log19, log(`mediumblob`) as log20, log(`longblob`) as log21, log(`text`) as log22 from test_type_table;
+\d test_log;
+drop table if exists test_log;
+reset dolphin.sql_mode;
 -- ln math function
 select
 ln(`int1`),
