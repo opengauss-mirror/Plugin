@@ -187,6 +187,7 @@ drop table fchar_test;
 drop schema db_b_parser2 cascade;
 reset current_schema;
 
+set dolphin.b_compatibility_mode to off;
 drop database if exists db_char_latin1;
 create database db_char_latin1 dbcompatibility 'B' encoding 'latin1' LC_CTYPE 'en_US' lc_collate 'en_US';
 \c db_char_latin1

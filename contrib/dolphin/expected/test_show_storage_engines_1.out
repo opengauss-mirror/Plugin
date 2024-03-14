@@ -4,6 +4,7 @@ NOTICE:  The iteration value of password is not recommended.Setting the iteratio
 create user user2 password 'Show@456';
 NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 -- B库执行
+set dolphin.b_compatibility_mode to off;
 drop database if exists show_storage_engines_b;
 NOTICE:  database "show_storage_engines_b" does not exist, skipping
 create database show_storage_engines_b dbcompatibility 'b';
@@ -133,6 +134,7 @@ SHOW STORAGE ENGINES;
 
 -- 非B库执行
 set role user1 password 'Show@123';
+set dolphin.b_compatibility_mode to off;
 drop database if exists show_storage_engines_nb;
 NOTICE:  database "show_storage_engines_nb" does not exist, skipping
 create database show_storage_engines_nb;

@@ -72,6 +72,7 @@ select 1::int8 % 1::text;
         0
 (1 row)
 
+set dolphin.b_compatibility_mode to off;
 select 1::int1 # 1::float4;
  ?column? 
 ----------
@@ -144,6 +145,7 @@ select 1::int8 # 1::text;
         0
 (1 row)
 
+set dolphin.b_compatibility_mode to on;
 select 1::int1 & 1::float4;
  ?column? 
 ----------

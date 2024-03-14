@@ -11,10 +11,10 @@ select * from tmp_table;
 
 set explain_perf_mode=pretty;
 explain verbose select id, group_concat(VARIADIC ARRAY[id,':',v] order by id) as title from t group by id;
-                                       QUERY PLAN                                       
-----------------------------------------------------------------------------------------
+                                             QUERY PLAN                                             
+----------------------------------------------------------------------------------------------------
  GroupAggregate  (cost=61.11..70.13 rows=200 width=8256)
-   Output: id, group_concat(VARIADIC ARRAY[id, ':'::text, v] ORDER BY id SEPARATOR ',')
+   Output: id, group_concat(VARIADIC ARRAY[id, ':'::text, v] ORDER BY id NULLS FIRST SEPARATOR ',')
    Group By Key: t.id
    ->  Sort  (cost=61.11..63.28 rows=869 width=64)
          Output: id, v

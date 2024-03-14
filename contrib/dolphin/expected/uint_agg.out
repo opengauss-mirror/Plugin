@@ -301,9 +301,9 @@ select listagg(a, ',') within group(order by a) from u4;
 create table u8(a uint8, b numeric(64, 0));
 insert into u8 values(null, null),(18446744073709551615, 18446744073709551615),(0, 0),(18446744073709551615, 18446744073709551615),(null, null);
 select avg(a), avg(b) from u8;
-         avg          |         avg          
-----------------------+----------------------
- 12297829382473034410 | 12297829382473034410
+            avg            |            avg            
+---------------------------+---------------------------
+ 12297829382473034410.0000 | 12297829382473034410.0000
 (1 row)
 
 select bit_and(a) from u8;
@@ -579,19 +579,19 @@ explain(costs off, verbose) select variance(a), variance(b) from smp_test;
 (8 rows)
 
 explain(costs off, verbose) select listagg(a) within group(order by a) from smp_test;
-                    QUERY PLAN                    
---------------------------------------------------
+                          QUERY PLAN                          
+--------------------------------------------------------------
  Aggregate
-   Output: listagg(a ) WITHIN GROUP ( ORDER BY a)
+   Output: listagg(a ) WITHIN GROUP ( ORDER BY a NULLS FIRST)
    ->  Seq Scan on uint_agg.smp_test
          Output: a, b
 (4 rows)
 
 explain(costs off, verbose) select listagg(a, ',') within group(order by a) from smp_test;
-                         QUERY PLAN                          
--------------------------------------------------------------
+                               QUERY PLAN                                
+-------------------------------------------------------------------------
  Aggregate
-   Output: listagg(a, ','::text ) WITHIN GROUP ( ORDER BY a)
+   Output: listagg(a, ','::text ) WITHIN GROUP ( ORDER BY a NULLS FIRST)
    ->  Seq Scan on uint_agg.smp_test
          Output: a, b
 (4 rows)

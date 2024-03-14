@@ -194,9 +194,13 @@ insert into func_test(functionName, result) values ('sec_to_time(-92233720368547
     -- 非指定类型的参数
 insert into func_test(functionName, result) values ('subdate(''2022-1-1'', 20)',subdate('2022-1-1', '20'));
 insert into func_test(functionName, result) values ('subdate(''2022-1-1'', ''20.5'')',subdate('2022-1-1', '20.5'));
+ERROR:  invalid input syntax for type int16: "20.5"
+DETAIL:  text contain invalid character
+CONTEXT:  SQL function "subdate" during inlining
+referenced column: result
 insert into func_test(functionName, result) values ('subdate(''2022-1-1'', 20.5)',subdate('2022-1-1', 20.5));
 insert into func_test(functionName, result) values ('subdate(''abcd'', ''abcd'')',subdate('abcd', 'abcd'));
-ERROR:  invalid input syntax for type bigint: "abcd"
+ERROR:  Truncated incorrect INTEGER value: 'abcd'
 CONTEXT:  SQL function "subdate" during inlining
 referenced column: result
 insert into func_test(functionName, result) values ('subdate(''2022-1-1'', true)',subdate('2022-1-1', true));
@@ -442,7 +446,6 @@ select * from func_test;
  sec_to_time(-10000000000000000000)                                     | -838:59:59
  sec_to_time(-9223372036854775808)                                      | -838:59:59
  subdate('2022-1-1', 20)                                                | 2021-12-12
- subdate('2022-1-1', '20.5')                                            | 2021-12-11
  subdate('2022-1-1', 20.5)                                              | 2021-12-11
  subdate('2022-1-1', true)                                              | 2021-12-31
  subdate('2022-1-1', B'1111')                                           | 2021-12-17
@@ -475,7 +478,7 @@ select * from func_test;
  subdate(time'838:59:59', interval 1.999 hour)                          | 836:59:59
  subdate('2022-01-01 01:01:01', interval 1.999 minute)                  | 2022-01-01 00:59:01
  subdate('2022-01-01 01:01:01', interval 1.999 second)                  | 2022-01-01 01:00:59.001
-(156 rows)
+(155 rows)
 
 SELECT SUBDATE(time'839:59:59', interval 2 hour);
 ERROR:  date/time field value out of range: "839:59:59"

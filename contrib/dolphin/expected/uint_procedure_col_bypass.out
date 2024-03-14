@@ -67,11 +67,11 @@ explain(costs off, verbose) delete from bypass where b = 10;
 (4 rows)
 
 explain(costs off, verbose) update bypass set b = b + 1 where a = 1;
-                 QUERY PLAN                  
----------------------------------------------
+                         QUERY PLAN                         
+------------------------------------------------------------
  Update on uint_procedure_col.bypass
    ->  Seq Scan on uint_procedure_col.bypass
-         Output: a, (b + 1), ctid
+         Output: a, (b OPERATOR(dolphin_catalog.+) 1), ctid
          Filter: (bypass.a = 1)
 (4 rows)
 

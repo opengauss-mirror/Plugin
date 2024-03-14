@@ -221,10 +221,10 @@ insert into test_blob_bytea values(1,'abcd',E'\\xdabc');
 insert into test_blob_bytea values(2,'9abc',E'\\xdabc');
 insert into test_blob_bytea values(2,'abcd',E'\\xeabc');
 select any_value(b) from test_blob_bytea group by a;
- any_value 
------------
- 9ABC
- 9ABC
+ any_value  
+------------
+ \x39616263
+ \x39616263
 (2 rows)
 
 select any_value(c) from test_blob_bytea group by a;

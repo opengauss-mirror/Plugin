@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 DROP DATABASE IF EXISTS role_test_db;
 CREATE DATABASE role_test_db dbcompatibility 'b';
 \c role_test_db;

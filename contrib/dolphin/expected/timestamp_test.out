@@ -5,10 +5,13 @@ select '101111101'::datetime;
 (1 row)
 
 select '2010117.5678'::datetime;
-ERROR:  timestamp out of range: "2010117.5678"
-LINE 1: select '2010117.5678'::datetime;
-               ^
+WARNING:  date/time field value out of range: "2010117.5678"
 CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
 select '2010117.1234'::datetime;
       timestamp      
 ---------------------
@@ -22,10 +25,13 @@ select '101111101'::timestamp;
 (1 row)
 
 select '2010117.5678'::timestamp;
-ERROR:  timestamp out of range: "2010117.5678"
-LINE 1: select '2010117.5678'::timestamp;
-               ^
+WARNING:  date/time field value out of range: "2010117.5678"
 CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
 select '2010117.1234'::timestamp;
       timestamptz       
 ------------------------

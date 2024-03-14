@@ -547,87 +547,87 @@ select null::bytea union select null::anyset;
 (1 row)
 
 select null::char union select null::int16;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 
 select null::char union select null::record;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 
 select null::char union select null::cstring;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 
 select null::char union select null::anyarray;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 
 select null::char union select null::void;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 
 select null::char union select null::anyelement;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 
 select null::char union select null::anynonarray;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 
 select null::char union select 'red'::rainbow::anyenum;
- bpchar 
---------
+ varchar 
+---------
  red
  
 (2 rows)
 
 select null::char union select null::anyrange;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 
 select null::char union select null::hll_hashval;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 
 select null::char union select null::hll_trans_type;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 
 select null::char union select null::byteawithoutorderwithequalcol;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 
 select null::char union select null::byteawithoutordercol;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 
 select null::char union select null::anyset;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 
@@ -17446,8 +17446,8 @@ select null::bytea union select null;
 (1 row)
 
 select null::char union select null;
- bpchar 
---------
+ varchar 
+---------
  
 (1 row)
 

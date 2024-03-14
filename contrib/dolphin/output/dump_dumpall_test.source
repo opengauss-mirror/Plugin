@@ -265,6 +265,7 @@ CONTEXT:  referenced column: c4
 /*
  * test for restore by gs_restore
  */
+set dolphin.b_compatibility_mode to off;
 drop database if exists table_test_restore;
 NOTICE:  database "table_test_restore" does not exist, skipping
 create database table_test_restore dbcompatibility 'B';

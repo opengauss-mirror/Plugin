@@ -31,10 +31,6 @@ truncate test_medium;
 truncate test_long;
 insert into test_tiny values('ppp');
 insert into test_blob values('ppp');
-ERROR:  invalid hexadecimal digit: "p"
-LINE 1: insert into test_blob values('ppp');
-                                     ^
-CONTEXT:  referenced column: b
 insert into test_medium values('ppp');
 insert into test_long values('ppp');
 set dolphin.b_compatibility_mode = true;
@@ -50,7 +46,8 @@ select * from test_blob;
   b  
 -----
  ppp
-(1 row)
+ ppp
+(2 rows)
 
 select * from test_medium;
   m  
@@ -69,7 +66,8 @@ select * from test_blob;
    b    
 --------
  707070
-(1 row)
+ 707070
+(2 rows)
 
 drop table test_template;
 drop table test_template2;

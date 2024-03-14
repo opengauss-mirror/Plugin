@@ -102,13 +102,13 @@ select make_set(3,-1,4);
 (1 row)
 
 select make_set(7,-1,&#!#!@,'asfjoajfowqeknf,zncfiwuhrqnsdfhkasf');
-ERROR:  syntax error at or near ","
-LINE 1: select make_set(7,-1,&#!#!@,'asfjoajfowqeknf,zncfiwuhrqnsdfh...
-                                   ^
+ERROR:  syntax error at end of input
+LINE 1: ...make_set(7,-1,&#!#!@,'asfjoajfowqeknf,zncfiwuhrqnsdfhkasf');
+                                                                       ^
 select make_set(3,-1,&#!#!@);
-ERROR:  syntax error at or near ")"
+ERROR:  syntax error at end of input
 LINE 1: select make_set(3,-1,&#!#!@);
-                                   ^
+                                     ^
 select make_set(3,-1,'afasfasdfdsafsafasfdasdfsadfowijfqwjfowqfhasdhfsaqufhaksdfhskadfhasiufhakjfdahfiuwhfasjlajfowifjawefwfa');
                                                   make_set                                                  
 ------------------------------------------------------------------------------------------------------------
@@ -134,9 +134,9 @@ select make_set(3, true, false);
 (1 row)
 
 select make_set(3,01/02/03, false, true, false);
-       make_set       
-----------------------
- 0.1666666666666667,0
+           make_set           
+------------------------------
+ 0.166666666666666666666667,0
 (1 row)
 
 set dolphin.b_compatibility_mode = on;

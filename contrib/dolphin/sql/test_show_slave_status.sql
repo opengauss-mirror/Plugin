@@ -2,7 +2,9 @@
 create user user1 with sysadmin password 'Show@123';
 create user user2 password 'Show@456';
 -- B库执行
+set dolphin.b_compatibility_mode to off;
 drop database if exists show_slave_status_b;
+set dolphin.b_compatibility_mode to on;
 create database show_slave_status_b dbcompatibility 'b';
 \c show_slave_status_b
 -- 管理员用户执行
@@ -21,6 +23,7 @@ SHOW SLAVE STATUS FOR CHANNEL 'no_qualified_row';
 SHOW REPLICA STATUS FOR CHANNEL 'no_qualified_row';
 -- 非B库执行
 set role user1 password 'Show@123';
+set dolphin.b_compatibility_mode to off;
 drop database if exists show_slave_status_nb;
 create database show_slave_status_nb;
 \c show_slave_status_nb
@@ -30,6 +33,7 @@ SHOW SLAVE STATUS FOR CHANNEL 'no_qualified_row';
 SHOW REPLICA STATUS FOR CHANNEL 'no_qualified_row';
 -- cleanup
 \c contrib_regression
+set dolphin.b_compatibility_mode to off;
 drop database show_slave_status_b;
 drop database show_slave_status_nb;
 drop user user1;

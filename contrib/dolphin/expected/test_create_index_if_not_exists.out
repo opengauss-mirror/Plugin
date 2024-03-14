@@ -3,7 +3,7 @@ set current_schema = create_index_if_not_exists;
 create table test(a int);
 create index test_index on test(a);
 create index test_index on test(a);
-ERROR:  relation "test_index" already exists
+WARNING:  index "test_index" already exists, change index name to "test_a_idx"
 create index if not exists test_index on test(a);
 NOTICE:  relation "test_index" already exists, skipping
 create index if not exists test_index1 on test(a);
@@ -343,10 +343,10 @@ select max(t1.col2)+1,t2.col2 from db_ID1097254_tb t1 force index ("Index_ID1097
 (1 row)
 
 explain (costs off )select max(t1.col2)+1,t2.col2 from db_ID1097254_tb t1 force index ("Index_ID1097254%%_1") join db_ID1097254_tb t2 force index (INDEX_ID1097254_2) on t1.col3=t2.col3 where t1.col1>= 3 and t2.col2 <=4 group by 2,t1.col2 having t1.col2 in (select max(col2) from db_ID1097254_tb force index ("Index_ID1097254%%_1") where col1>= 3) order by 1,2 ;
-                                  QUERY PLAN                                   
--------------------------------------------------------------------------------
+                                         QUERY PLAN                                          
+---------------------------------------------------------------------------------------------
  Sort
-   Sort Key: ((max(t1.col2) + 1)), t2.col2
+   Sort Key: ((max(t1.col2) OPERATOR(dolphin_catalog.+) 1)) NULLS FIRST, t2.col2 NULLS FIRST
    ->  HashAggregate
          Group By Key: t2.col2, t1.col2
          Filter: (hashed SubPlan 1)

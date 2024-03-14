@@ -1,4 +1,5 @@
 -- b compatibility case
+set dolphin.b_compatibility_mode to off;
 drop database if exists empty_value_list;
 create database empty_value_list dbcompatibility 'b';
 

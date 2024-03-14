@@ -27,5 +27,6 @@ select * from t2;
 select * from t1;
 
 \c contrib_regression
+set dolphin.b_compatibility_mode to off;
 drop database b_source;
 drop database b_target;

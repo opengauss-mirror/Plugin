@@ -249,13 +249,13 @@ select pg_catalog.chara('1'::int16);
 select pg_catalog.chara('1'::raw);
  chara 
 -------
- 
+ \x01
 (1 row)
 
 select pg_catalog.chara('1'::blob);
  chara 
 -------
- 
+ \x01
 (1 row)
 
 select pg_catalog.chara('1'::clob);

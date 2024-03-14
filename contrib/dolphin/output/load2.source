@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode = off;
 drop database if exists load2;
 NOTICE:  database "load2" does not exist, skipping
 create database load2 dbcompatibility 'B';

@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_databaselock1;
 create database b_databaselock1 dbcompatibility 'b';
 \c b_databaselock1
@@ -35,4 +36,5 @@ select get_lock(!,1);
 --failed
 select get_lock(@,1);
 \c postgres
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_databaselock1;

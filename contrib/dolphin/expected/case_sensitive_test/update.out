@@ -21,8 +21,8 @@ UPDATE Update_Test SET a = DEFAULT, b = DEFAULT;
 SELECT * FROM Update_Test  ORDER BY a, b, c;
  a  | b |  c  
 ----+---+-----
- 10 |   | foo
  10 |   | 
+ 10 |   | foo
 (2 rows)
 
 -- aliases for the UPDATE target table
@@ -30,16 +30,16 @@ UPDATE Update_Test AS t SET b = 10 WHERE t.a = 10;
 SELECT * FROM Update_Test  ORDER BY a, b, c;
  a  | b  |  c  
 ----+----+-----
- 10 | 10 | foo
  10 | 10 | 
+ 10 | 10 | foo
 (2 rows)
 
 UPDATE Update_Test t SET b = t.b + 10 WHERE t.a = 10;
 SELECT * FROM Update_Test  ORDER BY a, b, c;
  a  | b  |  c  
 ----+----+-----
- 10 | 20 | foo
  10 | 20 | 
+ 10 | 20 | foo
 (2 rows)
 
 --
@@ -50,8 +50,8 @@ UPDATE Update_Test SET a=v.i FROM (VALUES(100, 20)) AS v(i, j)
 SELECT * FROM Update_Test  ORDER BY a, b, c;
   a  | b  |  c  
 -----+----+-----
- 100 | 20 | foo
  100 | 20 | 
+ 100 | 20 | foo
 (2 rows)
 
 --

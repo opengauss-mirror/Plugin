@@ -748,10 +748,10 @@ insert into t_binary values(b'1',b'111111111',b'111');
 select *,length(a),length(b),length(c) from t_binary order by 1,2,3;
   a   |   b    |           c            | length | length | length 
 ------+--------+------------------------+--------+--------+--------
+      |        |                        |        |        |       
  \x01 | \x01ff | \x07000000000000000000 |      1 |      2 |     10
  \x01 | \x07   | \x07000000000000000000 |      1 |      1 |     10
  \x01 | \x1f   | \x07000000000000000000 |      1 |      1 |     10
-      |        |                        |        |        |       
 (4 rows)
 
 drop table t_binary;
@@ -773,6 +773,7 @@ select fchar,length(fchar) from fchar_test order by 1,2;
 drop table fchar_test;
 drop schema db_b_parser2 cascade;
 reset current_schema;
+set dolphin.b_compatibility_mode to off;
 drop database if exists db_char_latin1;
 NOTICE:  database "db_char_latin1" does not exist, skipping
 create database db_char_latin1 dbcompatibility 'B' encoding 'latin1' LC_CTYPE 'en_US' lc_collate 'en_US';

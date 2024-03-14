@@ -1,4 +1,5 @@
 --insert语法测试
+set dolphin.b_compatibility_mode to off;
 drop database if exists dump_insert_db;
 NOTICE:  database "dump_insert_db" does not exist, skipping
 drop database if exists restore_insert_db;
@@ -13,8 +14,8 @@ insert t_insert_001 set id = id + 1;
 select id from t_insert_001 order by id;
  id 
 ----
-  1
    
+  1
 (2 rows)
 
 --导入导出
@@ -27,8 +28,8 @@ drop table t_insert_001;
 select id from t_insert_001 order by id;
  id 
 ----
-  1
    
+  1
 (2 rows)
 
 \c postgres

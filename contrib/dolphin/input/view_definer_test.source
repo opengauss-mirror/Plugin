@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 DROP DATABASE IF EXISTS test_db;
 CREATE DATABASE test_db DBCOMPATIBILITY 'B';
 CREATE USER "Root_Test" WITH PASSWORD 'openGauss@123';
@@ -47,7 +48,7 @@ SELECT * FROM definer_test_view3;
 SELECT c.relname as view_name, u.usename as rolname FROM pg_class c, pg_user u WHERE u.usesysid = c.relowner AND relname like '%definer_test_view%' order by view_name;
 
 RESET ROLE;
-
+set dolphin.b_compatibility_mode to off;
 create database test_1;
 \c test_1
 create table startwith_t(id int, level int, connect_by_isleaf int, connect_by_iscycle int);
@@ -191,6 +192,7 @@ drop user use_a_1144425 cascade;
 drop user use_b_1144425 cascade;
 
 \c contrib_regression
+set dolphin.b_compatibility_mode to off;
 drop database test_db;
 drop database test_1;
 drop database test_2;

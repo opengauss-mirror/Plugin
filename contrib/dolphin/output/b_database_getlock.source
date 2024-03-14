@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_databaselock;
 NOTICE:  database "b_databaselock" does not exist, skipping
 create database b_databaselock dbcompatibility 'b';
@@ -123,4 +124,5 @@ NOTICE:  session2_2:<NULL>
 drop table b_database_lock_t1;
 drop table b_database_lock_t2;
 \c postgres
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_databaselock;

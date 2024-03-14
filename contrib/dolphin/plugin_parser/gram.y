@@ -25746,6 +25746,7 @@ CreatedbStmt:
 						n->options = $4;
 						$$ = (Node *)n;
 					} else {
+						ereport(NOTICE, (errmsg("CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
 						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 						n->schemaname = $3;
 						n->authid = NULL;
@@ -25773,6 +25774,7 @@ CreatedbStmt:
 						n->options = $7;
 						$$ = (Node *)n;
 					} else {
+						ereport(NOTICE, (errmsg("CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
 						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 						n->schemaname = $6;
 						n->authid = NULL;
@@ -25793,6 +25795,7 @@ CreatedbStmt:
 			| CREATE DATABASE database_name CharsetCollate
 				{
 					if (GetSessionContext()->enableBCmptMode) {
+						ereport(NOTICE, (errmsg("CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
 						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 						n->schemaname = $3;
 						n->authid = NULL;
@@ -25810,6 +25813,7 @@ CreatedbStmt:
 			| CREATE DATABASE IF_P NOT EXISTS database_name CharsetCollate
 				{
 					if (GetSessionContext()->enableBCmptMode) {
+						ereport(NOTICE, (errmsg("CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
 						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 						n->schemaname = $6;
 						n->authid = NULL;
@@ -25951,6 +25955,7 @@ AlterDatabaseStmt:
 			| ALTER DATABASE database_name CharsetCollate
 				{
 					if (GetSessionContext()->enableBCmptMode) {
+						ereport(NOTICE, (errmsg("ALTER DATABASE will change to ALTER SCHEMA when dolphin.b_compatibility_mode is on.")));
 						AlterSchemaStmt *n = makeNode(AlterSchemaStmt);
 						n->schemaname = $3;
 						n->authid = NULL;
@@ -26009,6 +26014,7 @@ alterdb_opt_item:
 DropdbStmt: DROP DATABASE database_name
 				{
 					if (GetSessionContext()->enableBCmptMode) {
+						ereport(NOTICE, (errmsg("DROP DATABASE will change to DROP SCHEMA when dolphin.b_compatibility_mode is on.")));
 						DropStmt *n = makeNode(DropStmt);
 						n->removeType = OBJECT_SCHEMA;
 						n->missing_ok = FALSE;
@@ -26027,6 +26033,7 @@ DropdbStmt: DROP DATABASE database_name
 			| DROP DATABASE IF_P EXISTS database_name
 				{
 					if (GetSessionContext()->enableBCmptMode) {
+						ereport(NOTICE, (errmsg("DROP DATABASE will change to DROP SCHEMA when dolphin.b_compatibility_mode is on.")));
 						DropStmt *n = makeNode(DropStmt);
 						n->removeType = OBJECT_SCHEMA;
 						n->missing_ok = true;

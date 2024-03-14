@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 drop database if exists dolphin_autoinc;
 drop database if exists dolphin_autoinc_restore;
 create database dolphin_autoinc dbcompatibility 'b';

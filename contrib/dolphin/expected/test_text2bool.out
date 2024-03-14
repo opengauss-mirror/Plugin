@@ -9,7 +9,7 @@ end if;
 end;
 /
 call text2bool();
-INFO:  true
+INFO:  false
  text2bool 
 -----------
  
@@ -29,7 +29,7 @@ end if;
 end;
 /
 call text2bool();
-INFO:  true
+INFO:  false
  text2bool 
 -----------
  

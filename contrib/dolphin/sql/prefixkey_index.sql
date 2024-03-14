@@ -1,6 +1,6 @@
 create database prefix_index_db WITH ENCODING 'UTF-8' LC_COLLATE='C' LC_CTYPE='C' dbcompatibility 'B';
 \c prefix_index_db
-
+set dolphin.b_compatibility_mode to off;
 --
 -- CREATE_INDEX
 --
@@ -260,14 +260,14 @@ INSERT INTO test_prefix_table VALUES(20, '高斯数据库-210', '高斯数据库
 INSERT INTO test_prefix_table VALUES(20, '开源数据库-210', '开源数据库-210', '开源数据库-210', '开源数据库-210', 'e5bc80e6ba90e695b0e68daee5ba932d323130', HEXTORAW('e5bc80e6ba90e695b0e68daee5ba932d323130'),E'\\xe5bc80e6ba90e695b0e68daee5ba932d323130');
 INSERT INTO test_prefix_table VALUES(20, '高', '高', '高', '高', 'e9ab98', HEXTORAW('e9ab98'),E'\\xe9ab98');
 
-CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_table (fraw(9));
+CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_table (fraw(18));
 \d+ test_prefix_table
 select pg_get_tabledef('test_prefix_table'::regclass);
 
 set enable_seqscan=false;
 set enable_opfusion=false;
 set enable_partition_opfusion=false;
-
+set dolphin.b_compatibility_mode to on;
 
 SELECT ftext FROM test_prefix_table where ftext like 'XXXXX%' ORDER BY 1;
 SELECT fblob FROM test_prefix_table where fblob < '58585858582D333030' ORDER BY 1;
@@ -647,7 +647,7 @@ ALTER TABLE test_prefix_ustore ADD INDEX prefix_index_fchar_fbytea (fchar(5), fb
 ALTER TABLE test_prefix_ustore ADD INDEX prefix_index_fvchar (fvchar(5));
 ALTER TABLE test_prefix_ustore ADD INDEX prefix_index_ftext (ftext(5));
 ALTER TABLE test_prefix_ustore ADD INDEX prefix_index_fblob (fblob(5));
-CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_ustore (fraw(9));
+CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_ustore (fraw(18));
 \d+ test_prefix_ustore
 select pg_get_tabledef('test_prefix_ustore'::regclass);
 
@@ -851,4 +851,5 @@ CREATE INDEX prefix_cindex_ftext ON test_prefix_cstore (ftext(5));
 DROP TABLE IF EXISTS test_prefix_cstore;
 
 \c contrib_regression
+set dolphin.b_compatibility_mode to off;
 drop database prefix_index_db;

@@ -1,5 +1,6 @@
 create schema partition_test2;
 set current_schema to 'partition_test2';
+set dolphin.b_compatibility_mode to off;
 CREATE TABLE IF NOT EXISTS test_part1
 (
 a int,

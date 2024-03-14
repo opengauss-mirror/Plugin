@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 drop database if exists db_b_atan_test;
 create database db_b_atan_test dbcompatibility 'A';
 \c db_b_atan_test
@@ -20,7 +21,9 @@ SELECT ATAN2(-0.5, 0.5);
 -- -0.7853981633974483
 
 \c contrib_regression
+set dolphin.b_compatibility_mode to off;
 drop database db_b_atan_test;
+set dolphin.b_compatibility_mode to on;
 create schema db_b_atan_test;
 set current_schema to 'db_b_atan_test';
 

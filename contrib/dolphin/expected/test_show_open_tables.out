@@ -4,6 +4,7 @@ NOTICE:  The iteration value of password is not recommended.Setting the iteratio
 create user user2 password 'Show@456';
 NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 -- B库执行
+set dolphin.b_compatibility_mode to off;
 drop database if exists show_open_tables_b;
 NOTICE:  database "show_open_tables_b" does not exist, skipping
 create database show_open_tables_b dbcompatibility 'b';
@@ -391,6 +392,7 @@ SHOW OPEN TABLES FROM show_open_tables_scm;
 
 -- 非B库执行
 set role user1 password 'Show@123';
+set dolphin.b_compatibility_mode to off;
 drop database if exists show_open_tables_nb;
 NOTICE:  database "show_open_tables_nb" does not exist, skipping
 create database show_open_tables_nb;

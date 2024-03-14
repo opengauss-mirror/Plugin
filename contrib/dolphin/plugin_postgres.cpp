@@ -972,7 +972,7 @@ void init_session_vars(void)
                              "Enable mysql behavior override opengauss's when collision happens.",
                              NULL,
                              &ENABLE_B_CMPT_MODE,
-                             false,
+                             true,
                              PGC_USERSET,
                              0,
                              NULL, NULL, NULL);

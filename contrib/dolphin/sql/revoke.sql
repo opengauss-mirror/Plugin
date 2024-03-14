@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 drop database if exists b;
 create database b dbcompatibility 'b';
 \c b

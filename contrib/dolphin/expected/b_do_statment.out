@@ -171,7 +171,7 @@ raise notice '%',b2;
 raise notice '%',b3;
 end;
 /
-NOTICE:  oo      
+NOTICE:  oo
 NOTICE:  3
 NOTICE:  pp
 select * from call_schema.time_table4 order by id;

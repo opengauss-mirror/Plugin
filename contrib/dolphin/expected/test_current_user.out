@@ -58,7 +58,9 @@ ALTER TABLE test OWNER TO current_user();
 create database tmp_db dbcompatibility 'b';
 CLEAN CONNECTION TO ALL FOR DATABASE tmp_db TO USER current_user;
 CLEAN CONNECTION TO ALL FOR DATABASE tmp_db TO USER current_user();
+set dolphin.b_compatibility_mode to off;
 drop database tmp_db;
+set dolphin.b_compatibility_mode to on;
 drop user current_user;
 ERROR:  current user cannot be dropped
 drop user current_user();

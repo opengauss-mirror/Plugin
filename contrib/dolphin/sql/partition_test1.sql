@@ -1,6 +1,5 @@
 create schema partition_test1;
 set current_schema to 'partition_test1';
-
 -------test range partition tables
 ----test partition table
 CREATE TABLE IF NOT EXISTS test_part

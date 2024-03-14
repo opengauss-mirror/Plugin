@@ -1,5 +1,6 @@
 set enable_indexscan = off;
 --GBK
+set dolphin.b_compatibility_mode to off;
 drop database if exists test_gbk;
 NOTICE:  database "test_gbk" does not exist, skipping
 create database test_gbk dbcompatibility='B' encoding='gbk' LC_CTYPE='zh_CN.gbk' LC_COLLATE='zh_CN.gbk';

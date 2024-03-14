@@ -351,9 +351,9 @@ LINE 1: SELECT CAST('E9AB98E696AF' AS blob) COLLATE "utf8mb4_unicode...
                                             ^
 CONTEXT:  referenced column: blob
 SELECT CAST('E9AB98E696AF' AS blob) COLLATE "binary";
-     blob     
---------------
- E9AB98E696AF
+            blob            
+----------------------------
+ \x453941423938453639364146
 (1 row)
 
 SELECT '高斯' COLLATE "utf8mb4_unicode_ci";
@@ -1054,9 +1054,9 @@ LINE 1: ...斯DB' COLLATE gb18030_bin) result, pg_collation_for(result);
                                                                        ^
 -- -- -- diff charset & implicit collation
 SELECT CONCAT(_utf8mb4'高斯DB' , _binary'高斯DB') result;
-              result              
-----------------------------------
- E9AB98E696AF4442E9AB98E696AF4442
+               result               
+------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' , _gbk'高斯DB') result, pg_collation_for(result);
@@ -1078,9 +1078,9 @@ SELECT CONCAT(_gbk'高斯DB' , '高斯DB') result, pg_collation_for(result);
 (1 row)
 
 SELECT CONCAT(_gbk'高斯DB' , _binary'高斯DB') result;
-              result              
-----------------------------------
- E9AB98E696AF4442E9AB98E696AF4442
+               result               
+------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(_gbk'高斯DB' , _gb18030'高斯DB') result, pg_collation_for(result); -- ERROR
@@ -1094,21 +1094,21 @@ SELECT CONCAT(_gb18030'高斯DB' , '高斯DB') result, pg_collation_for(result);
 (1 row)
 
 SELECT CONCAT(_gb18030'高斯DB' , _binary'高斯DB') result;
-              result              
-----------------------------------
- E9AB98E696AF4442E9AB98E696AF4442
+               result               
+------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT( _binary'高斯DB', _utf8mb4'高斯DB') result;
-              result              
-----------------------------------
- E9AB98E696AF4442E9AB98E696AF4442
+               result               
+------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT( _binary'高斯DB', '高斯DB') result;
-              result              
-----------------------------------
- E9AB98E696AF4442E9AB98E696AF4442
+               result               
+------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 -- -- -- explicit & implicit
@@ -1179,9 +1179,9 @@ SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , '高斯DB') result
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _binary'高斯DB') result;
-              result              
-----------------------------------
- E9AB98E696AF4442E9AB98E696AF4442
+               result               
+------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gbk'高斯DB') result, pg_collation_for(result);
@@ -1203,9 +1203,9 @@ SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , '高斯DB') result, pg_co
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _binary'高斯DB') result;
-              result              
-----------------------------------
- E9AB98E696AF4442E9AB98E696AF4442
+               result               
+------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gbk'高斯DB') result, pg_collation_for(result);
@@ -1257,28 +1257,28 @@ SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_bin , _gb18030'高斯DB') result, pg_co
 (1 row)
 
 SELECT CONCAT(_binary'高斯DB', _utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci) result;
-              result              
-----------------------------------
- E9AB98E696AF4442E9AB98E696AF4442
+               result               
+------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(_binary'高斯DB' COLLATE 'binary', _gbk'高斯DB') result;
-              result              
-----------------------------------
- E9AB98E696AF4442E9AB98E696AF4442
+               result               
+------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 -- -- -- concat 3 args
 SELECT CONCAT(_binary'高斯DB', _gb18030'高斯DB', _gbk'高斯DB') result;
-                      result                      
---------------------------------------------------
- E9AB98E696AF4442E9AB98E696AF4442E9AB98E696AF4442
+                       result                       
+----------------------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(_binary'高斯DB', _gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk_chinese_ci) result;
-                      result                      
---------------------------------------------------
- E9AB98E696AF4442E9AB98E696AF4442E9AB98E696AF4442
+                       result                       
+----------------------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _gbk'高斯DB') result, pg_collation_for(result);
@@ -1294,15 +1294,15 @@ SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _binary'高斯DB') result;
-                      result                      
---------------------------------------------------
- E9AB98E696AF4442E9AB98E696AF4442E9AB98E696AF4442
+                       result                       
+----------------------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB' COLLATE gb18030_chinese_ci, _binary'高斯DB') result;
-                    result                    
-----------------------------------------------
- B8DFCBB94442E9AB98E696AF4442E9AB98E696AF4442
+                     result                     
+------------------------------------------------
+ \xb8dfcbb94442e9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(_gb18030'高斯DB', _gbk'高斯DB', _utf8mb4'高斯DB') result, pg_collation_for(result); -- ERROR
@@ -1320,9 +1320,9 @@ SELECT CONCAT(_gb18030'高斯DB' COLLATE gb18030_chinese_ci, _gbk'高斯DB', _ut
 (1 row)
 
 SELECT CONCAT(_gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk_chinese_ci, _binary'高斯DB') result;
-                      result                      
---------------------------------------------------
- E9AB98E696AF4442E9AB98E696AF4442E9AB98E696AF4442
+                       result                       
+----------------------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 -- -- -- const compare CONCAT
@@ -1926,9 +1926,9 @@ LINE 1: SELECT fblob COLLATE gbk_chinese_ci FROM t_diff_charset_colu...
                      ^
 CONTEXT:  referenced column: fblob
 SELECT fblob COLLATE 'binary' FROM t_diff_charset_columns;
-    fblob     
---------------
- E9AB98E696AF
+           fblob            
+----------------------------
+ \x453941423938453639364146
 (1 row)
 
 SELECT fblob COLLATE "zh_CN.utf8" FROM t_diff_charset_columns; -- ERROR
@@ -2083,7 +2083,11 @@ SELECT futf8_bin = fbin, fbin = futf8_bin FROM t_diff_charset_columns;
 (1 row)
 
 SELECT futf8_bin = fblob, fblob = futf8_bin FROM t_diff_charset_columns; -- NOT SUPPORTED
-ERROR:  invalid hexadecimal digit: "�"
+ ?column? | ?column? 
+----------+----------
+ f        | f
+(1 row)
+
 SELECT futf8_uni = fbin, fbin = futf8_uni FROM t_diff_charset_columns;
  ?column? | ?column? 
 ----------+----------
@@ -2091,7 +2095,11 @@ SELECT futf8_uni = fbin, fbin = futf8_uni FROM t_diff_charset_columns;
 (1 row)
 
 SELECT futf8_uni = fblob, fblob = futf8_uni FROM t_diff_charset_columns; -- NOT SUPPORTED
-ERROR:  invalid hexadecimal digit: "�"
+ ?column? | ?column? 
+----------+----------
+ f        | f
+(1 row)
+
 SELECT fgbk_bin = fbin, fbin = fgbk_bin FROM t_diff_charset_columns;
  ?column? | ?column? 
 ----------+----------
@@ -2099,7 +2107,11 @@ SELECT fgbk_bin = fbin, fbin = fgbk_bin FROM t_diff_charset_columns;
 (1 row)
 
 SELECT fgbk_bin = fblob, fblob = fgbk_bin FROM t_diff_charset_columns; -- NOT SUPPORTED
-ERROR:  invalid hexadecimal digit: "�"
+ ?column? | ?column? 
+----------+----------
+ f        | f
+(1 row)
+
 SELECT fgb18030_bin = fbin, fbin = fgb18030_bin FROM t_diff_charset_columns;
  ?column? | ?column? 
 ----------+----------
@@ -2107,7 +2119,11 @@ SELECT fgb18030_bin = fbin, fbin = fgb18030_bin FROM t_diff_charset_columns;
 (1 row)
 
 SELECT fgb18030_bin = fblob, fblob = fgb18030_bin FROM t_diff_charset_columns; -- NOT SUPPORTED
-ERROR:  invalid hexadecimal digit: "�"
+ ?column? | ?column? 
+----------+----------
+ f        | f
+(1 row)
+
 -- -- COLUMN concat COLUMN
 -- -- -- same charset & implicit collation
 SELECT CONCAT(futf8_bin, futf8_uni) result, pg_collation_for(result) FROM t_diff_charset_columns;
@@ -2197,57 +2213,57 @@ LINE 1: ...esult, pg_collation_for(result) FROM t_diff_charset_columns;
                                                                        ^
 -- -- -- with binary & implicit collation
 SELECT CONCAT(futf8_bin, fbin) result FROM t_diff_charset_columns;
-              result              
-----------------------------------
- E9AB98E696AF4442E9AB98E696AF4442
+               result               
+------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(futf8_bin, fblob) result FROM t_diff_charset_columns;
-            result            
-------------------------------
- E9AB98E696AF4442E9AB98E696AF
+                   result                   
+--------------------------------------------
+ \xe9ab98e696af4442453941423938453639364146
 (1 row)
 
 SELECT CONCAT(futf8_uni, fbin) result FROM t_diff_charset_columns;
-              result              
-----------------------------------
- E9AB98E696AF6462E9AB98E696AF4442
+               result               
+------------------------------------
+ \xe9ab98e696af6462e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(futf8_uni, fblob) result FROM t_diff_charset_columns;
-            result            
-------------------------------
- E9AB98E696AF6462E9AB98E696AF
+                   result                   
+--------------------------------------------
+ \xe9ab98e696af6462453941423938453639364146
 (1 row)
 
 SELECT CONCAT(fgbk_bin, fbin) result FROM t_diff_charset_columns;
-            result            
-------------------------------
- B8DFCBB94442E9AB98E696AF4442
+             result             
+--------------------------------
+ \xb8dfcbb94442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(fgbk_bin, fblob) result FROM t_diff_charset_columns;
-          result          
---------------------------
- B8DFCBB94442E9AB98E696AF
+                 result                 
+----------------------------------------
+ \xb8dfcbb94442453941423938453639364146
 (1 row)
 
 SELECT CONCAT(fgb18030_bin, fbin) result FROM t_diff_charset_columns;
-            result            
-------------------------------
- B8DFCBB94442E9AB98E696AF4442
+             result             
+--------------------------------
+ \xb8dfcbb94442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(fgb18030_bin, fblob) result FROM t_diff_charset_columns;
-          result          
---------------------------
- B8DFCBB94442E9AB98E696AF
+                 result                 
+----------------------------------------
+ \xb8dfcbb94442453941423938453639364146
 (1 row)
 
 SELECT CONCAT(fbin, fblob) result FROM t_diff_charset_columns;
-            result            
-------------------------------
- E9AB98E696AF4442E9AB98E696AF
+                   result                   
+--------------------------------------------
+ \xe9ab98e696af4442453941423938453639364146
 (1 row)
 
 -- -- concat column and @uservar
@@ -3174,9 +3190,9 @@ LINE 1: SELECT CAST('DEADBEEF' AS blob) COLLATE utf8mb4_general_ci r...
                                         ^
 CONTEXT:  referenced column: result
 SELECT CAST('DEADBEEF' AS blob) COLLATE "binary" result;
-  result  
-----------
- DEADBEEF
+       result       
+--------------------
+ \x4445414442454546
 (1 row)
 
 -- -- case when
@@ -3729,9 +3745,9 @@ LINE 1: SELECT CONCAT(futf8_uni , futf8_gen) COLLATE gbk_chinese_ci ...
                                              ^
 -- -- -- for binary argument string function
 SELECT CONCAT(_utf8mb4'高斯DB', _binary'高斯DB') COLLATE "binary" result; -- ERROR
-              result              
-----------------------------------
- E9AB98E696AF4442E9AB98E696AF4442
+               result               
+------------------------------------
+ \xe9ab98e696af4442e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(_utf8mb4'高斯DB', _binary'高斯DB') COLLATE utf8mb4_unicode_ci result;
@@ -3740,9 +3756,9 @@ LINE 1: SELECT CONCAT(_utf8mb4'高斯DB', _binary'高斯DB') COLLATE utf...
                                                          ^
 CONTEXT:  referenced column: result
 SELECT CONCAT(futf8_uni, fbin) COLLATE "binary" result FROM t_diff_charset_columns; -- ERROR
-              result              
-----------------------------------
- E9AB98E696AF6462E9AB98E696AF4442
+               result               
+------------------------------------
+ \xe9ab98e696af6462e9ab98e696af4442
 (1 row)
 
 SELECT CONCAT(futf8_uni, fbin) COLLATE gbk_chinese_ci result FROM t_diff_charset_columns; -- ERROR
@@ -4256,7 +4272,7 @@ SELECT * FROM t_multi_charset_partkey WHERE part=_gbk'高斯DB' order by 1,2;
                              QUERY PLAN                              
 ---------------------------------------------------------------------
  Sort
-   Sort Key: a
+   Sort Key: a NULLS FIRST
    ->  Partition Iterator
          Iterations: 1
          ->  Partitioned Seq Scan on t_multi_charset_partkey
@@ -4275,7 +4291,7 @@ SELECT * FROM t_multi_charset_partkey WHERE part=_utf8mb4'高斯db1' order by 1,
                          QUERY PLAN                          
 -------------------------------------------------------------
  Sort
-   Sort Key: a
+   Sort Key: a NULLS FIRST
    ->  Partition Iterator
          Iterations: 1
          ->  Partitioned Seq Scan on t_multi_charset_partkey
@@ -4291,10 +4307,10 @@ SELECT * FROM t_multi_charset_partkey WHERE part=_utf8mb4'高斯db1' order by 1,
 
 EXPLAIN (costs off)
 SELECT * FROM t_multi_charset_partkey WHERE part=_gbk'高斯DB' collate gbk_chinese_ci order by 1,2; -- ALL PARTS
-                         QUERY PLAN                          
--------------------------------------------------------------
+                           QUERY PLAN                            
+-----------------------------------------------------------------
  Sort
-   Sort Key: part COLLATE utf8mb4_bin, a
+   Sort Key: part COLLATE utf8mb4_bin NULLS FIRST, a NULLS FIRST
    ->  Partition Iterator
          Iterations: 4
          ->  Partitioned Seq Scan on t_multi_charset_partkey
@@ -4383,7 +4399,7 @@ SELECT * FROM t_multi_charset_partkey WHERE part=_gbk'高斯DB' order by 1,2;
                              QUERY PLAN                              
 ---------------------------------------------------------------------
  Sort
-   Sort Key: a
+   Sort Key: a NULLS FIRST
    ->  Partition Iterator
          Iterations: 1
          ->  Partitioned Seq Scan on t_multi_charset_partkey
@@ -4402,7 +4418,7 @@ SELECT * FROM t_multi_charset_partkey WHERE part=_utf8mb4'高斯db' order by 1,2
                          QUERY PLAN                          
 -------------------------------------------------------------
  Sort
-   Sort Key: a
+   Sort Key: a NULLS FIRST
    ->  Partition Iterator
          Iterations: 1
          ->  Partitioned Seq Scan on t_multi_charset_partkey
@@ -4418,10 +4434,10 @@ SELECT * FROM t_multi_charset_partkey WHERE part=_utf8mb4'高斯db' order by 1,2
 
 EXPLAIN (costs off)
 SELECT * FROM t_multi_charset_partkey WHERE part=_gbk'高斯DB' collate gbk_chinese_ci order by 1,2; -- ALL PARTS
-                         QUERY PLAN                          
--------------------------------------------------------------
+                           QUERY PLAN                            
+-----------------------------------------------------------------
  Sort
-   Sort Key: part COLLATE utf8mb4_bin, a
+   Sort Key: part COLLATE utf8mb4_bin NULLS FIRST, a NULLS FIRST
    ->  Partition Iterator
          Iterations: 5
          ->  Partitioned Seq Scan on t_multi_charset_partkey
@@ -4505,7 +4521,7 @@ SELECT * FROM t_multi_charset_partkey WHERE part=_gbk'高斯DB' order by 1,2;
                                      QUERY PLAN                                     
 ------------------------------------------------------------------------------------
  Sort
-   Sort Key: part2 COLLATE utf8mb4_general_ci
+   Sort Key: part2 COLLATE utf8mb4_general_ci NULLS FIRST
    ->  Partition Iterator
          Iterations: 1
          ->  Partitioned Seq Scan on t_multi_charset_partkey
@@ -4525,7 +4541,7 @@ SELECT * FROM t_multi_charset_partkey WHERE part=_utf8mb4'高斯db' order by 1,2
                          QUERY PLAN                          
 -------------------------------------------------------------
  Sort
-   Sort Key: part2 COLLATE utf8mb4_general_ci
+   Sort Key: part2 COLLATE utf8mb4_general_ci NULLS FIRST
    ->  Partition Iterator
          Iterations: 1
          ->  Partitioned Seq Scan on t_multi_charset_partkey
@@ -4542,10 +4558,10 @@ SELECT * FROM t_multi_charset_partkey WHERE part=_utf8mb4'高斯db' order by 1,2
 
 EXPLAIN (costs off)
 SELECT * FROM t_multi_charset_partkey WHERE part=_gbk'高斯DB' collate gbk_chinese_ci order by 1,2; -- ALL PARTS
-                                  QUERY PLAN                                   
--------------------------------------------------------------------------------
+                                              QUERY PLAN                                               
+-------------------------------------------------------------------------------------------------------
  Sort
-   Sort Key: part COLLATE utf8mb4_unicode_ci, part2 COLLATE utf8mb4_general_ci
+   Sort Key: part COLLATE utf8mb4_unicode_ci NULLS FIRST, part2 COLLATE utf8mb4_general_ci NULLS FIRST
    ->  Partition Iterator
          Iterations: 2
          ->  Partitioned Seq Scan on t_multi_charset_partkey
@@ -4599,7 +4615,7 @@ SELECT * FROM charset_cstore ORDER BY val; -- b collation is not supported by ve
                    QUERY PLAN                    
 -------------------------------------------------
  Sort
-   Sort Key: val COLLATE utf8mb4_bin
+   Sort Key: val COLLATE utf8mb4_bin NULLS FIRST
    ->  Result
          ->  Row Adapter
                ->  CStore Scan on charset_cstore

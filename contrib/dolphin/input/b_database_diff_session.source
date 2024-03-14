@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_databaselock;
 create database b_databaselock dbcompatibility 'b';
 \c b_databaselock
@@ -59,4 +60,5 @@ end;
 /
 \parallel off
 \c postgres
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_databaselock;

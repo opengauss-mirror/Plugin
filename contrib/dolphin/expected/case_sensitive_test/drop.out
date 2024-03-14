@@ -46,18 +46,26 @@ ERROR:  function oldstyle_length(integer, text) does not exist
 -- OPERATOR REMOVAL
 --
 DROP OPERATOR ## (path, path);
-ERROR:  operator does not exist: path ## path
+ERROR:  syntax error at end of input
+LINE 1: DROP OPERATOR ## (path, path);
+                                      ^
 DROP OPERATOR <% (point, widget);
 ERROR:  type "widget" does not exist
 -- left unary
 DROP OPERATOR @#@ (none, int4);
-ERROR:  operator does not exist: @#@ integer
+ERROR:  syntax error at end of input
+LINE 1: DROP OPERATOR @#@ (none, int4);
+                                       ^
 -- right unary
 DROP OPERATOR #@# (int4, none);
-ERROR:  operator does not exist: integer #@#
+ERROR:  syntax error at end of input
+LINE 1: DROP OPERATOR #@# (int4, none);
+                                       ^
 -- right unary
 DROP OPERATOR #%# (int4, none);
-ERROR:  operator does not exist: integer #%#
+ERROR:  syntax error at end of input
+LINE 1: DROP OPERATOR #%# (int4, none);
+                                       ^
 --
 -- ABSTRACT DATA TYPE REMOVAL
 --

@@ -107,9 +107,9 @@ select * from t where name not like 'Test        %';
 (3 rows)
 
 select cast('a' as char(10)), 'a'::char(10);
-   bpchar   |   bpchar   
-------------+------------
- a          | a         
+ varchar | varchar 
+---------+---------
+ a       | a
 (1 row)
 
 set dolphin.b_compatibility_mode = true;

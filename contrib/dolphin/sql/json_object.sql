@@ -2,6 +2,7 @@ create schema test_json_object;
 set current_schema to 'test_json_object';
 
 -- test for b_compatibility_mode = false
+set dolphin.b_compatibility_mode = off;
 select json_object('{a,1,b,2,3,NULL,"d e f","a b c"}');
 select json_object('{a,b,"a b c"}', '{a,1,1}');
 

@@ -54,7 +54,9 @@ DETAIL:  drop cascades to table test_alter
 drop cascades to function test_alter_function(integer)
 drop cascades to function test_alter_procedure(integer,integer)
 \c contrib_regression
+set dolphin.b_compatibility_mode = off;
 drop database b_comments;
+set dolphin.b_compatibility_mode = on;
 create schema b_comments;
 set search_path to 'b_comments';
 /* unsupported */

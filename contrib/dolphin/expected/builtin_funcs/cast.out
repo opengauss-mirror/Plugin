@@ -37,29 +37,23 @@ select cast(cast('2022-11-10 18:03:20'::timestamp as unsigned) as timestamp);
 (1 row)
 
 SELECT CAST('test' AS CHAR CHARACTER SET utf8);
-WARNING:  value too long for type character(1)
-CONTEXT:  referenced column: bpchar
- bpchar 
---------
- t
+ varchar 
+---------
+ test
 (1 row)
 
 SELECT CAST('test' AS CHAR CHARACTER SET not_exist);
 WARNING:  not_exist is not a valid encoding name. default value set
-WARNING:  value too long for type character(1)
-CONTEXT:  referenced column: bpchar
- bpchar 
---------
- t
+ varchar 
+---------
+ test
 (1 row)
 
 SELECT CAST('test' AS nchar CHARACTER SET not_exist);
 WARNING:  not_exist is not a valid encoding name. default value set
-WARNING:  value too long for type character(1)
-CONTEXT:  referenced column: bpchar
- bpchar 
---------
- t
+ varchar 
+---------
+ test
 (1 row)
 
 select 2.5::float::int16;

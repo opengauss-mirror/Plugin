@@ -547,17 +547,17 @@ select * from
   cast(1+2 as int4) as i4,
   cast(1+2 as int8) as i8;
 show create view tt20v;
- View  |                                                                                    Create View                                                                                    | character_set_client | collation_connection 
--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- tt20v | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt20v AS                                                                                                           +| UTF8                 | en_US.UTF-8
-       | SELECT  * FROM COALESCE(1, 2) c(c), pg_collation_for('x'::text) col(col), text_date('now'::text) d(d), CAST((1 + 2) AS integer) i4(i4), CAST(((1 + 2))::bigint AS bigint) i8(i8); |                      | 
+ View  |                                                                                                              Create View                                                                                                               | character_set_client | collation_connection 
+-------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ tt20v | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt20v AS                                                                                                                                                                +| UTF8                 | en_US.UTF-8
+       | SELECT  * FROM COALESCE(1, 2) c(c), pg_collation_for('x'::text) col(col), text_date('now'::text) d(d), CAST(((1 OPERATOR(dolphin_catalog.+) 2))::integer AS integer) i4(i4), CAST((1 OPERATOR(dolphin_catalog.+) 2) AS bigint) i8(i8); |                      | 
 (1 row)
 
 show create table tt20v;
- View  |                                                                                    Create View                                                                                    | character_set_client | collation_connection 
--------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- tt20v | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt20v AS                                                                                                           +| UTF8                 | en_US.UTF-8
-       | SELECT  * FROM COALESCE(1, 2) c(c), pg_collation_for('x'::text) col(col), text_date('now'::text) d(d), CAST((1 + 2) AS integer) i4(i4), CAST(((1 + 2))::bigint AS bigint) i8(i8); |                      | 
+ View  |                                                                                                              Create View                                                                                                               | character_set_client | collation_connection 
+-------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ tt20v | CREATE OR REPLACE DEFINER = test_showcreate VIEW test_get_def.tt20v AS                                                                                                                                                                +| UTF8                 | en_US.UTF-8
+       | SELECT  * FROM COALESCE(1, 2) c(c), pg_collation_for('x'::text) col(col), text_date('now'::text) d(d), CAST(((1 OPERATOR(dolphin_catalog.+) 2))::integer AS integer) i4(i4), CAST((1 OPERATOR(dolphin_catalog.+) 2) AS bigint) i8(i8); |                      | 
 (1 row)
 
 drop view tt20v;

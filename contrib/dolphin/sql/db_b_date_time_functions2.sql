@@ -1,4 +1,5 @@
 ---- b compatibility case
+set dolphin.b_compatibility_mode = off;
 drop database if exists b_datetime_func_test2;
 create database b_datetime_func_test2 encoding 'UTF-8' lc_collate 'C' lc_ctype 'C' dbcompatibility 'B';
 \c b_datetime_func_test2
@@ -673,4 +674,5 @@ select time_to_sec(cast('294278-01-1' as timestamp));
 select time_to_sec(cast('2001-13-29' as timestamp));
 
 \c contrib_regression
+set dolphin.b_compatibility_mode = off;
 DROP DATABASE b_datetime_func_test2;

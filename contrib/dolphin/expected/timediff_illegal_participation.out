@@ -105,20 +105,20 @@ CONTEXT:  referenced column: timediff
 select c from test order by c;
      c      
 ------------
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
  -838:59:59
  838:59:59
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
 (14 rows)
 
 set dolphin.sql_mode = '';
@@ -292,34 +292,34 @@ CONTEXT:  referenced column: c
 select c from test order by c;
      c      
 ------------
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
  -838:59:59
  -838:59:59
  838:59:59
  838:59:59
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
 (28 rows)
 
 drop table test;
