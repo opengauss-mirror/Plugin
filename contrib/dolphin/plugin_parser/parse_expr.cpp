@@ -135,8 +135,6 @@ typedef struct DefaultFuncType {
     Oid tableOid = InvalidOid;
     int colNumber = 0;
 } DefaultFuncType;
-
-#define SYSTEM_SCHEMA_NAME(schemaname) ((schemaname) == NULL || strcmp((schemaname), "pg_catalog") == 0)
 #endif
 
 #define OrientedIsCOLorPAX(rte) ((rte)->orientation == REL_COL_ORIENTED || (rte)->orientation == REL_PAX_ORIENTED)
