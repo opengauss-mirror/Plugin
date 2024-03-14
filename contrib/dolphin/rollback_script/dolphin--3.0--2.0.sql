@@ -455,6 +455,15 @@ DROP FUNCTION IF EXISTS pg_catalog.log(anyelement,anyelement);
 
 DROP FUNCTION IF EXISTS pg_catalog.log(year);
 DROP FUNCTION IF EXISTS pg_catalog.log(json);
+DROP FUNCTION IF EXISTS pg_catalog.log(uint1);
+DROP FUNCTION IF EXISTS pg_catalog.log(uint2);
+DROP FUNCTION IF EXISTS pg_catalog.log(uint4);
+DROP FUNCTION IF EXISTS pg_catalog.log(uint8);
+DROP FUNCTION IF EXISTS pg_catalog.log(bit);
+DROP FUNCTION IF EXISTS pg_catalog.log(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.log(text);
+DROP FUNCTION IF EXISTS pg_catalog.log(char);
+DROP FUNCTION IF EXISTS pg_catalog.log(varchar);
 
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int1(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int2(anyelement) CASCADE;
