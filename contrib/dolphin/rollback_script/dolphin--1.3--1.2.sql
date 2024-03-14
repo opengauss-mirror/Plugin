@@ -970,6 +970,15 @@ DROP FUNCTION IF EXISTS pg_catalog.bool_cast_timestamptz(boolean);
 
 DROP FUNCTION IF EXISTS pg_catalog.log(year);
 DROP FUNCTION IF EXISTS pg_catalog.log(json);
+DROP FUNCTION IF EXISTS pg_catalog.log(uint1);
+DROP FUNCTION IF EXISTS pg_catalog.log(uint2);
+DROP FUNCTION IF EXISTS pg_catalog.log(uint4);
+DROP FUNCTION IF EXISTS pg_catalog.log(uint8);
+DROP FUNCTION IF EXISTS pg_catalog.log(bit);
+DROP FUNCTION IF EXISTS pg_catalog.log(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.log(text);
+DROP FUNCTION IF EXISTS pg_catalog.log(char);
+DROP FUNCTION IF EXISTS pg_catalog.log(varchar);
 
 DROP OPERATOR IF EXISTS pg_catalog.=(boolean, binary);
 DROP OPERATOR IF EXISTS pg_catalog.=(binary, boolean);

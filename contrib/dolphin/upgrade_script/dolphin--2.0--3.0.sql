@@ -51,16 +51,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_int4 (
 anyelement
 ) RETURNS int4 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'varlena_cast_int4';
 
-CREATE OR REPLACE FUNCTION pg_catalog.log(uint1) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
-CREATE OR REPLACE FUNCTION pg_catalog.log(uint2) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
-CREATE OR REPLACE FUNCTION pg_catalog.log(uint4) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
-CREATE OR REPLACE FUNCTION pg_catalog.log(uint8) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
-CREATE OR REPLACE FUNCTION pg_catalog.log(bit) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
-CREATE OR REPLACE FUNCTION pg_catalog.log(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
-CREATE OR REPLACE FUNCTION pg_catalog.log(text) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
-CREATE OR REPLACE FUNCTION pg_catalog.log(char) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
-CREATE OR REPLACE FUNCTION pg_catalog.log(varchar) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
-
 CREATE OR REPLACE FUNCTION pg_catalog.log2(uint1) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log2(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.log2(uint2) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log2(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.log2(uint4) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log2(cast($1 as double precision))';

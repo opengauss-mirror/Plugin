@@ -1523,6 +1523,15 @@ DROP FUNCTION IF EXISTS pg_catalog.log(year);
 DROP FUNCTION IF EXISTS pg_catalog.log(json);
 CREATE OR REPLACE FUNCTION pg_catalog.log(year) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.log(json) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log(uint1) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log(uint2) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log(uint4) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log(uint8) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log(bit) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log(text) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log(char) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log(varchar) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
 
 create or replace function pg_catalog.boolean_binary_eq(boolean, binary) returns bool LANGUAGE SQL IMMUTABLE STRICT as 'select ($1::int = $2::float)';
 CREATE OPERATOR pg_catalog.=(leftarg = boolean, rightarg = binary, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.boolean_binary_eq, restrict = eqsel, join = eqjoinsel);

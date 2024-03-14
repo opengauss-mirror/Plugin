@@ -38,16 +38,6 @@ DROP FUNCTION IF EXISTS pg_catalog.dayofmonth(numeric);
 
 drop function IF EXISTS pg_catalog."user"();
 
-DROP FUNCTION IF EXISTS pg_catalog.log(uint1);
-DROP FUNCTION IF EXISTS pg_catalog.log(uint2);
-DROP FUNCTION IF EXISTS pg_catalog.log(uint4);
-DROP FUNCTION IF EXISTS pg_catalog.log(uint8);
-DROP FUNCTION IF EXISTS pg_catalog.log(bit);
-DROP FUNCTION IF EXISTS pg_catalog.log(boolean);
-DROP FUNCTION IF EXISTS pg_catalog.log(text);
-DROP FUNCTION IF EXISTS pg_catalog.log(char);
-DROP FUNCTION IF EXISTS pg_catalog.log(varchar);
-
 DROP FUNCTION IF EXISTS pg_catalog.log2(uint1);
 DROP FUNCTION IF EXISTS pg_catalog.log2(uint2);
 DROP FUNCTION IF EXISTS pg_catalog.log2(uint4);
