@@ -194,6 +194,7 @@ plugin_postgres.cpp
 plugin_postgres.h
 plugin_utility.cpp
 prep.h
+prepare.cpp
 prepunion.cpp
 printtup.cpp
 printtup.h
