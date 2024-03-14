@@ -2168,3 +2168,5 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_eq(longblob, json) RETURNS bool LANGU
 CREATE OPERATOR pg_catalog.=(leftarg = longblob, rightarg = json, PROCEDURE = pg_catalog.json_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
 CREATE OR REPLACE FUNCTION pg_catalog.json_eq(anyenum, json) RETURNS bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_eq';
 CREATE OPERATOR pg_catalog.=(leftarg = anyenum, rightarg = json, PROCEDURE = pg_catalog.json_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
+
+CREATE OR REPLACE FUNCTION pg_catalog.hex(anyenum) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'SELECT hex($1::text)';
