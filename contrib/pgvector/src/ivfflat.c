@@ -228,18 +228,31 @@ ivfflathandler(PG_FUNCTION_ARGS)
 	amroutine->amkeytype = InvalidOid;
 
 	/* Interface functions */
-	strcpy_s(amroutine->ambuildfuncname, NAMEDATALEN, "ivfflatbuild");
-	strcpy_s(amroutine->ambuildemptyfuncname, NAMEDATALEN, "ivfflatbuildempty");
-	strcpy_s(amroutine->aminsertfuncname, NAMEDATALEN, "ivfflatinsert");
-	strcpy_s(amroutine->ambulkdeletefuncname, NAMEDATALEN, "ivfflatbulkdelete");
-	strcpy_s(amroutine->amvacuumcleanupfuncname, NAMEDATALEN, "ivfflatvacuumcleanup");
-	strcpy_s(amroutine->amcostestimatefuncname, NAMEDATALEN, "ivfflatcostestimate");
-	strcpy_s(amroutine->amoptionsfuncname, NAMEDATALEN, "ivfflatoptions");
-	strcpy_s(amroutine->amvalidatefuncname, NAMEDATALEN, "ivfflatvalidate");
-	strcpy_s(amroutine->ambeginscanfuncname, NAMEDATALEN, "ivfflatbeginscan");
-	strcpy_s(amroutine->amrescanfuncname, NAMEDATALEN, "ivfflatrescan");
-	strcpy_s(amroutine->amgettuplefuncname, NAMEDATALEN, "ivfflatgettuple");
-	strcpy_s(amroutine->amendscanfuncname, NAMEDATALEN, "ivfflatendscan");
+	errno_t rc;
+	rc = strcpy_s(amroutine->ambuildfuncname, NAMEDATALEN, "ivfflatbuild");
+	securec_check(rc, "\0", "\0");
+	rc = strcpy_s(amroutine->ambuildemptyfuncname, NAMEDATALEN, "ivfflatbuildempty");
+	securec_check(rc, "\0", "\0");
+	rc = strcpy_s(amroutine->aminsertfuncname, NAMEDATALEN, "ivfflatinsert");
+	securec_check(rc, "\0", "\0");
+	rc = strcpy_s(amroutine->ambulkdeletefuncname, NAMEDATALEN, "ivfflatbulkdelete");
+	securec_check(rc, "\0", "\0");
+	rc = strcpy_s(amroutine->amvacuumcleanupfuncname, NAMEDATALEN, "ivfflatvacuumcleanup");
+	securec_check(rc, "\0", "\0");
+	rc = strcpy_s(amroutine->amcostestimatefuncname, NAMEDATALEN, "ivfflatcostestimate");
+	securec_check(rc, "\0", "\0");
+	rc = strcpy_s(amroutine->amoptionsfuncname, NAMEDATALEN, "ivfflatoptions");
+	securec_check(rc, "\0", "\0");
+	rc = strcpy_s(amroutine->amvalidatefuncname, NAMEDATALEN, "ivfflatvalidate");
+	securec_check(rc, "\0", "\0");
+	rc = strcpy_s(amroutine->ambeginscanfuncname, NAMEDATALEN, "ivfflatbeginscan");
+	securec_check(rc, "\0", "\0");
+	rc = strcpy_s(amroutine->amrescanfuncname, NAMEDATALEN, "ivfflatrescan");
+	securec_check(rc, "\0", "\0");
+	rc = strcpy_s(amroutine->amgettuplefuncname, NAMEDATALEN, "ivfflatgettuple");
+	securec_check(rc, "\0", "\0");
+	rc = strcpy_s(amroutine->amendscanfuncname, NAMEDATALEN, "ivfflatendscan");
+	securec_check(rc, "\0", "\0");
 
 	PG_RETURN_POINTER(amroutine);
 }
