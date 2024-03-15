@@ -86,18 +86,17 @@ set enable_seqscan to off;
 set enable_bitmapscan to off;
 -- ok
 explain (costs off) select * from t_int1 where a = 'abc';
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: explain (costs off) select * from t_int1 where a = 'abc';
                                                            ^
-                QUERY PLAN                
-------------------------------------------
- [Bypass]
+                       QUERY PLAN                        
+---------------------------------------------------------
  Index Only Scan using i_t_int1 on t_int1
-   Index Cond: (a = '0'::tinyint)
-(3 rows)
+   Filter: ((a)::double precision = 0::double precision)
+(2 rows)
 
 select * from t_int1 where a = 'abc';
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select * from t_int1 where a = 'abc';
                                        ^
  a 
@@ -135,19 +134,19 @@ explain (costs off) insert into t_int1 values(1);
 
 --error, explain will check the actual query's type
 explain (costs off) update t_int1 set a = 1 where a = 'abc';
-ERROR:  invalid input syntax for type tinyint: "abc"
+ERROR:  invalid input syntax for type double precision: "abc"
 LINE 1: explain (costs off) update t_int1 set a = 1 where a = 'abc';
                                                               ^
 update t_int1 set a = 1 where a = 'abc';
-ERROR:  invalid input syntax for type tinyint: "abc"
+ERROR:  invalid input syntax for type double precision: "abc"
 LINE 1: update t_int1 set a = 1 where a = 'abc';
                                           ^
 explain (costs off) delete from t_int1 where a = 'abc';
-ERROR:  invalid input syntax for type tinyint: "abc"
+ERROR:  invalid input syntax for type double precision: "abc"
 LINE 1: explain (costs off) delete from t_int1 where a = 'abc';
                                                          ^
 delete from t_int1 where a = 'abc';
-ERROR:  invalid input syntax for type tinyint: "abc"
+ERROR:  invalid input syntax for type double precision: "abc"
 LINE 1: delete from t_int1 where a = 'abc';
                                      ^
 explain (costs off) insert into t_int1 values('abc');
@@ -170,7 +169,7 @@ select a into arg1 from t_int1 where a = 'abc' limit 1; -- warning
 return arg1;
 end//
 select test1(1)//
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select a           from t_int1 where a = 'abc' limit 1
                                                  ^
 QUERY:  select a           from t_int1 where a = 'abc' limit 1
@@ -184,7 +183,7 @@ referenced column: test1
 insert into t_text values(test1(1))// -- warning, even it's insert
 WARNING:  re-compile function 'test1' due to strict mode.
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select a           from t_int1 where a = 'abc' limit 1
                                                  ^
 QUERY:  select a           from t_int1 where a = 'abc' limit 1
@@ -204,7 +203,7 @@ insert into t_text values(arg1);
 return arg1;
 end//
 select test1(1)//
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT * from t_int1 where a = 'abc' limit 1
                                        ^
 QUERY:  SELECT * from t_int1 where a = 'abc' limit 1
@@ -218,7 +217,7 @@ referenced column: test1
 insert into t_text values(test1(1))// -- warning, even it's insert
 WARNING:  re-compile function 'test1' due to strict mode.
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT * from t_int1 where a = 'abc' limit 1
                                        ^
 QUERY:  SELECT * from t_int1 where a = 'abc' limit 1
@@ -242,13 +241,13 @@ perform * from t_int1 where a = 'abc' limit 1; -- warning
 return arg1;
 end//
 select test1(1)//
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT * from t_int1 where a = 'abc' limit 1
                                        ^
 QUERY:  SELECT * from t_int1 where a = 'abc' limit 1
 CONTEXT:  PL/pgSQL function test1(integer) line 2 at PERFORM
 referenced column: test1
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT * from t_int1 where a = 'abc' limit 1
                                        ^
 QUERY:  SELECT * from t_int1 where a = 'abc' limit 1
@@ -262,13 +261,13 @@ referenced column: test1
 insert into t_text values(test1(1))// -- warning, even it's insert
 WARNING:  re-compile function 'test1' due to strict mode.
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT * from t_int1 where a = 'abc' limit 1
                                        ^
 QUERY:  SELECT * from t_int1 where a = 'abc' limit 1
 CONTEXT:  PL/pgSQL function test1(integer) line 2 at PERFORM
 referenced column: a
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT * from t_int1 where a = 'abc' limit 1
                                        ^
 QUERY:  SELECT * from t_int1 where a = 'abc' limit 1
@@ -326,7 +325,7 @@ return c;
 end;
 //
 select test1(1)//
-WARNING:  invalid input syntax for type integer: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT b > 'abc'
                    ^
 QUERY:  SELECT b > 'abc'
@@ -340,7 +339,7 @@ referenced column: test1
 insert into t_text values(test1(1))//
 WARNING:  re-compile function 'test1' due to strict mode.
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type integer: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT b > 'abc'
                    ^
 QUERY:  SELECT b > 'abc'
@@ -371,7 +370,7 @@ return c;
 end;
 //
 select test1(1)//
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT __case__variable_11__ IN ('abc')
                                          ^
 QUERY:  SELECT __case__variable_11__ IN ('abc')
@@ -385,7 +384,7 @@ referenced column: test1
 insert into t_text values(test1(1))//
 WARNING:  re-compile function 'test1' due to strict mode.
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT __case__variable_11__ IN ('abc')
                                          ^
 QUERY:  SELECT __case__variable_11__ IN ('abc')
@@ -416,7 +415,7 @@ return c;
 end;
 //
 select test1(1)//
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT a >= 'abc'
                     ^
 QUERY:  SELECT a >= 'abc'
@@ -430,7 +429,7 @@ referenced column: test1
 insert into t_text values(test1(1))//
 WARNING:  re-compile function 'test1' due to strict mode.
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT a >= 'abc'
                     ^
 QUERY:  SELECT a >= 'abc'
@@ -505,7 +504,7 @@ return c;
 end;
 //
 select test1(1)//
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select a from t_int1 where a='abc'
                                      ^
 QUERY:  select a from t_int1 where a='abc'
@@ -519,7 +518,7 @@ referenced column: test1
 insert into t_text values(test1(1))// -- warning
 WARNING:  re-compile function 'test1' due to strict mode.
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select a from t_int1 where a='abc'
                                      ^
 QUERY:  select a from t_int1 where a='abc'
@@ -592,7 +591,7 @@ return c;
 end;
 //
 select test1(1)//
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select a from t_uint1 where a='abc'
                                       ^
 QUERY:  select a from t_uint1 where a='abc'
@@ -606,7 +605,7 @@ referenced column: test1
 insert into t_text values(test1(1))// -- warning
 WARNING:  re-compile function 'test1' due to strict mode.
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select a from t_uint1 where a='abc'
                                       ^
 QUERY:  select a from t_uint1 where a='abc'
@@ -748,7 +747,7 @@ return;
 end;
 //
 select test1()//
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: (select a from t_uint1 where a='abc')
                                        ^
 QUERY:  (select a from t_uint1 where a='abc')
@@ -762,7 +761,7 @@ referenced column: test1
 insert into t_text values(test1())// -- warning
 WARNING:  re-compile function 'test1' due to strict mode.
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: (select a from t_uint1 where a='abc')
                                        ^
 QUERY:  (select a from t_uint1 where a='abc')
@@ -793,7 +792,7 @@ return res;
 end;
 //
 select test1()//
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select a from t_uint1 where a='abc'
                                       ^
 QUERY:  select a from t_uint1 where a='abc'
@@ -807,7 +806,7 @@ referenced column: test1
 insert into t_text values(test1())// -- warning
 WARNING:  re-compile function 'test1' due to strict mode.
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select a from t_uint1 where a='abc'
                                       ^
 QUERY:  select a from t_uint1 where a='abc'
@@ -839,7 +838,7 @@ return res;
 end;
 //
 select test1()//
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select a from t_uint1 where a='abc'
                                       ^
 QUERY:  select a from t_uint1 where a='abc'
@@ -853,7 +852,7 @@ referenced column: test1
 insert into t_text values(test1())// -- warning
 WARNING:  re-compile function 'test1' due to strict mode.
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select a from t_uint1 where a='abc'
                                       ^
 QUERY:  select a from t_uint1 where a='abc'
@@ -890,7 +889,7 @@ return res;
 end;
 //
 select test1()//
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select a from t_uint1 where a='abc';
                                       ^
 QUERY:  select a from t_uint1 where a='abc';
@@ -904,7 +903,7 @@ referenced column: test1
 insert into t_text values(test1())// -- warning
 WARNING:  re-compile function 'test1' due to strict mode.
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select a from t_uint1 where a='abc';
                                       ^
 QUERY:  select a from t_uint1 where a='abc';
@@ -942,7 +941,7 @@ return res;
 end;
 //
 select test1()//
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT a FROM t_uint1 where a = 'abc'
                                         ^
 QUERY:  SELECT a FROM t_uint1 where a = 'abc'
@@ -956,7 +955,7 @@ referenced column: test1
 insert into t_text values(test1())// -- warning
 WARNING:  re-compile function 'test1' due to strict mode.
 CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: SELECT a FROM t_uint1 where a = 'abc'
                                         ^
 QUERY:  SELECT a FROM t_uint1 where a = 'abc'
@@ -1027,15 +1026,15 @@ select * from t_text order by 1//
 drop procedure test1//
 delimiter ;
 select a into @a from t_uint1 where a='abc'; -- warning
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: select a into @a from t_uint1 where a='abc';
                                               ^
 select a into outfile '@abs_srcdir@/data/strict_mode_test.data' from t_uint1 where a='abc'; -- warning
-WARNING:  invalid input syntax for type tinyint: "abc"
+WARNING:  invalid input syntax for type double precision: "abc"
 LINE 1: ...phin/data/strict_mode_test.data' from t_uint1 where a='abc';
                                                                  ^
 select * into new_table from t_uint1 where a = 'abc'; -- ctas, error
-ERROR:  invalid input syntax for type tinyint: "abc"
+ERROR:  invalid input syntax for type double precision: "abc"
 LINE 1: select * into new_table from t_uint1 where a = 'abc';
                                                        ^
 -- language sql
@@ -1095,7 +1094,7 @@ as $$
 select 1 + 1;
 update t_int1 set a = 1 where a = 'abc';
 $$;
-ERROR:  invalid input syntax for type tinyint: "abc"
+ERROR:  invalid input syntax for type double precision: "abc"
 LINE 4: update t_int1 set a = 1 where a = 'abc';
                                           ^
 --remove auto_recompile_function

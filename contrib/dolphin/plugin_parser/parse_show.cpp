@@ -451,7 +451,7 @@ static Node* makePluginsStatusColumn(bool smallcase)
     c->arg = (Expr *)cargnode;
 
     CaseWhen *w = makeNode(CaseWhen);
-    w->expr = (Expr *)plpsMakeStringConst("t");
+    w->expr = (Expr *)makeBoolConst(true, false);
     w->result = (Expr *)plpsMakeStringConst("ACTIVE");
     c->args = list_make1(w);
     c->defresult = (Expr *)plpsMakeStringConst("DISABLED");

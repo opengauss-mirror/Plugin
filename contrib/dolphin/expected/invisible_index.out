@@ -98,22 +98,22 @@ explain(costs false) select col1 from t_invisible_0012 where col1<70;
 (8 rows)
 
 explain(costs false) select col2,col3 from t_invisible_0012 where col2<37125 and col3>50;
-                             QUERY PLAN                              
----------------------------------------------------------------------
+                                           QUERY PLAN                                            
+-------------------------------------------------------------------------------------------------
  Partition Iterator
    Iterations: 2
    ->  Partitioned Seq Scan on t_invisible_0012
-         Filter: ((col2 < 37125::numeric) AND ((col3)::bigint > 50))
+         Filter: ((col2 < 37125::numeric) AND ((col3)::double precision > 50::double precision))
          Selected Partitions:  1..2
 (5 rows)
 
 alter table t_invisible_0012 alter index idx_invisible_0012_02 visible;
 explain(costs false) select col2,col3 from t_invisible_0012 where col2<37125 and col3>50;
-                    QUERY PLAN                    
---------------------------------------------------
+                         QUERY PLAN                          
+-------------------------------------------------------------
  Bitmap Heap Scan on t_invisible_0012
    Recheck Cond: (col2 < 37125::numeric)
-   Filter: ((col3)::bigint > 50)
+   Filter: ((col3)::double precision > 50::double precision)
    ->  Bitmap Index Scan on idx_invisible_0012_02
          Index Cond: (col2 < 37125::numeric)
 (5 rows)
