@@ -1521,11 +1521,113 @@ select * from test_part_segment where ((980 < b and b < 1000) or (2180 < b and b
 alter table test_part_segment remove partitioning;
 ERROR:  The segment table test_part_segment is not supported
 CONTEXT:  referenced column: remove_partitioning
+set dolphin.b_compatibility_mode = on;
+CREATE TABLE tb_subpart(
+    lid int,
+    rtime timestamp WITHOUT TIME ZONE,
+    col1 text
+)PARTITION BY RANGE(rtime) subpartition by list(lid)
+(
+    PARTITION p0 VALUES LESS THAN('2024-02-01 00:00:00'::TIMESTAMP)
+    (
+        subpartition sub01 values (1),
+        subpartition sub02 values (2)
+    ),
+    PARTITION p1 VALUES LESS THAN('2024-03-01 00:00:00'::TIMESTAMP)
+    (
+        subpartition sub11 values (1),
+        subpartition sub12 values (2)
+    )
+);
+insert into tb_subpart values(1,'2024-01-01'),(2,'2024-01-02'),(1,'2024-02-01'),(2,'2024-02-02');
+select * from tb_subpart partition(p0);
+ lid |        rtime        | col1 
+-----+---------------------+------
+   1 | 2024-01-01 00:00:00 | 
+   2 | 2024-01-02 00:00:00 | 
+(2 rows)
+
+select * from tb_subpart partition(p0) as a(b);
+ b |        rtime        | col1 
+---+---------------------+------
+ 1 | 2024-01-01 00:00:00 | 
+ 2 | 2024-01-02 00:00:00 | 
+(2 rows)
+
+select * from tb_subpart partition for ('2024-02-01 00:00:00'::TIMESTAMP);
+ lid |        rtime        | col1 
+-----+---------------------+------
+   1 | 2024-02-01 00:00:00 | 
+   2 | 2024-02-02 00:00:00 | 
+(2 rows)
+
+select * from tb_subpart subpartition(sub01);
+ lid |        rtime        | col1 
+-----+---------------------+------
+   1 | 2024-01-01 00:00:00 | 
+(1 row)
+
+select * from tb_subpart subpartition for ('2024-02-01 00:00:00'::TIMESTAMP, 1);
+ lid |        rtime        | col1 
+-----+---------------------+------
+   1 | 2024-02-01 00:00:00 | 
+(1 row)
+
+select * from tb_subpart partitio(p0); --error
+ERROR:  syntax error at or near "partitio"
+LINE 1: select * from tb_subpart partitio(p0);
+                                 ^
+select * from tb_subpart subpartitio(sub01); --error
+ERROR:  syntax error at or near "subpartitio"
+LINE 1: select * from tb_subpart subpartitio(sub01);
+                                 ^
+select * from tb_subpart partition fo ('2024-02-01 00:00:00'::TIMESTAMP); --error
+ERROR:  syntax error at or near "fo"
+LINE 1: select * from tb_subpart partition fo ('2024-02-01 00:00:00'...
+                                           ^
+select * from tb_subpart as partitio(p0);
+ p0 |        rtime        | col1 
+----+---------------------+------
+  1 | 2024-01-01 00:00:00 | 
+  2 | 2024-01-02 00:00:00 | 
+  1 | 2024-02-01 00:00:00 | 
+  2 | 2024-02-02 00:00:00 | 
+(4 rows)
+
+select * from tb_subpart as subpartitio(p0);
+ p0 |        rtime        | col1 
+----+---------------------+------
+  1 | 2024-01-01 00:00:00 | 
+  2 | 2024-01-02 00:00:00 | 
+  1 | 2024-02-01 00:00:00 | 
+  2 | 2024-02-02 00:00:00 | 
+(4 rows)
+
+set dolphin.b_compatibility_mode = off;
+select * from tb_subpart partitio(p0);
+ p0 |        rtime        | col1 
+----+---------------------+------
+  1 | 2024-01-01 00:00:00 | 
+  2 | 2024-01-02 00:00:00 | 
+  1 | 2024-02-01 00:00:00 | 
+  2 | 2024-02-02 00:00:00 | 
+(4 rows)
+
+select * from tb_subpart subpartitio(p0);
+ p0 |        rtime        | col1 
+----+---------------------+------
+  1 | 2024-01-01 00:00:00 | 
+  2 | 2024-01-02 00:00:00 | 
+  1 | 2024-02-01 00:00:00 | 
+  2 | 2024-02-02 00:00:00 | 
+(4 rows)
+
 drop schema partition_test1 cascade;
-NOTICE:  drop cascades to 5 other objects
+NOTICE:  drop cascades to 6 other objects
 DETAIL:  drop cascades to table test_part_list
 drop cascades to table test_part_hash
 drop cascades to table test_nopart
 drop cascades to table test_part_ustore
 drop cascades to table test_part_segment
+drop cascades to table tb_subpart
 reset current_schema;

@@ -321,5 +321,39 @@ select * from test_part_segment where ((980 < d and d < 1000) or (2180 < d and d
 select * from test_part_segment where ((980 < b and b < 1000) or (2180 < b and b < 2200));
 --test remove partitioning
 alter table test_part_segment remove partitioning;
+
+set dolphin.b_compatibility_mode = on;
+CREATE TABLE tb_subpart(
+    lid int,
+    rtime timestamp WITHOUT TIME ZONE,
+    col1 text
+)PARTITION BY RANGE(rtime) subpartition by list(lid)
+(
+    PARTITION p0 VALUES LESS THAN('2024-02-01 00:00:00'::TIMESTAMP)
+    (
+        subpartition sub01 values (1),
+        subpartition sub02 values (2)
+    ),
+    PARTITION p1 VALUES LESS THAN('2024-03-01 00:00:00'::TIMESTAMP)
+    (
+        subpartition sub11 values (1),
+        subpartition sub12 values (2)
+    )
+);
+insert into tb_subpart values(1,'2024-01-01'),(2,'2024-01-02'),(1,'2024-02-01'),(2,'2024-02-02');
+select * from tb_subpart partition(p0);
+select * from tb_subpart partition(p0) as a(b);
+select * from tb_subpart partition for ('2024-02-01 00:00:00'::TIMESTAMP);
+select * from tb_subpart subpartition(sub01);
+select * from tb_subpart subpartition for ('2024-02-01 00:00:00'::TIMESTAMP, 1);
+select * from tb_subpart partitio(p0); --error
+select * from tb_subpart subpartitio(sub01); --error
+select * from tb_subpart partition fo ('2024-02-01 00:00:00'::TIMESTAMP); --error
+select * from tb_subpart as partitio(p0);
+select * from tb_subpart as subpartitio(p0);
+set dolphin.b_compatibility_mode = off;
+select * from tb_subpart partitio(p0);
+select * from tb_subpart subpartitio(p0);
+
 drop schema partition_test1 cascade;
 reset current_schema;
