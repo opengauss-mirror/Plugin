@@ -1699,3 +1699,5 @@ DROP OPERATOR IF EXISTS pg_catalog.=(longblob, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_eq(longblob, json);
 DROP OPERATOR IF EXISTS pg_catalog.=(anyenum, json);
 DROP FUNCTION IF EXISTS pg_catalog.json_eq(anyenum, json);
+
+DROP FUNCTION IF EXISTS pg_catalog.hex(anyenum);
