@@ -150,6 +150,32 @@ typedef enum {
     TIME_INCORRECT
 } TimeErrorType;
 
+#define DTERR_ZERO_DATE (-6)
+#define DTERR_ZERO_MD (-7)
+
+typedef enum {
+    STRICT_NO_ZERO_DAY = 0,
+    STRICT_CAN_ZERO_DAY,
+    NO_STRICT_NO_ZERO_DAY,
+    NO_STRICT_CAN_ZERO_DAY
+} ZERO_DATE_MODE;
+
+typedef enum
+{
+    TIME_IN = 0,
+    TIME_CAST,
+    TIME_CAST_IMPLICIT,
+    TEXT_TIME_EXPLICIT
+}TimeCastType;
+
+typedef struct ZeroDayProcessMap {
+    int dterr;
+    int time_cast_type;
+    ZERO_DATE_MODE zero_date_mode;
+    int level;
+    bool only_set_result_zero;
+} ZeroDayProcessMap;
+
 extern Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type);
 extern Datum timestamptz_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type);
 
@@ -163,7 +189,7 @@ static inline bool non_zero_date(const pg_tm *ltime)
 extern TimeADT adjust_time_range_with_warn(TimeADT time, bool can_ignore);
 extern "C" DLL_PUBLIC Datum time_cast_implicit(PG_FUNCTION_ARGS);
 
-extern void check_zero_month_day(pg_tm *tm, bool can_ignore);
+extern void check_zero_month_day(const char* str, int dterr, bool can_ignore);
 
 
 #define CHECK_TM_TO_TIMESTAMP_RESULT(tm_to_timestamp_result)                       \

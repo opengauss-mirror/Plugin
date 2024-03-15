@@ -125,15 +125,6 @@ typedef struct DateTimeFormat
 }DateTimeFormat;
 
 
-typedef enum
-{
-    TIME_IN = 0,
-    TIME_CAST,
-    TIME_CAST_IMPLICIT,
-    TEXT_TIME_EXPLICIT
-}TimeCastType;
-
-
 typedef struct GaussTimeResult {
     long time_adt;
     bool handle_continuous;

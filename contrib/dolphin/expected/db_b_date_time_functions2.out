@@ -1585,8 +1585,11 @@ select time_to_sec(cast('0000-1-1' as datetime));
 select time_to_sec(cast('01-01' as datetime));
 WARNING:  invalid input syntax for type timestamp: "01-01"
 CONTEXT:  referenced column: time_to_sec
-ERROR:  The value of month or day cannot be zero.
-CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
 select time_to_sec(cast('1000-01-1' as datetime));
  time_to_sec 
 -------------
@@ -1653,8 +1656,11 @@ select time_to_sec(cast('0000-1-1' as timestamp));
 select time_to_sec(cast('01-01' as timestamp));
 WARNING:  invalid input syntax for type timestamp: "01-01"
 CONTEXT:  referenced column: time_to_sec
-ERROR:  The value of month or day cannot be zero.
-CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
 select time_to_sec(cast('1000-01-1' as timestamp));
  time_to_sec 
 -------------

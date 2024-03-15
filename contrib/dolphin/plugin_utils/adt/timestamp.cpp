@@ -713,7 +713,8 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
             */
             dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
             if (dterr != 0) {
-                DateTimeParseErrorWithFlag(dterr, str, "timestamp", fcinfo->can_ignore, time_cast_type == TIME_CAST);
+                DateTimeParseErrorWithFlag(dterr, str, "timestamp", time_cast_type,
+                    fcinfo->can_ignore, time_cast_type == TIME_CAST);
                 *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ?
                     TIME_CORRECT : TIME_INCORRECT;
                 /*
@@ -731,13 +732,12 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
                 }
             }
             if (dterr != 0) {
-                DateTimeParseErrorWithFlag(dterr, str, "timestamp", fcinfo->can_ignore, time_cast_type == TIME_CAST);
-                check_zero_month_day(tm, fcinfo->can_ignore);
+                DateTimeParseErrorWithFlag(dterr, str, "timestamp", time_cast_type,
+                    fcinfo->can_ignore, time_cast_type == TIME_CAST);
                 *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ?
                     TIME_CORRECT : TIME_INCORRECT;
                 PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
             }
-            check_zero_month_day(tm, fcinfo->can_ignore);
             switch (dtype) {
                 case DTK_DATE:
                     if (tm2timestamp(tm, fsec, NULL, &result) != 0) {
@@ -1081,6 +1081,7 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
     rc = memset_s(tm, sizeof(pg_tm), 0, sizeof(pg_tm));
     securec_check(rc, "\0", "\0");
     int tz;
+    int dterr = 0;
     int level = can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
     if (ts < B_FORMAT_DATE_INT_MIN) {
         ereport(level,
@@ -1112,16 +1113,16 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
     if (cnt > TIMESTAMP_YYYYMMDD_LEN) {
         time = ts % 1000000; /* extract time: hhmmss */
         date = ts / 1000000; /* extract date: YYMMDD or YYYYMMDD */
-    } 
-    if (int32_b_format_time_internal(tm, true, time, &fsec) || int32_b_format_date_internal(tm, date, true)) {
+    }
+    dterr = int32_b_format_time_internal(tm, true, time, &fsec);
+    dterr = dterr != 0 ? dterr : int32_b_format_date_internal(tm, date, true);
+    if (dterr) {
+        check_zero_month_day("timestamp out of range", dterr, can_ignore);
         ereport(level,
             (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
         *time_error_type = TIME_INCORRECT;
-        check_zero_month_day(tm, can_ignore);
         return TIMESTAMP_ZERO;
     }
-
-    check_zero_month_day(tm, can_ignore);
 
     if (hasTz) {
         /* b format timestamp type */
@@ -1869,7 +1870,8 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Time
              * if error ignorable, function DateTimeParseError reports warning instead, then return current timestamp.
              */
 #else
-             DateTimeParseErrorWithFlag(dterr, str, "timestamp", fcinfo->can_ignore, time_cast_type == TIME_CAST);
+            DateTimeParseErrorWithFlag(dterr, str, "timestamp", time_cast_type,
+                fcinfo->can_ignore, time_cast_type == TIME_CAST);
              *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ? TIME_CORRECT : TIME_INCORRECT;
 #endif
              PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
@@ -1888,15 +1890,12 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Time
 #ifndef DOLPHIN
             DateTimeParseError(dterr, str, "timestamp", (time_cast_type == TIME_CAST_IMPLICIT) || fcinfo->can_ignore);
 #else
-            DateTimeParseErrorWithFlag(dterr, str, "timestamp", fcinfo->can_ignore, time_cast_type == TIME_CAST);
-            check_zero_month_day(tm, fcinfo->can_ignore);
+            DateTimeParseErrorWithFlag(dterr, str, "timestamp", time_cast_type,
+                fcinfo->can_ignore, time_cast_type == TIME_CAST);
             *time_error_type = SQL_MODE_NOT_STRICT_ON_INSERT() || fcinfo->can_ignore ? TIME_CORRECT : TIME_INCORRECT;
 #endif
             PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);
         }
-#ifdef DOLPHIN
-        check_zero_month_day(tm, fcinfo->can_ignore);
-#endif
         switch (dtype) {
             case DTK_DATE:
                 if (tm2timestamp(tm, fsec, &tz, &result) != 0) {
@@ -11953,13 +11952,11 @@ Datum timestamp_bool(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(tmp ? true : false);
 }
 
-void check_zero_month_day(pg_tm *tm, bool can_ignore)
+void check_zero_month_day(const char* str, int dterr, bool can_ignore)
 {
-    if (!can_ignore && (tm->tm_mon == 0 || tm->tm_mday == 0)
-        && tm->tm_year != 0) {
+    if (!can_ignore && dterr == DTERR_ZERO_MD && SQL_MODE_STRICT()) {
         ereport(ERROR,
-            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
-                errmsg("The value of month or day cannot be zero.")));
+            (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("%s", str)));
     }
 }
 

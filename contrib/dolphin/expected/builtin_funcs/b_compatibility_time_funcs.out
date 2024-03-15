@@ -234,11 +234,9 @@ ERROR:  date/time field value out of range: "2022-4-31"
 CONTEXT:  referenced column: result
 insert into func_test(functionName, result) values ('subdate("2022-0-1 6:05:05", 20)',subdate('2022-0-1 6:05:05', 20)); 
 ERROR:  date/time field value out of range: "2022-0-1 6:05:05"
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: result
 insert into func_test(functionName, result) values ('subdate("2022-1-0 6:05:05", INTERVAL ''6'' SECOND)',subdate('2022-1-0 6:05:05', INTERVAL '6' SECOND));-- 天数为0
 ERROR:  date/time field value out of range: "2022-1-0 6:05:05"
-HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: result
 insert into func_test(functionName, result) values ('subdate(''2022-1-1 6:05:05'', INTERVAL ''10 20:20'' DAY TO SECOND)',subdate('2022-1-1 6:05:05', INTERVAL '10 20:20' DAY TO SECOND));
     -- 不同格式的date/datetime输入
@@ -720,9 +718,13 @@ select time_bool('01:00:00');
 (1 row)
 
 select date_bool('0001-00-01');
+WARNING:  date/time field value out of range: "0001-00-01"
+LINE 1: select date_bool('0001-00-01');
+                         ^
+CONTEXT:  referenced column: date_bool
  date_bool 
 -----------
- t
+ 
 (1 row)
 
 select time_bool('01:00:01');
@@ -732,9 +734,13 @@ select time_bool('01:00:01');
 (1 row)
 
 select date_bool('0001-01-00');
+WARNING:  date/time field value out of range: "0001-01-00"
+LINE 1: select date_bool('0001-01-00');
+                         ^
+CONTEXT:  referenced column: date_bool
  date_bool 
 -----------
- t
+ 
 (1 row)
 
 select time_bool('01:01:00');
@@ -771,8 +777,13 @@ select time_bool('-838:59:59');
 select timestamp('2022-05');
 WARNING:  invalid input syntax for type timestamp: "2022-05"
 CONTEXT:  referenced column: timestamp
-ERROR:  The value of month or day cannot be zero.
+WARNING:  date/time field value out of range
 CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
 select timestamp('2022-05-05');
       timestamp      
 ---------------------
