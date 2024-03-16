@@ -709,7 +709,8 @@ SelectStmt* makeShowTablesQuery(bool fullmode, char *optDbName, Node *likeWhereO
     char *colTbl = NULL; // inner table
     int len;
 
-    if (isLikeExpr && likeWhereOpt != NULL) {
+    /* likeWhereOpt can be a const or paramref */
+    if (isLikeExpr && likeWhereOpt != NULL && (IsA(likeWhereOpt, A_Const))) {
         char *likeStr = ((A_Const*)likeWhereOpt)->val.val.str; // LIKE restrict Sconst
         len = strlen("Tables_in_") + strlen(schemaname) + strlen(" (") + strlen(likeStr) + 2; //2 for ')' and '\0'
         retColTbl = (char *)palloc0(len);
@@ -718,8 +719,6 @@ SelectStmt* makeShowTablesQuery(bool fullmode, char *optDbName, Node *likeWhereO
         securec_check_ss(rc, "", "");
         rc = sprintf_s(colTbl, len, "tables_in_%s (%s)", schemaname, likeStr);
         securec_check_ss(rc, "", "");
-
-        likeWhereOpt = (Node*)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, colTbl), likeWhereOpt, -1);
     } else {
         len = strlen("Tables_in_") + strlen(schemaname) + 1;
         retColTbl = (char *)palloc0(len);
@@ -728,6 +727,10 @@ SelectStmt* makeShowTablesQuery(bool fullmode, char *optDbName, Node *likeWhereO
         securec_check_ss(rc, "", "");
         rc = sprintf_s(colTbl, len, "tables_in_%s", schemaname);
         securec_check_ss(rc, "", "");
+    }
+
+    if (isLikeExpr && likeWhereOpt != NULL) {
+        likeWhereOpt = (Node*)makeSimpleA_Expr(AEXPR_OP, "~~", plpsMakeColumnRef(NULL, colTbl), likeWhereOpt, -1);
     }
 
     bool smallcase_beneath = TRUE;
