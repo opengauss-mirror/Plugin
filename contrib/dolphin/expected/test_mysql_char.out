@@ -528,21 +528,18 @@ WARNING:  Truncated incorrect DOUBLE value: -1abc
 (1 row)
 
 select '00200' && 1;
-WARNING:  Truncated incorrect DOUBLE value: 00200
  ?column? 
 ----------
  t
 (1 row)
 
 select '00200' && 0;
-WARNING:  Truncated incorrect DOUBLE value: 00200
  ?column? 
 ----------
  f
 (1 row)
 
 select '00200' && null;
-WARNING:  Truncated incorrect DOUBLE value: 00200
  ?column? 
 ----------
  
@@ -654,21 +651,18 @@ WARNING:  Truncated incorrect DOUBLE value: -1abc
 (1 row)
 
 select '00200' || 1;
-WARNING:  Truncated incorrect DOUBLE value: 00200
  ?column? 
 ----------
  t
 (1 row)
 
 select '00200' || 0;
-WARNING:  Truncated incorrect DOUBLE value: 00200
  ?column? 
 ----------
  t
 (1 row)
 
 select '00200' || null;
-WARNING:  Truncated incorrect DOUBLE value: 00200
  ?column? 
 ----------
  t

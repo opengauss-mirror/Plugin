@@ -154,5 +154,24 @@ WARNING:  Truncated incorrect DOUBLE value: 1.23a
  t        | f        | f        | t        | f        | t        | f        | t
 (1 row)
 
+select '' is true, '1.23' is true, '1.23a' is true, '1.23$@' is true, '     1.23       ' is true, '     1.23       a' is true;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+WARNING:  Truncated incorrect DOUBLE value: 1.23$@
+WARNING:  Truncated incorrect DOUBLE value:      1.23       a
+ ?column? | ?column? | ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------+----------+----------
+ f        | t        | t        | t        | t        | t
+(1 row)
+
+select 'true' is true, 'true' is false, 'false' is true, 'false' is false;
+WARNING:  Truncated incorrect DOUBLE value: true
+WARNING:  Truncated incorrect DOUBLE value: true
+WARNING:  Truncated incorrect DOUBLE value: false
+WARNING:  Truncated incorrect DOUBLE value: false
+ ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------
+ f        | t        | f        | t
+(1 row)
+
 drop schema is_clause cascade;
 NOTICE:  drop cascades to table test_type_table

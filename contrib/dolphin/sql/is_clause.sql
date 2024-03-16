@@ -47,4 +47,7 @@ select `varchar` is true, `varchar` is not true, `varchar` is false, `varchar` i
 select `binary` is true, `binary` is not true, `binary` is false, `binary` is not false, `binary` is unknown, `binary` is not unknown, `binary` is null, `binary` is not null from test_type_table;
 select `varbinary` is true, `varbinary` is not true, `varbinary` is false, `varbinary` is not false, `varbinary` is unknown, `varbinary` is not unknown, `varbinary` is null, `varbinary` is not null from test_type_table;
 
+select '' is true, '1.23' is true, '1.23a' is true, '1.23$@' is true, '     1.23       ' is true, '     1.23       a' is true;
+select 'true' is true, 'true' is false, 'false' is true, 'false' is false;
+
 drop schema is_clause cascade;

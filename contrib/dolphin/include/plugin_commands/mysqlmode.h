@@ -72,4 +72,13 @@ extern inline void PrintErrInvalidLogarithm(bool ignore, char* errNum)
     ereport((!ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
         (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("Invalid argument '%s' for logarithm", errNum)));
 }
+
+extern inline bool IsBlankStr(char* str)
+{
+    while (isspace((unsigned char)*str)) {
+        str++;
+    }
+
+    return *str == '\0';
+}
 #endif /* MYSQLMODE_H */

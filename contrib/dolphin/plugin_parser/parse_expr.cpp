@@ -1464,6 +1464,7 @@ static Node* transformAExprOp(ParseState* pstate, A_Expr* a)
     return result;
 }
 
+#ifdef DOLPHIN
 static void CheckUnknownConstNode(Node* node, bool can_ignore)
 {
     if (!ENABLE_B_CMPT_MODE || node->type != T_Const || ((Const*)node)->constisnull) {
@@ -1474,11 +1475,12 @@ static void CheckUnknownConstNode(Node* node, bool can_ignore)
     char* newval = DatumGetCString(cons->constvalue);
     char* stopstring = NULL;
     resval = strtod(newval, &stopstring);
-    if (stopstring) {
+    if (stopstring && !IsBlankStr(stopstring)) {
         ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
                 (errmsg("Truncated incorrect DOUBLE value: %s", newval)));
     }
 }
+#endif
 
 static Node* transformAExprAnd(ParseState* pstate, A_Expr* a)
 {
@@ -4329,6 +4331,15 @@ static Node* transformBooleanTest(ParseState* pstate, BooleanTest* b)
 
     b->arg = (Expr*)transformExprRecurse(pstate, (Node*)b->arg);
 
+#ifdef DOLPHIN
+    if (exprType((Node*)b->arg) == UNKNOWNOID) {
+        CheckUnknownConstNode((Node*)b->arg, pstate->p_has_ignore);
+        b->arg = (Expr*)coerce_to_target_type(
+            pstate, (Node*)b->arg, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
+        b->arg = (Expr*)coerce_to_boolean(pstate, (Node*)b->arg, clausename);
+    }
+    else
+#endif
     b->arg = (Expr*)coerce_to_boolean(pstate, (Node*)b->arg, clausename);
 
     return (Node*)b;
