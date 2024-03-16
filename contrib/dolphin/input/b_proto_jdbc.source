@@ -14,6 +14,7 @@ alter system set dolphin.default_database_name=b_databaseproto;
 DROP USER IF EXISTS proto_user CASCADE;
 CREATE USER proto_user WITH PASSWORD 'Gauss@123';
 GRANT ALL PRIVILEGES TO proto_user;
+GRANT ALL ON SCHEMA dbe_perf TO proto_user;
 SET ROLE proto_user PASSWORD 'Gauss@123';
 
 create schema db_jdbc;

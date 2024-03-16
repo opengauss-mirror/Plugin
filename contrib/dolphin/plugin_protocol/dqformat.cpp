@@ -532,7 +532,7 @@ static void fill_null_bitmap(HeapTuple spi_tuple, TupleDesc spi_tupdesc, bits8 *
     }    
 }
 
-void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf)
+void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf, PrinttupAttrInfo *thisState)
 {
     switch (item->dolphin_type_id) {
         case DOLPHIN_TYPE_LONG:
@@ -572,12 +572,24 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
             dq_append_int4(buf, num);
             break;
         }
-        case DOLPHIN_TYPE_STRING:
+        case DOLPHIN_TYPE_STRING: {
+            /* since all MySQL unknown type are map to DOLPHIN_TYPE_STRING, we use type out func here */
+            if (thisState == NULL) {
+                /* should not happen */
+                ereport(ERROR, (errcode(ERRCODE_PROTOCOL_VIOLATION),
+                    errmsg("There is no output function for type: %s(%u)", item->og_typname, item->og_type_oid)));
+            }
+            char *val = OutputFunctionCall(&thisState->finfo, binval);
+            dq_append_string_lenenc(buf, val);
+            pfree_ext(val);
+            break;
+        }
         case DOLPHIN_TYPE_VARCHAR:
         case DOLPHIN_TYPE_VAR_STRING:
         case DOLPHIN_TYPE_JSON: {
             char *val = TextDatumGetCString(binval);
             dq_append_string_lenenc(buf, val);
+            pfree_ext(val);
             break;
         }
         case DOLPHIN_TYPE_LONG_BLOB:
@@ -587,11 +599,13 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
             u_sess->attr.attr_common.bytea_output = BYTEA_OUTPUT_ESCAPE;
             char *val = DatumGetCString(DirectFunctionCall1(byteaout, binval));
             dq_append_string_lenenc(buf, val);
+            pfree_ext(val);
             break;
         }
         case DOLPHIN_TYPE_BIT: {
             char *val = DatumGetCString(DirectFunctionCall1(bit_out, binval));
             dq_append_string_lenenc(buf, val);
+            pfree_ext(val);
             break;
         }
         case DOLPHIN_TYPE_GEOMETRY: {
@@ -604,22 +618,26 @@ void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo 
                 val = DatumGetCString(DirectFunctionCall1(poly_out, binval));
             }
             dq_append_string_lenenc(buf, val);
+            pfree_ext(val);
             break;
         }
         case DOLPHIN_TYPE_DECIMAL:
         case DOLPHIN_TYPE_NEWDECIMAL: {
             char *val = DatumGetCString(DirectFunctionCall1(numeric_out, binval));
             dq_append_string_lenenc(buf, val);
+            pfree_ext(val);
             break;
         }
         case DOLPHIN_TYPE_ENUM: {
             char *val = DatumGetCString(DirectFunctionCall1(enum_out, binval));
             dq_append_string_lenenc(buf, val);
+            pfree_ext(val);
             break;
         }
         case DOLPHIN_TYPE_SET: {
             char *val = DatumGetCString(DirectFunctionCall1(set_out, binval));
             dq_append_string_lenenc(buf, val);
+            pfree_ext(val);
             break;
         }
         case DOLPHIN_TYPE_DATE: {
