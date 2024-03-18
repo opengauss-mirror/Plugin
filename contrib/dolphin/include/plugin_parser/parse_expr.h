@@ -16,6 +16,10 @@
 #include "plugin_parser/parse_node.h"
 #include "utils/plpgsql.h"
 
+#ifdef DOLPHIN
+#define SYSTEM_SCHEMA_NAME(schemaname) ((schemaname) == NULL || strcmp((schemaname), "pg_catalog") == 0)
+#endif
+
 extern Node* transformExpr(ParseState* pstate, Node* expr, ParseExprKind exprKind);
 extern Node* transformExprRecurse(ParseState* pstate, Node* expr);
 extern Expr* make_distinct_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int location);

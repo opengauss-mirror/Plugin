@@ -867,7 +867,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <node>	for_locking_item
 %type <list>	for_locking_clause opt_for_locking_clause for_locking_items
 %type <list>	locked_rels_list
-%type <boolean>	opt_all
+%type <boolean>	opt_all opt_all_b
 
 %type <node>	join_outer join_qual
 %type <jtype>	join_type
@@ -920,7 +920,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <defelt>	def_elem tsconf_def_elem reloption_elem tblspc_option_elem old_aggr_elem cfoption_elem
 %type <node>	def_arg columnElem where_clause where_or_current_clause start_with_expr connect_by_expr
                                 a_expr a_expr_without_sconst b_expr c_expr c_expr_noparen c_expr_without_sconst AexprConst AexprConst_without_Sconst indirection_el siblings_clause
-                                columnref in_expr start_with_clause having_clause func_table array_expr set_ident_expr set_expr set_expr_extension
+                                columnref in_expr in_sum_expr start_with_clause having_clause func_table array_expr set_ident_expr set_expr set_expr_extension
 				ExclusionWhereClause fulltext_match_params
 %type <list>	ExclusionConstraintList ExclusionConstraintElem
 %type <list>	func_arg_list
@@ -1197,7 +1197,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	CHARACTER CHARACTERISTICS CHARACTERSET CHARSET CHECK CHECKPOINT CHECKSUM CLASS CLASS_ORIGIN CLEAN CLIENT CLIENT_MASTER_KEY CLIENT_MASTER_KEYS CLOB CLOSE
 	CLUSTER COALESCE COLLATE COLLATION COLUMN COLUMN_NAME COLUMN_ENCRYPTION_KEY COLUMN_ENCRYPTION_KEYS COLUMNS COMMENT COMMENTS COMMIT CONSISTENT
 	COMMITTED COMPATIBLE_ILLEGAL_CHARS COMPILE COMPLETE COMPLETION COMPRESS COMPRESSION CONCURRENTLY CONDITION CONFIGURATION CONNECTION CONSTANT CONSTRAINT CONSTRAINT_CATALOG CONSTRAINT_NAME CONSTRAINT_SCHEMA CONSTRAINTS
-	CONTAINS CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST CREATE
+	CONTAINS CONTENT_P CONTINUE_P CONTVIEW CONVERSION_P CONVERT CONNECT COORDINATOR COORDINATORS COPY COST COUNT CREATE
 	CROSS CSN CSV CUBE CURRENT_P
 	CURRENT_CATALOG CURRENT_DATE CURRENT_ROLE CURRENT_SCHEMA
 	CURRENT_TIME CURTIME CURRENT_TIMESTAMP CURRENT_USER CURSOR CURSOR_NAME CYCLE NOW_FUNC
@@ -30274,6 +30274,10 @@ opt_all:	ALL										{ $$ = TRUE; }
 			| /*EMPTY*/								{ $$ = FALSE; }
 		;
 
+opt_all_b:	ALL										{}
+			| /*EMPTY*/								{}
+		;
+
 /* We use (NIL) as a placeholder to indicate that all target expressions
  * should be placed in the DISTINCT list during parsetree analysis.
  */
@@ -35998,6 +36002,48 @@ func_expr_common_subexpr:
 					n->call_func = false;
 					$$ = (Node *)n;
 				}
+			| COUNT '(' opt_all_b '*' ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("count");
+					n->args = NIL;
+					n->agg_order = NIL;
+					n->agg_star = TRUE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| COUNT '(' in_sum_expr ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("count");
+					n->args = list_make1($3);
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = FALSE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
+			| COUNT '(' DISTINCT expr_list ')'
+				{
+					FuncCall *n = makeNode(FuncCall);
+					n->funcname = SystemFuncName("count");
+					n->args = $4;
+					n->agg_order = NIL;
+					n->agg_star = FALSE;
+					n->agg_distinct = TRUE;
+					n->func_variadic = FALSE;
+					n->over = NULL;
+					n->location = @1;
+					n->call_func = false;
+					$$ = (Node *)n;
+				}
 		;
 
 
@@ -36712,6 +36758,9 @@ in_expr:	select_with_parens
 			| '(' expr_list ')'						{ $$ = (Node *)$2; }
 		;
 
+in_sum_expr:
+			opt_all_b a_expr { $$ = $2; }
+		;
 /*
  * Define SQL92-style case clause.
  * - Full specification
@@ -38583,6 +38632,7 @@ alias_name_unreserved_keyword_without_key:
 			| COORDINATORS
 			| COPY
 			| COST
+			| COUNT %prec UMINUS
 			| CSV
 			| CURRENT_P
 			| CURSOR_NAME
