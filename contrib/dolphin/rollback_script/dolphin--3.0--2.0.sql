@@ -892,6 +892,14 @@ update pg_catalog.pg_cast set castfunc = (select oid from pg_proc where proname 
 end
 $$;
 
+drop function pg_catalog.year_recv(internal);
+CREATE OR REPLACE FUNCTION pg_catalog.year_recv (bytea) RETURNS year LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'year_recv';
+do $$
+begin
+update pg_catalog.pg_type set typreceive = '-', typsend = '-'  where oid = 'year'::regtype;
+end
+$$;
+
 DROP CAST IF EXISTS ("binary" AS boolean);
 DROP CAST IF EXISTS ("varbinary" AS boolean);
 DROP CAST IF EXISTS (blob AS boolean);
@@ -1302,6 +1310,7 @@ DROP OPERATOR IF EXISTS pg_catalog.&(blob, blob);
 DROP AGGREGATE IF EXISTS pg_catalog.bit_and(char);
 DROP AGGREGATE IF EXISTS pg_catalog.bit_and(varchar);
 DROP AGGREGATE IF EXISTS pg_catalog.bit_and(binary);
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(varbinary);
 DROP AGGREGATE IF EXISTS pg_catalog.bit_and(tinyblob);
 DROP AGGREGATE IF EXISTS pg_catalog.bit_and(blob);
 DROP AGGREGATE IF EXISTS pg_catalog.bit_and(mediumblob);

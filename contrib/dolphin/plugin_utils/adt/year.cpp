@@ -159,8 +159,14 @@ Datum year_out(PG_FUNCTION_ARGS)
 Datum year_recv(PG_FUNCTION_ARGS)
 {
     StringInfo buf = (StringInfo)PG_GETARG_POINTER(0);
-    int32 tmp = pq_getmsgint(buf, sizeof(YearADT));
-    PG_RETURN_YEARADT(int32_to_YearADT(tmp));
+    int32 tmp = pq_getmsgint(buf, sizeof(int32));
+
+    YearADT result = int32_to_YearADT(tmp);
+    /* year(2) */
+    if (PG_GETARG_INT32(2) == YEAR2_LEN) {
+        YEAR_CONVERT(result);
+    }
+    PG_RETURN_YEARADT(result);
 }
 
 /*
@@ -169,9 +175,17 @@ Datum year_recv(PG_FUNCTION_ARGS)
 Datum year_send(PG_FUNCTION_ARGS)
 {
     YearADT year = PG_GETARG_YEARADT(0);
+    int32 val = 0;
+    if (year >= 0) {
+        /* year(4) */
+        val = YearADT_to_Year(year);
+    } else {
+        /* year(2): displays only the last (least significant) 2 digits */
+        val = YearADT_to_Year(-year) % 100;
+    }
     StringInfoData buf;
     pq_begintypsend(&buf);
-    pq_sendint32(&buf, YearADT_to_Year(year));
+    pq_sendint32(&buf, val);
     PG_RETURN_BYTEA_P(pq_endtypsend(&buf));
 }
 
