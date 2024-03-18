@@ -91,6 +91,17 @@ public class MySQLJdbcTest {
                 System.out.println(resultSetMetaData.getColumnName(i) + ":" + resultSetMetaData.getColumnTypeName(i));
             }
 
+            resultSet = statement.executeQuery("explain (costs off) select * from t3 a join t3 b on a.c1=b.c2");
+            resultSetMetaData = resultSet.getMetaData();
+            for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+                System.out.println(resultSetMetaData.getColumnName(i) + ":" + resultSetMetaData.getColumnTypeName(i));
+            }
+
+            while (resultSet.next()) {
+                final String res_getString = resultSet.getString(1);
+                System.out.println(res_getString);
+            }
+
             // test for jdbc.getBoolean and getInt
             statement.executeUpdate("drop table if exists t3");
             statement.executeUpdate("create table t3 (id int, c boolean)");

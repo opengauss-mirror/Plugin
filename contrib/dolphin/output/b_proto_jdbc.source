@@ -16,6 +16,7 @@ NOTICE:  role "proto_user" does not exist, skipping
 CREATE USER proto_user WITH PASSWORD 'Gauss@123';
 NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 GRANT ALL PRIVILEGES TO proto_user;
+GRANT ALL ON SCHEMA dbe_perf TO proto_user;
 SET ROLE proto_user PASSWORD 'Gauss@123';
 create schema db_jdbc;
 \! $THIRD_PARTY_LIBS/kernel/platform/openjdk8/jdk/bin/javac -classpath @abs_builddir@/proto_jdbc/class/junixsocket-common-2.6.2.jar:@abs_builddir@/proto_jdbc/class/junixsocket-mysql-2.6.2.jar @abs_builddir@/proto_jdbc/class/*.java
@@ -84,6 +85,12 @@ c30:DECIMAL
 c31:JSON
 c32:CHAR
 c33:CHAR
+QUERY PLAN:VARCHAR
+Hash Join
+  Hash Cond: (a.c1 = b.c2)
+  ->  Seq Scan on t3 a
+  ->  Hash
+        ->  Seq Scan on t3 b
 res_getBoolean: true
 res_getInt: 1
 res_getString: 1
@@ -136,6 +143,246 @@ c30:DECIMAL:20.000
 c31:JSON:{"k": "v"}
 c32:CHAR:a
 c33:CHAR:a
+c34:CHAR:c
+c35:CHAR:openGauss name
+Tables_in_proto_user:CHAR:t3
+Name:CHAR:t3
+Engine:VARCHAR:ASTORE
+Version:VARCHAR:null
+Row_format:VARCHAR:ROW
+Rows:DOUBLE:0.0
+Avg_row_length:INT:0
+Data_length:BIGINT:8192
+Max_data_length:INT:0
+Index_length:BIGINT:0
+Data_free:INT:0
+Auto_increment:CHAR:null
+--?Create_time:DATETIME:.*
+--?Update_time:DATETIME:.*
+Check_time:VARCHAR:null
+Collation:VARCHAR:C
+Checksum:VARCHAR:null
+Create_options:VARCHAR:{orientation=row,compression=no}
+Comment:VARCHAR:null
+Database:VARCHAR:proto_user
+Table:VARCHAR:t3
+In_use:INT:0
+Name_locked:INT:0
+Variable_name:VARCHAR:enable_dolphin_proto
+Value:VARCHAR:on
+Database:CHAR:public
+charset:CHAR:gb18030
+description:VARCHAR:National Standard
+default collation:VARCHAR:gb18030_chinese_ci
+maxlen:INT:4
+collation:CHAR:gbk_bin
+charset:CHAR:gbk
+id:INT UNSIGNED:1328
+default:VARCHAR:null
+compiled:VARCHAR:Yes
+sortlen:INT:null
+Field:CHAR:c1
+Type:VARCHAR:integer
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c10
+Type:VARCHAR:double precision
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c11
+Type:VARCHAR:bit(10)
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c12
+Type:VARCHAR:boolean
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c13
+Type:VARCHAR:character(10)
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c15
+Type:VARCHAR:character varying(10)
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c16
+Type:VARCHAR:nvarchar2(10)
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c18
+Type:VARCHAR:year
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c19
+Type:VARCHAR:date
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c1
+Type:VARCHAR:integer
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c10
+Type:VARCHAR:double precision
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c11
+Type:VARCHAR:bit(10)
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c12
+Type:VARCHAR:boolean
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c13
+Type:VARCHAR:character(10)
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c15
+Type:VARCHAR:character varying(10)
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c16
+Type:VARCHAR:nvarchar2(10)
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c18
+Type:VARCHAR:year
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Field:CHAR:c19
+Type:VARCHAR:date
+Null:VARCHAR:YES
+Key:VARCHAR:null
+Default:VARCHAR:NULL
+Extra:VARCHAR:
+Db:CHAR:pg_catalog
+Name:CHAR:json_out
+Type:VARCHAR:FUNCTION
+--?Definer:CHAR:.*
+Modified:TIMESTAMP:null
+Created:TIMESTAMP:null
+Security_type:VARCHAR:INVOKER
+Comment:VARCHAR:I/O
+character_set_client:VARCHAR:null
+collation_connection:VARCHAR:null
+Database Collation:CHAR:en_US.UTF-8
+Variable_name:VARCHAR:datname
+Value:VARCHAR:b_databaseproto
+oid:INT UNSIGNED:1510
+proname:CHAR:backtrace
+pronamespace:INT UNSIGNED:4992
+proowner:INT UNSIGNED:10
+prolang:INT UNSIGNED:12
+procost:FLOAT:1.0
+prorows:FLOAT:100.0
+provariadic:INT UNSIGNED:0
+protransform:CHAR:-
+proisagg:TINYINT:0
+proiswindow:TINYINT:0
+prosecdef:TINYINT:0
+proleakproof:TINYINT:0
+proisstrict:TINYINT:1
+proretset:TINYINT:1
+provolatile:CHAR:s
+pronargs:SMALLINT:0
+pronargdefaults:SMALLINT:0
+prorettype:INT UNSIGNED:2249
+proargtypes:CHAR:
+proallargtypes:CHAR:{23,25,23,25,26}
+proargmodes:CHAR:{o,o,o,o,o}
+proargnames:CHAR:{frameno,funcname,lineno,query,funcoid}
+proargdefaults:CHAR:null
+prosrc:VARCHAR:debug_client_backtrace
+probin:VARCHAR:null
+proconfig:CHAR:null
+proacl:CHAR:null
+prodefaultargpos:CHAR:null
+fencedmode:TINYINT:0
+proshippable:TINYINT:0
+propackage:TINYINT:0
+prokind:CHAR:f
+proargsrc:VARCHAR:null
+propackageid:INT UNSIGNED:0
+proisprivate:TINYINT:0
+proargtypesext:CHAR:null
+prodefaultargposext:CHAR:null
+allargtypes:CHAR:23 25 23 25 26
+allargtypesext:CHAR:null
+oid:INT UNSIGNED:13341
+relname:CHAR:replication_slots
+relnamespace:INT UNSIGNED:4988
+reltype:INT UNSIGNED:13342
+reloftype:INT UNSIGNED:0
+relowner:INT UNSIGNED:10
+relam:INT UNSIGNED:0
+relfilenode:INT UNSIGNED:13341
+reltablespace:INT UNSIGNED:0
+relpages:DOUBLE:0.0
+reltuples:DOUBLE:0.0
+relallvisible:INT:0
+reltoastrelid:INT UNSIGNED:0
+reltoastidxid:INT UNSIGNED:0
+reldeltarelid:INT UNSIGNED:0
+reldeltaidx:INT UNSIGNED:0
+relcudescrelid:INT UNSIGNED:0
+relcudescidx:INT UNSIGNED:0
+relhasindex:TINYINT:0
+relisshared:TINYINT:0
+relpersistence:CHAR:p
+relkind:CHAR:v
+relnatts:SMALLINT:10
+relchecks:SMALLINT:0
+relhasoids:TINYINT:0
+relhaspkey:TINYINT:0
+relhasrules:TINYINT:1
+relhastriggers:TINYINT:0
+relhassubclass:TINYINT:0
+relcmprs:TINYINT:0
+relhasclusterkey:TINYINT:0
+relrowmovement:TINYINT:0
+parttype:CHAR:n
+relfrozenxid:CHAR:0
+--?relacl:CHAR:.*
+reloptions:CHAR:null
+relreplident:CHAR:n
+relfrozenxid64:CHAR:0
+relbucket:INT UNSIGNED:null
+relbucketkey:CHAR:null
+relminmxid:CHAR:0
 c1:INT:null
 c2:INT UNSIGNED:null
 c3:TINYINT:0
@@ -167,12 +414,14 @@ c30:DECIMAL:null
 c31:JSON:null
 c32:CHAR:null
 c33:CHAR:null
+c34:CHAR:null
+c35:CHAR:null
 update failed:invalid input syntax for type tinyint: "abc"
 delete failed:invalid input syntax for type tinyint: "abc"
 select * from t3;
- c1 |  c2  | c3 | c4 | c5 | c6 | c7 | c8 | c9  | c10 |    c11     | c12 |    c13     |   c15   |   c16    | c18  |    c19     |   c20    |            c21             |           c22           |    c23     |   c24    |    c25     |    c26     |   c27    |        c28         | c29  |  c30   |    c31     | c32 | c33 
-----+------+----+----+----+----+----+----+-----+-----+------------+-----+------------+---------+----------+------+------------+----------+----------------------------+-------------------------+------------+----------+------------+------------+----------+--------------------+------+--------+------------+-----+-----
-  1 | 2000 | 1  | 4  |  5 | 6  |  7 | 8  | 9.9 |  10 | 0001100011 | t   | char       | varchar | nvarchar | 2023 | 2023-02-27 | 14:46:30 | 2023-03-07 00:16:16.666-08 | 2023-03-07 16:16:16.666 | \x626c6f62 | 626C6F62 | \x626c6f62 | \x626c6f62 | (1000,0) | ((1000,0),(200,3)) | text | 20.000 | {"k": "v"} | a   | a
+ c1 |  c2  | c3 | c4 | c5 | c6 | c7 | c8 | c9  | c10 |    c11     | c12 |    c13     |   c15   |   c16    | c18  |    c19     |   c20    |            c21             |           c22           |    c23     |   c24    |    c25     |    c26     |   c27    |        c28         | c29  |  c30   |    c31     | c32 | c33 | c34 |      c35       
+----+------+----+----+----+----+----+----+-----+-----+------------+-----+------------+---------+----------+------+------------+----------+----------------------------+-------------------------+------------+----------+------------+------------+----------+--------------------+------+--------+------------+-----+-----+-----+----------------
+  1 | 2000 | 1  | 4  |  5 | 6  |  7 | 8  | 9.9 |  10 | 0001100011 | t   | char       | varchar | nvarchar | 2023 | 2023-02-27 | 14:46:30 | 2023-03-07 00:16:16.666-08 | 2023-03-07 16:16:16.666 | \x626c6f62 | 626C6F62 | \x626c6f62 | \x626c6f62 | (1000,0) | ((1000,0),(200,3)) | text | 20.000 | {"k": "v"} | a   | a   | c   | openGauss name
 (1 row)
 
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAutoCommitTest localhost $dp db_jdbc proto_user Gauss@123

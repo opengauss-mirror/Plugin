@@ -21,6 +21,23 @@ select variance(a), variance(b) from u1;
 select listagg(a) within group(order by a) from u1;
 select listagg(a, ',') within group(order by a) from u1;
 
+create table t_count(a int, b int);
+insert into t_count values(1,1);
+insert into t_count values(1,2);
+insert into t_count values(1,3);
+
+insert into t_count values(2,1);
+insert into t_count values(2,2);
+insert into t_count values(2,3);
+
+insert into t_count values(2,1);
+insert into t_count values(2,2);
+insert into t_count values(2,3);
+
+select count(distinct a,b) from t_count;
+select count(distinct a) from t_count;
+select count(distinct b) from t_count;
+drop table t_count;
 
 drop table if exists smp_test;
 drop table if exists t1;

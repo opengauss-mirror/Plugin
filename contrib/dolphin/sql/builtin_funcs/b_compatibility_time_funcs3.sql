@@ -596,6 +596,15 @@ select timestamptz '-2007-07-19 11:11:11.234-7');
 select timestamp without time zone'2007-13-19 11:11:11';
 select datetime'2007-13-19 11:11:11';
 
+select cast('2024-12-12 13:00:00.123456' as datetime(6));
+select cast('2024-12-12 13:00:00.123456' as timestamp(6));
+select cast('2024-12-12 13:00:00.123456' as time(6));
+
+create table test_time(c1 timestamp(6), c2 datetime(6), c3 time(6));
+insert into test_time values ('2024-12-12 13:00:00.123456', '2024-12-12 13:00:00.123456', '2024-12-12 13:00:00.123456');
+select * from test_time;
+
+drop table test_time;
 drop table t_time;
 drop schema b_time_funcs3 cascade;
 reset current_schema;

@@ -996,8 +996,10 @@ Datum float4um(PG_FUNCTION_ARGS)
     float4 arg1 = PG_GETARG_FLOAT4(0);
     float4 result;
 
+#ifndef DOLPHIN
     if (arg1 == 0.0)
         PG_RETURN_FLOAT4(0);
+#endif
 
     result = -arg1;
     PG_RETURN_FLOAT4(result);
@@ -1060,8 +1062,10 @@ Datum float8um(PG_FUNCTION_ARGS)
     float8 arg1 = PG_GETARG_FLOAT8(0);
     float8 result;
 
+#ifndef DOLPHIN
     if (arg1 == 0.0)
         PG_RETURN_FLOAT8(0);
+#endif
 
     result = -arg1;
     PG_RETURN_FLOAT8(result);

@@ -40,5 +40,7 @@ SELECT unhex(35 + 1), unhex(33 - 1), unhex(12 * 3);
 set dolphin.sql_mode = 'sql_mode_strict';
 SELECT UNHEX('GG');
 
+select +unhex(36),-unhex('43');
+
 drop schema unhex_test cascade;
 reset current_schema;

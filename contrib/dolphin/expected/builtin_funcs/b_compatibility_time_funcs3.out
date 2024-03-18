@@ -2470,6 +2470,33 @@ select datetime'2007-13-19 11:11:11';
 ERROR:  date/time field value out of range: "2007-13-19 11:11:11"
 HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: timestamp
+select cast('2024-12-12 13:00:00.123456' as datetime(6));
+         timestamp          
+----------------------------
+ 2024-12-12 13:00:00.123456
+(1 row)
+
+select cast('2024-12-12 13:00:00.123456' as timestamp(6));
+          timestamptz          
+-------------------------------
+ 2024-12-12 13:00:00.123456-08
+(1 row)
+
+select cast('2024-12-12 13:00:00.123456' as time(6));
+      time       
+-----------------
+ 13:00:00.123456
+(1 row)
+
+create table test_time(c1 timestamp(6), c2 datetime(6), c3 time(6));
+insert into test_time values ('2024-12-12 13:00:00.123456', '2024-12-12 13:00:00.123456', '2024-12-12 13:00:00.123456');
+select * from test_time;
+              c1               |             c2             |       c3        
+-------------------------------+----------------------------+-----------------
+ 2024-12-12 13:00:00.123456-08 | 2024-12-12 13:00:00.123456 | 13:00:00.123456
+(1 row)
+
+drop table test_time;
 drop table t_time;
 drop schema b_time_funcs3 cascade;
 NOTICE:  drop cascades to 2 other objects

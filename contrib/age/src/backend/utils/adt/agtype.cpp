@@ -3770,6 +3770,26 @@ Datum agtype_typecast_numeric(PG_FUNCTION_ARGS)
     PG_RETURN_POINTER(agtype_value_to_agtype(&result_value));
 }
 
+PG_FUNCTION_INFO_V1(ag_dtoi8);
+extern "C" Datum ag_dtoi8(PG_FUNCTION_ARGS);
+Datum ag_dtoi8(PG_FUNCTION_ARGS)
+{
+    float8 arg = PG_GETARG_FLOAT8(0);
+    int64 result;
+
+    /* Round arg to nearest integer (but it's still in float form) */
+    arg = rint(arg);
+    if (unlikely(arg < (double) PG_INT64_MIN) ||
+        unlikely(arg > (double) PG_INT64_MAX) ||
+        unlikely(isnan(arg)))
+    ereport(ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+             errmsg("bigint out of range")));
+
+    result = (int64) arg;
+    PG_RETURN_INT64(result);
+}
+
 PG_FUNCTION_INFO_V1(agtype_typecast_int);
 extern "C" Datum  agtype_typecast_int(PG_FUNCTION_ARGS);
 /*
@@ -3810,7 +3830,7 @@ Datum agtype_typecast_int(PG_FUNCTION_ARGS)
         PG_RETURN_POINTER(agtype_value_to_agtype(arg_value));
         break;
     case AGTV_FLOAT:
-        d = DirectFunctionCall1(dtoi8,
+        d = DirectFunctionCall1(ag_dtoi8,
                                 Float8GetDatum(arg_value->val.float_value));
         break;
     case AGTV_NUMERIC:

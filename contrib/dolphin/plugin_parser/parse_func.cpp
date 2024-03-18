@@ -247,6 +247,8 @@ Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, Node* l
                 break;
             }
         }
+    } else if (funcid == ANYCOUNTOID) {
+        goto special_func;
     }
 #endif
     if (fdresult == FUNCDETAIL_COERCION) {
@@ -512,7 +514,9 @@ Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, Node* l
     if (retset && pstate && pstate->p_is_flt_frame) {
         check_srf_call_placement(pstate, last_srf, location);
     }
-
+#ifdef DOLPHIN
+    special_func:
+#endif
     /* build the appropriate output structure */
     if (fdresult == FUNCDETAIL_NORMAL) {
         FuncExpr* funcexpr = makeNode(FuncExpr);
@@ -1620,6 +1624,19 @@ FuncDetailCode func_get_detail(List* funcname, List* fargs, List* fargnames, int
     if (refSynOid != NULL) {
         *refSynOid = InvalidOid;
     }
+
+#ifdef DOLPHIN
+    char* schemaname = NULL;
+    char* objname = NULL;
+    char* pkgname = NULL;
+    DeconstructQualifiedName(funcname, &schemaname, &objname, &pkgname);
+    if (nargs > 1 && SYSTEM_SCHEMA_NAME(schemaname) && strcmp(objname, "count") == 0) {
+        *funcid = ANYCOUNTOID;
+        *rettype = INT8OID;
+        *retset = false;
+        return FUNCDETAIL_AGGREGATE;
+    }
+#endif
 
 #ifndef ENABLE_MULTIPLE_NODES
     if (enable_out_param_override()) {

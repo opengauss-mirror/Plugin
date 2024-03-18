@@ -98,6 +98,35 @@ select listagg(a, ',') within group(order by a) from u1;
  -128,0,127
 (1 row)
 
+create table t_count(a int, b int);
+insert into t_count values(1,1);
+insert into t_count values(1,2);
+insert into t_count values(1,3);
+insert into t_count values(2,1);
+insert into t_count values(2,2);
+insert into t_count values(2,3);
+insert into t_count values(2,1);
+insert into t_count values(2,2);
+insert into t_count values(2,3);
+select count(distinct a,b) from t_count;
+ count 
+-------
+     6
+(1 row)
+
+select count(distinct a) from t_count;
+ count 
+-------
+     2
+(1 row)
+
+select count(distinct b) from t_count;
+ count 
+-------
+     3
+(1 row)
+
+drop table t_count;
 drop table if exists smp_test;
 NOTICE:  table "smp_test" does not exist, skipping
 drop table if exists t1;
