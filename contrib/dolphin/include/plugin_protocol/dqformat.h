@@ -24,6 +24,7 @@
 
 #include "plugin_protocol/proto_com.h"
 #include "plugin_protocol/bytestream.h"
+#include "plugin_protocol/printtup.h"
 
 #include "executor/spi.h"
 #include "commands/prepare.h"
@@ -165,6 +166,7 @@ void sendRowDescriptionPacket(StringInfo buf, SPITupleTable  *SPI_tuptable);
 
 void send_text_protocol_resultset_row(StringInfo buf, SPITupleTable *SPI_tuptable);
 
-void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf);
+void append_data_by_dolphin_type(const TypeItem *item, Datum binval, StringInfo buf,
+    PrinttupAttrInfo *thisState = NULL);
 
 #endif /* DQ_FORMAT_H */

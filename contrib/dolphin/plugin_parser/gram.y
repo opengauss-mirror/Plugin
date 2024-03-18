@@ -4289,6 +4289,16 @@ LikeOrWhere:
                                         n->like_or_where = makeStringConst($2, -1);
                                         $$ = n;
                                 }
+						| LIKE PARAM
+								{
+									ParamRef *p = makeNode(ParamRef);
+									p->number = $2;
+									p->location = @2;
+									OptLikeWhere *n = (OptLikeWhere *)palloc(sizeof(OptLikeWhere));
+									n->is_like = TRUE;
+									n->like_or_where = (Node*)p;
+									$$ = n;
+								}
                 ;
 
 opt_global:

@@ -34,7 +34,22 @@ public class MySQLJdbcPrepareTest {
     private static String dbname;
     private static String user;
     private static String password;
-    
+
+    public static void print_res(ResultSet resultSet) {
+        try {
+            ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+            while (resultSet.next()) {
+                for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
+                    byte[] val = resultSet.getBytes(i);
+                    String out = val != null ? new String(val) : null;
+                    System.out.println(resultSetMetaData.getColumnName(i) + ":" +resultSetMetaData.getColumnTypeName(i) + ":" + out);
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("print_res failed:" + e.getMessage());
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length == 5) {
             host = args[0];
@@ -87,10 +102,12 @@ public class MySQLJdbcPrepareTest {
                 "c30 decimal(5, 3)," +
                 "c31 json," +
                 "c32 enum('a', 'b')," +
-                "c33 set('a', 'b')" +
+                "c33 set('a', 'b')," +
+                "c34 \"char\"," +
+                "c35 name" +
                 ")");
             
-            PreparedStatement p1 = connection.prepareStatement("insert into t3 values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+            PreparedStatement p1 = connection.prepareStatement("insert into t3 values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
             p1.setInt(1, 1);
             p1.setLong(2, 2000);
             p1.setInt(3, 1);
@@ -129,24 +146,122 @@ public class MySQLJdbcPrepareTest {
             p1.setString(29, "{\"k\": \"v\"}"); 
             p1.setString(30, "a");
             p1.setString(31, "a");
+            p1.setString(32, "c");
+            p1.setString(33, "openGauss name");
             
             p1.executeUpdate();
             
             PreparedStatement p2 = connection.prepareStatement("select * from t3 where c1=?");
             p2.setObject(1, 1);
             resultSet = p2.executeQuery();
-            
-            resultSetMetaData = resultSet.getMetaData();
-            while (resultSet.next()) {
-                for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
-                    byte[] val = resultSet.getBytes(i);
-                    String out = val != null ? new String(val) : null;
-                    System.out.println(resultSetMetaData.getColumnName(i) + ":" +resultSetMetaData.getColumnTypeName(i) + ":" + out);
-                }
-            }
+            print_res(resultSet);
 
             p1.clearParameters();
             p1.close();
+            p2.clearParameters();
+            p2.close();
+            resultSet.close();
+
+            p2 = connection.prepareStatement("show tables like ?");
+            p2.setString(1, "t%");
+            resultSet = p2.executeQuery();
+            print_res(resultSet);
+            p2.clearParameters();
+            p2.close();
+            resultSet.close();
+
+            p2 = connection.prepareStatement("show table status like ?");
+            p2.setString(1, "t%");
+            resultSet = p2.executeQuery();
+            print_res(resultSet);
+            p2.clearParameters();
+            p2.close();
+            resultSet.close();
+
+            p2 = connection.prepareStatement("show open tables like ?");
+            p2.setString(1, "t%");
+            resultSet = p2.executeQuery();
+            print_res(resultSet);
+            p2.clearParameters();
+            p2.close();
+            resultSet.close();
+
+            p2 = connection.prepareStatement("show VARIABLES like ?");
+            p2.setString(1, "enable_dolphin%");
+            resultSet = p2.executeQuery();
+            print_res(resultSet);
+            p2.clearParameters();
+            p2.close();
+            resultSet.close();
+
+            p2 = connection.prepareStatement("show databases like ?");
+            p2.setString(1, "public%");
+            resultSet = p2.executeQuery();
+            print_res(resultSet);
+            p2.clearParameters();
+            p2.close();
+            resultSet.close();
+
+            p2 = connection.prepareStatement("show CHARACTER SET like ?");
+            p2.setString(1, "gb18030%");
+            resultSet = p2.executeQuery();
+            print_res(resultSet);
+            p2.clearParameters();
+            p2.close();
+            resultSet.close();
+
+            p2 = connection.prepareStatement("show COLLATION like ?");
+            p2.setString(1, "gbk_bin%");
+            resultSet = p2.executeQuery();
+            print_res(resultSet);
+            p2.clearParameters();
+            p2.close();
+            resultSet.close();
+
+            p2 = connection.prepareStatement("show COLUMNS FROM t3 like ?");
+            p2.setString(1, "c1%");
+            resultSet = p2.executeQuery();
+            print_res(resultSet);
+            p2.clearParameters();
+            p2.close();
+            resultSet.close();
+
+            p2 = connection.prepareStatement("show COLUMNS FROM t3 like ?");
+            p2.setString(1, "c1%");
+            resultSet = p2.executeQuery();
+            print_res(resultSet);
+            p2.clearParameters();
+            p2.close();
+            resultSet.close();
+
+            p2 = connection.prepareStatement("show FUNCTION STATUS like ?");
+            p2.setString(1, "json_out%");
+            resultSet = p2.executeQuery();
+            print_res(resultSet);
+            p2.clearParameters();
+            p2.close();
+            resultSet.close();
+
+            p2 = connection.prepareStatement("show STATUS like ?");
+            p2.setString(1, "datname%");
+            resultSet = p2.executeQuery();
+            print_res(resultSet);
+            p2.clearParameters();
+            p2.close();
+            resultSet.close();
+
+            p2 = connection.prepareStatement("select oid,* from pg_proc where proname = ?");
+            p2.setString(1, "backtrace");
+            resultSet = p2.executeQuery();
+            print_res(resultSet);
+            p2.clearParameters();
+            p2.close();
+            resultSet.close();
+
+            p2 = connection.prepareStatement("select oid,* from pg_class where relname = ?");
+            p2.setString(1, "replication_slots");
+            resultSet = p2.executeQuery();
+            print_res(resultSet);
             p2.clearParameters();
             p2.close();
             resultSet.close();

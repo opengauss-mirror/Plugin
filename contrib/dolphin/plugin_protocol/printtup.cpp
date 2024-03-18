@@ -244,7 +244,7 @@ static void send_textproto(TupleTableSlot *slot, DR_printtup *myState, int natts
     }
 }
 
-static void send_binaryproto(TupleTableSlot *slot, int natts, StringInfo buf)
+static void send_binaryproto(TupleTableSlot *slot, DR_printtup *myState, int natts, StringInfo buf)
 {
     TupleDesc desc = slot->tts_tupleDescriptor;
 
@@ -271,9 +271,10 @@ static void send_binaryproto(TupleTableSlot *slot, int natts, StringInfo buf)
         if (slot->tts_isnull[i] || desc->attrs[i].attisdropped) {
             continue;
         }
+        PrinttupAttrInfo *thisState = myState->myinfo + i;
         Datum binval = slot->tts_values[i];
         const TypeItem *item = GetItemByTypeOid(desc->attrs[i].atttypid);
-        append_data_by_dolphin_type(item, binval, buf);
+        append_data_by_dolphin_type(item, binval, buf, thisState);
     }
 }
 
@@ -299,7 +300,7 @@ void printtup(TupleTableSlot *slot, DestReceiver *self)
     if (!GetSessionContext()->is_binary_proto) {
         send_textproto(slot, myState, natts, buf);
     } else {
-        send_binaryproto(slot, natts, buf);
+        send_binaryproto(slot, myState, natts, buf);
     }
 
     (void)MemoryContextSwitchTo(old_context);

@@ -45,6 +45,7 @@ dolphin_proto_ctx g_proto_ctx;
 struct HTAB* b_typoid2DolphinMarcoHash;
 TypeItem b_type_items[] = {
     // int type
+    {"oid", DOLPHIN_TYPE_LONG, 0, UNSIGNED_FLAG, 0x2d},                          // integer unsigned
     {"int4", DOLPHIN_TYPE_LONG, INT4OID, 0, 0x2d},                                // integer
     {"uint4", DOLPHIN_TYPE_LONG, 0, UNSIGNED_FLAG, 0x2d},                         // integer unsigned
     {"int1", DOLPHIN_TYPE_TINY, INT1OID, 0, 0x2d},                                // tinyint
@@ -62,7 +63,8 @@ TypeItem b_type_items[] = {
     // bool type
     {"bool", DOLPHIN_TYPE_TINY, BOOLOID, 0, 0x2d},                                 // bool
     //char type
-    {"char", DOLPHIN_TYPE_STRING, CHAROID, 0, 0x2d},                              // char
+    {"name", DOLPHIN_TYPE_STRING, NAMEOID, 0, 0x2d},                              // name -- one char
+    {"char", DOLPHIN_TYPE_STRING, CHAROID, 0, 0x2d},                              // char -- cstring
     {"bpchar", DOLPHIN_TYPE_STRING, BPCHAROID, 0, 0x2d},                          // bpchar
     {"binary", DOLPHIN_TYPE_STRING, 0, BINARY_FLAG, COLLATE_BINARY},              // binary
     // varchar type
