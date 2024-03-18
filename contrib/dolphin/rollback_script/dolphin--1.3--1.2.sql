@@ -1508,3 +1508,11 @@ DROP FUNCTION IF EXISTS pg_catalog.hex(anyenum);
 
 DROP AGGREGATE IF EXISTS pg_catalog.stddev_pop(json);
 DROP FUNCTION IF EXISTS pg_catalog.any_accum(numeric[], anyelement);
+
+drop function pg_catalog.year_recv(internal);
+CREATE OR REPLACE FUNCTION pg_catalog.year_recv (bytea) RETURNS year LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'year_recv';
+do $$
+begin
+update pg_catalog.pg_type set typreceive = '-', typsend = '-'  where oid = 'year'::regtype;
+end
+$$;

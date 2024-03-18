@@ -28,14 +28,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.random_bytes(json) returns blob LANGUAGE S
 
 create or replace function pg_catalog."user"() returns name as 'select current_user' LANGUAGE 'sql' IMMUTABLE;
 
-drop function pg_catalog.year_recv(bytea);
-CREATE OR REPLACE FUNCTION pg_catalog.year_recv (internal) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'year_recv';
-do $$
-begin
-update pg_catalog.pg_type set typreceive = 'year_recv'::regproc, typsend = 'year_send'::regproc where oid = 'year'::regtype;
-end
-$$;
-
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int1(anyelement) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_int1 (
 anyelement
