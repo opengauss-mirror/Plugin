@@ -2278,3 +2278,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.json_eq(anyenum, json) RETURNS bool LANGUA
 CREATE OPERATOR pg_catalog.=(leftarg = anyenum, rightarg = json, PROCEDURE = pg_catalog.json_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
 
 CREATE OR REPLACE FUNCTION pg_catalog.hex(anyenum) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'SELECT hex($1::text)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.any_accum(numeric[], anyelement) RETURNS numeric[] LANGUAGE C STRICT AS  '$libdir/dolphin',  'any_accum';
+CREATE AGGREGATE pg_catalog.stddev_pop(json) (SFUNC = any_accum, cFUNC = numeric_collect, STYPE = numeric[], finalfunc = numeric_stddev_pop, initcond = '{0,0,0}', initcollect = '{0,0,0}');
