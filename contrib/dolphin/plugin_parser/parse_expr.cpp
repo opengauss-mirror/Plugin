@@ -2222,6 +2222,7 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
         if (PointerIsValid(result)) {
             return result;
         }
+        ReplaceBCmptFuncName(fn->funcname, objname, "std", "stddev_pop");
         ReplaceBCmptFuncName(fn->funcname, objname, "stddev", "stddev_pop");
         ReplaceBCmptFuncName(fn->funcname, objname, "variance", "var_pop");
     }

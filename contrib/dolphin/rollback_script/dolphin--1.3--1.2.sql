@@ -1505,3 +1505,6 @@ DROP FUNCTION pg_catalog.unknown_int_concat(unknown, integer);
 DROP FUNCTION pg_catalog.int_unknown_concat(integer, unknown);
 
 DROP FUNCTION IF EXISTS pg_catalog.hex(anyenum);
+
+DROP AGGREGATE IF EXISTS pg_catalog.stddev_pop(json);
+DROP FUNCTION IF EXISTS pg_catalog.any_accum(numeric[], anyelement);

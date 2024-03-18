@@ -962,9 +962,7 @@ DROP FUNCTION IF EXISTS pg_catalog.timestamp_longblob_ge(timestamptz, longblob);
 DROP FUNCTION IF EXISTS pg_catalog.longblob_timestamp_cmp(longblob, timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.timestamp_longblob_cmp(timestamptz, longblob);
 
-DROP AGGREGATE IF EXISTS pg_catalog.stddev_pop(json);
 DROP AGGREGATE IF EXISTS pg_catalog.var_pop(json);
-DROP FUNCTION IF EXISTS pg_catalog.any_accum(numeric[], anyelement);
 
 DROP FUNCTION IF EXISTS pg_catalog.upper(int8);
 DROP FUNCTION IF EXISTS pg_catalog.upper(numeric);

@@ -2253,3 +2253,6 @@ CREATE OPERATOR pg_catalog.||(leftarg=unknown, rightarg=integer, procedure=pg_ca
 CREATE OPERATOR pg_catalog.||(leftarg=integer, rightarg=unknown, procedure=pg_catalog.int_unknown_concat);
 
 CREATE OR REPLACE FUNCTION pg_catalog.hex(anyenum) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'SELECT hex($1::text)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.any_accum(numeric[], anyelement) RETURNS numeric[] LANGUAGE C STRICT AS  '$libdir/dolphin',  'any_accum';
+CREATE AGGREGATE pg_catalog.stddev_pop(json) (SFUNC = any_accum, cFUNC = numeric_collect, STYPE = numeric[], finalfunc = numeric_stddev_pop, initcond = '{0,0,0}', initcollect = '{0,0,0}');

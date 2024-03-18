@@ -47,6 +47,7 @@
 #include "vecexecutor/vechashagg.h"
 #include "vectorsonic/vsonichashagg.h"
 #ifdef DOLPHIN
+#include "nodes/makefuncs.h"
 #include "plugin_commands/mysqlmode.h"
 
 #ifndef CRCMASK
@@ -307,6 +308,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(uint1_accum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint2_accum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint4_accum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint8_accum);
+PG_FUNCTION_INFO_V1_PUBLIC(any_accum);
 
 PG_FUNCTION_INFO_V1_PUBLIC(uint1_numeric);
 PG_FUNCTION_INFO_V1_PUBLIC(uint2_numeric);
@@ -351,6 +353,7 @@ extern "C" DLL_PUBLIC Datum uint1_accum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint2_accum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint4_accum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint8_accum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum any_accum(PG_FUNCTION_ARGS);
 
 extern "C" DLL_PUBLIC Datum numeric_cast_uint1(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint2(PG_FUNCTION_ARGS);
@@ -21421,6 +21424,53 @@ Datum uint8_accum(PG_FUNCTION_ARGS)
 
     newval = DatumGetNumeric(DirectFunctionCall1(uint8_numeric, newval8));
 
+    PG_RETURN_ARRAYTYPE_P(do_numeric_accum(transarray, newval));
+}
+
+static Node* evel_const_node(Node* node, bool can_ignore)
+{
+    PlannerInfo* pi = makeNode(PlannerInfo);
+    PlannerGlobal* pg = makeNode(PlannerGlobal);
+    Query* q = makeNode(Query);
+    q->hasIgnore = can_ignore;
+    pi->parse = q;
+    pi->glob = pg;
+
+    Node* constNode = eval_const_expressions(pi, node);
+
+    pfree(q);
+    pfree(pg);
+    pfree(pi);
+    return constNode;
+}
+
+Datum any_accum(PG_FUNCTION_ARGS)
+{
+    ArrayType *transarray = PG_GETARG_ARRAYTYPE_P(0);
+    Datum val = PG_GETARG_DATUM(1);
+    Oid typeOid = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    
+    Node* node = (Node*)makeConst(typeOid, -1, -1, -1, val, false, false, NULL);
+    Node* newNode = coerce_type(NULL, node, typeOid, NUMERICOID, -1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+    
+    Node* constNode = evel_const_node(newNode, fcinfo->can_ignore);
+    
+    Datum datumVal = NULL;
+    if (IsA(constNode, Const)) {
+        datumVal = ((Const *)constNode)->constvalue;
+    } else if (IsA(constNode, FuncExpr)) {
+        datumVal = OidFunctionCall1Coll(((FuncExpr *)constNode)->funcid, InvalidOid, val, fcinfo->can_ignore);
+    } else {
+        ereport(ERROR,
+                (errcode(ERRCODE_DATATYPE_MISMATCH),
+                    errmsg("cannot convert type %s to numeric in any_accum", format_type_be(typeOid))));
+    }
+
+    Numeric newval = DatumGetNumeric(datumVal);
+
+    pfree(constNode);
+    pfree(newNode);
+    pfree(node);
     PG_RETURN_ARRAYTYPE_P(do_numeric_accum(transarray, newval));
 }
 
