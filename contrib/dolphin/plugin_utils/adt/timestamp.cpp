@@ -655,16 +655,17 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
 {
 #ifndef DOLPHIN
     char* str = PG_GETARG_CSTRING(0);
+    int32 typmod = PG_GETARG_INT32(2);
 #endif
 
 #ifdef NOT_USED
     Oid typelem = PG_GETARG_OID(1);
 #endif
-    int32 typmod = PG_GETARG_INT32(2);
     Timestamp result;
     fsec_t fsec;
     struct pg_tm tt, *tm = &tt;
 #ifdef DOLPHIN
+    int32 typmod = time_cast_type > 0 ? -1 : PG_GETARG_INT32(2);
     error_t rc = EOK;
     rc = memset_s(tm, sizeof(pg_tm), 0, sizeof(pg_tm));
     securec_check(rc, "\0", "\0");
