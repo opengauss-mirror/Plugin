@@ -1200,6 +1200,14 @@ update pg_catalog.pg_cast set castfunc = 401, castowner = 10 where castsource = 
 end
 $$;
 
+drop function pg_catalog.year_recv(bytea);
+CREATE OR REPLACE FUNCTION pg_catalog.year_recv (internal) RETURNS year LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'year_recv';
+do $$
+begin
+update pg_catalog.pg_type set typreceive = 'year_recv'::regproc, typsend = 'year_send'::regproc where oid = 'year'::regtype;
+end
+$$;
+
 DROP FUNCTION IF EXISTS pg_catalog.ln(year);
 CREATE OR REPLACE FUNCTION pg_catalog.ln(year) 
 RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as

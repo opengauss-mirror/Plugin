@@ -15,6 +15,64 @@ select * from t_year2 order by c;
  55
 (6 rows)
 
+\copy t_year2(c) to './test_year_binary.data' with binary;
+\copy t_year2(c) from './test_year_binary.data' with binary;
+select * from t_year2 order by c;
+ c  
+----
+ 70
+ 70
+ 70
+ 70
+ 55
+ 55
+ 55
+ 55
+ 55
+ 69
+ 69
+ 55
+(12 rows)
+
+create table t_year4(c year(4));
+copy t_year4(c) from stdin;
+select * from t_year4 order by c;
+  c   
+------
+ 1970
+ 1970
+ 2055
+ 2055
+ 2069
+ 2155
+(6 rows)
+
+\copy t_year4(c) to './test_year_binary.data' with binary;
+\copy t_year4(c) from './test_year_binary.data' with binary;
+select * from t_year4 order by c;
+  c   
+------
+ 1970
+ 1970
+ 1970
+ 1970
+ 2055
+ 2055
+ 2055
+ 2055
+ 2069
+ 2069
+ 2155
+ 2155
+(12 rows)
+
+select pg_catalog.year_recv(pg_catalog.int4send(9));
+ERROR:  function pg_catalog.year_recv(bytea) does not exist
+LINE 1: select pg_catalog.year_recv(pg_catalog.int4send(9));
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: year_recv
 drop table t_year2;
+drop table t_year4;
 reset current_schema;
 drop schema test_copy_year2 cascade;
