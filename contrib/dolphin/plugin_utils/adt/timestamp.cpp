@@ -7478,7 +7478,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
         case INT4OID:
         case BOOLOID: 
         case BITOID: {
-            convert_to_time(value, valuetypid, time);
+            convert_to_time(value, valuetypid, time, can_ignore);
             check_b_format_time_range_with_ereport(*time);
             return TIMEOID;
         }
@@ -7489,7 +7489,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
                 check_b_format_datetime_range_with_ereport(*datetime);
                 return TIMESTAMPOID;
             } else {
-                convert_to_time(value, INT4OID, time);
+                convert_to_time(value, INT4OID, time, can_ignore);
                 check_b_format_time_range_with_ereport(*time);
                 return TIMEOID;
             }
@@ -7502,7 +7502,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
                 check_b_format_datetime_range_with_ereport(*datetime);
                 return TIMESTAMPOID;
             } else {
-                convert_to_time(value, valuetypid, time);
+                convert_to_time(value, valuetypid, time, can_ignore);
                 check_b_format_time_range_with_ereport(*time);
                 return TIMEOID;
             }
@@ -7514,7 +7514,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
                 check_b_format_datetime_range_with_ereport(*datetime);
                 return TIMESTAMPOID;
             } else {
-                convert_to_time(value, valuetypid, time);
+                convert_to_time(value, valuetypid, time, can_ignore);
                 check_b_format_time_range_with_ereport(*time);
                 return TIMEOID;
             }
@@ -7526,7 +7526,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
                 check_b_format_datetime_range_with_ereport(*datetime);
                 return TIMESTAMPOID;
             } else {
-                convert_to_time(value, valuetypid, time);
+                convert_to_time(value, valuetypid, time, can_ignore);
                 check_b_format_time_range_with_ereport(*time);
                 return TIMEOID;
             }
@@ -7536,7 +7536,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
                 valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || 
                 valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
                 valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
-                convert_to_time(value, valuetypid, time);
+                convert_to_time(value, valuetypid, time, can_ignore);
                 check_b_format_time_range_with_ereport(*time);
                 return TIMEOID;
             } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
