@@ -3,12 +3,12 @@ set current_schema to 'uint_auto_increment';
 -- test CREATE TABLE with AUTO_INCREMENT
 -- syntax error
 CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment key, name varchar(200),a int unsigned);
-ERROR:  syntax error at or near "key"
-LINE 1: ...create_autoinc_err(id int unsigned auto_increment key, name ...
-                                                             ^
-CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment unique key, name varchar(200),a int unsigned);
 NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq" for serial column "test_create_autoinc_err.id"
-NOTICE:  CREATE TABLE / UNIQUE will create implicit index "test_create_autoinc_err_id_key" for table "test_create_autoinc_err"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_create_autoinc_err_pkey" for table "test_create_autoinc_err"
+CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment unique key, name varchar(200),a int unsigned);
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_err_id_seq1" for serial column "test_create_autoinc_err.id"
+ERROR:  relation "test_create_autoinc_err" already exists in schema "uint_auto_increment"
+DETAIL:  creating new table with existing name in the same schema
 drop table test_create_autoinc_err;
 -- constraint error
 CREATE TABLE test_create_autoinc_err(id int unsigned auto_increment, name varchar(200),a int unsigned, primary key(name, id));

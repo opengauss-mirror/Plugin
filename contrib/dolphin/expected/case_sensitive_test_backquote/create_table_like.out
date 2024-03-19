@@ -245,8 +245,8 @@ NOTICE:  table "ctlt10" does not exist, skipping
 NOTICE:  table "Ctlt11" does not exist, skipping
 NOTICE:  table "ctlt11a" does not exist, skipping
 create table `Ctltcol`(`id1` integer, `id2` integer, `id3` integer, `partial` cluster key(`id1`,`id2`))with(orientation = column);
-ERROR:  syntax error at or near "key"
-LINE 1: ..., `id2` integer, `id3` integer, `partial` cluster key(`id1`,...
+ERROR:  syntax error at or near "("
+LINE 1: ...id2` integer, `id3` integer, `partial` cluster key(`id1`,`id...
                                                              ^
 create table `Ctltcollike`(like `Ctltcol` including all);
 ERROR:  Table (null).Ctltcol does not exist in current datanode.
