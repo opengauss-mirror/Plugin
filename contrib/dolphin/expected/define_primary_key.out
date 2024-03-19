@@ -1,0 +1,55 @@
+create schema define_primary_key;
+set current_schema = define_primary_key;
+CREATE TABLE t1 (
+a2 int, b2 int, filler2 char(64) default ' ',
+PRIMARY KEY idx(a2,b2,filler2)
+) ;
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+CREATE TABLE t2 (
+a2 int, b2 int, filler2 char(64) default ' ',
+PRIMARY KEY idx using btree(a2,b2,filler2)
+) ;
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t2_pkey" for table "t2"
+CREATE TABLE t3 (a INT KEY);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t3_pkey" for table "t3"
+CREATE TABLE t4 (a INT UNIQUE);
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t4_a_key" for table "t4"
+CREATE TABLE t5 (a INT UNIQUE KEY);
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t5_a_key" for table "t5"
+desc t1;
+  Field  |     Type      | Null | Key |   Default   | Extra 
+---------+---------------+------+-----+-------------+-------
+ a2      | integer       | NO   | PRI | NULL        | 
+ b2      | integer       | NO   | PRI | NULL        | 
+ filler2 | character(64) | NO   | PRI | ' '::bpchar | 
+(3 rows)
+
+desc t2;
+  Field  |     Type      | Null | Key |   Default   | Extra 
+---------+---------------+------+-----+-------------+-------
+ a2      | integer       | NO   | PRI | NULL        | 
+ b2      | integer       | NO   | PRI | NULL        | 
+ filler2 | character(64) | NO   | PRI | ' '::bpchar | 
+(3 rows)
+
+desc t3;
+ Field |  Type   | Null | Key | Default | Extra 
+-------+---------+------+-----+---------+-------
+ a     | integer | NO   | PRI | NULL    | 
+(1 row)
+
+desc t4;
+ Field |  Type   | Null | Key | Default | Extra 
+-------+---------+------+-----+---------+-------
+ a     | integer | YES  | UNI | NULL    | 
+(1 row)
+
+desc t5;
+ Field |  Type   | Null | Key | Default | Extra 
+-------+---------+------+-----+---------+-------
+ a     | integer | YES  | UNI | NULL    | 
+(1 row)
+
+drop table t1,t2,t3,t4,t5;
+reset current_schema;
+drop schema define_primary_key;

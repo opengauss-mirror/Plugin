@@ -1300,7 +1300,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %nonassoc COMMENT
 %nonassoc   FIRST_P AFTER
 %nonassoc lower_than_key
-%nonassoc KEY
+%right UNIQUE KEY
 %nonassoc lower_than_row
 %nonassoc lower_than_on
 %left ON USING
@@ -10288,6 +10288,11 @@ InformationalConstraintElem:
                 }
         ;
 
+opt_primary_key:
+		PRIMARY KEY
+		| KEY
+	;
+
 /* DEFAULT NULL is already the default for Postgres.
  * But define it here and carry it forward into the system
  * to make it explicit.
@@ -10349,28 +10354,28 @@ ColConstraintElem:
 					n->inforConstraint = (InformationalConstraint *) $5;
 					$$ = (Node *)n;
 				}
-			| PRIMARY KEY opt_definition OptConsTableSpaceWithEmpty InformationalConstraintElem
+			| opt_primary_key opt_definition OptConsTableSpaceWithEmpty InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_PRIMARY;
 					n->location = @1;
 					n->keys = NULL;
-					n->options = $3;
+					n->options = $2;
 					n->indexname = NULL;
-					n->indexspace = $4;
-					n->inforConstraint = (InformationalConstraint *) $5;
+					n->indexspace = $3;
+					n->inforConstraint = (InformationalConstraint *) $4;
 					$$ = (Node *)n;
 				}
-			| PRIMARY KEY opt_definition OptConsTableSpaceWithEmpty ENABLE_P InformationalConstraintElem
+			| opt_primary_key opt_definition OptConsTableSpaceWithEmpty ENABLE_P InformationalConstraintElem
 				{
 					Constraint *n = makeNode(Constraint);
 					n->contype = CONSTR_PRIMARY;
 					n->location = @1;
 					n->keys = NULL;
-					n->options = $3;
+					n->options = $2;
 					n->indexname = NULL;
-					n->indexspace = $4;
-					n->inforConstraint = (InformationalConstraint *) $6;
+					n->indexspace = $3;
+					n->inforConstraint = (InformationalConstraint *) $5;
 					$$ = (Node *)n;
 				}
 			| CHECK '(' a_expr ')' opt_no_inherit
@@ -11008,6 +11013,26 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
+			| PRIMARY KEY index_name USING DOLPHINIDENT '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
+				ConstraintAttributeSpec InformationalConstraintElem
+				{
+					Constraint *n = makeNode(Constraint);
+					n->contype = CONSTR_PRIMARY;
+					n->location = @1;
+					n->access_method = downcase_str($5->str, $5->is_quoted);
+					n->keys = $7;
+					n->including = $9;
+					n->options = $10;
+					n->indexname = NULL;
+					n->indexspace = $11;
+					n->constraintOptions = $12;
+					processCASbits($13, @13, "PRIMARY KEY",
+								   &n->deferrable, &n->initdeferred, NULL,
+								   NULL, yyscanner);
+					n->inforConstraint = (InformationalConstraint *) $14; /* informational constraint info */
+					setAccessMethod(n);
+					$$ = (Node *)n;
+				}
 			| PRIMARY KEY USING DOLPHINIDENT '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
@@ -11025,6 +11050,26 @@ ConstraintElem:
 								   &n->deferrable, &n->initdeferred, NULL,
 								   NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint *) $12; /* informational constraint info */
+					setAccessMethod(n);
+					$$ = (Node *)n;
+				}
+			| PRIMARY KEY index_name USING DOLPHINIDENT '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
+				ConstraintAttributeSpec InformationalConstraintElem
+				{
+					Constraint *n = makeNode(Constraint);
+					n->contype = CONSTR_PRIMARY;
+					n->location = @1;
+					n->access_method = downcase_str($5->str, $5->is_quoted);
+					n->keys = $7;
+					n->including = $9;
+					n->options = $10;
+					n->indexname = NULL;
+					n->indexspace = NULL;
+					n->constraintOptions = $11;
+					processCASbits($12, @12, "PRIMARY KEY",
+								   &n->deferrable, &n->initdeferred, NULL,
+								   NULL, yyscanner);
+					n->inforConstraint = (InformationalConstraint *) $13; /* informational constraint info */
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
@@ -11047,6 +11092,25 @@ ConstraintElem:
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}
+			| PRIMARY KEY index_name '(' constraint_params ')' opt_c_include opt_definition OptConsTableSpace opt_table_index_options
+				ConstraintAttributeSpec InformationalConstraintElem
+				{
+					Constraint *n = makeNode(Constraint);
+					n->contype = CONSTR_PRIMARY;
+					n->location = @1;
+					n->keys = $5;
+					n->including = $7;
+					n->options = $8;
+					n->indexname = NULL;
+					n->indexspace = $9;
+					n->constraintOptions = $10;
+					processCASbits($11, @11, "PRIMARY KEY",
+								   &n->deferrable, &n->initdeferred, NULL,
+								   NULL, yyscanner);
+					n->inforConstraint = (InformationalConstraint *) $12; /* informational constraint info */
+					setAccessMethod(n);
+					$$ = (Node *)n;
+				}
 			| PRIMARY KEY '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
 				ConstraintAttributeSpec InformationalConstraintElem
 				{
@@ -11063,6 +11127,25 @@ ConstraintElem:
 								   &n->deferrable, &n->initdeferred, NULL,
 								   NULL, yyscanner);
 					n->inforConstraint = (InformationalConstraint *) $10; /* informational constraint info */
+					setAccessMethod(n);
+					$$ = (Node *)n;
+				}
+			| PRIMARY KEY index_name '(' constraint_params ')' opt_c_include opt_definition opt_table_index_options
+				ConstraintAttributeSpec InformationalConstraintElem
+				{
+					Constraint *n = makeNode(Constraint);
+					n->contype = CONSTR_PRIMARY;
+					n->location = @1;
+					n->keys = $5;
+					n->including = $7;
+					n->options = $8;
+					n->indexname = NULL;
+					n->indexspace = NULL;
+					n->constraintOptions = $9;
+					processCASbits($10, @10, "PRIMARY KEY",
+								   &n->deferrable, &n->initdeferred, NULL,
+								   NULL, yyscanner);
+					n->inforConstraint = (InformationalConstraint *) $11; /* informational constraint info */
 					setAccessMethod(n);
 					$$ = (Node *)n;
 				}

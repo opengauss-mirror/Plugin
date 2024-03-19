@@ -21,15 +21,15 @@ CREATE TABLE test_create_autoinc(
     a int AUTO_INCREMENT KEY,
     b varchar(32)
 ); -- ERROR
-ERROR:  syntax error at or near "KEY"
-LINE 2:     a int AUTO_INCREMENT KEY,
-                                 ^
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_a_seq" for serial column "test_create_autoinc.a"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_create_autoinc_pkey" for table "test_create_autoinc"
 CREATE TABLE test_create_autoinc(
     a int AUTO_INCREMENT PRIMARY KEY,
     b varchar(32)
 );
-NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_a_seq" for serial column "test_create_autoinc.a"
-NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_create_autoinc_pkey" for table "test_create_autoinc"
+NOTICE:  CREATE TABLE will create implicit sequence "test_create_autoinc_a_seq1" for serial column "test_create_autoinc.a"
+ERROR:  relation "test_create_autoinc" already exists in schema "public"
+DETAIL:  creating new table with existing name in the same schema
 \d test_create_autoinc;
             Table "public.test_create_autoinc"
  Column |         Type          |        Modifiers        
