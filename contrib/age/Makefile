@@ -169,6 +169,6 @@ include $(PGXS)
 else
 subdir = contrib/age
 include $(top_builddir)/src/Makefile.global
-include $(top_srcdir)/contrib/contrib-global.mk
+include $(top_builddir)/contrib/contrib-global.mk
 endif
 
