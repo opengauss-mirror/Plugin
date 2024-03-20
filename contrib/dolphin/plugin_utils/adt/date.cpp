@@ -87,6 +87,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(uint64_b_format_time);
 extern "C" DLL_PUBLIC Datum uint64_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_b_format_time);
 extern "C" DLL_PUBLIC Datum numeric_b_format_time(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(float4_b_format_time);
+extern "C" DLL_PUBLIC Datum float4_b_format_time(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(float8_b_format_time);
 extern "C" DLL_PUBLIC Datum float8_b_format_time(PG_FUNCTION_ARGS);
 
@@ -2158,14 +2160,22 @@ Datum numeric_b_format_time(PG_FUNCTION_ARGS)
 {
     Numeric n = PG_GETARG_NUMERIC(0);
     char *str = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
-    return DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    return DirectFunctionCall3Coll(time_in, InvalidOid, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1),
+        fcinfo->can_ignore);
+}
+
+Datum float4_b_format_time(PG_FUNCTION_ARGS)
+{
+    return DirectFunctionCall1Coll(float8_b_format_time, InvalidOid, Float8GetDatum((float8)PG_GETARG_FLOAT4(0)),
+        fcinfo->can_ignore);
 }
 
 Datum float8_b_format_time(PG_FUNCTION_ARGS)
 {
     float8 n = PG_GETARG_FLOAT8(0);
     char *str = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(n)));
-    return DirectFunctionCall3(time_in, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+    return DirectFunctionCall3Coll(time_in, InvalidOid, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1),
+        fcinfo->can_ignore);
 }
 
 Datum numeric_cast_time(PG_FUNCTION_ARGS)
@@ -4622,6 +4632,58 @@ Datum makedate(PG_FUNCTION_ARGS)
 }
 
 /*
+ * Check whether the int value is within the specified range: 
+ * [0001:01:01, 9999:12:31] (the date range is from MySQL).
+ * for case time('xxx') : should return null if the int value exceeds the range
+ * and for other case : Error will be reported if the int value exceeds the range.
+ */
+bool check_b_format_int_date_range(int64 time)
+{
+    if (time < 0) return true;
+    int dd = time / 1000000 % 100;
+    int mm = time / 100000000 % 100;
+    int yy = time / 10000000000;
+    int max_d;
+    if (yy == 0 || yy > 9999 || mm == 0 || mm > 12) {
+        return true;
+    }
+    switch (mm) {
+        case 2:
+            max_d = 28;
+            break;
+        case 4:
+        case 6:
+        case 9:
+        case 11:
+            max_d = 30;
+            break;
+        default:
+            max_d = 31;
+            break;
+    }
+    if(dd == 0 || dd > max_d) return true;
+    return false;
+}
+
+/*
+ * Check whether the int value is within the specified range: 
+ * [-838:59:59, 838:59:59] (the time range is from MySQL).
+ * for case time('xxx') : should return null if the int value exceeds the range
+ * and for other case : Error will be reported if the int value exceeds the range.
+ */
+bool check_b_format_int_time_range(int64 time)
+{
+    time = time > 0 ? time : -time;
+    int ss = time % 100;
+    int mm = time / 100 % 100;
+    int hh = time / 10000;
+    if (hh < 0 || hh > TIME_MAX_HOUR || mm < 0 || mm > TIME_MAX_MINUTE || ss < 0 || ss > TIME_MAX_SECOND) {
+        return true;
+    }
+    return false;
+}
+
+/*
  * Check whether the TimeADT value is within the specified range: 
  * [-838:59:59, 838:59:59] (the time range is from MySQL).
  * for case select time('xxx') : should return null if the TimeADT value exceeds the range
@@ -4973,7 +5035,7 @@ bool date_sub_interval(DateADT date, Interval *span, DateADT *result, bool is_ad
 /**
  * Convert non-NULL values of the indicated types to the TimeADT value
  */
-void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
+void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore)
 {
     switch (valuetypid) {
         case UNKNOWNOID:
@@ -5004,10 +5066,19 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
             *time = DatumGetTimeADT(value);
             break;
         }
-        case INT1OID:
-        case INT2OID:
+        case INT1OID: {
+            *time = DatumGetTimeADT(DirectFunctionCall1Coll(int8_b_format_time, InvalidOid,
+                                   value, can_ignore));
+            break;
+        }
+        case INT2OID: {
+            *time = DatumGetTimeADT(DirectFunctionCall1Coll(int16_b_format_time, InvalidOid,
+                                   value, can_ignore));
+            break;
+        }
         case INT4OID: {
-            *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, value));
+            *time = DatumGetTimeADT(DirectFunctionCall1Coll(int32_b_format_time, InvalidOid,
+                                   value, can_ignore));
             break;
         }
         case INT8OID: {
@@ -5016,12 +5087,14 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
                 ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
                                 errmsg("invalid input syntax for type time: \"%d\"", int_val)));
             } else {
-                *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, value));
+                *time = DatumGetTimeADT(DirectFunctionCall1Coll(int32_b_format_time, InvalidOid,
+                                   value, can_ignore));
             }
             break;
         }
         case NUMERICOID: {
-            *time = DatumGetTimeADT(DirectFunctionCall1(numeric_b_format_time, value));
+            *time = DatumGetTimeADT(DirectFunctionCall1Coll(numeric_b_format_time, InvalidOid,
+                                   value, can_ignore));
             break;
         }
         case BOOLOID: {
@@ -5030,12 +5103,12 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
             break;
         }
         case FLOAT4OID:
-            *time = DatumGetTimeADT(DirectFunctionCall1(numeric_b_format_time, 
-                                    DirectFunctionCall1(float4_numeric, value)));
+            *time = DatumGetTimeADT(DirectFunctionCall1Coll(float4_b_format_time, InvalidOid,
+                                   value, can_ignore));
             break;
         case FLOAT8OID: {
-            *time = DatumGetTimeADT(DirectFunctionCall1(numeric_b_format_time, 
-                                    DirectFunctionCall1(float8_numeric, value)));
+            *time = DatumGetTimeADT(DirectFunctionCall1Coll(float8_b_format_time, InvalidOid,
+                                   value, can_ignore));
             break;
         }
         case TIMETZOID: {
@@ -5060,20 +5133,25 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time)
             break;
         }
         default: {
-            if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
-                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
-                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
+            if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
                 valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
                 uint64 uint_val = DatumGetUInt64(value);
                 if (uint_val > (uint64)INT_MAX) {
                     ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
                                     errmsg("time out of range: \"%lu\"", uint_val)));
                 } else {
-                    *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, value));
+                    *time = DatumGetTimeADT(DirectFunctionCall1Coll(int32_b_format_time, InvalidOid,
+                                   value, can_ignore));
                 }
             } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
                 *time = DatumGetTimeADT(DirectFunctionCall1(int32_b_format_time, 
                                         DirectFunctionCall1(year_integer, value)));
+            } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")) {
+                *time = DatumGetTimeADT(DirectFunctionCall1Coll(uint8_b_format_time, InvalidOid,
+                                   value, can_ignore));
+            } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
+                *time = DatumGetTimeADT(DirectFunctionCall1Coll(uint16_b_format_time, InvalidOid,
+                                   value, can_ignore));
             } else {
                 ereport(ERROR, (errcode(ERRCODE_DATATYPE_MISMATCH), errmsg("unsupported input data type")));
             }
@@ -5414,11 +5492,83 @@ Datum time_mysql(PG_FUNCTION_ARGS)
     TimeADT result = 0;
     Timestamp datetime;
     Oid val_type;
+    Oid original_type;
 
     bool result_isnull = false;
     val_type = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    original_type = val_type;
     val_type = convert_to_datetime_time(PG_GETARG_DATUM(0), val_type, &datetime, &time,
                                         fcinfo->can_ignore, &result_isnull);
+
+    switch (original_type) {
+        case INT1OID:
+        case INT2OID:
+        case INT4OID: {
+            int32 int_time = PG_GETARG_INT32(0);
+            if (check_b_format_int_time_range((int64)int_time)) {
+                result_isnull = true;
+            }
+            break;
+        }
+        case INT8OID: {
+            int64 int_time = PG_GETARG_INT64(0);
+            if (int_time >= (int64)pow_of_10[10] && check_b_format_int_date_range(int_time)) { /* datetime: 0001-00-00 00-00-00 */
+                result_isnull = true;
+            }
+            if (int_time < (int64)pow_of_10[10] && check_b_format_int_time_range(int_time)) {
+                result_isnull = true;
+            }
+            break;
+        }
+        case FLOAT4OID: {
+            int64 int_time = (int64)PG_GETARG_FLOAT4(0);
+            if (check_b_format_int_time_range(int_time)) {
+                PG_RETURN_NULL();
+            }
+            break;
+        }
+        case FLOAT8OID: {
+            int64 int_time = (int64)PG_GETARG_FLOAT8(0);
+            if (check_b_format_int_time_range(int_time)) {
+                PG_RETURN_NULL();
+            }
+            break;
+        }
+        case NUMERICOID: {
+            Numeric num = PG_GETARG_NUMERIC(0);
+            NumericVar x;
+            int64 result;
+            init_var_from_num(num, &x);
+            numericvar_to_int64(&x, &result, fcinfo->can_ignore);
+            if (result >= (int64)pow_of_10[10] && check_b_format_int_date_range(result)) {
+                result_isnull = true;
+            }
+            if (result < (int64)pow_of_10[10] && check_b_format_int_time_range(result)) {
+                result_isnull = true;
+            }
+            break;
+        }
+        default: {
+            if (original_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") || 
+                original_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || 
+                original_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+                    int32 int_time = PG_GETARG_INT32(0);
+                    if (check_b_format_int_time_range((int64)int_time)) {
+                            result_isnull = true;
+                    }
+                } else if (original_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+                    uint64 int_time = PG_GETARG_TRANSACTIONID(0);
+                    if (int_time > (uint64)pow_of_10[14]) result_isnull = true;
+                    if (int_time >= (uint64)pow_of_10[10] && check_b_format_int_date_range(int_time)) {
+                        result_isnull = true;
+                    }
+                    if (int_time < (uint64)pow_of_10[10] && check_b_format_int_time_range(int_time)) {
+                        result_isnull = true;
+                    }
+                }
+            break;
+        }
+    }
 
     if (result_isnull) {
         PG_RETURN_NULL();

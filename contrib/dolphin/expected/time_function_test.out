@@ -165,5 +165,379 @@ select * from test_cast_time;
 (6 rows)
 
 drop table if exists test_cast_time;
+select time(8385959);
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select time(8395959);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231010203);
+   time   
+----------
+ 01:02:03
+(1 row)
+
+select time(8385959::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:01:27
+(1 row)
+
+select time(8395959::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:01:27
+(1 row)
+
+select time(8385959::uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:02:55
+(1 row)
+
+select time(8395959::uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:02:55
+(1 row)
+
+select time(8385959::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(8395959::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(8385959::uint2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: time
+   time   
+----------
+ 06:55:35
+(1 row)
+
+select time(8395959::uint2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: time
+   time   
+----------
+ 06:55:35
+(1 row)
+
+select time(8385959::int4);
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select time(8395959::int4);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(8385959::uint4);
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select time(8395959::uint4);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(8385959::int8);
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select time(8395959::int8);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(8385959::uint8);
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select time(8395959::uint8);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(8385959::float4);
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select time(8395959::float4);
+WARNING:  invalid input syntax for type time: "8395959"
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(8385959::float8);
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select time(8395959::float8);
+WARNING:  invalid input syntax for type time: "8395959"
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(8385959::numeric);
+   time    
+-----------
+ 838:59:59
+(1 row)
+
+select time(8395959::numeric);
+WARNING:  invalid input syntax for type time: "8395959"
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+\x
+create table test_time(time time);
+insert into test_time select time(8395959);
+ERROR:  time out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231010203);
+insert into test_time select time(8395959::int1);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::uint1);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::int2);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::uint2);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::int4);
+ERROR:  time out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::uint4);
+ERROR:  time out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::int8);
+ERROR:  time out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::uint8);
+ERROR:  time out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::float4);
+ERROR:  invalid input syntax for type time: "8395959"
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::float8);
+ERROR:  invalid input syntax for type time: "8395959"
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::numeric);
+ERROR:  invalid input syntax for type time: "8395959"
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(8395959);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(20031231010203);
+insert ignore into test_time select time(8395959::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(8395959::uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(8395959::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(8395959::uint2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(8395959::int4);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(8395959::uint4);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(8395959::int8);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(8395959::uint8);
+ERROR:  time out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(8395959::float4);
+WARNING:  invalid input syntax for type time: "8395959"
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(8395959::float8);
+WARNING:  invalid input syntax for type time: "8395959"
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(8395959::numeric);
+WARNING:  invalid input syntax for type time: "8395959"
+CONTEXT:  referenced column: time
+select * from test_time;
+-[ RECORD 1 ]--
+time | 01:02:03
+-[ RECORD 2 ]--
+time | 
+-[ RECORD 3 ]--
+time | 01:02:03
+-[ RECORD 4 ]--
+time | 00:01:27
+-[ RECORD 5 ]--
+time | 00:02:55
+-[ RECORD 6 ]--
+time | 
+-[ RECORD 7 ]--
+time | 06:55:35
+-[ RECORD 8 ]--
+time | 
+-[ RECORD 9 ]--
+time | 
+-[ RECORD 10 ]-
+time | 
+-[ RECORD 11 ]-
+time | 
+-[ RECORD 12 ]-
+time | 
+-[ RECORD 13 ]-
+time | 
+
+drop table if exists test_time;
+set dolphin.sql_mode = '';
+create table test_time(time time);
+insert into test_time select time(8395959);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231010203);
+insert into test_time select time(8395959::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::uint2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::int4);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::uint4);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::int8);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::uint8);
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::float4);
+WARNING:  invalid input syntax for type time: "8395959"
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::float8);
+WARNING:  invalid input syntax for type time: "8395959"
+CONTEXT:  referenced column: time
+insert into test_time select time(8395959::numeric);
+WARNING:  invalid input syntax for type time: "8395959"
+CONTEXT:  referenced column: time
+select * from test_time;
+-[ RECORD 1 ]--
+time | 
+-[ RECORD 2 ]--
+time | 01:02:03
+-[ RECORD 3 ]--
+time | 00:01:27
+-[ RECORD 4 ]--
+time | 00:02:55
+-[ RECORD 5 ]--
+time | 
+-[ RECORD 6 ]--
+time | 06:55:35
+-[ RECORD 7 ]--
+time | 
+-[ RECORD 8 ]--
+time | 
+-[ RECORD 9 ]--
+time | 
+-[ RECORD 10 ]-
+time | 
+-[ RECORD 11 ]-
+time | 
+-[ RECORD 12 ]-
+time | 
+-[ RECORD 13 ]-
+time | 
+
+\x
+drop table if exists test_time;
 drop schema time_function_test cascade ;
 NOTICE:  drop cascades to table time_function_test.test_year
