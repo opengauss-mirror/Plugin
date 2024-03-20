@@ -22,7 +22,7 @@ InitCenters(Relation index, VectorArray samples, VectorArray centers, float *low
 	double		sum;
 	double		choice;
 	Vector	   *vec;
-	float	   *weight = palloc(samples->length * sizeof(float));
+	float	   *weight = (float *)palloc(samples->length * sizeof(float));
 	int			numCenters = centers->maxlen;
 	int			numSamples = samples->length;
 
@@ -212,11 +212,11 @@ ElkanKmeans(Relation index, VectorArray samples, VectorArray centers)
 
 	/* Check memory requirements */
 	/* Add one to error message to ceil */
-	if (totalSize > (Size) maintenance_work_mem * 1024L)
+	if (totalSize > (Size) u_sess->attr.attr_memory.maintenance_work_mem * 1024L)
 		ereport(ERROR,
 				(errcode(ERRCODE_PROGRAM_LIMIT_EXCEEDED),
 				 errmsg("memory required is %zu MB, maintenance_work_mem is %d MB",
-						totalSize / (1024 * 1024) + 1, maintenance_work_mem / 1024)));
+						totalSize / (1024 * 1024) + 1, u_sess->attr.attr_memory.maintenance_work_mem / 1024)));
 
 	/* Ensure indexing does not overflow */
 	if (numCenters * numCenters > INT_MAX)
@@ -229,13 +229,13 @@ ElkanKmeans(Relation index, VectorArray samples, VectorArray centers)
 
 	/* Allocate space */
 	/* Use float instead of double to save memory */
-	centerCounts = palloc(centerCountsSize);
-	closestCenters = palloc(closestCentersSize);
-	lowerBound = palloc_extended(lowerBoundSize, MCXT_ALLOC_HUGE);
-	upperBound = palloc(upperBoundSize);
-	s = palloc(sSize);
-	halfcdist = palloc_extended(halfcdistSize, MCXT_ALLOC_HUGE);
-	newcdist = palloc(newcdistSize);
+	centerCounts = (int *)palloc(centerCountsSize);
+	closestCenters = (int *)palloc(closestCentersSize);
+	lowerBound = (float *)palloc_extended(lowerBoundSize, MCXT_ALLOC_HUGE);
+	upperBound = (float *)palloc(upperBoundSize);
+	s = (float *)palloc(sSize);
+	halfcdist = (float *)palloc_extended(halfcdistSize, MCXT_ALLOC_HUGE);
+	newcdist = (float *)palloc(newcdistSize);
 
 	newCenters = VectorArrayInit(numCenters, dimensions);
 	for (j = 0; j < numCenters; j++)
