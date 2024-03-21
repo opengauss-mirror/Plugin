@@ -279,6 +279,9 @@ Oid transform_default_collation(const char* collate, int charset, Oid def_coll_o
     
     if (collate != NULL && charset != PG_INVALID_ENCODING) {
         coll_oid = check_collation_by_charset(collate, charset, ignore_check);
+        if (USE_DEFAULT_COLLATION && coll_oid == DEFAULT_COLLATION_OID) {
+            coll_oid = def_coll_oid;
+        }
     } else if (collate != NULL) {
         CatCList* list = NULL;
         list = SearchSysCacheList1(COLLNAMEENCNSP, PointerGetDatum(collate));
