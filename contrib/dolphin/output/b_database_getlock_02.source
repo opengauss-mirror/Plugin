@@ -1,8 +1,8 @@
 set dolphin.b_compatibility_mode to off;
-drop database if exists b_databaselock2;
-NOTICE:  database "b_databaselock2" does not exist, skipping
-create database b_databaselock2 dbcompatibility 'b';
-\c b_databaselock2
+drop database if exists b_database_getlock_02;
+NOTICE:  database "b_database_getlock_02" does not exist, skipping
+create database b_database_getlock_02 dbcompatibility 'b';
+\c b_database_getlock_02
 --all succeed
 select get_lock('`');
  get_lock 
@@ -773,4 +773,3 @@ select get_lock('？',1);
 (1 row)
 
 \c postgres
-drop database if exists b_databaselock2;

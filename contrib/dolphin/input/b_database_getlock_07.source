@@ -1,7 +1,7 @@
 set dolphin.b_compatibility_mode to off;
-drop database if exists b_databaselock7;
-create database b_databaselock7 dbcompatibility 'b';
-\c b_databaselock7
+drop database if exists b_database_getlock_07;
+create database b_database_getlock_07 dbcompatibility 'b';
+\c b_database_getlock_07
 
 create table table_b_database_01(c1 int,c2 text);
 insert into table_b_database_01 values(1,'a');
@@ -14,4 +14,3 @@ select * from table_b_database_01;
 select a.lockname from get_all_locks() a where a.lockname like 'slock%' order by lockname;
 drop table table_b_database_01;
 \c postgres
-drop database if exists b_databaselock7;

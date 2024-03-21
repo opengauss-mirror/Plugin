@@ -1,8 +1,8 @@
 set dolphin.b_compatibility_mode to off;
-drop database if exists b_databaselock2;
-NOTICE:  database "b_databaselock2" does not exist, skipping
-create database b_databaselock2 dbcompatibility 'b';
-\c b_databaselock2
+drop database if exists b_database_lock_other_02;
+NOTICE:  database "b_database_lock_other_02" does not exist, skipping
+create database b_database_lock_other_02 dbcompatibility 'b';
+\c b_database_lock_other_02
 select get_lock('slock','1');
  get_lock 
 ----------
@@ -45,4 +45,3 @@ ERROR:  syntax error at or near "."
 LINE 1: select get_lock('slock',.);
                                 ^
 \c postgres
-drop database if exists b_databaselock2;

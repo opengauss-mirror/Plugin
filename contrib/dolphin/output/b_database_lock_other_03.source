@@ -1,8 +1,8 @@
 set dolphin.b_compatibility_mode to off;
-drop database if exists b_databaselock3;
-NOTICE:  database "b_databaselock3" does not exist, skipping
-create database b_databaselock3 dbcompatibility 'b';
-\c b_databaselock3
+drop database if exists b_database_lock_other_03;
+NOTICE:  database "b_database_lock_other_03" does not exist, skipping
+create database b_database_lock_other_03 dbcompatibility 'b';
+\c b_database_lock_other_03
 select release_all_locks( );
  release_all_locks 
 -------------------
@@ -76,4 +76,3 @@ LINE 1: select release_all_locks('.');
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: release_all_locks
 \c postgres
-drop database if exists b_databaselock3;

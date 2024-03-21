@@ -1,7 +1,7 @@
 set dolphin.b_compatibility_mode to off;
-drop database if exists b_databaselock3;
-create database b_databaselock3 dbcompatibility 'b';
-\c b_databaselock3
+drop database if exists b_database_isfreelock_03;
+create database b_database_isfreelock_03 dbcompatibility 'b';
+\c b_database_isfreelock_03
 
 select is_free_lock('a                                                             a');
 select is_free_lock('a                                                              a');
@@ -13,4 +13,3 @@ select is_free_lock('1                                                          
 select is_free_lock('a                                                              1');
 select is_free_lock(' ');
 \c postgres
-drop database if exists b_databaselock3;
