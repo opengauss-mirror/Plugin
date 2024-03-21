@@ -1,8 +1,8 @@
 set dolphin.b_compatibility_mode to off;
-drop database if exists b_databaselock;
-NOTICE:  database "b_databaselock" does not exist, skipping
-create database b_databaselock dbcompatibility 'b';
-\c b_databaselock
+drop database if exists b_database_isfreelock_01;
+NOTICE:  database "b_database_isfreelock_01" does not exist, skipping
+create database b_database_isfreelock_01 dbcompatibility 'b';
+\c b_database_isfreelock_01
 select is_free_lock('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
  is_free_lock 
 --------------
@@ -65,4 +65,3 @@ ERROR:  syntax error at or near ")"
 LINE 1: select is_free_lock(@);
                              ^
 \c postgres
-drop database if exists b_databaselock;

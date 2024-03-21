@@ -1,7 +1,7 @@
 set dolphin.b_compatibility_mode to off;
-drop database if exists b_databaselock4;
-create database b_databaselock4 dbcompatibility 'b';
-\c b_databaselock4
+drop database if exists b_database_other_languages_04;
+create database b_database_other_languages_04 dbcompatibility 'b';
+\c b_database_other_languages_04
 
 select get_lock('βάση δεδομένων');
 select get_lock('Η αστυνομία');
@@ -22,4 +22,3 @@ select release_lock('Η ενσάρκωση του φωτός');
 select release_lock('Χυμός μπακαλάρου θάλασσας');
 select release_lock('Δαιμονισμένος από ψυχές δράκων');
 \c postgres
-drop database if exists b_databaselock4;

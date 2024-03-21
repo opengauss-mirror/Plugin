@@ -1,8 +1,8 @@
 set dolphin.b_compatibility_mode to off;
-drop database if exists b_databaselock;
-NOTICE:  database "b_databaselock" does not exist, skipping
-create database b_databaselock dbcompatibility 'b';
-\c b_databaselock
+drop database if exists b_database_getlock;
+NOTICE:  database "b_database_getlock" does not exist, skipping
+create database b_database_getlock dbcompatibility 'b';
+\c b_database_getlock
 create table b_database_lock_t1(c1 int);
 insert into b_database_lock_t1 values (9);
 select get_lock('b_databasetest_lock', 100);
@@ -125,4 +125,3 @@ drop table b_database_lock_t1;
 drop table b_database_lock_t2;
 \c postgres
 set dolphin.b_compatibility_mode to off;
-drop database if exists b_databaselock;

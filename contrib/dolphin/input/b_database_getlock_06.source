@@ -1,7 +1,7 @@
 set dolphin.b_compatibility_mode to off;
-drop database if exists b_databaselock6;
-create database b_databaselock6 dbcompatibility 'b';
-\c b_databaselock6
+drop database if exists b_database_getlock_06;
+create database b_database_getlock_06 dbcompatibility 'b';
+\c b_database_getlock_06
 
 --failed
 select get_lock('slock',999999999999999999999999999999999999999999999.99999::numeric(50,5));
@@ -24,4 +24,3 @@ select get_lock('slock',-1.99999999999999999999999999999999999999999999999999999
 select get_lock('slock',-1.999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999::decimal(10,5));
 select get_lock('slock',-1.999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999::numeric(10,5));
 \c postgres
-drop database if exists b_databaselock6;

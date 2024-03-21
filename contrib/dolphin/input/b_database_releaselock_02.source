@@ -1,7 +1,7 @@
 set dolphin.b_compatibility_mode to off;
-drop database if exists b_databaselock2;
-create database b_databaselock2 dbcompatibility 'b';
-\c b_databaselock2
+drop database if exists b_database_releaselock_02;
+create database b_database_releaselock_02 dbcompatibility 'b';
+\c b_database_releaselock_02
 
 select release_lock('`');
 select release_lock('~');
@@ -69,4 +69,3 @@ select release_lock('》');
 select release_lock('/');
 select release_lock('？');
 \c postgres
-drop database if exists b_databaselock2;

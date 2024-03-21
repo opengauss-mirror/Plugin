@@ -1,8 +1,8 @@
 set dolphin.b_compatibility_mode to off;
-drop database if exists b_databaselock5;
-NOTICE:  database "b_databaselock5" does not exist, skipping
-create database b_databaselock5 dbcompatibility 'b';
-\c b_databaselock5
+drop database if exists b_database_other_languages_05;
+NOTICE:  database "b_database_other_languages_05" does not exist, skipping
+create database b_database_other_languages_05 dbcompatibility 'b';
+\c b_database_other_languages_05
 select get_lock('데이터베이스입니다');
  get_lock 
 ----------
@@ -100,4 +100,3 @@ select release_lock('용혼이 빙의하다');
 (1 row)
 
 \c postgres
-drop database if exists b_databaselock5;
