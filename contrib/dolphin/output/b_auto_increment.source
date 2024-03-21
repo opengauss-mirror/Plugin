@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 drop database if exists dolphin_autoinc;
 NOTICE:  database "dolphin_autoinc" does not exist, skipping
 drop database if exists dolphin_autoinc_restore;
@@ -195,52 +196,52 @@ ERROR:  auto_increment column must be defined as a unique or primary key
 ALTER TABLE test_alter_autoinc ADD COLUMN seq int AUTO_INCREMENT, ADD INDEX test_alter_autoinc_idx ((seq + 1), seq), ADD INDEX test_alter_autoinc_idx1 (seq,a);
 NOTICE:  ALTER TABLE will create implicit sequence "test_alter_autoinc_seq_seq" for serial column "test_alter_autoinc.seq"
 SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
-                                                 pg_get_tabledef                                                 
------------------------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                                      +
- CREATE TABLE test_alter_autoinc (                                                                              +
-     a integer,                                                                                                 +
-     b character varying(32),                                                                                   +
-     seq integer AUTO_INCREMENT NOT NULL,                                                                       +
-     INDEX test_alter_autoinc_idx1 USING btree (seq, a)                                                         +
- ) AUTO_INCREMENT = 1                                                                                           +
- WITH (orientation=row, compression=no);                                                                        +
- CREATE INDEX test_alter_autoinc_idx ON test_alter_autoinc USING btree (((seq + 1)), seq) TABLESPACE pg_default;
+                                                              pg_get_tabledef                                                              
+-------------------------------------------------------------------------------------------------------------------------------------------
+ SET search_path = public;                                                                                                                +
+ CREATE TABLE test_alter_autoinc (                                                                                                        +
+     a integer,                                                                                                                           +
+     b character varying(32),                                                                                                             +
+     seq integer AUTO_INCREMENT NOT NULL,                                                                                                 +
+     INDEX test_alter_autoinc_idx1 USING btree (seq, a)                                                                                   +
+ ) AUTO_INCREMENT = 1                                                                                                                     +
+ WITH (orientation=row, compression=no);                                                                                                  +
+ CREATE INDEX test_alter_autoinc_idx ON test_alter_autoinc USING btree (((seq OPERATOR(dolphin_catalog.+) 1)), seq) TABLESPACE pg_default;
 (1 row)
 
 ALTER TABLE test_alter_autoinc DROP INDEX test_alter_autoinc_idx1, ADD INDEX test_alter_autoinc_idx2 (seq,b); -- ERROR
 ERROR:  auto_increment column must be defined as a unique or primary key
 ALTER TABLE test_alter_autoinc ADD INDEX test_alter_autoinc_idx2 (seq,b);
 SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
-                                                 pg_get_tabledef                                                 
------------------------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                                      +
- CREATE TABLE test_alter_autoinc (                                                                              +
-     a integer,                                                                                                 +
-     b character varying(32),                                                                                   +
-     seq integer AUTO_INCREMENT NOT NULL,                                                                       +
-     INDEX test_alter_autoinc_idx2 USING btree (seq, b)                                                         +
- ) AUTO_INCREMENT = 1                                                                                           +
- WITH (orientation=row, compression=no);                                                                        +
- CREATE INDEX test_alter_autoinc_idx1 ON test_alter_autoinc USING btree (seq, a) TABLESPACE pg_default;         +
- CREATE INDEX test_alter_autoinc_idx ON test_alter_autoinc USING btree (((seq + 1)), seq) TABLESPACE pg_default;
+                                                              pg_get_tabledef                                                              
+-------------------------------------------------------------------------------------------------------------------------------------------
+ SET search_path = public;                                                                                                                +
+ CREATE TABLE test_alter_autoinc (                                                                                                        +
+     a integer,                                                                                                                           +
+     b character varying(32),                                                                                                             +
+     seq integer AUTO_INCREMENT NOT NULL,                                                                                                 +
+     INDEX test_alter_autoinc_idx2 USING btree (seq, b)                                                                                   +
+ ) AUTO_INCREMENT = 1                                                                                                                     +
+ WITH (orientation=row, compression=no);                                                                                                  +
+ CREATE INDEX test_alter_autoinc_idx1 ON test_alter_autoinc USING btree (seq, a) TABLESPACE pg_default;                                   +
+ CREATE INDEX test_alter_autoinc_idx ON test_alter_autoinc USING btree (((seq OPERATOR(dolphin_catalog.+) 1)), seq) TABLESPACE pg_default;
 (1 row)
 
 ALTER TABLE test_alter_autoinc DROP INDEX test_alter_autoinc_idx2, ADD CONSTRAINT test_alter_autoinc_uk UNIQUE (seq);
 NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "test_alter_autoinc_uk" for table "test_alter_autoinc"
 SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
-                                                 pg_get_tabledef                                                 
------------------------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                                      +
- CREATE TABLE test_alter_autoinc (                                                                              +
-     a integer,                                                                                                 +
-     b character varying(32),                                                                                   +
-     seq integer AUTO_INCREMENT NOT NULL,                                                                       +
-     CONSTRAINT test_alter_autoinc_uk UNIQUE (seq)                                                              +
- ) AUTO_INCREMENT = 1                                                                                           +
- WITH (orientation=row, compression=no);                                                                        +
- CREATE INDEX test_alter_autoinc_idx1 ON test_alter_autoinc USING btree (seq, a) TABLESPACE pg_default;         +
- CREATE INDEX test_alter_autoinc_idx ON test_alter_autoinc USING btree (((seq + 1)), seq) TABLESPACE pg_default;
+                                                              pg_get_tabledef                                                              
+-------------------------------------------------------------------------------------------------------------------------------------------
+ SET search_path = public;                                                                                                                +
+ CREATE TABLE test_alter_autoinc (                                                                                                        +
+     a integer,                                                                                                                           +
+     b character varying(32),                                                                                                             +
+     seq integer AUTO_INCREMENT NOT NULL,                                                                                                 +
+     CONSTRAINT test_alter_autoinc_uk UNIQUE (seq)                                                                                        +
+ ) AUTO_INCREMENT = 1                                                                                                                     +
+ WITH (orientation=row, compression=no);                                                                                                  +
+ CREATE INDEX test_alter_autoinc_idx1 ON test_alter_autoinc USING btree (seq, a) TABLESPACE pg_default;                                   +
+ CREATE INDEX test_alter_autoinc_idx ON test_alter_autoinc USING btree (((seq OPERATOR(dolphin_catalog.+) 1)), seq) TABLESPACE pg_default;
 (1 row)
 
 ALTER TABLE test_alter_autoinc DROP CONSTRAINT test_alter_autoinc_uk, ADD CONSTRAINT test_alter_autoinc_pk PRIMARY KEY (seq);
@@ -251,17 +252,17 @@ ERROR:  auto_increment column must be defined as a unique or primary key
 CREATE INDEX test_alter_autoinc_idx1 ON test_alter_autoinc(seq,a);
 ALTER TABLE test_alter_autoinc DROP CONSTRAINT test_alter_autoinc_pk;
 SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
-                                                 pg_get_tabledef                                                 
------------------------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                                      +
- CREATE TABLE test_alter_autoinc (                                                                              +
-     a integer,                                                                                                 +
-     b character varying(32),                                                                                   +
-     seq integer AUTO_INCREMENT NOT NULL,                                                                       +
-     INDEX test_alter_autoinc_idx1 USING btree (seq, a)                                                         +
- ) AUTO_INCREMENT = 1                                                                                           +
- WITH (orientation=row, compression=no);                                                                        +
- CREATE INDEX test_alter_autoinc_idx ON test_alter_autoinc USING btree (((seq + 1)), seq) TABLESPACE pg_default;
+                                                              pg_get_tabledef                                                              
+-------------------------------------------------------------------------------------------------------------------------------------------
+ SET search_path = public;                                                                                                                +
+ CREATE TABLE test_alter_autoinc (                                                                                                        +
+     a integer,                                                                                                                           +
+     b character varying(32),                                                                                                             +
+     seq integer AUTO_INCREMENT NOT NULL,                                                                                                 +
+     INDEX test_alter_autoinc_idx1 USING btree (seq, a)                                                                                   +
+ ) AUTO_INCREMENT = 1                                                                                                                     +
+ WITH (orientation=row, compression=no);                                                                                                  +
+ CREATE INDEX test_alter_autoinc_idx ON test_alter_autoinc USING btree (((seq OPERATOR(dolphin_catalog.+) 1)), seq) TABLESPACE pg_default;
 (1 row)
 
 DROP INDEX test_alter_autoinc_idx1; -- ERROR
@@ -434,24 +435,24 @@ SELECT * FROM test_create_autoinc;
 (1 row)
 
 SELECT pg_get_tabledef('test_create_autoinc'::regclass);
-                                                     pg_get_tabledef                                                     
--------------------------------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                                              +
- CREATE TABLE test_create_autoinc (                                                                                     +
-     "ID" bigint NOT NULL,                                                                                              +
-     "SEQ" bigint AUTO_INCREMENT NOT NULL,                                                                              +
-     "CODE" character varying(100) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                            +
-     "ACTIVITY_TYPE" character varying(50) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                    +
-     INDEX "INDEX_WX_ACTIVITY_EXCCODE_SEQ_AT" USING btree ("SEQ", "ACTIVITY_TYPE", (("SEQ" + 1)))                       +
- ) AUTO_INCREMENT = 600002                                                                                              +
- CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                                                                  +
- WITH (orientation=row, compression=no);                                                                                +
- COMMENT ON COLUMN test_create_autoinc."ID" IS '主键id';                                                                +
- COMMENT ON COLUMN test_create_autoinc."SEQ" IS '序号';                                                                 +
- COMMENT ON COLUMN test_create_autoinc."CODE" IS '兑换码';                                                              +
- COMMENT ON COLUMN test_create_autoinc."ACTIVITY_TYPE" IS '活动标识';                                                   +
- CREATE INDEX "INDEX_WX_ACTIVITY_EXCCODE_SEQ" ON test_create_autoinc USING btree ("SEQ") TABLESPACE pg_default;         +
- CREATE INDEX "INDEX_WX_ACTIVITY_EXCCODE_AT" ON test_create_autoinc USING btree ("ACTIVITY_TYPE") TABLESPACE pg_default;+
+                                                      pg_get_tabledef                                                       
+----------------------------------------------------------------------------------------------------------------------------
+ SET search_path = public;                                                                                                 +
+ CREATE TABLE test_create_autoinc (                                                                                        +
+     "ID" bigint NOT NULL,                                                                                                 +
+     "SEQ" bigint AUTO_INCREMENT NOT NULL,                                                                                 +
+     "CODE" character varying(100) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                               +
+     "ACTIVITY_TYPE" character varying(50) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                       +
+     INDEX "INDEX_WX_ACTIVITY_EXCCODE_SEQ_AT" USING btree ("SEQ", "ACTIVITY_TYPE", (("SEQ" OPERATOR(dolphin_catalog.+) 1)))+
+ ) AUTO_INCREMENT = 600002                                                                                                 +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                                                                     +
+ WITH (orientation=row, compression=no);                                                                                   +
+ COMMENT ON COLUMN test_create_autoinc."ID" IS '主键id';                                                                   +
+ COMMENT ON COLUMN test_create_autoinc."SEQ" IS '序号';                                                                    +
+ COMMENT ON COLUMN test_create_autoinc."CODE" IS '兑换码';                                                                 +
+ COMMENT ON COLUMN test_create_autoinc."ACTIVITY_TYPE" IS '活动标识';                                                      +
+ CREATE INDEX "INDEX_WX_ACTIVITY_EXCCODE_SEQ" ON test_create_autoinc USING btree ("SEQ") TABLESPACE pg_default;            +
+ CREATE INDEX "INDEX_WX_ACTIVITY_EXCCODE_AT" ON test_create_autoinc USING btree ("ACTIVITY_TYPE") TABLESPACE pg_default;   +
  ALTER TABLE test_create_autoinc ADD CONSTRAINT test_create_autoinc_pkey PRIMARY KEY USING btree  ("ID");
 (1 row)
 
@@ -464,18 +465,18 @@ NOTICE:  ALTER TABLE will create implicit sequence "test_alter_autoinc_seq_seq" 
 ALTER TABLE test_alter_autoinc ADD CONSTRAINT test_alter_autoinc_uk UNIQUE (seq);
 NOTICE:  ALTER TABLE / ADD UNIQUE will create implicit index "test_alter_autoinc_uk" for table "test_alter_autoinc"
 SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
-                                                 pg_get_tabledef                                                 
------------------------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                                      +
- CREATE TABLE test_alter_autoinc (                                                                              +
-     a integer,                                                                                                 +
-     b character varying(32),                                                                                   +
-     seq integer AUTO_INCREMENT NOT NULL,                                                                       +
-     CONSTRAINT test_alter_autoinc_uk UNIQUE (seq)                                                              +
- ) AUTO_INCREMENT = 1                                                                                           +
- WITH (orientation=row, compression=no);                                                                        +
- CREATE INDEX test_alter_autoinc_idx1 ON test_alter_autoinc USING btree (seq, a) TABLESPACE pg_default;         +
- CREATE INDEX test_alter_autoinc_idx ON test_alter_autoinc USING btree (((seq + 1)), seq) TABLESPACE pg_default;
+                                                              pg_get_tabledef                                                              
+-------------------------------------------------------------------------------------------------------------------------------------------
+ SET search_path = public;                                                                                                                +
+ CREATE TABLE test_alter_autoinc (                                                                                                        +
+     a integer,                                                                                                                           +
+     b character varying(32),                                                                                                             +
+     seq integer AUTO_INCREMENT NOT NULL,                                                                                                 +
+     CONSTRAINT test_alter_autoinc_uk UNIQUE (seq)                                                                                        +
+ ) AUTO_INCREMENT = 1                                                                                                                     +
+ WITH (orientation=row, compression=no);                                                                                                  +
+ CREATE INDEX test_alter_autoinc_idx1 ON test_alter_autoinc USING btree (seq, a) TABLESPACE pg_default;                                   +
+ CREATE INDEX test_alter_autoinc_idx ON test_alter_autoinc USING btree (((seq OPERATOR(dolphin_catalog.+) 1)), seq) TABLESPACE pg_default;
 (1 row)
 
 \! @abs_bindir@/gs_dump dolphin_autoinc -p @portstring@ -f @abs_bindir@/dump_dolphin_autoinc.tar -F t >/dev/null 2>&1; echo $?
@@ -501,7 +502,7 @@ Indexes:
     "test_create_autoinc_pkey" PRIMARY KEY, btree ("ID") TABLESPACE pg_default
     "INDEX_WX_ACTIVITY_EXCCODE_AT" btree ("ACTIVITY_TYPE") TABLESPACE pg_default
     "INDEX_WX_ACTIVITY_EXCCODE_SEQ" btree ("SEQ") TABLESPACE pg_default
-    "INDEX_WX_ACTIVITY_EXCCODE_SEQ_AT" btree ("SEQ", "ACTIVITY_TYPE", ("SEQ" + 1)) TABLESPACE pg_default
+    "INDEX_WX_ACTIVITY_EXCCODE_SEQ_AT" btree ("SEQ", "ACTIVITY_TYPE", ("SEQ" + 1::bigint)) TABLESPACE pg_default
 
 SELECT pg_get_tabledef('test_create_autoinc'::regclass);
                                                      pg_get_tabledef                                                     
@@ -512,7 +513,7 @@ SELECT pg_get_tabledef('test_create_autoinc'::regclass);
      "SEQ" bigint AUTO_INCREMENT NOT NULL,                                                                              +
      "CODE" character varying(100) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                            +
      "ACTIVITY_TYPE" character varying(50) CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci NOT NULL,                    +
-     INDEX "INDEX_WX_ACTIVITY_EXCCODE_SEQ_AT" USING btree ("SEQ", "ACTIVITY_TYPE", (("SEQ" + 1)))                       +
+     INDEX "INDEX_WX_ACTIVITY_EXCCODE_SEQ_AT" USING btree ("SEQ", "ACTIVITY_TYPE", (("SEQ" + (1)::bigint)))             +
  ) AUTO_INCREMENT = 600002                                                                                              +
  CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                                                                  +
  WITH (orientation=row, compression=no);                                                                                +
@@ -535,22 +536,22 @@ DROP TABLE test_create_autoinc;
  seq    | integer               | not null AUTO_INCREMENT
 Indexes:
     "test_alter_autoinc_uk" UNIQUE CONSTRAINT, btree (seq) TABLESPACE pg_default
-    "test_alter_autoinc_idx" btree ((seq + 1), seq) TABLESPACE pg_default
+    "test_alter_autoinc_idx" btree ((seq::bigint + 1::bigint), seq) TABLESPACE pg_default
     "test_alter_autoinc_idx1" btree (seq, a) TABLESPACE pg_default
 
 SELECT pg_get_tabledef('test_alter_autoinc'::regclass);
-                                                 pg_get_tabledef                                                 
------------------------------------------------------------------------------------------------------------------
- SET search_path = public;                                                                                      +
- CREATE TABLE test_alter_autoinc (                                                                              +
-     a integer,                                                                                                 +
-     b character varying(32),                                                                                   +
-     seq integer AUTO_INCREMENT NOT NULL,                                                                       +
-     CONSTRAINT test_alter_autoinc_uk UNIQUE (seq)                                                              +
- ) AUTO_INCREMENT = 1                                                                                           +
- WITH (orientation=row, compression=no);                                                                        +
- CREATE INDEX test_alter_autoinc_idx1 ON test_alter_autoinc USING btree (seq, a) TABLESPACE pg_default;         +
- CREATE INDEX test_alter_autoinc_idx ON test_alter_autoinc USING btree (((seq + 1)), seq) TABLESPACE pg_default;
+                                                           pg_get_tabledef                                                           
+-------------------------------------------------------------------------------------------------------------------------------------
+ SET search_path = public;                                                                                                          +
+ CREATE TABLE test_alter_autoinc (                                                                                                  +
+     a integer,                                                                                                                     +
+     b character varying(32),                                                                                                       +
+     seq integer AUTO_INCREMENT NOT NULL,                                                                                           +
+     CONSTRAINT test_alter_autoinc_uk UNIQUE (seq)                                                                                  +
+ ) AUTO_INCREMENT = 1                                                                                                               +
+ WITH (orientation=row, compression=no);                                                                                            +
+ CREATE INDEX test_alter_autoinc_idx1 ON test_alter_autoinc USING btree (seq, a) TABLESPACE pg_default;                             +
+ CREATE INDEX test_alter_autoinc_idx ON test_alter_autoinc USING btree ((((seq)::bigint + (1)::bigint)), seq) TABLESPACE pg_default;
 (1 row)
 
 DROP TABLE test_alter_autoinc;

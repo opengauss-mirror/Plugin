@@ -2,6 +2,7 @@
 create user user1 with sysadmin password 'Show@123';
 create user user2 password 'Show@456';
 -- B库执行
+set dolphin.b_compatibility_mode to off;
 drop database if exists show_storage_engines_b;
 create database show_storage_engines_b dbcompatibility 'b';
 \c show_storage_engines_b
@@ -46,6 +47,7 @@ SHOW ENGINES;
 SHOW STORAGE ENGINES;
 -- 非B库执行
 set role user1 password 'Show@123';
+set dolphin.b_compatibility_mode to off;
 drop database if exists show_storage_engines_nb;
 create database show_storage_engines_nb;
 \c show_storage_engines_nb

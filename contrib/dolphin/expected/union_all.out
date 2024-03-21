@@ -625,99 +625,99 @@ select null::bytea union all select null::anyset;
 (2 rows)
 
 select null::char union all select null::int16;
- bpchar 
---------
+ varchar 
+---------
  
  
 (2 rows)
 
 select null::char union all select null::record;
- bpchar 
---------
+ varchar 
+---------
  
  
 (2 rows)
 
 select null::char union all select null::cstring;
- bpchar 
---------
+ varchar 
+---------
  
  
 (2 rows)
 
 select null::char union all select null::anyarray;
- bpchar 
---------
+ varchar 
+---------
  
  
 (2 rows)
 
 select null::char union all select null::void;
- bpchar 
---------
+ varchar 
+---------
  
  
 (2 rows)
 
 select null::char union all select null::anyelement;
- bpchar 
---------
+ varchar 
+---------
  
  
 (2 rows)
 
 select null::char union all select null::anynonarray;
- bpchar 
---------
+ varchar 
+---------
  
  
 (2 rows)
 
 select null::char union all select 'red'::rainbow::anyenum;
- bpchar 
---------
+ varchar 
+---------
  
  red
 (2 rows)
 
 select null::char union all select null::anyrange;
- bpchar 
---------
+ varchar 
+---------
  
  
 (2 rows)
 
 select null::char union all select null::hll_hashval;
- bpchar 
---------
+ varchar 
+---------
  
  
 (2 rows)
 
 select null::char union all select null::hll_trans_type;
- bpchar 
---------
+ varchar 
+---------
  
  
 (2 rows)
 
 select null::char union all select null::byteawithoutorderwithequalcol;
- bpchar 
---------
+ varchar 
+---------
  
  
 (2 rows)
 
 select null::char union all select null::byteawithoutordercol;
- bpchar 
---------
+ varchar 
+---------
  
  
 (2 rows)
 
 select null::char union all select null::anyset;
- bpchar 
---------
+ varchar 
+---------
  
  
 (2 rows)

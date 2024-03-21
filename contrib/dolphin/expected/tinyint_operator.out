@@ -3,51 +3,75 @@ set current_schema to 'tinyint_operator';
 select 1::int1 + 1::int1;
  ?column? 
 ----------
- 2
+        2
 (1 row)
 
 select (-1)::int1 + (-1)::int1;
  ?column? 
 ----------
- -2
+       -2
 (1 row)
 
 select 127::int1 + 127::int1;
-ERROR:  tinyint out of range
+ ?column? 
+----------
+      254
+(1 row)
+
 select (-128)::int1 + (-128)::int1;
-ERROR:  tinyint out of range
+ ?column? 
+----------
+     -256
+(1 row)
+
 select 1::int1 - 1::int1;
  ?column? 
 ----------
- 0
+        0
 (1 row)
 
 select (-1)::int1 - (-1)::int1;
  ?column? 
 ----------
- 0
+        0
 (1 row)
 
 select 127::int1 - (-1)::int1;
-ERROR:  tinyint out of range
+ ?column? 
+----------
+      128
+(1 row)
+
 select (-128)::int1 - 1::int1;
-ERROR:  tinyint out of range
+ ?column? 
+----------
+     -129
+(1 row)
+
 select 1::int1 * 1::int1;
  ?column? 
 ----------
- 1
+        1
 (1 row)
 
 select (-1)::int1 * (-1)::int1;
  ?column? 
 ----------
- 1
+        1
 (1 row)
 
 select 127::int1 * 127::int1;
-ERROR:  tinyint out of range
+ ?column? 
+----------
+    16129
+(1 row)
+
 select (-128)::int1 * (-128)::int1;
-ERROR:  tinyint out of range
+ ?column? 
+----------
+    16384
+(1 row)
+
 select 1::int1 / 1::int1;
         ?column?        
 ------------------------
@@ -145,33 +169,33 @@ select (-128)::int1 | (-128)::int1;
 (1 row)
 
 select 1::int1 # 1::int1;
- ?column? 
-----------
- 0
+ int1 
+------
+ 1
 (1 row)
 
 select (-1)::int1 # (-1)::int1;
- ?column? 
-----------
- 0
+ int1 
+------
+ -1
 (1 row)
 
 select 127::int1 # 127::int1;
- ?column? 
-----------
- 0
+ int1 
+------
+ 127
 (1 row)
 
 select (-128)::int1 # (-128)::int1;
- ?column? 
-----------
- 0
+ int1 
+------
+ -128
 (1 row)
 
 select ~1::int1;
- ?column? 
-----------
- -2
+       ?column?       
+----------------------
+ 18446744073709551614
 (1 row)
 
 select ~(-1)::int1;
@@ -181,9 +205,9 @@ select ~(-1)::int1;
 (1 row)
 
 select ~127::int1;
- ?column? 
-----------
- -128
+       ?column?       
+----------------------
+ 18446744073709551488
 (1 row)
 
 select ~(-128)::int1;

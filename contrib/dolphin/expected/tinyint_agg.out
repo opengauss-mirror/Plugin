@@ -328,19 +328,19 @@ explain(costs off, verbose) select variance(a)from smp_test;
 (8 rows)
 
 explain(costs off, verbose) select listagg(a) within group(order by a) from smp_test;
-                    QUERY PLAN                    
---------------------------------------------------
+                          QUERY PLAN                          
+--------------------------------------------------------------
  Aggregate
-   Output: listagg(a ) WITHIN GROUP ( ORDER BY a)
+   Output: listagg(a ) WITHIN GROUP ( ORDER BY a NULLS FIRST)
    ->  Seq Scan on tinyint_agg.smp_test
          Output: a
 (4 rows)
 
 explain(costs off, verbose) select listagg(a, ',') within group(order by a) from smp_test;
-                         QUERY PLAN                          
--------------------------------------------------------------
+                               QUERY PLAN                                
+-------------------------------------------------------------------------
  Aggregate
-   Output: listagg(a, ','::text ) WITHIN GROUP ( ORDER BY a)
+   Output: listagg(a, ','::text ) WITHIN GROUP ( ORDER BY a NULLS FIRST)
    ->  Seq Scan on tinyint_agg.smp_test
          Output: a
 (4 rows)

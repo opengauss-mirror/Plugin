@@ -19,6 +19,7 @@ select character_length(true);
 
 drop schema db_character_length cascade;
 reset current_schema;
+set dolphin.b_compatibility_mode to off;
 drop database if exists db_character_length_gbk;
 create database db_character_length_gbk dbcompatibility 'B' encoding 'GBK' LC_CTYPE 'zh_CN.gbk' lc_collate 'zh_CN.gbk';
 \c db_character_length_gbk

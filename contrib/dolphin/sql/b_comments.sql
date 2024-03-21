@@ -35,7 +35,9 @@ create procedure test_alter_procedure(int,int) as begin select $1 + $2;end;
 alter procedure test_alter_procedure(int,int) comment 'test_alter_procedure';
 drop schema b_comments cascade;
 \c contrib_regression
+set dolphin.b_compatibility_mode = off;
 drop database b_comments;
+set dolphin.b_compatibility_mode = on;
 
 create schema b_comments;
 set search_path to 'b_comments';

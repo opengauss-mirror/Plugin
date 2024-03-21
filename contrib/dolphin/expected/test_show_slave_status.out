@@ -4,8 +4,10 @@ NOTICE:  The iteration value of password is not recommended.Setting the iteratio
 create user user2 password 'Show@456';
 NOTICE:  The iteration value of password is not recommended.Setting the iteration value too small reduces the security of the password, and setting it too large results in performance degradation.
 -- B库执行
+set dolphin.b_compatibility_mode to off;
 drop database if exists show_slave_status_b;
 NOTICE:  database "show_slave_status_b" does not exist, skipping
+set dolphin.b_compatibility_mode to on;
 create database show_slave_status_b dbcompatibility 'b';
 \c show_slave_status_b
 -- 管理员用户执行
@@ -56,6 +58,7 @@ SHOW REPLICA STATUS FOR CHANNEL 'no_qualified_row';
 
 -- 非B库执行
 set role user1 password 'Show@123';
+set dolphin.b_compatibility_mode to off;
 drop database if exists show_slave_status_nb;
 NOTICE:  database "show_slave_status_nb" does not exist, skipping
 create database show_slave_status_nb;
@@ -78,6 +81,7 @@ LINE 1: SHOW REPLICA STATUS FOR CHANNEL 'no_qualified_row';
                      ^
 -- cleanup
 \c contrib_regression
+set dolphin.b_compatibility_mode to off;
 drop database show_slave_status_b;
 drop database show_slave_status_nb;
 drop user user1;

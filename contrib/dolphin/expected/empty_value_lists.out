@@ -255,16 +255,16 @@ insert into test11 values(),();
 select *from test11;
  num 
 -----
- 
- 
+ \x
+ \x
 (2 rows)
 
 insert into test12 values(),();
 select *from test12;
  num 
 -----
- 
- 
+ \x
+ \x
 (2 rows)
 
 insert into test13 values(),();

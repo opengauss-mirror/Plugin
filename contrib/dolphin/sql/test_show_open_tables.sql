@@ -2,6 +2,7 @@
 create user user1 with sysadmin password 'Show@123';
 create user user2 password 'Show@456';
 -- B库执行
+set dolphin.b_compatibility_mode to off;
 drop database if exists show_open_tables_b;
 create database show_open_tables_b dbcompatibility 'b';
 \c show_open_tables_b
@@ -100,6 +101,7 @@ SHOW OPEN TABLES IN show_open_tables_scm;
 SHOW OPEN TABLES FROM show_open_tables_scm;
 -- 非B库执行
 set role user1 password 'Show@123';
+set dolphin.b_compatibility_mode to off;
 drop database if exists show_open_tables_nb;
 create database show_open_tables_nb;
 \c show_open_tables_nb

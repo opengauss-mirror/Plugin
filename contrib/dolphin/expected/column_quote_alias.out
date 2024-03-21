@@ -138,18 +138,14 @@ CONTEXT:  referenced column: varchar
 
 select timestamp(2) 'keyword_test' from t_alias_case0001_1;
 WARNING:  invalid input syntax for type timestamp: "keyword_test"
-LINE 1: select timestamp(2) 'keyword_test' from t_alias_case0001_1;
-                            ^
 CONTEXT:  referenced column: timestamp
-      timestamp      
----------------------
- 0000-00-00 00:00:00
+ timestamp 
+-----------
+ 
 (1 row)
 
 select time(2) 'keyword_test' from t_alias_case0001_1;
 WARNING:  invalid input syntax for type time: "keyword_test"
-LINE 1: select time(2) 'keyword_test' from t_alias_case0001_1;
-                       ^
 CONTEXT:  referenced column: time
    time   
 ----------
@@ -207,9 +203,7 @@ CONTEXT:  referenced column: int4
 (1 row)
 
 select bigint 'keyword_test' from t_alias_case0001_1;
-WARNING:  invalid input syntax for type bigint: "keyword_test"
-LINE 1: select bigint 'keyword_test' from t_alias_case0001_1;
-                      ^
+WARNING:  Truncated incorrect INTEGER value: 'keyword_test'
 CONTEXT:  referenced column: int8
  int8 
 ------
@@ -304,20 +298,26 @@ LINE 1: select boolean 'keyword_test' from t_alias_case0001_1;
                        ^
 CONTEXT:  referenced column: bool
 select bit(2) 'keyword_test' from t_alias_case0001_1;
-ERROR:  "k" is not a valid binary digit
-LINE 1: select bit(2) 'keyword_test' from t_alias_case0001_1;
-                      ^
+WARNING:  bit string length 96 does not match type bit(2)
 CONTEXT:  referenced column: bit
+ bit 
+-----
+ 11
+(1 row)
+
 select bit varying 'keyword_test' from t_alias_case0001_1;
 ERROR:  "k" is not a valid binary digit
 LINE 1: select bit varying 'keyword_test' from t_alias_case0001_1;
                            ^
 CONTEXT:  referenced column: varbit
 select bit 'keyword_test' from t_alias_case0001_1;
-ERROR:  "k" is not a valid binary digit
-LINE 1: select bit 'keyword_test' from t_alias_case0001_1;
-                   ^
+WARNING:  bit string length 96 does not match type bit(1)
 CONTEXT:  referenced column: bit
+ bit 
+-----
+ 1
+(1 row)
+
 SELECT a as ' ' from t_alias_case0001_1;
    
 ---

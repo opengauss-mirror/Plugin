@@ -1,6 +1,7 @@
 create schema db_db_b_format;
 set current_schema to 'db_db_b_format';
 -- test for b_compatibility_mode = false
+set dolphin.b_compatibility_mode to off;
 select format(1234.456, 2);
 select format(1234.456, 2, 'en_US');
 select format('%1s!', 'Hello');

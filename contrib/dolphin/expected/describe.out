@@ -37,77 +37,77 @@ CREATE UNIQUE INDEX idx_d_e on test (d, e);
 CREATE INDEX idx_f on test (f);
 CREATE INDEX idx_e_f on test (e, f);
 desc test;
- Field |         Type          | Null | Key |             Default             | Extra 
--------+-----------------------+------+-----+---------------------------------+-------
- a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass) | 
- b     | character varying(10) | NO   | PRI | NULL                            | 
- c     | character varying(10) | YES  | UNI | NULL                            | 
- d     | character varying(10) | YES  | UNI | NULL                            | 
- e     | character varying(10) | YES  | UNI | NULL                            | 
- f     | character varying(10) | YES  | MUL | NULL                            | 
- g     | character varying(10) | YES  |     | 'g'::character varying          | 
- h     | character varying(10) | NO   |     | NULL                            | 
- i     | integer               | YES  |     | 0                               | 
- j     | integer               | YES  |     | 0                               | 
- k     | integer               | YES  |     | (i + j)                         | 
- l     | integer               | YES  | MUL | 0                               | 
- m     | integer               | YES  |     | NULL                            | 
+ Field |         Type          | Null | Key |              Default              | Extra 
+-------+-----------------------+------+-----+-----------------------------------+-------
+ a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass)   | 
+ b     | character varying(10) | NO   | PRI | NULL                              | 
+ c     | character varying(10) | YES  | UNI | NULL                              | 
+ d     | character varying(10) | YES  | UNI | NULL                              | 
+ e     | character varying(10) | YES  | UNI | NULL                              | 
+ f     | character varying(10) | YES  | MUL | NULL                              | 
+ g     | character varying(10) | YES  |     | 'g'::character varying            | 
+ h     | character varying(10) | NO   |     | NULL                              | 
+ i     | integer               | YES  |     | 0                                 | 
+ j     | integer               | YES  |     | 0                                 | 
+ k     | integer               | YES  |     | (i OPERATOR(dolphin_catalog.+) j) | 
+ l     | integer               | YES  | MUL | 0                                 | 
+ m     | integer               | YES  |     | NULL                              | 
 (13 rows)
 
 describe test;
- Field |         Type          | Null | Key |             Default             | Extra 
--------+-----------------------+------+-----+---------------------------------+-------
- a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass) | 
- b     | character varying(10) | NO   | PRI | NULL                            | 
- c     | character varying(10) | YES  | UNI | NULL                            | 
- d     | character varying(10) | YES  | UNI | NULL                            | 
- e     | character varying(10) | YES  | UNI | NULL                            | 
- f     | character varying(10) | YES  | MUL | NULL                            | 
- g     | character varying(10) | YES  |     | 'g'::character varying          | 
- h     | character varying(10) | NO   |     | NULL                            | 
- i     | integer               | YES  |     | 0                               | 
- j     | integer               | YES  |     | 0                               | 
- k     | integer               | YES  |     | (i + j)                         | 
- l     | integer               | YES  | MUL | 0                               | 
- m     | integer               | YES  |     | NULL                            | 
+ Field |         Type          | Null | Key |              Default              | Extra 
+-------+-----------------------+------+-----+-----------------------------------+-------
+ a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass)   | 
+ b     | character varying(10) | NO   | PRI | NULL                              | 
+ c     | character varying(10) | YES  | UNI | NULL                              | 
+ d     | character varying(10) | YES  | UNI | NULL                              | 
+ e     | character varying(10) | YES  | UNI | NULL                              | 
+ f     | character varying(10) | YES  | MUL | NULL                              | 
+ g     | character varying(10) | YES  |     | 'g'::character varying            | 
+ h     | character varying(10) | NO   |     | NULL                              | 
+ i     | integer               | YES  |     | 0                                 | 
+ j     | integer               | YES  |     | 0                                 | 
+ k     | integer               | YES  |     | (i OPERATOR(dolphin_catalog.+) j) | 
+ l     | integer               | YES  | MUL | 0                                 | 
+ m     | integer               | YES  |     | NULL                              | 
 (13 rows)
 
 drop index if exists idx_c;
 CREATE UNIQUE INDEX idx_c on test (c);
 desc test;
- Field |         Type          | Null | Key |             Default             | Extra 
--------+-----------------------+------+-----+---------------------------------+-------
- a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass) | 
- b     | character varying(10) | NO   | PRI | NULL                            | 
- c     | character varying(10) | YES  | UNI | NULL                            | 
- d     | character varying(10) | YES  | UNI | NULL                            | 
- e     | character varying(10) | YES  | UNI | NULL                            | 
- f     | character varying(10) | YES  | MUL | NULL                            | 
- g     | character varying(10) | YES  |     | 'g'::character varying          | 
- h     | character varying(10) | NO   |     | NULL                            | 
- i     | integer               | YES  |     | 0                               | 
- j     | integer               | YES  |     | 0                               | 
- k     | integer               | YES  |     | (i + j)                         | 
- l     | integer               | YES  | MUL | 0                               | 
- m     | integer               | YES  |     | NULL                            | 
+ Field |         Type          | Null | Key |              Default              | Extra 
+-------+-----------------------+------+-----+-----------------------------------+-------
+ a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass)   | 
+ b     | character varying(10) | NO   | PRI | NULL                              | 
+ c     | character varying(10) | YES  | UNI | NULL                              | 
+ d     | character varying(10) | YES  | UNI | NULL                              | 
+ e     | character varying(10) | YES  | UNI | NULL                              | 
+ f     | character varying(10) | YES  | MUL | NULL                              | 
+ g     | character varying(10) | YES  |     | 'g'::character varying            | 
+ h     | character varying(10) | NO   |     | NULL                              | 
+ i     | integer               | YES  |     | 0                                 | 
+ j     | integer               | YES  |     | 0                                 | 
+ k     | integer               | YES  |     | (i OPERATOR(dolphin_catalog.+) j) | 
+ l     | integer               | YES  | MUL | 0                                 | 
+ m     | integer               | YES  |     | NULL                              | 
 (13 rows)
 
 describe test;
- Field |         Type          | Null | Key |             Default             | Extra 
--------+-----------------------+------+-----+---------------------------------+-------
- a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass) | 
- b     | character varying(10) | NO   | PRI | NULL                            | 
- c     | character varying(10) | YES  | UNI | NULL                            | 
- d     | character varying(10) | YES  | UNI | NULL                            | 
- e     | character varying(10) | YES  | UNI | NULL                            | 
- f     | character varying(10) | YES  | MUL | NULL                            | 
- g     | character varying(10) | YES  |     | 'g'::character varying          | 
- h     | character varying(10) | NO   |     | NULL                            | 
- i     | integer               | YES  |     | 0                               | 
- j     | integer               | YES  |     | 0                               | 
- k     | integer               | YES  |     | (i + j)                         | 
- l     | integer               | YES  | MUL | 0                               | 
- m     | integer               | YES  |     | NULL                            | 
+ Field |         Type          | Null | Key |              Default              | Extra 
+-------+-----------------------+------+-----+-----------------------------------+-------
+ a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass)   | 
+ b     | character varying(10) | NO   | PRI | NULL                              | 
+ c     | character varying(10) | YES  | UNI | NULL                              | 
+ d     | character varying(10) | YES  | UNI | NULL                              | 
+ e     | character varying(10) | YES  | UNI | NULL                              | 
+ f     | character varying(10) | YES  | MUL | NULL                              | 
+ g     | character varying(10) | YES  |     | 'g'::character varying            | 
+ h     | character varying(10) | NO   |     | NULL                              | 
+ i     | integer               | YES  |     | 0                                 | 
+ j     | integer               | YES  |     | 0                                 | 
+ k     | integer               | YES  |     | (i OPERATOR(dolphin_catalog.+) j) | 
+ l     | integer               | YES  | MUL | 0                                 | 
+ m     | integer               | YES  |     | NULL                              | 
 (13 rows)
 
 create schema sc;
@@ -144,21 +144,21 @@ describe test;
 (3 rows)
 
 desc db_describe.test;
- Field |         Type          | Null | Key |             Default             | Extra 
--------+-----------------------+------+-----+---------------------------------+-------
- a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass) | 
- b     | character varying(10) | NO   | PRI | NULL                            | 
- c     | character varying(10) | YES  | UNI | NULL                            | 
- d     | character varying(10) | YES  | UNI | NULL                            | 
- e     | character varying(10) | YES  | UNI | NULL                            | 
- f     | character varying(10) | YES  | MUL | NULL                            | 
- g     | character varying(10) | YES  |     | 'g'::character varying          | 
- h     | character varying(10) | NO   |     | NULL                            | 
- i     | integer               | YES  |     | 0                               | 
- j     | integer               | YES  |     | 0                               | 
- k     | integer               | YES  |     | (i + j)                         | 
- l     | integer               | YES  | MUL | 0                               | 
- m     | integer               | YES  |     | NULL                            | 
+ Field |         Type          | Null | Key |              Default              | Extra 
+-------+-----------------------+------+-----+-----------------------------------+-------
+ a     | integer               | NO   | PRI | nextval('test_a_seq'::regclass)   | 
+ b     | character varying(10) | NO   | PRI | NULL                              | 
+ c     | character varying(10) | YES  | UNI | NULL                              | 
+ d     | character varying(10) | YES  | UNI | NULL                              | 
+ e     | character varying(10) | YES  | UNI | NULL                              | 
+ f     | character varying(10) | YES  | MUL | NULL                              | 
+ g     | character varying(10) | YES  |     | 'g'::character varying            | 
+ h     | character varying(10) | NO   |     | NULL                              | 
+ i     | integer               | YES  |     | 0                                 | 
+ j     | integer               | YES  |     | 0                                 | 
+ k     | integer               | YES  |     | (i OPERATOR(dolphin_catalog.+) j) | 
+ l     | integer               | YES  | MUL | 0                                 | 
+ m     | integer               | YES  |     | NULL                              | 
 (13 rows)
 
 desc sc.test;

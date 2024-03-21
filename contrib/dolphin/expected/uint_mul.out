@@ -121,9 +121,9 @@ select 4294967295::uint4 * 0::uint8;
 (1 row)
 
 select 4294967295::uint4 * (-1)::int2;
-ERROR:  int unsigned  out of range
+ERROR:  bigint unsigned out of range
 select 4294967295::uint4 * (-1)::int4;
-ERROR:  int unsigned  out of range
+ERROR:  bigint unsigned out of range
 select 4294967295::uint4 * (-1)::int8;
 ERROR:  bigint unsigned out of range
 select 4294967295::uint4 * 9223372036854775807::int8;
@@ -180,17 +180,25 @@ select 65535::uint2 * 0::uint8;
 (1 row)
 
 select 65535::uint2 * (-1)::int2;
-ERROR:  smallint unsigned out of range
+ERROR:  bigint unsigned out of range
 select 65535::uint2 * (-1)::int4;
-ERROR:  int unsigned  out of range
+ERROR:  bigint unsigned out of range
 select 65535::uint2 * (-1)::int8;
 ERROR:  bigint unsigned out of range
 select 65535::uint2 * 2147483647::int4;
-ERROR:  int unsigned  out of range
+    ?column?     
+-----------------
+ 140735340806145
+(1 row)
+
 select 65535::uint2 * 9223372036854775807::int8;
 ERROR:  bigint unsigned out of range
 select 65535::uint2 * 4294967295::uint4;
-ERROR:   int unsigned out of range
+    ?column?     
+-----------------
+ 281470681677825
+(1 row)
+
 select 65535::uint2 * 18446744073709551615::uint8;
 ERROR:  bigint unsigned out of range
 --uint1
@@ -243,21 +251,37 @@ select 255::uint1 * 0::uint8;
 (1 row)
 
 select 255::uint1 * (-1)::int2;
-ERROR:  smallint unsigned out of range
-select 255::uint1 * (-1)::int4;
 ERROR:  int unsigned  out of range
+select 255::uint1 * (-1)::int4;
+ERROR:  bigint unsigned out of range
 select 255::uint1 * (-1)::int8;
 ERROR:  bigint unsigned out of range
 select 255::uint1 * 32767::int2;
-ERROR:  smallint unsigned out of range
+ ?column? 
+----------
+ 8355585
+(1 row)
+
 select 255::uint1 * 2147483647::int4;
-ERROR:  int unsigned  out of range
+   ?column?   
+--------------
+ 547608329985
+(1 row)
+
 select 255::uint1 * 9223372036854775807::int8;
 ERROR:  bigint unsigned out of range
 select 255::uint1 * 65535::uint2;
-ERROR:  smallint unsigned out of range
+ ?column? 
+----------
+ 16711425
+(1 row)
+
 select 255::uint1 * 4294967295::uint4;
-ERROR:   int unsigned out of range
+   ?column?    
+---------------
+ 1095216660225
+(1 row)
+
 select 255::uint1 * 18446744073709551615::uint8;
 ERROR:  bigint unsigned out of range
 --int8
@@ -337,7 +361,11 @@ select 2147483647::int4 * 0::uint8;
 (1 row)
 
 select 2147483647::int4 * 4294967295::uint4;
-ERROR:   int unsigned out of range
+      ?column?       
+---------------------
+ 9223372030412324865
+(1 row)
+
 select 2147483647::int4 * 18446744073709551615::uint8;
 ERROR:  bigint unsigned out of range
 select 2147483647::int4 * 1::uint1;
@@ -390,9 +418,17 @@ select 32767::int2 * 0::uint8;
 (1 row)
 
 select 32767::int2 * 65535::uint2;
-ERROR:  smallint unsigned out of range
+  ?column?  
+------------
+ 2147385345
+(1 row)
+
 select 32767::int2 * 4294967295::uint4;
-ERROR:   int unsigned out of range
+    ?column?     
+-----------------
+ 140733193355265
+(1 row)
+
 select 32767::int2 * 18446744073709551615::uint8;
 ERROR:  bigint unsigned out of range
 select 32767::int2 * 1::uint1;
@@ -445,9 +481,17 @@ select 127::int1 * 0::uint8;
 (1 row)
 
 select 127::int1 * 65535::uint2;
-ERROR:  smallint unsigned out of range
+ ?column? 
+----------
+ 8322945
+(1 row)
+
 select 127::int1 * 4294967295::uint4;
-ERROR:   int unsigned out of range
+   ?column?   
+--------------
+ 545460846465
+(1 row)
+
 select 127::int1 * 18446744073709551615::uint8;
 ERROR:  bigint unsigned out of range
 select 127::int1 * 1::uint1;

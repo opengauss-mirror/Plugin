@@ -115,7 +115,7 @@ SELECT HEX(COMPRESS('string for test compress function '::name));
 (1 row)
 
 SELECT HEX(COMPRESS('string for test compress function '::character(15)));
-WARNING:  value too long for type character(15)
+WARNING:  value too long for type character varying(15)
 CONTEXT:  referenced column: hex
                           hex                           
 --------------------------------------------------------
@@ -123,7 +123,7 @@ CONTEXT:  referenced column: hex
 (1 row)
 
 SELECT HEX(COMPRESS('string for test compress function '::char(10)));
-WARNING:  value too long for type character(10)
+WARNING:  value too long for type character varying(10)
 CONTEXT:  referenced column: hex
                      hex                      
 ----------------------------------------------
@@ -400,7 +400,7 @@ SELECT UNCOMPRESS(COMPRESS('string for test compress function '::name));
 (1 row)
 
 SELECT UNCOMPRESS(COMPRESS('string for test compress function '::character(15)));
-WARNING:  value too long for type character(15)
+WARNING:  value too long for type character varying(15)
 CONTEXT:  referenced column: uncompress
    uncompress    
 -----------------
@@ -408,7 +408,7 @@ CONTEXT:  referenced column: uncompress
 (1 row)
 
 SELECT UNCOMPRESS(COMPRESS('string for test compress function '::char(10)));
-WARNING:  value too long for type character(10)
+WARNING:  value too long for type character varying(10)
 CONTEXT:  referenced column: uncompress
  uncompress 
 ------------
@@ -739,7 +739,7 @@ SELECT UNCOMPRESSED_LENGTH(COMPRESS('string for test compress function '::name))
 (1 row)
 
 SELECT UNCOMPRESSED_LENGTH(COMPRESS('string for test compress function '::character(15)));
-WARNING:  value too long for type character(15)
+WARNING:  value too long for type character varying(15)
 CONTEXT:  referenced column: uncompressed_length
  uncompressed_length 
 ---------------------
@@ -747,7 +747,7 @@ CONTEXT:  referenced column: uncompressed_length
 (1 row)
 
 SELECT UNCOMPRESSED_LENGTH(COMPRESS('string for test compress function '::char(10)));
-WARNING:  value too long for type character(10)
+WARNING:  value too long for type character varying(10)
 CONTEXT:  referenced column: uncompressed_length
  uncompressed_length 
 ---------------------

@@ -154,6 +154,7 @@ insert ignore into test_ignore_invalid_input values('invalid input', 'invalid in
 /*
  * test for restore by gs_restore
  */
+set dolphin.b_compatibility_mode to off;
 drop database if exists table_test_restore;
 create database table_test_restore dbcompatibility 'B';
 \! @abs_bindir@/gs_dump table_test -p @portstring@ -f @abs_bindir@/table_test.tar -F t >/dev/null 2>&1; echo $?

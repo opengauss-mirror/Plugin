@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_char_blank_test_2;
 create database b_char_blank_test_2 encoding 'UTF-8' lc_collate 'C' lc_ctype 'C' dbcompatibility 'B';
 \c b_char_blank_test_2

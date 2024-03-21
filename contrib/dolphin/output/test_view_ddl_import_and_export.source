@@ -1,4 +1,5 @@
 --create view测试
+set dolphin.b_compatibility_mode to off;
 drop database if exists dump_view_db;
 NOTICE:  database "dump_view_db" does not exist, skipping
 drop database if exists restore_view_db;
@@ -79,73 +80,73 @@ show lc_collate;
 (1 row)
 
 show create view view001;
-  View   |                                   Create View                                   | character_set_client | collation_connection 
----------+---------------------------------------------------------------------------------+----------------------+----------------------
- view001 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view001 AS              +| UTF8                 | C
-         | SELECT t_create_view_001.c FROM t_create_view_001 ORDER BY t_create_view_001.c; |                      | 
+  View   |                                         Create View                                         | character_set_client | collation_connection 
+---------+---------------------------------------------------------------------------------------------+----------------------+----------------------
+ view001 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view001 AS                          +| UTF8                 | C
+         | SELECT t_create_view_001.c FROM t_create_view_001 ORDER BY t_create_view_001.c NULLS FIRST; |                      | 
 (1 row)
 
 show create view view002;
-  View   |                                   Create View                                   | character_set_client | collation_connection 
----------+---------------------------------------------------------------------------------+----------------------+----------------------
- view002 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view002 AS              +| UTF8                 | C
-         | SELECT t_create_view_002.c FROM t_create_view_002 ORDER BY t_create_view_002.c; |                      | 
+  View   |                                         Create View                                         | character_set_client | collation_connection 
+---------+---------------------------------------------------------------------------------------------+----------------------+----------------------
+ view002 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view002 AS                          +| UTF8                 | C
+         | SELECT t_create_view_002.c FROM t_create_view_002 ORDER BY t_create_view_002.c NULLS FIRST; |                      | 
 (1 row)
 
 show create view view003;
-  View   |                                                                Create View                                                                 | character_set_client | collation_connection 
----------+--------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view003 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view003 AS                                                                         +| UTF8                 | C
-         | SELECT t_create_view_003.col1, t_create_view_003.col2 FROM t_create_view_003 ORDER BY ROW(t_create_view_003.col1, t_create_view_003.col2); |                      | 
+  View   |                                                                      Create View                                                                       | character_set_client | collation_connection 
+---------+--------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view003 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view003 AS                                                                                     +| UTF8                 | C
+         | SELECT t_create_view_003.col1, t_create_view_003.col2 FROM t_create_view_003 ORDER BY ROW(t_create_view_003.col1, t_create_view_003.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view004;
-  View   |                                                                Create View                                                                 | character_set_client | collation_connection 
----------+--------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view004 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view004 AS                                                                         +| UTF8                 | C
-         | SELECT t_create_view_004.col1, t_create_view_004.col2 FROM t_create_view_004 ORDER BY ROW(t_create_view_004.col1, t_create_view_004.col2); |                      | 
+  View   |                                                                      Create View                                                                       | character_set_client | collation_connection 
+---------+--------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view004 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view004 AS                                                                                     +| UTF8                 | C
+         | SELECT t_create_view_004.col1, t_create_view_004.col2 FROM t_create_view_004 ORDER BY ROW(t_create_view_004.col1, t_create_view_004.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view005;
-  View   |                                                                Create View                                                                 | character_set_client | collation_connection 
----------+--------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view005 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view005 AS                                                                         +| UTF8                 | C
-         | SELECT t_create_view_005.col1, t_create_view_005.col2 FROM t_create_view_005 ORDER BY ROW(t_create_view_005.col1, t_create_view_005.col2); |                      | 
+  View   |                                                                      Create View                                                                       | character_set_client | collation_connection 
+---------+--------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view005 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view005 AS                                                                                     +| UTF8                 | C
+         | SELECT t_create_view_005.col1, t_create_view_005.col2 FROM t_create_view_005 ORDER BY ROW(t_create_view_005.col1, t_create_view_005.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view006;
-  View   |                                                      Create View                                                      | character_set_client | collation_connection 
----------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view006 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view006 AS                                                    +| UTF8                 | C
-         | SELECT  * FROM t_create_view_006 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_006.col1, t_create_view_006.col2); |                      | 
+  View   |                                                            Create View                                                            | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view006 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view006 AS                                                                +| UTF8                 | C
+         | SELECT  * FROM t_create_view_006 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_006.col1, t_create_view_006.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view007;
-  View   |                                                      Create View                                                      | character_set_client | collation_connection 
----------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view007 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view007 AS                                                    +| UTF8                 | C
-         | SELECT  * FROM t_create_view_007 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_007.col1, t_create_view_007.col2); |                      | 
+  View   |                                                            Create View                                                            | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view007 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view007 AS                                                                +| UTF8                 | C
+         | SELECT  * FROM t_create_view_007 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_007.col1, t_create_view_007.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view008;
-  View   |                                                      Create View                                                      | character_set_client | collation_connection 
----------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view008 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view008 AS                                                    +| UTF8                 | C
-         | SELECT  * FROM t_create_view_008 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_008.col1, t_create_view_008.col2); |                      | 
+  View   |                                                            Create View                                                            | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view008 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view008 AS                                                                +| UTF8                 | C
+         | SELECT  * FROM t_create_view_008 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_008.col1, t_create_view_008.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view009;
-  View   |                                                      Create View                                                      | character_set_client | collation_connection 
----------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view009 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view009 AS                                                    +| UTF8                 | C
-         | SELECT  * FROM t_create_view_009 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_009.col1, t_create_view_009.col2); |                      | 
+  View   |                                                            Create View                                                            | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view009 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view009 AS                                                                +| UTF8                 | C
+         | SELECT  * FROM t_create_view_009 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_009.col1, t_create_view_009.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view010;
-  View   |                                                      Create View                                                      | character_set_client | collation_connection 
----------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view010 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view010 AS                                                    +| UTF8                 | C
-         | SELECT  * FROM t_create_view_010 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_010.col1, t_create_view_010.col2); |                      | 
+  View   |                                                            Create View                                                            | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view010 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view010 AS                                                                +| UTF8                 | C
+         | SELECT  * FROM t_create_view_010 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_010.col1, t_create_view_010.col2) NULLS FIRST; |                      | 
 (1 row)
 
 \dv view001;
@@ -330,73 +331,73 @@ show lc_collate;
 (1 row)
 
 show create view view001;
-  View   |                                   Create View                                   | character_set_client | collation_connection 
----------+---------------------------------------------------------------------------------+----------------------+----------------------
- view001 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view001 AS              +| UTF8                 | C
-         | SELECT t_create_view_001.c FROM t_create_view_001 ORDER BY t_create_view_001.c; |                      | 
+  View   |                                         Create View                                         | character_set_client | collation_connection 
+---------+---------------------------------------------------------------------------------------------+----------------------+----------------------
+ view001 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view001 AS                          +| UTF8                 | C
+         | SELECT t_create_view_001.c FROM t_create_view_001 ORDER BY t_create_view_001.c NULLS FIRST; |                      | 
 (1 row)
 
 show create view view002;
-  View   |                                   Create View                                   | character_set_client | collation_connection 
----------+---------------------------------------------------------------------------------+----------------------+----------------------
- view002 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view002 AS              +| UTF8                 | C
-         | SELECT t_create_view_002.c FROM t_create_view_002 ORDER BY t_create_view_002.c; |                      | 
+  View   |                                         Create View                                         | character_set_client | collation_connection 
+---------+---------------------------------------------------------------------------------------------+----------------------+----------------------
+ view002 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view002 AS                          +| UTF8                 | C
+         | SELECT t_create_view_002.c FROM t_create_view_002 ORDER BY t_create_view_002.c NULLS FIRST; |                      | 
 (1 row)
 
 show create view view003;
-  View   |                                                                Create View                                                                 | character_set_client | collation_connection 
----------+--------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view003 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view003 AS                                                                         +| UTF8                 | C
-         | SELECT t_create_view_003.col1, t_create_view_003.col2 FROM t_create_view_003 ORDER BY ROW(t_create_view_003.col1, t_create_view_003.col2); |                      | 
+  View   |                                                                      Create View                                                                       | character_set_client | collation_connection 
+---------+--------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view003 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view003 AS                                                                                     +| UTF8                 | C
+         | SELECT t_create_view_003.col1, t_create_view_003.col2 FROM t_create_view_003 ORDER BY ROW(t_create_view_003.col1, t_create_view_003.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view004;
-  View   |                                                                Create View                                                                 | character_set_client | collation_connection 
----------+--------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view004 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view004 AS                                                                         +| UTF8                 | C
-         | SELECT t_create_view_004.col1, t_create_view_004.col2 FROM t_create_view_004 ORDER BY ROW(t_create_view_004.col1, t_create_view_004.col2); |                      | 
+  View   |                                                                      Create View                                                                       | character_set_client | collation_connection 
+---------+--------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view004 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view004 AS                                                                                     +| UTF8                 | C
+         | SELECT t_create_view_004.col1, t_create_view_004.col2 FROM t_create_view_004 ORDER BY ROW(t_create_view_004.col1, t_create_view_004.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view005;
-  View   |                                                                Create View                                                                 | character_set_client | collation_connection 
----------+--------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view005 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view005 AS                                                                         +| UTF8                 | C
-         | SELECT t_create_view_005.col1, t_create_view_005.col2 FROM t_create_view_005 ORDER BY ROW(t_create_view_005.col1, t_create_view_005.col2); |                      | 
+  View   |                                                                      Create View                                                                       | character_set_client | collation_connection 
+---------+--------------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view005 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view005 AS                                                                                     +| UTF8                 | C
+         | SELECT t_create_view_005.col1, t_create_view_005.col2 FROM t_create_view_005 ORDER BY ROW(t_create_view_005.col1, t_create_view_005.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view006;
-  View   |                                                      Create View                                                      | character_set_client | collation_connection 
----------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view006 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view006 AS                                                    +| UTF8                 | C
-         | SELECT  * FROM t_create_view_006 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_006.col1, t_create_view_006.col2); |                      | 
+  View   |                                                            Create View                                                            | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view006 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view006 AS                                                                +| UTF8                 | C
+         | SELECT  * FROM t_create_view_006 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_006.col1, t_create_view_006.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view007;
-  View   |                                                      Create View                                                      | character_set_client | collation_connection 
----------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view007 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view007 AS                                                    +| UTF8                 | C
-         | SELECT  * FROM t_create_view_007 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_007.col1, t_create_view_007.col2); |                      | 
+  View   |                                                            Create View                                                            | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view007 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view007 AS                                                                +| UTF8                 | C
+         | SELECT  * FROM t_create_view_007 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_007.col1, t_create_view_007.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view008;
-  View   |                                                      Create View                                                      | character_set_client | collation_connection 
----------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view008 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view008 AS                                                    +| UTF8                 | C
-         | SELECT  * FROM t_create_view_008 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_008.col1, t_create_view_008.col2); |                      | 
+  View   |                                                            Create View                                                            | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view008 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view008 AS                                                                +| UTF8                 | C
+         | SELECT  * FROM t_create_view_008 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_008.col1, t_create_view_008.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view009;
-  View   |                                                      Create View                                                      | character_set_client | collation_connection 
----------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view009 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view009 AS                                                    +| UTF8                 | C
-         | SELECT  * FROM t_create_view_009 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_009.col1, t_create_view_009.col2); |                      | 
+  View   |                                                            Create View                                                            | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view009 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view009 AS                                                                +| UTF8                 | C
+         | SELECT  * FROM t_create_view_009 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_009.col1, t_create_view_009.col2) NULLS FIRST; |                      | 
 (1 row)
 
 show create view view010;
-  View   |                                                      Create View                                                      | character_set_client | collation_connection 
----------+-----------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
- view010 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view010 AS                                                    +| UTF8                 | C
-         | SELECT  * FROM t_create_view_010 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_010.col1, t_create_view_010.col2); |                      | 
+  View   |                                                            Create View                                                            | character_set_client | collation_connection 
+---------+-----------------------------------------------------------------------------------------------------------------------------------+----------------------+----------------------
+ view010 | CREATE OR REPLACE DEFINER = viewdefiner001 VIEW public.view010 AS                                                                +| UTF8                 | C
+         | SELECT  * FROM t_create_view_010 PARTITION (p1, p2, p3) ORDER BY ROW(t_create_view_010.col1, t_create_view_010.col2) NULLS FIRST; |                      | 
 (1 row)
 
 \dv view001;

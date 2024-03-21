@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_databaselock7;
 NOTICE:  database "b_databaselock7" does not exist, skipping
 create database b_databaselock7 dbcompatibility 'b';

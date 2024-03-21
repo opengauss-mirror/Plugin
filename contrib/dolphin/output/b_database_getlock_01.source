@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_databaselock1;
 NOTICE:  database "b_databaselock1" does not exist, skipping
 create database b_databaselock1 dbcompatibility 'b';
@@ -125,4 +126,5 @@ ERROR:  syntax error at or near ","
 LINE 1: select get_lock(@,1);
                          ^
 \c postgres
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_databaselock1;

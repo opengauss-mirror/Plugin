@@ -1,7 +1,7 @@
 --
 -- Test All Time type under 'b' compatibility
 --
-
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_time_type;
 create database b_time_type dbcompatibility 'b';
 \c b_time_type

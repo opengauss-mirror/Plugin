@@ -96,7 +96,7 @@ Options: orientation=row, compression=no
  f2     | integer |           | plain   |              | 
  f3     | integer |           | plain   |              | 
 Indexes:
-    "tbl_idx3" btree ((abs(f1) + 10) DESC, f2) TABLESPACE pg_default
+    "tbl_idx3" btree ((abs(f1) OPERATOR(dolphin_catalog.+) 10) DESC, f2) TABLESPACE pg_default
 Has OIDs: no
 Options: orientation=row, compression=no
 
@@ -276,7 +276,7 @@ PARTITION BY RANGE(f1)
  f2     | integer |           | plain   |              | 
  f3     | integer |           | plain   |              | 
 Indexes:
-    "part_expr_idx" btree ((abs(f1) + 1)) LOCAL TABLESPACE pg_default
+    "part_expr_idx" btree ((abs(f1) OPERATOR(dolphin_catalog.+) 1)) LOCAL TABLESPACE pg_default
 Partition By RANGE(f1)
 Number of partitions: 4 (View pg_partition to check each partition range.)
 Has OIDs: no
@@ -381,7 +381,7 @@ SUBPARTITION p_201902_b VALUES ( '2' )
  user_no    | character varying(30) | not null  | extended |              | 
  sales_amt  | integer               |           | plain    |              | 
 Indexes:
-    "subpart_btree_idx" btree ((sales_amt + 1) DESC, dept_code) LOCAL TABLESPACE pg_default
+    "subpart_btree_idx" btree ((sales_amt OPERATOR(dolphin_catalog.+) 1) DESC, dept_code) LOCAL TABLESPACE pg_default
 Partition By LIST(month_code) Subpartition By LIST(dept_code)
 Number of partitions: 2 (View pg_partition to check each partition range.)
 Number of subpartitions: 4 (View pg_partition to check each subpartition range.)
@@ -467,7 +467,7 @@ alter table  t1 add key idx_a_b_expr_t1 using btree((abs(a+b) + a) desc);
  a      | integer |           | plain   |              | 
  b      | integer |           | plain   |              | 
 Indexes:
-    "idx_a_b_expr_t1" btree ((abs(a + b) + a) DESC) TABLESPACE pg_default
+    "idx_a_b_expr_t1" btree ((abs(a OPERATOR(dolphin_catalog.+) b) OPERATOR(dolphin_catalog.+) a) DESC) TABLESPACE pg_default
     "idx_a_b_t1" btree (a, b DESC) TABLESPACE pg_default
     "t1_a_b_idx" btree (a, b) TABLESPACE pg_default
 Has OIDs: no
@@ -514,7 +514,7 @@ Indexes:
     "test_normal_index_pkey" PRIMARY KEY, btree (f11, f12) TABLESPACE pg_default
     "idx_f11_f12" btree (f11, f12) TABLESPACE pg_default
     "test_normal_index_abs_idx" btree (abs(f11)) TABLESPACE pg_default
-    "test_normal_index_expr_idx" btree ((f11 * 2 + 1)) TABLESPACE pg_default
+    "test_normal_index_expr_idx" btree (((f11 OPERATOR(dolphin_catalog.*) 2) OPERATOR(dolphin_catalog.+) 1)) TABLESPACE pg_default
     "test_normal_index_f11_f12_idx" btree (f11, f12) TABLESPACE pg_default
     "test_normal_index_f11_f12_idx1" btree (f11 DESC, f12) TABLESPACE pg_default
     "test_normal_index_f11_f12_idx2" btree (f11, f12) TABLESPACE pg_default
@@ -579,7 +579,7 @@ alter table test_partition_btree add key using btree((abs(f1)) desc, (f2 * 2 + 1
  f2     | integer |           | plain   |              | 
  f3     | integer |           | plain   |              | 
 Indexes:
-    "test_partition_btree_abs_expr_f3_idx" btree (abs(f1) DESC, (f2 * 2 + 1), f3) LOCAL TABLESPACE pg_default
+    "test_partition_btree_abs_expr_f3_idx" btree (abs(f1) DESC, ((f2 OPERATOR(dolphin_catalog.*) 2) OPERATOR(dolphin_catalog.+) 1), f3) LOCAL TABLESPACE pg_default
     "test_partition_btree_f1_f2_f3_idx" btree (f1 DESC, f2, f3) LOCAL TABLESPACE pg_default
     "test_partition_btree_f1_idx" btree (f1 DESC) LOCAL TABLESPACE pg_default
 Partition By RANGE(f1)

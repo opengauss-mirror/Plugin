@@ -659,10 +659,10 @@ CONTEXT:  referenced column: c
 select * from t_timestamp;
               c               
 ------------------------------
---?.*
---?.*
---?.*
---?.*
+ 0000-00-00 00:00:00+08:05:43
+ 0000-00-00 00:00:00+08:05:43
+ 0000-00-00 00:00:00+08:05:43
+ 0000-00-00 00:00:00+08:05:43
 (4 rows)
 
 update ignore t_timestamp set c = '12a34';
@@ -695,10 +695,10 @@ CONTEXT:  referenced column: c
 select * from t_timestamptz;
               c               
 ------------------------------
---?.*
---?.*
---?.*
---?.*
+ 0000-00-00 00:00:00+08:05:43
+ 0000-00-00 00:00:00+08:05:43
+ 0000-00-00 00:00:00+08:05:43
+ 0000-00-00 00:00:00+08:05:43
 (4 rows)
 
 update ignore t_timestamptz set c = '12a34';
@@ -1243,28 +1243,24 @@ select * from t_jsonb;
 -- type: bit
 create table t_bit(c bit);
 insert ignore into t_bit values('12a34');
-WARNING:  "2" is not a valid binary digit
-LINE 1: insert ignore into t_bit values('12a34');
-                                        ^
+WARNING:  bit string length 40 does not match type bit(1)
 CONTEXT:  referenced column: c
 insert ignore into t_bit values('');
 select * from t_bit;
  c 
 ---
- 0
+ 1
  0
 (2 rows)
 
 update ignore t_bit set c = '12a34';
-WARNING:  "2" is not a valid binary digit
-LINE 1: update ignore t_bit set c = '12a34';
-                                    ^
+WARNING:  bit string length 40 does not match type bit(1)
 CONTEXT:  referenced column: c
 select * from t_bit;
  c 
 ---
- 0
- 0
+ 1
+ 1
 (2 rows)
 
 -- test net types
@@ -1297,9 +1293,6 @@ insert ignore into net values(null, null, null);
 WARNING:  null value in column "c1" violates not-null constraint
 DETAIL:  Failing row contains (null, null, null).
 insert ignore into net values(1::int, 1.1::float, 'sdfdf'::time);
-WARNING:  invalid input syntax for type time: "sdfdf"
-LINE 1: insert ignore into net values(1::int, 1.1::float, 'sdfdf'::t...
-                                                          ^
 WARNING:  column "c1" is of type cidr but expression is of type integer. Data truncated automatically.
 CONTEXT:  referenced column: c1
 WARNING:  column "c2" is of type inet but expression is of type real. Data truncated automatically.
@@ -1311,9 +1304,6 @@ insert ignore into net values(null, null, null);
 WARNING:  null value in column "c1" violates not-null constraint
 DETAIL:  Failing row contains (null, null, null).
 insert ignore into net values(1::int, 1.1::float, 'sdfdf'::time);
-WARNING:  invalid input syntax for type time: "sdfdf"
-LINE 1: insert ignore into net values(1::int, 1.1::float, 'sdfdf'::t...
-                                                          ^
 WARNING:  column "c1" is of type cidr but expression is of type integer. Data truncated automatically.
 CONTEXT:  referenced column: c1
 WARNING:  column "c2" is of type inet but expression is of type real. Data truncated automatically.
@@ -1400,9 +1390,6 @@ insert ignore into hashvec values(null, null, null);
 WARNING:  null value in column "c1" violates not-null constraint
 DETAIL:  Failing row contains (null, null, null).
 insert ignore into hashvec values(1::int, 1.1::float, 'sdfdf'::time);
-WARNING:  invalid input syntax for type time: "sdfdf"
-LINE 1: ...rt ignore into hashvec values(1::int, 1.1::float, 'sdfdf'::t...
-                                                             ^
 WARNING:  column "c1" is of type hash16 but expression is of type integer. Data truncated automatically.
 CONTEXT:  referenced column: c1
 WARNING:  column "c2" is of type hash32 but expression is of type real. Data truncated automatically.
@@ -1414,9 +1401,6 @@ insert ignore into hashvec values(null, null, null);
 WARNING:  null value in column "c1" violates not-null constraint
 DETAIL:  Failing row contains (null, null, null).
 insert ignore into hashvec values(1::int, 1.1::float, 'sdfdf'::time);
-WARNING:  invalid input syntax for type time: "sdfdf"
-LINE 1: ...rt ignore into hashvec values(1::int, 1.1::float, 'sdfdf'::t...
-                                                             ^
 WARNING:  column "c1" is of type hash16 but expression is of type integer. Data truncated automatically.
 CONTEXT:  referenced column: c1
 WARNING:  column "c2" is of type hash32 but expression is of type real. Data truncated automatically.
@@ -1442,9 +1426,6 @@ insert ignore into varbit values(null);
 WARNING:  null value in column "c1" violates not-null constraint
 DETAIL:  Failing row contains (null).
 insert ignore into varbit values('sdfdf'::time);
-WARNING:  invalid input syntax for type time: "sdfdf"
-LINE 1: insert ignore into varbit values('sdfdf'::time);
-                                         ^
 WARNING:  column "c1" is of type bit varying but expression is of type time without time zone. Data truncated automatically.
 CONTEXT:  referenced column: c1
 set sql_ignore_strategy='overwrite_null';
@@ -1455,9 +1436,6 @@ insert ignore into varbit values(1::int);
 WARNING:  column "c1" is of type bit varying but expression is of type integer. Data truncated automatically.
 CONTEXT:  referenced column: c1
 insert ignore into varbit values('sdfdf'::time);
-WARNING:  invalid input syntax for type time: "sdfdf"
-LINE 1: insert ignore into varbit values('sdfdf'::time);
-                                         ^
 WARNING:  column "c1" is of type bit varying but expression is of type time without time zone. Data truncated automatically.
 CONTEXT:  referenced column: c1
 select * from varbit;

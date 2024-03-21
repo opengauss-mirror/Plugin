@@ -1,4 +1,5 @@
 ---- b compatibility case
+set dolphin.b_compatibility_mode = off;
 drop database if exists b_datetime_func_test3;
 create database b_datetime_func_test3 encoding 'UTF-8' lc_collate 'C' lc_ctype 'C' dbcompatibility 'B';
 \c b_datetime_func_test3
@@ -762,4 +763,5 @@ select * from test2 order by funcname;
 drop table test2;
 
 \c contrib_regression
+set dolphin.b_compatibility_mode = off;
 DROP DATABASE b_datetime_func_test3;

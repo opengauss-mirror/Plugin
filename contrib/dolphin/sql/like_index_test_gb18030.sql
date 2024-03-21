@@ -1,5 +1,6 @@
 set enable_indexscan = off;
 --GB18030
+set dolphin.b_compatibility_mode to off;
 drop database if exists test_gb18030;
 Create database test_gb18030 dbcompatibility='b' ENCODING=36 LC_COLLATE='zh_CN.gb18030' LC_CTYPE='zh_CN.gb18030';
 \c test_gb18030

@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_char_blank_test_2;
 NOTICE:  database "b_char_blank_test_2" does not exist, skipping
 create database b_char_blank_test_2 encoding 'UTF-8' lc_collate 'C' lc_ctype 'C' dbcompatibility 'B';
@@ -702,11 +703,11 @@ show string_hash_compatible;
 set enable_hashjoin to on;
 set enable_mergejoin to off;
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Hash Left Join
                Hash Cond: (a.a = b.a)
                ->  CStore Scan on t_char1 a
@@ -732,11 +733,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Hash Left Join
                Hash Cond: (a.a = (b.b)::bpchar)
                ->  CStore Scan on t_char1 a
@@ -762,11 +763,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Hash Left Join
                Hash Cond: ((a.a)::text = b.c)
                ->  CStore Scan on t_char1 a
@@ -792,11 +793,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Hash Left Join
                Hash Cond: ((a.b)::bpchar = b.a)
                ->  CStore Scan on t_char1 a
@@ -822,11 +823,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Hash Left Join
                Hash Cond: ((a.b)::text = (b.b)::text)
                ->  CStore Scan on t_char1 a
@@ -852,11 +853,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Hash Left Join
                Hash Cond: ((a.b)::text = b.c)
                ->  CStore Scan on t_char1 a
@@ -882,11 +883,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Hash Left Join
                Hash Cond: (a.c = (b.a)::text)
                ->  CStore Scan on t_char1 a
@@ -912,11 +913,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Hash Left Join
                Hash Cond: (a.c = (b.b)::text)
                ->  CStore Scan on t_char1 a
@@ -942,11 +943,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Hash Left Join
                Hash Cond: (a.c = b.c)
                ->  CStore Scan on t_char1 a
@@ -974,11 +975,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 set enable_hashjoin to off;
 set enable_mergejoin to on;
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Merge Left Join
                Merge Cond: (a.a = b.a)
                ->  Vector Sort
@@ -1008,11 +1009,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Merge Left Join
                Merge Cond: (a.a = (b.b)::bpchar)
                ->  Vector Sort
@@ -1042,11 +1043,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Merge Left Join
                Merge Cond: (((a.a)::text) = b.c)
                ->  Vector Sort
@@ -1076,11 +1077,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Merge Left Join
                Merge Cond: ((a.b)::bpchar = b.a)
                ->  Vector Sort
@@ -1110,11 +1111,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Merge Left Join
                Merge Cond: ((a.b)::text = (b.b)::text)
                ->  Vector Sort
@@ -1144,11 +1145,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Merge Left Join
                Merge Cond: ((a.b)::text = b.c)
                ->  Vector Sort
@@ -1178,11 +1179,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Merge Left Join
                Merge Cond: (a.c = (b.a)::text)
                ->  Vector Sort
@@ -1212,11 +1213,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Merge Left Join
                Merge Cond: (a.c = (b.b)::text)
                ->  Vector Sort
@@ -1246,11 +1247,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Merge Left Join
                Merge Cond: (a.c = b.c)
                ->  Vector Sort
@@ -1281,11 +1282,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 
 set enable_mergejoin to off;
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Nest Loop Left Join
                Join Filter: (a.a = b.a)
                ->  CStore Scan on t_char1 a
@@ -1312,11 +1313,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Nest Loop Left Join
                Join Filter: (a.a = (b.b)::bpchar)
                ->  CStore Scan on t_char1 a
@@ -1343,11 +1344,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.a=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Nest Loop Left Join
                Join Filter: ((a.a)::text = b.c)
                ->  CStore Scan on t_char1 a
@@ -1374,11 +1375,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Nest Loop Left Join
                Join Filter: ((a.b)::bpchar = b.a)
                ->  CStore Scan on t_char1 a
@@ -1405,11 +1406,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Nest Loop Left Join
                Join Filter: ((a.b)::text = (b.b)::text)
                ->  CStore Scan on t_char1 a
@@ -1436,11 +1437,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.b=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Nest Loop Left Join
                Join Filter: ((a.b)::text = b.c)
                ->  CStore Scan on t_char1 a
@@ -1467,11 +1468,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.a order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Nest Loop Left Join
                Join Filter: (a.c = (b.a)::text)
                ->  CStore Scan on t_char1 a
@@ -1498,11 +1499,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.b order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Nest Loop Left Join
                Join Filter: (a.c = (b.b)::text)
                ->  CStore Scan on t_char1 a
@@ -1529,11 +1530,11 @@ select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,lengt
 (13 rows)
 
 explain(costs off) select a.a,length(a.a),a.b,length(a.b),a.c,length(a.c),b.a,length(b.a),b.b,length(b.b),b.c,length(b.c) from t_char1 a left join t_char2 b on a.c=b.c order by 1,2,3,4,5,6,7,8,9,10,11,12;
-                                                                        QUERY PLAN                                                                        
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                                                QUERY PLAN                                                                                                                                                
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: a.a, (length(a.a)), a.b, (length((a.b)::text)), a.c, (length(a.c)), b.a, (length(b.a)), b.b, (length((b.b)::text)), b.c, (length(b.c))
+         Sort Key: a.a NULLS FIRST, (length(a.a)) NULLS FIRST, a.b NULLS FIRST, (length((a.b)::text)) NULLS FIRST, a.c NULLS FIRST, (length(a.c)) NULLS FIRST, b.a NULLS FIRST, (length(b.a)) NULLS FIRST, b.b NULLS FIRST, (length((b.b)::text)) NULLS FIRST, b.c NULLS FIRST, (length(b.c)) NULLS FIRST
          ->  Vector Nest Loop Left Join
                Join Filter: (a.c = b.c)
                ->  CStore Scan on t_char1 a

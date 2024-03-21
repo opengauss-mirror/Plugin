@@ -141,11 +141,9 @@ SELECT NAME_CONST('0'::boolean, 'test');
 (1 row)
 
 SELECT NAME_CONST('2023-06-01 00:23:59'::date, 'test');
- 2023-06-01 
-------------
- test
-(1 row)
-
+ERROR:  Incorrect arguments to NAME_CONST
+HINT:  'NAME_CONST' function does not accept input of type FuncExpr
+CONTEXT:  referenced column: name_const
 SELECT NAME_CONST('test', '2023-06-01 00:23:59'::time);
    test   
 ----------
@@ -237,7 +235,7 @@ SELECT NAME_CONST('test'::clob, 123);
 (1 row)
 
 SELECT NAME_CONST('test', '2023-06-01 00:23:59'::character(15));
-WARNING:  value too long for type character(15)
+WARNING:  value too long for type character varying(15)
 CONTEXT:  referenced column: name_const
       test       
 -----------------
@@ -245,7 +243,7 @@ CONTEXT:  referenced column: name_const
 (1 row)
 
 SELECT NAME_CONST('2023-06-01 00:23:59'::character(15), 'test');
-WARNING:  value too long for type character(15)
+WARNING:  value too long for type character varying(15)
 CONTEXT:  referenced column: name_const
  2023-06-01 00:2 
 -----------------
@@ -253,7 +251,7 @@ CONTEXT:  referenced column: name_const
 (1 row)
 
 SELECT NAME_CONST('2023-06-01 00:23:59'::char(10), 'test');
-WARNING:  value too long for type character(10)
+WARNING:  value too long for type character varying(10)
 CONTEXT:  referenced column: name_const
  2023-06-01 
 ------------
@@ -373,18 +371,14 @@ LINE 1: SELECT NAME_CONST('test', 1E+1001);
                                   ^
 SELECT NAME_CONST('test', '9999-99-99 99:99:99'::time); --ERROR
 WARNING:  date/time field value out of range: "9999-99-99 99:99:99"
-LINE 1: SELECT NAME_CONST('test', '9999-99-99 99:99:99'::time);
-                                  ^
 CONTEXT:  referenced column: name_const
-   test   
-----------
- 00:00:00
+ test 
+------
+ 
 (1 row)
 
 SELECT NAME_CONST('9999-99-99 99:99:99'::time, 'test'); --ERROR
 WARNING:  date/time field value out of range: "9999-99-99 99:99:99"
-LINE 1: SELECT NAME_CONST('9999-99-99 99:99:99'::time, 'test');
-                          ^
 CONTEXT:  referenced column: name_const
  00:00:00 
 ----------

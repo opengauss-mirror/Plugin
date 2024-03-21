@@ -1,4 +1,5 @@
 --create table partition
+set dolphin.b_compatibility_mode to off;
 drop database if exists dump_table_partition_db;
 drop database if exists restore_table_partition_db;
 create database dump_table_partition_db with dbcompatibility = 'B';

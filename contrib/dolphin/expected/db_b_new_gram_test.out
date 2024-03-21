@@ -1275,23 +1275,23 @@ select (a.Sno+1) as no,a.Sname as name , (select  Degree from Score where Cno= '
 
 --multi var
 select (a.Sno+a.Sname) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
-WARNING:  invalid input syntax for type numeric: "李军"
+WARNING:  invalid input syntax for type double precision: "李军"
 CONTEXT:  referenced column: no
-WARNING:  invalid input syntax for type numeric: "李军"
+WARNING:  invalid input syntax for type double precision: "李军"
 CONTEXT:  referenced column: Degree
-WARNING:  invalid input syntax for type numeric: "李军"
+WARNING:  invalid input syntax for type double precision: "李军"
 CONTEXT:  referenced column: Degree
-WARNING:  invalid input syntax for type numeric: "陆君"
+WARNING:  invalid input syntax for type double precision: "陆君"
 CONTEXT:  referenced column: no
-WARNING:  invalid input syntax for type numeric: "陆君"
+WARNING:  invalid input syntax for type double precision: "陆君"
 CONTEXT:  referenced column: Degree
-WARNING:  invalid input syntax for type numeric: "陆君"
+WARNING:  invalid input syntax for type double precision: "陆君"
 CONTEXT:  referenced column: Degree
-WARNING:  invalid input syntax for type numeric: "匡明"
+WARNING:  invalid input syntax for type double precision: "匡明"
 CONTEXT:  referenced column: no
-WARNING:  invalid input syntax for type numeric: "匡明"
+WARNING:  invalid input syntax for type double precision: "匡明"
 CONTEXT:  referenced column: Degree
-WARNING:  invalid input syntax for type numeric: "匡明"
+WARNING:  invalid input syntax for type double precision: "匡明"
 CONTEXT:  referenced column: Degree
  no  | name | Degree 
 -----+------+--------
@@ -1302,6 +1302,18 @@ CONTEXT:  referenced column: Degree
 
 --func
 select (a.Sno is null) as no,a.Sname as name , (select  Degree from Score where Cno= '3-105' and S_no=no) from Student as a;
+WARNING:  Truncated incorrect DOUBLE value: 101
+CONTEXT:  referenced column: Degree
+WARNING:  Truncated incorrect DOUBLE value: 103
+CONTEXT:  referenced column: Degree
+WARNING:  Truncated incorrect DOUBLE value: 101
+CONTEXT:  referenced column: Degree
+WARNING:  Truncated incorrect DOUBLE value: 103
+CONTEXT:  referenced column: Degree
+WARNING:  Truncated incorrect DOUBLE value: 101
+CONTEXT:  referenced column: Degree
+WARNING:  Truncated incorrect DOUBLE value: 103
+CONTEXT:  referenced column: Degree
  no | name | Degree 
 ----+------+--------
  f  | 李军 |       

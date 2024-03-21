@@ -1,4 +1,5 @@
 --数据类型测试用例
+set dolphin.b_compatibility_mode to off;
 drop database if exists dump_data_type_db;
 NOTICE:  database "dump_data_type_db" does not exist, skipping
 drop database if exists restore_data_type_db;

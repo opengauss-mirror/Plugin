@@ -101,17 +101,17 @@ explain (costs off) select
                 n_name
         order by
                 revenue desc;
-                                                                   QUERY PLAN                                                                   
-------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                   QUERY PLAN                                                                                    
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
-         Sort Key: (sum((lineitem.l_extendedprice * (1::numeric - lineitem.l_discount)))) DESC
-         ->  Vector Sonic Hash Aggregate
+         Sort Key: (sum((lineitem.l_extendedprice OPERATOR(dolphin_catalog.*) (1::numeric - lineitem.l_discount)))) DESC NULLS LAST
+         ->  Vector Hash Aggregate
                Group By Key: nation.n_name
                ->  Vector Sonic Hash Join
                      Hash Cond: ((orders.o_custkey = customer.c_custkey) AND (orders.o_orderkey = lineitem.l_orderkey))
                      ->  CStore Scan on orders
-                           Filter: ((o_orderdate >= '1994-01-01'::date) AND (o_orderdate < '1995-01-01 00:00:00'::timestamp without time zone))
+                           Filter: ((o_orderdate >= ('1994-01-01' COLLATE "default")::date) AND (o_orderdate < (('1994-01-01' COLLATE "default")::date + '@ 1 year'::interval)))
                      ->  Vector Sonic Hash Join
                            Hash Cond: (lineitem.l_suppkey = supplier.s_suppkey)
                            ->  CStore Scan on lineitem

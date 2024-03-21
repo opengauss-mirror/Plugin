@@ -197,4 +197,5 @@ SELECT count(*) FROM performance_schema.table_io_waits_summary_by_index_usage;
 \c contrib_regression
 DROP user monadmin01 CASCADE;
 DROP user user01 CASCADE;
+set dolphin.b_compatibility_mode to off;
 DROP DATABASE mysqldb01;

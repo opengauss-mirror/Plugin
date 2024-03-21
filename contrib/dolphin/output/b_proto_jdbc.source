@@ -5,6 +5,7 @@
 2
 -- dowload mysql-connector-java
 \! sh @abs_builddir@/proto_jdbc/install-jars.sh > /dev/null 2>&1
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_databaseproto;
 NOTICE:  database "b_databaseproto" does not exist, skipping
 create database b_databaseproto dbcompatibility 'b';
@@ -419,9 +420,9 @@ c35:CHAR:null
 update failed:invalid input syntax for type tinyint: "abc"
 delete failed:invalid input syntax for type tinyint: "abc"
 select * from t3;
- c1 |  c2  | c3 | c4 | c5 | c6 | c7 | c8 | c9  | c10 |    c11     | c12 |    c13     |   c15   |   c16    | c18  |    c19     |   c20    |            c21             |           c22           |    c23     |   c24    |    c25     |    c26     |   c27    |        c28         | c29  |  c30   |    c31     | c32 | c33 | c34 |      c35       
-----+------+----+----+----+----+----+----+-----+-----+------------+-----+------------+---------+----------+------+------------+----------+----------------------------+-------------------------+------------+----------+------------+------------+----------+--------------------+------+--------+------------+-----+-----+-----+----------------
-  1 | 2000 | 1  | 4  |  5 | 6  |  7 | 8  | 9.9 |  10 | 0001100011 | t   | char       | varchar | nvarchar | 2023 | 2023-02-27 | 14:46:30 | 2023-03-07 00:16:16.666-08 | 2023-03-07 16:16:16.666 | \x626c6f62 | 626C6F62 | \x626c6f62 | \x626c6f62 | (1000,0) | ((1000,0),(200,3)) | text | 20.000 | {"k": "v"} | a   | a   | c   | openGauss name
+ c1 |  c2  | c3 | c4 | c5 | c6 | c7 | c8 | c9  | c10 |    c11     | c12 |    c13     |   c15   |   c16    | c18  |    c19     |   c20    |            c21             |           c22           |    c23     |    c24     |    c25     |    c26     |   c27    |        c28         | c29  |  c30   |    c31     | c32 | c33 | c34 |      c35       
+----+------+----+----+----+----+----+----+-----+-----+------------+-----+------------+---------+----------+------+------------+----------+----------------------------+-------------------------+------------+------------+------------+------------+----------+--------------------+------+--------+------------+-----+-----+-----+----------------
+  1 | 2000 | 1  | 4  |  5 | 6  |  7 | 8  | 9.9 |  10 | 0001100011 | t   | char       | varchar | nvarchar | 2023 | 2023-02-27 | 14:46:30 | 2023-03-07 00:16:16.666-08 | 2023-03-07 16:16:16.666 | \x626c6f62 | \x626c6f62 | \x626c6f62 | \x626c6f62 | (1000,0) | ((1000,0),(200,3)) | text | 20.000 | {"k": "v"} | a   | a   | c   | openGauss name
 (1 row)
 
 \! @abs_bindir@/../jre/bin/java -cp $CLASSPATH:@abs_builddir@/proto_jdbc/class/mysql-connector-java-5.1.47.jar:@abs_builddir@/proto_jdbc/class/. MySQLJdbcAutoCommitTest localhost $dp db_jdbc proto_user Gauss@123

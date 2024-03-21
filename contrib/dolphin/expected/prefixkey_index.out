@@ -1,5 +1,6 @@
 create database prefix_index_db WITH ENCODING 'UTF-8' LC_COLLATE='C' LC_CTYPE='C' dbcompatibility 'B';
 \c prefix_index_db
+set dolphin.b_compatibility_mode to off;
 --
 -- CREATE_INDEX
 --
@@ -628,7 +629,7 @@ INSERT INTO test_prefix_table VALUES(20, 'Y', 'Y', 'Y', 'Y', '59', HEXTORAW('59'
 INSERT INTO test_prefix_table VALUES(20, '高斯数据库-210', '高斯数据库-210', '高斯数据库-210', '高斯数据库-210', 'e9ab98e696afe695b0e68daee5ba932d323130', HEXTORAW('e9ab98e696afe695b0e68daee5ba932d323130'),E'\\xe9ab98e696afe695b0e68daee5ba932d323130');
 INSERT INTO test_prefix_table VALUES(20, '开源数据库-210', '开源数据库-210', '开源数据库-210', '开源数据库-210', 'e5bc80e6ba90e695b0e68daee5ba932d323130', HEXTORAW('e5bc80e6ba90e695b0e68daee5ba932d323130'),E'\\xe5bc80e6ba90e695b0e68daee5ba932d323130');
 INSERT INTO test_prefix_table VALUES(20, '高', '高', '高', '高', 'e9ab98', HEXTORAW('e9ab98'),E'\\xe9ab98');
-CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_table (fraw(9));
+CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_table (fraw(18));
 \d+ test_prefix_table
                           Table "public.test_prefix_table"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
@@ -642,7 +643,7 @@ CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_table (fraw(9));
  fraw   | raw                   |           | extended |              | 
  fbytea | bytea                 |           | extended |              | 
 Indexes:
-    "prefix_index_fraw" UNIQUE, btree (fraw(9)) TABLESPACE pg_default
+    "prefix_index_fraw" UNIQUE, btree (fraw(18)) TABLESPACE pg_default
     "prefix_index_fblob" btree (fblob(5)) TABLESPACE pg_default
     "prefix_index_fchar_fbytea" btree (fchar(5), fbytea(5)) TABLESPACE pg_default
     "prefix_index_fclob" btree (fclob(5)) TABLESPACE pg_default
@@ -666,7 +667,7 @@ select pg_get_tabledef('test_prefix_table'::regclass);
      fbytea bytea                                                                                                    +
  )                                                                                                                   +
  WITH (orientation=row, compression=no);                                                                             +
- CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_table USING btree (fraw(9)) TABLESPACE pg_default;             +
+ CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_table USING btree (fraw(18)) TABLESPACE pg_default;            +
  CREATE INDEX prefix_index_fblob ON test_prefix_table USING btree (fblob(5)) TABLESPACE pg_default;                  +
  CREATE INDEX prefix_index_fclob ON test_prefix_table USING btree (fclob(5)) TABLESPACE pg_default;                  +
  CREATE INDEX prefix_index_ftext ON test_prefix_table USING btree (ftext(5)) TABLESPACE pg_default;                  +
@@ -677,6 +678,7 @@ select pg_get_tabledef('test_prefix_table'::regclass);
 set enable_seqscan=false;
 set enable_opfusion=false;
 set enable_partition_opfusion=false;
+set dolphin.b_compatibility_mode to on;
 SELECT ftext FROM test_prefix_table where ftext like 'XXXXX%' ORDER BY 1;
  ftext 
 -------
@@ -710,12 +712,12 @@ SELECT ftext FROM test_prefix_table where ftext like 'XXXXX%' ORDER BY 1;
 (5 rows)
 
 SELECT fblob FROM test_prefix_table where fblob < '58585858582D333030' ORDER BY 1;
-       fblob        
---------------------
- 58585858582D303030
- 58585858582D313131
- 58585858582D323130
- 58585858582D323131
+                 fblob                  
+----------------------------------------
+ \x353835383538353835383244333033303330
+ \x353835383538353835383244333133313331
+ \x353835383538353835383244333233313330
+ \x353835383538353835383244333233313331
 (4 rows)
 
 SELECT fchar, fbytea FROM test_prefix_table where (fchar, fbytea)= ('XXXXX-211', 'XXXXX-211') ORDER BY 1,2;
@@ -737,12 +739,12 @@ SELECT ftext FROM test_prefix_table where ftext like 'AAAAA%' ORDER BY 1;
 (5 rows)
 
 SELECT fblob FROM test_prefix_table where fblob < '58585858582D333030' ORDER BY 1;
-       fblob        
---------------------
- 58585858582D303030
- 58585858582D313131
- 58585858582D323130
- 58585858582D323131
+                 fblob                  
+----------------------------------------
+ \x353835383538353835383244333033303330
+ \x353835383538353835383244333133313331
+ \x353835383538353835383244333233313330
+ \x353835383538353835383244333233313331
 (4 rows)
 
 SELECT fchar, fbytea FROM test_prefix_table where (fchar, fbytea)= ('AAAAA-211', 'XXXXX-211') ORDER BY 1,2;
@@ -763,11 +765,11 @@ SELECT ftext FROM test_prefix_table where ftext like 'AAAAA%' ORDER BY 1;
 (4 rows)
 
 SELECT fblob FROM test_prefix_table where fblob < '58585858582D333030' ORDER BY 1;
-       fblob        
---------------------
- 58585858582D303030
- 58585858582D313131
- 58585858582D323130
+                 fblob                  
+----------------------------------------
+ \x353835383538353835383244333033303330
+ \x353835383538353835383244333133313331
+ \x353835383538353835383244333233313330
 (3 rows)
 
 SELECT fchar, fbytea FROM test_prefix_table where (fchar, fbytea)= ('AAAAA-211', 'XXXXX-211') ORDER BY 1,2;
@@ -783,7 +785,7 @@ SELECT ftext FROM test_prefix_table where ftext like 'YYYY%' ORDER BY 1;
                                 QUERY PLAN                                
 --------------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: ((ftext >= 'YYYY'::text) AND (ftext < 'YYYZ'::text))
          Filter: (ftext ~~ 'YYYY%'::text)
@@ -804,7 +806,7 @@ SELECT ftext FROM test_prefix_table where ftext like 'YYYYY%' ORDER BY 1;
                            QUERY PLAN                           
 ----------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: (ftext = 'YYYYY'::text)
          Filter: (ftext ~~ 'YYYYY%'::text)
@@ -825,7 +827,7 @@ SELECT ftext FROM test_prefix_table where ftext like 'YYYYY-1%' ORDER BY 1;
                            QUERY PLAN                           
 ----------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: (ftext = 'YYYYY'::text)
          Filter: (ftext ~~ 'YYYYY-1%'::text)
@@ -842,7 +844,7 @@ SELECT ftext FROM test_prefix_table where ftext like 'YYYYY-210' ORDER BY 1;
                            QUERY PLAN                           
 ----------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: (ftext = 'YYYYY'::text)
          Filter: (ftext ~~ 'YYYYY-210'::text)
@@ -859,7 +861,7 @@ SELECT ftext FROM test_prefix_table where ftext like '开%' ORDER BY 1;
                               QUERY PLAN                              
 ----------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: ((ftext >= '开'::text) AND (ftext < '弁'::text))
          Filter: (ftext ~~ '开%'::text)
@@ -876,7 +878,7 @@ SELECT ftext FROM test_prefix_table where ftext like '开源数据库%' ORDER BY
                            QUERY PLAN                           
 ----------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: (ftext = '开源数据库'::text)
          Filter: (ftext ~~ '开源数据库%'::text)
@@ -893,7 +895,7 @@ SELECT ftext FROM test_prefix_table where ftext like '开源数据库-2%' ORDER 
                            QUERY PLAN                           
 ----------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: (ftext = '开源数据库'::text)
          Filter: (ftext ~~ '开源数据库-2%'::text)
@@ -925,7 +927,7 @@ SELECT ftext FROM test_prefix_table where ftext > '开' ORDER BY 1;
                            QUERY PLAN                           
 ----------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: (ftext >= '开'::text)
          Filter: (ftext > '开'::text)
@@ -944,7 +946,7 @@ SELECT ftext FROM test_prefix_table where ftext > '开源数据库' ORDER BY 1;
                            QUERY PLAN                           
 ----------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: (ftext >= '开源数据库'::text)
          Filter: (ftext > '开源数据库'::text)
@@ -963,7 +965,7 @@ SELECT ftext FROM test_prefix_table where ftext > '开源数据库-210' ORDER BY
                            QUERY PLAN                           
 ----------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: (ftext >= '开源数据库'::text)
          Filter: (ftext > '开源数据库-210'::text)
@@ -981,7 +983,7 @@ SELECT ftext FROM test_prefix_table where ftext < '开' ORDER BY 1;
                            QUERY PLAN                           
 ----------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: (ftext <= '开'::text)
          Filter: (ftext < '开'::text)
@@ -1014,7 +1016,7 @@ SELECT ftext FROM test_prefix_table where ftext < '开源数据库' ORDER BY 1;
                            QUERY PLAN                           
 ----------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: (ftext <= '开源数据库'::text)
          Filter: (ftext < '开源数据库'::text)
@@ -1047,7 +1049,7 @@ SELECT ftext FROM test_prefix_table where ftext < '开源数据库-210' ORDER BY
                            QUERY PLAN                           
 ----------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: (ftext <= '开源数据库'::text)
          Filter: (ftext < '开源数据库-210'::text)
@@ -1080,7 +1082,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea ~~ 'YY%' ORDER BY 1;
                                     QUERY PLAN                                    
 ----------------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: ((fbytea >= '\x5959'::bytea) AND (fbytea < '\x595a'::bytea))
          Filter: (fbytea ~~ '\x595925'::bytea)
@@ -1101,7 +1103,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea like 'YYYYY%' ORDER BY 1;
                                QUERY PLAN                                
 -------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: (fbytea = '\x5959595959'::bytea)
          Filter: (fbytea ~~ '\x595959595925'::bytea)
@@ -1122,7 +1124,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea ~~ 'YYYYY-%' ORDER BY 1;
                                QUERY PLAN                                
 -------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: (fbytea = '\x5959595959'::bytea)
          Filter: (fbytea ~~ '\x59595959592d25'::bytea)
@@ -1143,7 +1145,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea like 'YYYYY-111' ORDER BY 1;
                                QUERY PLAN                                
 -------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: (fbytea = '\x5959595959'::bytea)
          Filter: (fbytea ~~ '\x59595959592d313131'::bytea)
@@ -1160,7 +1162,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea like '高%' ORDER BY 1;
                                       QUERY PLAN                                      
 --------------------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: ((fbytea >= '\xe9ab98'::bytea) AND (fbytea < '\xe9ab99'::bytea))
          Filter: (fbytea ~~ '\xe9ab9825'::bytea)
@@ -1178,7 +1180,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea ~~ '开源数据库%' ORDER 
                                QUERY PLAN                                
 -------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: (fbytea = '\xe5bc80e6ba'::bytea)
          Filter: (fbytea ~~ '\xe5bc80e6ba90e695b0e68daee5ba9325'::bytea)
@@ -1195,7 +1197,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea like '高斯数据库-%' ORD
                                 QUERY PLAN                                 
 ---------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: (fbytea = '\xe9ab98e696'::bytea)
          Filter: (fbytea ~~ '\xe9ab98e696afe695b0e68daee5ba932d25'::bytea)
@@ -1212,7 +1214,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea ~~ '开源数据库-210' ORD
                                   QUERY PLAN                                   
 -------------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: (fbytea = '\xe5bc80e6ba'::bytea)
          Filter: (fbytea ~~ '\xe5bc80e6ba90e695b0e68daee5ba932d323130'::bytea)
@@ -1259,7 +1261,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea > 'Y' ORDER BY 1;
                                QUERY PLAN                                
 -------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: (fbytea >= '\x59'::bytea)
          Filter: (fbytea > '\x59'::bytea)
@@ -1290,7 +1292,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea > 'YYYYY' ORDER BY 1;
                                QUERY PLAN                                
 -------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: (fbytea >= '\x5959595959'::bytea)
          Filter: (fbytea > '\x5959595959'::bytea)
@@ -1321,7 +1323,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea > 'YYYYY-210' ORDER BY 1;
                                QUERY PLAN                                
 -------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: (fbytea >= '\x5959595959'::bytea)
          Filter: (fbytea > '\x59595959592d323130'::bytea)
@@ -1349,7 +1351,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea < 'Y' ORDER BY 1;
                                QUERY PLAN                                
 -------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: (fbytea <= '\x59'::bytea)
          Filter: (fbytea < '\x59'::bytea)
@@ -1369,7 +1371,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea < 'YYYYY' ORDER BY 1;
                                QUERY PLAN                                
 -------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: (fbytea <= '\x5959595959'::bytea)
          Filter: (fbytea < '\x5959595959'::bytea)
@@ -1390,7 +1392,7 @@ SELECT fbytea FROM test_prefix_table t where fbytea < 'YYYYY-210' ORDER BY 1;
                                QUERY PLAN                                
 -------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table t
          Index Cond: (fbytea <= '\x5959595959'::bytea)
          Filter: (fbytea < '\x59595959592d323130'::bytea)
@@ -1413,7 +1415,7 @@ SELECT fchar FROM test_prefix_table where fchar ~ '^开' ORDER BY 1;
                                 QUERY PLAN                                
 --------------------------------------------------------------------------
  Sort
-   Sort Key: fchar
+   Sort Key: fchar NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table
          Index Cond: ((fchar >= '开'::bpchar) AND (fchar < '弁'::bpchar))
          Filter: (fchar ~ '^开'::text)
@@ -1430,7 +1432,7 @@ SELECT fchar FROM test_prefix_table where fchar <= 'YYYYY-100' ORDER BY 1;
                               QUERY PLAN                               
 -----------------------------------------------------------------------
  Sort
-   Sort Key: fchar
+   Sort Key: fchar NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table
          Index Cond: (fchar <= 'YYYYY'::bpchar)
          Filter: (fchar <= 'YYYYY-100'::bpchar)
@@ -1452,7 +1454,7 @@ SELECT fchar FROM test_prefix_table where fchar <= 'YYYYY' ORDER BY 1;
                               QUERY PLAN                               
 -----------------------------------------------------------------------
  Sort
-   Sort Key: fchar
+   Sort Key: fchar NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_table
          Index Cond: (fchar <= 'YYYYY'::bpchar)
          Filter: (fchar <= 'YYYYY'::bpchar)
@@ -1473,7 +1475,7 @@ SELECT fclob FROM test_prefix_table t where fclob < 'ZZZZZ-210' ORDER BY 1;
                             QUERY PLAN                            
 ------------------------------------------------------------------
  Sort
-   Sort Key: fclob
+   Sort Key: fclob NULLS FIRST
    ->  Index Scan using prefix_index_fclob on test_prefix_table t
          Index Cond: ((fclob)::text <= 'ZZZZZ'::text)
          Filter: ((fclob)::text < 'ZZZZZ-210'::text)
@@ -1503,7 +1505,7 @@ SELECT fclob FROM test_prefix_table t where fclob < 'Z' ORDER BY 1;
                             QUERY PLAN                            
 ------------------------------------------------------------------
  Sort
-   Sort Key: fclob
+   Sort Key: fclob NULLS FIRST
    ->  Index Scan using prefix_index_fclob on test_prefix_table t
          Index Cond: ((fclob)::text <= 'Z'::text)
          Filter: ((fclob)::text < 'Z'::text)
@@ -1529,7 +1531,7 @@ SELECT ftext FROM test_prefix_table t where fvchar >= 'ZZZZZ-210' ORDER BY 1;
                             QUERY PLAN                             
 -------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_fvchar on test_prefix_table t
          Index Cond: ((fvchar)::text >= 'ZZZZZ'::text)
          Filter: ((fvchar)::text >= 'ZZZZZ-210'::text)
@@ -1551,7 +1553,7 @@ SELECT ftext FROM test_prefix_table t where fvchar >= 'ZZZZZ' ORDER BY 1;
                             QUERY PLAN                             
 -------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_fvchar on test_prefix_table t
          Index Cond: ((fvchar)::text >= 'ZZZZZ'::text)
          Filter: ((fvchar)::text >= 'ZZZZZ'::text)
@@ -1576,7 +1578,7 @@ SELECT ftext FROM test_prefix_table t where fvchar > 'ZZZZZ-' and fvchar <> 'ZZZ
                                           QUERY PLAN                                           
 -----------------------------------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_fvchar on test_prefix_table t
          Index Cond: ((fvchar)::text >= 'ZZZZZ'::text)
          Filter: (((fvchar)::text > 'ZZZZZ-'::text) AND ((fvchar)::text <> 'ZZZZZ-210'::text))
@@ -1600,7 +1602,7 @@ SELECT ftext FROM test_prefix_table t where fvchar > left('ZZZZZ-211', 7) and fv
                                            QUERY PLAN                                           
 ------------------------------------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_fvchar on test_prefix_table t
          Index Cond: ((fvchar)::text >= 'ZZZZZ'::text)
          Filter: (((fvchar)::text > 'ZZZZZ-2'::text) AND ((fvchar)::text <> 'ZZZZZ-211'::text))
@@ -1621,34 +1623,34 @@ SELECT fblob FROM test_prefix_table t where fblob IS NOT NULL ORDER BY 1;
                             QUERY PLAN                            
 ------------------------------------------------------------------
  Sort
-   Sort Key: fblob
+   Sort Key: fblob NULLS FIRST
    ->  Index Scan using prefix_index_fblob on test_prefix_table t
          Index Cond: (fblob IS NOT NULL)
 (4 rows)
 
 SELECT fblob FROM test_prefix_table t where fblob IS NOT NULL ORDER BY 1;
-                 fblob                  
-----------------------------------------
- 58585858582D303030
- 58585858582D313131
- 58585858582D323130
- 58585858582D333030
- 59
- 59595959592D303030
- 59595959592D313131
- 59595959592D323130
- 59595959592D323131
- 59595959592D333030
- 5A
- 5A5A5A5A5A2D303030
- 5A5A5A5A5A2D313131
- 5A5A5A5A5A2D313233
- 5A5A5A5A5A2D323130
- 5A5A5A5A5A2D323131
- 5A5A5A5A5A2D333030
- E5BC80E6BA90E695B0E68DAEE5BA932D323130
- E9AB98
- E9AB98E696AFE695B0E68DAEE5BA932D323130
+                  fblob                   
+------------------------------------------
+ \x353835383538353835383244333033303330
+ \x353835383538353835383244333133313331
+ \x353835383538353835383244333233313330
+ \x353835383538353835383244333333303330
+ \x59
+ \x59595959592d303030
+ \x59595959592d313131
+ \x59595959592d323130
+ \x59595959592d323131
+ \x59595959592d333030
+ \x5a
+ \x5a5a5a5a5a2d303030
+ \x5a5a5a5a5a2d313131
+ \x5a5a5a5a5a2d313233
+ \x5a5a5a5a5a2d323130
+ \x5a5a5a5a5a2d323131
+ \x5a5a5a5a5a2d333030
+ \xe5bc80e6ba90e695b0e68daee5ba932d323130
+ \xe9ab98
+ \xe9ab98e696afe695b0e68daee5ba932d323130
 (20 rows)
 
 EXPLAIN (costs false)
@@ -1657,34 +1659,34 @@ SELECT DISTINCT fraw FROM test_prefix_table t where fraw IS NOT NULL ORDER BY 1;
 -----------------------------------------------------------------------
  Unique
    ->  Sort
-         Sort Key: fraw
+         Sort Key: fraw NULLS FIRST
          ->  Index Scan using prefix_index_fraw on test_prefix_table t
                Index Cond: (fraw IS NOT NULL)
 (5 rows)
 
 SELECT DISTINCT fraw FROM test_prefix_table t where fraw IS NOT NULL ORDER BY 1;
-                  fraw                  
-----------------------------------------
- 58585858582D303030
- 58585858582D313131
- 58585858582D323130
- 58585858582D333030
- 59
- 59595959592D303030
- 59595959592D313131
- 59595959592D323130
- 59595959592D323131
- 59595959592D333030
- 5A
- 5A5A5A5A5A2D303030
- 5A5A5A5A5A2D313131
- 5A5A5A5A5A2D313233
- 5A5A5A5A5A2D323130
- 5A5A5A5A5A2D323131
- 5A5A5A5A5A2D333030
- E5BC80E6BA90E695B0E68DAEE5BA932D323130
- E9AB98
- E9AB98E696AFE695B0E68DAEE5BA932D323130
+                   fraw                   
+------------------------------------------
+ \x353835383538353835383244333033303330
+ \x353835383538353835383244333133313331
+ \x353835383538353835383244333233313330
+ \x353835383538353835383244333333303330
+ \x59
+ \x59595959592d303030
+ \x59595959592d313131
+ \x59595959592d323130
+ \x59595959592d323131
+ \x59595959592d333030
+ \x5a
+ \x5a5a5a5a5a2d303030
+ \x5a5a5a5a5a2d313131
+ \x5a5a5a5a5a2d313233
+ \x5a5a5a5a5a2d323130
+ \x5a5a5a5a5a2d323131
+ \x5a5a5a5a5a2d333030
+ \xe5bc80e6ba90e695b0e68daee5ba932d323130
+ \xe9ab98
+ \xe9ab98e696afe695b0e68daee5ba932d323130
 (20 rows)
 
 EXPLAIN (costs false)
@@ -1692,7 +1694,7 @@ SELECT fraw FROM test_prefix_table t where fraw IS NULL or ftext like '高%' ORD
                                     QUERY PLAN                                    
 ----------------------------------------------------------------------------------
  Sort
-   Sort Key: fraw
+   Sort Key: fraw NULLS FIRST
    ->  Bitmap Heap Scan on test_prefix_table t
          Recheck Cond: ((fraw IS NULL) OR (ftext ~~ '高%'::text))
          Filter: ((fraw IS NULL) OR (ftext ~~ '高%'::text))
@@ -1704,13 +1706,13 @@ SELECT fraw FROM test_prefix_table t where fraw IS NULL or ftext like '高%' ORD
 (10 rows)
 
 SELECT fraw FROM test_prefix_table t where fraw IS NULL or ftext like '高%' ORDER BY 1;
-                  fraw                  
-----------------------------------------
- E9AB98
- E9AB98E696AFE695B0E68DAEE5BA932D323130
+                   fraw                   
+------------------------------------------
  
  
  
+ \xe9ab98
+ \xe9ab98e696afe695b0e68daee5ba932d323130
 (5 rows)
 
 EXPLAIN (costs false)
@@ -1718,7 +1720,7 @@ SELECT fvchar FROM test_prefix_table t where fraw IS NULL or fvchar > 'ZZZZZ-200
                                                       QUERY PLAN                                                      
 ----------------------------------------------------------------------------------------------------------------------
  Sort
-   Sort Key: fvchar
+   Sort Key: fvchar NULLS FIRST
    ->  Bitmap Heap Scan on test_prefix_table t
          Recheck Cond: ((fraw IS NULL) OR ((fvchar)::text > 'ZZZZZ-200'::text))
          Filter: ((fraw IS NULL) OR (((fvchar)::text > 'ZZZZZ-200'::text) AND ((fvchar)::text <> 'ZZZZZ-210'::text)))
@@ -1732,14 +1734,14 @@ SELECT fvchar FROM test_prefix_table t where fraw IS NULL or fvchar > 'ZZZZZ-200
 SELECT fvchar FROM test_prefix_table t where fraw IS NULL or fvchar > 'ZZZZZ-200' and fvchar <> 'ZZZZZ-210' ORDER BY 1;
      fvchar     
 ----------------
+ 
+ 
+ 
  ZZZZZ-211
  ZZZZZ-300
  开源数据库-210
  高
  高斯数据库-210
- 
- 
- 
 (8 rows)
 
 EXPLAIN (costs false)
@@ -1777,7 +1779,7 @@ EXPLAIN (costs false) execute testprefixindex('ZZZZZ-200');
                                               QUERY PLAN                                               
 -------------------------------------------------------------------------------------------------------
  Sort
-   Sort Key: fvchar
+   Sort Key: fvchar NULLS FIRST
    ->  Bitmap Heap Scan on test_prefix_table t
          Recheck Cond: ((fraw IS NULL) OR ((fvchar)::text > $1))
          Filter: ((fraw IS NULL) OR (((fvchar)::text > $1) AND ((fvchar)::text <> 'ZZZZZ-210'::text)))
@@ -1791,14 +1793,14 @@ EXPLAIN (costs false) execute testprefixindex('ZZZZZ-200');
 EXECUTE testprefixindex('ZZZZZ-200');
      fvchar     
 ----------------
+ 
+ 
+ 
  ZZZZZ-211
  ZZZZZ-300
  开源数据库-210
  高
  高斯数据库-210
- 
- 
- 
 (8 rows)
 
 --prefix index not used
@@ -1807,7 +1809,7 @@ SELECT fvchar FROM test_prefix_table t where (fvchar <> 'ZZZZZ-211') IS false OR
                             QUERY PLAN                            
 ------------------------------------------------------------------
  Sort
-   Sort Key: fvchar
+   Sort Key: fvchar NULLS FIRST
    ->  Seq Scan on test_prefix_table t
          Filter: (((fvchar)::text <> 'ZZZZZ-211'::text) IS FALSE)
 (4 rows)
@@ -1839,7 +1841,7 @@ SELECT ftext FROM test_prefix_table ORDER BY ftext;
              QUERY PLAN              
 -------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Seq Scan on test_prefix_table
 (3 rows)
 
@@ -1856,7 +1858,7 @@ SELECT ftext FROM test_prefix_table where ftext not like 'YYYY%' ORDER BY 1;
                 QUERY PLAN                 
 -------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Seq Scan on test_prefix_table
          Filter: (ftext !~~ 'YYYY%'::text)
 (4 rows)
@@ -1879,7 +1881,7 @@ SELECT t1.ftext,t2.fchar FROM test_prefix_table t1 join test_prefix_table t2 on 
                                QUERY PLAN                                
 -------------------------------------------------------------------------
  Sort
-   Sort Key: t1.ftext, t2.fchar
+   Sort Key: t1.ftext NULLS FIRST, t2.fchar NULLS FIRST
    ->  Nested Loop
          ->  Seq Scan on test_prefix_table t2
          ->  Index Scan using prefix_index_ftext on test_prefix_table t1
@@ -1937,7 +1939,7 @@ SELECT t1.ftext FROM test_prefix_table t1 join test_prefix_table t2 on  t1.ftext
                                 QUERY PLAN                                
 --------------------------------------------------------------------------
  Sort
-   Sort Key: t1.ftext
+   Sort Key: t1.ftext NULLS FIRST
    ->  Nested Loop
          ->  Seq Scan on test_prefix_table t1
                Filter: (id = 30)
@@ -1963,7 +1965,7 @@ SELECT t1.ftext,t2.fvchar FROM test_prefix_table t1, test_prefix_table t2 where 
                                 QUERY PLAN                                
 --------------------------------------------------------------------------
  Sort
-   Sort Key: t1.ftext
+   Sort Key: t1.ftext NULLS FIRST
    ->  Nested Loop
          ->  Seq Scan on test_prefix_table t1
                Filter: (id = 30)
@@ -1989,7 +1991,7 @@ SELECT t1.fvchar,t2.fvchar FROM test_prefix_table t1 left join test_prefix_table
                                                 QUERY PLAN                                                 
 -----------------------------------------------------------------------------------------------------------
  Sort
-   Sort Key: t1.fvchar, t2.fvchar
+   Sort Key: t1.fvchar NULLS FIRST, t2.fvchar NULLS FIRST
    ->  Nested Loop Left Join
          ->  Seq Scan on test_prefix_table t1
          ->  Index Scan using prefix_index_fvchar on test_prefix_table t2
@@ -2000,6 +2002,9 @@ SELECT t1.fvchar,t2.fvchar FROM test_prefix_table t1 left join test_prefix_table
 SELECT t1.fvchar,t2.fvchar FROM test_prefix_table t1 left join test_prefix_table t2 on (t1.fvchar = t2.fvchar and t2.fvchar > 'ZZZZZ-3' ) ORDER BY 1,2;
      fvchar     |     fvchar     
 ----------------+----------------
+                | 
+                | 
+                | 
  XXXXX-000      | 
  XXXXX-111      | 
  XXXXX-210      | 
@@ -2020,9 +2025,6 @@ SELECT t1.fvchar,t2.fvchar FROM test_prefix_table t1 left join test_prefix_table
  开源数据库-210 | 开源数据库-210
  高             | 高
  高斯数据库-210 | 高斯数据库-210
-                | 
-                | 
-                | 
 (23 rows)
 
 --prefix index not used
@@ -2097,7 +2099,7 @@ SELECT ftext FROM test_prefix_table where ftext >= '高斯数据库-210' ORDER B
                            QUERY PLAN                           
 ----------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_table
          Index Cond: (ftext >= '高斯数据库'::text)
          Filter: (ftext >= '高斯数据库-210'::text)
@@ -2117,7 +2119,7 @@ SELECT fbpchar FROM test_prefix_tb where fbpchar > '开源' ORDER BY 1;
                              QUERY PLAN                             
 --------------------------------------------------------------------
  Sort
-   Sort Key: fbpchar
+   Sort Key: fbpchar NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_tb
          Index Cond: (fbpchar >= '开源'::bpchar)
          Filter: (fbpchar > '开源'::bpchar)
@@ -2137,7 +2139,7 @@ SELECT fbpchar FROM test_prefix_tb where fbpchar like '高斯数据库-%' ORDER 
                     QUERY PLAN                     
 ---------------------------------------------------
  Sort
-   Sort Key: fbpchar
+   Sort Key: fbpchar NULLS FIRST
    ->  Seq Scan on test_prefix_tb
          Filter: (fbpchar ~~ '高斯数据库-%'::text)
 (4 rows)
@@ -2215,7 +2217,7 @@ SELECT ftext FROM test_prefix_parttable where ftext like '高斯%' ORDER BY 1;
                                         QUERY PLAN                                         
 -------------------------------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Partition Iterator
          Iterations: 3, Sub Iterations: 12
          ->  Partitioned Index Scan using prefix_index_ftext_part on test_prefix_parttable
@@ -2322,7 +2324,7 @@ ALTER TABLE test_prefix_ustore ADD INDEX prefix_index_fchar_fbytea (fchar(5), fb
 ALTER TABLE test_prefix_ustore ADD INDEX prefix_index_fvchar (fvchar(5));
 ALTER TABLE test_prefix_ustore ADD INDEX prefix_index_ftext (ftext(5));
 ALTER TABLE test_prefix_ustore ADD INDEX prefix_index_fblob (fblob(5));
-CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_ustore (fraw(9));
+CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_ustore (fraw(18));
 \d+ test_prefix_ustore
                          Table "public.test_prefix_ustore"
  Column |         Type          | Modifiers | Storage  | Stats target | Description 
@@ -2336,7 +2338,7 @@ CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_ustore (fraw(9));
  fraw   | raw                   |           | extended |              | 
  fbytea | bytea                 |           | extended |              | 
 Indexes:
-    "prefix_index_fraw" UNIQUE, ubtree (fraw(9)) WITH (storage_type=USTORE) TABLESPACE pg_default
+    "prefix_index_fraw" UNIQUE, ubtree (fraw(18)) WITH (storage_type=USTORE) TABLESPACE pg_default
     "prefix_index_fblob" ubtree (fblob(5)) WITH (storage_type=USTORE) TABLESPACE pg_default
     "prefix_index_fchar_fbytea" ubtree (fchar(5), fbytea(5)) WITH (storage_type=USTORE) TABLESPACE pg_default
     "prefix_index_ftext" ubtree (ftext(5)) WITH (storage_type=USTORE) TABLESPACE pg_default
@@ -2359,7 +2361,7 @@ select pg_get_tabledef('test_prefix_ustore'::regclass);
      fbytea bytea                                                                                                                                 +
  )                                                                                                                                                +
  WITH (orientation=row, storage_type=ustore, compression=no);                                                                                     +
- CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_ustore USING ubtree (fraw(9)) WITH (storage_type=USTORE) TABLESPACE pg_default;             +
+ CREATE UNIQUE INDEX prefix_index_fraw ON test_prefix_ustore USING ubtree (fraw(18)) WITH (storage_type=USTORE) TABLESPACE pg_default;            +
  CREATE INDEX prefix_index_fblob ON test_prefix_ustore USING ubtree (fblob(5)) WITH (storage_type=USTORE) TABLESPACE pg_default;                  +
  CREATE INDEX prefix_index_ftext ON test_prefix_ustore USING ubtree (ftext(5)) WITH (storage_type=USTORE) TABLESPACE pg_default;                  +
  CREATE INDEX prefix_index_fvchar ON test_prefix_ustore USING ubtree (fvchar(5)) WITH (storage_type=USTORE) TABLESPACE pg_default;                +
@@ -2402,12 +2404,12 @@ SELECT ftext FROM test_prefix_ustore where ftext like 'XXXXX%' ORDER BY 1;
 (5 rows)
 
 SELECT fblob FROM test_prefix_ustore where fblob < '58585858582D333030' ORDER BY 1;
-       fblob        
---------------------
- 58585858582D303030
- 58585858582D313131
- 58585858582D323130
- 58585858582D323131
+                 fblob                  
+----------------------------------------
+ \x353835383538353835383244333033303330
+ \x353835383538353835383244333133313331
+ \x353835383538353835383244333233313330
+ \x353835383538353835383244333233313331
 (4 rows)
 
 SELECT fchar, fbytea FROM test_prefix_ustore where (fchar, fbytea)= ('XXXXX-211', 'XXXXX-211') ORDER BY 1,2;
@@ -2429,12 +2431,12 @@ SELECT ftext FROM test_prefix_ustore where ftext like 'AAAAA%' ORDER BY 1;
 (5 rows)
 
 SELECT fblob FROM test_prefix_ustore where fblob < '58585858582D333030' ORDER BY 1;
-       fblob        
---------------------
- 58585858582D303030
- 58585858582D313131
- 58585858582D323130
- 58585858582D323131
+                 fblob                  
+----------------------------------------
+ \x353835383538353835383244333033303330
+ \x353835383538353835383244333133313331
+ \x353835383538353835383244333233313330
+ \x353835383538353835383244333233313331
 (4 rows)
 
 SELECT fchar, fbytea FROM test_prefix_ustore where (fchar, fbytea)= ('AAAAA-211', 'XXXXX-211') ORDER BY 1,2;
@@ -2455,11 +2457,11 @@ SELECT ftext FROM test_prefix_ustore where ftext like 'AAAAA%' ORDER BY 1;
 (4 rows)
 
 SELECT fblob FROM test_prefix_ustore where fblob < '58585858582D333030' ORDER BY 1;
-       fblob        
---------------------
- 58585858582D303030
- 58585858582D313131
- 58585858582D323130
+                 fblob                  
+----------------------------------------
+ \x353835383538353835383244333033303330
+ \x353835383538353835383244333133313331
+ \x353835383538353835383244333233313330
 (3 rows)
 
 SELECT fchar, fbytea FROM test_prefix_ustore where (fchar, fbytea)= ('AAAAA-211', 'XXXXX-211') ORDER BY 1,2;
@@ -2475,7 +2477,7 @@ SELECT ftext FROM test_prefix_ustore t where ftext like 'YYYY%' ORDER BY 1;
                                 QUERY PLAN                                
 --------------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_ustore t
          Index Cond: ((ftext >= 'YYYY'::text) AND (ftext < 'YYYZ'::text))
          Filter: (ftext ~~ 'YYYY%'::text)
@@ -2496,7 +2498,7 @@ SELECT ftext FROM test_prefix_ustore t where ftext like '开源数据库-210' OR
                             QUERY PLAN                             
 -------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_ustore t
          Index Cond: (ftext = '开源数据库'::text)
          Filter: (ftext ~~ '开源数据库-210'::text)
@@ -2513,7 +2515,7 @@ SELECT fchar FROM test_prefix_ustore t where fchar ~~ '高斯数据库' ORDER BY
                                 QUERY PLAN                                
 --------------------------------------------------------------------------
  Sort
-   Sort Key: fchar
+   Sort Key: fchar NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_ustore t
          Index Cond: (fchar = '高斯数据库'::bpchar)
          Filter: (fchar ~~ '高斯数据库'::text)
@@ -2529,7 +2531,7 @@ SELECT fchar FROM test_prefix_ustore t where fchar ~ '^开' ORDER BY 1;
                                 QUERY PLAN                                
 --------------------------------------------------------------------------
  Sort
-   Sort Key: fchar
+   Sort Key: fchar NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_ustore t
          Index Cond: ((fchar >= '开'::bpchar) AND (fchar < '弁'::bpchar))
          Filter: (fchar ~ '^开'::text)
@@ -2546,7 +2548,7 @@ SELECT fbytea FROM test_prefix_ustore t where fbytea like '高%' ORDER BY 1;
                                       QUERY PLAN                                      
 --------------------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_ustore t
          Index Cond: ((fbytea >= '\xe9ab98'::bytea) AND (fbytea < '\xe9ab99'::bytea))
          Filter: (fbytea ~~ '\xe9ab9825'::bytea)
@@ -2564,7 +2566,7 @@ SELECT fbytea FROM test_prefix_ustore t where fbytea ~~ '开源数据库%' ORDER
                                 QUERY PLAN                                
 --------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_ustore t
          Index Cond: (fbytea = '\xe5bc80e6ba'::bytea)
          Filter: (fbytea ~~ '\xe5bc80e6ba90e695b0e68daee5ba9325'::bytea)
@@ -2581,7 +2583,7 @@ SELECT fbytea FROM test_prefix_ustore t where fbytea ~~ 'YYYYY-%' ORDER BY 1;
                                 QUERY PLAN                                
 --------------------------------------------------------------------------
  Sort
-   Sort Key: fbytea
+   Sort Key: fbytea NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_ustore t
          Index Cond: (fbytea = '\x5959595959'::bytea)
          Filter: (fbytea ~~ '\x59595959592d25'::bytea)
@@ -2602,7 +2604,7 @@ SELECT ftext FROM test_prefix_ustore t where ftext <= 'YYYYY-100' ORDER BY 1;
                             QUERY PLAN                             
 -------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_ustore t
          Index Cond: (ftext <= 'YYYYY'::text)
          Filter: (ftext <= 'YYYYY-100'::text)
@@ -2624,7 +2626,7 @@ SELECT ftext FROM test_prefix_ustore t where ftext <= 'YYYYY' ORDER BY 1;
                             QUERY PLAN                             
 -------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_ustore t
          Index Cond: (ftext <= 'YYYYY'::text)
          Filter: (ftext <= 'YYYYY'::text)
@@ -2645,7 +2647,7 @@ SELECT fvchar FROM test_prefix_ustore t where fvchar < 'ZZZZZ-210' ORDER BY 1;
                              QUERY PLAN                             
 --------------------------------------------------------------------
  Sort
-   Sort Key: fvchar
+   Sort Key: fvchar NULLS FIRST
    ->  Index Scan using prefix_index_fvchar on test_prefix_ustore t
          Index Cond: ((fvchar)::text <= 'ZZZZZ'::text)
          Filter: ((fvchar)::text < 'ZZZZZ-210'::text)
@@ -2675,7 +2677,7 @@ SELECT fvchar FROM test_prefix_ustore t where fvchar < 'Z' ORDER BY 1;
                              QUERY PLAN                             
 --------------------------------------------------------------------
  Sort
-   Sort Key: fvchar
+   Sort Key: fvchar NULLS FIRST
    ->  Index Scan using prefix_index_fvchar on test_prefix_ustore t
          Index Cond: ((fvchar)::text <= 'Z'::text)
          Filter: ((fvchar)::text < 'Z'::text)
@@ -2701,7 +2703,7 @@ SELECT ftext FROM test_prefix_ustore t where fvchar >= 'ZZZZZ-210' ORDER BY 1;
                              QUERY PLAN                             
 --------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_fvchar on test_prefix_ustore t
          Index Cond: ((fvchar)::text >= 'ZZZZZ'::text)
          Filter: ((fvchar)::text >= 'ZZZZZ-210'::text)
@@ -2723,7 +2725,7 @@ SELECT ftext FROM test_prefix_ustore t where fvchar >= 'ZZZZZ' ORDER BY 1;
                              QUERY PLAN                             
 --------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_fvchar on test_prefix_ustore t
          Index Cond: ((fvchar)::text >= 'ZZZZZ'::text)
          Filter: ((fvchar)::text >= 'ZZZZZ'::text)
@@ -2748,7 +2750,7 @@ SELECT ftext FROM test_prefix_ustore t where fvchar > 'ZZZZZ-' and fvchar <> 'ZZ
                                           QUERY PLAN                                           
 -----------------------------------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_fvchar on test_prefix_ustore t
          Index Cond: ((fvchar)::text >= 'ZZZZZ'::text)
          Filter: (((fvchar)::text > 'ZZZZZ-'::text) AND ((fvchar)::text <> 'ZZZZZ-210'::text))
@@ -2772,7 +2774,7 @@ SELECT ftext FROM test_prefix_ustore t where fvchar > left('ZZZZZ-211', 7) and f
                                            QUERY PLAN                                           
 ------------------------------------------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_fvchar on test_prefix_ustore t
          Index Cond: ((fvchar)::text >= 'ZZZZZ'::text)
          Filter: (((fvchar)::text > 'ZZZZZ-2'::text) AND ((fvchar)::text <> 'ZZZZZ-211'::text))
@@ -2823,34 +2825,34 @@ SELECT fblob FROM test_prefix_ustore t where fblob IS NOT NULL ORDER BY 1;
                             QUERY PLAN                             
 -------------------------------------------------------------------
  Sort
-   Sort Key: fblob
+   Sort Key: fblob NULLS FIRST
    ->  Index Scan using prefix_index_fblob on test_prefix_ustore t
          Index Cond: (fblob IS NOT NULL)
 (4 rows)
 
 SELECT fblob FROM test_prefix_ustore t where fblob IS NOT NULL ORDER BY 1;
-                 fblob                  
-----------------------------------------
- 58585858582D303030
- 58585858582D313131
- 58585858582D323130
- 58585858582D333030
- 59
- 59595959592D303030
- 59595959592D313131
- 59595959592D323130
- 59595959592D323131
- 59595959592D333030
- 5A
- 5A5A5A5A5A2D303030
- 5A5A5A5A5A2D313131
- 5A5A5A5A5A2D313233
- 5A5A5A5A5A2D323130
- 5A5A5A5A5A2D323131
- 5A5A5A5A5A2D333030
- E5BC80E6BA90E695B0E68DAEE5BA932D323130
- E9AB98
- E9AB98E696AFE695B0E68DAEE5BA932D323130
+                                     fblob                                      
+--------------------------------------------------------------------------------
+ \x353835383538353835383244333033303330
+ \x353835383538353835383244333133313331
+ \x353835383538353835383244333233313330
+ \x353835383538353835383244333333303330
+ \x3539
+ \x353935393539353935393244333033303330
+ \x353935393539353935393244333133313331
+ \x353935393539353935393244333233313330
+ \x353935393539353935393244333233313331
+ \x353935393539353935393244333333303330
+ \x3541
+ \x354135413541354135413244333033303330
+ \x354135413541354135413244333133313331
+ \x354135413541354135413244333133323333
+ \x354135413541354135413244333233313330
+ \x354135413541354135413244333233313331
+ \x354135413541354135413244333333303330
+ \x6535626338306536626139306536393562306536386461656535626139333264333233313330
+ \x653961623938
+ \x6539616239386536393661666536393562306536386461656535626139333264333233313330
 (20 rows)
 
 EXPLAIN (costs false)
@@ -2859,34 +2861,34 @@ SELECT DISTINCT fraw FROM test_prefix_ustore t where fraw IS NOT NULL ORDER BY 1
 ------------------------------------------------------------------------
  Unique
    ->  Sort
-         Sort Key: fraw
+         Sort Key: fraw NULLS FIRST
          ->  Index Scan using prefix_index_fraw on test_prefix_ustore t
                Index Cond: (fraw IS NOT NULL)
 (5 rows)
 
 SELECT DISTINCT fraw FROM test_prefix_ustore t where fraw IS NOT NULL ORDER BY 1;
-                  fraw                  
-----------------------------------------
- 58585858582D303030
- 58585858582D313131
- 58585858582D323130
- 58585858582D333030
- 59
- 59595959592D303030
- 59595959592D313131
- 59595959592D323130
- 59595959592D323131
- 59595959592D333030
- 5A
- 5A5A5A5A5A2D303030
- 5A5A5A5A5A2D313131
- 5A5A5A5A5A2D313233
- 5A5A5A5A5A2D323130
- 5A5A5A5A5A2D323131
- 5A5A5A5A5A2D333030
- E5BC80E6BA90E695B0E68DAEE5BA932D323130
- E9AB98
- E9AB98E696AFE695B0E68DAEE5BA932D323130
+                                      fraw                                      
+--------------------------------------------------------------------------------
+ \x353835383538353835383244333033303330
+ \x353835383538353835383244333133313331
+ \x353835383538353835383244333233313330
+ \x353835383538353835383244333333303330
+ \x3539
+ \x353935393539353935393244333033303330
+ \x353935393539353935393244333133313331
+ \x353935393539353935393244333233313330
+ \x353935393539353935393244333233313331
+ \x353935393539353935393244333333303330
+ \x3541
+ \x354135413541354135413244333033303330
+ \x354135413541354135413244333133313331
+ \x354135413541354135413244333133323333
+ \x354135413541354135413244333233313330
+ \x354135413541354135413244333233313331
+ \x354135413541354135413244333333303330
+ \x6535626338306536626139306536393562306536386461656535626139333264333233313330
+ \x653961623938
+ \x6539616239386536393661666536393562306536386461656535626139333264333233313330
 (20 rows)
 
 EXPLAIN (costs false)
@@ -2894,7 +2896,7 @@ SELECT fraw FROM test_prefix_ustore t where fraw IS NULL or ftext like '高%' OR
                                     QUERY PLAN                                    
 ----------------------------------------------------------------------------------
  Sort
-   Sort Key: fraw
+   Sort Key: fraw NULLS FIRST
    ->  Bitmap Heap Scan on test_prefix_ustore t
          Recheck Cond: ((fraw IS NULL) OR (ftext ~~ '高%'::text))
          Filter: ((fraw IS NULL) OR (ftext ~~ '高%'::text))
@@ -2906,13 +2908,13 @@ SELECT fraw FROM test_prefix_ustore t where fraw IS NULL or ftext like '高%' OR
 (10 rows)
 
 SELECT fraw FROM test_prefix_ustore t where fraw IS NULL or ftext like '高%' ORDER BY 1;
-                  fraw                  
-----------------------------------------
- E9AB98
- E9AB98E696AFE695B0E68DAEE5BA932D323130
+                                      fraw                                      
+--------------------------------------------------------------------------------
  
  
  
+ \x653961623938
+ \x6539616239386536393661666536393562306536386461656535626139333264333233313330
 (5 rows)
 
 EXPLAIN (costs false)
@@ -2920,7 +2922,7 @@ SELECT fvchar FROM test_prefix_ustore t where fraw IS NULL or fvchar > 'ZZZZZ-20
                                                       QUERY PLAN                                                      
 ----------------------------------------------------------------------------------------------------------------------
  Sort
-   Sort Key: fvchar
+   Sort Key: fvchar NULLS FIRST
    ->  Bitmap Heap Scan on test_prefix_ustore t
          Recheck Cond: ((fraw IS NULL) OR ((fvchar)::text > 'ZZZZZ-200'::text))
          Filter: ((fraw IS NULL) OR (((fvchar)::text > 'ZZZZZ-200'::text) AND ((fvchar)::text <> 'ZZZZZ-210'::text)))
@@ -2934,14 +2936,14 @@ SELECT fvchar FROM test_prefix_ustore t where fraw IS NULL or fvchar > 'ZZZZZ-20
 SELECT fvchar FROM test_prefix_ustore t where fraw IS NULL or fvchar > 'ZZZZZ-200' and fvchar <> 'ZZZZZ-210' ORDER BY 1;
      fvchar     
 ----------------
+ 
+ 
+ 
  ZZZZZ-211
  ZZZZZ-300
  开源数据库-210
  高
  高斯数据库-210
- 
- 
- 
 (8 rows)
 
 --prefix index not used
@@ -2966,7 +2968,7 @@ SELECT ftext FROM test_prefix_ustore ORDER BY ftext;
               QUERY PLAN              
 --------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Seq Scan on test_prefix_ustore
 (3 rows)
 
@@ -2988,7 +2990,7 @@ SELECT t1.ftext,t2.fchar FROM test_prefix_ustore t1 join test_prefix_ustore t2 o
                                 QUERY PLAN                                
 --------------------------------------------------------------------------
  Sort
-   Sort Key: t1.ftext, t2.fchar
+   Sort Key: t1.ftext NULLS FIRST, t2.fchar NULLS FIRST
    ->  Nested Loop
          ->  Seq Scan on test_prefix_ustore t2
          ->  Index Scan using prefix_index_ftext on test_prefix_ustore t1
@@ -3046,7 +3048,7 @@ SELECT t1.ftext FROM test_prefix_ustore t1 join test_prefix_ustore t2 on  t1.fte
                                 QUERY PLAN                                 
 ---------------------------------------------------------------------------
  Sort
-   Sort Key: t1.ftext
+   Sort Key: t1.ftext NULLS FIRST
    ->  Nested Loop
          ->  Seq Scan on test_prefix_ustore t1
                Filter: (id = 30)
@@ -3072,7 +3074,7 @@ SELECT t1.ftext,t2.fvchar FROM test_prefix_ustore t1, test_prefix_ustore t2 wher
                                 QUERY PLAN                                 
 ---------------------------------------------------------------------------
  Sort
-   Sort Key: t1.ftext
+   Sort Key: t1.ftext NULLS FIRST
    ->  Nested Loop
          ->  Seq Scan on test_prefix_ustore t1
                Filter: (id = 30)
@@ -3098,7 +3100,7 @@ SELECT t1.fvchar,t2.fvchar FROM test_prefix_ustore t1 left join test_prefix_usto
                                                 QUERY PLAN                                                 
 -----------------------------------------------------------------------------------------------------------
  Sort
-   Sort Key: t1.fvchar, t2.fvchar
+   Sort Key: t1.fvchar NULLS FIRST, t2.fvchar NULLS FIRST
    ->  Nested Loop Left Join
          ->  Seq Scan on test_prefix_ustore t1
          ->  Index Scan using prefix_index_fvchar on test_prefix_ustore t2
@@ -3109,6 +3111,9 @@ SELECT t1.fvchar,t2.fvchar FROM test_prefix_ustore t1 left join test_prefix_usto
 SELECT t1.fvchar,t2.fvchar FROM test_prefix_ustore t1 left join test_prefix_ustore t2 on (t1.fvchar = t2.fvchar and t2.fvchar > 'ZZZZZ-3' ) ORDER BY 1,2;
      fvchar     |     fvchar     
 ----------------+----------------
+                | 
+                | 
+                | 
  XXXXX-000      | 
  XXXXX-111      | 
  XXXXX-210      | 
@@ -3129,9 +3134,6 @@ SELECT t1.fvchar,t2.fvchar FROM test_prefix_ustore t1 left join test_prefix_usto
  开源数据库-210 | 开源数据库-210
  高             | 高
  高斯数据库-210 | 高斯数据库-210
-                | 
-                | 
-                | 
 (23 rows)
 
 --prefix index not used
@@ -3196,7 +3198,7 @@ SELECT ftext FROM test_prefix_ustore where ftext >= '高斯数据库-210' ORDER 
                            QUERY PLAN                            
 -----------------------------------------------------------------
  Sort
-   Sort Key: ftext
+   Sort Key: ftext NULLS FIRST
    ->  Index Scan using prefix_index_ftext on test_prefix_ustore
          Index Cond: (ftext >= '高斯数据库'::text)
          Filter: (ftext >= '高斯数据库-210'::text)
@@ -3216,7 +3218,7 @@ SELECT fbpchar FROM test_prefix_utb where fbpchar > '开源' ORDER BY 1;
                              QUERY PLAN                              
 ---------------------------------------------------------------------
  Sort
-   Sort Key: fbpchar
+   Sort Key: fbpchar NULLS FIRST
    ->  Index Scan using prefix_index_fchar_fbytea on test_prefix_utb
          Index Cond: (fbpchar >= '开源'::bpchar)
          Filter: (fbpchar > '开源'::bpchar)
@@ -3236,7 +3238,7 @@ SELECT fbpchar FROM test_prefix_utb where fbpchar like '高斯数据库-%' ORDER
                     QUERY PLAN                     
 ---------------------------------------------------
  Sort
-   Sort Key: fbpchar
+   Sort Key: fbpchar NULLS FIRST
    ->  Seq Scan on test_prefix_utb
          Filter: (fbpchar ~~ '高斯数据库-%'::text)
 (4 rows)
@@ -3271,4 +3273,5 @@ CREATE INDEX prefix_cindex_ftext ON test_prefix_cstore (ftext(5));
 ERROR:  access method "psort" does not support prefix key
 DROP TABLE IF EXISTS test_prefix_cstore;
 \c contrib_regression
+set dolphin.b_compatibility_mode to off;
 drop database prefix_index_db;

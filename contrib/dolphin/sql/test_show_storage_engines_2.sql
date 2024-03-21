@@ -48,6 +48,7 @@ create foreign table mot_tb_5(id int) server mot_server;
 SHOW ENGINES;
 -- cleanup
 \c contrib_regression
+set dolphin.b_compatibility_mode to off;
 drop database show_storage_engines_b;
 drop database show_storage_engines_nb;
 drop user user1;

@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 drop database if exists db_default;
 create database db_default dbcompatibility 'b';
 \c db_default

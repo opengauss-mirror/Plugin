@@ -6437,13 +6437,13 @@ select * from test11 union select * from test10;
 select * from test11 union select * from test11;
  num 
 -----
- 
+ \x
 (1 row)
 
 select * from test11 union select * from test12;
  num 
 -----
- 
+ \x
 (1 row)
 
 select * from test11 union select * from test13;
@@ -7060,13 +7060,13 @@ select * from test12 union select * from test10;
 select * from test12 union select * from test11;
  num 
 -----
- 
+ \x
 (1 row)
 
 select * from test12 union select * from test12;
  num 
 -----
- 
+ \x
 (1 row)
 
 select * from test12 union select * from test13;

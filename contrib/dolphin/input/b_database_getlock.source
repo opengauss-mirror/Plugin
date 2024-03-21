@@ -1,3 +1,4 @@
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_databaselock;
 create database b_databaselock dbcompatibility 'b';
 \c b_databaselock
@@ -82,4 +83,5 @@ end;
 drop table b_database_lock_t1;
 drop table b_database_lock_t2;
 \c postgres
+set dolphin.b_compatibility_mode to off;
 drop database if exists b_databaselock;
