@@ -40,7 +40,7 @@ test: test_char_tail_blank test_char_tail_blank_2 test_char_tail_blank_3
 
 test: builtin_funcs/bin builtin_funcs/char builtin_funcs/char_length builtin_funcs/character_length builtin_funcs/conv builtin_funcs/convert builtin_funcs/crc32 builtin_funcs/db_b_format builtin_funcs/math_func builtin_funcs/ascii builtin_funcs/bit_func builtin_funcs/varlena_func builtin_funcs/b_compatibility_substr_func
 
-test: builtin_funcs/db_b_hex builtin_funcs/db_b_if builtin_funcs/elt builtin_funcs/field builtin_funcs/find_in_set builtin_funcs/soundex builtin_funcs/space builtin_funcs/make_set builtin_funcs/between builtin_funcs/not_between
+test: builtin_funcs/db_b_hex builtin_funcs/db_b_if builtin_funcs/elt builtin_funcs/field builtin_funcs/find_in_set builtin_funcs/soundex builtin_funcs/space builtin_funcs/make_set builtin_funcs/between builtin_funcs/not_between builtin_funcs/lower_func
 
 test: uint_agg uint_and uint_cast uint_cast2 uint_cast3 uint_div uint_mi uint_mod uint_mod2 uint_mul uint_numeric uint_operator uint_or uint_partition uint_pl uint_xor
 

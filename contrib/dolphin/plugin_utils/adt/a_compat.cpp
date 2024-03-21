@@ -28,6 +28,8 @@
 
 static text* dotrim(const char* string, int stringlen, const char* set, int setlen, bool doltrim, bool dortrim);
 #ifdef DOLPHIN
+extern Datum bit_to_str(VarBit *bits);
+
 PG_FUNCTION_INFO_V1_PUBLIC(byteatrim_leading);
 extern "C" DLL_PUBLIC Datum byteatrim_leading(PG_FUNCTION_ARGS);
 
@@ -36,6 +38,12 @@ extern "C" DLL_PUBLIC Datum byteatrim_trailing(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(bit_to_ascii);
 extern "C" DLL_PUBLIC Datum bit_to_ascii(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(lower_bit);
+extern "C" DLL_PUBLIC Datum lower_bit(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(lower_blob);
+extern "C" DLL_PUBLIC Datum lower_blob(PG_FUNCTION_ARGS);
 #endif
 /********************************************************************
  *
@@ -65,6 +73,30 @@ Datum lower(PG_FUNCTION_ARGS)
 
     PG_RETURN_TEXT_P(result);
 }
+
+#ifdef DOLPHIN
+Datum lower_bit(PG_FUNCTION_ARGS)
+{
+    VarBit *bits = PG_GETARG_VARBIT_P(0);
+    FUNC_CHECK_HUGE_POINTER(false, bits, "lower_bit()");
+
+    bytea* result = NULL;
+
+    char *in_string = (char*)bit_to_str(bits);
+    result = cstring_to_bytea_with_len(in_string, VARBITBYTES(bits));
+
+    pfree_ext(in_string);
+
+    PG_RETURN_BYTEA_P(result);
+}
+
+Datum lower_blob(PG_FUNCTION_ARGS)
+{
+    bytea *input = PG_GETARG_BYTEA_PP(0);
+
+    PG_RETURN_BYTEA_P(input);
+}
+#endif
 
 /********************************************************************
  *
