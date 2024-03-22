@@ -36,7 +36,7 @@ CONTEXT:  referenced column: create_graph
 SELECT * FROM ag_graph WHERE name = 'g';
  name | namespaceoid 
 ------+--------------
- g    |        17443
+--? g    |  .*
 (1 row)
 
 -- create a label to test drop_label()
@@ -143,7 +143,7 @@ CONTEXT:  referenced column: create_graph
 SELECT * FROM ag_graph WHERE name = 'GraphA';
   name  | namespaceoid 
 --------+--------------
- GraphA |        17497
+--? GraphA | .*
 (1 row)
 
 SELECT nspname FROM pg_namespace WHERE nspname = 'GraphA';
@@ -165,7 +165,7 @@ CONTEXT:  referenced column: alter_graph
 SELECT * FROM ag_graph WHERE name = 'GraphX';
   name  | namespaceoid 
 --------+--------------
- GraphX |        17497
+--? GraphX |   .*
 (1 row)
 
 SELECT nspname FROM pg_namespace WHERE nspname = 'GraphX';

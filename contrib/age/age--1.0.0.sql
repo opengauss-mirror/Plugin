@@ -47,8 +47,41 @@ CREATE TABLE ag_label (
   graph oid NOT NULL,
   id label_id,
   kind label_kind,
-  relation regclass NOT NULL
+  relation regclass NOT NULL,
+  CONSTRAINT fk_graph_oid
+    FOREIGN KEY(graph)
+    REFERENCES ag_graph(oid)
 ) WITH (OIDS);
+
+CREATE OR REPLACE FUNCTION deny_update_ag_meta_tabel()  
+RETURNS trigger  
+LANGUAGE plpgsql  
+AS $function$  
+BEGIN  
+ RAISE EXCEPTION 
+    'Attention: can not update or delete table ag_graph|ag_label,Please use age extension function !';  
+END;  
+$function$;
+
+create trigger trigger_ag_graph_update 
+BEFORE UPDATE ON ag_graph 
+FOR EACH ROW 
+EXECUTE PROCEDURE deny_update_ag_meta_tabel();
+  
+create trigger trigger_ag_graph_delete
+BEFORE DELETE ON ag_graph 
+FOR EACH ROW 
+EXECUTE PROCEDURE deny_update_ag_meta_tabel();
+
+create trigger trigger_ag_label_update 
+BEFORE UPDATE ON ag_label 
+FOR EACH ROW 
+EXECUTE PROCEDURE deny_update_ag_meta_tabel();
+  
+create trigger trigger_ag_label_delete
+BEFORE DELETE ON ag_label 
+FOR EACH ROW 
+EXECUTE PROCEDURE deny_update_ag_meta_tabel();
 
 CREATE UNIQUE INDEX ag_label_oid_index ON ag_label USING btree (oid);
 
@@ -3043,6 +3076,13 @@ CREATE FUNCTION ag_catalog.age_toboolean(variadic "any")
 RETURNS agtype
 LANGUAGE c
 STABLE
+RETURNS NULL ON NULL INPUT
+AS 'MODULE_PATHNAME';
+
+CREATE FUNCTION ag_catalog.age_tobooleanlist(variadic "any")
+    RETURNS agtype
+    LANGUAGE c
+    STABLE
 RETURNS NULL ON NULL INPUT
 AS 'MODULE_PATHNAME';
 
