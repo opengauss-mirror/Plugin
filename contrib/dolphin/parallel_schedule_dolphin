@@ -175,4 +175,4 @@ test: test_show_open_tables_lock_waiting_1 test_show_open_tables_lock_waiting_2
 test: test_show_open_tables_cleanup
 test: column_quote_alias sconst_sconst sqlmode_strict
 
-test: test_row_in test_std
+test: test_row_in test_std test_var_pop
