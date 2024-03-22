@@ -2950,3 +2950,4 @@ CREATE OPERATOR pg_catalog.>(leftarg = timestamptz, rightarg = longblob, COMMUTA
 CREATE OPERATOR pg_catalog.>=(leftarg = timestamptz, rightarg = longblob, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.timestamp_longblob_ge, restrict = scalarltsel, join = scalarltjoinsel);
 CREATE OR REPLACE FUNCTION pg_catalog.any_accum(numeric[], anyelement) RETURNS numeric[] LANGUAGE C STRICT AS  '$libdir/dolphin',  'any_accum';
 CREATE AGGREGATE pg_catalog.stddev_pop(json) (SFUNC = any_accum, cFUNC = numeric_collect, STYPE = numeric[], finalfunc = numeric_stddev_pop, initcond = '{0,0,0}', initcollect = '{0,0,0}');
+CREATE AGGREGATE pg_catalog.var_pop(json) (SFUNC = any_accum, cFUNC = numeric_collect, STYPE = numeric[], finalfunc = numeric_var_pop, initcond = '{0,0,0}', initcollect = '{0,0,0}');
