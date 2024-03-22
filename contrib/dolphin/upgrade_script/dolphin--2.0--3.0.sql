@@ -2069,6 +2069,28 @@ CREATE OR REPLACE FUNCTION pg_catalog.xor(unknown, varbinary) RETURNS integer LA
 CREATE OR REPLACE FUNCTION pg_catalog.xor(varchar, unknown) RETURNS integer LANGUAGE SQL IMMUTABLE as 'select pg_catalog.xor($1::int8, $2::text::int8)';
 CREATE OR REPLACE FUNCTION pg_catalog.xor(unknown, varchar) RETURNS integer LANGUAGE SQL IMMUTABLE as 'select pg_catalog.xor($1::text::int8, $2::int8)';
 
+DROP FUNCTION IF EXISTS pg_catalog.to_days(bit);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(time);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(year);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(binary);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(blob);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(text);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(anyset);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(json);
+
+CREATE OR REPLACE FUNCTION pg_catalog.to_days(bit) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.to_days(cast(cast($1 as int8) as timestamp(0) without time zone))';
+CREATE OR REPLACE FUNCTION pg_catalog.to_days(boolean) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.to_days(cast(cast($1 as int8) as timestamp(0) without time zone))';
+CREATE OR REPLACE FUNCTION pg_catalog.to_days(time) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.to_days(cast($1 as timestamp(0) without time zone))';
+CREATE OR REPLACE FUNCTION pg_catalog.to_days(year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.to_days(cast(cast($1 as int8) as timestamp(0) without time zone))';
+CREATE OR REPLACE FUNCTION pg_catalog.to_days(binary) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.to_days(cast($1 as timestamp(0) without time zone))';
+CREATE OR REPLACE FUNCTION pg_catalog.to_days(blob) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.to_days(cast($1 as timestamp(0) without time zone))';
+CREATE OR REPLACE FUNCTION pg_catalog.to_days(text) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.to_days(text_timestamp($1))';
+CREATE OR REPLACE FUNCTION pg_catalog.to_days(anyenum) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.to_days(cast($1 as timestamp(0) without time zone))';
+CREATE OR REPLACE FUNCTION pg_catalog.to_days(anyset) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.to_days(cast($1 as timestamp(0) without time zone))';
+CREATE OR REPLACE FUNCTION pg_catalog.to_days(json) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.to_days(cast($1 as timestamp(0) without time zone))';
+
 CREATE OR REPLACE FUNCTION pg_catalog.round(int1) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number))::int8';
 CREATE OR REPLACE FUNCTION pg_catalog.round(uint1) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number))::int8';
 CREATE OR REPLACE FUNCTION pg_catalog.round(int2) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.round(cast($1 as number))::int8';

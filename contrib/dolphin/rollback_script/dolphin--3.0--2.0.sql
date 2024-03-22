@@ -1496,6 +1496,19 @@ end;
 $$
 language plpgsql;
 
+DROP FUNCTION IF EXISTS pg_catalog.to_days(bit);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(time);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(year);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(binary);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(blob);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(text);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(anyset);
+DROP FUNCTION IF EXISTS pg_catalog.to_days(json);
+
+CREATE OR REPLACE FUNCTION pg_catalog.to_days(time) RETURNS int8 AS $$ SELECT pg_catalog.to_days(text_date('now') + $1)  $$ LANGUAGE SQL;
+
 DROP FUNCTION pg_catalog.round(int1);
 DROP FUNCTION pg_catalog.round(uint1);
 DROP FUNCTION pg_catalog.round(int2);

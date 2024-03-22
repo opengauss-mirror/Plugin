@@ -719,6 +719,339 @@ insert ignore into test_md5 select md5(`text`) from test_type_table;
 insert ignore into test_md5 select md5(`enum_t`) from test_type_table;
 insert ignore into test_md5 select md5(`set_t`) from test_type_table;
 insert ignore into test_md5 select md5(`json`) from test_type_table;
+select
+to_days(`int1`),
+to_days(`uint1`),
+to_days(`int2`),
+to_days(`uint2`),
+to_days(`int4`),
+to_days(`uint4`),
+to_days(`int8`),
+to_days(`uint8`),
+to_days(`float4`),
+to_days(`float8`),
+to_days(`numeric`),
+to_days(`bit1`),
+to_days(`bit64`),
+to_days(`boolean`),
+to_days(`date`),
+to_days(`datetime`),
+to_days(`datetime(4)`),
+to_days(`timestamp`),
+to_days(`timestamp(4)`),
+to_days(`year`),
+to_days(`char`),
+to_days(`varchar`),
+to_days(`binary`),
+to_days(`varbinary`),
+to_days(`tinyblob`),
+to_days(`blob`),
+to_days(`mediumblob`),
+to_days(`longblob`),
+to_days(`text`),
+to_days(`enum_t`),
+to_days(`set_t`),
+to_days(`json`)
+from test_type_table;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: to_days
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: to_days
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: to_days
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: to_days
+WARNING:  date/time field value out of range: "000001.000000"
+CONTEXT:  referenced column: to_days
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: to_days
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: to_days
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: to_days
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "a"
+CONTEXT:  referenced column: timestamp
+SQL function "enum_timestamp" statement 1
+referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "a,c"
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type timestamp: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: to_days
+ to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days | to_days 
+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
+         |         |         |         |         |         |         |         |         |         |         |         |         |         |  738921 |  738921 |  738921 |  738921 |  738921 |         |         |         |         |         |         |         |         |         |         |         |         |        
+(1 row)
+
+select to_days(`time`) from test_type_table;
+ to_days 
+---------
+--?.*
+(1 row)
+
+select to_days(`time(4)`) from test_type_table;
+ to_days 
+---------
+--?.*
+(1 row)
+
+create table test_to_days(c int8);
+insert into test_to_days select to_days(`int1`) from test_type_table;
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`uint1`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`int2`) from test_type_table;
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`uint2`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`int4`) from test_type_table;
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`uint4`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`int8`) from test_type_table;
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`uint8`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`float4`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`float8`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`numeric`) from test_type_table;
+ERROR:  date/time field value out of range: "000001.000000"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`bit1`) from test_type_table;
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`bit64`) from test_type_table;
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`boolean`) from test_type_table;
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`date`) from test_type_table;
+insert into test_to_days select to_days(`time`) from test_type_table;
+insert into test_to_days select to_days(`time(4)`) from test_type_table;
+insert into test_to_days select to_days(`datetime`) from test_type_table;
+insert into test_to_days select to_days(`datetime(4)`) from test_type_table;
+insert into test_to_days select to_days(`timestamp`) from test_type_table;
+insert into test_to_days select to_days(`timestamp(4)`) from test_type_table;
+insert into test_to_days select to_days(`year`) from test_type_table;
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`char`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`varchar`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`binary`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`varbinary`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`tinyblob`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`blob`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`mediumblob`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`longblob`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`text`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`enum_t`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "a"
+CONTEXT:  referenced column: timestamp
+SQL function "enum_timestamp" statement 1
+referenced column: c
+insert into test_to_days select to_days(`set_t`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "a,c"
+CONTEXT:  referenced column: c
+insert into test_to_days select to_days(`json`) from test_type_table;
+ERROR:  invalid input syntax for type timestamp: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`int1`) from test_type_table;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`uint1`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`int2`) from test_type_table;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`uint2`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`int4`) from test_type_table;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`uint4`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`int8`) from test_type_table;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`uint8`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`float4`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`float8`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`numeric`) from test_type_table;
+ERROR:  date/time field value out of range: "000001.000000"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`bit1`) from test_type_table;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`bit64`) from test_type_table;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`boolean`) from test_type_table;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`date`) from test_type_table;
+insert ignore into test_to_days select to_days(`time`) from test_type_table;
+insert ignore into test_to_days select to_days(`time(4)`) from test_type_table;
+insert ignore into test_to_days select to_days(`datetime`) from test_type_table;
+insert ignore into test_to_days select to_days(`datetime(4)`) from test_type_table;
+insert ignore into test_to_days select to_days(`timestamp`) from test_type_table;
+insert ignore into test_to_days select to_days(`timestamp(4)`) from test_type_table;
+insert ignore into test_to_days select to_days(`year`) from test_type_table;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`char`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`varchar`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`binary`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`varbinary`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`tinyblob`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`blob`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`mediumblob`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`longblob`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`text`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`enum_t`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "a"
+CONTEXT:  referenced column: timestamp
+SQL function "enum_timestamp" statement 1
+referenced column: c
+insert ignore into test_to_days select to_days(`set_t`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "a,c"
+CONTEXT:  referenced column: c
+insert ignore into test_to_days select to_days(`json`) from test_type_table;
+WARNING:  invalid input syntax for type timestamp: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: c
+select * from test_to_days order by c;
+   c    
+--------
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
+ 738921
+ 738921
+ 738921
+ 738921
+ 738921
+ 738921
+ 738921
+ 738921
+ 738921
+ 738921
+--?.*
+--?.*
+--?.*
+--?.*
+(40 rows)
+
 select convert(1, binary) & convert(1, binary);
  ?column? 
 ----------
@@ -760,6 +1093,7 @@ drop table test_bit_and_1;
 drop table test_bit_and_2;
 drop table test_inet6_ntoa;
 drop table test_md5;
+drop table test_to_days;
 drop table test_type_table;
 reset current_schema;
 drop schema function_type_test;
