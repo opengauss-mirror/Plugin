@@ -47,6 +47,7 @@ extern char** get_next_snippet(
     char** query_string_single, const char* query_string, List* query_string_locationlist, int* stmt_num);
 
 extern void fixResTargetNameWithAlias(List* clause_list, const char* aliasname);
+extern char* EscapeQuotes(const char* src);
 #ifdef DOLPHIN
 enum CmpType {CMP_STRING_TYPE, CMP_REAL_TYPE, CMP_INT_TYPE, CMP_DECIMAL_TYPE, CMP_UNKNOWN_TYPE};
 CmpType map_oid_to_cmp_type(Oid oid, bool *unsigned_flag, bool *is_temporal_type = NULL);
