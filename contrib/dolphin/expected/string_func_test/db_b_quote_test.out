@@ -18,5 +18,18 @@ SELECT QUOTE('O\hello');
  E'O\\hello'
 (1 row)
 
+SELECT QUOTE(char(89));
+ quote 
+-------
+ 'Y'
+(1 row)
+
+SELECT QUOTE(char(224));
+ERROR:  Cannot convert string 0xe0 to UTF8
+CONTEXT:  referenced column: quote_literal
+referenced column: quote_literal
+SQL statement "SELECT (select quote_literal(t))"
+PL/pgSQL function quote(text) line 3 at RETURN
+referenced column: quote
 drop schema db_b_quote_test cascade;
 reset current_schema;
