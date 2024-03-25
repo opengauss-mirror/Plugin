@@ -1264,6 +1264,30 @@ CREATE OR REPLACE FUNCTION pg_catalog.log(text) RETURNS double precision LANGUAG
 CREATE OR REPLACE FUNCTION pg_catalog.log(char) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.log(varchar) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as double precision))';
 
+CREATE OR REPLACE FUNCTION pg_catalog.log2(uint1) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log2(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log2(uint2) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log2(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log2(uint4) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log2(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log2(uint8) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log2(cast($1 as double precision))';
+DROP FUNCTION IF EXISTS pg_catalog.log2(numeric);
+CREATE OR REPLACE FUNCTION pg_catalog.log2(numeric) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log2(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log2(bit) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log2(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log2(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log2(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log2(text) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log2(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log2(char) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log2(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log2(varchar) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log2(cast($1 as double precision))';
+
+CREATE OR REPLACE FUNCTION pg_catalog.log10(uint1) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log10(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log10(uint2) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log10(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log10(uint4) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log10(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log10(uint8) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log10(cast($1 as double precision))';
+DROP FUNCTION IF EXISTS pg_catalog.log10(numeric);
+CREATE OR REPLACE FUNCTION pg_catalog.log10(numeric) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log10(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log10(bit) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log10(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log10(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log10(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log10(text) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log10(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log10(char) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log10(cast($1 as double precision))';
+CREATE OR REPLACE FUNCTION pg_catalog.log10(varchar) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log10(cast($1 as double precision))';
+
 CREATE OR REPLACE FUNCTION pg_catalog.substr(arg1 longblob, start int, the_end int) RETURNS longblob LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substrb(arg1::text, start, the_end)::longblob';
 CREATE OR REPLACE FUNCTION pg_catalog.substr(arg1 longblob, start int) RETURNS longblob LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substrb(arg1::text, start)::longblob';
 
