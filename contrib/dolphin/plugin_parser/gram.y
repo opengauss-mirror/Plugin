@@ -6574,6 +6574,12 @@ part_options:
 					$$ = NULL;
 			 }
 			 ;
+
+opt_storage:
+			 STORAGE
+			 | /*EMPTY*/
+			 ;
+
 part_option:
 			 COMMENT opt_equal SCONST
 			 {
@@ -6581,6 +6587,11 @@ part_option:
 					u_sess->parser_cxt.hasPartitionComment = true;
 					$$ = (Node*)NULL;
 			 }
+			 | opt_storage engine_option
+				{
+					BCompatibilityOptionSupportCheck("engine");
+					$$ = (Node*)NULL;
+				}
 			 ;
 
 reloption_list:
