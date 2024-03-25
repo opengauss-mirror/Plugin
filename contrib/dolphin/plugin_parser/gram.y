@@ -1171,7 +1171,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
  * DOT_DOT is unused in the core SQL grammar, and so will always provoke
  * parse errors.  It is needed by PL/pgsql.
  */
-%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT UNDERSCORE_CHARSET
+%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT UNDERSCORE_CHARSET OR_OR_SYM
 %token <ival>	ICONST PARAM
 %token			TYPECAST ORA_JOINOP DOT_DOT COLON_EQUALS PARA_EQUALS SET_IDENT_SESSION SET_IDENT_GLOBAL
 
@@ -1347,7 +1347,8 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %right      FEATURES TARGET // DB4AI
 %left		UNION EXCEPT
 %left		INTERSECT
-%left		OR XOR
+%left		OR
+%left		XOR
 %left		AND
 %right		NOT
 %right		'=' CmpNullOp COLON_EQUALS
@@ -1399,6 +1400,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %left		'+' '-'
 %left		'*' '/' '%'
 %left		'^'
+%left		OR_OR_SYM
 /* Unary Operators */
 %left		AT				/* sets precedence for AT TIME ZONE */
 %left		COLLATE
@@ -33327,6 +33329,8 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 					n->call_func = false;
 					$$ = (Node *)n; 
 				}
+			| a_expr OR_OR_SYM a_expr
+				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "||", $1, $3, @2); }
 			| a_expr qual_Op a_expr				%prec Op
 				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, $3, @2); }
 			| qual_Op a_expr					%prec Op

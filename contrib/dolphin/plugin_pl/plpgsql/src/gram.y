@@ -437,7 +437,7 @@ static void processFunctionRecordOutParam(int varno, Oid funcoid, int* outparam)
  * Some of these are not directly referenced in this file, but they must be
  * here anyway.
  */
-%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT UNDERSCORE_CHARSET
+%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT UNDERSCORE_CHARSET OR_OR_SYM
 %token <ival>	ICONST PARAM
 %token			TYPECAST ORA_JOINOP DOT_DOT COLON_EQUALS PARA_EQUALS SET_IDENT_SESSION SET_IDENT_GLOBAL IDENT
 

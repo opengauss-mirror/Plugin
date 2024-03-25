@@ -2471,6 +2471,68 @@ WARNING:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: a
 INSERT IGNORE INTO TEST SELECT `text` xor `text` FROM test_multi_type_table;
+\x
+-- precedence test
+SELECT 1 or null xor null;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 0 or null xor null;
+ ?column? 
+----------
+ 
+(1 row)
+
+SELECT 1 or null xor 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 0 or null xor 1;
+ ?column? 
+----------
+ 
+(1 row)
+
+SELECT 1 or 0 xor null;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 0 or 0 xor null;
+ ?column? 
+----------
+ 
+(1 row)
+
+SELECT 1 or 0 xor 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 0 or 0 xor 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 1 or 1 xor 1;
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT 0 or 1 xor 1;
+ ?column? 
+----------
+ f
+(1 row)
+
 ---------- tail ----------
 drop schema multi_type_xor_test_schema cascade;
 NOTICE:  drop cascades to 2 other objects

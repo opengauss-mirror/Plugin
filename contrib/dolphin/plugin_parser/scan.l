@@ -1175,6 +1175,12 @@ other			.
 						yyextra->is_hint_str = false;
 						return (int)OR;
 					}
+					if (strcmp(yytext, "||") == 0 && SQL_MODE_PIPES_AS_CONCAT() && !GetSessionContext()->scan_from_pl)
+					{
+						yylval->str = pstrdup(yytext);
+						yyextra->is_hint_str = false;
+						return OR_OR_SYM;
+					}
 #endif
 					/* Convert "!=" operator to "<>" for compatibility */
 					if (strcmp(yytext, "!=") == 0 || strcmp(yytext, "^=") == 0)

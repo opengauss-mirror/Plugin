@@ -786,6 +786,19 @@ INSERT IGNORE INTO TEST SELECT `char` xor `varchar` FROM test_multi_type_table;
 INSERT IGNORE INTO TEST SELECT `binary` xor `varbinary` FROM test_multi_type_table;
 INSERT IGNORE INTO TEST SELECT `text` xor `text` FROM test_multi_type_table;
 
+\x
+-- precedence test
+SELECT 1 or null xor null;
+SELECT 0 or null xor null;
+SELECT 1 or null xor 1;
+SELECT 0 or null xor 1;
+SELECT 1 or 0 xor null;
+SELECT 0 or 0 xor null;
+SELECT 1 or 0 xor 1;
+SELECT 0 or 0 xor 1;
+SELECT 1 or 1 xor 1;
+SELECT 0 or 1 xor 1;
+
 ---------- tail ----------
 drop schema multi_type_xor_test_schema cascade;
 reset current_schema;
