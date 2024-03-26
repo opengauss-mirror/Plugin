@@ -2018,6 +2018,14 @@ CREATE OPERATOR CLASS uint4_ops
         OPERATOR        1       =(int4, uint4),
         FUNCTION        1       hashuint4(uint4);
 
+CREATE OPERATOR CLASS pg_catalog.enumtext_ops
+     FOR TYPE anyenum USING hash AS
+        OPERATOR        1       = ,
+        OPERATOR        1       =(anyenum, text),
+        OPERATOR        1       =(text, anyenum),
+        FUNCTION        1       hashenum(anyenum),
+        FUNCTION        1       hashtext(text);
+
 DROP FUNCTION IF EXISTS pg_catalog.xor(integer, integer);
 CREATE OR REPLACE FUNCTION pg_catalog.xor(int8, int8) RETURNS integer LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'dolphin_int8xor';
 CREATE OR REPLACE FUNCTION pg_catalog.xor(int8, bit) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.xor($1, $2::int8)';
