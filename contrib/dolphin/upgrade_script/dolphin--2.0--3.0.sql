@@ -2277,9 +2277,31 @@ CREATE OPERATOR pg_catalog.||(leftarg=unknown, rightarg=unknown, procedure=pg_ca
 CREATE OPERATOR pg_catalog.||(leftarg=unknown, rightarg=integer, procedure=pg_catalog.unknown_int_concat);
 CREATE OPERATOR pg_catalog.||(leftarg=integer, rightarg=unknown, procedure=pg_catalog.int_unknown_concat);
 
-CREATE OR REPLACE FUNCTION pg_catalog.left(bit, integer) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bit_left';
-CREATE OR REPLACE FUNCTION pg_catalog.left(blob, integer) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'blob_left';
-CREATE OR REPLACE FUNCTION pg_catalog.left(boolean, integer) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.left(cast($1 as text), $2)::varchar';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(boolean) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower(cast($1 as TEXT))::varchar';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(tinyblob) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'lower_blob';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(blob) RETURNS blob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'lower_blob';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(mediumblob) RETURNS blob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'lower_blob';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(longblob) RETURNS blob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'lower_blob';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(bit) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'lower_bit';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(binary) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'lower_blob';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(varbinary) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'lower_blob';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(integer) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower(cast($1 as TEXT))::varchar';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(float) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower(cast($1 as TEXT))::varchar';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(char) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower(cast($1 as TEXT))::varchar';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(varchar) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower(cast($1 as TEXT))::varchar';
+
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(boolean) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(tinyblob) RETURNS varbinary LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(blob) RETURNS blob LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(mediumblob) RETURNS blob LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(longblob) RETURNS blob LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(bit) RETURNS varbinary LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(binary) RETURNS varbinary LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(varbinary) RETURNS varbinary LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(integer) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(float) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(char) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(varchar) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
 
 CREATE OR REPLACE FUNCTION pg_catalog.int_uint2_eq(int, uint2) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1 = $2::int4)';
 CREATE OPERATOR pg_catalog.=(LEFTARG = int, RIGHTARG = uint2, COMMUTATOR = operator(pg_catalog.=), PROCEDURE = pg_catalog.int_uint2_eq, RESTRICT = eqsel, JOIN = eqjoinsel);

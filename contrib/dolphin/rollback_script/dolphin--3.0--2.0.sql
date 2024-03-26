@@ -1718,6 +1718,32 @@ DROP FUNCTION IF EXISTS pg_catalog.left(bit, integer);
 DROP FUNCTION IF EXISTS pg_catalog.left(blob, integer);
 DROP FUNCTION IF EXISTS pg_catalog.left(boolean, integer);
 
+DROP FUNCTION IF EXISTS pg_catalog.lower(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.lower(bit);
+DROP FUNCTION IF EXISTS pg_catalog.lower(tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.lower(blob);
+DROP FUNCTION IF EXISTS pg_catalog.lower(mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.lower(longblob);
+DROP FUNCTION IF EXISTS pg_catalog.lower(binary);
+DROP FUNCTION IF EXISTS pg_catalog.lower(varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.lower(integer);
+DROP FUNCTION IF EXISTS pg_catalog.lower(float);
+DROP FUNCTION IF EXISTS pg_catalog.lower(char);
+DROP FUNCTION IF EXISTS pg_catalog.lower(varchar);
+
+DROP FUNCTION IF EXISTS pg_catalog.lcase(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(blob);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(longblob);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(bit);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(binary);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(integer);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(float);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(char);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(varchar);
+
 DROP OPERATOR IF EXISTS pg_catalog.=(int, uint2);
 DROP FUNCTION IF EXISTS pg_catalog.int_uint2_eq(int, uint2);
 
