@@ -2318,3 +2318,24 @@ DROP FUNCTION IF EXISTS pg_catalog.timestamp_longblob_cmp(timestamptz, longblob)
 DROP AGGREGATE IF EXISTS pg_catalog.stddev_pop(json);
 DROP AGGREGATE IF EXISTS pg_catalog.var_pop(json);
 DROP FUNCTION IF EXISTS pg_catalog.any_accum(numeric[], anyelement);
+
+DROP FUNCTION IF EXISTS pg_catalog.upper(int8);
+DROP FUNCTION IF EXISTS pg_catalog.upper(numeric);
+DROP FUNCTION IF EXISTS pg_catalog.upper(date);
+DROP FUNCTION IF EXISTS pg_catalog.upper(time);
+DROP FUNCTION IF EXISTS pg_catalog.upper(timestamp(0) without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.upper(timestamp(0) with time zone);
+DROP FUNCTION IF EXISTS pg_catalog.upper(bit);
+DROP FUNCTION IF EXISTS pg_catalog.upper(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.upper(year);
+DROP FUNCTION IF EXISTS pg_catalog.upper(char);
+DROP FUNCTION IF EXISTS pg_catalog.upper(varchar);
+DROP FUNCTION IF EXISTS pg_catalog.upper(tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.upper(binary);
+DROP FUNCTION IF EXISTS pg_catalog.upper(varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.upper(blob);
+DROP FUNCTION IF EXISTS pg_catalog.upper(mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.upper(longblob);
+DROP FUNCTION IF EXISTS pg_catalog.upper(anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.upper(anyset);
+DROP FUNCTION IF EXISTS pg_catalog.upper(json);

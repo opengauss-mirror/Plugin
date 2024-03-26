@@ -580,6 +580,125 @@ insert ignore into test_to_days select to_days(`set_t`) from test_type_table;
 insert ignore into test_to_days select to_days(`json`) from test_type_table;
 select * from test_to_days order by c;
 
+select
+upper(`int1`),
+upper(`uint1`),
+upper(`int2`),
+upper(`uint2`),
+upper(`int4`),
+upper(`uint4`),
+upper(`int8`),
+upper(`uint8`),
+upper(`float4`),
+upper(`float8`),
+upper(`numeric`),
+upper(`bit1`),
+upper(`bit64`),
+upper(`boolean`),
+upper(`date`),
+upper(`time`),
+upper(`time(4)`),
+upper(`datetime`),
+upper(`datetime(4)`),
+upper(`timestamp`),
+upper(`timestamp(4)`),
+upper(`year`),
+upper(`char`),
+upper(`varchar`),
+upper(`binary`),
+upper(`varbinary`),
+upper(`tinyblob`),
+upper(`blob`),
+upper(`mediumblob`),
+upper(`longblob`),
+upper(`text`),
+upper(`enum_t`),
+upper(`set_t`),
+upper(`json`)
+from test_type_table;
+
+create table test_upper_1(c varchar(100));
+create table test_upper_2(c varbinary(100));
+create table test_upper_3(c text);
+create table test_upper_4(c blob);
+create table test_upper_5(c mediumblob);
+create table test_upper_6(c longblob);
+insert into test_upper_1 select upper(`int1`) from test_type_table;
+insert into test_upper_1 select upper(`uint1`) from test_type_table;
+insert into test_upper_1 select upper(`int2`) from test_type_table;
+insert into test_upper_1 select upper(`uint2`) from test_type_table;
+insert into test_upper_1 select upper(`int4`) from test_type_table;
+insert into test_upper_1 select upper(`uint4`) from test_type_table;
+insert into test_upper_1 select upper(`int8`) from test_type_table;
+insert into test_upper_1 select upper(`uint8`) from test_type_table;
+insert into test_upper_1 select upper(`float4`) from test_type_table;
+insert into test_upper_1 select upper(`float8`) from test_type_table;
+insert into test_upper_1 select upper(`numeric`) from test_type_table;
+insert into test_upper_2 select upper(`bit1`) from test_type_table;
+insert into test_upper_2 select upper(`bit64`) from test_type_table;
+insert into test_upper_1 select upper(`boolean`) from test_type_table;
+insert into test_upper_1 select upper(`date`) from test_type_table;
+insert into test_upper_1 select upper(`time`) from test_type_table;
+insert into test_upper_1 select upper(`time(4)`) from test_type_table;
+insert into test_upper_1 select upper(`datetime`) from test_type_table;
+insert into test_upper_1 select upper(`datetime(4)`) from test_type_table;
+insert into test_upper_1 select upper(`timestamp`) from test_type_table;
+insert into test_upper_1 select upper(`timestamp(4)`) from test_type_table;
+insert into test_upper_1 select upper(`year`) from test_type_table;
+insert into test_upper_1 select upper(`char`) from test_type_table;
+insert into test_upper_1 select upper(`varchar`) from test_type_table;
+insert into test_upper_2 select upper(`binary`) from test_type_table;
+insert into test_upper_2 select upper(`varbinary`) from test_type_table;
+insert into test_upper_2 select upper(`tinyblob`) from test_type_table;
+insert into test_upper_4 select upper(`blob`) from test_type_table;
+insert into test_upper_5 select upper(`mediumblob`) from test_type_table;
+insert into test_upper_6 select upper(`longblob`) from test_type_table;
+insert into test_upper_3 select upper(`text`) from test_type_table;
+insert into test_upper_1 select upper(`enum_t`) from test_type_table;
+insert into test_upper_1 select upper(`set_t`) from test_type_table;
+insert into test_upper_3 select upper(`json`) from test_type_table;
+insert ignore into test_upper_1 select upper(`int1`) from test_type_table;
+insert ignore into test_upper_1 select upper(`uint1`) from test_type_table;
+insert ignore into test_upper_1 select upper(`int2`) from test_type_table;
+insert ignore into test_upper_1 select upper(`uint2`) from test_type_table;
+insert ignore into test_upper_1 select upper(`int4`) from test_type_table;
+insert ignore into test_upper_1 select upper(`uint4`) from test_type_table;
+insert ignore into test_upper_1 select upper(`int8`) from test_type_table;
+insert ignore into test_upper_1 select upper(`uint8`) from test_type_table;
+insert ignore into test_upper_1 select upper(`float4`) from test_type_table;
+insert ignore into test_upper_1 select upper(`float8`) from test_type_table;
+insert ignore into test_upper_1 select upper(`numeric`) from test_type_table;
+insert ignore into test_upper_2 select upper(`bit1`) from test_type_table;
+insert ignore into test_upper_2 select upper(`bit64`) from test_type_table;
+insert ignore into test_upper_1 select upper(`boolean`) from test_type_table;
+insert ignore into test_upper_1 select upper(`date`) from test_type_table;
+insert ignore into test_upper_1 select upper(`time`) from test_type_table;
+insert ignore into test_upper_1 select upper(`time(4)`) from test_type_table;
+insert ignore into test_upper_1 select upper(`datetime`) from test_type_table;
+insert ignore into test_upper_1 select upper(`datetime(4)`) from test_type_table;
+insert ignore into test_upper_1 select upper(`timestamp`) from test_type_table;
+insert ignore into test_upper_1 select upper(`timestamp(4)`) from test_type_table;
+insert ignore into test_upper_1 select upper(`year`) from test_type_table;
+insert ignore into test_upper_1 select upper(`char`) from test_type_table;
+insert ignore into test_upper_1 select upper(`varchar`) from test_type_table;
+insert ignore into test_upper_2 select upper(`binary`) from test_type_table;
+insert ignore into test_upper_2 select upper(`varbinary`) from test_type_table;
+insert ignore into test_upper_2 select upper(`tinyblob`) from test_type_table;
+insert ignore into test_upper_4 select upper(`blob`) from test_type_table;
+insert ignore into test_upper_5 select upper(`mediumblob`) from test_type_table;
+insert ignore into test_upper_6 select upper(`longblob`) from test_type_table;
+insert ignore into test_upper_3 select upper(`text`) from test_type_table;
+insert ignore into test_upper_1 select upper(`enum_t`) from test_type_table;
+insert ignore into test_upper_1 select upper(`set_t`) from test_type_table;
+insert ignore into test_upper_3 select upper(`json`) from test_type_table;
+
+select * from test_upper_1 order by c;
+select * from test_upper_2 order by c;
+select * from test_upper_3 order by c;
+select * from test_upper_4 order by c;
+select * from test_upper_5 order by c;
+select * from test_upper_6 order by c;
+
 select convert(1, binary) & convert(1, binary);
 select convert(1, binary) & convert(2, binary);
 select convert(1.1, binary) & convert(1.2, binary);
@@ -594,5 +713,6 @@ drop table test_inet6_ntoa;
 drop table test_md5;
 drop table test_to_days;
 drop table test_type_table;
+drop table test_upper_1, test_upper_2, test_upper_3, test_upper_4, test_upper_5, test_upper_6;
 reset current_schema;
 drop schema function_type_test;
