@@ -465,6 +465,52 @@ DROP FUNCTION IF EXISTS pg_catalog.log(text);
 DROP FUNCTION IF EXISTS pg_catalog.log(char);
 DROP FUNCTION IF EXISTS pg_catalog.log(varchar);
 
+DROP FUNCTION IF EXISTS pg_catalog.log2(uint1);
+DROP FUNCTION IF EXISTS pg_catalog.log2(uint2);
+DROP FUNCTION IF EXISTS pg_catalog.log2(uint4);
+DROP FUNCTION IF EXISTS pg_catalog.log2(uint8);
+DROP FUNCTION IF EXISTS pg_catalog.log2(numeric);
+CREATE OR REPLACE FUNCTION pg_catalog.log2(numeric)
+RETURNS numeric
+AS
+$$
+BEGIN
+    IF $1 <= 0 THEN
+        RETURN NULL;
+    end if;
+    RETURN (SELECT log(2, $1));
+END;
+$$
+LANGUAGE plpgsql;
+DROP FUNCTION IF EXISTS pg_catalog.log2(bit);
+DROP FUNCTION IF EXISTS pg_catalog.log2(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.log2(text);
+DROP FUNCTION IF EXISTS pg_catalog.log2(char);
+DROP FUNCTION IF EXISTS pg_catalog.log2(varchar);
+
+DROP FUNCTION IF EXISTS pg_catalog.log10(uint1);
+DROP FUNCTION IF EXISTS pg_catalog.log10(uint2);
+DROP FUNCTION IF EXISTS pg_catalog.log10(uint4);
+DROP FUNCTION IF EXISTS pg_catalog.log10(uint8);
+DROP FUNCTION IF EXISTS pg_catalog.log10(numeric);
+CREATE OR REPLACE FUNCTION pg_catalog.log10(numeric)
+RETURNS numeric
+AS
+$$
+BEGIN
+    IF $1 <= 0 THEN
+        RETURN NULL;
+    end if;
+    RETURN (SELECT log(10, $1));
+END;
+$$
+LANGUAGE plpgsql;
+DROP FUNCTION IF EXISTS pg_catalog.log10(bit);
+DROP FUNCTION IF EXISTS pg_catalog.log10(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.log10(text);
+DROP FUNCTION IF EXISTS pg_catalog.log10(char);
+DROP FUNCTION IF EXISTS pg_catalog.log10(varchar);
+
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int1(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int2(anyelement) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int4(anyelement) CASCADE;
