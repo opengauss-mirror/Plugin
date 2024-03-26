@@ -1,13 +1,14 @@
-EXTENSION = vector
+EXTENSION = datavec
 EXTVERSION = 0.4.4
 
-MODULE_big = vector
-DATA = $(wildcard sql/*--*.sql)
+MODULE_big = datavec
+DATA = sql/datavec--0.4.4.sql
+#$(wildcard sql/*--*.sql)
 OBJS = src/ivfbuild.o src/ivfflat.o src/ivfinsert.o src/ivfkmeans.o src/ivfscan.o src/ivfutils.o src/ivfvacuum.o src/vector.o
 
 TESTS = $(wildcard test/sql/*.sql)
 REGRESS = $(patsubst test/sql/%.sql,%,$(TESTS))
-REGRESS_OPTS = --inputdir=test --load-extension=vector
+REGRESS_OPTS = --inputdir=test --load-extension=datavec
 
 OPTFLAGS = -march=native
 
@@ -47,7 +48,7 @@ PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
 else
-subdir = contrib/pgvector
+subdir = contrib/datavec
 top_builddir = ../..
 include $(top_builddir)/src/Makefile.global
 include $(top_srcdir)/contrib/contrib-global.mk
@@ -77,10 +78,10 @@ dist:
 .PHONY: docker
 
 docker:
-	docker build --pull --no-cache --platform linux/amd64 -t ankane/pgvector:latest .
+	docker build --pull --no-cache --platform linux/amd64 -t ankane/datavec:latest .
 
 .PHONY: docker-release
 
 docker-release:
-	docker buildx build --push --pull --no-cache --platform linux/amd64,linux/arm64 -t ankane/pgvector:latest .
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t ankane/pgvector:v$(EXTVERSION) .
+	docker buildx build --push --pull --no-cache --platform linux/amd64,linux/arm64 -t ankane/datavec:latest .
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t ankane/datavec:v$(EXTVERSION) .

@@ -1,5 +1,5 @@
 -- complain if script is sourced in psql, rather than via CREATE EXTENSION
-\echo Use "CREATE EXTENSION vector" to load this file. \quit
+\echo Use "CREATE EXTENSION datavec" to load this file. \quit
 
 -- type
 
