@@ -50,6 +50,7 @@ static int DecodeTimezone(const char* str, int* tzp);
 static const datetkn* datebsearch(const char* key, const datetkn* base, int nel);
 static int DecodeDate(char* str, unsigned int fmask, unsigned int* tmask, bool* is2digits, struct pg_tm* tm);
 #ifdef DOLPHIN
+static const dolphin_datetkn* dolphin_datebsearch(const char* key, const dolphin_datetkn* base, int nel);
 static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, bool ad, struct pg_tm* tm, unsigned int date_flag = 0);
 #else
 static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool bc, struct pg_tm* tm);
@@ -254,6 +255,20 @@ static datetkn deltatktbl[] = {
 
 static int szdeltatktbl = sizeof deltatktbl / sizeof deltatktbl[0];
 #ifdef DOLPHIN
+/* dictionary sorted */
+static dolphin_datetkn dolphin_deltatktbl[] = {
+    {"sql_tsi_day", UNITS, DTK_DAY},
+    {"sql_tsi_hour", UNITS, DTK_HOUR},
+    {"sql_tsi_minute", UNITS, DTK_MINUTE},
+    {"sql_tsi_month", UNITS, DTK_MONTH},
+    {"sql_tsi_quarter", UNITS, DTK_QUARTER},
+    {"sql_tsi_second", UNITS, DTK_SECOND},
+    {"sql_tsi_week", UNITS, DTK_WEEK},
+    {"sql_tsi_year", UNITS, DTK_YEAR}
+};
+
+static int dolphin_szdeltatktbl = sizeof dolphin_deltatktbl / sizeof dolphin_deltatktbl[0];
+
 #define NUMERIC_MAX_STRING_LENGTH (NUMERIC_MAX_PRECISION + 2)
 /* Position for YYYY-DD-MM HH-MM-DD.FFFFFF AM in default format */
 static unsigned char internal_format_positions[]=
@@ -3919,14 +3934,29 @@ int DecodeUnits(int field, const char* lowtoken, int* val)
 {
     int type;
     const datetkn* tp = NULL;
-
+#ifdef DOLPHIN
+    const dolphin_datetkn* dtp = NULL;
+#endif
     tp = u_sess->time_cxt.deltacache[field];
     if (tp == NULL || strncmp(lowtoken, tp->token, TOKMAXLEN) != 0) {
         tp = datebsearch(lowtoken, deltatktbl, szdeltatktbl);
     }
     if (tp == NULL) {
-        type = UNKNOWN_FIELD;
-        *val = 0;
+#ifdef DOLPHIN
+        dtp = dolphin_datebsearch(lowtoken, dolphin_deltatktbl, dolphin_szdeltatktbl);
+        if (dtp == NULL) {
+#endif
+            type = UNKNOWN_FIELD;
+            *val = 0;
+#ifdef DOLPHIN
+        } else {
+            type = dtp->type;
+            if (type == TZ || type == DTZ)
+                *val = FROMVAL(dtp);
+            else
+                *val = dtp->value;
+        }
+#endif
     } else {
         u_sess->time_cxt.deltacache[field] = tp;
         type = tp->type;
@@ -4096,6 +4126,31 @@ static const datetkn* datebsearch(const char* key, const datetkn* base, int nel)
     }
     return NULL;
 }
+
+#ifdef DOLPHIN
+static const dolphin_datetkn* dolphin_datebsearch(const char* key, const dolphin_datetkn* base, int nel)
+{
+    if (nel > 0) {
+        const dolphin_datetkn *last = base + nel - 1, *position = NULL;
+        int result;
+
+        while (last >= base) {
+            position = base + ((last - base) >> 1);
+            result = key[0] - position->token[0];
+            if (result == 0) {
+                result = strncmp(key, position->token, DOLPHIN_TOKMAXLEN);
+                if (result == 0)
+                    return position;
+            }
+            if (result < 0)
+                last = position - 1;
+            else
+                base = position + 1;
+        }
+    }
+    return NULL;
+}
+#endif
 
 /* EncodeTimezone()
  *		Copies representation of a numeric timezone offset to str.

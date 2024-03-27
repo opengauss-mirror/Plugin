@@ -74,6 +74,14 @@ enum b_units
   UNIT_MINUTE_MICROSECOND,
   UNIT_SECOND_MICROSECOND
 };
+
+#define DOLPHIN_TOKMAXLEN 20
+
+typedef struct dolphin_datetkn {
+    char token[DOLPHIN_TOKMAXLEN + 1];
+    char type;
+    char value;
+} dolphin_datetkn;
 #endif
 
 /* Limits for the TIME data type */
