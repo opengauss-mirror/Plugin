@@ -4,7 +4,7 @@
 #include "nodes/pg_list.h"
 #include "plugin_utils/fmgr.h"
 
-#define ENABLE_B_CMPT_MODE (GetSessionContext()->enableBCmptMode)
+#define ENABLE_B_CMPT_MODE (!u_sess->attr.attr_common.IsInplaceUpgrade && GetSessionContext()->enableBCmptMode)
 
 #if defined _WIN32 || defined __CYGWIN__
   #ifdef BUILDING_DLL

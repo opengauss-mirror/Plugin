@@ -971,7 +971,7 @@ void init_session_vars(void)
     DefineCustomBoolVariable("dolphin.b_compatibility_mode",
                              "Enable mysql behavior override opengauss's when collision happens.",
                              NULL,
-                             &ENABLE_B_CMPT_MODE,
+                             &GetSessionContext()->enableBCmptMode,
                              true,
                              PGC_USERSET,
                              0,

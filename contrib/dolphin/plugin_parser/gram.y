@@ -25832,7 +25832,7 @@ load_quote_str:
 CreatedbStmt:
 			CREATE DATABASE database_name createdb_opt_list
 				{
-					if ($4 != NIL || (GetSessionContext()->enableBCmptMode == false)) {
+					if ($4 != NIL || (ENABLE_B_CMPT_MODE == false)) {
 						CreatedbStmt *n = makeNode(CreatedbStmt);
 						IsValidIdent($3);
 						n->dbname = $3;
@@ -25860,7 +25860,7 @@ CreatedbStmt:
 				}
 			| CREATE DATABASE IF_P NOT EXISTS database_name createdb_opt_list
 				{
-					if ($7 != NIL || (GetSessionContext()->enableBCmptMode == false)) {
+					if ($7 != NIL || (ENABLE_B_CMPT_MODE == false)) {
 						CreatedbStmt *n = makeNode(CreatedbStmt);
 						IsValidIdent($6);
 						n->dbname = $6;
@@ -25888,7 +25888,7 @@ CreatedbStmt:
 				}
 			| CREATE DATABASE database_name CharsetCollate
 				{
-					if (GetSessionContext()->enableBCmptMode) {
+					if (ENABLE_B_CMPT_MODE) {
 						ereport(NOTICE, (errmsg("CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
 						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 						n->schemaname = $3;
@@ -25906,7 +25906,7 @@ CreatedbStmt:
 				}
 			| CREATE DATABASE IF_P NOT EXISTS database_name CharsetCollate
 				{
-					if (GetSessionContext()->enableBCmptMode) {
+					if (ENABLE_B_CMPT_MODE) {
 						ereport(NOTICE, (errmsg("CREAET DATABASE will change to CREATE SCHEMA when dolphin.b_compatibility_mode is on.")));
 						CreateSchemaStmt *n = makeNode(CreateSchemaStmt);
 						n->schemaname = $6;
@@ -26048,7 +26048,7 @@ AlterDatabaseStmt:
 				 }
 			| ALTER DATABASE database_name CharsetCollate
 				{
-					if (GetSessionContext()->enableBCmptMode) {
+					if (ENABLE_B_CMPT_MODE) {
 						ereport(NOTICE, (errmsg("ALTER DATABASE will change to ALTER SCHEMA when dolphin.b_compatibility_mode is on.")));
 						AlterSchemaStmt *n = makeNode(AlterSchemaStmt);
 						n->schemaname = $3;
@@ -26107,7 +26107,7 @@ alterdb_opt_item:
 
 DropdbStmt: DROP DATABASE database_name
 				{
-					if (GetSessionContext()->enableBCmptMode) {
+					if (ENABLE_B_CMPT_MODE) {
 						ereport(NOTICE, (errmsg("DROP DATABASE will change to DROP SCHEMA when dolphin.b_compatibility_mode is on.")));
 						DropStmt *n = makeNode(DropStmt);
 						n->removeType = OBJECT_SCHEMA;
@@ -26126,7 +26126,7 @@ DropdbStmt: DROP DATABASE database_name
 				}
 			| DROP DATABASE IF_P EXISTS database_name
 				{
-					if (GetSessionContext()->enableBCmptMode) {
+					if (ENABLE_B_CMPT_MODE) {
 						ereport(NOTICE, (errmsg("DROP DATABASE will change to DROP SCHEMA when dolphin.b_compatibility_mode is on.")));
 						DropStmt *n = makeNode(DropStmt);
 						n->removeType = OBJECT_SCHEMA;
@@ -33425,7 +33425,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 				{
 					char* op_str = ((Value*)lfirst($1->head))->val.str;
 					/* see if condition satisfied for special handling of b_compatibility mode */
-					bool is_satisfied = (GetSessionContext()->enableBCmptMode && $1->length == 1);
+					bool is_satisfied = (ENABLE_B_CMPT_MODE && $1->length == 1);
 					if (is_satisfied && strcmp("!", op_str) == 0) {
 						$$ = (Node *) makeA_Expr(AEXPR_NOT, NIL, NULL, $2, @1);
 					} else if (is_satisfied && strcmp("!!", op_str) == 0) {
@@ -33748,7 +33748,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 				}
 			| a_expr IS UNKNOWN							%prec IS
 				{
-					if (GetSessionContext()->enableBCmptMode) {
+					if (ENABLE_B_CMPT_MODE) {
 						NullTest *n = makeNode(NullTest);
 						n->arg = (Expr *) $1;
 						n->nulltesttype = IS_NULL;
@@ -33762,7 +33762,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 				}
 			| a_expr IS NOT UNKNOWN						%prec IS
 				{
-					if (GetSessionContext()->enableBCmptMode) {
+					if (ENABLE_B_CMPT_MODE) {
 						NullTest *n = makeNode(NullTest);
 						n->arg = (Expr *) $1;
 						n->nulltesttype = IS_NOT_NULL;
@@ -35461,7 +35461,7 @@ func_expr_common_subexpr:
 			| DB_B_FORMAT '(' func_arg_list ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
-					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && GetSessionContext()->enableBCmptMode
+					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && ENABLE_B_CMPT_MODE
 						&& (list_length($3) == 2 || list_length($3) == 3))
 					{
 						n->funcname = SystemFuncName("db_b_format");
@@ -35498,7 +35498,7 @@ func_expr_common_subexpr:
 			| DB_B_JSOBJ '(' func_arg_list ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
-					if (GetSessionContext()->enableBCmptMode) {
+					if (ENABLE_B_CMPT_MODE) {
 						n->funcname = SystemFuncName("json_object_mysql");
 						n->colname = "json_object";
 					}
@@ -35518,7 +35518,7 @@ func_expr_common_subexpr:
 			| DB_B_JSOBJ '(' ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
-					if (GetSessionContext()->enableBCmptMode) {
+					if (ENABLE_B_CMPT_MODE) {
 						n->funcname = SystemFuncName("json_object_noarg");
 						n->colname = "json_object";
 					}
@@ -35612,7 +35612,7 @@ func_expr_common_subexpr:
 						char* argname = strVal(&con->val);
 						b_units enum_unit;
 						if (resolve_units(argname, &enum_unit)) {
-							if (GetSessionContext()->enableBCmptMode) {
+							if (ENABLE_B_CMPT_MODE) {
 								n->funcname = SystemFuncName("b_extract");
 								n->colname = "extract";
 							} else {
@@ -35622,7 +35622,7 @@ func_expr_common_subexpr:
 							n->funcname = SystemFuncName("date_part");
 						}
 					} else {
-						if (GetSessionContext()->enableBCmptMode) {
+						if (ENABLE_B_CMPT_MODE) {
 							n->funcname = SystemFuncName("b_extract");
 							n->colname = "extract";
 						} else {
@@ -35642,7 +35642,7 @@ func_expr_common_subexpr:
 			| LAST_DAY_FUNC '(' a_expr ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
-					if(GetSessionContext()->enableBCmptMode) {
+					if(ENABLE_B_CMPT_MODE) {
 						n->funcname = SystemFuncName("b_db_last_day");
 						n->colname = pstrdup("last_day");
 					} else {
@@ -35721,7 +35721,7 @@ func_expr_common_subexpr:
 			| TIMESTAMPDIFF '(' timestamp_arg_list ')'
 				{
 					FuncCall *n = makeNode(FuncCall);
-					if (GetSessionContext()->enableBCmptMode) {
+					if (ENABLE_B_CMPT_MODE) {
 						n->funcname = SystemFuncName("b_timestampdiff");
 						n->colname = "timestampdiff";
 					} else {
@@ -39628,7 +39628,7 @@ normal_ident:		DOLPHINIDENT							{ $$ = downcase_str($1->str, $1->is_quoted); }
 
 
 static List* NakeLikeOpList() {
-    if (GetSessionContext()->enableBCmptMode) {
+    if (ENABLE_B_CMPT_MODE) {
     	return list_make1(makeString("~~*"));
     } else {
     	return list_make1(makeString("~~"));
@@ -39636,7 +39636,7 @@ static List* NakeLikeOpList() {
 }
 
 static List* MakeNotLikeOpList() {
-    return GetSessionContext()->enableBCmptMode ? list_make1(makeString("!~~*")) : list_make1(makeString("!~~"));
+    return ENABLE_B_CMPT_MODE ? list_make1(makeString("!~~*")) : list_make1(makeString("!~~"));
 }
 
 static Node* MakeSubLinkWithOp(SubLinkType subType, Node* testExpr, char* op, Node* subSelect, int location)

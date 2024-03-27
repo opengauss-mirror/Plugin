@@ -1063,7 +1063,7 @@ other			.
 					if (slashstar)
 						nchars = slashstar - yytext;
 #ifdef DOLPHIN
-					if(nchars >= 1 && GetSessionContext()->enableBCmptMode && !yyextra->in_slash_proc_body)
+					if(nchars >= 1 && ENABLE_B_CMPT_MODE && !yyextra->in_slash_proc_body)
 					{
 						char   *sharpchar = strstr(yytext, "#");
 						if(sharpchar)
@@ -1077,7 +1077,7 @@ other			.
 							}
 						}
 					}
-					if (GetSessionContext()->enableBCmptMode)
+					if (ENABLE_B_CMPT_MODE)
 					{
 						char *qMark = strstr(yytext, "?");
 						if (qMark != NULL)
@@ -1163,7 +1163,7 @@ other			.
 					if (nchars >= NAMEDATALEN)
 						yyerror("operator too long");
 #ifdef DOLPHIN
-					if (strcmp(yytext, "&&") == 0 && GetSessionContext()->enableBCmptMode && !GetSessionContext()->scan_from_pl)
+					if (strcmp(yytext, "&&") == 0 && ENABLE_B_CMPT_MODE && !GetSessionContext()->scan_from_pl)
 					{
 						yylval->str = pstrdup("AND");
 						yyextra->is_hint_str = false;
@@ -1341,7 +1341,7 @@ other			.
 
 #ifdef DOLPHIN
 					char* sharpcomment = strstr(yytext,"#");
-					if(sharpcomment && GetSessionContext()->enableBCmptMode && !yyextra->in_slash_proc_body)
+					if(sharpcomment && ENABLE_B_CMPT_MODE && !yyextra->in_slash_proc_body)
 					{
 						int nchars = sharpcomment - yytext;
 						yyless(nchars);
@@ -1643,7 +1643,7 @@ scanner_init(const char *str,
 	 * Make a scan buffer with special termination needed by flex.
 	 */
 #ifdef DOLPHIN
-	if( str[0] == '#' &&  GetSessionContext()->enableBCmptMode)
+	if( str[0] == '#' &&  ENABLE_B_CMPT_MODE)
     {
                 yyext->scanbuf = (char *) palloc(slen + 3);
                 ++yyext->scanbuf;

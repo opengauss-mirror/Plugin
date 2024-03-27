@@ -269,7 +269,7 @@ Datum bit_in(PG_FUNCTION_ARGS)
         slen;                 /* Length of the input string		  */
 
 #ifdef DOLPHIN
-    if (GetSessionContext()->enableBCmptMode) {
+    if (ENABLE_B_CMPT_MODE) {
         sp = input_string;
         slen = strlen(sp);
         if (slen == 0) {
@@ -1583,7 +1583,7 @@ Datum bittotinyint(VarBit* arg, bool isUnsigned)
     bits8* r = NULL;
     int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
 
-    if (GetSessionContext()->enableBCmptMode) {
+    if (ENABLE_B_CMPT_MODE) {
         result = isUnsigned ? (uint8)DirectFunctionCall1(ui8toui1, Int64GetDatum(bittobigint(arg, true))) :
                  (uint8)DirectFunctionCall1(ui8toi1, Int64GetDatum(bittobigint(arg, true)));
         PG_RETURN_INT8(result);
@@ -1618,7 +1618,7 @@ Datum bittosmallint(VarBit* arg, bool isUnsigned)
     bits8* r = NULL;
     int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
 
-    if (GetSessionContext()->enableBCmptMode) {
+    if (ENABLE_B_CMPT_MODE) {
         result = isUnsigned ? (uint16)DirectFunctionCall1(ui8toui2, Int64GetDatum(bittobigint(arg, true))) :
                  (uint16)DirectFunctionCall1(ui8toi2, Int64GetDatum(bittobigint(arg, true)));
         PG_RETURN_INT16(result);
@@ -1653,7 +1653,7 @@ Datum bittoint(VarBit* arg, bool isUnsigned)
     bits8* r = NULL;
     int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
 
-    if (GetSessionContext()->enableBCmptMode) {
+    if (ENABLE_B_CMPT_MODE) {
         result = isUnsigned ? (uint32)DirectFunctionCall1(ui8toui4, Int64GetDatum(bittobigint(arg, true))) :
                  (uint32)DirectFunctionCall1(ui8toi4, Int64GetDatum(bittobigint(arg, true)));
         PG_RETURN_INT32(result);
@@ -1721,7 +1721,7 @@ Datum bitfromtinyint(int16 a, int32 typmod)
     if (typmod <= 0 || typmod > VARBITMAXLEN)
         typmod = 1; /* default bit length */
 
-    if (typmod < M_BIT_LEN && GetSessionContext()->enableBCmptMode) {
+    if (typmod < M_BIT_LEN && ENABLE_B_CMPT_MODE) {
         return DirectFunctionCall2(bit, bitfromtinyint(a, M_BIT_LEN), Int32GetDatum(typmod));
     }
 
@@ -1773,7 +1773,7 @@ Datum bitfromsmallint(int32 a, int32 typmod)
     if (typmod <= 0 || typmod > VARBITMAXLEN)
         typmod = 1; /* default bit length */
 
-    if (typmod < M_BIT_LEN && GetSessionContext()->enableBCmptMode) {
+    if (typmod < M_BIT_LEN && ENABLE_B_CMPT_MODE) {
         return DirectFunctionCall2(bit, bitfromsmallint(a, M_BIT_LEN), Int32GetDatum(typmod));
     }
 
@@ -1825,7 +1825,7 @@ Datum bitfromint(int64 a, int32 typmod)
     if (typmod <= 0 || typmod > VARBITMAXLEN)
         typmod = 1; /* default bit length */
 
-    if (typmod < M_BIT_LEN && GetSessionContext()->enableBCmptMode) {
+    if (typmod < M_BIT_LEN && ENABLE_B_CMPT_MODE) {
         return DirectFunctionCall2(bit, bitfromint(a, M_BIT_LEN), Int32GetDatum(typmod));
     }
 
@@ -1877,7 +1877,7 @@ Datum bitfrombigint(int128 a, int32 typmod, bool canIgnore = false)
     if (typmod <= 0 || typmod > VARBITMAXLEN)
         typmod = 1; /* default bit length */
     
-    if (typmod < M_BIT_LEN && GetSessionContext()->enableBCmptMode) {
+    if (typmod < M_BIT_LEN && ENABLE_B_CMPT_MODE) {
         return DirectFunctionCall2Coll(bit, InvalidOid, bitfrombigint(a, M_BIT_LEN, canIgnore),
                                        Int32GetDatum(typmod), canIgnore);
     }

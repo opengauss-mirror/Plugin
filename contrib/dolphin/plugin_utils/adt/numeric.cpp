@@ -2601,7 +2601,7 @@ Datum numeric_div(PG_FUNCTION_ARGS)
      * This ensures that the precision of openGauss is greater than or equal to
      * that of MySQL.
      */
-    bool enableBCmptMode = GetSessionContext()->enableBCmptMode;
+    bool enableBCmptMode = ENABLE_B_CMPT_MODE;
     int div_precision_increment = GetSessionContext()->div_precision_increment;
     int oldScale = rscale;
     if (enableBCmptMode) {
@@ -3269,7 +3269,7 @@ Datum numeric_power_xor(PG_FUNCTION_ARGS)
     /*
      * Compatible with xor when b_compatibility_mode=true.
      */
-    if (GetSessionContext()->enableBCmptMode) {
+    if (ENABLE_B_CMPT_MODE) {
         Numeric num1 = PG_GETARG_NUMERIC(0);
         Numeric num2 = PG_GETARG_NUMERIC(1);
 	int64 num1_int64 = DatumGetInt64(DirectFunctionCall1(numeric_int8, NumericGetDatum(num1)));
@@ -22716,7 +22716,7 @@ static Numeric numeric_div_internal(NumericVar arg1, NumericVar arg2, bool ignor
      * This ensures that the precision of openGauss is greater than or equal to
      * that of MySQL.
      */
-    bool enableBCmptMode = GetSessionContext()->enableBCmptMode;
+    bool enableBCmptMode = ENABLE_B_CMPT_MODE;
     int div_precision_increment = GetSessionContext()->div_precision_increment;
     int oldScale = rscale;
     if (enableBCmptMode) {
