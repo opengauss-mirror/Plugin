@@ -1,3 +1,5 @@
+DROP OPERATOR CLASS IF EXISTS pg_catalog.enumtext_ops USING hash;
+
 DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_int8(nvarchar2);
 DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_enum(nvarchar2, int4, anyelement);
 DROP FUNCTION IF EXISTS pg_catalog.nvarchar2_cast_ui8(nvarchar2);

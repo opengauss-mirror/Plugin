@@ -4261,9 +4261,15 @@ select * from t_v22 natural join t_v31;
 (0 rows)
 
 select * from t_v22 natural join t_enum;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_v22 natural join t_set;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_v23 natural join t_v1;
 WARNING:  invalid input syntax for type tinyint: "1.23a"
 WARNING:  invalid input syntax for type tinyint: "1.23a"
@@ -4461,9 +4467,15 @@ select * from t_v23 natural join t_v31;
 (0 rows)
 
 select * from t_v23 natural join t_enum;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_v23 natural join t_set;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_v24 natural join t_v1;
 WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
@@ -4636,9 +4648,15 @@ select * from t_v24 natural join t_v31;
 (0 rows)
 
 select * from t_v24 natural join t_enum;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_v24 natural join t_set;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_v25 natural join t_v1;
 WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
@@ -4806,9 +4824,15 @@ select * from t_v25 natural join t_v31;
 (0 rows)
 
 select * from t_v25 natural join t_enum;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_v25 natural join t_set;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_v26 natural join t_v1;
 WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
@@ -5776,9 +5800,15 @@ select * from t_v30 natural join t_v31;
 (0 rows)
 
 select * from t_v30 natural join t_enum;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_v30 natural join t_set;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_v31 natural join t_v1;
  col1 
 ------
@@ -6046,13 +6076,25 @@ select * from t_enum natural join t_v21;
 (0 rows)
 
 select * from t_enum natural join t_v22;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_enum natural join t_v23;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_enum natural join t_v24;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_enum natural join t_v25;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_enum natural join t_v26;
 WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
@@ -6078,7 +6120,10 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_enum natural join t_v30;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_enum natural join t_v31;
  col1 
 ------
@@ -6200,13 +6245,25 @@ select * from t_set natural join t_v21;
 (0 rows)
 
 select * from t_set natural join t_v22;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_set natural join t_v23;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_set natural join t_v24;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_set natural join t_v25;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_set natural join t_v26;
 WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
@@ -6232,7 +6289,10 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_set natural join t_v30;
---?ERROR:  could not find hash function for hash operator .*
+ col1 
+------
+(0 rows)
+
 select * from t_set natural join t_v31;
  col1 
 ------
