@@ -36662,6 +36662,7 @@ all_Op:		Op										{ $$ = $1; }
 			| CmpOp									{ $$ = $1; }
 			| CmpNullOp								{ $$ = $1; }
 			| MathOp								{ $$ = $1; }
+			| OR_OR_SYM								{ $$ = $1; }
 		;
 
 assign_operator: 	'='								{ }
