@@ -3,7 +3,6 @@ EXTVERSION = 0.4.4
 
 MODULE_big = datavec
 DATA = sql/datavec--0.4.4.sql
-#$(wildcard sql/*--*.sql)
 OBJS = src/ivfbuild.o src/ivfflat.o src/ivfinsert.o src/ivfkmeans.o src/ivfscan.o src/ivfutils.o src/ivfvacuum.o src/vector.o
 
 TESTS = $(wildcard test/sql/*.sql)

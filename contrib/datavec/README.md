@@ -1,4 +1,4 @@
-# pgvector
+# datavec
 
 Open-source vector similarity search for Postgres
 
@@ -10,7 +10,7 @@ Supports
 
 Plus [ACID](https://en.wikipedia.org/wiki/ACID) compliance, point-in-time recovery, JOINs, and all of the other [great features](https://www.postgresql.org/about/) of Postgres
 
-[![Build Status](https://github.com/pgvector/pgvector/workflows/build/badge.svg?branch=master)](https://github.com/pgvector/pgvector/actions)
+[![Build Status](https://github.com/datavec/datavec/workflows/build/badge.svg?branch=master)](https://github.com/datavec/datavec/actions)
 
 ## Installation
 
@@ -18,8 +18,8 @@ Compile and install the extension (supports Postgres 11+)
 
 ```sh
 cd /tmp
-git clone --branch v0.4.4 https://github.com/pgvector/pgvector.git
-cd pgvector
+git clone --branch v0.4.4 https://github.com/datavec/datavec.git
+cd datavec
 make
 make install # may need sudo
 ```
@@ -33,7 +33,7 @@ You can also install it with [Docker](#docker), [Homebrew](#homebrew), [PGXN](#p
 Enable the extension (do this once in each database where you want to use it)
 
 ```tsql
-CREATE EXTENSION vector;
+CREATE EXTENSION datavec;
 ```
 
 Create a vector column with 3 dimensions
@@ -155,7 +155,7 @@ SELECT category_id, AVG(embedding) FROM items GROUP BY category_id;
 
 ## Indexing
 
-By default, pgvector performs exact nearest neighbor search, which provides perfect recall.
+By default, datavec performs exact nearest neighbor search, which provides perfect recall.
 
 You can add an index to use approximate nearest neighbor search, which trades some recall for performance. Unlike typical indexes, you will see different results for queries after adding an approximate index.
 
@@ -252,7 +252,7 @@ CREATE TABLE items (embedding vector(3), category_id int) PARTITION BY LIST(cate
 
 ## Hybrid Search
 
-Use together with Postgres [full-text search](https://www.postgresql.org/docs/current/textsearch-intro.html) for hybrid search ([Python example](https://github.com/pgvector/pgvector-python/blob/master/examples/hybrid_search.py)).
+Use together with Postgres [full-text search](https://www.postgresql.org/docs/current/textsearch-intro.html) for hybrid search ([Python example](https://github.com/datavec/datavec-python/blob/master/examples/hybrid_search.py)).
 
 ```sql
 SELECT id, content FROM items, to_tsquery('hello & search') query
@@ -291,27 +291,27 @@ CREATE INDEX ON items USING ivfflat (embedding vector_l2_ops) WITH (lists = 1000
 
 ## Languages
 
-Use pgvector from any language with a Postgres client. You can even generate and store vectors in one language and query them in another.
+Use datavec from any language with a Postgres client. You can even generate and store vectors in one language and query them in another.
 
 Language | Libraries / Examples
 --- | ---
-C++ | [pgvector-cpp](https://github.com/pgvector/pgvector-cpp)
-C# | [pgvector-dotnet](https://github.com/pgvector/pgvector-dotnet)
-Crystal | [pgvector-crystal](https://github.com/pgvector/pgvector-crystal)
-Elixir | [pgvector-elixir](https://github.com/pgvector/pgvector-elixir)
-Go | [pgvector-go](https://github.com/pgvector/pgvector-go)
-Haskell | [pgvector-haskell](https://github.com/pgvector/pgvector-haskell)
-Java, Scala | [pgvector-java](https://github.com/pgvector/pgvector-java)
-Julia | [pgvector-julia](https://github.com/pgvector/pgvector-julia)
-Lua | [pgvector-lua](https://github.com/pgvector/pgvector-lua)
-Node.js | [pgvector-node](https://github.com/pgvector/pgvector-node)
-Perl | [pgvector-perl](https://github.com/pgvector/pgvector-perl)
-PHP | [pgvector-php](https://github.com/pgvector/pgvector-php)
-Python | [pgvector-python](https://github.com/pgvector/pgvector-python)
-R | [pgvector-r](https://github.com/pgvector/pgvector-r)
-Ruby | [pgvector-ruby](https://github.com/pgvector/pgvector-ruby), [Neighbor](https://github.com/ankane/neighbor)
-Rust | [pgvector-rust](https://github.com/pgvector/pgvector-rust)
-Swift | [pgvector-swift](https://github.com/pgvector/pgvector-swift)
+C++ | [datavec-cpp](https://github.com/datavec/datavec-cpp)
+C# | [datavec-dotnet](https://github.com/datavec/datavec-dotnet)
+Crystal | [datavec-crystal](https://github.com/datavec/datavec-crystal)
+Elixir | [datavec-elixir](https://github.com/datavec/datavec-elixir)
+Go | [datavec-go](https://github.com/datavec/datavec-go)
+Haskell | [datavec-haskell](https://github.com/datavec/datavec-haskell)
+Java, Scala | [datavec-java](https://github.com/datavec/datavec-java)
+Julia | [datavec-julia](https://github.com/datavec/datavec-julia)
+Lua | [datavec-lua](https://github.com/datavec/datavec-lua)
+Node.js | [datavec-node](https://github.com/datavec/datavec-node)
+Perl | [datavec-perl](https://github.com/datavec/datavec-perl)
+PHP | [datavec-php](https://github.com/datavec/datavec-php)
+Python | [datavec-python](https://github.com/datavec/datavec-python)
+R | [datavec-r](https://github.com/datavec/datavec-r)
+Ruby | [datavec-ruby](https://github.com/datavec/datavec-ruby), [Neighbor](https://github.com/ankane/neighbor)
+Rust | [datavec-rust](https://github.com/datavec/datavec-rust)
+Swift | [datavec-swift](https://github.com/datavec/datavec-swift)
 
 ## Frequently Asked Questions
 
@@ -321,7 +321,7 @@ A non-partitioned table has a limit of 32 TB by default in Postgres. A partition
 
 #### Is replication supported?
 
-Yes, pgvector uses the write-ahead log (WAL), which allows for replication and point-in-time recovery.
+Yes, datavec uses the write-ahead log (WAL), which allows for replication and point-in-time recovery.
 
 #### What if I want to index vectors with more than 2,000 dimensions?
 
@@ -397,8 +397,8 @@ Support for Windows is currently experimental. Use `nmake` to build:
 
 ```cmd
 set "PGROOT=C:\Program Files\PostgreSQL\15"
-git clone --branch v0.4.4 https://github.com/pgvector/pgvector.git
-cd pgvector
+git clone --branch v0.4.4 https://github.com/datavec/datavec.git
+cd datavec
 nmake /F Makefile.win
 nmake /F Makefile.win install
 ```
@@ -407,20 +407,20 @@ nmake /F Makefile.win install
 
 ### Docker
 
-Get the [Docker image](https://hub.docker.com/r/ankane/pgvector) with:
+Get the [Docker image](https://hub.docker.com/r/ankane/datavec) with:
 
 ```sh
-docker pull ankane/pgvector
+docker pull ankane/datavec
 ```
 
-This adds pgvector to the [Postgres image](https://hub.docker.com/_/postgres) (run it the same way).
+This adds datavec to the [Postgres image](https://hub.docker.com/_/postgres) (run it the same way).
 
 You can also build the image manually:
 
 ```sh
-git clone --branch v0.4.4 https://github.com/pgvector/pgvector.git
-cd pgvector
-docker build --build-arg PG_MAJOR=15 -t myuser/pgvector .
+git clone --branch v0.4.4 https://github.com/datavec/datavec.git
+cd datavec
+docker build --build-arg PG_MAJOR=15 -t myuser/datavec .
 ```
 
 ### Homebrew
@@ -428,7 +428,7 @@ docker build --build-arg PG_MAJOR=15 -t myuser/pgvector .
 With Homebrew Postgres, you can use:
 
 ```sh
-brew install pgvector
+brew install datavec
 ```
 
 Note: This only adds it to the `postgresql@14` formula
@@ -446,7 +446,7 @@ pgxn install vector
 Debian and Ubuntu packages are available from the [PostgreSQL APT Repository](https://wiki.postgresql.org/wiki/Apt). Follow the [setup instructions](https://wiki.postgresql.org/wiki/Apt#Quickstart) and run:
 
 ```sh
-sudo apt install postgresql-15-pgvector
+sudo apt install postgresql-15-datavec
 ```
 
 Note: Replace `15` with your Postgres server version
@@ -456,22 +456,22 @@ Note: Replace `15` with your Postgres server version
 RPM packages are available from the [PostgreSQL Yum Repository](https://yum.postgresql.org/). Follow the [setup instructions](https://www.postgresql.org/download/linux/redhat/) for your distribution and run:
 
 ```sh
-sudo yum install pgvector_15
+sudo yum install datavec_15
 # or
-sudo dnf install pgvector_15
+sudo dnf install datavec_15
 ```
 
 Note: Replace `15` with your Postgres server version
 
 ### conda-forge
 
-With Conda Postgres, install from [conda-forge](https://anaconda.org/conda-forge/pgvector) with:
+With Conda Postgres, install from [conda-forge](https://anaconda.org/conda-forge/datavec) with:
 
 ```sh
-conda install -c conda-forge pgvector
+conda install -c conda-forge datavec
 ```
 
-This method is [community-maintained](https://github.com/conda-forge/pgvector-feedstock) by [@mmcauliffe](https://github.com/mmcauliffe)
+This method is [community-maintained](https://github.com/conda-forge/datavec-feedstock) by [@mmcauliffe](https://github.com/mmcauliffe)
 
 ### Postgres.app
 
@@ -479,12 +479,12 @@ Download the [latest release](https://postgresapp.com/downloads.html) with Postg
 
 ## Hosted Postgres
 
-pgvector is available on [these providers](https://github.com/pgvector/pgvector/issues/54).
+datavec is available on [these providers](https://github.com/datavec/datavec/issues/54).
 
 To request a new extension on other providers:
 
 - Google Cloud SQL - vote or comment on [this page](https://issuetracker.google.com/issues/265172065)
-- DigitalOcean Managed Databases - vote or comment on [this page](https://ideas.digitalocean.com/managed-database/p/pgvector-extension-for-postgresql)
+- DigitalOcean Managed Databases - vote or comment on [this page](https://ideas.digitalocean.com/managed-database/p/datavec-extension-for-postgresql)
 - Heroku Postgres - vote or comment on [this page](https://github.com/heroku/roadmap/issues/156)
 
 ## Upgrading
@@ -492,20 +492,20 @@ To request a new extension on other providers:
 Install the latest version and run:
 
 ```sql
-ALTER EXTENSION vector UPDATE;
+ALTER EXTENSION datavec UPDATE;
 ```
 
 ## Upgrade Notes
 
 ### 0.4.0
 
-If upgrading with Postgres < 13, remove this line from `sql/vector--0.3.2--0.4.0.sql`:
+If upgrading with Postgres < 13, remove this line from `sql/datavec--0.3.2--0.4.0.sql`:
 
 ```sql
-ALTER TYPE vector SET (STORAGE = extended);
+ALTER TYPE datavec SET (STORAGE = extended);
 ```
 
-Then run `make install` and `ALTER EXTENSION vector UPDATE;`.
+Then run `make install` and `ALTER EXTENSION datavec UPDATE;`.
 
 ### 0.3.1
 
@@ -533,22 +533,22 @@ Thanks to:
 
 ## History
 
-View the [changelog](https://github.com/pgvector/pgvector/blob/master/CHANGELOG.md)
+View the [changelog](https://github.com/datavec/datavec/blob/master/CHANGELOG.md)
 
 ## Contributing
 
 Everyone is encouraged to help improve this project. Here are a few ways you can help:
 
-- [Report bugs](https://github.com/pgvector/pgvector/issues)
-- Fix bugs and [submit pull requests](https://github.com/pgvector/pgvector/pulls)
+- [Report bugs](https://github.com/datavec/datavec/issues)
+- Fix bugs and [submit pull requests](https://github.com/datavec/datavec/pulls)
 - Write, clarify, or fix documentation
 - Suggest or add new features
 
 To get started with development:
 
 ```sh
-git clone https://github.com/pgvector/pgvector.git
-cd pgvector
+git clone https://github.com/datavec/datavec.git
+cd datavec
 make
 make install
 ```

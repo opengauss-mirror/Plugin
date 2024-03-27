@@ -10,7 +10,7 @@ $node->init;
 $node->start;
 
 # Create table
-$node->safe_psql("postgres", "CREATE EXTENSION vector;");
+$node->safe_psql("postgres", "CREATE EXTENSION datavec;");
 $node->safe_psql("postgres", "CREATE TABLE tst (i int4, v vector(3));");
 $node->safe_psql("postgres",
 	"INSERT INTO tst SELECT i, '[1,2,3]' FROM generate_series(1, 10) i;"

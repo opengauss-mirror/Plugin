@@ -10,7 +10,7 @@ $node->init;
 $node->start;
 
 # Create table
-$node->safe_psql("postgres", "CREATE EXTENSION vector;");
+$node->safe_psql("postgres", "CREATE EXTENSION datavec;");
 $node->safe_psql("postgres", "CREATE TABLE tst (r1 real, r2 real, r3 real, v vector(3));");
 $node->safe_psql("postgres", qq(
 	INSERT INTO tst SELECT r1, r2, r3, ARRAY[r1, r2, r3] FROM (

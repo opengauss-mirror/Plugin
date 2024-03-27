@@ -28,7 +28,7 @@
 
 ## 0.4.0 (2023-01-11)
 
-If upgrading with Postgres < 13, see [this note](https://github.com/pgvector/pgvector#040).
+If upgrading with Postgres < 13, see [this note](https://github.com/datavec/datavec#040).
 
 - Changed text representation for vector elements to match `real`
 - Changed storage for vector from `plain` to `extended`
@@ -45,7 +45,7 @@ If upgrading with Postgres < 13, see [this note](https://github.com/pgvector/pgv
 
 ## 0.3.1 (2022-11-02)
 
-If upgrading from 0.2.7 or 0.3.0, [recreate](https://github.com/pgvector/pgvector#031) all `ivfflat` indexes after upgrading to ensure all data is indexed.
+If upgrading from 0.2.7 or 0.3.0, [recreate](https://github.com/datavec/datavec#031) all `ivfflat` indexes after upgrading to ensure all data is indexed.
 
 - Fixed issue with inserts silently corrupting `ivfflat` indexes (introduced in 0.2.7)
 - Fixed segmentation fault with index creation when lists > 6500

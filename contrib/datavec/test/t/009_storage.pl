@@ -12,7 +12,7 @@ $node->init;
 $node->start;
 
 # Create table
-$node->safe_psql("postgres", "CREATE EXTENSION vector;");
+$node->safe_psql("postgres", "CREATE EXTENSION datavec;");
 $node->safe_psql("postgres", "CREATE TABLE tst (v1 vector(1024), v2 vector(1024), v3 vector(1024));");
 
 # Test insert succeeds

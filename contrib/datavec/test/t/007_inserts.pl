@@ -14,7 +14,7 @@ $node->init;
 $node->start;
 
 # Create table and index
-$node->safe_psql("postgres", "CREATE EXTENSION vector;");
+$node->safe_psql("postgres", "CREATE EXTENSION datavec;");
 $node->safe_psql("postgres", "CREATE TABLE tst (v vector($dim));");
 $node->safe_psql("postgres",
 	"INSERT INTO tst SELECT ARRAY[$array_sql] FROM generate_series(1, 10000) i;"
