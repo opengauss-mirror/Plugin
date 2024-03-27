@@ -795,6 +795,14 @@ INSERT INTO test_blob SELECT `binary` || `varbinary` FROM test_multi_type_table;
 DROP TABLE test_text;
 DROP TABLE test_blob;
 DROP TABLE test_multi_type_table;
+
+\x
+-- precedence test
+SELECT 4*2 || 1+4+5;
+SELECT (4*2) || 1+4+5;
+SELECT 2+3+4+3 || 4*4;
+SELECT 2+3+4+3 || (4*4);
+
 ---------- tail ----------
 drop schema pipes_as_concat_test_schema cascade;
 reset current_schema;
