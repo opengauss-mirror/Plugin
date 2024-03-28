@@ -1,0 +1,17 @@
+create schema b_database_subquery;
+set current_schema = b_database_subquery;
+
+set dolphin.sql_mode =''; 
+drop TABLE IF EXISTS t1;
+drop TABLE IF EXISTS t2;
+CREATE TABLE t1(a INTEGER);
+INSERT INTO t1 values(1), (2);
+CREATE TABLE t2(a INTEGER);
+INSERT INTO t2 VALUES(1), (3);
+SELECT * FROM t1
+WHERE a IN (SELECT a FROM t2 HAVING a IN (SELECT a FROM t2))
+HAVING a IN (SELECT a FROM t2);
+
+reset dolphin.sql_mode;
+reset current_schema;
+drop schema b_database_subquery cascade;
