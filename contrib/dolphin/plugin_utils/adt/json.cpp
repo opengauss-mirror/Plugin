@@ -119,6 +119,7 @@ static void array_to_json_internal(Datum array, StringInfo result, bool use_line
 static void datum_to_json(Datum val, bool is_null, StringInfo result, TYPCATEGORY tcategory, Oid typoutputfunc,
                           bool key_scalar);
 static void add_json(Datum val, bool is_null, StringInfo result, Oid val_type, bool key_scalar);
+static text *catenate_stringinfo_string(StringInfo buffer, const char *addon);
 
 /* the null action object used for pure validation */
 static JsonSemAction nullSemAction = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
@@ -1732,12 +1733,11 @@ Datum json_agg_finalfn(PG_FUNCTION_ARGS)
 
     /* cannot be called directly because of internal-type argument */
     Assert(AggCheckCallContext(fcinfo, NULL));
-    state = PG_ARGISNULL(0) ? NULL : (StringInfo)PG_GETARG_POINTER(0);
+    state = PG_ARGISNULL(0) ? NULL : (StringInfo) PG_GETARG_POINTER(0);
     if (state == NULL) {
         PG_RETURN_NULL();
     }
-    appendStringInfoChar(state, ']');
-    PG_RETURN_TEXT_P(cstring_to_text_with_len(state->data, state->len));
+    PG_RETURN_TEXT_P(catenate_stringinfo_string(state, "]"));
 }
 
 /*
@@ -1829,8 +1829,28 @@ Datum json_object_agg_finalfn(PG_FUNCTION_ARGS)
         PG_RETURN_TEXT_P(cstring_to_text("{}"));
     }
 
-    appendStringInfoString(state, " }");
-    PG_RETURN_TEXT_P(cstring_to_text_with_len(state->data, state->len));
+    PG_RETURN_TEXT_P(catenate_stringinfo_string(state, " }"));
+}
+
+/*
+ * Helper function for aggregates: return given StringInfo's contents plus
+ * specified trailing string, as a text datum.  We need this because aggregate
+ * final functions are not allowed to modify the aggregate state.
+ */
+static text *catenate_stringinfo_string(StringInfo buffer, const char *addon)
+{
+    int buflen = buffer->len;
+    int addlen = strlen(addon);
+    Size resbuflen = buflen + addlen;
+    text *result = (text *)palloc(resbuflen + VARHDRSZ);
+
+    SET_VARSIZE(result, resbuflen + VARHDRSZ);
+    int rc = memcpy_s(VARDATA(result), resbuflen, buffer->data, buflen);
+    securec_check(rc, "\0", "\0");
+    rc = memcpy_s(VARDATA(result) + buflen, resbuflen - buflen, addon, addlen);
+    securec_check(rc, "\0", "\0");
+
+    return result;
 }
 
 /*

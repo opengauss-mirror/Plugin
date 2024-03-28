@@ -21324,7 +21324,9 @@ CreateProcedureStmt:
 		;
 
 CreatePackageStmt:
-			CREATE opt_or_replace PACKAGE pkg_name invoker_rights as_is {pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;set_function_style_a();}
+			CREATE opt_or_replace PACKAGE pkg_name invoker_rights as_is {pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+			u_sess->plsql_cxt.isCreatePkg = true;
+			set_function_style_a();}
 				{
                     set_create_plsql_type_start();
 					u_sess->plsql_cxt.need_create_depend = true;
@@ -21585,6 +21587,7 @@ pkg_body_subprogram: {
                     if (tok == END_P)
                     {
 						pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = false;
+						u_sess->plsql_cxt.isCreatePkg = false;
                         tok = YYLEX;
                         proc_e = yylloc;
 
@@ -21727,7 +21730,9 @@ pkg_body_subprogram: {
             }
             ;
 CreatePackageBodyStmt:
-			CREATE opt_or_replace PACKAGE BODY_P pkg_name as_is {pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;set_function_style_a();} pkg_body_subprogram
+			CREATE opt_or_replace PACKAGE BODY_P pkg_name as_is {pg_yyget_extra(yyscanner)->core_yy_extra.include_ora_comment = true;
+			u_sess->plsql_cxt.isCreatePkg = true;
+			set_function_style_a();} pkg_body_subprogram
 				{
 					set_create_plsql_type_start();
 					u_sess->plsql_cxt.need_create_depend = true;
@@ -21801,6 +21806,7 @@ CreatePackageBodyStmt:
                     } else {
                         n->pkginit = NULL;
                     }
+					u_sess->plsql_cxt.isCreatePkg = false;
 					$$ = (Node *)n;
 				}
 		;
@@ -37342,7 +37348,15 @@ target_el:	a_expr AS DolphinColLabel
 			| a_expr DOLPHINIDENT
 				{
 					$$ = makeNode(ResTarget);
-					$$->name = $2->str;
+					if (u_sess->attr.attr_sql.enable_ignore_case_in_dquotes 
+						&& (pg_yyget_extra(yyscanner))->core_yy_extra.ident_quoted)
+					{
+						$$->name = pg_strtolower(pstrdup($2->str));
+					}
+					else
+					{
+						$$->name = $2->str;
+					}
 					$$->indirection = NIL;
 					$$->val = (Node *)$1;
 					$$->location = @1;
@@ -37745,8 +37759,7 @@ dolphin_func_name_opt_arg:
 
 DOLPHINIDENT: IDENT
 				{
-					if (u_sess->attr.attr_sql.enable_ignore_case_in_dquotes 
-					    && (pg_yyget_extra(yyscanner))->core_yy_extra.ident_quoted)
+					if (u_sess->attr.attr_sql.enable_ignore_case_in_dquotes)
 					{
 						$$ = CreateDolphinIdent(pg_strtolower(pstrdup($1->str)), false);
 					}

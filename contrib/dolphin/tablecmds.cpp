@@ -3034,6 +3034,7 @@ ObjectAddress DefineRelation(CreateStmt* stmt, char relkind, Oid ownerId, Object
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                         errmsg("Only support segment storage type while parameter enable_segment is ON.")));
     }
+    CheckSegmentCompressOption(stmt->options, relkind, storage_type, storeChar);
 
     /*
      * Create the relation.  Inherited defaults and constraints are passed in
@@ -30874,7 +30875,7 @@ static void readTuplesAndInsertInternal(Relation tempTableRel, Relation partTabl
                 ((UHeapTuple)copyTuple)->xc_node_id = u_sess->pgxc_cxt.PGXCNodeIdentifier;
             }
         }
-        tableam_tuple_insert(partRel, copyTuple, GetCurrentCommandId(true), 0, NULL);
+        tableam_tuple_insert(partRel, copyTuple, GetCurrentCommandId(true), HEAP_INSERT_SPLIT_PARTITION, NULL);
         HeapTuple tup = (HeapTuple)copyTuple;
         tableam_tops_free_tuple(tup);
     }
