@@ -101,5 +101,28 @@ insert into t_text0001 values (1, substr(@val, 1, 1), @val::float4, @val::float4
 select * from t_text0001;
 drop table t_text0001;
 
+--test extra_float_digits
+reset extra_float_digits;
+select 1.234::float4;
+select 1.234::float8;
+select 3.14159265358979323846::float4;
+select 3.14159265358979323846::float8;
+select concat(1.234::float4,'a');
+select concat(1.234::float8,'a');
+set extra_float_digits = 2;
+select 1.234::float4;
+select 1.234::float8;
+select 3.14159265358979323846::float4;
+select 3.14159265358979323846::float8;
+select concat(1.234::float4,'a');
+select concat(1.234::float8,'a');
+set extra_float_digits = 3;
+select 1.234::float4;
+select 1.234::float8;
+select 3.14159265358979323846::float4;
+select 3.14159265358979323846::float8;
+select concat(1.234::float4,'a');
+select concat(1.234::float8,'a');
+
 drop schema db_nvarchar cascade;
 reset current_schema;

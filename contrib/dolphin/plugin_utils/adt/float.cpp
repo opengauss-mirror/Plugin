@@ -640,6 +640,11 @@ Datum float4out(PG_FUNCTION_ARGS)
 
             if (ndig < 1)
                 ndig = 1;
+#ifdef DOLPHIN
+            else if (ndig > 8) {
+                ndig = 8;
+            }
+#endif
 
             rc = snprintf_s(ascii, MAXFLOATWIDTH + 1, MAXFLOATWIDTH, "%.*g", ndig, num);
             securec_check_ss(rc, "\0", "\0");
@@ -911,6 +916,11 @@ Datum float8out(PG_FUNCTION_ARGS)
 
             if (ndig < 1)
                 ndig = 1;
+#ifdef DOLPHIN
+            else if (ndig > 17) {
+                ndig = 17;
+            }
+#endif
 
             rc = snprintf_s(ascii, MAXDOUBLEWIDTH + 1, MAXDOUBLEWIDTH, "%.*g", ndig, num);
             securec_check_ss(rc, "\0", "\0");
