@@ -2856,6 +2856,11 @@ static void process_rowMarks(Query* parse, Plan** resultPlan, PlannerInfo* root,
  */
 extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
 {
+#ifndef DOLPHIN
+    if(u_sess->hook_cxt.groupingplannerHook != NULL) {
+        return ((grouping_plannerFunc)(u_sess->hook_cxt.groupingplannerHook))(root, tuple_fraction);
+    }
+#endif
     Query* parse = root->parse;
     List* tlist = parse->targetList;
     int64 offset_est = 0;

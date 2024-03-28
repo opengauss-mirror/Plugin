@@ -809,8 +809,11 @@ Datum b_plpgsql_call_handler(PG_FUNCTION_ARGS)
         nonatomic = false;
     }
 #else
-    nonatomic = fcinfo->context && IsA(fcinfo->context, FunctionScanState) &&
-        !castNode(FunctionScanState, fcinfo->context)->atomic;
+    if (fcinfo->context) {
+        nonatomic = IsA(fcinfo->context, FunctionScanState) && !castNode(FunctionScanState, fcinfo->context)->atomic;
+    } else {
+        nonatomic = u_sess->SPI_cxt.is_allow_commit_rollback;
+    }
 #endif
     /* get cast owner and make sure current user is cast owner when execute cast-func */
     GetUserIdAndSecContext(&old_user, &save_sec_context);

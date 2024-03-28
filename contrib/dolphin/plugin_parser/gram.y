@@ -37341,7 +37341,15 @@ target_el:	a_expr AS DolphinColLabel
 			| a_expr DOLPHINIDENT
 				{
 					$$ = makeNode(ResTarget);
-					$$->name = $2->str;
+					if (u_sess->attr.attr_sql.enable_ignore_case_in_dquotes 
+						&& (pg_yyget_extra(yyscanner))->core_yy_extra.ident_quoted)
+					{
+						$$->name = pg_strtolower(pstrdup($2->str));
+					}
+					else
+					{
+						$$->name = $2->str;
+					}
 					$$->indirection = NIL;
 					$$->val = (Node *)$1;
 					$$->location = @1;
@@ -37744,8 +37752,7 @@ dolphin_func_name_opt_arg:
 
 DOLPHINIDENT: IDENT
 				{
-					if (u_sess->attr.attr_sql.enable_ignore_case_in_dquotes 
-					    && (pg_yyget_extra(yyscanner))->core_yy_extra.ident_quoted)
+					if (u_sess->attr.attr_sql.enable_ignore_case_in_dquotes)
 					{
 						$$ = CreateDolphinIdent(pg_strtolower(pstrdup($1->str)), false);
 					}
