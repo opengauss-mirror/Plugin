@@ -42,4 +42,12 @@ struct DR_Dolphin_proc_printtup {
     int nattrs;
     PrinttupAttrInfo* myinfo; /* Cached info about each attr */
 };
+
+
+#ifdef DOLPHIN
+extern void AddCheckInfo(StringInfo buf);
+extern void printtupStream(TupleTableSlot* slot, DestReceiver* self);
+extern void printBatch(VectorBatch* batch, DestReceiver* self);
+#endif
+
 #endif  /* printtup.h */

@@ -37,6 +37,9 @@
 #include "plugin_protocol/printtup.h"
 #include "plugin_protocol/proto_com.h"
 #include "plugin_postgres.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 #define DOLPHIN_BLOB_LENGTH 65535
 
@@ -360,9 +363,14 @@ static void printtup_prepare_info(DR_printtup *myState, TupleDesc typeinfo, int 
         if (format == 0) {
             getTypeOutputInfo(typeinfo->attrs[i].atttypid, &thisState->typoutput, &thisState->typisvarlena);
             fmgr_info(thisState->typoutput, &thisState->finfo);
+            thisState->encoding = get_valid_charset_by_collation(typeinfo->attrs[i].attcollation);
+            construct_conversion_fmgr_info(
+                thisState->encoding, u_sess->mb_cxt.ClientEncoding->encoding, (void*)&thisState->convert_finfo);
         } else if (format == 1) {
             getTypeBinaryOutputInfo(typeinfo->attrs[i].atttypid, &thisState->typsend, &thisState->typisvarlena);
             fmgr_info(thisState->typsend, &thisState->finfo);
+            thisState->encoding = PG_INVALID_ENCODING; // just initialize, should not be used
+            thisState->convert_finfo.fn_oid = InvalidOid;
         } else {
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("unsupported format code: %d", format)));
         }
@@ -668,3 +676,278 @@ static void spi_sql_proc_dest_destroy(DestReceiver *self)
 {
     pfree(self);
 }
+
+
+#ifdef DOLPHIN
+bool inline is_req_from_jdbc()
+{
+    return strcmp(u_sess->attr.attr_common.application_name, "PostgreSQL JDBC Driver") == 0;
+}
+
+bool inline is_type_support_not_escape_zero(Oid type)
+{
+    return BINARYOID == type;
+}
+
+void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
+{
+    TupleDesc typeinfo = slot->tts_tupleDescriptor;
+    DR_printtup *myState = (DR_printtup *)self;
+    StringInfo buf = &myState->buf;
+    int natts = typeinfo->natts;
+    int i;
+    bool need_free = false;
+    bool binary = false;
+    /* just as we define in backend/commands/analyze.cpp */
+#define WIDTH_THRESHOLD 1024
+
+    /* Set or update my derived attribute info, if needed */
+    if (myState->attrinfo != typeinfo || myState->nattrs != natts)
+        printtup_prepare_info(myState, typeinfo, natts);
+
+#ifdef PGXC
+
+    /*
+     * The datanodes would have sent all attributes in TEXT form. But
+     * if the client has asked for any attribute to be sent in a binary format,
+     * then we must decode the datarow and send every attribute in the format
+     * that the client has asked for. Otherwise its ok to just forward the
+     * datarow as it is
+     */
+    for (i = 0; i < natts; ++i) {
+        PrinttupAttrInfo *thisState = myState->myinfo + i;
+        if (thisState->format != 0)
+            binary = true;
+    }
+
+    /*
+     * If we are having DataRow-based tuple we do not have to encode attribute
+     * values, just send over the DataRow message as we received it from the
+     * Datanode
+     */
+    if (slot->tts_dataRow != NULL && (pg_get_client_encoding() == GetDatabaseEncoding()) && !binary) {
+        pq_beginmessage_reuse(buf, 'D');
+        appendBinaryStringInfo(buf, slot->tts_dataRow, slot->tts_dataLen);
+        AddCheckInfo(buf);
+        pq_endmessage_reuse(buf);
+        return;
+    }
+#endif
+
+    /* Make sure the tuple is fully deconstructed */
+    tableam_tslot_getallattrs(slot);
+
+    MemoryContext old_context = changeToTmpContext(self);
+    /*
+     * Prepare a DataRow message
+     */
+    pq_beginmessage_reuse(buf, 'D');
+
+    pq_sendint16(buf, natts);
+
+    /*
+     * send the attributes of this tuple
+     */
+    for (i = 0; i < natts; ++i) {
+        PrinttupAttrInfo *thisState = myState->myinfo + i;
+        Datum attr = slot->tts_values[i];
+
+        /*
+         * skip null value attribute,
+         * we need to skip the droped columns for analyze global stats.
+         */
+        if (slot->tts_isnull[i] || typeinfo->attrs[i].attisdropped) {
+            pq_sendint32(buf, (uint32)-1);
+            continue;
+        }
+
+        if (typeinfo->attrs[i].atttypid == ANYARRAYOID && slot->tts_dataRow != NULL) {
+            /*
+             * For ANYARRAY type, the not null DataRow-based tuple indicates the value in
+             * attr had been converted to CSTRING type previously by using anyarray_out.
+             * just send over the DataRow message as we received it.
+             */
+            pq_sendcountedtext_printtup(buf, (char *)attr, strlen((char *)attr), thisState->encoding, (void*)&thisState->convert_finfo);
+        } else {
+            if (thisState->format == 0) {
+                /* Text output */
+                char *outputstr = NULL;
+                char *zero_without_escape_output = NULL;
+                int actual_len = 0;
+#ifndef ENABLE_MULTIPLE_NODES
+                t_thrd.xact_cxt.callPrint = true;
+#endif
+                need_free = false;
+                switch (thisState->typoutput) {
+                    case F_INT4OUT: 
+                        outputstr = output_int32_to_cstring(DatumGetInt32(attr));
+                        break;
+                    case F_INT8OUT:
+                        outputstr = output_int64_to_cstring(DatumGetInt64(attr));
+                        break;
+                    case F_BPCHAROUT: 
+                        /* support dolphin customizing bpcharout */
+                        if (u_sess->attr.attr_sql.dolphin) {
+                            outputstr = OutputFunctionCall(&thisState->finfo, attr);
+                            need_free = true;
+                            break;
+                        }
+                    case F_VARCHAROUT: 
+                        outputstr = output_text_to_cstring((text*)DatumGetPointer(attr));
+                        need_free = !check_need_free_varchar_output(outputstr);
+                        break;
+                    case F_NUMERIC_OUT: 
+                        outputstr = output_numeric_out(DatumGetNumeric(attr));
+                        need_free = !check_need_free_numeric_output(outputstr);
+                        break;
+                    case F_DATE_OUT:
+                        /* support dolphin customizing dateout */
+                        if (u_sess->attr.attr_sql.dolphin) {
+                            outputstr = OutputFunctionCall(&thisState->finfo, attr);
+                            need_free = true;
+                        } else {
+                            outputstr = output_date_out(DatumGetDateADT(attr));
+                            need_free = !check_need_free_date_output(outputstr);
+                        }
+                        break;
+                    default:
+                        outputstr = OutputFunctionCall(&thisState->finfo, attr);
+                        need_free = false;
+                        break;
+                }
+#ifndef ENABLE_MULTIPLE_NODES
+                t_thrd.xact_cxt.callPrint = false;
+#endif
+                if (is_type_support_not_escape_zero(typeinfo->attrs[i].atttypid) &&
+                        SQL_MODE_NOT_ESCAPE_ZERO_IN_BINARY() && is_req_from_jdbc()) {
+                    int escape_len = strlen(outputstr);
+                    zero_without_escape_output = (char*)palloc(escape_len + 1);
+                    for (int i = 0; i < escape_len; i++) {
+                        if ((i + 3 < escape_len) && outputstr[i] == '\\' && outputstr[i + 1] == '0' &&
+                            outputstr[i + 2] == '0' &&  outputstr[i + 3] == '0') {
+                            zero_without_escape_output[actual_len++] = 0;
+                            i = i + 3;
+                        } else {
+                            zero_without_escape_output[actual_len++] = outputstr[i];
+                        }
+                    }
+                    zero_without_escape_output[actual_len] = '\0';
+                    pq_sendcountedtext_printtup(buf, zero_without_escape_output, actual_len, thisState->encoding, (void*)&thisState->convert_finfo);
+                    pfree(zero_without_escape_output);
+                } else {
+                    pq_sendcountedtext_printtup(buf, outputstr, strlen(outputstr), thisState->encoding, (void*)&thisState->convert_finfo);
+                }
+                if (need_free) {
+                    pfree(outputstr);
+                }
+            } else {
+                /* Binary output */
+                bytea *outputbytes = NULL;
+                outputbytes = SendFunctionCall(&thisState->finfo, attr);
+                pq_sendint32(buf, VARSIZE(outputbytes) - VARHDRSZ);
+                pq_sendbytes(buf, VARDATA(outputbytes), VARSIZE(outputbytes) - VARHDRSZ);
+                pfree(outputbytes);
+            }
+        }
+    }
+
+    (void)MemoryContextSwitchTo(old_context);
+
+    AddCheckInfo(buf);
+    pq_endmessage_reuse(buf);
+}
+
+
+static void dolphin_default_printtup_startup(DestReceiver *self, int operation, TupleDesc typeinfo)
+{
+    DR_printtup *myState = (DR_printtup *)self;
+    Portal portal = myState->portal;
+
+    /* create buffer to be used for all messages */
+    initStringInfo(&myState->buf);
+
+    if (PG_PROTOCOL_MAJOR(FrontendProtocol) < 3) {
+        /*
+         * Send portal name to frontend (obsolete cruft, gone in proto 3.0)
+         *
+         * If portal name not specified, use "blank" portal.
+         */
+        const char *portalName = portal->name;
+
+        if (portalName == NULL || portalName[0] == '\0')
+            portalName = "blank";
+
+        pq_puttextmessage('P', portalName);
+    }
+
+    /*
+     * If we are supposed to emit row descriptions, then send the tuple
+     * descriptor of the tuples.
+     */
+    if (myState->sendDescrip)
+        SendRowDescriptionMessage(&myState->buf, typeinfo, FetchPortalTargetList(portal), portal->formats);
+
+    /* ----------------
+     * We could set up the derived attr info at this time, but we postpone it
+     * until the first call of printtup, for 2 reasons:
+     * 1. We don't waste time (compared to the old way) if there are no
+     *	  tuples at all to output.
+     * 2. Checking in printtup allows us to handle the case that the tuples
+     *	  change type midway through (although this probably can't happen in
+     *	  the current executor).
+     * ----------------
+     */
+}
+
+
+static void dolphin_default_printtup_shutdown(DestReceiver *self)
+{
+    DR_printtup *myState = (DR_printtup *)self;
+
+    if (myState->myinfo != NULL)
+        pfree(myState->myinfo);
+    myState->myinfo = NULL;
+
+    myState->attrinfo = NULL;
+}
+
+
+static void dolphin_default_printtup_destroy(DestReceiver *self)
+{
+    pfree(self);
+}
+
+
+DestReceiver* dophin_default_printtup_create_DR(CommandDest dest)
+{
+    DR_printtup *self = (DR_printtup *)palloc0(sizeof(DR_printtup));
+
+    if (StreamTopConsumerAmI())
+        self->pub.receiveSlot = printtupStream;
+    else
+        self->pub.receiveSlot = dolphin_default_printtup; /* might get changed later */
+
+    self->pub.sendBatch = printBatch;
+    self->pub.rStartup = dolphin_default_printtup_startup;
+    self->pub.rShutdown = dolphin_default_printtup_shutdown;
+    self->pub.rDestroy = dolphin_default_printtup_destroy;
+    self->pub.finalizeLocalStream = NULL;
+    self->pub.mydest = dest;
+    self->pub.tmpContext = NULL;
+
+    /*
+     * Send T message automatically if DestRemote, but not if
+     * DestRemoteExecute
+     */
+    self->sendDescrip = (dest == DestRemote);
+
+    self->attrinfo = NULL;
+    self->nattrs = 0;
+    self->myinfo = NULL;
+    self->formats = NULL;
+
+    return (DestReceiver *)self;
+}
+
+#endif
+
