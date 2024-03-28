@@ -1220,7 +1220,7 @@ Datum float8mul(PG_FUNCTION_ARGS)
 
 #ifdef DOLPHIN
     if (arg1 == 0.0 || arg2 == 0.0) {
-        if (GetSessionContext()->enableBCmptMode && (arg1 < 0.0 || arg2 < 0.0)) {
+        if (ENABLE_B_CMPT_MODE && (arg1 < 0.0 || arg2 < 0.0)) {
             PG_RETURN_FLOAT8(-0.0);
         } else {
             PG_RETURN_FLOAT8(0);
@@ -1252,7 +1252,7 @@ Datum float8div(PG_FUNCTION_ARGS)
     }
 #ifdef DOLPHIN
     if (arg1 == 0.0) {
-        if (GetSessionContext()->enableBCmptMode && arg2 < 0) {
+        if (ENABLE_B_CMPT_MODE && arg2 < 0) {
             PG_RETURN_FLOAT8(-0.0);
         } else {
             PG_RETURN_FLOAT8(0);
@@ -1900,7 +1900,7 @@ Datum dpow_xor(PG_FUNCTION_ARGS)
     /*
      * Compatible with xor
      */
-    if (GetSessionContext()->enableBCmptMode) {
+    if (ENABLE_B_CMPT_MODE) {
         float8 arg1 = PG_GETARG_FLOAT8(0);
         float8 arg2 = PG_GETARG_FLOAT8(1);
         int32 num1_int32 = DatumGetInt32(DirectFunctionCall1(dtoi4, Float8GetDatum(arg1)));
@@ -2879,7 +2879,7 @@ Datum float48mul(PG_FUNCTION_ARGS)
 
 #ifdef DOLPHIN
     if (arg1 == 0.0 || arg2 == 0.0) {
-        if (GetSessionContext()->enableBCmptMode && (arg1 < 0.0 || arg2 < 0.0)) {
+        if (ENABLE_B_CMPT_MODE && (arg1 < 0.0 || arg2 < 0.0)) {
             PG_RETURN_FLOAT8(-0.0);
         } else {
             PG_RETURN_FLOAT8(0);
@@ -2911,7 +2911,7 @@ Datum float48div(PG_FUNCTION_ARGS)
 
 #ifdef DOLPHIN
     if (arg1 == 0.0) {
-        if (GetSessionContext()->enableBCmptMode && arg2 < 0) {
+        if (ENABLE_B_CMPT_MODE && arg2 < 0) {
             PG_RETURN_FLOAT8(-0.0);
         } else {
             PG_RETURN_FLOAT8(0);
@@ -2965,7 +2965,7 @@ Datum float84mul(PG_FUNCTION_ARGS)
 
 #ifdef DOLPHIN
     if (arg1 == 0.0 || arg2 == 0.0) {
-        if (GetSessionContext()->enableBCmptMode && (arg1 < 0.0 || arg2 < 0.0)) {
+        if (ENABLE_B_CMPT_MODE && (arg1 < 0.0 || arg2 < 0.0)) {
             PG_RETURN_FLOAT8(-0.0);
         } else {
             PG_RETURN_FLOAT8(0);
@@ -2997,7 +2997,7 @@ Datum float84div(PG_FUNCTION_ARGS)
     }
 #ifdef DOLPHIN
     if (arg1 == 0.0) {
-        if (GetSessionContext()->enableBCmptMode && arg2 < 0) {
+        if (ENABLE_B_CMPT_MODE && arg2 < 0) {
             PG_RETURN_FLOAT8(-0.0);
         } else {
             PG_RETURN_FLOAT8(0);

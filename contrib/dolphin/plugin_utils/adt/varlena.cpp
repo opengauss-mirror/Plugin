@@ -902,7 +902,7 @@ Datum byteaout(PG_FUNCTION_ARGS)
 // input interface of RAW type
 Datum rawin(PG_FUNCTION_ARGS)
 {
-    if (!GetSessionContext()->enableBCmptMode) {
+    if (!ENABLE_B_CMPT_MODE) {
         Datum fmt = DirectFunctionCall1(textin, CStringGetDatum(pstrdup("HEX")));
         Datum result;
         char* cstring_arg1 = PG_GETARG_CSTRING(0);
@@ -969,7 +969,7 @@ Datum normal_rawout(PG_FUNCTION_ARGS)
 // output interface of RAW type
 Datum rawout(PG_FUNCTION_ARGS)
 {
-    if (!GetSessionContext()->enableBCmptMode) {
+    if (!ENABLE_B_CMPT_MODE) {
         return normal_rawout(fcinfo);
     } else {
         return dolphin_blob_rawout(fcinfo);

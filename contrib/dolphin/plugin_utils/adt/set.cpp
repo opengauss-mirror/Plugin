@@ -964,7 +964,7 @@ Datum ftoset(PG_FUNCTION_ARGS)
 {
     float4 val = PG_GETARG_FLOAT4(0);
 #ifdef DOLPHIN
-    if (GetSessionContext()->enableBCmptMode) {
+    if (ENABLE_B_CMPT_MODE) {
         return int64toset(DirectFunctionCall1(ftoi8_floor, Float4GetDatum(val)), PG_GETARG_OID(1));
     } else {
         return int64toset(DirectFunctionCall1(ftoi8, Float4GetDatum(val)), PG_GETARG_OID(1));
@@ -977,7 +977,7 @@ Datum dtoset(PG_FUNCTION_ARGS)
 {
     float8 val = PG_GETARG_FLOAT8(0);
 #ifdef DOLPHIN
-    if (GetSessionContext()->enableBCmptMode) {
+    if (ENABLE_B_CMPT_MODE) {
         return int64toset(DirectFunctionCall1(dtoi8_floor, Float8GetDatum(val)), PG_GETARG_OID(1));
     } else {
         return int64toset(DirectFunctionCall1(dtoi8, Float8GetDatum(val)), PG_GETARG_OID(1));
@@ -990,7 +990,7 @@ Datum numbertoset(PG_FUNCTION_ARGS)
 {
     Numeric val = PG_GETARG_NUMERIC(0);
 #ifdef DOLPHIN
-    if (GetSessionContext()->enableBCmptMode) {
+    if (ENABLE_B_CMPT_MODE) {
         Datum num = DirectFunctionCall1(numeric_float8, NumericGetDatum(val));
         return int64toset(DirectFunctionCall1(dtoi8_floor, num), PG_GETARG_OID(1));
     } else {

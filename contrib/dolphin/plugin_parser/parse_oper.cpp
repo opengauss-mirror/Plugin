@@ -552,7 +552,7 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
      * we consider the string constant as datetime,
      * and make it become adding an interval to datetime.
      */
-    if (GetSessionContext()->enableBCmptMode) {
+    if (ENABLE_B_CMPT_MODE) {
         if (ltypeId == UNKNOWNOID && rtypeId == INTERVALOID) {
             ltypeId = TIMESTAMPOID;
         } else if (ltypeId == INTERVALOID && rtypeId == UNKNOWNOID) {
@@ -562,7 +562,7 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
     /**
      * the result of 'bool like unknown' is wrong, which we should change into 'bool like text'
      */
-    if (GetSessionContext()->enableBCmptMode) {
+    if (ENABLE_B_CMPT_MODE) {
         if (ltypeId == UNKNOWNOID && rtypeId == BOOLOID) {
             ltypeId = TEXTOID;
         } else if (ltypeId == BOOLOID && rtypeId == UNKNOWNOID) {
@@ -573,7 +573,7 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
             ltypeId = BLOBOID;
         }
     }
-    if (GetSessionContext()->enableBCmptMode) {
+    if (ENABLE_B_CMPT_MODE) {
         char* schemaname = NULL;
         char* opername = NULL;
         DeconstructQualifiedName(opname, &schemaname, &opername);
@@ -945,7 +945,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
         info.rtree = rtree;
         info.location = location;
         info.inNumeric = inNumeric;
-        if (IsJsonType(ltypeId) && GetSessionContext()->enableBCmptMode) {
+        if (IsJsonType(ltypeId) && ENABLE_B_CMPT_MODE) {
             DeconstructQualifiedName(opname, &schemaname, &opername);
             jsonTransfored = TransformJsonDolphinType(opername, ltypeId, rtypeId);
             tup = right_oper(pstate, opname, ltypeId, false, location);
@@ -972,7 +972,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
         info.inNumeric = inNumeric;
         tup = GetDolphinRightOperatorTup(&info);
         if (!HeapTupleIsValid(tup)) {
-            if (IsJsonType(rtypeId) && GetSessionContext()->enableBCmptMode) {
+            if (IsJsonType(rtypeId) && ENABLE_B_CMPT_MODE) {
                 DeconstructQualifiedName(opname, &schemaname, &opername);
                 jsonTransfored = TransformJsonDolphinType(opername, ltypeId, rtypeId);
                 tup = left_oper(pstate, opname, rtypeId, false, location);
@@ -1008,7 +1008,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
         info.inNumeric = inNumeric;
         tup = GetDolphinOperatorTup(&info);
         if (!HeapTupleIsValid(tup)) {
-            if ((IsJsonType(ltypeId) || IsJsonType(rtypeId)) && GetSessionContext()->enableBCmptMode) {
+            if ((IsJsonType(ltypeId) || IsJsonType(rtypeId)) && ENABLE_B_CMPT_MODE) {
                 DeconstructQualifiedName(opname, &schemaname, &opername);
                 jsonTransfored = TransformJsonDolphinType(opername, ltypeId, rtypeId);
             }
@@ -1401,7 +1401,7 @@ static Operator GetNumericDolphinOperatorTup(
 
 static Operator GetDolphinRightOperatorTup(GetDolphinOperatorTupInfo* info)
 {
-    if (!GetSessionContext()->enableBCmptMode) {
+    if (!ENABLE_B_CMPT_MODE) {
         return NULL;
     }
     ParseState* pstate = info->pstate;
@@ -1444,7 +1444,7 @@ static Operator GetDolphinRightOperatorTup(GetDolphinOperatorTupInfo* info)
 
 static Operator GetDolphinOperatorTup(GetDolphinOperatorTupInfo* info)
 {
-    if (!GetSessionContext()->enableBCmptMode) {
+    if (!ENABLE_B_CMPT_MODE) {
         return NULL;
     }
     ParseState* pstate = info->pstate;
