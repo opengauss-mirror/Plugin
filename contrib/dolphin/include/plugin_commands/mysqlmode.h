@@ -21,7 +21,8 @@
 #define OPT_SQL_MODE_ATUO_RECOMPILE_FUNCTION (1 << 8)
 #define OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO (1 << 9)
 #define OPT_SQL_MODE_TREAT_BXCONST_AS_BINARY (1<<10)
-#define OPT_SQL_MODE_MAX 11
+#define OPT_SQL_MODE_NOT_ESCAPE_ZERO_IN_BINARY (1<<11)
+#define OPT_SQL_MODE_MAX 12
 #define SQL_MODE_STRICT() ((GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && !CMD_TAG_IS_SELECT())
 #define SQL_MODE_STRICT_ON_SELECT() ((GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && CMD_TAG_IS_SELECT())
 #define SQL_MODE_NOT_STRICT_ON_INSERT() \
@@ -33,6 +34,7 @@
 #define SQL_MODE_ANSI_QUOTES() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_ANSI_QUOTES)
 #define SQL_MODE_NO_ZERO_DATE() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_NO_ZERO_DATE)
 #define SQL_MODE_PAD_CHAR_TO_FULL_LENGTH() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_PAD_CHAR_TO_FULL_LENGTH)
+#define SQL_MODE_NOT_ESCAPE_ZERO_IN_BINARY() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_NOT_ESCAPE_ZERO_IN_BINARY)
 #define SQL_MODE_AllOW_PROCEDURE_WITH_SELECT()                                      \
     (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_BLOCK_RETURN_MULTI_RESULTS)
 #define SQL_MODE_ATUO_RECOMPILE_FUNCTION() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_ATUO_RECOMPILE_FUNCTION)

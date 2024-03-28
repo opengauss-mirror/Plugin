@@ -112,6 +112,7 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
     {"auto_recompile_function", OPT_SQL_MODE_ATUO_RECOMPILE_FUNCTION},
     {"error_for_division_by_zero", OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO},
     {"treat_bxconst_as_binary", OPT_SQL_MODE_TREAT_BXCONST_AS_BINARY},
+    {"not_escape_zero_in_binary", OPT_SQL_MODE_NOT_ESCAPE_ZERO_IN_BINARY},
 };
 
 #define DOLPHIN_TYPES_NUM 12
@@ -188,6 +189,7 @@ static bool check_wait_timeout(int* newval, void** extra, GucSource source);
 static int SpiIsExecMultiSelect(PLpgSQL_execstate* estate, PLpgSQL_expr* expr,
     PLpgSQL_stmt_execsql* pl_stmt, ParamListInfo paramLI, long tcount, bool* multi_res);
 static void SpiMultiSelectException();
+extern DestReceiver* dophin_default_printtup_create_DR(CommandDest dest);
 #endif
 static const int LOADER_COL_BUF_CNT = 5;
 static uint32 dolphin_index;
@@ -325,6 +327,9 @@ void init_plugin_object()
     u_sess->hook_cxt.checkSqlFnRetvalHook = (void*)check_sql_fn_retval;
     u_sess->hook_cxt.typeTransfer = (void*)type_transfer;
     u_sess->hook_cxt.groupingplannerHook = (void*)grouping_planner;
+    if (u_sess->proc_cxt.MyProcPort->protocol_config == &default_protocol_config) {
+        u_sess->proc_cxt.MyProcPort->protocol_config->fn_printtup_create_DR = dophin_default_printtup_create_DR;
+    }
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
