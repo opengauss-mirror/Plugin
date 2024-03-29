@@ -1506,11 +1506,11 @@ static void TransformDolphinType(Oid& type, int32& typmod)
         typmod = YEAR_TO_INT_TYPMOD;
     } else if (type == TIMESTAMPOID || type == TIMESTAMPTZOID) {
         /* timestamp, timestamptz */
-        type = typmod > 0 ? NUMERICOID : INT8OID;
+        type = (typmod == -1 || typmod > 0) ? NUMERICOID : INT8OID;
         typmod = TIMESTAMP_TO_INT_TYMOD;
     } else if (type == TIMEOID || type == TIMETZOID) {
         /* time, timetz */
-        type = typmod > 0 ? NUMERICOID : INT4OID;
+        type = (typmod == -1 || typmod > 0) ? NUMERICOID : INT4OID;
         typmod = TIME_TO_INT_TYPMOD;
     } else if (type == DATEOID) {
         /* date type */
