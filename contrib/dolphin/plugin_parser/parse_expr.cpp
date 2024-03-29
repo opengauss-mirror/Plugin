@@ -1553,8 +1553,16 @@ static Node* transformAExprOr(ParseState* pstate, A_Expr* a)
 static Node* transformAExprNot(ParseState* pstate, A_Expr* a)
 {
     Node* rexpr = transformExprRecurse(pstate, a->rexpr);
-
-    rexpr = coerce_to_boolean(pstate, rexpr, "NOT");
+#ifdef DOLPHIN
+    if (exprType(rexpr) == UNKNOWNOID) {
+        CheckUnknownConstNode(rexpr, pstate->p_has_ignore);
+        rexpr = coerce_to_target_type(
+            pstate, rexpr, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
+        rexpr = coerce_to_boolean(pstate, rexpr, "NOT");
+    }
+    else
+#endif
+        rexpr = coerce_to_boolean(pstate, rexpr, "NOT");
 
     return (Node*)makeBoolExpr(NOT_EXPR, list_make1(rexpr), a->location);
 }

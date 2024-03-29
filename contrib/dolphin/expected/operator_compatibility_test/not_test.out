@@ -1,0 +1,709 @@
+drop schema if exists not_test_schema cascade;
+NOTICE:  schema "not_test_schema" does not exist, skipping
+create schema not_test_schema;
+set current_schema to 'not_test_schema';
+---------- head ----------
+set dolphin.b_compatibility_mode to on;
+set dolphin.sql_mode to 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+drop table if exists test_multi_type_table;
+NOTICE:  table "test_multi_type_table" does not exist, skipping
+CREATE TABLE test_multi_type_table (`int1` tinyint, `uint1` tinyint unsigned, `int2` smallint, `uint2` smallint unsigned, `int4` integer, `uint4` integer unsigned, `int8` bigint, `uint8` bigint unsigned, `float4` float4, `float8` float8, `numeric` decimal(20, 6), `bit1` bit(1), `bit64` bit(64), `boolean` boolean,  `char` char(100), `varchar` varchar(100), `binary` binary(100), `varbinary` varbinary(100), `text` text);
+insert into test_multi_type_table values(0x7F, 0xFF, 0x7FFF, 0xFFFF, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0.9884282, 5.288433915413254, 43391541, b'1', b'100110100110', true, '1.23a', '1.23a', '1.23a', '1.23a', '1.23a');
+DROP TABLE IF EXISTS test_multi_type;
+NOTICE:  table "test_multi_type" does not exist, skipping
+CREATE TABLE test_multi_type AS SELECT
+not `int1` as `not_int1`,
+not `uint1` as `not_uint1`,
+not `int2` as `not_int2`,
+not `uint2` as `not_uint2`,
+not `int4` as `not_int4`,
+not `uint4` as `not_uint4`,
+not `int8` as `not_int8`,
+not `uint8` as `not_uint8`,
+not `float4` as `not_float4`,
+not `float8` as `not_float8`,
+not `numeric` as `not_numeric`,
+not `bit1` as `not_bit1`,
+not `bit64` as `not_bit64`,
+not `boolean` as `not_boolean`,
+not `char` as `not_char`,
+not `varchar` as `not_varchar`,
+not `binary` as `not_binary`,
+not `varbinary` as `not_varbinary`,
+not `text` as `not_text`,
+! `int1` as `!_int1`,
+! `uint1` as `!_uint1`,
+! `int2` as `!_int2`,
+! `uint2` as `!_uint2`,
+! `int4` as `!_int4`,
+! `uint4` as `!_uint4`,
+! `int8` as `!_int8`,
+! `uint8` as `!_uint8`,
+! `float4` as `!_float4`,
+! `float8` as `!_float8`,
+! `numeric` as `!_numeric`,
+! `bit1` as `!_bit1`,
+! `bit64` as `!_bit64`,
+! `boolean` as `!_boolean`,
+! `char` as `!_char`,
+! `varchar` as `!_varchar`,
+! `binary` as `!_binary`,
+! `varbinary` as `!_varbinary`,
+! `text` as `!_text` 
+from test_multi_type_table;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: not_char
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: not_varchar
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: not_binary
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: not_varbinary
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: !_char
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: !_varchar
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: !_binary
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: !_varbinary
+\x
+SHOW COLUMNS FROM test_multi_type;
+-[ RECORD 1 ]----------
+Field   | not_int1
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 2 ]----------
+Field   | not_uint1
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 3 ]----------
+Field   | not_int2
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 4 ]----------
+Field   | not_uint2
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 5 ]----------
+Field   | not_int4
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 6 ]----------
+Field   | not_uint4
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 7 ]----------
+Field   | not_int8
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 8 ]----------
+Field   | not_uint8
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 9 ]----------
+Field   | not_float4
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 10 ]---------
+Field   | not_float8
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 11 ]---------
+Field   | not_numeric
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 12 ]---------
+Field   | not_bit1
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 13 ]---------
+Field   | not_bit64
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 14 ]---------
+Field   | not_boolean
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 15 ]---------
+Field   | not_char
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 16 ]---------
+Field   | not_varchar
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 17 ]---------
+Field   | not_binary
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 18 ]---------
+Field   | not_varbinary
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 19 ]---------
+Field   | not_text
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 20 ]---------
+Field   | !_int1
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 21 ]---------
+Field   | !_uint1
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 22 ]---------
+Field   | !_int2
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 23 ]---------
+Field   | !_uint2
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 24 ]---------
+Field   | !_int4
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 25 ]---------
+Field   | !_uint4
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 26 ]---------
+Field   | !_int8
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 27 ]---------
+Field   | !_uint8
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 28 ]---------
+Field   | !_float4
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 29 ]---------
+Field   | !_float8
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 30 ]---------
+Field   | !_numeric
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 31 ]---------
+Field   | !_bit1
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 32 ]---------
+Field   | !_bit64
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 33 ]---------
+Field   | !_boolean
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 34 ]---------
+Field   | !_char
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 35 ]---------
+Field   | !_varchar
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 36 ]---------
+Field   | !_binary
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 37 ]---------
+Field   | !_varbinary
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+-[ RECORD 38 ]---------
+Field   | !_text
+Type    | boolean
+Null    | YES
+Key     | 
+Default | NULL
+Extra   | 
+
+-- test value
+delete from test_multi_type;
+delete from test_multi_type_table;
+insert into test_multi_type values(null);
+insert into test_multi_type_table values(0x7F, 0xFF, 0x7FFF, 0xFFFF, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0.9884282, 5.288433915413254, 43391541, b'1', b'100110100110', true, '1.23a', '1.23a', '1.23a', '1.23a', '1.23a');
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_int1` = not test_multi_type_table.`int1`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_uint1` = not test_multi_type_table.`uint1`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_int2` = not test_multi_type_table.`int2`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_uint2` = not test_multi_type_table.`uint2`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_int4` = not test_multi_type_table.`int4`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_uint4` = not test_multi_type_table.`uint4`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_int8` = not test_multi_type_table.`int8`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_uint8` = not test_multi_type_table.`uint8`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_float4` = not test_multi_type_table.`float4`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_float8` = not test_multi_type_table.`float8`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_numeric` = not test_multi_type_table.`numeric`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_bit1` = not test_multi_type_table.`bit1`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_bit64` = not test_multi_type_table.`bit64`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_boolean` = not test_multi_type_table.`boolean`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_char` = not test_multi_type_table.`char`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: not_char
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_varchar` = not test_multi_type_table.`varchar`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: not_varchar
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_binary` = not test_multi_type_table.`binary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: not_binary
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_varbinary` = not test_multi_type_table.`varbinary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: not_varbinary
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`not_text` = not test_multi_type_table.`text`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_int1` = ! test_multi_type_table.`int1`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_uint1` = ! test_multi_type_table.`uint1`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_int2` = ! test_multi_type_table.`int2`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_uint2` = ! test_multi_type_table.`uint2`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_int4` = ! test_multi_type_table.`int4`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_uint4` = ! test_multi_type_table.`uint4`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_int8` = ! test_multi_type_table.`int8`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_uint8` = ! test_multi_type_table.`uint8`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_float4` = ! test_multi_type_table.`float4`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_float8` = ! test_multi_type_table.`float8`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_numeric` = ! test_multi_type_table.`numeric`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_bit1` = ! test_multi_type_table.`bit1`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_bit64` = ! test_multi_type_table.`bit64`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_boolean` = ! test_multi_type_table.`boolean`;
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_char` = ! test_multi_type_table.`char`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: !_char
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_varchar` = ! test_multi_type_table.`varchar`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: !_varchar
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_binary` = ! test_multi_type_table.`binary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: !_binary
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_varbinary` = ! test_multi_type_table.`varbinary`;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: !_varbinary
+UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`!_text` = ! test_multi_type_table.`text`;
+SELECT * FROM test_multi_type;
+-[ RECORD 1 ]-+--
+not_int1      | f
+not_uint1     | f
+not_int2      | f
+not_uint2     | f
+not_int4      | f
+not_uint4     | f
+not_int8      | f
+not_uint8     | f
+not_float4    | f
+not_float8    | f
+not_numeric   | f
+not_bit1      | f
+not_bit64     | f
+not_boolean   | f
+not_char      | f
+not_varchar   | f
+not_binary    | f
+not_varbinary | f
+not_text      | f
+!_int1        | f
+!_uint1       | f
+!_int2        | f
+!_uint2       | f
+!_int4        | f
+!_uint4       | f
+!_int8        | f
+!_uint8       | f
+!_float4      | f
+!_float8      | f
+!_numeric     | f
+!_bit1        | f
+!_bit64       | f
+!_boolean     | f
+!_char        | f
+!_varchar     | f
+!_binary      | f
+!_varbinary   | f
+!_text        | f
+
+DROP TABLE test_multi_type;
+set dolphin.sql_mode to 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+-- strict select
+SELECT
+    not `int1` as `not_int1`,
+    not `uint1` as `not_uint1`,
+    not `int2` as `not_int2`,
+    not `uint2` as `not_uint2`,
+    not `int4` as `not_int4`,
+    not `uint4` as `not_uint4`,
+    not `int8` as `not_int8`,
+    not `uint8` as `not_uint8`,
+    not `float4` as `not_float4`,
+    not `float8` as `not_float8`,
+    not `numeric` as `not_numeric`,
+    not `bit1` as `not_bit1`,
+    not `bit64` as `not_bit64`,
+    not `boolean` as `not_boolean`,
+    not `char` as `not_char`,
+    not `varchar` as `not_varchar`,
+    not `binary` as `not_binary`,
+    not `varbinary` as `not_varbinary`,
+    not `text` as `not_text`,
+    ! `int1` as `!_int1`,
+    ! `uint1` as `!_uint1`,
+    ! `int2` as `!_int2`,
+    ! `uint2` as `!_uint2`,
+    ! `int4` as `!_int4`,
+    ! `uint4` as `!_uint4`,
+    ! `int8` as `!_int8`,
+    ! `uint8` as `!_uint8`,
+    ! `float4` as `!_float4`,
+    ! `float8` as `!_float8`,
+    ! `numeric` as `!_numeric`,
+    ! `bit1` as `!_bit1`,
+    ! `bit64` as `!_bit64`,
+    ! `boolean` as `!_boolean`,
+    ! `char` as `!_char`,
+    ! `varchar` as `!_varchar`,
+    ! `binary` as `!_binary`,
+    ! `varbinary` as `!_varbinary`,
+    ! `text` as `!_text` 
+FROM test_multi_type_table;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: not_char
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: not_varchar
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: not_binary
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: not_varbinary
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: !_char
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: !_varchar
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: !_binary
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: !_varbinary
+-[ RECORD 1 ]-+--
+not_int1      | f
+not_uint1     | f
+not_int2      | f
+not_uint2     | f
+not_int4      | f
+not_uint4     | f
+not_int8      | f
+not_uint8     | f
+not_float4    | f
+not_float8    | f
+not_numeric   | f
+not_bit1      | f
+not_bit64     | f
+not_boolean   | f
+not_char      | f
+not_varchar   | f
+not_binary    | f
+not_varbinary | f
+not_text      | f
+!_int1        | f
+!_uint1       | f
+!_int2        | f
+!_uint2       | f
+!_int4        | f
+!_uint4       | f
+!_int8        | f
+!_uint8       | f
+!_float4      | f
+!_float8      | f
+!_numeric     | f
+!_bit1        | f
+!_bit64       | f
+!_boolean     | f
+!_char        | f
+!_varchar     | f
+!_binary      | f
+!_varbinary   | f
+!_text        | f
+
+\x
+-- strict insert
+CREATE TABLE TEST(a boolean);
+INSERT INTO TEST SELECT not `int1` from test_multi_type_table;
+INSERT INTO TEST SELECT not `uint1` from test_multi_type_table;
+INSERT INTO TEST SELECT not `int2` from test_multi_type_table;
+INSERT INTO TEST SELECT not `uint2` from test_multi_type_table;
+INSERT INTO TEST SELECT not `int4` from test_multi_type_table;
+INSERT INTO TEST SELECT not `uint4` from test_multi_type_table;
+INSERT INTO TEST SELECT not `int8` from test_multi_type_table;
+INSERT INTO TEST SELECT not `uint8` from test_multi_type_table;
+INSERT INTO TEST SELECT not `float4` from test_multi_type_table;
+INSERT INTO TEST SELECT not `float8` from test_multi_type_table;
+INSERT INTO TEST SELECT not `numeric` from test_multi_type_table;
+INSERT INTO TEST SELECT not `bit1` from test_multi_type_table;
+INSERT INTO TEST SELECT not `bit64` from test_multi_type_table;
+INSERT INTO TEST SELECT not `boolean` from test_multi_type_table;
+INSERT INTO TEST SELECT not `char` from test_multi_type_table;
+ERROR:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: a
+INSERT INTO TEST SELECT not `varchar` from test_multi_type_table;
+ERROR:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: a
+INSERT INTO TEST SELECT not `binary` from test_multi_type_table;
+ERROR:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: a
+INSERT INTO TEST SELECT not `varbinary` from test_multi_type_table;
+ERROR:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: a
+INSERT INTO TEST SELECT not `text` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `int1` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `uint1` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `int2` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `uint2` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `int4` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `uint4` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `int8` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `uint8` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `float4` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `float8` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `numeric` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `bit1` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `bit64` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `boolean` from test_multi_type_table;
+INSERT INTO TEST SELECT ! `char` from test_multi_type_table;
+ERROR:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: a
+INSERT INTO TEST SELECT ! `varchar` from test_multi_type_table;
+ERROR:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: a
+INSERT INTO TEST SELECT ! `binary` from test_multi_type_table;
+ERROR:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: a
+INSERT INTO TEST SELECT ! `varbinary` from test_multi_type_table;
+ERROR:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: a
+INSERT INTO TEST SELECT ! `text` from test_multi_type_table;
+-- strict insert ignore
+INSERT IGNORE INTO TEST SELECT not `int1` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `uint1` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `int2` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `uint2` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `int4` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `uint4` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `int8` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `uint8` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `float4` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `float8` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `numeric` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `bit1` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `bit64` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `boolean` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT not `char` from test_multi_type_table;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: a
+INSERT IGNORE INTO TEST SELECT not `varchar` from test_multi_type_table;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: a
+INSERT IGNORE INTO TEST SELECT not `binary` from test_multi_type_table;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: a
+INSERT IGNORE INTO TEST SELECT not `varbinary` from test_multi_type_table;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: a
+INSERT IGNORE INTO TEST SELECT not `text` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `int1` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `uint1` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `int2` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `uint2` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `int4` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `uint4` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `int8` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `uint8` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `float4` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `float8` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `numeric` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `bit1` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `bit64` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `boolean` from test_multi_type_table;
+INSERT IGNORE INTO TEST SELECT ! `char` from test_multi_type_table;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+CONTEXT:  referenced column: a
+INSERT IGNORE INTO TEST SELECT ! `varchar` from test_multi_type_table;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: a
+INSERT IGNORE INTO TEST SELECT ! `binary` from test_multi_type_table;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: a
+INSERT IGNORE INTO TEST SELECT ! `varbinary` from test_multi_type_table;
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+CONTEXT:  referenced column: a
+INSERT IGNORE INTO TEST SELECT ! `text` from test_multi_type_table;
+-- unknown test
+SELECT NOT '1.23a';
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT NOT '1.23';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT NOT 'h2YOf#/P4m7>*Gr$BCD)2CitpI(\VkB+ie6HzIS[]rrG$rbXU0ANTZc]]D3a_O.m';
+WARNING:  Truncated incorrect DOUBLE value: h2YOf#/P4m7>*Gr$BCD)2CitpI(\VkB+ie6HzIS[]rrG$rbXU0ANTZc]]D3a_O.m
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT NOT '4u5b*gA;+-vm<yj^,Q%Z6p9EtLCJlPSCrsGvrkBNlZ6<Ez,Nf]2~ox[UbbNc(~R;';
+WARNING:  Truncated incorrect DOUBLE value: 4u5b*gA;+-vm<yj^,Q%Z6p9EtLCJlPSCrsGvrkBNlZ6<Ez,Nf]2~ox[UbbNc(~R;
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT ! '1.23a';
+WARNING:  Truncated incorrect DOUBLE value: 1.23a
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT ! '1.23';
+ ?column? 
+----------
+ f
+(1 row)
+
+SELECT ! 'h2YOf#/P4m7>*Gr$BCD)2CitpI(\VkB+ie6HzIS[]rrG$rbXU0ANTZc]]D3a_O.m';
+WARNING:  Truncated incorrect DOUBLE value: h2YOf#/P4m7>*Gr$BCD)2CitpI(\VkB+ie6HzIS[]rrG$rbXU0ANTZc]]D3a_O.m
+ ?column? 
+----------
+ t
+(1 row)
+
+SELECT ! '4u5b*gA;+-vm<yj^,Q%Z6p9EtLCJlPSCrsGvrkBNlZ6<Ez,Nf]2~ox[UbbNc(~R;';
+WARNING:  Truncated incorrect DOUBLE value: 4u5b*gA;+-vm<yj^,Q%Z6p9EtLCJlPSCrsGvrkBNlZ6<Ez,Nf]2~ox[UbbNc(~R;
+ ?column? 
+----------
+ f
+(1 row)
+
+DROP TABLE TEST;
+DROP TABLE test_multi_type_table;
+---------- tail ----------
+drop schema not_test_schema;
+reset current_schema;

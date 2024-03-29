@@ -3693,10 +3693,245 @@ INSERT INTO test_text SELECT 'int4' || 'openGauss' FROM test_multi_type_table;
 INSERT INTO test_text SELECT 'openGauss' || 'openGauss' FROM test_multi_type_table;
 INSERT INTO test_blob SELECT `bit1` || `bit64` FROM test_multi_type_table;
 INSERT INTO test_blob SELECT `binary` || `varbinary` FROM test_multi_type_table;
+\x
+-- unknown test
+SELECT '1.23a' || 'a.123';
+  ?column?  
+------------
+ 1.23aa.123
+(1 row)
+
+SELECT '1.23a' || `int1` FROM test_multi_type_table;
+ ?column? 
+----------
+ 1.23a127
+(1 row)
+
+SELECT `int1` || '1.23a' FROM test_multi_type_table;
+ ?column? 
+----------
+ 1271.23a
+(1 row)
+
+SELECT '1.23a' || `uint1` FROM test_multi_type_table;
+ ?column? 
+----------
+ 1.23a255
+(1 row)
+
+SELECT `uint1` || '1.23a' FROM test_multi_type_table;
+ ?column? 
+----------
+ 2551.23a
+(1 row)
+
+SELECT '1.23a' || `int2` FROM test_multi_type_table;
+  ?column?  
+------------
+ 1.23a32767
+(1 row)
+
+SELECT `int2` || '1.23a' FROM test_multi_type_table;
+  ?column?  
+------------
+ 327671.23a
+(1 row)
+
+SELECT '1.23a' || `uint2` FROM test_multi_type_table;
+  ?column?  
+------------
+ 1.23a65535
+(1 row)
+
+SELECT `uint2` || '1.23a' FROM test_multi_type_table;
+  ?column?  
+------------
+ 655351.23a
+(1 row)
+
+SELECT '1.23a' || `int4` FROM test_multi_type_table;
+    ?column?     
+-----------------
+ 1.23a2147483647
+(1 row)
+
+SELECT `int4` || '1.23a' FROM test_multi_type_table;
+    ?column?     
+-----------------
+ 21474836471.23a
+(1 row)
+
+SELECT '1.23a' || `uint4` FROM test_multi_type_table;
+    ?column?     
+-----------------
+ 1.23a4294967295
+(1 row)
+
+SELECT `uint4` || '1.23a' FROM test_multi_type_table;
+    ?column?     
+-----------------
+ 42949672951.23a
+(1 row)
+
+SELECT '1.23a' || `int8` FROM test_multi_type_table;
+         ?column?         
+--------------------------
+ 1.23a9223372036854775807
+(1 row)
+
+SELECT `int8` || '1.23a' FROM test_multi_type_table;
+         ?column?         
+--------------------------
+ 92233720368547758071.23a
+(1 row)
+
+SELECT '1.23a' || `uint8` FROM test_multi_type_table;
+         ?column?          
+---------------------------
+ 1.23a18446744073709551615
+(1 row)
+
+SELECT `uint8` || '1.23a' FROM test_multi_type_table;
+         ?column?          
+---------------------------
+ 184467440737095516151.23a
+(1 row)
+
+SELECT '1.23a' || `float4` FROM test_multi_type_table;
+   ?column?    
+---------------
+ 1.23a0.988428
+(1 row)
+
+SELECT `float4` || '1.23a' FROM test_multi_type_table;
+   ?column?    
+---------------
+ 0.9884281.23a
+(1 row)
+
+SELECT '1.23a' || `float8` FROM test_multi_type_table;
+        ?column?        
+------------------------
+ 1.23a5.288433915413254
+(1 row)
+
+SELECT `float8` || '1.23a' FROM test_multi_type_table;
+        ?column?        
+------------------------
+ 5.2884339154132541.23a
+(1 row)
+
+SELECT '1.23a' || `numeric` FROM test_multi_type_table;
+       ?column?       
+----------------------
+ 1.23a43391541.000000
+(1 row)
+
+SELECT `numeric` || '1.23a' FROM test_multi_type_table;
+       ?column?       
+----------------------
+ 43391541.0000001.23a
+(1 row)
+
+SELECT '1.23a' || `bit1` FROM test_multi_type_table;
+    ?column?    
+----------------
+ \x312e32336101
+(1 row)
+
+SELECT `bit1` || '1.23a' FROM test_multi_type_table;
+    ?column?    
+----------------
+ \x01312e323361
+(1 row)
+
+SELECT '1.23a' || `bit64` FROM test_multi_type_table;
+           ?column?           
+------------------------------
+ \x312e32336100000000000009a6
+(1 row)
+
+SELECT `bit64` || '1.23a' FROM test_multi_type_table;
+           ?column?           
+------------------------------
+ \x00000000000009a6312e323361
+(1 row)
+
+SELECT '1.23a' || `boolean` FROM test_multi_type_table;
+ ?column? 
+----------
+ 1.23a1
+(1 row)
+
+SELECT `boolean` || '1.23a' FROM test_multi_type_table;
+ ?column? 
+----------
+ 11.23a
+(1 row)
+
+SELECT '1.23a' || `char` FROM test_multi_type_table;
+  ?column?  
+------------
+ 1.23a1.23a
+(1 row)
+
+SELECT `char` || '1.23a' FROM test_multi_type_table;
+  ?column?  
+------------
+ 1.23a1.23a
+(1 row)
+
+SELECT '1.23a' || `varchar` FROM test_multi_type_table;
+  ?column?  
+------------
+ 1.23a1.23a
+(1 row)
+
+SELECT `varchar` || '1.23a' FROM test_multi_type_table;
+  ?column?  
+------------
+ 1.23a1.23a
+(1 row)
+
+SELECT '1.23a' || `binary` FROM test_multi_type_table;
+                                                                                                       ?column?                                                                                                       
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ \x312e323361312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+(1 row)
+
+SELECT `binary` || '1.23a' FROM test_multi_type_table;
+                                                                                                       ?column?                                                                                                       
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ \x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000312e323361
+(1 row)
+
+SELECT '1.23a' || `varbinary` FROM test_multi_type_table;
+        ?column?        
+------------------------
+ \x312e323361312e323361
+(1 row)
+
+SELECT `varbinary` || '1.23a' FROM test_multi_type_table;
+        ?column?        
+------------------------
+ \x312e323361312e323361
+(1 row)
+
+SELECT '1.23a' || `text` FROM test_multi_type_table;
+  ?column?  
+------------
+ 1.23a1.23a
+(1 row)
+
+SELECT `text` || '1.23a' FROM test_multi_type_table;
+  ?column?  
+------------
+ 1.23a1.23a
+(1 row)
+
 DROP TABLE test_text;
 DROP TABLE test_blob;
 DROP TABLE test_multi_type_table;
-\x
 -- precedence test
 SELECT 4*2 || 1+4+5;
  ?column? 

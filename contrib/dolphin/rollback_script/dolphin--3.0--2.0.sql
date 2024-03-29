@@ -1664,9 +1664,6 @@ DROP OPERATOR IF EXISTS pg_catalog.||(varbinary, boolean);
 DROP OPERATOR IF EXISTS pg_catalog.||(binary, varbinary);
 DROP OPERATOR IF EXISTS pg_catalog.||(varbinary, binary);
 DROP OPERATOR IF EXISTS pg_catalog.||(varbinary, varbinary);
-DROP OPERATOR IF EXISTS pg_catalog.||(unknown, unknown);
-DROP OPERATOR IF EXISTS pg_catalog.||(unknown, integer);
-DROP OPERATOR IF EXISTS pg_catalog.||(integer, unknown);
 
 DROP FUNCTION pg_catalog.bit_concat(bit, bit);
 DROP FUNCTION pg_catalog.bit_bool_concat(bit, boolean);
@@ -1712,9 +1709,6 @@ DROP FUNCTION pg_catalog.bit_varbin_concat(bit,varbinary);
 DROP FUNCTION pg_catalog.text_varbin_concat(text,varbinary);
 DROP FUNCTION pg_catalog.bool_varbin_concat(boolean,varbinary);
 DROP FUNCTION pg_catalog.bin_varbin_concat(binary,varbinary);
-DROP FUNCTION pg_catalog.unknown_concat(unknown, unknown);
-DROP FUNCTION pg_catalog.unknown_int_concat(unknown, integer);
-DROP FUNCTION pg_catalog.int_unknown_concat(integer, unknown);
 
 DROP FUNCTION IF EXISTS pg_catalog.left(bit, integer);
 DROP FUNCTION IF EXISTS pg_catalog.left(blob, integer);
