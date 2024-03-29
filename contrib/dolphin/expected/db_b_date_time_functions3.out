@@ -174,6 +174,55 @@ CONTEXT:  referenced column: result
 insert into test values('timestampdiff(day, ''2020-11-11'', ''abc'')', timestampdiff(day, '2020-11-11', 'abc'));
 ERROR:  Incorrect datetime value: "abc"
 CONTEXT:  referenced column: result
+-- SQL_TSI_ 兼容
+select timestampdiff(SQL_TSI_SECOND, '2001-02-01', '2001-05-01') = timestampdiff(SECOND, '2001-02-01', '2001-05-01');
+ ?column? 
+----------
+ t
+(1 row)
+
+select timestampdiff(SQL_TSI_MINUTE, '2001-02-01', '2001-05-01') = timestampdiff(MINUTE, '2001-02-01', '2001-05-01');
+ ?column? 
+----------
+ t
+(1 row)
+
+select timestampdiff(SQL_TSI_HOUR, '2001-02-01', '2001-05-01') = timestampdiff(HOUR, '2001-02-01', '2001-05-01');
+ ?column? 
+----------
+ t
+(1 row)
+
+select timestampdiff(SQL_TSI_DAY, '2001-02-01', '2001-05-01') = timestampdiff(DAY, '2001-02-01', '2001-05-01');
+ ?column? 
+----------
+ t
+(1 row)
+
+select timestampdiff(SQL_TSI_WEEK, '2001-02-01', '2001-05-01') = timestampdiff(WEEK, '2001-02-01', '2001-05-01');
+ ?column? 
+----------
+ t
+(1 row)
+
+select timestampdiff(SQL_TSI_MONTH, '2001-02-01', '2001-05-01') = timestampdiff(MONTH, '2001-02-01', '2001-05-01');
+ ?column? 
+----------
+ t
+(1 row)
+
+select timestampdiff(SQL_TSI_QUARTER, '2001-02-01', '2001-05-01') = timestampdiff(QUARTER, '2001-02-01', '2001-05-01');
+ ?column? 
+----------
+ t
+(1 row)
+
+select timestampdiff(SQL_TSI_YEAR, '2001-02-01', '2001-05-01') = timestampdiff(YEAR, '2001-02-01', '2001-05-01');
+ ?column? 
+----------
+ t
+(1 row)
+
 set dolphin.b_compatibility_mode = false;
 -- test convert_tz
 -- 严格模式或者非严格模式都有值

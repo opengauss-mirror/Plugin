@@ -137,6 +137,16 @@ insert into test values('timestampdiff(abc, ''2020-11-11'', ''2020-11-12'')', ti
 insert into test values('timestampdiff(decades, ''2020-11-11'', ''2020-11-12'')', timestampdiff(decades, '2020-11-11', '2020-11-12'));
 insert into test values('timestampdiff(day, ''2020-11-11'', ''abc'')', timestampdiff(day, '2020-11-11', 'abc'));
 
+-- SQL_TSI_ 兼容
+select timestampdiff(SQL_TSI_SECOND, '2001-02-01', '2001-05-01') = timestampdiff(SECOND, '2001-02-01', '2001-05-01');
+select timestampdiff(SQL_TSI_MINUTE, '2001-02-01', '2001-05-01') = timestampdiff(MINUTE, '2001-02-01', '2001-05-01');
+select timestampdiff(SQL_TSI_HOUR, '2001-02-01', '2001-05-01') = timestampdiff(HOUR, '2001-02-01', '2001-05-01');
+select timestampdiff(SQL_TSI_DAY, '2001-02-01', '2001-05-01') = timestampdiff(DAY, '2001-02-01', '2001-05-01');
+select timestampdiff(SQL_TSI_WEEK, '2001-02-01', '2001-05-01') = timestampdiff(WEEK, '2001-02-01', '2001-05-01');
+select timestampdiff(SQL_TSI_MONTH, '2001-02-01', '2001-05-01') = timestampdiff(MONTH, '2001-02-01', '2001-05-01');
+select timestampdiff(SQL_TSI_QUARTER, '2001-02-01', '2001-05-01') = timestampdiff(QUARTER, '2001-02-01', '2001-05-01');
+select timestampdiff(SQL_TSI_YEAR, '2001-02-01', '2001-05-01') = timestampdiff(YEAR, '2001-02-01', '2001-05-01');
+
 set dolphin.b_compatibility_mode = false;
 
 -- test convert_tz
