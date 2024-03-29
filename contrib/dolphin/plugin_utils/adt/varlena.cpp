@@ -410,6 +410,9 @@ extern "C" DLL_PUBLIC Datum Varlena2Bit(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_binaryout);
 extern "C" DLL_PUBLIC Datum dolphin_binaryout(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(binary_varbinary);
+extern "C" DLL_PUBLIC Datum binary_varbinary(PG_FUNCTION_ARGS);
+
 extern BpChar* bpchar_input(const char* s, size_t len, int32 atttypmod);
 extern VarChar* varchar_input(const char* s, size_t len, int32 atttypmod);
 
@@ -8665,6 +8668,13 @@ Datum bytea2var(PG_FUNCTION_ARGS)
 {
     bytea* source = PG_GETARG_BYTEA_P(0);
     int32 maxlen = PG_GETARG_INT32(1);
+    return copy_binary(PointerGetDatum(source), maxlen, true, fcinfo->can_ignore);
+}
+
+Datum binary_varbinary(PG_FUNCTION_ARGS)
+{
+    bytea* source = PG_GETARG_BYTEA_P(0);
+    int32 maxlen = VARSIZE(source);
     return copy_binary(PointerGetDatum(source), maxlen, true, fcinfo->can_ignore);
 }
 
