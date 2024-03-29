@@ -677,6 +677,33 @@ static void spi_sql_proc_dest_destroy(DestReceiver *self)
     pfree(self);
 }
 
+inline void AddCheckInfo(StringInfo buf)
+{
+    StringInfoData buf_check;
+    bool is_check_added = false;
+
+    /* add check info  for datanode and coordinator */
+    if (IS_SPQ_EXECUTOR || IsConnFromCoord()) {
+#ifdef USE_ASSERT_CHECKING
+        initStringInfo(&buf_check);
+        AddCheckMessage(&buf_check, buf, false);
+        is_check_added = true;
+#else
+        if (anls_opt_is_on(ANLS_STREAM_DATA_CHECK)) {
+            initStringInfo(&buf_check);
+            AddCheckMessage(&buf_check, buf, false);
+            is_check_added = true;
+        }
+#endif
+
+        if (unlikely(is_check_added)) {
+            pfree(buf->data);
+            buf->len = buf_check.len;
+            buf->maxlen = buf_check.maxlen;
+            buf->data = buf_check.data;
+        }
+    }
+}
 
 #ifdef DOLPHIN
 bool inline is_req_from_jdbc()

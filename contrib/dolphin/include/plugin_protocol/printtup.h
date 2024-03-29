@@ -45,7 +45,6 @@ struct DR_Dolphin_proc_printtup {
 
 
 #ifdef DOLPHIN
-extern void AddCheckInfo(StringInfo buf);
 extern void printtupStream(TupleTableSlot* slot, DestReceiver* self);
 extern void printBatch(VectorBatch* batch, DestReceiver* self);
 #endif
