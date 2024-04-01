@@ -1,0 +1,122 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.opengauss</groupId>
+    <artifactId>apache-age-driver</artifactId>
+    <version>1.0.0</version>
+    <name>apache-age-driver</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+        <java.version>1.8</java.version>
+    </properties>
+
+    <dependencies>
+        <!-- https://mvnrepository.com/artifact/org.opengauss/opengauss-jdbc -->
+        <dependency>
+            <groupId>org.opengauss</groupId>
+            <artifactId>opengauss-jdbc</artifactId>
+            <version>5.1.0</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-text -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.10.0</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.antlr/antlr4 -->
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4</artifactId>
+            <version>4.7</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.antlr</groupId>
+                    <artifactId>antlr-runtime</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.7</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.testcontainers/testcontainers -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.15.3</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.7.1</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.7.1</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- 	执行插件 antlr4:antlr4,根据语法文件(.g4)生成解析器(java)代码
+                                完整说明参见 antlr4-maven-plugin 官方文档：
+                                https://www.antlr.org/api/maven-plugin/latest/plugin-info.html
+                                也可以命令行执行 mvn antlr4:help -Ddetail=true -Dgoal=antlr4 查看在线说明
+                        -->
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <version>4.7</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>
+                                <!-- 命令行参数 -package ${package} 定义生成java代码的包名-->
+                                <argument>-package</argument>
+                                <argument>org.apache.age.jdbc.antlr4</argument>
+                                <!-- 输出生成的Java源码文件位置
+                                       这里的输出文件夹定义一定要与上面 -package 定义的包名匹配
+                                 -->
+                                <argument>-o</argument>
+                                <argument>${project.build.sourceDirectory}/org/apache/age/jdbc/antlr4</argument>
+                            </arguments>
+                            <!-- 指定语法文件的编码方式,默认utf-8 -->
+                            <!--<inputEncoding>utf-8</inputEncoding>-->
+                            <!-- ANTLR 语法文件(.g4) 所在位置-->
+                            <sourceDirectory>${project.basedir}/../../</sourceDirectory>
+                            <includes>
+                                <include>*.g4</include>
+                            </includes>
+                            <!-- 生成语法树侦听器(Listener)代码,默认为true -->
+                            <listener>true</listener>
+                            <!-- 生成语法树访问器(Visitor)代码,默认为false-->
+                            <visitor>true</visitor>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
