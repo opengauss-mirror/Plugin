@@ -2311,6 +2311,11 @@ CREATE OR REPLACE FUNCTION pg_catalog.lcase(float) RETURNS varchar LANGUAGE SQL 
 CREATE OR REPLACE FUNCTION pg_catalog.lcase(char) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
 CREATE OR REPLACE FUNCTION pg_catalog.lcase(varchar) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
 
+DROP FUNCTION IF EXISTS pg_catalog.asin(bit);
+CREATE OR REPLACE FUNCTION pg_catalog.asin(bit) RETURNS double precision LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'asin_bit';
+DROP FUNCTION IF EXISTS pg_catalog.asin(boolean);
+CREATE OR REPLACE FUNCTION pg_catalog.asin(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.asin(cast($1 as float))';
+
 CREATE OR REPLACE FUNCTION pg_catalog.int_uint2_eq(int, uint2) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1 = $2::int4)';
 CREATE OPERATOR pg_catalog.=(LEFTARG = int, RIGHTARG = uint2, COMMUTATOR = operator(pg_catalog.=), PROCEDURE = pg_catalog.int_uint2_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
 

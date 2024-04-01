@@ -57,9 +57,11 @@ extern "C" Datum time_int8(PG_FUNCTION_ARGS);
 extern "C" Datum year_integer(PG_FUNCTION_ARGS);
 extern "C" Datum uint8out(PG_FUNCTION_ARGS);
 extern "C" Datum dolphin_binaryin(PG_FUNCTION_ARGS);
-Datum bittobigint(VarBit* arg, bool isUnsigned);
+Datum bittobigint(VarBit* arg, bool isUnsigned, bool canIgnore = false);
 PG_FUNCTION_INFO_V1_PUBLIC(bit_bin_in);
 extern "C" DLL_PUBLIC Datum bit_bin_in(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(asin_bit);
+extern "C" DLL_PUBLIC Datum asin_bit(PG_FUNCTION_ARGS);
 #endif
 
 
@@ -1682,11 +1684,11 @@ Datum bittoint(VarBit* arg, bool isUnsigned)
     PG_RETURN_INT32(result);
 }
 
-Datum bittobigint(VarBit* arg, bool isUnsigned)
+Datum bittobigint(VarBit* arg, bool isUnsigned, bool canIgnore)
 {
     uint64 result;
     bits8* r = NULL;
-    int errlevel = SQL_MODE_STRICT() ? ERROR : WARNING;
+    int errlevel = !canIgnore && SQL_MODE_STRICT() ? ERROR : WARNING;
 
     /* Check that the bit string is not too long */
     if ((uint32)VARBITLEN(arg) - GetLeadingZeroLen(arg) > sizeof(result) * BITS_PER_BYTE) {
@@ -2724,5 +2726,24 @@ VarBit* bit_substr_with_byte_align(VarBit *bits, int start, int length, bool len
     pfree_ext(bitostr);
 
     return result;
+}
+
+Datum asin_bit(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+    int64 arg1 = bittobigint(arg, false, fcinfo->can_ignore);
+    if (arg1 < -1 || arg1 > 1) {
+        PG_RETURN_NULL();
+    }
+    float8 res;
+    errno = 0;
+    res = asin(arg1);
+    if (errno != 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("input is out of range")));
+    }
+    if (isinf(res)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("value out of range: overflow")));
+    }
+    PG_RETURN_FLOAT8(res);
 }
 #endif
