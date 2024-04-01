@@ -604,6 +604,15 @@ create table test_time(c1 timestamp(6), c2 datetime(6), c3 time(6));
 insert into test_time values ('2024-12-12 13:00:00.123456', '2024-12-12 13:00:00.123456', '2024-12-12 13:00:00.123456');
 select * from test_time;
 
+
+select pg_typeof(localtime(3) + 10);
+select pg_typeof(localtime(3) + 10.5);
+select pg_typeof(localtime(3) - 10);
+select pg_typeof(now(3) + 10);
+select pg_typeof(sysdate(3) - 10);
+select pg_typeof(cast(now(3) as datetime(3)) + 10);
+select pg_typeof(cast(now(3) as timestamp(3)) + 10);
+
 drop table test_time;
 drop table t_time;
 drop schema b_time_funcs3 cascade;
