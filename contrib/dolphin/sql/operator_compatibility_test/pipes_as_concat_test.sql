@@ -792,11 +792,53 @@ INSERT INTO test_text SELECT 'int4' || 'openGauss' FROM test_multi_type_table;
 INSERT INTO test_text SELECT 'openGauss' || 'openGauss' FROM test_multi_type_table;
 INSERT INTO test_blob SELECT `bit1` || `bit64` FROM test_multi_type_table;
 INSERT INTO test_blob SELECT `binary` || `varbinary` FROM test_multi_type_table;
+
+\x
+-- unknown test
+SELECT '1.23a' || 'a.123';
+SELECT '1.23a' || `int1` FROM test_multi_type_table;
+SELECT `int1` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `uint1` FROM test_multi_type_table;
+SELECT `uint1` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `int2` FROM test_multi_type_table;
+SELECT `int2` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `uint2` FROM test_multi_type_table;
+SELECT `uint2` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `int4` FROM test_multi_type_table;
+SELECT `int4` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `uint4` FROM test_multi_type_table;
+SELECT `uint4` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `int8` FROM test_multi_type_table;
+SELECT `int8` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `uint8` FROM test_multi_type_table;
+SELECT `uint8` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `float4` FROM test_multi_type_table;
+SELECT `float4` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `float8` FROM test_multi_type_table;
+SELECT `float8` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `numeric` FROM test_multi_type_table;
+SELECT `numeric` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `bit1` FROM test_multi_type_table;
+SELECT `bit1` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `bit64` FROM test_multi_type_table;
+SELECT `bit64` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `boolean` FROM test_multi_type_table;
+SELECT `boolean` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `char` FROM test_multi_type_table;
+SELECT `char` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `varchar` FROM test_multi_type_table;
+SELECT `varchar` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `binary` FROM test_multi_type_table;
+SELECT `binary` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `varbinary` FROM test_multi_type_table;
+SELECT `varbinary` || '1.23a' FROM test_multi_type_table;
+SELECT '1.23a' || `text` FROM test_multi_type_table;
+SELECT `text` || '1.23a' FROM test_multi_type_table;
+
 DROP TABLE test_text;
 DROP TABLE test_blob;
 DROP TABLE test_multi_type_table;
 
-\x
 -- precedence test
 SELECT 4*2 || 1+4+5;
 SELECT (4*2) || 1+4+5;

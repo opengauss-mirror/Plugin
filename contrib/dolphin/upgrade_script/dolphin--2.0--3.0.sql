@@ -2233,10 +2233,6 @@ CREATE FUNCTION pg_catalog.text_varbin_concat(text,varbinary) RETURNS blob LANGU
 CREATE FUNCTION pg_catalog.bool_varbin_concat(boolean,varbinary) RETURNS blob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'concat_blob';
 CREATE FUNCTION pg_catalog.bin_varbin_concat(binary,varbinary) RETURNS blob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'concat_blob';
 
-CREATE FUNCTION pg_catalog.unknown_concat(unknown, unknown) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select concat($1, $2)';
-CREATE FUNCTION pg_catalog.unknown_int_concat(unknown, integer) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select concat($1, $2)';
-CREATE FUNCTION pg_catalog.int_unknown_concat(integer, unknown) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select concat($1, $2)';
-
 CREATE OPERATOR pg_catalog.||(leftarg=bit, rightarg=bit, procedure=pg_catalog.bit_concat);
 CREATE OPERATOR pg_catalog.||(leftarg=bit, rightarg=boolean, procedure=pg_catalog.bit_bool_concat);
 CREATE OPERATOR pg_catalog.||(leftarg=boolean, rightarg=bit, procedure=pg_catalog.bool_bit_concat);
@@ -2281,9 +2277,6 @@ CREATE OPERATOR pg_catalog.||(leftarg=varbinary, rightarg=boolean, procedure=pg_
 CREATE OPERATOR pg_catalog.||(leftarg=binary, rightarg=varbinary, procedure=pg_catalog.bin_varbin_concat);
 CREATE OPERATOR pg_catalog.||(leftarg=varbinary, rightarg=binary, procedure=pg_catalog.varbin_bin_concat);
 CREATE OPERATOR pg_catalog.||(leftarg=varbinary, rightarg=varbinary, procedure=pg_catalog.varbin_concat);
-CREATE OPERATOR pg_catalog.||(leftarg=unknown, rightarg=unknown, procedure=pg_catalog.unknown_concat);
-CREATE OPERATOR pg_catalog.||(leftarg=unknown, rightarg=integer, procedure=pg_catalog.unknown_int_concat);
-CREATE OPERATOR pg_catalog.||(leftarg=integer, rightarg=unknown, procedure=pg_catalog.int_unknown_concat);
 
 CREATE OR REPLACE FUNCTION pg_catalog.lower(boolean) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower(cast($1 as TEXT))::varchar';
 CREATE OR REPLACE FUNCTION pg_catalog.lower(tinyblob) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'lower_blob';

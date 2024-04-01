@@ -595,6 +595,14 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
                 rtypeId = TEXTOID;
             }
         }
+        if (strcmp("||", opername) == 0) {
+            if (ltypeId == UNKNOWNOID) {
+                ltypeId = TEXTOID;
+            }
+            if (rtypeId == UNKNOWNOID) {
+                rtypeId = TEXTOID;
+            }
+        }
     }
 #endif
     /*
