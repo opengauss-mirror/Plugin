@@ -526,3 +526,16 @@ drop table Student;
 drop schema test_m cascade;
 drop schema db_b_new_gram_test cascade;
 reset current_schema;
+
+--to fix I9AZQB, be compatible with mysql, no error message if there exists only one index start with the given index hint
+create table t1 (a int, d int, unique key bmw (d,a));
+explain (costs off) select count(a) from t1 ignore index(b);
+explain (costs off) select count(a) from t1 ignore index(bm);
+explain (costs off) select count(a) from t1 ignore index(bmw);
+explain (costs off) select count(a) from t1 ignore index(mw);
+explain (costs off) select count(a) from t1 ignore index(bmws);
+create index bmu1 on t1(a);
+explain (costs off) select count(a) from t1 ignore index(bdx);
+explain (costs off) select count(a) from t1 ignore index(bmu);
+explain (costs off) select count(a) from t1 ignore index(bm);
+drop table t1;
