@@ -2831,6 +2831,15 @@ bool check_generic_type_consistency(Oid* actual_arg_types, Oid* declared_arg_typ
                 continue;
             }
             if (OidIsValid(elem_typeid) && actual_type != elem_typeid) {
+#ifdef DOLPHIN
+                if (have_anyelement && !have_anynonarray && !have_anyenum && !have_anyset) {
+                    Oid funcid;
+                    CoercionPathType pathtype = find_coercion_pathway(elem_typeid, actual_type, COERCION_ASSIGNMENT, &funcid);
+                    if (pathtype != COERCION_PATH_NONE) {
+                        continue;
+                    }
+                }
+#endif
                 return false;
             }
             elem_typeid = actual_type;
@@ -3032,6 +3041,15 @@ Oid enforce_generic_type_consistency(
                 continue; /* no new information here */
             }
             if (OidIsValid(elem_typeid) && actual_type != elem_typeid) {
+#ifdef DOLPHIN
+                if (have_anyelement && !have_anynonarray && !have_anyenum) {
+                    Oid funcid;
+                    CoercionPathType pathtype = find_coercion_pathway(elem_typeid, actual_type, COERCION_ASSIGNMENT, &funcid);
+                    if (pathtype != COERCION_PATH_NONE) {
+                        continue;
+                    }
+                }
+#endif
                 ereport(ERROR,
                     (errcode(ERRCODE_DATATYPE_MISMATCH),
                         errmsg("arguments declared \"anyelement\" are not all alike"),
