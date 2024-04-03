@@ -5846,6 +5846,9 @@ bool IsTypeAcceptEmptyStr(Oid typeOid)
         case CHAROID:
             return true;
         default:
+            if (type_is_set(typeOid)) {
+                return true;
+            }
             return false;
     }
 }
