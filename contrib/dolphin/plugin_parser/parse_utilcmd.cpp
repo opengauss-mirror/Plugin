@@ -795,6 +795,7 @@ Oid *namespaceid, bool isFirstNode)
         stmt->partTableState = cxt.csc_partTableState;
     }
 
+#ifdef DOLPHIN
     // When no keys are explicitly provided as the partition key, we use the primary key
     // by default. This is to be compatible with MySQL.
     if (PointerIsValid(stmt->partTableState) && !PointerIsValid(stmt->partTableState->partitionKey)) {
@@ -805,6 +806,8 @@ Oid *namespaceid, bool isFirstNode)
         }
         CreatePartitionKeyFromIndexConstraints(stmt->partTableState, cxt.ixconstraints);
     }
+#endif
+
     /* check syntax for CREATE TABLE */
     checkPartitionSynax(stmt);
 
