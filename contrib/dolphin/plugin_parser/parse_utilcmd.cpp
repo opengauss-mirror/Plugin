@@ -163,6 +163,7 @@ static int128 TransformAutoIncStart(CreateStmt* stmt);
 #ifdef DOLPHIN
 static void transformTableIndex(CreateStmtContext* cxt);
 static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mustGlobal);
+static void CreatePartitionKeyFromIndexConstraints(PartitionState* partTableState, List* ixconstraints);
 #endif
 
 /*
@@ -206,7 +207,6 @@ static void TransformModifyColumndef(CreateStmtContext* cxt, AlterTableCmd* cmd)
 static void TransformColumnDefinitionOptions(CreateStmtContext* cxt, ColumnDef* column);
 static void TransformColumnDefinitionConstraints(
     CreateStmtContext* cxt, ColumnDef* column, bool preCheck, bool is_modify);
-static void CreatePartitionKeyFromIndexConstraints(PartitionState* partTableState, List* ixconstraints);
 #define REDIS_SCHEMA "data_redis"
 
 /*
@@ -9101,6 +9101,7 @@ static void TransformModifyColumndef(CreateStmtContext* cxt, AlterTableCmd* cmd)
     }
 }
 
+#ifdef DOLPHIN
 /*
  * @@GaussDB@@
  * Target		: data partition
@@ -9146,3 +9147,4 @@ static void CreatePartitionKeyFromIndexConstraints(PartitionState* partTableStat
     }
     partTableState->partitionKey = list_make1(c);
 }
+#endif
