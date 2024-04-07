@@ -1740,6 +1740,9 @@ DROP FUNCTION IF EXISTS pg_catalog.lcase(float);
 DROP FUNCTION IF EXISTS pg_catalog.lcase(char);
 DROP FUNCTION IF EXISTS pg_catalog.lcase(varchar);
 
+DROP FUNCTION IF EXISTS pg_catalog.acos(bit);
+DROP FUNCTION IF EXISTS pg_catalog.cos(bit);
+DROP FUNCTION IF EXISTS pg_catalog.cos(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.asin(bit);
 DROP FUNCTION IF EXISTS pg_catalog.asin(boolean);
 
