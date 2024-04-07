@@ -35733,10 +35733,10 @@ func_expr_common_subexpr:
 					FuncCall *n = makeNode(FuncCall);
 					if (ENABLE_B_CMPT_MODE) {
 						n->funcname = SystemFuncName("b_timestampdiff");
-						n->colname = "timestampdiff";
 					} else {
 						n->funcname = SystemFuncName("timestamp_diff");
 					}
+					n->colname = "timestampdiff";
 					n->args = $3;
 					n->agg_order = NIL;
 					n->agg_star = FALSE;
