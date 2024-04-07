@@ -1964,12 +1964,29 @@ void make_fn_arguments(ParseState* pstate, List* fargs, Oid* actual_arg_types, O
 {
     ListCell* current_fargs = NULL;
     int i = 0;
+    CoercionContext cc = COERCION_IMPLICIT;
+#ifdef DOLPHIN
+    Oid polymorphicTypeId = InvalidOid;
+#endif
 
     foreach (current_fargs, fargs) {
         /* types don't match? then force coercion using a function call... */
-        if (actual_arg_types[i] != declared_arg_types[i]) {
+        Oid sourceType = actual_arg_types[i];
+        Oid targetType = declared_arg_types[i];
+        if (sourceType != targetType) {
             Node* node = (Node*)lfirst(current_fargs);
-
+#ifdef DOLPHIN
+            if (targetType == ANYELEMENTOID) {
+                if (OidIsValid(polymorphicTypeId)) {
+                    if (polymorphicTypeId != sourceType) {
+                        targetType = polymorphicTypeId;
+                        cc = COERCION_ASSIGNMENT;
+                    }
+                } else {
+                    polymorphicTypeId = sourceType;
+                }
+            }
+#endif
             /*
              * If arg is a NamedArgExpr, coerce its input expr instead --- we
              * want the NamedArgExpr to stay at the top level of the list.
@@ -1979,10 +1996,10 @@ void make_fn_arguments(ParseState* pstate, List* fargs, Oid* actual_arg_types, O
 
                 node = coerce_type(pstate,
                     (Node*)na->arg,
-                    actual_arg_types[i],
-                    declared_arg_types[i],
+                    sourceType,
+                    targetType,
                     -1,
-                    COERCION_IMPLICIT,
+                    cc,
                     COERCE_IMPLICIT_CAST,
                     -1);
                 na->arg = (Expr*)node;
@@ -1991,20 +2008,20 @@ void make_fn_arguments(ParseState* pstate, List* fargs, Oid* actual_arg_types, O
 
                 node = coerce_type(pstate,
                     (Node*)uvar->value,
-                    actual_arg_types[i],
-                    declared_arg_types[i],
+                    sourceType,
+                    targetType,
                     -1,
-                    COERCION_IMPLICIT,
+                    cc,
                     COERCE_IMPLICIT_CAST,
                     -1);
                 uvar->value = (Expr*)node;
             } else {
                 node = coerce_type(pstate,
                     node,
-                    actual_arg_types[i],
-                    declared_arg_types[i],
+                    sourceType,
+                    targetType,
                     -1,
-                    COERCION_IMPLICIT,
+                    cc,
                     COERCE_IMPLICIT_CAST,
                     -1);
                 lfirst(current_fargs) = node;
