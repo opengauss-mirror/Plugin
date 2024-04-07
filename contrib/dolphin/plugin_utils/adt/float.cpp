@@ -2058,7 +2058,9 @@ Datum dasin(PG_FUNCTION_ARGS)
 {
     float8 arg1 = PG_GETARG_FLOAT8(0);
     float8 result;
-
+    if (arg1 < -1 || arg1 > 1) {
+        PG_RETURN_NULL();
+    }
     errno = 0;
     result = asin(arg1);
     if (errno != 0)

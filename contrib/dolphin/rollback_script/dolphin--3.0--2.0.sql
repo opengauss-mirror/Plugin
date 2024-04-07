@@ -1740,6 +1740,9 @@ DROP FUNCTION IF EXISTS pg_catalog.lcase(float);
 DROP FUNCTION IF EXISTS pg_catalog.lcase(char);
 DROP FUNCTION IF EXISTS pg_catalog.lcase(varchar);
 
+DROP FUNCTION IF EXISTS pg_catalog.asin(bit);
+DROP FUNCTION IF EXISTS pg_catalog.asin(boolean);
+
 DROP OPERATOR IF EXISTS pg_catalog.=(int, uint2);
 DROP FUNCTION IF EXISTS pg_catalog.int_uint2_eq(int, uint2);
 

@@ -90,6 +90,20 @@ insert into test_double_acos  select acos(`int1`), acos(`uint1`), acos(`int2`), 
 
 select * from test_double_acos order by 1;
 
+-- asin math function
+reset dolphin.sql_mode;
+select asin(`int1`), asin(`uint1`), asin(`int2`), asin(`uint2`), asin(`int4`), asin(`uint4`), asin(`int8`), asin(`uint8`), asin(`float4`), asin(`float8`), asin(`numeric`),asin(`bit1`), asin(`bit64`), asin(`boolean`), asin(`char`), asin(`varchar`), asin(`binary`), asin(`varbinary`), asin(`text`) from test_type_table;   
+
+create table test_double_asin(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double);
+
+insert ignore into test_double_asin select asin(`int1`), asin(`uint1`), asin(`int2`), asin(`uint2`), asin(`int4`), asin(`uint4`), asin(`int8`), asin(`uint8`), asin(`float4`), asin(`float8`), asin(`numeric`),asin(`bit1`), asin(`bit64`), asin(`boolean`), asin(`char`), asin(`varchar`), asin(`binary`), asin(`varbinary`), asin(`text`) from test_type_table;
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+
+insert into test_double_asin select asin(`int1`), asin(`uint1`), asin(`int2`), asin(`uint2`), asin(`int4`), asin(`uint4`), asin(`int8`), asin(`uint8`), asin(`float4`), asin(`float8`), asin(`numeric`),asin(`bit1`), asin(`bit64`), asin(`boolean`), asin(`char`), asin(`varchar`), asin(`binary`), asin(`varbinary`), asin(`text`) from test_type_table;
+
+select * from test_double_asin order by 1;
+
 -- log math function
 reset dolphin.sql_mode;
 select log(`int1`), log(`uint1`), log(`int2`), log(`uint2`), log(`int4`), log(`uint4`), log(`int8`), log(`uint8`), log(`float4`), log(`float8`), log(`numeric`), log(`bit1`), log(`bit64`), log(`boolean`), log(`date`), log(`time`), log(`time(4)`), log(`datetime`), log(`datetime(4)`), log(`timestamp`), log(`timestamp(4)`), log(`year`), log(`char`), log(`varchar`), log(`binary`), log(`varbinary`), log(`tinyblob`), log(`blob`), log(`mediumblob`), log(`longblob`), log(`text`), log(`enum_t`), log(`set_t`), log(`json`) from test_type_table;
@@ -419,6 +433,7 @@ drop table if exists test_round1;
 drop table if exists test_year;
 drop table if exists test_time_to_sec;
 drop table if exists test_double_acos;
+drop table if exists test_double_asin;
 drop table if exists test_double_exp;
 drop table if exists test_double_degrees;
 drop table if exists test_type_table;
