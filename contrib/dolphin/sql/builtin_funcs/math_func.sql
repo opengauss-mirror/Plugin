@@ -118,6 +118,20 @@ insert into test_double_asin select asin(`int1`), asin(`uint1`), asin(`int2`), a
 
 select * from test_double_asin order by 1;
 
+-- atan math function
+reset dolphin.sql_mode;
+select atan(`int1`), atan(`uint1`), atan(`int2`), atan(`uint2`), atan(`int4`), atan(`uint4`), atan(`int8`), atan(`uint8`), atan(`float4`), atan(`float8`), atan(`numeric`),atan(`bit1`), atan(`bit64`), atan(`boolean`), atan(`char`), atan(`varchar`), atan(`binary`), atan(`varbinary`), atan(`text`) from test_type_table;   
+
+create table test_double_atan(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double);
+
+insert ignore into test_double_atan select atan(`int1`), atan(`uint1`), atan(`int2`), atan(`uint2`), atan(`int4`), atan(`uint4`), atan(`int8`), atan(`uint8`), atan(`float4`), atan(`float8`), atan(`numeric`),atan(`bit1`), atan(`bit64`), atan(`boolean`), atan(`char`), atan(`varchar`), atan(`binary`), atan(`varbinary`), atan(`text`) from test_type_table;
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+
+insert into test_double_atan select atan(`int1`), atan(`uint1`), atan(`int2`), atan(`uint2`), atan(`int4`), atan(`uint4`), atan(`int8`), atan(`uint8`), atan(`float4`), atan(`float8`), atan(`numeric`),atan(`bit1`), atan(`bit64`), atan(`boolean`), atan(`char`), atan(`varchar`), atan(`binary`), atan(`varbinary`), atan(`text`) from test_type_table;
+
+select * from test_double_atan order by 1;
+
 -- log math function
 reset dolphin.sql_mode;
 select log(`int1`), log(`uint1`), log(`int2`), log(`uint2`), log(`int4`), log(`uint4`), log(`int8`), log(`uint8`), log(`float4`), log(`float8`), log(`numeric`), log(`bit1`), log(`bit64`), log(`boolean`), log(`date`), log(`time`), log(`time(4)`), log(`datetime`), log(`datetime(4)`), log(`timestamp`), log(`timestamp(4)`), log(`year`), log(`char`), log(`varchar`), log(`binary`), log(`varbinary`), log(`tinyblob`), log(`blob`), log(`mediumblob`), log(`longblob`), log(`text`), log(`enum_t`), log(`set_t`), log(`json`) from test_type_table;
@@ -449,6 +463,7 @@ drop table if exists test_time_to_sec;
 drop table if exists test_double_acos;
 drop table if exists test_double_cos;
 drop table if exists test_double_asin;
+drop table if exists test_double_atan;
 drop table if exists test_double_exp;
 drop table if exists test_double_degrees;
 drop table if exists test_type_table;

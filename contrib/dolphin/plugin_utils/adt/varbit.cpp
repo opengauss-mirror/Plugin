@@ -67,6 +67,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(cos_bit);
 extern "C" DLL_PUBLIC Datum cos_bit(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(asin_bit);
 extern "C" DLL_PUBLIC Datum asin_bit(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(atan_bit);
+extern "C" DLL_PUBLIC Datum atan_bit(PG_FUNCTION_ARGS);
 #endif
 
 
@@ -2783,6 +2785,22 @@ Datum asin_bit(PG_FUNCTION_ARGS)
     float8 res;
     errno = 0;
     res = asin(arg1);
+    if (errno != 0) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("input is out of range")));
+    }
+    if (isinf(res)) {
+        ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("value out of range: overflow")));
+    }
+    PG_RETURN_FLOAT8(res);
+}
+
+Datum atan_bit(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+    int64 arg1 = bittobigint(arg, false, fcinfo->can_ignore);
+    float8 res;
+    errno = 0;
+    res = atan(arg1);
     if (errno != 0) {
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("input is out of range")));
     }
