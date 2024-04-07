@@ -2415,24 +2415,19 @@ select * from t_v13 natural join t_v20;
 select * from t_v13 natural join t_v21;
  col1 
 ------
- t
-(1 row)
+(0 rows)
 
 select * from t_v13 natural join t_v22;
-WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
-WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
+WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
  col1 
 ------
- t
-(1 row)
+(0 rows)
 
 select * from t_v13 natural join t_v23;
-WARNING:  Truncated incorrect DOUBLE value: 1.23a
-WARNING:  Truncated incorrect DOUBLE value: 1.23a
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
- t
-(1 row)
+(0 rows)
 
 select * from t_v13 natural join t_v24;
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -2467,10 +2462,10 @@ select * from t_v13 natural join t_v29;
 (0 rows)
 
 select * from t_v13 natural join t_v30;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
- t
-(1 row)
+(0 rows)
 
 select * from t_v13 natural join t_v31;
  col1 
@@ -3962,8 +3957,7 @@ select * from t_v21 natural join t_v12;
 select * from t_v21 natural join t_v13;
  col1 
 ------
- 2023
-(1 row)
+(0 rows)
 
 select * from t_v21 natural join t_v14;
  col1 
@@ -4156,12 +4150,10 @@ WARNING:  invalid input syntax for type numeric: "1.23a                         
 (0 rows)
 
 select * from t_v22 natural join t_v13;
-WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
-WARNING:  Truncated incorrect DOUBLE value: 1.23a                                                                                               
-                                                 col1                                                 
-------------------------------------------------------------------------------------------------------
- 1.23a                                                                                               
-(1 row)
+WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+ col1 
+------
+(0 rows)
 
 select * from t_v22 natural join t_v14;
 WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
@@ -4357,12 +4349,10 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 (0 rows)
 
 select * from t_v23 natural join t_v13;
-WARNING:  Truncated incorrect DOUBLE value: 1.23a
-WARNING:  Truncated incorrect DOUBLE value: 1.23a
- col1  
--------
- 1.23a
-(1 row)
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
 
 select * from t_v23 natural join t_v14;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
@@ -5692,10 +5682,10 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 (0 rows)
 
 select * from t_v30 natural join t_v13;
- col1  
--------
- 1.23a
-(1 row)
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
 
 select * from t_v30 natural join t_v14;
 WARNING:  invalid input syntax for type timestamp: "1.23a"

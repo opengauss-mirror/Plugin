@@ -56,7 +56,7 @@ select true between symmetric true and false;
 select 'abc' between symmetric 'deg' and 'abc';
 select (sqrt(81) between log10(100) and 20)+('2' between log2(4) and sqrt(4));
 select (sqrt(81) between log10(100) and 20)-('22' between log2(4) and sqrt(4));
-select sqrt(1000) > 3.14 and sqrt(2000) <= 4 between sqrt(1212) <= 3 and sqrt(5757) = sqrt(5757);
+select sqrt(1000) > 3.14 and sqrt(2000) <= 4 between (sqrt(1212) <= 3) and (sqrt(5757) = sqrt(5757));
 drop table if exists t_between_and_0015;
 create table t_between_and_0015(c_0015_nn numeric);
 insert into t_between_and_0015 values(0.123),(21.215),(12.5),(268/7),(5.0001),(-11.111);

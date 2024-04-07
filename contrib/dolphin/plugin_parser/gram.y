@@ -33355,7 +33355,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 				{ $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "=", $1, $3, @2); }
 			 | a_expr '@' a_expr
 				 { $$ = (Node *) makeSimpleA_Expr(AEXPR_OP, "@", $1, $3, @2); }
-			| a_expr CmpNullOp a_expr    %prec IS
+			| a_expr CmpNullOp a_expr    	%prec CmpNullOp
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility == B_FORMAT)
 					{
