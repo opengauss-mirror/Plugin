@@ -975,14 +975,6 @@ DROP FUNCTION IF EXISTS pg_catalog.bit_length(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(json);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(binary);
 
-DROP FUNCTION IF EXISTS pg_catalog.length(boolean);
-DROP FUNCTION IF EXISTS pg_catalog.length(tinyblob);
-DROP FUNCTION IF EXISTS pg_catalog.length(blob);
-DROP FUNCTION IF EXISTS pg_catalog.length(mediumblob);
-DROP FUNCTION IF EXISTS pg_catalog.length(longblob);
-DROP FUNCTION IF EXISTS pg_catalog.length(anyenum);
-DROP FUNCTION IF EXISTS pg_catalog.length(json);
-
 DROP CAST IF EXISTS (uint4 AS year) CASCADE;
 DROP CAST IF EXISTS (boolean AS year) CASCADE;
 DROP CAST IF EXISTS (char AS year) CASCADE;
@@ -1672,6 +1664,9 @@ DROP OPERATOR IF EXISTS pg_catalog.||(varbinary, boolean);
 DROP OPERATOR IF EXISTS pg_catalog.||(binary, varbinary);
 DROP OPERATOR IF EXISTS pg_catalog.||(varbinary, binary);
 DROP OPERATOR IF EXISTS pg_catalog.||(varbinary, varbinary);
+DROP OPERATOR IF EXISTS pg_catalog.||(unknown, unknown);
+DROP OPERATOR IF EXISTS pg_catalog.||(unknown, integer);
+DROP OPERATOR IF EXISTS pg_catalog.||(integer, unknown);
 
 DROP FUNCTION pg_catalog.bit_concat(bit, bit);
 DROP FUNCTION pg_catalog.bit_bool_concat(bit, boolean);
@@ -1717,6 +1712,9 @@ DROP FUNCTION pg_catalog.bit_varbin_concat(bit,varbinary);
 DROP FUNCTION pg_catalog.text_varbin_concat(text,varbinary);
 DROP FUNCTION pg_catalog.bool_varbin_concat(boolean,varbinary);
 DROP FUNCTION pg_catalog.bin_varbin_concat(binary,varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.unknown_concat(unknown, unknown);
+DROP FUNCTION IF EXISTS pg_catalog.unknown_int_concat(unknown, integer);
+DROP FUNCTION IF EXISTS pg_catalog.int_unknown_concat(integer, unknown);
 
 DROP FUNCTION IF EXISTS pg_catalog.left(bit, integer);
 DROP FUNCTION IF EXISTS pg_catalog.left(blob, integer);
@@ -1747,12 +1745,6 @@ DROP FUNCTION IF EXISTS pg_catalog.lcase(integer);
 DROP FUNCTION IF EXISTS pg_catalog.lcase(float);
 DROP FUNCTION IF EXISTS pg_catalog.lcase(char);
 DROP FUNCTION IF EXISTS pg_catalog.lcase(varchar);
-
-DROP FUNCTION IF EXISTS pg_catalog.acos(bit);
-DROP FUNCTION IF EXISTS pg_catalog.cos(bit);
-DROP FUNCTION IF EXISTS pg_catalog.cos(boolean);
-DROP FUNCTION IF EXISTS pg_catalog.asin(bit);
-DROP FUNCTION IF EXISTS pg_catalog.asin(boolean);
 
 DROP OPERATOR IF EXISTS pg_catalog.=(int, uint2);
 DROP FUNCTION IF EXISTS pg_catalog.int_uint2_eq(int, uint2);

@@ -130,11 +130,15 @@ extra_clean:
 	make clean -C $(catalog)
 clean: extra_clean
 
-dolphin--3.0.sql: sql_script/* sql_script_post/* upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql
+dolphin--4.0.sql: sql_script/* sql_script_post/* upgrade_script/dolphin--1.0--1.1.sql upgrade_script/dolphin--1.1--2.0.sql upgrade_script/dolphin--2.0--3.0.sql upgrade_script/dolphin--3.0--4.0.sql
 	cat $^ > $@
 
-DATA_built = dolphin--3.0.sql openGauss_expr_dolphin.ir
-DATA = upgrade_script/dolphin--1.0--1.1.sql rollback_script/dolphin--1.1--1.0.sql upgrade_script/dolphin--1.1--2.0.sql rollback_script/dolphin--2.0--1.1.sql upgrade_script/dolphin--2.0--3.0.sql rollback_script/dolphin--3.0--2.0.sql upgrade_script/dolphin--2.0--2.0.1.sql rollback_script/dolphin--2.0.1--2.0.sql
+DATA_built = dolphin--4.0.sql openGauss_expr_dolphin.ir
+DATA = upgrade_script/dolphin--1.0--1.1.sql rollback_script/dolphin--1.1--1.0.sql \
+upgrade_script/dolphin--1.1--2.0.sql rollback_script/dolphin--2.0--1.1.sql \
+upgrade_script/dolphin--2.0--3.0.sql rollback_script/dolphin--3.0--2.0.sql \
+upgrade_script/dolphin--3.0--4.0.sql rollback_script/dolphin--4.0--3.0.sql \
+upgrade_script/dolphin--2.0--2.0.1.sql rollback_script/dolphin--2.0.1--2.0.sql
 
 OBJS += plugin_postgres.o 
 plugin_postgres.o: plugin_postgres.cpp
