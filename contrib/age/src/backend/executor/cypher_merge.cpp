@@ -63,7 +63,7 @@ const ExtensibleExecMethods cypher_merge_exec_methods = {MERGE_SCAN_STATE_NAME,
     NULL};
 
 /*
- * Initializes the MERGE Execution Node at the begginning of the execution
+ * Initializes the MERGE Execution Node at the beginning of the execution
  * phase.
  */
 static void begin_cypher_merge(ExtensiblePlanState *node, EState *estate,
@@ -106,7 +106,7 @@ static void begin_cypher_merge(ExtensiblePlanState *node, EState *estate,
         Relation rel;
 
         /*
-         * This entity is refrences an entity that is already declared. Either
+         * This entity references an entity that is already declared. Either
          * by a previous clause or an entity earlier in the MERGE path. In both
          * cases, this target_entry will not create data, only reference data
          * that already exists.
@@ -181,7 +181,7 @@ static bool check_path(cypher_merge_custom_scan_state *css,
          * If target_node as a valid attribute number and is a node not
          * declared in a previous clause, check the tuple position in the
          * slot. If the slot is null, the path was not found. The rules
-         * state that if one part of the path does not exists, the whold
+         * state that if one part of the path does not exists, the whole
          * path must be created.
          */
         if (node->tuple_position != InvalidAttrNumber ||
@@ -466,7 +466,7 @@ static TupleTableSlot *exec_cypher_merge(ExtensiblePlanState *node)
             Assert(css->found_a_path == false);
 
             /*
-             * This block of sub-case 1 should only be exectuted once. To
+             * This block of sub-case 1 should only be executed once. To
              * create the single path if the path does not exist. If we find
              * ourselves here again, the internal state of the MERGE execution
              * node was incorrectly altered.
@@ -500,7 +500,7 @@ static TupleTableSlot *exec_cypher_merge(ExtensiblePlanState *node)
                                 econtext->ecxt_scantuple->tts_values,
                                 econtext->ecxt_scantuple->tts_isnull);
 
-            // store the heap tuble
+            // store the heap tuple
             ExecStoreTuple(heap_tuple, econtext->ecxt_scantuple, InvalidBuffer, false);
 
             /*
