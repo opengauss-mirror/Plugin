@@ -1435,14 +1435,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.bit_length(anyenum) RETURNS integer LANGUA
 CREATE OR REPLACE FUNCTION pg_catalog.bit_length(json) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.bit_length(cast($1 as TEXT))';
 CREATE OR REPLACE FUNCTION pg_catalog.bit_length(binary) RETURNS integer LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'mp_bit_length_binary';
 
-CREATE OR REPLACE FUNCTION pg_catalog.length(boolean) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.length($1::integer)';
-CREATE OR REPLACE FUNCTION pg_catalog.length(tinyblob) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.length($1::text)';
-CREATE OR REPLACE FUNCTION pg_catalog.length(blob) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.length($1::text)';
-CREATE OR REPLACE FUNCTION pg_catalog.length(mediumblob) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.length($1::text)';
-CREATE OR REPLACE FUNCTION pg_catalog.length(longblob) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.length($1::text)';
-CREATE OR REPLACE FUNCTION pg_catalog.length(anyenum) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.length($1::text)';
-CREATE OR REPLACE FUNCTION pg_catalog.length(json) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.length($1::text)';
-
 DROP CAST IF EXISTS (uint4 AS year) CASCADE;
 DROP CAST IF EXISTS (boolean AS year) CASCADE;
 DROP CAST IF EXISTS (char AS year) CASCADE;
@@ -2311,19 +2303,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.lcase(integer) RETURNS varchar LANGUAGE SQ
 CREATE OR REPLACE FUNCTION pg_catalog.lcase(float) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
 CREATE OR REPLACE FUNCTION pg_catalog.lcase(char) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
 CREATE OR REPLACE FUNCTION pg_catalog.lcase(varchar) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
-
-DROP FUNCTION IF EXISTS pg_catalog.acos(bit);
-CREATE OR REPLACE FUNCTION pg_catalog.acos(bit) RETURNS double precision LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'acos_bit';
-
-DROP FUNCTION IF EXISTS pg_catalog.cos(bit);
-CREATE OR REPLACE FUNCTION pg_catalog.cos(bit) RETURNS double precision LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'cos_bit';
-DROP FUNCTION IF EXISTS pg_catalog.cos(boolean);
-CREATE OR REPLACE FUNCTION pg_catalog.cos(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.cos(cast($1 as float))';
-
-DROP FUNCTION IF EXISTS pg_catalog.asin(bit);
-CREATE OR REPLACE FUNCTION pg_catalog.asin(bit) RETURNS double precision LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'asin_bit';
-DROP FUNCTION IF EXISTS pg_catalog.asin(boolean);
-CREATE OR REPLACE FUNCTION pg_catalog.asin(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.asin(cast($1 as float))';
 
 CREATE OR REPLACE FUNCTION pg_catalog.int_uint2_eq(int, uint2) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT ($1 = $2::int4)';
 CREATE OPERATOR pg_catalog.=(LEFTARG = int, RIGHTARG = uint2, COMMUTATOR = operator(pg_catalog.=), PROCEDURE = pg_catalog.int_uint2_eq, RESTRICT = eqsel, JOIN = eqjoinsel);
