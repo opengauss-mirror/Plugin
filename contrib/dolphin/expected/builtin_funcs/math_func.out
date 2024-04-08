@@ -280,6 +280,55 @@ select * from test_double_acos order by 1;
   0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |   0 |   0 |   0 |     |   0 |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |   0 |     | 1.570796326794897
 (2 rows)
 
+-- cos math function
+reset dolphin.sql_mode;
+select cos(`int1`), cos(`uint1`), cos(`int2`), cos(`uint2`), cos(`int4`), cos(`uint4`), cos(`int8`), cos(`uint8`), cos(`float4`), cos(`float8`), cos(`numeric`),cos(`bit1`), cos(`bit64`), cos(`boolean`), cos(`char`), cos(`varchar`), cos(`binary`), cos(`varbinary`), cos(`text`) from test_type_table;   
+WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+CONTEXT:  referenced column: cos
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: cos
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: cos
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: cos
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: cos
+        cos         |        cos         |        cos         |        cos         |        cos         |        cos         |        cos         |        cos         |        cos         |        cos         |        cos         |        cos         |        cos         |        cos         |        cos         |        cos         |        cos         |        cos         |        cos         
+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------
+ 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.7539022543433046 | 0.5403023058681398 | 0.3342377271245026 | 0.3342377271245026 | 0.3342377271245026 | 0.3342377271245026 | 0.3342377271245026
+(1 row)
+
+create table test_double_cos(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double);
+insert ignore into test_double_cos select cos(`int1`), cos(`uint1`), cos(`int2`), cos(`uint2`), cos(`int4`), cos(`uint4`), cos(`int8`), cos(`uint8`), cos(`float4`), cos(`float8`), cos(`numeric`),cos(`bit1`), cos(`bit64`), cos(`boolean`), cos(`char`), cos(`varchar`), cos(`binary`), cos(`varbinary`), cos(`text`) from test_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+CONTEXT:  referenced column: d15
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d16
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d17
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d18
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d19
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test_double_cos select cos(`int1`), cos(`uint1`), cos(`int2`), cos(`uint2`), cos(`int4`), cos(`uint4`), cos(`int8`), cos(`uint8`), cos(`float4`), cos(`float8`), cos(`numeric`),cos(`bit1`), cos(`bit64`), cos(`boolean`), cos(`char`), cos(`varchar`), cos(`binary`), cos(`varbinary`), cos(`text`) from test_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d15
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d16
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d17
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d18
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d19
+select * from test_double_cos order by 1;
+         d1         |         d2         |         d3         |         d4         |         d5         |         d6         |         d7         |         d8         |         d9         |        d10         |        d11         |        d12         |        d13         |        d14         |        d15         |        d16         |        d17         |        d18         |        d19         
+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------
+ 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.7539022543433046 | 0.5403023058681398 | 0.3342377271245026 | 0.3342377271245026 | 0.3342377271245026 | 0.3342377271245026 | 0.3342377271245026
+ 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.5403023058681398 | 0.7539022543433046 | 0.5403023058681398 | 0.3342377271245026 | 0.3342377271245026 | 0.3342377271245026 | 0.3342377271245026 | 0.3342377271245026
+(2 rows)
+
 -- asin math function
 reset dolphin.sql_mode;
 select asin(`int1`), asin(`uint1`), asin(`int2`), asin(`uint2`), asin(`int4`), asin(`uint4`), asin(`int8`), asin(`uint8`), asin(`float4`), asin(`float8`), asin(`numeric`),asin(`bit1`), asin(`bit64`), asin(`boolean`), asin(`char`), asin(`varchar`), asin(`binary`), asin(`varbinary`), asin(`text`) from test_type_table;   
@@ -1775,6 +1824,7 @@ drop table if exists test_round1;
 drop table if exists test_year;
 drop table if exists test_time_to_sec;
 drop table if exists test_double_acos;
+drop table if exists test_double_cos;
 drop table if exists test_double_asin;
 drop table if exists test_double_exp;
 drop table if exists test_double_degrees;
