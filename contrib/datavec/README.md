@@ -18,8 +18,9 @@ Compile and install the extension (supports Postgres 11+)
 
 ```sh
 cd /tmp
-git clone --branch v0.4.4 https://github.com/datavec/datavec.git
-cd datavec
+git clone https://gitee.com/opengauss/Plugin.git
+cd Plugin/contrib/datavec 
+# you would better copy those files to openGauss-server, i.e. cp Plugin/contrib/datavec openGauss-server/contrib, and run the following command.
 make
 make install # may need sudo
 ```
