@@ -21,5 +21,30 @@ SELECT length('你好呀');
 SELECT LENGTH(B'101');
 SELECT length('你好呀jose');
 
+set dolphin.b_compatibility_mode to on;
+drop table if exists t_len;
+create table t_len
+(
+    c1 integer,
+    `boolean` boolean,
+    `tinyblob` tinyblob,
+    `blob` blob,
+    `mediumblob` mediumblob,
+    `longblob` longblob,
+    `enum_t` enum('Red', '1.23a', '1000'),
+    `json` json
+);
+insert into t_len values (1, 1, '62.345*67-89', '62.345*67-89', '62.345*67-89', '62.345*67-89', 'Red', json_object('name', 'jack', 'age', 18));
+insert into t_len values (2, 0, 'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ', '1.23a', json_object('id', 123456, 'name', 'Blue'));
+insert into t_len values (3, 1, ' ', ' ', ' ', ' ', '1000', json_object('x', 3.14, 'y', 12));
+set dolphin.sql_mode = 'PAD_CHAR_TO_FULL_LENGTH';
+select c1, length(`boolean`), length(`tinyblob`), length(`tinyblob`), length(`mediumblob`), length(`longblob`), length(`enum_t`), length(`json`) from t_len order by c1;
+set dolphin.sql_mode = '';
+select c1, length(`boolean`), length(`tinyblob`), length(`tinyblob`), length(`mediumblob`), length(`longblob`), length(`enum_t`), length(`json`) from t_len order by c1;
+select pg_typeof(length(`boolean`)), pg_typeof(length(`tinyblob`)), pg_typeof(length(`tinyblob`)), pg_typeof(length(`mediumblob`)), pg_typeof(length(`longblob`)), pg_typeof(length(`enum_t`)), pg_typeof(length(`json`)) from t_len where c1 = 1;
+drop table t_len;
+reset dolphin.sql_mode;
+reset dolphin.b_compatibility_mode;
+
 drop schema db_b_string_length_test cascade;
 reset current_schema;

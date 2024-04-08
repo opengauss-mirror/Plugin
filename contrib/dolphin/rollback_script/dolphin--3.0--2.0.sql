@@ -975,6 +975,14 @@ DROP FUNCTION IF EXISTS pg_catalog.bit_length(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(json);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(binary);
 
+DROP FUNCTION IF EXISTS pg_catalog.length(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.length(tinyblob);
+DROP FUNCTION IF EXISTS pg_catalog.length(blob);
+DROP FUNCTION IF EXISTS pg_catalog.length(mediumblob);
+DROP FUNCTION IF EXISTS pg_catalog.length(longblob);
+DROP FUNCTION IF EXISTS pg_catalog.length(anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.length(json);
+
 DROP CAST IF EXISTS (uint4 AS year) CASCADE;
 DROP CAST IF EXISTS (boolean AS year) CASCADE;
 DROP CAST IF EXISTS (char AS year) CASCADE;
