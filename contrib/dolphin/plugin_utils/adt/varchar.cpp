@@ -2228,7 +2228,7 @@ static double ProcessStrval(char* str, int len, PG_FUNCTION_ARGS)
     newstr[len] = '\0';
     char* stopstring = NULL;
     resval = strtod(newstr, &stopstring);
-    if (stopstring) {
+    if (stopstring && !IsBlankStr(stopstring)) {
         ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
                 (errmsg("Truncated incorrect DOUBLE value: %s", newstr)));
     }

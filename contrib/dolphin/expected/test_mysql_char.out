@@ -160,9 +160,6 @@ WARNING:  Truncated incorrect DOUBLE value: 00100abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc     
 WARNING:  Truncated incorrect DOUBLE value: -1abc     
 WARNING:  Truncated incorrect DOUBLE value: -1abc     
-WARNING:  Truncated incorrect DOUBLE value: 00200     
-WARNING:  Truncated incorrect DOUBLE value: 00200     
-WARNING:  Truncated incorrect DOUBLE value: 00200     
 WARNING:  Truncated incorrect DOUBLE value: abc       
 WARNING:  Truncated incorrect DOUBLE value: abc       
 WARNING:  Truncated incorrect DOUBLE value: abc       
@@ -201,9 +198,6 @@ WARNING:  Truncated incorrect DOUBLE value: 00100abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc     
 WARNING:  Truncated incorrect DOUBLE value: -1abc     
 WARNING:  Truncated incorrect DOUBLE value: -1abc     
-WARNING:  Truncated incorrect DOUBLE value: 00200     
-WARNING:  Truncated incorrect DOUBLE value: 00200     
-WARNING:  Truncated incorrect DOUBLE value: 00200     
 WARNING:  Truncated incorrect DOUBLE value: abc       
 WARNING:  Truncated incorrect DOUBLE value: abc       
 WARNING:  Truncated incorrect DOUBLE value: abc       
@@ -242,9 +236,6 @@ WARNING:  Truncated incorrect DOUBLE value: 00100abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc     
 WARNING:  Truncated incorrect DOUBLE value: -1abc     
 WARNING:  Truncated incorrect DOUBLE value: -1abc     
-WARNING:  Truncated incorrect DOUBLE value: 00200     
-WARNING:  Truncated incorrect DOUBLE value: 00200     
-WARNING:  Truncated incorrect DOUBLE value: 00200     
 WARNING:  Truncated incorrect DOUBLE value: abc       
 WARNING:  Truncated incorrect DOUBLE value: abc       
 WARNING:  Truncated incorrect DOUBLE value: abc       
@@ -283,9 +274,6 @@ WARNING:  Truncated incorrect DOUBLE value: 00100abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc     
 WARNING:  Truncated incorrect DOUBLE value: -1abc     
 WARNING:  Truncated incorrect DOUBLE value: -1abc     
-WARNING:  Truncated incorrect DOUBLE value: 00200     
-WARNING:  Truncated incorrect DOUBLE value: 00200     
-WARNING:  Truncated incorrect DOUBLE value: 00200     
 WARNING:  Truncated incorrect DOUBLE value: abc       
 WARNING:  Truncated incorrect DOUBLE value: abc       
 WARNING:  Truncated incorrect DOUBLE value: abc       
@@ -324,9 +312,6 @@ WARNING:  Truncated incorrect DOUBLE value: 00100abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc
-WARNING:  Truncated incorrect DOUBLE value: 00200
-WARNING:  Truncated incorrect DOUBLE value: 00200
-WARNING:  Truncated incorrect DOUBLE value: 00200
 WARNING:  Truncated incorrect DOUBLE value: abc
 WARNING:  Truncated incorrect DOUBLE value: abc
 WARNING:  Truncated incorrect DOUBLE value: abc
@@ -365,9 +350,6 @@ WARNING:  Truncated incorrect DOUBLE value: 00100abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc
-WARNING:  Truncated incorrect DOUBLE value: 00200
-WARNING:  Truncated incorrect DOUBLE value: 00200
-WARNING:  Truncated incorrect DOUBLE value: 00200
 WARNING:  Truncated incorrect DOUBLE value: abc
 WARNING:  Truncated incorrect DOUBLE value: abc
 WARNING:  Truncated incorrect DOUBLE value: abc
@@ -406,9 +388,6 @@ WARNING:  Truncated incorrect DOUBLE value: 00100abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc
-WARNING:  Truncated incorrect DOUBLE value: 00200
-WARNING:  Truncated incorrect DOUBLE value: 00200
-WARNING:  Truncated incorrect DOUBLE value: 00200
 WARNING:  Truncated incorrect DOUBLE value: abc
 WARNING:  Truncated incorrect DOUBLE value: abc
 WARNING:  Truncated incorrect DOUBLE value: abc
@@ -447,9 +426,6 @@ WARNING:  Truncated incorrect DOUBLE value: 00100abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc
 WARNING:  Truncated incorrect DOUBLE value: -1abc
-WARNING:  Truncated incorrect DOUBLE value: 00200
-WARNING:  Truncated incorrect DOUBLE value: 00200
-WARNING:  Truncated incorrect DOUBLE value: 00200
 WARNING:  Truncated incorrect DOUBLE value: abc
 WARNING:  Truncated incorrect DOUBLE value: abc
 WARNING:  Truncated incorrect DOUBLE value: abc
@@ -485,6 +461,34 @@ WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
 drop table testfortext;
 drop table testforchar;
 drop table testforvarchar;
+set dolphin.b_compatibility_mode to on;
+create table t1(a varchar(10));
+insert into t1 values(1);
+select * from t1 where a=true;
+ a 
+---
+ 1
+(1 row)
+
+create table t2(a char(10));
+insert into t2 values(1);
+select * from t2 where a=true;
+ a 
+---
+ 1
+(1 row)
+
+create table t3(a text);
+insert into t3 values(1);
+select * from t3 where a=true;
+ a 
+---
+ 1
+(1 row)
+
+drop table t1;
+drop table t2;
+drop table t3;
 select '00100abc' && 1;
 WARNING:  Truncated incorrect DOUBLE value: 00100abc
  ?column? 
