@@ -5319,6 +5319,10 @@ Datum timestamp_part(PG_FUNCTION_ARGS)
                 break;
 
             case DTK_QUARTER:
+#ifdef DOLPHIN
+                if (timestamp == TIMESTAMP_ZERO)
+                    PG_RETURN_NULL();
+#endif
                 result = (tm->tm_mon - 1) / 3 + 1;
                 break;
 
@@ -12212,6 +12216,67 @@ Datum numeric_cast_timestamptz(PG_FUNCTION_ARGS)
 Datum date_cast_timestamptz(PG_FUNCTION_ARGS)
 {
     return date_cast_timestamp(fcinfo, date_timestamptz);
+}
+
+static void check_binary_date(PG_FUNCTION_ARGS, Datum input, int datalen)
+{
+    int reallen;
+
+    reallen = VARSIZE_ANY_EXHDR(DatumGetByteaPP(input));
+
+    /**
+     * if real binary length is less than datalen, it must truncate '\0'
+     */
+    if (reallen > datalen) {
+        ereport((SQL_MODE_STRICT() && !fcinfo->can_ignore ? ERROR : WARNING),
+            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
+                    errmsg("Truncated incorrect datetime value: \"%s\"",
+                           DatumGetCString(DirectFunctionCall1(rawout, input)))));
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(binary_timestamp);
+extern "C" DLL_PUBLIC Datum binary_timestamp(PG_FUNCTION_ARGS);
+Datum binary_timestamp(PG_FUNCTION_ARGS)
+{
+    Datum input = PG_GETARG_DATUM(0);
+    char *data;
+    TimeErrorType time_error_type = TIME_CORRECT;
+
+    data = DatumGetCString(DirectFunctionCall1(textout, input));
+    check_binary_date(fcinfo, input, strlen(data));
+
+    Datum result = date_internal(fcinfo, data, TIME_IN, &time_error_type);
+    pfree_ext(data);
+
+    if ((fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT) &&
+        time_error_type == TIME_INCORRECT) {
+        PG_RETURN_NULL();
+    }
+
+    PG_RETURN_TIMESTAMP(date2timestamp(DatumGetDateADT(result)));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(binary_timestamptz);
+extern "C" DLL_PUBLIC Datum binary_timestamptz(PG_FUNCTION_ARGS);
+Datum binary_timestamptz(PG_FUNCTION_ARGS)
+{
+    Datum input = PG_GETARG_DATUM(0);
+    char *data;
+    TimeErrorType time_error_type = TIME_CORRECT;
+
+    data = DatumGetCString(DirectFunctionCall1(textout, input));
+    check_binary_date(fcinfo, input, strlen(data));
+
+    Datum result = timestamptz_internal(fcinfo, data, TIME_IN, &time_error_type);
+    pfree_ext(data);
+    
+    if (time_error_type == TIME_INCORRECT &&
+        (fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT)) {
+        PG_RETURN_NULL();
+    }
+
+    return result;
 }
 #endif
 
