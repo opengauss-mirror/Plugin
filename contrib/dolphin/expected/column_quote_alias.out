@@ -1,0 +1,835 @@
+create schema column_quote_alias;
+set current_schema to 'column_quote_alias';
+DROP TABLE IF EXISTS t_alias_case0001_1;
+NOTICE:  table "t_alias_case0001_1" does not exist, skipping
+CREATE TABLE t_alias_case0001_1 (a int);
+INSERT INTO t_alias_case0001_1 SET a=1;
+select character varying 'keyword_test' from t_alias_case0001_1;
+ varchar 
+---------
+ k
+(1 row)
+
+select character 'keyword_test' from t_alias_case0001_1;
+ bpchar 
+--------
+ k
+(1 row)
+
+select nvarchar 'keyword_test' from t_alias_case0001_1;
+ nvarchar2 
+-----------
+ k
+(1 row)
+
+select nvarchar2 'keyword_test' from t_alias_case0001_1;
+ nvarchar2 
+-----------
+ k
+(1 row)
+
+select national varchar 'keyword_test' from t_alias_case0001_1;
+ nvarchar2 
+-----------
+ k
+(1 row)
+
+select VARCHAR 'keyword_test' from t_alias_case0001_1;
+ varchar 
+---------
+ k
+(1 row)
+
+select VARCHAR2 'keyword_test' from t_alias_case0001_1;
+ varchar 
+---------
+ k
+(1 row)
+
+select NATIONAL CHARACTER 'keyword_test' from t_alias_case0001_1;
+ bpchar 
+--------
+ k
+(1 row)
+
+select NATIONAL CHAR 'keyword_test' from t_alias_case0001_1;
+ bpchar 
+--------
+ k
+(1 row)
+
+select NCHAR 'keyword_test' from t_alias_case0001_1;
+ bpchar 
+--------
+ k
+(1 row)
+
+select NCHAR VARYING 'keyword_test' from t_alias_case0001_1;
+ varchar 
+---------
+ k
+(1 row)
+
+select CHAR 'keyword_test' from t_alias_case0001_1;
+ bpchar 
+--------
+ k
+(1 row)
+
+select CHAR VARYING 'keyword_test' from t_alias_case0001_1;
+   varchar    
+--------------
+ keyword_test
+(1 row)
+
+select TEXT 'keyword_test' from t_alias_case0001_1;
+     text     
+--------------
+ keyword_test
+(1 row)
+
+select character(2) 'keyword_test' from t_alias_case0001_1;
+ bpchar 
+--------
+ ke
+(1 row)
+
+select text(2) 'keyword_test' from t_alias_case0001_1;
+     text     
+--------------
+ keyword_test
+(1 row)
+
+select char(1) 'keyword_test' from t_alias_case0001_1;
+ bpchar 
+--------
+ k
+(1 row)
+
+select char varying(1) 'keyword_test' from t_alias_case0001_1;
+ varchar 
+---------
+ k
+(1 row)
+
+select timestamp(2) 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for type timestamp: "keyword_test"
+LINE 1: select timestamp(2) 'keyword_test' from t_alias_case0001_1;
+                            ^
+CONTEXT:  referenced column: timestamp
+      timestamp      
+---------------------
+ 0000-00-00 00:00:00
+(1 row)
+
+select time(2) 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for type time: "keyword_test"
+LINE 1: select time(2) 'keyword_test' from t_alias_case0001_1;
+                       ^
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:00:00
+(1 row)
+
+select smalldatetime 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for type smalldatetime: "keyword_test"
+LINE 1: select smalldatetime 'keyword_test' from t_alias_case0001_1;
+                             ^
+CONTEXT:  referenced column: smalldatetime
+    smalldatetime    
+---------------------
+ 1970-01-01 00:00:00
+(1 row)
+
+select int 'keyword_test' from t_alias_case0001_1;
+ int4 
+------
+    0
+(1 row)
+
+select tinyint 'keyword_test' from t_alias_case0001_1;
+ int1 
+------
+ 0
+(1 row)
+
+select smallint 'keyword_test' from t_alias_case0001_1;
+ int2 
+------
+    0
+(1 row)
+
+select mediumint 'keyword_test' from t_alias_case0001_1;
+ int4 
+------
+    0
+(1 row)
+
+select bigint 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for type bigint: "keyword_test"
+LINE 1: select bigint 'keyword_test' from t_alias_case0001_1;
+                      ^
+CONTEXT:  referenced column: int8
+ int8 
+------
+    0
+(1 row)
+
+select real 'keyword_test' from t_alias_case0001_1;
+ float4 
+--------
+      0
+(1 row)
+
+select float 'keyword_test' from t_alias_case0001_1;
+ float4 
+--------
+      0
+(1 row)
+
+select BINARY_DOUBLE 'keyword_test' from t_alias_case0001_1;
+WARNING:  invalid input syntax for type double precision: "keyword_test"
+LINE 1: select BINARY_DOUBLE 'keyword_test' from t_alias_case0001_1;
+                             ^
+CONTEXT:  referenced column: float8
+ float8 
+--------
+      0
+(1 row)
+
+select BINARY_INTEGER 'keyword_test' from t_alias_case0001_1;
+ int4 
+------
+    0
+(1 row)
+
+select decimal 'keyword_test' from t_alias_case0001_1;
+ numeric 
+---------
+       0
+(1 row)
+
+select number 'keyword_test' from t_alias_case0001_1;
+ numeric 
+---------
+       0
+(1 row)
+
+select dec 'keyword_test' from t_alias_case0001_1;
+ numeric 
+---------
+       0
+(1 row)
+
+select numeric 'keyword_test' from t_alias_case0001_1;
+ numeric 
+---------
+       0
+(1 row)
+
+select fixed 'keyword_test' from t_alias_case0001_1;
+ numeric 
+---------
+       0
+(1 row)
+
+select boolean 'keyword_test' from t_alias_case0001_1;
+ERROR:  invalid input syntax for type boolean: "keyword_test"
+LINE 1: select boolean 'keyword_test' from t_alias_case0001_1;
+                       ^
+CONTEXT:  referenced column: bool
+select bit(2) 'keyword_test' from t_alias_case0001_1;
+ERROR:  "k" is not a valid binary digit
+LINE 1: select bit(2) 'keyword_test' from t_alias_case0001_1;
+                      ^
+CONTEXT:  referenced column: bit
+select bit varying 'keyword_test' from t_alias_case0001_1;
+ERROR:  "k" is not a valid binary digit
+LINE 1: select bit varying 'keyword_test' from t_alias_case0001_1;
+                           ^
+CONTEXT:  referenced column: varbit
+select bit 'keyword_test' from t_alias_case0001_1;
+ERROR:  "k" is not a valid binary digit
+LINE 1: select bit 'keyword_test' from t_alias_case0001_1;
+                   ^
+CONTEXT:  referenced column: bit
+SELECT a as ' ' from t_alias_case0001_1;
+   
+---
+ 1
+(1 row)
+
+SELECT a ' ' from t_alias_case0001_1;
+   
+---
+ 1
+(1 row)
+
+SELECT a as '(ss)' from t_alias_case0001_1;
+ (ss) 
+------
+    1
+(1 row)
+
+SELECT a '(ss)' from t_alias_case0001_1;
+ (ss) 
+------
+    1
+(1 row)
+
+SELECT a as '334ss' from t_alias_case0001_1;
+ 334ss 
+-------
+     1
+(1 row)
+
+SELECT a '334ss' from t_alias_case0001_1;
+ 334ss 
+-------
+     1
+(1 row)
+
+SELECT a as '#' from t_alias_case0001_1;
+ # 
+---
+ 1
+(1 row)
+
+SELECT a '#' from t_alias_case0001_1;
+ # 
+---
+ 1
+(1 row)
+
+SELECT a '$&%^@' from t_alias_case0001_1;
+ $&%^@ 
+-------
+     1
+(1 row)
+
+SELECT a as '$&%^@' from t_alias_case0001_1;
+ $&%^@ 
+-------
+     1
+(1 row)
+
+SELECT a as '!' from t_alias_case0001_1;
+ ! 
+---
+ 1
+(1 row)
+
+SELECT a as '@' from t_alias_case0001_1;
+ @ 
+---
+ 1
+(1 row)
+
+SELECT a as '$' from t_alias_case0001_1;
+ $ 
+---
+ 1
+(1 row)
+
+SELECT a as '&' from t_alias_case0001_1;
+ & 
+---
+ 1
+(1 row)
+
+SELECT a  '!' from t_alias_case0001_1;
+ ! 
+---
+ 1
+(1 row)
+
+SELECT a  '@' from t_alias_case0001_1;
+ @ 
+---
+ 1
+(1 row)
+
+SELECT a  '$' from t_alias_case0001_1;
+ $ 
+---
+ 1
+(1 row)
+
+SELECT a  '&' from t_alias_case0001_1;
+ & 
+---
+ 1
+(1 row)
+
+SELECT a as 'abort' from t_alias_case0001_1;
+ abort 
+-------
+     1
+(1 row)
+
+SELECT a 'abort' from t_alias_case0001_1;
+ abort 
+-------
+     1
+(1 row)
+
+SELECT a as 'as' from t_alias_case0001_1;
+ as 
+----
+  1
+(1 row)
+
+SELECT a 'as' from t_alias_case0001_1;
+ as 
+----
+  1
+(1 row)
+
+SELECT a as 'all' from t_alias_case0001_1;
+ all 
+-----
+   1
+(1 row)
+
+SELECT a 'all' from t_alias_case0001_1;
+ all 
+-----
+   1
+(1 row)
+
+SELECT a as 'cast' from t_alias_case0001_1;
+ cast 
+------
+    1
+(1 row)
+
+SELECT a 'cast' from t_alias_case0001_1;
+ cast 
+------
+    1
+(1 row)
+
+SELECT a as 'BIT' from t_alias_case0001_1;
+ BIT 
+-----
+   1
+(1 row)
+
+SELECT a 'BIT' from t_alias_case0001_1;
+ BIT 
+-----
+   1
+(1 row)
+
+SELECT a as 'BINARY_DOUBLE' from t_alias_case0001_1;
+ BINARY_DOUBLE 
+---------------
+             1
+(1 row)
+
+SELECT a 'BINARY_DOUBLE' from t_alias_case0001_1;
+ BINARY_DOUBLE 
+---------------
+             1
+(1 row)
+
+SELECT a as 'BINARY_INTEGER' from t_alias_case0001_1;
+ BINARY_INTEGER 
+----------------
+              1
+(1 row)
+
+SELECT a 'BINARY_INTEGER' from t_alias_case0001_1;
+ BINARY_INTEGER 
+----------------
+              1
+(1 row)
+
+SELECT a as 'BOOLEAN_P' from t_alias_case0001_1;
+ BOOLEAN_P 
+-----------
+         1
+(1 row)
+
+SELECT a 'BOOLEAN_P' from t_alias_case0001_1;
+ BOOLEAN_P 
+-----------
+         1
+(1 row)
+
+SELECT a as 'FIXED_P' from t_alias_case0001_1;
+ FIXED_P 
+---------
+       1
+(1 row)
+
+SELECT a 'FIXED_P' from t_alias_case0001_1;
+ FIXED_P 
+---------
+       1
+(1 row)
+
+SELECT a as 'NUMBER_P' from t_alias_case0001_1;
+ NUMBER_P 
+----------
+        1
+(1 row)
+
+SELECT a 'NUMBER_P' from t_alias_case0001_1;
+ NUMBER_P 
+----------
+        1
+(1 row)
+
+SELECT a as 'NCHAR' from t_alias_case0001_1;
+ NCHAR 
+-------
+     1
+(1 row)
+
+SELECT a 'NCHAR' from t_alias_case0001_1;
+ NCHAR 
+-------
+     1
+(1 row)
+
+SELECT a as 'NVARCHAR2' from t_alias_case0001_1;
+ NVARCHAR2 
+-----------
+         1
+(1 row)
+
+SELECT a 'NVARCHAR2' from t_alias_case0001_1;
+ NVARCHAR2 
+-----------
+         1
+(1 row)
+
+SELECT a as 'VARCHAR2' from t_alias_case0001_1;
+ VARCHAR2 
+----------
+        1
+(1 row)
+
+SELECT a 'VARCHAR2' from t_alias_case0001_1;
+ VARCHAR2 
+----------
+        1
+(1 row)
+
+SELECT a as 'NVARCHAR' from t_alias_case0001_1;
+ NVARCHAR 
+----------
+        1
+(1 row)
+
+SELECT a 'NVARCHAR' from t_alias_case0001_1;
+ NVARCHAR 
+----------
+        1
+(1 row)
+
+SELECT a 'NVARCHAR ' from t_alias_case0001_1;
+ NVARCHAR  
+-----------
+         1
+(1 row)
+
+SELECT a 'NVARCHAR@' from t_alias_case0001_1;
+ NVARCHAR@ 
+-----------
+         1
+(1 row)
+
+SELECT a as 'BINARY' from t_alias_case0001_1;
+ BINARY 
+--------
+      1
+(1 row)
+
+SELECT a 'BINARY' from t_alias_case0001_1;
+ BINARY 
+--------
+      1
+(1 row)
+
+SELECT a as 'BIGINT' from t_alias_case0001_1;
+ BIGINT 
+--------
+      1
+(1 row)
+
+SELECT a 'BIGINT' from t_alias_case0001_1;
+ BIGINT 
+--------
+      1
+(1 row)
+
+SELECT a as 'DEC' from t_alias_case0001_1;
+ DEC 
+-----
+   1
+(1 row)
+
+SELECT a 'DEC' from t_alias_case0001_1;
+ DEC 
+-----
+   1
+(1 row)
+
+SELECT a as 'DECIMAL_P' from t_alias_case0001_1;
+ DECIMAL_P 
+-----------
+         1
+(1 row)
+
+SELECT a 'DECIMAL_P' from t_alias_case0001_1;
+ DECIMAL_P 
+-----------
+         1
+(1 row)
+
+SELECT a as 'FLOAT_P' from t_alias_case0001_1;
+ FLOAT_P 
+---------
+       1
+(1 row)
+
+SELECT a 'FLOAT_P' from t_alias_case0001_1;
+ FLOAT_P 
+---------
+       1
+(1 row)
+
+SELECT a as 'INT_P' from t_alias_case0001_1;
+ INT_P 
+-------
+     1
+(1 row)
+
+SELECT a 'INT_P' from t_alias_case0001_1;
+ INT_P 
+-------
+     1
+(1 row)
+
+SELECT a as 'MEDIUMINT' from t_alias_case0001_1;
+ MEDIUMINT 
+-----------
+         1
+(1 row)
+
+SELECT a 'MEDIUMINT' from t_alias_case0001_1;
+ MEDIUMINT 
+-----------
+         1
+(1 row)
+
+SELECT a as 'INTEGER' from t_alias_case0001_1;
+ INTEGER 
+---------
+       1
+(1 row)
+
+SELECT a 'INTEGER' from t_alias_case0001_1;
+ INTEGER 
+---------
+       1
+(1 row)
+
+SELECT a as 'NUMERIC' from t_alias_case0001_1;
+ NUMERIC 
+---------
+       1
+(1 row)
+
+SELECT a 'NUMERIC' from t_alias_case0001_1;
+ NUMERIC 
+---------
+       1
+(1 row)
+
+SELECT a as 'REAL' from t_alias_case0001_1;
+ REAL 
+------
+    1
+(1 row)
+
+SELECT a 'REAL' from t_alias_case0001_1;
+ REAL 
+------
+    1
+(1 row)
+
+SELECT a as 'SMALLINT' from t_alias_case0001_1;
+ SMALLINT 
+----------
+        1
+(1 row)
+
+SELECT a 'SMALLINT' from t_alias_case0001_1;
+ SMALLINT 
+----------
+        1
+(1 row)
+
+SELECT a as 'TINYINT' from t_alias_case0001_1;
+ TINYINT 
+---------
+       1
+(1 row)
+
+SELECT a 'TINYINT' from t_alias_case0001_1;
+ TINYINT 
+---------
+       1
+(1 row)
+
+SELECT a as 'CHARACTER' from t_alias_case0001_1;
+ CHARACTER 
+-----------
+         1
+(1 row)
+
+SELECT a 'CHARACTER' from t_alias_case0001_1;
+ CHARACTER 
+-----------
+         1
+(1 row)
+
+SELECT a as 'VARCHAR' from t_alias_case0001_1;
+ VARCHAR 
+---------
+       1
+(1 row)
+
+SELECT a 'VARCHAR' from t_alias_case0001_1;
+ VARCHAR 
+---------
+       1
+(1 row)
+
+SELECT a as 'CHAR_P' from t_alias_case0001_1;
+ CHAR_P 
+--------
+      1
+(1 row)
+
+SELECT a 'CHAR_P' from t_alias_case0001_1;
+ CHAR_P 
+--------
+      1
+(1 row)
+
+SELECT a as '哈哈' from t_alias_case0001_1;
+ 哈哈 
+------
+    1
+(1 row)
+
+SELECT a '哈哈' from t_alias_case0001_1;
+ 哈哈 
+------
+    1
+(1 row)
+
+SELECT a as 'امروز' from t_alias_case0001_1;
+ امروز 
+-------
+     1
+(1 row)
+
+SELECT a 'امروز' from t_alias_case0001_1;
+ امروز 
+-------
+     1
+(1 row)
+
+SELECT a as 'waɗ' from t_alias_case0001_1;
+ waɗ 
+-----
+   1
+(1 row)
+
+SELECT a 'waɗ' from t_alias_case0001_1;
+ waɗ 
+-----
+   1
+(1 row)
+
+SELECT a as 'अद्यः' from t_alias_case0001_1;
+ अद्यः 
+------
+    1
+(1 row)
+
+SELECT a 'अद्यः' from t_alias_case0001_1;
+ अद्यः 
+------
+    1
+(1 row)
+
+SELECT a as 'ວັນນີ້' from t_alias_case0001_1;
+ ວັນນີ້ 
+-----
+   1
+(1 row)
+
+SELECT a 'ວັນນີ້' from t_alias_case0001_1;
+ ວັນນີ້ 
+-----
+   1
+(1 row)
+
+SELECT a as 'हदाद' from t_alias_case0001_1;
+ हदाद 
+------
+    1
+(1 row)
+
+SELECT a 'हदाद' from t_alias_case0001_1;
+ हदाद 
+------
+    1
+(1 row)
+
+SELECT a as 'kssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c ssss kssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c ssss' from t_alias_case0001_1;
+ kssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkal 
+-----------------------------------------------------------------
+                                                               1
+(1 row)
+
+SELECT a 'kssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c ssss kssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c sssskssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkaldierufq8239e0d98wjeca,s.c ssss' from t_alias_case0001_1;
+ kssdjskjcjdfkvndfkvndk ndkfn kldfvklx m dfjcvaldskcdlfk ndfvkal 
+-----------------------------------------------------------------
+                                                               1
+(1 row)
+
+SELECT a as 'ssss' from t_alias_case0001_1;
+ ssss 
+------
+    1
+(1 row)
+
+SELECT a 'ssss' from t_alias_case0001_1;
+ ssss 
+------
+    1
+(1 row)
+
+SELECT a as 'SSSS' from t_alias_case0001_1;
+ SSSS 
+------
+    1
+(1 row)
+
+SELECT a 'SSSS' from t_alias_case0001_1;
+ SSSS 
+------
+    1
+(1 row)
+
+DROP TABLE t_alias_case0001_1;
+drop schema column_quote_alias cascade;
+reset current_schema;
