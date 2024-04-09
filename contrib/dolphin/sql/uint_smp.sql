@@ -84,5 +84,22 @@ explain(costs off, verbose) select /*+ nestloop(join_1 join_2)*/ * from join_1 l
 explain(costs off, verbose) select /*+ hashjoin(join_1 join_2)*/ * from join_1 left join join_2 on join_1.a = join_2.a;
 explain(costs off, verbose) select /*+ mergejoin(join_1 join_2)*/ * from join_1 left join join_2 on join_1.a = join_2.a;
 
+-- test
+set query_dop = 6;
+drop table if exists t_t_mutil_t1;
+drop table if exists t_t_mutil_t2;
+drop table if exists t_t_mutil_t3;
+create table t_t_mutil_t1(col1 int,col2 int);
+create table t_t_mutil_t2(col1 int,col2 int);
+create table t_t_mutil_t3(col1 int,col2 int);
+insert into t_t_mutil_t1 values(generate_series(1,1000000),generate_series(1,1000000));
+insert into t_t_mutil_t2 values(generate_series(1,1000000),generate_series(1,1000000));
+insert into t_t_mutil_t3 values(generate_series(1,1000000),generate_series(1,1000000));
+explain(costs off, verbose) update/*+nestloop(a b)*/ t_t_mutil_t1 a,t_t_mutil_t2 b set b.col1=5,a.col2=4 where a.col1=b.col1;
+drop table if exists t_t_mutil_t1;
+drop table if exists t_t_mutil_t2;
+drop table if exists t_t_mutil_t3;
+reset query_dop;
+
 drop schema uint_smp cascade;
 reset current_schema;
