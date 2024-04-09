@@ -297,6 +297,15 @@ extern "C" DLL_PUBLIC Datum time_cast_implicit(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(text_time_explicit);
 extern "C" DLL_PUBLIC Datum text_time_explicit(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(hour_bit);
+extern "C" DLL_PUBLIC Datum hour_bit(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(minute_bit);
+extern "C" DLL_PUBLIC Datum minute_bit(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(second_bit);
+extern "C" DLL_PUBLIC Datum second_bit(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(microsecond_bit);
+extern "C" DLL_PUBLIC Datum microsecond_bit(PG_FUNCTION_ARGS);
 #endif
 /* common code for timetypmodin and timetztypmodin */
 static int32 anytime_typmodin(bool istz, ArrayType* ta)
@@ -6401,6 +6410,65 @@ Datum GetMinute(PG_FUNCTION_ARGS)
 Datum GetSecond(PG_FUNCTION_ARGS)
 {
     return GetSpecificPartOfTime(fcinfo, SECOND);
+}
+
+static Datum bit_to_part_time(VarBit *bits, int part, bool can_ignore)
+{
+    char *bitostr;
+    PGFunction func;
+    Datum result;
+
+    bitostr = bit_to_str(bits);
+    // if the first char is '\0', return 0 and print warning.
+    if (*bitostr == '\0') {
+        ereport((!can_ignore && SQL_MODE_STRICT() ? ERROR : WARNING),
+                (errcode(DTERR_BAD_FORMAT), errmsg("Truncated incorrect time value: \"%s\"", bitostr)));
+        PG_RETURN_INT64(0);
+    }
+
+    switch (part) {
+        case HOUR:
+            func = GetHour;
+            break;
+        case MINUTE:
+            func = GetMinute;
+            break;
+        case SECOND:
+            func = GetSecond;
+            break;
+        case MICROSECOND:
+            func = GetMicrosecond;
+            break;
+        default:
+            break;
+    }
+    if (func == NULL)
+        ereport(ERROR, (errmsg("Unsupported time type: \"%d\"", part)));
+
+    result =  DirectFunctionCall1(func, PointerGetDatum(cstring_to_text(bitostr)));
+    pfree_ext(bitostr);
+
+    return result;
+}
+
+Datum hour_bit(PG_FUNCTION_ARGS)
+{
+    return bit_to_part_time(PG_GETARG_VARBIT_P(0), HOUR, fcinfo->can_ignore);
+}
+
+Datum minute_bit(PG_FUNCTION_ARGS)
+{
+    return bit_to_part_time(PG_GETARG_VARBIT_P(0), MINUTE, fcinfo->can_ignore);
+}
+
+Datum second_bit(PG_FUNCTION_ARGS)
+{
+    return bit_to_part_time(PG_GETARG_VARBIT_P(0), SECOND, fcinfo->can_ignore);
+}
+
+Datum microsecond_bit(PG_FUNCTION_ARGS)
+{
+    return bit_to_part_time(PG_GETARG_VARBIT_P(0), MICROSECOND, fcinfo->can_ignore);
 }
 
 static Datum GetSpecificPartOfTimeInDate(PG_FUNCTION_ARGS, int part)

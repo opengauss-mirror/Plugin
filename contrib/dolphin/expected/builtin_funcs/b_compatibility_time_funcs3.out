@@ -53,8 +53,6 @@ insert into func_test3(functionName,result) values('TO_DAYS(true)',TO_DAYS(true)
 ERROR:  timestamp out of range
 CONTEXT:  referenced column: result
 insert into func_test3(functionName,result) values('TO_DAYS(false)',TO_DAYS(false));
-ERROR:  timestamp out of range
-CONTEXT:  referenced column: result
 insert into func_test3(functionName,result) values('TO_DAYS(null)',TO_DAYS(null));
 insert into func_test3(functionName,result) values('TO_DAYS(date''2000-1-1'')',TO_DAYS(date'2000-1-1'));
 insert into func_test3(functionName,result) values('TO_DAYS(cast(''2022-2-2 2:2:2'' as datetime))',TO_DAYS(cast('2022-2-2 2:2:2' as datetime)));
@@ -285,6 +283,7 @@ select * from func_test3;
  TO_DAYS('00000000000-1-1')                                  | 1
  TO_DAYS('00000000000-00000000001-1')                        | 1
  TO_DAYS('00000000000-00000000001-0000000001')               | 1
+ TO_DAYS(false)                                              | 
  TO_DAYS(null)                                               | 
  TO_DAYS(date'2000-1-1')                                     | 730485
  TO_DAYS(cast('2022-2-2 2:2:2' as datetime))                 | 738553
@@ -374,7 +373,7 @@ select * from func_test3;
 --? UTC_TIMESTAMP(4)                                            | .*
 --? UTC_TIMESTAMP(5)                                            | .*
 --? UTC_TIMESTAMP(6)                                            | .*
-(101 rows)
+(102 rows)
 
 select to_seconds('-838:59:59');
 WARNING:  time zone displacement out of range: "-838:59:59"

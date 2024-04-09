@@ -12,6 +12,37 @@ DROP FUNCTION IF EXISTS pg_catalog.cos(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.asin(bit);
 DROP FUNCTION IF EXISTS pg_catalog.asin(boolean);
 
+DROP FUNCTION IF EXISTS pg_catalog.year(integer);
+DROP FUNCTION IF EXISTS pg_catalog.year(anyset);
+
+DROP FUNCTION IF EXISTS pg_catalog.hour(bit);
+DROP FUNCTION IF EXISTS pg_catalog.hour(blob);
+DROP FUNCTION IF EXISTS pg_catalog.hour(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.hour(json);
+DROP FUNCTION IF EXISTS pg_catalog.hour(integer);
+
+DROP FUNCTION IF EXISTS pg_catalog.minute(bit);
+DROP FUNCTION IF EXISTS pg_catalog.minute(blob);
+DROP FUNCTION IF EXISTS pg_catalog.minute(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.minute(json);
+DROP FUNCTION IF EXISTS pg_catalog.minute(integer);
+
+DROP FUNCTION IF EXISTS pg_catalog.second(bit);
+DROP FUNCTION IF EXISTS pg_catalog.second(blob);
+DROP FUNCTION IF EXISTS pg_catalog.second(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.second(json);
+DROP FUNCTION IF EXISTS pg_catalog.second(integer);
+
+DROP FUNCTION IF EXISTS pg_catalog.microsecond(year);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond(bit);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond(blob);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond(json);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond(integer);
+DROP FUNCTION IF EXISTS pg_catalog.microsecond(float);
+
+CREATE OR REPLACE FUNCTION pg_catalog.year(int4) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
+
 CREATE FUNCTION pg_catalog.unknown_concat(unknown, unknown) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select concat($1, $2)';
 CREATE FUNCTION pg_catalog.unknown_int_concat(unknown, integer) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select concat($1, $2)';
 CREATE FUNCTION pg_catalog.int_unknown_concat(integer, unknown) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select concat($1, $2)';

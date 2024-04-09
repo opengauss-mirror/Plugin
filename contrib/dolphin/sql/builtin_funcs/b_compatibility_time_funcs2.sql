@@ -547,5 +547,128 @@ insert into func_test2(functionName, result) values('subtime(8375959.9999999, ''
 insert into func_test2(functionName, result) values('subtime(-8385959, ''1:00:00'')', subtime(-8385959,'1:00:00'));
 select * from func_test2 order by functionName;
 
+set dolphin.b_compatibility_mode=on;
+set b_format_behavior_compat_options='enable_set_variables,enable_multi_charset';
+
+drop table if exists t_number;
+create table t_number(c1 int,c2 tinyint,c3 tinyint(255),c4 smallint,c5 smallint(255),c6 mediumint,c7 mediumint(255),c8 int,c9 int(255),c10 integer,c11 integer(255),c12 bigint,c13 bigint(255));
+drop table if exists t_number_decimal;
+create table t_number_decimal(
+    c1 int,c2 decimal,c3 decimal(10),c4 decimal(10, 3),c5 decimal(30, 15),c6 fixed,c7 fixed(10),c8 fixed(10, 3),c9 fixed(30, 15),
+    c10 float,c11 float(10),c12 float(10, 3),c13 float(30, 15),c14 float4,c15 float4(10),c16 float4(10, 3),c17 float4(30, 15),
+    c18 numeric,c19 numeric(10),c20 numeric(10, 3),c21 numeric(30, 15),c22 double,c23 float8,c24 double precision,c25 double(10, 3),
+    c26 real(10, 3),c27 double precision(10, 3),c28 double(30, 15),c29 real(30, 15),c30 double precision(30, 15)
+    );
+drop table if exists t_date_time;
+create table t_date_time(c1 int,c2 date,c3 datetime,c4 datetime(6),c5 year,c6 year(4),c7 time,c8 time(6),c9 timestamp,c10 timestamp(6) default current_timestamp(6));
+drop table if exists t_bin;
+create table t_bin(c1 int,c2 bit,c3 bit(64),c4 binary,c5 binary(255),c6 varbinary(10),c7 varbinary(255),c8 blob,c9 tinyblob,c10 mediumblob,c11 longblob) charset utf8mb3;
+drop table if exists t_set;
+create table t_set(c1 int,c2 set('0', '1', '1.01314') default null);
+drop table if exists t_enum;
+create table t_enum(c1 int,c2 enum('red', 'yellow', 'blue') not null);
+drop table if exists t_bool;
+create table t_bool(c1 int,c2 boolean,c3 tinyint(1),c4 tinyint(1) unsigned);
+drop table if exists t_json;
+create table t_json(c1 int,c2 json);
+
+insert into t_number values (1, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127);
+insert into t_number values (2, 127, 127, 127, 127, 127, 127, 127, 1000, 10000, 10000, 10000, 10000);
+set @v1 = 3.14159265327896457;
+insert into t_number_decimal values (1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1);
+set @v2 = 'abcdef熊猫竹竹';
+insert into t_bin values (1, 0x01, 0xFFFF, 9, hex(@v2), hex(12354), hex(@v2), '[B@5e265ba4','[B@5e265ba4', '[B@5e265ba4', '[B@5e265ba4'),
+                         (2, b'1', b'1011', 1, @v2, 121314, @v2, 10000, 10000, 10000, 10000);
+insert into t_date_time values (1, '1999-01-01', '1999-01-01 01:01:01', '00-01-01 00:00:01', 27, '1904','23:59:59', 121314, '1970-01-01 08:00:01.123', '2038-01-19 11:14:07');
+insert into t_set values (1, '1.01314'), (2, '0');
+insert into t_enum values (1, 'red');
+insert into t_bool values (1, true, -1, false);
+insert into t_json values (1, '["a", "b", "c"]'), (2, '{"k1":"v1"}');
+
+-- test year number
+select c1, year(c2), year(c3), year(c4), year(c5), year(c6), year(c7),year(c8), year(c9), year(c10), year(c11), year(c12), year(c13) from t_number order by c1;
+-- error test, month or day can't be zero
+select c1, year(c9), year(c10), year(c11), year(c12), year(c13) from t_number order by c1;
+select year(0);
+-- test year binary
+select c1, year(c2), year(c3), year(c4), year(c5), year(c6), year(c7), year(c8), year(c9), year(c10), year(c11) from t_bin order by c1;
+-- test year set
+select c1, year(c2) from t_set order by c1;
+-- test year bool
+select c1, year(c2), year(c3), year(c4) from t_bool order by c1;
+
+-- test hour number
+select hour(-100), hour(0), hour(121314);
+-- test hour binary
+select c1, hour(c2), hour(c3), hour(c4), hour(c5), hour(c6), hour(c7), hour(c8), hour(c9), hour(c10), hour(c11) from t_bin order by c1;
+-- test hour bool
+select c1, hour(c2), hour(c3), hour(c4) from t_bool order by c1;
+-- test hour json
+select c1, hour(c2) from t_json order by c1;
+
+-- test minute number
+select c1, minute(c2), minute(c3), minute(c4), minute(c5), minute(c6), minute(c7), minute(c8), minute(c9), minute(c10), minute(c11), minute(c12), minute(c13) from t_number order by c1;
+select minute(-127), minute(0), minute(100);
+-- test minute binary
+select c1, minute(c2), minute(c3), minute(c4), minute(c5), minute(c6), minute(c7), minute(c8), minute(c9), minute(c10), minute(c11) from t_bin order by c1;
+-- test minute bool
+select c1, minute(c2), minute(c3), minute(c4) from t_bool order by c1;
+-- test minute json
+select c1, minute(c2) from t_json order by c1;
+
+-- test second number
+select c1, second(c2), second(c3), second(c4), second(c5), second(c6), second(c7), second(c8), second(c9), second(c10), second(c11), second(c12), second(c13) from t_number order by c1;
+select second(-127), second(0), second(100);
+-- test second decimal
+select c1, second(c2), second(c3), second(c4), second(c5), second(c6), second(c7), second(c8), second(c9), second(c10), second(c11), second(c12),
+    second(c13), second(c14), second(c15), second(c16), second(c17), second(c18), second(c19), second(c20), second(c21), second(c22), second(c23),
+    second(c24), second(c25), second(c26), second(c27), second(c28), second(c29), second(c30)
+from t_number_decimal order by c1;
+-- test second binary
+select c1, second(c2), second(c3), second(c4), second(c5), second(c6), second(c7), second(c8), second(c9), second(c10), second(c11) from t_bin order by c1;
+-- test second bool
+select c1, second(c2), second(c3), second(c4) from t_bool order by c1;
+-- test second json
+select c1, second(c2) from t_json order by c1;
+
+-- test microsecond datetime
+select c1, microsecond(c2), microsecond(c3), microsecond(c4), microsecond(c5), microsecond(c6), microsecond(c7), microsecond(c8), microsecond(c9), microsecond(c10) from t_date_time order by c1;
+-- test microsecond binary
+select c1, microsecond(c2), microsecond(c3), microsecond(c4), microsecond(c5), microsecond(c6), microsecond(c7), microsecond(c8), microsecond(c9), microsecond(c10), microsecond(c11) from t_bin order by c1;
+-- test microsecond bool
+select c1, microsecond(c2), microsecond(c3), microsecond(c4) from t_bool order by c1;
+-- test microsecond json
+select c1, microsecond(c2) from t_json order by c1;
+-- test microsecond number
+select microsecond(-127), microsecond(0), microsecond(100.23);
+
+-- test bit type insert ignore, if first char is '\0'
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+create table bit_ignore (c1 integer, `func_name` varchar(100), `result` bigint);
+-- warnings
+insert ignore into bit_ignore values (1, 'hour(bit)', hour(b'000000000011000000111001'));
+insert ignore into bit_ignore values (2, 'minute(bit)', minute(b'000000000011000000111001'));
+insert ignore into bit_ignore values (3, 'second(bit)', second(b'000000000011000000111001'));
+insert ignore into bit_ignore values (4, 'microsecond(bit)', microsecond(b'000000000011000000111001'));
+-- error
+insert into bit_ignore values (5, 'hour(bit)', hour(b'000000000011000000111001'));
+insert into bit_ignore values (6, 'minute(bit)', minute(b'000000000011000000111001'));
+insert into bit_ignore values (7, 'second(bit)', second(b'000000000011000000111001'));
+insert into bit_ignore values (8, 'microsecond(bit)', microsecond(b'000000000011000000111001'));
+select c1, `func_name`, `result` from bit_ignore order by c1;
+
+drop table t_number;
+drop table t_number_decimal;
+drop table t_date_time;
+drop table t_bin;
+drop table t_set;
+drop table t_enum;
+drop table t_bool;
+drop table t_json;
+drop table bit_ignore;
+
+reset b_format_behavior_compat_options;
+reset dolphin.sql_mode;
+
 drop schema b_time_funcs2 cascade;
 reset current_schema;

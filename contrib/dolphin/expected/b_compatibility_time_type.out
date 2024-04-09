@@ -2680,16 +2680,12 @@ select cast(0::boolean as date);
 (1 row)
 
 select cast(0::boolean as datetime);
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: timestamp
       timestamp      
 ---------------------
  0000-00-00 00:00:00
 (1 row)
 
 select cast(0::boolean as timestamp);
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: timestamptz
       timestamptz       
 ------------------------
  0000-00-00 00:00:00+00
@@ -2732,11 +2728,7 @@ create table boolean_test_timestamp(a timestamp);
 insert into boolean_test_time values(0::boolean);
 insert into boolean_test_date values(0::boolean);
 insert into boolean_test_datetime values(0::boolean);
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: a
 insert into boolean_test_timestamp values(0::boolean);
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: a
 insert into boolean_test_time values(1::boolean);
 insert into boolean_test_date values(1::boolean);
 WARNING:  Out of range value for date
@@ -2751,11 +2743,7 @@ set dolphin.sql_mode = '';
 insert into boolean_test_time values(0::boolean);
 insert into boolean_test_date values(0::boolean);
 insert into boolean_test_datetime values(0::boolean);
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: a
 insert into boolean_test_timestamp values(0::boolean);
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: a
 insert into boolean_test_time values(1::boolean);
 insert into boolean_test_date values(1::boolean);
 WARNING:  Out of range value for date
