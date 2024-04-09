@@ -635,7 +635,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 		AlterSystemStmt
 		AlterRoleStmt AlterRoleSetStmt AlterRlsPolicyStmt
 		AlterDefaultPrivilegesStmt DefACLAction AlterSessionStmt
-		AnalyzeStmt AnalyzePartitionStmt CleanConnStmt ClosePortalStmt ClusterStmt CommentStmt
+		AnalyzeStmt AnalyzePartitionStmt AnalyzeTableStmt CleanConnStmt ClosePortalStmt ClusterStmt CommentStmt
 		ConstraintsSetStmt CopyStmt CreateAsStmt CreateCastStmt CreateContQueryStmt CreateDirectoryStmt 
 		CreateDomainStmt CreateExtensionStmt CreateGroupStmt CreateKeyStmt CreateOpClassStmt
 		CreateOpFamilyStmt AlterOpFamilyStmt CreatePLangStmt
@@ -1561,6 +1561,7 @@ stmt :
 			| AlterWorkloadGroupStmt
 			| AnalyzeStmt
 			| AnalyzePartitionStmt
+			| AnalyzeTableStmt
 			| AnonyBlockStmt
 			| BarrierStmt
 			| CreateAppWorkloadGroupMappingStmt
@@ -26743,7 +26744,9 @@ AnalyzeStmt:
 					$$ = (Node *)n;
 
 				}
-			| analyze_keyword opt_verbose_with_brance opt_no_write_to_binlog TABLE qualified_name_list
+		;
+
+AnalyzeTableStmt: analyze_keyword opt_verbose_with_brance opt_no_write_to_binlog TABLE qualified_name_list
 				{
 					SelectStmt *n = makeNode(SelectStmt);
 
