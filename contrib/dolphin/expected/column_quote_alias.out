@@ -113,65 +113,97 @@ select char varying(1) 'keyword_test' from t_alias_case0001_1;
 (1 row)
 
 select timestamp(2) 'keyword_test' from t_alias_case0001_1;
-ERROR:  invalid input syntax for type timestamp: "keyword_test"
+WARNING:  invalid input syntax for type timestamp: "keyword_test"
 LINE 1: select timestamp(2) 'keyword_test' from t_alias_case0001_1;
                             ^
 CONTEXT:  referenced column: timestamp
+      timestamp      
+---------------------
+ 0000-00-00 00:00:00
+(1 row)
+
 select time(2) 'keyword_test' from t_alias_case0001_1;
-ERROR:  invalid input syntax for type time: "keyword_test"
+WARNING:  invalid input syntax for type time: "keyword_test"
 LINE 1: select time(2) 'keyword_test' from t_alias_case0001_1;
                        ^
 CONTEXT:  referenced column: time
+   time   
+----------
+ 00:00:00
+(1 row)
+
 select smalldatetime 'keyword_test' from t_alias_case0001_1;
-ERROR:  invalid input syntax for type smalldatetime: "keyword_test"
+WARNING:  invalid input syntax for type smalldatetime: "keyword_test"
 LINE 1: select smalldatetime 'keyword_test' from t_alias_case0001_1;
                              ^
 CONTEXT:  referenced column: smalldatetime
+    smalldatetime    
+---------------------
+ 1970-01-01 00:00:00
+(1 row)
+
 select int 'keyword_test' from t_alias_case0001_1;
-ERROR:  invalid input syntax for integer: "keyword_test"
-LINE 1: select int 'keyword_test' from t_alias_case0001_1;
-                   ^
-CONTEXT:  referenced column: int4
+ int4 
+------
+    0
+(1 row)
+
 select tinyint 'keyword_test' from t_alias_case0001_1;
-ERROR:  invalid input syntax for tinyint: "keyword_test"
-LINE 1: select tinyint 'keyword_test' from t_alias_case0001_1;
-                       ^
-CONTEXT:  referenced column: int1
+ int1 
+------
+ 0
+(1 row)
+
 select smallint 'keyword_test' from t_alias_case0001_1;
-ERROR:  invalid input syntax for smallint: "keyword_test"
-LINE 1: select smallint 'keyword_test' from t_alias_case0001_1;
-                        ^
-CONTEXT:  referenced column: int2
+ int2 
+------
+    0
+(1 row)
+
 select mediumint 'keyword_test' from t_alias_case0001_1;
-ERROR:  invalid input syntax for integer: "keyword_test"
-LINE 1: select mediumint 'keyword_test' from t_alias_case0001_1;
-                         ^
-CONTEXT:  referenced column: int4
+ int4 
+------
+    0
+(1 row)
+
 select bigint 'keyword_test' from t_alias_case0001_1;
-ERROR:  invalid input syntax for type bigint: "keyword_test"
+WARNING:  invalid input syntax for type bigint: "keyword_test"
 LINE 1: select bigint 'keyword_test' from t_alias_case0001_1;
                       ^
 CONTEXT:  referenced column: int8
+ int8 
+------
+    0
+(1 row)
+
 select real 'keyword_test' from t_alias_case0001_1;
-ERROR:  invalid input syntax for type real: "keyword_test"
-LINE 1: select real 'keyword_test' from t_alias_case0001_1;
-                    ^
-CONTEXT:  referenced column: float4
+ float4 
+--------
+      0
+(1 row)
+
 select float 'keyword_test' from t_alias_case0001_1;
-ERROR:  invalid input syntax for type real: "keyword_test"
-LINE 1: select float 'keyword_test' from t_alias_case0001_1;
-                     ^
-CONTEXT:  referenced column: float4
+ float4 
+--------
+      0
+(1 row)
+
 select BINARY_DOUBLE 'keyword_test' from t_alias_case0001_1;
-ERROR:  invalid input syntax for type double precision: "keyword_test"
+WARNING:  invalid input syntax for type double precision: "keyword_test"
 LINE 1: select BINARY_DOUBLE 'keyword_test' from t_alias_case0001_1;
                              ^
 CONTEXT:  referenced column: float8
+ float8 
+--------
+      0
+(1 row)
+
 select BINARY_INTEGER 'keyword_test' from t_alias_case0001_1;
-ERROR:  invalid input syntax for integer: "keyword_test"
-LINE 1: select BINARY_INTEGER 'keyword_test' from t_alias_case0001_1...
-                              ^
-CONTEXT:  referenced column: int4
+ int4 
+------
+    0
+(1 row)
+
 select decimal 'keyword_test' from t_alias_case0001_1;
  numeric 
 ---------
