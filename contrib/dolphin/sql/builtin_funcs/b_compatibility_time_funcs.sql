@@ -340,6 +340,28 @@ select hour('209614'), minute('209614'), second('209614'), microsecond('209614')
 select hour('abcdefg'), minute('abcdefg'), second('abcdefg'), microsecond('abcdefg');
 select hour('abcdefghijklmnopqrstuv'), minute('abcdefghijklmnopqrstuv'), second('abcdefghijklmnopqrstuv'), microsecond('abcdefghijklmnopqrstuv');
 
+-- test quarter
+create table t_time(c1 int,`date` date,`time` time,`time4` time(4),`datetime` datetime,`datetime4` datetime(4) default '2023-12-30 12:00:12',`timestamp` timestamp without time zone,`timestamp4` timestamp(4) without time zone default '2023-12-30 12:00:12',`year` year,`year4` year(4));
+create table t_char(c1 int,`char` char(100),`varchar` varchar(100),`binary` binary(100),`varbinary` varbinary(100),`text` text);
+insert into t_time values (1, '2024-01-11', '11:47:58', '11:47:58.7896', '2024-08-21 11:49:25', '2024-04-29 11:49:25.1234', '2024-12-30 11:49:25', '2024-01-11 11:49:25.1234', 70, '2024');
+insert into t_time values (2, '1999-01-01', 121314, '00:00:01.1234', '00-9-19 00:00:01', '1970-10-02 08:00:01.123', '2024-08-20 11:14:07', '1970-04-08 08:00:01.123', 27, '1904');
+insert into t_char values (1, '2008-04-01', '1968-02-28', '2077-08-20', '2001-12-12', '2024-3-14');
+insert into t_char values (2, '30215', '31215 12345', '10000', '10023', '700923');
+insert into t_char values (3, '3.145@6七八九', '3.145@6七八九', '3.145@6七八九', '3.145@6七八九', '3.145@6七八九');
+set dolphin.sql_mode = '';
+SELECT c1, quarter(`time`), quarter(`time4`) from t_time order by c1;
+SELECT c1, quarter(`date`), quarter(`datetime`), quarter(`datetime4`), quarter(`timestamp`), quarter(`timestamp4`), quarter(`year`), quarter(`year4`) from t_time order by c1;
+SELECT c1, quarter(`char`), quarter(`varchar`), quarter(`binary`), quarter(`varbinary`), quarter(`text`) from t_char order by c1;
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+SELECT c1, quarter(`time`), quarter(`time4`) from t_time order by c1;
+SELECT c1, quarter(`date`), quarter(`datetime`), quarter(`datetime4`), quarter(`timestamp`), quarter(`timestamp4`), quarter(`year`), quarter(`year4`) from t_time order by c1;
+SELECT c1, quarter(`char`), quarter(`varchar`), quarter(`binary`), quarter(`varbinary`), quarter(`text`) from t_char order by c1;
+-- return type: B mode => int
+SELECT c1, pg_typeof(quarter(`date`)),pg_typeof(quarter(`time`)),pg_typeof(quarter(`time4`)),pg_typeof(quarter(`datetime`)),pg_typeof(quarter(`datetime4`)),pg_typeof(quarter(`timestamp`)),pg_typeof(quarter(`timestamp4`)),pg_typeof(quarter(`year`)),pg_typeof(quarter(`year4`)) from t_time order by c1 limit 1;
+SELECT c1, pg_typeof(quarter(`char`)), pg_typeof(quarter(`varchar`)), pg_typeof(quarter(`binary`)), pg_typeof(quarter(`varbinary`)), pg_typeof(quarter(`text`)) from t_char order by c1 limit 1;
+drop table t_time;
+drop table t_char;
+
 reset dolphin.sql_mode;
 
 drop schema b_time_funcs cascade;

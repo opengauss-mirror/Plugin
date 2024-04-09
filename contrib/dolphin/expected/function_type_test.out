@@ -787,17 +787,19 @@ WARNING:  invalid input syntax for type timestamp: "1.23a                       
 CONTEXT:  referenced column: to_days
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: to_days
-WARNING:  invalid input syntax for type timestamp: "1.23a"
+WARNING:  Truncated incorrect datetime value: "\x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  referenced column: to_days
+WARNING:  invalid input syntax for type date: "1.23a"
 CONTEXT:  referenced column: to_days
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: to_days
-WARNING:  invalid input syntax for type timestamp: "1.23a"
+WARNING:  invalid input syntax for type date: "1.23a"
 CONTEXT:  referenced column: to_days
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: to_days
-WARNING:  invalid input syntax for type timestamp: "1.23a"
+WARNING:  invalid input syntax for type date: "1.23a"
 CONTEXT:  referenced column: to_days
-WARNING:  invalid input syntax for type timestamp: "1.23a"
+WARNING:  invalid input syntax for type date: "1.23a"
 CONTEXT:  referenced column: to_days
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: to_days
@@ -886,22 +888,22 @@ insert into test_to_days select to_days(`varchar`) from test_type_table;
 ERROR:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: c
 insert into test_to_days select to_days(`binary`) from test_type_table;
-ERROR:  invalid input syntax for type timestamp: "1.23a"
+ERROR:  Truncated incorrect datetime value: "\x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 CONTEXT:  referenced column: c
 insert into test_to_days select to_days(`varbinary`) from test_type_table;
 ERROR:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: c
 insert into test_to_days select to_days(`tinyblob`) from test_type_table;
-ERROR:  invalid input syntax for type timestamp: "1.23a"
+ERROR:  invalid input syntax for type date: "1.23a"
 CONTEXT:  referenced column: c
 insert into test_to_days select to_days(`blob`) from test_type_table;
 ERROR:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: c
 insert into test_to_days select to_days(`mediumblob`) from test_type_table;
-ERROR:  invalid input syntax for type timestamp: "1.23a"
+ERROR:  invalid input syntax for type date: "1.23a"
 CONTEXT:  referenced column: c
 insert into test_to_days select to_days(`longblob`) from test_type_table;
-ERROR:  invalid input syntax for type timestamp: "1.23a"
+ERROR:  invalid input syntax for type date: "1.23a"
 CONTEXT:  referenced column: c
 insert into test_to_days select to_days(`text`) from test_type_table;
 ERROR:  invalid input syntax for type timestamp: "1.23a"
@@ -976,22 +978,24 @@ insert ignore into test_to_days select to_days(`varchar`) from test_type_table;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: c
 insert ignore into test_to_days select to_days(`binary`) from test_type_table;
-WARNING:  invalid input syntax for type timestamp: "1.23a"
+WARNING:  Truncated incorrect datetime value: "\x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  referenced column: c
+WARNING:  invalid input syntax for type date: "1.23a"
 CONTEXT:  referenced column: c
 insert ignore into test_to_days select to_days(`varbinary`) from test_type_table;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: c
 insert ignore into test_to_days select to_days(`tinyblob`) from test_type_table;
-WARNING:  invalid input syntax for type timestamp: "1.23a"
+WARNING:  invalid input syntax for type date: "1.23a"
 CONTEXT:  referenced column: c
 insert ignore into test_to_days select to_days(`blob`) from test_type_table;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: c
 insert ignore into test_to_days select to_days(`mediumblob`) from test_type_table;
-WARNING:  invalid input syntax for type timestamp: "1.23a"
+WARNING:  invalid input syntax for type date: "1.23a"
 CONTEXT:  referenced column: c
 insert ignore into test_to_days select to_days(`longblob`) from test_type_table;
-WARNING:  invalid input syntax for type timestamp: "1.23a"
+WARNING:  invalid input syntax for type date: "1.23a"
 CONTEXT:  referenced column: c
 insert ignore into test_to_days select to_days(`text`) from test_type_table;
 WARNING:  invalid input syntax for type timestamp: "1.23a"

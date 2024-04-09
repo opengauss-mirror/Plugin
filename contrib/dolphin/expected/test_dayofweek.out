@@ -263,9 +263,9 @@ select dayofyear(time'203840');
 
 select quarter('20:38:40');
 WARNING:  invalid input syntax for type timestamp: "20:38:40"
-LINE 1: select quarter('20:38:40');
-                       ^
-CONTEXT:  referenced column: quarter
+CONTEXT:  referenced column: date_part
+SQL function "quarter" statement 1
+referenced column: quarter
  quarter 
 ---------
         
