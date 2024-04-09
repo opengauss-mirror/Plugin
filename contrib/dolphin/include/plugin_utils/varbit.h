@@ -109,6 +109,7 @@ extern Datum bitgetbit(PG_FUNCTION_ARGS);
 
 #ifdef DOLPHIN
 int GetLeadingZeroLen(VarBit* arg);
+Datum dolphin_bitposition(PG_FUNCTION_ARGS);
 #endif
 
 #endif

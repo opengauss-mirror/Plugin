@@ -43,6 +43,7 @@ static VarBit* bit_overlay(VarBit* t1, VarBit* t2, int sp, int sl);
 
 #ifdef DOLPHIN
 extern int GetLeadingZeroLen(VarBit* arg);
+extern Datum dolphin_bitposition(PG_FUNCTION_ARGS);
 static int32 bit_cmp(VarBit* arg1, VarBit* arg2, int leadingZeroLen1 = -1, int leadingZeroLen2 = -1);
 extern "C" Datum ui8toi1(PG_FUNCTION_ARGS);
 extern "C" Datum ui8toi2(PG_FUNCTION_ARGS);
@@ -2274,6 +2275,9 @@ Datum bittoint8(PG_FUNCTION_ARGS)
  */
 Datum bitposition(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    return dolphin_bitposition(fcinfo);
+#else
     VarBit* str = PG_GETARG_VARBIT_P(0);
     VarBit* substr = PG_GETARG_VARBIT_P(1);
     int substr_length, str_length, i, is;
@@ -2349,6 +2353,7 @@ Datum bitposition(PG_FUNCTION_ARGS)
         }
     }
     PG_RETURN_INT32(0);
+#endif
 }
 
 /*
@@ -2785,5 +2790,54 @@ Datum asin_bit(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("value out of range: overflow")));
     }
     PG_RETURN_FLOAT8(res);
+}
+
+Datum dolphin_bitposition(PG_FUNCTION_ARGS)
+{
+    VarBit* bit_str = PG_GETARG_VARBIT_P(0);
+    VarBit* bit_substr = PG_GETARG_VARBIT_P(1);
+
+    int result = 0;
+    int substr_length, str_length;
+    char *str, *subStr;
+
+    /* Get the substring bit byte length */
+    substr_length = VARBITBYTES(bit_substr);
+    str_length = VARBITBYTES(bit_str);
+
+    /* String has zero length or substring longer than string, return 0 */
+    if ((str_length == 0) || (substr_length > str_length))
+        PG_RETURN_INT32(result);
+
+    str = bit_to_str(bit_str);
+    subStr = bit_to_str(bit_substr);
+
+    const uint8 *pos, *search, *end, *search_end;
+
+    pos = (const uint8*)str;
+    search = (const uint8*)subStr;
+    end = (const uint8*)str + str_length - substr_length + 1;
+    search_end = (const uint8*)subStr + substr_length;
+
+skip:
+    while (pos != end) {
+        if ((*pos++) != (*search)) continue;
+
+        const uint8 *i,*j;
+
+        i = pos;
+        j = search + 1;
+        while (j != search_end)
+            if ((*i++) != (*j++))
+                goto skip;
+
+        result = (pos - (const uint8*)str);
+        break;
+    }
+
+    pfree_ext(str);
+    pfree_ext(subStr);
+
+    PG_RETURN_INT32(result);
 }
 #endif

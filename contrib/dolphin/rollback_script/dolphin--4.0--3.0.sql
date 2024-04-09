@@ -6,6 +6,8 @@ DROP FUNCTION IF EXISTS pg_catalog.length(longblob);
 DROP FUNCTION IF EXISTS pg_catalog.length(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.length(json);
 
+DROP FUNCTION IF EXISTS pg_catalog.position(boolean, text);
+
 DROP FUNCTION IF EXISTS pg_catalog.acos(bit);
 DROP FUNCTION IF EXISTS pg_catalog.cos(bit);
 DROP FUNCTION IF EXISTS pg_catalog.cos(boolean);
