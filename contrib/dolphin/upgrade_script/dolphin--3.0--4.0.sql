@@ -71,6 +71,58 @@ BEGIN
 END
 $for_upgrade_only$;
 
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_eq(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1=$2::timestamp without time zone';
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_ne(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<>$2::timestamp without time zone';
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_lt(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<$2::timestamp without time zone';
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_le(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<=$2::timestamp without time zone';
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_gt(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1>$2::timestamp without time zone';
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_ge(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1>=$2::timestamp without time zone';
+CREATE OPERATOR pg_catalog.=(leftarg = timestamp without time zone, rightarg = text, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.datetime_text_eq);
+CREATE OPERATOR pg_catalog.<>(leftarg = timestamp without time zone, rightarg = text, COMMUTATOR = operator(pg_catalog.<>), procedure = pg_catalog.datetime_text_ne);
+CREATE OPERATOR pg_catalog.<(leftarg = timestamp without time zone, rightarg = text, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.datetime_text_lt);
+CREATE OPERATOR pg_catalog.<=(leftarg = timestamp without time zone, rightarg = text, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.datetime_text_le);
+CREATE OPERATOR pg_catalog.>(leftarg = timestamp without time zone, rightarg = text, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.datetime_text_gt);
+CREATE OPERATOR pg_catalog.>=(leftarg = timestamp without time zone, rightarg = text, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.datetime_text_ge);
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_datetime_eq(arg1 text, arg2 timestamp without time zone) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as 'select $1::timestamp without time zone=$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_datetime_ne(arg1 text, arg2 timestamp without time zone) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1::timestamp without time zone<>$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_datetime_lt(arg1 text, arg2 timestamp without time zone) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1::timestamp without time zone<$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_datetime_le(arg1 text, arg2 timestamp without time zone) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1::timestamp without time zone<=$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_datetime_gt(arg1 text, arg2 timestamp without time zone) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1::timestamp without time zone>$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_datetime_ge(arg1 text, arg2 timestamp without time zone) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1::timestamp without time zone>=$2';
+CREATE OPERATOR pg_catalog.=(leftarg = text, rightarg = timestamp without time zone, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.text_datetime_eq);
+CREATE OPERATOR pg_catalog.<>(leftarg = text, rightarg = timestamp without time zone, COMMUTATOR = operator(pg_catalog.<>), procedure = pg_catalog.text_datetime_ne);
+CREATE OPERATOR pg_catalog.<(leftarg = text, rightarg = timestamp without time zone, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.text_datetime_lt);
+CREATE OPERATOR pg_catalog.<=(leftarg = text, rightarg = timestamp without time zone, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.text_datetime_le);
+CREATE OPERATOR pg_catalog.>(leftarg = text, rightarg = timestamp without time zone, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.text_datetime_gt);
+CREATE OPERATOR pg_catalog.>=(leftarg = text, rightarg = timestamp without time zone, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.text_datetime_ge);
+
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_text_eq(arg1 timestamptz, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1=$2::timestamptz';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_text_ne(arg1 timestamptz, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<>$2::timestamptz';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_text_lt(arg1 timestamptz, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<$2::timestamptz';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_text_le(arg1 timestamptz, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<=$2::timestamptz';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_text_gt(arg1 timestamptz, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1>$2::timestamptz';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_text_ge(arg1 timestamptz, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1>=$2::timestamptz';
+CREATE OPERATOR pg_catalog.=(leftarg = timestamptz, rightarg = text, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.timestamp_text_eq);
+CREATE OPERATOR pg_catalog.<>(leftarg = timestamptz, rightarg = text, COMMUTATOR = operator(pg_catalog.<>), procedure = pg_catalog.timestamp_text_ne);
+CREATE OPERATOR pg_catalog.<(leftarg = timestamptz, rightarg = text, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.timestamp_text_lt);
+CREATE OPERATOR pg_catalog.<=(leftarg = timestamptz, rightarg = text, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.timestamp_text_le);
+CREATE OPERATOR pg_catalog.>(leftarg = timestamptz, rightarg = text, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.timestamp_text_gt);
+CREATE OPERATOR pg_catalog.>=(leftarg = timestamptz, rightarg = text, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.timestamp_text_ge);
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_timestamp_eq(arg1 text, arg2 timestamptz) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as 'select $1::timestamptz=$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_timestamp_ne(arg1 text, arg2 timestamptz) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1::timestamptz<>$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_timestamp_lt(arg1 text, arg2 timestamptz) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1::timestamptz<$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_timestamp_le(arg1 text, arg2 timestamptz) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1::timestamptz<=$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_timestamp_gt(arg1 text, arg2 timestamptz) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1::timestamptz>$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_timestamp_ge(arg1 text, arg2 timestamptz) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1::timestamptz>=$2';
+CREATE OPERATOR pg_catalog.=(leftarg = text, rightarg = timestamptz, COMMUTATOR = operator(pg_catalog.=), procedure = pg_catalog.text_timestamp_eq);
+CREATE OPERATOR pg_catalog.<>(leftarg = text, rightarg = timestamptz, COMMUTATOR = operator(pg_catalog.<>), procedure = pg_catalog.text_timestamp_ne);
+CREATE OPERATOR pg_catalog.<(leftarg = text, rightarg = timestamptz, COMMUTATOR = operator(pg_catalog.>), procedure = pg_catalog.text_timestamp_lt);
+CREATE OPERATOR pg_catalog.<=(leftarg = text, rightarg = timestamptz, COMMUTATOR = operator(pg_catalog.>=), procedure = pg_catalog.text_timestamp_le);
+CREATE OPERATOR pg_catalog.>(leftarg = text, rightarg = timestamptz, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.text_timestamp_gt);
+CREATE OPERATOR pg_catalog.>=(leftarg = text, rightarg = timestamptz, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.text_timestamp_ge);
+
 DROP FUNCTION IF EXISTS pg_catalog.chara(variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns varbinary LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'm_char';
 

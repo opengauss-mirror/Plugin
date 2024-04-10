@@ -1351,8 +1351,8 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %left		XOR
 %left		AND
 %right		NOT
-%right		'=' CmpNullOp COLON_EQUALS
-%left		'<' '>' CmpOp
+%right		CmpNullOp COLON_EQUALS
+%left		'=' '<' '>' CmpOp
 %nonassoc	BINARY
 %nonassoc	LIKE ILIKE SIMILAR SOUNDS NOT_LIKE NOT_ILIKE NOT_SIMILAR ANY DO END_P
 %nonassoc	ESCAPE
