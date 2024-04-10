@@ -125,19 +125,6 @@ DROP FUNCTION IF EXISTS pg_catalog.timestamptz_lt_time (timestamp with time zone
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_ge_time (timestamp with time zone, time);
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_gt_time (timestamp with time zone, time);
 
-do $$
-begin
-    update pg_cast set castcontext='e', castowner=10 where castsource=1560 and casttarget=20 and castcontext='a';
-    update pg_cast set castcontext='e', castowner=10 where castsource=1560 and casttarget=23 and castcontext='a';
-    update pg_cast set castcontext='e', castowner=10 where castsource=20 and casttarget=1560 and castcontext='a';
-    update pg_cast set castcontext='e', castowner=10 where castsource=23 and casttarget=1560 and castcontext='a';
-end
-$$;
-drop CAST IF EXISTS (uint4 AS bit);
-drop CAST IF EXISTS (uint8 AS bit);
-CREATE CAST (uint4 AS bit) WITH FUNCTION bitfromuint4(uint4, int4);
-CREATE CAST (uint8 AS bit) WITH FUNCTION bitfromuint8(uint8, int4);
-
 DROP FUNCTION IF EXISTS pg_catalog.rand(int16);
 DROP FUNCTION IF EXISTS pg_catalog.rand(uint4);
 DROP FUNCTION IF EXISTS pg_catalog.rand(timestamp with time zone);
@@ -159,18 +146,6 @@ DROP FUNCTION IF EXISTS pg_catalog.random_bytes(blob);
 DROP FUNCTION IF EXISTS pg_catalog.random_bytes(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.random_bytes(anyset);
 DROP FUNCTION IF EXISTS pg_catalog.random_bytes(json);
-
-CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_rawout (
-tinyblob
-) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
-
-CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_rawout (
-mediumblob
-) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
-
-CREATE OR REPLACE FUNCTION pg_catalog.longblob_rawout (
-longblob
-) RETURNS cstring LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteaout';
 
 -- Make the result of oct(bit) and conv(bit) identical to Mysql
 DROP FUNCTION IF EXISTS pg_catalog.conv(bit, int4, int4) CASCADE;
@@ -967,13 +942,6 @@ DROP FUNCTION IF EXISTS pg_catalog.ascii(json);
 DROP FUNCTION IF EXISTS pg_catalog.ascii(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.ascii(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.ascii(bit);
-
-DROP FUNCTION IF EXISTS pg_catalog.bit_length(boolean);
-DROP FUNCTION IF EXISTS pg_catalog.bit_length(year);
-DROP FUNCTION IF EXISTS pg_catalog.bit_length(blob);
-DROP FUNCTION IF EXISTS pg_catalog.bit_length(anyenum);
-DROP FUNCTION IF EXISTS pg_catalog.bit_length(json);
-DROP FUNCTION IF EXISTS pg_catalog.bit_length(binary);
 
 DROP CAST IF EXISTS (uint4 AS year) CASCADE;
 DROP CAST IF EXISTS (boolean AS year) CASCADE;

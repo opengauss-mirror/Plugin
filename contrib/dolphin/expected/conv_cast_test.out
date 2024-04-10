@@ -1,6 +1,5 @@
 create schema conv_cast_test;
 set current_schema to 'conv_cast_test';
-
 select conv(-211111111111111111111111111111111111111111111111111111111177777,10,8);
           conv          
 ------------------------
@@ -174,7 +173,6 @@ select conv(1,10,8);
 ------
  1
 (1 row)
-
 
 select conv('-211111111111111111111111111111111111111111111111111111111177777',10,8);
           conv          
@@ -350,7 +348,6 @@ select conv('1',10,8);
  1
 (1 row)
 
-
 select cast(b'1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111' as unsigned);
         uint8         
 ----------------------
@@ -399,6 +396,65 @@ select cast(b'11111111111111111111111111111111111111111111111111111111111111111'
    -1
 (1 row)
 
+select 'true'::bool::bit;
+ bit 
+-----
+ 1
+(1 row)
+
+select 'true'::bool::bit(10);
+    bit     
+------------
+ 0000000001
+(1 row)
+
+select 'true'::bool::bit(64);
+                               bit                                
+------------------------------------------------------------------
+ 0000000000000000000000000000000000000000000000000000000000000001
+(1 row)
+
+select 'true'::bool::float4;
+ float4 
+--------
+      1
+(1 row)
+
+select 'true'::bool::float8;
+ float8 
+--------
+      1
+(1 row)
+
+select 'false'::bool::bit;
+ bit 
+-----
+ 0
+(1 row)
+
+select 'false'::bool::bit(10);
+    bit     
+------------
+ 0000000000
+(1 row)
+
+select 'false'::bool::bit(64);
+                               bit                                
+------------------------------------------------------------------
+ 0000000000000000000000000000000000000000000000000000000000000000
+(1 row)
+
+select 'false'::bool::float4;
+ float4 
+--------
+      0
+(1 row)
+
+select 'false'::bool::float8;
+ float8 
+--------
+      0
+(1 row)
 
 create table test_date(a date);
 set dolphin.sql_mode = sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length;
@@ -495,7 +551,6 @@ select * from test_date;
  0000-00-00
  0000-00-00
 (5 rows)
-
 
 drop schema conv_cast_test cascade;
 NOTICE:  drop cascades to table test_date

@@ -226,14 +226,6 @@ DROP FUNCTION IF EXISTS pg_catalog.dolphin_invoke();
 CREATE FUNCTION pg_catalog.dolphin_invoke()
     RETURNS VOID AS '$libdir/dolphin','dolphin_invoke' LANGUAGE C STRICT;
 
-DROP CAST IF EXISTS (bool AS bit) CASCADE;
-DROP CAST IF EXISTS (bool AS float4) CASCADE;
-DROP CAST IF EXISTS (bool AS float8) CASCADE;
-
-DROP FUNCTION IF EXISTS pg_catalog.booltobit(bool, int4) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.booltofloat4(bool) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.booltofloat8(bool) CASCADE;
-
 --rollback castcontext
 CREATE FUNCTION pg_catalog.rollback_castcontext(varchar, varchar, varchar) RETURNS varchar AS
 $$

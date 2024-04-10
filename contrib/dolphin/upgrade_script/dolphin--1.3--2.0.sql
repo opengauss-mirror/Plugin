@@ -3244,24 +3244,6 @@ GRANT USAGE ON schema performance_schema TO PUBLIC;
 
 GRANT SELECT,REFERENCES on all tables in schema performance_schema to public;
 
--- bool cast bit/float/double
-DROP FUNCTION IF EXISTS pg_catalog.booltobit(bool, int4) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.booltofloat4(bool) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.booltofloat8(bool) CASCADE;
-
-DROP CAST IF EXISTS (bool AS bit) CASCADE;
-DROP CAST IF EXISTS (bool AS float4) CASCADE;
-DROP CAST IF EXISTS (bool AS float8) CASCADE;
-
-CREATE OR REPLACE FUNCTION pg_catalog.booltobit(bool, int4) RETURNS bit LANGUAGE C STRICT AS  '$libdir/dolphin',  'bool_bit';
-CREATE CAST (bool AS bit) WITH FUNCTION pg_catalog.booltobit(bool, int4) AS ASSIGNMENT;
-
-CREATE OR REPLACE FUNCTION pg_catalog.booltofloat4(bool) RETURNS float4 LANGUAGE C STRICT AS  '$libdir/dolphin',  'bool_float4';
-CREATE CAST (bool AS float4) WITH FUNCTION pg_catalog.booltofloat4(bool) AS ASSIGNMENT;
-
-CREATE OR REPLACE FUNCTION pg_catalog.booltofloat8(bool) RETURNS float8 LANGUAGE C STRICT AS  '$libdir/dolphin',  'bool_float8';
-CREATE CAST (bool AS float8) WITH FUNCTION pg_catalog.booltofloat8(bool) AS ASSIGNMENT;
-
 -- binary/varbinary -> text implicit
 DROP FUNCTION IF EXISTS pg_catalog.hex(binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.hex(varbinary) CASCADE;

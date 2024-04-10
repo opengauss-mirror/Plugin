@@ -2035,4 +2035,24 @@ Datum bitnlike(PG_FUNCTION_ARGS)
     result = DatumGetBool(bitne(fcinfo));
     PG_RETURN_BOOL(result);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(bool_bit);
+extern "C" DLL_PUBLIC Datum bool_bit(PG_FUNCTION_ARGS);
+Datum bool_bit(PG_FUNCTION_ARGS)
+{
+    int32 atttypmod = PG_GETARG_INT32(1);
+    if (PG_GETARG_BOOL(0) == false) {
+        return DirectFunctionCall2(bitfromint8, Int64GetDatum(0), Int32GetDatum(atttypmod));
+    } else {
+        return DirectFunctionCall2(bitfromint8, Int64GetDatum(1), Int32GetDatum(atttypmod));
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(mp_bit_length_binary);
+extern "C" DLL_PUBLIC Datum mp_bit_length_binary(PG_FUNCTION_ARGS);
+Datum mp_bit_length_binary(PG_FUNCTION_ARGS)
+{
+    Datum input = PG_GETARG_DATUM(0);
+    PG_RETURN_INT32((toast_raw_datum_size(input) - VARHDRSZ) * BITS_PER_BYTE);
+}
 #endif
