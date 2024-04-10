@@ -363,7 +363,11 @@ static void printtup_prepare_info(DR_printtup *myState, TupleDesc typeinfo, int 
         if (format == 0) {
             getTypeOutputInfo(typeinfo->attrs[i].atttypid, &thisState->typoutput, &thisState->typisvarlena);
             fmgr_info(thisState->typoutput, &thisState->finfo);
-            thisState->encoding = get_valid_charset_by_collation(typeinfo->attrs[i].attcollation);
+            if (typeinfo->attrs[i].attcollation == BINARY_COLLATION_OID && ENABLE_MULTI_CHARSET) {
+                thisState->encoding = GetDatabaseEncoding();
+             } else {
+                thisState->encoding = get_valid_charset_by_collation(typeinfo->attrs[i].attcollation);
+            }
             construct_conversion_fmgr_info(
                 thisState->encoding, u_sess->mb_cxt.ClientEncoding->encoding, (void*)&thisState->convert_finfo);
         } else if (format == 1) {
@@ -716,6 +720,45 @@ bool inline is_type_support_not_escape_zero(Oid type)
     return BINARYOID == type;
 }
 
+
+void dolphin_pq_sendcountedtext_binary_printtup(StringInfo buf, const char* str, int slen, int src_encoding, void* convert_finfo)
+{
+    char* p = (char*)str;
+    char* p2 = NULL;
+
+    if (unlikely(src_encoding != u_sess->mb_cxt.ClientEncoding->encoding)) {
+        int check_len = strlen(str);
+        p = pg_any_to_client(str, check_len, src_encoding, convert_finfo);
+        if (unlikely(p != str)) {
+            p2 = (char*)palloc(slen + 1);
+            errno_t rc = memset_sp(p2, slen + 1, 0, slen + 1);
+            securec_check(rc, "\0", "\0");
+            rc = memcpy_sp(p2, (size_t)slen, p, (size_t)strlen(p));
+            securec_check(rc, "\0", "\0");
+            pfree(p);
+            p = p2;
+        }
+    }
+    if (unlikely(p != str)) { /* actual conversion has been done? */
+        enlargeStringInfo(buf, slen + sizeof(uint32));
+        pq_writeint32(buf, (uint32)slen);
+        errno_t rc = memcpy_sp(buf->data + buf->len, (size_t)(buf->maxlen - buf->len), p, (size_t)slen);
+        securec_check(rc, "\0", "\0");
+        buf->len += slen;
+        buf->data[buf->len] = '\0';
+        pfree(p);
+        p = NULL;
+    } else {
+        enlargeStringInfo(buf, slen + sizeof(uint32));
+        pq_writeint32(buf, (uint32)slen);
+        errno_t rc = memcpy_sp(buf->data + buf->len, (size_t)(buf->maxlen - buf->len), str, (size_t)slen);
+        securec_check(rc, "\0", "\0");
+        buf->len += slen;
+        buf->data[buf->len] = '\0';
+    }
+}
+
+
 void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
 {
     TupleDesc typeinfo = slot->tts_tupleDescriptor;
@@ -846,7 +889,7 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                 t_thrd.xact_cxt.callPrint = false;
 #endif
                 if (is_type_support_not_escape_zero(typeinfo->attrs[i].atttypid) &&
-                        SQL_MODE_NOT_ESCAPE_ZERO_IN_BINARY() && is_req_from_jdbc()) {
+                    SQL_MODE_NOT_ESCAPE_ZERO_IN_BINARY() && is_req_from_jdbc()) {
                     int escape_len = strlen(outputstr);
                     zero_without_escape_output = (char*)palloc(escape_len + 1);
                     for (int i = 0; i < escape_len; i++) {
@@ -859,7 +902,7 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                         }
                     }
                     zero_without_escape_output[actual_len] = '\0';
-                    pq_sendcountedtext_printtup(buf, zero_without_escape_output, actual_len, thisState->encoding, (void*)&thisState->convert_finfo);
+                    dolphin_pq_sendcountedtext_binary_printtup(buf, zero_without_escape_output, actual_len, thisState->encoding, (void*)&thisState->convert_finfo);
                     pfree(zero_without_escape_output);
                 } else {
                     pq_sendcountedtext_printtup(buf, outputstr, strlen(outputstr), thisState->encoding, (void*)&thisState->convert_finfo);

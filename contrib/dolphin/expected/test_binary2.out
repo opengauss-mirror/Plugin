@@ -1,0 +1,56 @@
+set b_format_behavior_compat_options = 'default_collation,enable_multi_charset';
+CREATE DATABASE test_b1 with dbcompatibility 'b' ENCODING='SQL_ASCII' LC_COLLATE='C' LC_CTYPE='C';
+CREATE DATABASE test_b2 with dbcompatibility 'b' ENCODING='GBK' LC_COLLATE='zh_CN.gbk' LC_CTYPE='zh_CN.gbk';
+create database test_b3 with dbcompatibility 'b';
+\c test_b1
+set bytea_output=escape;
+set client_encoding = 'UTF8';
+select cast('熊猫' as binary(10));
+        binary        
+----------------------
+ 熊猫\000\000\000\000
+(1 row)
+
+set b_format_behavior_compat_options = 'default_collation,enable_multi_charset';
+select cast('熊猫' as binary(10));
+        binary        
+----------------------
+ 熊猫\000\000\000\000
+(1 row)
+
+reset b_format_behavior_compat_options;
+\c test_b2
+set client_encoding = 'UTF8';
+set bytea_output=escape;
+select cast('熊猫' as binary(10));
+            binary            
+------------------------------
+ 熊猫\000\000\000\000\000\000
+(1 row)
+
+set b_format_behavior_compat_options = 'default_collation,enable_multi_charset';
+select cast('熊猫' as binary(10));
+            binary            
+------------------------------
+ 熊猫\000\000\000\000\000\000
+(1 row)
+
+reset b_format_behavior_compat_options;
+\c test_b3
+set client_encoding = 'UTF8';
+set bytea_output=escape;
+select cast('熊猫' as binary(10));
+        binary        
+----------------------
+ 熊猫\000\000\000\000
+(1 row)
+
+set b_format_behavior_compat_options = 'default_collation,enable_multi_charset';
+select cast('熊猫' as binary(10));
+        binary        
+----------------------
+ 熊猫\000\000\000\000
+(1 row)
+
+reset b_format_behavior_compat_options;
+\c postgres
