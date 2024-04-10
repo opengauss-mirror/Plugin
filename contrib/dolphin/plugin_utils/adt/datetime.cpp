@@ -5923,8 +5923,13 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type, pg_tm
                 }
                 found_space = 1;
             }
-            str++;
-            found_delimitier = 1; /* Should be a 'normal' date */
+             // for timezone, leading character must be "+" or "-"
+            if (i == format_position[6] && (str[0] == '+' || str[0] == '-')) {
+                break;
+            } else {
+                str++;
+                found_delimitier = 1; /* Should be a 'normal' date */
+            }
         }
         /* Check if next position is AM/PM */
         /* Seconds, time for AM/PM */

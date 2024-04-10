@@ -654,6 +654,7 @@ select * from t_date;
 select * from t_datetime;
 
 SET TIME ZONE PRC;
+select '2022-2-22 11:11:11.123456+06:00'::timestamp(6);
 CREATE TABLE test_timestamp(ts timestamp(2));
 INSERT INTO test_timestamp VALUES ('2012-10-21 23:55:23-12:12');
 INSERT INTO test_timestamp VALUES (201112234512);
