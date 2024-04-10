@@ -129,12 +129,13 @@ extra_clean:
 	make clean -C $(catalog)
 clean: extra_clean
 
-dolphin--1.0.sql: sql_script/* sql_script_post/*
+dolphin--1.3.sql: sql_script/* sql_script_post/* upgrade_script/dolphin--1.0--1.2.sql upgrade_script/dolphin--1.2--1.3.sql
 	cat $^ > $@
-dolphin--1.2.sql: dolphin--1.0.sql upgrade_script/dolphin--1.0--1.2.sql
-	cat $^ > $@
-DATA_built = dolphin--1.0.sql dolphin--1.2.sql upgrade_script/dolphin--1.0--1.2.sql rollback_script/dolphin--1.2--1.0.sql openGauss_expr_dolphin.ir
-DATA = upgrade_script/dolphin--1.2--2.0.sql rollback_script/dolphin--2.0--1.2.sql
+DATA_built = dolphin--1.3.sql openGauss_expr_dolphin.ir
+DATA = upgrade_script/dolphin--1.0--1.2.sql rollback_script/dolphin--1.2--1.0.sql \
+upgrade_script/dolphin--1.2--1.3.sql rollback_script/dolphin--1.3--1.2.sql \
+upgrade_script/dolphin--1.3--2.0.sql rollback_script/dolphin--2.0--1.3.sql \
+upgrade_script/dolphin--2.0--3.0.sql rollback_script/dolphin--3.0--2.0.sql
 
 OBJS += plugin_postgres.o 
 plugin_postgres.o: plugin_postgres.cpp
