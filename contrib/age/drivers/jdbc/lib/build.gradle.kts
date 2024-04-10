@@ -27,7 +27,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.postgresql:postgresql:42.2.20")
+    implementation("org.opengauss:opengauss-jdbc:5.1.0")
     api("org.apache.commons:commons-text:1.9")
     antlr("org.antlr:antlr4:4.9.2")
 
@@ -35,7 +35,7 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 
     testImplementation("org.testcontainers:testcontainers:1.15.3")
-    testImplementation("org.postgresql:postgresql:42.2.20")
+    testImplementation("org.opengauss:opengauss-jdbc:5.1.0")
 }
 
 tasks.generateGrammarSource {
