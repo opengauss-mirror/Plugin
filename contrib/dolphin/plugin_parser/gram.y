@@ -1042,7 +1042,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 				list_subpartitioning_clause subpartition_item opt_subpartition_index_def
                 range_subpartition_index_list range_subpartition_index_item
 %type <list>	range_partition_definition_list list_partition_definition_list hash_partition_definition_list maxValueList maxValueList_with_opt_parens listValueList
-			column_item_list tablespaceList opt_interval_tablespaceList opt_hash_partition_definition_list
+			column_item_list opt_column_item_list tablespaceList opt_interval_tablespaceList opt_hash_partition_definition_list
 			split_dest_partition_define_list split_dest_listsubpartition_define_list split_dest_rangesubpartition_define_list
 			range_start_end_list range_less_than_list opt_range_every_list subpartition_definition_list
 %type <range> partition_name
@@ -9208,7 +9208,7 @@ hash_partitioning_clause:
 				$$ = (Node *)n;
 
 			}
-		| PARTITION BY KEY '(' column_item_list ')' opt_partitions_num subpartitioning_clause
+		| PARTITION BY KEY '(' opt_column_item_list ')' opt_partitions_num subpartitioning_clause
 		opt_hash_partition_definition_list opt_row_movement_clause
 			{
 				if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT) {
@@ -9226,13 +9226,13 @@ hash_partitioning_clause:
 						errmsg("Un-support feature"),
 						errdetail("The distributed capability is not supported currently.")));
 #endif
-				if (list_length($5) != 1) {
+				if (list_length($5) > 1) {
 					const char* message = "Un-support feature";
 					InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
 					ereport(errstate,
 						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
 							errmsg("Un-support feature"),
-							errdetail("The partition key's length should be 1.")));
+							errdetail("The partition key's length should be 0 or 1.")));
 				}
 				PartitionState *n = makeNode(PartitionState);
 				n->partitionKey = $5;
@@ -9500,6 +9500,16 @@ subpartition_item:
 				$$ = (Node *)n;
 			}
 		;
+
+opt_column_item_list:
+		column_item_list
+			{
+				$$ = $1;
+			}
+		| /*EMPTY*/
+			{
+				$$ = NIL;
+			}
 
 column_item_list:
 		column_item
