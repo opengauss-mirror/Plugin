@@ -1,0 +1,98 @@
+create schema test_lag_lead;
+set current_schema to 'test_lag_lead';
+set dolphin.b_compatibility_mode to on;
+-- 1、3参数类型兼容
+CREATE TABLE test_lag_lead_table (d DOUBLE, id INT, sex CHAR(1), n INT NOT NULL AUTO_INCREMENT, PRIMARY KEY(n));
+NOTICE:  CREATE TABLE will create implicit sequence "test_lag_lead_table_n_seq" for serial column "test_lag_lead_table.n"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "test_lag_lead_table_pkey" for table "test_lag_lead_table"
+SELECT n, id, LAG(id, 0, n*n) OVER (ORDER BY id DESC, n ASC ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) L FROM test_lag_lead_table;
+ n | id | L 
+---+----+---
+(0 rows)
+
+INSERT INTO test_lag_lead_table values(1.0, 1, 'F', 1);
+INSERT INTO test_lag_lead_table values(2.0, 2, 'M', 2);
+SELECT n, id, LAG(id, 1, n*n) OVER (ORDER BY id DESC, n ASC ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) L FROM test_lag_lead_table;
+ n | id | L 
+---+----+---
+ 2 |  2 | 4
+ 1 |  1 | 2
+(2 rows)
+
+-- 1参数类型unknown、NULL兼容
+SELECT LEAD(NULL) OVER ();
+ lead 
+------
+ 
+(1 row)
+
+SELECT LAG(NULL) OVER ();
+ lag 
+-----
+ 
+(1 row)
+
+SELECT LEAD(NULL, 0) OVER ();
+ lead 
+------
+ 
+(1 row)
+
+SELECT LAG(NULL, 0) OVER ();
+ lag 
+-----
+ 
+(1 row)
+
+SELECT LEAD(NULL, 1, 'test') OVER ();
+ lead 
+------
+ test
+(1 row)
+
+SELECT LAG(NULL, 1, 'test') OVER ();
+ lag  
+------
+ test
+(1 row)
+
+SELECT LEAD('] .| /= ') OVER ();
+ lead 
+------
+ 
+(1 row)
+
+SELECT LAG('] .| /= ') OVER ();
+ lag 
+-----
+ 
+(1 row)
+
+SELECT LEAD('] .| /= ', 0) OVER ();
+   lead   
+----------
+ ] .| /= 
+(1 row)
+
+SELECT LAG('] .| /= ', 0) OVER ();
+   lag    
+----------
+ ] .| /= 
+(1 row)
+
+SELECT LEAD('] .| /= ', 1, 'test') OVER ();
+ lead 
+------
+ test
+(1 row)
+
+SELECT LAG('] .| /= ', 1, 'test') OVER ();
+ lag  
+------
+ test
+(1 row)
+
+drop table test_lag_lead_table;
+set dolphin.b_compatibility_mode to off;
+drop schema test_lag_lead cascade;
+reset current_schema;

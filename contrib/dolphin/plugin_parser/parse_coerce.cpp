@@ -3153,10 +3153,14 @@ Oid enforce_generic_type_consistency(
             array_typeid = ANYARRAYOID;
             range_typeid = ANYRANGEOID;
         } else {
+#ifdef DOLPHIN
+            elem_typeid = VARCHAROID;
+#else
             /* Only way to get here is if all the generic args are UNKNOWN */
             ereport(ERROR,
                 (errcode(ERRCODE_DATATYPE_MISMATCH),
                     errmsg("could not determine polymorphic type because input has type \"unknown\"")));
+#endif
         }
     }
 
