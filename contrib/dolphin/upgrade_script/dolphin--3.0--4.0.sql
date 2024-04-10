@@ -39,6 +39,9 @@ BEGIN
 END
 $for_upgrade_only$;
 
+DROP FUNCTION IF EXISTS pg_catalog.chara(variadic arr "any") cascade;
+CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns varbinary LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'm_char';
+
 DROP FUNCTION IF EXISTS pg_catalog.quarter (timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.quarter (timetz);
 DROP FUNCTION IF EXISTS pg_catalog.quarter (abstime);

@@ -19,6 +19,7 @@
 #include "nodes/nodes.h"
 #include "utils/timestamp.h"
 #include "utils/datetime.h"
+#include "utils/numeric.h"
 
 #define INVALID_DAY_TIME(h, m, s, fsec) ((h) > HOURS_PER_DAY || ((h) == HOURS_PER_DAY && ((m) > 0 || (s) > 0 || (fsec) > 0)))
 

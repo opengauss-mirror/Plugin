@@ -158,6 +158,11 @@
 #include "optimizer/gplanmgr.h"
 #include "instruments/instr_statement.h"
 
+#ifdef DOLPHIN
+#include "plugin_utils/datetime.h"
+#include "plugin_utils/date.h"
+#endif
+
 #ifdef PGXC
 #include "pgxc/pgxc.h"
 #include "access/transam.h"
@@ -9015,7 +9020,57 @@ double get_windowagg_selectivity(PlannerInfo* root, WindowClause* wc, WindowFunc
 #ifdef DOLPHIN
 double use_convert_timevalue_to_scalar(Datum value, Oid typid)
 {
-    return convert_timevalue_to_scalar(value, typid);
+    switch (typid) {
+        case TIMESTAMPOID:
+            {
+                Timestamp val = DatumGetTimestamp(value);
+                struct pg_tm tt;
+                struct pg_tm* tm = &tt;
+                fsec_t fsec;
+                if (timestamp2tm(val, NULL, tm, &fsec, NULL, NULL) != 0) {
+                    ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+                }
+                return timestamp2int(tm);
+            }
+        case TIMESTAMPTZOID:
+            {
+                Timestamp val = DatumGetTimestampTz(value);
+                struct pg_tm tt;
+                struct pg_tm* tm = &tt;
+                fsec_t fsec;
+                int tz;
+                const char *tzn = NULL;
+                if (timestamp2tm(val, &tz, tm, &fsec, &tzn, NULL) != 0) {
+                    ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamptz out of range")));
+                }
+                return timestamp2int(tm);
+            }
+        case TIMEOID:
+             {
+                TimeADT val = DatumGetTimeADT(value);
+                struct pg_tm tt;
+                struct pg_tm* tm = &tt;
+                fsec_t fsec;
+                if (time2tm(val, tm, &fsec) != 0) {
+                    ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("time out of range")));
+                }
+                return tmfsec2uint(tm);
+            }
+        case TIMETZOID: 
+            {
+                TimeTzADT* timetz = DatumGetTimeTzADTP(value);
+                struct pg_tm tt;
+                struct pg_tm* tm = &tt;
+                fsec_t fsec;
+                int tz;
+                if (timetz2tm(timetz, tm, &fsec, &tz) != 0) {
+                    ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timetz out of range")));
+                }
+                return tmfsec2uint(tm);
+            }
+        default:
+            return convert_timevalue_to_scalar(value, typid);
+    }
 }
 #endif
 
