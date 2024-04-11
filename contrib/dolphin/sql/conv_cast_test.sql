@@ -70,6 +70,18 @@ select cast(b'111111111111111111111111111111111111111111111111111111111111111' a
 select cast(b'11111111111111111111111111111111111111111111111111111111111111111' as unsigned);
 select cast(b'11111111111111111111111111111111111111111111111111111111111111111' as signed);
 
+select 'true'::bool::bit;
+select 'true'::bool::bit(10);
+select 'true'::bool::bit(64);
+select 'true'::bool::float4;
+select 'true'::bool::float8;
+
+select 'false'::bool::bit;
+select 'false'::bool::bit(10);
+select 'false'::bool::bit(64);
+select 'false'::bool::float4;
+select 'false'::bool::float8;
+
 create table test_date(a date);
 set dolphin.sql_mode = sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length;
 select 0::date;
