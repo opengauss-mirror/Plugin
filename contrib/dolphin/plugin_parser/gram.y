@@ -3559,7 +3559,6 @@ zone_value:
 opt_encoding:
 			SCONST									{ $$ = $1; }
 			| normal_ident							{ $$ = $1; }
-			| BINARY								{ $$ = (char*)$1; }
 			| DEFAULT								{ $$ = NULL; }
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
@@ -20653,7 +20652,7 @@ view_security_option: DEFINER
 					$$ = VIEW_SQL_SECURITY_INVOKER;
 				}
 			;
-view_security_expression: SQL_P SECURITY view_security_option
+view_security_expression: SQL SECURITY view_security_option
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility ==  B_FORMAT) {
 						$$ = $3;
@@ -31222,7 +31221,6 @@ character_set:
 
 charset_collate_name:
 			ColId									{ $$ = $1; }
-			| BINARY								{ $$ = "binary"; }
 			| SCONST								{ $$ = $1; }
 		;
 

@@ -11703,7 +11703,8 @@ static Datum getValue(CopyState cstate, TupleDesc tupDesc, char* string, int ind
     cstate->cur_attval = string;
     atttypmod = (asTypemods != NULL && asTypemods[index].assign) ? asTypemods[index].typemod : attr[index].atttypmod;
     value =
-        InputFunctionCallForBulkload(cstate, &in_functions[index], string, typioparams[index], atttypmod);
+        InputFunctionCallForBulkload(cstate, &in_functions[index], string, typioparams[index], atttypmod,
+                                    cstate->attr_encodings[index], &cstate->in_convert_funcs[index]);
     cstate->cur_attname = NULL;
     cstate->cur_attval = NULL;
     return value;

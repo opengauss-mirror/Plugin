@@ -193,7 +193,7 @@ int generic_match_text_with_collation(char* s, int slen, char* p, int plen, Oid 
     return GenericMatchText(s, slen, p, plen);
 }
 
-static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation)
+static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation, bool ifbpchar)
 {
     char *s = NULL, *p = NULL;
     int slen, plen;
