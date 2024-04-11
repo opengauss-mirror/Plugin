@@ -32,23 +32,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.from_base64 (text)  RETURNS text LANGUAGE 
 CREATE OR REPLACE FUNCTION pg_catalog.from_base64 (boolean)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'base64_decode_bool';
 CREATE OR REPLACE FUNCTION pg_catalog.from_base64 (bit)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'base64_decode_bit';
 
-DROP FUNCTION IF EXISTS pg_catalog.atan2 (boolean, boolean);
-CREATE OR REPLACE FUNCTION pg_catalog.atan2 (boolean, boolean)  RETURNS float8 AS $$ SELECT pg_catalog.atan2($1::int4, $2::int4) $$ LANGUAGE SQL;
-DROP FUNCTION IF EXISTS pg_catalog.atan2 (boolean, float8);
-CREATE OR REPLACE FUNCTION pg_catalog.atan2 (boolean, float8)  RETURNS float8 AS $$ SELECT pg_catalog.atan2($1::int4, $2) $$ LANGUAGE SQL;
-DROP FUNCTION IF EXISTS pg_catalog.atan2 (float8, boolean);
-CREATE OR REPLACE FUNCTION pg_catalog.atan2 (float8, boolean)  RETURNS float8 AS $$ SELECT pg_catalog.atan2($1, $2::int4) $$ LANGUAGE SQL;
-DROP FUNCTION IF EXISTS pg_catalog.atan (float8, float8);
-CREATE OR REPLACE FUNCTION pg_catalog.atan (float8, float8)  RETURNS float8 AS $$ SELECT pg_catalog.atan2($1, $2) $$ LANGUAGE SQL;
-DROP FUNCTION IF EXISTS pg_catalog.atan (boolean, boolean);
-CREATE OR REPLACE FUNCTION pg_catalog.atan (boolean, boolean)  RETURNS float8 AS $$ SELECT pg_catalog.atan2($1::int4, $2::int4) $$ LANGUAGE SQL;
-DROP FUNCTION IF EXISTS pg_catalog.atan (boolean, float8);
-CREATE OR REPLACE FUNCTION pg_catalog.atan (boolean, float8)  RETURNS float8 AS $$ SELECT pg_catalog.atan2($1::int4, $2) $$ LANGUAGE SQL;
-DROP FUNCTION IF EXISTS pg_catalog.atan (float8, boolean);
-CREATE OR REPLACE FUNCTION pg_catalog.atan (float8, boolean)  RETURNS float8 AS $$ SELECT pg_catalog.atan2($1, $2::int4) $$ LANGUAGE SQL;
-DROP FUNCTION IF EXISTS pg_catalog.atan (boolean);
-CREATE OR REPLACE FUNCTION pg_catalog.atan (boolean)  RETURNS float8 AS $$ SELECT pg_catalog.atan($1::int4) $$ LANGUAGE SQL;
-
 DROP FUNCTION IF EXISTS pg_catalog.oct(text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.oct(boolean) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.oct(bit) CASCADE;
