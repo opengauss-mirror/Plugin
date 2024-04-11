@@ -56,6 +56,11 @@ CREATE OPERATOR pg_catalog.||(leftarg=integer, rightarg=unknown, procedure=pg_ca
 DROP FUNCTION IF EXISTS pg_catalog.chara(variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'm_char';
 
+DROP FUNCTION IF EXISTS pg_catalog.lpad(boolean, integer, text);
+DROP FUNCTION IF EXISTS pg_catalog.lpad(bit, integer, text);
+DROP FUNCTION IF EXISTS pg_catalog.lpad(binary, integer, text);
+DROP FUNCTION IF EXISTS pg_catalog.lpad(varbinary, integer, text);
+
 DROP FUNCTION IF EXISTS pg_catalog.quarter (timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.quarter (timetz);
 DROP FUNCTION IF EXISTS pg_catalog.quarter (abstime);

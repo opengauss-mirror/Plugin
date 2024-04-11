@@ -74,6 +74,11 @@ $for_upgrade_only$;
 DROP FUNCTION IF EXISTS pg_catalog.chara(variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns varbinary LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'm_char';
 
+CREATE OR REPLACE FUNCTION pg_catalog.lpad(boolean, integer, text) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lpad($1::text, $2, $3)::varchar';
+CREATE OR REPLACE FUNCTION pg_catalog.lpad(bit, integer, text) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'lpad_bit';
+CREATE OR REPLACE FUNCTION pg_catalog.lpad(binary, integer, text) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'lpad_bin';
+CREATE OR REPLACE FUNCTION pg_catalog.lpad(varbinary, integer, text) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'lpad_bin';
+
 DROP FUNCTION IF EXISTS pg_catalog.quarter (timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.quarter (timetz);
 DROP FUNCTION IF EXISTS pg_catalog.quarter (abstime);

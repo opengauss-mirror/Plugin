@@ -28,7 +28,7 @@
 
 static text* dotrim(const char* string, int stringlen, const char* set, int setlen, bool doltrim, bool dortrim);
 #ifdef DOLPHIN
-extern Datum bit_to_str(VarBit *bits);
+extern char* bit_to_str(VarBit *bits);
 
 PG_FUNCTION_INFO_V1_PUBLIC(byteatrim_leading);
 extern "C" DLL_PUBLIC Datum byteatrim_leading(PG_FUNCTION_ARGS);
@@ -44,6 +44,12 @@ extern "C" DLL_PUBLIC Datum lower_bit(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(lower_blob);
 extern "C" DLL_PUBLIC Datum lower_blob(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(lpad_bit);
+extern "C" DLL_PUBLIC Datum lpad_bit(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(lpad_bin);
+extern "C" DLL_PUBLIC Datum lpad_bin(PG_FUNCTION_ARGS);
 #endif
 /********************************************************************
  *
@@ -82,7 +88,7 @@ Datum lower_bit(PG_FUNCTION_ARGS)
 
     bytea* result = NULL;
 
-    char *in_string = (char*)bit_to_str(bits);
+    char *in_string = bit_to_str(bits);
     result = cstring_to_bytea_with_len(in_string, VARBITBYTES(bits));
 
     pfree_ext(in_string);
@@ -255,6 +261,80 @@ Datum lpad(PG_FUNCTION_ARGS)
     else
         PG_RETURN_TEXT_P(ret);
 }
+
+#ifdef DOLPHIN
+Datum lpad_bit(PG_FUNCTION_ARGS)
+{
+    VarBit *bits = PG_GETARG_VARBIT_P(0);
+    bytea *input;
+
+    char *str = bit_to_str(bits);
+    input = cstring_to_bytea_with_len(str, VARBITBYTES(bits));
+
+    pfree_ext(str);
+
+    return DirectFunctionCall3Coll(lpad_bin, PG_GET_COLLATION(), 
+                                  PointerGetDatum(input), PG_GETARG_DATUM(1), 
+                                  PG_GETARG_DATUM(2), fcinfo->can_ignore);
+}
+
+/**
+ * if param[0] is binary, substitute another as binary (ignore if its a multi-byte character string).
+*/
+Datum lpad_bin(PG_FUNCTION_ARGS)
+{
+    bytea *string1 = PG_GETARG_BYTEA_PP(0);
+    int32 len = PG_GETARG_INT32(1);
+    text* string2 = PG_GETARG_TEXT_PP(2);
+    bytea* ret = NULL;
+    char *ptr1 = NULL, *ptr2 = NULL, *ret_ptr = NULL;
+    int m, s1len, s2len, tmplen;
+    errno_t ss_rc;
+
+    FUNC_CHECK_HUGE_POINTER(false, string1, "lpad_bin()");
+
+    if (len < 0)
+        PG_RETURN_NULL();
+
+    s1len = VARSIZE_ANY_EXHDR(string1);
+    s2len = VARSIZE_ANY_EXHDR(string2);
+    if (s2len <= 0)
+        len = s1len;
+
+    ptr1 = VARDATA_ANY(string1);
+    ptr2 = VARDATA_ANY(string2);
+
+    ret = (bytea*)palloc(VARHDRSZ + len);
+    SET_VARSIZE(ret, VARHDRSZ + len);
+
+    if (len <= s1len) {
+        ss_rc = memcpy_s(VARDATA_ANY(ret), len, ptr1, len);
+        securec_check(ss_rc, "\0", "\0");
+        PG_RETURN_BYTEA_P(ret);
+    }
+
+    ret_ptr = VARDATA_ANY(ret);
+    m = len - s1len;
+    tmplen = 0;
+    while (m > s2len) {
+        ss_rc = memcpy_s(ret_ptr, len - tmplen, ptr2, s2len);
+        securec_check(ss_rc, "\0", "\0");
+        m -= s2len;
+        ret_ptr += s2len;
+        tmplen += s2len;
+    }
+    if (m > 0) {
+        ss_rc = memcpy_s(ret_ptr, len - tmplen, ptr2, m);
+        securec_check(ss_rc, "\0", "\0");
+        ret_ptr += m;
+        tmplen += m;
+    }
+    ss_rc = memcpy_s(ret_ptr, len - tmplen, ptr1, s1len);
+    securec_check(ss_rc, "\0", "\0");
+
+    PG_RETURN_BYTEA_P(ret);
+}
+#endif
 
 /********************************************************************
  *
