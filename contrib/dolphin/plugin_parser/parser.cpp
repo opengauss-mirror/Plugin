@@ -55,6 +55,11 @@ static void resetForbidTruncateFlag()
     u_sess->parser_cxt.isForbidTruncate = false;
 }
 
+static void resetHasSetUservarFlag()
+{
+    u_sess->parser_cxt.has_set_uservar = false;
+}
+
 /*
  * raw_parser
  *        Given a query in string form, do lexical and grammatical analysis.
@@ -81,6 +86,9 @@ List* raw_parser(const char* str, List** query_string_locationlist)
 
     /* reset u_sess->parser_cxt.isForbidTruncate */
     resetForbidTruncateFlag();
+
+    /* reset u_sess->parser_cxt.has_set_uservar */
+    resetHasSetUservarFlag();
 
     /* initialize the flex scanner */
     yyscanner = scanner_init(str, &yyextra.core_yy_extra, &ScanKeywords, ScanKeywordTokens);
@@ -677,8 +685,8 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
 #endif
         case USE:
         /*
-        * USE INDEX \USE KEY must be reduced to one token,to allow KEY\USE as table / column alias.
-        */
+         * USE INDEX \USE KEY must be reduced to one token,to allow KEY\USE as table / column alias.
+         */
             GET_NEXT_TOKEN();
 
             switch (next_token) {
@@ -699,8 +707,8 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
             break;
         case FORCE:
         /*
-        * FORCE INDEX \FORCE KEY must be reduced to one token,to allow KEY\FORCE as table / column alias.
-        */
+         * FORCE INDEX \FORCE KEY must be reduced to one token,to allow KEY\FORCE as table / column alias.
+         */
             GET_NEXT_TOKEN();
 
             switch (next_token) {
@@ -719,7 +727,17 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                     break;
             }
             break;
+        case IGNORE:
+        /*
+         * IGNORE INDEX \IGNORE KEY must be reduced to one token,to allow KEY\IGNORE as table / column alias.
+         */
+            GET_NEXT_TOKEN();
 
+            switch (next_token) {
+                case KEY:
+                case INDEX:
+                    cur_token = IGNORE_INDEX;
+                    break;
 #ifdef DOLPHIN
 
         case EXPLAIN:

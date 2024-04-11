@@ -1078,6 +1078,7 @@ typedef struct CreateTrigStmt {
     char* trgordername; /* mysql compatibility trigger order {follows|precedes}*/
     bool is_follows; 
     bool if_not_exists;
+    char* schemaname;  /* mysql compatibility schema of new trigger, or NULL for default */
 } CreateTrigStmt;
 
 
@@ -2338,6 +2339,7 @@ typedef struct DropDirectoryStmt {
 typedef struct CreateSetStmt {
     NodeTag type;
     TypeName *typname;  /* type of column */
+    Oid set_collation;
 } CreateSetStmt;
 
 extern inline NodeTag transform_node_tag(Node* raw_parse_tree)

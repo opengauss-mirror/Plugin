@@ -736,6 +736,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 				opt_collation collate_option
 
 %type <range>	qualified_name insert_target OptConstrFromTable opt_index_name insert_partition_clause update_delete_partition_clause dolphin_qualified_name
+				qualified_trigger_name
 
 %type <str>		all_Op MathOp OptDbName
 %type <str>		SingleLineProcPart
@@ -839,7 +840,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <list>	extract_list timestamp_arg_list overlay_list position_list
 
 %type <list>	substr_list trim_list
-%type <list>	opt_interval interval_second opt_single_interval opt_multipart_interval
+%type <list>	opt_interval interval_second opt_single_interval opt_multipart_interval event_interval_unit opt_evtime_unit
 %type <node>	overlay_placing substr_from substr_for optional_precision get_format_time_type
 
 %type <boolean> opt_instead opt_incremental
@@ -934,7 +935,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 
 %type <keyword> character_set
 %type <ival>	charset opt_charset convert_charset default_charset
-%type <str>		collate opt_collate default_collate
+%type <str>		collate opt_collate default_collate set_names_collate
 %type <charsetcollateopt> CharsetCollate charset_collate optCharsetCollate
 
 %type <boolean> opt_varying opt_timezone opt_no_inherit
@@ -963,7 +964,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 %type <boolean> OptRelative
 %type <boolean> OptGPI
 %type <str>		OptTableSpace OptTableSpace_without_empty OptConsTableSpace OptConsTableSpaceWithEmpty OptTableSpaceOwner LoggingStr size_clause OptMaxSize OptDatafileSize OptReuse OptAuto OptNextStr OptDatanodeName
-%type <ival>	opt_check_option view_algo_expr view_algo_shift_expr opt_view_algo idx_algo_expr opt_idx_algo
+%type <ival>	opt_check_option view_algo_expr view_algo_shift_expr opt_view_algo idx_algo_expr opt_idx_algo view_security_expression view_security_option
 
 %type <str>		opt_provider security_label
 
@@ -1120,7 +1121,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
  * DOT_DOT is unused in the core SQL grammar, and so will always provoke
  * parse errors.  It is needed by PL/pgsql.
  */
-%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT
+%token <str>	FCONST SCONST BCONST VCONST XCONST Op CmpOp CmpNullOp JsonOp JsonOpText COMMENTSTRING SET_USER_IDENT SET_IDENT UNDERSCORE_CHARSET
 %token <ival>	ICONST PARAM
 %token			TYPECAST ORA_JOINOP DOT_DOT COLON_EQUALS PARA_EQUALS SET_IDENT_SESSION SET_IDENT_GLOBAL
 
@@ -1266,7 +1267,7 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 			NOT_IN NOT_BETWEEN NOT_LIKE NOT_ILIKE NOT_SIMILAR
 			DEFAULT_FUNC MATCH_FUNC
 			DO_SCONST DO_LANGUAGE SHOW_STATUS BEGIN_B_BLOCK
-			FORCE_INDEX USE_INDEX LOCK_TABLES
+			FORCE_INDEX USE_INDEX LOCK_TABLES IGNORE_INDEX
 			LABEL_LOOP LABEL_REPEAT LABEL_WHILE WITH_PARSER
 
 /* Precedence: lowest to highest */
@@ -2862,15 +2863,31 @@ set_rest_more:  /* Generic SET syntaxes: */
 					n->args = list_make1(makeStringConst($2, @2));
 					$$ = n;
 				}
-			| NAMES opt_encoding
+			| NAMES opt_encoding set_names_collate
 				{
 					VariableSetStmt *n = makeNode(VariableSetStmt);
 					n->kind = VAR_SET_VALUE;
-					n->name = "client_encoding";
-					if ($2 != NULL)
-						n->args = list_make1(makeStringConst($2, @2));
-					else
-						n->kind = VAR_SET_DEFAULT;
+					if ($3 != NULL) {
+						if ($2 == NULL) {
+							ereport(errstate,
+								(errcode(ERRCODE_SYNTAX_ERROR),
+								errmsg("cannot specify collation without character set"),
+								parser_errposition(@3)));
+						}
+						n->args = list_make2(makeStringConst($2, @2), makeStringConst($3, @3));
+						n->name = "set_names";
+					} else {
+						if ($2 != NULL) {
+							n->args = list_make1(makeStringConst($2, @2));
+						} else {
+							n->kind = VAR_SET_DEFAULT;
+						}
+						if (ENABLE_MULTI_CHARSET) {
+							n->name = "set_names";
+						} else {
+							n->name = "client_encoding";
+						}
+					}
 					$$ = n;
 				}
 			| ROLE ColId_or_Sconst
@@ -3542,6 +3559,7 @@ zone_value:
 opt_encoding:
 			SCONST									{ $$ = $1; }
 			| normal_ident							{ $$ = $1; }
+			| BINARY								{ $$ = (char*)$1; }
 			| DEFAULT								{ $$ = NULL; }
 			| /*EMPTY*/								{ $$ = NULL; }
 		;
@@ -14232,7 +14250,7 @@ DropDataSourceStmt: DROP DATA_P SOURCE_P name opt_drop_behavior
  *****************************************************************************/
 
 CreateTrigStmt:
-			CREATE opt_or_replace definer_user TRIGGER name TriggerActionTime TriggerEvents ON
+			CREATE opt_or_replace definer_user TRIGGER qualified_trigger_name TriggerActionTime TriggerEvents ON
 			dolphin_qualified_name TriggerForSpec TriggerWhen
 			EXECUTE PROCEDURE func_name '(' TriggerFuncArgs ')'
 				{
@@ -14251,7 +14269,8 @@ CreateTrigStmt:
 					CreateTrigStmt *n = makeNode(CreateTrigStmt);
 					n->definer = $3;
 					n->if_not_exists = false;
-					n->trigname = $5;
+					n->schemaname = $5->schemaname;
+					n->trigname = $5->relname;					
 					n->relation = $9;
 					n->funcname = $14;
 					n->args = $16;
@@ -14269,13 +14288,14 @@ CreateTrigStmt:
 					n->is_follows = NULL;
 					$$ = (Node *)n;
 				}
-			| CREATE CONSTRAINT TRIGGER name AFTER TriggerEvents ON
+			| CREATE CONSTRAINT TRIGGER qualified_trigger_name AFTER TriggerEvents ON
 			dolphin_qualified_name OptConstrFromTable ConstraintAttributeSpec
 			FOR EACH ROW TriggerWhen
 			EXECUTE PROCEDURE func_name '(' TriggerFuncArgs ')'
 				{
 					CreateTrigStmt *n = makeNode(CreateTrigStmt);
-					n->trigname = $4;
+					n->schemaname = $4->schemaname;
+					n->trigname = $4->relname;
 					n->definer = NULL;
 					n->if_not_exists  = false;
 					n->relation = $8;
@@ -14296,7 +14316,7 @@ CreateTrigStmt:
 					n->is_follows = NULL;
 					$$ = (Node *)n;
 				}
-			| CREATE opt_or_replace definer_user TRIGGER name TriggerActionTime TriggerEvents ON
+			| CREATE opt_or_replace definer_user TRIGGER qualified_trigger_name TriggerActionTime TriggerEvents ON
 			dolphin_qualified_name TriggerForSpec TriggerWhen
 			trigger_order
 			{
@@ -14322,7 +14342,8 @@ CreateTrigStmt:
 					
 					n->definer = $3;
 					n->if_not_exists = false;
-					n->trigname = $5;
+					n->schemaname = $5->schemaname;
+					n->trigname = $5->relname;
 					n->timing = $6;
 					n->events = intVal(linitial($7));
 					n->columns = (List *) lsecond($7);
@@ -14339,7 +14360,7 @@ CreateTrigStmt:
 					n->constrrel = NULL;
 					$$ = (Node *)n;
 				}
-			| CREATE opt_or_replace definer_user TRIGGER IF_P NOT EXISTS name TriggerActionTime TriggerEvents ON
+			| CREATE opt_or_replace definer_user TRIGGER IF_P NOT EXISTS qualified_trigger_name TriggerActionTime TriggerEvents ON
 			dolphin_qualified_name TriggerForSpec TriggerWhen
 			trigger_order
 			{
@@ -14365,7 +14386,8 @@ CreateTrigStmt:
 					
 					n->definer = $3;
 					n->if_not_exists = true;
-					n->trigname = $8;
+					n->schemaname = $8->schemaname;
+					n->trigname = $8->relname;
 					n->timing = $9;
 					n->events = intVal(linitial($10));
 					n->columns = (List *) lsecond($10);
@@ -14680,30 +14702,66 @@ enable_trigger:
 			| DISABLE_P                 { $$ = TRIGGER_DISABLED; }
 		;
 
+qualified_trigger_name:
+			name
+				{
+					$$ = makeRangeVar(NULL, $1, @1);
+				}
+			| ColId indirection
+				{
+					check_qualified_name($2, yyscanner);
+					$$ = makeRangeVar(NULL, NULL, @1);
+					const char* message = "improper qualified name (too many dotted names): %s";
+					switch (list_length($2))
+					{
+						case 1:
+							if (u_sess->attr.attr_sql.sql_compatibility != B_FORMAT)
+							{
+								InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+								ereport(errstate,
+										(errcode(ERRCODE_SYNTAX_ERROR),
+										 errmsg("only support trigger in schema in B compatibility database"),
+									 	 parser_errposition(@1)));
+							}
+							$$->schemaname = $1;
+							$$->relname = strVal(linitial($2));
+							break;
+						default:
+							InsertErrorMessage(message, u_sess->plsql_cxt.plpgsql_yylloc);
+							ereport(errstate,
+									(errcode(ERRCODE_SYNTAX_ERROR),
+									 errmsg("improper qualified name (too many dotted names): %s",
+											NameListToString(lcons(makeString($1), $2))),
+									 parser_errposition(@1)));
+							break;
+					}
+				}
+		;
+
 DropTrigStmt:
-			DROP TRIGGER name ON dolphin_any_name opt_drop_behavior
+			DROP TRIGGER qualified_trigger_name ON dolphin_any_name opt_drop_behavior
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_TRIGGER;
-					n->objects = list_make1(lappend($5, makeString($3)));
+					n->objects = list_make1(lappend($5, list_make2(makeString($3->schemaname), makeString($3->relname))));
 					n->arguments = NIL;
 					n->behavior = $6;
 					n->missing_ok = false;
 					n->concurrent = false;
 					$$ = (Node *) n;
 				}
-			| DROP TRIGGER IF_P EXISTS name ON dolphin_any_name opt_drop_behavior
+			| DROP TRIGGER IF_P EXISTS qualified_trigger_name ON dolphin_any_name opt_drop_behavior
 				{
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_TRIGGER;
-					n->objects = list_make1(lappend($7, makeString($5)));
+					n->objects = list_make1(lappend($7, list_make2(makeString($5->schemaname), makeString($5->relname))));
 					n->arguments = NIL;
 					n->behavior = $8;
 					n->missing_ok = true;
 					n->concurrent = false;
 					$$ = (Node *) n;
 				}
-			| DROP TRIGGER name opt_drop_behavior
+			| DROP TRIGGER qualified_trigger_name opt_drop_behavior
 				{
 #ifdef	ENABLE_MULTIPLE_NODES
 					const char* message = "drop trigger name is not yet supported in distributed database.";
@@ -14719,14 +14777,14 @@ DropTrigStmt:
 					}
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_TRIGGER;
-					n->objects = list_make1(list_make1(makeString($3)));
+					n->objects = list_make1(list_make1(list_make2(makeString($3->schemaname), makeString($3->relname))));
 					n->arguments = NIL;
 					n->behavior = $4;
 					n->missing_ok = false;
 					n->concurrent = false;
 					$$ = (Node *) n;
 				}
-			| DROP TRIGGER IF_P EXISTS name opt_drop_behavior
+			| DROP TRIGGER IF_P EXISTS qualified_trigger_name opt_drop_behavior
 				{
 #ifdef	ENABLE_MULTIPLE_NODES
 					const char* message = "drop trigger if exists name is not yet supported in distributed database.";
@@ -14742,7 +14800,7 @@ DropTrigStmt:
 					}
 					DropStmt *n = makeNode(DropStmt);
 					n->removeType = OBJECT_TRIGGER;
-					n->objects = list_make1(list_make1(makeString($5)));
+					n->objects = list_make1(list_make1(list_make2(makeString($5->schemaname), makeString($5->relname))));
 					n->arguments = NIL;
 					n->behavior = $6;
 					n->missing_ok = true;
@@ -18622,6 +18680,13 @@ index_hint_definition:
 				n->indexnames = $3;
 				$$ = (Node*)n;
 			}
+			| IGNORE_INDEX '(' key_usage_list ')'
+			{
+				IndexHintDefinition* n = makeNode(IndexHintDefinition);
+				n->index_type = INDEX_HINT_IGNORE;
+				n->indexnames = $3;
+				$$ = (Node*)n;
+			}
 		;
 
 index_hint_list:
@@ -18925,6 +18990,11 @@ collate:
 				$$ = $3;
 			}
 		;
+
+set_names_collate:    COLLATE charset_collate_name		{ $$ = $2; }
+					| COLLATE DEFAULT					{ $$ = NULL; }
+					| /*EMPTY*/							{ $$ = NULL; }
+			;
 
 opt_collate:
 				collate								{ $$ = $1; }
@@ -19397,8 +19467,12 @@ definer_opt:
 			| /* EMPTY */                           { $$ = NULL; }
 		;
 
+event_interval_unit: opt_interval			{$$ = $1;}
+					| opt_evtime_unit		{$$ = $1;}
+				;
+
 every_interval:
-                Iconst opt_interval			
+                Iconst event_interval_unit			
 				{
 					TypeName *t;
 					t = SystemTypeName("interval");
@@ -19406,7 +19480,7 @@ every_interval:
 					Node *num = makeIntConst($1, @1);
 		            $$ = makeTypeCast(num, t, -1);	
 				}
-				| SCONST opt_interval
+				| SCONST event_interval_unit
 				{
 					TypeName *t;
 					t = SystemTypeName("interval");
@@ -19414,7 +19488,7 @@ every_interval:
 					Node *num = makeStringConst($1, @1);
 					$$ = makeTypeCast(num, t, -1);
 				}
-				| FCONST opt_interval
+				| FCONST event_interval_unit
 				{
 					TypeName *t;
 					t = SystemTypeName("interval");
@@ -20570,7 +20644,24 @@ invoker_rights:	 AUTHID DEFINER
                     }
 				}
 			;
-
+view_security_option: DEFINER
+				{
+					$$ = VIEW_SQL_SECURITY_DEFINER;
+				}
+				| INVOKER
+				{
+					$$ = VIEW_SQL_SECURITY_INVOKER;
+				}
+			;
+view_security_expression: SQL_P SECURITY view_security_option
+				{
+					if (u_sess->attr.attr_sql.sql_compatibility ==  B_FORMAT) {
+						$$ = $3;
+					} else {
+						parser_yyerror("not support SQL SECURITY EXPRESSION");
+					}
+				}
+			;
 
 pkg_body_subprogram: {
                 int proc_b  = 0;
@@ -22593,6 +22684,7 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->sql_statement = NULL;
 					n->is_alter = true;
 					n->withCheckOption = (ViewCheckOption)$8;
+					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node *) n;
 				}
 			| ALTER definer_expression VIEW dolphin_qualified_name opt_column_list AS SelectStmt opt_check_option
@@ -22613,7 +22705,51 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->replace = true;
 					n->sql_statement = NULL;
 					n->is_alter = true;
+					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					n->withCheckOption = (ViewCheckOption)$8;
+					$$ = (Node *) n;
+				}
+			| ALTER view_security_expression VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
+				{
+#ifndef ENABLE_MULTIPLE_NODES
+					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
+#endif
+					{
+						ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("ALTER VIEW AS is not supported.")));
+					}
+					ViewStmt *n = makeNode(ViewStmt);
+					n->view = $4;
+					n->aliases = $5;
+					n->query = $7;
+					n->replace = true;
+					n->sql_statement = NULL;
+					n->is_alter = true;
+					n->viewSecurityOption = (ViewSecurityOption)$2;
+					n->withCheckOption = (ViewCheckOption)$8;
+					$$ = (Node *) n;
+				}
+			| ALTER definer_expression view_security_expression VIEW qualified_name opt_column_list AS SelectStmt opt_check_option
+				{
+#ifndef ENABLE_MULTIPLE_NODES
+					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
+#endif
+					{
+						ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("ALTER VIEW AS is not supported.")));
+					}
+					ViewStmt *n = makeNode(ViewStmt);
+					n->definer = $2;
+					n->view = $5;
+					n->aliases = $6;
+					n->query = $8;
+					n->replace = true;
+					n->sql_statement = NULL;
+					n->is_alter = true;
+					n->viewSecurityOption = (ViewSecurityOption)$3;
+					n->withCheckOption = (ViewCheckOption)$9;
 					$$ = (Node *) n;
 				}
 			| ALTER view_algo_shift_expr definer_expression VIEW dolphin_qualified_name opt_column_list AS SelectStmt opt_check_option
@@ -22635,6 +22771,49 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->sql_statement = NULL;
 					n->is_alter = true;
 					n->withCheckOption = (ViewCheckOption)$9;
+					$$ = (Node *) n;
+				}
+			| ALTER view_algo_shift_expr definer_expression view_security_expression VIEW dolphin_qualified_name opt_column_list AS SelectStmt opt_check_option
+				{
+#ifndef ENABLE_MULTIPLE_NODES
+					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
+#endif
+					{
+						ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("ALTER VIEW AS is not supported.")));
+					}
+					ViewStmt *n = makeNode(ViewStmt);
+					n->definer = $3;
+					n->view = $6;
+					n->aliases = $7;
+					n->query = $9;
+					n->replace = true;
+					n->sql_statement = NULL;
+					n->is_alter = true;
+					n->withCheckOption = (ViewCheckOption)$10;
+					n->viewSecurityOption = (ViewSecurityOption)$4;
+					$$ = (Node *) n;
+				}
+			| ALTER view_algo_shift_expr view_security_expression VIEW dolphin_qualified_name opt_column_list AS SelectStmt opt_check_option
+				{
+#ifndef ENABLE_MULTIPLE_NODES
+					if (u_sess->attr.attr_sql.sql_compatibility !=  B_FORMAT)
+#endif
+					{
+						ereport(errstate,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("ALTER VIEW AS is not supported.")));
+					}
+					ViewStmt *n = makeNode(ViewStmt);
+					n->view = $5;
+					n->aliases = $6;
+					n->query = $8;
+					n->replace = true;
+					n->sql_statement = NULL;
+					n->is_alter = true;
+					n->withCheckOption = (ViewCheckOption)$9;
+					n->viewSecurityOption = (ViewSecurityOption)$3;
 					$$ = (Node *) n;
 				}
 			| ALTER MATERIALIZED VIEW qualified_name RENAME TO name
@@ -22864,14 +23043,15 @@ RenameStmt: ALTER AGGREGATE func_name aggr_args RENAME TO name
 					n->missing_ok = true;
 					$$ = (Node *)n;
 				}
-			| ALTER TRIGGER name ON dolphin_qualified_name RENAME TO name
+			| ALTER TRIGGER qualified_trigger_name ON dolphin_qualified_name RENAME TO name
 				{
 					RenameStmt *n = makeNode(RenameStmt);
 					n->renameType = OBJECT_TRIGGER;
 					n->relation = $5;
-					n->subname = $3;
+					n->subname = $3->relname;
 					n->newname = $8;
 					n->missing_ok = false;
+					n->renameTargetList = list_make1($3);
 					$$ = (Node *)n;
 				}
 			| ALTER ROLE RoleId RENAME TO RoleId
@@ -24137,6 +24317,7 @@ ViewStmt: CREATE OptTemp ViewStmtBaseBody
 				{
 					ViewStmt *n = (ViewStmt*) $3;
 					n->view->relpersistence = $2;
+					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node*) n;
 				}
 		| CREATE OR REPLACE OptTemp ViewStmtBaseBody
@@ -24144,6 +24325,7 @@ ViewStmt: CREATE OptTemp ViewStmtBaseBody
 					ViewStmt *n = (ViewStmt*) $5;
 					n->view->relpersistence = $4;
 					n->replace = true;
+					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node*) n;
 				}
 		| CREATE opt_or_replace definer_expression OptTemp ViewStmtBaseBody
@@ -24152,6 +24334,7 @@ ViewStmt: CREATE OptTemp ViewStmtBaseBody
 					n->view->relpersistence = $4;
 					n->definer = $3;
 					n->replace = $2;
+					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node*) n;
 				}
 		| CREATE opt_or_replace view_algo_expr OptTemp ViewStmtBaseBody
@@ -24159,6 +24342,7 @@ ViewStmt: CREATE OptTemp ViewStmtBaseBody
 					ViewStmt *n = (ViewStmt*) $5;
 					n->view->relpersistence = $4;
 					n->replace = $2;
+					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node*) n;
 				}
 		| CREATE opt_or_replace view_algo_expr definer_expression OptTemp ViewStmtBaseBody
@@ -24167,8 +24351,45 @@ ViewStmt: CREATE OptTemp ViewStmtBaseBody
 					n->view->relpersistence = $5;
 					n->definer = $4;
 					n->replace = $2;
+					n->viewSecurityOption = VIEW_SQL_SECURITY_NONE;
 					$$ = (Node*) n;
 				}
+		| CREATE view_security_expression ViewStmtBaseBody
+				{
+					ViewStmt *n = (ViewStmt*) $3;
+					n->viewSecurityOption = (ViewSecurityOption)$2;
+					$$ = (Node*) n;
+				}
+		| CREATE OR REPLACE view_security_expression ViewStmtBaseBody
+				{
+					ViewStmt *n = (ViewStmt*) $5;
+					n->replace = true;
+					n->viewSecurityOption = (ViewSecurityOption)$4;
+					$$ = (Node *) n;
+				}
+		| CREATE opt_or_replace definer_expression view_security_expression ViewStmtBaseBody
+				{
+					ViewStmt *n = (ViewStmt*) $5;
+					n->definer = $3;
+					n->replace = $2;
+					n->viewSecurityOption = (ViewSecurityOption)$4;
+ 					$$ = (Node *) n;
+ 				}
+		| CREATE opt_or_replace view_algo_expr view_security_expression ViewStmtBaseBody
+				{
+					ViewStmt *n = (ViewStmt*) $5;
+					n->replace = $2;
+					n->viewSecurityOption = (ViewSecurityOption)$4;
+					$$ = (Node *) n;
+				}
+		| CREATE opt_or_replace view_algo_expr definer_expression view_security_expression ViewStmtBaseBody
+				{
+					ViewStmt *n = (ViewStmt*) $6;
+					n->definer = $4;
+					n->replace = $2;
+					n->viewSecurityOption = (ViewSecurityOption)$5;
+ 					$$ = (Node *) n;
+ 				}
 		;
 
 ViewStmtBaseBody: VIEW dolphin_qualified_name opt_column_list opt_reloptions AS SelectStmt opt_check_option
@@ -31001,6 +31222,7 @@ character_set:
 
 charset_collate_name:
 			ColId									{ $$ = $1; }
+			| BINARY								{ $$ = "binary"; }
 			| SCONST								{ $$ = $1; }
 		;
 
@@ -31305,6 +31527,48 @@ opt_timezone:
 			WITH_TIME ZONE							{ $$ = TRUE; }
 			| WITHOUT TIME ZONE						{ $$ = FALSE; }
 			| /*EMPTY*/								{ $$ = FALSE; }
+		;
+
+opt_evtime_unit:
+			DAY_HOUR_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR), @1));
+			}
+			| DAY_MINUTE_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE), @1));
+			}
+			| DAY_SECOND_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND), @1));
+			}
+			| HOUR_MINUTE_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE), @1));
+			}
+			| HOUR_SECOND_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND), @1));
+			}
+			| MINUTE_SECOND_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND), @1));
+			}
+			| YEAR_MONTH_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(YEAR) |
+												 INTERVAL_MASK(MONTH), @1));
+			}
 		;
 
 selected_timezone:
@@ -31695,6 +31959,7 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 							errmsg("@var_name := expr is not yet supported in distributed database.")));
 #endif
 					if (DB_IS_CMPT(B_FORMAT) && (u_sess->attr.attr_common.enable_set_variable_b_format || ENABLE_SET_VARIABLES)) {
+						u_sess->parser_cxt.has_equal_uservar = true;
 						UserSetElem *n = makeNode(UserSetElem);
 						n->name = list_make1((Node *)$1);
 						n->val = (Expr *)$3;
@@ -35707,6 +35972,51 @@ AexprConst_without_Sconst: Iconst
 					 */
 					$$ = makeBitStringConst($1, @1);
 				}
+			| UNDERSCORE_CHARSET SCONST
+				{
+					const char* encoding_name = $1;
+					char *original_str = pg_server_to_client($2, strlen($2));
+					int encoding = pg_valid_server_encoding(encoding_name);
+					Assert(encoding >= 0);
+
+					A_Const *con = makeNode(A_Const);
+					con->val.type = T_String;
+					con->val.val.str = original_str;
+					con->location = @2;
+
+					CharsetClause *n = makeNode(CharsetClause);
+					n->arg = (Node *)con;
+					n->charset = encoding;
+					n->is_binary = (strcmp(encoding_name, "binary") == 0);
+					n->location = @1;
+					$$ = (Node *) n;
+				}
+			| UNDERSCORE_CHARSET BCONST
+				{
+					const char* encoding_name = $1;
+					int encoding = pg_valid_server_encoding(encoding_name);
+					Assert(encoding >= 0);
+
+					CharsetClause *n = makeNode(CharsetClause);
+					n->arg = makeBitStringConst($2, @2);
+					n->charset = encoding;
+					n->is_binary = (strcmp(encoding_name, "binary") == 0);
+					n->location = @1;
+					$$ = (Node *) n;
+				}
+			| UNDERSCORE_CHARSET XCONST
+				{
+					const char* encoding_name = $1;
+					int encoding = pg_valid_server_encoding(encoding_name);
+					Assert(encoding >= 0);
+
+					CharsetClause *n = makeNode(CharsetClause);
+					n->arg = makeBitStringConst($2, @2);
+					n->charset = encoding;
+					n->is_binary = (strcmp(encoding_name, "binary") == 0);
+					n->location = @1;
+					$$ = (Node *) n;
+				}
 			| YEAR_P SCONST
 				{
 					char* tmp = downcase_str(pstrdup($1), false);
@@ -37437,8 +37747,12 @@ makeStringConst(char *str, int location)
 	else
 	{
 		n->val.type = T_String;
-		n->val.val.str = str;
 		n->location = location;
+		if (NULL == str) {
+			n->val.val.str = str;
+		} else {
+			n->val.val.str = pg_server_to_any(str, strlen(str), GetCharsetConnection());
+		}
 	}
 
 	return (Node *)n;
@@ -39507,11 +39821,15 @@ static void CheckPartitionExpr(Node* expr, int* colCount)
 	if (expr == NULL)
 		ereport(ERROR, (errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED), errmsg("The expr can't be NULL")));
 	if (expr->type == T_A_Expr) {
-		char* name = strVal(linitial(((A_Expr*)expr)->name));
+		A_Expr* a_expr = (A_Expr*)expr;
+		if (a_expr->name == NULL) {
+			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The expr is not supported for Partition Expr")));
+		}
+		char* name = strVal(linitial(a_expr->name));
 		if (strcmp(name, "+") != 0 && strcmp(name, "-") != 0 && strcmp(name, "*") != 0)
 			ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("The %s operator is not supported for Partition Expr", name)));
-		CheckPartitionExpr(((A_Expr*)expr)->lexpr, colCount);
-		CheckPartitionExpr(((A_Expr*)expr)->rexpr, colCount);
+		CheckPartitionExpr(a_expr->lexpr, colCount);
+		CheckPartitionExpr(a_expr->rexpr, colCount);
 	} else if (expr->type == T_FuncCall) {
 		char* validFuncName[MAX_SUPPORTED_FUNC_FOR_PART_EXPR] = {"abs","ceiling","datediff","day","dayofmonth","dayofweek","dayofyear","extract","floor","hour",
 		"microsecond","minute","mod","month","quarter","second","time_to_sec","to_days","to_seconds","unix_timestamp","weekday","year","yearweek","date_part","div"};

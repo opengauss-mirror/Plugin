@@ -27,6 +27,7 @@
 #include "fmgr/fmgr_core.h"
 #include "lib/stringinfo.h"
 #include "access/tupdesc.h"
+#include "nodes/primnodes.h"
 
 #ifndef FRONTEND_PARSER
 
@@ -144,7 +145,6 @@ typedef struct StartWithFuncEvalInfo
 {
     Node   *sw_econtext;
     Node   *sw_exprstate;
-    bool   sw_is_flt_frame;
 } StartWithFuncEvalInfo;
 
 /*
@@ -168,6 +168,7 @@ typedef struct FunctionCallInfoData {
     RefcusorInfoData refcursor_data;
     UDFInfoType udfInfo;
     StartWithFuncEvalInfo  swinfo;
+    CoercionContext ccontext;
 
     FunctionCallInfoData()
     {
@@ -182,6 +183,7 @@ typedef struct FunctionCallInfoData {
         nargs = 0;
         isnull = false;
         can_ignore = false;
+        ccontext = COERCION_UNKNOWN;
     }
 } FunctionCallInfoData;
 
@@ -454,19 +456,24 @@ typedef const Pg_magic_struct* (*PGModuleMagicFunction)(void);
  * are allowed to be NULL.
  */
 extern Datum DirectFunctionCall1Coll(PGFunction func, Oid collation, Datum arg1, bool can_ignore = false);
-extern Datum DirectFunctionCall2Coll(PGFunction func, Oid collation, Datum arg1, Datum arg2);
-extern Datum DirectFunctionCall3Coll(PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3);
-extern Datum DirectFunctionCall4Coll(PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3, Datum arg4);
+extern Datum DirectFunctionCall2Coll(PGFunction func, Oid collation, Datum arg1, Datum arg2, bool can_ignore = false);
+extern Datum DirectFunctionCall3Coll(PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3,
+    bool can_ignore = false);
+extern Datum DirectFunctionCall4Coll(PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3, Datum arg4,
+    bool can_ignore = false);
 extern Datum DirectFunctionCall5Coll(
-    PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3, Datum arg4, Datum arg5);
+    PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3, Datum arg4, Datum arg5,
+    bool can_ignore = false);
 extern Datum DirectFunctionCall6Coll(
-    PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3, Datum arg4, Datum arg5, Datum arg6);
+    PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3, Datum arg4, Datum arg5, Datum arg6,
+    bool can_ignore = false);
 extern Datum DirectFunctionCall7Coll(
-    PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3, Datum arg4, Datum arg5, Datum arg6, Datum arg7);
+    PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3, Datum arg4, Datum arg5, Datum arg6, Datum arg7,
+    bool can_ignore = false);
 extern Datum DirectFunctionCall8Coll(PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3, Datum arg4,
-    Datum arg5, Datum arg6, Datum arg7, Datum arg8);
+    Datum arg5, Datum arg6, Datum arg7, Datum arg8, bool can_ignore = false);
 extern Datum DirectFunctionCall9Coll(PGFunction func, Oid collation, Datum arg1, Datum arg2, Datum arg3, Datum arg4,
-    Datum arg5, Datum arg6, Datum arg7, Datum arg8, Datum arg9);
+    Datum arg5, Datum arg6, Datum arg7, Datum arg8, Datum arg9, bool can_ignore = false);
 
 /* These are for invocation of a previously-looked-up function with a
  * directly-computed parameter list.  Note that neither arguments nor result
@@ -565,7 +572,7 @@ typedef struct {
 } CFunInfo;
 
 /* Special cases for convenient invocation of datatype I/O functions. */
-extern Datum InputFunctionCall(FmgrInfo* flinfo, char* str, Oid typioparam, int32 typmod, bool can_ignore = false);
+extern Datum InputFunctionCall(FmgrInfo* flinfo, char* str, Oid typioparam, int32 typmod, bool can_ignore = false, Oid collation = InvalidOid);
 extern Datum InputFunctionCallForDateType(
     FmgrInfo* flinfo, char* str, Oid typioparam, int32 typmod, char* date_time_fmt);
 extern Datum OidInputFunctionCall(Oid functionId, char* str, Oid typioparam, int32 typmod, bool can_ignore = false);
@@ -575,6 +582,7 @@ extern Datum ReceiveFunctionCall(FmgrInfo* flinfo, fmStringInfo buf, Oid typiopa
 extern Datum OidReceiveFunctionCall(Oid functionId, fmStringInfo buf, Oid typioparam, int32 typmod);
 extern bytea* SendFunctionCall(FmgrInfo* flinfo, Datum val);
 extern bytea* OidSendFunctionCall(Oid functionId, Datum val);
+extern Datum OidInputFunctionCallColl(Oid functionId, char* str, Oid typioparam, int32 typmod, Oid collation);
 
 /*
  * Routines in fmgr.c
