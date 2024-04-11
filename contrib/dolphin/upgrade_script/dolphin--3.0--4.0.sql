@@ -21,6 +21,36 @@ CREATE OR REPLACE FUNCTION pg_catalog.asin(bit) RETURNS double precision LANGUAG
 DROP FUNCTION IF EXISTS pg_catalog.asin(boolean);
 CREATE OR REPLACE FUNCTION pg_catalog.asin(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.asin(cast($1 as float))';
 
+DROP FUNCTION IF EXISTS pg_catalog.year(integer);
+CREATE OR REPLACE FUNCTION pg_catalog.year(integer) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT year($1::timestamp(0) without time zone)';
+CREATE OR REPLACE FUNCTION pg_catalog.year(anyset) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT year($1::timestamp(0) without time zone)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour(bit) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as  '$libdir/dolphin','hour_bit';
+CREATE OR REPLACE FUNCTION pg_catalog.hour(blob) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT hour($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.hour(boolean) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT hour($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.hour(json) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT hour($1::timestamp(0) without time zone)';
+CREATE OR REPLACE FUNCTION pg_catalog.hour(integer) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT hour($1::text)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.minute(bit) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as  '$libdir/dolphin','minute_bit';
+CREATE OR REPLACE FUNCTION pg_catalog.minute(blob) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT minute($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.minute(boolean) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT minute($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.minute(json) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT minute($1::timestamp(0) without time zone)';
+CREATE OR REPLACE FUNCTION pg_catalog.minute(integer) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT minute($1::text)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.second(bit) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as  '$libdir/dolphin','second_bit';
+CREATE OR REPLACE FUNCTION pg_catalog.second(blob) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT second($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.second(boolean) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT second($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.second(json) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT second($1::timestamp(0) without time zone)';
+CREATE OR REPLACE FUNCTION pg_catalog.second(integer) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT second($1::text)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT microsecond($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (bit) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as  '$libdir/dolphin','microsecond_bit';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (blob) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT microsecond($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (boolean) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT microsecond($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (json) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT microsecond($1::timestamp(0) without time zone)';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (integer) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT microsecond($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.microsecond (float) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT microsecond($1::text)';
+
 DO $for_upgrade_only$
 DECLARE
   ans boolean;

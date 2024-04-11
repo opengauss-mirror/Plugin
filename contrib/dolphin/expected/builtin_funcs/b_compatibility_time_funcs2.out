@@ -1155,6 +1155,519 @@ select * from func_test2 order by functionName;
  subtime('839:59:59', '837:59:59')    | 01:00:00
 (7 rows)
 
+set dolphin.b_compatibility_mode=on;
+set b_format_behavior_compat_options='enable_set_variables,enable_multi_charset';
+drop table if exists t_number;
+NOTICE:  table "t_number" does not exist, skipping
+create table t_number(c1 int,c2 tinyint,c3 tinyint(255),c4 smallint,c5 smallint(255),c6 mediumint,c7 mediumint(255),c8 int,c9 int(255),c10 integer,c11 integer(255),c12 bigint,c13 bigint(255));
+drop table if exists t_number_decimal;
+NOTICE:  table "t_number_decimal" does not exist, skipping
+create table t_number_decimal(
+    c1 int,c2 decimal,c3 decimal(10),c4 decimal(10, 3),c5 decimal(30, 15),c6 fixed,c7 fixed(10),c8 fixed(10, 3),c9 fixed(30, 15),
+    c10 float,c11 float(10),c12 float(10, 3),c13 float(30, 15),c14 float4,c15 float4(10),c16 float4(10, 3),c17 float4(30, 15),
+    c18 numeric,c19 numeric(10),c20 numeric(10, 3),c21 numeric(30, 15),c22 double,c23 float8,c24 double precision,c25 double(10, 3),
+    c26 real(10, 3),c27 double precision(10, 3),c28 double(30, 15),c29 real(30, 15),c30 double precision(30, 15)
+    );
+drop table if exists t_date_time;
+NOTICE:  table "t_date_time" does not exist, skipping
+create table t_date_time(c1 int,c2 date,c3 datetime,c4 datetime(6),c5 year,c6 year(4),c7 time,c8 time(6),c9 timestamp,c10 timestamp(6) default current_timestamp(6));
+drop table if exists t_bin;
+NOTICE:  table "t_bin" does not exist, skipping
+create table t_bin(c1 int,c2 bit,c3 bit(64),c4 binary,c5 binary(255),c6 varbinary(10),c7 varbinary(255),c8 blob,c9 tinyblob,c10 mediumblob,c11 longblob) charset utf8mb3;
+WARNING:  utf8mb3 is not a valid encoding name. default value set
+drop table if exists t_set;
+NOTICE:  table "t_set" does not exist, skipping
+create table t_set(c1 int,c2 set('0', '1', '1.01314') default null);
+NOTICE:  CREATE TABLE will create implicit set "t_set_c2_set" for column "t_set.c2"
+drop table if exists t_enum;
+NOTICE:  table "t_enum" does not exist, skipping
+create table t_enum(c1 int,c2 enum('red', 'yellow', 'blue') not null);
+drop table if exists t_bool;
+NOTICE:  table "t_bool" does not exist, skipping
+create table t_bool(c1 int,c2 boolean,c3 tinyint(1),c4 tinyint(1) unsigned);
+drop table if exists t_json;
+NOTICE:  table "t_json" does not exist, skipping
+create table t_json(c1 int,c2 json);
+insert into t_number values (1, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127);
+insert into t_number values (2, 127, 127, 127, 127, 127, 127, 127, 1000, 10000, 10000, 10000, 10000);
+set @v1 = 3.14159265327896457;
+insert into t_number_decimal values (1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1, @v1);
+set @v2 = 'abcdef熊猫竹竹';
+insert into t_bin values (1, 0x01, 0xFFFF, 9, hex(@v2), hex(12354), hex(@v2), '[B@5e265ba4','[B@5e265ba4', '[B@5e265ba4', '[B@5e265ba4'),
+                         (2, b'1', b'1011', 1, @v2, 121314, @v2, 10000, 10000, 10000, 10000);
+insert into t_date_time values (1, '1999-01-01', '1999-01-01 01:01:01', '00-01-01 00:00:01', 27, '1904','23:59:59', 121314, '1970-01-01 08:00:01.123', '2038-01-19 11:14:07');
+insert into t_set values (1, '1.01314'), (2, '0');
+insert into t_enum values (1, 'red');
+insert into t_bool values (1, true, -1, false);
+insert into t_json values (1, '["a", "b", "c"]'), (2, '{"k1":"v1"}');
+-- test year number
+select c1, year(c2), year(c3), year(c4), year(c5), year(c6), year(c7),year(c8), year(c9), year(c10), year(c11), year(c12), year(c13) from t_number order by c1;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: year
+SQL function "year" statement 1
+referenced column: year
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: year
+SQL function "year" statement 1
+referenced column: year
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: year
+SQL function "year" statement 1
+referenced column: year
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: year
+SQL function "year" statement 1
+referenced column: year
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: year
+SQL function "year" statement 1
+referenced column: year
+ c1 | year | year | year | year | year | year | year | year | year | year | year | year 
+----+------+------+------+------+------+------+------+------+------+------+------+------
+  1 | 2000 | 2000 | 2000 | 2000 | 2000 | 2000 | 2000 | 2000 | 2000 | 2000 | 2000 | 2000
+  2 | 2000 | 2000 | 2000 | 2000 | 2000 | 2000 | 2000 |      |      |      |      |     
+(2 rows)
+
+-- error test, month or day can't be zero
+select c1, year(c9), year(c10), year(c11), year(c12), year(c13) from t_number order by c1;
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: year
+SQL function "year" statement 1
+referenced column: year
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: year
+SQL function "year" statement 1
+referenced column: year
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: year
+SQL function "year" statement 1
+referenced column: year
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: year
+SQL function "year" statement 1
+referenced column: year
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: year
+SQL function "year" statement 1
+referenced column: year
+ c1 | year | year | year | year | year 
+----+------+------+------+------+------
+  1 | 2000 | 2000 | 2000 | 2000 | 2000
+  2 |      |      |      |      |     
+(2 rows)
+
+select year(0);
+ year 
+------
+    0
+(1 row)
+
+-- test year binary
+select c1, year(c2), year(c3), year(c4), year(c5), year(c6), year(c7), year(c8), year(c9), year(c10), year(c11) from t_bin order by c1;
+WARNING:  invalid input syntax for type timestamp: ""
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "��"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "9"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "616263646566E7868AE78CABE7ABB9E7ABB9"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "3042"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "616263646566E7868AE78CABE7ABB9E7ABB9"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "[B@5e265ba4"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "[B@5e265ba4"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "[B@5e265ba4"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "[B@5e265ba4"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: ""
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: ""
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "abcdef熊猫竹竹"
+CONTEXT:  referenced column: year
+WARNING:  date/time field value out of range: "121314"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: year
+WARNING:  invalid input syntax for type timestamp: "abcdef熊猫竹竹"
+CONTEXT:  referenced column: year
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  referenced column: year
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  referenced column: year
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  referenced column: year
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  referenced column: year
+ c1 | year | year | year | year | year | year | year | year | year | year 
+----+------+------+------+------+------+------+------+------+------+------
+  1 |      |      |      |      |      |      |      |      |      |     
+  2 |      |      |      |      |      |      |      |      |      |     
+(2 rows)
+
+-- test year set
+select c1, year(c2) from t_set order by c1;
+WARNING:  invalid input syntax for type timestamp: "0"
+CONTEXT:  referenced column: year
+SQL function "year" statement 1
+referenced column: year
+ c1 | year 
+----+------
+  1 | 2001
+  2 |     
+(2 rows)
+
+-- test year bool
+select c1, year(c2), year(c3), year(c4) from t_bool order by c1;
+WARNING:  invalid input syntax for type timestamp: "1"
+CONTEXT:  referenced column: year
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: year
+SQL function "year" statement 1
+referenced column: year
+ c1 | year | year | year 
+----+------+------+------
+  1 |      |      |    0
+(1 row)
+
+-- test hour number
+select hour(-100), hour(0), hour(121314);
+ hour | hour | hour 
+------+------+------
+    0 |    0 |   12
+(1 row)
+
+-- test hour binary
+select c1, hour(c2), hour(c3), hour(c4), hour(c5), hour(c6), hour(c7), hour(c8), hour(c9), hour(c10), hour(c11) from t_bin order by c1;
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: hour
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: hour
+WARNING:  Truncated incorrect time value: "[B@5e265ba4"
+CONTEXT:  referenced column: hour
+SQL function "hour" statement 1
+referenced column: hour
+WARNING:  Truncated incorrect time value: "[B@5e265ba4"
+CONTEXT:  referenced column: hour
+SQL function "hour" statement 1
+referenced column: hour
+WARNING:  Truncated incorrect time value: "[B@5e265ba4"
+CONTEXT:  referenced column: hour
+SQL function "hour" statement 1
+referenced column: hour
+WARNING:  Truncated incorrect time value: "[B@5e265ba4"
+CONTEXT:  referenced column: hour
+SQL function "hour" statement 1
+referenced column: hour
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: hour
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: hour
+WARNING:  Truncated incorrect time value: "abcdef熊猫竹竹"
+CONTEXT:  referenced column: hour
+WARNING:  Truncated incorrect time value: "abcdef熊猫竹竹"
+CONTEXT:  referenced column: hour
+ c1 | hour | hour | hour | hour | hour | hour | hour | hour | hour | hour 
+----+------+------+------+------+------+------+------+------+------+------
+  1 |    0 |    0 |    0 |      |    0 |      |    0 |    0 |    0 |    0
+  2 |    0 |    0 |    0 |    0 |   12 |    0 |    1 |    1 |    1 |    1
+(2 rows)
+
+-- test hour bool
+select c1, hour(c2), hour(c3), hour(c4) from t_bool order by c1;
+ c1 | hour | hour | hour 
+----+------+------+------
+  1 |    0 |    0 |    0
+(1 row)
+
+-- test hour json
+select c1, hour(c2) from t_json order by c1;
+WARNING:  invalid input syntax for type timestamp: "["a", "b", "c"]"
+CONTEXT:  referenced column: hour
+SQL function "hour" statement 1
+referenced column: hour
+WARNING:  invalid input syntax for type timestamp: "{"k1":"v1"}"
+CONTEXT:  referenced column: hour
+SQL function "hour" statement 1
+referenced column: hour
+ c1 | hour 
+----+------
+  1 |     
+  2 |     
+(2 rows)
+
+-- test minute number
+select c1, minute(c2), minute(c3), minute(c4), minute(c5), minute(c6), minute(c7), minute(c8), minute(c9), minute(c10), minute(c11), minute(c12), minute(c13) from t_number order by c1;
+ c1 | minute | minute | minute | minute | minute | minute | minute | minute | minute | minute | minute | minute 
+----+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------
+  1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1
+  2 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |     10 |      0 |      0 |      0 |      0
+(2 rows)
+
+select minute(-127), minute(0), minute(100);
+ minute | minute | minute 
+--------+--------+--------
+      1 |      0 |      1
+(1 row)
+
+-- test minute binary
+select c1, minute(c2), minute(c3), minute(c4), minute(c5), minute(c6), minute(c7), minute(c8), minute(c9), minute(c10), minute(c11) from t_bin order by c1;
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: minute
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: minute
+WARNING:  Truncated incorrect time value: "[B@5e265ba4"
+CONTEXT:  referenced column: minute
+SQL function "minute" statement 1
+referenced column: minute
+WARNING:  Truncated incorrect time value: "[B@5e265ba4"
+CONTEXT:  referenced column: minute
+SQL function "minute" statement 1
+referenced column: minute
+WARNING:  Truncated incorrect time value: "[B@5e265ba4"
+CONTEXT:  referenced column: minute
+SQL function "minute" statement 1
+referenced column: minute
+WARNING:  Truncated incorrect time value: "[B@5e265ba4"
+CONTEXT:  referenced column: minute
+SQL function "minute" statement 1
+referenced column: minute
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: minute
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: minute
+WARNING:  Truncated incorrect time value: "abcdef熊猫竹竹"
+CONTEXT:  referenced column: minute
+WARNING:  Truncated incorrect time value: "abcdef熊猫竹竹"
+CONTEXT:  referenced column: minute
+ c1 | minute | minute | minute | minute | minute | minute | minute | minute | minute | minute 
+----+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------
+  1 |      0 |      0 |      0 |        |     30 |        |      0 |      0 |      0 |      0
+  2 |      0 |      0 |      0 |      0 |     13 |      0 |      0 |      0 |      0 |      0
+(2 rows)
+
+-- test minute bool
+select c1, minute(c2), minute(c3), minute(c4) from t_bool order by c1;
+ c1 | minute | minute | minute 
+----+--------+--------+--------
+  1 |      0 |      0 |      0
+(1 row)
+
+-- test minute json
+select c1, minute(c2) from t_json order by c1;
+WARNING:  invalid input syntax for type timestamp: "["a", "b", "c"]"
+CONTEXT:  referenced column: minute
+SQL function "minute" statement 1
+referenced column: minute
+WARNING:  invalid input syntax for type timestamp: "{"k1":"v1"}"
+CONTEXT:  referenced column: minute
+SQL function "minute" statement 1
+referenced column: minute
+ c1 | minute 
+----+--------
+  1 |       
+  2 |       
+(2 rows)
+
+-- test second number
+select c1, second(c2), second(c3), second(c4), second(c5), second(c6), second(c7), second(c8), second(c9), second(c10), second(c11), second(c12), second(c13) from t_number order by c1;
+ c1 | second | second | second | second | second | second | second | second | second | second | second | second 
+----+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------
+  1 |     27 |     27 |     27 |     27 |     27 |     27 |     27 |     27 |     27 |     27 |     27 |     27
+  2 |     27 |     27 |     27 |     27 |     27 |     27 |     27 |      0 |      0 |      0 |      0 |      0
+(2 rows)
+
+select second(-127), second(0), second(100);
+ second | second | second 
+--------+--------+--------
+     27 |      0 |      0
+(1 row)
+
+-- test second decimal
+select c1, second(c2), second(c3), second(c4), second(c5), second(c6), second(c7), second(c8), second(c9), second(c10), second(c11), second(c12),
+    second(c13), second(c14), second(c15), second(c16), second(c17), second(c18), second(c19), second(c20), second(c21), second(c22), second(c23),
+    second(c24), second(c25), second(c26), second(c27), second(c28), second(c29), second(c30)
+from t_number_decimal order by c1;
+ c1 | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second | second 
+----+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------
+  1 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3 |      3
+(1 row)
+
+-- test second binary
+select c1, second(c2), second(c3), second(c4), second(c5), second(c6), second(c7), second(c8), second(c9), second(c10), second(c11) from t_bin order by c1;
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: second
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: second
+WARNING:  Truncated incorrect time value: "[B@5e265ba4"
+CONTEXT:  referenced column: second
+SQL function "second" statement 1
+referenced column: second
+WARNING:  Truncated incorrect time value: "[B@5e265ba4"
+CONTEXT:  referenced column: second
+SQL function "second" statement 1
+referenced column: second
+WARNING:  Truncated incorrect time value: "[B@5e265ba4"
+CONTEXT:  referenced column: second
+SQL function "second" statement 1
+referenced column: second
+WARNING:  Truncated incorrect time value: "[B@5e265ba4"
+CONTEXT:  referenced column: second
+SQL function "second" statement 1
+referenced column: second
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: second
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: second
+WARNING:  Truncated incorrect time value: "abcdef熊猫竹竹"
+CONTEXT:  referenced column: second
+WARNING:  Truncated incorrect time value: "abcdef熊猫竹竹"
+CONTEXT:  referenced column: second
+ c1 | second | second | second | second | second | second | second | second | second | second 
+----+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------
+  1 |      0 |      0 |      9 |        |     42 |        |      0 |      0 |      0 |      0
+  2 |      0 |      0 |      1 |      0 |     14 |      0 |      0 |      0 |      0 |      0
+(2 rows)
+
+-- test second bool
+select c1, second(c2), second(c3), second(c4) from t_bool order by c1;
+ c1 | second | second | second 
+----+--------+--------+--------
+  1 |      1 |      1 |      0
+(1 row)
+
+-- test second json
+select c1, second(c2) from t_json order by c1;
+WARNING:  invalid input syntax for type timestamp: "["a", "b", "c"]"
+CONTEXT:  referenced column: second
+SQL function "second" statement 1
+referenced column: second
+WARNING:  invalid input syntax for type timestamp: "{"k1":"v1"}"
+CONTEXT:  referenced column: second
+SQL function "second" statement 1
+referenced column: second
+ c1 | second 
+----+--------
+  1 |       
+  2 |       
+(2 rows)
+
+-- test microsecond datetime
+select c1, microsecond(c2), microsecond(c3), microsecond(c4), microsecond(c5), microsecond(c6), microsecond(c7), microsecond(c8), microsecond(c9), microsecond(c10) from t_date_time order by c1;
+ c1 | microsecond | microsecond | microsecond | microsecond | microsecond | microsecond | microsecond | microsecond | microsecond 
+----+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------
+  1 |           0 |           0 |           0 |           0 |           0 |           0 |           0 |           0 |           0
+(1 row)
+
+-- test microsecond binary
+select c1, microsecond(c2), microsecond(c3), microsecond(c4), microsecond(c5), microsecond(c6), microsecond(c7), microsecond(c8), microsecond(c9), microsecond(c10), microsecond(c11) from t_bin order by c1;
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: microsecond
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: microsecond
+WARNING:  Truncated incorrect time value: "[B@5e265ba4"
+CONTEXT:  referenced column: microsecond
+WARNING:  invalid input syntax for type double precision: "[B@5e265ba4"
+CONTEXT:  referenced column: microsecond
+WARNING:  invalid input syntax for type double precision: "[B@5e265ba4"
+CONTEXT:  referenced column: microsecond
+WARNING:  invalid input syntax for type double precision: "[B@5e265ba4"
+CONTEXT:  referenced column: microsecond
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: microsecond
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: microsecond
+WARNING:  Truncated incorrect time value: "abcdef熊猫竹竹"
+CONTEXT:  referenced column: microsecond
+WARNING:  Truncated incorrect time value: "abcdef熊猫竹竹"
+CONTEXT:  referenced column: microsecond
+ c1 | microsecond | microsecond | microsecond | microsecond | microsecond | microsecond | microsecond | microsecond | microsecond | microsecond 
+----+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------
+  1 |           0 |           0 |           0 |             |           0 |             |           0 |           0 |           0 |           0
+  2 |           0 |           0 |           0 |           0 |           0 |           0 |           0 |           0 |           0 |           0
+(2 rows)
+
+-- test microsecond bool
+select c1, microsecond(c2), microsecond(c3), microsecond(c4) from t_bool order by c1;
+ c1 | microsecond | microsecond | microsecond 
+----+-------------+-------------+-------------
+  1 |           0 |           0 |           0
+(1 row)
+
+-- test microsecond json
+select c1, microsecond(c2) from t_json order by c1;
+WARNING:  invalid input syntax for type timestamp: "["a", "b", "c"]"
+CONTEXT:  referenced column: microsecond
+WARNING:  invalid input syntax for type timestamp: "{"k1":"v1"}"
+CONTEXT:  referenced column: microsecond
+ c1 | microsecond 
+----+-------------
+  1 |            
+  2 |            
+(2 rows)
+
+-- test microsecond number
+select microsecond(-127), microsecond(0), microsecond(100.23);
+ microsecond | microsecond | microsecond 
+-------------+-------------+-------------
+           0 |           0 |      230000
+(1 row)
+
+-- test bit type insert ignore, if first char is '\0'
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+create table bit_ignore (c1 integer, `func_name` varchar(100), `result` bigint);
+-- warnings
+insert ignore into bit_ignore values (1, 'hour(bit)', hour(b'000000000011000000111001'));
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: result
+insert ignore into bit_ignore values (2, 'minute(bit)', minute(b'000000000011000000111001'));
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: result
+insert ignore into bit_ignore values (3, 'second(bit)', second(b'000000000011000000111001'));
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: result
+insert ignore into bit_ignore values (4, 'microsecond(bit)', microsecond(b'000000000011000000111001'));
+WARNING:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: result
+-- error
+insert into bit_ignore values (5, 'hour(bit)', hour(b'000000000011000000111001'));
+ERROR:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: result
+insert into bit_ignore values (6, 'minute(bit)', minute(b'000000000011000000111001'));
+ERROR:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: result
+insert into bit_ignore values (7, 'second(bit)', second(b'000000000011000000111001'));
+ERROR:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: result
+insert into bit_ignore values (8, 'microsecond(bit)', microsecond(b'000000000011000000111001'));
+ERROR:  Truncated incorrect time value: ""
+CONTEXT:  referenced column: result
+select c1, `func_name`, `result` from bit_ignore order by c1;
+ c1 |    func_name     | result 
+----+------------------+--------
+  1 | hour(bit)        |      0
+  2 | minute(bit)      |      0
+  3 | second(bit)      |      0
+  4 | microsecond(bit) |      0
+(4 rows)
+
+drop table t_number;
+drop table t_number_decimal;
+drop table t_date_time;
+drop table t_bin;
+drop table t_set;
+drop table t_enum;
+drop table t_bool;
+drop table t_json;
+drop table bit_ignore;
+reset b_format_behavior_compat_options;
+reset dolphin.sql_mode;
 drop schema b_time_funcs2 cascade;
 NOTICE:  drop cascades to table func_test2
 reset current_schema;

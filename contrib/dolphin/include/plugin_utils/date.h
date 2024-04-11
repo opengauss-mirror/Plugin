@@ -22,6 +22,9 @@
 #include "utils/numeric.h"
 #include "plugin_postgres.h"
 #include "datetime.h"
+#ifdef DOLPHIN
+#include "plugin_utils/varbit.h"
+#endif
 
 /* b format date and time type boundaries*/
 #define DATE_YYYYMMDD_LEN 8
@@ -121,6 +124,7 @@ bool check_time_min_value(char* input_str, long long nr, bool can_ignore = false
 bool resolve_units(char *unit_str, b_units *unit);
 /* same as longlong_to_tm */
 extern bool longlong_to_tm(long long nr, TimeADT* time, LongLongTm* tm, bool can_ignore = false);
+extern char* bit_to_str(VarBit *bits);
 
 typedef struct DateTimeFormat
 {

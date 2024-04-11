@@ -1085,8 +1085,10 @@ static Timestamp int64_b_format_timestamp_internal(bool hasTz, int64 ts, fsec_t 
     int dterr = 0;
     int level = can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
     if (ts < B_FORMAT_DATE_INT_MIN) {
-        ereport(level,
-            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+        if (ts != 0) {
+            ereport(level,
+                (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("timestamp out of range")));
+        }
         *time_error_type = TIME_INCORRECT;
         return TIMESTAMP_ZERO;
     }
