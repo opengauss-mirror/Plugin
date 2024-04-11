@@ -20679,7 +20679,7 @@ view_security_option: DEFINER
 					$$ = VIEW_SQL_SECURITY_INVOKER;
 				}
 			;
-view_security_expression: SQL SECURITY view_security_option
+view_security_expression: SQL_P SECURITY view_security_option
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility ==  B_FORMAT) {
 						$$ = $3;

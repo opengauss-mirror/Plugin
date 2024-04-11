@@ -228,3 +228,4 @@ select datetime '2022-1-12 12:23:23' or  timestamp '00000000000000';
 ----------
  t
 (1 row)
+

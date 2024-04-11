@@ -101,6 +101,7 @@ SELECT ATAN('2022-05-12', 1);
 -- ERROR
 SELECT ATAN('2022-05-12'::date, 1);
 -- 1.57079627734016
+-- https://gitee.com/opengauss/Plugin/pulls/815 fix it
 SELECT ATAN('2023-06-01 00:23:59'::timestamp, 1);
 -- 1.57079632679485
 SELECT ATAN('2'::bytea, 1);
