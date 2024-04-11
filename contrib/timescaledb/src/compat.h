@@ -9,6 +9,8 @@
 
 #include "c.h"
 #include "postgres.h"
+#include "utils/int8.h"
+#define Point OG_Point
 #include <commands/trigger.h>
 #include <postgres.h>
 #include <pgstat.h>
@@ -88,6 +90,36 @@
 
 #define loaded (get_session_context()->tsdb_loaded)
 #define loader_present (get_session_context()->tsdb_loader_present)
+
+#define NamedLWLockTrancheRequestsAllocated (get_session_context()->tsdb_NamedLWLockTrancheRequestsAllocated)
+#define lock_named_request_allowed (get_session_context()->tsdb_lock_named_request_allowed)
+#define BackgroundWorkerData (get_session_context()->tsdb_BackgroundWorkerData)
+
+#define ts_guc_disable_optimizations (get_session_context()->tsdb_ts_guc_disable_optimizations)
+#define ts_guc_optimize_non_hypertables (get_session_context()->tsdb_ts_guc_optimize_non_hypertables)
+#define ts_guc_restoring (get_session_context()->tsdb_ts_guc_restoring)
+#define ts_guc_constraint_aware_append (get_session_context()->tsdb_ts_guc_constraint_aware_append)
+#define ts_guc_enable_ordered_append (get_session_context()->tsdb_ts_guc_enable_ordered_append)
+#define ts_guc_enable_chunk_append (get_session_context()->tsdb_ts_guc_enable_chunk_append)
+#define ts_guc_enable_parallel_chunk_append (get_session_context()->tsdb_ts_guc_enable_parallel_chunk_append)
+#define ts_guc_enable_runtime_exclusion (get_session_context()->tsdb_ts_guc_enable_runtime_exclusion)
+#define ts_guc_enable_constraint_exclusion (get_session_context()->tsdb_ts_guc_enable_constraint_exclusion)
+#define ts_guc_enable_cagg_reorder_groupby (get_session_context()->tsdb_ts_guc_enable_cagg_reorder_groupby)
+#define ts_guc_enable_transparent_decompression (get_session_context()->tsdb_ts_guc_enable_transparent_decompression)
+#define ts_guc_max_open_chunks_per_insert (get_session_context()->tsdb_ts_guc_max_open_chunks_per_insert)
+#define ts_guc_max_cached_chunks_per_hypertable (get_session_context()->tsdb_ts_guc_max_cached_chunks_per_hypertable)
+#define ts_guc_telemetry_level (get_session_context()->tsdb_ts_guc_telemetry_level)
+
+#define ts_last_tune_time (get_session_context()->tsdb_ts_last_tune_time)
+#define ts_last_tune_version (get_session_context()->tsdb_ts_last_tune_version)
+#define ts_telemetry_cloud (get_session_context()->tsdb_ts_telemetry_cloud)
+
+#define ts_current_timestamp_mock (get_session_context()->tsdb_ts_current_timestamp_mock)
+#ifdef TS_DEBUG
+#define ts_shutdown_bgw (get_session_context()->tsdb_ts_shutdown_bgw)
+#else
+#define ts_shutdown_bgw false
+#endif
 /*
  * The following are compatibility functions for different versions of
  * PostgreSQL. Each compatibility function (or group) has its own logic for
@@ -865,65 +897,6 @@ extern int oid_cmp(const void *p1, const void *p2);
 #define ExecTypeFromTLCompat(tlist, hasoid) ExecTypeFromTL(tlist, hasoid)
 #endif
 
-/* backport pg_add_s64_overflow/pg_sub_s64_overflow */
-#if PG11_LT
-static inline bool
-pg_add_s64_overflow(int64 a, int64 b, int64 *result)
-{
-#if defined(HAVE__BUILTIN_OP_OVERFLOW)
-	return __builtin_add_overflow(a, b, result);
-#elif defined(HAVE_INT128)
-	int128 res = (int128) a + (int128) b;
-
-	if (res > PG_INT64_MAX || res < PG_INT64_MIN)
-	{
-		*result = 0x5EED; /* to avoid spurious warnings */
-		return true;
-	}
-	*result = (int64) res;
-	return false;
-#else
-	if ((a > 0 && b > 0 && a > PG_INT64_MAX - b) || (a < 0 && b < 0 && a < PG_INT64_MIN - b))
-	{
-		*result = 0x5EED; /* to avoid spurious warnings */
-		return true;
-	}
-	*result = a + b;
-	return false;
-#endif
-}
-
-/*
- * If a - b overflows, return true, otherwise store the result of a - b into
- * *result. The content of *result is implementation defined in case of
- * overflow.
- */
-static inline bool
-pg_sub_s64_overflow(int64 a, int64 b, int64 *result)
-{
-#if defined(HAVE__BUILTIN_OP_OVERFLOW)
-	return __builtin_sub_overflow(a, b, result);
-#elif defined(HAVE_INT128)
-	int128 res = (int128) a - (int128) b;
-
-	if (res > PG_INT64_MAX || res < PG_INT64_MIN)
-	{
-		*result = 0x5EED; /* to avoid spurious warnings */
-		return true;
-	}
-	*result = (int64) res;
-	return false;
-#else
-	if ((a < 0 && b > 0 && a < PG_INT64_MIN + b) || (a > 0 && b < 0 && a > PG_INT64_MAX + b))
-	{
-		*result = 0x5EED; /* to avoid spurious warnings */
-		return true;
-	}
-	*result = a - b;
-	return false;
-#endif
-}
-#endif
 
 /* Backport of list_qsort() */
 #if PG11_LT

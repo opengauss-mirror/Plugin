@@ -28,6 +28,7 @@
 #include "utils/evtcache.h"
 #include "cache.h"
 #include "nodes/nodes.h"
+#include <libpq/pqsignal.h>
 
 
 extern void NewRelationCreateToastTable(Oid relOid, Datum reloptions); 

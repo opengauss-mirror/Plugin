@@ -37,7 +37,7 @@ TimescaleDB能够以插件化的形式，很方便的处理时序数据，随着
 从Plugin仓下载好TimescaleDB源码，解压完成后，放入openGauss-server/contrib目录下，在脚本所在目录执行离线安装脚本 ./run_to_build.sh
 
 ```
-cd cd contrib/timescaledb
+cd contrib/timescaledb
 sudo ./run_to_build.sh
 ```
 

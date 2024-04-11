@@ -11,30 +11,6 @@
 
 extern bool ts_telemetry_on(void);
 
-extern bool ts_guc_disable_optimizations;
-extern bool ts_guc_optimize_non_hypertables;
-extern bool ts_guc_constraint_aware_append;
-extern bool ts_guc_enable_ordered_append;
-extern bool ts_guc_enable_chunk_append;
-extern bool ts_guc_enable_parallel_chunk_append;
-extern bool ts_guc_enable_runtime_exclusion;
-extern bool ts_guc_enable_constraint_exclusion;
-extern bool ts_guc_enable_cagg_reorder_groupby;
-extern TSDLLEXPORT bool ts_guc_enable_transparent_decompression;
-extern bool ts_guc_restoring;
-extern int ts_guc_max_open_chunks_per_insert;
-extern int ts_guc_max_cached_chunks_per_hypertable;
-extern int ts_guc_telemetry_level;
-extern char *ts_last_tune_time;
-extern char *ts_last_tune_version;
-extern char *ts_telemetry_cloud;
-
-#ifdef TS_DEBUG
-extern bool ts_shutdown_bgw;
-extern char *ts_current_timestamp_mock;
-#else
-#define ts_shutdown_bgw false
-#endif
 
 void _guc_init(void);
 void _guc_fini(void);
