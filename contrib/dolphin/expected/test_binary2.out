@@ -6,16 +6,16 @@ create database test_b3 with dbcompatibility 'b';
 set bytea_output=escape;
 set client_encoding = 'UTF8';
 select cast('熊猫' as binary(10));
-        binary        
-----------------------
- 熊猫\000\000\000\000
+                  binary                  
+------------------------------------------
+ \347\206\212\347\214\253\000\000\000\000
 (1 row)
 
 set b_format_behavior_compat_options = 'default_collation,enable_multi_charset';
 select cast('熊猫' as binary(10));
-        binary        
-----------------------
- 熊猫\000\000\000\000
+                  binary                  
+------------------------------------------
+ \347\206\212\347\214\253\000\000\000\000
 (1 row)
 
 reset b_format_behavior_compat_options;
@@ -23,16 +23,16 @@ reset b_format_behavior_compat_options;
 set client_encoding = 'UTF8';
 set bytea_output=escape;
 select cast('熊猫' as binary(10));
-            binary            
-------------------------------
- 熊猫\000\000\000\000\000\000
+                  binary                  
+------------------------------------------
+ \320\334\303\250\000\000\000\000\000\000
 (1 row)
 
 set b_format_behavior_compat_options = 'default_collation,enable_multi_charset';
 select cast('熊猫' as binary(10));
-            binary            
-------------------------------
- 熊猫\000\000\000\000\000\000
+                  binary                  
+------------------------------------------
+ \320\334\303\250\000\000\000\000\000\000
 (1 row)
 
 reset b_format_behavior_compat_options;
@@ -40,16 +40,16 @@ reset b_format_behavior_compat_options;
 set client_encoding = 'UTF8';
 set bytea_output=escape;
 select cast('熊猫' as binary(10));
-        binary        
-----------------------
- 熊猫\000\000\000\000
+                  binary                  
+------------------------------------------
+ \347\206\212\347\214\253\000\000\000\000
 (1 row)
 
 set b_format_behavior_compat_options = 'default_collation,enable_multi_charset';
 select cast('熊猫' as binary(10));
-        binary        
-----------------------
- 熊猫\000\000\000\000
+                  binary                  
+------------------------------------------
+ \347\206\212\347\214\253\000\000\000\000
 (1 row)
 
 reset b_format_behavior_compat_options;
