@@ -8,6 +8,14 @@ DROP FUNCTION IF EXISTS pg_catalog.length(json);
 
 DROP FUNCTION IF EXISTS pg_catalog.position(boolean, text);
 
+DROP FUNCTION IF EXISTS pg_catalog.instr(boolean, text, integer);
+DROP FUNCTION IF EXISTS pg_catalog.instr(bit, bit, integer);
+
+DROP FUNCTION IF EXISTS pg_catalog.locate(boolean, text);
+DROP FUNCTION IF EXISTS pg_catalog.locate(bit, bit);
+DROP FUNCTION IF EXISTS pg_catalog.locate(boolean, text, integer);
+DROP FUNCTION IF EXISTS pg_catalog.locate(bit, bit, integer);
+
 DROP FUNCTION IF EXISTS pg_catalog.acos(bit);
 DROP FUNCTION IF EXISTS pg_catalog.cos(bit);
 DROP FUNCTION IF EXISTS pg_catalog.cos(boolean);
