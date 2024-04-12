@@ -11252,6 +11252,9 @@ Datum binary_length(PG_FUNCTION_ARGS)
  */
 Datum dolphin_binaryout(PG_FUNCTION_ARGS)
 {
+    if  (!is_req_from_jdbc()) {
+        return byteaout(fcinfo);
+    }
     bytea* vlena = PG_GETARG_BYTEA_PP(0);
     char* result = NULL;
     char* rp = NULL;
