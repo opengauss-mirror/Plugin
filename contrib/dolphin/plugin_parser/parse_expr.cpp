@@ -4528,19 +4528,37 @@ static Node* transformCharsetClause(ParseState* pstate, CharsetClause* c)
         /* transform bit to bytea */
         VarBit* vb = DatumGetVarBitP(con->constvalue);
         Datum bit_binary = CStringGetByteaDatum((const char*)VARBITS(vb), VARBITBYTES(vb));
+#ifdef DOLPHIN
+        if (c->is_binary) {
+            result = (Node *)makeConst(VARBINARYOID, -1, InvalidOid, -1, bit_binary, false, false);
+        } else {
+            /* varbinary datum can be a varchar datum */
+            result = (Node *)makeConst(VARCHAROID, -1, InvalidOid, -1, bit_binary, false, false);
+        }
+#else
         if (c->is_binary) {
             result = (Node *)makeConst(BYTEAOID, -1, InvalidOid, -1, bit_binary, false, false);
         } else {
             /* bytea datum can be a text datum */
             result = (Node *)makeConst(TEXTOID, -1, InvalidOid, -1, bit_binary, false, false);
         }
+#endif
     } else {
+#ifdef DOLPHIN
+        /* treate string as binary datatype: varbinary */
+        if (c->is_binary) {
+            result = coerce_type(pstate, result, exprType(result), VARBINARYOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, c->location);
+        } else {
+            result = coerce_type(pstate, result, exprType(result), VARCHAROID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, c->location);
+        }
+#else
         /* treate string as binary datatype: bytea */
         if (c->is_binary) {
             result = coerce_type(pstate, result, exprType(result), BYTEAOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, c->location);
         } else {
             result = coerce_type(pstate, result, exprType(result), TEXTOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, c->location);
         }
+#endif
     }
 
     exprSetCollation(result, get_default_collation_by_charset(c->charset));

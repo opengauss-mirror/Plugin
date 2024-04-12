@@ -778,16 +778,6 @@ void init_session_vars(void)
                                NULL,
                                NULL,
                                NULL);
-    DefineCustomStringVariable("character_set_connection",
-                               gettext_noop("When there is no character set introducer, this character set is used."),
-                               NULL,
-                               &GetSessionContext()->character_set_connection,
-                               "utf8",
-                               PGC_INTERNAL,
-                               0,
-                               NULL,
-                               NULL,
-                               NULL);
     DefineCustomStringVariable("character_set_results",
                                gettext_noop("The server uses this character set "
                                "to return the query results to the client"),
@@ -814,16 +804,6 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->collation_server,
                                "latin1_swedish_ci",
-                               PGC_INTERNAL,
-                               0,
-                               NULL,
-                               NULL,
-                               NULL);
-    DefineCustomStringVariable("collation_connection",
-                               gettext_noop("The connection character set uses this collation."),
-                               NULL,
-                               &GetSessionContext()->collation_connection,
-                               "",
                                PGC_INTERNAL,
                                0,
                                NULL,

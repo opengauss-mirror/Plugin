@@ -240,7 +240,7 @@ static void checkPartitionConstraintWithExpr(Constraint* con)
     }
 }
 
-Oid check_collation_by_charset(const char* collate, int charset)
+Oid check_collation_by_charset(const char* collate, int charset, bool ignore_check)
 {
     Oid coll_oid = InvalidOid;
     coll_oid = GetSysCacheOid3(COLLNAMEENCNSP, PointerGetDatum(collate),
@@ -250,8 +250,10 @@ Oid check_collation_by_charset(const char* collate, int charset)
         coll_oid = get_collation_oid_with_lower_name(collate, charset);
         if (coll_oid == InvalidOid) {
 #ifdef DOLPHIN
-            ereport(WARNING, (errmsg("Invalid collation detected. default value set")));
-            coll_oid = DEFAULT_COLLATION_OID;
+            if (ignore_check) {
+                ereport(WARNING, (errmsg("Invalid collation detected. default value set")));
+                coll_oid = DEFAULT_COLLATION_OID;
+            }
 #else
             ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
                     errmsg("collation \"%s\" for encoding \"%s\" does not exist",
@@ -266,13 +268,17 @@ Oid check_collation_by_charset(const char* collate, int charset)
  * transform_default_collation -
  *      Returns the processed collation oid of schema, relation or attribute level.
  */
+#ifdef DOLPHIN
+Oid transform_default_collation(const char* collate, int charset, Oid def_coll_oid, bool is_attr, bool ignore_check)
+#else
 Oid transform_default_collation(const char* collate, int charset, Oid def_coll_oid, bool is_attr)
+#endif
 {
     Oid coll_oid = InvalidOid;
     HeapTuple coll_tup;
     
     if (collate != NULL && charset != PG_INVALID_ENCODING) {
-        coll_oid = check_collation_by_charset(collate, charset);
+        coll_oid = check_collation_by_charset(collate, charset, ignore_check);
     } else if (collate != NULL) {
         CatCList* list = NULL;
         list = SearchSysCacheList1(COLLNAMEENCNSP, PointerGetDatum(collate));
@@ -281,8 +287,10 @@ Oid transform_default_collation(const char* collate, int charset, Oid def_coll_o
             coll_oid = get_collation_oid_with_lower_name(collate, charset);
             if (coll_oid == InvalidOid) {
 #ifdef DOLPHIN
-                coll_oid = DEFAULT_COLLATION_OID;
-                ereport(WARNING, (errmsg("Invalid collation detected. default value set")));
+                if (ignore_check) {
+                    coll_oid = DEFAULT_COLLATION_OID;
+                    ereport(WARNING, (errmsg("Invalid collation detected. default value set")));
+                }
 #else
                 ereport(ERROR, (errcode(ERRCODE_UNDEFINED_OBJECT),
                         errmsg("collation \"%s\" does not exist", collate)));
@@ -641,7 +649,11 @@ Oid *namespaceid, bool isFirstNode)
     if (DB_CMPT_B) {
         Oid nspdefcoll = get_nsp_default_collation(*namespaceid);
         if (stmt->collate || stmt->charset != PG_INVALID_ENCODING || nspdefcoll != InvalidOid) {
+#ifdef DOLPHIN
+            rel_coll_oid = transform_default_collation(stmt->collate, stmt->charset, nspdefcoll, false, false);
+#else
             rel_coll_oid = transform_default_collation(stmt->collate, stmt->charset, nspdefcoll);
+#endif
         }
     }
     cxt.rel_coll_id = rel_coll_oid;

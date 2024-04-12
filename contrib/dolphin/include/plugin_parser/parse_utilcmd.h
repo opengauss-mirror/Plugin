@@ -99,9 +99,14 @@ extern char* getTmptableIndexName(const char* srcSchema, const char* srcIndex);
 extern IndexStmt* generateClonedIndexStmt(
     CreateStmtContext* cxt, Relation source_idx, const AttrNumber* attmap, int attmap_length, Relation rel,
     TransformTableType transformType);
+#ifdef DOLPHIN
+extern Oid transform_default_collation(const char* collate, int charset, Oid def_coll_oid = InvalidOid,
+    bool is_attr = false, bool ignore_check = true);
+#else
 extern Oid transform_default_collation(const char* collate, int charset, Oid def_coll_oid = InvalidOid,
     bool is_attr = false);
-extern Oid check_collation_by_charset(const char* collate, int charset);
+#endif
+extern Oid check_collation_by_charset(const char* collate, int charset, bool ignore_check = true);
 
 #ifdef DOLPHIN
 extern char* transformIndexOptions(List* list);

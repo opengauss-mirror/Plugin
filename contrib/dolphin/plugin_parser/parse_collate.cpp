@@ -106,8 +106,13 @@ static void merge_same_charset_collation(Oid collation, CollateStrength strength
     CollateDerivation derivation, assign_collations_context* context);
 static void merge_diff_charset_collation(Oid collation, CollateStrength strength, int location,
     CollateDerivation derivation, int charset, int context_charset, assign_collations_context* context);
+#ifdef DOLPHIN
+static void deal_expr_collation_b_compatibility(Node* node, Oid expr_type,
+    assign_collations_context* context, int location, Oid *out_collation);
+#else
 static void deal_expr_collation_b_compatibility(
     Node* node, Oid expr_type, assign_collations_context* context, int location);
+#endif
 
 #define TYPE_IS_COLLATABLE_B_FORMAT(type_oid) \
     (IsSupportCharsetType(type_oid) || (type_oid) == UNKNOWNOID || IsBinaryType(type_oid))
@@ -703,9 +708,16 @@ static bool assign_collations_walker(Node* node, assign_collations_context* cont
             /*
              * Now figure out what collation to assign to this node.
              */
-            type_oid = exprType(node);
+             type_oid = exprType(node);
+#ifdef DOLPHIN
+            Oid out_collation = InvalidOid;
+#endif
             if (ENABLE_MULTI_CHARSET) {
+#ifdef DOLPHIN
+                deal_expr_collation_b_compatibility(node, type_oid, &loccontext, location, &out_collation);
+#else
                 deal_expr_collation_b_compatibility(node, type_oid, &loccontext, location);
+#endif
                 typcollation = IsBinaryType(type_oid) ? BINARY_COLLATION_OID : get_typcollation(type_oid);
             } else {
                 typcollation = get_typcollation(type_oid);
@@ -719,6 +731,11 @@ static bool assign_collations_walker(Node* node, assign_collations_context* cont
                 (loccontext.strength > COLLATE_NONE) ? true : false,
                 node,
                 loccontext);
+#ifdef DOLPHIN
+            if (OidIsValid(out_collation)) {
+                collation = out_collation;
+            }
+#endif
             /*
              * Save the result collation into the expression node. If the
              * state is COLLATE_CONFLICT, we'll set the collation to
@@ -938,8 +955,13 @@ static void merge_diff_charset_collation(Oid collation, CollateStrength strength
     context->location2 = location;
 }
 
+#ifdef DOLPHIN
+static void deal_expr_collation_b_compatibility(Node* node, Oid expr_type,
+    assign_collations_context* context, int location, Oid *out_collation)
+#else
 static void deal_expr_collation_b_compatibility(Node* node, Oid expr_type,
     assign_collations_context* context, int location)
+#endif
 {
     int db_charset = GetDatabaseEncoding();
     int arg_charset = get_valid_charset_by_collation(context->collation);
@@ -951,7 +973,11 @@ static void deal_expr_collation_b_compatibility(Node* node, Oid expr_type,
         FuncExpr* func = (FuncExpr*)node;
         if (IsSystemObjOid(func->funcid)) {
             if (func->funcid == VERSIONFUNCOID ||
-                func->funcid == OPENGAUSSVERSIONFUNCOID) {
+                func->funcid == OPENGAUSSVERSIONFUNCOID
+#ifdef DOLPHIN
+                || func->funcid == CURRENTUSERFUNCOID
+#endif
+            ) {
                 context->derivation = DERIVATION_SYSCONST;
             } else if ((func->funcid == CONVERTTOFUNCOID ||
                 func->funcid == CONVERTTONOCASEFUNCOID) &&
@@ -972,6 +998,18 @@ static void deal_expr_collation_b_compatibility(Node* node, Oid expr_type,
                 context->strength = COLLATE_EXPLICIT; /* avoid InvalidOid collation */
             }
         }
+#ifdef DOLPHIN
+        /* pg_convert_to_text function should have different input collation and output collation */
+        else if (list_length(func->args) == 2 && IsA(llast_node(Node, func->args), Const)) {
+            char* func_name = get_func_name(func->funcid);
+            if (strncmp(func_name, "convert", strlen("convert")) == 0) {
+                Const* con = llast_node(Const, func->args);
+                int out_charset = pg_char_to_encoding(DatumGetName(con->constvalue)->data);
+                *out_collation = (out_charset > 0) ? get_default_collation_by_charset(out_charset) : InvalidOid;
+            }
+            pfree_ext(func_name);
+        }
+#endif
     }
 
     /*
