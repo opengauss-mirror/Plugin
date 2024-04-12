@@ -76,6 +76,7 @@ ParseState* make_parsestate(ParseState* parentParseState)
         pstate->p_bind_hook_state = parentParseState->p_bind_hook_state;
         pstate->p_bind_describe_hook = parentParseState->p_bind_describe_hook;
         pstate->p_describeco_hook_state = parentParseState->p_describeco_hook_state;
+        pstate->p_has_ignore = parentParseState->p_has_ignore;
     }
 
     return pstate;
@@ -458,6 +459,7 @@ Const* make_const(ParseState* pstate, Value* value, int location)
     Datum val;
     int64 val64;
     Oid typid;
+    Oid collid = InvalidOid;
     int typelen;
     bool typebyval = false;
     ParseCallbackState pcbstate;
@@ -517,6 +519,9 @@ Const* make_const(ParseState* pstate, Value* value, int location)
             typid = UNKNOWNOID; /* will be coerced later */
             typelen = -2;       /* cstring-style varwidth type */
             typebyval = false;
+            if (OidIsValid(GetCollationConnection())) {
+                collid = GetCollationConnection();
+            }
             break;
 
         case T_BitString:
@@ -544,7 +549,7 @@ Const* make_const(ParseState* pstate, Value* value, int location)
 
     con = makeConst(typid,
         -1,         /* typmod -1 is OK for all cases */
-        InvalidOid, /* all cases are uncollatable types */
+        collid, /* all cases are uncollatable types */
         typelen,
         val,
         false,

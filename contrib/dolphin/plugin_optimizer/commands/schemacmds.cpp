@@ -30,7 +30,7 @@
 #include "commands/event_trigger.h"
 #include "commands/schemacmds.h"
 #include "miscadmin.h"
-#include "parser/parse_utilcmd.h"
+#include "plugin_parser/parse_utilcmd.h"
 #include "tcop/utility.h"
 #include "utils/acl.h"
 #include "utils/builtins.h"
@@ -427,7 +427,7 @@ void AlterSchemaCommand(AlterSchemaStmt* stmt)
     bool is_null = true;
     /* For B format, the default collation of a schema can be changed. */
     if (stmt->collate || stmt->charset != PG_INVALID_ENCODING) {
-        colloid = transform_default_collation(stmt->collate, stmt->charset);
+        colloid = transform_default_collation(stmt->collate, stmt->charset, InvalidOid, false, true);
         datum = SysCacheGetAttr(NAMESPACENAME, tup, Anum_pg_namespace_nspcollation, &is_null);
         if (!is_null) {
             nspcollation = ObjectIdGetDatum(datum);

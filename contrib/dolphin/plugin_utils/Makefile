@@ -31,9 +31,9 @@ $(SUBDIRS:%=%-recursive): fmgroids.h
 
 # see explanation in ../parser/Makefile
 fmgroids.h: fmgrtab.cpp
-  fmgrtab.cpp: $(top_builddir)/src/common/backend/utils/Gen_fmgrtab.pl  $(top_builddir)/$(subdir)/../include/builtin_funcs.ini
+  fmgrtab.cpp: $(top_builddir)/$(subdir)/Gen_fmgrtab.pl  $(top_builddir)/$(subdir)/../include/builtin_funcs.ini
 	  $(PERL)  $< $(top_builddir)/$(subdir)/../include/builtin_funcs.ini
-  pg_builtin_proc.h: $(top_builddir)/src/common/backend/utils/Gen_fmgrtab.pl  $(top_builddir)/$(subdir)/../include/builtin_funcs.ini
+  pg_builtin_proc.h: $(top_builddir)/$(subdir)/Gen_fmgrtab.pl  $(top_builddir)/$(subdir)/../include/builtin_funcs.ini
 	  $(PERL)  $< $(top_builddir)/$(subdir)/../include/builtin_funcs.ini
 
 clean maintainer-clean:

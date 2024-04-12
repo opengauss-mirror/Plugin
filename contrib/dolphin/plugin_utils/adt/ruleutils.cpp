@@ -5938,6 +5938,13 @@ static void make_viewdef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc, i
 void deparse_query(Query* query, StringInfo buf, List* parentnamespace, bool finalise_aggs, bool sortgroup_colno,
     void* parserArg, bool qrw_phase, bool is_fqs)
 {
+#ifndef DOLPHIN
+    if (u_sess->hook_cxt.deparseQueryHook != NULL) {
+        ((deparse_query_func)(u_sess->hook_cxt.deparseQueryHook))(query, buf, parentnamespace,
+            finalise_aggs, sortgroup_colno, parserArg, qrw_phase, is_fqs);
+        return;
+    }
+#endif
     OverrideSearchPath* tmp_search_path = NULL;
     List* schema_list = NIL;
     ListCell* schema = NULL;
@@ -11079,6 +11086,8 @@ static void get_const_expr(Const* constval, deparse_context* context, int showty
     char* extval = NULL;
     bool isfloat = false;
     bool needlabel = false;
+    bool skip_collation = false;
+
 #ifdef DOLPHIN
     bool without_cast = false;
     const char *left_bracket = PRETTY_PAREN(context) ? "" : "(";
@@ -11241,7 +11250,16 @@ static void get_const_expr(Const* constval, deparse_context* context, int showty
             break;
 
         default:
-            simple_quote_literal(buf, extval);
+            int src_encoding = get_valid_charset_by_collation(constval->constcollid);
+            char* converted_str = (src_encoding != GetDatabaseEncoding()) ?
+                pg_any_to_server(extval, strlen(extval), src_encoding) : extval;
+            skip_collation = (src_encoding != GetCharsetConnection() || GetCollationConnection() == constval->constcollid);
+            if (converted_str != extval) {
+                simple_quote_literal(buf, converted_str);
+                pfree_ext(converted_str);
+            } else {
+                simple_quote_literal(buf, extval);
+            }
             break;
     }
 
@@ -11285,6 +11303,9 @@ static void get_const_expr(Const* constval, deparse_context* context, int showty
         appendStringInfo(buf, "::%s", format_type_with_typemod(constval->consttype, constval->consttypmod));
     }
 
+    if (skip_collation) {
+        return;
+    }
     get_const_collation(constval, context);
 }
 

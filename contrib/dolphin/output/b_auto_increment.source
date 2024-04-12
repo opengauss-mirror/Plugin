@@ -490,13 +490,13 @@ SELECT * FROM test_create_autoinc;
 (1 row)
 
 \d test_create_autoinc;
-                      Table "public.test_create_autoinc"
-    Column     |          Type          |              Modifiers              
----------------+------------------------+-------------------------------------
+                               Table "public.test_create_autoinc"
+    Column     |          Type          |                       Modifiers                        
+---------------+------------------------+--------------------------------------------------------
  ID            | bigint                 | not null
  SEQ           | bigint                 | not null AUTO_INCREMENT
- CODE          | character varying(100) | collate utf8mb4_general_ci not null
- ACTIVITY_TYPE | character varying(50)  | collate utf8mb4_general_ci not null
+ CODE          | character varying(100) | character set UTF8 collate utf8mb4_general_ci not null
+ ACTIVITY_TYPE | character varying(50)  | character set UTF8 collate utf8mb4_general_ci not null
 Indexes:
     "test_create_autoinc_pkey" PRIMARY KEY, btree ("ID") TABLESPACE pg_default
     "INDEX_WX_ACTIVITY_EXCCODE_AT" btree ("ACTIVITY_TYPE") TABLESPACE pg_default

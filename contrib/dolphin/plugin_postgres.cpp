@@ -136,6 +136,9 @@ extern void initBSQLBuiltinFuncs();
 extern struct HTAB* b_nameHash;
 extern struct HTAB* b_oidHash;
 extern RegExternFunc b_plpgsql_function_table[3];
+extern int tmp_b_fmgr_nbuiltins;
+extern FmgrBuiltin tmp_b_fmgr_builtins[];
+
 extern bool isAllTempObjects(Node* parse_tree, const char* query_string, bool sent_to_remote);
 extern void ts_check_feature_disable();
 extern void ExecAlterDatabaseSetStmt(Node* parse_tree, const char* query_string, bool sent_to_remote);
@@ -299,7 +302,11 @@ void _PG_init(void)
     if (b_oidHash == NULL || b_nameHash == NULL) {
         initBSQLBuiltinFuncs();
     }
-
+    if (b_fmgr_builtins == NULL) {
+        b_fmgr_builtins = tmp_b_fmgr_builtins;
+        pg_memory_barrier(); /* make sure b_fmgr_builtins has been assigned before b_fmgr_nbuiltins */
+        b_fmgr_nbuiltins = tmp_b_fmgr_nbuiltins;
+    }
     AutoMutexLock nameHashLock(&gNameHashLock);
     nameHashLock.lock();
     if (lockNameHash == NULL)
@@ -771,16 +778,6 @@ void init_session_vars(void)
                                NULL,
                                NULL,
                                NULL);
-    DefineCustomStringVariable("character_set_connection",
-                               gettext_noop("When there is no character set introducer, this character set is used."),
-                               NULL,
-                               &GetSessionContext()->character_set_connection,
-                               "utf8",
-                               PGC_INTERNAL,
-                               0,
-                               NULL,
-                               NULL,
-                               NULL);
     DefineCustomStringVariable("character_set_results",
                                gettext_noop("The server uses this character set "
                                "to return the query results to the client"),
@@ -807,16 +804,6 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->collation_server,
                                "latin1_swedish_ci",
-                               PGC_INTERNAL,
-                               0,
-                               NULL,
-                               NULL,
-                               NULL);
-    DefineCustomStringVariable("collation_connection",
-                               gettext_noop("The connection character set uses this collation."),
-                               NULL,
-                               &GetSessionContext()->collation_connection,
-                               "",
                                PGC_INTERNAL,
                                0,
                                NULL,

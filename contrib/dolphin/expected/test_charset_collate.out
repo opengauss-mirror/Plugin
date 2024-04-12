@@ -172,11 +172,9 @@ select f1 from test_binary1 where f1 = 'ppp'::blob collate 'binary';
 (1 row)
 
 select f1 from test_binary1 where f1 = 'ppp'::blob collate 'utf8mb4_bin';
- f1  
------
- ppp
-(1 row)
-
+ERROR:  COLLATION "utf8mb4_bin" is not valid for binary type
+LINE 1: ...elect f1 from test_binary1 where f1 = 'ppp'::blob collate 'u...
+                                                             ^
 alter table test_binary1 add column f2 tinyblob collate 'binary';
 insert into test_binary1 (f2) values('ppp'),('PpP'),('PPP'),('AAA'),('Aaa'),('aaa'),('Š'),('S');
 select distinct f2 from test_binary1 order by f2;
@@ -200,11 +198,9 @@ select f2 from test_binary1 where f2 = 'ppp'::blob collate 'binary';
 (1 row)
 
 select f2 from test_binary1 where f2 = 'ppp'::blob collate 'utf8mb4_bin';
- f2  
------
- ppp
-(1 row)
-
+ERROR:  COLLATION "utf8mb4_bin" is not valid for binary type
+LINE 1: ...elect f2 from test_binary1 where f2 = 'ppp'::blob collate 'u...
+                                                             ^
 alter table test_binary1 add column f3 mediumblob collate 'binary';
 alter table test_binary1 add column f4 binary collate 'binary';
 alter table test_binary1 add column f5 varbinary collate 'binary';

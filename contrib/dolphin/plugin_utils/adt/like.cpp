@@ -25,7 +25,7 @@
 #include "miscadmin.h"
 #include "utils/builtins.h"
 #include "utils/pg_locale.h"
-#include "catalog/gs_utf8_collation.h"
+#include "catalog/gs_collation.h"
 
 #include "funcapi.h"
 #include "plugin_postgres.h"
@@ -186,14 +186,14 @@ int GenericMatchText(char* s, int slen, char* p, int plen)
 
 int generic_match_text_with_collation(char* s, int slen, char* p, int plen, Oid collation)
 {
-    if (IS_UTF8_GENERAL_COLLATION(collation)) {
-        return matchtext_utf8mb4((unsigned char*)s, slen, (unsigned char*)p, plen);
+    if (is_b_format_collation(collation)) {
+        return match_text_by_builtin_collations((unsigned char*)s, slen, (unsigned char*)p, plen, collation);
     }
 
     return GenericMatchText(s, slen, p, plen);
 }
 
-static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation,bool ifbpchar)
+static inline int Generic_Text_IC_like(text* str, text* pat, Oid collation, bool ifbpchar)
 {
     char *s = NULL, *p = NULL;
     int slen, plen;

@@ -133,6 +133,7 @@ static Query* transformCreateTableAsStmt(ParseState* pstate, CreateTableAsStmt* 
 static void CheckDeleteRelation(Relation targetrel);
 static void CheckUpdateRelation(Relation targetrel);
 static void transformVariableSetValueStmt(ParseState* pstate, VariableSetStmt* stmt);
+static bool ContainColStoreWalker(Node* node, Oid targetOid);
 #ifdef PGXC
 static Query* transformExecDirectStmt(ParseState* pstate, ExecDirectStmt* stmt);
 static bool IsExecDirectUtilityStmt(const Node* node);
@@ -638,6 +639,7 @@ Query* transformStmt(ParseState* pstate, Node* parseTree, bool isFirstNode, bool
     /* Mark as original query until we learn differently */
     result->querySource = QSRC_ORIGINAL;
     result->canSetTag = true;
+    result->has_uservar = pstate->has_uservar;
 
     /* Mark whether synonym object is in rtables or not. */
     result->hasSynonyms = pstate->p_hasSynonyms;
@@ -1627,17 +1629,16 @@ static void CheckUnsupportInsertSelectClause(Query* query)
 }
 
 
-static void SetInsertAttrnoState(ParseState* pstate, List* attrnos) 
+static void SetInsertAttrnoState(ParseState* pstate, List* attrnos, int exprLen) 
 {
     RightRefState* rstate = pstate->rightRefState;
     Relation relation = (Relation)linitial(pstate->p_target_relation);
     rstate->colCnt = RelationGetNumberOfAttributes(relation);
-    int len = list_length(attrnos);
-    rstate->explicitAttrLen = len;
-    rstate->explicitAttrNos = (int*)palloc0(sizeof(int) * len);
+    rstate->explicitAttrLen = exprLen;
+    rstate->explicitAttrNos = (int*)palloc0(sizeof(int) * exprLen);
     
     ListCell* attr = list_head(attrnos);
-    for (int i = 0; i < len; ++i) {
+    for (int i = 0; i < exprLen; ++i) {
         rstate->explicitAttrNos[i] = lfirst_int(attr);
         attr = lnext(attr);
     }
@@ -1660,19 +1661,21 @@ static void SetUpsertAttrnoState(ParseState* pstate, List *targetList)
     for (int ni = 0; ni < len; ++ni) {
         ResTarget* res = (ResTarget*)lfirst(target);
         char* name = nullptr;
-        if (list_length(res->indirection) > 0) {
-            name = ((Value*)llast(res->indirection))->val.str;
+        if (list_length(res->indirection) > 0 && IsA(linitial(res->indirection), String)) {
+            name = strVal(linitial(res->indirection));
         } else {
             name = res->name;
         }
 
-        for (int ci = 0; ci < colNum; ++ci) {
-            if (attr[ci].attisdropped) {
-                continue;
-            }
-            if (strcmp(name, attr[ci].attname.data) == 0) {
-                rstate->usExplicitAttrNos[ni] = ci + 1;
-                break;
+        if (name != NULL) {
+            for (int ci = 0; ci < colNum; ++ci) {
+                if (attr[ci].attisdropped) {
+                    continue;
+                }
+                if (strcmp(name, attr[ci].attname.data) == 0) {
+                    rstate->usExplicitAttrNos[ni] = ci + 1;
+                    break;
+                }
             }
         }
 
@@ -1685,10 +1688,44 @@ static void SetUpsertAttrnoState(ParseState* pstate, List *targetList)
     }
 }
 
-static RightRefState* MakeRightRefState() 
+static bool isSubExprSupportRightRef(Node* node)
 {
+    if (!node) {
+        return true;
+    }
+    if (IsA(node, A_Expr)) {
+        A_Expr* expr = (A_Expr*)node;
+        return isSubExprSupportRightRef(expr->lexpr) &&
+               isSubExprSupportRightRef(expr->rexpr);
+    } else if (IsA(node, SubLink)) {
+        SubLink* sl = (SubLink*)node;
+        if (sl->subselect) {
+            SelectStmt* subsel = (SelectStmt*)sl->subselect;
+            return (!subsel->whereClause || subsel->fromClause);
+        }
+    }
+    return true;
+}
+
+static RightRefState* MakeRightRefStateIfSupported(SelectStmt* selectStmt)
+{
+    bool isSupported = DB_IS_CMPT(B_FORMAT) && selectStmt && selectStmt->valuesLists && !IsInitdb;
+    if (!isSupported) {
+        return nullptr;
+    }
+    ListCell* lc = NULL;
+    ListCell* lc2 = NULL;
+    foreach (lc, selectStmt->valuesLists) {
+        List* sublist = (List*)lfirst(lc);
+        foreach(lc2, sublist) {
+            Node* col  = (Node*)lfirst(lc2);
+            if (!isSubExprSupportRightRef(col)) {
+                return nullptr;
+            }
+        }
+    }
     RightRefState* refState = (RightRefState*)palloc0(sizeof(RightRefState));
-    refState->isSupported = !IsInitdb && DB_IS_CMPT(B_FORMAT);
+    refState->isSupported = true;
     return refState;
 }
 
@@ -1718,7 +1755,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     /* There can't be any outer WITH to worry about */
     AssertEreport(pstate->p_ctenamespace == NIL, MOD_OPT, "para should be NIL");
 
-    RightRefState* rightRefState = MakeRightRefState();
+    RightRefState* rightRefState = MakeRightRefStateIfSupported((SelectStmt*)stmt->selectStmt);
     
     qry->commandType = CMD_INSERT;
     pstate->p_is_insert = true;
@@ -1887,8 +1924,6 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
 
     /* Validate stmt->cols list, or build default list if no list given */
     icolumns = checkInsertTargets(pstate, stmt->cols, &attrnos);
-
-    SetInsertAttrnoState(pstate, attrnos);
     
     AssertEreport(list_length(icolumns) == list_length(attrnos), MOD_OPT, "list length inconsistent");
 
@@ -2237,6 +2272,10 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
         exprList = transformInsertRow(pstate, exprList, stmt->cols, icolumns, attrnos);
     }
 
+    if (IS_SUPPORT_RIGHT_REF(rightRefState)) {
+        SetInsertAttrnoState(pstate, attrnos, list_length(exprList));
+    }
+
     /*
      * Generate query's target list using the computed list of expressions.
      * Also, mark all the target columns as needing insert permissions.
@@ -2317,6 +2356,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     }
 
     assign_query_collations(pstate, qry);
+    assign_query_ignore_flag(pstate, qry);
 
     CheckUnsupportInsertSelectClause(qry);
 
@@ -2330,7 +2370,7 @@ static Query* transformInsertStmt(ParseState* pstate, InsertStmt* stmt)
     } else {
         qry->rightRefState = nullptr;
         pstate->rightRefState = nullptr;
-        pfree(rightRefState);
+        pfree_ext(rightRefState);
     }
 
     return qry;
@@ -3105,6 +3145,7 @@ static void transformVariableSetStmt(ParseState* pstate, VariableSetStmt* stmt)
         newUserElem->name = userElem->name;
         
         Node *node = transformExprRecurse(pstate, (Node *)userElem->val);
+        assign_expr_collations(pstate, node);
 
         if (IsA(node, UserSetElem)) {
             newUserElem->name = list_concat(newUserElem->name, ((UserSetElem *)node)->name);
@@ -3801,6 +3842,58 @@ static Query* transformSetOperationStmt(ParseState* pstate, SelectStmt* stmt)
     return qry;
 }
 
+/* Find real target entry and convert its character set in UNION tree. */
+static void convert_set_operation_tree_charset(ParseState* pstate, Node* op_tree,
+    int arg_id, Oid target_collation, int target_charset)
+{
+    if (IsA(op_tree, SetOperationStmt)) {
+        SetOperationStmt* opstmt = (SetOperationStmt*)op_tree;
+        convert_set_operation_tree_charset(pstate, opstmt->larg, arg_id, target_collation, target_charset);
+        convert_set_operation_tree_charset(pstate, opstmt->rarg, arg_id, target_collation, target_charset);
+        return;
+    }
+
+    Assert(IsA(op_tree, RangeTblRef));
+    RangeTblRef* rtr = (RangeTblRef*)op_tree;
+    RangeTblEntry* rte = rt_fetch(rtr->rtindex, pstate->p_rtable);
+    TargetEntry* te = NULL;
+    int n = 0;
+
+    foreach_cell(tmp_cell, rte->subquery->targetList) {
+        te = (TargetEntry*)lfirst(tmp_cell);
+        if (te->resjunk) {
+            continue;
+        }
+        if (++n > arg_id) {
+            break;
+        }
+    }
+
+    te->expr = (Expr*)coerce_to_target_charset(
+        (Node*)te->expr, target_charset, exprType((Node*)te->expr), exprTypmod((Node*)te->expr), target_collation);
+}
+
+/* Converts the character set of the query column on a side of the UNION. */
+static void convert_set_operation_charset(ParseState* pstate, Node* op_tree, TargetEntry* arg,
+    int arg_id, Oid target_collation, int target_charset)
+{
+    Node* arg_expr = (Node*)arg->expr;
+    Oid expr_type = exprType(arg_expr);
+    Oid expr_collation = exprCollation(arg_expr);
+    if (expr_collation == BINARY_COLLATION_OID || expr_collation == target_collation) {
+        return;
+    }
+
+    if (!IsA(arg->expr, SetToDefault)) {
+        arg->expr = (Expr*)coerce_to_target_charset(
+            arg_expr, target_charset, expr_type, exprTypmod(arg_expr), target_collation);
+        return;
+    }
+
+    Assert(IsA(op_tree, SetOperationStmt));
+    convert_set_operation_tree_charset(pstate, op_tree, arg_id, target_collation, target_charset);
+}
+
 /*
  * transformSetOperationTree
  *		Recursively transform leaves and internal nodes of a set-op tree
@@ -3931,6 +4024,7 @@ static Node* transformSetOperationTree(ParseState* pstate, SelectStmt* stmt, boo
         ListCell* ltl = NULL;
         ListCell* rtl = NULL;
         const char* context = NULL;
+        int col_id = 0;
 
         context = (stmt->op == SETOP_UNION ? "UNION" : (stmt->op == SETOP_INTERSECT ? "INTERSECT" : "EXCEPT"));
 
@@ -4079,7 +4173,13 @@ static Node* transformSetOperationTree(ParseState* pstate, SelectStmt* stmt, boo
              */
             rescolcoll =
                 select_common_collation(pstate, list_make2(lcolnode, rcolnode), (op->op == SETOP_UNION && op->all));
-
+            if (ENABLE_MULTI_CHARSET && rescolcoll != BINARY_COLLATION_OID) {
+                int res_charset = get_valid_charset_by_collation(rescolcoll);
+                convert_set_operation_charset(pstate, op->larg, ltle, col_id, rescolcoll, res_charset);
+                convert_set_operation_charset(pstate, op->rarg, rtle, col_id, rescolcoll, res_charset);
+            }
+            col_id++;
+            
             /* emit results */
             op->colTypes = lappend_oid(op->colTypes, rescoltype);
             op->colTypmods = lappend_int(op->colTypmods, rescoltypmod);
@@ -4292,30 +4392,29 @@ static void MergeTargetList(List** targetLists, RangeTblEntry* rte1, int rtindex
     targetLists[rtindex2 - 1] = NULL;
 }
 
-static void transformMultiTargetList(List* target_rangetblentry, List** targetLists)
+static void transformMultiTargetList(List* target_rangetblentry, List** targetLists, List* result_relations)
 {
-    int rtindex1 = 1, rtindex2 = 1;
-    ListCell* l1;
-    ListCell* l2;
-
     if (list_length(target_rangetblentry) <= 1) {
         return;
     }
-    foreach (l1, target_rangetblentry) {
-        RangeTblEntry* rte1 = (RangeTblEntry*)lfirst(l1);
-        rtindex2 = 0;
 
-        l2 = lnext(l1);
-        rtindex2 = rtindex1 + 1;
-        while (l2 != NULL) {
-            RangeTblEntry* rte2 = (RangeTblEntry*)lfirst(l2);
+    ListCell *l1 = NULL;
+    ListCell *l2 = NULL;
+    forboth (l1, target_rangetblentry, l2, result_relations) {
+        RangeTblEntry* rte1 = (RangeTblEntry*)lfirst(l1);
+        int rtindex1 = lfirst_int(l2);
+        ListCell *l3 = lnext(l1);
+        ListCell *l4 = lnext(l2);
+
+        while (l3 && l4) {
+            RangeTblEntry* rte2 = (RangeTblEntry*)lfirst(l3);
+            int rtindex2 = lfirst_int(l4);
             if (rte2->relid == rte1->relid) {
                 MergeTargetList(targetLists, rte1, rtindex1, rte2, rtindex2);
             }
-            rtindex2++;
-            l2 = lnext(l2);
+            l3 = lnext(l3);
+            l4 = lnext(l4);
         }
-        rtindex1++;
     }
 }
 
@@ -4505,6 +4604,7 @@ static Query* transformUpdateStmt(ParseState* pstate, UpdateStmt* stmt)
     UpdateParseCheck(pstate, (Node *)qry);
 
     assign_query_collations(pstate, qry);
+    assign_query_ignore_flag(pstate, qry);
     qry->hintState = stmt->hintState;
     qry->hasIgnore = stmt->hasIgnore;
 
@@ -4611,6 +4711,13 @@ static int fixUpdateResTargetName(ParseState* pstate, List* resultRelations, Res
             /* Mark the target column as requiring update permissions */
             target_rte->updatedCols = bms_add_member(target_rte->updatedCols,
                                                      attrno - FirstLowInvalidHeapAttributeNumber);
+            if (DB_IS_CMPT(B_FORMAT) && ((strcmp(rangeVar->relname, res->name) == 0) ||
+                ((rangeVar->alias != NULL) && (strcmp((rangeVar->alias)->aliasname, res->name) == 0)))) {
+                if (matchRelname == true) {
+                    removeRelname = true;
+                }
+                break;
+            }
         }
         if (matchRelname == true) {
             removeRelname = true;
@@ -4741,7 +4848,7 @@ static List* transformUpdateTargetList(ParseState* pstate, List* qryTlist, List*
      * If there are actually the same result relations by different alias
      * or synonym in multiple update, merge their targetLists.
      */
-    transformMultiTargetList(pstate->p_target_rangetblentry, new_tle);
+    transformMultiTargetList(pstate->p_target_rangetblentry, new_tle, resultRelations);
 
     if (targetRelationNum == 1) {
         int i = linitial_int(resultRelations);
@@ -5547,21 +5654,50 @@ static bool CheckViewBasedOnCstore(Relation targetrel)
 
     Query* viewquery = get_view_query(targetrel);
     ListCell* l = NULL;
-
-    foreach (l, viewquery->jointree->fromlist) {
-        RangeTblRef* rtr = (RangeTblRef*)lfirst(l);
-        RangeTblEntry* base_rte = rt_fetch(rtr->rtindex, viewquery->rtable);
-        Relation base_rel = try_relation_open(base_rte->relid, AccessShareLock);
-
-        if (RelationIsColStore(base_rel) || (RelationIsView(base_rel) && CheckViewBasedOnCstore(base_rel))) {
-            heap_close(base_rel, AccessShareLock);
+    foreach (l, viewquery->rtable) {
+        Node* rte = (Node*)lfirst(l);
+        if (ContainColStoreWalker(rte, targetrel->rd_id)) {
             return true;
         }
-
-        heap_close(base_rel, AccessShareLock);
     }
-
     return false;
+}
+
+static bool ContainColStoreWalker(Node* node, Oid targetOid)
+{
+    if (node == NULL) {
+        return false;
+    }
+    uintptr_t ptrOid = (uintptr_t)targetOid;
+
+    /* Check range table entry */
+    if (IsA(node, RangeTblEntry)) {
+        RangeTblEntry* rte = (RangeTblEntry*)node;
+        /* only check ordinary relation */
+        if ((rte->rtekind != RTE_RELATION)) {
+            List* rtable = list_make1(node);
+            return range_table_walker(rtable, (bool (*)())ContainColStoreWalker, (void*)ptrOid, 0);
+        }
+        Assert(OidIsValid(rte->relid));
+        if (rte->relid == targetOid) {
+            return false;
+        }
+        Relation rel = relation_open(rte->relid, AccessShareLock);
+        if (!RelationIsValid(rel)) {
+            return false;
+        }
+        if (RelationIsColStore(rel) || (RelationIsView(rel) && CheckViewBasedOnCstore(rel))) {
+            relation_close(rel, AccessShareLock);
+            return true;
+        }
+        relation_close(rel, AccessShareLock);
+        return false;
+    }
+    /* Check query */
+    if (IsA(node, Query)) {
+        return query_tree_walker((Query*)node, (bool (*)())ContainColStoreWalker, (void*)ptrOid, QTW_EXAMINE_RTES);
+    }
+    return expression_tree_walker(node, (bool (*)())ContainColStoreWalker, (void*)ptrOid);
 }
 
 /*

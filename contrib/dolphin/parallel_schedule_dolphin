@@ -23,7 +23,7 @@ test: test_shows_3
 
 test: test_shows_4 test_shows_5
 
-test: nvarchar regexp upsert zerofill test_set_charset test_optimize test_charset_collate
+test: nvarchar regexp upsert zerofill test_set_charset test_optimize test_charset_collate charset_utf8mb4_b_db charset_gbk_b_db
 
 test: test_binary test_blob test_datatype test_fixed test_mysql_enum
 
