@@ -2424,7 +2424,13 @@ restart:
 
                 fcinfo->isnull = false;
                 rsinfo.isDone = ExprSingleResult;
-                result = FunctionCallInvoke(fcinfo);
+                if (func_encoding != db_encoding) {
+                    DB_ENCODING_SWITCH_TO(func_encoding);
+                    result = FunctionCallInvoke(fcinfo);
+                    DB_ENCODING_SWITCH_BACK(db_encoding);
+                } else {
+                        result = FunctionCallInvoke(fcinfo);
+                }
                 if (AUDIT_SYSTEM_EXEC_ENABLED) {
                     audit_system_function(fcinfo, AUDIT_OK);
                 }
@@ -2774,7 +2780,8 @@ static Datum ExecMakeFunctionResultNoSets(
     }
 
     if (econtext) {
-        fcinfo->can_ignore = econtext->can_ignore;
+        fcinfo->can_ignore = econtext->can_ignore || (econtext->ecxt_estate && econtext->ecxt_estate->es_plannedstmt &&
+            econtext->ecxt_estate->es_plannedstmt->hasIgnore);
     }
 
     /*
@@ -2881,7 +2888,13 @@ static Datum ExecMakeFunctionResultNoSets(
     if (u_sess->instr_cxt.global_instr != NULL && fcinfo->flinfo->fn_addr == plpgsql_call_handler) {
         StreamInstrumentation* save_global_instr = u_sess->instr_cxt.global_instr;
         u_sess->instr_cxt.global_instr = NULL;
-        result = FunctionCallInvoke(fcinfo);   // node will be free at here or else;
+        if (func_encoding != db_encoding) {
+            DB_ENCODING_SWITCH_TO(func_encoding);
+            result = FunctionCallInvoke(fcinfo);   // node will be free at here or else;
+            DB_ENCODING_SWITCH_BACK(db_encoding);
+        } else {
+            result = FunctionCallInvoke(fcinfo);   // node will be free at here or else;
+        }
         u_sess->instr_cxt.global_instr = save_global_instr;
     } else {
         if (fcinfo->argTypes[0] == CLOBOID && fcinfo->argTypes[1] == CLOBOID && fcinfo->flinfo->fn_addr == textcat) {
@@ -2895,7 +2908,13 @@ static Datum ExecMakeFunctionResultNoSets(
                 fcinfo->arg[1] = fetch_lob_value_from_tuple(lob_pointer, InvalidOid, &is_null);
             }
         }    
-        result = FunctionCallInvoke(fcinfo);
+        if (func_encoding != db_encoding) {
+            DB_ENCODING_SWITCH_TO(func_encoding);
+            result = FunctionCallInvoke(fcinfo);
+            DB_ENCODING_SWITCH_BACK(db_encoding);
+        } else {
+            result = FunctionCallInvoke(fcinfo);
+        }
     }
     *isNull = fcinfo->isnull;
     if (AUDIT_SYSTEM_EXEC_ENABLED) {
