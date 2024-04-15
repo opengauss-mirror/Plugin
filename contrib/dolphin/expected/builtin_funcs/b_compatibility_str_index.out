@@ -77,6 +77,66 @@ select position('one' in `bit64`) from t_bit order by c1;
         5
 (3 rows)
 
+-- test locate for boolean
+create table t_bool (c1 integer, c2 boolean);
+insert into t_bool values (1, 0);
+insert into t_bool values (2, 1);
+select locate('1', `c2`), locate(0, `c2`) from t_bool order by c1;
+ locate | locate 
+--------+--------
+      0 |      1
+      1 |      0
+(2 rows)
+
+select locate('0', `c2`, 1), locate(1, `c2`, 2) from t_bool order by c1;
+ locate | locate 
+--------+--------
+      1 |      0
+      0 |      0
+(2 rows)
+
+drop table t_bool;
+-- test locate for bit
+select locate(b'01', `bit64`), locate(b'01', `bit64`, 2) from t_bit order by c1;
+ locate | locate 
+--------+--------
+      0 |      2
+      0 |      2
+      0 |      2
+(3 rows)
+
+select locate(b'01100101', `bit64`), locate(b'01100101', `bit64`, 6) from t_bit order by c1; -- e
+ locate | locate 
+--------+--------
+      4 |      8
+      5 |      8
+      4 |      7
+(3 rows)
+
+select locate('e', `bit64`), locate('e', `bit64`, 6) from t_bit order by c1;
+ locate | locate 
+--------+--------
+      4 |      8
+      5 |      8
+      4 |      7
+(3 rows)
+
+select locate('yes', `bit64`), locate('yes', `bit64`, 5) from t_bit order by c1;
+ locate | locate 
+--------+--------
+      0 |      5
+      0 |      5
+      0 |      5
+(3 rows)
+
+select locate('one', `bit64`), locate('one', `bit64`, 4) from t_bit order by c1;
+ locate | locate 
+--------+--------
+      6 |      6
+      6 |      6
+      5 |      5
+(3 rows)
+
 drop table  t_bit;
 drop schema string_index_test cascade;
 reset dolphin.sql_mode;

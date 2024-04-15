@@ -11356,4 +11356,33 @@ Datum concat_blob(PG_FUNCTION_ARGS)
 {
     PG_RETURN_BYTEA_P(concat_internal("", 0, 0, fcinfo, false));
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(instr_bit);
+extern "C" DLL_PUBLIC Datum instr_bit(PG_FUNCTION_ARGS);
+Datum instr_bit(PG_FUNCTION_ARGS)
+{
+    VarBit* bit_str = PG_GETARG_VARBIT_P(0);
+    VarBit* bit_substr = PG_GETARG_VARBIT_P(1);
+    int32 start = PG_GETARG_INT32(2);
+
+    int result = 0;
+    int substr_length, str_length;
+    char *str, *subStr;
+
+    substr_length = VARBITBYTES(bit_substr);
+    str_length = VARBITBYTES(bit_str);
+
+    if (start <= 0 || start > str_length)
+        PG_RETURN_INT32(0);
+
+    str = bit_to_str(bit_str);
+    subStr = bit_to_str(bit_substr);
+
+    result = bin_text_position(str + start, str_length - start, subStr, substr_length);
+
+    pfree_ext(str);
+    pfree_ext(subStr);
+
+    PG_RETURN_INT32(result + start);
+}
 #endif

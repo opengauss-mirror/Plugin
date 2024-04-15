@@ -2702,7 +2702,7 @@ VarBit* bit_substr_with_byte_align(VarBit *bits, int start, int length, bool len
 {
     VarBit *result = NULL;
     char *bitostr = NULL, *sp = NULL;
-    int i, len = length, bitlen = VARBITLEN(bits), bytelen = VARBITBYTES(bits);
+    int len = length, bytelen = VARBITBYTES(bits);
 
     if (length < 0)
         ereport(ERROR, (errcode(ERRCODE_SUBSTRING_ERROR), errmsg("negative substring length not allowed")));
@@ -2792,32 +2792,20 @@ Datum asin_bit(PG_FUNCTION_ARGS)
     PG_RETURN_FLOAT8(res);
 }
 
-Datum dolphin_bitposition(PG_FUNCTION_ARGS)
+/**
+ * search binary text position, ignore '\0' in text.
+*/
+int32 bin_text_position(const char *b, size_t b_length, const char *s, size_t s_length)
 {
-    VarBit* bit_str = PG_GETARG_VARBIT_P(0);
-    VarBit* bit_substr = PG_GETARG_VARBIT_P(1);
-
-    int result = 0;
-    int substr_length, str_length;
-    char *str, *subStr;
-
-    /* Get the substring bit byte length */
-    substr_length = VARBITBYTES(bit_substr);
-    str_length = VARBITBYTES(bit_str);
-
-    /* String has zero length or substring longer than string, return 0 */
-    if ((str_length == 0) || (substr_length > str_length))
-        PG_RETURN_INT32(result);
-
-    str = bit_to_str(bit_str);
-    subStr = bit_to_str(bit_substr);
-
+    int32 result = 0;
     const uint8 *pos, *search, *end, *search_end;
 
-    pos = (const uint8*)str;
-    search = (const uint8*)subStr;
-    end = (const uint8*)str + str_length - substr_length + 1;
-    search_end = (const uint8*)subStr + substr_length;
+    if (b_length <= 0 || s_length > b_length) return 0;
+
+    pos = (const uint8*)b;
+    search = (const uint8*)s;
+    end = (const uint8*)b + b_length - s_length + 1;
+    search_end = (const uint8*)s + s_length;
 
 skip:
     while (pos != end) {
@@ -2831,9 +2819,30 @@ skip:
             if ((*i++) != (*j++))
                 goto skip;
 
-        result = (pos - (const uint8*)str);
+        result = (pos - (const uint8*)b);
         break;
     }
+
+    return result;
+}
+
+Datum dolphin_bitposition(PG_FUNCTION_ARGS)
+{
+    VarBit* bit_str = PG_GETARG_VARBIT_P(0);
+    VarBit* bit_substr = PG_GETARG_VARBIT_P(1);
+
+    int result = 0;
+    int substr_length, str_length;
+    char *str, *subStr;
+
+    /* Get the substring bit byte length */
+    substr_length = VARBITBYTES(bit_substr);
+    str_length = VARBITBYTES(bit_str);
+
+    str = bit_to_str(bit_str);
+    subStr = bit_to_str(bit_substr);
+
+    result = bin_text_position(str, str_length, subStr, substr_length);
 
     pfree_ext(str);
     pfree_ext(subStr);
