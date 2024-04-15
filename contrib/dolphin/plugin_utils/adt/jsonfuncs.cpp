@@ -4201,6 +4201,9 @@ static void cJSON_DeleteJsonPath(cJSON_JsonPath *jp)
 
 static void cJSON_DeleteResultWrapper(cJSON_ResultWrapper *res)
 {
+    if (res == NULL) {
+        return;
+    }
     cJSON_ResultNode *head = res->head;
     cJSON_ResultNode *next = NULL;
 
