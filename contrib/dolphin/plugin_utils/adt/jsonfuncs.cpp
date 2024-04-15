@@ -737,9 +737,13 @@ Datum json_object_field(PG_FUNCTION_ARGS)
 
     root = cJSON_ParseWithOpts(data, 0, 1);
     if (!root) {
-        cJSON_DeleteResultWrapper(res);
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("Invalid JSON text in argument 1 to function json_extract.")));
+        char *fnamestr = text_to_cstring(in_array);
+        result = get_worker(json, fnamestr, -1, NULL, NULL, -1, false);
+        if (result != NULL) {
+            PG_RETURN_TEXT_P(result);
+        } else {
+            PG_RETURN_NULL();
+        }
     }
     cJSON_SortObject(root);
     res = cJSON_CreateResultWrapper();
@@ -872,9 +876,13 @@ Datum json_object_field_text(PG_FUNCTION_ARGS)
 
     root = cJSON_ParseWithOpts(data, 0, 1);
     if (!root) {
-        cJSON_DeleteResultWrapper(res);
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
-                        errmsg("Invalid JSON text in argument 1 to function json_extract.")));
+        char *fnamestr = text_to_cstring(in_array);
+        result = get_worker(json, fnamestr, -1, NULL, NULL, -1, true);
+        if (result != NULL) {
+            PG_RETURN_TEXT_P(result);
+        } else {
+            PG_RETURN_NULL();
+        }
     }
     cJSON_SortObject(root);
     res = cJSON_CreateResultWrapper();

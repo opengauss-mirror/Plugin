@@ -35,8 +35,10 @@ select json_object('a','{"a":"b"}'::json,'b',234342,'c',true)->>'b';
 --test with json functions
 select json_object_field(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
 select json_object_field(json_object('Name','Adam','Age',23,'Address','Chengdu','Test','{"a":233}'::json),'Test');
+select json_object_field('{"Test":11111111111111111111111111111111111111111111111111111111111111111111111}','Test');
 select json_object_field_text(json_object('Name','Adam','Age',23,'Address','Chengdu','Test','{"a":233}'::json),'Test');
 select json_object_field_text(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
+select json_object_field_text('{"Test":11111111111111111111111111111111111111111111111111111111111111111111111}','Test');
 select json_extract_path(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
 select json_extract_path_op(json_object('Name','Adam','Age',23,'Address','Chengdu'),'{Name}');
 select pg_catalog.json_extract_path_op(cast('[0, 0, 0, 0]' as json), cast(pg_catalog.dolphin_types() as _text));
