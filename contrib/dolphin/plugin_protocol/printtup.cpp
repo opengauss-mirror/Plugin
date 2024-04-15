@@ -710,7 +710,7 @@ inline void AddCheckInfo(StringInfo buf)
 }
 
 #ifdef DOLPHIN
-bool inline is_req_from_jdbc()
+bool is_req_from_jdbc()
 {
     return strcmp(u_sess->attr.attr_common.application_name, "PostgreSQL JDBC Driver") == 0;
 }
