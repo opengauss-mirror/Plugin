@@ -11385,4 +11385,45 @@ Datum instr_bit(PG_FUNCTION_ARGS)
 
     PG_RETURN_INT32(result + start);
 }
+
+static Datum GetPeakVarlena(PG_FUNCTION_ARGS, bool isLarger)
+{
+    bytea* arg0 = (bytea*)PG_GETARG_DATUM(0);
+    bytea* arg1 = (bytea*)PG_GETARG_DATUM(1);
+
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1)) {
+            PG_RETURN_NULL();
+        } else {
+            PG_RETURN_BYTEA_P(arg1);
+        }
+    } else if (PG_ARGISNULL(1)) {
+        PG_RETURN_BYTEA_P(arg0);
+    }
+
+    int len0 = VARSIZE_ANY_EXHDR(arg0);
+    int len1 = VARSIZE_ANY_EXHDR(arg1);
+    int cmpFlag = memcmp(VARDATA_ANY(arg0), VARDATA_ANY(arg1), Min(len0, len1));
+    if ((isLarger && cmpFlag < 0) ||
+        (!isLarger && cmpFlag > 0)) {
+        PG_RETURN_BYTEA_P(arg1);
+    } else {
+        PG_RETURN_BYTEA_P(arg0);
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varlena_larger);
+extern "C" DLL_PUBLIC Datum varlena_larger(PG_FUNCTION_ARGS);
+Datum varlena_larger(PG_FUNCTION_ARGS)
+{
+    return GetPeakVarlena(fcinfo, true);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varlena_smaller);
+extern "C" DLL_PUBLIC Datum varlena_smaller(PG_FUNCTION_ARGS);
+Datum varlena_smaller(PG_FUNCTION_ARGS)
+{
+    return GetPeakVarlena(fcinfo, false);
+}
+
 #endif

@@ -1,0 +1,103 @@
+-- test json
+drop table if exists json_maxmin_t cascade;
+NOTICE:  table "json_maxmin_t" does not exist, skipping
+create table json_maxmin_t (a json);
+insert into json_maxmin_t values('{"a":1}');
+insert into json_maxmin_t values('{"a":2}');
+select max(a), min(a) from json_maxmin_t;
+   max   |   min   
+---------+---------
+ {"a":2} | {"a":1}
+(1 row)
+
+create view json_maxmin_v as select
+    max(a) as max_a,
+    min(a) as min_a
+    from json_maxmin_t;
+desc json_maxmin_v;
+ Field | Type | Null | Key | Default | Extra 
+-------+------+------+-----+---------+-------
+ max_a | json | YES  |     | NULL    | 
+ min_a | json | YES  |     | NULL    | 
+(2 rows)
+
+insert into json_maxmin_t values(null);
+insert into json_maxmin_t values('{"a":2, "b":1}');
+select * from json_maxmin_v;
+     max_a      |  min_a  
+----------------+---------
+ {"a":2, "b":1} | {"a":1}
+(1 row)
+
+insert into json_maxmin_t values('{"a":1, "b":2}');
+select * from json_maxmin_v;
+     max_a      |  min_a  
+----------------+---------
+ {"a":2, "b":1} | {"a":1}
+(1 row)
+
+insert into json_maxmin_t values(null);
+insert into json_maxmin_t values('{"a":2, "b":3}');
+select * from json_maxmin_v;
+     max_a      |  min_a  
+----------------+---------
+ {"a":2, "b":3} | {"a":1}
+(1 row)
+
+insert into json_maxmin_t values('{"b":3,"a":2}');
+select * from json_maxmin_v;
+     max_a      |  min_a  
+----------------+---------
+ {"a":2, "b":3} | {"a":1}
+(1 row)
+
+insert into json_maxmin_t values('{"b":2,"a":3}');
+select * from json_maxmin_v;
+     max_a     |  min_a  
+---------------+---------
+ {"b":2,"a":3} | {"a":1}
+(1 row)
+
+-- test blobs
+drop table if exists blob_maxmin_t cascade;
+NOTICE:  table "blob_maxmin_t" does not exist, skipping
+create table blob_maxmin_t(
+    a tinyblob,
+    b blob,
+    c mediumblob,
+    d longblob
+);
+insert into blob_maxmin_t values ('1.23.abc', '1.23.abc', '1.23.abc', '1.23.abc'),
+                                 (null, null, null, null),
+                                 ('3.23.abc', '3.23.abc', '3.23.abc', '3.23.abc'),
+                                 (null, null, null, null),
+                                 ('2.23.abc', '2.23.abc', '2.23.abc', '2.23.abc');
+create view blob_maxmin_v as select
+    max(a) as max_a,
+    min(a) as min_a,
+    max(b) as max_b,
+    min(b) as min_b,
+    max(c) as max_c,
+    min(c) as min_c,
+    max(d) as max_d,
+    min(d) as min_d
+    from blob_maxmin_t;
+desc blob_maxmin_v;
+ Field |    Type    | Null | Key | Default | Extra 
+-------+------------+------+-----+---------+-------
+ max_a | tinyblob   | YES  |     | NULL    | 
+ min_a | tinyblob   | YES  |     | NULL    | 
+ max_b | blob       | YES  |     | NULL    | 
+ min_b | blob       | YES  |     | NULL    | 
+ max_c | mediumblob | YES  |     | NULL    | 
+ min_c | mediumblob | YES  |     | NULL    | 
+ max_d | longblob   | YES  |     | NULL    | 
+ min_d | longblob   | YES  |     | NULL    | 
+(8 rows)
+
+select * from blob_maxmin_v;
+       max_a        |       min_a        |       max_b        |       min_b        |       max_c        |       min_c        |       max_d        |       min_d        
+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------
+ \x332e32332e616263 | \x312e32332e616263 | \x332e32332e616263 | \x312e32332e616263 | \x332e32332e616263 | \x312e32332e616263 | \x332e32332e616263 | \x312e32332e616263
+(1 row)
+

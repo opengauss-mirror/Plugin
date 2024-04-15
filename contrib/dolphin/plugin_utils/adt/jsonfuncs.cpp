@@ -7345,4 +7345,43 @@ static char* getJsonString(Oid othersTypeOid, Datum othersArg)
     }
     return tmp;
 }
+
+static Datum GetPeakJson(PG_FUNCTION_ARGS, char* cmpFunc, Json_Compare_Result secondCondition)
+{
+    Datum value1 = PG_GETARG_DATUM(0);
+    Datum value2 = PG_GETARG_DATUM(1);
+
+    /* Regardless of whether it is greater than or less than, it is non null priority */
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1)) {
+            PG_RETURN_NULL();
+        } else {
+            PG_RETURN_DATUM(value2);
+        }
+    } else if (PG_ARGISNULL(1)) {
+        PG_RETURN_DATUM(value1);
+    }
+
+    int cmpResult = json_compare(fcinfo, cmpFunc, false);
+    if (cmpResult == secondCondition) {
+        PG_RETURN_DATUM(value2);
+    } else {
+        PG_RETURN_DATUM(value1);
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_larger);
+extern "C" DLL_PUBLIC Datum json_larger(PG_FUNCTION_ARGS);
+Datum json_larger(PG_FUNCTION_ARGS)
+{
+    return GetPeakJson(fcinfo, "json_lt", JSON_LT);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(json_smaller);
+extern "C" DLL_PUBLIC Datum json_smaller(PG_FUNCTION_ARGS);
+Datum json_smaller(PG_FUNCTION_ARGS)
+{
+    return GetPeakJson(fcinfo, "json_gt", JSON_GT);
+}
+
 #endif

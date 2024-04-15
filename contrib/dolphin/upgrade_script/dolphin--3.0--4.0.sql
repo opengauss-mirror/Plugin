@@ -104,3 +104,29 @@ CREATE OR REPLACE FUNCTION pg_catalog.binary_timestamp(binary) RETURNS timestamp
 CREATE OR REPLACE FUNCTION pg_catalog.binary_timestamptz(binary) RETURNS timestamp with time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binary_timestamptz';
 CREATE CAST (binary AS timestamp without time zone) WITH FUNCTION pg_catalog.binary_timestamp(binary) AS ASSIGNMENT;
 CREATE CAST (binary AS timestamp with time zone) WITH FUNCTION pg_catalog.binary_timestamptz(binary) AS ASSIGNMENT;
+
+-- json max/min
+CREATE OR REPLACE FUNCTION pg_catalog.json_larger(json, json) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_larger';
+CREATE OR REPLACE FUNCTION pg_catalog.json_smaller(json, json) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_smaller';
+create aggregate pg_catalog.max(json) (SFUNC=pg_catalog.json_larger, STYPE=json);
+create aggregate pg_catalog.min(json) (SFUNC=pg_catalog.json_smaller, STYPE=json);
+-- tinyblob
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_larger(tinyblob, tinyblob) RETURNS tinyblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varlena_larger';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_smaller(tinyblob, tinyblob) RETURNS tinyblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varlena_smaller';
+create aggregate pg_catalog.max(tinyblob) (SFUNC=pg_catalog.tinyblob_larger, STYPE=tinyblob);
+create aggregate pg_catalog.min(tinyblob) (SFUNC=pg_catalog.tinyblob_smaller, STYPE=tinyblob);
+-- blob
+CREATE OR REPLACE FUNCTION pg_catalog.blob_larger(blob, blob) RETURNS blob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varlena_larger';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_smaller(blob, blob) RETURNS blob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varlena_smaller';
+create aggregate pg_catalog.max(blob) (SFUNC=pg_catalog.blob_larger, STYPE=blob);
+create aggregate pg_catalog.min(blob) (SFUNC=pg_catalog.blob_smaller, STYPE=blob);
+-- mediumblob
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_larger(mediumblob, mediumblob) RETURNS mediumblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varlena_larger';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_smaller(mediumblob, mediumblob) RETURNS mediumblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varlena_smaller';
+create aggregate pg_catalog.max(mediumblob) (SFUNC=pg_catalog.mediumblob_larger, STYPE=mediumblob);
+create aggregate pg_catalog.min(mediumblob) (SFUNC=pg_catalog.mediumblob_smaller, STYPE=mediumblob);
+-- longblob
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_larger(longblob, longblob) RETURNS longblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varlena_larger';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_smaller(longblob, longblob) RETURNS longblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varlena_smaller';
+create aggregate pg_catalog.max(longblob) (SFUNC=pg_catalog.longblob_larger, STYPE=longblob);
+create aggregate pg_catalog.min(longblob) (SFUNC=pg_catalog.longblob_smaller, STYPE=longblob);
