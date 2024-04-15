@@ -113,6 +113,7 @@
 |plugin_optimizer\commands|schemacmds.cpp   |src\gausskernel\optimizer\commands\schemacmds.cpp  |
 |plugin_optimizer\commands|typecmds.cpp   |src\gausskernel\optimizer\commands\typecmds.cpp  |
 |plugin_optimizer\commands|user.cpp   |src\gausskernel\optimizer\commands\user.cpp  |
+|plugin_optimizer\commands|alter.cpp   |src\gausskernel\optimizer\commands\alter.cpp  |
 |plugin_optimizer\plan|pgxcplan_single.cpp   |src\gausskernel\optimizer\plan\pgxcplan_single.cpp  |
 |plugin_optimizer\plan|planner.cpp   |src\gausskernel\optimizer\plan\planner.cpp  |
 |plugin_optimizer\plan|streamwalker.cpp   |src\gausskernel\optimizer\plan\streamwalker.cpp  |

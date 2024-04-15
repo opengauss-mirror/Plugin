@@ -39,3 +39,5 @@ DROP FUNCTION IF EXISTS pg_catalog.bit_length(blob);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(json);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(binary);
+
+drop function IF EXISTS pg_catalog."user"();

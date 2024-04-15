@@ -3843,7 +3843,11 @@ static char* pg_get_constraintdef_worker(Oid constraintId, bool fullCommand, int
     initStringInfo(&buf);
 
     if (fullCommand && OidIsValid(conForm->conrelid)) {
+#ifndef DOLPHIN
         appendStringInfo(&buf, "ALTER TABLE ONLY %s ADD CONSTRAINT %s ",
+#else
+        appendStringInfo(&buf, "ALTER TABLE ONLY (%s) ADD CONSTRAINT %s ",
+#endif
             generate_relation_name(conForm->conrelid, NIL), quote_identifier(NameStr(conForm->conname)));
     }
 
@@ -7615,7 +7619,15 @@ static void get_update_query_def(Query* query, deparse_context* context)
     }
     appendStringInfo(buf, "UPDATE ");
     get_hint_string(query->hintState, buf);
+#ifdef ODLPHIN
+    if (rte->inh) {
+        appendStringInfo(buf, "%s", generate_relation_name(rte->relid, NIL));
+    } else {
+        appendStringInfo(buf, "ONLY (%s)", enerate_relation_name(rte->relid, NIL));
+    }
+#else
     appendStringInfo(buf, "%s%s", only_marker(rte), generate_relation_name(rte->relid, NIL));
+#endif
     if (rte->alias != NULL) {
         appendStringInfo(buf, " %s", quote_identifier(rte->alias->aliasname));
     }
@@ -7753,7 +7765,15 @@ static void get_delete_query_def(Query* query, deparse_context* context)
     }
     appendStringInfo(buf, "DELETE ");
     get_hint_string(query->hintState, buf);
+#ifdef ODLPHIN
+    if (rte->inh) {
+        appendStringInfo(buf, "FROM %s", generate_relation_name(rte->relid, NIL));
+    } else {
+        appendStringInfo(buf, "FROM ONLY (%s)", generate_relation_name(rte->relid, NIL));
+    }
+#else
     appendStringInfo(buf, "FROM %s%s", only_marker(rte), generate_relation_name(rte->relid, NIL));
+#endif
     if (rte->alias != NULL)
         appendStringInfo(buf, " %s", quote_identifier(rte->alias->aliasname));
 
@@ -11702,12 +11722,26 @@ static void get_from_clause_item(Node* jtnode, Query* query, deparse_context* co
         switch (rte->rtekind) {
             case RTE_RELATION: {
                 /* Normal relation RTE */
+#ifdef ODLPHIN
+                char *relname = NULL;
+                if (OidIsValid(rte->refSynOid)) {
+                    relname = GetQualifiedSynonymName(rte->refSynOid, true);
+                } else {
+                    relname = generate_relation_name(rte->relid, context->namespaces);
+                }
+                if (rte->inh) {
+                    appendStringInfo(buf, "%s", relname);
+                } else {
+                    appendStringInfo(buf, "ONLY (%s)", relname);
+                }
+#else
                 if (OidIsValid(rte->refSynOid)) {
                     appendStringInfo(buf, "%s%s", only_marker(rte), GetQualifiedSynonymName(rte->refSynOid, true));
                 } else {
                     appendStringInfo(
                         buf, "%s%s", only_marker(rte), generate_relation_name(rte->relid, context->namespaces));
                 }
+#endif
                 if (rte->orientation == REL_COL_ORIENTED || rte->orientation == REL_TIMESERIES_ORIENTED)
                     query->vec_output = true;
             } break;

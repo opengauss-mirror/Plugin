@@ -49,7 +49,7 @@ SELECT _gb18030'高斯';
 SELECT _gbk X'e9ab98e696af';
 SELECT CONVERT_TO(_utf8mb4'楂樻柉', 'gbk'); -- ERROR
 SELECT CONVERT_TO(_utf8mb4'高斯', 'gbk'); -- ERROR
-SELECT COLLATION FOR(CAST('高斯' AS binary)::text);
+SELECT pg_collation_for(CAST('高斯' AS binary)::text);
 
 -- -- 中文 const compare
 -- -- -- same charset & explicit collation
@@ -130,70 +130,70 @@ SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_chinese_ci , '高斯DB' COLLATE gbk_bin
 SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_bin , '高斯DB' COLLATE gbk_chinese_ci); -- ERROR
 SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_bin , '高斯DB' COLLATE gbk_bin);
 -- -- -- same charset & implicit collation
-SELECT CONCAT(_gbk'高斯DB' , '高斯DB') result, collation for(result);
+SELECT CONCAT(_gbk'高斯DB' , '高斯DB') result, pg_collation_for(result);
 -- -- -- diff charset & explicit collation
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gbk'高斯DB' COLLATE gbk_chinese_ci) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gbk'高斯DB' COLLATE gbk_bin) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gb18030'高斯DB' COLLATE gb18030_chinese_ci) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gb18030'高斯DB' COLLATE gb18030_bin) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gbk'高斯DB' COLLATE gbk_chinese_ci) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gbk'高斯DB' COLLATE gbk_bin) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gb18030'高斯DB' COLLATE gb18030_chinese_ci) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gb18030'高斯DB' COLLATE gb18030_bin) result, collation for(result);
-SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_chinese_ci , _gb18030'高斯DB' COLLATE gb18030_chinese_ci) result, collation for(result); -- ERROR
-SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_chinese_ci , _gb18030'高斯DB' COLLATE gb18030_bin) result, collation for(result); -- ERROR
-SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_bin , _gb18030'高斯DB' COLLATE gb18030_chinese_ci) result, collation for(result); -- ERROR
-SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_bin , _gb18030'高斯DB' COLLATE gb18030_bin) result, collation for(result); -- ERROR
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gbk'高斯DB' COLLATE gbk_chinese_ci) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gbk'高斯DB' COLLATE gbk_bin) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gb18030'高斯DB' COLLATE gb18030_chinese_ci) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gb18030'高斯DB' COLLATE gb18030_bin) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gbk'高斯DB' COLLATE gbk_chinese_ci) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gbk'高斯DB' COLLATE gbk_bin) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gb18030'高斯DB' COLLATE gb18030_chinese_ci) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gb18030'高斯DB' COLLATE gb18030_bin) result, pg_collation_for(result);
+SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_chinese_ci , _gb18030'高斯DB' COLLATE gb18030_chinese_ci) result, pg_collation_for(result); -- ERROR
+SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_chinese_ci , _gb18030'高斯DB' COLLATE gb18030_bin) result, pg_collation_for(result); -- ERROR
+SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_bin , _gb18030'高斯DB' COLLATE gb18030_chinese_ci) result, pg_collation_for(result); -- ERROR
+SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_bin , _gb18030'高斯DB' COLLATE gb18030_bin) result, pg_collation_for(result); -- ERROR
 -- -- -- diff charset & implicit collation
-SELECT CONCAT(_utf8mb4'高斯DB' , _binary'高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' , _gbk'高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' , _gb18030'高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' , '高斯DB') result, collation for(result);
-SELECT CONCAT(_gbk'高斯DB' , _binary'高斯DB') result, collation for(result);
-SELECT CONCAT(_gbk'高斯DB' , _gb18030'高斯DB') result, collation for(result); -- ERROR
-SELECT CONCAT(_gb18030'高斯DB' , '高斯DB') result, collation for(result); -- ERROR
-SELECT CONCAT(_gb18030'高斯DB' , _binary'高斯DB') result, collation for(result);
-SELECT CONCAT( _binary'高斯DB', _utf8mb4'高斯DB') result, collation for(result);
-SELECT CONCAT( _binary'高斯DB', '高斯DB') result, collation for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' , _binary'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' , _gbk'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' , _gb18030'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' , '高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_gbk'高斯DB' , _binary'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_gbk'高斯DB' , _gb18030'高斯DB') result, pg_collation_for(result); -- ERROR
+SELECT CONCAT(_gb18030'高斯DB' , '高斯DB') result, pg_collation_for(result); -- ERROR
+SELECT CONCAT(_gb18030'高斯DB' , _binary'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT( _binary'高斯DB', _utf8mb4'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT( _binary'高斯DB', '高斯DB') result, pg_collation_for(result);
 -- -- -- explicit & implicit
-SELECT CONCAT(_utf8mb4'高斯DB' , '高斯DB' COLLATE "C") result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' , '高斯DB' COLLATE "zh_CN.gbk") result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' , '高斯DB' COLLATE gbk_chinese_ci) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' , '高斯DB' COLLATE gbk_bin) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' , _gbk'高斯DB' COLLATE gbk_chinese_ci) result, collation for(result);
-SELECT CONCAT(_utf8mb4'楂樻柉DB' , _gbk'高斯db' COLLATE gbk_chinese_ci) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' , _gbk'高斯DB' COLLATE gbk_bin) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' , _gb18030'高斯DB' COLLATE gb18030_chinese_ci) result, collation for(result);
-SELECT CONCAT(_utf8mb4'楂樻柉DB' , _gb18030'高斯db' COLLATE gb18030_chinese_ci) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' , _gb18030'高斯DB' COLLATE gb18030_bin) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , '高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _binary'高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gbk'高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gb18030'高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , '高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _binary'高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gbk'高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gb18030'高斯DB') result, collation for(result);
-SELECT CONCAT(_gbk'高斯DB' , _gb18030'高斯DB' COLLATE gb18030_chinese_ci) result, collation for(result);
-SELECT CONCAT(_gbk'高斯DB' , _gb18030'高斯DB' COLLATE gb18030_bin) result, collation for(result);
-SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_chinese_ci , '高斯DB') result, collation for(result);
-SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_chinese_ci , _gb18030'高斯DB') result, collation for(result);
-SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_bin , '高斯DB') result, collation for(result);
-SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_bin , _gb18030'高斯DB') result, collation for(result);
-SELECT CONCAT(_binary'高斯DB', _utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci) result, collation for(result);
-SELECT CONCAT(_binary'高斯DB' COLLATE 'binary', _gbk'高斯DB') result, collation for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' , '高斯DB' COLLATE "C") result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' , '高斯DB' COLLATE "zh_CN.gbk") result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' , '高斯DB' COLLATE gbk_chinese_ci) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' , '高斯DB' COLLATE gbk_bin) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' , _gbk'高斯DB' COLLATE gbk_chinese_ci) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'楂樻柉DB' , _gbk'高斯db' COLLATE gbk_chinese_ci) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' , _gbk'高斯DB' COLLATE gbk_bin) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' , _gb18030'高斯DB' COLLATE gb18030_chinese_ci) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'楂樻柉DB' , _gb18030'高斯db' COLLATE gb18030_chinese_ci) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' , _gb18030'高斯DB' COLLATE gb18030_bin) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , '高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _binary'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gbk'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci , _gb18030'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , '高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _binary'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gbk'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB' COLLATE utf8mb4_bin , _gb18030'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_gbk'高斯DB' , _gb18030'高斯DB' COLLATE gb18030_chinese_ci) result, pg_collation_for(result);
+SELECT CONCAT(_gbk'高斯DB' , _gb18030'高斯DB' COLLATE gb18030_bin) result, pg_collation_for(result);
+SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_chinese_ci , '高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_chinese_ci , _gb18030'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_bin , '高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_gbk'高斯DB' COLLATE gbk_bin , _gb18030'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_binary'高斯DB', _utf8mb4'高斯DB' COLLATE utf8mb4_unicode_ci) result, pg_collation_for(result);
+SELECT CONCAT(_binary'高斯DB' COLLATE 'binary', _gbk'高斯DB') result, pg_collation_for(result);
 
 -- -- -- concat 3 args
-SELECT CONCAT(_binary'高斯DB', _gb18030'高斯DB', _gbk'高斯DB') result, collation for(result);
-SELECT CONCAT(_binary'高斯DB', _gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk_chinese_ci) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _gbk'高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk_chinese_ci) result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _binary'高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB' COLLATE gb18030_chinese_ci, _binary'高斯DB') result, collation for(result);
-SELECT CONCAT(_gb18030'高斯DB', _gbk'高斯DB', _utf8mb4'高斯DB') result, collation for(result); -- ERROR
-SELECT CONCAT(_gb18030'高斯DB', _gbk'高斯DB', _binary'高斯DB') result, collation for(result); -- ERROR
-SELECT CONCAT(_gb18030'高斯DB' COLLATE gb18030_chinese_ci, _gbk'高斯DB', _utf8mb4'高斯DB') result, collation for(result);
-SELECT CONCAT(_gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk_chinese_ci, _binary'高斯DB') result, collation for(result);
+SELECT CONCAT(_binary'高斯DB', _gb18030'高斯DB', _gbk'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_binary'高斯DB', _gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk_chinese_ci) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _gbk'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk_chinese_ci) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB', _binary'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB', _gb18030'高斯DB' COLLATE gb18030_chinese_ci, _binary'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_gb18030'高斯DB', _gbk'高斯DB', _utf8mb4'高斯DB') result, pg_collation_for(result); -- ERROR
+SELECT CONCAT(_gb18030'高斯DB', _gbk'高斯DB', _binary'高斯DB') result, pg_collation_for(result); -- ERROR
+SELECT CONCAT(_gb18030'高斯DB' COLLATE gb18030_chinese_ci, _gbk'高斯DB', _utf8mb4'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_gb18030'高斯DB', _gbk'高斯DB' COLLATE gbk_chinese_ci, _binary'高斯DB') result, pg_collation_for(result);
 -- -- -- const compare CONCAT
 SELECT _utf8mb4'楂樻柉DB' = CONCAT(_gbk'高斯DB');
 SELECT _utf8mb4'楂樻柉DB楂樻柉DB' = CONCAT(_gbk'高斯DB', _gb18030'高斯DB' COLLATE gb18030_chinese_ci);
@@ -201,67 +201,67 @@ SELECT _utf8mb4'楂樻柉DB' COLLATE utf8mb4_bin = CONCAT(_gbk'高斯DB');
 SELECT _utf8mb4'楂樻柉DB楂樻柉DB' COLLATE utf8mb4_bin = CONCAT(_gbk'高斯DB', _gb18030'高斯DB' COLLATE gb18030_chinese_ci);
 SELECT _utf8mb4'楂樻柉DB楂樻柉DB' = CONCAT(_gbk'高斯DB', _gb18030'高斯DB'); -- ERROR
 -- -- -- const CONCAT CONCAT
-SELECT CONCAT(_utf8mb4'楂樻柉DB', CONCAT(_gbk'高斯DB')) result, collation for(result);
-SELECT CONCAT(_utf8mb4'楂樻柉DB楂樻柉DB', CONCAT(_gbk'高斯DB', _gb18030'高斯DB' COLLATE gb18030_chinese_ci)) result, collation for(result);
-SELECT CONCAT(_utf8mb4'楂樻柉DB' COLLATE utf8mb4_bin, CONCAT(_gbk'高斯DB')) result, collation for(result);
-SELECT CONCAT(_utf8mb4'楂樻柉DB楂樻柉DB' COLLATE utf8mb4_bin, CONCAT(_gbk'高斯DB', _gb18030'高斯DB' COLLATE gb18030_chinese_ci)) result, collation for(result);
+SELECT CONCAT(_utf8mb4'楂樻柉DB', CONCAT(_gbk'高斯DB')) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'楂樻柉DB楂樻柉DB', CONCAT(_gbk'高斯DB', _gb18030'高斯DB' COLLATE gb18030_chinese_ci)) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'楂樻柉DB' COLLATE utf8mb4_bin, CONCAT(_gbk'高斯DB')) result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'楂樻柉DB楂樻柉DB' COLLATE utf8mb4_bin, CONCAT(_gbk'高斯DB', _gb18030'高斯DB' COLLATE gb18030_chinese_ci)) result, pg_collation_for(result);
 -- -- -- const CONCAT with other diff DERIVATION
 -- -- -- -- same charset
-SELECT CONCAT('高斯DB', opengauss_version()) result, collation for(result);
-SELECT CONCAT(opengauss_version(), '高斯DB') result, collation for(result);
-SELECT CONCAT('高斯DB', 123) result, collation for(result);
-SELECT CONCAT(123, '高斯DB') result, collation for(result);
-SELECT CONCAT('高斯DB', DATE '2023-05-01') result, collation for(result);
-SELECT CONCAT(DATE '2023-05-01', '高斯DB') result, collation for(result);
-SELECT CONCAT('高斯DB', NULL) result, collation for(result);
-SELECT CONCAT(NULL, '高斯DB') result, collation for(result);
+SELECT CONCAT('高斯DB', opengauss_version()) result, pg_collation_for(result);
+SELECT CONCAT(opengauss_version(), '高斯DB') result, pg_collation_for(result);
+SELECT CONCAT('高斯DB', 123) result, pg_collation_for(result);
+SELECT CONCAT(123, '高斯DB') result, pg_collation_for(result);
+SELECT CONCAT('高斯DB', DATE '2023-05-01') result, pg_collation_for(result);
+SELECT CONCAT(DATE '2023-05-01', '高斯DB') result, pg_collation_for(result);
+SELECT CONCAT('高斯DB', NULL) result, pg_collation_for(result);
+SELECT CONCAT(NULL, '高斯DB') result, pg_collation_for(result);
 -- -- -- -- diff charset
-SELECT CONCAT(_utf8mb4'高斯DB', opengauss_version()) result, collation for(result);
-SELECT CONCAT(opengauss_version(), _utf8mb4'高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB', 123) result, collation for(result);
-SELECT CONCAT(123, _utf8mb4'高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB', DATE '2023-05-01') result, collation for(result);
-SELECT CONCAT(DATE '2023-05-01', _utf8mb4'高斯DB') result, collation for(result);
-SELECT CONCAT(_utf8mb4'高斯DB', NULL) result, collation for(result);
-SELECT CONCAT(NULL, _utf8mb4'高斯DB') result, collation for(result);
+SELECT CONCAT(_utf8mb4'高斯DB', opengauss_version()) result, pg_collation_for(result);
+SELECT CONCAT(opengauss_version(), _utf8mb4'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB', 123) result, pg_collation_for(result);
+SELECT CONCAT(123, _utf8mb4'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB', DATE '2023-05-01') result, pg_collation_for(result);
+SELECT CONCAT(DATE '2023-05-01', _utf8mb4'高斯DB') result, pg_collation_for(result);
+SELECT CONCAT(_utf8mb4'高斯DB', NULL) result, pg_collation_for(result);
+SELECT CONCAT(NULL, _utf8mb4'高斯DB') result, pg_collation_for(result);
 -- -- -- CONCAT CONCAT with other diff DERIVATION
 -- -- -- -- same charset
-SELECT CONCAT(CONCAT('高斯DB'), opengauss_version()) result, collation for(result);
-SELECT CONCAT(opengauss_version(), CONCAT('高斯DB')) result, collation for(result);
-SELECT CONCAT(CONCAT('高斯DB'), 123) result, collation for(result);
-SELECT CONCAT(123, CONCAT('高斯DB')) result, collation for(result);
-SELECT CONCAT(CONCAT('高斯DB'), DATE '2023-05-01') result, collation for(result);
-SELECT CONCAT(DATE '2023-05-01', CONCAT('高斯DB')) result, collation for(result);
-SELECT CONCAT(CONCAT('高斯DB'), NULL) result, collation for(result);
-SELECT CONCAT(NULL, CONCAT('高斯DB')) result, collation for(result);
+SELECT CONCAT(CONCAT('高斯DB'), opengauss_version()) result, pg_collation_for(result);
+SELECT CONCAT(opengauss_version(), CONCAT('高斯DB')) result, pg_collation_for(result);
+SELECT CONCAT(CONCAT('高斯DB'), 123) result, pg_collation_for(result);
+SELECT CONCAT(123, CONCAT('高斯DB')) result, pg_collation_for(result);
+SELECT CONCAT(CONCAT('高斯DB'), DATE '2023-05-01') result, pg_collation_for(result);
+SELECT CONCAT(DATE '2023-05-01', CONCAT('高斯DB')) result, pg_collation_for(result);
+SELECT CONCAT(CONCAT('高斯DB'), NULL) result, pg_collation_for(result);
+SELECT CONCAT(NULL, CONCAT('高斯DB')) result, pg_collation_for(result);
 -- -- -- -- diff charset
-SELECT CONCAT(CONCAT(_utf8mb4'高斯DB'), opengauss_version()) result, collation for(result);
-SELECT CONCAT(opengauss_version(), CONCAT(_utf8mb4'高斯DB')) result, collation for(result);
-SELECT CONCAT(CONCAT(_utf8mb4'高斯DB'), 123) result, collation for(result);
-SELECT CONCAT(123, CONCAT(_utf8mb4'高斯DB')) result, collation for(result);
-SELECT CONCAT(CONCAT(_utf8mb4'高斯DB'), DATE '2023-05-01') result, collation for(result);
-SELECT CONCAT(DATE '2023-05-01', CONCAT(_utf8mb4'高斯DB')) result, collation for(result);
-SELECT CONCAT(CONCAT(_utf8mb4'高斯DB'), NULL) result, collation for(result);
-SELECT CONCAT(NULL, CONCAT(_utf8mb4'高斯DB')) result, collation for(result);
+SELECT CONCAT(CONCAT(_utf8mb4'高斯DB'), opengauss_version()) result, pg_collation_for(result);
+SELECT CONCAT(opengauss_version(), CONCAT(_utf8mb4'高斯DB')) result, pg_collation_for(result);
+SELECT CONCAT(CONCAT(_utf8mb4'高斯DB'), 123) result, pg_collation_for(result);
+SELECT CONCAT(123, CONCAT(_utf8mb4'高斯DB')) result, pg_collation_for(result);
+SELECT CONCAT(CONCAT(_utf8mb4'高斯DB'), DATE '2023-05-01') result, pg_collation_for(result);
+SELECT CONCAT(DATE '2023-05-01', CONCAT(_utf8mb4'高斯DB')) result, pg_collation_for(result);
+SELECT CONCAT(CONCAT(_utf8mb4'高斯DB'), NULL) result, pg_collation_for(result);
+SELECT CONCAT(NULL, CONCAT(_utf8mb4'高斯DB')) result, pg_collation_for(result);
 -- -- -- CONCAT NUMBERS
-SELECT CONCAT('100', 200) result, collation for(result);
-SELECT CONCAT('100', date'2021-01-01') result, collation for(result);
-SELECT CONCAT('100', NULL) result, collation for(result);
-SELECT CONCAT('100', NULL::varbinary(16)) result, collation for(result);
-SELECT CONCAT('100', NULL::text) result, collation for(result);
-SELECT CONCAT(100, 200) result, collation for(result);
-SELECT CONCAT(100, date'2021-01-01') result, collation for(result);
-SELECT CONCAT(100, NULL) result, collation for(result);
-SELECT CONCAT(100, NULL::varbinary(16)) result, collation for(result);
-SELECT CONCAT(100, NULL::text) result, collation for(result);
-SELECT CONCAT(NULL, NULL::varbinary(16)) result, collation for(result);
-SELECT CONCAT(NULL, NULL::text) result, collation for(result);
-SELECT CONCAT(CONCAT(100, NULL), '100') result, collation for(result);
-SELECT CONCAT(CONCAT(100, NULL::varbinary(16)), '100') result, collation for(result);
-SELECT CONCAT(CONCAT(100, NULL::text), '100') result, collation for(result);
-SELECT CONCAT(CONCAT(100, NULL), 100) result, collation for(result);
-SELECT CONCAT(CONCAT(100, NULL::varbinary(16)), 100) result, collation for(result);
-SELECT CONCAT(CONCAT(100, NULL::text), 100) result, collation for(result);
+SELECT CONCAT('100', 200) result, pg_collation_for(result);
+SELECT CONCAT('100', date'2021-01-01') result, pg_collation_for(result);
+SELECT CONCAT('100', NULL) result, pg_collation_for(result);
+SELECT CONCAT('100', NULL::varbinary(16)) result, pg_collation_for(result);
+SELECT CONCAT('100', NULL::text) result, pg_collation_for(result);
+SELECT CONCAT(100, 200) result, pg_collation_for(result);
+SELECT CONCAT(100, date'2021-01-01') result, pg_collation_for(result);
+SELECT CONCAT(100, NULL) result, pg_collation_for(result);
+SELECT CONCAT(100, NULL::varbinary(16)) result, pg_collation_for(result);
+SELECT CONCAT(100, NULL::text) result, pg_collation_for(result);
+SELECT CONCAT(NULL, NULL::varbinary(16)) result, pg_collation_for(result);
+SELECT CONCAT(NULL, NULL::text) result, pg_collation_for(result);
+SELECT CONCAT(CONCAT(100, NULL), '100') result, pg_collation_for(result);
+SELECT CONCAT(CONCAT(100, NULL::varbinary(16)), '100') result, pg_collation_for(result);
+SELECT CONCAT(CONCAT(100, NULL::text), '100') result, pg_collation_for(result);
+SELECT CONCAT(CONCAT(100, NULL), 100) result, pg_collation_for(result);
+SELECT CONCAT(CONCAT(100, NULL::varbinary(16)), 100) result, pg_collation_for(result);
+SELECT CONCAT(CONCAT(100, NULL::text), 100) result, pg_collation_for(result);
 
 -- -- 中文 with column charset
 CREATE TABLE t_diff_charset_columns(
@@ -380,58 +380,58 @@ SELECT fgbk_chi = fgb18030_chi, fgb18030_chi = fgbk_chi FROM t_diff_charset_colu
 
 -- -- COLUMN concat COLUMN
 -- -- -- same charset & implicit collation
-SELECT CONCAT(futf8_bin, futf8_uni) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(fgbk_bin, fgbk_chi) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(fgb18030_bin, fgb18030_chi) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_gen, futf8_uni) result, collation for(result) FROM t_diff_charset_columns; -- result is _bin
+SELECT CONCAT(futf8_bin, futf8_uni) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(fgbk_bin, fgbk_chi) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(fgb18030_bin, fgb18030_chi) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_gen, futf8_uni) result, pg_collation_for(result) FROM t_diff_charset_columns; -- result is _bin
 -- -- -- diff charset & implicit collation
-SELECT CONCAT(futf8_bin, fgbk_bin) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_bin, fgbk_chi) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_bin, fgb18030_bin) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_bin, fgb18030_chi) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_uni, fgbk_bin) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_uni, fgbk_chi) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_uni, fgb18030_bin) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_uni, fgb18030_chi) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(fgbk_bin, fgb18030_bin) result, collation for(result) FROM t_diff_charset_columns; -- ERROR
-SELECT CONCAT(fgbk_bin, fgb18030_chi) result, collation for(result) FROM t_diff_charset_columns; -- ERROR
-SELECT CONCAT(fgbk_chi, fgb18030_chi) result, collation for(result) FROM t_diff_charset_columns; -- ERROR
+SELECT CONCAT(futf8_bin, fgbk_bin) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_bin, fgbk_chi) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_bin, fgb18030_bin) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_bin, fgb18030_chi) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_uni, fgbk_bin) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_uni, fgbk_chi) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_uni, fgb18030_bin) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_uni, fgb18030_chi) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(fgbk_bin, fgb18030_bin) result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
+SELECT CONCAT(fgbk_bin, fgb18030_chi) result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
+SELECT CONCAT(fgbk_chi, fgb18030_chi) result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
 
 -- -- concat column and @uservar
 set enable_set_variable_b_format=on;
 -- -- -- string var utf8mb4_general_ci
 set @var_utf8_gen = _utf8mb4'高斯DB' COLLATE utf8mb4_general_ci; -- should support
-SELECT collation for(@var_utf8_gen);
-SELECT CONCAT(futf8_uni, @var_utf8_gen) result, collation for(result) FROM t_diff_charset_columns; -- null collation
-SELECT CONCAT(fgbk_bin, @var_utf8_gen) result, collation for(result) FROM t_diff_charset_columns; -- utf8mb4_general_ci
-SELECT CONCAT(@var_utf8_gen, futf8_bin) result, collation for(result) FROM t_diff_charset_columns; -- _bin
+SELECT pg_collation_for(@var_utf8_gen);
+SELECT CONCAT(futf8_uni, @var_utf8_gen) result, pg_collation_for(result) FROM t_diff_charset_columns; -- null collation
+SELECT CONCAT(fgbk_bin, @var_utf8_gen) result, pg_collation_for(result) FROM t_diff_charset_columns; -- utf8mb4_general_ci
+SELECT CONCAT(@var_utf8_gen, futf8_bin) result, pg_collation_for(result) FROM t_diff_charset_columns; -- _bin
 -- -- -- string var gbk_chinese_ci
 set @var_gbk_chi = '高斯DB' COLLATE gbk_chinese_ci; -- should support
-SELECT collation for(@var_gbk_chi);
-SELECT CONCAT(futf8_uni, @var_gbk_chi) result, collation for(result) FROM t_diff_charset_columns; -- futf8_uni
-SELECT CONCAT(@var_gbk_chi, fgbk_bin) result, collation for(result) FROM t_diff_charset_columns; -- fgbk_bin
+SELECT pg_collation_for(@var_gbk_chi);
+SELECT CONCAT(futf8_uni, @var_gbk_chi) result, pg_collation_for(result) FROM t_diff_charset_columns; -- futf8_uni
+SELECT CONCAT(@var_gbk_chi, fgbk_bin) result, pg_collation_for(result) FROM t_diff_charset_columns; -- fgbk_bin
 -- -- -- number var
 set @var_num = 5.0;
-SELECT CONCAT(@var_num, fgbk_bin) result, collation for(result) FROM t_diff_charset_columns; -- fgbk_bin
+SELECT CONCAT(@var_num, fgbk_bin) result, pg_collation_for(result) FROM t_diff_charset_columns; -- fgbk_bin
 -- -- -- varbinary var
 set @var_binary = _binary'高斯DB';
-SELECT CONCAT(futf8_bin, @var_binary) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(@var_binary, fgbk_bin) result, collation for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_bin, @var_binary) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(@var_binary, fgbk_bin) result, pg_collation_for(result) FROM t_diff_charset_columns;
 
 -- -- concat column and bind parameter
 -- -- -- -- PBE with implicit collation
 PREPARE test_merge_collation(text) AS
-SELECT CONCAT(futf8_uni, $1) result, collation for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_uni, $1) result, pg_collation_for(result) FROM t_diff_charset_columns;
 -- -- -- -- -- _utf8mb4
 SET @pbe_param1 = _utf8mb4'高斯DB';
 EXECUTE test_merge_collation(@pbe_param1); -- futf8_uni collation has priority
 EXECUTE test_merge_collation(_utf8mb4'高斯DB'); -- same as above
-SELECT CONCAT(futf8_uni, _utf8mb4'高斯DB') result, collation for(result) FROM t_diff_charset_columns; -- same as above
+SELECT CONCAT(futf8_uni, _utf8mb4'高斯DB') result, pg_collation_for(result) FROM t_diff_charset_columns; -- same as above
 -- -- -- -- -- _gbk
 SET @pbe_param1 = _gbk'高斯DB';
 EXECUTE test_merge_collation(@pbe_param1); -- _gbk noneffective, futf8_uni collation has priority,  _gbk'高斯DB' will not convert to utf8mb4
 EXECUTE test_merge_collation(_gbk'高斯DB'); -- same as above
-SELECT CONCAT(futf8_uni, _gbk'高斯DB') result, collation for(result) FROM t_diff_charset_columns; -- same as above
+SELECT CONCAT(futf8_uni, _gbk'高斯DB') result, pg_collation_for(result) FROM t_diff_charset_columns; -- same as above
 -- -- -- -- -- _utf8mb4 utf8mb4_unicode_ci
 SET @pbe_param1 = _utf8mb4'高斯DB' collate utf8mb4_bin;
 EXECUTE test_merge_collation(@pbe_param1); -- explicit noneffective, futf8_uni collation has priority
@@ -439,7 +439,7 @@ EXECUTE test_merge_collation(_utf8mb4'高斯DB' collate utf8mb4_unicode_ci); -- 
 DEALLOCATE test_merge_collation;
 -- -- -- -- PBE with explicit collation,
 PREPARE test_merge_collation(text) AS
-SELECT CONCAT($1 collate gbk_chinese_ci, futf8_bin) result, collation for(result) FROM t_diff_charset_columns;
+SELECT CONCAT($1 collate gbk_chinese_ci, futf8_bin) result, pg_collation_for(result) FROM t_diff_charset_columns;
 -- -- -- -- -- _utf8mb4
 SET @pbe_param1 = _utf8mb4'高斯DB';
 EXECUTE test_merge_collation(@pbe_param1);
@@ -451,7 +451,7 @@ EXECUTE test_merge_collation(_gbk'高斯DB'); -- utf8mb4_unicode_ci
 DEALLOCATE test_merge_collation;
 -- -- -- -- PBE with explicit collation,
 PREPARE test_merge_collation(text) AS
-SELECT CONCAT($1 collate utf8mb4_unicode_ci, futf8_bin) result, collation for(result) FROM t_diff_charset_columns; -- $1 use collation_connection, ERROR
+SELECT CONCAT($1 collate utf8mb4_unicode_ci, futf8_bin) result, pg_collation_for(result) FROM t_diff_charset_columns; -- $1 use collation_connection, ERROR
 DEALLOCATE test_merge_collation;
 -- -- -- -- test revalidate
 SELECT fgbk_chi result FROM t_diff_charset_columns WHERE fgbk_chi=_gbk'高斯db'; -- 1 rows
@@ -474,52 +474,52 @@ SET NAMES gbk;
 
 -- -- concat for DERIVATION
 -- -- -- same charset & diff DERIVATION
-SELECT CONCAT(CONCAT(futf8_gen, futf8_uni), futf8_bin) result, collation for(result) FROM t_diff_charset_columns; -- conflict in concat inside
-SELECT CONCAT(futf8_bin, CONCAT(futf8_gen, futf8_uni)) result, collation for(result) FROM t_diff_charset_columns; -- conflict in concat inside
-SELECT CONCAT(CONCAT(futf8_gen, futf8_uni), futf8_bin collate utf8mb4_unicode_ci) result, collation for(result) FROM t_diff_charset_columns; -- conflict in concat inside
-SELECT CONCAT(futf8_bin collate utf8mb4_unicode_ci, CONCAT(futf8_gen, futf8_uni)) result, collation for(result) FROM t_diff_charset_columns; -- conflict in concat inside
-SELECT CONCAT(CONCAT(futf8_gen), futf8_uni) result, collation for(result) FROM t_diff_charset_columns; -- conflict
-SELECT CONCAT(futf8_uni, CONCAT(futf8_gen)) result, collation for(result) FROM t_diff_charset_columns; -- conflict
-SELECT CONCAT(futf8_uni, opengauss_version()) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(opengauss_version(), futf8_uni) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(fgbk_chi, '高斯DB') result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT('高斯DB', fgbk_chi) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_uni, 123) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(123, futf8_uni) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_uni, DATE '2023-05-01') result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(DATE '2023-05-01', futf8_uni) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_uni, NULL) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(NULL, futf8_uni) result, collation for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(CONCAT(futf8_gen, futf8_uni), futf8_bin) result, pg_collation_for(result) FROM t_diff_charset_columns; -- conflict in concat inside
+SELECT CONCAT(futf8_bin, CONCAT(futf8_gen, futf8_uni)) result, pg_collation_for(result) FROM t_diff_charset_columns; -- conflict in concat inside
+SELECT CONCAT(CONCAT(futf8_gen, futf8_uni), futf8_bin collate utf8mb4_unicode_ci) result, pg_collation_for(result) FROM t_diff_charset_columns; -- conflict in concat inside
+SELECT CONCAT(futf8_bin collate utf8mb4_unicode_ci, CONCAT(futf8_gen, futf8_uni)) result, pg_collation_for(result) FROM t_diff_charset_columns; -- conflict in concat inside
+SELECT CONCAT(CONCAT(futf8_gen), futf8_uni) result, pg_collation_for(result) FROM t_diff_charset_columns; -- conflict
+SELECT CONCAT(futf8_uni, CONCAT(futf8_gen)) result, pg_collation_for(result) FROM t_diff_charset_columns; -- conflict
+SELECT CONCAT(futf8_uni, opengauss_version()) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(opengauss_version(), futf8_uni) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(fgbk_chi, '高斯DB') result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT('高斯DB', fgbk_chi) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_uni, 123) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(123, futf8_uni) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_uni, DATE '2023-05-01') result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(DATE '2023-05-01', futf8_uni) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_uni, NULL) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(NULL, futf8_uni) result, pg_collation_for(result) FROM t_diff_charset_columns;
 -- -- -- diff charset & diff DERIVATION
-SELECT CONCAT(CONCAT(futf8_gen, futf8_uni), CONCAT(fgbk_chi, fgb18030_chi)) result, collation for(result) FROM t_diff_charset_columns; -- conflict in concat inside
-SELECT CONCAT(CONCAT(fgbk_chi, fgb18030_chi), CONCAT(futf8_gen, futf8_uni)) result, collation for(result) FROM t_diff_charset_columns; -- conflict in concat inside
-SELECT CONCAT(CONCAT(futf8_gen, futf8_uni), fgbk_chi) result, collation for(result) FROM t_diff_charset_columns; -- conflict in concat inside
-SELECT CONCAT(fgbk_chi, CONCAT(futf8_gen, futf8_uni)) result, collation for(result) FROM t_diff_charset_columns; -- conflict in concat inside
-SELECT CONCAT(CONCAT(futf8_gen, futf8_uni), fgbk_chi COLLATE gbk_chinese_ci) result, collation for(result) FROM t_diff_charset_columns; -- conflict in concat inside
-SELECT CONCAT(fgbk_chi COLLATE gbk_chinese_ci, CONCAT(futf8_gen, futf8_uni)) result, collation for(result) FROM t_diff_charset_columns; -- conflict in concat inside
-SELECT CONCAT(fgbk_chi, CONCAT(fgb18030_chi)) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(CONCAT(fgb18030_bin), fgbk_bin) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(fgbk_chi, opengauss_version()) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(opengauss_version(), fgbk_bin) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_uni, '高斯DB') result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT('高斯DB', futf8_uni) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(fgbk_chi, 123) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(123, fgbk_bin) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(fgbk_chi, DATE '2023-05-01') result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(DATE '2023-05-01', fgbk_bin) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(fgbk_chi, NULL) result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(NULL, fgbk_bin) result, collation for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(CONCAT(futf8_gen, futf8_uni), CONCAT(fgbk_chi, fgb18030_chi)) result, pg_collation_for(result) FROM t_diff_charset_columns; -- conflict in concat inside
+SELECT CONCAT(CONCAT(fgbk_chi, fgb18030_chi), CONCAT(futf8_gen, futf8_uni)) result, pg_collation_for(result) FROM t_diff_charset_columns; -- conflict in concat inside
+SELECT CONCAT(CONCAT(futf8_gen, futf8_uni), fgbk_chi) result, pg_collation_for(result) FROM t_diff_charset_columns; -- conflict in concat inside
+SELECT CONCAT(fgbk_chi, CONCAT(futf8_gen, futf8_uni)) result, pg_collation_for(result) FROM t_diff_charset_columns; -- conflict in concat inside
+SELECT CONCAT(CONCAT(futf8_gen, futf8_uni), fgbk_chi COLLATE gbk_chinese_ci) result, pg_collation_for(result) FROM t_diff_charset_columns; -- conflict in concat inside
+SELECT CONCAT(fgbk_chi COLLATE gbk_chinese_ci, CONCAT(futf8_gen, futf8_uni)) result, pg_collation_for(result) FROM t_diff_charset_columns; -- conflict in concat inside
+SELECT CONCAT(fgbk_chi, CONCAT(fgb18030_chi)) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(CONCAT(fgb18030_bin), fgbk_bin) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(fgbk_chi, opengauss_version()) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(opengauss_version(), fgbk_bin) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_uni, '高斯DB') result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT('高斯DB', futf8_uni) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(fgbk_chi, 123) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(123, fgbk_bin) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(fgbk_chi, DATE '2023-05-01') result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(DATE '2023-05-01', fgbk_bin) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(fgbk_chi, NULL) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(NULL, fgbk_bin) result, pg_collation_for(result) FROM t_diff_charset_columns;
 
 -- -- test explicit collate on concat
 -- -- -- same charset & implicit collation
-SELECT CONCAT(futf8_bin, futf8_uni) COLLATE utf8mb4_general_ci result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_bin, futf8_uni) COLLATE gbk_chinese_ci result, collation for(result) FROM t_diff_charset_columns; -- ERROR
+SELECT CONCAT(futf8_bin, futf8_uni) COLLATE utf8mb4_general_ci result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_bin, futf8_uni) COLLATE gbk_chinese_ci result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
 -- -- -- diff charset & implicit collation
-SELECT CONCAT(futf8_bin, fgbk_bin) COLLATE utf8mb4_general_ci result, collation for(result) FROM t_diff_charset_columns;
-SELECT CONCAT(futf8_bin, fgbk_bin) COLLATE gbk_chinese_ci result, collation for(result) FROM t_diff_charset_columns; -- ERROR
+SELECT CONCAT(futf8_bin, fgbk_bin) COLLATE utf8mb4_general_ci result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CONCAT(futf8_bin, fgbk_bin) COLLATE gbk_chinese_ci result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
 -- -- -- with binary & implicit collation
-SELECT CONCAT(fbin, futf8_uni) COLLATE "binary" result, collation for(result) FROM t_diff_charset_columns; -- return datatype still text
-SELECT CONCAT(fbin, futf8_uni) COLLATE utf8mb4_general_ci result, collation for(result) FROM t_diff_charset_columns; -- return datatype still text
+SELECT CONCAT(fbin, futf8_uni) COLLATE "binary" result, pg_collation_for(result) FROM t_diff_charset_columns; -- return datatype still text
+SELECT CONCAT(fbin, futf8_uni) COLLATE utf8mb4_general_ci result, pg_collation_for(result) FROM t_diff_charset_columns; -- return datatype still text
 
 -- -- test explicit collate on blob result
 SELECT CAST('DEADBEEF' AS blob) COLLATE utf8mb4_general_ci result; -- ERROR
@@ -528,41 +528,41 @@ SELECT CAST('DEADBEEF' AS blob) COLLATE "binary" result;
 -- -- case when
 -- -- -- condition same charset & result same charset & implicit collation
 -- -- -- -- bool condition
-SELECT CASE WHEN (fgbk_chi = fgbk_bin) THEN (futf8_bin) ELSE (futf8_uni) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE WHEN (futf8_bin = futf8_uni) THEN (fgbk_chi) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE WHEN (fgbk_chi = fgbk_bin) THEN (futf8_gen) ELSE (futf8_uni) END result, collation for(result) FROM t_diff_charset_columns; -- null collation
-SELECT CASE WHEN (futf8_gen = futf8_uni) THEN (fgbk_chi) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns; -- ERROR
+SELECT CASE WHEN (fgbk_chi = fgbk_bin) THEN (futf8_bin) ELSE (futf8_uni) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE WHEN (futf8_bin = futf8_uni) THEN (fgbk_chi) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE WHEN (fgbk_chi = fgbk_bin) THEN (futf8_gen) ELSE (futf8_uni) END result, pg_collation_for(result) FROM t_diff_charset_columns; -- null collation
+SELECT CASE WHEN (futf8_gen = futf8_uni) THEN (fgbk_chi) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
 -- -- -- -- case condition
-SELECT CASE fgbk_chi WHEN fgbk_bin THEN (futf8_bin) ELSE (futf8_uni) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE futf8_bin WHEN futf8_uni THEN (fgbk_chi) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE fgbk_chi WHEN fgbk_bin THEN (futf8_gen) ELSE (futf8_uni) END result, collation for(result) FROM t_diff_charset_columns; -- null collation
-SELECT CASE futf8_gen WHEN futf8_uni THEN (fgbk_chi) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns; -- ERROR
+SELECT CASE fgbk_chi WHEN fgbk_bin THEN (futf8_bin) ELSE (futf8_uni) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE futf8_bin WHEN futf8_uni THEN (fgbk_chi) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE fgbk_chi WHEN fgbk_bin THEN (futf8_gen) ELSE (futf8_uni) END result, pg_collation_for(result) FROM t_diff_charset_columns; -- null collation
+SELECT CASE futf8_gen WHEN futf8_uni THEN (fgbk_chi) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
 -- -- -- condition same charset & result diff charset & implicit collation
 -- -- -- -- bool condition
-SELECT CASE WHEN (fgbk_chi = fgbk_bin) THEN (fgbk_bin) ELSE (futf8_uni) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE WHEN (futf8_bin = futf8_uni) THEN (futf8_uni) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE WHEN (futf8_bin = futf8_uni) THEN (fgb18030_bin) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns; -- ERROR
+SELECT CASE WHEN (fgbk_chi = fgbk_bin) THEN (fgbk_bin) ELSE (futf8_uni) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE WHEN (futf8_bin = futf8_uni) THEN (futf8_uni) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE WHEN (futf8_bin = futf8_uni) THEN (fgb18030_bin) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
 -- -- -- -- case condition
-SELECT CASE fgbk_chi WHEN fgbk_bin THEN (futf8_bin) ELSE (futf8_uni) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE futf8_bin WHEN futf8_uni THEN (futf8_uni) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns;
+SELECT CASE fgbk_chi WHEN fgbk_bin THEN (futf8_bin) ELSE (futf8_uni) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE futf8_bin WHEN futf8_uni THEN (futf8_uni) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns;
 -- -- -- condition diff charset & result same charset & implicit collation
 -- -- -- -- bool condition
-SELECT CASE WHEN (futf8_uni = fgbk_bin) THEN (futf8_bin) ELSE (futf8_uni) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE WHEN (fgbk_bin = futf8_uni) THEN (fgbk_chi) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE WHEN (fgbk_bin = fgb18030_bin) THEN (fgbk_chi) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns; -- ERROR
+SELECT CASE WHEN (futf8_uni = fgbk_bin) THEN (futf8_bin) ELSE (futf8_uni) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE WHEN (fgbk_bin = futf8_uni) THEN (fgbk_chi) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE WHEN (fgbk_bin = fgb18030_bin) THEN (fgbk_chi) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
 -- -- -- -- case condition
-SELECT CASE futf8_uni WHEN fgbk_bin THEN (futf8_bin) ELSE (futf8_uni) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE fgbk_bin WHEN futf8_uni THEN (fgbk_chi) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE fgbk_bin WHEN fgb18030_bin THEN (fgbk_chi) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns; -- ERROR
+SELECT CASE futf8_uni WHEN fgbk_bin THEN (futf8_bin) ELSE (futf8_uni) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE fgbk_bin WHEN futf8_uni THEN (fgbk_chi) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE fgbk_bin WHEN fgb18030_bin THEN (fgbk_chi) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
 -- -- -- condition diff charset & result diff charset & implicit collation
 -- -- -- -- bool condition
-SELECT CASE WHEN (futf8_uni = fgbk_bin) THEN (fgbk_bin) ELSE (futf8_bin) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE WHEN (fgbk_bin = futf8_uni) THEN (futf8_bin) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE WHEN (fgbk_bin = fgb18030_bin) THEN (fgb18030_chi) ELSE (fgbk_chi) END result, collation for(result) FROM t_diff_charset_columns; -- ERROR
+SELECT CASE WHEN (futf8_uni = fgbk_bin) THEN (fgbk_bin) ELSE (futf8_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE WHEN (fgbk_bin = futf8_uni) THEN (futf8_bin) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE WHEN (fgbk_bin = fgb18030_bin) THEN (fgb18030_chi) ELSE (fgbk_chi) END result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
 -- -- -- -- case condition
-SELECT CASE futf8_uni WHEN fgbk_bin THEN (fgbk_bin) ELSE (futf8_bin) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE fgbk_bin WHEN futf8_uni THEN (futf8_bin) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns;
-SELECT CASE fgb18030_chi WHEN fgbk_chi THEN (fgb18030_bin) ELSE (fgbk_bin) END result, collation for(result) FROM t_diff_charset_columns; -- ERROR
+SELECT CASE futf8_uni WHEN fgbk_bin THEN (fgbk_bin) ELSE (futf8_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE fgbk_bin WHEN futf8_uni THEN (futf8_bin) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT CASE fgb18030_chi WHEN fgbk_chi THEN (fgb18030_bin) ELSE (fgbk_bin) END result, pg_collation_for(result) FROM t_diff_charset_columns; -- ERROR
 
 -- -- in
 -- -- -- column utf8
@@ -597,16 +597,16 @@ SELECT futf8_bin FROM t_diff_charset_columns t1 WHERE fgbk_chi in (SELECT t2.fgb
 SELECT futf8_bin FROM t_diff_charset_columns t1 WHERE fgbk_chi in (SELECT t2.fgb18030_bin FROM t_diff_charset_columns t2); -- ERROR
 
 -- -- COALESCE
-SELECT COALESCE(fgbk_chi, futf8_bin) result, collation for(result) FROM t_diff_charset_columns;
-SELECT COALESCE(futf8_gen, futf8_bin) result, collation for (result) FROM t_diff_charset_columns;
-SELECT COALESCE(futf8_uni, futf8_gen) result, collation for (result) FROM t_diff_charset_columns; -- conflict
-SELECT COALESCE(fgbk_chi, fgb18030_chi) result, collation for (result) FROM t_diff_charset_columns; -- ERROR
+SELECT COALESCE(fgbk_chi, futf8_bin) result, pg_collation_for(result) FROM t_diff_charset_columns;
+SELECT COALESCE(futf8_gen, futf8_bin) result, pg_collation_for (result) FROM t_diff_charset_columns;
+SELECT COALESCE(futf8_uni, futf8_gen) result, pg_collation_for (result) FROM t_diff_charset_columns; -- conflict
+SELECT COALESCE(fgbk_chi, fgb18030_chi) result, pg_collation_for (result) FROM t_diff_charset_columns; -- ERROR
 
 -- -- GREATEST
-SELECT GREATEST(fgbk_chi, futf8_bin) result, collation for (result) FROM t_diff_charset_columns;
-SELECT GREATEST(futf8_gen, futf8_bin) result, collation for (result) FROM t_diff_charset_columns;
-SELECT GREATEST(futf8_uni, futf8_gen) result, collation for (result) FROM t_diff_charset_columns; -- conflict
-SELECT GREATEST(fgbk_chi, fgb18030_chi) result, collation for (result) FROM t_diff_charset_columns; -- ERROR
+SELECT GREATEST(fgbk_chi, futf8_bin) result, pg_collation_for (result) FROM t_diff_charset_columns;
+SELECT GREATEST(futf8_gen, futf8_bin) result, pg_collation_for (result) FROM t_diff_charset_columns;
+SELECT GREATEST(futf8_uni, futf8_gen) result, pg_collation_for (result) FROM t_diff_charset_columns; -- conflict
+SELECT GREATEST(fgbk_chi, fgb18030_chi) result, pg_collation_for (result) FROM t_diff_charset_columns; -- ERROR
 
 -- -- XMLEXPR
 SELECT xmlelement(NAME a, fgbk_chi, futf8_bin) result FROM t_diff_charset_columns;

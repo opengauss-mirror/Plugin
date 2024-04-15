@@ -2,6 +2,7 @@
 #define PLUGIN_POSTGRES_H
 
 #include "nodes/pg_list.h"
+#include "nodes/primnodes.h"
 #include "plugin_utils/fmgr.h"
 
 #define ENABLE_B_CMPT_MODE (GetSessionContext()->enableBCmptMode)
@@ -157,6 +158,7 @@ typedef struct BSqlPluginContext {
     bool is_first_lable;
     bool is_b_declare;
     bool group_by_error;
+    Alias *upSertAliasName;
 #endif
 } bSqlPluginContext;
 
