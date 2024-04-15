@@ -119,9 +119,7 @@ NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "Ctlt1_pkey" for 
 CREATE INDEX `ctlt1_b_key` ON `Ctlt1` (`b`);
 CREATE INDEX `ctlt1_fnidx` ON `Ctlt1` ((`a` || `b`));
 COMMENT ON COLUMN `Ctlt1`.a IS 'A';
-ERROR:  relation "ctlt1" does not exist
 COMMENT ON COLUMN `Ctlt1`.b IS 'B';
-ERROR:  relation "ctlt1" does not exist
 COMMENT ON CONSTRAINT ctlt1_a_check ON `Ctlt1` IS 't1_a_check';
 ERROR:  constraint "ctlt1_a_check" for table "Ctlt1" does not exist
 COMMENT ON INDEX ctlt1_pkey IS 'index pkey';
@@ -138,9 +136,7 @@ CREATE TABLE `Ctlt3` (`a` text CHECK (length(`a`) < 5), `c` text);
 ALTER TABLE `Ctlt3` ALTER COLUMN `c` SET STORAGE EXTERNAL;
 ALTER TABLE `Ctlt3` ALTER COLUMN `a` SET STORAGE MAIN;
 COMMENT ON COLUMN `Ctlt3`.`a` IS 'A3';
-ERROR:  relation "ctlt3" does not exist
 COMMENT ON COLUMN `Ctlt3`.`c` IS 'C';
-ERROR:  relation "ctlt3" does not exist
 COMMENT ON CONSTRAINT `ctlt3_a_check` ON `Ctlt3` IS 't3_a_check';
 ERROR:  constraint "ctlt3_a_check" for table "Ctlt3" does not exist
 CREATE TABLE `Ctlt4` (`a` text, `c` text);
@@ -161,8 +157,8 @@ CREATE TABLE `Ctlt12_comments` (LIKE `Ctlt1` INCLUDING COMMENTS, LIKE `Ctlt2` IN
                   Table "public.Ctlt12_comments"
  Column | Type | Modifiers | Storage  | Stats target | Description 
 --------+------+-----------+----------+--------------+-------------
- a      | text | not null  | extended |              | 
- b      | text |           | extended |              | 
+ a      | text | not null  | extended |              | A
+ b      | text |           | extended |              | B
  c      | text |           | extended |              | 
 Has OIDs: no
 Options: orientation=row, compression=no
@@ -190,8 +186,8 @@ NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "Ctlt_all_pkey" f
                       Table "public.Ctlt_all"
  Column | Type | Modifiers | Storage  | Stats target | Description 
 --------+------+-----------+----------+--------------+-------------
- a      | text | not null  | main     |              | 
- b      | text |           | extended |              | 
+ a      | text | not null  | main     |              | A
+ b      | text |           | extended |              | B
 Indexes:
     "Ctlt_all_pkey" PRIMARY KEY, btree (a) TABLESPACE pg_default
     "Ctlt_all_b_idx" btree (b) TABLESPACE pg_default

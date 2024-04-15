@@ -15950,8 +15950,7 @@ CommentStmt:
 		;
 
 comment_type:
-			COLUMN								{ $$ = OBJECT_COLUMN; }
-			| DATABASE							{ $$ = OBJECT_DATABASE; }
+			DATABASE							{ $$ = OBJECT_DATABASE; }
 			| SCHEMA							{ $$ = OBJECT_SCHEMA; }
 			| INDEX								{ $$ = OBJECT_INDEX; }
 			| SEQUENCE							{ $$ = OBJECT_SEQUENCE; }
@@ -15975,6 +15974,7 @@ dolphin_comment_type:
 			| FOREIGN TABLE						{ $$ = OBJECT_FOREIGN_TABLE; }
 			| ROLE								{ $$ = OBJECT_ROLE; }
 			| USER								{ $$ = OBJECT_USER; }
+			| COLUMN							{ $$ = OBJECT_COLUMN; }
 		;
 
 comment_text:
