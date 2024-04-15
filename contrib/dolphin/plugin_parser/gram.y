@@ -1214,9 +1214,9 @@ static inline void ChangeBpcharCastType(TypeName* typname);
 
 	SAMPLE SAVEPOINT SCHEDULE SCHEMA SCHEMAS SCROLL SEARCH SECONDARY_ENGINE_ATTRIBUTE SECOND_P SECOND_MICROSECOND_P SECURITY SELECT SEPARATOR_P SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHIPPABLE SHOW SHUTDOWN SIBLINGS SIGNED
-	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT SQL STABLE STANDALONE_P START STARTS STARTING STARTWITH
+	SIMILAR SIMPLE SIZE SKIP SLAVE SLICE SMALLDATETIME SMALLDATETIME_FORMAT_P SMALLINT SNAPSHOT SOME SOUNDS SOURCE_P SPACE SPILL SPLIT STABLE STANDALONE_P START STARTS STARTING STARTWITH
 	STATEMENT STATEMENT_ID STATISTICS STATS_AUTO_RECALC STATS_PERSISTENT STATS_SAMPLE_PAGES STATUS STDIN STDOUT STORAGE STORE_P STORED STRATIFY STREAM STRICT_P STRIP_P SUBPARTITION SUBPARTITIONS SUBSCRIPTION SUBSTR SUBSTRING
-	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR
+	SYMMETRIC SYNONYM SYSDATE SYSID SYSTEM_P SYS_REFCURSOR SQL_P
 
 	TABLE TABLES TABLESAMPLE TABLESPACE TARGET TEMP TEMPLATE TEMPORARY TEMPTABLE TERMINATED TEXT_P THAN THEN TIME TIME_FORMAT_P TIMECAPSULE TIMESTAMP TIMESTAMP_FORMAT_P TIMESTAMPADD TIMESTAMPDIFF TINYINT
 	TO TRAILING TRANSACTION TRANSFORM TREAT TRIGGER TRIM TRUE_P
@@ -16344,6 +16344,28 @@ GrantStmt:	GRANT privileges ON privilege_target TO grantee_list
 					n->grantee_roles = list_make1(makeString($9));
 					$$ = (Node*)n;
 				}
+			| GRANT privileges ON '*' '.' '*' TO UserId IDENTIFIED BY opt_passwords password_string
+				{
+					if (list_length($2) != 1) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("syntax error"),
+							parser_errposition(@2)));
+					}
+					AccessPriv *ap = (AccessPriv*)lfirst(list_head($2));
+					if (strcmp(ap->priv_name, "usage") != 0) {
+						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("syntax error"),
+							parser_errposition(@2)));
+					}
+					list_free_ext($2);
+					List *options = NIL;
+					AlterRoleStmt *n = makeNode(AlterRoleStmt);
+					n->role = $8;
+					n->action = +1;
+					options = lappend(options, makeDefElem("b_mode_create_user_if_not_exist", (Node *)makeInteger(TRUE)));
+					options = lappend(options, makeDefElem("password", (Node *)list_make1(makeStringConst($12, -1))));
+					n->options = options;
+					n->lockstatus = DO_NOTHING;
+					$$ = (Node*)n;
+				}
 			| GRANT ALL privilege_str TO UserId
 				{
 					AlterRoleStmt *n = makeNode(AlterRoleStmt);
@@ -16352,6 +16374,11 @@ GrantStmt:	GRANT privileges ON privilege_target TO grantee_list
 					n->options =  lappend(NULL,makeDefElem("issystemadmin", (Node *)makeInteger(TRUE)));
 					$$ = (Node *)n;
 				}
+		;
+
+opt_passwords:
+			PASSWORD
+			| /* EMPTY */
 		;
 
 RevokeStmt:
@@ -20652,7 +20679,7 @@ view_security_option: DEFINER
 					$$ = VIEW_SQL_SECURITY_INVOKER;
 				}
 			;
-view_security_expression: SQL SECURITY view_security_option
+view_security_expression: SQL_P SECURITY view_security_option
 				{
 					if (u_sess->attr.attr_sql.sql_compatibility ==  B_FORMAT) {
 						$$ = $3;
@@ -21257,27 +21284,27 @@ common_func_opt_item:
 				{
 					$$ = makeDefElem("package", (Node *)makeInteger(true));
 				}
-			| NO SQL
+			| NO SQL_P
 			    {
 					$$ = makeDefElem("sql_opt", (Node *)makeString("nosql"));
 				}
-			| CONTAINS SQL
+			| CONTAINS SQL_P
 				{
 					$$ = makeDefElem("sql_opt", (Node *)makeString("contains"));
 				}
-			| READS SQL DATA_P
+			| READS SQL_P DATA_P
 				{
 					$$ = makeDefElem("sql_opt", (Node *)makeString("reads"));
 				}
-			| MODIFIES SQL DATA_P
+			| MODIFIES SQL_P DATA_P
 				{
 					$$ = makeDefElem("sql_opt", (Node *)makeString("modify"));
 				}
-			| SQL SECURITY DEFINER
+			| SQL_P SECURITY DEFINER
 				{
                                         $$ = makeDefElem("security", (Node *)makeInteger(TRUE));
                                 }
-			| SQL SECURITY INVOKER
+			| SQL_P SECURITY INVOKER
 				{
                                         $$ = makeDefElem("security", (Node *)makeInteger(FALSE));
                                 }
@@ -37233,7 +37260,7 @@ unreserved_keyword_without_key:
 			| SPACE
 			| SPILL
 			| SPLIT
-			| SQL
+			| SQL_P
 			| STABLE
 			| STANDALONE_P
 			| START

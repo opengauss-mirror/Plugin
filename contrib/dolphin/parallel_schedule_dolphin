@@ -1,4 +1,4 @@
-test: float_numeric_test/db_b_log_test float_numeric_test/db_b_sqrt_test
+test: float_numeric_test/db_b_log_test float_numeric_test/db_b_sqrt_test float_numeric_test/db_b_atan_test
 test: keyword_ignore_test/ignore_no_matched_partition keyword_ignore_test/ignore_not_null_constraints keyword_ignore_test/ignore_type_transform keyword_ignore_test/ignore_unique_constraints keyword_ignore_test/ignore_invalid_input
 
 test: string_func_test/db_b_ascii_test string_func_test/db_b_left_right_test string_func_test/db_b_quote_test string_func_test/db_b_string_length_test string_func_test/db_b_substr_test string_func_test/db_b_trim_test string_func_test/db_b_insert_test
@@ -116,7 +116,7 @@ test: test_mysql_operator test_op_xor_unsignedint test_op_blob test_op_xor_boola
 
 test: json_array json_object json_quote json_contains json_contains_path json_extract json_unquote  json_keys json_search json_array_append
 
-test: show b_comments ansi_quotes_start b_system_view
+test: show b_comments ansi_quotes_start b_system_view test_proxy
 
 test: pl_debugger_server pl_debugger_client load load2 flush ansi_quotes_test
 

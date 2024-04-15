@@ -6,6 +6,20 @@ DROP FUNCTION IF EXISTS pg_catalog.booltobit(bool, int4) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.booltofloat4(bool) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.booltofloat8(bool) CASCADE;
 
+DROP FUNCTION IF EXISTS pg_catalog.atan2 (boolean, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.atan2 (boolean, float8);
+DROP FUNCTION IF EXISTS pg_catalog.atan2 (float8, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.atan (float8, float8);
+DROP FUNCTION IF EXISTS pg_catalog.atan (boolean, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.atan (boolean, float8);
+DROP FUNCTION IF EXISTS pg_catalog.atan (float8, boolean);
+DROP FUNCTION IF EXISTS pg_catalog.atan (boolean);
+
+drop CAST IF EXISTS (timestamptz as boolean);
+drop CAST IF EXISTS (timestamp(0) without time zone as boolean);
+DROP FUNCTION IF EXISTS pg_catalog.timestamptz_bool(timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_bool(timestamp(0) without time zone);
+
 do $$
 begin
     update pg_cast set castcontext='e', castowner=10 where castsource=1560 and casttarget=20 and castcontext='a';
