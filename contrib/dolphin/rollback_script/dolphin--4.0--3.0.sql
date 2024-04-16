@@ -135,6 +135,15 @@ DROP FUNCTION IF EXISTS pg_catalog.text_timestamp_le(text, timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.text_timestamp_gt(text, timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.text_timestamp_ge(text, timestamptz);
 
+DROP OPERATOR IF EXISTS pg_catalog.~~(anyenum, text);
+DROP OPERATOR IF EXISTS pg_catalog.~~(text, anyenum);
+DROP OPERATOR IF EXISTS pg_catalog.!~~(anyenum, text);
+DROP OPERATOR IF EXISTS pg_catalog.!~~(text, anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.enumtext_like(anyenum, text);
+DROP FUNCTION IF EXISTS pg_catalog.textenum_like(text, anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.enumtext_nlike(anyenum, text);
+DROP FUNCTION IF EXISTS pg_catalog.textenum_nlike(text, anyenum);
+
 DROP FUNCTION IF EXISTS pg_catalog.chara(variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'm_char';
 

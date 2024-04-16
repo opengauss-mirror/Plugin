@@ -143,6 +143,15 @@ CREATE OPERATOR pg_catalog.<=(leftarg = text, rightarg = timestamptz, COMMUTATOR
 CREATE OPERATOR pg_catalog.>(leftarg = text, rightarg = timestamptz, COMMUTATOR = operator(pg_catalog.<), procedure = pg_catalog.text_timestamp_gt);
 CREATE OPERATOR pg_catalog.>=(leftarg = text, rightarg = timestamptz, COMMUTATOR = operator(pg_catalog.<=), procedure = pg_catalog.text_timestamp_ge);
 
+CREATE FUNCTION pg_catalog.enumtext_like(anyenum, text) returns bool LANGUAGE SQL IMMUTABLE as 'select $1::text like $2';
+CREATE FUNCTION pg_catalog.textenum_like(text, anyenum) returns bool LANGUAGE SQL IMMUTABLE as 'select $1 like $2::text';
+CREATE FUNCTION pg_catalog.enumtext_nlike(anyenum, text) returns bool LANGUAGE SQL IMMUTABLE as 'select $1::text not like $2';
+CREATE FUNCTION pg_catalog.textenum_nlike(text, anyenum) returns bool LANGUAGE SQL IMMUTABLE as 'select $1 not like $2::text';
+CREATE OPERATOR pg_catalog.~~(leftarg = anyenum, rightarg = text, procedure = pg_catalog.enumtext_like);
+CREATE OPERATOR pg_catalog.~~(leftarg = text, rightarg = anyenum, procedure = pg_catalog.textenum_like);
+CREATE OPERATOR pg_catalog.!~~(leftarg = anyenum, rightarg = text, procedure = pg_catalog.enumtext_nlike);
+CREATE OPERATOR pg_catalog.!~~(leftarg = text, rightarg = anyenum, procedure = pg_catalog.textenum_nlike);
+
 DROP FUNCTION IF EXISTS pg_catalog.chara(variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns varbinary LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'm_char';
 
