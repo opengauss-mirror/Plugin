@@ -231,7 +231,6 @@ func (p *processor) ProcessQuery(q query.Query, isWarm bool) ([]*query.Stat, err
 	}
 	rows.Close()
 	if err := rows.Err(); err != nil {
-
 		return nil, err
 	}
 	took := float64(time.Since(start).Nanoseconds()) / 1e6
