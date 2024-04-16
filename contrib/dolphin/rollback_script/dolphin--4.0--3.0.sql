@@ -72,7 +72,7 @@ DROP FUNCTION IF EXISTS pg_catalog.quarter (time);
 DROP FUNCTION IF EXISTS pg_catalog.quarter (timestamp(0) with time zone);
 DROP FUNCTION IF EXISTS pg_catalog.quarter (year);
 DROP FUNCTION IF EXISTS pg_catalog.quarter (binary);
-DROP FUNCTION IF EXISTS pg_catalog.quarter (text;
+DROP FUNCTION IF EXISTS pg_catalog.quarter (text);
 DROP CAST IF EXISTS (binary as timestamp without time zone);
 DROP CAST IF EXISTS (binary as timestamp with time zone);
 DROP FUNCTION IF EXISTS pg_catalog.binary_timestamp (binary);
@@ -85,3 +85,29 @@ CREATE OR REPLACE FUNCTION pg_catalog.quarter (abstime) RETURNS float8 LANGUAGE 
 CREATE OR REPLACE FUNCTION pg_catalog.quarter (date) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.quarter (time) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.quarter (timestamp(0) with time zone) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
+
+-- json
+DROP aggregate IF EXISTS pg_catalog.max(json);
+DROP aggregate IF EXISTS pg_catalog.min(json);
+DROP FUNCTION IF EXISTS pg_catalog.json_larger(json, json);
+DROP FUNCTION IF EXISTS pg_catalog.json_smaller(json, json);
+-- tinyblob
+DROP aggregate pg_catalog.max(tinyblob);
+DROP aggregate pg_catalog.min(tinyblob);
+DROP FUNCTION pg_catalog.tinyblob_larger(tinyblob, tinyblob);
+DROP FUNCTION pg_catalog.tinyblob_smaller(tinyblob, tinyblob);
+-- blob
+DROP aggregate pg_catalog.max(blob);
+DROP aggregate pg_catalog.min(blob);
+DROP FUNCTION pg_catalog.blob_larger(blob, blob);
+DROP FUNCTION pg_catalog.blob_smaller(blob, blob);
+-- mediumblob
+DROP aggregate pg_catalog.max(mediumblob);
+DROP aggregate pg_catalog.min(mediumblob);
+DROP FUNCTION pg_catalog.mediumblob_larger(mediumblob, mediumblob);
+DROP FUNCTION pg_catalog.mediumblob_smaller(mediumblob, mediumblob);
+-- longblob
+DROP aggregate pg_catalog.max(longblob);
+DROP aggregate pg_catalog.min(longblob);
+DROP FUNCTION pg_catalog.longblob_larger(longblob, longblob);
+DROP FUNCTION pg_catalog.longblob_smaller(longblob, longblob);
