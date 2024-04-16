@@ -68,6 +68,8 @@ extern "C" DLL_PUBLIC Datum bitotherlike(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(bitothernlike);
 extern "C" DLL_PUBLIC Datum bitothernlike(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(binarylike);
+extern "C" DLL_PUBLIC Datum binarylike(PG_FUNCTION_ARGS);
 
 /* --------------------
  * Support routine for MatchText. Compares given multibyte streams
@@ -345,6 +347,28 @@ Datum bitothernlike(PG_FUNCTION_ARGS)
     bool result = true;
     PG_RETURN_BOOL(result);
 }
+
+Datum binarylike(PG_FUNCTION_ARGS)
+{
+    bytea* str = PG_GETARG_BYTEA_PP(0);
+    bytea* pat = PG_GETARG_BYTEA_PP(1);
+
+    bool result = false;
+    char *s;
+    char *p;
+    int slen;
+    int plen;
+
+    s = VARDATA_ANY(str);
+    slen = VARSIZE_ANY_EXHDR(str);
+    p = VARDATA_ANY(pat);
+    plen = VARSIZE_ANY_EXHDR(pat);
+
+    result = (GenericMatchText(s, slen, p, plen) == LIKE_TRUE);
+
+    PG_RETURN_BOOL(result);
+}
+
 
 Datum bytealike(PG_FUNCTION_ARGS)
 {

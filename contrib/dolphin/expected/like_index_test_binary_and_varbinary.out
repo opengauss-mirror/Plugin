@@ -1,0 +1,44 @@
+create schema test_binary_like;
+set search_path = test_binary_like;
+set enable_indexscan = off;
+create table test_binary(a binary(10));
+create index on test_binary(a);
+insert into test_binary values('aaa');
+explain(costs off)select * from test_binary where a like 'a%';
+                                                  QUERY PLAN                                                  
+--------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_binary
+   Filter: (a ~~ '\x6125'::"binary")
+   ->  Bitmap Index Scan on test_binary_a_idx
+         Index Cond: ((a OPERATOR(pg_catalog.>=) '\x61'::bytea) AND (a OPERATOR(pg_catalog.<) '\x62'::bytea))
+(4 rows)
+
+select * from test_binary where a like 'a%';
+           a            
+------------------------
+ \x61616100000000000000
+(1 row)
+
+create table test_varbinary(a varbinary(10));
+create index on test_varbinary(a);
+insert into test_varbinary values('aaa');
+explain(costs off) select * from test_varbinary where a like 'a%';
+                                                  QUERY PLAN                                                  
+--------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_varbinary
+   Filter: (a ~~ '\x6125'::varbinary)
+   ->  Bitmap Index Scan on test_varbinary_a_idx
+         Index Cond: ((a OPERATOR(pg_catalog.>=) '\x61'::bytea) AND (a OPERATOR(pg_catalog.<) '\x62'::bytea))
+(4 rows)
+
+select * from test_varbinary where a like 'a%';
+    a     
+----------
+ \x616161
+(1 row)
+
+reset search_path;
+drop schema test_binary_like cascade;
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to table test_binary_like.test_binary
+drop cascades to table test_binary_like.test_varbinary

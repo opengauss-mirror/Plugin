@@ -1,0 +1,759 @@
+--UTF8
+create database test_utf8 dbcompatibility='B' encoding='utf8';
+\c test_utf8
+--utf8_bin
+--char
+create table test_utf8_bin_char(c1 char(10))charset utf8 collate utf8_bin;
+create index on test_utf8_bin_char(c1);
+insert into test_utf8_bin_char values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_bin_char where c1 like 'sde%';
+                                  QUERY PLAN                                  
+------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_bin_char
+   Filter: (c1 ~~ 'sde%'::text)
+   ->  Bitmap Index Scan on test_utf8_bin_char_c1_idx
+         Index Cond: ((c1 >= 'sde'::bpchar) AND (c1 <= 'sde￿￿￿￿￿￿￿'::bpchar))
+(4 rows)
+
+select * from test_utf8_bin_char where c1 like 'sde%';
+     c1     
+------------
+ sdeWf     
+(1 row)
+
+insert into test_utf8_bin_char values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_bin_char(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_bin_char where c1 like '谢%';
+                                  QUERY PLAN                                  
+------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_bin_char
+   Filter: (c1 ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_bin_char_c1_idx
+         Index Cond: ((c1 >= '谢'::bpchar) AND (c1 <= '谢￿￿￿￿￿￿￿￿￿'::bpchar))
+(4 rows)
+
+select * from test_utf8_bin_char where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿    
+(2 rows)
+
+--varchar with length without prefix key
+create table test_utf8_bin_varchar_length_nprefix(c1 varchar(10))charset utf8 collate utf8_bin;
+create index on test_utf8_bin_varchar_length_nprefix(c1);
+insert into test_utf8_bin_varchar_length_nprefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_bin_varchar_length_nprefix where c1 like 'sde%';
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_bin_varchar_length_nprefix
+   Filter: ((c1)::text ~~ 'sde%'::text)
+   ->  Bitmap Index Scan on test_utf8_bin_varchar_length_nprefix_c1_idx
+         Index Cond: (((c1)::text >= 'sde'::text) AND ((c1)::text <= 'sde￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_bin_varchar_length_nprefix where c1 like 'sde%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_bin_varchar_length_nprefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_bin_varchar_length_nprefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_bin_varchar_length_nprefix where c1 like '谢%';
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_bin_varchar_length_nprefix
+   Filter: ((c1)::text ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_bin_varchar_length_nprefix_c1_idx
+         Index Cond: (((c1)::text >= '谢'::text) AND ((c1)::text <= '谢￿￿￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_bin_varchar_length_nprefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--varchar without length without prefix key
+create table test_utf8_bin_varchar_nlength_nprefix(c1 varchar)charset utf8 collate utf8_bin;
+create index on test_utf8_bin_varchar_nlength_nprefix(c1);
+insert into test_utf8_bin_varchar_nlength_nprefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_bin_varchar_nlength_nprefix where c1 like 'sde%';
+                    QUERY PLAN                     
+---------------------------------------------------
+ Seq Scan on test_utf8_bin_varchar_nlength_nprefix
+   Filter: ((c1)::text ~~ 'sde%'::text)
+(2 rows)
+
+select * from test_utf8_bin_varchar_nlength_nprefix where c1 like 'sde%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_bin_varchar_nlength_nprefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_bin_varchar_nlength_nprefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_bin_varchar_nlength_nprefix where c1 like '谢%';
+                    QUERY PLAN                     
+---------------------------------------------------
+ Seq Scan on test_utf8_bin_varchar_nlength_nprefix
+   Filter: ((c1)::text ~~ '谢%'::text)
+(2 rows)
+
+select * from test_utf8_bin_varchar_nlength_nprefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--varchar without length with prefix key
+create table test_utf8_bin_varchar_nlength_prefix(c1 varchar)charset utf8 collate utf8_bin;
+create index on test_utf8_bin_varchar_nlength_prefix(c1(10));
+insert into test_utf8_bin_varchar_nlength_prefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_bin_varchar_nlength_prefix where c1 like 'sde%';
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_bin_varchar_nlength_prefix
+   Filter: ((c1)::text ~~ 'sde%'::text)
+   ->  Bitmap Index Scan on test_utf8_bin_varchar_nlength_prefix_expr_idx
+         Index Cond: (((c1)::text >= 'sde'::text) AND ((c1)::text <= 'sde￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_bin_varchar_nlength_prefix where c1 like 'sde%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_bin_varchar_nlength_prefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_bin_varchar_nlength_prefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_bin_varchar_nlength_prefix where c1 like '谢%';
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_bin_varchar_nlength_prefix
+   Filter: ((c1)::text ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_bin_varchar_nlength_prefix_expr_idx
+         Index Cond: (((c1)::text >= '谢'::text) AND ((c1)::text <= '谢￿￿￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_bin_varchar_nlength_prefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--varchar with length with prefix key
+create table test_utf8_bin_varchar_length_prefix(c1 varchar(10))charset utf8 collate utf8_bin;
+create index on test_utf8_bin_varchar_length_prefix(c1(2));
+insert into test_utf8_bin_varchar_length_prefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_bin_varchar_length_prefix where c1 like 's%';
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_bin_varchar_length_prefix
+   Filter: ((c1)::text ~~ 's%'::text)
+   ->  Bitmap Index Scan on test_utf8_bin_varchar_length_prefix_expr_idx
+         Index Cond: (((c1)::text >= 's'::text) AND ((c1)::text <= 's￿'::text))
+(4 rows)
+
+select * from test_utf8_bin_varchar_length_prefix where c1 like 's%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_bin_varchar_length_prefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_bin_varchar_length_prefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_bin_varchar_length_prefix where c1 like '谢%';
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_bin_varchar_length_prefix
+   Filter: ((c1)::text ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_bin_varchar_length_prefix_expr_idx
+         Index Cond: (((c1)::text >= '谢'::text) AND ((c1)::text <= '谢￿'::text))
+(4 rows)
+
+select * from test_utf8_bin_varchar_length_prefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--text without prefix key
+create table test_utf8_bin_text_nprefix(c1 text)charset utf8 collate utf8_bin;
+create index on test_utf8_bin_text_nprefix(c1);
+insert into test_utf8_bin_text_nprefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_bin_text_nprefix where c1 like 's%';
+               QUERY PLAN               
+----------------------------------------
+ Seq Scan on test_utf8_bin_text_nprefix
+   Filter: (c1 ~~ 's%'::text)
+(2 rows)
+
+select * from test_utf8_bin_text_nprefix where c1 like 's%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_bin_text_nprefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_bin_text_nprefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_bin_text_nprefix where c1 like '谢%';
+               QUERY PLAN               
+----------------------------------------
+ Seq Scan on test_utf8_bin_text_nprefix
+   Filter: (c1 ~~ '谢%'::text)
+(2 rows)
+
+select * from test_utf8_bin_text_nprefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--text with prefix key
+create table test_utf8_bin_text_prefix(c1 text)charset utf8 collate utf8_bin;
+create index on test_utf8_bin_text_prefix(c1(10));
+insert into test_utf8_bin_text_prefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_bin_text_prefix where c1 like 's%';
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_bin_text_prefix
+   Filter: (c1 ~~ 's%'::text)
+   ->  Bitmap Index Scan on test_utf8_bin_text_prefix_expr_idx
+         Index Cond: ((c1 >= 's'::text) AND (c1 <= 's￿￿￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_bin_text_prefix where c1 like 's%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_bin_text_prefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_bin_text_prefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_bin_text_prefix where c1 like '谢%';
+                                QUERY PLAN                                
+--------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_bin_text_prefix
+   Filter: (c1 ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_bin_text_prefix_expr_idx
+         Index Cond: ((c1 >= '谢'::text) AND (c1 <= '谢￿￿￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_bin_text_prefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--utf8_general_ci
+--char
+create table test_utf8_general_ci_char(c1 char(10))charset utf8 collate utf8_general_ci;
+create index on test_utf8_general_ci_char(c1);
+insert into test_utf8_general_ci_char values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_general_ci_char where c1 like 'sde%';
+                                  QUERY PLAN                                  
+------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_general_ci_char
+   Filter: (c1 ~~ 'sde%'::text)
+   ->  Bitmap Index Scan on test_utf8_general_ci_char_c1_idx
+         Index Cond: ((c1 >= 'sde'::bpchar) AND (c1 <= 'sde￿￿￿￿￿￿￿'::bpchar))
+(4 rows)
+
+select * from test_utf8_general_ci_char where c1 like 'sde%';
+     c1     
+------------
+ sdeWf     
+(1 row)
+
+insert into test_utf8_general_ci_char values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_general_ci_char(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_general_ci_char where c1 like '谢%';
+                                  QUERY PLAN                                  
+------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_general_ci_char
+   Filter: (c1 ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_general_ci_char_c1_idx
+         Index Cond: ((c1 >= '谢'::bpchar) AND (c1 <= '谢￿￿￿￿￿￿￿￿￿'::bpchar))
+(4 rows)
+
+select * from test_utf8_general_ci_char where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿    
+(2 rows)
+
+--varchar with length without prefix key
+create table test_utf8_general_ci_varchar_length_nprefix(c1 varchar(10))charset utf8 collate utf8_general_ci;
+create index on test_utf8_general_ci_varchar_length_nprefix(c1);
+insert into test_utf8_general_ci_varchar_length_nprefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_general_ci_varchar_length_nprefix where c1 like 'sde%';
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_general_ci_varchar_length_nprefix
+   Filter: ((c1)::text ~~ 'sde%'::text)
+   ->  Bitmap Index Scan on test_utf8_general_ci_varchar_length_nprefix_c1_idx
+         Index Cond: (((c1)::text >= 'sde'::text) AND ((c1)::text <= 'sde￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_general_ci_varchar_length_nprefix where c1 like 'sde%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_general_ci_varchar_length_nprefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_general_ci_varchar_length_nprefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_general_ci_varchar_length_nprefix where c1 like '谢%';
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_general_ci_varchar_length_nprefix
+   Filter: ((c1)::text ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_general_ci_varchar_length_nprefix_c1_idx
+         Index Cond: (((c1)::text >= '谢'::text) AND ((c1)::text <= '谢￿￿￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_general_ci_varchar_length_nprefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--varchar without length without prefix key
+create table test_utf8_general_ci_varchar_nlength_nprefix(c1 varchar)charset utf8 collate utf8_general_ci;
+create index on test_utf8_general_ci_varchar_nlength_nprefix(c1);
+insert into test_utf8_general_ci_varchar_nlength_nprefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_general_ci_varchar_nlength_nprefix where c1 like 'sde%';
+                        QUERY PLAN                        
+----------------------------------------------------------
+ Seq Scan on test_utf8_general_ci_varchar_nlength_nprefix
+   Filter: ((c1)::text ~~ 'sde%'::text)
+(2 rows)
+
+select * from test_utf8_general_ci_varchar_nlength_nprefix where c1 like 'sde%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_general_ci_varchar_nlength_nprefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_general_ci_varchar_nlength_nprefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_general_ci_varchar_nlength_nprefix where c1 like '谢%';
+                        QUERY PLAN                        
+----------------------------------------------------------
+ Seq Scan on test_utf8_general_ci_varchar_nlength_nprefix
+   Filter: ((c1)::text ~~ '谢%'::text)
+(2 rows)
+
+select * from test_utf8_general_ci_varchar_nlength_nprefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--varchar without length with prefix key
+create table test_utf8_general_ci_varchar_nlength_prefix(c1 varchar)charset utf8 collate utf8_general_ci;
+create index on test_utf8_general_ci_varchar_nlength_prefix(c1(10));
+insert into test_utf8_general_ci_varchar_nlength_prefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_general_ci_varchar_nlength_prefix where c1 like 'sde%';
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_general_ci_varchar_nlength_prefix
+   Filter: ((c1)::text ~~ 'sde%'::text)
+   ->  Bitmap Index Scan on test_utf8_general_ci_varchar_nlength_prefix_expr_idx
+         Index Cond: (((c1)::text >= 'sde'::text) AND ((c1)::text <= 'sde￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_general_ci_varchar_nlength_prefix where c1 like 'sde%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_general_ci_varchar_nlength_prefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_general_ci_varchar_nlength_prefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_general_ci_varchar_nlength_prefix where c1 like '谢%';
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_general_ci_varchar_nlength_prefix
+   Filter: ((c1)::text ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_general_ci_varchar_nlength_prefix_expr_idx
+         Index Cond: (((c1)::text >= '谢'::text) AND ((c1)::text <= '谢￿￿￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_general_ci_varchar_nlength_prefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--varchar with length with prefix key
+create table test_utf8_general_ci_varchar_length_prefix(c1 varchar(10))charset utf8 collate utf8_general_ci;
+create index on test_utf8_general_ci_varchar_length_prefix(c1(2));
+insert into test_utf8_general_ci_varchar_length_prefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_general_ci_varchar_length_prefix where c1 like 's%';
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_general_ci_varchar_length_prefix
+   Filter: ((c1)::text ~~ 's%'::text)
+   ->  Bitmap Index Scan on test_utf8_general_ci_varchar_length_prefix_expr_idx
+         Index Cond: (((c1)::text >= 's'::text) AND ((c1)::text <= 's￿'::text))
+(4 rows)
+
+select * from test_utf8_general_ci_varchar_length_prefix where c1 like 's%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_general_ci_varchar_length_prefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_general_ci_varchar_length_prefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_general_ci_varchar_length_prefix where c1 like '谢%';
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_general_ci_varchar_length_prefix
+   Filter: ((c1)::text ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_general_ci_varchar_length_prefix_expr_idx
+         Index Cond: (((c1)::text >= '谢'::text) AND ((c1)::text <= '谢￿'::text))
+(4 rows)
+
+select * from test_utf8_general_ci_varchar_length_prefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--text without prefix key
+create table test_utf8_general_ci_text_nprefix(c1 text)charset utf8 collate utf8_general_ci;
+create index on test_utf8_general_ci_text_nprefix(c1);
+insert into test_utf8_general_ci_text_nprefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_general_ci_text_nprefix where c1 like 's%';
+                  QUERY PLAN                   
+-----------------------------------------------
+ Seq Scan on test_utf8_general_ci_text_nprefix
+   Filter: (c1 ~~ 's%'::text)
+(2 rows)
+
+select * from test_utf8_general_ci_text_nprefix where c1 like 's%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_general_ci_text_nprefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_general_ci_text_nprefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_general_ci_text_nprefix where c1 like '谢%';
+                  QUERY PLAN                   
+-----------------------------------------------
+ Seq Scan on test_utf8_general_ci_text_nprefix
+   Filter: (c1 ~~ '谢%'::text)
+(2 rows)
+
+select * from test_utf8_general_ci_text_nprefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--text with prefix key
+create table test_utf8_general_ci_text_prefix(c1 text)charset utf8 collate utf8_general_ci;
+create index on test_utf8_general_ci_text_prefix(c1(10));
+insert into test_utf8_general_ci_text_prefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_general_ci_text_prefix where c1 like 's%';
+                               QUERY PLAN                               
+------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_general_ci_text_prefix
+   Filter: (c1 ~~ 's%'::text)
+   ->  Bitmap Index Scan on test_utf8_general_ci_text_prefix_expr_idx
+         Index Cond: ((c1 >= 's'::text) AND (c1 <= 's￿￿￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_general_ci_text_prefix where c1 like 's%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_general_ci_text_prefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_general_ci_text_prefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_general_ci_text_prefix where c1 like '谢%';
+                                QUERY PLAN                                
+--------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_general_ci_text_prefix
+   Filter: (c1 ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_general_ci_text_prefix_expr_idx
+         Index Cond: ((c1 >= '谢'::text) AND (c1 <= '谢￿￿￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_general_ci_text_prefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--utf8_unicode_ci
+--char
+create table test_utf8_unicode_ci_char(c1 char(10))charset utf8 collate utf8_unicode_ci;
+create index on test_utf8_unicode_ci_char(c1);
+insert into test_utf8_unicode_ci_char values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_unicode_ci_char where c1 like 'sde%';
+                                                              QUERY PLAN                                                              
+--------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_unicode_ci_char
+   Filter: (c1 ~~ 'sde%'::text)
+   ->  Bitmap Index Scan on test_utf8_unicode_ci_char_c1_idx
+         Index Cond: ((c1 >= 'sde                                                        '::bpchar) AND (c1 <= 'sde￿￿￿￿￿￿￿'::bpchar))
+(4 rows)
+
+select * from test_utf8_unicode_ci_char where c1 like 'sde%';
+     c1     
+------------
+ sdeWf     
+(1 row)
+
+insert into test_utf8_unicode_ci_char values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_unicode_ci_char(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_unicode_ci_char where c1 like '谢%';
+                                                                  QUERY PLAN                                                                   
+-----------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_unicode_ci_char
+   Filter: (c1 ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_unicode_ci_char_c1_idx
+         Index Cond: ((c1 >= '谢                                                                 '::bpchar) AND (c1 <= '谢￿￿￿￿￿￿￿￿￿'::bpchar))
+(4 rows)
+
+select * from test_utf8_unicode_ci_char where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿    
+(2 rows)
+
+--varchar with length without prefix key
+create table test_utf8_unicode_ci_varchar_length_nprefix(c1 varchar(10))charset utf8 collate utf8_unicode_ci;
+create index on test_utf8_unicode_ci_varchar_length_nprefix(c1);
+insert into test_utf8_unicode_ci_varchar_length_nprefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_unicode_ci_varchar_length_nprefix where c1 like 'sde%';
+                                                                    QUERY PLAN                                                                    
+--------------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_unicode_ci_varchar_length_nprefix
+   Filter: ((c1)::text ~~ 'sde%'::text)
+   ->  Bitmap Index Scan on test_utf8_unicode_ci_varchar_length_nprefix_c1_idx
+         Index Cond: (((c1)::text >= 'sde                                                        '::text) AND ((c1)::text <= 'sde￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_unicode_ci_varchar_length_nprefix where c1 like 'sde%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_unicode_ci_varchar_length_nprefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_unicode_ci_varchar_length_nprefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_unicode_ci_varchar_length_nprefix where c1 like '谢%';
+                                                                        QUERY PLAN                                                                         
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_unicode_ci_varchar_length_nprefix
+   Filter: ((c1)::text ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_unicode_ci_varchar_length_nprefix_c1_idx
+         Index Cond: (((c1)::text >= '谢                                                                 '::text) AND ((c1)::text <= '谢￿￿￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_unicode_ci_varchar_length_nprefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--varchar without length without prefix key
+create table test_utf8_unicode_ci_varchar_nlength_nprefix(c1 varchar)charset utf8 collate utf8_unicode_ci;
+create index on test_utf8_unicode_ci_varchar_nlength_nprefix(c1);
+insert into test_utf8_unicode_ci_varchar_nlength_nprefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_unicode_ci_varchar_nlength_nprefix where c1 like 'sde%';
+                        QUERY PLAN                        
+----------------------------------------------------------
+ Seq Scan on test_utf8_unicode_ci_varchar_nlength_nprefix
+   Filter: ((c1)::text ~~ 'sde%'::text)
+(2 rows)
+
+select * from test_utf8_unicode_ci_varchar_nlength_nprefix where c1 like 'sde%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_unicode_ci_varchar_nlength_nprefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_unicode_ci_varchar_nlength_nprefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_unicode_ci_varchar_nlength_nprefix where c1 like '谢%';
+                        QUERY PLAN                        
+----------------------------------------------------------
+ Seq Scan on test_utf8_unicode_ci_varchar_nlength_nprefix
+   Filter: ((c1)::text ~~ '谢%'::text)
+(2 rows)
+
+select * from test_utf8_unicode_ci_varchar_nlength_nprefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--varchar without length with prefix key
+create table test_utf8_unicode_ci_varchar_nlength_prefix(c1 varchar)charset utf8 collate utf8_unicode_ci;
+create index on test_utf8_unicode_ci_varchar_nlength_prefix(c1(10));
+insert into test_utf8_unicode_ci_varchar_nlength_prefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_unicode_ci_varchar_nlength_prefix where c1 like 'sde%';
+                                                                    QUERY PLAN                                                                    
+--------------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_unicode_ci_varchar_nlength_prefix
+   Filter: ((c1)::text ~~ 'sde%'::text)
+   ->  Bitmap Index Scan on test_utf8_unicode_ci_varchar_nlength_prefix_expr_idx
+         Index Cond: (((c1)::text >= 'sde                                                        '::text) AND ((c1)::text <= 'sde￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_unicode_ci_varchar_nlength_prefix where c1 like 'sde%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_unicode_ci_varchar_nlength_prefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_unicode_ci_varchar_nlength_prefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_unicode_ci_varchar_nlength_prefix where c1 like '谢%';
+                                                                        QUERY PLAN                                                                         
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_unicode_ci_varchar_nlength_prefix
+   Filter: ((c1)::text ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_unicode_ci_varchar_nlength_prefix_expr_idx
+         Index Cond: (((c1)::text >= '谢                                                                 '::text) AND ((c1)::text <= '谢￿￿￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_unicode_ci_varchar_nlength_prefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--varchar with length with prefix key
+create table test_utf8_unicode_ci_varchar_length_prefix(c1 varchar(10))charset utf8 collate utf8_unicode_ci;
+create index on test_utf8_unicode_ci_varchar_length_prefix(c1(2));
+insert into test_utf8_unicode_ci_varchar_length_prefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_unicode_ci_varchar_length_prefix where c1 like 's%';
+                                    QUERY PLAN                                    
+----------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_unicode_ci_varchar_length_prefix
+   Filter: ((c1)::text ~~ 's%'::text)
+   ->  Bitmap Index Scan on test_utf8_unicode_ci_varchar_length_prefix_expr_idx
+         Index Cond: (((c1)::text >= 's  '::text) AND ((c1)::text <= 's￿'::text))
+(4 rows)
+
+select * from test_utf8_unicode_ci_varchar_length_prefix where c1 like 's%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_unicode_ci_varchar_length_prefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_unicode_ci_varchar_length_prefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_unicode_ci_varchar_length_prefix where c1 like '谢%';
+                                    QUERY PLAN                                     
+-----------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_unicode_ci_varchar_length_prefix
+   Filter: ((c1)::text ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_unicode_ci_varchar_length_prefix_expr_idx
+         Index Cond: (((c1)::text >= '谢 '::text) AND ((c1)::text <= '谢￿'::text))
+(4 rows)
+
+select * from test_utf8_unicode_ci_varchar_length_prefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--text without prefix key
+create table test_utf8_unicode_ci_text_nprefix(c1 text)charset utf8 collate utf8_unicode_ci;
+create index on test_utf8_unicode_ci_text_nprefix(c1);
+insert into test_utf8_unicode_ci_text_nprefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_unicode_ci_text_nprefix where c1 like 's%';
+                  QUERY PLAN                   
+-----------------------------------------------
+ Seq Scan on test_utf8_unicode_ci_text_nprefix
+   Filter: (c1 ~~ 's%'::text)
+(2 rows)
+
+select * from test_utf8_unicode_ci_text_nprefix where c1 like 's%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_unicode_ci_text_nprefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_unicode_ci_text_nprefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_unicode_ci_text_nprefix where c1 like '谢%';
+                  QUERY PLAN                   
+-----------------------------------------------
+ Seq Scan on test_utf8_unicode_ci_text_nprefix
+   Filter: (c1 ~~ '谢%'::text)
+(2 rows)
+
+select * from test_utf8_unicode_ci_text_nprefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+
+--text with prefix key
+create table test_utf8_unicode_ci_text_prefix(c1 text)charset utf8 collate utf8_unicode_ci;
+create index on test_utf8_unicode_ci_text_prefix(c1(10));
+insert into test_utf8_unicode_ci_text_prefix values('sdeWf'), ('wertf');
+explain (costs off) select * from test_utf8_unicode_ci_text_prefix where c1 like 's%';
+                                                                QUERY PLAN                                                                
+------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_unicode_ci_text_prefix
+   Filter: (c1 ~~ 's%'::text)
+   ->  Bitmap Index Scan on test_utf8_unicode_ci_text_prefix_expr_idx
+         Index Cond: ((c1 >= 's                                                                  '::text) AND (c1 <= 's￿￿￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_unicode_ci_text_prefix where c1 like 's%';
+  c1   
+-------
+ sdeWf
+(1 row)
+
+insert into test_utf8_unicode_ci_text_prefix values('谢谢你呀'), ('新年快乐');
+insert into test_utf8_unicode_ci_text_prefix(c1) select convert_from('\xe8b0a2efbfbf','utf8');
+explain (costs off) select * from test_utf8_unicode_ci_text_prefix where c1 like '谢%';
+                                                                QUERY PLAN                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on test_utf8_unicode_ci_text_prefix
+   Filter: (c1 ~~ '谢%'::text)
+   ->  Bitmap Index Scan on test_utf8_unicode_ci_text_prefix_expr_idx
+         Index Cond: ((c1 >= '谢                                                                 '::text) AND (c1 <= '谢￿￿￿￿￿￿￿￿￿'::text))
+(4 rows)
+
+select * from test_utf8_unicode_ci_text_prefix where c1 like '谢%';
+    c1    
+----------
+ 谢谢你呀
+ 谢￿
+(2 rows)
+

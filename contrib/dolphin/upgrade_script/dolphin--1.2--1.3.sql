@@ -64,4 +64,63 @@ CREATE OR REPLACE FUNCTION pg_catalog.bit_length(anyenum) RETURNS integer LANGUA
 CREATE OR REPLACE FUNCTION pg_catalog.bit_length(json) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.bit_length(cast($1 as TEXT))';
 CREATE OR REPLACE FUNCTION pg_catalog.bit_length(binary) RETURNS integer LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'mp_bit_length_binary';
 
+
 create or replace function pg_catalog."user"() returns name as 'select current_user' LANGUAGE 'sql' IMMUTABLE;
+
+create or replace function pg_catalog.varbinarylike(varbinary, varbinary) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+CREATE OPERATOR pg_catalog.~~(leftarg = varbinary, rightarg = varbinary, procedure = pg_catalog.varbinarylike);
+
+create or replace function pg_catalog.varbinarytextlike(varbinary, text) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+CREATE OPERATOR pg_catalog.~~(leftarg = varbinary, rightarg = text, procedure = pg_catalog.varbinarytextlike);
+
+create or replace function pg_catalog.textvarbinarylike(text, varbinary) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+CREATE OPERATOR pg_catalog.~~(leftarg = text, rightarg = varbinary, procedure = pg_catalog.textvarbinarylike);
+
+create or replace function pg_catalog.bloblike(blob, blob) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+CREATE OPERATOR pg_catalog.~~(leftarg = blob, rightarg = blob, procedure = pg_catalog.bloblike);
+
+create or replace function pg_catalog.binarylike(binary, binary) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+create or replace function pg_catalog.binarytextlike(binary, text) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+create or replace function pg_catalog.textbinarylike(text, binary) returns bool LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binarylike';
+
+CREATE OPERATOR pg_catalog.~~(leftarg = binary, rightarg = binary, procedure = pg_catalog.binarylike);
+
+CREATE OR REPLACE FUNCTION pg_catalog.binary_cmp(binary, binary) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+
+CREATE OPERATOR FAMILY pg_catalog.binary_ops USING BTREE;
+CREATE OPERATOR FAMILY pg_catalog.binary_ops USING HASH;
+
+CREATE OPERATOR CLASS pg_catalog.binary_ops DEFAULT
+   FOR TYPE binary USING BTREE FAMILY pg_catalog.binary_ops as
+   OPERATOR 1 pg_catalog.<(binary, binary),
+   OPERATOR 2 pg_catalog.<=(binary, binary),
+   OPERATOR 3 pg_catalog.=(binary, binary),
+   OPERATOR 4 pg_catalog.>=(binary, binary),
+   OPERATOR 5 pg_catalog.>(binary, binary),
+   FUNCTION 1 pg_catalog.binary_cmp(binary, binary),
+   FUNCTION 2 pg_catalog.bytea_sortsupport(internal);
+
+CREATE OPERATOR CLASS pg_catalog.binary_ops DEFAULT
+   FOR TYPE binary USING HASH FAMILY binary_ops as
+   OPERATOR 1 pg_catalog.=(binary, binary),
+   FUNCTION 1 (binary, binary) pg_catalog.hashvarlena(internal);
+
+CREATE OR REPLACE FUNCTION pg_catalog.varbinary_cmp(varbinary, varbinary) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
+CREATE OPERATOR FAMILY pg_catalog.varbinary_ops USING BTREE;
+CREATE OPERATOR FAMILY pg_catalog.varbinary_ops USING HASH;
+
+CREATE OPERATOR CLASS pg_catalog.varbinary_ops DEFAULT
+   FOR TYPE varbinary USING BTREE FAMILY pg_catalog.varbinary_ops as
+   OPERATOR 1 pg_catalog.<(varbinary, varbinary),
+   OPERATOR 2 pg_catalog.<=(varbinary, varbinary),
+   OPERATOR 3 pg_catalog.=(varbinary, varbinary),
+   OPERATOR 4 pg_catalog.>=(varbinary, varbinary),
+   OPERATOR 5 pg_catalog.>(varbinary, varbinary),
+   FUNCTION 1 pg_catalog.varbinary_cmp(varbinary, varbinary),
+   FUNCTION 2 pg_catalog.bytea_sortsupport(internal);
+
+CREATE OPERATOR CLASS pg_catalog.varbinary_ops DEFAULT
+   FOR TYPE varbinary USING HASH FAMILY pg_catalog.varbinary_ops as
+   OPERATOR 1 pg_catalog.=(varbinary, varbinary),
+   FUNCTION 1 (varbinary, varbinary) pg_catalog.hashvarlena(internal);
+

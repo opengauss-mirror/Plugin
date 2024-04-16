@@ -352,17 +352,6 @@ DROP FUNCTION IF EXISTS pg_catalog.convert(longblob, name);
 DROP FUNCTION IF EXISTS pg_catalog.convert(anyenum, name);
 DROP FUNCTION IF EXISTS pg_catalog.convert(json, name);
 
-DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING BTREE;
-DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING HASH;
-DROP OPERATOR CLASS IF EXISTS pg_catalog.binary_ops USING BTREE;
-DROP OPERATOR CLASS IF EXISTS pg_catalog.binary_ops USING HASH;
-DROP OPERATOR FAMILY IF EXISTS pg_catalog.varbinary_ops USING BTREE;
-DROP OPERATOR FAMILY IF EXISTS pg_catalog.varbinary_ops USING HASH;
-DROP OPERATOR FAMILY IF EXISTS pg_catalog.binary_ops USING BTREE;
-DROP OPERATOR FAMILY IF EXISTS pg_catalog.binary_ops USING HASH;
-DROP FUNCTION IF EXISTS pg_catalog.varbinary_cmp(varbinary, varbinary);
-DROP FUNCTION IF EXISTS pg_catalog.binary_cmp(binary, binary);
-
 DROP FUNCTION IF EXISTS pg_catalog.degrees(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(year);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(json);
@@ -948,18 +937,6 @@ DROP FUNCTION IF EXISTS pg_catalog.boolean_year(boolean) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.char_year(char) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varchar_year(varchar) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.text_year(text) CASCADE;
-
-DROP OPERATOR IF EXISTS pg_catalog.~~(varbinary, varbinary);
-DROP OPERATOR IF EXISTS pg_catalog.~~(varbinary, text);
-DROP OPERATOR IF EXISTS pg_catalog.~~*(varbinary, text);
-DROP OPERATOR IF EXISTS pg_catalog.~~(text, varbinary);
-DROP OPERATOR IF EXISTS pg_catalog.~~*(text, varbinary);
-DROP FUNCTION IF EXISTS pg_catalog.varbinarylike(varbinary, varbinary);
-DROP FUNCTION IF EXISTS pg_catalog.textvarbinarylike(text, varbinary);
-DROP FUNCTION IF EXISTS pg_catalog.varbinarytextlike(varbinary, text);
-DROP OPERATOR IF EXISTS pg_catalog.~~(blob, blob);
-DROP OPERATOR IF EXISTS pg_catalog.~~*(blob, blob);
-DROP FUNCTION IF EXISTS pg_catalog.bloblike(blob, blob);
 
 DROP OPERATOR IF EXISTS pg_catalog.=(boolean, binary);
 DROP OPERATOR IF EXISTS pg_catalog.=(binary, boolean);
