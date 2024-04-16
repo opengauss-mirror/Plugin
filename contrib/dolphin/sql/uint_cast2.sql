@@ -327,5 +327,13 @@ select cast(1 as unsigned);
 select convert(1 , signed);
 select convert(1 , unsigned);
 
+--test for db core
+select varlena_cast_ui1(1);
+select varlena_cast_ui2(1);
+select varlena_cast_ui4(1);
+select varlena_cast_ui8(1);
+select varlena_cast_int8(1);
+select varlena2float8(1);
+
 drop schema uint_cast2 cascade;
 reset current_schema;

@@ -10451,10 +10451,26 @@ Datum blob_any_value(PG_FUNCTION_ARGS)
     PG_RETURN_BYTEA_P(vlena);
 }
 
+static char* AnyElementGetCString(Oid anyOid, Datum anyDatum)
+{
+    char* data = NULL;
+    Oid typeOutput = InvalidOid;
+    bool typIsVarlena = false;
+    getTypeOutputInfo(anyOid, &typeOutput, &typIsVarlena);
+    if (typIsVarlena) {
+
+
+        data = DatumGetCString(DirectFunctionCall1(textout, anyDatum));
+    } else {
+        data = DatumGetCString(OidOutputFunctionCall(typeOutput, anyDatum));
+    }
+    return data;
+}
+
 Datum Varlena2Float8(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0));
     bool hasError = false;
     char* endptr = NULL;
 

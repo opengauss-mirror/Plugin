@@ -521,6 +521,43 @@ select convert(1 , unsigned);
  1
 (1 row)
 
+--test for db core
+select varlena_cast_ui1(1);
+ varlena_cast_ui1 
+------------------
+ 1
+(1 row)
+
+select varlena_cast_ui2(1);
+ varlena_cast_ui2 
+------------------
+ 1
+(1 row)
+
+select varlena_cast_ui4(1);
+ varlena_cast_ui4 
+------------------
+ 1
+(1 row)
+
+select varlena_cast_ui8(1);
+ varlena_cast_ui8 
+------------------
+ 1
+(1 row)
+
+select varlena_cast_int8(1);
+ varlena_cast_int8 
+-------------------
+                 1
+(1 row)
+
+select varlena2float8(1);
+ varlena2float8 
+----------------
+              1
+(1 row)
+
 drop schema uint_cast2 cascade;
 NOTICE:  drop cascades to table t1
 reset current_schema;
