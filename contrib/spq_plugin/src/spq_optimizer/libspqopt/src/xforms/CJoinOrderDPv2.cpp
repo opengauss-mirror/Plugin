@@ -1319,7 +1319,7 @@ CJoinOrderDPv2::SearchBushyJoinOrders(ULONG current_level)
 	{
 		// we've exceeded the number of joins for which we generate bushy trees
 		// TODO: Transition off of bushy joins more gracefully, note that bushy
-		// trees usually do't add any more groups, they just generate more
+		// trees usually don't add any more groups, they just generate more
 		// expressions for existing groups
 		return;
 	}

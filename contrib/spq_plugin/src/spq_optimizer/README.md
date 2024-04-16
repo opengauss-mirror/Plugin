@@ -18,7 +18,7 @@ To understand the objectives and architecture of GPORCA please refer to the foll
 * [Profiling Query Compilation Time with GPORCA](http://engineering.pivotal.io/post/orca-profiling/)
 * [Improving Constraints In ORCA](http://engineering.pivotal.io/post/making-orca-smarter/)
 
-Want to [Contribute](#contribute)?
+Want to [Contribute](https://github.com/greenplum-db/gporca/blob/main/CONTRIBUTING.md)?
 
 GPORCA supports various build types: debug, release with debug info, release.
 You'll need CMake 3.1 or higher to build the gporca_test and gpos_test
@@ -165,7 +165,7 @@ that allows for users to quickly and easily update existing mdps. This script
 takes in a logfile that it will use to update the mdps. This logfile can be
 obtained from running ctest as shown below.
 
-Existing minidumps can be updated by runing the following:
+Existing minidumps can be updated by running the following:
 
 
 1. Run `ctest -j8`.
