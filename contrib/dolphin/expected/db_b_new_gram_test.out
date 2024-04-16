@@ -1364,3 +1364,44 @@ drop cascades to table db_b_new_gram_test.test_list2
 drop cascades to table db_b_new_gram_test.t_new_analyze
 drop cascades to table db_b_new_gram_test.t_quote_test
 reset current_schema;
+--to fix I9AZQB, be compatible with mysql, no error message if there exists only one index start with the given index hint
+create table t1 (a int, d int, unique key bmw (d,a));
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "bmw" for table "t1"
+explain (costs off) select count(a) from t1 ignore index(b);
+      QUERY PLAN      
+----------------------
+ Aggregate
+   ->  Seq Scan on t1
+(2 rows)
+
+explain (costs off) select count(a) from t1 ignore index(bm);
+      QUERY PLAN      
+----------------------
+ Aggregate
+   ->  Seq Scan on t1
+(2 rows)
+
+explain (costs off) select count(a) from t1 ignore index(bmw);
+      QUERY PLAN      
+----------------------
+ Aggregate
+   ->  Seq Scan on t1
+(2 rows)
+
+explain (costs off) select count(a) from t1 ignore index(mw);
+ERROR:  index not exists in relation t1
+explain (costs off) select count(a) from t1 ignore index(bmws);
+ERROR:  index not exists in relation t1
+create index bmu1 on t1(a);
+explain (costs off) select count(a) from t1 ignore index(bdx);
+ERROR:  index not exists in relation t1
+explain (costs off) select count(a) from t1 ignore index(bmu);
+      QUERY PLAN      
+----------------------
+ Aggregate
+   ->  Seq Scan on t1
+(2 rows)
+
+explain (costs off) select count(a) from t1 ignore index(bm);
+ERROR:  index not exists in relation t1
+drop table t1;

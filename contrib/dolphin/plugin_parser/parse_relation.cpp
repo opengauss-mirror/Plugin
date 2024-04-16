@@ -3263,6 +3263,39 @@ static void setRteOrientation(Relation rel, RangeTblEntry* rte)
         rte->orientation = REL_ROW_ORIENTED;
     }
 }
+#ifdef DOLPHIN
+/*
+ * get_idxhint_relid
+ *		Given hintname, and the relation index list, check if there is one and
+ *      only one index fullfill the fuzzy condition hintname like 'indexname*',
+ *
+ * Returns oid of the index or InvalidOid if there is no such index.
+ */
+Oid get_idxhint_relid(const char *hintname, List *indexList)
+{
+    ListCell *l = NULL;
+    Oid idxOid = InvalidOid;
+    Oid first_match_oid = InvalidOid;
+    foreach (l, indexList) {
+        idxOid = lfirst_oid(l);
+        const char *idxname = get_rel_name(idxOid);
+        const char *pos = NULL;
+        pos = strstr(idxname, hintname);
+        if (pos != NULL && pos == idxname) {
+            if (first_match_oid == InvalidOid) {
+                first_match_oid = idxOid;
+            } else {
+                // if more than one match, return invalidOid
+                first_match_oid = InvalidOid;
+                pfree_ext(idxname);
+                break;
+            }
+        }
+        pfree_ext(idxname);
+    }
+    return first_match_oid;
+}
+#endif
 
 /*check index in the table , and mixd write force and use*/
 static IndexHintType preCheckIndexHints(ParseState* pstate, List* indexhints, Relation relation)
@@ -3312,8 +3345,15 @@ static IndexHintType preCheckIndexHints(ParseState* pstate, List* indexhints, Re
                 }
             }
             if (!exist_indexs) {
-                retType = INDEX_HINT_NOT_EXISTS;
-                goto err;
+#ifdef DOLPHIN
+                indexOid = get_idxhint_relid(indexName, indexList);
+                if (!OidIsValid(indexOid)) {
+#endif
+                    retType = INDEX_HINT_NOT_EXISTS;
+                    goto err;
+#ifdef DOLPHIN
+                }
+#endif
             }
             IndexHintRelationData* indexdata = makeNode(IndexHintRelationData);
             indexdata->indexOid = indexOid;
