@@ -352,10 +352,10 @@ select (sqrt(81) between log10(100) and 20)-('22' between log2(4) and sqrt(4));
         1
 (1 row)
 
-select sqrt(1000) > 3.14 and sqrt(2000) <= 4 between sqrt(1212) <= 3 and sqrt(5757) = sqrt(5757);
+select sqrt(1000) > 3.14 and sqrt(2000) <= 4 between (sqrt(1212) <= 3) and (sqrt(5757) = sqrt(5757));
  ?column? 
 ----------
- t
+ f
 (1 row)
 
 drop table if exists t_between_and_0015;

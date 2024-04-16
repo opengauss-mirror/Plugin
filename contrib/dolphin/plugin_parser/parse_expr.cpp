@@ -135,6 +135,46 @@ typedef struct DefaultFuncType {
     Oid tableOid = InvalidOid;
     int colNumber = 0;
 } DefaultFuncType;
+
+bool IsStringType(Oid typeoid)
+{
+    switch (typeoid) {
+        case BPCHAROID:
+        case VARCHAROID:
+        case TEXTOID:
+            return true;
+        default:
+            if (typeoid == BINARYOID ||
+                typeoid == VARBINARYOID) {
+                  return true;
+            }
+            return false;
+    }
+}
+
+void DealWithBoolType(ParseState** pstate, Node** lexpr, Node** rexpr)
+{
+    Oid leftType = exprType(*lexpr);
+    int32 leftTypmod = exprTypmod(*lexpr);
+    Oid rightType = exprType(*rexpr);
+    int32 rightTypmod = exprTypmod(*rexpr);
+    if ((IsStringType(leftType) || leftType == YEAROID || leftType == FLOAT8OID || leftType == FLOAT4OID) && rightType == BOOLOID) {
+        *rexpr = coerce_to_target_type(
+            *pstate, *rexpr, BOOLOID, INT4OID, 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+        if (IsStringType(leftType)) {
+            *lexpr = coerce_to_target_type(
+                *pstate, *lexpr, leftType, FLOAT8OID, leftTypmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+        }
+    }
+    if ((IsStringType(rightType) || rightType == YEAROID || rightType == FLOAT8OID || rightType == FLOAT4OID) && leftType == BOOLOID) {
+        *lexpr = coerce_to_target_type(
+            *pstate, *lexpr, BOOLOID, INT4OID, 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+        if (IsStringType(rightType)) {
+            *rexpr = coerce_to_target_type(
+                *pstate, *rexpr, rightType, FLOAT8OID, rightTypmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+        }
+    }
+}
 #endif
 
 #define OrientedIsCOLorPAX(rte) ((rte)->orientation == REL_COL_ORIENTED || (rte)->orientation == REL_PAX_ORIENTED)
@@ -1469,6 +1509,11 @@ static Node* transformAExprOp(ParseState* pstate, A_Expr* a)
         lexpr = transformExprRecurse(pstate, lexpr);
         rexpr = transformExprRecurse(pstate, rexpr);
 
+#ifdef DOLPHIN
+        if (strcmp(strVal(linitial(a->name)), "=") == 0) {
+            DealWithBoolType(&pstate, &lexpr, &rexpr);
+        }
+#endif
         result = (Node*)make_op(pstate, a->name, lexpr, rexpr, last_srf, a->location);
     }
 
@@ -5106,6 +5151,9 @@ static Node* make_row_distinct_op(ParseState* pstate, List* opname, RowExpr* lro
  */
 Expr* make_distinct_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, int location)
 {
+#ifdef DOLPHIN
+    DealWithBoolType(&pstate, &ltree, &rtree);
+#endif
     Expr* result = NULL;
     Node* last_srf = parse_get_last_srf(pstate);
     result = make_op(pstate, opname, ltree, rtree, last_srf, location);
