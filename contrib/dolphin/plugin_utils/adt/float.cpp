@@ -2012,6 +2012,7 @@ Datum dlog2(PG_FUNCTION_ARGS)
 {
     float8 arg = PG_GETARG_FLOAT8(0);
     if (arg <= 0) {
+        PrintErrInvalidLogarithm(fcinfo->can_ignore, arg);
         PG_RETURN_NULL();
     }
     PG_RETURN_FLOAT8(get_log_result(arg, false));
@@ -2023,6 +2024,12 @@ Datum dlog2(PG_FUNCTION_ARGS)
 Datum dlog10(PG_FUNCTION_ARGS)
 {
     float8 arg = PG_GETARG_FLOAT8(0);
+#ifdef DOLPHIN
+    if (arg <= 0) {
+        PrintErrInvalidLogarithm(fcinfo->can_ignore, arg);
+        PG_RETURN_NULL();
+    }
+#endif
     PG_RETURN_FLOAT8(get_log_result(arg, true));
 }
 

@@ -59,12 +59,14 @@ WARNING:  Invalid argument '0.000000' for logarithm
 (1 row)
 
 SELECT LOG10(0) IS NULL;
+WARNING:  Invalid argument '0.000000' for logarithm
  ?column? 
 ----------
  t
 (1 row)
 
 SELECT LOG2(0) IS NULL;
+WARNING:  Invalid argument '0.000000' for logarithm
  ?column? 
 ----------
  t
@@ -78,12 +80,14 @@ WARNING:  Invalid argument '-1.000000' for logarithm
 (1 row)
 
 SELECT LOG10(-1) IS NULL;
+WARNING:  Invalid argument '-1.000000' for logarithm
  ?column? 
 ----------
  t
 (1 row)
 
 SELECT LOG2(-1) IS NULL;
+WARNING:  Invalid argument '-1.000000' for logarithm
  ?column? 
 ----------
  t
@@ -97,12 +101,18 @@ WARNING:  Invalid argument '0' for logarithm
 (1 row)
 
 SELECT LOG10(0::numeric) IS NULL;
+WARNING:  Invalid argument '0.000000' for logarithm
+CONTEXT:  referenced column: log10
+SQL function "log10" statement 1
  ?column? 
 ----------
  t
 (1 row)
 
 SELECT LOG2(0::numeric) IS NULL;
+WARNING:  Invalid argument '0.000000' for logarithm
+CONTEXT:  referenced column: log2
+SQL function "log2" statement 1
  ?column? 
 ----------
  t
@@ -116,12 +126,18 @@ WARNING:  Invalid argument '-1' for logarithm
 (1 row)
 
 SELECT LOG10(-1::numeric) IS NULL;
+WARNING:  Invalid argument '-1.000000' for logarithm
+CONTEXT:  referenced column: log10
+SQL function "log10" statement 1
  ?column? 
 ----------
  t
 (1 row)
 
 SELECT LOG2(-1::numeric) IS NULL;
+WARNING:  Invalid argument '-1.000000' for logarithm
+CONTEXT:  referenced column: log2
+SQL function "log2" statement 1
  ?column? 
 ----------
  t
@@ -282,25 +298,15 @@ log10(`int8`) as log7,  log10(`uint8`) as log8, log10(`float4`) as log9, log10(`
 log10(`boolean`) as log14, log10(`char`) as log15,  log10(`varchar`) as log16,  log10(`binary`) as log17, log10(`varbinary`) as log18, log10(`text`) as log19, log10(`numeric`) 
 as log20 from test_type_table;
 WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: log10
-SQL function "log10" statement 1
-referenced column: log15
+CONTEXT:  referenced column: log15
 WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: log10
-SQL function "log10" statement 1
-referenced column: log16
+CONTEXT:  referenced column: log16
 WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: log10
-SQL function "log10" statement 1
-referenced column: log17
+CONTEXT:  referenced column: log17
 WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: log10
-SQL function "log10" statement 1
-referenced column: log18
+CONTEXT:  referenced column: log18
 WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: log10
-SQL function "log10" statement 1
-referenced column: log19
+CONTEXT:  referenced column: log19
 \d test_log
     Table "db_b_log_test.test_log"
  Column |       Type       | Modifiers 
@@ -369,5 +375,58 @@ CONTEXT:  referenced column: log19
 drop table if exists test_log;
 drop table if exists test_type_table;
 reset dolphin.sql_mode;
+create table test_log(val double);
+insert into test_log select log10(0);
+ERROR:  Invalid argument '0.000000' for logarithm
+CONTEXT:  referenced column: log10
+insert into test_log select log10(-10);
+ERROR:  Invalid argument '-10.000000' for logarithm
+CONTEXT:  referenced column: log10
+insert into test_log select log2(0);
+ERROR:  Invalid argument '0.000000' for logarithm
+CONTEXT:  referenced column: log2
+insert into test_log select log2(-10);
+ERROR:  Invalid argument '-10.000000' for logarithm
+CONTEXT:  referenced column: log2
+insert ignore into test_log select log10(0);
+WARNING:  Invalid argument '0.000000' for logarithm
+CONTEXT:  referenced column: log10
+insert ignore into test_log select log10(-10);
+WARNING:  Invalid argument '-10.000000' for logarithm
+CONTEXT:  referenced column: log10
+insert ignore into test_log select log2(0);
+WARNING:  Invalid argument '0.000000' for logarithm
+CONTEXT:  referenced column: log2
+insert ignore into test_log select log2(-10);
+WARNING:  Invalid argument '-10.000000' for logarithm
+CONTEXT:  referenced column: log2
+set dolphin.sql_mode = '';
+insert into test_log select log10(0);
+WARNING:  Invalid argument '0.000000' for logarithm
+CONTEXT:  referenced column: log10
+insert into test_log select log10(-10);
+WARNING:  Invalid argument '-10.000000' for logarithm
+CONTEXT:  referenced column: log10
+insert into test_log select log2(0);
+WARNING:  Invalid argument '0.000000' for logarithm
+CONTEXT:  referenced column: log2
+insert into test_log select log2(-10);
+WARNING:  Invalid argument '-10.000000' for logarithm
+CONTEXT:  referenced column: log2
+select * from test_log;
+ val 
+-----
+    
+    
+    
+    
+    
+    
+    
+    
+(8 rows)
+
+reset dolphin.sql_mode;
+drop table if exists test_log;
 drop schema db_b_log_test cascade;
 reset current_schema;
