@@ -1481,15 +1481,25 @@ select integer'-2147481651' - year'1997';
 
 -- test year input
 select year '20$#12';
-ERROR:  invalid input syntax for type double precision: "20$#12"
+WARNING:  invalid input syntax for type double precision: "20$#12"
 LINE 1: select year '20$#12';
                     ^
 CONTEXT:  referenced column: year
+ year 
+------
+ 2020
+(1 row)
+
 select year '20中文12';
-ERROR:  invalid input syntax for type double precision: "20中文12"
+WARNING:  invalid input syntax for type double precision: "20中文12"
 LINE 1: select year '20中文12';
                     ^
 CONTEXT:  referenced column: year
+ year 
+------
+ 2020
+(1 row)
+
 select year '    1997    ';
  year 
 ------
@@ -1509,25 +1519,45 @@ select year '1997  ';
 (1 row)
 
 select year ' 1997  89';
-ERROR:  invalid input syntax for type double precision: " 1997  89"
+WARNING:  invalid input syntax for type double precision: " 1997  89"
 LINE 1: select year ' 1997  89';
                     ^
 CONTEXT:  referenced column: year
+ year 
+------
+ 1997
+(1 row)
+
 select year ' 1997  #@#';
-ERROR:  invalid input syntax for type double precision: " 1997  #@#"
+WARNING:  invalid input syntax for type double precision: " 1997  #@#"
 LINE 1: select year ' 1997  #@#';
                     ^
 CONTEXT:  referenced column: year
+ year 
+------
+ 1997
+(1 row)
+
 select year '&%2122';
-ERROR:  invalid input syntax for type double precision: "&%2122"
+WARNING:  invalid input syntax for type double precision: "&%2122"
 LINE 1: select year '&%2122';
                     ^
 CONTEXT:  referenced column: year
+ year 
+------
+ 0
+(1 row)
+
 select year '中文2122';
-ERROR:  invalid input syntax for type double precision: "中文2122"
+WARNING:  invalid input syntax for type double precision: "中文2122"
 LINE 1: select year '中文2122';
                     ^
 CONTEXT:  referenced column: year
+ year 
+------
+ 0
+(1 row)
+
 select year '98.3';
  year 
 ------

@@ -31,6 +31,7 @@ select conv(9223372036854775807,10,8);
 select conv(123456,10,8);
 select conv(1,10,8);
 
+-- https://gitee.com/opengauss/Plugin/pulls/815 fix it
 select time'-2 34:25:59'::float4;
 select time'-838:59:59'::float4;
 select time'0'::float4;

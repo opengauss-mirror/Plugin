@@ -1091,10 +1091,10 @@ set enable_partition_opfusion to on;
 insert into slb_monitor_drop_part values('2021-08-05 11:50:14.000000');
 copy slb_monitor_drop_part from stdin;
 select * from slb_monitor_drop_part;
-       monitor_time       
---------------------------
- Thu Aug 05 11:50:14 2021
- Thu Aug 05 11:50:15 2021
+    monitor_time     
+---------------------
+ 2021-08-05 11:50:14
+ 2021-08-05 11:50:15
 (2 rows)
 
 reset enable_opfusion;

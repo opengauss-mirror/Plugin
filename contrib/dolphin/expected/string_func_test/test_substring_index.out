@@ -85,14 +85,29 @@ SELECT SUBSTRING_INDEX('www.opengauss.com','.','-2');
 (1 row)
 
 SELECT SUBSTRING_INDEX('www.opengauss.com','.','2.1');
-ERROR:  invalid input syntax for type long precision: "2.1"
+WARNING:  invalid input syntax for type long precision: "2.1"
 CONTEXT:  referenced column: substring_index
+ substring_index 
+-----------------
+ www.opengauss
+(1 row)
+
 SELECT SUBSTRING_INDEX('www.opengauss.com','.','-2.1');
-ERROR:  invalid input syntax for type long precision: "-2.1"
+WARNING:  invalid input syntax for type long precision: "-2.1"
 CONTEXT:  referenced column: substring_index
+ substring_index 
+-----------------
+ opengauss.com
+(1 row)
+
 SELECT SUBSTRING_INDEX('www.opengauss.com','.','abc');
-ERROR:  invalid input syntax for type long precision: "abc"
+WARNING:  invalid input syntax for type long precision: "abc"
 CONTEXT:  referenced column: substring_index
+ substring_index 
+-----------------
+ 
+(1 row)
+
 SELECT SUBSTRING_INDEX('www.opengauss.com','.',2147483647);
   substring_index  
 -------------------
@@ -118,11 +133,21 @@ SELECT SUBSTRING_INDEX('www.opengauss.com','.',-9223372036854775808);
 (1 row)
 
 SELECT SUBSTRING_INDEX('www.opengauss.com','.',10000000000000000000);
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: substring_index
+  substring_index  
+-------------------
+ www.opengauss.com
+(1 row)
+
 SELECT SUBSTRING_INDEX('www.opengauss.com','.',-10000000000000000000);
-ERROR:  bigint out of range
+WARNING:  bigint out of range
 CONTEXT:  referenced column: substring_index
+  substring_index  
+-------------------
+ www.opengauss.com
+(1 row)
+
 SELECT SUBSTRING_INDEX(123132,1,2);
  substring_index 
 -----------------
