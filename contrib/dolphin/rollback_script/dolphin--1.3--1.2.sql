@@ -40,4 +40,26 @@ DROP FUNCTION IF EXISTS pg_catalog.bit_length(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(json);
 DROP FUNCTION IF EXISTS pg_catalog.bit_length(binary);
 
+
 drop function IF EXISTS pg_catalog."user"();
+
+DROP OPERATOR IF EXISTS pg_catalog.~~(varbinary, varbinary);
+DROP OPERATOR IF EXISTS pg_catalog.~~(varbinary, text);
+DROP OPERATOR IF EXISTS pg_catalog.~~(text, varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.varbinarylike(varbinary, varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.textvarbinarylike(text, varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.varbinarytextlike(varbinary, text);
+DROP OPERATOR IF EXISTS pg_catalog.~~(blob, blob);
+DROP FUNCTION IF EXISTS pg_catalog.bloblike(blob, blob);
+
+DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING BTREE;
+DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING HASH;
+DROP OPERATOR CLASS IF EXISTS pg_catalog.binary_ops USING BTREE;
+DROP OPERATOR CLASS IF EXISTS pg_catalog.binary_ops USING HASH;
+DROP OPERATOR FAMILY IF EXISTS pg_catalog.varbinary_ops USING BTREE;
+DROP OPERATOR FAMILY IF EXISTS pg_catalog.varbinary_ops USING HASH;
+DROP OPERATOR FAMILY IF EXISTS pg_catalog.binary_ops USING BTREE;
+DROP OPERATOR FAMILY IF EXISTS pg_catalog.binary_ops USING HASH;
+DROP FUNCTION IF EXISTS pg_catalog.varbinary_cmp(varbinary, varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.binary_cmp(binary, binary);
+
