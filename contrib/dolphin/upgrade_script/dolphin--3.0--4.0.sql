@@ -16,6 +16,8 @@ CREATE OR REPLACE FUNCTION pg_catalog.locate(bit, bit) RETURNS integer LANGUAGE 
 CREATE OR REPLACE FUNCTION pg_catalog.locate(boolean, text, integer) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.instr($1, $2, $3)';
 CREATE OR REPLACE FUNCTION pg_catalog.locate(bit, bit, integer) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.instr($1, $2, $3)';
 
+CREATE OR REPLACE FUNCTION pg_catalog.log10(float8) RETURNS double precision LANGUAGE INTERNAL IMMUTABLE STRICT as 'dlog10';
+
 DROP FUNCTION IF EXISTS pg_catalog.acos(bit);
 CREATE OR REPLACE FUNCTION pg_catalog.acos(bit) RETURNS double precision LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'acos_bit';
 

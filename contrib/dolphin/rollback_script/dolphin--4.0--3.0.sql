@@ -16,6 +16,20 @@ DROP FUNCTION IF EXISTS pg_catalog.locate(bit, bit);
 DROP FUNCTION IF EXISTS pg_catalog.locate(boolean, text, integer);
 DROP FUNCTION IF EXISTS pg_catalog.locate(bit, bit, integer);
 
+DROP FUNCTION IF EXISTS pg_catalog.log10(float8);
+CREATE OR REPLACE FUNCTION pg_catalog.log10(float8)
+RETURNS float8
+AS
+$$
+BEGIN
+    IF $1 <= 0 THEN
+        RETURN NULL;
+    end if;
+    RETURN (SELECT dlog10($1));
+END;
+$$
+LANGUAGE plpgsql;
+
 DROP FUNCTION IF EXISTS pg_catalog.acos(bit);
 DROP FUNCTION IF EXISTS pg_catalog.cos(bit);
 DROP FUNCTION IF EXISTS pg_catalog.cos(boolean);
