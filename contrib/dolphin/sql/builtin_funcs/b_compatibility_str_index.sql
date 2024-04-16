@@ -21,6 +21,7 @@ select position(b'01100101' in `bit64`) from t_bit order by c1; -- e
 select position('e' in `bit64`) from t_bit order by c1;
 select position('yes' in `bit64`) from t_bit order by c1;
 select position('one' in `bit64`) from t_bit order by c1;
+select position('' in `bit64`) from t_bit order by c1;
 
 -- test locate for boolean
 create table t_bool (c1 integer, c2 boolean);
@@ -36,8 +37,18 @@ select locate(b'01100101', `bit64`), locate(b'01100101', `bit64`, 6) from t_bit 
 select locate('e', `bit64`), locate('e', `bit64`, 6) from t_bit order by c1;
 select locate('yes', `bit64`), locate('yes', `bit64`, 5) from t_bit order by c1;
 select locate('one', `bit64`), locate('one', `bit64`, 4) from t_bit order by c1;
+select locate('', `bit64`), locate('', `bit64`, 4) from t_bit order by c1;
 
-drop table  t_bit;
+drop table t_bit;
+
+-- test multi_byte charatar binary string
+create table t_bin(c1 binary(50), c2 varbinary(50), c3 varchar(50));
+insert into t_bin values ('脸映桃红桃映脸', '脸映桃红桃映脸', '脸映桃红桃映脸');
+select locate('映', c1), locate('映', c2, 5), locate('映', c3, 5) from t_bin;
+select position('映' in c1), position('映' in c2), position('映' in c3) from t_bin;
+select instr(c1, '映'), instr(c2, '映'), instr(c3, '映') from t_bin;
+
+drop table t_bin;
 
 drop schema string_index_test cascade;
 reset dolphin.sql_mode;

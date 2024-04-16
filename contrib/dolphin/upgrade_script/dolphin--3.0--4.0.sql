@@ -7,14 +7,26 @@ CREATE OR REPLACE FUNCTION pg_catalog.length(anyenum) RETURNS integer LANGUAGE S
 CREATE OR REPLACE FUNCTION pg_catalog.length(json) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.length($1::text)';
 
 CREATE OR REPLACE FUNCTION pg_catalog.position(boolean, text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.position($1::text, $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.position(binary, text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.position($1::bytea, $2::bytea)';
+CREATE OR REPLACE FUNCTION pg_catalog.position(varbinary, text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.position($1::bytea, $2::bytea)';
 
+CREATE OR REPLACE FUNCTION pg_catalog.instr(binary, text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.position($1, $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.instr(varbinary, text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.position($1, $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.instr(boolean, text, integer) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.instr($1::text, $2, $3)';
 CREATE OR REPLACE FUNCTION pg_catalog.instr(bit, bit, integer) RETURNS integer LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'instr_bit';
+CREATE OR REPLACE FUNCTION pg_catalog.instr(bytea, bytea, integer) RETURNS integer LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'instr_binary';
+CREATE OR REPLACE FUNCTION pg_catalog.instr(binary, text, integer) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.instr($1::bytea, $2::bytea, $3)';
+CREATE OR REPLACE FUNCTION pg_catalog.instr(varbinary, text, integer) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.instr($1::bytea, $2::bytea, $3)';
 
 CREATE OR REPLACE FUNCTION pg_catalog.locate(boolean, text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.position($1, $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.locate(bit, bit) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.position($1, $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.locate(binary, text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.position($1, $2)';
+CREATE OR REPLACE FUNCTION pg_catalog.locate(varbinary, text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.position($1, $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.locate(boolean, text, integer) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.instr($1, $2, $3)';
 CREATE OR REPLACE FUNCTION pg_catalog.locate(bit, bit, integer) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.instr($1, $2, $3)';
+CREATE OR REPLACE FUNCTION pg_catalog.locate(bytea, bytea, integer) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.instr($1, $2, $3)';
+CREATE OR REPLACE FUNCTION pg_catalog.locate(binary, text, integer) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.instr($1, $2, $3)';
+CREATE OR REPLACE FUNCTION pg_catalog.locate(varbinary, text, integer) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.instr($1, $2, $3)';
 
 DROP FUNCTION IF EXISTS pg_catalog.acos(bit);
 CREATE OR REPLACE FUNCTION pg_catalog.acos(bit) RETURNS double precision LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'acos_bit';

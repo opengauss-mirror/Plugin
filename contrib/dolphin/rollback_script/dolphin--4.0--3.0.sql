@@ -7,14 +7,26 @@ DROP FUNCTION IF EXISTS pg_catalog.length(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.length(json);
 
 DROP FUNCTION IF EXISTS pg_catalog.position(boolean, text);
+DROP FUNCTION IF EXISTS pg_catalog.position(binary, text);
+DROP FUNCTION IF EXISTS pg_catalog.position(varbinary, text);
 
+DROP FUNCTION IF EXISTS pg_catalog.instr(binary, text);
+DROP FUNCTION IF EXISTS pg_catalog.instr(varbinary, text);
 DROP FUNCTION IF EXISTS pg_catalog.instr(boolean, text, integer);
 DROP FUNCTION IF EXISTS pg_catalog.instr(bit, bit, integer);
+DROP FUNCTION IF EXISTS pg_catalog.instr(bytea, bytea, integer);
+DROP FUNCTION IF EXISTS pg_catalog.instr(binary, text, integer);
+DROP FUNCTION IF EXISTS pg_catalog.instr(varbinary, text, integer);
 
 DROP FUNCTION IF EXISTS pg_catalog.locate(boolean, text);
 DROP FUNCTION IF EXISTS pg_catalog.locate(bit, bit);
+DROP FUNCTION IF EXISTS pg_catalog.locate(binary, text);
+DROP FUNCTION IF EXISTS pg_catalog.locate(varbinary, text);
 DROP FUNCTION IF EXISTS pg_catalog.locate(boolean, text, integer);
 DROP FUNCTION IF EXISTS pg_catalog.locate(bit, bit, integer);
+DROP FUNCTION IF EXISTS pg_catalog.locate(bytea, bytea, integer);
+DROP FUNCTION IF EXISTS pg_catalog.locate(binary, text, integer);
+DROP FUNCTION IF EXISTS pg_catalog.locate(varbinary, text, integer);
 
 DROP FUNCTION IF EXISTS pg_catalog.acos(bit);
 DROP FUNCTION IF EXISTS pg_catalog.cos(bit);

@@ -11365,9 +11365,9 @@ Datum instr_bit(PG_FUNCTION_ARGS)
     VarBit* bit_substr = PG_GETARG_VARBIT_P(1);
     int32 start = PG_GETARG_INT32(2);
 
-    int result = 0;
+    int result;
     int substr_length, str_length;
-    char *str, *subStr;
+    char *str, *substr;
 
     substr_length = VARBITBYTES(bit_substr);
     str_length = VARBITBYTES(bit_str);
@@ -11375,15 +11375,54 @@ Datum instr_bit(PG_FUNCTION_ARGS)
     if (start <= 0 || start > str_length)
         PG_RETURN_INT32(0);
 
-    str = bit_to_str(bit_str);
-    subStr = bit_to_str(bit_substr);
+    /* Empty string is always found */
+    if (substr_length <= 0)
+        PG_RETURN_INT32(start);
 
-    result = bin_text_position(str + start, str_length - start, subStr, substr_length);
+    str = bit_to_str(bit_str);
+    substr = bit_to_str(bit_substr);
+
+    result = binary_text_position(str + start, str_length - start, substr, substr_length);
 
     pfree_ext(str);
-    pfree_ext(subStr);
+    pfree_ext(substr);
 
-    PG_RETURN_INT32(result + start);
+    if (result < 0)
+        PG_RETURN_INT32(0);
+    else 
+        PG_RETURN_INT32(result + start);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(instr_binary);
+extern "C" DLL_PUBLIC Datum instr_binary(PG_FUNCTION_ARGS);
+Datum instr_binary(PG_FUNCTION_ARGS)
+{
+    bytea *input = PG_GETARG_BYTEA_P(0);
+    bytea *subinput = PG_GETARG_BYTEA_P(1);
+    int32 start = PG_GETARG_INT32(2);
+
+    int result;
+    int substr_length, str_length;
+    char *str, *substr;
+
+    str = VARDATA_ANY(input);
+    substr = VARDATA_ANY(subinput);
+    str_length = VARSIZE_ANY_EXHDR(input);
+    substr_length = VARSIZE_ANY_EXHDR(subinput);
+
+    if (start <= 0 || start > str_length)
+        PG_RETURN_INT32(0);
+
+    /* Empty string is always found */
+    if (substr_length <= 0)
+        PG_RETURN_INT32(start);
+
+    result = binary_text_position(str + start, str_length - start, substr, substr_length);
+
+    if (result < 0)
+        PG_RETURN_INT32(0);
+    else 
+        PG_RETURN_INT32(result + start);
 }
 
 static Datum GetPeakVarlena(PG_FUNCTION_ARGS, bool isLarger)
@@ -11425,5 +11464,6 @@ Datum varlena_smaller(PG_FUNCTION_ARGS)
 {
     return GetPeakVarlena(fcinfo, false);
 }
+
 
 #endif

@@ -2794,13 +2794,14 @@ Datum asin_bit(PG_FUNCTION_ARGS)
 
 /**
  * search binary text position, ignore '\0' in text.
+ * - if string lenght is illegal, return -1
 */
-int32 bin_text_position(const char *b, size_t b_length, const char *s, size_t s_length)
+int32 binary_text_position(const char *b, size_t b_length, const char *s, size_t s_length)
 {
-    int32 result = 0;
+    int32 result = -1;
     const uint8 *pos, *search, *end, *search_end;
 
-    if (b_length <= 0 || s_length > b_length) return 0;
+    if (b_length <= 0 || s_length > b_length) return -1;
 
     pos = (const uint8*)b;
     search = (const uint8*)s;
@@ -2837,16 +2838,23 @@ Datum dolphin_bitposition(PG_FUNCTION_ARGS)
 
     /* Get the substring bit byte length */
     substr_length = VARBITBYTES(bit_substr);
+    /* Empty string is always found */
+    if (substr_length <= 0)
+        PG_RETURN_INT32(1);
+
     str_length = VARBITBYTES(bit_str);
 
     str = bit_to_str(bit_str);
     subStr = bit_to_str(bit_substr);
 
-    result = bin_text_position(str, str_length, subStr, substr_length);
+    result = binary_text_position(str, str_length, subStr, substr_length);
 
     pfree_ext(str);
     pfree_ext(subStr);
 
-    PG_RETURN_INT32(result);
+    if (result < 0) 
+        PG_RETURN_INT32(0);
+    else
+        PG_RETURN_INT32(result);
 }
 #endif
