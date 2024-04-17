@@ -4065,32 +4065,27 @@ static Node* transformCoalesceExpr(ParseState* pstate, CoalesceExpr* c)
         newe = transformExprRecurse(pstate, e);
         newargs = lappend(newargs, newe);
     }
-
+#ifdef DOLPHIN
+    newc->coalescetype = agg_result_type(newargs);
+    if (!OidIsValid(newc->coalescetype)) {
+        /* if the agg_result_type is invalid, goto original routine */
+        newc->coalescetype = select_common_type(pstate, newargs, c->isnvl ? "NVL" : "COALESCE", NULL);
+    }
+#else
     // supports implicit convert
     if (c->isnvl) {
-#ifdef DOLPHIN
-        newc->coalescetype = agg_result_type(newargs);
-        if (!OidIsValid(newc->coalescetype)) {
-            /* if the agg_result_type is invalid, goto original routine */
-            newc->coalescetype = select_common_type(pstate, newargs, "NVL", NULL);
-        }
-#else
         newc->coalescetype = select_common_type(pstate, newargs, "NVL", NULL);
-#endif
     } else {
         newc->coalescetype = select_common_type(pstate, newargs, "COALESCE", NULL);
     }
+#endif
     /* coalescecollid will be set by parse_collate.c */
 
     /* Convert arguments if necessary */
     foreach (args, newargs) {
         Node* e = (Node*)lfirst(args);
         Node* newe = NULL;
-#ifdef DOLPHIN
-        newe = coerce_to_common_type(pstate, e, newc->coalescetype, c->isnvl ? "NVL" : "COALESCE");
-#else
         newe = coerce_to_common_type(pstate, e, newc->coalescetype, "COALESCE");
-#endif
         newcoercedargs = lappend(newcoercedargs, newe);
     }
     if (pstate->p_is_flt_frame) {
