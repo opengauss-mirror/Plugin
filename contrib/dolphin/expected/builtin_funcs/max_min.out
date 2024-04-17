@@ -101,3 +101,57 @@ select * from blob_maxmin_v;
  \x332e32332e616263 | \x312e32332e616263 | \x332e32332e616263 | \x312e32332e616263 | \x332e32332e616263 | \x312e32332e616263 | \x332e32332e616263 | \x312e32332e616263
 (1 row)
 
+-- test bit type with max/min
+drop table if exists bit_maxmin_t cascade;
+NOTICE:  table "bit_maxmin_t" does not exist, skipping
+create table bit_maxmin_t(
+    a bit,
+    b bit(64)
+);
+insert into bit_maxmin_t values (b'1', b'111');
+insert into bit_maxmin_t values (b'0', b'101');
+select max(a), min(a) from bit_maxmin_t;
+ max | min 
+-----+-----
+ 1   | 0
+(1 row)
+
+select max(b), min(b) from bit_maxmin_t;
+                               max                                |                               min                                
+------------------------------------------------------------------+------------------------------------------------------------------
+ 0000000000000000000000000000000000000000000000000000000000000111 | 0000000000000000000000000000000000000000000000000000000000000101
+(1 row)
+
+create view bit_maxmin_v as select
+    max(a) as max_a,
+    min(a) as min_a,
+    max(b) as max_b,
+    min(b) as min_b
+    from bit_maxmin_t;
+desc bit_maxmin_v;
+ Field | Type  | Null | Key | Default | Extra 
+-------+-------+------+-----+---------+-------
+ max_a | "bit" | YES  |     | NULL    | 
+ min_a | "bit" | YES  |     | NULL    | 
+ max_b | "bit" | YES  |     | NULL    | 
+ min_b | "bit" | YES  |     | NULL    | 
+(4 rows)
+
+delete from bit_maxmin_t;
+insert into bit_maxmin_t values (null, null);
+insert into bit_maxmin_t values (null, null);
+select * from bit_maxmin_v;
+ max_a | min_a | max_b | min_b 
+-------+-------+-------+-------
+       |       |       | 
+(1 row)
+
+insert into bit_maxmin_t values (b'1', b'111');
+insert into bit_maxmin_t values (null, null);
+insert into bit_maxmin_t values (b'0', b'101');
+select * from bit_maxmin_v;
+ max_a | min_a |                              max_b                               |                              min_b                               
+-------+-------+------------------------------------------------------------------+------------------------------------------------------------------
+ 1     | 0     | 0000000000000000000000000000000000000000000000000000000000000111 | 0000000000000000000000000000000000000000000000000000000000000101
+(1 row)
+

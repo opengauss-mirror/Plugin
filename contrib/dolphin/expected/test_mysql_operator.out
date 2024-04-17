@@ -1426,7 +1426,7 @@ select * from testforbit;
 select max(tem) from (select a^b tem from testforbit);
  max 
 -----
-   1
+ 1
 (1 row)
 
 select sum(tem) from (select a^b tem from testforbit);
@@ -1438,7 +1438,7 @@ select sum(tem) from (select a^b tem from testforbit);
 select min(tem) from (select a^b tem from testforbit);
  min 
 -----
-   0
+ 0
 (1 row)
 
 select avg(tem) from (select a^b tem from testforbit);
