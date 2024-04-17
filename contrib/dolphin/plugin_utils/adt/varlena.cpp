@@ -56,6 +56,7 @@
 #include "workload/cpwlm.h"
 #include "utils/varbit.h"
 #include "plugin_commands/mysqlmode.h"
+#include "utils/varbit.h"
 #include "plugin_utils/timestamp.h"
 #include "plugin_utils/date.h"
 #include "libpq/libpq-int.h"
@@ -197,6 +198,7 @@ static uint64 parse_unsigned_val(Oid typeoid, char* str_val);
 static CmpType agg_cmp_type(FunctionCallInfo fcinfo, int argc);
 static bytea* binary_type_and(PG_FUNCTION_ARGS);
 static uint64 bit_and_text_uint8(const char* s, uint64 max, int64 min, const char* typname);
+static char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError = nullptr);
 
 PG_FUNCTION_INFO_V1_PUBLIC(binary_typmodin);
 extern "C" DLL_PUBLIC Datum binary_typmodin(PG_FUNCTION_ARGS);
@@ -10813,7 +10815,7 @@ Datum blob_any_value(PG_FUNCTION_ARGS)
     PG_RETURN_BYTEA_P(vlena);
 }
 
-static char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError = nullptr)
+static char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError)
 {
     if (!OidIsValid(anyOid)) {
         return DatumGetCString(DirectFunctionCall1(textout, anyDatum));
@@ -10857,6 +10859,22 @@ Datum Varlena2Float8(PG_FUNCTION_ARGS)
     }
     pfree_ext(data);
     PG_RETURN_FLOAT8(result);
+}
+
+
+Datum bit_blob(VarBit* input)
+{
+    bytea* result = NULL;
+    int len = (VARBITLEN(input) - 1) / 8  + 1;
+    result = (bytea*)palloc0(len + VARHDRSZ);
+    Datum shift = DirectFunctionCall2(bit, VarBitPGetDatum(input), Int32GetDatum(len * 8));
+
+    errno_t ss_rc = 0;
+    ss_rc = memcpy_s(VARDATA(result), len, VARBITS((VarBit*)shift), len);
+    securec_check(ss_rc, "\0", "\0");
+    SET_VARSIZE(result, len + VARHDRSZ);
+
+    PG_RETURN_BYTEA_P(result);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(binary_length);

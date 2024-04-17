@@ -27,6 +27,7 @@
 #include "fmgr/fmgr_core.h"
 #include "lib/stringinfo.h"
 #include "access/tupdesc.h"
+#include "nodes/primnodes.h"
 
 #ifndef FRONTEND_PARSER
 

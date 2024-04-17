@@ -49,7 +49,8 @@
 #ifdef DOLPHIN
 #include "nodes/makefuncs.h"
 #include "plugin_commands/mysqlmode.h"
-
+#include "plugin_parser/parse_coerce.h"
+#include "utils/varbit.h"
 #ifndef CRCMASK
 #define CRCMASK 0xEDB88320
 #define DIG_PER_DEC1 9
@@ -21459,7 +21460,7 @@ Datum any_accum(PG_FUNCTION_ARGS)
     if (IsA(constNode, Const)) {
         datumVal = ((Const *)constNode)->constvalue;
     } else if (IsA(constNode, FuncExpr)) {
-        datumVal = OidFunctionCall1Coll(((FuncExpr *)constNode)->funcid, InvalidOid, val, fcinfo->can_ignore);
+        datumVal = OidFunctionCall1Coll(((FuncExpr *)constNode)->funcid, InvalidOid, val);
     } else {
         ereport(ERROR,
                 (errcode(ERRCODE_DATATYPE_MISMATCH),

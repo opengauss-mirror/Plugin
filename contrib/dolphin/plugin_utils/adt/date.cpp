@@ -36,6 +36,7 @@
 #include "utils/sortsupport.h"
 #ifdef DOLPHIN
 #include "plugin_commands/mysqlmode.h"
+#include "int8.h"
 #endif
 
 /*
@@ -63,6 +64,7 @@ static int getStartingDigits(char* str);
 #ifdef DOLPHIN
 bool check_pg_tm_time_part(pg_tm *tm, fsec_t fsec);
 extern const char* extract_numericstr(const char* str);
+extern "C" DLL_PUBLIC Datum uint8out(PG_FUNCTION_ARGS);
 static char* adjust_b_format_time(char *str, int *timeSign, int *D, bool *hasD);
 int DatetimeDate(char *str, pg_tm *tm, int time_cast_type);
 static int64 getPartFromTm(pg_tm* tm, fsec_t fsec, int part);
@@ -2379,7 +2381,11 @@ static int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result)
  * If out of this range, leave as UTC (in practice that could only happen
  * if pg_time_t is just 32 bits) - thomas 97/05/27
  */
+#ifdef DOLPHIN
+int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec)
+#else
 static int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec)
+#endif
 {
 #ifdef HAVE_INT64_TIMESTAMP
     tm->tm_hour = time / USECS_PER_HOUR;

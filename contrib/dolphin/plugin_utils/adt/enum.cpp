@@ -29,6 +29,7 @@
 #include "utils/typcache.h"
 #ifdef DOLPHIN
 #include "plugin_postgres.h"
+#include "plugin_parser/parse_coerce.h"
 #include "plugin_commands/mysqlmode.h"
 #include "catalog/gs_collation.h"
 #endif

@@ -26,7 +26,7 @@
 #include "utils/builtins.h"
 #include "plugin_commands/mysqlmode.h"
 #ifdef DOLPHIN
-#include "plugin_utils/varbit.h"
+#include "utils/varbit.h"
 #include "utils/int16.h"
 #include "plugin_utils/date.h"
 #include "plugin_utils/datetime.h"

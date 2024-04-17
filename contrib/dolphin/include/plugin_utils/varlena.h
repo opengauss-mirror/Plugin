@@ -3,7 +3,7 @@
 
 #include "plugin_postgres.h"
 #include "fmgr.h"
-#include "plugin_utils/varbit.h"
+#include "utils/varbit.h"
 
 #ifdef DOLPHIN
 extern Datum bit_blob(VarBit* input);

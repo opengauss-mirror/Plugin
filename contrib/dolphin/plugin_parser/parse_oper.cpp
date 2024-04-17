@@ -910,6 +910,7 @@ Expr* make_op(ParseState* pstate, List* opname, Node* ltree, Node* rtree, Node* 
 #ifdef DOLPHIN
     Node* newLeftTree = NULL;
     Node* newRightTree = NULL;
+    GetDolphinOperatorTupInfo info;
 #endif
     /* Select the operator */
     if (rtree == NULL) {

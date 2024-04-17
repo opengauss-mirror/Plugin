@@ -52,7 +52,11 @@
 #include "workload/cpwlm.h"
 #include "utils/varbit.h"
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/date.h"
 #include "plugin_utils/unsigned_int.h"
+
+extern Datum bpchar_float8(PG_FUNCTION_ARGS);
+extern Datum varchar_float8(PG_FUNCTION_ARGS);
 
 #define INTEGER_DIV_INTEGER(arg1, arg2)   \
     float8 result;                        \
@@ -4868,6 +4872,14 @@ Datum dolphin_boolnot(PG_FUNCTION_ARGS)
     PG_RETURN_UINT64(~argval);
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(time_cast_ui8);
+extern "C" DLL_PUBLIC Datum time_cast_ui8(PG_FUNCTION_ARGS);
+Datum time_cast_ui8(PG_FUNCTION_ARGS)
+{
+    Datum val = time_float(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui8, val);
+}
+
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_timenot);
 extern "C" DLL_PUBLIC Datum dolphin_timenot(PG_FUNCTION_ARGS);
 Datum dolphin_timenot(PG_FUNCTION_ARGS)
@@ -4875,11 +4887,27 @@ Datum dolphin_timenot(PG_FUNCTION_ARGS)
     PG_RETURN_UINT64(~time_cast_ui8(fcinfo));
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(char_cast_ui8);
+extern "C" DLL_PUBLIC Datum char_cast_ui8(PG_FUNCTION_ARGS);
+Datum char_cast_ui8(PG_FUNCTION_ARGS)
+{
+    Datum val = bpchar_float8(fcinfo);
+    return DirectFunctionCall1Coll(f8_cast_ui8, InvalidOid, val, fcinfo->can_ignore);
+}
+
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_charnot);
 extern "C" DLL_PUBLIC Datum dolphin_charnot(PG_FUNCTION_ARGS);
 Datum dolphin_charnot(PG_FUNCTION_ARGS)
 {
     PG_RETURN_UINT64(~char_cast_ui8(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_cast_ui8);
+extern "C" DLL_PUBLIC Datum varchar_cast_ui8(PG_FUNCTION_ARGS);
+Datum varchar_cast_ui8(PG_FUNCTION_ARGS)
+{
+    Datum val = varchar_float8(fcinfo);
+    return DirectFunctionCall1Coll(f8_cast_ui8, InvalidOid, val, fcinfo->can_ignore);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_varcharnot);
@@ -4896,6 +4924,7 @@ Datum dolphin_textnot(PG_FUNCTION_ARGS)
     PG_RETURN_UINT64(~text_cast_uint8(fcinfo));
 }
 
+extern "C" Datum Varlena2Float8(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui8);
 extern "C" DLL_PUBLIC Datum varlena_cast_ui8(PG_FUNCTION_ARGS);
 Datum varlena_cast_ui8(PG_FUNCTION_ARGS)

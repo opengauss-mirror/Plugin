@@ -8,6 +8,9 @@
 #include "utils/builtins.h"
 #include "libpq/pqformat.h"
 #include "plugin_utils/year.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 /*
  * gcc's -ffast-math switch breaks routines that expect exact results from

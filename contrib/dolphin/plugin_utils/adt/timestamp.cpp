@@ -215,6 +215,8 @@ PG_FUNCTION_INFO_V1_PUBLIC(bool_b_format_timestamp);
 extern "C" DLL_PUBLIC Datum bool_b_format_timestamp(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(bool_b_format_datetime);
 extern "C" DLL_PUBLIC Datum bool_b_format_datetime(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(float8_b_format_datetime);
+extern "C" DLL_PUBLIC Datum float8_b_format_datetime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(subtime);
 extern "C" DLL_PUBLIC Datum subtime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(time_format);
@@ -739,6 +741,27 @@ inline bool is_explicit_call(PG_FUNCTION_ARGS)
     return PG_NARGS() > 1 && PG_GETARG_BOOL(1) == true;
 }
 
+Datum float8_b_format_datetime(PG_FUNCTION_ARGS)
+{
+    float8 n = PG_GETARG_FLOAT8(0);
+    char *str = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(n)));
+    char buf[MAXDATELEN + 1];
+    fillZeroBeforeNumericTimestamp(str, buf);
+    bool isRetNull = false;
+    if (is_explicit_call(fcinfo)) {
+        Datum result = DirectCall3(&isRetNull, timestamp_explicit, InvalidOid, CStringGetDatum(buf),
+            ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
+        if (isRetNull) {
+            PG_RETURN_NULL();
+        } else {
+            return result;
+        }
+    } else {
+        return DirectFunctionCall3(timestamptz_in, CStringGetDatum(buf), ObjectIdGetDatum(InvalidOid),
+            Int32GetDatum(-1));
+    }
+}
+
 Datum numeric_b_format_datetime(PG_FUNCTION_ARGS)
 {
     Numeric n = PG_GETARG_NUMERIC(0);
@@ -779,8 +802,6 @@ Datum numeric_b_format_timestamp(PG_FUNCTION_ARGS)
             Int32GetDatum(-1));
     }
 }
-
-#endif
 
 #ifdef DOLPHIN
 int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec, unsigned int date_flag)
@@ -9176,30 +9197,30 @@ static inline bool convert_tz_internal(Timestamp raw_datetime, text *expr2, text
     {
         if (from_ok == 0) { // if expr2 is zone
             if (!calc_timestamp_internal(expr2, datetime, &datetime)) {
-                PG_TRY_RETURN(false);
+                return false;
             }
         } else {    // if expr2 is izone
             if (!is_izone_in_range(str2, &interval1)) {
-                PG_TRY_RETURN(false);
+                return false;
             }
             datetime = (Timestamp)DirectFunctionCall2(timestamp_izone, PointerGetDatum(interval1), TimestampGetDatum(datetime));
         }
         if (!datetime_in_unixtimestmap(datetime)) {
             *result = raw_datetime;
-            PG_TRY_RETURN(true);
+            return true;
         }
         if (to_ok == 0) {   // if expr3 is zone
              if (!calc_timestamptz_internal(expr3, datetime, &datetime)) {
-                PG_TRY_RETURN(false);
+                return false;
             }
         } else {    // if expr3 is izone
              if (!is_izone_in_range(str3, &interval2)) {
-                PG_TRY_RETURN(false);
+                return false;
             }
             datetime = (Timestamp)DirectFunctionCall2(timestamptz_izone, PointerGetDatum(interval2), TimestampGetDatum(datetime));
         }
         *result = datetime;
-        PG_TRY_RETURN(true);
+        return true;
     }
     PG_CATCH();
     {

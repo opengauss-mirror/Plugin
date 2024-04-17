@@ -2,6 +2,7 @@
 #include "plugin_parser/parser.h"
 #include "plugin_parser/analyze.h"
 #include "plugin_parser/parse_oper.h"
+#include "plugin_parser/parse_coerce.h"
 #include "plugin_storage/hash.h"
 #include "plugin_postgres.h"
 #include "plugin_utils/plpgsql.h"

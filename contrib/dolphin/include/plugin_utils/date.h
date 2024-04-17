@@ -88,6 +88,7 @@ extern void convert_to_time(Datum value, Oid valuetypid, TimeADT *time);
 
 #ifdef DOLPHIN
 extern int tm2time(struct pg_tm* tm, fsec_t fsec, TimeADT* result);
+extern int time2tm(TimeADT time, struct pg_tm* tm, fsec_t* fsec);
 extern int timetz2tm(TimeTzADT* time, struct pg_tm* tm, fsec_t* fsec, int* tzp);
 extern bool cstring_to_time(const char *str, pg_tm *tm, fsec_t &fsec, int &timeSign, int &tm_type, bool &warnings, bool *null_func_result);
 extern void check_b_format_time_range_with_ereport(TimeADT &time, bool can_ignore = false, bool* result_isnull = NULL);
@@ -99,7 +100,8 @@ extern bool time_in_with_flag(char *str, unsigned int date_flag, TimeADT* time_a
 extern bool time_in_with_sql_mode(char *str, TimeADT *result, unsigned int date_flag, bool vertify_time = false,
     bool can_ignore = false);
 extern bool date_add_interval(DateADT date, Interval *span, DateADT *result);
-eextern Datum date_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type);
+extern Datum date_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type);
+extern "C" Datum time_float(PG_FUNCTION_ARGS);
 extern Datum textout (PG_FUNCTION_ARGS);
 extern bool time_add_nanoseconds_with_round(char* input_str, pg_tm *tm, long long rem, fsec_t* fsec, bool can_ignore);
 extern long long align_to_nanoseconds(long long src);

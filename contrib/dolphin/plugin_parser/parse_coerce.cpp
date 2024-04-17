@@ -85,8 +85,10 @@ static bool Numeric2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCA
 
 static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others, &Date2Others, &Numeric2Others};
 
+#define INVALID_IDX -1
 #define CAST_FUNCTION_ROW 8
 #define CAST_FUNCTION_COLUMN 4
+#define CAST_SIGNED_IDX 16
 #define NUM_CAST_TIME_IDX 14
 #define MAX_FLOAT8_PRECISION 15
 
@@ -98,6 +100,11 @@ static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1
                                                                             {"f8_cast_ui1", "f8_cast_ui2", "f8_cast_ui4", "f8_cast_ui8"},
                                                                             {"numeric_cast_uint1", "numeric_cast_uint2", "numeric_cast_uint4", "numeric_cast_uint8"},
                                                                             {"text_cast_uint1", "text_cast_uint2", "text_cast_uint4", "text_cast_uint8"}};
+
+static const char* castSignedFunction[CAST_SIGNED_IDX] = {"bit_cast_int8", "float4_cast_int8", "float8_cast_int8", "numeric_cast_int8",
+                                                          "date_cast_int8", "timestamp_cast_int8", "timestamptz_cast_int8", "time_cast_int8",
+                                                          "timetz_cast_int8","set_cast_int8", "uint8_cast_int8", "year_cast_int8",
+                                                          "bpchar_cast_int8","varchar_cast_int8", "text_cast_int8", "varlena_cast_int8"};
 
 static const char* numCastTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_time", "int16_cast_time", "int32_cast_time",
                                                              "int64_cast_time", "uint8_cast_time", "uint16_cast_time",
@@ -146,8 +153,34 @@ typedef enum {
     FLOAT4,
     FLOAT8,
     NUMERIC,
-    TEXT
+    TEXT,
+    TIME,
+    BPCHAR,
+    VARCHAR,
+    NVARCHAR2,
+    VARLENA
 } CastRow;
+
+typedef enum {
+    S_INVALID_IDX = -1,
+    S_BIT,
+    S_FLOAT4,
+    S_FLOAT8,
+    S_NUMERIC,
+    S_DATE,
+    S_TIMESTAMP,
+    S_TIMESTAMPTZ,
+    S_TIME,
+    S_TIMETZ,
+    S_SET,
+    S_UINT8,
+    S_YEAR,
+    S_BPCHAR,
+    S_VARCHAR,
+    S_NVARCHAR2,
+    S_TEXT,
+    S_VARLENA
+} CastSignedIdx;
 
 typedef enum {
     N_INVALID_IDX = -1,

@@ -36,6 +36,7 @@
 #include "plugin_protocol/dqformat.h"
 #include "plugin_protocol/printtup.h"
 #include "plugin_protocol/proto_com.h"
+#include "plugin_postgres.h"
 
 #define DOLPHIN_BLOB_LENGTH 65535
 

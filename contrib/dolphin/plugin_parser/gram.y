@@ -1358,7 +1358,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
  * blame any funny behavior of UNBOUNDED on the SQL standard, though.
  */
 %nonassoc	UNBOUNDED		/* ideally should have same precedence as IDENT */
-%nonassoc	IDENT GENERATED NULL_P PARTITION SUBPARTITION RANGE ROWS PRECEDING FOLLOWING CUBE ROLLUP DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ DB_B_POINT
+%nonassoc	IDENT GENERATED NULL_P PARTITION SUBPARTITION RANGE ROWS PRECEDING FOLLOWING CUBE ROLLUP DB_B_JSON DB_B_JSONB DB_B_BOX DB_B_CIRCLE DB_B_POLYGON DB_B_BYTEA DB_B_TIMETZ DB_B_TIMESTAMPTZ DB_B_POINT DB_B_CIDR
 %left		Op OPERATOR '@'		/* multi-character ops and user-defined operators */
 %nonassoc	NOTNULL
 %nonassoc	ISNULL
@@ -5518,7 +5518,6 @@ alter_table_cmd:
 					def->colname = $4;
 					def->typname = $5;
 					def->typname->charset = $6;
-					def->columnOptions = $8;
 					def->kvtype = ATT_KV_UNDEFINED;
 					def->inhcount = 0;
 					def->is_local = true;
@@ -9952,7 +9951,6 @@ columnDef:	DolphinColColId Typename opt_charset KVType ColCmprsMode create_gener
 						SplitColQualList($7, &n->constraints, &n->collClause, &n->columnOptions,
 										yyscanner);
 					}
-					n->columnOptions = $8;
 					$$ = (Node *)n;
 				}
 		;
