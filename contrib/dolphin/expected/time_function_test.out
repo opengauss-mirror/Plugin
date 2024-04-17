@@ -280,8 +280,6 @@ select time(8385959::uint4);
 select time(8395959::uint4);
 WARNING:  time out of range
 CONTEXT:  referenced column: time
-WARNING:  time field value out of range
-CONTEXT:  referenced column: time
  time 
 ------
  
@@ -538,6 +536,401 @@ time |
 time | 
 
 \x
+drop table if exists test_time;
+reset dolphin.sql_mode;
+select time(20031231235959);
+   time   
+----------
+ 23:59:59
+(1 row)
+
+select time(20031231245959);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: time
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231010203);
+   time   
+----------
+ 01:02:03
+(1 row)
+
+select time(20031231235959::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:01:27
+(1 row)
+
+select time(20031231245959::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:01:27
+(1 row)
+
+select time(20031231235959::uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:02:55
+(1 row)
+
+select time(20031231245959::uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: time
+   time   
+----------
+ 00:02:55
+(1 row)
+
+select time(20031231235959::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231245959::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231235959::uint2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: time
+   time   
+----------
+ 06:55:35
+(1 row)
+
+select time(20031231245959::uint2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: time
+   time   
+----------
+ 06:55:35
+(1 row)
+
+select time(20031231235959::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231245959::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231235959::uint4);
+WARNING:   int unsigned out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range: "4294967295"
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231245959::uint4);
+WARNING:   int unsigned out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range: "4294967295"
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231235959::int8);
+   time   
+----------
+ 23:59:59
+(1 row)
+
+select time(20031231245959::int8);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: time
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231235959::uint8);
+   time   
+----------
+ 23:59:59
+(1 row)
+
+select time(20031231245959::uint8);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: time
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231235959::float4);
+WARNING:  date/time field value out of range: "20031200000000"
+CONTEXT:  referenced column: time
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231245959::float4);
+WARNING:  date/time field value out of range: "20031200000000"
+CONTEXT:  referenced column: time
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231235959::float8);
+   time   
+----------
+ 23:59:59
+(1 row)
+
+select time(20031231245959::float8);
+WARNING:  date/time field value out of range: "20031231245959"
+CONTEXT:  referenced column: time
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231235959::numeric);
+WARNING:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+select time(20031231245959::numeric);
+WARNING:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+ time 
+------
+ 
+(1 row)
+
+create table test_time(time time);
+insert into test_time select time(20031231245959);
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::int1);
+ERROR:  tinyint out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::uint1);
+ERROR:  tinyint unsigned out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::int2);
+ERROR:  smallint out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::uint2);
+ERROR:  smallint unsigned out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::int4);
+ERROR:  integer out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::uint4);
+ERROR:   int unsigned out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::int8);
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::uint8);
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::float4);
+ERROR:  date/time field value out of range: "20031200000000"
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::float8);
+ERROR:  date/time field value out of range: "20031231245959"
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::numeric);
+ERROR:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(20031231245959);
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(20031231245959::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(20031231245959::uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(20031231245959::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(20031231245959::uint2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(20031231245959::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(20031231245959::uint4);
+WARNING:   int unsigned out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range: "4294967295"
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(20031231245959::int8);
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(20031231245959::uint8);
+ERROR:  timestamp out of range
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(20031231245959::float4);
+ERROR:  date/time field value out of range: "20031200000000"
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(20031231245959::float8);
+ERROR:  date/time field value out of range: "20031231245959"
+CONTEXT:  referenced column: time
+insert ignore into test_time select time(20031231245959::numeric);
+WARNING:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: time
+ERROR:  time field value out of range
+CONTEXT:  referenced column: time
+select * from test_time;
+   time   
+----------
+ 00:01:27
+ 00:02:55
+ 
+ 06:55:35
+ 
+ 
+(6 rows)
+
+drop table if exists test_time;
+set dolphin.sql_mode = '';
+create table test_time(time time);
+insert into test_time select time(20031231245959);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: time
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::int1);
+WARNING:  tinyint out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::int2);
+WARNING:  smallint out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::uint2);
+WARNING:  smallint unsigned out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::int4);
+WARNING:  integer out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::uint4);
+WARNING:   int unsigned out of range
+CONTEXT:  referenced column: time
+WARNING:  time out of range: "4294967295"
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::int8);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: time
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::uint8);
+WARNING:  timestamp out of range
+CONTEXT:  referenced column: time
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::float4);
+WARNING:  date/time field value out of range: "20031200000000"
+CONTEXT:  referenced column: time
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::float8);
+WARNING:  date/time field value out of range: "20031231245959"
+CONTEXT:  referenced column: time
+WARNING:  date/time field value out of range
+CONTEXT:  referenced column: time
+insert into test_time select time(20031231245959::numeric);
+WARNING:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: time
+WARNING:  time field value out of range
+CONTEXT:  referenced column: time
+select * from test_time;
+   time   
+----------
+ 
+ 00:01:27
+ 00:02:55
+ 
+ 06:55:35
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+(12 rows)
+
 drop table if exists test_time;
 drop schema time_function_test cascade ;
 NOTICE:  drop cascades to table time_function_test.test_year

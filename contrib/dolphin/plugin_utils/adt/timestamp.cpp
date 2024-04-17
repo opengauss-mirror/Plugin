@@ -7169,11 +7169,12 @@ Datum float8_timestamptz(PG_FUNCTION_ARGS)
  * [0000-01-01 00:00:00.000000, 9999-12-31 23:59:59.999999].(the 
  * datetime range is from MySQL)
  */
-void check_b_format_datetime_range_with_ereport(Timestamp &datetime)
+
+void check_b_format_datetime_range_with_ereport(Timestamp &datetime, bool ignore)
 {
     if (datetime < B_FORMAT_TIMESTAMP_MIN_VALUE || datetime > B_FORMAT_TIMESTAMP_MAX_VALUE) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),
-                        errmsg("date/time field value out of range")));
+        ereport((!ignore && SQL_MODE_STRICT()) ? ERROR : WARNING, 
+            (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("date/time field value out of range")));
     }
 }
 
@@ -7535,7 +7536,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
             int64 number = DatumGetInt64(value);
             if (number >= (int64)pow_of_10[10]) { /* datetime: 0001-00-00 00-00-00 */
                 *datetime = DatumGetTimestamp(DirectFunctionCall1(int64_b_format_datetime, value));
-                check_b_format_datetime_range_with_ereport(*datetime);
+                check_b_format_datetime_range_with_ereport(*datetime, can_ignore);
                 return TIMESTAMPOID;
             } else {
                 convert_to_time(value, INT4OID, time, can_ignore);
@@ -7548,7 +7549,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
             Datum bound = DirectFunctionCall1(int8_numeric, Int64GetDatum((int64)pow_of_10[10]));
             if (DirectFunctionCall2(numeric_ge, value, bound)) {
                 *datetime = DatumGetTimestamp(DirectFunctionCall1(numeric_b_format_datetime, value));
-                check_b_format_datetime_range_with_ereport(*datetime);
+                check_b_format_datetime_range_with_ereport(*datetime, can_ignore);
                 return TIMESTAMPOID;
             } else {
                 convert_to_time(value, valuetypid, time, can_ignore);
@@ -7560,7 +7561,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
             double float_val = (double)DatumGetFloat4(value);
             if (float_val >= (double)pow_of_10[10]) {
                 convert_to_datetime(value, valuetypid, datetime);
-                check_b_format_datetime_range_with_ereport(*datetime);
+                check_b_format_datetime_range_with_ereport(*datetime, can_ignore);
                 return TIMESTAMPOID;
             } else {
                 convert_to_time(value, valuetypid, time, can_ignore);
@@ -7572,7 +7573,7 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
             double float_val = (double)DatumGetFloat8(value);
             if (float_val >= (double)pow_of_10[10]) {
                 convert_to_datetime(value, valuetypid, datetime);
-                check_b_format_datetime_range_with_ereport(*datetime);
+                check_b_format_datetime_range_with_ereport(*datetime, can_ignore);
                 return TIMESTAMPOID;
             } else {
                 convert_to_time(value, valuetypid, time, can_ignore);
@@ -7583,16 +7584,18 @@ Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, T
         default: {
             if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") || 
                 valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || 
-                valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
                 valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
                 convert_to_time(value, valuetypid, time, can_ignore);
-                check_b_format_time_range_with_ereport(*time);
+                check_b_format_time_range_with_ereport(*time, can_ignore);
+                return TIMEOID;
+            } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+                convert_to_time(value, valuetypid, time, can_ignore);
                 return TIMEOID;
             } else if (valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
                 uint64 number = DatumGetUInt64(value);
                 if (number >= (uint64)pow_of_10[10]) {
                     convert_to_datetime(value, valuetypid, datetime);
-                    check_b_format_datetime_range_with_ereport(*datetime);
+                    check_b_format_datetime_range_with_ereport(*datetime, can_ignore);
                     return TIMESTAMPOID;
                 } else {
                     convert_to_time(value, valuetypid, time);

@@ -4648,13 +4648,14 @@ Datum makedate(PG_FUNCTION_ARGS)
  */
 bool check_b_format_int_date_range(int64 time)
 {
-    if (time < 0) return true;
+    bool invalid = false;
+    if (time < 0) invalid = true;
     int dd = time / 1000000 % 100;
     int mm = time / 100000000 % 100;
     int yy = time / 10000000000;
     int max_d;
     if (yy == 0 || yy > 9999 || mm == 0 || mm > 12) {
-        return true;
+        invalid = true;
     }
     switch (mm) {
         case 2:
@@ -4670,8 +4671,17 @@ bool check_b_format_int_date_range(int64 time)
             max_d = 31;
             break;
     }
-    if(dd == 0 || dd > max_d) return true;
-    return false;
+    if(dd == 0 || dd > max_d) invalid = true;
+
+    int hour = time / 10000 % 100;
+    int minute = time / 100 % 100;
+    int second = time % 100;
+
+    if (hour >= 24 || minute >=60 || second >= 60) {
+        invalid = true;
+    }
+
+    return invalid;
 }
 
 /*
@@ -5146,8 +5156,8 @@ void convert_to_time(Datum value, Oid valuetypid, TimeADT *time, bool can_ignore
                 valuetypid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
                 uint64 uint_val = DatumGetUInt64(value);
                 if (uint_val > (uint64)INT_MAX) {
-                    ereport(ERROR, (errcode(ERRCODE_INVALID_DATETIME_FORMAT),
-                                    errmsg("time out of range: \"%lu\"", uint_val)));
+                    ereport((!can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING, 
+                        (errcode(ERRCODE_INVALID_DATETIME_FORMAT), errmsg("time out of range: \"%lu\"", uint_val)));
                 } else {
                     *time = DatumGetTimeADT(DirectFunctionCall1Coll(int32_b_format_time, InvalidOid,
                                    value, can_ignore));
@@ -5532,14 +5542,17 @@ Datum time_mysql(PG_FUNCTION_ARGS)
         case FLOAT4OID: {
             int64 int_time = (int64)PG_GETARG_FLOAT4(0);
             if (check_b_format_int_time_range(int_time)) {
-                PG_RETURN_NULL();
+                result_isnull = true;
             }
             break;
         }
         case FLOAT8OID: {
             int64 int_time = (int64)PG_GETARG_FLOAT8(0);
-            if (check_b_format_int_time_range(int_time)) {
-                PG_RETURN_NULL();
+            if (int_time >= (int64)pow_of_10[10] && check_b_format_int_date_range(int_time)) { 
+                result_isnull = true;
+            }
+            if (int_time < (int64)pow_of_10[10] && check_b_format_int_time_range(int_time)) {
+                result_isnull = true;
             }
             break;
         }
@@ -5559,9 +5572,13 @@ Datum time_mysql(PG_FUNCTION_ARGS)
         }
         default: {
             if (original_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") || 
-                original_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") || 
-                original_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+                original_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
                     int32 int_time = PG_GETARG_INT32(0);
+                    if (check_b_format_int_time_range((int64)int_time)) {
+                            result_isnull = true;
+                    }
+                } else if (original_type == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+                    uint32 int_time = PG_GETARG_UINT32(0);
                     if (check_b_format_int_time_range((int64)int_time)) {
                             result_isnull = true;
                     }
