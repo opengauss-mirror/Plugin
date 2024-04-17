@@ -87,7 +87,6 @@ static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others
 
 #define CAST_FUNCTION_ROW 8
 #define CAST_FUNCTION_COLUMN 4
-#define CAST_SIGNED_IDX 16
 #define NUM_CAST_TIME_IDX 12
 
 static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1_cast_ui1", "i1_cast_ui2", "i1_cast_ui4", "i1_cast_ui8"},
@@ -98,12 +97,6 @@ static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1
                                                                             {"f8_cast_ui1", "f8_cast_ui2", "f8_cast_ui4", "f8_cast_ui8"},
                                                                             {"numeric_cast_uint1", "numeric_cast_uint2", "numeric_cast_uint4", "numeric_cast_uint8"},
                                                                             {"text_cast_uint1", "text_cast_uint2", "text_cast_uint4", "text_cast_uint8"}};
-
-static const char* enumCastFunction[ENUM_CAST_IDX] = {"enum_bit", "enum_int1", "enum_int2", "enum_int4",
-                                                      "enum_int8", "enum_float4", "enum_float8", "enum_numeric",
-                                                      "enum_date", "enum_timestamp", "enum_timestamptz", "enum_time",
-                                                      "enum_set", "enum_uint1", "enum_uint2", "enum_uint4",
-                                                      "enum_uint8", "enum_year", "enum_varlena"};
 
 static const char* numCastTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_time", "int16_cast_time", "int32_cast_time",
                                                              "int64_cast_time", "uint8_cast_time", "uint16_cast_time",
@@ -145,32 +138,6 @@ typedef enum {
     NUMERIC,
     TEXT
 } CastRow;
-
-typedef enum {
-    INVALID_IDX = -1,
-    E_BIT,
-    E_INT1,
-    E_INT2,
-    E_INT4,
-    E_INT8,
-    E_FLOAT4,
-    E_FLOAT8,
-    E_NUMERIC,
-    E_DATE,
-    E_TIMESTAMP,
-    E_TIMESTAMPTZ,
-    E_TIME,
-    E_ANYSET,
-    E_UINT1,
-    E_UINT2,
-    E_UINT4,
-    E_UINT8,
-    E_YEAR,
-    E_VARLENA,
-    E_BPCHAR,
-    E_VARCHAR,
-    E_TEXT
-} CastIdx;
 
 typedef enum {
     N_INVALID_IDX = -1,
