@@ -1,6 +1,5 @@
 create schema read_only_guc_test;
 set current_schema to 'read_only_guc_test';
-
 show version_comment;
         version_comment         
 --------------------------------
@@ -115,7 +114,6 @@ show wait_timeout;
  28800
 (1 row)
 
-
 SELECT * FROM pg_settings WHERE NAME='version_comment';
       name       |            setting             | unit |      category      |                          short_desc                           | extra_desc | context  | vartype | source  | min_val | max_val | enumvals |            boot_val            |           reset_val            | sourcefile | sourceline 
 -----------------+--------------------------------+------+--------------------+---------------------------------------------------------------+------------+----------+---------+---------+---------+---------+----------+--------------------------------+--------------------------------+------------+------------
@@ -229,7 +227,6 @@ SELECT * FROM pg_settings WHERE NAME='wait_timeout';
 --------------+---------+------+--------------------+--------------------------------------------------------------------------------------------------+------------+---------+---------+---------+---------+----------+----------+----------+-----------+------------+------------
  wait_timeout | 28800   |      | Customized Options | After this number of seconds of inactivity, the server will close the noninteractive connection. |            | user    | integer | default | 1       | 31536000 |          | 28800    | 28800     |            |           
 (1 row)
-
 
 drop schema read_only_guc_test cascade;
 reset current_schema;
