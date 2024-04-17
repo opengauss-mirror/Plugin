@@ -1,0 +1,275 @@
+create schema test_subquery;
+set current_schema to test_subquery;
+set dolphin.b_compatibility_mode = on;
+drop table if exists test_type_table cascade;
+NOTICE:  table "test_type_table" does not exist, skipping
+create table test_type_table
+(
+  `int1`         tinyint,
+  `uint1`        tinyint unsigned,
+  `int2`         smallint,
+  `uint2`        smallint unsigned,
+  `int4`         integer,
+  `uint4`        integer unsigned,
+  `int8`         bigint,
+  `uint8`        bigint unsigned,
+  `float4`       float4,
+  `float8`       float8,
+  `numeric`      decimal(20, 6),
+  `date`         date,
+  `time`         time,
+  `time(4)`      time(4),
+  `datetime`     datetime,
+  `datetime(4)`  datetime(4) default '2022-11-11 11:11:11',
+  `timestamp`    timestamp,
+  `timestamp(4)` timestamp(4) default '2022-11-11 11:11:11',
+  `year`         year,
+  `char`         char(100),
+  `varchar`      varchar(100),
+  `text`         text
+);
+insert into test_type_table
+values (111, 111, 11111, 11111, 1111111111, 1111111111, 11111111111111, 11111111111111, 111, 1111111111111.1, 111,
+        '2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456',
+        '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023',
+        '2023-02-05', '2023-02-05', '2023-02-05');
+-- test (subquery)
+drop table if exists t1;
+NOTICE:  table "t1" does not exist, skipping
+drop table if exists t2;
+NOTICE:  table "t2" does not exist, skipping
+create table t1(s1 int);
+insert into t1 values(1);
+create table t2(s1 int);
+insert into t2 values(2);
+select (select s1 from t2) from t1;
+ s1 
+----
+  2
+(1 row)
+
+select (table t2) from t1;
+ s1 
+----
+  2
+(1 row)
+
+drop view if exists res_view;
+NOTICE:  view "res_view" does not exist, skipping
+create view res_view as select 
+(select `int1` from test_type_table) + (select `numeric` from test_type_table) as 'int1+numeric',
+(select `uint1` from test_type_table) + (select `float8` from test_type_table) as 'uint1+float8',
+(select `int2` from test_type_table) + (select `float4` from test_type_table) as 'int2+float4',
+(select `uint2` from test_type_table) + (select `uint8` from test_type_table) as 'uint2+uint8',
+(select `int4` from test_type_table) + (select `int8` from test_type_table) as 'int4+int8',
+(select `uint4` from test_type_table) + (select `uint4` from test_type_table) as 'uint4+uint4',
+concat((select `char` from test_type_table),(select `text` from test_type_table)) as 'concat(char,text)',
+concat((select `varchar` from test_type_table),(select `text` from test_type_table)) as 'concat(varchar,text)',
+extract(day from (select `date` from test_type_table)) as 'extract(date)',
+extract(hour from (select `time` from test_type_table)) as 'extract(time)',
+extract(hour from (select `time(4)` from test_type_table)) as 'extract(time(4))',
+extract(day from (select `datetime` from test_type_table)) as 'extract(datetime)',
+extract(day from (select `datetime(4)` from test_type_table)) as 'extract(datetime(4))',
+(select `year` from test_type_table) + (select `year` from test_type_table) as 'year+year';
+\x
+select * from res_view;
+-[ RECORD 1 ]--------+---------------------------------------------------------------------------------------------------------------
+int1+numeric         | 222.000000
+uint1+float8         | 1111111111222.1
+int2+float4          | 11222
+uint2+uint8          | 11111111122222
+int4+int8            | 11112222222222
+uint4+uint4          | 2222222222
+concat(char,text)    | 2023-02-05                                                                                          2023-02-05
+concat(varchar,text) | 2023-02-052023-02-05
+extract(date)        | 5
+extract(time)        | 19
+extract(time(4))     | 19
+extract(datetime)    | 5
+extract(datetime(4)) | 5
+year+year            | 4046
+
+\x
+desc res_view;
+        Field         |       Type       | Null | Key | Default | Extra 
+----------------------+------------------+------+-----+---------+-------
+ int1+numeric         | number           | YES  |     | NULL    | 
+ uint1+float8         | double precision | YES  |     | NULL    | 
+ int2+float4          | double precision | YES  |     | NULL    | 
+ uint2+uint8          | uint8            | YES  |     | NULL    | 
+ int4+int8            | bigint           | YES  |     | NULL    | 
+ uint4+uint4          | uint8            | YES  |     | NULL    | 
+ concat(char,text)    | text             | YES  |     | NULL    | 
+ concat(varchar,text) | text             | YES  |     | NULL    | 
+ extract(date)        | bigint           | YES  |     | NULL    | 
+ extract(time)        | bigint           | YES  |     | NULL    | 
+ extract(time(4))     | bigint           | YES  |     | NULL    | 
+ extract(datetime)    | bigint           | YES  |     | NULL    | 
+ extract(datetime(4)) | bigint           | YES  |     | NULL    | 
+ year+year            | uint4            | YES  |     | NULL    | 
+(14 rows)
+
+-- test abnormal case
+select (select * from test_type_table) from t1;
+ERROR:  subquery must return only one column
+LINE 1: select (select * from test_type_table) from t1;
+               ^
+-- no strict mode
+set dolphin.sql_mode = '';
+drop table if exists t3;
+NOTICE:  table "t3" does not exist, skipping
+drop table if exists t4;
+NOTICE:  table "t4" does not exist, skipping
+create table t3 as select (select * from t1) from t1; 
+create table t4 as select (select * from test_type_table) from t1; 
+ERROR:  subquery must return only one column
+LINE 1: create table t4 as select (select * from test_type_table) fr...
+                                  ^
+reset dolphin.sql_mode;
+-- strict mode
+set dolphin.sql_mode = 'sql_mode_strict';
+drop table if exists t3;
+drop table if exists t4;
+NOTICE:  table "t4" does not exist, skipping
+create table t3 as select (select * from t1) from t1; 
+create table t4 as select (select * from test_type_table) from t1; 
+ERROR:  subquery must return only one column
+LINE 1: create table t4 as select (select * from test_type_table) fr...
+                                  ^
+reset dolphin.sql_mode;
+-- test EXISTS (subquery)
+drop view if exists res_view;
+create view res_view as select 
+exists (select `int1` from test_type_table) as 'int1',
+exists (select `uint1` from test_type_table) as 'uint1',
+exists (select `int2` from test_type_table) as 'int2',
+exists (select `uint2` from test_type_table) as 'uint2',
+exists (select `int4` from test_type_table) as 'int4',
+exists (select `uint4` from test_type_table) as 'uint4',
+exists (select `int8` from test_type_table) as 'int8',
+exists (select `uint8` from test_type_table) as 'uint8',
+exists (select `float4` from test_type_table) as 'float4',
+exists (select `float8` from test_type_table) as 'float8',
+exists (select `numeric` from test_type_table) as 'numeric',
+exists (select `date` from test_type_table) as 'date',
+exists (select `time` from test_type_table) as 'time',
+exists (select `time(4)` from test_type_table) as 'time(4)',
+exists (select `datetime` from test_type_table) as 'datetime',
+exists (select `datetime(4)` from test_type_table) as 'datetime(4)',
+exists (select `timestamp` from test_type_table) as 'timestamp',
+exists (select `timestamp(4)` from test_type_table) as 'timestamp(4)',
+exists (select `year` from test_type_table) as 'year',
+exists (select `char` from test_type_table) as 'char',
+exists (select `varchar` from test_type_table) as 'varchar',
+exists (select `text` from test_type_table) as 'text';
+\x
+select * from res_view;
+-[ RECORD 1 ]+--
+int1         | t
+uint1        | t
+int2         | t
+uint2        | t
+int4         | t
+uint4        | t
+int8         | t
+uint8        | t
+float4       | t
+float8       | t
+numeric      | t
+date         | t
+time         | t
+time(4)      | t
+datetime     | t
+datetime(4)  | t
+timestamp    | t
+timestamp(4) | t
+year         | t
+char         | t
+varchar      | t
+text         | t
+
+\x
+desc res_view;
+    Field     |  Type   | Null | Key | Default | Extra 
+--------------+---------+------+-----+---------+-------
+ int1         | boolean | YES  |     | NULL    | 
+ uint1        | boolean | YES  |     | NULL    | 
+ int2         | boolean | YES  |     | NULL    | 
+ uint2        | boolean | YES  |     | NULL    | 
+ int4         | boolean | YES  |     | NULL    | 
+ uint4        | boolean | YES  |     | NULL    | 
+ int8         | boolean | YES  |     | NULL    | 
+ uint8        | boolean | YES  |     | NULL    | 
+ float4       | boolean | YES  |     | NULL    | 
+ float8       | boolean | YES  |     | NULL    | 
+ numeric      | boolean | YES  |     | NULL    | 
+ date         | boolean | YES  |     | NULL    | 
+ time         | boolean | YES  |     | NULL    | 
+ time(4)      | boolean | YES  |     | NULL    | 
+ datetime     | boolean | YES  |     | NULL    | 
+ datetime(4)  | boolean | YES  |     | NULL    | 
+ timestamp    | boolean | YES  |     | NULL    | 
+ timestamp(4) | boolean | YES  |     | NULL    | 
+ year         | boolean | YES  |     | NULL    | 
+ char         | boolean | YES  |     | NULL    | 
+ varchar      | boolean | YES  |     | NULL    | 
+ text         | boolean | YES  |     | NULL    | 
+(22 rows)
+
+-- no strict mode
+set dolphin.sql_mode = '';
+drop table if exists emp_tbl;
+NOTICE:  table "emp_tbl" does not exist, skipping
+drop table if exists nul_tbl;
+NOTICE:  table "nul_tbl" does not exist, skipping
+create table emp_tbl(s1 int);
+create table nul_tbl(s1 int);
+insert into nul_tbl values(null);
+drop table if exists t3;
+drop table if exists t4;
+NOTICE:  table "t4" does not exist, skipping
+create table t3 as select exists (select * from emp_tbl); 
+create table t4 as select exists (select * from nul_tbl); 
+select * from t3;
+ exists 
+--------
+ f
+(1 row)
+
+select * from t4;
+ exists 
+--------
+ t
+(1 row)
+
+reset dolphin.sql_mode;
+-- strict mode
+set dolphin.sql_mode = 'sql_mode_strict';
+drop table if exists t3;
+drop table if exists t4;
+create table t3 as select exists (select * from emp_tbl); 
+create table t4 as select exists (select * from nul_tbl); 
+select * from t3;
+ exists 
+--------
+ f
+(1 row)
+
+select * from t4;
+ exists 
+--------
+ t
+(1 row)
+
+reset dolphin.sql_mode;
+drop view if exists res_view;
+drop table if exists t1;
+drop table if exists t2;
+drop table if exists t3;
+drop table if exists t4;
+drop table if exists emp_tbl;
+drop table if exists nul_tbl;
+drop table if exists test_type_table;
+reset dolphin.b_compatibility_mode;
+drop schema test_subquery cascade;
+reset current_schema;
