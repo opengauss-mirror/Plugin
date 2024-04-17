@@ -18,6 +18,16 @@ CREATE OR REPLACE FUNCTION pg_catalog.locate(bit, bit, integer) RETURNS integer 
 
 CREATE OR REPLACE FUNCTION pg_catalog.log10(float8) RETURNS double precision LANGUAGE INTERNAL IMMUTABLE STRICT as 'dlog10';
 
+CREATE OR REPLACE FUNCTION pg_catalog.lower(int8) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower(cast($1 as TEXT))::varchar';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(uint8) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower(cast($1 as TEXT))::varchar';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(float4) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower(cast($1 as TEXT))::varchar';
+CREATE OR REPLACE FUNCTION pg_catalog.lower(numeric) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower(cast($1 as TEXT))::varchar';
+
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(int8) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(uint8) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(float4) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+CREATE OR REPLACE FUNCTION pg_catalog.lcase(numeric) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower($1)';
+
 DROP FUNCTION IF EXISTS pg_catalog.acos(bit);
 CREATE OR REPLACE FUNCTION pg_catalog.acos(bit) RETURNS double precision LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'acos_bit';
 
