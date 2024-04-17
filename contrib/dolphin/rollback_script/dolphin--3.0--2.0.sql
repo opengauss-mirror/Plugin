@@ -976,3 +976,46 @@ DROP FUNCTION IF EXISTS pg_catalog.upper(longblob);
 DROP FUNCTION IF EXISTS pg_catalog.upper(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.upper(anyset);
 DROP FUNCTION IF EXISTS pg_catalog.upper(json);
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(year);
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(timestamp without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(json);
+
+DROP FUNCTION IF EXISTS pg_catalog.hour(YEAR);
+DROP FUNCTION IF EXISTS pg_catalog.minute(YEAR);
+DROP FUNCTION IF EXISTS pg_catalog.second(YEAR);
+DROP FUNCTION IF EXISTS pg_catalog.year(time);
+
+DROP FUNCTION IF EXISTS pg_catalog.exp(year);
+DROP FUNCTION IF EXISTS pg_catalog.exp(json);
+
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(year);
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(json);
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(blob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(mediumblob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(longblob) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.unhex (text);
+DROP FUNCTION IF EXISTS pg_catalog.unhex (boolean);
+DROP FUNCTION IF EXISTS pg_catalog.unhex (bytea);
+DROP FUNCTION IF EXISTS pg_catalog.unhex (bit);
+CREATE OR REPLACE FUNCTION pg_catalog.unhex (text)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_text';
+CREATE OR REPLACE FUNCTION pg_catalog.unhex (boolean)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bool';
+CREATE OR REPLACE FUNCTION pg_catalog.unhex (bytea)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bytea';
+CREATE OR REPLACE FUNCTION pg_catalog.unhex (bit)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bit';
+
+DROP CAST IF EXISTS (uint4 AS year) CASCADE;
+DROP CAST IF EXISTS (boolean AS year) CASCADE;
+DROP CAST IF EXISTS (char AS year) CASCADE;
+DROP CAST IF EXISTS (varchar AS year) CASCADE;
+DROP CAST IF EXISTS (text AS year) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_year(uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.boolean_year(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.char_year(char) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varchar_year(varchar) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.text_year(text) CASCADE;
+
+DROP FUNCTION IF EXISTS pg_catalog.makedate (year, int8);
+
+DROP AGGREGATE IF EXISTS pg_catalog.bit_and(json);
+DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, json) CASCADE;

@@ -371,45 +371,6 @@ CREATE OPERATOR pg_catalog.~~(leftarg = binary, rightarg = binary, procedure = p
 
 CREATE OR REPLACE FUNCTION pg_catalog.binary_cmp(binary, binary) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
 
-CREATE OPERATOR FAMILY pg_catalog.binary_ops USING BTREE;
-CREATE OPERATOR FAMILY pg_catalog.binary_ops USING HASH;
-
-CREATE OPERATOR CLASS pg_catalog.binary_ops DEFAULT
-   FOR TYPE binary USING BTREE FAMILY pg_catalog.binary_ops as
-   OPERATOR 1 pg_catalog.<(binary, binary),
-   OPERATOR 2 pg_catalog.<=(binary, binary),
-   OPERATOR 3 pg_catalog.=(binary, binary),
-   OPERATOR 4 pg_catalog.>=(binary, binary),
-   OPERATOR 5 pg_catalog.>(binary, binary),
-   FUNCTION 1 pg_catalog.binary_cmp(binary, binary),
-   FUNCTION 2 pg_catalog.bytea_sortsupport(internal);
-
-CREATE OPERATOR CLASS pg_catalog.binary_ops DEFAULT
-   FOR TYPE binary USING HASH FAMILY binary_ops as
-   OPERATOR 1 pg_catalog.=(binary, binary),
-   FUNCTION 1 (binary, binary) pg_catalog.hashvarlena(internal);
-
-CREATE OR REPLACE FUNCTION pg_catalog.varbinary_cmp(varbinary, varbinary) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
-CREATE OPERATOR FAMILY pg_catalog.varbinary_ops USING BTREE;
-CREATE OPERATOR FAMILY pg_catalog.varbinary_ops USING HASH;
-
-CREATE OPERATOR CLASS pg_catalog.varbinary_ops DEFAULT
-   FOR TYPE varbinary USING BTREE FAMILY pg_catalog.varbinary_ops as
-   OPERATOR 1 pg_catalog.<(varbinary, varbinary),
-   OPERATOR 2 pg_catalog.<=(varbinary, varbinary),
-   OPERATOR 3 pg_catalog.=(varbinary, varbinary),
-   OPERATOR 4 pg_catalog.>=(varbinary, varbinary),
-   OPERATOR 5 pg_catalog.>(varbinary, varbinary),
-   FUNCTION 1 pg_catalog.varbinary_cmp(varbinary, varbinary),
-   FUNCTION 2 pg_catalog.bytea_sortsupport(internal);
-
-CREATE OPERATOR CLASS pg_catalog.varbinary_ops DEFAULT
-   FOR TYPE varbinary USING HASH FAMILY pg_catalog.varbinary_ops as
-   OPERATOR 1 pg_catalog.=(varbinary, varbinary),
-   FUNCTION 1 (varbinary, varbinary) pg_catalog.hashvarlena(internal);
-
-
-
 --CREATE TIME_TIMESTAMP'S COMPARATION FUNCTION
 DROP FUNCTION IF EXISTS pg_catalog.time_eq_timestamp (time, timestamp without time zone) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.time_eq_timestamp (time, timestamp without time zone) RETURNS boolean LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'time_eq_timestamp';
@@ -539,12 +500,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(timestamp without time zone) R
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(timestamp with time zone);
 CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(timestamp with time zone) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'timestamptz_time_to_sec';
 
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(date);
-CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(date) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as timestamp without time zone)) $$ LANGUAGE SQL;
-
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(year);
-CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(year) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as int8)) $$ LANGUAGE SQL;
-
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(longblob);
 CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(longblob) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as text)) $$ LANGUAGE SQL;
 
@@ -556,9 +511,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(anyset) RETURNS int8 AS $$ SEL
 
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(anyenum);
 CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(anyenum) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as text)) $$ LANGUAGE SQL;
-
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(json);
-CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(json) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as timestamp without time zone)) $$ LANGUAGE SQL;
 
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(int8);
 CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(int8) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'int64_time_to_sec';
@@ -619,10 +571,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.microsecond (timestamptz) RETURNS int8 LAN
 CREATE OR REPLACE FUNCTION pg_catalog.minute (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinuteFromTimestampTz';
 CREATE OR REPLACE FUNCTION pg_catalog.second (timestamptz) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetSecondFromTimestampTz';
 
-CREATE OR REPLACE FUNCTION pg_catalog.hour (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT hour($1::time)';
-CREATE OR REPLACE FUNCTION pg_catalog.minute (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT minute($1::time)';
-CREATE OR REPLACE FUNCTION pg_catalog.second (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT second($1::time)';
-
 DROP FUNCTION IF EXISTS pg_catalog.year(timestamp(0) without time zone);
 DROP FUNCTION IF EXISTS pg_catalog.year(text);
 CREATE FUNCTION pg_catalog.year (timestamp(0) without time zone) RETURNS int8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_year_part';
@@ -635,7 +583,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.year(int4) RETURNS int8 LANGUAGE SQL STABL
 CREATE OR REPLACE FUNCTION pg_catalog.year(longblob) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
 CREATE OR REPLACE FUNCTION pg_catalog.year(anyenum) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
 CREATE OR REPLACE FUNCTION pg_catalog.year(json) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::text)';
-CREATE OR REPLACE FUNCTION pg_catalog.year(time) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::timestamp(0) without time zone)';
 
 drop function if EXISTS pg_catalog.length(binary);
 drop function if EXISTS pg_catalog.length(varbinary);
@@ -833,23 +780,14 @@ CREATE OR REPLACE FUNCTION pg_catalog.degrees(boolean) RETURNS double precision 
 CREATE OR REPLACE FUNCTION pg_catalog.degrees(year) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.degrees(cast($1 as double precision))';
 CREATE OR REPLACE FUNCTION pg_catalog.degrees(json) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.degrees(cast($1 as double precision))';
 
-DROP FUNCTION IF EXISTS pg_catalog.exp(year);
-DROP FUNCTION IF EXISTS pg_catalog.exp(json);
-CREATE OR REPLACE FUNCTION pg_catalog.exp(year) RETURNS numeric LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.exp(cast($1 as numeric))';
-CREATE OR REPLACE FUNCTION pg_catalog.exp(json) RETURNS numeric LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.exp(cast($1 as numeric))';
-
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(tinyblob) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(nvarchar2) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(year) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(json) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (bit) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (binary) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (tinyblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
 CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (nvarchar2) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as varchar))';
-CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (year) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
-CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (json) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
 
 CREATE OR REPLACE FUNCTION pg_catalog.binary_cmp(binary, binary) RETURNS integer LANGUAGE INTERNAL IMMUTABLE STRICT as 'byteacmp';
 
@@ -1347,10 +1285,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.floor(json)
 RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as
 'select pg_catalog.floor(cast($1 as double precision))';
 
-CREATE OR REPLACE FUNCTION pg_catalog.hour (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT hour($1::time)';
-CREATE OR REPLACE FUNCTION pg_catalog.minute (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT minute($1::time)';
-CREATE OR REPLACE FUNCTION pg_catalog.second (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT second($1::time)';
-
 CREATE OR REPLACE FUNCTION pg_catalog.substr(arg1 longblob, start int, the_end int) RETURNS longblob LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substrb(arg1::text, start, the_end)::longblob';
 CREATE OR REPLACE FUNCTION pg_catalog.substr(arg1 longblob, start int) RETURNS longblob LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.substrb(arg1::text, start)::longblob';
 
@@ -1362,22 +1296,6 @@ CREATE CAST (mediumblob AS binary) WITHOUT FUNCTION AS IMPLICIT;
 CREATE CAST (mediumblob AS varbinary) WITHOUT FUNCTION AS IMPLICIT;
 CREATE CAST (longblob AS binary) WITHOUT FUNCTION AS IMPLICIT;
 CREATE CAST (longblob AS varbinary) WITHOUT FUNCTION AS IMPLICIT;
-
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(blob) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(mediumblob) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(longblob) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (blob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
-CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (mediumblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
-CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (longblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
-
-DROP FUNCTION IF EXISTS pg_catalog.unhex (text);
-DROP FUNCTION IF EXISTS pg_catalog.unhex (boolean);
-DROP FUNCTION IF EXISTS pg_catalog.unhex (bytea);
-DROP FUNCTION IF EXISTS pg_catalog.unhex (bit);
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (text)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_text';
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (boolean)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bool';
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (bytea)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bytea';
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (bit)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bit';
 
 -- repeat function support
 CREATE OR REPLACE FUNCTION pg_catalog.repeat(anyenum, integer) RETURNS text LANGUAGE SQL STRICT IMMUTABLE AS 'select repeat($1::text, $2)';
@@ -1446,32 +1364,11 @@ RETURNS timestamp with time zone LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin
 
 CREATE CAST(TEXT AS timestamp with time zone) WITH FUNCTION pg_catalog.timestamptz_explicit(TEXT) AS ASSIGNMENT;
 
-DROP CAST IF EXISTS (uint4 AS year) CASCADE;
-DROP CAST IF EXISTS (boolean AS year) CASCADE;
-DROP CAST IF EXISTS (char AS year) CASCADE;
-DROP CAST IF EXISTS (varchar AS year) CASCADE;
-DROP CAST IF EXISTS (text AS year) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.uint4_year(uint4) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.boolean_year(boolean) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.char_year(char) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.varchar_year(varchar) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.text_year(text) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.uint4_year(uint4) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
-CREATE CAST(uint4 AS year) WITH FUNCTION uint4_year(uint4) AS ASSIGNMENT;
-CREATE OR REPLACE FUNCTION pg_catalog.boolean_year(boolean) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
-CREATE CAST(boolean AS year) WITH FUNCTION boolean_year(boolean) AS ASSIGNMENT;
-CREATE OR REPLACE FUNCTION pg_catalog.char_year(char) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
-CREATE CAST(char AS year) WITH FUNCTION char_year(char) AS ASSIGNMENT;
-CREATE OR REPLACE FUNCTION pg_catalog.varchar_year(varchar) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
-CREATE CAST(varchar AS year) WITH FUNCTION varchar_year(varchar) AS ASSIGNMENT;
-CREATE OR REPLACE FUNCTION pg_catalog.text_year (text) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
-CREATE CAST(text AS year) WITH FUNCTION text_year(text) AS ASSIGNMENT;
-
 CREATE OR REPLACE FUNCTION pg_catalog.log(anyelement,anyelement) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.log(cast($1 as number), cast($2 as number))';
 
-DROP CAST (timestamptz AS year);
-DROP CAST (timestamp(0) without time zone AS year);
-DROP CAST (date AS year);
+DROP CAST IF EXISTS (timestamptz AS year);
+DROP CAST IF EXISTS (timestamp(0) without time zone AS year);
+DROP CAST IF EXISTS (date AS year);
 
 DROP FUNCTION IF EXISTS pg_catalog.timestamp_year(timestamptz) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.datetime_year(timestamp(0) without time zone) cascade;
@@ -1809,8 +1706,6 @@ DROP FUNCTION IF EXISTS pg_catalog.b_extract (text, year);
 CREATE OR REPLACE FUNCTION pg_catalog.b_extract (text, year) RETURNS int8 LANGUAGE SQL STABLE STRICT as $$ SELECT pg_catalog.b_extract($1, $2::text) $$;
 DROP FUNCTION IF EXISTS pg_catalog.yearweek (year);
 CREATE OR REPLACE FUNCTION pg_catalog.yearweek (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as $$ SELECT pg_catalog.yearweek($1::text) $$;
-DROP FUNCTION IF EXISTS pg_catalog.makedate (year, int8);
-CREATE OR REPLACE FUNCTION pg_catalog.makedate (year, int8) RETURNS date AS $$ SELECT pg_catalog.makedate(cast($1 as int8), cast($2 as int8)) $$ LANGUAGE SQL;
 DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,year,year);
 DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,text,year);
 DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,year,text);
@@ -2011,7 +1906,6 @@ DROP FUNCTION IF EXISTS pg_catalog.varbinary_and_longblob(varbinary, longblob) C
 DROP FUNCTION IF EXISTS pg_catalog.text_and_uint8(uint8, text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, char) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, varchar) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, json) CASCADE;
 
 CREATE OR REPLACE FUNCTION pg_catalog.binaryand(binary, binary) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'binaryand';
 CREATE OR REPLACE FUNCTION pg_catalog.varbinary_and_binary(varbinary, binary) RETURNS varbinary LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'varbinary_and_binary';
@@ -2024,7 +1918,6 @@ CREATE OR REPLACE FUNCTION pg_catalog.varbinary_and_longblob(varbinary, longblob
 CREATE OR REPLACE FUNCTION pg_catalog.text_and_uint8(uint8, text) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'text_and_uint8';
 CREATE OR REPLACE FUNCTION pg_catalog.uint8and(uint8, char) RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint8and($1, cast($2 as uint8))';
 CREATE OR REPLACE FUNCTION pg_catalog.uint8and(uint8, varchar) RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint8and($1, cast($2 as uint8))';
-CREATE OR REPLACE FUNCTION pg_catalog.uint8and(uint8, json) RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint8and($1, cast($2 as uint8))';
 CREATE OPERATOR pg_catalog.&(leftarg = binary, rightarg = binary, procedure = pg_catalog.binaryand);
 CREATE OPERATOR pg_catalog.&(leftarg = blob, rightarg = blob, procedure = pg_catalog.bloband);
 CREATE AGGREGATE pg_catalog.bit_and(char) (SFUNC = pg_catalog.uint8and, cFUNC = pg_catalog.uint8and, STYPE = uint8, initcond = '18446744073709551615');
@@ -2036,7 +1929,6 @@ CREATE AGGREGATE pg_catalog.bit_and(blob) (SFUNC = pg_catalog.varbinary_and_blob
 CREATE AGGREGATE pg_catalog.bit_and(mediumblob) (SFUNC = pg_catalog.varbinary_and_mediumblob, STYPE = varbinary);
 CREATE AGGREGATE pg_catalog.bit_and(longblob) (SFUNC = pg_catalog.varbinary_and_longblob, STYPE = varbinary);
 CREATE AGGREGATE pg_catalog.bit_and(text) (SFUNC = pg_catalog.text_and_uint8, STYPE = uint8, initcond = '18446744073709551615');
-CREATE AGGREGATE pg_catalog.bit_and(json) (SFUNC = pg_catalog.uint8and, cFUNC = pg_catalog.uint8and, STYPE = uint8, initcond = '18446744073709551615');
 
 DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(boolean) CASCADE;

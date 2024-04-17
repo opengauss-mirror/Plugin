@@ -195,16 +195,6 @@ DROP FUNCTION IF EXISTS pg_catalog.varbinarytextlike(varbinary, text);
 DROP OPERATOR IF EXISTS pg_catalog.~~(blob, blob);
 DROP FUNCTION IF EXISTS pg_catalog.bloblike(blob, blob);
 
-DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING BTREE;
-DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING HASH;
-DROP OPERATOR CLASS IF EXISTS pg_catalog.binary_ops USING BTREE;
-DROP OPERATOR CLASS IF EXISTS pg_catalog.binary_ops USING HASH;
-DROP OPERATOR FAMILY IF EXISTS pg_catalog.varbinary_ops USING BTREE;
-DROP OPERATOR FAMILY IF EXISTS pg_catalog.varbinary_ops USING HASH;
-DROP OPERATOR FAMILY IF EXISTS pg_catalog.binary_ops USING BTREE;
-DROP OPERATOR FAMILY IF EXISTS pg_catalog.binary_ops USING HASH;
-DROP FUNCTION IF EXISTS pg_catalog.varbinary_cmp(varbinary, varbinary);
-DROP FUNCTION IF EXISTS pg_catalog.binary_cmp(binary, binary);
 DROP OPERATOR IF EXISTS pg_catalog.=(time, timestamp without time zone);
 DROP OPERATOR IF EXISTS pg_catalog.<>(time, timestamp without time zone);
 DROP OPERATOR IF EXISTS pg_catalog.<=(time, timestamp without time zone);
@@ -267,15 +257,12 @@ END;
 $$
 LANGUAGE plpgsql;
 
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(json);
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(anyset);
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(bit);
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(longblob);
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(year);
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(date);
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(timestamp with time zone);
-DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(timestamp without time zone);
 DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(text);
 
 CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(text) RETURNS int4 LANGUAGE C STABLE RETURNS NULL ON NULL INPUT as '$libdir/dolphin', 'time_to_sec';
@@ -299,21 +286,18 @@ DROP FUNCTION IF EXISTS pg_catalog.bit_cast_timestamp(bit);
 DROP FUNCTION IF EXISTS pg_catalog.bit_cast_datetime(bit);
 DROP FUNCTION IF EXISTS pg_catalog.bit_cast_date(bit);
 
-DROP FUNCTION IF EXISTS pg_catalog.hour(YEAR);
 DROP FUNCTION IF EXISTS pg_catalog.hour(date);
 DROP FUNCTION IF EXISTS pg_catalog.hour(timetz);
 DROP FUNCTION IF EXISTS pg_catalog.hour(timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.hour (text);
 CREATE OR REPLACE FUNCTION pg_catalog.hour (text) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetHour';
 
-DROP FUNCTION IF EXISTS pg_catalog.minute(YEAR);
 DROP FUNCTION IF EXISTS pg_catalog.minute(date);
 DROP FUNCTION IF EXISTS pg_catalog.minute(timetz);
 DROP FUNCTION IF EXISTS pg_catalog.minute(timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.minute (text);
 CREATE OR REPLACE FUNCTION pg_catalog.minute (text) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'GetMinute';
 
-DROP FUNCTION IF EXISTS pg_catalog.second(YEAR);
 DROP FUNCTION IF EXISTS pg_catalog.second(date);
 DROP FUNCTION IF EXISTS pg_catalog.second(timetz);
 DROP FUNCTION IF EXISTS pg_catalog.second(timestamptz);
@@ -336,7 +320,6 @@ DROP FUNCTION IF EXISTS pg_catalog.year(int4);
 DROP FUNCTION IF EXISTS pg_catalog.year(longblob);
 DROP FUNCTION IF EXISTS pg_catalog.year(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.year(json);
-DROP FUNCTION IF EXISTS pg_catalog.year(time);
 CREATE FUNCTION pg_catalog.year (timestamp(0) without time zone) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'datetime_year_part';
 CREATE FUNCTION pg_catalog.year (text) RETURNS float8 LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'text_year_part';
 
@@ -461,15 +444,10 @@ DROP FUNCTION IF EXISTS pg_catalog.degrees(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(year);
 DROP FUNCTION IF EXISTS pg_catalog.degrees(json);
 
-DROP FUNCTION IF EXISTS pg_catalog.exp(year);
-DROP FUNCTION IF EXISTS pg_catalog.exp(json);
-
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(bit);
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(binary);
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(tinyblob);
 DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(nvarchar2);
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(year);
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(json);
 
 DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING BTREE;
 DROP OPERATOR CLASS IF EXISTS pg_catalog.varbinary_ops USING HASH;
@@ -869,18 +847,6 @@ DROP CAST IF EXISTS (mediumblob AS binary) ;
 DROP CAST IF EXISTS (mediumblob AS varbinary) ;
 DROP CAST IF EXISTS (longblob AS binary) ;
 DROP CAST IF EXISTS (longblob AS varbinary) ;
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(blob) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(mediumblob) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(longblob) CASCADE;
-
-DROP FUNCTION IF EXISTS pg_catalog.unhex (text);
-DROP FUNCTION IF EXISTS pg_catalog.unhex (boolean);
-DROP FUNCTION IF EXISTS pg_catalog.unhex (bytea);
-DROP FUNCTION IF EXISTS pg_catalog.unhex (bit);
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (text)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_text';
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (boolean)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bool';
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (bytea)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bytea';
-CREATE OR REPLACE FUNCTION pg_catalog.unhex (bit)  RETURNS text LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bit';
 
 -- repeat function support
 DROP FUNCTION IF EXISTS pg_catalog.repeat(anyenum, integer);
@@ -924,17 +890,6 @@ DROP FUNCTION IF EXISTS pg_catalog.float8_cast_timestamptz(float8);
 DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_timestamptz(numeric);
 DROP CAST IF EXISTS (TEXT AS timestamp with time zone);
 DROP FUNCTION IF EXISTS pg_catalog.timestamptz_explicit(TEXT);
-
-DROP CAST IF EXISTS (uint4 AS year) CASCADE;
-DROP CAST IF EXISTS (boolean AS year) CASCADE;
-DROP CAST IF EXISTS (char AS year) CASCADE;
-DROP CAST IF EXISTS (varchar AS year) CASCADE;
-DROP CAST IF EXISTS (text AS year) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.uint4_year(uint4) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.boolean_year(boolean) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.char_year(char) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.varchar_year(varchar) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.text_year(text) CASCADE;
 
 DROP FUNCTION IF EXISTS pg_catalog.log(anyelement,anyelement);
 
@@ -1039,7 +994,7 @@ CREATE CAST (FLOAT8 AS NVARCHAR2) WITH FUNCTION pg_catalog.TO_NVARCHAR2(FLOAT8) 
 
 DROP FUNCTION IF EXISTS pg_catalog.b_extract (text, year);
 DROP FUNCTION IF EXISTS pg_catalog.yearweek (year);
-DROP FUNCTION IF EXISTS pg_catalog.makedate (year, int8);
+
 DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,year,year);
 DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,text,year);
 DROP FUNCTION IF EXISTS pg_catalog.b_timestampdiff(text,year,text);
@@ -1290,7 +1245,7 @@ DROP AGGREGATE IF EXISTS pg_catalog.bit_and(blob);
 DROP AGGREGATE IF EXISTS pg_catalog.bit_and(mediumblob);
 DROP AGGREGATE IF EXISTS pg_catalog.bit_and(longblob);
 DROP AGGREGATE IF EXISTS pg_catalog.bit_and(text);
-DROP AGGREGATE IF EXISTS pg_catalog.bit_and(json);
+
 DROP FUNCTION IF EXISTS pg_catalog.binaryand(binary, binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varbinary_and_binary(varbinary, binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.varbinaryand(varbinary, varbinary) CASCADE;
@@ -1302,7 +1257,7 @@ DROP FUNCTION IF EXISTS pg_catalog.varbinary_and_longblob(varbinary, longblob) C
 DROP FUNCTION IF EXISTS pg_catalog.text_and_uint8(uint8, text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, char) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, varchar) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, json) CASCADE;
+
 
 DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(bit) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.inet6_ntoa(boolean) CASCADE;

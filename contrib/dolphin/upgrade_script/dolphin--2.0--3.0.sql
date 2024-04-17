@@ -967,3 +967,70 @@ CREATE OR REPLACE FUNCTION pg_catalog.upper(longblob) RETURNS longblob LANGUAGE 
 CREATE OR REPLACE FUNCTION pg_catalog.upper(anyenum) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT AS 'select pg_catalog.upper($1::text)';
 CREATE OR REPLACE FUNCTION pg_catalog.upper(anyset) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT AS 'select pg_catalog.upper($1::text)';
 CREATE OR REPLACE FUNCTION pg_catalog.upper(json) RETURNS text LANGUAGE SQL IMMUTABLE STRICT AS 'select pg_catalog.upper($1::text)';
+
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(year);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(year) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as int8)) $$ LANGUAGE SQL;
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(date);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(date) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as timestamp without time zone)) $$ LANGUAGE SQL;
+DROP FUNCTION IF EXISTS pg_catalog.time_to_sec(json);
+CREATE OR REPLACE FUNCTION pg_catalog.time_to_sec(json) RETURNS int8 AS $$ SELECT pg_catalog.time_to_sec(cast($1 as timestamp without time zone)) $$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION pg_catalog.hour (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT hour($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.minute (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT minute($1::time)';
+CREATE OR REPLACE FUNCTION pg_catalog.second (year) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT second($1::time)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.year(time) RETURNS int8 LANGUAGE SQL STABLE STRICT as 'SELECT year($1::timestamp(0) without time zone)';
+
+DROP FUNCTION IF EXISTS pg_catalog.exp(year);
+CREATE OR REPLACE FUNCTION pg_catalog.exp(year) RETURNS numeric LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.exp(cast($1 as numeric))';
+DROP FUNCTION IF EXISTS pg_catalog.exp(json);
+CREATE OR REPLACE FUNCTION pg_catalog.exp(json) RETURNS numeric LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.exp(cast($1 as numeric))';
+
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(year) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (year) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(json) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (json) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(blob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(mediumblob) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.inet_ntoa(longblob) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (blob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (mediumblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+CREATE OR REPLACE FUNCTION pg_catalog.inet_ntoa (longblob) RETURNS text LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.inet_ntoa(cast($1 as int8))';
+
+DROP FUNCTION IF EXISTS pg_catalog.unhex (text);
+DROP FUNCTION IF EXISTS pg_catalog.unhex (boolean);
+DROP FUNCTION IF EXISTS pg_catalog.unhex (bytea);
+DROP FUNCTION IF EXISTS pg_catalog.unhex (bit);
+CREATE OR REPLACE FUNCTION pg_catalog.unhex (text)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_text';
+CREATE OR REPLACE FUNCTION pg_catalog.unhex (boolean)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bool';
+CREATE OR REPLACE FUNCTION pg_catalog.unhex (bytea)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bytea';
+CREATE OR REPLACE FUNCTION pg_catalog.unhex (bit)  RETURNS longblob LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'hex_decode_bit';
+
+DROP CAST IF EXISTS (uint4 AS year) CASCADE;
+DROP CAST IF EXISTS (boolean AS year) CASCADE;
+DROP CAST IF EXISTS (char AS year) CASCADE;
+DROP CAST IF EXISTS (varchar AS year) CASCADE;
+DROP CAST IF EXISTS (text AS year) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.uint4_year(uint4) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.boolean_year(boolean) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.char_year(char) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.varchar_year(varchar) CASCADE;
+DROP FUNCTION IF EXISTS pg_catalog.text_year(text) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint4_year(uint4) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
+CREATE CAST(uint4 AS year) WITH FUNCTION uint4_year(uint4) AS ASSIGNMENT;
+CREATE OR REPLACE FUNCTION pg_catalog.boolean_year(boolean) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
+CREATE CAST(boolean AS year) WITH FUNCTION boolean_year(boolean) AS ASSIGNMENT;
+CREATE OR REPLACE FUNCTION pg_catalog.char_year(char) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
+CREATE CAST(char AS year) WITH FUNCTION char_year(char) AS ASSIGNMENT;
+CREATE OR REPLACE FUNCTION pg_catalog.varchar_year(varchar) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
+CREATE CAST(varchar AS year) WITH FUNCTION varchar_year(varchar) AS ASSIGNMENT;
+CREATE OR REPLACE FUNCTION pg_catalog.text_year (text) RETURNS year LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int8) as year)';
+CREATE CAST(text AS year) WITH FUNCTION text_year(text) AS ASSIGNMENT;
+
+DROP FUNCTION IF EXISTS pg_catalog.makedate (year, int8);
+CREATE OR REPLACE FUNCTION pg_catalog.makedate (year, int8) RETURNS date AS $$ SELECT pg_catalog.makedate(cast($1 as int8), cast($2 as int8)) $$ LANGUAGE SQL;
+
+DROP FUNCTION IF EXISTS pg_catalog.uint8and(uint8, json) CASCADE;
+CREATE OR REPLACE FUNCTION pg_catalog.uint8and(uint8, json) RETURNS uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint8and($1, cast($2 as uint8))';
+CREATE AGGREGATE pg_catalog.bit_and(json) (SFUNC = pg_catalog.uint8and, cFUNC = pg_catalog.uint8and, STYPE = uint8, initcond = '18446744073709551615');
