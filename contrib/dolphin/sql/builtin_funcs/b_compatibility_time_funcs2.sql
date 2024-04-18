@@ -667,6 +667,61 @@ drop table t_bool;
 drop table t_json;
 drop table bit_ignore;
 
+-- test weekofyear
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+create table t_time (c1 int, `date` date,`time` time, `time4` time(4), `datetime` datetime, `datetime4` datetime(4) default '2023-12-30 12:00:12', `timestamp` timestamp, `timestamp4` timestamp(4) default '2023-12-30 12:00:12', `year` year, `year4` year(4));
+create table t_char (c1 int, `char` char(100), `varchar` varchar(100), `binary` binary(100), `varbinary` varbinary(100), `text` text);
+
+insert into t_time values (1, '2024-01-11', '11:47:58', '11:47:58.7896', '2024-08-21 11:49:25', '2024-04-29 11:49:25.1234', '2024-12-30 11:49:25', '2024-01-11 11:49:25.1234', 70, '2024');
+insert into t_time values (2, '1999-01-01', 121314, '00:00:01.1234', '00-9-19 00:00:01', '1970-10-02 08:00:01.123', '2024-08-20 11:14:07', '1970-04-08 08:00:01.123', 27, '1904');
+insert into t_char values (1, '2008-04-01', '1968-02-28', '2077-08-20', '2001-12-12', '2024-3-14');
+insert into t_char values (2, '30215', '31215 12345', '10000', '10023', '700923');
+insert into t_char values (3, '3.145@6七八九', '3.145@6七八九', '3.145@6七八九', '3.145@6七八九', '3.145@6七八九');
+
+SELECT c1, weekofyear(`time`), weekofyear(`time4`) from t_time order by c1;
+SELECT c1, weekofyear(`date`), weekofyear(`datetime`), weekofyear(`datetime4`), weekofyear(`timestamp`), weekofyear(`timestamp4`), weekofyear(`year`), weekofyear(`year4`) from t_time order by c1;
+SELECT c1, pg_typeof(weekofyear(`date`)), pg_typeof(weekofyear(`time`)), pg_typeof(weekofyear(`time4`)), pg_typeof(weekofyear(`datetime`)), pg_typeof(weekofyear(`datetime4`)), 
+pg_typeof(weekofyear(`timestamp`)), pg_typeof(weekofyear(`timestamp4`)), pg_typeof(weekofyear(`year`)), pg_typeof(weekofyear(`year4`)) from t_time order by c1;
+SELECT c1, weekofyear(`char`), weekofyear(`varchar`), weekofyear(`binary`), weekofyear(`varbinary`), weekofyear(`text`) from t_char order by c1;
+SELECT c1, pg_typeof(weekofyear(`char`)), pg_typeof(weekofyear(`varchar`)), pg_typeof(weekofyear(`binary`)), pg_typeof(weekofyear(`varbinary`)), pg_typeof(weekofyear(`text`)) from t_char order by c1;
+
+-- test weekofyear insert ignore with strict_mode
+create table t1 (c1 bigint, c2 bigint, c3 bigint, c4 bigint, c5 bigint, c6 bigint, c7 bigint, c8 bigint);
+create table t2 (c1 integer, c2 integer, c3 integer, c4 integer, c5 integer, c6 integer);
+
+insert ignore into t1 SELECT c1, weekofyear(`date`), weekofyear(`datetime`), weekofyear(`datetime4`), weekofyear(`timestamp`), weekofyear(`timestamp4`), weekofyear(`year`), weekofyear(`year4`) from t_time order by c1;
+insert ignore into t2 SELECT c1, weekofyear(`char`), weekofyear(`varchar`), weekofyear(`binary`), weekofyear(`varbinary`), weekofyear(`text`) from t_char order by c1;
+select * from t1 order by c1;
+select * from t2 order by c1;
+
+truncate t1;
+truncate t2;
+insert into t1 SELECT c1, weekofyear(`date`), weekofyear(`datetime`), weekofyear(`datetime4`), weekofyear(`timestamp`), weekofyear(`timestamp4`), weekofyear(`year`), weekofyear(`year4`) from t_time order by c1;
+insert into t2 SELECT c1, weekofyear(`char`), weekofyear(`varchar`), weekofyear(`binary`), weekofyear(`varbinary`), weekofyear(`text`) from t_char order by c1;
+select * from t1 order by c1;
+select * from t2 order by c1;
+
+-- test weekofyear insert ignore with strict_mode
+set dolphin.sql_mode = '';
+truncate t1;
+truncate t2;
+insert ignore into t1 SELECT c1, weekofyear(`date`), weekofyear(`datetime`), weekofyear(`datetime4`), weekofyear(`timestamp`), weekofyear(`timestamp4`), weekofyear(`year`), weekofyear(`year4`) from t_time order by c1;
+insert ignore into t2 SELECT c1, weekofyear(`char`), weekofyear(`varchar`), weekofyear(`binary`), weekofyear(`varbinary`), weekofyear(`text`) from t_char order by c1;
+select * from t1 order by c1;
+select * from t2 order by c1;
+
+truncate t1;
+truncate t2;
+insert into t1 SELECT c1, weekofyear(`date`), weekofyear(`datetime`), weekofyear(`datetime4`), weekofyear(`timestamp`), weekofyear(`timestamp4`), weekofyear(`year`), weekofyear(`year4`) from t_time order by c1;
+insert into t2 SELECT c1, weekofyear(`char`), weekofyear(`varchar`), weekofyear(`binary`), weekofyear(`varbinary`), weekofyear(`text`) from t_char order by c1;
+select * from t1 order by c1;
+select * from t2 order by c1;
+
+drop table t_time;
+drop table t_char;
+drop table t1;
+drop table t2;
+
 reset b_format_behavior_compat_options;
 reset dolphin.sql_mode;
 

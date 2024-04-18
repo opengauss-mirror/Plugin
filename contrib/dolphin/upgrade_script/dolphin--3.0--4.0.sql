@@ -174,6 +174,22 @@ CREATE OR REPLACE FUNCTION pg_catalog.binary_timestamptz(binary) RETURNS timesta
 CREATE CAST (binary AS timestamp without time zone) WITH FUNCTION pg_catalog.binary_timestamp(binary) AS ASSIGNMENT;
 CREATE CAST (binary AS timestamp with time zone) WITH FUNCTION pg_catalog.binary_timestamptz(binary) AS ASSIGNMENT;
 
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (timetz);
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (abstime);
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (date);
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (time);
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (timestamp(0) with time zone);
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (timestamptz) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)::integer';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (timetz) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)::integer';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (abstime) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)::integer';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (date) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)::integer';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (time) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', cast($1 as timestamp(0) without time zone))::integer';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (timestamp(0) with time zone) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)::integer';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (year) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_part(''week'', cast($1 as timestamp(0) without time zone))::integer';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (binary) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_part(''week'', cast($1 as timestamp(0) without time zone))::integer';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_part(''week'', cast($1 as timestamp(0) without time zone))::integer';
+
 -- json max/min
 CREATE OR REPLACE FUNCTION pg_catalog.json_larger(json, json) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_larger';
 CREATE OR REPLACE FUNCTION pg_catalog.json_smaller(json, json) RETURNS json LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','json_smaller';

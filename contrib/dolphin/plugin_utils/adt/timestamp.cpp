@@ -5329,6 +5329,10 @@ Datum timestamp_part(PG_FUNCTION_ARGS)
                 break;
 
             case DTK_WEEK:
+#ifdef DOLPHIN
+                if (timestamp == TIMESTAMP_ZERO)
+                    PG_RETURN_NULL();
+#endif
                 result = (float8)date2isoweek(tm->tm_year, tm->tm_mon, tm->tm_mday);
                 break;
 
@@ -5565,6 +5569,10 @@ Datum timestamptz_part(PG_FUNCTION_ARGS)
                 break;
 
             case DTK_WEEK:
+#ifdef DOLPHIN
+                if (timestamp == TIMESTAMP_ZERO)
+                    PG_RETURN_NULL();
+#endif
                 result = (float8)date2isoweek(tm->tm_year, tm->tm_mon, tm->tm_mday);
                 break;
 
@@ -12251,7 +12259,7 @@ Datum binary_timestamp(PG_FUNCTION_ARGS)
     data = DatumGetCString(DirectFunctionCall1(textout, input));
     check_binary_date(fcinfo, input, strlen(data));
 
-    Datum result = date_internal(fcinfo, data, TIME_IN, &time_error_type);
+    Datum result = timestamp_internal(fcinfo, data, TIME_IN, &time_error_type);
     pfree_ext(data);
 
     if ((fcinfo->ccontext == COERCION_IMPLICIT || fcinfo->ccontext == COERCION_EXPLICIT) &&
@@ -12259,7 +12267,7 @@ Datum binary_timestamp(PG_FUNCTION_ARGS)
         PG_RETURN_NULL();
     }
 
-    PG_RETURN_TIMESTAMP(date2timestamp(DatumGetDateADT(result)));
+    PG_RETURN_TIMESTAMP(result);
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC(binary_timestamptz);
