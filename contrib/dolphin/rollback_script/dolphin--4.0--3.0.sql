@@ -30,6 +30,16 @@ END;
 $$
 LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS pg_catalog.lower(int8);
+DROP FUNCTION IF EXISTS pg_catalog.lower(uint8);
+DROP FUNCTION IF EXISTS pg_catalog.lower(float4);
+DROP FUNCTION IF EXISTS pg_catalog.lower(numeric);
+
+DROP FUNCTION IF EXISTS pg_catalog.lcase(int8);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(uint8);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(float4);
+DROP FUNCTION IF EXISTS pg_catalog.lcase(numeric);
+
 DROP FUNCTION IF EXISTS pg_catalog.acos(bit);
 DROP FUNCTION IF EXISTS pg_catalog.cos(bit);
 DROP FUNCTION IF EXISTS pg_catalog.cos(boolean);

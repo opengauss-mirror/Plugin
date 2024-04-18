@@ -3,8 +3,9 @@ set current_schema to 'db_test_lower_func';
 set dolphin.sql_mode = '';
 set dolphin.b_compatibility_mode = on;
 
-create table test_type_table
+create table t1
 (
+    c1 integer,
     `int1`         tinyint,
     `uint1`        tinyint unsigned,
     `int2`         smallint,
@@ -30,18 +31,42 @@ create table test_type_table
     `text`         text
 );
 
-insert into test_type_table values
-    (
-        127, 255, 32767, 65535, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 3.402823, 1.79769313486231, 3.141592654,
-        1, 0xFFFFFFFFFFFFFFFF, 1,
-        'Today is a good day.  ', 'Today is a good day.  ',
-        'Today is a good day.  ', 'Today is a good day.  ',
-        'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ',
-        'Today is a good day.  '
-    );
+insert into t1 values
+(
+1,
+1, 1, 1, 1, 1, 1, 1, 1, 1.0, 1.0, 3.14259, 
+1, 10101100, 1, 
+'62.345*67-89', '62.345*67-89', 
+'67890 - 12345 = 55545', '67890 - 12345 = 55545', 
+'67890 - 12345 = 55545', '67890 - 12345 = 55545', '67890 - 12345 = 55545', '67890 - 12345 = 55545', 
+'67890 - 12345 = 55545'
+);
+
+insert into t1 values
+(
+2, 
+127, 255, 32767, 65535, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 3.402823, 1.79769313486231, 3.141592654, 
+1, 0xFFFFFFFFFFFFFFFF, 1, 
+'Today is a good day.  ', 'Today is a good day.  ', 
+'Today is a good day.  ', 'Today is a good day.  ', 
+'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ', 
+'Today is a good day.  '
+);
+
+insert into t1 values
+(
+3, 
+-127, 0, -32768, 0, -2147483648, 0, -9223372036854775808, 0,
+-1234.567890, -1002345.78456892, -99999999999999.999999, 
+0, 0x01, 0,
+'', '', '', '',
+'', '', '', '', 
+''
+);
 
 \x
 SELECT
+    c1, 
     lower(`int1`),
     lower(`uint1`),
     lower(`int2`),
@@ -65,9 +90,10 @@ SELECT
     lower(`mediumblob`),
     lower(`longblob`),
     lower(`text`)
-FROM test_type_table;
+FROM t1 order by c1;
 
 SELECT
+    c1, 
     lcase(`int1`),
     lcase(`uint1`),
     lcase(`int2`),
@@ -91,7 +117,7 @@ SELECT
     lcase(`mediumblob`),
     lcase(`longblob`),
     lcase(`text`)
-FROM test_type_table;
+FROM t1 order by c1;
 
 \x
 SELECT
@@ -118,7 +144,7 @@ SELECT
     pg_typeof(lower(`mediumblob`)),
     pg_typeof(lower(`longblob`)),
     pg_typeof(lower(`text`))
-FROM test_type_table;
+FROM t1 where c1 = 1;
 
 SELECT
     pg_typeof(lcase(`int1`)),
@@ -144,9 +170,9 @@ SELECT
     pg_typeof(lcase(`mediumblob`)),
     pg_typeof(lcase(`longblob`)),
     pg_typeof(lcase(`text`))
-FROM test_type_table;
+FROM t1 where c1 = 1;
 
-drop table test_type_table;
+drop table t1;
 
 create table bit_test (`bit1` bit(1), `bit6` bit(6), `bit8` bit(8), `bit15` bit(15), `bit16` bit(16));
 insert into bit_test values (1, 0x33, 0x68, 0x4d45, 0x5400);
@@ -160,4 +186,3 @@ reset bytea_output;
 reset dolphin.sql_mode;
 reset dolphin.b_compatibility_mode;
 reset current_schema;
-

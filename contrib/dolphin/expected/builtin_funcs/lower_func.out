@@ -2,8 +2,9 @@ create schema db_test_lower_func;
 set current_schema to 'db_test_lower_func';
 set dolphin.sql_mode = '';
 set dolphin.b_compatibility_mode = on;
-create table test_type_table
+create table t1
 (
+    c1 integer,
     `int1`         tinyint,
     `uint1`        tinyint unsigned,
     `int2`         smallint,
@@ -28,17 +29,39 @@ create table test_type_table
     `longblob`     longblob,
     `text`         text
 );
-insert into test_type_table values
-    (
-        127, 255, 32767, 65535, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 3.402823, 1.79769313486231, 3.141592654,
-        1, 0xFFFFFFFFFFFFFFFF, 1,
-        'Today is a good day.  ', 'Today is a good day.  ',
-        'Today is a good day.  ', 'Today is a good day.  ',
-        'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ',
-        'Today is a good day.  '
-    );
+insert into t1 values
+(
+1,
+1, 1, 1, 1, 1, 1, 1, 1, 1.0, 1.0, 3.14259, 
+1, 10101100, 1, 
+'62.345*67-89', '62.345*67-89', 
+'67890 - 12345 = 55545', '67890 - 12345 = 55545', 
+'67890 - 12345 = 55545', '67890 - 12345 = 55545', '67890 - 12345 = 55545', '67890 - 12345 = 55545', 
+'67890 - 12345 = 55545'
+);
+insert into t1 values
+(
+2, 
+127, 255, 32767, 65535, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 3.402823, 1.79769313486231, 3.141592654, 
+1, 0xFFFFFFFFFFFFFFFF, 1, 
+'Today is a good day.  ', 'Today is a good day.  ', 
+'Today is a good day.  ', 'Today is a good day.  ', 
+'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ', 
+'Today is a good day.  '
+);
+insert into t1 values
+(
+3, 
+-127, 0, -32768, 0, -2147483648, 0, -9223372036854775808, 0,
+-1234.567890, -1002345.78456892, -99999999999999.999999, 
+0, 0x01, 0,
+'', '', '', '',
+'', '', '', '', 
+''
+);
 \x
 SELECT
+    c1, 
     lower(`int1`),
     lower(`uint1`),
     lower(`int2`),
@@ -62,17 +85,43 @@ SELECT
     lower(`mediumblob`),
     lower(`longblob`),
     lower(`text`)
-FROM test_type_table;
+FROM t1 order by c1;
 -[ RECORD 1 ]-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+c1    | 1
+lower | 1
+lower | 1
+lower | 1
+lower | 1
+lower | 1
+lower | 1
+lower | 1
+lower | 1
+lower | 1
+lower | 1
+lower | 3.142590
+lower | \x01
+lower | \x00000000009a216c
+lower | 1
+lower | 62.345*67-89
+lower | 62.345*67-89
+lower | \x3637383930202d203132333435203d20353535343500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+lower | \x3637383930202d203132333435203d203535353435
+lower | \x3637383930202d203132333435203d203535353435
+lower | \x3637383930202d203132333435203d203535353435
+lower | \x3637383930202d203132333435203d203535353435
+lower | \x3637383930202d203132333435203d203535353435
+lower | 67890 - 12345 = 55545
+-[ RECORD 2 ]-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+c1    | 2
 lower | 127
 lower | 255
 lower | 32767
 lower | 65535
 lower | 2147483647
 lower | 4294967295
-lower | 9.223372036854776e+18
-lower | 1.844674407370955e+19
-lower | 3.402822971343994
+lower | 9223372036854775807
+lower | 18446744073709551615
+lower | 3.40282
 lower | 1.79769313486231
 lower | 3.141593
 lower | \x01
@@ -87,8 +136,34 @@ lower | \x546f646179206973206120676f6f64206461792e2020
 lower | \x546f646179206973206120676f6f64206461792e2020
 lower | \x546f646179206973206120676f6f64206461792e2020
 lower | today is a good day.  
+-[ RECORD 3 ]-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+c1    | 3
+lower | -127
+lower | 0
+lower | -32768
+lower | 0
+lower | -2147483648
+lower | 0
+lower | -9223372036854775808
+lower | 0
+lower | -1234.57
+lower | -1002345.78456892
+lower | -99999999999999.999999
+lower | \x00
+lower | \x0000000000000001
+lower | 0
+lower | 
+lower | 
+lower | \x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+lower | \x
+lower | \x
+lower | \x
+lower | \x
+lower | \x
+lower | 
 
 SELECT
+    c1, 
     lcase(`int1`),
     lcase(`uint1`),
     lcase(`int2`),
@@ -112,17 +187,43 @@ SELECT
     lcase(`mediumblob`),
     lcase(`longblob`),
     lcase(`text`)
-FROM test_type_table;
+FROM t1 order by c1;
 -[ RECORD 1 ]-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+c1    | 1
+lcase | 1
+lcase | 1
+lcase | 1
+lcase | 1
+lcase | 1
+lcase | 1
+lcase | 1
+lcase | 1
+lcase | 1
+lcase | 1
+lcase | 3.142590
+lcase | \x01
+lcase | \x00000000009a216c
+lcase | 1
+lcase | 62.345*67-89
+lcase | 62.345*67-89
+lcase | \x3637383930202d203132333435203d20353535343500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+lcase | \x3637383930202d203132333435203d203535353435
+lcase | \x3637383930202d203132333435203d203535353435
+lcase | \x3637383930202d203132333435203d203535353435
+lcase | \x3637383930202d203132333435203d203535353435
+lcase | \x3637383930202d203132333435203d203535353435
+lcase | 67890 - 12345 = 55545
+-[ RECORD 2 ]-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+c1    | 2
 lcase | 127
 lcase | 255
 lcase | 32767
 lcase | 65535
 lcase | 2147483647
 lcase | 4294967295
-lcase | 9.223372036854776e+18
-lcase | 1.844674407370955e+19
-lcase | 3.402822971343994
+lcase | 9223372036854775807
+lcase | 18446744073709551615
+lcase | 3.40282
 lcase | 1.79769313486231
 lcase | 3.141593
 lcase | \x01
@@ -137,6 +238,31 @@ lcase | \x546f646179206973206120676f6f64206461792e2020
 lcase | \x546f646179206973206120676f6f64206461792e2020
 lcase | \x546f646179206973206120676f6f64206461792e2020
 lcase | today is a good day.  
+-[ RECORD 3 ]-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+c1    | 3
+lcase | -127
+lcase | 0
+lcase | -32768
+lcase | 0
+lcase | -2147483648
+lcase | 0
+lcase | -9223372036854775808
+lcase | 0
+lcase | -1234.57
+lcase | -1002345.78456892
+lcase | -99999999999999.999999
+lcase | \x00
+lcase | \x0000000000000001
+lcase | 0
+lcase | 
+lcase | 
+lcase | \x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+lcase | \x
+lcase | \x
+lcase | \x
+lcase | \x
+lcase | \x
+lcase | 
 
 \x
 SELECT
@@ -163,7 +289,7 @@ SELECT
     pg_typeof(lower(`mediumblob`)),
     pg_typeof(lower(`longblob`)),
     pg_typeof(lower(`text`))
-FROM test_type_table;
+FROM t1 where c1 = 1;
      pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |  pg_typeof  |  pg_typeof  |     pg_typeof     |     pg_typeof     |     pg_typeof     |  pg_typeof  |  pg_typeof  |  pg_typeof  | pg_typeof | pg_typeof | pg_typeof | pg_typeof 
 -------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------+-------------+-------------------+-------------------+-------------------+-------------+-------------+-------------+-----------+-----------+-----------+-----------
  character varying | character varying | character varying | character varying | character varying | character varying | character varying | character varying | character varying | character varying | character varying | `varbinary` | `varbinary` | character varying | character varying | character varying | `varbinary` | `varbinary` | `varbinary` | blob      | blob      | blob      | text
@@ -193,13 +319,13 @@ SELECT
     pg_typeof(lcase(`mediumblob`)),
     pg_typeof(lcase(`longblob`)),
     pg_typeof(lcase(`text`))
-FROM test_type_table;
+FROM t1 where c1 = 1;
      pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |     pg_typeof     |  pg_typeof  |  pg_typeof  |     pg_typeof     |     pg_typeof     |     pg_typeof     |  pg_typeof  |  pg_typeof  |  pg_typeof  | pg_typeof | pg_typeof | pg_typeof | pg_typeof 
 -------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------+-------------+-------------------+-------------------+-------------------+-------------+-------------+-------------+-----------+-----------+-----------+-----------
  character varying | character varying | character varying | character varying | character varying | character varying | character varying | character varying | character varying | character varying | character varying | `varbinary` | `varbinary` | character varying | character varying | character varying | `varbinary` | `varbinary` | `varbinary` | blob      | blob      | blob      | text
 (1 row)
 
-drop table test_type_table;
+drop table t1;
 create table bit_test (`bit1` bit(1), `bit6` bit(6), `bit8` bit(8), `bit15` bit(15), `bit16` bit(16));
 insert into bit_test values (1, 0x33, 0x68, 0x4d45, 0x5400);
 select lower(`bit1`), lower(`bit6`), lower(`bit8`), lower(`bit15`), lower(`bit16`) from bit_test;
