@@ -123,6 +123,12 @@ select json_object_field(json_object('Name','Adam','Age',23,'Address','Chengdu',
  {"a":233}
 (1 row)
 
+select json_object_field('{"Test":11111111111111111111111111111111111111111111111111111111111111111111111}','Test');
+                            json_object_field                            
+-------------------------------------------------------------------------
+ 11111111111111111111111111111111111111111111111111111111111111111111111
+(1 row)
+
 select json_object_field_text(json_object('Name','Adam','Age',23,'Address','Chengdu','Test','{"a":233}'::json),'Test');
  json_object_field_text 
 ------------------------
@@ -133,6 +139,12 @@ select json_object_field_text(json_object('Name','Adam','Age',23,'Address','Chen
  json_object_field_text 
 ------------------------
  Adam
+(1 row)
+
+select json_object_field_text('{"Test":11111111111111111111111111111111111111111111111111111111111111111111111}','Test');
+                         json_object_field_text                          
+-------------------------------------------------------------------------
+ 11111111111111111111111111111111111111111111111111111111111111111111111
 (1 row)
 
 select json_extract_path(json_object('Name','Adam','Age',23,'Address','Chengdu'),'Name');
