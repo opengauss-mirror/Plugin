@@ -125,3 +125,13 @@ DROP aggregate pg_catalog.max(longblob);
 DROP aggregate pg_catalog.min(longblob);
 DROP FUNCTION pg_catalog.longblob_larger(longblob, longblob);
 DROP FUNCTION pg_catalog.longblob_smaller(longblob, longblob);
+-- bit
+DROP aggregate pg_catalog.max(bit);
+DROP aggregate pg_catalog.min(bit);
+DROP FUNCTION pg_catalog.bit_larger(bit, bit);
+DROP FUNCTION pg_catalog.bit_smaller(bit, bit);
+-- varbit
+DROP aggregate pg_catalog.max(varbit);
+DROP aggregate pg_catalog.min(varbit);
+DROP FUNCTION pg_catalog.varbit_larger(varbit, varbit);
+DROP FUNCTION pg_catalog.varbit_smaller(varbit, varbit);

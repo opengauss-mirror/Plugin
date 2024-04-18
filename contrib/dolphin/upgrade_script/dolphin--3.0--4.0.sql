@@ -132,3 +132,13 @@ CREATE OR REPLACE FUNCTION pg_catalog.longblob_larger(longblob, longblob) RETURN
 CREATE OR REPLACE FUNCTION pg_catalog.longblob_smaller(longblob, longblob) RETURNS longblob LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varlena_smaller';
 create aggregate pg_catalog.max(longblob) (SFUNC=pg_catalog.longblob_larger, STYPE=longblob);
 create aggregate pg_catalog.min(longblob) (SFUNC=pg_catalog.longblob_smaller, STYPE=longblob);
+-- bit
+CREATE OR REPLACE FUNCTION pg_catalog.bit_larger(bit, bit) RETURNS bit LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varbit_larger';
+CREATE OR REPLACE FUNCTION pg_catalog.bit_smaller(bit, bit) RETURNS bit LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varbit_smaller';
+create aggregate pg_catalog.max(bit) (SFUNC=pg_catalog.bit_larger, STYPE=bit);
+create aggregate pg_catalog.min(bit) (SFUNC=pg_catalog.bit_smaller, STYPE=bit);
+-- varbit
+CREATE OR REPLACE FUNCTION pg_catalog.varbit_larger(varbit, varbit) RETURNS varbit LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varbit_larger';
+CREATE OR REPLACE FUNCTION pg_catalog.varbit_smaller(varbit, varbit) RETURNS varbit LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin','varbit_smaller';
+create aggregate pg_catalog.max(varbit) (SFUNC=pg_catalog.varbit_larger, STYPE=varbit);
+create aggregate pg_catalog.min(varbit) (SFUNC=pg_catalog.varbit_smaller, STYPE=varbit);

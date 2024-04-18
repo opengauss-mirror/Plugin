@@ -2849,4 +2849,43 @@ Datum dolphin_bitposition(PG_FUNCTION_ARGS)
 
     PG_RETURN_INT32(result);
 }
+
+static Datum GetPeakVarBit(PG_FUNCTION_ARGS, bool isLarger)
+{
+    VarBit* bit1 = (VarBit*)PG_GETARG_DATUM(0);
+    VarBit* bit2 = (VarBit*)PG_GETARG_DATUM(1);
+
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1)) {
+            PG_RETURN_NULL();
+        } else {
+            PG_RETURN_VARBIT_P(bit2);
+        }
+    } else if (PG_ARGISNULL(1)) {
+        PG_RETURN_VARBIT_P(bit1);
+    }
+
+    int cmpFlag = bit_cmp(bit1, bit2);
+    if ((isLarger && cmpFlag < 0) ||
+        (!isLarger && cmpFlag > 0)) {
+        PG_RETURN_VARBIT_P(bit2);
+    } else {
+        PG_RETURN_VARBIT_P(bit1);
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbit_larger);
+extern "C" DLL_PUBLIC Datum varbit_larger(PG_FUNCTION_ARGS);
+Datum varbit_larger(PG_FUNCTION_ARGS)
+{
+    return GetPeakVarBit(fcinfo, true);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbit_smaller);
+extern "C" DLL_PUBLIC Datum varbit_smaller(PG_FUNCTION_ARGS);
+Datum varbit_smaller(PG_FUNCTION_ARGS)
+{
+    return GetPeakVarBit(fcinfo, false);
+}
+
 #endif
