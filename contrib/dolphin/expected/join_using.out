@@ -2617,40 +2617,31 @@ select * from t_v14 natural join t_v25;
 (0 rows)
 
 select * from t_v14 natural join t_v26;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v14 natural join t_v27;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v14 natural join t_v28;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v14 natural join t_v29;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v14 natural join t_v30;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -3144,73 +3135,55 @@ select * from t_v17 natural join t_v21;
 (0 rows)
 
 select * from t_v17 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
  col1 
 ------
 (0 rows)
 
 select * from t_v17 natural join t_v23;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v17 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v17 natural join t_v25;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v17 natural join t_v26;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v17 natural join t_v27;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v17 natural join t_v28;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v17 natural join t_v29;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v17 natural join t_v30;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -3364,73 +3337,55 @@ select * from t_v18 natural join t_v21;
 (0 rows)
 
 select * from t_v18 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
  col1 
 ------
 (0 rows)
 
 select * from t_v18 natural join t_v23;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v18 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v18 natural join t_v25;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v18 natural join t_v26;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v18 natural join t_v27;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v18 natural join t_v28;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v18 natural join t_v29;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v18 natural join t_v30;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -3584,73 +3539,55 @@ select * from t_v19 natural join t_v21;
 (0 rows)
 
 select * from t_v19 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
  col1 
 ------
 (0 rows)
 
 select * from t_v19 natural join t_v23;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v19 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v19 natural join t_v25;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v19 natural join t_v26;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v19 natural join t_v27;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v19 natural join t_v28;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v19 natural join t_v29;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v19 natural join t_v30;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -3804,73 +3741,55 @@ select * from t_v20 natural join t_v21;
 (0 rows)
 
 select * from t_v20 natural join t_v22;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
  col1 
 ------
 (0 rows)
 
 select * from t_v20 natural join t_v23;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v20 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v20 natural join t_v25;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v20 natural join t_v26;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v20 natural join t_v27;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v20 natural join t_v28;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v20 natural join t_v29;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v20 natural join t_v30;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4560,21 +4479,25 @@ select * from t_v24 natural join t_v16;
 (0 rows)
 
 select * from t_v24 natural join t_v17;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v18;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v19;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v20;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4734,21 +4657,25 @@ select * from t_v25 natural join t_v16;
 (0 rows)
 
 select * from t_v25 natural join t_v17;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v25 natural join t_v18;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v25 natural join t_v19;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v25 natural join t_v20;
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4902,7 +4829,6 @@ select * from t_v26 natural join t_v13;
 
 select * from t_v26 natural join t_v14;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "tinyblob_timestamp_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -4933,14 +4859,12 @@ WARNING:  invalid input syntax for type timestamp: "1.23a"
 
 select * from t_v26 natural join t_v19;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "tinyblob_timestamp_eq" statement 1
  col1 
 ------
 (0 rows)
 
 select * from t_v26 natural join t_v20;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "tinyblob_timestamp_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -5095,7 +5019,6 @@ select * from t_v27 natural join t_v13;
 
 select * from t_v27 natural join t_v14;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "blob_timestamp_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -5126,14 +5049,12 @@ WARNING:  invalid input syntax for type timestamp: "1.23a"
 
 select * from t_v27 natural join t_v19;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "blob_timestamp_eq" statement 1
  col1 
 ------
 (0 rows)
 
 select * from t_v27 natural join t_v20;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "blob_timestamp_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -5288,7 +5209,6 @@ select * from t_v28 natural join t_v13;
 
 select * from t_v28 natural join t_v14;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "mediumblob_timestamp_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -5319,14 +5239,12 @@ WARNING:  invalid input syntax for type timestamp: "1.23a"
 
 select * from t_v28 natural join t_v19;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "mediumblob_timestamp_eq" statement 1
  col1 
 ------
 (0 rows)
 
 select * from t_v28 natural join t_v20;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "mediumblob_timestamp_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -5481,7 +5399,6 @@ select * from t_v29 natural join t_v13;
 
 select * from t_v29 natural join t_v14;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "longblob_timestamp_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -5512,14 +5429,12 @@ WARNING:  invalid input syntax for type timestamp: "1.23a"
 
 select * from t_v29 natural join t_v19;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "longblob_timestamp_eq" statement 1
  col1 
 ------
 (0 rows)
 
 select * from t_v29 natural join t_v20;
 WARNING:  invalid input syntax for type timestamp: "1.23a"
-CONTEXT:  SQL function "longblob_timestamp_eq" statement 1
  col1 
 ------
 (0 rows)

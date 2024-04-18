@@ -652,6 +652,40 @@ select * from t1 where dt <> 20021020::numeric and dt1 <> 20021020::numeric orde
 
 drop table t1;
 
+-- test datetime >,>=,<,<=,=,<> with text(ADDDATE(datetime,INTERVAL))
+create table t1 (ctime timestamp(4) without time zone);
+insert into t1 values('2020-03-20 17:51:46.189');
+
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 hour), ADDDATE(ctime, INTERVAL 1 hour) = ctime from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 hour), ADDDATE(ctime, INTERVAL 1 hour) > ctime from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 hour), ADDDATE(ctime, INTERVAL 1 hour) < ctime from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 hour), ADDDATE(ctime, INTERVAL 1 hour) >= ctime from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 hour), ADDDATE(ctime, INTERVAL 1 hour) <= ctime from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 hour), ADDDATE(ctime, INTERVAL 1 hour) <> ctime from t1;
+
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 minute), ctime = ADDDATE(ctime, INTERVAL 1 minute) from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 minute), ctime > ADDDATE(ctime, INTERVAL 1 minute) from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 minute), ctime < ADDDATE(ctime, INTERVAL 1 minute) from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 minute), ctime >= ADDDATE(ctime, INTERVAL 1 minute) from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 minute), ctime <= ADDDATE(ctime, INTERVAL 1 minute) from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 minute), ctime <> ADDDATE(ctime, INTERVAL 1 minute) from t1;
+
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 hour), ADDDATE(ctime, INTERVAL 1 hour) = ctime::timestamp from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 hour), ADDDATE(ctime, INTERVAL 1 hour) > ctime::timestamp from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 hour), ADDDATE(ctime, INTERVAL 1 hour) < ctime::timestamp from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 hour), ADDDATE(ctime, INTERVAL 1 hour) >= ctime::timestamp from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 hour), ADDDATE(ctime, INTERVAL 1 hour) <= ctime::timestamp from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 hour), ADDDATE(ctime, INTERVAL 1 hour) <> ctime::timestamp from t1;
+
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 minute), ctime::timestamp = ADDDATE(ctime, INTERVAL 1 minute) from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 minute), ctime::timestamp > ADDDATE(ctime, INTERVAL 1 minute) from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 minute), ctime::timestamp < ADDDATE(ctime, INTERVAL 1 minute) from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 minute), ctime::timestamp >= ADDDATE(ctime, INTERVAL 1 minute) from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 minute), ctime::timestamp <= ADDDATE(ctime, INTERVAL 1 minute) from t1;
+SELECT ctime, ADDDATE(ctime, INTERVAL 1 minute), ctime::timestamp <> ADDDATE(ctime, INTERVAL 1 minute) from t1;
+
+drop table t1;
+
 ---------- tail ----------
 drop schema time_operator_test_schema cascade;
 reset current_schema;

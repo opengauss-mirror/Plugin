@@ -75,6 +75,56 @@ CREATE OPERATOR pg_catalog.||(leftarg=unknown, rightarg=unknown, procedure=pg_ca
 CREATE OPERATOR pg_catalog.||(leftarg=unknown, rightarg=integer, procedure=pg_catalog.unknown_int_concat);
 CREATE OPERATOR pg_catalog.||(leftarg=integer, rightarg=unknown, procedure=pg_catalog.int_unknown_concat);
 
+DROP OPERATOR IF EXISTS pg_catalog.=(timestamp without time zone, text);
+DROP OPERATOR IF EXISTS pg_catalog.<(timestamp without time zone, text);
+DROP OPERATOR IF EXISTS pg_catalog.<=(timestamp without time zone, text);
+DROP OPERATOR IF EXISTS pg_catalog.>(timestamp without time zone, text);
+DROP OPERATOR IF EXISTS pg_catalog.>=(timestamp without time zone, text);
+DROP OPERATOR IF EXISTS pg_catalog.<>(timestamp without time zone, text);
+DROP OPERATOR IF EXISTS pg_catalog.=(text, timestamp without time zone);
+DROP OPERATOR IF EXISTS pg_catalog.<(text, timestamp without time zone);
+DROP OPERATOR IF EXISTS pg_catalog.<=(text, timestamp without time zone);
+DROP OPERATOR IF EXISTS pg_catalog.>(text, timestamp without time zone);
+DROP OPERATOR IF EXISTS pg_catalog.>=(text, timestamp without time zone);
+DROP OPERATOR IF EXISTS pg_catalog.<>(text, timestamp without time zone);
+DROP OPERATOR IF EXISTS pg_catalog.=(timestamptz, text);
+DROP OPERATOR IF EXISTS pg_catalog.<(timestamptz, text);
+DROP OPERATOR IF EXISTS pg_catalog.<=(timestamptz, text);
+DROP OPERATOR IF EXISTS pg_catalog.>(timestamptz, text);
+DROP OPERATOR IF EXISTS pg_catalog.>=(timestamptz, text);
+DROP OPERATOR IF EXISTS pg_catalog.<>(timestamptz, text);
+DROP OPERATOR IF EXISTS pg_catalog.=(text, timestamptz);
+DROP OPERATOR IF EXISTS pg_catalog.<(text, timestamptz);
+DROP OPERATOR IF EXISTS pg_catalog.<=(text, timestamptz);
+DROP OPERATOR IF EXISTS pg_catalog.>(text, timestamptz);
+DROP OPERATOR IF EXISTS pg_catalog.>=(text, timestamptz);
+DROP OPERATOR IF EXISTS pg_catalog.<>(text, timestamptz);
+
+DROP FUNCTION IF EXISTS pg_catalog.datetime_text_eq(timestamp without time zone, text);
+DROP FUNCTION IF EXISTS pg_catalog.datetime_text_ne(timestamp without time zone, text);
+DROP FUNCTION IF EXISTS pg_catalog.datetime_text_lt(timestamp without time zone, text);
+DROP FUNCTION IF EXISTS pg_catalog.datetime_text_le(timestamp without time zone, text);
+DROP FUNCTION IF EXISTS pg_catalog.datetime_text_gt(timestamp without time zone, text);
+DROP FUNCTION IF EXISTS pg_catalog.datetime_text_ge(timestamp without time zone, text);
+DROP FUNCTION IF EXISTS pg_catalog.text_datetime_eq(text, timestamp without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.text_datetime_ne(text, timestamp without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.text_datetime_lt(text, timestamp without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.text_datetime_le(text, timestamp without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.text_datetime_gt(text, timestamp without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.text_datetime_ge(text, timestamp without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_text_eq(timestamptz, text);
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_text_ne(timestamptz, text);
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_text_lt(timestamptz, text);
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_text_le(timestamptz, text);
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_text_gt(timestamptz, text);
+DROP FUNCTION IF EXISTS pg_catalog.timestamp_text_ge(timestamptz, text);
+DROP FUNCTION IF EXISTS pg_catalog.text_timestamp_eq(text, timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.text_timestamp_ne(text, timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.text_timestamp_lt(text, timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.text_timestamp_le(text, timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.text_timestamp_gt(text, timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.text_timestamp_ge(text, timestamptz);
+
 DROP FUNCTION IF EXISTS pg_catalog.chara(variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns text LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'm_char';
 
