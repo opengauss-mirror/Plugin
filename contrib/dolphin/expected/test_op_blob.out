@@ -119,7 +119,6 @@ select * from res_table;
 
 insert into blob_table values('a', 'a', 'a', 'a');
 select `blob` = 1.1 from blob_table;
-WARNING:  invalid input syntax for type double precision: "a"
  ?column? 
 ----------
  f

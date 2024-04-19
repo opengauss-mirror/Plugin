@@ -359,6 +359,12 @@ extern "C" DLL_PUBLIC Datum convert_datetime_uint64(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(convert_timestamptz_uint64);
 extern "C" DLL_PUBLIC Datum convert_timestamptz_uint64(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(convert_text_datetime);
+extern "C" DLL_PUBLIC Datum convert_text_datetime(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(convert_text_timestamptz);
+extern "C" DLL_PUBLIC Datum convert_text_timestamptz(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(bool_cast_datetime);
 extern "C" DLL_PUBLIC Datum bool_cast_datetime(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(int8_cast_datetime);
@@ -1267,6 +1273,27 @@ Datum convert_timestamptz_uint64(PG_FUNCTION_ARGS)
     return timestamp_to_datum_with_null_result(fcinfo, true, ts);
 }
 
+Datum convert_text_datetime(PG_FUNCTION_ARGS)
+{
+    Datum textValue = PG_GETARG_DATUM(0);
+    char* str = NULL;
+    TimeErrorType time_error_type = TIME_CORRECT;
+    str = DatumGetCString(DirectFunctionCall1(textout, textValue));
+    Datum result = timestamp_internal(fcinfo, str, TIME_IN, &time_error_type);
+    pfree_ext(str);
+    PG_RETURN_TIMESTAMP(result);
+}
+
+Datum convert_text_timestamptz(PG_FUNCTION_ARGS)
+{
+    Datum textValue = PG_GETARG_DATUM(0);
+    char* str = NULL;
+    TimeErrorType time_error_type = TIME_CORRECT;
+    str = DatumGetCString(DirectFunctionCall1(textout, textValue));
+    Datum result = timestamptz_internal(fcinfo, str, TIME_IN, &time_error_type);
+    pfree_ext(str);
+    PG_RETURN_TIMESTAMPTZ(result);
+}
 #endif
 
 /* timestamp_out()

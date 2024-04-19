@@ -11497,4 +11497,30 @@ Datum bit_substr_no_len(PG_FUNCTION_ARGS)
     }
     return bit_blob(result);
 }
+
+PG_FUNCTION_INFO_V1_PUBLIC(blob_to_float8);
+extern "C" DLL_PUBLIC Datum blob_to_float8(PG_FUNCTION_ARGS);
+Datum blob_to_float8(PG_FUNCTION_ARGS)
+{
+    char* data = NULL;
+    bool hasLenError = false;
+    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasLenError);
+    bool hasError = false;
+    char* endptr = NULL;
+    double result = float8in_internal(data, &endptr, &hasError, fcinfo->ccontext);
+    pfree_ext(data);
+    
+    PG_RETURN_FLOAT8(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(text_to_blob);
+extern "C" DLL_PUBLIC Datum text_to_blob(PG_FUNCTION_ARGS);
+Datum text_to_blob(PG_FUNCTION_ARGS)
+{
+    text* input = PG_GETARG_TEXT_P(0);
+    char* str = TextDatumGetCString(input);
+    int32 len = VARSIZE_ANY(input);
+    return DirectFunctionCall3(dolphin_binaryin, CStringGetDatum(str), ObjectIdGetDatum(InvalidOid),
+                                Int32GetDatum(len));
+}
 #endif
