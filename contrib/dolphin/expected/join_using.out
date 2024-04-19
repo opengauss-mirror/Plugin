@@ -2186,10 +2186,9 @@ select * from t_v12 natural join t_v11;
 select * from t_v12 natural join t_v12;
 ERROR:  table name "t_v12" specified more than once
 select * from t_v12 natural join t_v13;
-                               col1                               
-------------------------------------------------------------------
- 0000000000000000000000000000000000000000000000000000000000000111
-(1 row)
+ col1 
+------
+(0 rows)
 
 select * from t_v12 natural join t_v14;
  col1 
@@ -2369,8 +2368,7 @@ select * from t_v13 natural join t_v11;
 select * from t_v13 natural join t_v12;
  col1 
 ------
- t
-(1 row)
+(0 rows)
 
 select * from t_v13 natural join t_v13;
 ERROR:  table name "t_v13" specified more than once

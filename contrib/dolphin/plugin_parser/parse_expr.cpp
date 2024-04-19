@@ -158,7 +158,7 @@ void DealWithBoolType(ParseState** pstate, Node** lexpr, Node** rexpr)
     int32 leftTypmod = exprTypmod(*lexpr);
     Oid rightType = exprType(*rexpr);
     int32 rightTypmod = exprTypmod(*rexpr);
-    if ((IsStringType(leftType) || leftType == YEAROID || leftType == FLOAT8OID || leftType == FLOAT4OID) && rightType == BOOLOID) {
+    if ((IsStringType(leftType) || leftType == BITOID || leftType == YEAROID || leftType == FLOAT8OID || leftType == FLOAT4OID) && rightType == BOOLOID) {
         *rexpr = coerce_to_target_type(
             *pstate, *rexpr, BOOLOID, INT4OID, 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
         if (IsStringType(leftType)) {
@@ -166,7 +166,7 @@ void DealWithBoolType(ParseState** pstate, Node** lexpr, Node** rexpr)
                 *pstate, *lexpr, leftType, FLOAT8OID, leftTypmod, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
         }
     }
-    if ((IsStringType(rightType) || rightType == YEAROID || rightType == FLOAT8OID || rightType == FLOAT4OID) && leftType == BOOLOID) {
+    if ((IsStringType(rightType) || rightType == BITOID || rightType == YEAROID || rightType == FLOAT8OID || rightType == FLOAT4OID) && leftType == BOOLOID) {
         *lexpr = coerce_to_target_type(
             *pstate, *lexpr, BOOLOID, INT4OID, 1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
         if (IsStringType(rightType)) {
