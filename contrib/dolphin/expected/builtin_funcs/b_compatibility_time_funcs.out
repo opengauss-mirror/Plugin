@@ -1289,8 +1289,298 @@ CONTEXT:  referenced column: pg_typeof
   1 | integer   | integer   | integer   | integer   | integer
 (1 row)
 
+-- test weekday
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+SELECT weekday(`time`), weekday(`time4`) from t_time order by c1;
+ weekday | weekday 
+---------+---------
+--?.*
+--?.*
+(2 rows)
+
+SELECT c1, weekday(`date`), weekday(`datetime`), weekday(`datetime4`), weekday(`timestamp`), weekday(`timestamp4`), weekday(`year`), weekday(`year4`) from t_time order by c1;
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+ c1 | weekday | weekday | weekday | weekday | weekday | weekday | weekday 
+----+---------+---------+---------+---------+---------+---------+---------
+  1 |       3 |       2 |       0 |       0 |       3 |  <NULL> |  <NULL>
+  2 |       4 |       1 |       4 |       1 |       2 |  <NULL> |  <NULL>
+(2 rows)
+
+SELECT c1, weekday(`char`), weekday(`varchar`), weekday(`binary`), weekday(`varbinary`), weekday(`text`) from t_char order by c1;
+WARNING:  Truncated incorrect datetime value: "\x323037372d30382d3230000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  date/time field value out of range: "30215                                                                                               "
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "31215 12345"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  Truncated incorrect datetime value: "\x31303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九                                                                                          "
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  Truncated incorrect datetime value: "\x332e3134354036e4b883e585abe4b99d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+ c1 | weekday | weekday | weekday | weekday | weekday 
+----+---------+---------+---------+---------+---------
+  1 |       1 |       2 |       4 |       2 |       3
+  2 |  <NULL> |  <NULL> |  <NULL> |       2 |       2
+  3 |  <NULL> |  <NULL> |  <NULL> |  <NULL> |  <NULL>
+(3 rows)
+
+-- test weekday insert ignore with strict_mode
+create table t1 (c1 bigint, c2 bigint, c3 bigint, c4 bigint, c5 bigint, c6 bigint, c7 bigint, c8 bigint);
+create table t2 (c1 integer, c2 integer, c3 integer, c4 integer, c5 integer, c6 integer);
+insert ignore into t1 select c1, weekday(`date`), weekday(`datetime`), weekday(`datetime4`), weekday(`timestamp`), weekday(`timestamp4`), weekday(`year`), weekday(`year4`) from t_time order by c1;
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+insert ignore into t2 select c1, weekday(`char`), weekday(`varchar`), weekday(`binary`), weekday(`varbinary`), weekday(`text`) from t_char order by c1;
+WARNING:  Truncated incorrect datetime value: "\x323037372d30382d3230000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  date/time field value out of range: "30215                                                                                               "
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "31215 12345"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  Truncated incorrect datetime value: "\x31303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九                                                                                          "
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  Truncated incorrect datetime value: "\x332e3134354036e4b883e585abe4b99d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+select * from t1 order by c1;
+ c1 | c2 | c3 | c4 | c5 | c6 |   c7   |   c8   
+----+----+----+----+----+----+--------+--------
+  1 |  3 |  2 |  0 |  0 |  3 | <NULL> | <NULL>
+  2 |  4 |  1 |  4 |  1 |  2 | <NULL> | <NULL>
+(2 rows)
+
+select * from t2 order by c1;
+ c1 |   c2   |   c3   |   c4   |   c5   |   c6   
+----+--------+--------+--------+--------+--------
+  1 |      1 |      2 |      4 |      2 |      3
+  2 | <NULL> | <NULL> | <NULL> |      2 |      2
+  3 | <NULL> | <NULL> | <NULL> | <NULL> | <NULL>
+(3 rows)
+
+truncate t1;
+truncate t2;
+insert into t1 select c1, weekday(`date`), weekday(`datetime`), weekday(`datetime4`), weekday(`timestamp`), weekday(`timestamp4`), weekday(`year`), weekday(`year4`) from t_time order by c1;
+ERROR:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+insert into t2 select c1, weekday(`char`), weekday(`varchar`), weekday(`binary`), weekday(`varbinary`), weekday(`text`) from t_char order by c1;
+ERROR:  Truncated incorrect datetime value: "\x323037372d30382d3230000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+select * from t1 order by c1;
+ c1 | c2 | c3 | c4 | c5 | c6 | c7 | c8 
+----+----+----+----+----+----+----+----
+(0 rows)
+
+select * from t2 order by c1;
+ c1 | c2 | c3 | c4 | c5 | c6 
+----+----+----+----+----+----
+(0 rows)
+
+-- test weekday insert ignore without strict_mode
+set dolphin.sql_mode = '';
+truncate t1;
+truncate t2;
+insert ignore into t1 select c1, weekday(`date`), weekday(`datetime`), weekday(`datetime4`), weekday(`timestamp`), weekday(`timestamp4`), weekday(`year`), weekday(`year4`) from t_time order by c1;
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+insert ignore into t2 select c1, weekday(`char`), weekday(`varchar`), weekday(`binary`), weekday(`varbinary`), weekday(`text`) from t_char order by c1;
+WARNING:  Truncated incorrect datetime value: "\x323037372d30382d3230000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  date/time field value out of range: "30215"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "31215 12345"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  Truncated incorrect datetime value: "\x31303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  Truncated incorrect datetime value: "\x332e3134354036e4b883e585abe4b99d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+select * from t1 order by c1;
+ c1 | c2 | c3 | c4 | c5 | c6 |   c7   |   c8   
+----+----+----+----+----+----+--------+--------
+  1 |  3 |  2 |  0 |  0 |  3 | <NULL> | <NULL>
+  2 |  4 |  1 |  4 |  1 |  2 | <NULL> | <NULL>
+(2 rows)
+
+select * from t2 order by c1;
+ c1 |   c2   |   c3   |   c4   |   c5   |   c6   
+----+--------+--------+--------+--------+--------
+  1 |      1 |      2 |      4 |      2 |      3
+  2 | <NULL> | <NULL> | <NULL> |      2 |      2
+  3 | <NULL> | <NULL> | <NULL> | <NULL> | <NULL>
+(3 rows)
+
+truncate t1;
+truncate t2;
+insert into t1 select c1, weekday(`date`), weekday(`datetime`), weekday(`datetime4`), weekday(`timestamp`), weekday(`timestamp4`), weekday(`year`), weekday(`year4`) from t_time order by c1;
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  timestamp out of range
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+insert into t2 select c1, weekday(`char`), weekday(`varchar`), weekday(`binary`), weekday(`varbinary`), weekday(`text`) from t_char order by c1;
+WARNING:  Truncated incorrect datetime value: "\x323037372d30382d3230000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  date/time field value out of range: "30215"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "31215 12345"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  Truncated incorrect datetime value: "\x31303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  date/time field value out of range: "10000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  Truncated incorrect datetime value: "\x332e3134354036e4b883e585abe4b99d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
+CONTEXT:  SQL function "weekday" statement 1
+referenced column: weekday
+select * from t1 order by c1;
+ c1 | c2 | c3 | c4 | c5 | c6 |   c7   |   c8   
+----+----+----+----+----+----+--------+--------
+  1 |  3 |  2 |  0 |  0 |  3 | <NULL> | <NULL>
+  2 |  4 |  1 |  4 |  1 |  2 | <NULL> | <NULL>
+(2 rows)
+
+select * from t2 order by c1;
+ c1 |   c2   |   c3   |   c4   |   c5   |   c6   
+----+--------+--------+--------+--------+--------
+  1 |      1 |      2 |      4 |      2 |      3
+  2 | <NULL> | <NULL> | <NULL> |      2 |      2
+  3 | <NULL> | <NULL> | <NULL> | <NULL> | <NULL>
+(3 rows)
+
 drop table t_time;
 drop table t_char;
+drop table t1;
+drop table t2;
 reset dolphin.sql_mode;
 drop schema b_time_funcs cascade;
 NOTICE:  drop cascades to table func_test

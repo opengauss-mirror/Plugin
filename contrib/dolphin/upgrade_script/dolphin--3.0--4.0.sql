@@ -195,6 +195,22 @@ CREATE OR REPLACE FUNCTION pg_catalog.binary_timestamptz(binary) RETURNS timesta
 CREATE CAST (binary AS timestamp without time zone) WITH FUNCTION pg_catalog.binary_timestamp(binary) AS ASSIGNMENT;
 CREATE CAST (binary AS timestamp with time zone) WITH FUNCTION pg_catalog.binary_timestamptz(binary) AS ASSIGNMENT;
 
+DROP FUNCTION IF EXISTS pg_catalog.weekday (timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.weekday (timetz);
+DROP FUNCTION IF EXISTS pg_catalog.weekday (abstime);
+DROP FUNCTION IF EXISTS pg_catalog.weekday (date);
+DROP FUNCTION IF EXISTS pg_catalog.weekday (time);
+DROP FUNCTION IF EXISTS pg_catalog.weekday (timestamp(0) with time zone);
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (timestamptz) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1)::integer - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (timetz) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1)::integer - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (abstime) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1)::integer - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (date) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1)::integer - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (time) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1)::integer - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (timestamp(0) with time zone) RETURNS integer LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1)::integer - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (year) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_part(''isodow'', cast($1 as timestamp(0) with time zone))::integer - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (binary) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_part(''isodow'', cast($1 as timestamp(0) with time zone))::integer - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.date_part(''isodow'', cast($1 as timestamp(0) with time zone))::integer - 1';
+
 DROP FUNCTION IF EXISTS pg_catalog.weekofyear (timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.weekofyear (timetz);
 DROP FUNCTION IF EXISTS pg_catalog.weekofyear (abstime);

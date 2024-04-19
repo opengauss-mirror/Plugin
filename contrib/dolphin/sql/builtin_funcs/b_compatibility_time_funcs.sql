@@ -359,8 +359,49 @@ SELECT c1, quarter(`char`), quarter(`varchar`), quarter(`binary`), quarter(`varb
 -- return type: B mode => int
 SELECT c1, pg_typeof(quarter(`date`)),pg_typeof(quarter(`time`)),pg_typeof(quarter(`time4`)),pg_typeof(quarter(`datetime`)),pg_typeof(quarter(`datetime4`)),pg_typeof(quarter(`timestamp`)),pg_typeof(quarter(`timestamp4`)),pg_typeof(quarter(`year`)),pg_typeof(quarter(`year4`)) from t_time order by c1 limit 1;
 SELECT c1, pg_typeof(quarter(`char`)), pg_typeof(quarter(`varchar`)), pg_typeof(quarter(`binary`)), pg_typeof(quarter(`varbinary`)), pg_typeof(quarter(`text`)) from t_char order by c1 limit 1;
+
+-- test weekday
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+SELECT weekday(`time`), weekday(`time4`) from t_time order by c1;
+SELECT c1, weekday(`date`), weekday(`datetime`), weekday(`datetime4`), weekday(`timestamp`), weekday(`timestamp4`), weekday(`year`), weekday(`year4`) from t_time order by c1;
+SELECT c1, weekday(`char`), weekday(`varchar`), weekday(`binary`), weekday(`varbinary`), weekday(`text`) from t_char order by c1;
+
+-- test weekday insert ignore with strict_mode
+create table t1 (c1 bigint, c2 bigint, c3 bigint, c4 bigint, c5 bigint, c6 bigint, c7 bigint, c8 bigint);
+create table t2 (c1 integer, c2 integer, c3 integer, c4 integer, c5 integer, c6 integer);
+
+insert ignore into t1 select c1, weekday(`date`), weekday(`datetime`), weekday(`datetime4`), weekday(`timestamp`), weekday(`timestamp4`), weekday(`year`), weekday(`year4`) from t_time order by c1;
+insert ignore into t2 select c1, weekday(`char`), weekday(`varchar`), weekday(`binary`), weekday(`varbinary`), weekday(`text`) from t_char order by c1;
+select * from t1 order by c1;
+select * from t2 order by c1;
+
+truncate t1;
+truncate t2;
+insert into t1 select c1, weekday(`date`), weekday(`datetime`), weekday(`datetime4`), weekday(`timestamp`), weekday(`timestamp4`), weekday(`year`), weekday(`year4`) from t_time order by c1;
+insert into t2 select c1, weekday(`char`), weekday(`varchar`), weekday(`binary`), weekday(`varbinary`), weekday(`text`) from t_char order by c1;
+select * from t1 order by c1;
+select * from t2 order by c1;
+
+-- test weekday insert ignore without strict_mode
+set dolphin.sql_mode = '';
+truncate t1;
+truncate t2;
+insert ignore into t1 select c1, weekday(`date`), weekday(`datetime`), weekday(`datetime4`), weekday(`timestamp`), weekday(`timestamp4`), weekday(`year`), weekday(`year4`) from t_time order by c1;
+insert ignore into t2 select c1, weekday(`char`), weekday(`varchar`), weekday(`binary`), weekday(`varbinary`), weekday(`text`) from t_char order by c1;
+select * from t1 order by c1;
+select * from t2 order by c1;
+
+truncate t1;
+truncate t2;
+insert into t1 select c1, weekday(`date`), weekday(`datetime`), weekday(`datetime4`), weekday(`timestamp`), weekday(`timestamp4`), weekday(`year`), weekday(`year4`) from t_time order by c1;
+insert into t2 select c1, weekday(`char`), weekday(`varchar`), weekday(`binary`), weekday(`varbinary`), weekday(`text`) from t_char order by c1;
+select * from t1 order by c1;
+select * from t2 order by c1;
+
 drop table t_time;
 drop table t_char;
+drop table t1;
+drop table t2;
 
 reset dolphin.sql_mode;
 
