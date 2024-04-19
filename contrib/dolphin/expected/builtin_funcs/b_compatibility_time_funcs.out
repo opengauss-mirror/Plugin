@@ -1162,7 +1162,7 @@ WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
 CONTEXT:  referenced column: quarter
 WARNING:  Truncated incorrect datetime value: "\x332e3134354036e4b883e585abe4b99d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 CONTEXT:  referenced column: quarter
-WARNING:  invalid input syntax for type date: "3.145@6七八九"
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
 CONTEXT:  referenced column: quarter
 WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
 CONTEXT:  referenced column: quarter
@@ -1224,7 +1224,7 @@ WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
 CONTEXT:  referenced column: quarter
 WARNING:  Truncated incorrect datetime value: "\x332e3134354036e4b883e585abe4b99d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 CONTEXT:  referenced column: quarter
-WARNING:  invalid input syntax for type date: "3.145@6七八九"
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
 CONTEXT:  referenced column: quarter
 WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
 CONTEXT:  referenced column: quarter
@@ -1278,7 +1278,7 @@ WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
 CONTEXT:  referenced column: pg_typeof
 WARNING:  Truncated incorrect datetime value: "\x332e3134354036e4b883e585abe4b99d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 CONTEXT:  referenced column: pg_typeof
-WARNING:  invalid input syntax for type date: "3.145@6七八九"
+WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
 CONTEXT:  referenced column: pg_typeof
 WARNING:  invalid input syntax for type timestamp: "3.145@6七八九"
 CONTEXT:  referenced column: pg_typeof

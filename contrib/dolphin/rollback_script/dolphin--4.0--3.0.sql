@@ -165,6 +165,22 @@ CREATE OR REPLACE FUNCTION pg_catalog.quarter (date) RETURNS float8 LANGUAGE SQL
 CREATE OR REPLACE FUNCTION pg_catalog.quarter (time) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.quarter (timestamp(0) with time zone) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
 
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (timetz);
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (abstime);
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (date);
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (time);
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (timestamp(0) with time zone);
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (year);
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (binary);
+DROP FUNCTION IF EXISTS pg_catalog.weekofyear (text);
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (timestamptz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (timetz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (abstime) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (date) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (time) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
+CREATE OR REPLACE FUNCTION pg_catalog.weekofyear (timestamp(0) with time zone) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''week'', $1)';
+
 -- json
 DROP aggregate IF EXISTS pg_catalog.max(json);
 DROP aggregate IF EXISTS pg_catalog.min(json);
