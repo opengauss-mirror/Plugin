@@ -186,6 +186,22 @@ CREATE OR REPLACE FUNCTION pg_catalog.quarter (date) RETURNS float8 LANGUAGE SQL
 CREATE OR REPLACE FUNCTION pg_catalog.quarter (time) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
 CREATE OR REPLACE FUNCTION pg_catalog.quarter (timestamp(0) with time zone) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''quarter'', $1)';
 
+DROP FUNCTION IF EXISTS pg_catalog.weekday (timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.weekday (timetz);
+DROP FUNCTION IF EXISTS pg_catalog.weekday (abstime);
+DROP FUNCTION IF EXISTS pg_catalog.weekday (date);
+DROP FUNCTION IF EXISTS pg_catalog.weekday (time);
+DROP FUNCTION IF EXISTS pg_catalog.weekday (timestamp(0) with time zone);
+DROP FUNCTION IF EXISTS pg_catalog.weekday (year);
+DROP FUNCTION IF EXISTS pg_catalog.weekday (binary);
+DROP FUNCTION IF EXISTS pg_catalog.weekday (text);
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (timestamptz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1) - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (timetz) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1) - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (abstime) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1) - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (date) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1) - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (time) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1) - 1';
+CREATE OR REPLACE FUNCTION pg_catalog.weekday (timestamp(0) with time zone) RETURNS float8 LANGUAGE SQL STABLE STRICT as 'select pg_catalog.date_part(''isodow'', $1) - 1';
+
 DROP FUNCTION IF EXISTS pg_catalog.weekofyear (timestamptz);
 DROP FUNCTION IF EXISTS pg_catalog.weekofyear (timetz);
 DROP FUNCTION IF EXISTS pg_catalog.weekofyear (abstime);
