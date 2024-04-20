@@ -46,6 +46,7 @@ static Oid get_enumid_with_collation(Oid enumtypoid, Oid collation, char* enum_n
 static int compare_values_of_enum_with_collation(Oid arg1, Oid arg2, Oid collation);
 #define DEC_BASE 10
 static uint64 pg_strntoul(const char *nptr, size_t l, char **endptr, int *err);
+static Datum GetPeakEnumByLabel(PG_FUNCTION_ARGS, bool isLarger);
 #endif
 
 /* Basic I/O support */
@@ -658,18 +659,26 @@ Datum enum_gt(PG_FUNCTION_ARGS)
 
 Datum enum_smaller(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    return GetPeakEnumByLabel(fcinfo, false);
+#else
     Oid a = PG_GETARG_OID(0);
     Oid b = PG_GETARG_OID(1);
 
     PG_RETURN_OID((enum_cmp_internal(a, b, fcinfo) < 0) ? a : b);
+#endif
 }
 
 Datum enum_larger(PG_FUNCTION_ARGS)
 {
+#ifdef DOLPHIN
+    return GetPeakEnumByLabel(fcinfo, true);
+#else
     Oid a = PG_GETARG_OID(0);
     Oid b = PG_GETARG_OID(1);
 
     PG_RETURN_OID((enum_cmp_internal(a, b, fcinfo) > 0) ? a : b);
+#endif
 }
 
 Datum enum_cmp(PG_FUNCTION_ARGS)
@@ -1168,4 +1177,53 @@ noconv:
         *endptr = (char *)nptr;
     return 0L;
 }
+
+static Datum GetPeakEnumByLabel(PG_FUNCTION_ARGS, bool isLarger)
+{
+    Datum arg0 = PG_GETARG_DATUM(0);
+    Datum arg1 = PG_GETARG_DATUM(1);
+
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1)) {
+            PG_RETURN_NULL();
+        } else {
+            PG_RETURN_DATUM(arg1);
+        }
+    } else if (PG_ARGISNULL(1)) {
+        PG_RETURN_DATUM(arg0);
+    }
+
+    HeapTuple tup0 = SearchSysCache1(ENUMOID, arg0);
+    if (!HeapTupleIsValid(tup0)) {
+        ereport(ERROR,
+            (errcode(ERRCODE_DATA_EXCEPTION),
+             errmsg("invalid internal value for enum oid: %s", arg0)));
+    }
+
+    HeapTuple tup1 = SearchSysCache1(ENUMOID, arg1);
+    if (!HeapTupleIsValid(tup1)) {
+        ReleaseSysCache(tup0);
+        ereport(ERROR,
+            (errcode(ERRCODE_DATA_EXCEPTION),
+             errmsg("invalid internal value for enum oid: %s", arg1)));
+    }
+
+    Form_pg_enum form0 = (Form_pg_enum)GETSTRUCT(tup0);
+    Form_pg_enum from1 = (Form_pg_enum)GETSTRUCT(tup1);
+    char* label0 = NameStr(form0->enumlabel);
+    char* label1 = NameStr(from1->enumlabel);
+
+    int cmpFlag = varstr_cmp(label0, strlen(label0), label1, strlen(label1), PG_GET_COLLATION());
+
+    ReleaseSysCache(tup0);
+    ReleaseSysCache(tup1);
+
+    if ((isLarger && cmpFlag < 0) ||
+        (!isLarger && cmpFlag > 0)) {
+        PG_RETURN_DATUM(arg1);
+    } else {
+        PG_RETURN_DATUM(arg0);
+    }
+}
+
 #endif
