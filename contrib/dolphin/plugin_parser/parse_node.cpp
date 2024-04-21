@@ -536,6 +536,11 @@ Const* make_const(ParseState* pstate, Value* value, int location)
             if (OidIsValid(GetCollationConnection())) {
                 collid = GetCollationConnection();
             }
+#ifdef DOLPHIN
+            else {
+                collid = DEFAULT_COLLATION_OID;
+            }
+#endif
             break;
 
         case T_BitString:

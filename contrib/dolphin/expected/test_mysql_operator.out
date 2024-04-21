@@ -1942,10 +1942,10 @@ select * from hotel natural inner join price where name like 'b/%' escape '/';
 (0 rows)
 
 select * from hotel natural inner join price where name like binary 'b/%' escape '/';
- id | name | cin | cout | hotel | room | hotelname | price 
-----+------+-----+------+-------+------+-----------+-------
-(0 rows)
-
+ERROR:  operator is not unique: character ~~ bytea
+LINE 1: ... * from hotel natural inner join price where name like binar...
+                                                             ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from hotel natural inner join price where name not like 'b%' order by 1;
  id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
 ----+------------+------------+------------+------------+------+------------+-------
@@ -2122,10 +2122,10 @@ select * from hotel natural inner join price where name like 'b/%' escape '/';
 (0 rows)
 
 select * from hotel natural inner join price where name like binary 'b/%' escape '/';
- id | name | cin | cout | hotel | room | hotelname | price 
-----+------+-----+------+-------+------+-----------+-------
-(0 rows)
-
+ERROR:  operator is not unique: character ~~ bytea
+LINE 1: ... * from hotel natural inner join price where name like binar...
+                                                             ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from hotel natural inner join price where name not like 'b%' order by 1;
  id |    name    |    cin     |    cout    |   hotel    | room | hotelname  | price 
 ----+------------+------------+------------+------------+------+------------+-------
@@ -2678,10 +2678,10 @@ select
 ~(`blob`),
 ~(`mediumblob`),
 ~(`longblob`),
-~(`text`),
+--~(`text`),
 ~(`enum_t`),
-~(`set_t`),
-~(`json`)
+~(`set_t`)
+--~(`json`)
 from test_type_table;
 WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -2691,12 +2691,9 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
 WARNING:  invalid input syntax for type double precision: "1.23a"
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       
-----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------
- 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551608 | 18446744073709551614 | 18446744073689321410 | 18446744073709360565 | 18446744073709360565 | 18446723843504360565 | 18446723843504360565 | 18446723843504360565 | 18446723843504360565 | 18446744073709549592 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551610 | 18446744073709551615
+       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       |       ?column?       
+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------
+ 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551608 | 18446744073709551614 | 18446744073689321410 | 18446744073709360565 | 18446744073709360565 | 18446723843504360565 | 18446723843504360565 | 18446723843504360565 | 18446723843504360565 | 18446744073709549592 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551614 | 18446744073709551610
 (1 row)
 
 DROP TABLE test_type_table;

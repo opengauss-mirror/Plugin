@@ -56,8 +56,8 @@ insert into test_type_table values
     );
 insert into test_type_table values
     (
-        127, 255, 32767, 65535, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 3.402823, 1.79769313486231, 3.141592654,
-        1, 0xFFFFFFFFFFFFFFFF, 1,
+        127, 255, 32767, 65535, x'7FFFFFFF', x'FFFFFFFF', x'7FFFFFFFFFFFFFFF', x'FFFFFFFFFFFFFFFF', 3.402823, 1.79769313486231, 3.141592654,
+        1, x'FFFFFFFFFFFFFFFF', 1,
         '2222-02-22', '11:59:58', '11:59:58.9999', '2222-02-22 11:59:58', '2222-02-22 11:59:58.9999', '2038-01-19 03:14:07', '2038-01-19 03:14:07.9999', '2155',
         'Today is a good day.  ', 'Today is a good day.  ',
         'Today is a good day.  ', 'Today is a good day.  ',
@@ -71,7 +71,7 @@ insert into test_type_table values
     (
         -127, 0, -32768, 0, -2147483648, 0, -9223372036854775808, 0,
         -1234.567890, -1002345.78456892, -99999999999999.999999,
-        0, 0x01, 0,
+        0, x'01', 0,
         '1999-09-19', '00:00:01', '00:00:01.0001', '1999-09-19 00:00:0001', '1999-09-19 00:00:01.0001', '1970-07-07 00:00:59', '1970-07-07 00:00:59.0001', '1999',
         '', '', '', '',
         '', '', '', '',
@@ -313,8 +313,8 @@ drop table test_type_table;
 
 -- test bit type
 create table bit_test (`bit1` bit(1), `bit6` bit(6), `bit8` bit(8), `bit15` bit(15), `bit16` bit(16));
-insert into bit_test values (1, 0x33, 0xA6, 0x6E00, 0xCC00);
-insert into bit_test values (0, 0x2F, 0xF0, 0x006E, 0x00CC);
+insert into bit_test values (1, x'33', x'A6', x'6E00', x'CC00');
+insert into bit_test values (0, x'2F', x'F0', x'006E', x'00CC');
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
 select concat(`bit1`, 'openGauss'), concat(`bit6`, 'openGauss'), concat(`bit8`, 'openGauss'), concat(`bit15`, 'openGauss'), concat(`bit16`, 'openGauss') from bit_test;
 select concat_ws('-', `bit1`, 'openGauss'), concat_ws('-', `bit6`, 'openGauss'), concat_ws('-', `bit8`, 'openGauss'), concat_ws('-', `bit15`, 'openGauss'), concat_ws('-', `bit16`, 'openGauss') from bit_test;

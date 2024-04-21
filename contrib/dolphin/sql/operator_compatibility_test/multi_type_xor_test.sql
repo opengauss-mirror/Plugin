@@ -6,7 +6,7 @@ set dolphin.b_compatibility_mode to on;
 set dolphin.sql_mode to 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 drop table if exists test_multi_type_table;
 CREATE TABLE test_multi_type_table (`int1` tinyint, `uint1` tinyint unsigned, `int2` smallint, `uint2` smallint unsigned, `int4` integer, `uint4` integer unsigned, `int8` bigint, `uint8` bigint unsigned, `float4` float4, `float8` float8, `numeric` decimal(20, 6), `bit1` bit(1), `bit64` bit(64), `boolean` boolean,  `char` char(100), `varchar` varchar(100), `binary` binary(100), `varbinary` varbinary(100), `text` text);
-insert into test_multi_type_table values(0x7F, 0xFF, 0x7FFF, 0xFFFF, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0.9884282, 5.288433915413254, 43391541, b'1', b'100110100110', true, '1.23a', '1.23a', '1.23a', '1.23a', '1.23a');
+insert into test_multi_type_table values(127, 255, 32767, 65535, 2147483647, 4294967295, 9223372036854775807, 18446744073709551615, 0.9884282, 5.288433915413254, 43391541, b'1', b'100110100110', true, '1.23a', '1.23a', '1.23a', '1.23a', '1.23a');
 
 DROP TABLE IF EXISTS test_multi_type;
 CREATE TABLE test_multi_type AS SELECT
@@ -377,7 +377,7 @@ SHOW COLUMNS FROM test_multi_type;
 delete from test_multi_type;
 delete from test_multi_type_table;
 insert into test_multi_type values(null);
-insert into test_multi_type_table values(0x7F, 0xFF, 0x7FFF, 0xFFFF, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0.9884282, 5.288433915413254, 43391541, b'1', b'100110100110', true, '1.23a', '1.23a', '1.23a', '1.23a', '1.23a');
+insert into test_multi_type_table values(x'7F', x'FF', x'7FFF', x'FFFF', x'7FFFFFFF', x'FFFFFFFF', x'7FFFFFFFFFFFFFFF', x'FFFFFFFFFFFFFFFF', 0.9884282, 5.288433915413254, 43391541, b'1', b'100110100110', true, '1.23a', '1.23a', '1.23a', '1.23a', '1.23a');
 
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_int1` = test_multi_type_table.`int1` xor test_multi_type_table.`int1`;
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_uint1` = test_multi_type_table.`int1` xor test_multi_type_table.`uint1`;

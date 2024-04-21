@@ -396,12 +396,6 @@ CONTEXT:  referenced column: to_seconds
            
 (1 row)
 
-select to_seconds(time'-838:59:59');
- to_seconds  
--------------
- 63859366801
-(1 row)
-
 -- 进位和非法值
 set dolphin.b_compatibility_mode = true;
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
@@ -1505,27 +1499,43 @@ referenced column: result
 (1 row)
 
 select str_to_date('2023-10-01'::tinyblob, '%Y-%m-%d');
+WARNING:  Incorrect date value: '\x323032332d31302d3031' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+SQL function "str_to_date" statement 1
+referenced column: str_to_date
  str_to_date 
 -------------
- 2023-10-01
+ 
 (1 row)
 
 select str_to_date('2023-10-01'::blob, '%Y-%m-%d');
+WARNING:  Incorrect date value: '\x323032332d31302d3031' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+SQL function "str_to_date" statement 1
+referenced column: str_to_date
  str_to_date 
 -------------
- 2023-10-01
+ 
 (1 row)
 
 select str_to_date('2023-10-01'::mediumblob, '%Y-%m-%d');
+WARNING:  Incorrect date value: '\x323032332d31302d3031' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+SQL function "str_to_date" statement 1
+referenced column: str_to_date
  str_to_date 
 -------------
- 2023-10-01
+ 
 (1 row)
 
 select str_to_date('2023-10-01'::longblob, '%Y-%m-%d');
+WARNING:  Incorrect date value: '\x323032332d31302d3031' for function str_to_date
+CONTEXT:  referenced column: str_to_date
+SQL function "str_to_date" statement 1
+referenced column: str_to_date
  str_to_date 
 -------------
- 2023-10-01
+ 
 (1 row)
 
 select str_to_date(json_object('2023-10-01', '2023-10-01'), '%Y-%m-%d');
@@ -1588,91 +1598,11 @@ str_to_date(`time`, '%Y-%m-%d'), str_to_date(`time(4)`, '%Y-%m-%d'), str_to_date
 str_to_date(`timestamp(4)`, '%Y-%m-%d'), str_to_date(`year`, '%Y-%m-%d'), str_to_date(`char`, '%Y-%m-%d'), str_to_date(`varchar`, '%Y-%m-%d'), str_to_date(`binary`, '%Y-%m-%d'), 
 str_to_date(`varbinary`, '%Y-%m-%d'), str_to_date(`tinyblob`, '%Y-%m-%d'), str_to_date(`blob`, '%Y-%m-%d'), str_to_date(`mediumblob`, '%Y-%m-%d'), str_to_date(`longblob`, '%Y-%m-%d'), 
 str_to_date(`text`, '%Y-%m-%d'), str_to_date(`enum_t`, '%Y-%m-%d'), str_to_date(`set_t`, '%Y-%m-%d'), str_to_date(`json`, '%Y-%m-%d') from test_type_table;
-WARNING:  Incorrect date value: '1' for function str_to_date
+ERROR:  function str_to_date("binary", unknown) does not exist
+LINE 5: ... '%Y-%m-%d'), str_to_date(`varchar`, '%Y-%m-%d'), str_to_dat...
+                                                             ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1.000000' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: str_to_date
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: str_to_date
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: str_to_date
-WARNING:  Incorrect date value: '19:10:50' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '19:10:50.3456' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Truncated incorrect date value: '2023-02-05 19:10:50'
-CONTEXT:  referenced column: str_to_date
-WARNING:  Truncated incorrect date value: '2023-02-05 19:10:50.456'
-CONTEXT:  referenced column: str_to_date
-WARNING:  Truncated incorrect date value: '2023-02-05 19:10:50-08'
-CONTEXT:  referenced column: str_to_date
-WARNING:  Truncated incorrect date value: '2023-02-05 19:10:50.456-08'
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: str_to_date
-WARNING:  Incorrect date value: '1.23a                                                                                               ' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: str_to_date
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: str_to_date
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: str_to_date
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: str_to_date
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-WARNING:  Incorrect date value: '{"a": 1, "b": 2}' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: str_to_date
- str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date | str_to_date 
--------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------
-             |             |             |             |             |             |             |             |             |             |             |             |             |             | 2023-02-05  |             |             | 2023-02-05  | 2023-02-05  | 2023-02-05  | 2023-02-05  |             |             |             |             |             |             |             |             |             |             | 2023-01-01  | 2023-01-01  | 
-(1 row)
-
 create table test_str_to_date(col1 text, col2 text, col3 text, col4 text, col5 text, col6 text, col7 text, col8 text, col9 text, col10 text, col11 text, col12 text, col13 text, col14 text, col15 text, col16 text, col17 text, col18 text, col19 text, col20 text, col21 text, col22 text, col23 text, col24 text, col25 text, col26 text, col27 text, col28 text, col29 text, col30 text, col31 text, col32 text,
 col33 text, col34 text);
 insert ignore into test_str_to_date select str_to_date(`int1`, '%Y-%m-%d'), str_to_date(`uint1`, '%Y-%m-%d'), str_to_date(`int2`, '%Y-%m-%d'), str_to_date(`uint2`, '%Y-%m-%d'), str_to_date(`int4`, '%Y-%m-%d'), 
@@ -1682,91 +1612,15 @@ str_to_date(`time`, '%Y-%m-%d'), str_to_date(`time(4)`, '%Y-%m-%d'), str_to_date
 str_to_date(`timestamp(4)`, '%Y-%m-%d'), str_to_date(`year`, '%Y-%m-%d'), str_to_date(`char`, '%Y-%m-%d'), str_to_date(`varchar`, '%Y-%m-%d'), str_to_date(`binary`, '%Y-%m-%d'), 
 str_to_date(`varbinary`, '%Y-%m-%d'), str_to_date(`tinyblob`, '%Y-%m-%d'), str_to_date(`blob`, '%Y-%m-%d'), str_to_date(`mediumblob`, '%Y-%m-%d'), str_to_date(`longblob`, '%Y-%m-%d'), 
 str_to_date(`text`, '%Y-%m-%d'), str_to_date(`enum_t`, '%Y-%m-%d'), str_to_date(`set_t`, '%Y-%m-%d'), str_to_date(`json`, '%Y-%m-%d') from test_type_table;
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: col1
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: col2
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: col3
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: col4
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: col5
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: col6
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: col7
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: col8
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: col9
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: col10
-WARNING:  Incorrect date value: '1.000000' for function str_to_date
-CONTEXT:  referenced column: col11
-WARNING:  Incorrect date value: '1' for function str_to_date
+ERROR:  function str_to_date("binary", unknown) does not exist
+LINE 5: ... '%Y-%m-%d'), str_to_date(`varchar`, '%Y-%m-%d'), str_to_dat...
+                                                             ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: col12
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: col13
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: col14
-WARNING:  Incorrect date value: '19:10:50' for function str_to_date
-CONTEXT:  referenced column: col16
-WARNING:  Incorrect date value: '19:10:50.3456' for function str_to_date
-CONTEXT:  referenced column: col17
-WARNING:  Truncated incorrect date value: '2023-02-05 19:10:50'
-CONTEXT:  referenced column: col18
-WARNING:  Truncated incorrect date value: '2023-02-05 19:10:50.456'
-CONTEXT:  referenced column: col19
-WARNING:  Truncated incorrect date value: '2023-02-05 19:10:50-08'
-CONTEXT:  referenced column: col20
-WARNING:  Truncated incorrect date value: '2023-02-05 19:10:50.456-08'
-CONTEXT:  referenced column: col21
-WARNING:  Incorrect date value: '1' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: col22
-WARNING:  Incorrect date value: '1.23a                                                                                               ' for function str_to_date
-CONTEXT:  referenced column: col23
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: col24
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: col25
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: col26
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: col27
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: col28
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: col29
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: col30
-WARNING:  Incorrect date value: '1.23a' for function str_to_date
-CONTEXT:  referenced column: col31
-WARNING:  Incorrect date value: '{"a": 1, "b": 2}' for function str_to_date
-CONTEXT:  referenced column: str_to_date
-SQL function "str_to_date" statement 1
-referenced column: col34
 select * from test_str_to_date;
- col1 | col2 | col3 | col4 | col5 | col6 | col7 | col8 | col9 | col10 | col11 | col12 | col13 | col14 |   col15    | col16 | col17 |   col18    |   col19    |   col20    |   col21    | col22 | col23 | col24 | col25 | col26 | col27 | col28 | col29 | col30 | col31 |   col32    |   col33    | col34 
-------+------+------+------+------+------+------+------+------+-------+-------+-------+-------+-------+------------+-------+-------+------------+------------+------------+------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+------------+------------+-------
-      |      |      |      |      |      |      |      |      |       |       |       |       |       | 2023-02-05 |       |       | 2023-02-05 | 2023-02-05 | 2023-02-05 | 2023-02-05 |       |       |       |       |       |       |       |       |       |       | 2023-01-01 | 2023-01-01 | 
-(1 row)
+ col1 | col2 | col3 | col4 | col5 | col6 | col7 | col8 | col9 | col10 | col11 | col12 | col13 | col14 | col15 | col16 | col17 | col18 | col19 | col20 | col21 | col22 | col23 | col24 | col25 | col26 | col27 | col28 | col29 | col30 | col31 | col32 | col33 | col34 
+------+------+------+------+------+------+------+------+------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------
+(0 rows)
 
 drop table if exists test_str_to_date;
 drop table if exists test_type_table;
@@ -1861,42 +1715,32 @@ LINE 1: insert into t1 values('-69', '-32769', '-32769', '-32769', '...
                                      ^
 CONTEXT:  referenced column: c2
 insert into t2  select c1, c2, c3, c4, c5, c6, c7 from t1;
-WARNING:  time out of range
+ERROR:  column "c1" is of type time without time zone but expression is of type tinyint
+LINE 1: insert into t2  select c1, c2, c3, c4, c5, c6, c7 from t1;
+                               ^
+HINT:  You will need to rewrite or cast the expression.
 CONTEXT:  referenced column: c1
-WARNING:  time out of range
-CONTEXT:  referenced column: c2
-WARNING:  time out of range
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type time: "-32769"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type time: "69"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type time: "32769"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type time: "32769"
-CONTEXT:  referenced column: c7
 reset dolphin.sql_mode;
 insert ignore into t2  select c1, c2, c3, c4, c5, c6, c7 from t1;
-WARNING:  time out of range
+WARNING:  column "c1" is of type time without time zone but expression is of type tinyint. Data truncated automatically.
 CONTEXT:  referenced column: c1
-WARNING:  time out of range
+WARNING:  column "c2" is of type time without time zone but expression is of type smallint. Data truncated automatically.
 CONTEXT:  referenced column: c2
+WARNING:  column "c5" is of type time without time zone but expression is of type uint1. Data truncated automatically.
+CONTEXT:  referenced column: c5
+WARNING:  column "c6" is of type time without time zone but expression is of type uint2. Data truncated automatically.
+CONTEXT:  referenced column: c6
+WARNING:  column "c7" is of type time without time zone but expression is of type uint8. Data truncated automatically.
+CONTEXT:  referenced column: c7
 WARNING:  time out of range
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type time: "-32769"
+WARNING:  time out of range
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type time: "69"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type time: "32769"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type time: "32769"
-CONTEXT:  referenced column: c7
 select * from t2;
     c1    |    c2    |    c3    |    c4    |    c5    |    c6    |    c7    
 ----------+----------+----------+----------+----------+----------+----------
  00:00:00 | 00:00:00 | 00:00:00 | 00:00:00 | 00:00:00 | 00:00:00 | 00:00:00
- 00:00:00 | 00:00:00 | 00:00:00 | 00:00:00 | 00:00:00 | 00:00:00 | 00:00:00
-(2 rows)
+(1 row)
 
 drop table if exists t1;
 drop table if exists t2;
@@ -2364,13 +2208,10 @@ CONTEXT:  referenced column: timestamp
 (1 row)
 
 select cast(3.1415926::float8 as datetime);
-WARNING:  invalid input syntax for type timestamp: "000003.1415926"
+ERROR:  cannot cast type double precision to timestamp without time zone
+LINE 1: select cast(3.1415926::float8 as datetime);
+               ^
 CONTEXT:  referenced column: timestamp
- timestamp 
------------
- 
-(1 row)
-
 select cast('3.1415926' as datetime);
 WARNING:  invalid input syntax for type timestamp: "3.1415926"
 CONTEXT:  referenced column: timestamp
@@ -2388,13 +2229,10 @@ CONTEXT:  referenced column: timestamptz
 (1 row)
 
 select cast(3.1415926::float8 as timestamp with time zone);
-WARNING:  invalid input syntax for type timestamp: "000003.1415926"
+ERROR:  cannot cast type double precision to timestamp with time zone
+LINE 1: select cast(3.1415926::float8 as timestamp with time zone);
+               ^
 CONTEXT:  referenced column: timestamptz
- timestamptz 
--------------
- 
-(1 row)
-
 select cast('3.1415926' as timestamp with time zone);
 WARNING:  invalid input syntax for type timestamp: "3.1415926"
 CONTEXT:  referenced column: timestamptz

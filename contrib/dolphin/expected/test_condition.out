@@ -51,6 +51,7 @@ insert into test_bccf values(null,null,'c',null);
 insert into test_bccf values(8,null,'b','asdf');
 insert into test_bccf values(7,42.3,'b','sdf');
 ----------------Coalesce function----------------------
+set dolphin.b_compatibility_mode to on;
 select coalesce(null, null);
  coalesce 
 ----------
@@ -72,43 +73,43 @@ select coalesce('something','other');
 select coalesce(null,321);
  coalesce 
 ----------
-      321
+ 321
 (1 row)
 
 select coalesce(null, null,123,'321');
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,123::int2,321::int2);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,123::int4,321::int4);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,123::int8,321::int8);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,123::float4,321::float4);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,null,123::float8,321::float8);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,null,''::text,'hello!'::text);
@@ -120,7 +121,7 @@ select coalesce(null, null,null,''::text,'hello!'::text);
 select coalesce(null, null,null,'100.001'::numeric,134);
  coalesce 
 ----------
-      100
+ 100
 (1 row)
 
 select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
@@ -156,43 +157,43 @@ select coalesce('something','other');
 select coalesce(null,321);
  coalesce 
 ----------
-      321
+ 321
 (1 row)
 
 select coalesce(123,'321');
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(123::int2,null, null,321::int2);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(123::int4,null, null,321::int4);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(123::int8,null, null,321::int8);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(123::float4,null, null,321::float4);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(123::float8,null, null,321::float8);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
@@ -210,13 +211,13 @@ select coalesce('2001-01-01 01:01:01.3654'::timestamp,null, null,'2012-08-02 15:
 SELECT coalesce(null,1, 'k');
  coalesce 
 ----------
-        1
+ 1
 (1 row)
 
 SELECT coalesce(null,1, '6');
  coalesce 
 ----------
-        1
+ 1
 (1 row)
 
 SELECT coalesce(null,'j', '');
@@ -246,107 +247,107 @@ SELECT coalesce(null, 'k');
 SELECT coalesce(null,t1, 12) from test_bccf;
  coalesce 
 ----------
-        1
-       12
-        1
-        3
-        4
-       12
-        5
-        6
-        7
-       12
-        1
-        1
-        1
-       12
-       11
-       10
-       11
-       12
-       13
-       12
-        9
-       12
-        8
-        7
-      123
-       12
-       51
-       73
-       84
-       12
-        5
-        6
-        7
-       12
-        1
-        2
-        1
-       12
-       13
-       10
-       11
-       12
-       13
-       12
-        9
-       12
-        8
-        7
+ 1
+ 12
+ 1
+ 3
+ 4
+ 12
+ 5
+ 6
+ 7
+ 12
+ 1
+ 1
+ 1
+ 12
+ 11
+ 10
+ 11
+ 12
+ 13
+ 12
+ 9
+ 12
+ 8
+ 7
+ 123
+ 12
+ 51
+ 73
+ 84
+ 12
+ 5
+ 6
+ 7
+ 12
+ 1
+ 2
+ 1
+ 12
+ 13
+ 10
+ 11
+ 12
+ 13
+ 12
+ 9
+ 12
+ 8
+ 7
 (48 rows)
 
 SELECT coalesce(null,t2, 213.4) from test_bccf;
  coalesce 
 ----------
-        3
-    213.4
-    213.4
-        2
-      6.1
-    213.4
-    213.4
-        6
-        9
-    213.4
-    213.4
-        4
-      7.1
-    213.4
-    213.4
-        6
-     14.6
-    213.4
-    213.4
-        2
-      2.2
-    213.4
-    213.4
-      2.3
-        3
-    213.4
-    213.4
-       72
-     96.1
-    213.4
-    213.4
-      6.7
-    213.4
-    213.4
-    213.4
-        4
-      7.1
-    213.4
-    213.4
-      6.7
-     24.6
-    213.4
-    213.4
-      2.7
-     12.2
-    213.4
-    213.4
-     42.3
+ 3
+ 213.4
+ 213.4
+ 2
+ 6.1
+ 213.4
+ 213.4
+ 6
+ 9
+ 213.4
+ 213.4
+ 4
+ 7.1
+ 213.4
+ 213.4
+ 6
+ 14.6
+ 213.4
+ 213.4
+ 2
+ 2.2
+ 213.4
+ 213.4
+ 2.3
+ 3
+ 213.4
+ 213.4
+ 72
+ 96.1
+ 213.4
+ 213.4
+ 6.7
+ 213.4
+ 213.4
+ 213.4
+ 4
+ 7.1
+ 213.4
+ 213.4
+ 6.7
+ 24.6
+ 213.4
+ 213.4
+ 2.7
+ 12.2
+ 213.4
+ 213.4
+ 42.3
 (48 rows)
 
 SELECT coalesce(null,t3, 'c') from test_bccf;
@@ -458,111 +459,548 @@ SELECT coalesce(null,t4, 'hello') from test_bccf;
 SELECT coalesce(null,t1,t2) from test_bccf;
  coalesce 
 ----------
-        1
-         
-        1
-        3
-        4
-         
-        5
-        6
-        7
-         
-        1
-        1
-        1
-         
-       11
-       10
-       11
-         
-       13
-       12
-        9
-         
-        8
-        7
-      123
-         
-       51
-       73
-       84
-         
-        5
-        6
-        7
-         
-        1
-        2
-        1
-         
-       13
-       10
-       11
-         
-       13
-       12
-        9
-         
-        8
-        7
+ 1
+ 
+ 1
+ 3
+ 4
+ 
+ 5
+ 6
+ 7
+ 
+ 1
+ 1
+ 1
+ 
+ 11
+ 10
+ 11
+ 
+ 13
+ 12
+ 9
+ 
+ 8
+ 7
+ 123
+ 
+ 51
+ 73
+ 84
+ 
+ 5
+ 6
+ 7
+ 
+ 1
+ 2
+ 1
+ 
+ 13
+ 10
+ 11
+ 
+ 13
+ 12
+ 9
+ 
+ 8
+ 7
 (48 rows)
 
 SELECT coalesce(null,t2,t1) from test_bccf;
  coalesce 
 ----------
-        3
-         
-        1
-        2
-      6.1
-         
-        5
-        6
-        9
-         
-        1
-        4
-      7.1
-         
-       11
-        6
-     14.6
-         
-       13
-        2
-      2.2
-         
-        8
-      2.3
-        3
-         
-       51
-       72
-     96.1
-         
-        5
-      6.7
-        7
-         
-        1
-        4
-      7.1
-         
-       13
-      6.7
-     24.6
-         
-       13
-      2.7
-     12.2
-         
-        8
-     42.3
+ 3
+ 
+ 1
+ 2
+ 6.1
+ 
+ 5
+ 6
+ 9
+ 
+ 1
+ 4
+ 7.1
+ 
+ 11
+ 6
+ 14.6
+ 
+ 13
+ 2
+ 2.2
+ 
+ 8
+ 2.3
+ 3
+ 
+ 51
+ 72
+ 96.1
+ 
+ 5
+ 6.7
+ 7
+ 
+ 1
+ 4
+ 7.1
+ 
+ 13
+ 6.7
+ 24.6
+ 
+ 13
+ 2.7
+ 12.2
+ 
+ 8
+ 42.3
+(48 rows)
+
+select pg_typeof(coalesce(null, null));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(null, 'other'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce('something','other'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(null,321));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(null, null,123,'321'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(null, null,123::int2,321::int2));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(null, null,123::int4,321::int4));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(null, null,123::int8,321::int8));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(null, null,123::float4,321::float4));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(null, null,null,123::float8,321::float8));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(null, null,null,''::text,'hello!'::text));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(null, null,null,'100.001'::numeric,134));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(null, null,null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date));
+ pg_typeof 
+-----------
+ date
+(1 row)
+
+select pg_typeof(coalesce(null, null,null,'2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp));
+        pg_typeof         
+--------------------------
+ timestamp with time zone
+(1 row)
+
+SELECT pg_typeof(coalesce(null,1, 'k'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+SELECT pg_typeof(coalesce(null,1, '6'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+SELECT pg_typeof(coalesce(null,'j', ''));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+SELECT pg_typeof(coalesce(null,'j', null));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+SELECT pg_typeof(coalesce(null,'', 'k'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+SELECT pg_typeof(coalesce(null, 'k'));
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+SELECT pg_typeof(coalesce(null,t1, 12)) from test_bccf;
+ pg_typeof 
+-----------
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+(48 rows)
+
+SELECT pg_typeof(coalesce(null,t2, 213.4)) from test_bccf;
+ pg_typeof 
+-----------
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+(48 rows)
+
+SELECT pg_typeof(coalesce(null,t3, 'c')) from test_bccf;
+ pg_typeof 
+-----------
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+(48 rows)
+
+SELECT pg_typeof(coalesce(null,t4, 'hello')) from test_bccf;
+ pg_typeof 
+-----------
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+(48 rows)
+
+SELECT pg_typeof(coalesce(null,t1,t2)) from test_bccf;
+ pg_typeof 
+-----------
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+(48 rows)
+
+SELECT pg_typeof(coalesce(null,t2,t1)) from test_bccf;
+ pg_typeof 
+-----------
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
+ text
 (48 rows)
 
 ----------------IfNULL function------------------------
-set dolphin.b_compatibility_mode to on;
 select ifnull(null, null);
  ifnull 
 --------
@@ -2875,43 +3313,43 @@ select coalesce('something','other');
 select coalesce(null,321);
  coalesce 
 ----------
-      321
+ 321
 (1 row)
 
 select coalesce(null, null,123,'321');
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,123::int2,321::int2);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,123::int4,321::int4);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,123::int8,321::int8);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,123::float4,321::float4);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,null,123::float8,321::float8);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,null,''::text,'hello!'::text);
@@ -2923,7 +3361,7 @@ select coalesce(null, null,null,''::text,'hello!'::text);
 select coalesce(null, null,null,'100.001'::numeric,134);
  coalesce 
 ----------
-      100
+ 100
 (1 row)
 
 select coalesce(null, null,null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
@@ -2959,43 +3397,43 @@ select coalesce('something','other');
 select coalesce(null,321);
  coalesce 
 ----------
-      321
+ 321
 (1 row)
 
 select coalesce(123,'321');
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(123::int2,null, null,321::int2);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(123::int4,null, null,321::int4);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(123::int8,null, null,321::int8);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(123::float4,null, null,321::float4);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(123::float8,null, null,321::float8);
  coalesce 
 ----------
-      123
+ 123
 (1 row)
 
 select coalesce(null, null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date);
@@ -3013,13 +3451,13 @@ select coalesce('2001-01-01 01:01:01.3654'::timestamp,null, null,'2012-08-02 15:
 SELECT coalesce(null,1, 'k');
  coalesce 
 ----------
-        1
+ 1
 (1 row)
 
 SELECT coalesce(null,1, '6');
  coalesce 
 ----------
-        1
+ 1
 (1 row)
 
 SELECT coalesce(null,'j', '');
@@ -3049,107 +3487,107 @@ SELECT coalesce(null, 'k');
 SELECT coalesce(null,t1, 12) from test_bccf;
  coalesce 
 ----------
-        1
-       12
-        1
-        3
-        4
-       12
-        5
-        6
-        7
-       12
-        1
-        1
-        1
-       12
-       11
-       10
-       11
-       12
-       13
-       12
-        9
-       12
-        8
-        7
-      123
-       12
-       51
-       73
-       84
-       12
-        5
-        6
-        7
-       12
-        1
-        2
-        1
-       12
-       13
-       10
-       11
-       12
-       13
-       12
-        9
-       12
-        8
-        7
+ 1
+ 12
+ 1
+ 3
+ 4
+ 12
+ 5
+ 6
+ 7
+ 12
+ 1
+ 1
+ 1
+ 12
+ 11
+ 10
+ 11
+ 12
+ 13
+ 12
+ 9
+ 12
+ 8
+ 7
+ 123
+ 12
+ 51
+ 73
+ 84
+ 12
+ 5
+ 6
+ 7
+ 12
+ 1
+ 2
+ 1
+ 12
+ 13
+ 10
+ 11
+ 12
+ 13
+ 12
+ 9
+ 12
+ 8
+ 7
 (48 rows)
 
 SELECT coalesce(null,t2, 213.4) from test_bccf;
  coalesce 
 ----------
-        3
-    213.4
-    213.4
-        2
-      6.1
-    213.4
-    213.4
-        6
-        9
-    213.4
-    213.4
-        4
-      7.1
-    213.4
-    213.4
-        6
-     14.6
-    213.4
-    213.4
-        2
-      2.2
-    213.4
-    213.4
-      2.3
-        3
-    213.4
-    213.4
-       72
-     96.1
-    213.4
-    213.4
-      6.7
-    213.4
-    213.4
-    213.4
-        4
-      7.1
-    213.4
-    213.4
-      6.7
-     24.6
-    213.4
-    213.4
-      2.7
-     12.2
-    213.4
-    213.4
-     42.3
+ 3
+ 213.4
+ 213.4
+ 2
+ 6.1
+ 213.4
+ 213.4
+ 6
+ 9
+ 213.4
+ 213.4
+ 4
+ 7.1
+ 213.4
+ 213.4
+ 6
+ 14.6
+ 213.4
+ 213.4
+ 2
+ 2.2
+ 213.4
+ 213.4
+ 2.3
+ 3
+ 213.4
+ 213.4
+ 72
+ 96.1
+ 213.4
+ 213.4
+ 6.7
+ 213.4
+ 213.4
+ 213.4
+ 4
+ 7.1
+ 213.4
+ 213.4
+ 6.7
+ 24.6
+ 213.4
+ 213.4
+ 2.7
+ 12.2
+ 213.4
+ 213.4
+ 42.3
 (48 rows)
 
 SELECT coalesce(null,t3, 'c') from test_bccf;
@@ -3261,107 +3699,107 @@ SELECT coalesce(null,t4, 'hello') from test_bccf;
 SELECT coalesce(null,t1,t2) from test_bccf;
  coalesce 
 ----------
-        1
-         
-        1
-        3
-        4
-         
-        5
-        6
-        7
-         
-        1
-        1
-        1
-         
-       11
-       10
-       11
-         
-       13
-       12
-        9
-         
-        8
-        7
-      123
-         
-       51
-       73
-       84
-         
-        5
-        6
-        7
-         
-        1
-        2
-        1
-         
-       13
-       10
-       11
-         
-       13
-       12
-        9
-         
-        8
-        7
+ 1
+ 
+ 1
+ 3
+ 4
+ 
+ 5
+ 6
+ 7
+ 
+ 1
+ 1
+ 1
+ 
+ 11
+ 10
+ 11
+ 
+ 13
+ 12
+ 9
+ 
+ 8
+ 7
+ 123
+ 
+ 51
+ 73
+ 84
+ 
+ 5
+ 6
+ 7
+ 
+ 1
+ 2
+ 1
+ 
+ 13
+ 10
+ 11
+ 
+ 13
+ 12
+ 9
+ 
+ 8
+ 7
 (48 rows)
 
 SELECT coalesce(null,t2,t1) from test_bccf;
  coalesce 
 ----------
-        3
-         
-        1
-        2
-      6.1
-         
-        5
-        6
-        9
-         
-        1
-        4
-      7.1
-         
-       11
-        6
-     14.6
-         
-       13
-        2
-      2.2
-         
-        8
-      2.3
-        3
-         
-       51
-       72
-     96.1
-         
-        5
-      6.7
-        7
-         
-        1
-        4
-      7.1
-         
-       13
-      6.7
-     24.6
-         
-       13
-      2.7
-     12.2
-         
-        8
-     42.3
+ 3
+ 
+ 1
+ 2
+ 6.1
+ 
+ 5
+ 6
+ 9
+ 
+ 1
+ 4
+ 7.1
+ 
+ 11
+ 6
+ 14.6
+ 
+ 13
+ 2
+ 2.2
+ 
+ 8
+ 2.3
+ 3
+ 
+ 51
+ 72
+ 96.1
+ 
+ 5
+ 6.7
+ 7
+ 
+ 1
+ 4
+ 7.1
+ 
+ 13
+ 6.7
+ 24.6
+ 
+ 13
+ 2.7
+ 12.2
+ 
+ 8
+ 42.3
 (48 rows)
 
 ----------------IfNULL function------------------------
@@ -5089,6 +5527,7 @@ select interval(t2, t1) from test_bccf;
 
 drop table test_bccf;
 --Type Conversion Test--
+set dolphin.b_compatibility_mode to on;
 drop table if exists typeset;
 NOTICE:  table "typeset" does not exist, skipping
 create table typeset (
@@ -5108,18 +5547,16 @@ create table typeset (
 	blb   BLOB not null,
 	txt   TEXT not null,
 	bin   binary,
-	vbin  varbinary(50)
+	vbin  varbinary(50),
+	bit   bit(64),
+	cset   set('123','124','125')
 );
-insert into typeset (
-tyint,smint,anint,bgint,dcmal,nmric,flt,
-bt,dt,tmstp,tm,
-ch,vch,blb,
-txt,bin,vbin
-) values (
+NOTICE:  CREATE TABLE will create implicit set "typeset_cset_set" for column "typeset.cset"
+insert into typeset values (
 127, 127, 127, 127, 127.234, 127.32, 127.213,
 b'01111111', '2001-04-19','2001-04-19', '22:23:44',
 '2001-04-19 22:23:44', '2001-04-19 22:23:44', '1233454212',
-'2001-04-19 22:23:44', '1', '2001-04-19 22:23:44'
+'2001-04-19 22:23:44', '1', '2001-04-19 22:23:44',b'111111111','124'
 );
 select coalesce(tyint, smint) from typeset;
  coalesce 
@@ -5158,45 +5595,53 @@ select coalesce(tyint, flt) from typeset;
 (1 row)
 
 select coalesce(tyint, bt) from typeset;
-ERROR:  COALESCE types tinyint and bit cannot be matched
-LINE 1: select coalesce(tyint, bt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+      127
+(1 row)
+
 select coalesce(tyint, dt) from typeset;
-ERROR:  COALESCE types tinyint and date cannot be matched
-LINE 1: select coalesce(tyint, dt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(tyint, tmstp) from typeset;
-ERROR:  COALESCE types tinyint and timestamp with time zone cannot be matched
-LINE 1: select coalesce(tyint, tmstp) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(tyint, tm) from typeset;
-ERROR:  COALESCE types tinyint and time without time zone cannot be matched
-LINE 1: select coalesce(tyint, tm) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(tyint, ch) from typeset;
-ERROR:  COALESCE types tinyint and character cannot be matched
-LINE 1: select coalesce(tyint, ch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(tyint, vch) from typeset;
-ERROR:  COALESCE types tinyint and character varying cannot be matched
-LINE 1: select coalesce(tyint, vch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(tyint, blb) from typeset;
-ERROR:  COALESCE types tinyint and blob cannot be matched
-LINE 1: select coalesce(tyint, blb) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ \x313237
+(1 row)
+
 select coalesce(tyint, txt) from typeset;
-ERROR:  COALESCE types tinyint and text cannot be matched
-LINE 1: select coalesce(tyint, txt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(smint, anint) from typeset;
  coalesce 
 ----------
@@ -5228,45 +5673,53 @@ select coalesce(smint, flt) from typeset;
 (1 row)
 
 select coalesce(smint, bt) from typeset;
-ERROR:  COALESCE types smallint and bit cannot be matched
-LINE 1: select coalesce(smint, bt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+      127
+(1 row)
+
 select coalesce(smint, dt) from typeset;
-ERROR:  COALESCE types smallint and date cannot be matched
-LINE 1: select coalesce(smint, dt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(smint, tmstp) from typeset;
-ERROR:  COALESCE types smallint and timestamp with time zone cannot be matched
-LINE 1: select coalesce(smint, tmstp) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(smint, tm) from typeset;
-ERROR:  COALESCE types smallint and time without time zone cannot be matched
-LINE 1: select coalesce(smint, tm) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(smint, ch) from typeset;
-ERROR:  COALESCE types smallint and character cannot be matched
-LINE 1: select coalesce(smint, ch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(smint, vch) from typeset;
-ERROR:  COALESCE types smallint and character varying cannot be matched
-LINE 1: select coalesce(smint, vch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(smint, blb) from typeset;
-ERROR:  COALESCE types smallint and blob cannot be matched
-LINE 1: select coalesce(smint, blb) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ \x313237
+(1 row)
+
 select coalesce(smint, txt) from typeset;
-ERROR:  COALESCE types smallint and text cannot be matched
-LINE 1: select coalesce(smint, txt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(anint, bgint) from typeset;
  coalesce 
 ----------
@@ -5292,45 +5745,53 @@ select coalesce(anint, flt) from typeset;
 (1 row)
 
 select coalesce(anint, bt) from typeset;
-ERROR:  COALESCE types integer and bit cannot be matched
-LINE 1: select coalesce(anint, bt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+      127
+(1 row)
+
 select coalesce(anint, dt) from typeset;
-ERROR:  COALESCE types integer and date cannot be matched
-LINE 1: select coalesce(anint, dt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(anint, tmstp) from typeset;
-ERROR:  COALESCE types integer and timestamp with time zone cannot be matched
-LINE 1: select coalesce(anint, tmstp) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(anint, tm) from typeset;
-ERROR:  COALESCE types integer and time without time zone cannot be matched
-LINE 1: select coalesce(anint, tm) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(anint, ch) from typeset;
-ERROR:  COALESCE types integer and character cannot be matched
-LINE 1: select coalesce(anint, ch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(anint, vch) from typeset;
-ERROR:  COALESCE types integer and character varying cannot be matched
-LINE 1: select coalesce(anint, vch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(anint, blb) from typeset;
-ERROR:  COALESCE types integer and blob cannot be matched
-LINE 1: select coalesce(anint, blb) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ \x313237
+(1 row)
+
 select coalesce(anint, txt) from typeset;
-ERROR:  COALESCE types integer and text cannot be matched
-LINE 1: select coalesce(anint, txt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(bgint, dcmal) from typeset;
  coalesce 
 ----------
@@ -5350,45 +5811,53 @@ select coalesce(bgint, flt) from typeset;
 (1 row)
 
 select coalesce(bgint, bt) from typeset;
-ERROR:  COALESCE types bigint and bit cannot be matched
-LINE 1: select coalesce(bgint, bt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+      127
+(1 row)
+
 select coalesce(bgint, dt) from typeset;
-ERROR:  COALESCE types bigint and date cannot be matched
-LINE 1: select coalesce(bgint, dt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(bgint, tmstp) from typeset;
-ERROR:  COALESCE types bigint and timestamp with time zone cannot be matched
-LINE 1: select coalesce(bgint, tmstp) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(bgint, tm) from typeset;
-ERROR:  COALESCE types bigint and time without time zone cannot be matched
-LINE 1: select coalesce(bgint, tm) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(bgint, ch) from typeset;
-ERROR:  COALESCE types bigint and character cannot be matched
-LINE 1: select coalesce(bgint, ch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(bgint, vch) from typeset;
-ERROR:  COALESCE types bigint and character varying cannot be matched
-LINE 1: select coalesce(bgint, vch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(bgint, blb) from typeset;
-ERROR:  COALESCE types bigint and blob cannot be matched
-LINE 1: select coalesce(bgint, blb) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ \x313237
+(1 row)
+
 select coalesce(bgint, txt) from typeset;
-ERROR:  COALESCE types bigint and text cannot be matched
-LINE 1: select coalesce(bgint, txt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(dcmal, nmric) from typeset;
  coalesce 
 ----------
@@ -5402,45 +5871,53 @@ select coalesce(dcmal, flt) from typeset;
 (1 row)
 
 select coalesce(dcmal, bt) from typeset;
-ERROR:  COALESCE types number and bit cannot be matched
-LINE 1: select coalesce(dcmal, bt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+      127
+(1 row)
+
 select coalesce(dcmal, dt) from typeset;
-ERROR:  COALESCE types number and date cannot be matched
-LINE 1: select coalesce(dcmal, dt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(dcmal, tmstp) from typeset;
-ERROR:  COALESCE types number and timestamp with time zone cannot be matched
-LINE 1: select coalesce(dcmal, tmstp) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(dcmal, tm) from typeset;
-ERROR:  COALESCE types number and time without time zone cannot be matched
-LINE 1: select coalesce(dcmal, tm) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(dcmal, ch) from typeset;
-ERROR:  COALESCE types number and character cannot be matched
-LINE 1: select coalesce(dcmal, ch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(dcmal, vch) from typeset;
-ERROR:  COALESCE types number and character varying cannot be matched
-LINE 1: select coalesce(dcmal, vch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(dcmal, blb) from typeset;
-ERROR:  COALESCE types number and blob cannot be matched
-LINE 1: select coalesce(dcmal, blb) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ \x313237
+(1 row)
+
 select coalesce(dcmal, txt) from typeset;
-ERROR:  COALESCE types number and text cannot be matched
-LINE 1: select coalesce(dcmal, txt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(nmric, flt) from typeset;
  coalesce 
 ----------
@@ -5448,196 +5925,231 @@ select coalesce(nmric, flt) from typeset;
 (1 row)
 
 select coalesce(nmric, bt) from typeset;
-ERROR:  COALESCE types number and bit cannot be matched
-LINE 1: select coalesce(nmric, bt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+      127
+(1 row)
+
 select coalesce(nmric, dt) from typeset;
-ERROR:  COALESCE types number and date cannot be matched
-LINE 1: select coalesce(nmric, dt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(nmric, tmstp) from typeset;
-ERROR:  COALESCE types number and timestamp with time zone cannot be matched
-LINE 1: select coalesce(nmric, tmstp) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(nmric, tm) from typeset;
-ERROR:  COALESCE types number and time without time zone cannot be matched
-LINE 1: select coalesce(nmric, tm) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(nmric, ch) from typeset;
-ERROR:  COALESCE types number and character cannot be matched
-LINE 1: select coalesce(nmric, ch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(nmric, vch) from typeset;
-ERROR:  COALESCE types number and character varying cannot be matched
-LINE 1: select coalesce(nmric, vch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 127
+(1 row)
+
 select coalesce(nmric, blb) from typeset;
-ERROR:  COALESCE types number and blob cannot be matched
-LINE 1: select coalesce(nmric, blb) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ \x313237
+(1 row)
+
 select coalesce(nmric, txt) from typeset;
-ERROR:  COALESCE types number and text cannot be matched
-LINE 1: select coalesce(nmric, txt) from typeset;
+ coalesce 
+----------
+ 127
+(1 row)
+
+select coalesce(flt, bt) from typeset;
+     coalesce      
+-------------------
+ 127.2129974365234
+(1 row)
+
+select coalesce(flt, dt) from typeset;
+ coalesce 
+----------
+ 127.213
+(1 row)
+
+select coalesce(flt, tmstp) from typeset;
+ coalesce 
+----------
+ 127.213
+(1 row)
+
+select coalesce(flt, tm) from typeset;
+ coalesce 
+----------
+ 127.213
+(1 row)
+
+select coalesce(flt, ch) from typeset;
+ coalesce 
+----------
+ 127.213
+(1 row)
+
+select coalesce(flt, vch) from typeset;
+ coalesce 
+----------
+ 127.213
+(1 row)
+
+select coalesce(flt, blb) from typeset;
+     coalesce     
+------------------
+ \x3132372e323133
+(1 row)
+
+select coalesce(flt, txt) from typeset;
+ coalesce 
+----------
+ 127.213
+(1 row)
+
+select coalesce(bt, dt) from typeset;
+      coalesce      
+--------------------
+ \x3031313131313131
+(1 row)
+
+select coalesce(bt, tmstp) from typeset;
+      coalesce      
+--------------------
+ \x3031313131313131
+(1 row)
+
+select coalesce(bt, tm) from typeset;
+      coalesce      
+--------------------
+ \x3031313131313131
+(1 row)
+
+select coalesce(bt, ch) from typeset;
+      coalesce      
+--------------------
+ \x3031313131313131
+(1 row)
+
+select coalesce(bt, vch) from typeset;
+      coalesce      
+--------------------
+ \x3031313131313131
+(1 row)
+
+select coalesce(bt, blb) from typeset;
+      coalesce      
+--------------------
+ \x3031313131313131
+(1 row)
+
+select coalesce(bt, txt) from typeset;
+      coalesce      
+--------------------
+ \x3031313131313131
+(1 row)
+
+select coalesce(dt, tmstp) from typeset;
+      coalesce       
+---------------------
+ 2001-04-19 00:00:00
+(1 row)
+
+select coalesce(dt, tm) from typeset;
+ERROR:  COALESCE could not convert type time without time zone to timestamp without time zone
+LINE 1: select coalesce(dt, tm) from typeset;
+                            ^
+CONTEXT:  referenced column: coalesce
+select coalesce(dt, ch) from typeset;
+  coalesce  
+------------
+ 2001-04-19
+(1 row)
+
+select coalesce(dt, vch) from typeset;
+  coalesce  
+------------
+ 2001-04-19
+(1 row)
+
+select coalesce(dt, blb) from typeset;
+        coalesce        
+------------------------
+ \x323030312d30342d3139
+(1 row)
+
+select coalesce(dt, txt) from typeset;
+  coalesce  
+------------
+ 2001-04-19
+(1 row)
+
+select coalesce(tmstp, tm) from typeset;
+ERROR:  COALESCE could not convert type time without time zone to timestamp without time zone
+LINE 1: select coalesce(tmstp, tm) from typeset;
                                ^
 CONTEXT:  referenced column: coalesce
-select coalesce(flt, bt) from typeset;
-ERROR:  COALESCE types real and bit cannot be matched
-LINE 1: select coalesce(flt, bt) from typeset;
-                             ^
-CONTEXT:  referenced column: coalesce
-select coalesce(flt, dt) from typeset;
-ERROR:  COALESCE types real and date cannot be matched
-LINE 1: select coalesce(flt, dt) from typeset;
-                             ^
-CONTEXT:  referenced column: coalesce
-select coalesce(flt, tmstp) from typeset;
-ERROR:  COALESCE types real and timestamp with time zone cannot be matched
-LINE 1: select coalesce(flt, tmstp) from typeset;
-                             ^
-CONTEXT:  referenced column: coalesce
-select coalesce(flt, tm) from typeset;
-ERROR:  COALESCE types real and time without time zone cannot be matched
-LINE 1: select coalesce(flt, tm) from typeset;
-                             ^
-CONTEXT:  referenced column: coalesce
-select coalesce(flt, ch) from typeset;
-ERROR:  COALESCE types real and character cannot be matched
-LINE 1: select coalesce(flt, ch) from typeset;
-                             ^
-CONTEXT:  referenced column: coalesce
-select coalesce(flt, vch) from typeset;
-ERROR:  COALESCE types real and character varying cannot be matched
-LINE 1: select coalesce(flt, vch) from typeset;
-                             ^
-CONTEXT:  referenced column: coalesce
-select coalesce(flt, blb) from typeset;
-ERROR:  COALESCE types real and blob cannot be matched
-LINE 1: select coalesce(flt, blb) from typeset;
-                             ^
-CONTEXT:  referenced column: coalesce
-select coalesce(flt, txt) from typeset;
-ERROR:  COALESCE types real and text cannot be matched
-LINE 1: select coalesce(flt, txt) from typeset;
-                             ^
-CONTEXT:  referenced column: coalesce
-select coalesce(bt, dt) from typeset;
-ERROR:  COALESCE types bit and date cannot be matched
-LINE 1: select coalesce(bt, dt) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
-select coalesce(bt, tmstp) from typeset;
-ERROR:  COALESCE types bit and timestamp with time zone cannot be matched
-LINE 1: select coalesce(bt, tmstp) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
-select coalesce(bt, tm) from typeset;
-ERROR:  COALESCE types bit and time without time zone cannot be matched
-LINE 1: select coalesce(bt, tm) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
-select coalesce(bt, ch) from typeset;
-ERROR:  COALESCE types bit and character cannot be matched
-LINE 1: select coalesce(bt, ch) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
-select coalesce(bt, vch) from typeset;
-ERROR:  COALESCE types bit and character varying cannot be matched
-LINE 1: select coalesce(bt, vch) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
-select coalesce(bt, blb) from typeset;
-ERROR:  COALESCE types bit and blob cannot be matched
-LINE 1: select coalesce(bt, blb) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
-select coalesce(bt, txt) from typeset;
-ERROR:  COALESCE types bit and text cannot be matched
-LINE 1: select coalesce(bt, txt) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
-select coalesce(dt, tmstp) from typeset;
+select coalesce(tmstp, ch) from typeset;
         coalesce        
 ------------------------
  2001-04-19 00:00:00-07
 (1 row)
 
-select coalesce(dt, tm) from typeset;
-ERROR:  COALESCE could not convert type time without time zone to date
-LINE 1: select coalesce(dt, tm) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
-select coalesce(dt, ch) from typeset;
-ERROR:  COALESCE types date and character cannot be matched
-LINE 1: select coalesce(dt, ch) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
-select coalesce(dt, vch) from typeset;
-ERROR:  COALESCE types date and character varying cannot be matched
-LINE 1: select coalesce(dt, vch) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
-select coalesce(dt, blb) from typeset;
-ERROR:  COALESCE types date and blob cannot be matched
-LINE 1: select coalesce(dt, blb) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
-select coalesce(dt, txt) from typeset;
-ERROR:  COALESCE types date and text cannot be matched
-LINE 1: select coalesce(dt, txt) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
-select coalesce(tmstp, tm) from typeset;
-ERROR:  COALESCE could not convert type time without time zone to timestamp with time zone
-LINE 1: select coalesce(tmstp, tm) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
-select coalesce(tmstp, ch) from typeset;
-ERROR:  COALESCE types timestamp with time zone and character cannot be matched
-LINE 1: select coalesce(tmstp, ch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
 select coalesce(tmstp, vch) from typeset;
-ERROR:  COALESCE types timestamp with time zone and character varying cannot be matched
-LINE 1: select coalesce(tmstp, vch) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+        coalesce        
+------------------------
+ 2001-04-19 00:00:00-07
+(1 row)
+
 select coalesce(tmstp, blb) from typeset;
-ERROR:  COALESCE types timestamp with time zone and blob cannot be matched
-LINE 1: select coalesce(tmstp, blb) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+                    coalesce                    
+------------------------------------------------
+ \x323030312d30342d31392030303a30303a30302d3037
+(1 row)
+
 select coalesce(tmstp, txt) from typeset;
-ERROR:  COALESCE types timestamp with time zone and text cannot be matched
-LINE 1: select coalesce(tmstp, txt) from typeset;
-                               ^
-CONTEXT:  referenced column: coalesce
+        coalesce        
+------------------------
+ 2001-04-19 00:00:00-07
+(1 row)
+
 select coalesce(tm, ch) from typeset;
-ERROR:  COALESCE types time without time zone and character cannot be matched
-LINE 1: select coalesce(tm, ch) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 22:23:44
+(1 row)
+
 select coalesce(tm, vch) from typeset;
-ERROR:  COALESCE types time without time zone and character varying cannot be matched
-LINE 1: select coalesce(tm, vch) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 22:23:44
+(1 row)
+
 select coalesce(tm, blb) from typeset;
-ERROR:  COALESCE types time without time zone and blob cannot be matched
-LINE 1: select coalesce(tm, blb) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
+      coalesce      
+--------------------
+ \x32323a32333a3434
+(1 row)
+
 select coalesce(tm, txt) from typeset;
-ERROR:  COALESCE types time without time zone and text cannot be matched
-LINE 1: select coalesce(tm, txt) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
+ coalesce 
+----------
+ 22:23:44
+(1 row)
+
 select coalesce(ch, vch) from typeset;
             coalesce            
 --------------------------------
@@ -5645,10 +6157,11 @@ select coalesce(ch, vch) from typeset;
 (1 row)
 
 select coalesce(ch, blb) from typeset;
-ERROR:  COALESCE types character and blob cannot be matched
-LINE 1: select coalesce(ch, blb) from typeset;
-                            ^
-CONTEXT:  referenced column: coalesce
+                            coalesce                            
+----------------------------------------------------------------
+ \x323030312d30342d31392032323a32333a34342020202020202020202020
+(1 row)
+
 select coalesce(ch, txt) from typeset;
             coalesce            
 --------------------------------
@@ -5656,10 +6169,11 @@ select coalesce(ch, txt) from typeset;
 (1 row)
 
 select coalesce(vch, blb) from typeset;
-ERROR:  COALESCE types character varying and blob cannot be matched
-LINE 1: select coalesce(vch, blb) from typeset;
-                             ^
-CONTEXT:  referenced column: coalesce
+                 coalesce                 
+------------------------------------------
+ \x323030312d30342d31392032323a32333a3434
+(1 row)
+
 select coalesce(vch, txt) from typeset;
       coalesce       
 ---------------------
@@ -5667,11 +6181,639 @@ select coalesce(vch, txt) from typeset;
 (1 row)
 
 select coalesce(blb, txt) from typeset;
-ERROR:  COALESCE types blob and text cannot be matched
-LINE 1: select coalesce(blb, txt) from typeset;
-                             ^
-CONTEXT:  referenced column: coalesce
-set dolphin.b_compatibility_mode to on;
+        coalesce        
+------------------------
+ \x31323333343534323132
+(1 row)
+
+select pg_typeof(coalesce(tyint, smint)) from typeset;
+ pg_typeof 
+-----------
+ smallint
+(1 row)
+
+select pg_typeof(coalesce(tyint, anint)) from typeset;
+ pg_typeof 
+-----------
+ integer
+(1 row)
+
+select pg_typeof(coalesce(tyint, bgint)) from typeset;
+ pg_typeof 
+-----------
+ bigint
+(1 row)
+
+select pg_typeof(coalesce(tyint, dcmal)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(tyint, nmric)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(tyint, flt)) from typeset;
+ pg_typeof 
+-----------
+ real
+(1 row)
+
+select pg_typeof(coalesce(tyint, bt)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(tyint, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(tyint, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(tyint, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(tyint, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(tyint, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(tyint, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(tyint, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(smint, anint)) from typeset;
+ pg_typeof 
+-----------
+ integer
+(1 row)
+
+select pg_typeof(coalesce(smint, bgint)) from typeset;
+ pg_typeof 
+-----------
+ bigint
+(1 row)
+
+select pg_typeof(coalesce(smint, dcmal)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(smint, nmric)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(smint, flt)) from typeset;
+ pg_typeof 
+-----------
+ real
+(1 row)
+
+select pg_typeof(coalesce(smint, bt)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(smint, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(smint, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(smint, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(smint, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(smint, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(smint, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(smint, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(anint, bgint)) from typeset;
+ pg_typeof 
+-----------
+ bigint
+(1 row)
+
+select pg_typeof(coalesce(anint, dcmal)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(anint, nmric)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(anint, flt)) from typeset;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select pg_typeof(coalesce(anint, bt)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(anint, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(anint, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(anint, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(anint, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(anint, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(anint, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(anint, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(bgint, dcmal)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(bgint, nmric)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(bgint, flt)) from typeset;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select pg_typeof(coalesce(bgint, bt)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(bgint, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(bgint, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(bgint, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(bgint, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(bgint, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(bgint, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(bgint, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(dcmal, nmric)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(dcmal, flt)) from typeset;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select pg_typeof(coalesce(dcmal, bt)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(dcmal, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(dcmal, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(dcmal, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(dcmal, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(dcmal, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(dcmal, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(dcmal, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(nmric, flt)) from typeset;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select pg_typeof(coalesce(nmric, bt)) from typeset;
+ pg_typeof 
+-----------
+ number
+(1 row)
+
+select pg_typeof(coalesce(nmric, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(nmric, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(nmric, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(nmric, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(nmric, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(nmric, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(nmric, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(flt, bt)) from typeset;
+    pg_typeof     
+------------------
+ double precision
+(1 row)
+
+select pg_typeof(coalesce(flt, dt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(flt, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(flt, tm)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(flt, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(flt, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(flt, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(flt, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(bt, dt)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(bt, tmstp)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(bt, tm)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(bt, ch)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(bt, vch)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(bt, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(bt, txt)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(dt, tmstp)) from typeset;
+          pg_typeof          
+-----------------------------
+ timestamp without time zone
+(1 row)
+
+select pg_typeof(coalesce(dt, tm)) from typeset;
+ERROR:  COALESCE could not convert type time without time zone to timestamp without time zone
+LINE 1: select pg_typeof(coalesce(dt, tm)) from typeset;
+                                      ^
+CONTEXT:  referenced column: pg_typeof
+select pg_typeof(coalesce(dt, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(dt, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(dt, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(dt, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(tmstp, tm)) from typeset;
+ERROR:  COALESCE could not convert type time without time zone to timestamp without time zone
+LINE 1: select pg_typeof(coalesce(tmstp, tm)) from typeset;
+                                         ^
+CONTEXT:  referenced column: pg_typeof
+select pg_typeof(coalesce(tmstp, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(tmstp, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(tmstp, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(tmstp, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(tm, ch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(tm, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(tm, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(tm, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(ch, vch)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(ch, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(ch, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(vch, blb)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
+select pg_typeof(coalesce(vch, txt)) from typeset;
+ pg_typeof 
+-----------
+ text
+(1 row)
+
+select pg_typeof(coalesce(blb, txt)) from typeset;
+ pg_typeof 
+-----------
+ blob
+(1 row)
+
 select ifnull(tyint, smint) from typeset;
  ifnull 
 --------
@@ -6087,9 +7229,9 @@ select ifnull(nmric, txt) from typeset;
 (1 row)
 
 select ifnull(flt, bt) from typeset;
-      ifnull      
-------------------
- 127.212997436523
+      ifnull       
+-------------------
+ 127.2129974365234
 (1 row)
 
 select ifnull(flt, dt) from typeset;
@@ -6183,7 +7325,7 @@ select ifnull(dt, tmstp) from typeset;
 (1 row)
 
 select ifnull(dt, tm) from typeset;
-ERROR:  NVL could not convert type time without time zone to timestamp without time zone
+ERROR:  COALESCE could not convert type time without time zone to timestamp without time zone
 LINE 1: select ifnull(dt, tm) from typeset;
                           ^
 CONTEXT:  referenced column: ifnull
@@ -6212,7 +7354,7 @@ select ifnull(dt, txt) from typeset;
 (1 row)
 
 select ifnull(tmstp, tm) from typeset;
-ERROR:  NVL could not convert type time without time zone to timestamp without time zone
+ERROR:  COALESCE could not convert type time without time zone to timestamp without time zone
 LINE 1: select ifnull(tmstp, tm) from typeset;
                              ^
 CONTEXT:  referenced column: ifnull
@@ -6295,9 +7437,9 @@ select ifnull(vch, txt) from typeset;
 (1 row)
 
 select ifnull(blb, txt) from typeset;
-    ifnull    
---------------
- \x1233454212
+         ifnull         
+------------------------
+ \x31323333343534323132
 (1 row)
 
 select ifnull(bin, smint) from typeset;
@@ -6979,7 +8121,7 @@ select pg_typeof(ifnull(dt, tmstp)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(dt, tm)) from typeset;
-ERROR:  NVL could not convert type time without time zone to timestamp without time zone
+ERROR:  COALESCE could not convert type time without time zone to timestamp without time zone
 LINE 1: select pg_typeof(ifnull(dt, tm)) from typeset;
                                     ^
 CONTEXT:  referenced column: pg_typeof
@@ -7008,7 +8150,7 @@ select pg_typeof(ifnull(dt, txt)) from typeset;
 (1 row)
 
 select pg_typeof(ifnull(tmstp, tm)) from typeset;
-ERROR:  NVL could not convert type time without time zone to timestamp without time zone
+ERROR:  COALESCE could not convert type time without time zone to timestamp without time zone
 LINE 1: select pg_typeof(ifnull(tmstp, tm)) from typeset;
                                        ^
 CONTEXT:  referenced column: pg_typeof
@@ -7304,7 +8446,7 @@ select interval(tyint, flt) from typeset;
 select interval(tyint, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(tyint, dt) from typeset;
@@ -7322,16 +8464,20 @@ select interval(tyint, tmstp) from typeset;
 select interval(tyint, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(tyint, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(tyint, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7344,6 +8490,8 @@ select interval(tyint, blb) from typeset;
 (1 row)
 
 select interval(tyint, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7382,7 +8530,7 @@ select interval(smint, flt) from typeset;
 select interval(smint, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(smint, dt) from typeset;
@@ -7400,16 +8548,20 @@ select interval(smint, tmstp) from typeset;
 select interval(smint, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(smint, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(smint, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7422,6 +8574,8 @@ select interval(smint, blb) from typeset;
 (1 row)
 
 select interval(smint, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7454,7 +8608,7 @@ select interval(anint, flt) from typeset;
 select interval(anint, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(anint, dt) from typeset;
@@ -7472,16 +8626,20 @@ select interval(anint, tmstp) from typeset;
 select interval(anint, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(anint, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(anint, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7494,6 +8652,8 @@ select interval(anint, blb) from typeset;
 (1 row)
 
 select interval(anint, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7520,7 +8680,7 @@ select interval(bgint, flt) from typeset;
 select interval(bgint, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(bgint, dt) from typeset;
@@ -7538,16 +8698,20 @@ select interval(bgint, tmstp) from typeset;
 select interval(bgint, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bgint, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(bgint, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7560,6 +8724,8 @@ select interval(bgint, blb) from typeset;
 (1 row)
 
 select interval(bgint, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7580,7 +8746,7 @@ select interval(dcmal, flt) from typeset;
 select interval(dcmal, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(dcmal, dt) from typeset;
@@ -7598,16 +8764,20 @@ select interval(dcmal, tmstp) from typeset;
 select interval(dcmal, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(dcmal, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(dcmal, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7620,6 +8790,8 @@ select interval(dcmal, blb) from typeset;
 (1 row)
 
 select interval(dcmal, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7634,7 +8806,7 @@ select interval(nmric, flt) from typeset;
 select interval(nmric, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(nmric, dt) from typeset;
@@ -7652,16 +8824,20 @@ select interval(nmric, tmstp) from typeset;
 select interval(nmric, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(nmric, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(nmric, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7674,6 +8850,8 @@ select interval(nmric, blb) from typeset;
 (1 row)
 
 select interval(nmric, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7682,7 +8860,7 @@ select interval(nmric, txt) from typeset;
 select interval(flt, bt) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(flt, dt) from typeset;
@@ -7700,16 +8878,20 @@ select interval(flt, tmstp) from typeset;
 select interval(flt, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(flt, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(flt, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7722,6 +8904,8 @@ select interval(flt, blb) from typeset;
 (1 row)
 
 select interval(flt, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
@@ -7730,31 +8914,35 @@ select interval(flt, txt) from typeset;
 select interval(bt, dt) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bt, tmstp) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bt, tm) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bt, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bt, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(bt, blb) from typeset;
@@ -7764,15 +8952,17 @@ select interval(bt, blb) from typeset;
 (1 row)
 
 select interval(bt, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(dt, tmstp) from typeset;
  interval 
 ----------
-        1
+        0
 (1 row)
 
 select interval(dt, tm) from typeset;
@@ -7782,12 +8972,16 @@ select interval(dt, tm) from typeset;
 (1 row)
 
 select interval(dt, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
 (1 row)
 
 select interval(dt, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
@@ -7800,6 +8994,8 @@ select interval(dt, blb) from typeset;
 (1 row)
 
 select interval(dt, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
@@ -7812,12 +9008,16 @@ select interval(tmstp, tm) from typeset;
 (1 row)
 
 select interval(tmstp, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
 (1 row)
 
 select interval(tmstp, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
@@ -7826,25 +9026,31 @@ select interval(tmstp, vch) from typeset;
 select interval(tmstp, blb) from typeset;
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(tmstp, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
 (1 row)
 
 select interval(tm, ch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(tm, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(tm, blb) from typeset;
@@ -7854,47 +9060,68 @@ select interval(tm, blb) from typeset;
 (1 row)
 
 select interval(tm, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
-        0
+        1
 (1 row)
 
 select interval(ch, vch) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
 (1 row)
 
 select interval(ch, blb) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(ch, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44           "
+CONTEXT:  referenced column: interval
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
 (1 row)
 
 select interval(vch, blb) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         0
 (1 row)
 
 select interval(vch, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
 (1 row)
 
 select interval(blb, txt) from typeset;
+WARNING:  invalid input syntax for type double precision: "2001-04-19 22:23:44"
+CONTEXT:  referenced column: interval
  interval 
 ----------
         1
 (1 row)
 
+set dolphin.b_compatibility_mode to on; 
 select strcmp(tyint, smint) from typeset;
  strcmp 
 --------
@@ -7934,7 +9161,7 @@ select strcmp(tyint, flt) from typeset;
 select strcmp(tyint, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(tyint, dt) from typeset;
@@ -8012,7 +9239,7 @@ select strcmp(smint, flt) from typeset;
 select strcmp(smint, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(smint, dt) from typeset;
@@ -8084,7 +9311,7 @@ select strcmp(anint, flt) from typeset;
 select strcmp(anint, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(anint, dt) from typeset;
@@ -8150,7 +9377,7 @@ select strcmp(bgint, flt) from typeset;
 select strcmp(bgint, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(bgint, dt) from typeset;
@@ -8210,7 +9437,7 @@ select strcmp(dcmal, flt) from typeset;
 select strcmp(dcmal, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(dcmal, dt) from typeset;
@@ -8264,7 +9491,7 @@ select strcmp(nmric, flt) from typeset;
 select strcmp(nmric, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(nmric, dt) from typeset;
@@ -8312,7 +9539,7 @@ select strcmp(nmric, txt) from typeset;
 select strcmp(flt, bt) from typeset;
  strcmp 
 --------
-      1
+     -1
 (1 row)
 
 select strcmp(flt, dt) from typeset;
@@ -8360,43 +9587,43 @@ select strcmp(flt, txt) from typeset;
 select strcmp(bt, dt) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(bt, tmstp) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(bt, tm) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(bt, ch) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(bt, vch) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(bt, blb) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(bt, txt) from typeset;
  strcmp 
 --------
-     -1
+      1
 (1 row)
 
 select strcmp(dt, tmstp) from typeset;
@@ -8492,7 +9719,7 @@ select strcmp(tm, txt) from typeset;
 select strcmp(ch, vch) from typeset;
  strcmp 
 --------
-      1
+      0
 (1 row)
 
 select strcmp(ch, blb) from typeset;
@@ -8504,7 +9731,7 @@ select strcmp(ch, blb) from typeset;
 select strcmp(ch, txt) from typeset;
  strcmp 
 --------
-      1
+      0
 (1 row)
 
 select strcmp(vch, blb) from typeset;
@@ -8523,6 +9750,24 @@ select strcmp(blb, txt) from typeset;
  strcmp 
 --------
      -1
+(1 row)
+
+select strcmp(tyint, cset) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp(tyint, bit) from typeset;
+ strcmp 
+--------
+      1
+(1 row)
+
+select strcmp('123   ','123');
+ strcmp 
+--------
+      0
 (1 row)
 
 create table t1 (a int, b bigint unsigned);
@@ -8550,5 +9795,7 @@ join t2 on t1.a=t2.c order by d;
 drop table t1;
 drop table t2;
 drop schema db_test_condition cascade;
-NOTICE:  drop cascades to table typeset
+NOTICE:  drop cascades to 2 other objects
+DETAIL:  drop cascades to type typeset_cset_set
+drop cascades to table typeset
 reset current_schema;

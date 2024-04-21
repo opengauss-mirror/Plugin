@@ -11,42 +11,23 @@ CONTEXT:  referenced column: varchar
 (1 row)
 
 SELECT CONVERT('1.1', signed);
-WARNING:  invalid input syntax for type int16: "1.1"
+ERROR:  invalid input syntax for type int16: "1.1"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: int8
- int8 
-------
-    1
-(1 row)
-
 SELECT CONVERT('1.5', signed);
-WARNING:  invalid input syntax for type int16: "1.5"
+ERROR:  invalid input syntax for type int16: "1.5"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: int8
- int8 
-------
-    1
-(1 row)
-
 SELECT CONVERT('abc', signed);
-WARNING:  Truncated incorrect INTEGER value: 'abc'
-CONTEXT:  referenced column: int8
  int8 
 ------
     0
 (1 row)
 
 SELECT CONVERT('1111111111111111111111111111111111111111111', signed);
-WARNING:  value "1111111111111111111111111111111111111111111" is out of range for type int16
+ERROR:  value "1111111111111111111111111111111111111111111" is out of range for type int16
 DETAIL:  text exceeds the length of int16
 CONTEXT:  referenced column: int8
-WARNING:  bigint out of range
-CONTEXT:  referenced column: int8
- int8 
-------
-   -1
-(1 row)
-
 SELECT CONVERT(1111111111111111111111111111111111111111111, signed);
 WARNING:  bigint out of range
 CONTEXT:  referenced column: int8
@@ -66,42 +47,23 @@ CONTEXT:  referenced column: int8
 (1 row)
 
 SELECT CONVERT('1.1', unsigned);
-WARNING:  invalid input syntax for type int16: "1.1"
+ERROR:  invalid input syntax for type int16: "1.1"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: uint8
- uint8 
--------
- 1
-(1 row)
-
 SELECT CONVERT('1.5', unsigned);
-WARNING:  invalid input syntax for type int16: "1.5"
+ERROR:  invalid input syntax for type int16: "1.5"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: uint8
- uint8 
--------
- 1
-(1 row)
-
 SELECT CONVERT('abc', unsigned);
-WARNING:  Truncated incorrect INTEGER value: 'abc'
-CONTEXT:  referenced column: uint8
  uint8 
 -------
  0
 (1 row)
 
 SELECT CONVERT('1111111111111111111111111111111111111111111', unsigned);
-WARNING:  value "1111111111111111111111111111111111111111111" is out of range for type int16
+ERROR:  value "1111111111111111111111111111111111111111111" is out of range for type int16
 DETAIL:  text exceeds the length of int16
 CONTEXT:  referenced column: uint8
-WARNING:  bigint unsigned out of range
-CONTEXT:  referenced column: uint8
-        uint8         
-----------------------
- 18446744073709551615
-(1 row)
-
 SELECT CONVERT(1111111111111111111111111111111111111111111, unsigned);
 WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
@@ -111,8 +73,6 @@ CONTEXT:  referenced column: uint8
 (1 row)
 
 SELECT CONVERT(b'11111111111111111111111111111111111111111111111111111111111111111111111111111111111', unsigned);
-WARNING:  bigint unsigned out of range
-CONTEXT:  referenced column: uint8
         uint8         
 ----------------------
  18446744073709551615
@@ -155,12 +115,6 @@ CONTEXT:  referenced column: numeric
 (1 row)
 
 SELECT CONVERT(b'11111111111111111111111111111111111111111111111111111111111111111111111111111111111', decimal);
-WARNING:  bigint unsigned out of range
-CONTEXT:  referenced column: bittouint8
-referenced column: bittouint8
-SQL statement "SELECT (SELECT bittouint8($1))"
-PL/pgSQL function bit2numeric(bit) line 3 at RETURN
-referenced column: numeric
 WARNING:  numeric field overflow
 DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
 CONTEXT:  referenced column: numeric
@@ -170,12 +124,6 @@ CONTEXT:  referenced column: numeric
 (1 row)
 
 SELECT CONVERT(b'11111111111111111111111111111111111111111111111111111111111111111111111111111111111', decimal(10, 2));
-WARNING:  bigint unsigned out of range
-CONTEXT:  referenced column: bittouint8
-referenced column: bittouint8
-SQL statement "SELECT (SELECT bittouint8($1))"
-PL/pgSQL function bit2numeric(bit) line 3 at RETURN
-referenced column: numeric
 WARNING:  numeric field overflow
 DETAIL:  A field with precision 10, scale 2 must round to an absolute value less than 10^8.
 CONTEXT:  referenced column: numeric

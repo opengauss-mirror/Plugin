@@ -32,11 +32,10 @@ show databases;
  dbe_pldeveloper
  dbe_sql_util
  dolphin_catalog
- performance_schema
  pg_catalog
  public
  sqladvisor
-(12 rows)
+(11 rows)
 
 drop database db1;
 NOTICE:  drop cascades to table db1.test
@@ -53,7 +52,6 @@ show databases;
 --------------------
  information_schema
  blockchain
- coverage
  cstore
  db4ai
  dbe_perf
@@ -61,12 +59,11 @@ show databases;
  dbe_pldeveloper
  dbe_sql_util
  dolphin_catalog
- performance_schema
  pg_catalog
  pg_toast
  pkg_service
  public
  snapshot
  sqladvisor
-(17 rows)
+(15 rows)
 

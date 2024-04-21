@@ -54,6 +54,7 @@ select 8 as div;
 
 select div 1;
 
+-- without binary as numeric
 select '-12.3abc' div null;
 select '-12.3abc' div -100.1;
 select '-12.3abc' div 0;

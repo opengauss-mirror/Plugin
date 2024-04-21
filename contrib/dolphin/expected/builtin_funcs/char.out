@@ -321,19 +321,19 @@ select pg_catalog.chara('1'::float8);
 select pg_catalog.chara('Mon May 1 00:30:30 1995'::abstime);
  chara 
 -------
- Հ
+ 
 (1 row)
 
 select pg_catalog.chara('1'::reltime);
  chara 
 -------
- \x1D`
+ 
 (1 row)
 
 select pg_catalog.chara('["Sep 4, 1983 23:59:12" "Oct4, 1983 23:59:12"]'::tinterval);
- chara  
---------
- \x7F=@
+ chara 
+-------
+ 
 (1 row)
 
 select pg_catalog.chara('((0,0),10)'::circle);
@@ -405,7 +405,7 @@ select pg_catalog.chara('2000-11-11 11:11:11'::timestamptz);
 select pg_catalog.chara('11:11:11'::timetz);
  chara 
 -------
- >`-
+ 
 (1 row)
 
 select pg_catalog.chara(b'1'::bit);

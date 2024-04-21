@@ -289,10 +289,11 @@ CONTEXT:  referenced column: atan
 (1 row)
 
 -- ERROR
+-- without date->float8 implicit
 SELECT ATAN('2022-05-12'::date, 1);
-       atan       
-------------------
- 1.57079627734016
+        atan        
+--------------------
+ 0.7853981633974483
 (1 row)
 
 -- 1.57079627734016

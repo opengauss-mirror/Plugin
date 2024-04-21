@@ -88,7 +88,7 @@ from test_type_table;
 create table bit_test(bit1 bit(1), bit5 bit(5), bit8 bit(8), bit15 bit(15), bit16 bit(16));
 insert into bit_test values(0,0,0,0,0);
 insert into bit_test values(1,1,1,1,1);
-insert into bit_test values(1,0x7,0xF,0xF5,0xF6);
+insert into bit_test values(1,x'7',x'F',x'F5',x'F6');
 select repeat(bit1,5),repeat(bit5,5),repeat(bit8,5),repeat(bit15,5),repeat(bit16,5) from bit_test;
 drop schema test_builtin_funcs cascade;
 reset bytea_output;

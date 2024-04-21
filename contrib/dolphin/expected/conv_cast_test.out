@@ -454,8 +454,11 @@ select cast(b'1111111111111111111111111111111111111111111111111111111111111111' 
 (1 row)
 
 select cast(b'1111111111111111111111111111111111111111111111111111111111111111' as signed);
-ERROR:  bigint out of range
-CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
 select cast(b'111111111111111111111111111111111111111111111111111111111111111' as unsigned);
         uint8        
 ---------------------
@@ -688,21 +691,23 @@ select b'11100000111000';
 (1 row)
 
 select conv(b'11100000111000', 10, 8);
- conv 
-------
- 130
-(1 row)
-
+ERROR:  function conv(`binary`, integer, integer) does not exist
+LINE 1: select conv(b'11100000111000', 10, 8);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: conv
 select conv(b'11100000111000', 20, 8);
- conv 
-------
- 250
-(1 row)
-
+ERROR:  function conv(`binary`, integer, integer) does not exist
+LINE 1: select conv(b'11100000111000', 20, 8);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: conv
 select conv(b'11100000111000'::int8, 20, 8);
+WARNING:  invalid input syntax for type bigint: "\x3838"
+CONTEXT:  referenced column: conv
  conv 
 ------
- 250
+ 0
 (1 row)
 
 select x'4c';
@@ -712,25 +717,26 @@ select x'4c';
 (1 row)
 
 select conv(x'4c', 10, 8);
- conv 
-------
- 0
-(1 row)
-
+ERROR:  function conv(`binary`, integer, integer) does not exist
+LINE 1: select conv(x'4c', 10, 8);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: conv
 select conv(x'4c', 30, 8);
- conv 
-------
- 25
-(1 row)
-
+ERROR:  function conv(`binary`, integer, integer) does not exist
+LINE 1: select conv(x'4c', 30, 8);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: conv
 select conv(x'4c'::int8, 30, 8);
-WARNING:  Truncated incorrect INTEGER value: 'L'
+WARNING:  invalid input syntax for type bigint: "\x4c"
 CONTEXT:  referenced column: conv
  conv 
 ------
  0
 (1 row)
 
+reset dolphin.sql_mode;
 drop schema conv_cast_test cascade;
 NOTICE:  drop cascades to table test_date
 reset current_schema;

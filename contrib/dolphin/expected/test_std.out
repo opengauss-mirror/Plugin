@@ -162,11 +162,11 @@ SELECT STD(`boolean`) OVER () AS `boolean` FROM all_types_table;
 (1 row)
 
 SELECT STD(`date`) OVER () AS `date` FROM all_types_table;
- date 
-------
-    0
-(1 row)
-
+ERROR:  function stddev_pop(date) does not exist
+LINE 1: SELECT STD(`date`) OVER () AS `date` FROM all_types_table;
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: date
 SELECT STD(`time`) OVER () AS `time` FROM all_types_table;
  time 
 ------
@@ -192,17 +192,17 @@ SELECT STD(`datetime4`) OVER () AS `datetime4` FROM all_types_table;
 (1 row)
 
 SELECT STD(`timestamp`) OVER () AS `timestamp` FROM all_types_table;
- timestamp 
------------
-         0
-(1 row)
-
+ERROR:  function stddev_pop(timestamp with time zone) does not exist
+LINE 1: SELECT STD(`timestamp`) OVER () AS `timestamp` FROM all_type...
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: timestamp
 SELECT STD(`timestamp4`) OVER () AS `timestamp4` FROM all_types_table;
- timestamp4 
-------------
-          0
-(1 row)
-
+ERROR:  function stddev_pop(timestamp with time zone) does not exist
+LINE 1: SELECT STD(`timestamp4`) OVER () AS `timestamp4` FROM all_ty...
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: timestamp4
 SELECT STD(`year`) OVER () AS `year` FROM all_types_table;
  year 
 ------
@@ -285,12 +285,7 @@ SELECT STD(`set_t`) OVER () AS `set_t` FROM all_types_table;
 (1 row)
 
 SELECT STD(`json`) OVER () AS `json` FROM all_types_table;
-WARNING:  invalid input syntax for type numeric: "{"a": 2, "b": 3}"
- json 
-------
-    0
-(1 row)
-
+ERROR:  failed to find conversion function from json to number
 SELECT STD(`NULL`) OVER () AS `NULL` FROM all_types_table;
  NULL 
 ------
@@ -434,54 +429,51 @@ SELECT STD(`boolean`) OVER () AS `boolean` FROM all_types_table;
 (2 rows)
 
 SELECT STD(`date`) OVER () AS `date` FROM all_types_table;
-        date         
----------------------
- 50.0000000000000000
- 50.0000000000000000
-(2 rows)
-
+ERROR:  function stddev_pop(date) does not exist
+LINE 1: SELECT STD(`date`) OVER () AS `date` FROM all_types_table;
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: date
 SELECT STD(`time`) OVER () AS `time` FROM all_types_table;
-       time        
--------------------
- 5000.000000000000
- 5000.000000000000
+ time 
+------
+ 5000
+ 5000
 (2 rows)
 
 SELECT STD(`time4`) OVER () AS `time4` FROM all_types_table;
-       time4       
--------------------
- 5000.000000000000
- 5000.000000000000
+ time4 
+-------
+  5000
+  5000
 (2 rows)
 
 SELECT STD(`datetime`) OVER () AS `datetime` FROM all_types_table;
-   datetime    
----------------
- 50000000.0000
- 50000000.0000
+     datetime     
+------------------
+ 50000145.6363447
+ 50000145.6363447
 (2 rows)
 
 SELECT STD(`datetime4`) OVER () AS `datetime4` FROM all_types_table;
-       datetime4       
------------------------
- 50000000.000000000000
- 50000000.000000000000
+     datetime4     
+-------------------
+ 49999458.43885656
+ 49999458.43885656
 (2 rows)
 
 SELECT STD(`timestamp`) OVER () AS `timestamp` FROM all_types_table;
-   timestamp   
----------------
- 50000000.0000
- 50000000.0000
-(2 rows)
-
+ERROR:  function stddev_pop(timestamp with time zone) does not exist
+LINE 1: SELECT STD(`timestamp`) OVER () AS `timestamp` FROM all_type...
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: timestamp
 SELECT STD(`timestamp4`) OVER () AS `timestamp4` FROM all_types_table;
-      timestamp4       
------------------------
- 50000000.000000000000
- 50000000.000000000000
-(2 rows)
-
+ERROR:  function stddev_pop(timestamp with time zone) does not exist
+LINE 1: SELECT STD(`timestamp4`) OVER () AS `timestamp4` FROM all_ty...
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: timestamp4
 SELECT STD(`year`) OVER () AS `year` FROM all_types_table;
           year          
 ------------------------
@@ -571,10 +563,10 @@ WARNING:  invalid input syntax for type numeric: "61890 - 12345 = 55545"
 (2 rows)
 
 SELECT STD(`enum_t`) OVER () AS `enum_t` FROM all_types_table;
-         enum_t         
-------------------------
- 0.50000000000000000000
- 0.50000000000000000000
+ enum_t 
+--------
+    0.5
+    0.5
 (2 rows)
 
 SELECT STD(`set_t`) OVER () AS `set_t` FROM all_types_table;
@@ -585,14 +577,7 @@ SELECT STD(`set_t`) OVER () AS `set_t` FROM all_types_table;
 (2 rows)
 
 SELECT STD(`json`) OVER () AS `json` FROM all_types_table;
-WARNING:  invalid input syntax for type numeric: "{"a": 2, "b": 3}"
-WARNING:  invalid input syntax for type numeric: "{"a": 2, "b": 1}"
- json 
-------
-    0
-    0
-(2 rows)
-
+ERROR:  failed to find conversion function from json to number
 SELECT STD(`NULL`) OVER () AS `NULL` FROM all_types_table;
  NULL 
 ------

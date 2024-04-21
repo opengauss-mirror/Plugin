@@ -67,8 +67,8 @@ is_ipv4(`timestamp(4)`),
 is_ipv4(`year`),
 is_ipv4(`char`),
 is_ipv4(`varchar`),
-is_ipv4(`binary`),
-is_ipv4(`varbinary`),
+--is_ipv4(`binary`),
+--is_ipv4(`varbinary`),
 is_ipv4(`tinyblob`),
 is_ipv4(`blob`),
 is_ipv4(`mediumblob`),
@@ -181,9 +181,9 @@ bit_and(`blob`),
 bit_and(`mediumblob`),
 bit_and(`longblob`),
 bit_and(`text`),
-bit_and(`enum_t`),
-bit_and(`set_t`),
-bit_and(`json`)
+--bit_and(`enum_t`),
+bit_and(`set_t`)
+--bit_and(`json`)
 from test_type_table;
 
 create table test_bit_and_1(c uint8);

@@ -43,8 +43,8 @@ insert into test_type_table values
 
 insert into test_type_table values
     (
-        127, 255, 32767, 65535, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 3.402823, 1.79769313486231, 3.141592654,
-        1, 0xFFFFFFFFFFFFFFFF, 1,
+        127, 255, 32767, 65535, x'7FFFFFFF', x'FFFFFFFF', x'7FFFFFFFFFFFFFFF', x'FFFFFFFFFFFFFFFF', 3.402823, 1.79769313486231, 3.141592654,
+        1, x'FFFFFFFFFFFFFFFF', 1,
         'Today is a good day.  ', 'Today is a good day.  ',
         'Today is a good day.  ', 'Today is a good day.  ',
         'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ',
@@ -82,9 +82,9 @@ FROM test_type_table;
 
 -- test bit type
 create table bit_test (`bit1` bit(1), `bit8` bit(8), `bit15` bit(15), `bit64` bit(64));
-insert into bit_test values (1, 0x68, 0x4d45, 0x536f6d65006f6e65);
-insert into bit_test values (0, 0x7d, 0x0057, 0x00536f6d656f6e65);
-insert into bit_test values (0, 0x77, 0x5700, 0x536f6d656f6e6500);
+insert into bit_test values (1, x'68', x'4d45', x'536f6d65006f6e65');
+insert into bit_test values (0, x'7d', x'0057', x'00536f6d656f6e65');
+insert into bit_test values (0, x'77', x'5700', x'536f6d656f6e6500');
 select left(`bit1`, 2), left(`bit8`, 0), left(`bit15`, -12), left(`bit64`, 6) from bit_test;
 -- test integer overflow
 select left(`bit64`, 2147483647) from bit_test;

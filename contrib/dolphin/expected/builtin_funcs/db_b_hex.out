@@ -40,7 +40,7 @@ WARNING:  bigint out of range
 CONTEXT:  referenced column: hex
        hex        
 ------------------
- 7fffffffffffffff
+ 7FFFFFFFFFFFFFFF
 (1 row)
 
 select hex(9223372036854775811);
@@ -48,7 +48,7 @@ WARNING:  bigint out of range
 CONTEXT:  referenced column: hex
        hex        
 ------------------
- 7fffffffffffffff
+ 7FFFFFFFFFFFFFFF
 (1 row)
 
 select hex(1546546574654561321324564564543453);
@@ -56,7 +56,7 @@ WARNING:  bigint out of range
 CONTEXT:  referenced column: hex
        hex        
 ------------------
- ffffffffffffffff
+ 7FFFFFFFFFFFFFFF
 (1 row)
 
 -- test for negative numbers
@@ -255,9 +255,9 @@ substr(hex('a熊猫竹竹爱吃竹子'),1,1), substr(hex('a熊猫竹竹爱吃竹
 select c1, cast(c2 as char), cast(c3 as char), cast(c4 as char), cast(c5 as
 char), cast(c6 as char), cast(c7 as char) from t_binary order by
 1,2,3,4,5,6,7;
- c1 | c2 |  c3  |                                                                                                                               c4                                                                                                                                | c5 |  c6  |                                                                                                                               c7                                                                                                                                
-----+----+------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----+------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  1 | 6  | 61E7 | 61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78 | 6  | 61E7 | 61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78
+ c1 | c2 |              c3              |                                                                                                                               c4                                                                                                                                | c5 |  c6  |                                                                                                                               c7                                                                                                                                
+----+----+------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----+------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  1 | 6  | 61E7\000\000\000\000\000\000 | 61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78 | 6  | 61E7 | 61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78
 (1 row)
 
 drop table if exists t_binary;
@@ -265,15 +265,18 @@ drop table if exists t1;
 -- test for enum with hex format
 create table enum_to_hex_test_table(c enum('a', 'b', 'c'));
 insert into enum_to_hex_test_table values(1);
+--?ERROR:  failed to find conversion function from integer.*
+CONTEXT:  referenced column: c
 insert into enum_to_hex_test_table values(2);
+--?ERROR:  failed to find conversion function from integer.*
+CONTEXT:  referenced column: c
 insert into enum_to_hex_test_table values(3);
+--?ERROR:  failed to find conversion function from integer.*
+CONTEXT:  referenced column: c
 select hex(c) from enum_to_hex_test_table;
  hex 
 -----
- 61
- 62
- 63
-(3 rows)
+(0 rows)
 
 create table test_hex as select hex(c) from enum_to_hex_test_table;
 \d test_hex

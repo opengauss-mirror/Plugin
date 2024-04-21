@@ -66,8 +66,8 @@ is_ipv4(`timestamp(4)`),
 is_ipv4(`year`),
 is_ipv4(`char`),
 is_ipv4(`varchar`),
-is_ipv4(`binary`),
-is_ipv4(`varbinary`),
+--is_ipv4(`binary`),
+--is_ipv4(`varbinary`),
 is_ipv4(`tinyblob`),
 is_ipv4(`blob`),
 is_ipv4(`mediumblob`),
@@ -77,9 +77,9 @@ is_ipv4(`enum_t`),
 is_ipv4(`set_t`),
 is_ipv4(`json`)
 from test_type_table;
- is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 
----------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
-       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0
+ is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 | is_ipv4 
+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
+       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0 |       0
 (1 row)
 
 create table test_is_ipv4(c int4);
@@ -108,7 +108,17 @@ insert into test_is_ipv4 select is_ipv4(`year`) from test_type_table;
 insert into test_is_ipv4 select is_ipv4(`char`) from test_type_table;
 insert into test_is_ipv4 select is_ipv4(`varchar`) from test_type_table;
 insert into test_is_ipv4 select is_ipv4(`binary`) from test_type_table;
+ERROR:  function is_ipv4("binary") does not exist
+LINE 1: insert into test_is_ipv4 select is_ipv4(`binary`) from test_...
+                                        ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: is_ipv4
 insert into test_is_ipv4 select is_ipv4(`varbinary`) from test_type_table;
+ERROR:  function is_ipv4("varbinary") does not exist
+LINE 1: insert into test_is_ipv4 select is_ipv4(`varbinary`) from te...
+                                        ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: is_ipv4
 insert into test_is_ipv4 select is_ipv4(`tinyblob`) from test_type_table;
 insert into test_is_ipv4 select is_ipv4(`blob`) from test_type_table;
 insert into test_is_ipv4 select is_ipv4(`mediumblob`) from test_type_table;
@@ -142,7 +152,17 @@ insert ignore into test_is_ipv4 select is_ipv4(`year`) from test_type_table;
 insert ignore into test_is_ipv4 select is_ipv4(`char`) from test_type_table;
 insert ignore into test_is_ipv4 select is_ipv4(`varchar`) from test_type_table;
 insert ignore into test_is_ipv4 select is_ipv4(`binary`) from test_type_table;
+ERROR:  function is_ipv4("binary") does not exist
+LINE 1: insert ignore into test_is_ipv4 select is_ipv4(`binary`) fro...
+                                               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: is_ipv4
 insert ignore into test_is_ipv4 select is_ipv4(`varbinary`) from test_type_table;
+ERROR:  function is_ipv4("varbinary") does not exist
+LINE 1: insert ignore into test_is_ipv4 select is_ipv4(`varbinary`) ...
+                                               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: is_ipv4
 insert ignore into test_is_ipv4 select is_ipv4(`tinyblob`) from test_type_table;
 insert ignore into test_is_ipv4 select is_ipv4(`blob`) from test_type_table;
 insert ignore into test_is_ipv4 select is_ipv4(`mediumblob`) from test_type_table;
@@ -183,22 +203,13 @@ bit_and(`blob`),
 bit_and(`mediumblob`),
 bit_and(`longblob`),
 bit_and(`text`),
-bit_and(`enum_t`),
-bit_and(`set_t`),
-bit_and(`json`)
+--bit_and(`enum_t`),
+bit_and(`set_t`)
+--bit_and(`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: uint8and
-SQL function "uint8and" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: uint8and
-SQL function "uint8and" statement 1
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
-CONTEXT:  referenced column: uint8and
-SQL function "uint8and" statement 1
- bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and |                             bit_and                              | bit_and | bit_and  | bit_and | bit_and |    bit_and     |    bit_and     |    bit_and     |    bit_and     | bit_and | bit_and | bit_and |                                                                                                  bit_and                                                                                                   |   bit_and    |   bit_and    |   bit_and    |   bit_and    |   bit_and    | bit_and | bit_and | bit_and | bit_and 
----------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+------------------------------------------------------------------+---------+----------+---------+---------+----------------+----------------+----------------+----------------+---------+---------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------+--------------+--------------+--------------+--------------+---------+---------+---------+---------
- 1       | 1       |       1 | 1       |       1 | 1       |       1 | 1       |       1 |       1 |       1 | 1       | 0000000000000000000000000000000000000000000000000000000000000111 |       1 | 20230205 |  191050 |  191050 | 20230205191050 | 20230205191050 | 20230205191050 | 20230205191050 |    2023 | 1       | 1       | \x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 | \x312e323361 | \x312e323361 | \x312e323361 | \x312e323361 | \x312e323361 | 1       |       1 |       5 | 0
+ bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and |                             bit_and                              | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and | bit_and |                                                                                                  bit_and                                                                                                   |   bit_and    |   bit_and    |   bit_and    |   bit_and    |   bit_and    | bit_and | bit_and 
+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+------------------------------------------------------------------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------+--------------+--------------+--------------+--------------+---------+---------
+ 1       | 1       |       1 | 1       |       1 | 1       |       1 | 1       |       1 |       1 |       1 | 1       | 0000000000000000000000000000000000000000000000000000000000000111 |       1 | 2023    | 19      | 19      | 2023    | 2023    | 2023    | 2023    |    2023 | 1       | 1       | \x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 | \x312e323361 | \x312e323361 | \x312e323361 | \x312e323361 | \x312e323361 | 1       |       5
 (1 row)
 
 create table test_bit_and_1(c uint8);
@@ -226,11 +237,11 @@ insert into test_bit_and_1 select bit_and(`timestamp`) from test_type_table;
 insert into test_bit_and_1 select bit_and(`timestamp(4)`) from test_type_table;
 insert into test_bit_and_1 select bit_and(`year`) from test_type_table;
 insert into test_bit_and_1 select bit_and(`char`) from test_type_table;
-ERROR:  invalid input syntax for type double precision: "1.23a                                                                                               "
+ERROR:  invalid input syntax for type bigint unsigned: "1.23a                                                                                               "
 CONTEXT:  referenced column: uint8and
 SQL function "uint8and" statement 1
 insert into test_bit_and_1 select bit_and(`varchar`) from test_type_table;
-ERROR:  invalid input syntax for type double precision: "1.23a"
+ERROR:  invalid input syntax for type bigint unsigned: "1.23a"
 CONTEXT:  referenced column: uint8and
 SQL function "uint8and" statement 1
 insert into test_bit_and_2 select bit_and(`binary`) from test_type_table;
@@ -241,11 +252,18 @@ insert into test_bit_and_2 select bit_and(`mediumblob`) from test_type_table;
 insert into test_bit_and_2 select bit_and(`longblob`) from test_type_table;
 insert into test_bit_and_1 select bit_and(`text`) from test_type_table;
 insert into test_bit_and_1 select bit_and(`enum_t`) from test_type_table;
+--?.*
+LINE 1: insert into test_bit_and_1 select bit_and(`enum_t`) from tes...
+                                          ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: bit_and
 insert into test_bit_and_1 select bit_and(`set_t`) from test_type_table;
 insert into test_bit_and_1 select bit_and(`json`) from test_type_table;
-ERROR:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: uint8and
-SQL function "uint8and" statement 1
+ERROR:  function bit_and(json) does not exist
+LINE 1: insert into test_bit_and_1 select bit_and(`json`) from test_...
+                                          ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: bit_and
 insert ignore into test_bit_and_1 select bit_and(`int1`) from test_type_table;
 insert ignore into test_bit_and_1 select bit_and(`uint1`) from test_type_table;
 insert ignore into test_bit_and_1 select bit_and(`int2`) from test_type_table;
@@ -269,11 +287,11 @@ insert ignore into test_bit_and_1 select bit_and(`timestamp`) from test_type_tab
 insert ignore into test_bit_and_1 select bit_and(`timestamp(4)`) from test_type_table;
 insert ignore into test_bit_and_1 select bit_and(`year`) from test_type_table;
 insert ignore into test_bit_and_1 select bit_and(`char`) from test_type_table;
-WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+ERROR:  invalid input syntax for type bigint unsigned: "1.23a                                                                                               "
 CONTEXT:  referenced column: uint8and
 SQL function "uint8and" statement 1
 insert ignore into test_bit_and_1 select bit_and(`varchar`) from test_type_table;
-WARNING:  invalid input syntax for type double precision: "1.23a"
+ERROR:  invalid input syntax for type bigint unsigned: "1.23a"
 CONTEXT:  referenced column: uint8and
 SQL function "uint8and" statement 1
 insert ignore into test_bit_and_2 select bit_and(`binary`) from test_type_table;
@@ -284,11 +302,18 @@ insert ignore into test_bit_and_2 select bit_and(`mediumblob`) from test_type_ta
 insert ignore into test_bit_and_2 select bit_and(`longblob`) from test_type_table;
 insert ignore into test_bit_and_1 select bit_and(`text`) from test_type_table;
 insert ignore into test_bit_and_1 select bit_and(`enum_t`) from test_type_table;
+--?.*
+LINE 1: insert ignore into test_bit_and_1 select bit_and(`enum_t`) f...
+                                                 ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: bit_and
 insert ignore into test_bit_and_1 select bit_and(`set_t`) from test_type_table;
 insert ignore into test_bit_and_1 select bit_and(`json`) from test_type_table;
-WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
-CONTEXT:  referenced column: uint8and
-SQL function "uint8and" statement 1
+ERROR:  function bit_and(json) does not exist
+LINE 1: insert ignore into test_bit_and_1 select bit_and(`json`) fro...
+                                                 ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: bit_and
 select
 inet6_ntoa(`int1`),
 inet6_ntoa(`uint1`),
@@ -647,7 +672,7 @@ md5(`json`)
 from test_type_table;
                md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                |               md5                
 ----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------
- c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | fcb889fe74a0920efe14939de2fd2b1b | 55a54008ad1ba589aa210d2629c1df41 | 89e74e640b8c46257a29de0616794d5d | c4ca4238a0b923820dcc509a6f75849b | 79f473b263e449cab0082ca771c274ef | d8dba60872e05ff526349f71fc69e63d | 25cdbc8541537f885fc7e7be1adc32a0 | ce4016ef0ac88007967a0b45a2cfd978 | f8800ed2bd883b81721e8c8636551fa3 | 2f6c0bc864825163cb3fd23cf50e5124 | 27da995fbfbee3b0021854a4c5baf3c9 | 5531a5834816222280f20d1ef9e95f69 | 82579ce1a519ffd899ce86c21b5b0c1a | 4dfd6b34e7fe3888e7c63ef076ae8707 | e856c7924ef025b0d940412e8a45b5ba | 4dfd6b34e7fe3888e7c63ef076ae8707 | 4dfd6b34e7fe3888e7c63ef076ae8707 | 4dfd6b34e7fe3888e7c63ef076ae8707 | 4dfd6b34e7fe3888e7c63ef076ae8707 | 4dfd6b34e7fe3888e7c63ef076ae8707 | 4dfd6b34e7fe3888e7c63ef076ae8707 | 0cc175b9c0f1b6a831c399e269772661 | f24f071a6ff25db0c9da484cbe06a17a | 8aacdb17187e6acf2b175d4aa08d7213
+ c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | c4ca4238a0b923820dcc509a6f75849b | fcb889fe74a0920efe14939de2fd2b1b | c4ca4238a0b923820dcc509a6f75849b | 4733904347b49cc86e68935a85b34efb | c4ca4238a0b923820dcc509a6f75849b | 79f473b263e449cab0082ca771c274ef | d8dba60872e05ff526349f71fc69e63d | 25cdbc8541537f885fc7e7be1adc32a0 | ce4016ef0ac88007967a0b45a2cfd978 | f8800ed2bd883b81721e8c8636551fa3 | 2f6c0bc864825163cb3fd23cf50e5124 | 27da995fbfbee3b0021854a4c5baf3c9 | 5531a5834816222280f20d1ef9e95f69 | 82579ce1a519ffd899ce86c21b5b0c1a | 4dfd6b34e7fe3888e7c63ef076ae8707 | e856c7924ef025b0d940412e8a45b5ba | 4dfd6b34e7fe3888e7c63ef076ae8707 | c925fb55428b5ed0a6b8923af8924e37 | c925fb55428b5ed0a6b8923af8924e37 | c925fb55428b5ed0a6b8923af8924e37 | c925fb55428b5ed0a6b8923af8924e37 | 4dfd6b34e7fe3888e7c63ef076ae8707 | 0cc175b9c0f1b6a831c399e269772661 | f24f071a6ff25db0c9da484cbe06a17a | 8aacdb17187e6acf2b175d4aa08d7213
 (1 row)
 
 create table test_md5(c varchar(100));

@@ -2,10 +2,10 @@ create table t_null(c1 enum('a','','b'));
 create table t_notnull(c1 enum('a','b'));
 --strict sql_mode
 insert into t_null values(0);
-ERROR:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+--?ERROR:  failed to find conversion function from integer.*
 CONTEXT:  referenced column: c1
 insert into t_notnull values(0);
-ERROR:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+--?ERROR:  failed to find conversion function from integer.*
 CONTEXT:  referenced column: c1
 insert into t_null values('');
 insert into t_notnull values('');
@@ -14,10 +14,10 @@ LINE 1: insert into t_notnull values('');
                                      ^
 CONTEXT:  referenced column: c1
 insert ignore into t_null values(0);
-WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+--?ERROR:  failed to find conversion function from integer.*
 CONTEXT:  referenced column: c1
 insert ignore into t_notnull values(0);
-WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+--?ERROR:  failed to find conversion function from integer.*
 CONTEXT:  referenced column: c1
 insert ignore into t_null values('');
 insert ignore into t_notnull values('');
@@ -38,10 +38,10 @@ CONTEXT:  referenced column: c1
 --non_strict sql_mode
 set dolphin.sql_mode = '';
 insert into t_null values(0);
-WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+--?ERROR:  failed to find conversion function from integer.*
 CONTEXT:  referenced column: c1
 insert into t_notnull values(0);
-WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+--?ERROR:  failed to find conversion function from integer.*
 CONTEXT:  referenced column: c1
 insert into t_null values('');
 insert into t_notnull values('');
@@ -58,22 +58,18 @@ select c1, c1+0 from t_null;
  c1 | ?column? 
 ----+----------
     |        2
+    |        2
     |        0
     |        2
     |        0
-    |        0
-    |        2
-    |        0
-(7 rows)
+(5 rows)
 
 select c1, c1+0 from t_notnull;
  c1 | ?column? 
 ----+----------
     |        0
     |        0
-    |        0
-    |        0
-(4 rows)
+(2 rows)
 
 set dolphin.sql_mode = sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero;
 drop table t_null;

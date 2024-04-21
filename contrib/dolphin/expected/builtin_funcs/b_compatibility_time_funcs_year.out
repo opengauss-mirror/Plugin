@@ -44,11 +44,11 @@ referenced column: yearweek
 
 select c1, makedate(c2, 10), makedate(c3, 100), makedate(c4, 1000)
 from t_year_0002 order by c1;
- c1 |  makedate  |  makedate  |  makedate  
-----+------------+------------+------------
-  1 | 1901-01-10 | 1901-04-10 | 1903-09-27
-(1 row)
-
+ERROR:  function makedate(year, integer) does not exist
+LINE 1: select c1, makedate(c2, 10), makedate(c3, 100), makedate(c4,...
+                   ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: makedate
 select c1, timestampadd(year, 1, c2), timestampadd(year, 1, c3),
 timestampadd(year, 1, c4) from t_year_0002 order by c1;
 WARNING:  Incorrect datetime value: "1901"
@@ -165,6 +165,10 @@ CONTEXT:  referenced column: yearweek
 SQL function "yearweek" statement 1
 referenced column: result
 insert ignore into func_test(functionName, result) values('makedate(cast(1901 as year), 10)', makedate(cast(1901 as year), 10));
+ERROR:  function makedate(year, integer) does not exist
+LINE 1: ...esult) values('makedate(cast(1901 as year), 10)', makedate(c...
+                                                             ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert ignore into func_test(functionName, result) values('timestampadd(year, 1, cast(1901 as year))', timestampadd(year, 1, cast(1901 as year)));
 WARNING:  Incorrect datetime value: "1901"
 CONTEXT:  referenced column: result
@@ -196,11 +200,10 @@ insert ignore into func_test(functionName, result) values('timestampadd(year ,1.
 WARNING:  interval out of range
 CONTEXT:  referenced column: result
 select * from func_test;
-                             functionName                              |   result   
------------------------------------------------------------------------+------------
+                             functionName                              | result 
+-----------------------------------------------------------------------+--------
  extract(year from cast(1901 as year))                                 | 
  yearweek(cast(1901 as year))                                          | 
- makedate(cast(1901 as year), 10)                                      | 1901-01-10
  timestampadd(year, 1, cast(1901 as year))                             | 
  timestampadd(day, timestamptz'2000-1-1 1:1:1+05', cast(1901 as year)) | 
  timestampadd(year, '1', cast(1901 as year))                           | 
@@ -211,7 +214,7 @@ select * from func_test;
  timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724')         | 
  timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724')         | 
  timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724')        | 
-(13 rows)
+(12 rows)
 
 truncate table func_test;
 insert into func_test(functionName, result) values('extract(year from cast(1901 as year))', extract(year from cast(1901 as year)));
@@ -223,6 +226,10 @@ CONTEXT:  referenced column: yearweek
 SQL function "yearweek" statement 1
 referenced column: result
 insert into func_test(functionName, result) values('makedate(cast(1901 as year), 10)', makedate(cast(1901 as year), 10));
+ERROR:  function makedate(year, integer) does not exist
+LINE 1: ...esult) values('makedate(cast(1901 as year), 10)', makedate(c...
+                                                             ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert into func_test(functionName, result) values('timestampadd(year, 1, cast(1901 as year))', timestampadd(year, 1, cast(1901 as year)));
 ERROR:  Incorrect datetime value: "1901"
 CONTEXT:  referenced column: result
@@ -254,10 +261,9 @@ insert into func_test(functionName, result) values('timestampadd(year ,1.212208e
 ERROR:  interval out of range
 CONTEXT:  referenced column: result
 select * from func_test;
-           functionName           |   result   
-----------------------------------+------------
- makedate(cast(1901 as year), 10) | 1901-01-10
-(1 row)
+ functionName | result 
+--------------+--------
+(0 rows)
 
 truncate table func_test;
 -- 非严格模式下的写测试
@@ -271,6 +277,10 @@ CONTEXT:  referenced column: yearweek
 SQL function "yearweek" statement 1
 referenced column: result
 insert ignore into func_test(functionName, result) values('makedate(cast(1901 as year), 10)', makedate(cast(1901 as year), 10));
+ERROR:  function makedate(year, integer) does not exist
+LINE 1: ...esult) values('makedate(cast(1901 as year), 10)', makedate(c...
+                                                             ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert ignore into func_test(functionName, result) values('timestampadd(year, 1, cast(1901 as year))', timestampadd(year, 1, cast(1901 as year)));
 WARNING:  Incorrect datetime value: "1901"
 CONTEXT:  referenced column: result
@@ -302,11 +312,10 @@ insert ignore into func_test(functionName, result) values('timestampadd(year ,1.
 WARNING:  interval out of range
 CONTEXT:  referenced column: result
 select * from func_test;
-                             functionName                              |   result   
------------------------------------------------------------------------+------------
+                             functionName                              | result 
+-----------------------------------------------------------------------+--------
  extract(year from cast(1901 as year))                                 | 
  yearweek(cast(1901 as year))                                          | 
- makedate(cast(1901 as year), 10)                                      | 1901-01-10
  timestampadd(year, 1, cast(1901 as year))                             | 
  timestampadd(day, timestamptz'2000-1-1 1:1:1+05', cast(1901 as year)) | 
  timestampadd(year, '1', cast(1901 as year))                           | 
@@ -317,7 +326,7 @@ select * from func_test;
  timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724')         | 
  timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724')         | 
  timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724')        | 
-(13 rows)
+(12 rows)
 
 truncate table func_test;
 insert into func_test(functionName, result) values('extract(year from cast(1901 as year))', extract(year from cast(1901 as year)));
@@ -329,6 +338,10 @@ CONTEXT:  referenced column: yearweek
 SQL function "yearweek" statement 1
 referenced column: result
 insert into func_test(functionName, result) values('makedate(cast(1901 as year), 10)', makedate(cast(1901 as year), 10));
+ERROR:  function makedate(year, integer) does not exist
+LINE 1: ...esult) values('makedate(cast(1901 as year), 10)', makedate(c...
+                                                             ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert into func_test(functionName, result) values('timestampadd(year, 1, cast(1901 as year))', timestampadd(year, 1, cast(1901 as year)));
 WARNING:  Incorrect datetime value: "1901"
 CONTEXT:  referenced column: result
@@ -360,11 +373,10 @@ insert into func_test(functionName, result) values('timestampadd(year ,1.212208e
 WARNING:  interval out of range
 CONTEXT:  referenced column: result
 select * from func_test;
-                             functionName                              |   result   
------------------------------------------------------------------------+------------
+                             functionName                              | result 
+-----------------------------------------------------------------------+--------
  extract(year from cast(1901 as year))                                 | 
  yearweek(cast(1901 as year))                                          | 
- makedate(cast(1901 as year), 10)                                      | 1901-01-10
  timestampadd(year, 1, cast(1901 as year))                             | 
  timestampadd(day, timestamptz'2000-1-1 1:1:1+05', cast(1901 as year)) | 
  timestampadd(year, '1', cast(1901 as year))                           | 
@@ -375,7 +387,7 @@ select * from func_test;
  timestampadd(year ,1.212208e+10,'1995-01-05 06:32:20.859724')         | 
  timestampadd(year ,1.212208e+30,'1995-01-05 06:32:20.859724')         | 
  timestampadd(year ,1.212208e+308,'1995-01-05 06:32:20.859724')        | 
-(13 rows)
+(12 rows)
 
 drop table if exists func_test cascade;
 drop table if exists t_year_0002 cascade;

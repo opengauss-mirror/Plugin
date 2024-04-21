@@ -17,744 +17,652 @@ insert into t_blob values('1.2'),('1'),('0.2'),('0');
 insert into t_mediumblob values('1.2'),('1'),('0.2'),('0');
 insert into t_longblob values('1.2'),('1'),('0.2'),('0');
 select * from t_boolean inner join t_binary where t_boolean.col1 = t_binary.col1;
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0"
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- t    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  f    | \x30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(2 rows)
+ f    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ f    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ f    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+(4 rows)
 
 select * from t_boolean inner join t_binary where t_binary.col1 = t_boolean.col1;
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0"
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- t    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  f    | \x30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(2 rows)
+ f    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ f    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ f    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+(4 rows)
 
 select * from t_boolean inner join t_binary where t_boolean.col1 != t_binary.col1;
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  t    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ t    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- f    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- f    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- f    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(6 rows)
+(4 rows)
 
 select * from t_boolean inner join t_binary where t_binary.col1 != t_boolean.col1;
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  t    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ t    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- f    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- f    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- f    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(6 rows)
+(4 rows)
 
 select * from t_boolean inner join t_binary where t_boolean.col1 >= t_binary.col1;
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ t    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ f    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ f    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ f    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  f    | \x30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(4 rows)
+(8 rows)
 
 select * from t_boolean inner join t_binary where t_binary.col1 >= t_boolean.col1;
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- t    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- t    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  f    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  f    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  f    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  f    | \x30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(6 rows)
+(4 rows)
 
 select * from t_boolean inner join t_binary where t_boolean.col1 <= t_binary.col1;
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- t    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- t    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  f    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  f    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  f    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  f    | \x30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(6 rows)
+(4 rows)
 
 select * from t_boolean inner join t_binary where t_binary.col1 <= t_boolean.col1;
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ t    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ f    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ f    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ f    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  f    | \x30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(4 rows)
+(8 rows)
 
 select * from t_boolean inner join t_binary where t_boolean.col1 > t_binary.col1;
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ t    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+ t    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(2 rows)
+(4 rows)
 
 select * from t_boolean inner join t_binary where t_binary.col1 > t_boolean.col1;
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
- col1 |                                                                                                    col1                                                                                                    
-------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- t    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- f    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- f    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- f    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(4 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_boolean inner join t_binary where t_boolean.col1 < t_binary.col1;
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
+ col1 | col1 
+------+------
+(0 rows)
+
+select * from t_boolean inner join t_binary where t_binary.col1 < t_boolean.col1;
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  t    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- f    | \x312e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- f    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- f    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(4 rows)
-
-select * from t_boolean inner join t_binary where t_binary.col1 < t_boolean.col1;
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
-WARNING:  Data truncated for input data: "1.2"
-WARNING:  Data truncated for input data: "1"
-WARNING:  Data truncated for input data: "0.2"
-WARNING:  Data truncated for input data: "0"
- col1 |                                                                                                    col1                                                                                                    
-------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ t    | \x31000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x302e3200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  t    | \x30000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(2 rows)
+(4 rows)
 
 select * from t_varbinary inner join t_boolean where t_varbinary.col1 = t_boolean.col1;
- col1 | col1 
-------+------
- \x31 | t
- \x30 | f
-(2 rows)
+   col1   | col1 
+----------+------
+ \x30     | f
+ \x302e32 | f
+ \x31     | f
+ \x312e32 | f
+(4 rows)
 
 select * from t_varbinary inner join t_boolean where t_boolean.col1 = t_varbinary.col1;
- col1 | col1 
-------+------
- \x31 | t
- \x30 | f
-(2 rows)
+   col1   | col1 
+----------+------
+ \x30     | f
+ \x302e32 | f
+ \x31     | f
+ \x312e32 | f
+(4 rows)
 
 select * from t_varbinary inner join t_boolean where t_varbinary.col1 != t_boolean.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
  \x302e32 | t
  \x30     | t
- \x312e32 | f
- \x31     | f
- \x302e32 | f
-(6 rows)
+(4 rows)
 
 select * from t_varbinary inner join t_boolean where t_boolean.col1 != t_varbinary.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
  \x302e32 | t
  \x30     | t
- \x312e32 | f
- \x31     | f
- \x302e32 | f
-(6 rows)
+(4 rows)
 
 select * from t_varbinary inner join t_boolean where t_varbinary.col1 >= t_boolean.col1;
    col1   | col1 
 ----------+------
- \x312e32 | t
- \x31     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
  \x30     | f
-(6 rows)
+(4 rows)
 
 select * from t_varbinary inner join t_boolean where t_boolean.col1 >= t_varbinary.col1;
    col1   | col1 
 ----------+------
+ \x312e32 | t
  \x31     | t
  \x302e32 | t
  \x30     | t
+ \x312e32 | f
+ \x31     | f
+ \x302e32 | f
  \x30     | f
-(4 rows)
+(8 rows)
 
 select * from t_varbinary inner join t_boolean where t_varbinary.col1 <= t_boolean.col1;
    col1   | col1 
 ----------+------
+ \x312e32 | t
  \x31     | t
  \x302e32 | t
  \x30     | t
+ \x312e32 | f
+ \x31     | f
+ \x302e32 | f
  \x30     | f
-(4 rows)
+(8 rows)
 
 select * from t_varbinary inner join t_boolean where t_boolean.col1 <= t_varbinary.col1;
    col1   | col1 
 ----------+------
- \x312e32 | t
- \x31     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
  \x30     | f
-(6 rows)
+(4 rows)
 
 select * from t_varbinary inner join t_boolean where t_varbinary.col1 > t_boolean.col1;
-   col1   | col1 
-----------+------
- \x312e32 | t
- \x312e32 | f
- \x31     | f
- \x302e32 | f
-(4 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_varbinary inner join t_boolean where t_boolean.col1 > t_varbinary.col1;
    col1   | col1 
 ----------+------
+ \x312e32 | t
+ \x31     | t
  \x302e32 | t
  \x30     | t
-(2 rows)
+(4 rows)
 
 select * from t_varbinary inner join t_boolean where t_varbinary.col1 < t_boolean.col1;
    col1   | col1 
 ----------+------
+ \x312e32 | t
+ \x31     | t
  \x302e32 | t
  \x30     | t
-(2 rows)
+(4 rows)
 
 select * from t_varbinary inner join t_boolean where t_boolean.col1 < t_varbinary.col1;
-   col1   | col1 
-----------+------
- \x312e32 | t
- \x312e32 | f
- \x31     | f
- \x302e32 | f
-(4 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_tinyblob inner join t_boolean where t_tinyblob.col1 = t_boolean.col1;
  col1 | col1 
 ------+------
- \x31 | t
- \x30 | f
-(2 rows)
+(0 rows)
 
 select * from t_tinyblob inner join t_boolean where t_boolean.col1 = t_tinyblob.col1;
  col1 | col1 
 ------+------
- \x31 | t
- \x30 | f
-(2 rows)
+(0 rows)
 
 select * from t_tinyblob inner join t_boolean where t_tinyblob.col1 != t_boolean.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
  \x302e32 | t
  \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(6 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_tinyblob inner join t_boolean where t_boolean.col1 != t_tinyblob.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
  \x302e32 | t
  \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(6 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_tinyblob inner join t_boolean where t_tinyblob.col1 >= t_boolean.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
  \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
  \x30     | f
-(6 rows)
+(8 rows)
 
 select * from t_tinyblob inner join t_boolean where t_boolean.col1 >= t_tinyblob.col1;
-   col1   | col1 
-----------+------
- \x31     | t
- \x302e32 | t
- \x30     | t
- \x30     | f
-(4 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_tinyblob inner join t_boolean where t_tinyblob.col1 <= t_boolean.col1;
-   col1   | col1 
-----------+------
- \x31     | t
- \x302e32 | t
- \x30     | t
- \x30     | f
-(4 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_tinyblob inner join t_boolean where t_boolean.col1 <= t_tinyblob.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
  \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
  \x30     | f
-(6 rows)
+(8 rows)
 
 select * from t_tinyblob inner join t_boolean where t_tinyblob.col1 > t_boolean.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(4 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_tinyblob inner join t_boolean where t_boolean.col1 > t_tinyblob.col1;
-   col1   | col1 
-----------+------
- \x302e32 | t
- \x30     | t
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_tinyblob inner join t_boolean where t_tinyblob.col1 < t_boolean.col1;
-   col1   | col1 
-----------+------
- \x302e32 | t
- \x30     | t
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_tinyblob inner join t_boolean where t_boolean.col1 < t_tinyblob.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(4 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_blob inner join t_boolean where t_blob.col1 = t_boolean.col1;
  col1 | col1 
 ------+------
- \x31 | t
- \x30 | f
-(2 rows)
+(0 rows)
 
 select * from t_blob inner join t_boolean where t_boolean.col1 = t_blob.col1;
  col1 | col1 
 ------+------
- \x31 | t
- \x30 | f
-(2 rows)
+(0 rows)
 
 select * from t_blob inner join t_boolean where t_blob.col1 != t_boolean.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
  \x302e32 | t
  \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(6 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_blob inner join t_boolean where t_boolean.col1 != t_blob.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
  \x302e32 | t
  \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(6 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_blob inner join t_boolean where t_blob.col1 >= t_boolean.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
  \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
  \x30     | f
-(6 rows)
+(8 rows)
 
 select * from t_blob inner join t_boolean where t_boolean.col1 >= t_blob.col1;
-   col1   | col1 
-----------+------
- \x31     | t
- \x302e32 | t
- \x30     | t
- \x30     | f
-(4 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_blob inner join t_boolean where t_blob.col1 <= t_boolean.col1;
-   col1   | col1 
-----------+------
- \x31     | t
- \x302e32 | t
- \x30     | t
- \x30     | f
-(4 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_blob inner join t_boolean where t_boolean.col1 <= t_blob.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
  \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
  \x30     | f
-(6 rows)
+(8 rows)
 
 select * from t_blob inner join t_boolean where t_blob.col1 > t_boolean.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(4 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_blob inner join t_boolean where t_boolean.col1 > t_blob.col1;
-   col1   | col1 
-----------+------
- \x302e32 | t
- \x30     | t
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_blob inner join t_boolean where t_blob.col1 < t_boolean.col1;
-   col1   | col1 
-----------+------
- \x302e32 | t
- \x30     | t
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_blob inner join t_boolean where t_boolean.col1 < t_blob.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(4 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_mediumblob inner join t_boolean where t_mediumblob.col1 = t_boolean.col1;
  col1 | col1 
 ------+------
- \x31 | t
- \x30 | f
-(2 rows)
+(0 rows)
 
 select * from t_mediumblob inner join t_boolean where t_boolean.col1 = t_mediumblob.col1;
  col1 | col1 
 ------+------
- \x31 | t
- \x30 | f
-(2 rows)
+(0 rows)
 
 select * from t_mediumblob inner join t_boolean where t_mediumblob.col1 != t_boolean.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
  \x302e32 | t
  \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(6 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_mediumblob inner join t_boolean where t_boolean.col1 != t_mediumblob.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
  \x302e32 | t
  \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(6 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_mediumblob inner join t_boolean where t_mediumblob.col1 >= t_boolean.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
  \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
  \x30     | f
-(6 rows)
+(8 rows)
 
 select * from t_mediumblob inner join t_boolean where t_boolean.col1 >= t_mediumblob.col1;
-   col1   | col1 
-----------+------
- \x31     | t
- \x302e32 | t
- \x30     | t
- \x30     | f
-(4 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_mediumblob inner join t_boolean where t_mediumblob.col1 <= t_boolean.col1;
-   col1   | col1 
-----------+------
- \x31     | t
- \x302e32 | t
- \x30     | t
- \x30     | f
-(4 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_mediumblob inner join t_boolean where t_boolean.col1 <= t_mediumblob.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
  \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
  \x30     | f
-(6 rows)
+(8 rows)
 
 select * from t_mediumblob inner join t_boolean where t_mediumblob.col1 > t_boolean.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(4 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_mediumblob inner join t_boolean where t_boolean.col1 > t_mediumblob.col1;
-   col1   | col1 
-----------+------
- \x302e32 | t
- \x30     | t
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_mediumblob inner join t_boolean where t_mediumblob.col1 < t_boolean.col1;
-   col1   | col1 
-----------+------
- \x302e32 | t
- \x30     | t
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_mediumblob inner join t_boolean where t_boolean.col1 < t_mediumblob.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(4 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_longblob inner join t_boolean where t_longblob.col1 = t_boolean.col1;
  col1 | col1 
 ------+------
- \x31 | t
- \x30 | f
-(2 rows)
+(0 rows)
 
 select * from t_longblob inner join t_boolean where t_boolean.col1 = t_longblob.col1;
  col1 | col1 
 ------+------
- \x31 | t
- \x30 | f
-(2 rows)
+(0 rows)
 
 select * from t_longblob inner join t_boolean where t_longblob.col1 != t_boolean.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
  \x302e32 | t
  \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(6 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_longblob inner join t_boolean where t_boolean.col1 != t_longblob.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
  \x302e32 | t
  \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(6 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_longblob inner join t_boolean where t_longblob.col1 >= t_boolean.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
  \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
  \x30     | f
-(6 rows)
+(8 rows)
 
 select * from t_longblob inner join t_boolean where t_boolean.col1 >= t_longblob.col1;
-   col1   | col1 
-----------+------
- \x31     | t
- \x302e32 | t
- \x30     | t
- \x30     | f
-(4 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_longblob inner join t_boolean where t_longblob.col1 <= t_boolean.col1;
-   col1   | col1 
-----------+------
- \x31     | t
- \x302e32 | t
- \x30     | t
- \x30     | f
-(4 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_longblob inner join t_boolean where t_boolean.col1 <= t_longblob.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
  \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
  \x30     | f
-(6 rows)
+(8 rows)
 
 select * from t_longblob inner join t_boolean where t_longblob.col1 > t_boolean.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(4 rows)
+ \x30     | f
+(8 rows)
 
 select * from t_longblob inner join t_boolean where t_boolean.col1 > t_longblob.col1;
-   col1   | col1 
-----------+------
- \x302e32 | t
- \x30     | t
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_longblob inner join t_boolean where t_longblob.col1 < t_boolean.col1;
-   col1   | col1 
-----------+------
- \x302e32 | t
- \x30     | t
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_longblob inner join t_boolean where t_boolean.col1 < t_longblob.col1;
    col1   | col1 
 ----------+------
  \x312e32 | t
+ \x31     | t
+ \x302e32 | t
+ \x30     | t
  \x312e32 | f
  \x31     | f
  \x302e32 | f
-(4 rows)
+ \x30     | f
+(8 rows)
 
 delete from t_binary;
 delete from t_varbinary;
@@ -770,544 +678,472 @@ insert into t_blob values('2023'),('2022'),('2024');
 insert into t_mediumblob values('2023'),('2022'),('2024');
 insert into t_longblob values('2023'),('2022'),('2024');
 select * from t_year inner join t_binary where t_year.col1 = t_binary.col1;
-WARNING:  Data truncated for input data: "2023"
-CONTEXT:  SQL function "year_binary_eq" statement 1
-WARNING:  Data truncated for input data: "2022"
-CONTEXT:  SQL function "year_binary_eq" statement 1
-WARNING:  Data truncated for input data: "2024"
-CONTEXT:  SQL function "year_binary_eq" statement 1
- col1 |                                                                                                    col1                                                                                                    
-------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- 2023 | \x32303233000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_year inner join t_binary where t_binary.col1 = t_year.col1;
-WARNING:  Data truncated for input data: "2023"
-CONTEXT:  SQL function "binary_year_eq" statement 1
-WARNING:  Data truncated for input data: "2022"
-CONTEXT:  SQL function "binary_year_eq" statement 1
-WARNING:  Data truncated for input data: "2024"
-CONTEXT:  SQL function "binary_year_eq" statement 1
- col1 |                                                                                                    col1                                                                                                    
-------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- 2023 | \x32303233000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_year inner join t_binary where t_year.col1 != t_binary.col1;
-WARNING:  Data truncated for input data: "2023"
-CONTEXT:  SQL function "year_binary_ne" statement 1
-WARNING:  Data truncated for input data: "2022"
-CONTEXT:  SQL function "year_binary_ne" statement 1
-WARNING:  Data truncated for input data: "2024"
-CONTEXT:  SQL function "year_binary_ne" statement 1
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 2023 | \x32303233000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  2023 | \x32303232000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  2023 | \x32303234000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(2 rows)
+(3 rows)
 
 select * from t_year inner join t_binary where t_binary.col1 != t_year.col1;
-WARNING:  Data truncated for input data: "2023"
-CONTEXT:  SQL function "binary_year_ne" statement 1
-WARNING:  Data truncated for input data: "2022"
-CONTEXT:  SQL function "binary_year_ne" statement 1
-WARNING:  Data truncated for input data: "2024"
-CONTEXT:  SQL function "binary_year_ne" statement 1
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 2023 | \x32303233000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  2023 | \x32303232000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  2023 | \x32303234000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(2 rows)
+(3 rows)
 
 select * from t_year inner join t_binary where t_year.col1 >= t_binary.col1;
-WARNING:  Data truncated for input data: "2023"
-CONTEXT:  SQL function "year_binary_ge" statement 1
-WARNING:  Data truncated for input data: "2022"
-CONTEXT:  SQL function "year_binary_ge" statement 1
-WARNING:  Data truncated for input data: "2024"
-CONTEXT:  SQL function "year_binary_ge" statement 1
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  2023 | \x32303233000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  2023 | \x32303232000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(2 rows)
+ 2023 | \x32303234000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+(3 rows)
 
 select * from t_year inner join t_binary where t_binary.col1 >= t_year.col1;
-WARNING:  Data truncated for input data: "2023"
-CONTEXT:  SQL function "binary_year_ge" statement 1
-WARNING:  Data truncated for input data: "2022"
-CONTEXT:  SQL function "binary_year_ge" statement 1
-WARNING:  Data truncated for input data: "2024"
-CONTEXT:  SQL function "binary_year_ge" statement 1
- col1 |                                                                                                    col1                                                                                                    
-------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- 2023 | \x32303233000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- 2023 | \x32303234000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_year inner join t_binary where t_year.col1 <= t_binary.col1;
-WARNING:  Data truncated for input data: "2023"
-CONTEXT:  SQL function "year_binary_le" statement 1
-WARNING:  Data truncated for input data: "2022"
-CONTEXT:  SQL function "year_binary_le" statement 1
-WARNING:  Data truncated for input data: "2024"
-CONTEXT:  SQL function "year_binary_le" statement 1
- col1 |                                                                                                    col1                                                                                                    
-------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- 2023 | \x32303233000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
- 2023 | \x32303234000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_year inner join t_binary where t_binary.col1 <= t_year.col1;
-WARNING:  Data truncated for input data: "2023"
-CONTEXT:  SQL function "binary_year_le" statement 1
-WARNING:  Data truncated for input data: "2022"
-CONTEXT:  SQL function "binary_year_le" statement 1
-WARNING:  Data truncated for input data: "2024"
-CONTEXT:  SQL function "binary_year_le" statement 1
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  2023 | \x32303233000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  2023 | \x32303232000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(2 rows)
+ 2023 | \x32303234000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+(3 rows)
 
 select * from t_year inner join t_binary where t_year.col1 > t_binary.col1;
-WARNING:  Data truncated for input data: "2023"
-CONTEXT:  SQL function "year_binary_gt" statement 1
-WARNING:  Data truncated for input data: "2022"
-CONTEXT:  SQL function "year_binary_gt" statement 1
-WARNING:  Data truncated for input data: "2024"
-CONTEXT:  SQL function "year_binary_gt" statement 1
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 2023 | \x32303233000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  2023 | \x32303232000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(1 row)
+ 2023 | \x32303234000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+(3 rows)
 
 select * from t_year inner join t_binary where t_binary.col1 > t_year.col1;
-WARNING:  Data truncated for input data: "2023"
-CONTEXT:  SQL function "binary_year_gt" statement 1
-WARNING:  Data truncated for input data: "2022"
-CONTEXT:  SQL function "binary_year_gt" statement 1
-WARNING:  Data truncated for input data: "2024"
-CONTEXT:  SQL function "binary_year_gt" statement 1
- col1 |                                                                                                    col1                                                                                                    
-------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- 2023 | \x32303234000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_year inner join t_binary where t_year.col1 < t_binary.col1;
-WARNING:  Data truncated for input data: "2023"
-CONTEXT:  SQL function "year_binary_lt" statement 1
-WARNING:  Data truncated for input data: "2022"
-CONTEXT:  SQL function "year_binary_lt" statement 1
-WARNING:  Data truncated for input data: "2024"
-CONTEXT:  SQL function "year_binary_lt" statement 1
- col1 |                                                                                                    col1                                                                                                    
-------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- 2023 | \x32303234000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_year inner join t_binary where t_binary.col1 < t_year.col1;
-WARNING:  Data truncated for input data: "2023"
-CONTEXT:  SQL function "binary_year_lt" statement 1
-WARNING:  Data truncated for input data: "2022"
-CONTEXT:  SQL function "binary_year_lt" statement 1
-WARNING:  Data truncated for input data: "2024"
-CONTEXT:  SQL function "binary_year_lt" statement 1
  col1 |                                                                                                    col1                                                                                                    
 ------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ 2023 | \x32303233000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
  2023 | \x32303232000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(1 row)
+ 2023 | \x32303234000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+(3 rows)
 
 select * from t_varbinary inner join t_year where t_varbinary.col1 = t_year.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_varbinary inner join t_year where t_year.col1 = t_varbinary.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_varbinary inner join t_year where t_varbinary.col1 != t_year.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
  \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_varbinary inner join t_year where t_year.col1 != t_varbinary.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
  \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_varbinary inner join t_year where t_varbinary.col1 >= t_year.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
- \x32303234 | 2023
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_varbinary inner join t_year where t_year.col1 >= t_varbinary.col1;
     col1    | col1 
 ------------+------
  \x32303233 | 2023
  \x32303232 | 2023
-(2 rows)
+ \x32303234 | 2023
+(3 rows)
 
 select * from t_varbinary inner join t_year where t_varbinary.col1 <= t_year.col1;
     col1    | col1 
 ------------+------
  \x32303233 | 2023
  \x32303232 | 2023
-(2 rows)
+ \x32303234 | 2023
+(3 rows)
 
 select * from t_varbinary inner join t_year where t_year.col1 <= t_varbinary.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
- \x32303234 | 2023
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_varbinary inner join t_year where t_varbinary.col1 > t_year.col1;
-    col1    | col1 
-------------+------
- \x32303234 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_varbinary inner join t_year where t_year.col1 > t_varbinary.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
  \x32303232 | 2023
-(1 row)
+ \x32303234 | 2023
+(3 rows)
 
 select * from t_varbinary inner join t_year where t_varbinary.col1 < t_year.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
  \x32303232 | 2023
-(1 row)
+ \x32303234 | 2023
+(3 rows)
 
 select * from t_varbinary inner join t_year where t_year.col1 < t_varbinary.col1;
-    col1    | col1 
-------------+------
- \x32303234 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_tinyblob inner join t_year where t_tinyblob.col1 = t_year.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_tinyblob inner join t_year where t_year.col1 = t_tinyblob.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_tinyblob inner join t_year where t_tinyblob.col1 != t_year.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
  \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_tinyblob inner join t_year where t_year.col1 != t_tinyblob.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
  \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_tinyblob inner join t_year where t_tinyblob.col1 >= t_year.col1;
     col1    | col1 
 ------------+------
  \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_tinyblob inner join t_year where t_year.col1 >= t_tinyblob.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
- \x32303232 | 2023
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_tinyblob inner join t_year where t_tinyblob.col1 <= t_year.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
- \x32303232 | 2023
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_tinyblob inner join t_year where t_year.col1 <= t_tinyblob.col1;
     col1    | col1 
 ------------+------
  \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_tinyblob inner join t_year where t_tinyblob.col1 > t_year.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(1 row)
+(3 rows)
 
 select * from t_tinyblob inner join t_year where t_year.col1 > t_tinyblob.col1;
-    col1    | col1 
-------------+------
- \x32303232 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_tinyblob inner join t_year where t_tinyblob.col1 < t_year.col1;
-    col1    | col1 
-------------+------
- \x32303232 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_tinyblob inner join t_year where t_year.col1 < t_tinyblob.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(1 row)
+(3 rows)
 
 select * from t_blob inner join t_year where t_blob.col1 = t_year.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_blob inner join t_year where t_year.col1 = t_blob.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_blob inner join t_year where t_blob.col1 != t_year.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
  \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_blob inner join t_year where t_year.col1 != t_blob.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
  \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_blob inner join t_year where t_blob.col1 >= t_year.col1;
     col1    | col1 
 ------------+------
  \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_blob inner join t_year where t_year.col1 >= t_blob.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
- \x32303232 | 2023
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_blob inner join t_year where t_blob.col1 <= t_year.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
- \x32303232 | 2023
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_blob inner join t_year where t_year.col1 <= t_blob.col1;
     col1    | col1 
 ------------+------
  \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_blob inner join t_year where t_blob.col1 > t_year.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(1 row)
+(3 rows)
 
 select * from t_blob inner join t_year where t_year.col1 > t_blob.col1;
-    col1    | col1 
-------------+------
- \x32303232 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_blob inner join t_year where t_blob.col1 < t_year.col1;
-    col1    | col1 
-------------+------
- \x32303232 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_blob inner join t_year where t_year.col1 < t_blob.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(1 row)
+(3 rows)
 
 select * from t_mediumblob inner join t_year where t_mediumblob.col1 = t_year.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_mediumblob inner join t_year where t_year.col1 = t_mediumblob.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_mediumblob inner join t_year where t_mediumblob.col1 != t_year.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
  \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_mediumblob inner join t_year where t_year.col1 != t_mediumblob.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
  \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_mediumblob inner join t_year where t_mediumblob.col1 >= t_year.col1;
     col1    | col1 
 ------------+------
  \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_mediumblob inner join t_year where t_year.col1 >= t_mediumblob.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
- \x32303232 | 2023
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_mediumblob inner join t_year where t_mediumblob.col1 <= t_year.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
- \x32303232 | 2023
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_mediumblob inner join t_year where t_year.col1 <= t_mediumblob.col1;
     col1    | col1 
 ------------+------
  \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_mediumblob inner join t_year where t_mediumblob.col1 > t_year.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(1 row)
+(3 rows)
 
 select * from t_mediumblob inner join t_year where t_year.col1 > t_mediumblob.col1;
-    col1    | col1 
-------------+------
- \x32303232 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_mediumblob inner join t_year where t_mediumblob.col1 < t_year.col1;
-    col1    | col1 
-------------+------
- \x32303232 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_mediumblob inner join t_year where t_year.col1 < t_mediumblob.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(1 row)
+(3 rows)
 
 select * from t_longblob inner join t_year where t_longblob.col1 = t_year.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_longblob inner join t_year where t_year.col1 = t_longblob.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_longblob inner join t_year where t_longblob.col1 != t_year.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
  \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_longblob inner join t_year where t_year.col1 != t_longblob.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
  \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_longblob inner join t_year where t_longblob.col1 >= t_year.col1;
     col1    | col1 
 ------------+------
  \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_longblob inner join t_year where t_year.col1 >= t_longblob.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
- \x32303232 | 2023
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_longblob inner join t_year where t_longblob.col1 <= t_year.col1;
-    col1    | col1 
-------------+------
- \x32303233 | 2023
- \x32303232 | 2023
-(2 rows)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_longblob inner join t_year where t_year.col1 <= t_longblob.col1;
     col1    | col1 
 ------------+------
  \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(2 rows)
+(3 rows)
 
 select * from t_longblob inner join t_year where t_longblob.col1 > t_year.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(1 row)
+(3 rows)
 
 select * from t_longblob inner join t_year where t_year.col1 > t_longblob.col1;
-    col1    | col1 
-------------+------
- \x32303232 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_longblob inner join t_year where t_longblob.col1 < t_year.col1;
-    col1    | col1 
-------------+------
- \x32303232 | 2023
-(1 row)
+ col1 | col1 
+------+------
+(0 rows)
 
 select * from t_longblob inner join t_year where t_year.col1 < t_longblob.col1;
     col1    | col1 
 ------------+------
+ \x32303233 | 2023
+ \x32303232 | 2023
  \x32303234 | 2023
-(1 row)
+(3 rows)
 
 reset search_path;
 drop schema test_supplemental_operator cascade;

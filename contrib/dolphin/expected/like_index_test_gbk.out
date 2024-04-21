@@ -37,10 +37,10 @@ explain (costs off) select * from test_gbk_table_bin_char where c1 like 'Ð»%';
 (4 rows)
 
 select * from test_gbk_table_bin_char where c1 like 'Ð»%';
-     c1     
-------------
- Ð»Ð»ÄãÑ½  
- Ð»þþ      
+       c1       
+----------------
+ Ð»Ð»ÄãÑ½      
+ Ð»þþ        
 (2 rows)
 
 --varchar with length without prefix key
@@ -289,10 +289,10 @@ explain (costs off) select * from test_gbk_chinese_ci_char where c1 like 'Ð»%';
 (4 rows)
 
 select * from test_gbk_chinese_ci_char where c1 like 'Ð»%';
-     c1     
-------------
- Ð»Ð»ÄãÑ½  
- Ð»þþ      
+       c1       
+----------------
+ Ð»Ð»ÄãÑ½      
+ Ð»þþ        
 (2 rows)
 
 --varchar with length without prefix key

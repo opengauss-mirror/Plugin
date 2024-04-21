@@ -32036,6 +32036,14 @@ opt_evtime_unit:
 												 INTERVAL_MASK(MINUTE) |
 												 INTERVAL_MASK(SECOND), @1));
 			}
+			| DAY_MICROSECOND_P
+			{
+				$$ = list_make1(makeIntConst(INTERVAL_MASK(DAY) |
+												 INTERVAL_MASK(HOUR) |
+												 INTERVAL_MASK(MINUTE) |
+												 INTERVAL_MASK(SECOND) |
+												 INTERVAL_MASK(MICROSECOND), @1));
+			}
 			| HOUR_MINUTE_P
 			{
 				$$ = list_make1(makeIntConst(INTERVAL_MASK(HOUR) |

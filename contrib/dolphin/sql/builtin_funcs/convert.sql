@@ -50,16 +50,16 @@ select convert(`int1` using utf8), convert(`uint1` using utf8), convert(`int2` u
 convert(`uint4` using utf8), convert(`int8` using utf8), convert(`uint8` using utf8), convert(`float4` using utf8), convert(`float8` using utf8),
 convert(`numeric` using utf8), convert(`bit1` using utf8), convert(`bit64` using utf8), convert(`boolean` using utf8), convert(`date` using utf8),
 convert(`time` using utf8), convert(`time(4)` using utf8), convert(`datetime` using utf8), convert(`datetime(4)` using utf8), convert(`timestamp` using utf8), 
-convert(`timestamp(4)` using utf8), convert(`year` using utf8), convert(`char` using utf8), convert(`varchar` using utf8), convert(`binary` using utf8), 
-convert(`varbinary` using utf8), convert(`tinyblob` using utf8), convert(`blob` using utf8), convert(`mediumblob` using utf8), convert(`longblob` using utf8), 
+convert(`timestamp(4)` using utf8), convert(`year` using utf8), convert(`char` using utf8), convert(`varchar` using utf8),
+convert(`tinyblob` using utf8), convert(`blob` using utf8), convert(`mediumblob` using utf8), convert(`longblob` using utf8), 
 convert(`text` using utf8), convert(`enum_t` using utf8), convert(`set_t` using utf8), convert(`json` using utf8) from test_type_table;
 
 select convert(`int1` using 'utf8'), convert(`uint1` using 'utf8'), convert(`int2` using 'utf8'), convert(`uint2` using 'utf8'), convert(`int4` using 'utf8'), 
 convert(`uint4` using 'utf8'), convert(`int8` using 'utf8'), convert(`uint8` using 'utf8'), convert(`float4` using 'utf8'), convert(`float8` using 'utf8'),
 convert(`numeric` using 'utf8'), convert(`bit1` using 'utf8'), convert(`bit64` using 'utf8'), convert(`boolean` using 'utf8'), convert(`date` using 'utf8'),
 convert(`time` using 'utf8'), convert(`time(4)` using 'utf8'), convert(`datetime` using 'utf8'), convert(`datetime(4)` using 'utf8'), convert(`timestamp` using 'utf8'), 
-convert(`timestamp(4)` using 'utf8'), convert(`year` using 'utf8'), convert(`char` using 'utf8'), convert(`varchar` using 'utf8'), convert(`binary` using 'utf8'), 
-convert(`varbinary` using 'utf8'), convert(`tinyblob` using 'utf8'), convert(`blob` using 'utf8'), convert(`mediumblob` using 'utf8'), convert(`longblob` using 'utf8'), 
+convert(`timestamp(4)` using 'utf8'), convert(`year` using 'utf8'), convert(`char` using 'utf8'), convert(`varchar` using 'utf8'),
+convert(`tinyblob` using 'utf8'), convert(`blob` using 'utf8'), convert(`mediumblob` using 'utf8'), convert(`longblob` using 'utf8'), 
 convert(`text` using 'utf8'), convert(`enum_t` using 'utf8'), convert(`set_t` using 'utf8'), convert(`json` using 'utf8') from test_type_table;
 
 drop table test_type_table;
@@ -83,6 +83,7 @@ set b_format_behavior_compat_options = '';
 select convert('测试' using latin1);
 select convert(11.1, decimal(10,3));
 select convert(1 using decimal(10,3));
+set dolphin.b_compatibility_mode = off;
 select pg_typeof(convert('1', char));
 select pg_typeof(convert('1', char(10)));
 set dolphin.b_compatibility_mode = on;

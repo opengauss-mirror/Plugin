@@ -2,15 +2,11 @@ create schema rpad_integer_overflow;
 set current_schema = rpad_integer_overflow;
 set dolhin.sql_mode = default;
 select rpad('a', 9223372036854775807, 'x');
-WARNING:  integer out of range
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: select rpad('a', 9223372036854775807, 'x');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: rpad
-WARNING:  requested length too large
-CONTEXT:  referenced column: rpad
- rpad 
-------
- 
-(1 row)
-
 select rpad('a', 2147483647, 'x');
 WARNING:  requested length too large
 CONTEXT:  referenced column: rpad
@@ -20,15 +16,11 @@ CONTEXT:  referenced column: rpad
 (1 row)
 
 select rpad('a', 2147483648, 'x');
-WARNING:  integer out of range
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: select rpad('a', 2147483648, 'x');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: rpad
-WARNING:  requested length too large
-CONTEXT:  referenced column: rpad
- rpad 
-------
- 
-(1 row)
-
 select rpad('a', -2147483648, 'x');
  rpad 
 ------
@@ -36,79 +28,89 @@ select rpad('a', -2147483648, 'x');
 (1 row)
 
 select rpad('a', -2147483649, 'x');
-WARNING:  integer out of range
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: select rpad('a', -2147483649, 'x');
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: rpad
- rpad 
-------
- 
-(1 row)
-
 create table t1(c text);
 insert into t1 values(rpad('a', 9223372036854775807, 'x'));
-ERROR:  integer out of range
-CONTEXT:  referenced column: c
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: insert into t1 values(rpad('a', 9223372036854775807, 'x'));
+                              ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert into t1 values(rpad('a', 2147483647, 'x'));
 ERROR:  requested length too large
 CONTEXT:  referenced column: c
 insert into t1 values(rpad('a', 2147483648, 'x'));
-ERROR:  integer out of range
-CONTEXT:  referenced column: c
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: insert into t1 values(rpad('a', 2147483648, 'x'));
+                              ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert into t1 values(rpad('a', -2147483648, 'x'));
 insert into t1 values(rpad('a', -2147483649, 'x'));
-ERROR:  integer out of range
-CONTEXT:  referenced column: c
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: insert into t1 values(rpad('a', -2147483649, 'x'));
+                              ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert ignore into t1 values(rpad('a', 9223372036854775807, 'x'));
-WARNING:  integer out of range
-CONTEXT:  referenced column: c
-WARNING:  requested length too large
-CONTEXT:  referenced column: c
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: insert ignore into t1 values(rpad('a', 9223372036854775807, ...
+                                     ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert ignore into t1 values(rpad('a', 2147483647, 'x'));
 WARNING:  requested length too large
 CONTEXT:  referenced column: c
 insert ignore into t1 values(rpad('a', 2147483648, 'x'));
-WARNING:  integer out of range
-CONTEXT:  referenced column: c
-WARNING:  requested length too large
-CONTEXT:  referenced column: c
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: insert ignore into t1 values(rpad('a', 2147483648, 'x'));
+                                     ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert ignore into t1 values(rpad('a', -2147483648, 'x'));
 insert ignore into t1 values(rpad('a', -2147483649, 'x'));
-WARNING:  integer out of range
-CONTEXT:  referenced column: c
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: insert ignore into t1 values(rpad('a', -2147483649, 'x'));
+                                     ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 set dolphin.sql_mode = '';
 insert into t1 values(rpad('a', 9223372036854775807, 'x'));
-WARNING:  integer out of range
-CONTEXT:  referenced column: c
-WARNING:  requested length too large
-CONTEXT:  referenced column: c
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: insert into t1 values(rpad('a', 9223372036854775807, 'x'));
+                              ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert into t1 values(rpad('a', 2147483647, 'x'));
 WARNING:  requested length too large
 CONTEXT:  referenced column: c
 insert into t1 values(rpad('a', 2147483648, 'x'));
-WARNING:  integer out of range
-CONTEXT:  referenced column: c
-WARNING:  requested length too large
-CONTEXT:  referenced column: c
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: insert into t1 values(rpad('a', 2147483648, 'x'));
+                              ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert into t1 values(rpad('a', -2147483648, 'x'));
 insert into t1 values(rpad('a', -2147483649, 'x'));
-WARNING:  integer out of range
-CONTEXT:  referenced column: c
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: insert into t1 values(rpad('a', -2147483649, 'x'));
+                              ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert ignore into t1 values(rpad('a', 9223372036854775807, 'x'));
-WARNING:  integer out of range
-CONTEXT:  referenced column: c
-WARNING:  requested length too large
-CONTEXT:  referenced column: c
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: insert ignore into t1 values(rpad('a', 9223372036854775807, ...
+                                     ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert ignore into t1 values(rpad('a', 2147483647, 'x'));
 WARNING:  requested length too large
 CONTEXT:  referenced column: c
 insert ignore into t1 values(rpad('a', 2147483648, 'x'));
-WARNING:  integer out of range
-CONTEXT:  referenced column: c
-WARNING:  requested length too large
-CONTEXT:  referenced column: c
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: insert ignore into t1 values(rpad('a', 2147483648, 'x'));
+                                     ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 insert ignore into t1 values(rpad('a', -2147483648, 'x'));
 insert ignore into t1 values(rpad('a', -2147483649, 'x'));
-WARNING:  integer out of range
-CONTEXT:  referenced column: c
+ERROR:  function rpad(unknown, bigint, unknown) does not exist
+LINE 1: insert ignore into t1 values(rpad('a', -2147483649, 'x'));
+                                     ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 drop table t1;
 reset current_schema;
 drop schema rpad_integer_overflow;

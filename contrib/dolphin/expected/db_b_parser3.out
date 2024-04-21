@@ -147,8 +147,9 @@ select div 1;
 ERROR:  syntax error at or near "1"
 LINE 1: select div 1;
                    ^
+-- without binary as numeric
 select '-12.3abc' div null;
-WARNING:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "\x2d31322e33616263"
 CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
@@ -167,7 +168,7 @@ CONTEXT:  referenced column: div
 (1 row)
 
 select '-12.3abc' div 0;
-WARNING:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "\x2d31322e33616263"
 CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
@@ -176,12 +177,12 @@ referenced column: div
 (1 row)
 
 select '-12.3abc' div 5;
-WARNING:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "\x2d31322e33616263"
 CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
-  -2
+   0
 (1 row)
 
 select '-12.3abc' div 158.3;
@@ -225,10 +226,10 @@ CONTEXT:  referenced column: div
 (1 row)
 
 select '-12.3abc' div 'null';
-WARNING:  invalid input syntax for type numeric: "-12.3abc"
+WARNING:  invalid input syntax for type numeric: "\x2d31322e33616263"
 CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
 referenced column: div
-WARNING:  invalid input syntax for type numeric: "null"
+WARNING:  invalid input syntax for type numeric: "\x6e756c6c"
 CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
@@ -528,6 +529,9 @@ select c1 div c12 from div_test;
 (1 row)
 
 select c1 div c13 from div_test;
+WARNING:  invalid input syntax for type numeric: "\x30"
+CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
+referenced column: div
  div 
 -----
     
@@ -600,16 +604,16 @@ insert into tmp_res select c1 div c10 from div_test;
 insert into tmp_res select c1 div c11 from div_test;
 insert into tmp_res select c1 div c12 from div_test;
 insert into tmp_res select c1 div c13 from div_test;
-ERROR:  function pg_catalog.div(tinyint, `binary`) does not exist
-LINE 1: insert into tmp_res select c1 div c13 from div_test;
+ERROR:  invalid input syntax for type numeric: "\x30"
+CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
+referenced column: div
+insert into tmp_res select c1 div c14 from div_test;
+insert into tmp_res select c1 div c15 from div_test;
+ERROR:  function pg_catalog.div(tinyint, json) does not exist
+LINE 1: insert into tmp_res select c1 div c15 from div_test;
                                       ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: div
-insert into tmp_res select c1 div c14 from div_test;
-insert into tmp_res select c1 div c15 from div_test;
-ERROR:  invalid input syntax for type double precision: "{"0":"0"}"
-CONTEXT:  PL/pgSQL function `div`(anyelement,json) line 3 at RETURN
-referenced column: div
 -- non-strict mode and non-err_division_by_zero, no warning and error
 set dolphin.sql_mode = '';
 select c1/c1 from div_test;
@@ -866,11 +870,14 @@ select c1 div c12 from div_test;
 (1 row)
 
 select c1 div c13 from div_test;
-ERROR:  function pg_catalog.div(tinyint, `binary`) does not exist
-LINE 1: select c1 div c13 from div_test;
-                  ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: div
+WARNING:  invalid input syntax for type numeric: "\x30"
+CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
+referenced column: div
+ div 
+-----
+    
+(1 row)
+
 select c1 div c14 from div_test;
  div 
 -----
@@ -878,14 +885,11 @@ select c1 div c14 from div_test;
 (1 row)
 
 select c1 div c15 from div_test;
-WARNING:  invalid input syntax for type double precision: "{"0":"0"}"
-CONTEXT:  PL/pgSQL function `div`(anyelement,json) line 3 at RETURN
-referenced column: div
- div 
------
-    
-(1 row)
-
+ERROR:  function pg_catalog.div(tinyint, json) does not exist
+LINE 1: select c1 div c15 from div_test;
+                  ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: div
 insert into tmp_res select c1/c1 from div_test;
 insert into tmp_res select c1/c2 from div_test;
 insert into tmp_res select c1/c3 from div_test;
@@ -941,6 +945,9 @@ insert into tmp_res select c1 div c10 from div_test;
 insert into tmp_res select c1 div c11 from div_test;
 insert into tmp_res select c1 div c12 from div_test;
 insert into tmp_res select c1 div c13 from div_test;
+WARNING:  invalid input syntax for type numeric: "\x30"
+CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
+referenced column: div
 insert into tmp_res select c1 div c14 from div_test;
 insert into tmp_res select c1 div c15 from div_test;
 ERROR:  function pg_catalog.div(tinyint, json) does not exist
@@ -1243,6 +1250,9 @@ CONTEXT:  referenced column: div
 (1 row)
 
 select c1 div c13 from div_test;
+WARNING:  invalid input syntax for type numeric: "\x30"
+CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
+referenced column: div
 WARNING:  division by zero
 CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
 referenced column: div
@@ -1371,6 +1381,9 @@ insert into tmp_res select c1 div c12 from div_test;
 ERROR:  division by zero
 CONTEXT:  referenced column: div
 insert into tmp_res select c1 div c13 from div_test;
+ERROR:  invalid input syntax for type numeric: "\x30"
+CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
+referenced column: div
 insert into tmp_res select c1 div c14 from div_test;
 ERROR:  division by zero
 CONTEXT:  referenced column: a
@@ -1675,6 +1688,9 @@ CONTEXT:  referenced column: div
 (1 row)
 
 select c1 div c13 from div_test;
+WARNING:  invalid input syntax for type numeric: "\x30"
+CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
+referenced column: div
 WARNING:  division by zero
 CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
 referenced column: div
@@ -1682,6 +1698,7 @@ referenced column: div
 -----
     
 (1 row)
+
 select c1 div c14 from div_test;
 WARNING:  division by zero
 CONTEXT:  referenced column: div
@@ -1804,6 +1821,9 @@ insert into tmp_res select c1 div c12 from div_test;
 WARNING:  division by zero
 CONTEXT:  referenced column: div
 insert into tmp_res select c1 div c13 from div_test;
+WARNING:  invalid input syntax for type numeric: "\x30"
+CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
+referenced column: div
 WARNING:  division by zero
 CONTEXT:  PL/pgSQL function `div`(double precision,`binary`) line 4 during statement block local variable initialization
 referenced column: div
@@ -1819,13 +1839,13 @@ CONTEXT:  referenced column: div
 select count(*) from tmp_res;
  count 
 -------
-   138
+   137
 (1 row)
 
 select count(*) from tmp_res where a is null;
  count 
 -------
-   138
+   137
 (1 row)
 
 drop table tmp_res;
@@ -2017,59 +2037,59 @@ select 1 xor 0;
 (1 row)
 
 select '-12.3abc' xor null;
- xor 
------
-    
-(1 row)
-
+ERROR:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
 select '-12.3abc' xor -100.1;
- xor 
------
-   0
-(1 row)
-
+ERROR:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
 select '-12.3abc' xor 0;
- xor 
------
-   1
-(1 row)
-
+ERROR:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
 select '-12.3abc' xor 5;
- xor 
------
-   0
-(1 row)
-
+ERROR:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
 select '-12.3abc' xor 158.3;
- xor 
------
-   0
-(1 row)
-
+ERROR:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
 select '-12.3abc' xor -8.222e4;
- xor 
------
-   0
-(1 row)
-
+ERROR:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
 select '-12.3abc' xor true;
- xor 
------
-   0
-(1 row)
-
+ERROR:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
 select '-12.3abc' xor false;
- xor 
------
-   1
-(1 row)
-
+ERROR:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
 select '-12.3abc' xor 'null';
- xor 
------
-   1
-(1 row)
-
+ERROR:  invalid input syntax for type int16: "-12.3abc"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: xor
+SQL function "xor" statement 1
+referenced column: xor
 create table t1 (a int, b varchar(20));
 insert into t1 values(1, 'true');
 select a = 1 xor b = 'true' from t1;

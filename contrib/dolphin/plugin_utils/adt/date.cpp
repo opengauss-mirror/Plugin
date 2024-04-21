@@ -2204,7 +2204,7 @@ Datum int64_cast_time(PG_FUNCTION_ARGS)
 Datum int64_number_cast_time(PG_FUNCTION_ARGS, int64 number)
 {
     bool isnull = false;
-    Datum result = int_cast_date_internal(fcinfo, number, &isnull);
+    Datum result = int_cast_time_internal(fcinfo, number, &isnull);
     if (isnull) {
         PG_RETURN_NULL();
     } else {

@@ -390,37 +390,11 @@ inet_ntoa(`enum_t`),
 inet_ntoa(`set_t`),
 inet_ntoa(`json`)
 from test_type_table;
-WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
+ERROR:  function inet_ntoa(date) does not exist
+LINE 16: inet_ntoa(`date`),
+         ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: inet_ntoa
-WARNING:  invalid input syntax for type bigint: "1.23a"
-CONTEXT:  referenced column: inet_ntoa
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: inet_ntoa
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: inet_ntoa
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: inet_ntoa
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: inet_ntoa
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: inet_ntoa
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: inet_ntoa
-WARNING:  invalid input syntax for type bigint: "1.23a"
-CONTEXT:  referenced column: inet_ntoa
-WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
-CONTEXT:  referenced column: inet_ntoa
- inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa |  inet_ntoa  | inet_ntoa  | inet_ntoa  | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa | inet_ntoa 
------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-------------+------------+------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
- 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.7   | 0.0.0.1   | 1.52.176.61 | 0.2.234.74 | 0.2.234.74 |           |           |           |           | 0.0.7.231 | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.1   | 0.0.0.5   | 0.0.0.0
-(1 row)
-
 drop table test_type_table;
 drop table t_text0001;
 reset current_schema;

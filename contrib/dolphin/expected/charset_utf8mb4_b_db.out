@@ -142,11 +142,11 @@ SELECT _gbk B'111010011010101110011000111001101001011010101111';
 (1 row)
 
 SELECT _utf8mb4 B'111010011010101110011000111001101001011010101111高斯'; -- ERROR
-ERROR:  "�" is not a valid binary digit
+ERROR:  "�" is not a valid binary digit
 LINE 1: SELECT _utf8mb4 B'111010011010101110011000111001101001011010...
                         ^
 SELECT _binary X'000D' | X'0BC0';
-WARNING:  invalid input syntax for numeric: ""
+WARNING:  invalid input syntax for type numeric: "\x000d"
 CONTEXT:  SQL function "binary_or_double" during inlining
  ?column? 
 ----------
@@ -2083,7 +2083,7 @@ SELECT futf8_bin = fbin, fbin = futf8_bin FROM t_diff_charset_columns;
 (1 row)
 
 SELECT futf8_bin = fblob, fblob = futf8_bin FROM t_diff_charset_columns; -- NOT SUPPORTED
-ERROR:  invalid hexadecimal digit: "�"
+ERROR:  invalid hexadecimal digit: "�"
 SELECT futf8_uni = fbin, fbin = futf8_uni FROM t_diff_charset_columns;
  ?column? | ?column? 
 ----------+----------
@@ -2091,7 +2091,7 @@ SELECT futf8_uni = fbin, fbin = futf8_uni FROM t_diff_charset_columns;
 (1 row)
 
 SELECT futf8_uni = fblob, fblob = futf8_uni FROM t_diff_charset_columns; -- NOT SUPPORTED
-ERROR:  invalid hexadecimal digit: "�"
+ERROR:  invalid hexadecimal digit: "�"
 SELECT fgbk_bin = fbin, fbin = fgbk_bin FROM t_diff_charset_columns;
  ?column? | ?column? 
 ----------+----------
@@ -2099,7 +2099,7 @@ SELECT fgbk_bin = fbin, fbin = fgbk_bin FROM t_diff_charset_columns;
 (1 row)
 
 SELECT fgbk_bin = fblob, fblob = fgbk_bin FROM t_diff_charset_columns; -- NOT SUPPORTED
-ERROR:  invalid hexadecimal digit: "�"
+ERROR:  invalid hexadecimal digit: "�"
 SELECT fgb18030_bin = fbin, fbin = fgb18030_bin FROM t_diff_charset_columns;
  ?column? | ?column? 
 ----------+----------
@@ -2107,7 +2107,7 @@ SELECT fgb18030_bin = fbin, fbin = fgb18030_bin FROM t_diff_charset_columns;
 (1 row)
 
 SELECT fgb18030_bin = fblob, fblob = fgb18030_bin FROM t_diff_charset_columns; -- NOT SUPPORTED
-ERROR:  invalid hexadecimal digit: "�"
+ERROR:  invalid hexadecimal digit: "�"
 -- -- COLUMN concat COLUMN
 -- -- -- same charset & implicit collation
 SELECT CONCAT(futf8_bin, futf8_uni) result, pg_collation_for(result) FROM t_diff_charset_columns;
@@ -2314,7 +2314,7 @@ SELECT CONCAT(@var_num, fgbk_bin) result, pg_collation_for(result) FROM t_diff_c
 
 -- -- -- varbinary var
 set @var_binary = _binary'高斯DB';
-ERROR:  failed to find conversion function from varbinary to text
+ERROR:  failed to find conversion function from "varbinary" to text
 SELECT CONCAT(futf8_bin, @var_binary) result, pg_collation_for(result) FROM t_diff_charset_columns;
  result | pg_collation_for 
 --------+------------------
@@ -2464,14 +2464,14 @@ SET NAMES gbk COLLATE gbk_bin;
 EXECUTE test_revalidate(_utf8mb4'高斯db'); -- fgbk_chi collation has priority, 1 rows
  result 
 --------
- ��˹db
+ ��˹db
 (1 row)
 
 ALTER INDEX idx_prefixkey_futf8_bin REBUILD;
 EXECUTE test_revalidate(_utf8mb4'高斯db'); -- fgbk_chi collation has priority, 1 rows
  result 
 --------
- ��˹db
+ ��˹db
 (1 row)
 
 DEALLOCATE test_revalidate;
@@ -4668,7 +4668,7 @@ SELECT _binary'高斯';
 SELECT _utf8mb4'高斯';
  ?column? 
 ----------
- ��˹
+ ��˹
 (1 row)
 
 SELECT _gbk'高斯';
@@ -4686,7 +4686,7 @@ SELECT _binary X'E9AB98E696AF';
 SELECT _utf8mb4 X'E9AB98E696AF';
  ?column? 
 ----------
- ��˹
+ ��˹
 (1 row)
 
 SELECT _gbk X'E9AB98E696AF';
@@ -4775,14 +4775,14 @@ SELECT id,a FROM t_charset_utf8mb4 WHERE a=_utf8mb4'高斯DB' LIMIT 1;
 --------------------------------------
  Limit
    ->  Seq Scan on t_charset_utf8mb4
-         Filter: (a = '��˹DB'::text)
+         Filter: (a = '��˹DB'::text)
 (3 rows)
 
 SELECT id,a FROM t_charset_utf8mb4 WHERE a=_utf8mb4'高斯DB' LIMIT 1 into @id_res,@a_res;
 SELECT @id_res,@a_res;
  @id_res | @a_res 
 ---------+--------
-       3 | ��˹DB
+       3 | ��˹DB
 (1 row)
 
 EXPLAIN (costs off)
@@ -4791,7 +4791,7 @@ SELECT id,a FROM t_charset_utf8mb4 WHERE a=_utf8mb4'高斯db' COLLATE utf8mb4_un
 --------------------------------------
  Limit
    ->  Seq Scan on t_charset_utf8mb4
-         Filter: (a = '��˹db'::text)
+         Filter: (a = '��˹db'::text)
 (3 rows)
 
 SELECT id,a FROM t_charset_utf8mb4 WHERE a=_utf8mb4'高斯db' COLLATE utf8mb4_unicode_ci LIMIT 1 into @id_res,@a_res;
@@ -4801,7 +4801,7 @@ LINE 1: ...E a=_utf8mb4'高斯db' COLLATE utf8mb4_unicode_ci LIMIT 1 in...
 SELECT @id_res,@a_res;
  @id_res | @a_res 
 ---------+--------
-       3 | ��˹DB
+       3 | ��˹DB
 (1 row)
 
 -- -- -- -- test condition
@@ -4822,25 +4822,25 @@ SELECT * FROM t_charset_utf8mb4 WHERE a=_gbk'高斯db' COLLATE gbk_chinese_ci OR
 SELECT * FROM t_charset_utf8mb4 WHERE a=_binary'高斯DB' ORDER BY id; -- ERROR
  id |   a    |         b          
 ----+--------+--------------------
-  3 | ��˹DB | \xe9ab98e696af4442
-  4 | ��˹DB | \xe9ab98e696af4442
-  6 | ��˹DB | \xe9ab98e696af4442
+  3 | ��˹DB | \xe9ab98e696af4442
+  4 | ��˹DB | \xe9ab98e696af4442
+  6 | ��˹DB | \xe9ab98e696af4442
 (3 rows)
 
 SELECT * FROM t_charset_utf8mb4 WHERE a=_utf8mb4'高斯DB' ORDER BY id;
  id |   a    |         b          
 ----+--------+--------------------
-  3 | ��˹DB | \xe9ab98e696af4442
-  4 | ��˹DB | \xe9ab98e696af4442
-  6 | ��˹DB | \xe9ab98e696af4442
+  3 | ��˹DB | \xe9ab98e696af4442
+  4 | ��˹DB | \xe9ab98e696af4442
+  6 | ��˹DB | \xe9ab98e696af4442
 (3 rows)
 
 SELECT * FROM t_charset_utf8mb4 WHERE a=_utf8mb4'高斯db' COLLATE utf8mb4_unicode_ci ORDER BY id;
  id |   a    |         b          
 ----+--------+--------------------
-  3 | ��˹DB | \xe9ab98e696af4442
-  4 | ��˹DB | \xe9ab98e696af4442
-  6 | ��˹DB | \xe9ab98e696af4442
+  3 | ��˹DB | \xe9ab98e696af4442
+  4 | ��˹DB | \xe9ab98e696af4442
+  6 | ��˹DB | \xe9ab98e696af4442
 (3 rows)
 
 UPDATE t_charset_utf8mb4 SET a='高斯DB', b='高斯DB'
@@ -4950,14 +4950,14 @@ SELECT id,a FROM t_charset_gbk WHERE a=_utf8mb4'高斯DB' LIMIT 1;
 -----------------------------------------------------------------
  Limit
    ->  Seq Scan on t_charset_gbk
-         Filter: (a = '��˹DB'::text COLLATE pg_catalog.gbk_bin)
+         Filter: (a = '��˹DB'::text COLLATE pg_catalog.gbk_bin)
 (3 rows)
 
 SELECT id,a FROM t_charset_gbk WHERE a=_utf8mb4'高斯DB' LIMIT 1 into @id_res,@a_res;
 SELECT @id_res,@a_res;
  @id_res | @a_res 
 ---------+--------
-       3 | ��˹DB
+       3 | ��˹DB
 (1 row)
 
 EXPLAIN (costs off)
@@ -4966,7 +4966,7 @@ SELECT id,a FROM t_charset_gbk WHERE a=_utf8mb4'高斯db' COLLATE utf8mb4_unicod
 ----------------------------------------------
  Limit
    ->  Seq Scan on t_charset_gbk
-         Filter: ((a)::text = '��˹db'::text)
+         Filter: ((a)::text = '��˹db'::text)
 (3 rows)
 
 SELECT id,a FROM t_charset_gbk WHERE a=_utf8mb4'高斯db' COLLATE utf8mb4_unicode_ci LIMIT 1 into @id_res,@a_res;
@@ -4976,7 +4976,7 @@ LINE 1: ...tf8mb4'高斯db' COLLATE utf8mb4_unicode_ci LIMIT 1 into @id...
 SELECT @id_res,@a_res;
  @id_res | @a_res 
 ---------+--------
-       3 | ��˹DB
+       3 | ��˹DB
 (1 row)
 
 EXPLAIN (costs off)
@@ -4985,14 +4985,14 @@ SELECT id,a FROM t_charset_gbk WHERE a COLLATE gbk_chinese_ci =_utf8mb4'高斯db
 ----------------------------------------------
  Limit
    ->  Seq Scan on t_charset_gbk
-         Filter: ((a)::text = '��˹db'::text)
+         Filter: ((a)::text = '��˹db'::text)
 (3 rows)
 
 SELECT id,a FROM t_charset_gbk WHERE a COLLATE gbk_chinese_ci =_utf8mb4'高斯db' LIMIT 1 into @id_res,@a_res;
 SELECT @id_res,@a_res;
  @id_res | @a_res 
 ---------+--------
-       3 | ��˹DB
+       3 | ��˹DB
 (1 row)
 
 -- -- -- -- test condition
@@ -5017,17 +5017,17 @@ SELECT * FROM t_charset_gbk WHERE a=_binary'高斯DB' ORDER BY id; -- ERROR
 SELECT * FROM t_charset_gbk WHERE a=_utf8mb4'高斯DB' ORDER BY id;
  id |   a    |         b          
 ----+--------+--------------------
-  3 | ��˹DB | \xe9ab98e696af4442
-  4 | ��˹DB | \xe9ab98e696af4442
-  6 | ��˹DB | \xe9ab98e696af4442
+  3 | ��˹DB | \xe9ab98e696af4442
+  4 | ��˹DB | \xe9ab98e696af4442
+  6 | ��˹DB | \xe9ab98e696af4442
 (3 rows)
 
 SELECT * FROM t_charset_gbk WHERE a=_utf8mb4'高斯db' COLLATE utf8mb4_unicode_ci ORDER BY id;
  id |   a    |         b          
 ----+--------+--------------------
-  3 | ��˹DB | \xe9ab98e696af4442
-  4 | ��˹DB | \xe9ab98e696af4442
-  6 | ��˹DB | \xe9ab98e696af4442
+  3 | ��˹DB | \xe9ab98e696af4442
+  4 | ��˹DB | \xe9ab98e696af4442
+  6 | ��˹DB | \xe9ab98e696af4442
 (3 rows)
 
 SELECT * FROM t_charset_gbk WHERE a=_utf8mb4'高斯' ORDER BY id;
@@ -5149,7 +5149,7 @@ SELECT /*+ indexscan(t_diff_charset_columns idx_prefixkey_futf8_bin) */ futf8_bi
                              QUERY PLAN                             
 --------------------------------------------------------------------
  Index Scan using idx_prefixkey_futf8_bin on t_diff_charset_columns
-   Index Cond: ((futf8_bin)::text = '高�'::text)
+   Index Cond: ((futf8_bin)::text = '高�'::text)
    Filter: ((futf8_bin)::text ~~ '高斯%'::text)
 (3 rows)
 
@@ -5164,7 +5164,7 @@ SELECT /*+ indexscan(t_diff_charset_columns idx_prefixkey_futf8_bin) */ futf8_bi
                              QUERY PLAN                             
 --------------------------------------------------------------------
  Index Scan using idx_prefixkey_futf8_bin on t_diff_charset_columns
-   Index Cond: ((futf8_bin)::text = '高�'::text)
+   Index Cond: ((futf8_bin)::text = '高�'::text)
    Filter: ((futf8_bin)::text = '高斯DB'::text)
 (3 rows)
 
@@ -5180,7 +5180,7 @@ SELECT /*+ indexscan(t_diff_charset_columns idx_prefixkey_fgbk_bin) */ fgbk_bin 
                             QUERY PLAN                             
 -------------------------------------------------------------------
  Index Scan using idx_prefixkey_fgbk_bin on t_diff_charset_columns
-   Index Cond: ((fgbk_bin)::text = '高�'::text)
+   Index Cond: ((fgbk_bin)::text = '高�'::text)
    Filter: ((fgbk_bin)::text ~~ '高斯%'::text)
 (3 rows)
 
@@ -5195,7 +5195,7 @@ SELECT /*+ indexscan(t_diff_charset_columns idx_prefixkey_fgbk_bin) */ fgbk_bin 
                             QUERY PLAN                             
 -------------------------------------------------------------------
  Index Scan using idx_prefixkey_fgbk_bin on t_diff_charset_columns
-   Index Cond: ((fgbk_bin)::text = '高�'::text)
+   Index Cond: ((fgbk_bin)::text = '高�'::text)
    Filter: ((fgbk_bin)::text = '高斯DB'::text)
 (3 rows)
 
@@ -5211,7 +5211,7 @@ SELECT /*+ indexscan(t_diff_charset_columns idx_prefixkey_fgb18030_bin) */ fgb18
                               QUERY PLAN                               
 -----------------------------------------------------------------------
  Index Scan using idx_prefixkey_fgb18030_bin on t_diff_charset_columns
-   Index Cond: ((fgb18030_bin)::text = '高�'::text)
+   Index Cond: ((fgb18030_bin)::text = '高�'::text)
    Filter: ((fgb18030_bin)::text ~~ '高斯%'::text)
 (3 rows)
 
@@ -5226,7 +5226,7 @@ SELECT /*+ indexscan(t_diff_charset_columns idx_prefixkey_fgb18030_bin) */ fgb18
                               QUERY PLAN                               
 -----------------------------------------------------------------------
  Index Scan using idx_prefixkey_fgb18030_bin on t_diff_charset_columns
-   Index Cond: ((fgb18030_bin)::text = '高�'::text)
+   Index Cond: ((fgb18030_bin)::text = '高�'::text)
    Filter: ((fgb18030_bin)::text = '高斯DB'::text)
 (3 rows)
 

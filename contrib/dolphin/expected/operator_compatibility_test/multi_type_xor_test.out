@@ -8,7 +8,7 @@ set dolphin.sql_mode to 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero
 drop table if exists test_multi_type_table;
 NOTICE:  table "test_multi_type_table" does not exist, skipping
 CREATE TABLE test_multi_type_table (`int1` tinyint, `uint1` tinyint unsigned, `int2` smallint, `uint2` smallint unsigned, `int4` integer, `uint4` integer unsigned, `int8` bigint, `uint8` bigint unsigned, `float4` float4, `float8` float8, `numeric` decimal(20, 6), `bit1` bit(1), `bit64` bit(64), `boolean` boolean,  `char` char(100), `varchar` varchar(100), `binary` binary(100), `varbinary` varbinary(100), `text` text);
-insert into test_multi_type_table values(0x7F, 0xFF, 0x7FFF, 0xFFFF, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0.9884282, 5.288433915413254, 43391541, b'1', b'100110100110', true, '1.23a', '1.23a', '1.23a', '1.23a', '1.23a');
+insert into test_multi_type_table values(127, 255, 32767, 65535, 2147483647, 4294967295, 9223372036854775807, 18446744073709551615, 0.9884282, 5.288433915413254, 43391541, b'1', b'100110100110', true, '1.23a', '1.23a', '1.23a', '1.23a', '1.23a');
 DROP TABLE IF EXISTS test_multi_type;
 NOTICE:  table "test_multi_type" does not exist, skipping
 CREATE TABLE test_multi_type AS SELECT
@@ -374,2016 +374,1478 @@ CREATE TABLE test_multi_type AS SELECT
 `text` xor `varbinary` AS `text_xor_varbinary`,
 `text` xor `text` AS `text_xor_text`
 FROM test_multi_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a"
+ERROR:  invalid input syntax for type int16: "1.23a"
 DETAIL:  text contain invalid character
 CONTEXT:  referenced column: int1_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int1_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int1_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int1_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint1_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint1_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint1_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint1_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int2_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int2_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int2_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int2_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint2_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint2_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint2_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint2_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int4_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int4_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int4_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int4_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint4_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint4_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint4_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint4_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int8_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int8_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int8_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int8_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint8_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint8_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint8_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint8_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float4_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float4_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float4_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float4_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float8_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float8_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float8_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float8_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: numeric_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: numeric_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: numeric_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: numeric_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit1_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit1_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit1_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit1_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit64_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit64_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit64_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit64_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: boolean_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: boolean_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: boolean_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: boolean_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_int1
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_uint1
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_int2
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_uint2
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_int4
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_uint4
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_int8
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_uint8
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_float4
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_float8
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_numeric
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_bit1
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_bit64
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_boolean
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_text
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_int1
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_uint1
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_int2
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_uint2
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_int4
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_uint4
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_int8
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_uint8
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_float4
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_float8
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_numeric
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_bit1
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_bit64
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_boolean
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_text
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_int1
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_uint1
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_int2
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_uint2
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_int4
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_uint4
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_int8
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_uint8
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_float4
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_float8
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_numeric
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_bit1
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_bit64
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_boolean
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_text
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_int1
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_uint1
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_int2
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_uint2
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_int4
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_uint4
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_int8
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_uint8
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_float4
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_float8
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_numeric
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_bit1
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_bit64
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_boolean
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_text
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: text_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: text_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: text_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: text_xor_varbinary
 SHOW COLUMNS FROM test_multi_type;
-          Field          |  Type   | Null | Key | Default | Extra 
--------------------------+---------+------+-----+---------+-------
- int1_xor_int1           | integer | YES  |     | NULL    | 
- int1_xor_uint1          | integer | YES  |     | NULL    | 
- int1_xor_int2           | integer | YES  |     | NULL    | 
- int1_xor_uint2          | integer | YES  |     | NULL    | 
- int1_xor_int4           | integer | YES  |     | NULL    | 
- int1_xor_uint4          | integer | YES  |     | NULL    | 
- int1_xor_int8           | integer | YES  |     | NULL    | 
- int1_xor_uint8          | integer | YES  |     | NULL    | 
- int1_xor_float4         | integer | YES  |     | NULL    | 
- int1_xor_float8         | integer | YES  |     | NULL    | 
- int1_xor_numeric        | integer | YES  |     | NULL    | 
- int1_xor_bit1           | integer | YES  |     | NULL    | 
- int1_xor_bit64          | integer | YES  |     | NULL    | 
- int1_xor_boolean        | integer | YES  |     | NULL    | 
- int1_xor_char           | integer | YES  |     | NULL    | 
- int1_xor_varchar        | integer | YES  |     | NULL    | 
- int1_xor_binary         | integer | YES  |     | NULL    | 
- int1_xor_varbinary      | integer | YES  |     | NULL    | 
- int1_xor_text           | integer | YES  |     | NULL    | 
- uint1_xor_int1          | integer | YES  |     | NULL    | 
- uint1_xor_uint1         | integer | YES  |     | NULL    | 
- uint1_xor_int2          | integer | YES  |     | NULL    | 
- uint1_xor_uint2         | integer | YES  |     | NULL    | 
- uint1_xor_int4          | integer | YES  |     | NULL    | 
- uint1_xor_uint4         | integer | YES  |     | NULL    | 
- uint1_xor_int8          | integer | YES  |     | NULL    | 
- uint1_xor_uint8         | integer | YES  |     | NULL    | 
- uint1_xor_float4        | integer | YES  |     | NULL    | 
- uint1_xor_float8        | integer | YES  |     | NULL    | 
- uint1_xor_numeric       | integer | YES  |     | NULL    | 
- uint1_xor_bit1          | integer | YES  |     | NULL    | 
- uint1_xor_bit64         | integer | YES  |     | NULL    | 
- uint1_xor_boolean       | integer | YES  |     | NULL    | 
- uint1_xor_char          | integer | YES  |     | NULL    | 
- uint1_xor_varchar       | integer | YES  |     | NULL    | 
- uint1_xor_binary        | integer | YES  |     | NULL    | 
- uint1_xor_varbinary     | integer | YES  |     | NULL    | 
- uint1_xor_text          | integer | YES  |     | NULL    | 
- int2_xor_int1           | integer | YES  |     | NULL    | 
- int2_xor_uint1          | integer | YES  |     | NULL    | 
- int2_xor_int2           | integer | YES  |     | NULL    | 
- int2_xor_uint2          | integer | YES  |     | NULL    | 
- int2_xor_int4           | integer | YES  |     | NULL    | 
- int2_xor_uint4          | integer | YES  |     | NULL    | 
- int2_xor_int8           | integer | YES  |     | NULL    | 
- int2_xor_uint8          | integer | YES  |     | NULL    | 
- int2_xor_float4         | integer | YES  |     | NULL    | 
- int2_xor_float8         | integer | YES  |     | NULL    | 
- int2_xor_numeric        | integer | YES  |     | NULL    | 
- int2_xor_bit1           | integer | YES  |     | NULL    | 
- int2_xor_bit64          | integer | YES  |     | NULL    | 
- int2_xor_boolean        | integer | YES  |     | NULL    | 
- int2_xor_char           | integer | YES  |     | NULL    | 
- int2_xor_varchar        | integer | YES  |     | NULL    | 
- int2_xor_binary         | integer | YES  |     | NULL    | 
- int2_xor_varbinary      | integer | YES  |     | NULL    | 
- int2_xor_text           | integer | YES  |     | NULL    | 
- uint2_xor_int1          | integer | YES  |     | NULL    | 
- uint2_xor_uint1         | integer | YES  |     | NULL    | 
- uint2_xor_int2          | integer | YES  |     | NULL    | 
- uint2_xor_uint2         | integer | YES  |     | NULL    | 
- uint2_xor_int4          | integer | YES  |     | NULL    | 
- uint2_xor_uint4         | integer | YES  |     | NULL    | 
- uint2_xor_int8          | integer | YES  |     | NULL    | 
- uint2_xor_uint8         | integer | YES  |     | NULL    | 
- uint2_xor_float4        | integer | YES  |     | NULL    | 
- uint2_xor_float8        | integer | YES  |     | NULL    | 
- uint2_xor_numeric       | integer | YES  |     | NULL    | 
- uint2_xor_bit1          | integer | YES  |     | NULL    | 
- uint2_xor_bit64         | integer | YES  |     | NULL    | 
- uint2_xor_boolean       | integer | YES  |     | NULL    | 
- uint2_xor_char          | integer | YES  |     | NULL    | 
- uint2_xor_varchar       | integer | YES  |     | NULL    | 
- uint2_xor_binary        | integer | YES  |     | NULL    | 
- uint2_xor_varbinary     | integer | YES  |     | NULL    | 
- uint2_xor_text          | integer | YES  |     | NULL    | 
- int4_xor_int1           | integer | YES  |     | NULL    | 
- int4_xor_uint1          | integer | YES  |     | NULL    | 
- int4_xor_int2           | integer | YES  |     | NULL    | 
- int4_xor_uint2          | integer | YES  |     | NULL    | 
- int4_xor_int4           | integer | YES  |     | NULL    | 
- int4_xor_uint4          | integer | YES  |     | NULL    | 
- int4_xor_int8           | integer | YES  |     | NULL    | 
- int4_xor_uint8          | integer | YES  |     | NULL    | 
- int4_xor_float4         | integer | YES  |     | NULL    | 
- int4_xor_float8         | integer | YES  |     | NULL    | 
- int4_xor_numeric        | integer | YES  |     | NULL    | 
- int4_xor_bit1           | integer | YES  |     | NULL    | 
- int4_xor_bit64          | integer | YES  |     | NULL    | 
- int4_xor_boolean        | integer | YES  |     | NULL    | 
- int4_xor_char           | integer | YES  |     | NULL    | 
- int4_xor_varchar        | integer | YES  |     | NULL    | 
- int4_xor_binary         | integer | YES  |     | NULL    | 
- int4_xor_varbinary      | integer | YES  |     | NULL    | 
- int4_xor_text           | integer | YES  |     | NULL    | 
- uint4_xor_int1          | integer | YES  |     | NULL    | 
- uint4_xor_uint1         | integer | YES  |     | NULL    | 
- uint4_xor_int2          | integer | YES  |     | NULL    | 
- uint4_xor_uint2         | integer | YES  |     | NULL    | 
- uint4_xor_int4          | integer | YES  |     | NULL    | 
- uint4_xor_uint4         | integer | YES  |     | NULL    | 
- uint4_xor_int8          | integer | YES  |     | NULL    | 
- uint4_xor_uint8         | integer | YES  |     | NULL    | 
- uint4_xor_float4        | integer | YES  |     | NULL    | 
- uint4_xor_float8        | integer | YES  |     | NULL    | 
- uint4_xor_numeric       | integer | YES  |     | NULL    | 
- uint4_xor_bit1          | integer | YES  |     | NULL    | 
- uint4_xor_bit64         | integer | YES  |     | NULL    | 
- uint4_xor_boolean       | integer | YES  |     | NULL    | 
- uint4_xor_char          | integer | YES  |     | NULL    | 
- uint4_xor_varchar       | integer | YES  |     | NULL    | 
- uint4_xor_binary        | integer | YES  |     | NULL    | 
- uint4_xor_varbinary     | integer | YES  |     | NULL    | 
- uint4_xor_text          | integer | YES  |     | NULL    | 
- int8_xor_int1           | integer | YES  |     | NULL    | 
- int8_xor_uint1          | integer | YES  |     | NULL    | 
- int8_xor_int2           | integer | YES  |     | NULL    | 
- int8_xor_uint2          | integer | YES  |     | NULL    | 
- int8_xor_int4           | integer | YES  |     | NULL    | 
- int8_xor_uint4          | integer | YES  |     | NULL    | 
- int8_xor_int8           | integer | YES  |     | NULL    | 
- int8_xor_uint8          | integer | YES  |     | NULL    | 
- int8_xor_float4         | integer | YES  |     | NULL    | 
- int8_xor_float8         | integer | YES  |     | NULL    | 
- int8_xor_numeric        | integer | YES  |     | NULL    | 
- int8_xor_bit1           | integer | YES  |     | NULL    | 
- int8_xor_bit64          | integer | YES  |     | NULL    | 
- int8_xor_boolean        | integer | YES  |     | NULL    | 
- int8_xor_char           | integer | YES  |     | NULL    | 
- int8_xor_varchar        | integer | YES  |     | NULL    | 
- int8_xor_binary         | integer | YES  |     | NULL    | 
- int8_xor_varbinary      | integer | YES  |     | NULL    | 
- int8_xor_text           | integer | YES  |     | NULL    | 
- uint8_xor_int1          | integer | YES  |     | NULL    | 
- uint8_xor_uint1         | integer | YES  |     | NULL    | 
- uint8_xor_int2          | integer | YES  |     | NULL    | 
- uint8_xor_uint2         | integer | YES  |     | NULL    | 
- uint8_xor_int4          | integer | YES  |     | NULL    | 
- uint8_xor_uint4         | integer | YES  |     | NULL    | 
- uint8_xor_int8          | integer | YES  |     | NULL    | 
- uint8_xor_uint8         | integer | YES  |     | NULL    | 
- uint8_xor_float4        | integer | YES  |     | NULL    | 
- uint8_xor_float8        | integer | YES  |     | NULL    | 
- uint8_xor_numeric       | integer | YES  |     | NULL    | 
- uint8_xor_bit1          | integer | YES  |     | NULL    | 
- uint8_xor_bit64         | integer | YES  |     | NULL    | 
- uint8_xor_boolean       | integer | YES  |     | NULL    | 
- uint8_xor_char          | integer | YES  |     | NULL    | 
- uint8_xor_varchar       | integer | YES  |     | NULL    | 
- uint8_xor_binary        | integer | YES  |     | NULL    | 
- uint8_xor_varbinary     | integer | YES  |     | NULL    | 
- uint8_xor_text          | integer | YES  |     | NULL    | 
- float4_xor_int1         | integer | YES  |     | NULL    | 
- float4_xor_uint1        | integer | YES  |     | NULL    | 
- float4_xor_int2         | integer | YES  |     | NULL    | 
- float4_xor_uint2        | integer | YES  |     | NULL    | 
- float4_xor_int4         | integer | YES  |     | NULL    | 
- float4_xor_uint4        | integer | YES  |     | NULL    | 
- float4_xor_int8         | integer | YES  |     | NULL    | 
- float4_xor_uint8        | integer | YES  |     | NULL    | 
- float4_xor_float4       | integer | YES  |     | NULL    | 
- float4_xor_float8       | integer | YES  |     | NULL    | 
- float4_xor_numeric      | integer | YES  |     | NULL    | 
- float4_xor_bit1         | integer | YES  |     | NULL    | 
- float4_xor_bit64        | integer | YES  |     | NULL    | 
- float4_xor_boolean      | integer | YES  |     | NULL    | 
- float4_xor_char         | integer | YES  |     | NULL    | 
- float4_xor_varchar      | integer | YES  |     | NULL    | 
- float4_xor_binary       | integer | YES  |     | NULL    | 
- float4_xor_varbinary    | integer | YES  |     | NULL    | 
- float4_xor_text         | integer | YES  |     | NULL    | 
- float8_xor_int1         | integer | YES  |     | NULL    | 
- float8_xor_uint1        | integer | YES  |     | NULL    | 
- float8_xor_int2         | integer | YES  |     | NULL    | 
- float8_xor_uint2        | integer | YES  |     | NULL    | 
- float8_xor_int4         | integer | YES  |     | NULL    | 
- float8_xor_uint4        | integer | YES  |     | NULL    | 
- float8_xor_int8         | integer | YES  |     | NULL    | 
- float8_xor_uint8        | integer | YES  |     | NULL    | 
- float8_xor_float4       | integer | YES  |     | NULL    | 
- float8_xor_float8       | integer | YES  |     | NULL    | 
- float8_xor_numeric      | integer | YES  |     | NULL    | 
- float8_xor_bit1         | integer | YES  |     | NULL    | 
- float8_xor_bit64        | integer | YES  |     | NULL    | 
- float8_xor_boolean      | integer | YES  |     | NULL    | 
- float8_xor_char         | integer | YES  |     | NULL    | 
- float8_xor_varchar      | integer | YES  |     | NULL    | 
- float8_xor_binary       | integer | YES  |     | NULL    | 
- float8_xor_varbinary    | integer | YES  |     | NULL    | 
- float8_xor_text         | integer | YES  |     | NULL    | 
- numeric_xor_int1        | integer | YES  |     | NULL    | 
- numeric_xor_uint1       | integer | YES  |     | NULL    | 
- numeric_xor_int2        | integer | YES  |     | NULL    | 
- numeric_xor_uint2       | integer | YES  |     | NULL    | 
- numeric_xor_int4        | integer | YES  |     | NULL    | 
- numeric_xor_uint4       | integer | YES  |     | NULL    | 
- numeric_xor_int8        | integer | YES  |     | NULL    | 
- numeric_xor_uint8       | integer | YES  |     | NULL    | 
- numeric_xor_float4      | integer | YES  |     | NULL    | 
- numeric_xor_float8      | integer | YES  |     | NULL    | 
- numeric_xor_numeric     | integer | YES  |     | NULL    | 
- numeric_xor_bit1        | integer | YES  |     | NULL    | 
- numeric_xor_bit64       | integer | YES  |     | NULL    | 
- numeric_xor_boolean     | integer | YES  |     | NULL    | 
- numeric_xor_char        | integer | YES  |     | NULL    | 
- numeric_xor_varchar     | integer | YES  |     | NULL    | 
- numeric_xor_binary      | integer | YES  |     | NULL    | 
- numeric_xor_varbinary   | integer | YES  |     | NULL    | 
- numeric_xor_text        | integer | YES  |     | NULL    | 
- bit1_xor_int1           | integer | YES  |     | NULL    | 
- bit1_xor_uint1          | integer | YES  |     | NULL    | 
- bit1_xor_int2           | integer | YES  |     | NULL    | 
- bit1_xor_uint2          | integer | YES  |     | NULL    | 
- bit1_xor_int4           | integer | YES  |     | NULL    | 
- bit1_xor_uint4          | integer | YES  |     | NULL    | 
- bit1_xor_int8           | integer | YES  |     | NULL    | 
- bit1_xor_uint8          | integer | YES  |     | NULL    | 
- bit1_xor_float4         | integer | YES  |     | NULL    | 
- bit1_xor_float8         | integer | YES  |     | NULL    | 
- bit1_xor_numeric        | integer | YES  |     | NULL    | 
- bit1_xor_bit1           | integer | YES  |     | NULL    | 
- bit1_xor_bit64          | integer | YES  |     | NULL    | 
- bit1_xor_boolean        | integer | YES  |     | NULL    | 
- bit1_xor_char           | integer | YES  |     | NULL    | 
- bit1_xor_varchar        | integer | YES  |     | NULL    | 
- bit1_xor_binary         | integer | YES  |     | NULL    | 
- bit1_xor_varbinary      | integer | YES  |     | NULL    | 
- bit1_xor_text           | integer | YES  |     | NULL    | 
- bit64_xor_int1          | integer | YES  |     | NULL    | 
- bit64_xor_uint1         | integer | YES  |     | NULL    | 
- bit64_xor_int2          | integer | YES  |     | NULL    | 
- bit64_xor_uint2         | integer | YES  |     | NULL    | 
- bit64_xor_int4          | integer | YES  |     | NULL    | 
- bit64_xor_uint4         | integer | YES  |     | NULL    | 
- bit64_xor_int8          | integer | YES  |     | NULL    | 
- bit64_xor_uint8         | integer | YES  |     | NULL    | 
- bit64_xor_float4        | integer | YES  |     | NULL    | 
- bit64_xor_float8        | integer | YES  |     | NULL    | 
- bit64_xor_numeric       | integer | YES  |     | NULL    | 
- bit64_xor_bit1          | integer | YES  |     | NULL    | 
- bit64_xor_bit64         | integer | YES  |     | NULL    | 
- bit64_xor_boolean       | integer | YES  |     | NULL    | 
- bit64_xor_char          | integer | YES  |     | NULL    | 
- bit64_xor_varchar       | integer | YES  |     | NULL    | 
- bit64_xor_binary        | integer | YES  |     | NULL    | 
- bit64_xor_varbinary     | integer | YES  |     | NULL    | 
- bit64_xor_text          | integer | YES  |     | NULL    | 
- boolean_xor_int1        | integer | YES  |     | NULL    | 
- boolean_xor_uint1       | integer | YES  |     | NULL    | 
- boolean_xor_int2        | integer | YES  |     | NULL    | 
- boolean_xor_uint2       | integer | YES  |     | NULL    | 
- boolean_xor_int4        | integer | YES  |     | NULL    | 
- boolean_xor_uint4       | integer | YES  |     | NULL    | 
- boolean_xor_int8        | integer | YES  |     | NULL    | 
- boolean_xor_uint8       | integer | YES  |     | NULL    | 
- boolean_xor_float4      | integer | YES  |     | NULL    | 
- boolean_xor_float8      | integer | YES  |     | NULL    | 
- boolean_xor_numeric     | integer | YES  |     | NULL    | 
- boolean_xor_bit1        | integer | YES  |     | NULL    | 
- boolean_xor_bit64       | integer | YES  |     | NULL    | 
- boolean_xor_boolean     | integer | YES  |     | NULL    | 
- boolean_xor_char        | integer | YES  |     | NULL    | 
- boolean_xor_varchar     | integer | YES  |     | NULL    | 
- boolean_xor_binary      | integer | YES  |     | NULL    | 
- boolean_xor_varbinary   | integer | YES  |     | NULL    | 
- boolean_xor_text        | integer | YES  |     | NULL    | 
- char_xor_int1           | integer | YES  |     | NULL    | 
- char_xor_uint1          | integer | YES  |     | NULL    | 
- char_xor_int2           | integer | YES  |     | NULL    | 
- char_xor_uint2          | integer | YES  |     | NULL    | 
- char_xor_int4           | integer | YES  |     | NULL    | 
- char_xor_uint4          | integer | YES  |     | NULL    | 
- char_xor_int8           | integer | YES  |     | NULL    | 
- char_xor_uint8          | integer | YES  |     | NULL    | 
- char_xor_float4         | integer | YES  |     | NULL    | 
- char_xor_float8         | integer | YES  |     | NULL    | 
- char_xor_numeric        | integer | YES  |     | NULL    | 
- char_xor_bit1           | integer | YES  |     | NULL    | 
- char_xor_bit64          | integer | YES  |     | NULL    | 
- char_xor_boolean        | integer | YES  |     | NULL    | 
- char_xor_char           | integer | YES  |     | NULL    | 
- char_xor_varchar        | integer | YES  |     | NULL    | 
- char_xor_binary         | integer | YES  |     | NULL    | 
- char_xor_varbinary      | integer | YES  |     | NULL    | 
- char_xor_text           | integer | YES  |     | NULL    | 
- varchar_xor_int1        | integer | YES  |     | NULL    | 
- varchar_xor_uint1       | integer | YES  |     | NULL    | 
- varchar_xor_int2        | integer | YES  |     | NULL    | 
- varchar_xor_uint2       | integer | YES  |     | NULL    | 
- varchar_xor_int4        | integer | YES  |     | NULL    | 
- varchar_xor_uint4       | integer | YES  |     | NULL    | 
- varchar_xor_int8        | integer | YES  |     | NULL    | 
- varchar_xor_uint8       | integer | YES  |     | NULL    | 
- varchar_xor_float4      | integer | YES  |     | NULL    | 
- varchar_xor_float8      | integer | YES  |     | NULL    | 
- varchar_xor_numeric     | integer | YES  |     | NULL    | 
- varchar_xor_bit1        | integer | YES  |     | NULL    | 
- varchar_xor_bit64       | integer | YES  |     | NULL    | 
- varchar_xor_boolean     | integer | YES  |     | NULL    | 
- varchar_xor_char        | integer | YES  |     | NULL    | 
- varchar_xor_varchar     | integer | YES  |     | NULL    | 
- varchar_xor_binary      | integer | YES  |     | NULL    | 
- varchar_xor_varbinary   | integer | YES  |     | NULL    | 
- varchar_xor_text        | integer | YES  |     | NULL    | 
- binary_xor_int1         | integer | YES  |     | NULL    | 
- binary_xor_uint1        | integer | YES  |     | NULL    | 
- binary_xor_int2         | integer | YES  |     | NULL    | 
- binary_xor_uint2        | integer | YES  |     | NULL    | 
- binary_xor_int4         | integer | YES  |     | NULL    | 
- binary_xor_uint4        | integer | YES  |     | NULL    | 
- binary_xor_int8         | integer | YES  |     | NULL    | 
- binary_xor_uint8        | integer | YES  |     | NULL    | 
- binary_xor_float4       | integer | YES  |     | NULL    | 
- binary_xor_float8       | integer | YES  |     | NULL    | 
- binary_xor_numeric      | integer | YES  |     | NULL    | 
- binary_xor_bit1         | integer | YES  |     | NULL    | 
- binary_xor_bit64        | integer | YES  |     | NULL    | 
- binary_xor_boolean      | integer | YES  |     | NULL    | 
- binary_xor_char         | integer | YES  |     | NULL    | 
- binary_xor_varchar      | integer | YES  |     | NULL    | 
- binary_xor_binary       | integer | YES  |     | NULL    | 
- binary_xor_varbinary    | integer | YES  |     | NULL    | 
- binary_xor_text         | integer | YES  |     | NULL    | 
- varbinary_xor_int1      | integer | YES  |     | NULL    | 
- varbinary_xor_uint1     | integer | YES  |     | NULL    | 
- varbinary_xor_int2      | integer | YES  |     | NULL    | 
- varbinary_xor_uint2     | integer | YES  |     | NULL    | 
- varbinary_xor_int4      | integer | YES  |     | NULL    | 
- varbinary_xor_uint4     | integer | YES  |     | NULL    | 
- varbinary_xor_int8      | integer | YES  |     | NULL    | 
- varbinary_xor_uint8     | integer | YES  |     | NULL    | 
- varbinary_xor_float4    | integer | YES  |     | NULL    | 
- varbinary_xor_float8    | integer | YES  |     | NULL    | 
- varbinary_xor_numeric   | integer | YES  |     | NULL    | 
- varbinary_xor_bit1      | integer | YES  |     | NULL    | 
- varbinary_xor_bit64     | integer | YES  |     | NULL    | 
- varbinary_xor_boolean   | integer | YES  |     | NULL    | 
- varbinary_xor_char      | integer | YES  |     | NULL    | 
- varbinary_xor_varchar   | integer | YES  |     | NULL    | 
- varbinary_xor_binary    | integer | YES  |     | NULL    | 
- varbinary_xor_varbinary | integer | YES  |     | NULL    | 
- varbinary_xor_text      | integer | YES  |     | NULL    | 
- text_xor_int1           | integer | YES  |     | NULL    | 
- text_xor_uint1          | integer | YES  |     | NULL    | 
- text_xor_int2           | integer | YES  |     | NULL    | 
- text_xor_uint2          | integer | YES  |     | NULL    | 
- text_xor_int4           | integer | YES  |     | NULL    | 
- text_xor_uint4          | integer | YES  |     | NULL    | 
- text_xor_int8           | integer | YES  |     | NULL    | 
- text_xor_uint8          | integer | YES  |     | NULL    | 
- text_xor_float4         | integer | YES  |     | NULL    | 
- text_xor_float8         | integer | YES  |     | NULL    | 
- text_xor_numeric        | integer | YES  |     | NULL    | 
- text_xor_bit1           | integer | YES  |     | NULL    | 
- text_xor_bit64          | integer | YES  |     | NULL    | 
- text_xor_boolean        | integer | YES  |     | NULL    | 
- text_xor_char           | integer | YES  |     | NULL    | 
- text_xor_varchar        | integer | YES  |     | NULL    | 
- text_xor_binary         | integer | YES  |     | NULL    | 
- text_xor_varbinary      | integer | YES  |     | NULL    | 
- text_xor_text           | integer | YES  |     | NULL    | 
-(361 rows)
-
+ERROR:  Table 'multi_type_xor_test_schema.test_multi_type' doesn't exist.
 -- test value
 delete from test_multi_type;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: delete from test_multi_type;
+                    ^
 delete from test_multi_type_table;
 insert into test_multi_type values(null);
-insert into test_multi_type_table values(0x7F, 0xFF, 0x7FFF, 0xFFFF, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0.9884282, 5.288433915413254, 43391541, b'1', b'100110100110', true, '1.23a', '1.23a', '1.23a', '1.23a', '1.23a');
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: insert into test_multi_type values(null);
+                    ^
+insert into test_multi_type_table values(x'7F', x'FF', x'7FFF', x'FFFF', x'7FFFFFFF', x'FFFFFFFF', x'7FFFFFFFFFFFFFFF', x'FFFFFFFFFFFFFFFF', 0.9884282, 5.288433915413254, 43391541, b'1', b'100110100110', true, '1.23a', '1.23a', '1.23a', '1.23a', '1.23a');
+ERROR:  column "int1" is of type tinyint but expression is of type bit
+LINE 1: insert into test_multi_type_table values(x'7F', x'FF', x'7FF...
+                                                 ^
+HINT:  You will need to rewrite or cast the expression.
+CONTEXT:  referenced column: int1
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_int1` = test_multi_type_table.`int1` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_uint1` = test_multi_type_table.`int1` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_int2` = test_multi_type_table.`int1` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_uint2` = test_multi_type_table.`int1` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_int4` = test_multi_type_table.`int1` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_uint4` = test_multi_type_table.`int1` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_int8` = test_multi_type_table.`int1` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_uint8` = test_multi_type_table.`int1` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_float4` = test_multi_type_table.`int1` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_float8` = test_multi_type_table.`int1` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_numeric` = test_multi_type_table.`int1` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_bit1` = test_multi_type_table.`int1` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_bit64` = test_multi_type_table.`int1` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_boolean` = test_multi_type_table.`int1` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_char` = test_multi_type_table.`int1` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int1_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_varchar` = test_multi_type_table.`int1` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int1_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_binary` = test_multi_type_table.`int1` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int1_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_varbinary` = test_multi_type_table.`int1` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int1_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int1_xor_text` = test_multi_type_table.`int1` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_int1` = test_multi_type_table.`uint1` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_uint1` = test_multi_type_table.`uint1` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_int2` = test_multi_type_table.`uint1` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_uint2` = test_multi_type_table.`uint1` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_int4` = test_multi_type_table.`uint1` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_uint4` = test_multi_type_table.`uint1` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_int8` = test_multi_type_table.`uint1` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_uint8` = test_multi_type_table.`uint1` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_float4` = test_multi_type_table.`uint1` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_float8` = test_multi_type_table.`uint1` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_numeric` = test_multi_type_table.`uint1` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_bit1` = test_multi_type_table.`uint1` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_bit64` = test_multi_type_table.`uint1` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_boolean` = test_multi_type_table.`uint1` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_char` = test_multi_type_table.`uint1` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint1_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_varchar` = test_multi_type_table.`uint1` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint1_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_binary` = test_multi_type_table.`uint1` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint1_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_varbinary` = test_multi_type_table.`uint1` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint1_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint1_xor_text` = test_multi_type_table.`uint1` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_int1` = test_multi_type_table.`int2` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_uint1` = test_multi_type_table.`int2` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_int2` = test_multi_type_table.`int2` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_uint2` = test_multi_type_table.`int2` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_int4` = test_multi_type_table.`int2` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_uint4` = test_multi_type_table.`int2` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_int8` = test_multi_type_table.`int2` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_uint8` = test_multi_type_table.`int2` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_float4` = test_multi_type_table.`int2` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_float8` = test_multi_type_table.`int2` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_numeric` = test_multi_type_table.`int2` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_bit1` = test_multi_type_table.`int2` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_bit64` = test_multi_type_table.`int2` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_boolean` = test_multi_type_table.`int2` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_char` = test_multi_type_table.`int2` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int2_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_varchar` = test_multi_type_table.`int2` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int2_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_binary` = test_multi_type_table.`int2` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int2_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_varbinary` = test_multi_type_table.`int2` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int2_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int2_xor_text` = test_multi_type_table.`int2` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_int1` = test_multi_type_table.`uint2` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_uint1` = test_multi_type_table.`uint2` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_int2` = test_multi_type_table.`uint2` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_uint2` = test_multi_type_table.`uint2` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_int4` = test_multi_type_table.`uint2` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_uint4` = test_multi_type_table.`uint2` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_int8` = test_multi_type_table.`uint2` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_uint8` = test_multi_type_table.`uint2` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_float4` = test_multi_type_table.`uint2` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_float8` = test_multi_type_table.`uint2` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_numeric` = test_multi_type_table.`uint2` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_bit1` = test_multi_type_table.`uint2` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_bit64` = test_multi_type_table.`uint2` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_boolean` = test_multi_type_table.`uint2` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_char` = test_multi_type_table.`uint2` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint2_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_varchar` = test_multi_type_table.`uint2` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint2_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_binary` = test_multi_type_table.`uint2` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint2_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_varbinary` = test_multi_type_table.`uint2` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint2_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint2_xor_text` = test_multi_type_table.`uint2` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_int1` = test_multi_type_table.`int4` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_uint1` = test_multi_type_table.`int4` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_int2` = test_multi_type_table.`int4` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_uint2` = test_multi_type_table.`int4` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_int4` = test_multi_type_table.`int4` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_uint4` = test_multi_type_table.`int4` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_int8` = test_multi_type_table.`int4` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_uint8` = test_multi_type_table.`int4` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_float4` = test_multi_type_table.`int4` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_float8` = test_multi_type_table.`int4` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_numeric` = test_multi_type_table.`int4` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_bit1` = test_multi_type_table.`int4` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_bit64` = test_multi_type_table.`int4` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_boolean` = test_multi_type_table.`int4` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_char` = test_multi_type_table.`int4` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int4_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_varchar` = test_multi_type_table.`int4` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int4_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_binary` = test_multi_type_table.`int4` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int4_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_varbinary` = test_multi_type_table.`int4` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int4_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int4_xor_text` = test_multi_type_table.`int4` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_int1` = test_multi_type_table.`uint4` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_uint1` = test_multi_type_table.`uint4` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_int2` = test_multi_type_table.`uint4` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_uint2` = test_multi_type_table.`uint4` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_int4` = test_multi_type_table.`uint4` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_uint4` = test_multi_type_table.`uint4` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_int8` = test_multi_type_table.`uint4` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_uint8` = test_multi_type_table.`uint4` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_float4` = test_multi_type_table.`uint4` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_float8` = test_multi_type_table.`uint4` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_numeric` = test_multi_type_table.`uint4` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_bit1` = test_multi_type_table.`uint4` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_bit64` = test_multi_type_table.`uint4` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_boolean` = test_multi_type_table.`uint4` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_char` = test_multi_type_table.`uint4` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint4_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_varchar` = test_multi_type_table.`uint4` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint4_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_binary` = test_multi_type_table.`uint4` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint4_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_varbinary` = test_multi_type_table.`uint4` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint4_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint4_xor_text` = test_multi_type_table.`uint4` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_int1` = test_multi_type_table.`int8` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_uint1` = test_multi_type_table.`int8` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_int2` = test_multi_type_table.`int8` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_uint2` = test_multi_type_table.`int8` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_int4` = test_multi_type_table.`int8` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_uint4` = test_multi_type_table.`int8` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_int8` = test_multi_type_table.`int8` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_uint8` = test_multi_type_table.`int8` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_float4` = test_multi_type_table.`int8` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_float8` = test_multi_type_table.`int8` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_numeric` = test_multi_type_table.`int8` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_bit1` = test_multi_type_table.`int8` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_bit64` = test_multi_type_table.`int8` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_boolean` = test_multi_type_table.`int8` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_char` = test_multi_type_table.`int8` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int8_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_varchar` = test_multi_type_table.`int8` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int8_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_binary` = test_multi_type_table.`int8` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int8_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_varbinary` = test_multi_type_table.`int8` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: int8_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`int8_xor_text` = test_multi_type_table.`int8` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_int1` = test_multi_type_table.`uint8` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_uint1` = test_multi_type_table.`uint8` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_int2` = test_multi_type_table.`uint8` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_uint2` = test_multi_type_table.`uint8` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_int4` = test_multi_type_table.`uint8` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_uint4` = test_multi_type_table.`uint8` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_int8` = test_multi_type_table.`uint8` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_uint8` = test_multi_type_table.`uint8` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_float4` = test_multi_type_table.`uint8` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_float8` = test_multi_type_table.`uint8` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_numeric` = test_multi_type_table.`uint8` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_bit1` = test_multi_type_table.`uint8` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_bit64` = test_multi_type_table.`uint8` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_boolean` = test_multi_type_table.`uint8` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_char` = test_multi_type_table.`uint8` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint8_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_varchar` = test_multi_type_table.`uint8` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint8_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_binary` = test_multi_type_table.`uint8` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint8_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_varbinary` = test_multi_type_table.`uint8` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: uint8_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`uint8_xor_text` = test_multi_type_table.`uint8` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_int1` = test_multi_type_table.`float4` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_uint1` = test_multi_type_table.`float4` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_int2` = test_multi_type_table.`float4` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_uint2` = test_multi_type_table.`float4` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_int4` = test_multi_type_table.`float4` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_uint4` = test_multi_type_table.`float4` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_int8` = test_multi_type_table.`float4` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_uint8` = test_multi_type_table.`float4` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_float4` = test_multi_type_table.`float4` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_float8` = test_multi_type_table.`float4` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_numeric` = test_multi_type_table.`float4` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_bit1` = test_multi_type_table.`float4` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_bit64` = test_multi_type_table.`float4` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_boolean` = test_multi_type_table.`float4` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_char` = test_multi_type_table.`float4` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float4_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_varchar` = test_multi_type_table.`float4` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float4_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_binary` = test_multi_type_table.`float4` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float4_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_varbinary` = test_multi_type_table.`float4` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float4_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float4_xor_text` = test_multi_type_table.`float4` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_int1` = test_multi_type_table.`float8` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_uint1` = test_multi_type_table.`float8` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_int2` = test_multi_type_table.`float8` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_uint2` = test_multi_type_table.`float8` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_int4` = test_multi_type_table.`float8` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_uint4` = test_multi_type_table.`float8` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_int8` = test_multi_type_table.`float8` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_uint8` = test_multi_type_table.`float8` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_float4` = test_multi_type_table.`float8` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_float8` = test_multi_type_table.`float8` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_numeric` = test_multi_type_table.`float8` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_bit1` = test_multi_type_table.`float8` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_bit64` = test_multi_type_table.`float8` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_boolean` = test_multi_type_table.`float8` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_char` = test_multi_type_table.`float8` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float8_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_varchar` = test_multi_type_table.`float8` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float8_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_binary` = test_multi_type_table.`float8` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float8_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_varbinary` = test_multi_type_table.`float8` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: float8_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`float8_xor_text` = test_multi_type_table.`float8` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_int1` = test_multi_type_table.`numeric` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_uint1` = test_multi_type_table.`numeric` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_int2` = test_multi_type_table.`numeric` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_uint2` = test_multi_type_table.`numeric` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_int4` = test_multi_type_table.`numeric` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_uint4` = test_multi_type_table.`numeric` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_int8` = test_multi_type_table.`numeric` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_uint8` = test_multi_type_table.`numeric` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_float4` = test_multi_type_table.`numeric` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_float8` = test_multi_type_table.`numeric` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_numeric` = test_multi_type_table.`numeric` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_bit1` = test_multi_type_table.`numeric` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_bit64` = test_multi_type_table.`numeric` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_boolean` = test_multi_type_table.`numeric` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_char` = test_multi_type_table.`numeric` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: numeric_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_varchar` = test_multi_type_table.`numeric` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: numeric_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_binary` = test_multi_type_table.`numeric` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: numeric_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_varbinary` = test_multi_type_table.`numeric` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: numeric_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`numeric_xor_text` = test_multi_type_table.`numeric` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_int1` = test_multi_type_table.`bit1` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_uint1` = test_multi_type_table.`bit1` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_int2` = test_multi_type_table.`bit1` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_uint2` = test_multi_type_table.`bit1` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_int4` = test_multi_type_table.`bit1` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_uint4` = test_multi_type_table.`bit1` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_int8` = test_multi_type_table.`bit1` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_uint8` = test_multi_type_table.`bit1` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_float4` = test_multi_type_table.`bit1` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_float8` = test_multi_type_table.`bit1` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_numeric` = test_multi_type_table.`bit1` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_bit1` = test_multi_type_table.`bit1` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_bit64` = test_multi_type_table.`bit1` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_boolean` = test_multi_type_table.`bit1` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_char` = test_multi_type_table.`bit1` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit1_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_varchar` = test_multi_type_table.`bit1` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit1_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_binary` = test_multi_type_table.`bit1` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit1_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_varbinary` = test_multi_type_table.`bit1` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit1_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit1_xor_text` = test_multi_type_table.`bit1` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_int1` = test_multi_type_table.`bit64` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_uint1` = test_multi_type_table.`bit64` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_int2` = test_multi_type_table.`bit64` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_uint2` = test_multi_type_table.`bit64` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_int4` = test_multi_type_table.`bit64` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_uint4` = test_multi_type_table.`bit64` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_int8` = test_multi_type_table.`bit64` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_uint8` = test_multi_type_table.`bit64` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_float4` = test_multi_type_table.`bit64` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_float8` = test_multi_type_table.`bit64` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_numeric` = test_multi_type_table.`bit64` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_bit1` = test_multi_type_table.`bit64` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_bit64` = test_multi_type_table.`bit64` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_boolean` = test_multi_type_table.`bit64` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_char` = test_multi_type_table.`bit64` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit64_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_varchar` = test_multi_type_table.`bit64` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit64_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_binary` = test_multi_type_table.`bit64` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit64_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_varbinary` = test_multi_type_table.`bit64` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: bit64_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`bit64_xor_text` = test_multi_type_table.`bit64` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_int1` = test_multi_type_table.`boolean` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_uint1` = test_multi_type_table.`boolean` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_int2` = test_multi_type_table.`boolean` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_uint2` = test_multi_type_table.`boolean` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_int4` = test_multi_type_table.`boolean` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_uint4` = test_multi_type_table.`boolean` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_int8` = test_multi_type_table.`boolean` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_uint8` = test_multi_type_table.`boolean` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_float4` = test_multi_type_table.`boolean` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_float8` = test_multi_type_table.`boolean` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_numeric` = test_multi_type_table.`boolean` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_bit1` = test_multi_type_table.`boolean` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_bit64` = test_multi_type_table.`boolean` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_boolean` = test_multi_type_table.`boolean` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_char` = test_multi_type_table.`boolean` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: boolean_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_varchar` = test_multi_type_table.`boolean` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: boolean_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_binary` = test_multi_type_table.`boolean` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: boolean_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_varbinary` = test_multi_type_table.`boolean` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: boolean_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`boolean_xor_text` = test_multi_type_table.`boolean` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_int1` = test_multi_type_table.`char` xor test_multi_type_table.`int1`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_int1
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_uint1` = test_multi_type_table.`char` xor test_multi_type_table.`uint1`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_uint1
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_int2` = test_multi_type_table.`char` xor test_multi_type_table.`int2`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_int2
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_uint2` = test_multi_type_table.`char` xor test_multi_type_table.`uint2`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_uint2
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_int4` = test_multi_type_table.`char` xor test_multi_type_table.`int4`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_int4
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_uint4` = test_multi_type_table.`char` xor test_multi_type_table.`uint4`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_uint4
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_int8` = test_multi_type_table.`char` xor test_multi_type_table.`int8`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_int8
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_uint8` = test_multi_type_table.`char` xor test_multi_type_table.`uint8`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_uint8
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_float4` = test_multi_type_table.`char` xor test_multi_type_table.`float4`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_float4
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_float8` = test_multi_type_table.`char` xor test_multi_type_table.`float8`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_float8
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_numeric` = test_multi_type_table.`char` xor test_multi_type_table.`numeric`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_numeric
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_bit1` = test_multi_type_table.`char` xor test_multi_type_table.`bit1`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_bit1
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_bit64` = test_multi_type_table.`char` xor test_multi_type_table.`bit64`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_bit64
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_boolean` = test_multi_type_table.`char` xor test_multi_type_table.`boolean`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_boolean
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_char` = test_multi_type_table.`char` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_varchar` = test_multi_type_table.`char` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_binary` = test_multi_type_table.`char` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_varbinary` = test_multi_type_table.`char` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`char_xor_text` = test_multi_type_table.`char` xor test_multi_type_table.`text`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_text
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_int1` = test_multi_type_table.`varchar` xor test_multi_type_table.`int1`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_int1
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_uint1` = test_multi_type_table.`varchar` xor test_multi_type_table.`uint1`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_uint1
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_int2` = test_multi_type_table.`varchar` xor test_multi_type_table.`int2`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_int2
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_uint2` = test_multi_type_table.`varchar` xor test_multi_type_table.`uint2`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_uint2
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_int4` = test_multi_type_table.`varchar` xor test_multi_type_table.`int4`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_int4
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_uint4` = test_multi_type_table.`varchar` xor test_multi_type_table.`uint4`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_uint4
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_int8` = test_multi_type_table.`varchar` xor test_multi_type_table.`int8`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_int8
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_uint8` = test_multi_type_table.`varchar` xor test_multi_type_table.`uint8`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_uint8
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_float4` = test_multi_type_table.`varchar` xor test_multi_type_table.`float4`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_float4
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_float8` = test_multi_type_table.`varchar` xor test_multi_type_table.`float8`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_float8
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_numeric` = test_multi_type_table.`varchar` xor test_multi_type_table.`numeric`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_numeric
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_bit1` = test_multi_type_table.`varchar` xor test_multi_type_table.`bit1`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_bit1
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_bit64` = test_multi_type_table.`varchar` xor test_multi_type_table.`bit64`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_bit64
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_boolean` = test_multi_type_table.`varchar` xor test_multi_type_table.`boolean`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_boolean
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_char` = test_multi_type_table.`varchar` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_varchar` = test_multi_type_table.`varchar` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_binary` = test_multi_type_table.`varchar` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_varbinary` = test_multi_type_table.`varchar` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varchar_xor_text` = test_multi_type_table.`varchar` xor test_multi_type_table.`text`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varchar_xor_text
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_int1` = test_multi_type_table.`binary` xor test_multi_type_table.`int1`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_int1
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_uint1` = test_multi_type_table.`binary` xor test_multi_type_table.`uint1`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_uint1
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_int2` = test_multi_type_table.`binary` xor test_multi_type_table.`int2`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_int2
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_uint2` = test_multi_type_table.`binary` xor test_multi_type_table.`uint2`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_uint2
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_int4` = test_multi_type_table.`binary` xor test_multi_type_table.`int4`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_int4
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_uint4` = test_multi_type_table.`binary` xor test_multi_type_table.`uint4`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_uint4
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_int8` = test_multi_type_table.`binary` xor test_multi_type_table.`int8`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_int8
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_uint8` = test_multi_type_table.`binary` xor test_multi_type_table.`uint8`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_uint8
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_float4` = test_multi_type_table.`binary` xor test_multi_type_table.`float4`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_float4
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_float8` = test_multi_type_table.`binary` xor test_multi_type_table.`float8`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_float8
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_numeric` = test_multi_type_table.`binary` xor test_multi_type_table.`numeric`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_numeric
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_bit1` = test_multi_type_table.`binary` xor test_multi_type_table.`bit1`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_bit1
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_bit64` = test_multi_type_table.`binary` xor test_multi_type_table.`bit64`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_bit64
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_boolean` = test_multi_type_table.`binary` xor test_multi_type_table.`boolean`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_boolean
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_char` = test_multi_type_table.`binary` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_varchar` = test_multi_type_table.`binary` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_binary` = test_multi_type_table.`binary` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_varbinary` = test_multi_type_table.`binary` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`binary_xor_text` = test_multi_type_table.`binary` xor test_multi_type_table.`text`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_text
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_int1` = test_multi_type_table.`varbinary` xor test_multi_type_table.`int1`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_int1
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_uint1` = test_multi_type_table.`varbinary` xor test_multi_type_table.`uint1`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_uint1
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_int2` = test_multi_type_table.`varbinary` xor test_multi_type_table.`int2`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_int2
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_uint2` = test_multi_type_table.`varbinary` xor test_multi_type_table.`uint2`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_uint2
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_int4` = test_multi_type_table.`varbinary` xor test_multi_type_table.`int4`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_int4
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_uint4` = test_multi_type_table.`varbinary` xor test_multi_type_table.`uint4`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_uint4
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_int8` = test_multi_type_table.`varbinary` xor test_multi_type_table.`int8`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_int8
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_uint8` = test_multi_type_table.`varbinary` xor test_multi_type_table.`uint8`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_uint8
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_float4` = test_multi_type_table.`varbinary` xor test_multi_type_table.`float4`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_float4
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_float8` = test_multi_type_table.`varbinary` xor test_multi_type_table.`float8`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_float8
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_numeric` = test_multi_type_table.`varbinary` xor test_multi_type_table.`numeric`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_numeric
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_bit1` = test_multi_type_table.`varbinary` xor test_multi_type_table.`bit1`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_bit1
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_bit64` = test_multi_type_table.`varbinary` xor test_multi_type_table.`bit64`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_bit64
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_boolean` = test_multi_type_table.`varbinary` xor test_multi_type_table.`boolean`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_boolean
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_char` = test_multi_type_table.`varbinary` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_char
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_varchar` = test_multi_type_table.`varbinary` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_binary` = test_multi_type_table.`varbinary` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_binary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_varbinary` = test_multi_type_table.`varbinary` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`varbinary_xor_text` = test_multi_type_table.`varbinary` xor test_multi_type_table.`text`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: varbinary_xor_text
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_int1` = test_multi_type_table.`text` xor test_multi_type_table.`int1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_uint1` = test_multi_type_table.`text` xor test_multi_type_table.`uint1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_int2` = test_multi_type_table.`text` xor test_multi_type_table.`int2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_uint2` = test_multi_type_table.`text` xor test_multi_type_table.`uint2`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_int4` = test_multi_type_table.`text` xor test_multi_type_table.`int4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_uint4` = test_multi_type_table.`text` xor test_multi_type_table.`uint4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_int8` = test_multi_type_table.`text` xor test_multi_type_table.`int8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_uint8` = test_multi_type_table.`text` xor test_multi_type_table.`uint8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_float4` = test_multi_type_table.`text` xor test_multi_type_table.`float4`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_float8` = test_multi_type_table.`text` xor test_multi_type_table.`float8`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_numeric` = test_multi_type_table.`text` xor test_multi_type_table.`numeric`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_bit1` = test_multi_type_table.`text` xor test_multi_type_table.`bit1`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_bit64` = test_multi_type_table.`text` xor test_multi_type_table.`bit64`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_boolean` = test_multi_type_table.`text` xor test_multi_type_table.`boolean`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_char` = test_multi_type_table.`text` xor test_multi_type_table.`char`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: text_xor_char
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_varchar` = test_multi_type_table.`text` xor test_multi_type_table.`varchar`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: text_xor_varchar
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_binary` = test_multi_type_table.`text` xor test_multi_type_table.`binary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: text_xor_binary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_varbinary` = test_multi_type_table.`text` xor test_multi_type_table.`varbinary`;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: text_xor_varbinary
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 UPDATE test_multi_type, test_multi_type_table SET test_multi_type.`text_xor_text` = test_multi_type_table.`text` xor test_multi_type_table.`text`;
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: UPDATE test_multi_type, test_multi_type_table SET test_multi...
+               ^
 \x
 SELECT * FROM test_multi_type;
--[ RECORD 1 ]-----------+--
-int1_xor_int1           | 0
-int1_xor_uint1          | 0
-int1_xor_int2           | 0
-int1_xor_uint2          | 0
-int1_xor_int4           | 0
-int1_xor_uint4          | 0
-int1_xor_int8           | 0
-int1_xor_uint8          | 0
-int1_xor_float4         | 0
-int1_xor_float8         | 0
-int1_xor_numeric        | 0
-int1_xor_bit1           | 0
-int1_xor_bit64          | 0
-int1_xor_boolean        | 0
-int1_xor_char           | 0
-int1_xor_varchar        | 0
-int1_xor_binary         | 0
-int1_xor_varbinary      | 0
-int1_xor_text           | 0
-uint1_xor_int1          | 0
-uint1_xor_uint1         | 0
-uint1_xor_int2          | 0
-uint1_xor_uint2         | 0
-uint1_xor_int4          | 0
-uint1_xor_uint4         | 0
-uint1_xor_int8          | 0
-uint1_xor_uint8         | 0
-uint1_xor_float4        | 0
-uint1_xor_float8        | 0
-uint1_xor_numeric       | 0
-uint1_xor_bit1          | 0
-uint1_xor_bit64         | 0
-uint1_xor_boolean       | 0
-uint1_xor_char          | 0
-uint1_xor_varchar       | 0
-uint1_xor_binary        | 0
-uint1_xor_varbinary     | 0
-uint1_xor_text          | 0
-int2_xor_int1           | 0
-int2_xor_uint1          | 0
-int2_xor_int2           | 0
-int2_xor_uint2          | 0
-int2_xor_int4           | 0
-int2_xor_uint4          | 0
-int2_xor_int8           | 0
-int2_xor_uint8          | 0
-int2_xor_float4         | 0
-int2_xor_float8         | 0
-int2_xor_numeric        | 0
-int2_xor_bit1           | 0
-int2_xor_bit64          | 0
-int2_xor_boolean        | 0
-int2_xor_char           | 0
-int2_xor_varchar        | 0
-int2_xor_binary         | 0
-int2_xor_varbinary      | 0
-int2_xor_text           | 0
-uint2_xor_int1          | 0
-uint2_xor_uint1         | 0
-uint2_xor_int2          | 0
-uint2_xor_uint2         | 0
-uint2_xor_int4          | 0
-uint2_xor_uint4         | 0
-uint2_xor_int8          | 0
-uint2_xor_uint8         | 0
-uint2_xor_float4        | 0
-uint2_xor_float8        | 0
-uint2_xor_numeric       | 0
-uint2_xor_bit1          | 0
-uint2_xor_bit64         | 0
-uint2_xor_boolean       | 0
-uint2_xor_char          | 0
-uint2_xor_varchar       | 0
-uint2_xor_binary        | 0
-uint2_xor_varbinary     | 0
-uint2_xor_text          | 0
-int4_xor_int1           | 0
-int4_xor_uint1          | 0
-int4_xor_int2           | 0
-int4_xor_uint2          | 0
-int4_xor_int4           | 0
-int4_xor_uint4          | 0
-int4_xor_int8           | 0
-int4_xor_uint8          | 0
-int4_xor_float4         | 0
-int4_xor_float8         | 0
-int4_xor_numeric        | 0
-int4_xor_bit1           | 0
-int4_xor_bit64          | 0
-int4_xor_boolean        | 0
-int4_xor_char           | 0
-int4_xor_varchar        | 0
-int4_xor_binary         | 0
-int4_xor_varbinary      | 0
-int4_xor_text           | 0
-uint4_xor_int1          | 0
-uint4_xor_uint1         | 0
-uint4_xor_int2          | 0
-uint4_xor_uint2         | 0
-uint4_xor_int4          | 0
-uint4_xor_uint4         | 0
-uint4_xor_int8          | 0
-uint4_xor_uint8         | 0
-uint4_xor_float4        | 0
-uint4_xor_float8        | 0
-uint4_xor_numeric       | 0
-uint4_xor_bit1          | 0
-uint4_xor_bit64         | 0
-uint4_xor_boolean       | 0
-uint4_xor_char          | 0
-uint4_xor_varchar       | 0
-uint4_xor_binary        | 0
-uint4_xor_varbinary     | 0
-uint4_xor_text          | 0
-int8_xor_int1           | 0
-int8_xor_uint1          | 0
-int8_xor_int2           | 0
-int8_xor_uint2          | 0
-int8_xor_int4           | 0
-int8_xor_uint4          | 0
-int8_xor_int8           | 0
-int8_xor_uint8          | 0
-int8_xor_float4         | 0
-int8_xor_float8         | 0
-int8_xor_numeric        | 0
-int8_xor_bit1           | 0
-int8_xor_bit64          | 0
-int8_xor_boolean        | 0
-int8_xor_char           | 0
-int8_xor_varchar        | 0
-int8_xor_binary         | 0
-int8_xor_varbinary      | 0
-int8_xor_text           | 0
-uint8_xor_int1          | 0
-uint8_xor_uint1         | 0
-uint8_xor_int2          | 0
-uint8_xor_uint2         | 0
-uint8_xor_int4          | 0
-uint8_xor_uint4         | 0
-uint8_xor_int8          | 0
-uint8_xor_uint8         | 0
-uint8_xor_float4        | 0
-uint8_xor_float8        | 0
-uint8_xor_numeric       | 0
-uint8_xor_bit1          | 0
-uint8_xor_bit64         | 0
-uint8_xor_boolean       | 0
-uint8_xor_char          | 0
-uint8_xor_varchar       | 0
-uint8_xor_binary        | 0
-uint8_xor_varbinary     | 0
-uint8_xor_text          | 0
-float4_xor_int1         | 0
-float4_xor_uint1        | 0
-float4_xor_int2         | 0
-float4_xor_uint2        | 0
-float4_xor_int4         | 0
-float4_xor_uint4        | 0
-float4_xor_int8         | 0
-float4_xor_uint8        | 0
-float4_xor_float4       | 0
-float4_xor_float8       | 0
-float4_xor_numeric      | 0
-float4_xor_bit1         | 0
-float4_xor_bit64        | 0
-float4_xor_boolean      | 0
-float4_xor_char         | 0
-float4_xor_varchar      | 0
-float4_xor_binary       | 0
-float4_xor_varbinary    | 0
-float4_xor_text         | 0
-float8_xor_int1         | 0
-float8_xor_uint1        | 0
-float8_xor_int2         | 0
-float8_xor_uint2        | 0
-float8_xor_int4         | 0
-float8_xor_uint4        | 0
-float8_xor_int8         | 0
-float8_xor_uint8        | 0
-float8_xor_float4       | 0
-float8_xor_float8       | 0
-float8_xor_numeric      | 0
-float8_xor_bit1         | 0
-float8_xor_bit64        | 0
-float8_xor_boolean      | 0
-float8_xor_char         | 0
-float8_xor_varchar      | 0
-float8_xor_binary       | 0
-float8_xor_varbinary    | 0
-float8_xor_text         | 0
-numeric_xor_int1        | 0
-numeric_xor_uint1       | 0
-numeric_xor_int2        | 0
-numeric_xor_uint2       | 0
-numeric_xor_int4        | 0
-numeric_xor_uint4       | 0
-numeric_xor_int8        | 0
-numeric_xor_uint8       | 0
-numeric_xor_float4      | 0
-numeric_xor_float8      | 0
-numeric_xor_numeric     | 0
-numeric_xor_bit1        | 0
-numeric_xor_bit64       | 0
-numeric_xor_boolean     | 0
-numeric_xor_char        | 0
-numeric_xor_varchar     | 0
-numeric_xor_binary      | 0
-numeric_xor_varbinary   | 0
-numeric_xor_text        | 0
-bit1_xor_int1           | 0
-bit1_xor_uint1          | 0
-bit1_xor_int2           | 0
-bit1_xor_uint2          | 0
-bit1_xor_int4           | 0
-bit1_xor_uint4          | 0
-bit1_xor_int8           | 0
-bit1_xor_uint8          | 0
-bit1_xor_float4         | 0
-bit1_xor_float8         | 0
-bit1_xor_numeric        | 0
-bit1_xor_bit1           | 0
-bit1_xor_bit64          | 0
-bit1_xor_boolean        | 0
-bit1_xor_char           | 0
-bit1_xor_varchar        | 0
-bit1_xor_binary         | 0
-bit1_xor_varbinary      | 0
-bit1_xor_text           | 0
-bit64_xor_int1          | 0
-bit64_xor_uint1         | 0
-bit64_xor_int2          | 0
-bit64_xor_uint2         | 0
-bit64_xor_int4          | 0
-bit64_xor_uint4         | 0
-bit64_xor_int8          | 0
-bit64_xor_uint8         | 0
-bit64_xor_float4        | 0
-bit64_xor_float8        | 0
-bit64_xor_numeric       | 0
-bit64_xor_bit1          | 0
-bit64_xor_bit64         | 0
-bit64_xor_boolean       | 0
-bit64_xor_char          | 0
-bit64_xor_varchar       | 0
-bit64_xor_binary        | 0
-bit64_xor_varbinary     | 0
-bit64_xor_text          | 0
-boolean_xor_int1        | 0
-boolean_xor_uint1       | 0
-boolean_xor_int2        | 0
-boolean_xor_uint2       | 0
-boolean_xor_int4        | 0
-boolean_xor_uint4       | 0
-boolean_xor_int8        | 0
-boolean_xor_uint8       | 0
-boolean_xor_float4      | 0
-boolean_xor_float8      | 0
-boolean_xor_numeric     | 0
-boolean_xor_bit1        | 0
-boolean_xor_bit64       | 0
-boolean_xor_boolean     | 0
-boolean_xor_char        | 0
-boolean_xor_varchar     | 0
-boolean_xor_binary      | 0
-boolean_xor_varbinary   | 0
-boolean_xor_text        | 0
-char_xor_int1           | 0
-char_xor_uint1          | 0
-char_xor_int2           | 0
-char_xor_uint2          | 0
-char_xor_int4           | 0
-char_xor_uint4          | 0
-char_xor_int8           | 0
-char_xor_uint8          | 0
-char_xor_float4         | 0
-char_xor_float8         | 0
-char_xor_numeric        | 0
-char_xor_bit1           | 0
-char_xor_bit64          | 0
-char_xor_boolean        | 0
-char_xor_char           | 0
-char_xor_varchar        | 0
-char_xor_binary         | 0
-char_xor_varbinary      | 0
-char_xor_text           | 0
-varchar_xor_int1        | 0
-varchar_xor_uint1       | 0
-varchar_xor_int2        | 0
-varchar_xor_uint2       | 0
-varchar_xor_int4        | 0
-varchar_xor_uint4       | 0
-varchar_xor_int8        | 0
-varchar_xor_uint8       | 0
-varchar_xor_float4      | 0
-varchar_xor_float8      | 0
-varchar_xor_numeric     | 0
-varchar_xor_bit1        | 0
-varchar_xor_bit64       | 0
-varchar_xor_boolean     | 0
-varchar_xor_char        | 0
-varchar_xor_varchar     | 0
-varchar_xor_binary      | 0
-varchar_xor_varbinary   | 0
-varchar_xor_text        | 0
-binary_xor_int1         | 0
-binary_xor_uint1        | 0
-binary_xor_int2         | 0
-binary_xor_uint2        | 0
-binary_xor_int4         | 0
-binary_xor_uint4        | 0
-binary_xor_int8         | 0
-binary_xor_uint8        | 0
-binary_xor_float4       | 0
-binary_xor_float8       | 0
-binary_xor_numeric      | 0
-binary_xor_bit1         | 0
-binary_xor_bit64        | 0
-binary_xor_boolean      | 0
-binary_xor_char         | 0
-binary_xor_varchar      | 0
-binary_xor_binary       | 0
-binary_xor_varbinary    | 0
-binary_xor_text         | 0
-varbinary_xor_int1      | 0
-varbinary_xor_uint1     | 0
-varbinary_xor_int2      | 0
-varbinary_xor_uint2     | 0
-varbinary_xor_int4      | 0
-varbinary_xor_uint4     | 0
-varbinary_xor_int8      | 0
-varbinary_xor_uint8     | 0
-varbinary_xor_float4    | 0
-varbinary_xor_float8    | 0
-varbinary_xor_numeric   | 0
-varbinary_xor_bit1      | 0
-varbinary_xor_bit64     | 0
-varbinary_xor_boolean   | 0
-varbinary_xor_char      | 0
-varbinary_xor_varchar   | 0
-varbinary_xor_binary    | 0
-varbinary_xor_varbinary | 0
-varbinary_xor_text      | 0
-text_xor_int1           | 0
-text_xor_uint1          | 0
-text_xor_int2           | 0
-text_xor_uint2          | 0
-text_xor_int4           | 0
-text_xor_uint4          | 0
-text_xor_int8           | 0
-text_xor_uint8          | 0
-text_xor_float4         | 0
-text_xor_float8         | 0
-text_xor_numeric        | 0
-text_xor_bit1           | 0
-text_xor_bit64          | 0
-text_xor_boolean        | 0
-text_xor_char           | 0
-text_xor_varchar        | 0
-text_xor_binary         | 0
-text_xor_varbinary      | 0
-text_xor_text           | 0
-
+ERROR:  relation "test_multi_type" does not exist on datanode1
+LINE 1: SELECT * FROM test_multi_type;
+                      ^
 DROP TABLE test_multi_type;
+ERROR:  table "test_multi_type" does not exist
 set dolphin.sql_mode to 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 -- strict select
 SELECT
@@ -2398,30 +1860,7 @@ SELECT
     `binary` xor `varbinary` AS `binary_xor_varbinary`,
     `text` xor `text` AS `text_xor_text`
 FROM test_multi_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: char_xor_varchar
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_varbinary
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: binary_xor_varbinary
--[ RECORD 1 ]--------+--
-int1_xor_uint1       | 0
-int2_xor_uint2       | 0
-int4_xor_uint4       | 0
-int8_xor_uint8       | 0
-float4_xor_float8    | 0
-numeric_xor_bit1     | 0
-bit64_xor_boolean    | 0
-char_xor_varchar     | 0
-binary_xor_varbinary | 0
-text_xor_text        | 0
-
+(No rows)
 -- strict insert
 CREATE TABLE TEST(a int8);
 INSERT INTO TEST SELECT `int1` xor `uint1` FROM test_multi_type_table;
@@ -2432,21 +1871,9 @@ INSERT INTO TEST SELECT `float4` xor `float8` FROM test_multi_type_table;
 INSERT INTO TEST SELECT `numeric` xor `bit1` FROM test_multi_type_table;
 INSERT INTO TEST SELECT `bit64` xor `boolean` FROM test_multi_type_table;
 INSERT INTO TEST SELECT `char` xor `int1` FROM test_multi_type_table;
-ERROR:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: a
 INSERT INTO TEST SELECT `varchar` xor `int1` FROM test_multi_type_table;
-ERROR:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: a
 INSERT INTO TEST SELECT `binary` xor `int1` FROM test_multi_type_table;
-ERROR:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: a
 INSERT INTO TEST SELECT `varbinary` xor `int1` FROM test_multi_type_table;
-ERROR:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: a
 INSERT INTO TEST SELECT `text` xor `text` FROM test_multi_type_table;
 -- strict insert ignore
 INSERT IGNORE INTO TEST SELECT `int1` xor `uint1` FROM test_multi_type_table;
@@ -2457,19 +1884,7 @@ INSERT IGNORE INTO TEST SELECT `float4` xor `float8` FROM test_multi_type_table;
 INSERT IGNORE INTO TEST SELECT `numeric` xor `bit1` FROM test_multi_type_table;
 INSERT IGNORE INTO TEST SELECT `bit64` xor `boolean` FROM test_multi_type_table;
 INSERT IGNORE INTO TEST SELECT `char` xor `varchar` FROM test_multi_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: a
 INSERT IGNORE INTO TEST SELECT `binary` xor `varbinary` FROM test_multi_type_table;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-CONTEXT:  referenced column: a
 INSERT IGNORE INTO TEST SELECT `text` xor `text` FROM test_multi_type_table;
 ---------- tail ----------
 drop schema multi_type_xor_test_schema cascade;

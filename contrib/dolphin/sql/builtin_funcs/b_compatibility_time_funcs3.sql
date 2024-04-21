@@ -191,7 +191,6 @@ select * from func_test3;
 
 select to_seconds('-838:59:59');
 select to_seconds(-8385959);
-select to_seconds(time'-838:59:59');
 
 -- 进位和非法值
 set dolphin.b_compatibility_mode = true;

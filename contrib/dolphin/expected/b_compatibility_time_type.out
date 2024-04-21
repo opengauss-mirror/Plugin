@@ -791,8 +791,13 @@ CONTEXT:  referenced column: timestamp
 
 -- YYYYMMDDhhmmss or YYMMDDhhmmss
 SELECT 11::datetime;
-ERROR:  timestamp out of range
+WARNING:  timestamp out of range
 CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
 SELECT 111::datetime;
       timestamp      
 ---------------------
@@ -2235,37 +2240,25 @@ select cast(false as date) as result;
 (1 row)
 
 select cast(100::int1 as date) as result;
-WARNING:  Out of range value for date
+ERROR:  cannot cast type tinyint to date
+LINE 1: select cast(100::int1 as date) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::uint1 as date) as result;
-WARNING:  Out of range value for date
+ERROR:  cannot cast type uint1 to date
+LINE 1: select cast(100::uint1 as date) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::int2 as date) as result;
-WARNING:  Out of range value for date
+ERROR:  cannot cast type smallint to date
+LINE 1: select cast(100::int2 as date) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::uint2 as date) as result;
-WARNING:  Out of range value for date
+ERROR:  cannot cast type uint2 to date
+LINE 1: select cast(100::uint2 as date) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::int4 as date) as result;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: result
@@ -2291,69 +2284,45 @@ CONTEXT:  referenced column: result
 (1 row)
 
 select cast(100::uint8 as date) as result;
-WARNING:  Out of range value for date
+ERROR:  cannot cast type uint8 to date
+LINE 1: select cast(100::uint8 as date) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::float4 as date) as result;
-WARNING:  date/time field value out of range: "000100"
+ERROR:  cannot cast type real to date
+LINE 1: select cast(100::float4 as date) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::float8 as date) as result;
-WARNING:  date/time field value out of range: "000100"
+ERROR:  cannot cast type double precision to date
+LINE 1: select cast(100::float8 as date) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::numeric as date) as result;
-WARNING:  date/time field value out of range: "000100"
+ERROR:  cannot cast type number to date
+LINE 1: select cast(100::numeric as date) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::int1 as datetime) as result;
-WARNING:  timestamp out of range
+ERROR:  cannot cast type tinyint to timestamp without time zone
+LINE 1: select cast(100::int1 as datetime) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::uint1 as datetime) as result;
-WARNING:  timestamp out of range
+ERROR:  cannot cast type uint1 to timestamp without time zone
+LINE 1: select cast(100::uint1 as datetime) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::int2 as datetime) as result;
-WARNING:  timestamp out of range
+ERROR:  cannot cast type smallint to timestamp without time zone
+LINE 1: select cast(100::int2 as datetime) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::uint2 as datetime) as result;
-WARNING:  timestamp out of range
+ERROR:  cannot cast type uint2 to timestamp without time zone
+LINE 1: select cast(100::uint2 as datetime) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::int4 as datetime) as result;
 WARNING:  timestamp out of range
 CONTEXT:  referenced column: result
@@ -2387,21 +2356,15 @@ CONTEXT:  referenced column: result
 (1 row)
 
 select cast(100::float4 as datetime) as result;
-WARNING:  date/time field value out of range: "000100"
+ERROR:  cannot cast type real to timestamp without time zone
+LINE 1: select cast(100::float4 as datetime) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::float8 as datetime) as result;
-WARNING:  date/time field value out of range: "000100"
+ERROR:  cannot cast type double precision to timestamp without time zone
+LINE 1: select cast(100::float8 as datetime) as result;
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::numeric as datetime) as result;
 WARNING:  date/time field value out of range: "000100"
 CONTEXT:  referenced column: result
@@ -2411,37 +2374,25 @@ CONTEXT:  referenced column: result
 (1 row)
 
 select cast(100::int1 as timestamp with time zone) as result;
-WARNING:  timestamp out of range
+ERROR:  cannot cast type tinyint to timestamp with time zone
+LINE 1: select cast(100::int1 as timestamp with time zone) as result...
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::uint1 as timestamp with time zone) as result;
-WARNING:  timestamp out of range
+ERROR:  cannot cast type uint1 to timestamp with time zone
+LINE 1: select cast(100::uint1 as timestamp with time zone) as resul...
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::int2 as timestamp with time zone) as result;
-WARNING:  timestamp out of range
+ERROR:  cannot cast type smallint to timestamp with time zone
+LINE 1: select cast(100::int2 as timestamp with time zone) as result...
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::uint2 as timestamp with time zone) as result;
-WARNING:  timestamp out of range
+ERROR:  cannot cast type uint2 to timestamp with time zone
+LINE 1: select cast(100::uint2 as timestamp with time zone) as resul...
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::int4 as timestamp with time zone) as result;
 WARNING:  timestamp out of range
 CONTEXT:  referenced column: result
@@ -2475,21 +2426,15 @@ CONTEXT:  referenced column: result
 (1 row)
 
 select cast(100::float4 as timestamp with time zone) as result;
-WARNING:  date/time field value out of range: "000100"
+ERROR:  cannot cast type real to timestamp with time zone
+LINE 1: select cast(100::float4 as timestamp with time zone) as resu...
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::float8 as timestamp with time zone) as result;
-WARNING:  date/time field value out of range: "000100"
+ERROR:  cannot cast type double precision to timestamp with time zone
+LINE 1: select cast(100::float8 as timestamp with time zone) as resu...
+               ^
 CONTEXT:  referenced column: result
- result 
---------
- 
-(1 row)
-
 select cast(100::numeric as timestamp with time zone) as result;
 WARNING:  date/time field value out of range: "000100"
 CONTEXT:  referenced column: result
@@ -2746,129 +2691,10 @@ set @val = 9223372036854775807;
 insert t_bigint0005 values(7, @val, @val, @val, @val, @val, @val, @val, @val);
 select c1, cast(c2 as date), cast(c3 as date), cast(c4 as date), cast(c5 as date), cast(c6 as date), cast(c7 as date), cast(c8 as date), cast(c9 as date)
 from t_bigint0005 order by 1,2,3,4,5,6,7,8,9;
-WARNING:  timestamp out of range
+ERROR:  cannot cast type bigint to date
+LINE 1: select c1, cast(c2 as date), cast(c3 as date), cast(c4 as da...
+                   ^
 CONTEXT:  referenced column: c2
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c3
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c4
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c5
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c6
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c7
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c8
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c9
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c2
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c3
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c4
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c5
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c6
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c7
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c8
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c9
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c2
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c3
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c4
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c5
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c6
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c7
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c8
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c9
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c2
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c3
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c4
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c5
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c6
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c7
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c8
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c9
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c2
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c3
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c4
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c5
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c6
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c7
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c8
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c9
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c2
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c3
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c4
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c5
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c6
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c7
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c8
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: c9
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c2
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c3
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c4
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c5
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c6
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c7
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c8
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: c9
- c1 | c2 | c3 | c4 | c5 | c6 | c7 | c8 | c9 
-----+----+----+----+----+----+----+----+----
-  1 |    |    |    |    |    |    |    | 
-  2 |    |    |    |    |    |    |    | 
-  3 |    |    |    |    |    |    |    | 
-  4 |    |    |    |    |    |    |    | 
-  5 |    |    |    |    |    |    |    | 
-  6 |    |    |    |    |    |    |    | 
-  7 |    |    |    |    |    |    |    | 
-(7 rows)
-
 select c1, cast(c2 as time), cast(c3 as time), cast(c4 as time), cast(c5 as time), cast(c6 as time), cast(c7 as time), cast(c8 as time), cast(c9 as time)
 from t_bigint0005 order by 1,2,3,4,5,6,7,8,9;
 WARNING:  timestamp out of range
@@ -3227,27 +3053,10 @@ set @val = 12.1314;
 insert into t_fixed0005 values (1, @val, @val, @val, @val, @val, @val, @val, @val, @val);
 select c1, cast(c2 as date), cast(c3 as date), cast(c4 as date), cast(c5 as date), cast(c6 as date), cast(c7 as date), cast(c8 as date), cast(c9 as date)
 from t_fixed0005 order by 1,2,3,4,5,6,7,8,9;
-WARNING:  date/time field value out of range: "000012"
+ERROR:  cannot cast type number to date
+LINE 1: select c1, cast(c2 as date), cast(c3 as date), cast(c4 as da...
+                   ^
 CONTEXT:  referenced column: c2
-WARNING:  date/time field value out of range: "000012"
-CONTEXT:  referenced column: c3
-WARNING:  date/time field value out of range: "000012.13"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type timestamp: "000012.1314000000"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type timestamp: "000012.13140000"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type timestamp: "000012.131400000000000000000000000000"
-CONTEXT:  referenced column: c7
-WARNING:  date/time field value out of range: "000012.131"
-CONTEXT:  referenced column: c8
-WARNING:  date/time field value out of range: "000012"
-CONTEXT:  referenced column: c9
- c1 | c2 | c3 | c4 | c5 | c6 | c7 | c8 | c9 
-----+----+----+----+----+----+----+----+----
-  1 |    |    |    |    |    |    |    | 
-(1 row)
-
 select c1, cast(c2 as time), cast(c3 as time), cast(c4 as time), cast(c5 as time), cast(c6 as time), cast(c7 as time), cast(c8 as time), cast(c9 as time)
 from t_fixed0005 order by 1,2,3,4,5,6,7,8,9;
  c1 |    c2    |    c3    |    c4    |    c5    |    c6    |    c7    |    c8    |    c9    

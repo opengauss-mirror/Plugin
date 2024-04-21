@@ -61,6 +61,40 @@ FROM pbu_trade_collect_mbr_m a
 GROUP BY a.biz_date, a.member_code, a.collect_des
 ) b
 ) c order by trade_amt;
+ERROR:  function lag(number, bigint) does not exist
+LINE 8: , lag(a.mbr_trade_amt, 1) OVER (PARTITION BY a.member_code, ...
+          ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+QUERY:  
+
+SELECT c.biz_date   biz_date, c.member_code   member_code, c.breed_scope   breed_scope, c.collect_des   collect_des, c.trade_amt   trade_amt
+, c.last_trade_amt   last_trade_amt
+, (CASE WHEN(c.last_trade_amt = 0) THEN 0 ELSE c.trade_amt / c.last_trade_amt * 100 END)    yoy
+FROM (
+SELECT a.biz_date   biz_date, a.member_code   member_code, a.breed_scope   breed_scope, a.collect_des   collect_des, a.mbr_trade_amt   trade_amt
+, lag(a.mbr_trade_amt, 1) OVER (PARTITION BY a.member_code, a.breed_scope ORDER BY a.biz_date ASC)   last_trade_amt
+FROM pbu_trade_collect_mbr_m a
+WHERE 
+a.period_type = 'MONTH'
+UNION ALL
+SELECT b.biz_date   biz_date, b.member_code   member_code, 'AETF'   breed_scope, b.collect_des   collect_des, b.trade_amt   trade_amt
+, lag(b.trade_amt, 1) OVER (PARTITION BY b.member_code ORDER BY b.biz_date ASC)   last_trade_amt
+FROM (
+SELECT a.biz_date   biz_date, a.member_code   member_code, a.collect_des   collect_des, SUM(a.mbr_trade_amt)   trade_amt
+FROM pbu_trade_collect_mbr_m a
+GROUP BY a.biz_date, a.member_code, a.collect_des
+) b
+UNION ALL
+SELECT b.biz_date   biz_date, b.member_code   member_code, 'ABETF'   breed_scope, b.collect_des   collect_des, b.trade_amt   trade_amt
+, lag(b.trade_amt, 1) OVER (PARTITION BY b.member_code ORDER BY b.biz_date ASC)   last_trade_amt
+FROM (
+SELECT a.biz_date   biz_date, a.member_code   member_code, a.collect_des   collect_des, SUM(a.mbr_trade_amt)   trade_amt
+FROM pbu_trade_collect_mbr_m a
+GROUP BY a.biz_date, a.member_code, a.collect_des
+) b
+) c order by trade_amt;
+
+CONTEXT:  referenced column: last_trade_amt
 CREATE TABLE base_info_pbu_trade (
     id varchar(96) NOT NULL,
     data_start_date date,
@@ -190,28 +224,11 @@ select proc9();
 (1 row)
 
 select proc10();
-                      proc10                       
----------------------------------------------------
- (2022-06-30,00395,ABETF,2022-06,19332245263.44,,)
- (2022-06-30,00395,01,2022-06,19332245263.44,,)
- (2022-06-30,00395,AETF,2022-06,19332245263.44,,)
- (2022-06-30,00129,AETF,2022-06,23636305947.68,,)
- (2022-06-30,00129,01,2022-06,23636305947.68,,)
- (2022-06-30,00129,ABETF,2022-06,23636305947.68,,)
- (2022-06-30,00015,01,2022-06,23862755529.64,,)
- (2022-06-30,00015,AETF,2022-06,23862755529.64,,)
- (2022-06-30,00015,ABETF,2022-06,23862755529.64,,)
- (2022-06-30,00558,ABETF,2022-06,24208138747.60,,)
- (2022-06-30,00558,AETF,2022-06,24208138747.60,,)
- (2022-06-30,00558,01,2022-06,24208138747.60,,)
- (2022-06-30,00701,AETF,2022-06,26630727808.08,,)
- (2022-06-30,00701,01,2022-06,26630727808.08,,)
- (2022-06-30,00701,ABETF,2022-06,26630727808.08,,)
- (2022-06-30,00030,AETF,2022-06,33694248540.86,,)
- (2022-06-30,00030,ABETF,2022-06,33694248540.86,,)
- (2022-06-30,00030,01,2022-06,33694248540.86,,)
-(18 rows)
-
+ERROR:  function proc10() does not exist
+LINE 1: select proc10();
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: proc10
 select proc11();
                     proc11                    
 ----------------------------------------------
@@ -312,7 +329,7 @@ select  pro_test_t2();
 (2 rows)
 
 drop schema db_func_call_2 cascade;
-NOTICE:  drop cascades to 23 other objects
+NOTICE:  drop cascades to 22 other objects
 DETAIL:  drop cascades to table t1
 drop cascades to table t2
 drop cascades to function proc1()
@@ -325,7 +342,6 @@ drop cascades to function proc7()
 drop cascades to function proc8()
 drop cascades to function proc9()
 drop cascades to table pbu_trade_collect_mbr_m
-drop cascades to function proc10()
 drop cascades to table base_info_pbu_trade
 drop cascades to table base_info_pbu_org
 drop cascades to function proc11()

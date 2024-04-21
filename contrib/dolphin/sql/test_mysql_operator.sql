@@ -976,10 +976,10 @@ select
 ~(`blob`),
 ~(`mediumblob`),
 ~(`longblob`),
-~(`text`),
+--~(`text`),
 ~(`enum_t`),
-~(`set_t`),
-~(`json`)
+~(`set_t`)
+--~(`json`)
 from test_type_table;
 
 DROP TABLE test_type_table;

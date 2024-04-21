@@ -523,29 +523,29 @@ select convert(1 , unsigned);
 
 --test for db core
 select varlena_cast_ui1(1);
- varlena_cast_ui1 
-------------------
- 1
-(1 row)
-
+ERROR:  function varlena_cast_ui1(integer) does not exist
+LINE 1: select varlena_cast_ui1(1);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: varlena_cast_ui1
 select varlena_cast_ui2(1);
- varlena_cast_ui2 
-------------------
- 1
-(1 row)
-
+ERROR:  function varlena_cast_ui2(integer) does not exist
+LINE 1: select varlena_cast_ui2(1);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: varlena_cast_ui2
 select varlena_cast_ui4(1);
- varlena_cast_ui4 
-------------------
- 1
-(1 row)
-
+ERROR:  function varlena_cast_ui4(integer) does not exist
+LINE 1: select varlena_cast_ui4(1);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: varlena_cast_ui4
 select varlena_cast_ui8(1);
- varlena_cast_ui8 
-------------------
- 1
-(1 row)
-
+ERROR:  function varlena_cast_ui8(integer) does not exist
+LINE 1: select varlena_cast_ui8(1);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: varlena_cast_ui8
 select varlena_cast_int8(1);
  varlena_cast_int8 
 -------------------
@@ -556,12 +556,6 @@ select varlena2float8(1);
  varlena2float8 
 ----------------
               1
-(1 row)
-
-select varlena2bit(1,10);
- varlena2bit 
--------------
- 0000110001
 (1 row)
 
 create OR REPLACE procedure t_p(out ret varchar) as

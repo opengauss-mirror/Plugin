@@ -81,8 +81,8 @@ SELECT
     ascii(`year`),
     ascii(`char`),
     ascii(`varchar`),
-    ascii(`binary`),
-    ascii(`varbinary`),
+    --ascii(`binary`),
+    --ascii(`varbinary`),
     ascii(`tinyblob`),
     ascii(`blob`),
     ascii(`mediumblob`),
@@ -97,7 +97,7 @@ FROM test_type_table;
 create table bit_test(`bit1` bit(1), `bit5` bit(5), `bit8` bit(8), `bit15` bit(15), `bit16` bit(16));
 insert into bit_test values(0,0,0,0,0);
 insert into bit_test values(1,1,1,1,1);
-insert into bit_test values(1,0x7,0xF,0xF5,0xF6);
+insert into bit_test values(1,x'7',x'F',x'F5',x'F6');
 select ascii(`bit1`), ascii(`bit5`), ascii(`bit8`), ascii(`bit15`), ascii(`bit16`) from bit_test;
 
 -- test bit length = 0

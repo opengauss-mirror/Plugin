@@ -379,77 +379,45 @@ select 19990101222222::uint8::datetime;
 (1 row)
 
 select '-1'::uint1::date;
-WARNING:  Cast to tinyint unsigned converted negative integer to it's positive complement
+ERROR:  cannot cast type uint1 to date
+LINE 1: select '-1'::uint1::date;
+                          ^
 CONTEXT:  referenced column: date
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: date
- date 
-------
- 
-(1 row)
-
 select '256'::uint1::date;
-WARNING:  tinyint unsigned out of range
+ERROR:  cannot cast type uint1 to date
+LINE 1: select '256'::uint1::date;
+                           ^
 CONTEXT:  referenced column: date
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: date
- date 
-------
- 
-(1 row)
-
 select 2004::uint2::date;
-WARNING:  Out of range value for date
+ERROR:  cannot cast type uint2 to date
+LINE 1: select 2004::uint2::date;
+                          ^
 CONTEXT:  referenced column: date
- date 
-------
- 
-(1 row)
-
 select '65536'::uint2::date;
-WARNING:  smallint unsigned out of range
+ERROR:  cannot cast type uint2 to date
+LINE 1: select '65536'::uint2::date;
+                             ^
 CONTEXT:  referenced column: date
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: date
- date 
-------
- 
-(1 row)
-
 select '65535'::uint2::date;
-WARNING:  Out of range value for date
+ERROR:  cannot cast type uint2 to date
+LINE 1: select '65535'::uint2::date;
+                             ^
 CONTEXT:  referenced column: date
- date 
-------
- 
-(1 row)
-
 select 2067::uint8::date;
-WARNING:  Out of range value for date
+ERROR:  cannot cast type uint8 to date
+LINE 1: select 2067::uint8::date;
+                          ^
 CONTEXT:  referenced column: date
- date 
-------
- 
-(1 row)
-
 select '-1'::uint8::date;
-WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+ERROR:  cannot cast type uint8 to date
+LINE 1: select '-1'::uint8::date;
+                          ^
 CONTEXT:  referenced column: date
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: date
- date 
-------
- 
-(1 row)
-
 select '18446744073709551615'::uint8::date;
-WARNING:  Out of range value for date
+ERROR:  cannot cast type uint8 to date
+LINE 1: select '18446744073709551615'::uint8::date;
+                                            ^
 CONTEXT:  referenced column: date
- date 
-------
- 
-(1 row)
-
 select 1999::uint4::year;
  year 
 ------
@@ -595,41 +563,33 @@ substr(@v6,1,1), substr(@v6,1,4), substr(repeat(@v6, 10),1,255));
 --- 使用cast/convert函数转换
 select c1, cast(c2 as unsigned), cast(c3 as unsigned), cast(c4 as unsigned),
 cast(c5 as unsigned) from t_binary0001 order by 1,2,3,4,5;
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghij"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "61E7"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  Data truncated for input data: "1110"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010"
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
 CONTEXT:  referenced column: c4
-WARNING:  Data truncated for input data: "3641"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "3641077364107736410773641077364107736410773641077364107736410773641077"
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
 CONTEXT:  referenced column: c4
  c1 | c2 |  c3  |          c4          | c5 
 ----+----+------+----------------------+----
@@ -644,61 +604,49 @@ CONTEXT:  referenced column: c4
 select c1, convert(c2, unsigned), convert(c3, unsigned), convert(c4, unsigned),
 convert(c5, unsigned), convert(c6, unsigned), convert(c7, unsigned) from
 t_binary0001 order by 1,2,3,4,5,6,7;
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghij"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghij"
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
 CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
 CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "61E7"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "61E7"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "61E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E7868AE78CABE7ABB9E7ABB9E788B1E59083E7ABB9E5AD9061E78"
-CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a熊"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
 CONTEXT:  referenced column: c7
-WARNING:  Data truncated for input data: "1110"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010"
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010"
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010" is out of range for type bigint unsigned
 CONTEXT:  referenced column: c7
-WARNING:  Data truncated for input data: "3641"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "3641077364107736410773641077364107736410773641077364107736410773641077"
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "3641077364107736410773641077364107736410773641077364107736410773641077"
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077" is out of range for type bigint unsigned
 CONTEXT:  referenced column: c7
  c1 | c2 |  c3  |          c4          | c5 |  c6  |          c7          
 ----+----+------+----------------------+----+------+----------------------
@@ -713,287 +661,319 @@ CONTEXT:  referenced column: c7
 --- 测试uint1/uint2/uint4/uint8，预期表现和unsigned一致
 select c1, cast(c2 as uint1), cast(c3 as uint1), cast(c4 as uint1),
 cast(c5 as uint1) from t_binary0001 order by 1,2,3,4,5;
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  value "1110\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  value "3641\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c4
- c1 | c2 | c3 | c4 | c5 
-----+----+----+----+----
-  1 | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6
-(3 rows)
+ c1 | c2 | c3  | c4  | c5 
+----+----+-----+-----+----
+  1 | 0  | 0   | 0   | 0
+  2 | 0  | 0   | 0   | 0
+  3 | 6  | 61  | 61  | 6
+  4 | 0  | 0   | 0   | 0
+  5 | 1  | 255 | 255 | 1
+  6 | 3  | 255 | 255 | 3
+(6 rows)
 
 select c1, convert(c2, uint1), convert(c3, uint1), convert(c4, uint1),
 convert(c5, uint1), convert(c6, uint1), convert(c7, uint1) from
 t_binary0001 order by 1,2,3,4,5,6,7;
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  value "1110\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  value "1110" is out of range for type tinyint unsigned. truncated automatically
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010" is out of range for type tinyint unsigned. truncated automatically
 CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  value "3641\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
-CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  value "3641" is out of range for type tinyint unsigned. truncated automatically
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077" is out of range for type tinyint unsigned. truncated automatically
 CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "61e7"
-CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
-CONTEXT:  referenced column: c7
- c1 | c2 | c3 | c4 | c5 | c6 | c7 
-----+----+----+----+----+----+----
-  1 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6  | 61 | 61
-(3 rows)
+ c1 | c2 | c3  | c4  | c5 | c6  | c7  
+----+----+-----+-----+----+-----+-----
+  1 | 0  | 0   | 0   | 0  | 0   | 0
+  2 | 0  | 0   | 0   | 0  | 0   | 0
+  3 | 6  | 61  | 61  | 6  | 61  | 61
+  4 | 0  | 0   | 0   | 0  | 0   | 0
+  5 | 1  | 255 | 255 | 1  | 255 | 255
+  6 | 3  | 255 | 255 | 3  | 255 | 255
+(6 rows)
 
 select c1, cast(c2 as uint2), cast(c3 as uint2), cast(c4 as uint2),
 cast(c5 as uint2) from t_binary0001 order by 1,2,3,4,5;
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for smallint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  invalid input syntax for smallint unsigned: "abcdefghij"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  invalid input syntax for smallint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for smallint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for smallint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for smallint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "61e7"
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
 CONTEXT:  referenced column: c4
- c1 | c2 | c3 | c4 | c5 
-----+----+----+----+----
-  1 | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6
-(3 rows)
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c5
+ c1 | c2 |  c3  |  c4   | c5 
+----+----+------+-------+----
+  1 | 0  | 0    | 0     | 0
+  2 | 0  | 0    | 0     | 0
+  3 | 6  | 61   | 61    | 6
+  4 | 0  | 0    | 0     | 0
+  5 | 1  | 1110 | 65535 | 1
+  6 | 3  | 3641 | 65535 | 3
+(6 rows)
 
 select c1, convert(c2, uint2), convert(c3, uint2), convert(c4, uint2),
 convert(c5, uint2), convert(c6, uint2), convert(c7, uint2) from
 t_binary0001 order by 1,2,3,4,5,6,7;
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for smallint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  invalid input syntax for smallint unsigned: "abcdefghij"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  invalid input syntax for smallint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for smallint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  invalid input syntax for smallint unsigned: "abcdefghij"
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  invalid input syntax for smallint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
 CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for smallint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for smallint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
 CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "61e7"
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "61e7"
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
 CONTEXT:  referenced column: c7
- c1 | c2 | c3 | c4 | c5 | c6 | c7 
-----+----+----+----+----+----+----
-  1 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6  | 61 | 61
-(3 rows)
+ c1 | c2 |  c3  |  c4   | c5 |  c6  |  c7   
+----+----+------+-------+----+------+-------
+  1 | 0  | 0    | 0     | 0  | 0    | 0
+  2 | 0  | 0    | 0     | 0  | 0    | 0
+  3 | 6  | 61   | 61    | 6  | 61   | 61
+  4 | 0  | 0    | 0     | 0  | 0    | 0
+  5 | 1  | 1110 | 65535 | 1  | 1110 | 65535
+  6 | 3  | 3641 | 65535 | 3  | 3641 | 65535
+(6 rows)
 
 select c1, cast(c2 as uint4), cast(c3 as uint4), cast(c4 as uint4),
 cast(c5 as uint4) from t_binary0001 order by 1,2,3,4,5;
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for int unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  invalid input syntax for int unsigned: "abcdefghij"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  invalid input syntax for int unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for int unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for int unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for int unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "61e7"
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
 CONTEXT:  referenced column: c4
- c1 | c2 | c3 | c4 | c5 
-----+----+----+----+----
-  1 | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6
-(3 rows)
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c5
+ c1 | c2 |  c3  |     c4     | c5 
+----+----+------+------------+----
+  1 | 0  | 0    | 0          | 0
+  2 | 0  | 0    | 0          | 0
+  3 | 6  | 61   | 61         | 6
+  4 | 0  | 0    | 0          | 0
+  5 | 1  | 1110 | 4294967295 | 1
+  6 | 3  | 3641 | 4294967295 | 3
+(6 rows)
 
 select c1, convert(c2, uint4), convert(c3, uint4), convert(c4, uint4),
 convert(c5, uint4), convert(c6, uint4), convert(c7, uint4) from
 t_binary0001 order by 1,2,3,4,5,6,7;
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for int unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  invalid input syntax for int unsigned: "abcdefghij"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  invalid input syntax for int unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for int unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  invalid input syntax for int unsigned: "abcdefghij"
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  invalid input syntax for int unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
 CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for int unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for int unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
 CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "61e7"
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "61e7"
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
 CONTEXT:  referenced column: c7
- c1 | c2 | c3 | c4 | c5 | c6 | c7 
-----+----+----+----+----+----+----
-  1 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6  | 61 | 61
-(3 rows)
+ c1 | c2 |  c3  |     c4     | c5 |  c6  |     c7     
+----+----+------+------------+----+------+------------
+  1 | 0  | 0    | 0          | 0  | 0    | 0
+  2 | 0  | 0    | 0          | 0  | 0    | 0
+  3 | 6  | 61   | 61         | 6  | 61   | 61
+  4 | 0  | 0    | 0          | 0  | 0    | 0
+  5 | 1  | 1110 | 4294967295 | 1  | 1110 | 4294967295
+  6 | 3  | 3641 | 4294967295 | 3  | 3641 | 4294967295
+(6 rows)
 
 select c1, cast(c2 as uint8), cast(c3 as uint8), cast(c4 as uint8),
 cast(c5 as uint8) from t_binary0001 order by 1,2,3,4,5;
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghij"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "61e7"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
 CONTEXT:  referenced column: c4
- c1 | c2 | c3 | c4 | c5 
-----+----+----+----+----
-  1 | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6
-(3 rows)
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c4
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c4
+ c1 | c2 |  c3  |          c4          | c5 
+----+----+------+----------------------+----
+  1 | 0  | 0    | 0                    | 0
+  2 | 0  | 0    | 0                    | 0
+  3 | 6  | 61   | 61                   | 6
+  4 | 0  | 0    | 0                    | 0
+  5 | 1  | 1110 | 18446744073709551615 | 1
+  6 | 3  | 3641 | 18446744073709551615 | 3
+(6 rows)
 
 select c1, convert(c2, uint8), convert(c3, uint8), convert(c4, uint8),
 convert(c5, uint8), convert(c6, uint8), convert(c7, uint8) from
 t_binary0001 order by 1,2,3,4,5,6,7;
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghij"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "abcdefghij"
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghij"
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
 CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c2
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "a"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
 CONTEXT:  referenced column: c5
-WARNING:  invalid input syntax for type double precision: "a熊猫竹"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子a熊猫竹竹爱吃竹子"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
 CONTEXT:  referenced column: c7
-WARNING:  invalid input syntax for type double precision: "61e7"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c3
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
 CONTEXT:  referenced column: c4
-WARNING:  invalid input syntax for type double precision: "61e7"
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
 CONTEXT:  referenced column: c6
-WARNING:  invalid input syntax for type double precision: "61e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e7868ae78cabe7abb9e7abb9e788b1e59083e7abb9e5ad9061e78"
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
 CONTEXT:  referenced column: c7
- c1 | c2 | c3 | c4 | c5 | c6 | c7 
-----+----+----+----+----+----+----
-  1 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 0  | 0  | 0  | 0  | 0  | 0
-  2 | 6  | 61 | 61 | 6  | 61 | 61
-(3 rows)
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c4
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c7
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c4
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c7
+ c1 | c2 |  c3  |          c4          | c5 |  c6  |          c7          
+----+----+------+----------------------+----+------+----------------------
+  1 | 0  | 0    | 0                    | 0  | 0    | 0
+  2 | 0  | 0    | 0                    | 0  | 0    | 0
+  3 | 6  | 61   | 61                   | 6  | 61   | 61
+  4 | 0  | 0    | 0                    | 0  | 0    | 0
+  5 | 1  | 1110 | 18446744073709551615 | 1  | 1110 | 18446744073709551615
+  6 | 3  | 3641 | 18446744073709551615 | 3  | 3641 | 18446744073709551615
+(6 rows)
 
 --- 建表并插入数据
 create table t_binary(a binary(255));
@@ -1004,14 +984,6 @@ insert into t_binary values('0x1ab');
 insert into t_binary values('123');
 --- 测试转换结果
 select cast(a as unsigned) from t_binary;
-WARNING:  invalid input syntax for type double precision: "2e1"
-CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type double precision: "1ab"
-CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type double precision: "0x1ab"
-CONTEXT:  referenced column: a
-WARNING:  Data truncated for input data: "123"
-CONTEXT:  referenced column: a
   a  
 -----
  2
@@ -1021,21 +993,15 @@ CONTEXT:  referenced column: a
 (4 rows)
 
 insert ignore into t_unsigned select a from t_binary;
-WARNING:  Data truncated for input data: "2e1"
-CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type double precision: "1ab"
-CONTEXT:  referenced column: a
-WARNING:  invalid input syntax for type double precision: "0x1ab"
-CONTEXT:  referenced column: a
-WARNING:  Data truncated for input data: "123"
+WARNING:  column "a" is of type uint8 but expression is of type "binary". Data truncated automatically.
 CONTEXT:  referenced column: a
 select * from t_unsigned;
-  a  
------
- 20
- 1
+ a 
+---
  0
- 123
+ 0
+ 0
+ 0
 (4 rows)
 
 --- 清理

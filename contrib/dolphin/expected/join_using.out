@@ -126,16 +126,9 @@ select * from t_v1 natural join t_v10;
 (1 row)
 
 select * from t_v1 natural join t_v11;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v1 natural join t_v12;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v1 natural join t_v13;
  col1 
 ------
@@ -143,45 +136,21 @@ select * from t_v1 natural join t_v13;
 (1 row)
 
 select * from t_v1 natural join t_v14;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v1 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v1 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v1 natural join t_v17;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v1 natural join t_v18;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v1 natural join t_v19;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v1 natural join t_v20;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v1 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v1 natural join t_v22;
 WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
 WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
@@ -199,13 +168,11 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v1 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v1 natural join t_v25;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -239,22 +206,11 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v1 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v1 natural join t_enum;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v1 natural join t_set;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v2 natural join t_v1;
  col1 
 ------
@@ -312,16 +268,9 @@ select * from t_v2 natural join t_v10;
 (1 row)
 
 select * from t_v2 natural join t_v11;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v2 natural join t_v12;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v2 natural join t_v13;
  col1 
 ------
@@ -329,45 +278,21 @@ select * from t_v2 natural join t_v13;
 (1 row)
 
 select * from t_v2 natural join t_v14;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v2 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v2 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v2 natural join t_v17;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v2 natural join t_v18;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v2 natural join t_v19;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v2 natural join t_v20;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v2 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v2 natural join t_v22;
 WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
 WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
@@ -385,7 +310,6 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v2 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -424,22 +348,11 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v2 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v2 natural join t_enum;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v2 natural join t_set;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v3 natural join t_v1;
  col1 
 ------
@@ -497,16 +410,9 @@ select * from t_v3 natural join t_v10;
 (1 row)
 
 select * from t_v3 natural join t_v11;
- col1 
-------
-    1
-(1 row)
-
+--?.*
 select * from t_v3 natural join t_v12;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v3 natural join t_v13;
  col1 
 ------
@@ -514,45 +420,21 @@ select * from t_v3 natural join t_v13;
 (1 row)
 
 select * from t_v3 natural join t_v14;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v3 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v3 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v3 natural join t_v17;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v3 natural join t_v18;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v3 natural join t_v19;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v3 natural join t_v20;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v3 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v3 natural join t_v22;
 WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
 WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
@@ -570,7 +452,6 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v3 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -609,22 +490,11 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v3 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v3 natural join t_enum;
- col1 
-------
-    1
-(1 row)
-
+--?.*
 select * from t_v3 natural join t_set;
- col1 
-------
-    1
-(1 row)
-
+--?.*
 select * from t_v4 natural join t_v1;
  col1 
 ------
@@ -688,10 +558,7 @@ select * from t_v4 natural join t_v11;
 (1 row)
 
 select * from t_v4 natural join t_v12;
- col1 
-------
-(0 rows)
-
+ERROR:  integer unsigned out of range
 select * from t_v4 natural join t_v13;
  col1 
 ------
@@ -699,40 +566,31 @@ select * from t_v4 natural join t_v13;
 (1 row)
 
 select * from t_v4 natural join t_v14;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v4 natural join t_v15;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v4 natural join t_v16;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v4 natural join t_v17;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v4 natural join t_v18;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v4 natural join t_v19;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v4 natural join t_v20;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v4 natural join t_v21;
  col1 
 ------
@@ -755,7 +613,6 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v4 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -794,22 +651,11 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v4 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v4 natural join t_enum;
- col1 
-------
-    1
-(1 row)
-
+--?.*
 select * from t_v4 natural join t_set;
- col1 
-------
-    1
-(1 row)
-
+--?.*
 select * from t_v5 natural join t_v1;
  col1 
 ------
@@ -884,40 +730,19 @@ select * from t_v5 natural join t_v13;
 (1 row)
 
 select * from t_v5 natural join t_v14;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v5 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v5 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v5 natural join t_v17;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v5 natural join t_v18;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v5 natural join t_v19;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v5 natural join t_v20;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v5 natural join t_v21;
  col1 
 ------
@@ -940,7 +765,6 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v5 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -979,22 +803,11 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v5 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v5 natural join t_enum;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v5 natural join t_set;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v6 natural join t_v1;
  col1 
 ------
@@ -1069,45 +882,49 @@ select * from t_v6 natural join t_v13;
 (1 row)
 
 select * from t_v6 natural join t_v14;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v6 natural join t_v15;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v6 natural join t_v16;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v6 natural join t_v17;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v6 natural join t_v18;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v6 natural join t_v19;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v6 natural join t_v20;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v6 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v6 natural join t_v22;
 WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
 WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
@@ -1125,7 +942,6 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v6 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -1164,22 +980,11 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v6 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v6 natural join t_enum;
- col1 
-------
-    1
-(1 row)
-
+--?.*
 select * from t_v6 natural join t_set;
- col1 
-------
-    1
-(1 row)
-
+--?.*
 select * from t_v7 natural join t_v1;
  col1 
 ------
@@ -1254,30 +1059,15 @@ select * from t_v7 natural join t_v13;
 (1 row)
 
 select * from t_v7 natural join t_v14;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v7 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v7 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v7 natural join t_v17;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v7 natural join t_v18;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v7 natural join t_v19;
  col1 
 ------
@@ -1310,7 +1100,6 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v7 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -1349,22 +1138,11 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (1 row)
 
 select * from t_v7 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v7 natural join t_enum;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v7 natural join t_set;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v8 natural join t_v1;
  col1 
 ------
@@ -1439,45 +1217,21 @@ select * from t_v8 natural join t_v13;
 (1 row)
 
 select * from t_v8 natural join t_v14;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v8 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v8 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v8 natural join t_v17;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v8 natural join t_v18;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v8 natural join t_v19;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v8 natural join t_v20;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v8 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v8 natural join t_v22;
 WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
  col1 
@@ -1533,22 +1287,11 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v8 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v8 natural join t_enum;
- col1 
-------
-    1
-(1 row)
-
+--?.*
 select * from t_v8 natural join t_set;
- col1 
-------
-    1
-(1 row)
-
+--?.*
 select * from t_v9 natural join t_v1;
  col1 
 ------
@@ -1717,10 +1460,8 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v9 natural join t_v31;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: double precision = json
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v9 natural join t_enum;
  col1 
 ------
@@ -1807,36 +1548,43 @@ select * from t_v10 natural join t_v13;
 (1 row)
 
 select * from t_v10 natural join t_v14;
+WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v10 natural join t_v15;
+WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v10 natural join t_v16;
+WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v10 natural join t_v17;
+WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v10 natural join t_v18;
+WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v10 natural join t_v19;
+WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v10 natural join t_v20;
+WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
@@ -1859,7 +1607,6 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 (0 rows)
 
 select * from t_v10 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -1896,40 +1643,17 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 (0 rows)
 
 select * from t_v10 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v10 natural join t_enum;
-   col1   
-----------
- 1.000000
-(1 row)
-
+--?.*
 select * from t_v10 natural join t_set;
-   col1   
-----------
- 1.000000
-(1 row)
-
+--?.*
 select * from t_v11 natural join t_v1;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v11 natural join t_v2;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v11 natural join t_v3;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v11 natural join t_v4;
  col1 
 ------
@@ -1955,23 +1679,11 @@ select * from t_v11 natural join t_v7;
 (1 row)
 
 select * from t_v11 natural join t_v8;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v11 natural join t_v9;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v11 natural join t_v10;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v11 natural join t_v11;
 ERROR:  table name "t_v11" specified more than once
 select * from t_v11 natural join t_v12;
@@ -1986,45 +1698,21 @@ select * from t_v11 natural join t_v13;
 (1 row)
 
 select * from t_v11 natural join t_v14;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v11 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v11 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v11 natural join t_v17;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v11 natural join t_v18;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v11 natural join t_v19;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v11 natural join t_v20;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v11 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v11 natural join t_v22;
 WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
  col1 
@@ -2038,7 +1726,6 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 (0 rows)
 
 select * from t_v11 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2076,42 +1763,19 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 (0 rows)
 
 select * from t_v11 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v11 natural join t_enum;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v11 natural join t_set;
- col1 
-------
- 1
-(1 row)
-
+--?.*
 select * from t_v12 natural join t_v1;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v2;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v3;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v4;
- col1 
-------
-(0 rows)
-
+ERROR:  integer unsigned out of range
 select * from t_v12 natural join t_v5;
  col1 
 ------
@@ -2128,20 +1792,11 @@ select * from t_v12 natural join t_v7;
 (0 rows)
 
 select * from t_v12 natural join t_v8;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v9;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v10;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v11;
  col1 
 ------
@@ -2156,45 +1811,21 @@ select * from t_v12 natural join t_v13;
 (1 row)
 
 select * from t_v12 natural join t_v14;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v17;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v18;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v19;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v20;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_v22;
 WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
  col1 
@@ -2208,7 +1839,6 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 (0 rows)
 
 select * from t_v12 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2246,20 +1876,11 @@ WARNING:  invalid input syntax for type numeric: "1.23a"
 (0 rows)
 
 select * from t_v12 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_enum;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v12 natural join t_set;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v13 natural join t_v1;
  col1 
 ------
@@ -2353,25 +1974,17 @@ select * from t_v13 natural join t_v16;
 (1 row)
 
 select * from t_v13 natural join t_v17;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: boolean = timestamp without time zone
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v13 natural join t_v18;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: boolean = timestamp without time zone
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v13 natural join t_v19;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: boolean = timestamp with time zone
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v13 natural join t_v20;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: boolean = timestamp with time zone
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v13 natural join t_v21;
  col1 
 ------
@@ -2395,13 +2008,11 @@ WARNING:  Truncated incorrect DOUBLE value: 1.23a
 (1 row)
 
 select * from t_v13 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v13 natural join t_v25;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2433,107 +2044,56 @@ select * from t_v13 natural join t_v30;
 (1 row)
 
 select * from t_v13 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v13 natural join t_enum;
- col1 
-------
- t
-(1 row)
-
+--?.*
 select * from t_v13 natural join t_set;
- col1 
-------
- t
-(1 row)
-
+--?.*
 select * from t_v14 natural join t_v1;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v14 natural join t_v2;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v14 natural join t_v3;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v14 natural join t_v4;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v14 natural join t_v5;
- col1 
-------
-(0 rows)
-
-select * from t_v14 natural join t_v6;
- col1 
-------
-(0 rows)
-
-select * from t_v14 natural join t_v7;
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
  col1 
 ------
 (0 rows)
 
+select * from t_v14 natural join t_v6;
+--?.*
+select * from t_v14 natural join t_v7;
+--?.*
 select * from t_v14 natural join t_v8;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v14 natural join t_v9;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v14 natural join t_v10;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v14 natural join t_v11;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v14 natural join t_v12;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v14 natural join t_v13;
- col1 
-------
-(0 rows)
+    col1    
+------------
+ 2023-02-05
+(1 row)
 
 select * from t_v14 natural join t_v14;
 ERROR:  table name "t_v14" specified more than once
 select * from t_v14 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v14 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v14 natural join t_v17;
  col1 
 ------
@@ -2555,18 +2115,15 @@ select * from t_v14 natural join t_v20;
 (0 rows)
 
 select * from t_v14 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v14 natural join t_v22;
-WARNING:  invalid input syntax for type smallint unsigned: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
  col1 
 ------
 (0 rows)
 
 select * from t_v14 natural join t_v23;
-WARNING:  invalid input syntax for type smallint unsigned: "1.23a"
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2602,47 +2159,25 @@ select * from t_v14 natural join t_v29;
 (0 rows)
 
 select * from t_v14 natural join t_v30;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v14 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v14 natural join t_enum;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v14 natural join t_set;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v15 natural join t_v1;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v15 natural join t_v2;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v15 natural join t_v3;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v15 natural join t_v4;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
@@ -2653,50 +2188,35 @@ select * from t_v15 natural join t_v5;
 (0 rows)
 
 select * from t_v15 natural join t_v6;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v15 natural join t_v7;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v15 natural join t_v8;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v15 natural join t_v9;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v15 natural join t_v10;
+WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v15 natural join t_v11;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v15 natural join t_v12;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v15 natural join t_v13;
- col1 
-------
-(0 rows)
+   col1   
+----------
+ 19:10:50
+(1 row)
 
 select * from t_v15 natural join t_v14;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v15 natural join t_v15;
 ERROR:  table name "t_v15" specified more than once
 select * from t_v15 natural join t_v16;
@@ -2725,18 +2245,15 @@ select * from t_v15 natural join t_v20;
 (0 rows)
 
 select * from t_v15 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v15 natural join t_v22;
-WARNING:  invalid input syntax for type smallint unsigned: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
  col1 
 ------
 (0 rows)
 
 select * from t_v15 natural join t_v23;
-WARNING:  invalid input syntax for type smallint unsigned: "1.23a"
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2772,43 +2289,25 @@ select * from t_v15 natural join t_v29;
 (0 rows)
 
 select * from t_v15 natural join t_v30;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v15 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v15 natural join t_enum;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v15 natural join t_set;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v16 natural join t_v1;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v16 natural join t_v2;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v16 natural join t_v3;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v16 natural join t_v4;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
@@ -2819,50 +2318,35 @@ select * from t_v16 natural join t_v5;
 (0 rows)
 
 select * from t_v16 natural join t_v6;
+WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v16 natural join t_v7;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v16 natural join t_v8;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v16 natural join t_v9;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v16 natural join t_v10;
+WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v16 natural join t_v11;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v16 natural join t_v12;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v16 natural join t_v13;
- col1 
-------
-(0 rows)
+     col1      
+---------------
+ 19:10:50.3456
+(1 row)
 
 select * from t_v16 natural join t_v14;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v16 natural join t_v15;
  col1 
 ------
@@ -2891,18 +2375,15 @@ select * from t_v16 natural join t_v20;
 (0 rows)
 
 select * from t_v16 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v16 natural join t_v22;
-WARNING:  invalid input syntax for type smallint unsigned: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type timestamp: "1.23a                                                                                               "
  col1 
 ------
 (0 rows)
 
 select * from t_v16 natural join t_v23;
-WARNING:  invalid input syntax for type smallint unsigned: "1.23a"
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
@@ -2938,48 +2419,23 @@ select * from t_v16 natural join t_v29;
 (0 rows)
 
 select * from t_v16 natural join t_v30;
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
+WARNING:  invalid input syntax for type timestamp: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v16 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v16 natural join t_enum;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v16 natural join t_set;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v17 natural join t_v1;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v17 natural join t_v2;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_uint8_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v17 natural join t_v3;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v17 natural join t_v4;
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_eq" statement 1
@@ -3009,19 +2465,9 @@ CONTEXT:  SQL function "datetime_uint8_eq" statement 1
 (0 rows)
 
 select * from t_v17 natural join t_v8;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v17 natural join t_v9;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v17 natural join t_v10;
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_eq" statement 1
@@ -3030,19 +2476,9 @@ CONTEXT:  SQL function "datetime_double_eq" statement 1
 (0 rows)
 
 select * from t_v17 natural join t_v11;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v17 natural join t_v12;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v17 natural join t_v13;
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_eq" statement 1
@@ -3056,15 +2492,9 @@ select * from t_v17 natural join t_v14;
 (0 rows)
 
 select * from t_v17 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v17 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v17 natural join t_v17;
 ERROR:  table name "t_v17" specified more than once
 select * from t_v17 natural join t_v18;
@@ -3084,10 +2514,7 @@ select * from t_v17 natural join t_v20;
 (0 rows)
 
 select * from t_v17 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v17 natural join t_v22;
 WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
 WARNING:  timestamp out of range
@@ -3161,45 +2588,17 @@ CONTEXT:  SQL function "datetime_double_eq" statement 1
 (0 rows)
 
 select * from t_v17 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v17 natural join t_enum;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v17 natural join t_set;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v18 natural join t_v1;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v18 natural join t_v2;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_uint8_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v18 natural join t_v3;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v18 natural join t_v4;
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_eq" statement 1
@@ -3229,19 +2628,9 @@ CONTEXT:  SQL function "datetime_uint8_eq" statement 1
 (0 rows)
 
 select * from t_v18 natural join t_v8;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v18 natural join t_v9;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v18 natural join t_v10;
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_double_eq" statement 1
@@ -3250,19 +2639,9 @@ CONTEXT:  SQL function "datetime_double_eq" statement 1
 (0 rows)
 
 select * from t_v18 natural join t_v11;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v18 natural join t_v12;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v18 natural join t_v13;
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "datetime_uint8_eq" statement 1
@@ -3276,15 +2655,9 @@ select * from t_v18 natural join t_v14;
 (0 rows)
 
 select * from t_v18 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v18 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v18 natural join t_v17;
  col1 
 ------
@@ -3304,10 +2677,7 @@ select * from t_v18 natural join t_v20;
 (1 row)
 
 select * from t_v18 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v18 natural join t_v22;
 WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
 WARNING:  timestamp out of range
@@ -3381,45 +2751,17 @@ CONTEXT:  SQL function "datetime_double_eq" statement 1
 (0 rows)
 
 select * from t_v18 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v18 natural join t_enum;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v18 natural join t_set;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "datetime_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v19 natural join t_v1;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v19 natural join t_v2;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v19 natural join t_v3;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v19 natural join t_v4;
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_eq" statement 1
@@ -3449,19 +2791,9 @@ CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
 (0 rows)
 
 select * from t_v19 natural join t_v8;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v19 natural join t_v9;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v19 natural join t_v10;
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_eq" statement 1
@@ -3470,19 +2802,9 @@ CONTEXT:  SQL function "timestamp_double_eq" statement 1
 (0 rows)
 
 select * from t_v19 natural join t_v11;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v19 natural join t_v12;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v19 natural join t_v13;
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
@@ -3496,15 +2818,9 @@ select * from t_v19 natural join t_v14;
 (0 rows)
 
 select * from t_v19 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v19 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v19 natural join t_v17;
           col1          
 ------------------------
@@ -3524,10 +2840,7 @@ select * from t_v19 natural join t_v20;
 (0 rows)
 
 select * from t_v19 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v19 natural join t_v22;
 WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
 WARNING:  timestamp out of range
@@ -3601,45 +2914,17 @@ CONTEXT:  SQL function "timestamp_double_eq" statement 1
 (0 rows)
 
 select * from t_v19 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v19 natural join t_enum;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v19 natural join t_set;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v20 natural join t_v1;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v20 natural join t_v2;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v20 natural join t_v3;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v20 natural join t_v4;
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_eq" statement 1
@@ -3669,19 +2954,9 @@ CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
 (0 rows)
 
 select * from t_v20 natural join t_v8;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v20 natural join t_v9;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v20 natural join t_v10;
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_double_eq" statement 1
@@ -3690,19 +2965,9 @@ CONTEXT:  SQL function "timestamp_double_eq" statement 1
 (0 rows)
 
 select * from t_v20 natural join t_v11;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v20 natural join t_v12;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v20 natural join t_v13;
 WARNING:  timestamp out of range
 CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
@@ -3716,15 +2981,9 @@ select * from t_v20 natural join t_v14;
 (0 rows)
 
 select * from t_v20 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v20 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v20 natural join t_v17;
  col1 
 ------
@@ -3744,10 +3003,7 @@ select * from t_v20 natural join t_v19;
 select * from t_v20 natural join t_v20;
 ERROR:  table name "t_v20" specified more than once
 select * from t_v20 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v20 natural join t_v22;
 WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
 WARNING:  timestamp out of range
@@ -3821,39 +3077,17 @@ CONTEXT:  SQL function "timestamp_double_eq" statement 1
 (0 rows)
 
 select * from t_v20 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v20 natural join t_enum;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v20 natural join t_set;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_double_eq" statement 1
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_v1;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_v2;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_v3;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_v4;
  col1 
 ------
@@ -3865,81 +3099,43 @@ select * from t_v21 natural join t_v5;
 (0 rows)
 
 select * from t_v21 natural join t_v6;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_v7;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_v8;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_v9;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_v10;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_v11;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_v12;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_v13;
+--?.*
+select * from t_v21 natural join t_v14;
  col1 
 ------
  2023
 (1 row)
 
-select * from t_v21 natural join t_v14;
- col1 
-------
-(0 rows)
-
 select * from t_v21 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_v17;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: year = timestamp without time zone
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v21 natural join t_v18;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: year = timestamp without time zone
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v21 natural join t_v19;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: year = timestamp with time zone
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v21 natural join t_v20;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: year = timestamp with time zone
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v21 natural join t_v21;
 ERROR:  table name "t_v21" specified more than once
 select * from t_v21 natural join t_v22;
@@ -3955,15 +3151,11 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (0 rows)
 
 select * from t_v21 natural join t_v24;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  SQL function "year_binary_eq" statement 1
  col1 
 ------
 (0 rows)
 
 select * from t_v21 natural join t_v25;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  SQL function "year_binary_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -3995,31 +3187,18 @@ WARNING:  invalid input syntax for type bigint: "1.23a"
 (0 rows)
 
 select * from t_v21 natural join t_v31;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_enum;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v21 natural join t_set;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v22 natural join t_v1;
-WARNING:  invalid input syntax for type tinyint: "1.23a                                                                                               "
-WARNING:  invalid input syntax for type tinyint: "1.23a                                                                                               "
                                                  col1                                                 
 ------------------------------------------------------------------------------------------------------
  1.23a                                                                                               
 (1 row)
 
 select * from t_v22 natural join t_v2;
-WARNING:  invalid input syntax for type tinyint: "1.23a                                                                                               "
-WARNING:  invalid input syntax for type tinyint: "1.23a                                                                                               "
                                                  col1                                                 
 ------------------------------------------------------------------------------------------------------
  1.23a                                                                                               
@@ -4196,25 +3375,19 @@ select * from t_v22 natural join t_v30;
 (1 row)
 
 select * from t_v22 natural join t_v31;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: character = json
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v22 natural join t_enum;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_v22 natural join t_set;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_v23 natural join t_v1;
-WARNING:  invalid input syntax for type tinyint: "1.23a"
-WARNING:  invalid input syntax for type tinyint: "1.23a"
  col1  
 -------
  1.23a
 (1 row)
 
 select * from t_v23 natural join t_v2;
-WARNING:  invalid input syntax for type tinyint: "1.23a"
-WARNING:  invalid input syntax for type tinyint: "1.23a"
  col1  
 -------
  1.23a
@@ -4396,52 +3569,43 @@ select * from t_v23 natural join t_v30;
 (1 row)
 
 select * from t_v23 natural join t_v31;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: character varying = json
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v23 natural join t_enum;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_v23 natural join t_set;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_v24 natural join t_v1;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v2;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v3;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v4;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v5;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v6;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v7;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4459,25 +3623,21 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v24 natural join t_v10;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v11;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v12;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
 select * from t_v24 natural join t_v13;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4518,8 +3678,6 @@ select * from t_v24 natural join t_v20;
 (0 rows)
 
 select * from t_v24 natural join t_v21;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  SQL function "binary_year_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -4542,46 +3700,38 @@ select * from t_v24 natural join t_v25;
 (0 rows)
 
 select * from t_v24 natural join t_v26;
-                                                                                                    col1                                                                                                    
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- \x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(1 row)
-
+ERROR:  operator is not unique: "binary" = tinyblob
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v24 natural join t_v27;
-                                                                                                    col1                                                                                                    
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- \x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(1 row)
-
+ERROR:  operator is not unique: "binary" = blob
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v24 natural join t_v28;
-                                                                                                    col1                                                                                                    
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- \x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(1 row)
-
+ERROR:  operator is not unique: "binary" = mediumblob
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v24 natural join t_v29;
-                                                                                                    col1                                                                                                    
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- \x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-(1 row)
-
+ERROR:  operator is not unique: "binary" = longblob
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v24 natural join t_v30;
- col1  
--------
- 1.23a
-(1 row)
-
-select * from t_v24 natural join t_v31;
  col1 
 ------
 (0 rows)
 
+select * from t_v24 natural join t_v31;
+ERROR:  operator does not exist: "binary" = json
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v24 natural join t_enum;
---?ERROR:  could not find hash function for hash operator .*
-select * from t_v24 natural join t_set;
---?ERROR:  could not find hash function for hash operator .*
-select * from t_v25 natural join t_v1;
 WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
+select * from t_v24 natural join t_set;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
+select * from t_v25 natural join t_v1;
  col1 
 ------
 (0 rows)
@@ -4646,7 +3796,6 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v25 natural join t_v13;
-WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
@@ -4687,8 +3836,6 @@ select * from t_v25 natural join t_v20;
 (0 rows)
 
 select * from t_v25 natural join t_v21;
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  SQL function "binary_year_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -4712,44 +3859,38 @@ select * from t_v25 natural join t_v24;
 select * from t_v25 natural join t_v25;
 ERROR:  table name "t_v25" specified more than once
 select * from t_v25 natural join t_v26;
-     col1     
---------------
- \x312e323361
-(1 row)
-
+ERROR:  operator is not unique: "varbinary" = tinyblob
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v25 natural join t_v27;
-     col1     
---------------
- \x312e323361
-(1 row)
-
+ERROR:  operator is not unique: "varbinary" = blob
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v25 natural join t_v28;
-     col1     
---------------
- \x312e323361
-(1 row)
-
+ERROR:  operator is not unique: "varbinary" = mediumblob
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v25 natural join t_v29;
+ERROR:  operator is not unique: "varbinary" = longblob
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
+select * from t_v25 natural join t_v30;
      col1     
 --------------
  \x312e323361
-(1 row)
-
-select * from t_v25 natural join t_v30;
- col1  
--------
- 1.23a
 (1 row)
 
 select * from t_v25 natural join t_v31;
+ERROR:  operator does not exist: "varbinary" = json
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+select * from t_v25 natural join t_enum;
+WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
 ------
 (0 rows)
 
-select * from t_v25 natural join t_enum;
---?ERROR:  could not find hash function for hash operator .*
 select * from t_v25 natural join t_set;
---?ERROR:  could not find hash function for hash operator .*
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_v26 natural join t_v1;
  col1 
 ------
@@ -4869,17 +4010,11 @@ select * from t_v26 natural join t_v23;
 (1 row)
 
 select * from t_v26 natural join t_v24;
-     col1     
---------------
- \x312e323361
-(1 row)
-
+ERROR:  operator is not unique: tinyblob = "binary"
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v26 natural join t_v25;
-     col1     
---------------
- \x312e323361
-(1 row)
-
+ERROR:  operator is not unique: tinyblob = "varbinary"
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v26 natural join t_v26;
 ERROR:  table name "t_v26" specified more than once
 select * from t_v26 natural join t_v27;
@@ -5040,17 +4175,11 @@ select * from t_v27 natural join t_v23;
 (1 row)
 
 select * from t_v27 natural join t_v24;
-     col1     
---------------
- \x312e323361
-(1 row)
-
+ERROR:  operator is not unique: blob = "binary"
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v27 natural join t_v25;
-     col1     
---------------
- \x312e323361
-(1 row)
-
+ERROR:  operator is not unique: blob = "varbinary"
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v27 natural join t_v26;
      col1     
 --------------
@@ -5211,17 +4340,11 @@ select * from t_v28 natural join t_v23;
 (1 row)
 
 select * from t_v28 natural join t_v24;
-     col1     
---------------
- \x312e323361
-(1 row)
-
+ERROR:  operator is not unique: mediumblob = "binary"
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v28 natural join t_v25;
-     col1     
---------------
- \x312e323361
-(1 row)
-
+ERROR:  operator is not unique: mediumblob = "varbinary"
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v28 natural join t_v26;
      col1     
 --------------
@@ -5382,17 +4505,11 @@ select * from t_v29 natural join t_v23;
 (1 row)
 
 select * from t_v29 natural join t_v24;
-     col1     
---------------
- \x312e323361
-(1 row)
-
+ERROR:  operator is not unique: longblob = "binary"
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v29 natural join t_v25;
-     col1     
---------------
- \x312e323361
-(1 row)
-
+ERROR:  operator is not unique: longblob = "varbinary"
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select * from t_v29 natural join t_v26;
      col1     
 --------------
@@ -5435,16 +4552,12 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 (0 rows)
 
 select * from t_v30 natural join t_v1;
-WARNING:  invalid input syntax for type tinyint: "1.23a"
-WARNING:  invalid input syntax for type tinyint: "1.23a"
  col1  
 -------
  1.23a
 (1 row)
 
 select * from t_v30 natural join t_v2;
-WARNING:  invalid input syntax for type tinyint: "1.23a"
-WARNING:  invalid input syntax for type tinyint: "1.23a"
  col1  
 -------
  1.23a
@@ -5587,10 +4700,9 @@ select * from t_v30 natural join t_v23;
 (1 row)
 
 select * from t_v30 natural join t_v24;
- col1  
--------
- 1.23a
-(1 row)
+ col1 
+------
+(0 rows)
 
 select * from t_v30 natural join t_v25;
  col1  
@@ -5625,288 +4737,145 @@ select * from t_v30 natural join t_v29;
 select * from t_v30 natural join t_v30;
 ERROR:  table name "t_v30" specified more than once
 select * from t_v30 natural join t_v31;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: text = json
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v30 natural join t_enum;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_v30 natural join t_set;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_v31 natural join t_v1;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v2;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v3;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v4;
- col1 
-------
-(0 rows)
-
+--?--?.*
 select * from t_v31 natural join t_v5;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v6;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v7;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v8;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v9;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v10;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v11;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v12;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v13;
-ERROR:  failed to find conversion function from boolean to json
+--?.*
 select * from t_v31 natural join t_v14;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v17;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v18;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v19;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v20;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_v22;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: json = character
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v31 natural join t_v23;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: json = character varying
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v31 natural join t_v24;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: json = "binary"
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v31 natural join t_v25;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: json = "varbinary"
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v31 natural join t_v26;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: json = tinyblob
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v31 natural join t_v27;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: json = blob
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v31 natural join t_v28;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: json = mediumblob
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v31 natural join t_v29;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: json = longblob
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v31 natural join t_v30;
- col1 
-------
-(0 rows)
-
+ERROR:  operator does not exist: json = text
+HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
 select * from t_v31 natural join t_v31;
 ERROR:  table name "t_v31" specified more than once
 select * from t_v31 natural join t_enum;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_v31 natural join t_set;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_enum natural join t_v1;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_enum natural join t_v2;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_enum natural join t_v3;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_enum natural join t_v4;
- col1 
-------
- a
-(1 row)
-
+--?--?.*
 select * from t_enum natural join t_v5;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_enum natural join t_v6;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_enum natural join t_v7;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_enum natural join t_v8;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_enum natural join t_v9;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_enum natural join t_v10;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_enum natural join t_v11;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_enum natural join t_v12;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_enum natural join t_v13;
---?ERROR:  failed to find conversion function from boolean to .*
+--?.*
 select * from t_enum natural join t_v14;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_enum natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_enum natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_enum natural join t_v17;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_enum natural join t_v18;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_enum natural join t_v19;
---?ERROR:  failed to find conversion function from timestamp with time zone to .*
+--?.*
 select * from t_enum natural join t_v20;
---?ERROR:  failed to find conversion function from timestamp with time zone to .*
+--?.*
 select * from t_enum natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_enum natural join t_v22;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_enum natural join t_v23;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_enum natural join t_v24;
---?ERROR:  could not find hash function for hash operator .*
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_enum natural join t_v25;
---?ERROR:  could not find hash function for hash operator .*
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_enum natural join t_v26;
 WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
@@ -5934,8 +4903,7 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 select * from t_enum natural join t_v30;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_enum natural join t_v31;
---?ERROR:  operator does not exist: .* = json
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+--?.*
 select * from t_enum natural join t_enum;
 ERROR:  table name "t_enum" specified more than once
 select * from t_enum natural join t_set;
@@ -5945,120 +4913,63 @@ select * from t_enum natural join t_set;
 (1 row)
 
 select * from t_set natural join t_v1;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_set natural join t_v2;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_set natural join t_v3;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_set natural join t_v4;
- col1 
-------
- a
-(1 row)
-
+--?--?.*
 select * from t_set natural join t_v5;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_set natural join t_v6;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_set natural join t_v7;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_set natural join t_v8;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_set natural join t_v9;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_set natural join t_v10;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_set natural join t_v11;
- col1 
-------
- a
-(1 row)
-
+--?.*
 select * from t_set natural join t_v12;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_set natural join t_v13;
---?ERROR:  failed to find conversion function from boolean to .*
+--?.*
 select * from t_set natural join t_v14;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_set natural join t_v15;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_set natural join t_v16;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_set natural join t_v17;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_set natural join t_v18;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_set natural join t_v19;
---?ERROR:  failed to find conversion function from timestamp with time zone to .*
+--?.*
 select * from t_set natural join t_v20;
---?ERROR:  failed to find conversion function from timestamp with time zone to .*
+--?.*
 select * from t_set natural join t_v21;
- col1 
-------
-(0 rows)
-
+--?.*
 select * from t_set natural join t_v22;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_set natural join t_v23;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_set natural join t_v24;
---?ERROR:  could not find hash function for hash operator .*
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_set natural join t_v25;
---?ERROR:  could not find hash function for hash operator .*
+WARNING:  invalid input syntax for type double precision: "1.23a"
+ col1 
+------
+(0 rows)
+
 select * from t_set natural join t_v26;
 WARNING:  invalid input syntax for type double precision: "1.23a"
  col1 
@@ -6086,8 +4997,7 @@ WARNING:  invalid input syntax for type double precision: "1.23a"
 select * from t_set natural join t_v30;
 --?ERROR:  could not find hash function for hash operator .*
 select * from t_set natural join t_v31;
---?ERROR:  operator does not exist: .* = json
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+--?.*
 select * from t_set natural join t_enum;
  col1 
 ------

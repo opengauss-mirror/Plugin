@@ -143,6 +143,8 @@ NOTICE:  table "t1" does not exist, skipping
 create table t1(c_id int, c_name varchar(20), c_age enum('20', '30'));
 --插入1条数据
 insert into t1 values(1, 'name+' || 1, 2);
+--?ERROR:  failed to find conversion function from integer.*
+CONTEXT:  referenced column: c_age
 --创建存储过程，插入10条数据
 create or replace procedure p_enum1 
 as 
@@ -154,19 +156,14 @@ end;
 /
 --调用
 call p_enum1();
- p_enum1 
----------
- 
-(1 row)
-
+--?ERROR:  failed to find conversion function from integer.*
+CONTEXT:  referenced column: c_age
+SQL statement "insert into t1 values(i, 'name+' || i, 1)"
+PL/pgSQL function p_enum1() line 3 at SQL statement
 select * from t1;
  c_id | c_name | c_age 
 ------+--------+-------
-    1 | name+1 | 30
-    1 | name+1 | 20
-    2 | name+2 | 20
-    3 | name+3 | 20
-(4 rows)
+(0 rows)
 
 -- not allowed to create a type with type name contained 'anonymous_enum'
 CREATE TYPE country_anonymous_enum_1 AS enum('CHINA','USA');
@@ -177,20 +174,21 @@ CREATE TABLE test (
     myname enum('a','b','c')
 );
 INSERT INTO test (myname) VALUES (1);
+--?ERROR:  failed to find conversion function from integer.*
+CONTEXT:  referenced column: myname
 -- insert with index 0 resulting in a null value
 INSERT INTO test (myname) VALUES (0);
+--?ERROR:  failed to find conversion function from integer.*
+CONTEXT:  referenced column: myname
 -- insert with out-of-range index
 INSERT INTO test (myname) VALUES (4);
-ERROR:  enum order 4 out of the enum value size: 3
-LINE 1: INSERT INTO test (myname) VALUES (4);
-                                          ^
+--?ERROR:  failed to find conversion function from integer.*
 CONTEXT:  referenced column: myname
 -- query with existing index
 SELECT * FROM test WHERE myname=1;
  age | myname 
 -----+--------
-     | a
-(1 row)
+(0 rows)
 
 -- query with index 0
 SELECT * FROM test WHERE myname=0;
@@ -551,30 +549,52 @@ LINE 1: insert into test values('orange');
                                 ^
 CONTEXT:  referenced column: color
 insert into test values(0);
---?ERROR:  invalid input value for enum.*
+--?ERROR:  failed to find conversion function from integer.*
 CONTEXT:  referenced column: color
 insert into test values('0');
 insert into test values(1);
+--?ERROR:  failed to find conversion function from integer.*
+CONTEXT:  referenced column: color
 insert into test values('1');
 insert into test values(1.2);
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 insert into test values('1.2');
 --?ERROR:  invalid input value for enum.*
 LINE 1: insert into test values('1.2');
                                 ^
 CONTEXT:  referenced column: color
 insert into test values(1.4);
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 insert into test values('1.4');
 --?ERROR:  invalid input value for enum.*
 LINE 1: insert into test values('1.4');
                                 ^
 CONTEXT:  referenced column: color
 insert into test values(1.5);
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 insert into test values('1.5');
 --?ERROR:  invalid input value for enum.*
 LINE 1: insert into test values('1.5');
                                 ^
 CONTEXT:  referenced column: color
 insert into test values(1.6);
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 insert into test values('1.6');
 --?ERROR:  invalid input value for enum.*
 LINE 1: insert into test values('1.6');
@@ -607,12 +627,7 @@ select * from test;
  green
  
  red
- red
- red
- red
- red
- red
-(9 rows)
+(4 rows)
 
 delete from test;
 insert ignore into test values('red');
@@ -623,30 +638,40 @@ LINE 1: insert ignore into test values('orange');
                                        ^
 CONTEXT:  referenced column: color
 insert ignore into test values(0);
-WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+--?ERROR:  failed to find conversion function from integer.*
 CONTEXT:  referenced column: color
 insert ignore into test values('0');
 insert ignore into test values(1);
+--?ERROR:  failed to find conversion function from integer.*
+CONTEXT:  referenced column: color
 insert ignore into test values('1');
 insert ignore into test values(1.2);
+--?.*
+CONTEXT:  referenced column: color
 insert ignore into test values('1.2');
 --?WARNING:  invalid input value for enum .*
 LINE 1: insert ignore into test values('1.2');
                                        ^
 CONTEXT:  referenced column: color
 insert ignore into test values(1.4);
+--?.*
+CONTEXT:  referenced column: color
 insert ignore into test values('1.4');
 --?WARNING:  invalid input value for enum .*
 LINE 1: insert ignore into test values('1.4');
                                        ^
 CONTEXT:  referenced column: color
 insert ignore into test values(1.5);
+--?.*
+CONTEXT:  referenced column: color
 insert ignore into test values('1.5');
 --?WARNING:  invalid input value for enum .*
 LINE 1: insert ignore into test values('1.5');
                                        ^
 CONTEXT:  referenced column: color
 insert ignore into test values(1.6);
+--?.*
+CONTEXT:  referenced column: color
 insert ignore into test values('1.6');
 --?WARNING:  invalid input value for enum .*
 LINE 1: insert ignore into test values('1.6');
@@ -679,22 +704,20 @@ select * from test;
  green
  
  
- 
- red
- red
- red
- 
- red
- 
- red
- 
  red
  
  
  
  
  
-(19 rows)
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+(17 rows)
 
 delete from test;
 set dolphin.sql_mode to 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
@@ -706,30 +729,52 @@ LINE 1: insert into test values('orange');
                                 ^
 CONTEXT:  referenced column: color
 insert into test values(0);
-WARNING:  Invalid input value for enum. In strict sql_mode, do not allow the value 0.
+--?ERROR:  failed to find conversion function from integer.*
 CONTEXT:  referenced column: color
 insert into test values('0');
 insert into test values(1);
+--?ERROR:  failed to find conversion function from integer.*
+CONTEXT:  referenced column: color
 insert into test values('1');
 insert into test values(1.2);
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 insert into test values('1.2');
 --?WARNING:  invalid input value for enum .*
 LINE 1: insert into test values('1.2');
                                 ^
 CONTEXT:  referenced column: color
 insert into test values(1.4);
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 insert into test values('1.4');
 --?WARNING:  invalid input value for enum .*
 LINE 1: insert into test values('1.4');
                                 ^
 CONTEXT:  referenced column: color
 insert into test values(1.5);
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 insert into test values('1.5');
 --?WARNING:  invalid input value for enum .*
 LINE 1: insert into test values('1.5');
                                 ^
 CONTEXT:  referenced column: color
 insert into test values(1.6);
+--?.*
+--?.*
+--?.*
+--?.*
+--?.*
 insert into test values('1.6');
 --?WARNING:  invalid input value for enum .*
 LINE 1: insert into test values('1.6');
@@ -762,22 +807,16 @@ select * from test;
  green
  
  
- 
- red
- red
- red
- 
- red
- 
- red
- 
  red
  
  
  
  
  
-(19 rows)
+ 
+ 
+ 
+(13 rows)
 
 drop table test cascade;
 drop schema db_b_new_gram_test3 cascade;

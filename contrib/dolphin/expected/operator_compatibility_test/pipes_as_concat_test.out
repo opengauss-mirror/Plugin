@@ -29,7 +29,7 @@ CREATE TABLE test_multi_type_table
     `varbinary` varbinary(100),
     `text` text
 );
-INSERT INTO test_multi_type_table VALUES(0x7F, 0xFF, 0x7FFF, 0xFFFF, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 0.9884282, 5.288433915413254, 43391541, b'1', b'100110100110', true, '1.23a', '1.23a', '1.23a', '1.23a', '1.23a');
+INSERT INTO test_multi_type_table VALUES(127, 255, 32767, 65535, 2147483647, 4294967295, 9223372036854775807, 18446744073709551615, 0.9884282, 5.288433915413254, 43391541, b'1', b'100110100110', true, '1.23a', '1.23a', '1.23a', '1.23a', '1.23a');
 CREATE TABLE test_multi_type SELECT
 `int1` || `int1` AS `int1_||_int1`,
 `int1` || `uint1` AS `int1_||_uint1`,

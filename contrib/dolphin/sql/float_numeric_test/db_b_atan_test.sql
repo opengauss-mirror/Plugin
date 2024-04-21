@@ -99,6 +99,7 @@ SELECT ATAN('2'::interval, 1);
 -- ERROR
 SELECT ATAN('2022-05-12', 1);
 -- ERROR
+-- without date->float8 implicit
 SELECT ATAN('2022-05-12'::date, 1);
 -- 1.57079627734016
 -- https://gitee.com/opengauss/Plugin/pulls/815 fix it

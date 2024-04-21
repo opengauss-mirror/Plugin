@@ -2,15 +2,15 @@ create schema unhex_test;
 set current_schema to 'unhex_test';
 --测试字符串作为输入，返回十六进制编码的编码结果
 SELECT UNHEX('6f70656e4761757373');
-        unhex         
-----------------------
- \x6f70656e4761757373
+   unhex   
+-----------
+ openGauss
 (1 row)
 
 SELECT UNHEX(HEX('string'));
-     unhex      
-----------------
- \x737472696e67
+ unhex  
+--------
+ string
 (1 row)
 
 SELECT HEX(UNHEX('1267'));
@@ -20,9 +20,9 @@ SELECT HEX(UNHEX('1267'));
 (1 row)
 
 SELECT UNHEX(HEX('测试'));
-     unhex      
-----------------
- \xe6b58be8af95
+ unhex 
+-------
+ 测试
 (1 row)
 
 --测试非十六进制符号和二进制类型作为输入，返回NULL
@@ -42,26 +42,26 @@ SELECT UNHEX('4142'::bytea);
 SELECT UNHEX('941424344');
     unhex     
 --------------
- \x0941424344
+         ABCD
 (1 row)
 
 SELECT UNHEX('0941424344');
     unhex     
 --------------
- \x0941424344
+         ABCD
 (1 row)
 
 --测试numeric作为输入，返回十六进制编码的编码结果，这里是的数字是十六进制编码，若想将十六进制数转为十进制数，需使用其它函数
 SELECT UNHEX('41424344454647484950515253545556575859');
-                  unhex                   
-------------------------------------------
- \x41424344454647484950515253545556575859
+        unhex        
+---------------------
+ ABCDEFGHIPQRSTUVWXY
 (1 row)
 
 SELECT UNHEX(41424344454647484950515253545556575859);
-                  unhex                   
-------------------------------------------
- \x41424344454647484950515253545556575859
+        unhex        
+---------------------
+ ABCDEFGHIPQRSTUVWXY
 (1 row)
 
 --测试日期类型、bool类型、空值作为输入
@@ -93,10 +93,10 @@ SELECT UNHEX(NULL);
 CREATE TABLE test_unhex (name text);
 INSERT INTO test_unhex values('4142'), ('6f70656e4761757373');
 SELECT UNHEX(name) from test_unhex;
-        unhex         
-----------------------
- \x4142
- \x6f70656e4761757373
+   unhex   
+-----------
+ AB
+ openGauss
 (2 rows)
 
 set bytea_output = escape;
@@ -113,10 +113,10 @@ SELECT unhex(35 + 1), unhex(33 - 1), unhex(12 * 3);
 (1 row)
 
 select +unhex(36),-unhex('43');
-WARNING:  invalid input syntax for type double precision: "C"
+WARNING:  invalid input syntax for type numeric: "C"
  ?column? | ?column? 
 ----------+----------
-        6 |       -0
+        6 |        0
 (1 row)
 
 drop schema unhex_test cascade;
