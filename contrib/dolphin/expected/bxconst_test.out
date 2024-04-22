@@ -198,7 +198,7 @@ select x'01' | x'02';
 
 select 5::binary div 2;
 WARNING:  invalid input syntax for type numeric: "\x35"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -207,7 +207,7 @@ referenced column: div
 
 select 5::binary div (2::int1);
 WARNING:  invalid input syntax for type numeric: "\x35"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -216,7 +216,7 @@ referenced column: div
 
 select 5::binary div (2::int2);
 WARNING:  invalid input syntax for type numeric: "\x35"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -225,7 +225,7 @@ referenced column: div
 
 select 5::binary div (2::int4);
 WARNING:  invalid input syntax for type numeric: "\x35"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -234,7 +234,7 @@ referenced column: div
 
 select 5::binary div (2::int8);
 WARNING:  invalid input syntax for type numeric: "\x35"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -243,7 +243,7 @@ referenced column: div
 
 select 5::binary div (2::uint1);
 WARNING:  invalid input syntax for type numeric: "\x35"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -252,7 +252,7 @@ referenced column: div
 
 select 5::binary div (2::uint2);
 WARNING:  invalid input syntax for type numeric: "\x35"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -261,7 +261,7 @@ referenced column: div
 
 select 5::binary div (2::uint4);
 WARNING:  invalid input syntax for type numeric: "\x35"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -270,7 +270,7 @@ referenced column: div
 
 select 5::binary div (2::uint8);
 WARNING:  invalid input syntax for type numeric: "\x35"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -279,7 +279,7 @@ referenced column: div
 
 select 5::binary div (2::float4);
 WARNING:  invalid input syntax for type numeric: "\x35"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -288,7 +288,7 @@ referenced column: div
 
 select 5::binary div (2::float8);
 WARNING:  invalid input syntax for type numeric: "\x35"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -297,7 +297,7 @@ referenced column: div
 
 select 5::binary div (2::numeric);
 WARNING:  invalid input syntax for type numeric: "\x35"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -306,10 +306,10 @@ referenced column: div
 
 select 5 div 2::binary;
 WARNING:  invalid input syntax for type numeric: "\x32"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -318,10 +318,10 @@ referenced column: div
 
 select (5::int1) div 2::binary;
 WARNING:  invalid input syntax for type numeric: "\x32"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -330,10 +330,10 @@ referenced column: div
 
 select (5::int2) div 2::binary;
 WARNING:  invalid input syntax for type numeric: "\x32"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -342,10 +342,10 @@ referenced column: div
 
 select (5::int4) div 2::binary;
 WARNING:  invalid input syntax for type numeric: "\x32"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -354,10 +354,10 @@ referenced column: div
 
 select (5::int8) div 2::binary;
 WARNING:  invalid input syntax for type numeric: "\x32"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -366,10 +366,10 @@ referenced column: div
 
 select (5::uint1) div 2::binary;
 WARNING:  invalid input syntax for type numeric: "\x32"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -378,10 +378,10 @@ referenced column: div
 
 select (5::uint2) div 2::binary;
 WARNING:  invalid input syntax for type numeric: "\x32"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -390,10 +390,10 @@ referenced column: div
 
 select (5::uint4) div 2::binary;
 WARNING:  invalid input syntax for type numeric: "\x32"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -402,10 +402,10 @@ referenced column: div
 
 select (5::uint8) div 2::binary;
 WARNING:  invalid input syntax for type numeric: "\x32"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -414,10 +414,10 @@ referenced column: div
 
 select (5::float4) div 2::binary;
 WARNING:  invalid input syntax for type numeric: "\x32"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -426,10 +426,10 @@ referenced column: div
 
 select (5::float8) div 2::binary;
 WARNING:  invalid input syntax for type numeric: "\x32"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -438,10 +438,10 @@ referenced column: div
 
 select (5::numeric) div 2::binary;
 WARNING:  invalid input syntax for type numeric: "\x32"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -450,13 +450,13 @@ referenced column: div
 
 select 5::binary div 2::binary;
 WARNING:  invalid input syntax for type numeric: "\x35"
-CONTEXT:  PL/pgSQL function div("binary","binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  invalid input syntax for type numeric: "\x32"
-CONTEXT:  PL/pgSQL function div("binary","binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div("binary","binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -716,7 +716,7 @@ CONTEXT:  SQL function "binary_or_binary" statement 1
 
 select x'01' div 2;
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -725,7 +725,7 @@ referenced column: div
 
 select x'01' div (2::int1);
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -734,7 +734,7 @@ referenced column: div
 
 select x'01' div (2::int2);
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -743,7 +743,7 @@ referenced column: div
 
 select x'01' div (2::int4);
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -752,7 +752,7 @@ referenced column: div
 
 select x'01' div (2::int8);
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -761,7 +761,7 @@ referenced column: div
 
 select x'01' div (2::uint1);
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -770,7 +770,7 @@ referenced column: div
 
 select x'01' div (2::uint2);
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -779,7 +779,7 @@ referenced column: div
 
 select x'01' div (2::uint4);
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -788,7 +788,7 @@ referenced column: div
 
 select x'01' div (2::uint8);
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -797,7 +797,7 @@ referenced column: div
 
 select x'01' div (2::float4);
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -806,7 +806,7 @@ referenced column: div
 
 select x'01' div (2::float8);
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -815,7 +815,7 @@ referenced column: div
 
 select x'01' div (2::numeric);
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div("binary",double precision) line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary",double precision) line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -824,10 +824,10 @@ referenced column: div
 
 select 2 div x'01';
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -836,10 +836,10 @@ referenced column: div
 
 select (2::int1) div x'01';
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -848,10 +848,10 @@ referenced column: div
 
 select (2::int2) div x'01';
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -860,10 +860,10 @@ referenced column: div
 
 select (2::int4) div x'01';
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -872,10 +872,10 @@ referenced column: div
 
 select (2::int8) div x'01';
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -884,10 +884,10 @@ referenced column: div
 
 select (2::uint1) div x'01';
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -896,10 +896,10 @@ referenced column: div
 
 select (2::uint2) div x'01';
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -908,10 +908,10 @@ referenced column: div
 
 select (2::uint4) div x'01';
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -920,10 +920,10 @@ referenced column: div
 
 select (2::uint8) div x'01';
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -932,10 +932,10 @@ referenced column: div
 
 select (2::float4) div x'01';
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -944,10 +944,10 @@ referenced column: div
 
 select (2::float8) div x'01';
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -956,10 +956,10 @@ referenced column: div
 
 select (2::numeric) div x'01';
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div(double precision,"binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"(double precision,"binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
@@ -968,13 +968,13 @@ referenced column: div
 
 select x'01' div x'02';
 WARNING:  invalid input syntax for type numeric: "\x01"
-CONTEXT:  PL/pgSQL function div("binary","binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  invalid input syntax for type numeric: "\x02"
-CONTEXT:  PL/pgSQL function div("binary","binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
 referenced column: div
 WARNING:  division by zero
-CONTEXT:  PL/pgSQL function div("binary","binary") line 4 during statement block local variable initialization
+CONTEXT:  PL/pgSQL function "div"("binary","binary") line 4 during statement block local variable initialization
 referenced column: div
  div 
 -----
