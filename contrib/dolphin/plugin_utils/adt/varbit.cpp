@@ -2699,6 +2699,7 @@ char* bit_to_str(VarBit *bits)
  * - then substr like char, and don't ignore '\0'
  * - start index from 1
  * - length can't be negative
+ * - when start<0, amend the sartPosition to abs(start) from last char
  */
 VarBit* bit_substr_with_byte_align(VarBit *bits, int start, int length, bool length_not_specified)
 {
@@ -2706,10 +2707,14 @@ VarBit* bit_substr_with_byte_align(VarBit *bits, int start, int length, bool len
     char *bitostr = NULL, *sp = NULL;
     int len = length, bytelen = VARBITBYTES(bits);
 
-    if (length < 0)
+    if (!length_not_specified && length < 0)
         ereport(ERROR, (errcode(ERRCODE_SUBSTRING_ERROR), errmsg("negative substring length not allowed")));
 
-    if (start > bytelen || start > VARBITMAXLEN) {
+    if (start < 0) {
+        start = bytelen + start;
+    }
+
+    if (start < 0 || start > bytelen || start > VARBITMAXLEN) {
         /* Need to return a zero-length bitstring */
         len = VARBITTOTALLEN(0);
         result = (VarBit*)palloc(len);
