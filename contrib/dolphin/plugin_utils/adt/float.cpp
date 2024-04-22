@@ -2152,7 +2152,11 @@ Datum dcot(PG_FUNCTION_ARGS)
     }
 
     result = 1.0 / result;
+#ifdef DOLPHIN
+    CHECKFLOATVAL(result, isinf(arg1), true);
+#else
     CHECKFLOATVAL(result, true, true);
+#endif
     PG_RETURN_FLOAT8(result);
 }
 

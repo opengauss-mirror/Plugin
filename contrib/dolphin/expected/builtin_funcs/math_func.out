@@ -201,6 +201,202 @@ select * from test_double_exp order by 1;
  2.718281828459045 | 2.718281828459045 | 2.718281828459045 | 2.718281828459045 | 2.718281828459045 | 2.718281828459045 | 2.718281828459045 | 2.718281828459045 | 2.718281828459045 | 2.718281828459045 | 2.718281828459045 | 2.718281828459045 | 1096.633158428459 | 2.718281828459045 | 3.421229536289673 | 3.421229536289673 | 3.421229536289673 | 3.421229536289673 | 3.421229536289673 | 3.421229536289673 | 3.421229536289673 | 3.421229536289673 | 3.421229536289673 | 2.718281828459045 | 148.4131591025766 |   1
 (2 rows)
 
+-- ceil math function
+reset dolphin.sql_mode;
+select ceil(`int1`), ceil(`uint1`), ceil(`int2`), ceil(`uint2`), ceil(`int4`), ceil(`uint4`), ceil(`int8`), ceil(`uint8`), ceil(`float4`), ceil(`float8`), ceil(`numeric`),ceil(`bit1`), ceil(`bit64`), ceil(`boolean`), ceil(`char`), ceil(`varchar`), ceil(`binary`), ceil(`varbinary`), ceil(`text`) from test_type_table;   
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: ceil
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceil
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ceil
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ceil
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceil
+ ceil | ceil | ceil | ceil | ceil | ceil | ceil | ceil | ceil | ceil | ceil | ceil | ceil | ceil | ceil | ceil | ceil | ceil | ceil 
+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------
+    1 |    1 |    1 |    1 |    1 |    1 |    1 |    1 |    1 |    1 |    1 |    1 |    7 |    1 |    2 |    2 |    2 |    2 |    2
+(1 row)
+
+create table test_double_ceil(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double);
+insert ignore into test_double_ceil select ceil(`int1`), ceil(`uint1`), ceil(`int2`), ceil(`uint2`), ceil(`int4`), ceil(`uint4`), ceil(`int8`), ceil(`uint8`), ceil(`float4`), ceil(`float8`), ceil(`numeric`),ceil(`bit1`), ceil(`bit64`), ceil(`boolean`), ceil(`char`), ceil(`varchar`), ceil(`binary`), ceil(`varbinary`), ceil(`text`) from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: ceil
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceil
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ceil
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ceil
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceil
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test_double_ceil select ceil(`int1`), ceil(`uint1`), ceil(`int2`), ceil(`uint2`), ceil(`int4`), ceil(`uint4`), ceil(`int8`), ceil(`uint8`), ceil(`float4`), ceil(`float8`), ceil(`numeric`),ceil(`bit1`), ceil(`bit64`), ceil(`boolean`), ceil(`char`), ceil(`varchar`), ceil(`binary`), ceil(`varbinary`), ceil(`text`) from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceil
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceil
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ceil
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ceil
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceil
+select * from test_double_ceil order by 1;
+ d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 | d9 | d10 | d11 | d12 | d13 | d14 | d15 | d16 | d17 | d18 | d19 
+----+----+----+----+----+----+----+----+----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |   1 |   1 |   1 |   7 |   1 |   2 |   2 |   2 |   2 |   2
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |   1 |   1 |   1 |   7 |   1 |   2 |   2 |   2 |   2 |   2
+(2 rows)
+
+-- ceiling math function
+reset dolphin.sql_mode;
+select ceiling(`int1`), ceiling(`uint1`), ceiling(`int2`), ceiling(`uint2`), ceiling(`int4`), ceiling(`uint4`), ceiling(`int8`), ceiling(`uint8`), ceiling(`float4`), ceiling(`float8`), ceiling(`numeric`),ceiling(`bit1`), ceiling(`bit64`), ceiling(`boolean`), ceiling(`char`), ceiling(`varchar`), ceiling(`binary`), ceiling(`varbinary`), ceiling(`text`) from test_type_table;   
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: ceiling
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceiling
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ceiling
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ceiling
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceiling
+ ceiling | ceiling | ceiling | ceiling | ceiling | ceiling | ceiling | ceiling | ceiling | ceiling | ceiling | ceiling | ceiling | ceiling | ceiling | ceiling | ceiling | ceiling | ceiling 
+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------+---------
+       1 |       1 |       1 |       1 |       1 |       1 |       1 |       1 |       1 |       1 |       1 |       1 |       7 |       1 |       2 |       2 |       2 |       2 |       2
+(1 row)
+
+create table test_double_ceiling(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double);
+insert ignore into test_double_ceiling select ceiling(`int1`), ceiling(`uint1`), ceiling(`int2`), ceiling(`uint2`), ceiling(`int4`), ceiling(`uint4`), ceiling(`int8`), ceiling(`uint8`), ceiling(`float4`), ceiling(`float8`), ceiling(`numeric`),ceiling(`bit1`), ceiling(`bit64`), ceiling(`boolean`), ceiling(`char`), ceiling(`varchar`), ceiling(`binary`), ceiling(`varbinary`), ceiling(`text`) from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: ceiling
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceiling
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ceiling
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ceiling
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceiling
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test_double_ceiling select ceiling(`int1`), ceiling(`uint1`), ceiling(`int2`), ceiling(`uint2`), ceiling(`int4`), ceiling(`uint4`), ceiling(`int8`), ceiling(`uint8`), ceiling(`float4`), ceiling(`float8`), ceiling(`numeric`),ceiling(`bit1`), ceiling(`bit64`), ceiling(`boolean`), ceiling(`char`), ceiling(`varchar`), ceiling(`binary`), ceiling(`varbinary`), ceiling(`text`) from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceiling
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceiling
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ceiling
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ceiling
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ceiling
+select * from test_double_ceiling order by 1;
+ d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 | d9 | d10 | d11 | d12 | d13 | d14 | d15 | d16 | d17 | d18 | d19 
+----+----+----+----+----+----+----+----+----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |   1 |   1 |   1 |   7 |   1 |   2 |   2 |   2 |   2 |   2
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |   1 |   1 |   1 |   7 |   1 |   2 |   2 |   2 |   2 |   2
+(2 rows)
+
+-- abs math function
+reset dolphin.sql_mode;
+select abs(`int1`), abs(`uint1`), abs(`int2`), abs(`uint2`), abs(`int4`), abs(`uint4`), abs(`int8`), abs(`uint8`), abs(`float4`), abs(`float8`), abs(`numeric`),abs(`bit1`), abs(`bit64`), abs(`boolean`), abs(`char`), abs(`varchar`), abs(`binary`), abs(`varbinary`), abs(`text`) from test_type_table;   
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: abs
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: abs
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: abs
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: abs
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: abs
+ abs | abs | abs | abs | abs | abs | abs | abs | abs | abs |   abs    | abs | abs | abs | abs  | abs  | abs  | abs  | abs  
+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+----------+-----+-----+-----+------+------+------+------+------
+   1 |   1 |   1 |   1 |   1 |   1 |   1 |   1 |   1 |   1 | 1.000000 |   1 |   7 |   1 | 1.23 | 1.23 | 1.23 | 1.23 | 1.23
+(1 row)
+
+create table test_double_abs(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double);
+insert ignore into test_double_abs select abs(`int1`), abs(`uint1`), abs(`int2`), abs(`uint2`), abs(`int4`), abs(`uint4`), abs(`int8`), abs(`uint8`), abs(`float4`), abs(`float8`), abs(`numeric`),abs(`bit1`), abs(`bit64`), abs(`boolean`), abs(`char`), abs(`varchar`), abs(`binary`), abs(`varbinary`), abs(`text`) from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
+CONTEXT:  referenced column: abs
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: abs
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: abs
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: abs
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: abs
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test_double_abs select abs(`int1`), abs(`uint1`), abs(`int2`), abs(`uint2`), abs(`int4`), abs(`uint4`), abs(`int8`), abs(`uint8`), abs(`float4`), abs(`float8`), abs(`numeric`),abs(`bit1`), abs(`bit64`), abs(`boolean`), abs(`char`), abs(`varchar`), abs(`binary`), abs(`varbinary`), abs(`text`) from test_type_table;
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: abs
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: abs
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: abs
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: abs
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: abs
+select * from test_double_abs order by 1;
+ d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 | d9 | d10 | d11 | d12 | d13 | d14 | d15  | d16  | d17  | d18  | d19  
+----+----+----+----+----+----+----+----+----+-----+-----+-----+-----+-----+------+------+------+------+------
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |   1 |   1 |   1 |   7 |   1 | 1.23 | 1.23 | 1.23 | 1.23 | 1.23
+  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |   1 |   1 |   1 |   7 |   1 | 1.23 | 1.23 | 1.23 | 1.23 | 1.23
+(2 rows)
+
+-- cot math function
+reset dolphin.sql_mode;
+select cot(`int1`), cot(`uint1`), cot(`int2`), cot(`uint2`), cot(`int4`), cot(`uint4`), cot(`int8`), cot(`uint8`), cot(`float4`), cot(`float8`), cot(`numeric`),cot(`bit1`), cot(`bit64`), cot(`boolean`), cot(`char`), cot(`varchar`), cot(`binary`), cot(`varbinary`), cot(`text`) from test_type_table;   
+WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+CONTEXT:  referenced column: cot
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: cot
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: cot
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: cot
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: cot
+        cot         |        cot         |        cot         |        cot         |        cot         |        cot         |        cot         |        cot         |        cot         |        cot         |        cot         |        cot         |        cot        |        cot         |        cot         |        cot         |        cot         |        cot         |        cot         
+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------
+ 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 1.147515422405136 | 0.6420926159343306 | 0.3546331016766021 | 0.3546331016766021 | 0.3546331016766021 | 0.3546331016766021 | 0.3546331016766021
+(1 row)
+
+create table test_double_cot(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double);
+insert ignore into test_double_cot select cot(`int1`), cot(`uint1`), cot(`int2`), cot(`uint2`), cot(`int4`), cot(`uint4`), cot(`int8`), cot(`uint8`), cot(`float4`), cot(`float8`), cot(`numeric`),cot(`bit1`), cot(`bit64`), cot(`boolean`), cot(`char`), cot(`varchar`), cot(`binary`), cot(`varbinary`), cot(`text`) from test_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
+CONTEXT:  referenced column: d15
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d16
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d17
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d18
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d19
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+insert into test_double_cot select cot(`int1`), cot(`uint1`), cot(`int2`), cot(`uint2`), cot(`int4`), cot(`uint4`), cot(`int8`), cot(`uint8`), cot(`float4`), cot(`float8`), cot(`numeric`),cot(`bit1`), cot(`bit64`), cot(`boolean`), cot(`char`), cot(`varchar`), cot(`binary`), cot(`varbinary`), cot(`text`) from test_type_table;
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d15
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d16
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d17
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d18
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: d19
+select * from test_double_cot order by 1;
+         d1         |         d2         |         d3         |         d4         |         d5         |         d6         |         d7         |         d8         |         d9         |        d10         |        d11         |        d12         |        d13        |        d14         |        d15         |        d16         |        d17         |        d18         |        d19         
+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------
+ 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 1.147515422405136 | 0.6420926159343306 | 0.3546331016766021 | 0.3546331016766021 | 0.3546331016766021 | 0.3546331016766021 | 0.3546331016766021
+ 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 0.6420926159343306 | 1.147515422405136 | 0.6420926159343306 | 0.3546331016766021 | 0.3546331016766021 | 0.3546331016766021 | 0.3546331016766021 | 0.3546331016766021
+(2 rows)
+
 -- acos math function
 reset dolphin.sql_mode;
 select acos(`int1`), acos(`uint1`), acos(`int2`), acos(`uint2`), acos(`int4`), acos(`uint4`), acos(`int8`), acos(`uint8`), acos(`float4`), acos(`float8`), acos(`numeric`),acos(`bit1`), acos(`bit64`), acos(`boolean`), acos(`date`), acos(`time`), acos(`time(4)`), acos(`datetime`),acos(`datetime(4)`), acos(`timestamp`), acos(`timestamp(4)`), acos(`year`), acos(`char`), acos(`varchar`), acos(`binary`), acos(`varbinary`), acos(`tinyblob`), acos(`blob`), acos(`mediumblob`), acos(`longblob`), acos(`text`), acos(`enum_t`), acos(`set_t`), acos(`json`) from test_type_table;   
@@ -1955,6 +2151,10 @@ select * from test_round1 order by 1;
 drop table if exists test_round1;
 drop table if exists test_year;
 drop table if exists test_time_to_sec;
+drop table if exists test_double_abs;
+drop table if exists test_double_ceil;
+drop table if exists test_double_ceiling;
+drop table if exists test_double_cot;
 drop table if exists test_double_acos;
 drop table if exists test_double_cos;
 drop table if exists test_double_asin;

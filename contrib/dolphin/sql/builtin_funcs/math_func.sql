@@ -76,6 +76,62 @@ insert into test_double_exp select exp(`int1`), exp(`uint1`), exp(`int2`), exp(`
 
 select * from test_double_exp order by 1;
 
+-- ceil math function
+reset dolphin.sql_mode;
+select ceil(`int1`), ceil(`uint1`), ceil(`int2`), ceil(`uint2`), ceil(`int4`), ceil(`uint4`), ceil(`int8`), ceil(`uint8`), ceil(`float4`), ceil(`float8`), ceil(`numeric`),ceil(`bit1`), ceil(`bit64`), ceil(`boolean`), ceil(`char`), ceil(`varchar`), ceil(`binary`), ceil(`varbinary`), ceil(`text`) from test_type_table;   
+
+create table test_double_ceil(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double);
+
+insert ignore into test_double_ceil select ceil(`int1`), ceil(`uint1`), ceil(`int2`), ceil(`uint2`), ceil(`int4`), ceil(`uint4`), ceil(`int8`), ceil(`uint8`), ceil(`float4`), ceil(`float8`), ceil(`numeric`),ceil(`bit1`), ceil(`bit64`), ceil(`boolean`), ceil(`char`), ceil(`varchar`), ceil(`binary`), ceil(`varbinary`), ceil(`text`) from test_type_table;
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+
+insert into test_double_ceil select ceil(`int1`), ceil(`uint1`), ceil(`int2`), ceil(`uint2`), ceil(`int4`), ceil(`uint4`), ceil(`int8`), ceil(`uint8`), ceil(`float4`), ceil(`float8`), ceil(`numeric`),ceil(`bit1`), ceil(`bit64`), ceil(`boolean`), ceil(`char`), ceil(`varchar`), ceil(`binary`), ceil(`varbinary`), ceil(`text`) from test_type_table;
+
+select * from test_double_ceil order by 1;
+
+-- ceiling math function
+reset dolphin.sql_mode;
+select ceiling(`int1`), ceiling(`uint1`), ceiling(`int2`), ceiling(`uint2`), ceiling(`int4`), ceiling(`uint4`), ceiling(`int8`), ceiling(`uint8`), ceiling(`float4`), ceiling(`float8`), ceiling(`numeric`),ceiling(`bit1`), ceiling(`bit64`), ceiling(`boolean`), ceiling(`char`), ceiling(`varchar`), ceiling(`binary`), ceiling(`varbinary`), ceiling(`text`) from test_type_table;   
+
+create table test_double_ceiling(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double);
+
+insert ignore into test_double_ceiling select ceiling(`int1`), ceiling(`uint1`), ceiling(`int2`), ceiling(`uint2`), ceiling(`int4`), ceiling(`uint4`), ceiling(`int8`), ceiling(`uint8`), ceiling(`float4`), ceiling(`float8`), ceiling(`numeric`),ceiling(`bit1`), ceiling(`bit64`), ceiling(`boolean`), ceiling(`char`), ceiling(`varchar`), ceiling(`binary`), ceiling(`varbinary`), ceiling(`text`) from test_type_table;
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+
+insert into test_double_ceiling select ceiling(`int1`), ceiling(`uint1`), ceiling(`int2`), ceiling(`uint2`), ceiling(`int4`), ceiling(`uint4`), ceiling(`int8`), ceiling(`uint8`), ceiling(`float4`), ceiling(`float8`), ceiling(`numeric`),ceiling(`bit1`), ceiling(`bit64`), ceiling(`boolean`), ceiling(`char`), ceiling(`varchar`), ceiling(`binary`), ceiling(`varbinary`), ceiling(`text`) from test_type_table;
+
+select * from test_double_ceiling order by 1;
+
+-- abs math function
+reset dolphin.sql_mode;
+select abs(`int1`), abs(`uint1`), abs(`int2`), abs(`uint2`), abs(`int4`), abs(`uint4`), abs(`int8`), abs(`uint8`), abs(`float4`), abs(`float8`), abs(`numeric`),abs(`bit1`), abs(`bit64`), abs(`boolean`), abs(`char`), abs(`varchar`), abs(`binary`), abs(`varbinary`), abs(`text`) from test_type_table;   
+
+create table test_double_abs(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double);
+
+insert ignore into test_double_abs select abs(`int1`), abs(`uint1`), abs(`int2`), abs(`uint2`), abs(`int4`), abs(`uint4`), abs(`int8`), abs(`uint8`), abs(`float4`), abs(`float8`), abs(`numeric`),abs(`bit1`), abs(`bit64`), abs(`boolean`), abs(`char`), abs(`varchar`), abs(`binary`), abs(`varbinary`), abs(`text`) from test_type_table;
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+
+insert into test_double_abs select abs(`int1`), abs(`uint1`), abs(`int2`), abs(`uint2`), abs(`int4`), abs(`uint4`), abs(`int8`), abs(`uint8`), abs(`float4`), abs(`float8`), abs(`numeric`),abs(`bit1`), abs(`bit64`), abs(`boolean`), abs(`char`), abs(`varchar`), abs(`binary`), abs(`varbinary`), abs(`text`) from test_type_table;
+
+select * from test_double_abs order by 1;
+
+-- cot math function
+reset dolphin.sql_mode;
+select cot(`int1`), cot(`uint1`), cot(`int2`), cot(`uint2`), cot(`int4`), cot(`uint4`), cot(`int8`), cot(`uint8`), cot(`float4`), cot(`float8`), cot(`numeric`),cot(`bit1`), cot(`bit64`), cot(`boolean`), cot(`char`), cot(`varchar`), cot(`binary`), cot(`varbinary`), cot(`text`) from test_type_table;   
+
+create table test_double_cot(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double);
+
+insert ignore into test_double_cot select cot(`int1`), cot(`uint1`), cot(`int2`), cot(`uint2`), cot(`int4`), cot(`uint4`), cot(`int8`), cot(`uint8`), cot(`float4`), cot(`float8`), cot(`numeric`),cot(`bit1`), cot(`bit64`), cot(`boolean`), cot(`char`), cot(`varchar`), cot(`binary`), cot(`varbinary`), cot(`text`) from test_type_table;
+
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
+
+insert into test_double_cot select cot(`int1`), cot(`uint1`), cot(`int2`), cot(`uint2`), cot(`int4`), cot(`uint4`), cot(`int8`), cot(`uint8`), cot(`float4`), cot(`float8`), cot(`numeric`),cot(`bit1`), cot(`bit64`), cot(`boolean`), cot(`char`), cot(`varchar`), cot(`binary`), cot(`varbinary`), cot(`text`) from test_type_table;
+
+select * from test_double_cot order by 1;
+
 -- acos math function
 reset dolphin.sql_mode;
 select acos(`int1`), acos(`uint1`), acos(`int2`), acos(`uint2`), acos(`int4`), acos(`uint4`), acos(`int8`), acos(`uint8`), acos(`float4`), acos(`float8`), acos(`numeric`),acos(`bit1`), acos(`bit64`), acos(`boolean`), acos(`date`), acos(`time`), acos(`time(4)`), acos(`datetime`),acos(`datetime(4)`), acos(`timestamp`), acos(`timestamp(4)`), acos(`year`), acos(`char`), acos(`varchar`), acos(`binary`), acos(`varbinary`), acos(`tinyblob`), acos(`blob`), acos(`mediumblob`), acos(`longblob`), acos(`text`), acos(`enum_t`), acos(`set_t`), acos(`json`) from test_type_table;   
@@ -446,6 +502,10 @@ select * from test_round1 order by 1;
 drop table if exists test_round1;
 drop table if exists test_year;
 drop table if exists test_time_to_sec;
+drop table if exists test_double_abs;
+drop table if exists test_double_ceil;
+drop table if exists test_double_ceiling;
+drop table if exists test_double_cot;
 drop table if exists test_double_acos;
 drop table if exists test_double_cos;
 drop table if exists test_double_asin;
