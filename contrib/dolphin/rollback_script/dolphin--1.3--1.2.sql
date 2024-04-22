@@ -1509,6 +1509,7 @@ DROP FUNCTION IF EXISTS pg_catalog.rand(anyset);
 DROP FUNCTION IF EXISTS pg_catalog.rand(json);
 
 DROP FUNCTION IF EXISTS pg_catalog.random_bytes(int4);
+DROP FUNCTION IF EXISTS pg_catalog.random_bytes(int8);
 DROP FUNCTION IF EXISTS pg_catalog.random_bytes(bit);
 DROP FUNCTION IF EXISTS pg_catalog.random_bytes(timestamp with time zone);
 DROP FUNCTION IF EXISTS pg_catalog.random_bytes(date);

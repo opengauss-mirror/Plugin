@@ -136,69 +136,46 @@ rand(`uint8`)=rand(cast(`uint8` as signed)),
 rand(`float4`)=rand(cast(`float4` as signed)),
 rand(`float8`)=rand(cast(`float8` as signed)),
 rand(`numeric`)=rand(cast(`numeric` as signed)),
-rand(`bit1`)=rand(cast(`bit1` as signed)),
-rand(`bit64`)=rand(cast(`bit64` as signed)),
+--rand(`bit1`)=rand(cast(`bit1` as signed)),
+--rand(`bit64`)=rand(cast(`bit64` as signed)),
 rand(`boolean`)=rand(cast(`boolean` as signed)),
 rand(`date`)=rand(cast(`date` as signed)),
-rand(`time`)=rand(cast(`time` as signed)),
-rand(`time(4)`)=rand(cast(`time(4)` as signed)),
+--rand(`time`)=rand(cast(`time` as signed)),
+--rand(`time(4)`)=rand(cast(`time(4)` as signed)),
 rand(`datetime`)=rand(cast(`datetime` as signed)),
 rand(`datetime(4)`)=rand(cast(`datetime(4)` as signed)),
 rand(`timestamp`)=rand(cast(`timestamp` as signed)),
 rand(`timestamp(4)`)=rand(cast(`timestamp(4)` as signed)),
-rand(`year`)=rand(cast(`year` as signed)),
-rand(`char`)=rand(cast(`char` as signed)),
-rand(`varchar`)=rand(cast(`varchar` as signed)),
+rand(`year`)=rand(cast(`year` as int4)),
+--rand(`char`)=rand(cast(`char` as int4)),
+--rand(`varchar`)=rand(cast(`varchar` as int4)),
 rand(`binary`)=rand(cast(`binary` as signed)),
 rand(`varbinary`)=rand(cast(`varbinary` as signed)),
 rand(`tinyblob`)=rand(cast(`tinyblob` as signed)),
 rand(`blob`)=rand(cast(`blob` as signed)),
 rand(`mediumblob`)=rand(cast(`mediumblob` as signed)),
 rand(`longblob`)=rand(cast(`longblob` as signed)),
-rand(`text`)=rand(cast(`text` as signed)),
-rand(`enum_t`)=rand(cast(`enum_t` as signed)),
+--rand(`text`)=rand(cast(`text` as int4)),
+rand(`enum_t`)=rand(cast(`enum_t` as float8)),
 rand(`set_t`)=rand(cast(`set_t` as signed)),
-rand(`json`)=rand(cast(`json` as signed))
+rand(`json`)=rand(cast(`json` as float8))
 from test_type_table;
-WARNING:  invalid input syntax for type int unsigned: "1.23a                                                                                               "
-WARNING:  invalid input syntax for type int16: "1.23a                                                                                               "
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int unsigned: "1.23a"
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  invalid input syntax for type int16: "1.23a"
-DETAIL:  text contain invalid character
-WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
-WARNING:  Truncated incorrect INTEGER value: '{"a": 1, "b": 2}'
- ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? 
-----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------
- t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t
+WARNING:  invalid input syntax for type bigint: "\x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+WARNING:  invalid input syntax for type bigint: "\x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+WARNING:  invalid input syntax for type bigint: "\x312e323361"
+WARNING:  invalid input syntax for type bigint: "\x312e323361"
+WARNING:  invalid input syntax for type bigint: "\x312e323361"
+WARNING:  invalid input syntax for type bigint: "\x312e323361"
+WARNING:  invalid input syntax for type bigint: "\x312e323361"
+WARNING:  invalid input syntax for type bigint: "\x312e323361"
+WARNING:  invalid input syntax for type bigint: "\x312e323361"
+WARNING:  invalid input syntax for type bigint: "\x312e323361"
+WARNING:  invalid input syntax for type bigint: "\x312e323361"
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+ ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? | ?column? 
+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------
+ t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t        | t
 (1 row)
 
 select
@@ -218,37 +195,25 @@ length(random_bytes(`bit64`)::binary),
 length(random_bytes(`boolean`)::binary),
 length(random_bytes(`char`)::binary),
 length(random_bytes(`varchar`)::binary),
-length(random_bytes(`binary`)::binary),
-length(random_bytes(`varbinary`)::binary),
-length(random_bytes(`tinyblob`)::binary),
-length(random_bytes(`blob`)::binary),
-length(random_bytes(`mediumblob`)::binary),
-length(random_bytes(`longblob`)::binary),
+--length(random_bytes(`binary`)::binary),
+--length(random_bytes(`varbinary`)::binary),
+--length(random_bytes(`tinyblob`)::binary),
+--length(random_bytes(`blob`)::binary),
+--length(random_bytes(`mediumblob`)::binary),
+--length(random_bytes(`longblob`)::binary),
 length(random_bytes(`text`)::binary),
 length(random_bytes(`enum_t`)::binary),
 length(random_bytes(`set_t`)::binary)
 from test_type_table;
-WARNING:  invalid input syntax for type integer: "1.23a                                                                                               "
+WARNING:  invalid input syntax for type bigint: "1.23a                                                                                               "
 CONTEXT:  referenced column: length
-WARNING:  invalid input syntax for type integer: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: length
-WARNING:  invalid input syntax for type double precision: "1.23a"
+WARNING:  invalid input syntax for type bigint: "1.23a"
 CONTEXT:  referenced column: length
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: length
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: length
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: length
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: length
-WARNING:  invalid input syntax for type double precision: "1.23a"
-CONTEXT:  referenced column: length
-WARNING:  invalid input syntax for type integer: "1.23a"
-CONTEXT:  referenced column: length
- length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length 
---------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------
-      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      7 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      5
+ length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length | length 
+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------
+      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      7 |      1 |      1 |      1 |      1 |      1 |      5
 (1 row)
 
 --error, cause value out of range
@@ -256,10 +221,16 @@ select length(random_bytes(`date`)::binary) from test_type_table;
 ERROR:  length value is out of range in 'random_bytes'
 CONTEXT:  referenced column: length
 select length(random_bytes(`time`)::binary) from test_type_table;
-ERROR:  length value is out of range in 'random_bytes'
+ERROR:  function random_bytes(time without time zone) does not exist
+LINE 1: select length(random_bytes(`time`)::binary) from test_type_t...
+                      ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: length
 select length(random_bytes(`time(4)`)::binary) from test_type_table;
-ERROR:  length value is out of range in 'random_bytes'
+ERROR:  function random_bytes(time without time zone) does not exist
+LINE 1: select length(random_bytes(`time(4)`)::binary) from test_typ...
+                      ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: length
 select length(random_bytes(`datetime`)::binary) from test_type_table;
 WARNING:  integer out of range

@@ -86,10 +86,10 @@ ERROR:  relation "test" does not exist on datanode1
 LINE 1: SELECT * FROM test;
                       ^
 RESET current_schema;
-DROP SCHEMA IF EXISTS test_schema1 CASCADE;
+DROP SCHEMA IF EXISTS test_schema CASCADE;
 NOTICE:  drop cascades to 2 other objects
-DETAIL:  drop cascades to operator test_schema1.-(NONE,tinyint)
-drop cascades to operator test_schema1.~(tinyint,NONE)
+DETAIL:  drop cascades to operator test_schema.-(NONE,tinyint)
+drop cascades to operator test_schema.~(tinyint,NONE)
 -- test error message
 DROP TABLE viewtest;
 ERROR:  "viewtest" is not a table

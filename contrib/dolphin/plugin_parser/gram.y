@@ -4569,7 +4569,6 @@ modify_column_cmd:
 						def->colname = $1;
 						def->typname = $2;
 						def->typname->charset = $3->charset;
-						def->columnOptions = $5;
 						if ($3->binary) {
 							def->columnOptions = lappend(def->columnOptions, makeString("binary"));
 						}
@@ -5491,7 +5490,6 @@ alter_table_cmd:
 					def->colname = $3;
 					def->typname = $4;
 					def->typname->charset = $5->charset;
-					def->columnOptions = $7;
 					if ($5->binary) {
 						def->columnOptions = lappend(def->columnOptions, makeString("binary"));
 					}
@@ -5535,7 +5533,6 @@ alter_table_cmd:
 					def->colname = $4;
 					def->typname = $5;
 					def->typname->charset = $6->charset;
-					def->columnOptions = $8;
 					if ($6->binary) {
 						def->columnOptions = lappend(def->columnOptions, makeString("binary"));
 					}
@@ -9943,7 +9940,6 @@ columnDefForTableElement:	ColIdForTableElement Typename opt_charset KVType ColCm
 						SplitColQualList($7, &n->constraints, &n->collClause, &n->columnOptions,
 										yyscanner);
 					}
-					n->columnOptions = $8;
 					if ($3->binary) {
 						n->columnOptions = lappend(n->columnOptions, makeString("binary"));
 					}
@@ -9976,7 +9972,6 @@ columnDef:	DolphinColColId Typename opt_charset KVType ColCmprsMode create_gener
 						SplitColQualList($7, &n->constraints, &n->collClause, &n->columnOptions,
 										yyscanner);
 					}
-					n->columnOptions = $8;
 					if ($3->binary) {
 						n->columnOptions = lappend(n->columnOptions, makeString("binary"));
 					}
@@ -37895,7 +37890,6 @@ alias_name_unreserved_keyword_without_key:
 			| DETERMINISTIC
 			| DICTIONARY
 			| DELTA
-			| DIAGNOSTICS
 			| DEFAULTS		
 			| DEFERRED
 			| DEFINER
@@ -38227,6 +38221,7 @@ alias_name_unreserved_keyword_without_key:
 			| WAIT
 			/* | WARNINGS */
 			| WEAK
+			| WEEK_P
 			| WHITESPACE_P
 			| WORK
 			| WORKLOAD
@@ -38261,7 +38256,6 @@ unreserved_keyword_without_key:
 			| FORMATTER
 			| FUNCTION
 			| GENERATED
-			| GET
 			| HOUR_MICROSECOND_P
 			| HOUR_MINUTE_P
 			| HOUR_P
@@ -38299,7 +38293,6 @@ unreserved_keyword_without_key:
 			| RENAME
 			| REPEAT
 			| REPLACE
-			| RESIGNAL
 			| RETURN
 			| ROUTINE
 			| ROWS
@@ -38311,9 +38304,7 @@ unreserved_keyword_without_key:
 			| SEPARATOR_P
 			| SET
 			| SHOW
-			| SIGNAL
 			| SQL_P
-			| SQLSTATE
 			| STARTING
 			| STORED
 			| SYSTEM_P
@@ -38360,7 +38351,6 @@ alias_name_col_name_keyword:
 	| DATE_P %prec IDENT
 	| EXTRACT
 	| SYSDATE
-	| WEIGHT_STRING
 	| XMLCONCAT
 	| XMLELEMENT
 	| XMLEXISTS
