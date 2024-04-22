@@ -1176,6 +1176,33 @@ FuncCandidateList func_select_candidate(int nargs, Oid* input_typeids, FuncCandi
     if (ncandidates == 1)
         return candidates;
 
+#ifdef DOLPHIN
+    if (nargs == 1 && slot_category[0] == TYPCATEGORY_ENUM) {
+        ncandidates = 0;
+        last_candidate = NULL;
+        for (current_candidate = candidates; current_candidate != NULL; current_candidate = current_candidate->next) {
+            if (current_candidate->args[0] == input_base_typeids[0] ||
+                current_candidate->args[0] == ANYENUMOID) {
+                if (last_candidate == NULL) {
+                    candidates = current_candidate;
+                } else {
+                    last_candidate->next = current_candidate;
+                }
+                last_candidate = current_candidate;
+                ncandidates++;
+            }
+        }
+
+        if (last_candidate) {
+            last_candidate->next = NULL;
+        }
+
+        if (ncandidates == 1) {
+            return candidates;
+        }
+    }
+#endif
+
     /*
      * Still too many candidates? Now look for candidates which have either
      * exact matches or preferred types at the args that will require

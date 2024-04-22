@@ -1535,6 +1535,8 @@ WARNING:  Truncated incorrect time value: "1.23a"
 CONTEXT:  referenced column: time_to_sec
 WARNING:  Truncated incorrect time value: "1.23a"
 CONTEXT:  referenced column: time_to_sec
+WARNING:  Truncated incorrect time value: "a"
+CONTEXT:  referenced column: time_to_sec
 WARNING:  Truncated incorrect time value: "a,c"
 CONTEXT:  referenced column: time_to_sec
 WARNING:  invalid input syntax for type timestamp: "{"a": 1, "b": 2}"
@@ -1561,13 +1563,15 @@ WARNING:  Truncated incorrect time value: "1.23a"
 CONTEXT:  referenced column: pg_typeof
 WARNING:  Truncated incorrect time value: "1.23a"
 CONTEXT:  referenced column: pg_typeof
+WARNING:  Truncated incorrect time value: "a"
+CONTEXT:  referenced column: pg_typeof
 WARNING:  Truncated incorrect time value: "a,c"
 CONTEXT:  referenced column: pg_typeof
 WARNING:  invalid input syntax for type timestamp: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: pg_typeof
  time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | time_to_sec | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof 
 -------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
-           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           0 |           0 |           1 |           0 |       69050 |       69050 |       69050 |       69050 |       69050 |       69050 |        1223 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           0 |             | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint
+           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           0 |           0 |           1 |           0 |       69050 |       69050 |       69050 |       69050 |       69050 |       69050 |        1223 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           1 |           0 |           0 |             | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint
 (1 row)
 
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
@@ -1594,6 +1598,8 @@ WARNING:  Truncated incorrect time value: "1.23a"
 CONTEXT:  referenced column: sec_30
 WARNING:  Truncated incorrect time value: "1.23a"
 CONTEXT:  referenced column: sec_31
+WARNING:  Truncated incorrect time value: "a"
+CONTEXT:  referenced column: sec_32
 WARNING:  Truncated incorrect time value: "a,c"
 CONTEXT:  referenced column: sec_33
 reset dolphin.sql_mode;
@@ -1620,13 +1626,15 @@ WARNING:  Truncated incorrect time value: "1.23a"
 CONTEXT:  referenced column: sec_30
 WARNING:  Truncated incorrect time value: "1.23a"
 CONTEXT:  referenced column: sec_31
+WARNING:  Truncated incorrect time value: "a"
+CONTEXT:  referenced column: sec_32
 WARNING:  Truncated incorrect time value: "a,c"
 CONTEXT:  referenced column: sec_33
 select * from test_time_to_sec;
  sec_1 | sec_2 | sec_3 | sec_4 | sec_5 | sec_6 | sec_7 | sec_8 | sec_9 | sec_10 | sec_11 | sec_12 | sec_13 | sec_14 | sec_15 | sec_16 | sec_17 | sec_18 | sec_19 | sec_20 | sec_21 | sec_22 | sec_23 | sec_24 | sec_25 | sec_26 | sec_27 | sec_28 | sec_29 | sec_30 | sec_31 | sec_32 | sec_33 
 -------+-------+-------+-------+-------+-------+-------+-------+-------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------
-     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |      1 |      1 |      0 |      0 |      1 |      0 |  69050 |  69050 |  69050 |  69050 |  69050 |  69050 |   1223 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      0
-     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |      1 |      1 |      0 |      0 |      1 |      0 |  69050 |  69050 |  69050 |  69050 |  69050 |  69050 |   1223 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      0
+     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |      1 |      1 |      0 |      0 |      1 |      0 |  69050 |  69050 |  69050 |  69050 |  69050 |  69050 |   1223 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      0 |      0
+     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |      1 |      1 |      0 |      0 |      1 |      0 |  69050 |  69050 |  69050 |  69050 |  69050 |  69050 |   1223 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      1 |      0 |      0
 (2 rows)
 
 select year(`int1`), year(`uint1`), year(`int2`), year(`uint2`), year(`int4`), year(`uint4`), year(`int8`), year(`uint8`), year(`float4`), year(`float8`), year(`numeric`), year(`bit1`), year(`bit64`), year(`boolean`), year(`date`), year(`time`), year(`time(4)`), year(`datetime`), year(`datetime(4)`), year(`timestamp`), year(`timestamp(4)`), year(`year`), year(`char`), year(`varchar`), year(`binary`), year(`varbinary`), year(`tinyblob`), year(`blob`), year(`mediumblob`), year(`longblob`), year(`text`), year(`enum_t`), year(`set_t`), year(`json`), 
@@ -1701,10 +1709,8 @@ WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: year
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: year
-WARNING:  timestamp out of range
+WARNING:  invalid input syntax for type timestamp: "a"
 CONTEXT:  referenced column: year
-SQL function "year" statement 1
-referenced column: year
 WARNING:  invalid input syntax for type timestamp: "a,c"
 CONTEXT:  referenced column: year
 SQL function "year" statement 1
@@ -1781,10 +1787,8 @@ WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: pg_typeof
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: pg_typeof
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: year
-SQL function "year" statement 1
-referenced column: pg_typeof
+WARNING:  invalid input syntax for type timestamp: "a"
+CONTEXT:  referenced column: pg_typeof
 WARNING:  invalid input syntax for type timestamp: "a,c"
 CONTEXT:  referenced column: year
 SQL function "year" statement 1
@@ -1874,10 +1878,8 @@ WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: year30
 WARNING:  invalid input syntax for type timestamp: "1.23a"
 CONTEXT:  referenced column: year31
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: year
-SQL function "year" statement 1
-referenced column: year32
+WARNING:  invalid input syntax for type timestamp: "a"
+CONTEXT:  referenced column: year32
 WARNING:  invalid input syntax for type timestamp: "a,c"
 CONTEXT:  referenced column: year
 SQL function "year" statement 1
@@ -1930,10 +1932,6 @@ WARNING:  timestamp out of range
 CONTEXT:  referenced column: year
 SQL function "year" statement 1
 referenced column: year11
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: year
-SQL function "year" statement 1
-referenced column: year32
 WARNING:  invalid input syntax for type timestamp: "a,c"
 CONTEXT:  referenced column: year
 SQL function "year" statement 1

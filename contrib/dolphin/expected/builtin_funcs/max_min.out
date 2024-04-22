@@ -155,3 +155,18 @@ select * from bit_maxmin_v;
  1     | 0     | 0000000000000000000000000000000000000000000000000000000000000111 | 0000000000000000000000000000000000000000000000000000000000000101
 (1 row)
 
+-- test enum
+drop table if exists enum_maxmin_t cascade;
+NOTICE:  table "enum_maxmin_t" does not exist, skipping
+create table enum_maxmin_t(a enum('c', 'b', 'a', 'aa'));
+insert into enum_maxmin_t values ('b'), ('c'), ('b'), ('a'), (null), (null), ('aa');
+create view enum_maxmin_v as select
+    max(a) as max_a,
+    min(a) as min_a
+    from enum_maxmin_t;
+select * from enum_maxmin_v;
+ max_a | min_a 
+-------+-------
+ c     | a
+(1 row)
+

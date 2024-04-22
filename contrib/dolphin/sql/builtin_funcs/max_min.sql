@@ -73,3 +73,13 @@ insert into bit_maxmin_t values (b'1', b'111');
 insert into bit_maxmin_t values (null, null);
 insert into bit_maxmin_t values (b'0', b'101');
 select * from bit_maxmin_v;
+
+-- test enum
+drop table if exists enum_maxmin_t cascade;
+create table enum_maxmin_t(a enum('c', 'b', 'a', 'aa'));
+insert into enum_maxmin_t values ('b'), ('c'), ('b'), ('a'), (null), (null), ('aa');
+create view enum_maxmin_v as select
+    max(a) as max_a,
+    min(a) as min_a
+    from enum_maxmin_t;
+select * from enum_maxmin_v;
