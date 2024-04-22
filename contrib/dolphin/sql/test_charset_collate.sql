@@ -114,6 +114,57 @@ alter table test_binary2 add column c7 char(10);
 alter table test_binary2 add column c8 tinytext;
 select pg_get_tabledef('test_binary2');
 
+--binary/ascii attribute
+create schema bin_schema_test character set = utf8 collate utf8_unicode_ci;
+use bin_schema_test;
+set b_format_behavior_compat_options='enable_multi_charset'; -- use to enable different table charset with schema
+create table t_bin(a text binary);
+\d t_bin
+create table t_bin2(a text character set gbk binary);
+\d t_bin2
+create table t_bin3(a text binary) character set gb18030;
+\d t_bin3
+-- binary has high proirity than collate clause
+create table t_bin4(a text binary collate gb18030_chinese_ci);
+\d t_bin4
+create table t_bin5(a text binary character set gbk) character set gb18030;
+\d t_bin5
+-- ascii
+create table t_bin6(a text ascii collate 'af_ZA.iso88591', b text charset binary binary);
+show create table t_bin6;
+
+--alter table
+alter table t_bin6 add column c text binary;
+show create table t_bin6;
+alter table t_bin6 add column d text character set gbk binary;
+show create table t_bin6;
+alter table t_bin6 add column e text binary character set gbk;
+show create table t_bin6;
+alter table t_bin6 modify column a text binary;
+show create table t_bin6;
+alter table t_bin6 modify column a text character set gbk binary;
+show create table t_bin6;
+alter table t_bin6 modify column a text binary character set gb18030;
+show create table t_bin6;
+alter table t_bin6 change column b b_new text binary;
+show create table t_bin6;
+alter table t_bin6 change column b_new b_new2 text charset gb18030 binary;
+show create table t_bin6;
+alter table t_bin6 change column b_new2 b_new3 text binary charset gbk;
+show create table t_bin6;
+
+-- ascii, grammar is ok, but execute report error
+create table t_bin7(a text binary ascii);
+create table t_bin8(a text ascii binary);
+create table t_bin9(a text ascii);
+
+-- wrong grammar
+create table t_bin10(a text collate gb18030_chinese_ci binary);
+create table t_bin11(a text collate gb18030_chinese_ci ascii);
+create table t_bin12(a text character set gbk ascii);
+create table t_bin13(a text ascii character set gbk);
+drop schema bin_schema_test cascade;
+
 drop schema test_charset cascade;
 reset current_schema;
 

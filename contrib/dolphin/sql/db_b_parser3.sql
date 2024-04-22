@@ -10,10 +10,148 @@ select lower('ABc'), lower('哈哈'), lower('123456'),lower('哈市&%%￥#'),low
 --测试点三：验证ucase函数
 select ucase('ABc'), ucase('哈哈'), ucase('123456'),ucase('哈市&%%￥#'),ucase(null);
 select upper('ABc'), upper('哈哈'), upper('123456'),upper('哈市&%%￥#'),upper(null);
---测试点四：验证rand和random函数
--- select rand(), random();--不显示小数点前的0
--- set behavior_compat_options := 'display_leading_zero';
--- select rand(), random();--显示小数点前的0
+--测试点四：验证rand和random_bytes函数
+select rand(18446744073709551615) = rand(18446744073709551616);
+select rand(-9223372036854775808) = rand(-9223372036854775809);
+select rand(0) = rand(4294967296);
+select rand(1) = rand(4294967297);
+select rand(0) = rand(null);
+select random_bytes(null);
+select random_bytes(0);
+select random_bytes(1);
+select random_bytes(1024);
+select random_bytes(1025);
+
+set dolphin.b_compatibility_mode to on;
+CREATE TABLE test_type_table
+(
+    `int1` tinyint,
+    `uint1` tinyint unsigned,
+    `int2` smallint,
+    `uint2` smallint unsigned,
+    `int4` integer,
+    `uint4` integer unsigned,
+    `int8` bigint,
+    `uint8` bigint unsigned,
+    `float4` float4,
+    `float8` float8,
+    `numeric` decimal(20, 6),
+    `bit1` bit(1),
+    `bit64` bit(64),
+    `boolean` boolean,
+    `date` date,
+    `time` time,
+    `time(4)` time(4),
+    `datetime` datetime,
+    `datetime(4)` datetime(4) default '2022-11-11 11:11:11',
+    `timestamp` timestamp,
+    `timestamp(4)` timestamp(4) default '2022-11-11 11:11:11',
+    `year` year,
+    `char` char(100),
+    `varchar` varchar(100),
+    `binary` binary(100),
+    `varbinary` varbinary(100),
+    `tinyblob` tinyblob,
+    `blob` blob,
+    `mediumblob` mediumblob,
+    `longblob` longblob,
+    `text` text,
+    `enum_t` enum('a', 'b', 'c'),
+    `set_t` set('a', 'b', 'c'),
+    `json` json
+);
+
+insert into test_type_table values(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,b'1', b'111', true,'2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023','1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a','a', 'a,c',json_object('a', 1, 'b', 2));
+select
+rand(`int1`)=rand(cast(`int1` as signed)),
+rand(`uint1`)=rand(cast(`uint1` as signed)),
+rand(`int2`)=rand(cast(`int2` as signed)),
+rand(`uint2`)=rand(cast(`uint2` as signed)),
+rand(`int4`)=rand(cast(`int4` as signed)),
+rand(`uint4`)=rand(cast(`uint4` as signed)),
+rand(`int8`)=rand(cast(`int8` as signed)),
+rand(`uint8`)=rand(cast(`uint8` as signed)),
+rand(`float4`)=rand(cast(`float4` as signed)),
+rand(`float8`)=rand(cast(`float8` as signed)),
+rand(`numeric`)=rand(cast(`numeric` as signed)),
+--rand(`bit1`)=rand(cast(`bit1` as signed)),
+--rand(`bit64`)=rand(cast(`bit64` as signed)),
+rand(`boolean`)=rand(cast(`boolean` as signed)),
+rand(`date`)=rand(cast(`date` as signed)),
+--rand(`time`)=rand(cast(`time` as signed)),
+--rand(`time(4)`)=rand(cast(`time(4)` as signed)),
+rand(`datetime`)=rand(cast(`datetime` as signed)),
+rand(`datetime(4)`)=rand(cast(`datetime(4)` as signed)),
+rand(`timestamp`)=rand(cast(`timestamp` as signed)),
+rand(`timestamp(4)`)=rand(cast(`timestamp(4)` as signed)),
+rand(`year`)=rand(cast(`year` as int4)),
+--rand(`char`)=rand(cast(`char` as int4)),
+--rand(`varchar`)=rand(cast(`varchar` as int4)),
+rand(`binary`)=rand(cast(`binary` as signed)),
+rand(`varbinary`)=rand(cast(`varbinary` as signed)),
+rand(`tinyblob`)=rand(cast(`tinyblob` as signed)),
+rand(`blob`)=rand(cast(`blob` as signed)),
+rand(`mediumblob`)=rand(cast(`mediumblob` as signed)),
+rand(`longblob`)=rand(cast(`longblob` as signed)),
+--rand(`text`)=rand(cast(`text` as int4)),
+rand(`enum_t`)=rand(cast(`enum_t` as float8)),
+rand(`set_t`)=rand(cast(`set_t` as signed)),
+rand(`json`)=rand(cast(`json` as float8))
+from test_type_table;
+
+select
+length(random_bytes(`int1`)::binary),
+length(random_bytes(`uint1`)::binary),
+length(random_bytes(`int2`)::binary),
+length(random_bytes(`uint2`)::binary),
+length(random_bytes(`int4`)::binary),
+length(random_bytes(`uint4`)::binary),
+length(random_bytes(`int8`)::binary),
+length(random_bytes(`uint8`)::binary),
+length(random_bytes(`float4`)::binary),
+length(random_bytes(`float8`)::binary),
+length(random_bytes(`numeric`)::binary),
+length(random_bytes(`bit1`)::binary),
+length(random_bytes(`bit64`)::binary),
+length(random_bytes(`boolean`)::binary),
+length(random_bytes(`char`)::binary),
+length(random_bytes(`varchar`)::binary),
+--length(random_bytes(`binary`)::binary),
+--length(random_bytes(`varbinary`)::binary),
+--length(random_bytes(`tinyblob`)::binary),
+--length(random_bytes(`blob`)::binary),
+--length(random_bytes(`mediumblob`)::binary),
+--length(random_bytes(`longblob`)::binary),
+length(random_bytes(`text`)::binary),
+length(random_bytes(`enum_t`)::binary),
+length(random_bytes(`set_t`)::binary)
+from test_type_table;
+
+--error, cause value out of range
+select length(random_bytes(`date`)::binary) from test_type_table;
+select length(random_bytes(`time`)::binary) from test_type_table;
+select length(random_bytes(`time(4)`)::binary) from test_type_table;
+select length(random_bytes(`datetime`)::binary) from test_type_table;
+select length(random_bytes(`datetime(4)`)::binary) from test_type_table;
+select length(random_bytes(`timestamp`)::binary) from test_type_table;
+select length(random_bytes(`timestamp(4)`)::binary) from test_type_table;
+select length(random_bytes(`year`)::binary)from test_type_table;
+select length(random_bytes(`json`)::binary)from test_type_table;
+
+drop table test_type_table;
+
+reset dolphin.b_compatibility_mode;
+
+--hex number
+select 0x123 = x'123';
+select 0x123;
+select 0xfe = x'FE';
+select 0xFE = x'fe';
+
+select 0xG123; --equal to select 0 xG123;
+select 0x123G; --equal to select 0x123 G;
+select 0x; --equal to select 0 x;
+
 --测试点五：验证truncate函数
 select truncate(111.28);--返回111
 select truncate(111.28,0);--返回111

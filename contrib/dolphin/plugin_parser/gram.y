@@ -334,6 +334,11 @@ typedef struct DolphinString
 	bool is_sconst;
 } DolphinString;
 
+typedef struct TypeAttr {
+	int charset;
+	bool binary;
+} TypeAttr;
+
 /* ConstraintAttributeSpec yields an integer bitmask of these flags: */
 #define CAS_NOT_DEFERRABLE			0x01
 #define CAS_DEFERRABLE				0x02
@@ -602,6 +607,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 	struct IndexMethodRelationClause *indexmethodrelationclause;
 	struct DolphinString		*dolphinString;
 	struct DolphinIdent			*dolphinIdent;
+	struct TypeAttr* typeattr;
 }
 %type <singletableoption> CreateOption CreateIfNotExistsOption CreateAsOption CreateTableOption
 %type <createtableoptions> CreateOptionList CreateIfNotExistsOptionList CreateAsOptionList
@@ -956,11 +962,12 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <str>		selected_timezone
 
 %type <keyword> character_set
-%type <ival>	charset opt_charset convert_charset default_charset
+%type <ival>	charset convert_charset default_charset
 %type <str>		collate opt_collate default_collate set_names_collate
 %type <charsetcollateopt> CharsetCollate charset_collate optCharsetCollate
+%type <typeattr> opt_charset
 
-%type <boolean> opt_varying opt_timezone opt_no_inherit
+%type <boolean> opt_varying opt_timezone opt_no_inherit opt_bin_mode
 
 %type <ival>	Iconst SignedIconst opt_partitions_num opt_subpartitions_num
 %type <str>		Sconst comment_text notify_payload DolphinColColId 
@@ -969,8 +976,9 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 %type <str>		ColId ColLabel var_name dolphin_var_name schema_var type_function_name param_name charset_collate_name opt_password opt_replace show_index_schema_opt ColIdForTableElement PrivilegeColId
 %type <node>	var_value zone_value
 %type <dolphinString>	DolphinColId DolphinColLabel dolphin_indirection_el
-
-%type <keyword> unreserved_keyword type_func_name_keyword type_func_name_keyword_without_current_schema unreserved_keyword_without_key unreserved_keyword_without_proxy
+/* for keyword which could be a column/table alias name, use alias_name_xxxx*/
+%type <keyword> alias_name_keyword alias_name_unreserved_keyword_without_key alias_name_reserved_keyword alias_name_col_name_keyword alias_name_col_name_alias_nonambiguous_keyword alias_name_type_func_name_keyword_without_current_schema
+%type <keyword> unreserved_keyword type_func_name_keyword type_func_name_keyword_without_current_schema unreserved_keyword_without_key unreserved_keyword_without_proxy alias_keyword_ColId
 %type <keyword> col_name_keyword reserved_keyword col_name_keyword_nonambiguous
 
 %type <node>	TableConstraint TableIndexClause TableLikeClause ForeignTableLikeClause
@@ -1159,7 +1167,7 @@ static inline SortByNulls GetNullOrderRule(SortByDir sortBy, SortByNulls nullRul
 /* ordinary key words in alphabetical order */
 /* PGXC - added DISTRIBUTE, DIRECT, COORDINATOR, CLEAN,  NODE, BARRIER, SLICE, DATANODE */
 %token <keyword> ABORT_P ABSOLUTE_P ACCESS ACCOUNT ACTION ADD_P ADMIN AFTER
-	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYZE AND ANY APP APPEND ARCHIVE ARRAY AS ASC
+	AGGREGATE ALGORITHM ALL ALSO ALTER ALWAYS ANALYZE AND ANY APP APPEND ARCHIVE ARRAY AS ASC ASCII
         ASSERTION ASSIGNMENT ASYMMETRIC AT ATTRIBUTE AUDIT AUTHID AUTHORIZATION AUTOEXTEND AUTOEXTEND_SIZE AUTOMAPPED AUTO_INCREMENT AVG_ROW_LENGTH AGAINST
 
 	BACKWARD BARRIER BEFORE BEGIN_NON_ANOYBLOCK BEGIN_P BETWEEN BIGINT BINARY BINARY_P BINARY_DOUBLE BINARY_INTEGER BIT BLANKS
@@ -3383,8 +3391,6 @@ set_expr_extension:
 				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, $3, @2); }
 			| qual_Op b_expr					%prec Op
 				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $1, NULL, $2, @1); }
-			| b_expr qual_Op					%prec POSTFIXOP
-				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, NULL, @2); }
 			| b_expr IS DISTINCT FROM b_expr		%prec IS
 				{
 					$$ = (Node *) makeSimpleA_Expr(AEXPR_DISTINCT, "=", $1, $5, @2);
@@ -4534,11 +4540,14 @@ modify_column_cmd:
 						n->def = (Node *) def;
 						/* We only use these three fields of the ColumnDef node */
 						def->typname = $2;
-						def->typname->charset = $3;
+						def->typname->charset = $3->charset;
 						def->collClause = NULL;
 						def->raw_default = NULL;
 						def->update_default = NULL;
 						def->clientLogicColumnRef=NULL;
+						if ($3->binary) {
+							def->columnOptions = list_make1(makeString("binary"));
+						}
 						$$ = (Node *)n;
 					} else {
 #ifdef ENABLE_MULTIPLE_NODES
@@ -4559,7 +4568,10 @@ modify_column_cmd:
 						ColumnDef *def = makeNode(ColumnDef);
 						def->colname = $1;
 						def->typname = $2;
-						def->typname->charset = $3;
+						def->typname->charset = $3->charset;
+						if ($3->binary) {
+							def->columnOptions = lappend(def->columnOptions, makeString("binary"));
+						}
 						def->kvtype = ATT_KV_UNDEFINED;
 						def->inhcount = 0;
 						def->is_local = true;
@@ -5477,7 +5489,10 @@ alter_table_cmd:
 					ColumnDef *def = makeNode(ColumnDef);
 					def->colname = $3;
 					def->typname = $4;
-					def->typname->charset = $5;
+					def->typname->charset = $5->charset;
+					if ($5->binary) {
+						def->columnOptions = lappend(def->columnOptions, makeString("binary"));
+					}
 					def->kvtype = ATT_KV_UNDEFINED;
 					def->inhcount = 0;
 					def->is_local = true;
@@ -5517,7 +5532,10 @@ alter_table_cmd:
 					ColumnDef *def = makeNode(ColumnDef);
 					def->colname = $4;
 					def->typname = $5;
-					def->typname->charset = $6;
+					def->typname->charset = $6->charset;
+					if ($6->binary) {
+						def->columnOptions = lappend(def->columnOptions, makeString("binary"));
+					}
 					def->kvtype = ATT_KV_UNDEFINED;
 					def->inhcount = 0;
 					def->is_local = true;
@@ -6028,13 +6046,13 @@ alter_table_option:
                 }
 /* table comments start */
             | COMMENT opt_equal SCONST
-            	{
+            {
                     BCompatibilityOptionSupportCheck($1);
                     AlterTableCmd *n = makeNode(AlterTableCmd);
                     n->subtype = AT_COMMENTS;
                     n->name = $3;
                     $$ = (Node *)n;
-            	}
+            }
 /* table comments end */
 		;
 
@@ -9902,7 +9920,7 @@ columnDefForTableElement:	ColIdForTableElement Typename opt_charset KVType ColCm
 					ColumnDef *n = makeNode(ColumnDef);
 					n->colname = $1;
 					n->typname = $2;
-					n->typname->charset = $3;
+					n->typname->charset = $3->charset;
 					n->kvtype = $4;
 					n->inhcount = 0;
 					n->is_local = true;
@@ -9922,6 +9940,9 @@ columnDefForTableElement:	ColIdForTableElement Typename opt_charset KVType ColCm
 						SplitColQualList($7, &n->constraints, &n->collClause, &n->columnOptions,
 										yyscanner);
 					}
+					if ($3->binary) {
+						n->columnOptions = lappend(n->columnOptions, makeString("binary"));
+					}
 					$$ = (Node *)n;
 				}
 		;
@@ -9931,7 +9952,7 @@ columnDef:	DolphinColColId Typename opt_charset KVType ColCmprsMode create_gener
 					ColumnDef *n = makeNode(ColumnDef);
 					n->colname = $1;
 					n->typname = $2;
-					n->typname->charset = $3;
+					n->typname->charset = $3->charset;
 					n->kvtype = $4;
 					n->inhcount = 0;
 					n->is_local = true;
@@ -9950,6 +9971,9 @@ columnDef:	DolphinColColId Typename opt_charset KVType ColCmprsMode create_gener
 					} else {
 						SplitColQualList($7, &n->constraints, &n->collClause, &n->columnOptions,
 										yyscanner);
+					}
+					if ($3->binary) {
+						n->columnOptions = lappend(n->columnOptions, makeString("binary"));
 					}
 					$$ = (Node *)n;
 				}
@@ -30661,6 +30685,11 @@ dolphin_alias_clause:
 					$$ = makeNode(Alias);
 					$$->aliasname = GetDolphinObjName($1->str, $1->is_quoted);
 				}
+			| alias_keyword_ColId
+				{
+					$$ = makeNode(Alias);
+					$$->aliasname = downcase_str(pstrdup($1), false);
+				}
 		;
 
 opt_alias_clause: alias_clause		{ $$ = $1; }
@@ -31712,6 +31741,7 @@ character_set:
 charset_collate_name:
 			ColId									{ $$ = $1; }
 			| SCONST								{ $$ = $1; }
+                        | BINARY                                                                { $$ = "binary"; }
 		;
 
 charset:
@@ -31758,14 +31788,56 @@ convert_charset:
 			}
 		;
 
-opt_charset:
-			charset
+opt_bin_mode:
+			BINARY
 			{
-				$$ = $1;
+				$$ = true;
+			}
+			| /*EMPTY*/ { $$ = false; }
+		;
+
+opt_charset:
+			charset opt_bin_mode
+			{
+				TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+				n->charset = $1;
+				n->binary = $2;
+				$$ = n;
+			}
+			| BINARY
+			{
+				TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+				n->charset = PG_INVALID_ENCODING;
+				n->binary = true;
+				$$ = n;
+			}
+			| BINARY charset
+			{
+				TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+				n->charset = $2;
+				n->binary = true;
+				$$ = n;
+			}
+			| ASCII opt_bin_mode
+			{
+				TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+				n->charset = pg_valid_server_encoding("latin1");
+				n->binary = $2;
+				$$ = n;
+			}
+			| BINARY ASCII
+			{
+				TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+				n->charset = pg_valid_server_encoding("latin1");
+				n->binary = true;
+				$$ = n;
 			}
 			| /*EMPTY*/
 			{
-				$$ = PG_INVALID_ENCODING;
+				TypeAttr *n = (TypeAttr*)palloc0(sizeof(TypeAttr));
+				n->charset = PG_INVALID_ENCODING;
+				n->binary = false;
+				$$ = n;
 			}
 		;
 
@@ -32589,16 +32661,6 @@ a_expr_without_sconst:		c_expr_without_sconst		{ $$ = $1; }
 						$$ = (Node *) makeA_Expr(AEXPR_OP, $1, NULL, $2, @1);
 					}
 				}
-			| a_expr qual_Op					%prec POSTFIXOP
-				{
-					char* op_str = ((Value*)lfirst($2->head))->val.str;
-					/* deprecate use of expr! when b_compatibility_mode is on */
-					if (GetSessionContext()->enableBCmptMode && $2->length == 1 && strcmp("!", op_str) == 0) {
-						ereport(ERROR, (errcode(ERRCODE_SYNTAX_ERROR), errmsg("Operator '!' behind expression is deprecated when b_compatibility_mode is on. Please use function factorial().")));
-					}
-					$$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, NULL, @2);
-				}
-
 			| a_expr AND a_expr
 				{ $$ = (Node *) makeA_Expr(AEXPR_AND, NIL, $1, $3, @2); }
 			| a_expr OR a_expr
@@ -33458,8 +33520,6 @@ b_expr:		c_expr
 				}
 			| qual_Op b_expr					%prec Op
 				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $1, NULL, $2, @1); }
-			| b_expr qual_Op					%prec POSTFIXOP
-				{ $$ = (Node *) makeA_Expr(AEXPR_OP, $2, $1, NULL, @2); }
 			| b_expr IS DISTINCT FROM b_expr		%prec IS
 				{
 					$$ = (Node *) makeSimpleA_Expr(AEXPR_DISTINCT, "=", $1, $5, @2);
@@ -36178,6 +36238,65 @@ columnref:	DolphinColId
 					}
 					$$ = makeColumnRef(first_word, result, @1, yyscanner);
 				}
+			| alias_keyword_ColId dolphin_indirection %prec IDENT
+				{
+					List* result = NIL;
+					ListCell* cell = NULL;
+					char* first_word = NULL;
+					int schema_index = -1;
+					int table_index = -1;
+					int col_index = -1;
+					int count = 0;
+					int indices = 0;
+					foreach (cell, $2) {
+						DolphinString* dolphinString = (DolphinString*)lfirst(cell);
+						if (IsA(dolphinString->node, A_Indices)) {
+							indices++;
+						}
+					}
+					cell = NULL;
+					switch (list_length($2) - indices)
+					{
+						case 0:
+							first_word = downcase_str(pstrdup($1), false);
+							break;
+						case 1:
+							first_word = downcase_str(pstrdup($1), false);
+							col_index = 0;
+							break;
+						case 2:
+							first_word = downcase_str(pstrdup($1), false);;
+							col_index = 1;
+							table_index = 0;
+							break;
+						default:
+							first_word = downcase_str(pstrdup($1), false);;
+							schema_index = 0;
+							table_index = 1;
+							col_index = 2;
+							break;
+					}
+					foreach (cell, $2) {
+						DolphinString* dolphinString = (DolphinString*)lfirst(cell);
+						if (IsA(dolphinString->node, String)) {
+							Value* value = (Value*)(dolphinString->node);
+							char* text = strVal(value);
+							bool is_quoted = dolphinString->is_quoted;
+							if (count == schema_index) {
+								text = GetDolphinSchemaName(text, is_quoted);
+							} else if (count == table_index) {
+								text = GetDolphinObjName(text, is_quoted);
+							} else if (count != col_index) {
+								text = downcase_str(text, is_quoted);
+							}
+							count++;
+							result = lappend(result, (Node*)makeString(text));
+						} else {
+							result = lappend(result, dolphinString->node);
+						}
+					}
+					$$ = makeColumnRef(first_word, result, @1, yyscanner);
+				}
 		;
 
 indirection_el:
@@ -36349,6 +36468,14 @@ target_el:	a_expr AS DolphinColLabel
 						$$->name = MakeConnectByRootColName(NULL, $2->str);
 						$$->val = (Node*) n;
 					}
+				}
+			| a_expr alias_name_keyword
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = pstrdup($2);
+					$$->indirection = NIL;
+					$$->val = (Node *)$1;
+					$$->location = @1;
 				}
 			| a_expr_without_sconst SCONST
 				{
@@ -37632,6 +37759,15 @@ FlushStmt:
 /* "Unreserved" keywords --- available for use as any kind of name.
  */
 /* PGXC - added DISTRIBUTE, DIRECT, COORDINATOR, DATANODES, CLEAN, NODE, BARRIER, SLICE, DATANODE */
+
+/* for keyword which could be a alias name, use alias_name_keyword*/
+alias_name_keyword:
+	alias_name_unreserved_keyword_without_key
+	| alias_name_reserved_keyword
+	| alias_name_col_name_keyword
+	| alias_name_col_name_alias_nonambiguous_keyword
+	| alias_name_type_func_name_keyword_without_current_schema
+
  unreserved_keyword:
                         unreserved_keyword_without_proxy
                         | PROXY
@@ -37641,9 +37777,8 @@ unreserved_keyword_without_proxy:
                         unreserved_keyword_without_key
                         | KEY
                         ;
-
-unreserved_keyword_without_key:
-			  ABORT_P
+alias_name_unreserved_keyword_without_key:
+			ABORT_P
 			| ABSOLUTE_P
 			| ACCESS
 			| USER
@@ -37660,14 +37795,12 @@ unreserved_keyword_without_key:
 			| MODIFY_P
 			| ALGORITHM
 			| ALSO
-			| ALTER
 			| FREEZE
-
 			| ALWAYS
-			| NOTNULL
 			| APP
 			| APPEND
 			| ARCHIVE
+			| ASCII
 			| ASSERTION
 			| ASSIGNMENT
 			| AST
@@ -37681,26 +37814,20 @@ unreserved_keyword_without_key:
 			| AUTO_INCREMENT
 			| AVG_ROW_LENGTH
 			| BACKWARD
-/* PGXC_BEGIN */
+			/* PGXC_BEGIN */
 			| BARRIER
-/* PGXC_END */
-			| BEFORE
+			/* PGXC_END */
 			| BEGIN_P
 			| BEGIN_NON_ANOYBLOCK
 			| BLANKS
-			| BLOB_P
 			| BLOCKCHAIN
 			| BODY_P
-			| BY
 			| CACHE
-			| CALL
 			| CALLED
 			| CANCELABLE
-			| CASCADE
 			| CASCADED
 			| CATALOG_P
 			| CHAIN
-			| CHANGE
 			| CHARACTERISTICS
 			| CHARACTERSET
 			| CHARSET
@@ -37709,13 +37836,13 @@ unreserved_keyword_without_key:
 			| CLASS
 			| CLEAN
 			| CLIENT
-            | CLIENT_MASTER_KEY
-            | CLIENT_MASTER_KEYS
+			| CLIENT_MASTER_KEY
+			| CLIENT_MASTER_KEYS
 			| CLOB
 			| CLOSE
 			| CLUSTER
-            | COLUMN_ENCRYPTION_KEY
-            | COLUMN_ENCRYPTION_KEYS
+			| COLUMN_ENCRYPTION_KEY
+			| COLUMN_ENCRYPTION_KEYS
 			| COLUMNS
 			| COMMENT
 			| COMMENTS
@@ -37726,7 +37853,6 @@ unreserved_keyword_without_key:
 			| COMPLETION
 			| COMPRESS
 			| COMPRESSION
-			| CONDITION
 			| CONFIGURATION
 			| CONNECT
 			| CONNECTION
@@ -37734,7 +37860,6 @@ unreserved_keyword_without_key:
 			| CONSTRAINTS
 			| CONTAINS
 			| CONTENT_P
-			| CONTINUE_P
 			| CONTVIEW
 			| CONVERSION_P
 			| COORDINATOR
@@ -37743,63 +37868,55 @@ unreserved_keyword_without_key:
 			| COST
 			| COUNT %prec UMINUS
 			| CSV
-			| CUBE
 			| CURRENT_P
-			| CURSOR
 			| CYCLE
 			| DATA_P
-			| DATABASE
-			| DATABASES
 			| DATAFILE
 			| DATANODE
 			| DATANODES
 			| DATATYPE_CL
 			| DATE_FORMAT_P
+			| DBCOMPATIBILITY_P
+			| DEALLOCATE
+			| DATABASE
+			| DATABASES
 			| DAY_HOUR_P
 			| DAY_MICROSECOND_P
 			| DAY_MINUTE_P
-			| DAY_P
 			| DAY_SECOND_P
-			| DBCOMPATIBILITY_P
-			| DEALLOCATE
 			| DECLARE
-			| DEFAULTS
-			| DEFERRED
-			| DEFINER
-			| DELAY_KEY_WRITE
 			| DELETE_P
-			| DELIMITER
-			| DELIMITERS
-			| DELTA
 			| DESCRIBE
 			| DETERMINISTIC
 			| DICTIONARY
+			| DELTA
+			| DEFAULTS		
+			| DEFERRED
+			| DEFINER
+			| DELAY_KEY_WRITE	
+			| DELIMITER
+			| DELIMITERS
 			| DIRECT
 			| DIRECTORY
 			| DISABLE_P
 			| DISCARD
 			| DISCONNECT
 			| DISK
-/* PGXC_BEGIN */
+			/* PGXC_BEGIN */
 			| DISTRIBUTE
 			| DISTRIBUTION
-/* PGXC_END */
+			/* PGXC_END */
 			| DO
 			| DOCUMENT_P
 			| DOMAIN_P
-			| DOUBLE_P
-			| DROP
-			| DUMPFILE
 			| DUPLICATE
-			| EACH
 			| ELASTIC
 			| ENABLE_P
-			| ENCLOSED
 			| ENCODING
 			| ENCRYPTED       
-            | ENCRYPTED_VALUE
+			| ENCRYPTED_VALUE
 			| ENCRYPTION
-            | ENCRYPTION_TYPE
+			| ENCRYPTION_TYPE
 			| END_P
 			| ENDS
 			| ENGINE_ATTRIBUTE
@@ -37808,7 +37925,6 @@ unreserved_keyword_without_key:
 			| EOL
 			| ERRORS
 			| ESCAPE
-			| ESCAPED
 			| ESCAPING
 			| EVENT
 			| EVENTS
@@ -37820,7 +37936,6 @@ unreserved_keyword_without_key:
 			| EXECUTE
 			| EXPANSION
 			| EXPIRED_P
-			| EXPLAIN
 			| EXTENDED
 			| EXTENSION
 			| EXTERNAL
@@ -37837,22 +37952,14 @@ unreserved_keyword_without_key:
 			| FLUSH
 			| FOLLOWING
 			| FOLLOWS_P
-			| FORCE
-			| FORMATTER
 			| FORWARD
-			| FUNCTION
 			| FUNCTIONS
-			| GENERATED
 			| GLOBAL
 			| GRANTED
 			| GRANTS
 			| HANDLER
 			| HEADER_P
 			| HOSTS
-			| HOUR_MICROSECOND_P
-			| HOUR_MINUTE_P
-			| HOUR_P
-			| HOUR_SECOND_P
 			| HOLD
 			| IDENTIFIED
 			| IDENTITY_P
@@ -37860,34 +37967,28 @@ unreserved_keyword_without_key:
 			| IMMEDIATE
 			| IMMUTABLE
 			| IMPLICIT_P
-			| INCLUDE
 			| INCLUDING
 			| INCREMENT
 			| INCREMENTAL
 			| INDEXES
 			| INFILE
-			| INHERIT
 			| INHERITS
+			| INHERIT
 			| INITIAL_P
 			| INITRANS
 			| INLINE_P
 			| INPLACE
 			| INPUT_P
-			| INSENSITIVE
-			| INSERT
 			| INSERT_METHOD
 			| INSTEAD
 			| INTERNAL
 			| INVISIBLE
 			| INVOKER
 			| IP
-			| ISNULL
 			| ISOLATION
-			| KEYS
 			| KEY_BLOCK_SIZE
 			| KEY_PATH
 			| KEY_STORE
-			| KILL
 			| LABEL
 			| LANGUAGE
 			| LARGE_P
@@ -37896,13 +37997,10 @@ unreserved_keyword_without_key:
 			| LC_CTYPE_P
 			| LEAKPROOF
 			| LEVEL
-			| LINES
 			| LIST
 			| LISTEN
-			| LOAD
 			| LOCAL
 			| LOCATION
-			| LOCK_P
 			| LOCKED
 			| LOG_P
 			| LOGGING
@@ -37911,11 +38009,9 @@ unreserved_keyword_without_key:
 			| LOGIN_SUCCESS
 			| LOGOUT
 			| LOGS
-			| LOOP
 			| MAPPING
 			| MASKING
 			| MASTER
-			| MATCH
 			| MATCHED
 			| MATERIALIZED
 			| MAX_ROWS
@@ -37927,23 +38023,16 @@ unreserved_keyword_without_key:
 			| MICROSECOND_P
 			| MIN_ROWS
 			| MINEXTENTS
-			| MINUTE_MICROSECOND_P
-			| MINUTE_P
-			| MINUTE_SECOND_P
 			| MINVALUE
-			| MOD
 			| MODE
 			| MODEL      // DB4AI
 			| MODIFIES
-			| MONTH_P
 			| MOVE
 			| MOVEMENT
-			| NAME_P
 			| NAMES
 			| NEXT
 			| NGRAM
 			| NO
-			| NO_WRITE_TO_BINLOG
 			| NOCOMPRESS
 			| NODE
 			| NOLOGGING
@@ -37956,17 +38045,11 @@ unreserved_keyword_without_key:
 			| NULLS_P
 			| NUMSTR
 			| OBJECT_P
-			| OF
 			| OFF
 			| OIDS
 			| OPERATOR
 			| OPTIMIZATION
-			| OPTIMIZE
-			| OPTION
-			| OPTIONALLY
 			| OPTIONS
-			| OVER
-			| OUTFILE
 			| OWNED
 			| OWNER
 			| PACK_KEYS
@@ -37974,7 +38057,6 @@ unreserved_keyword_without_key:
 			| PACKAGES
 			| PARSER
 			| PARTIAL %prec PARTIAL_EMPTY_PREC
-			| PARTITION
 			| PARTITIONING
 			| PARTITIONS
 			| PASSING
@@ -37990,14 +38072,13 @@ unreserved_keyword_without_key:
 			| PRECEDES_P
 			| PRECEDING
 			| PREDICT   // DB4AI
-/* PGXC_BEGIN */
+			/* PGXC_BEGIN */
 			| PREFERRED
-/* PGXC_END */
+			/* PGXC_END */
 			| PREFIX
 			| PREPARE
 			| PREPARED
 			| PRESERVE
-			| PRIOR
 			| PRIORER
 			| PRIVATE
 			| PRIVILEGE
@@ -38007,18 +38088,14 @@ unreserved_keyword_without_key:
 			| PROFILE
 			| PUBLICATION
 			| PUBLISH
-			| PURGE
 			| QUARTER
 			| QUERY
 			| QUICK
 			| QUOTE
 			| RANDOMIZED
-			| RANGE
 			| RATIO
 			| RAW  '(' Iconst ')'				{	$$ = "raw";}
 			| RAW  %prec UNION				{	$$ = "raw";}
-			| READ
-			| READS
 			| REASSIGN
 			| REBUILD
 			| RECHECK
@@ -38028,23 +38105,18 @@ unreserved_keyword_without_key:
 			| REFRESH
 			| REINDEX
 			| RELATIVE_P
-			| RELEASE
 			| RELOPTIONS
 			| REMOTE_P
 			| REMOVE
-			| RENAME
 			| REORGANIZE
 			| REPAIR
-			| REPEAT
 			| REPEATABLE
-			| REPLACE
 			| REPLICA
 			| RESET
 			| RESIZE
 			| RESOURCE
 			| RESTART
 			| RESTRICT
-			| RETURN
 			| RETURNS
 			| REUSE
 			| REVOKE
@@ -38054,32 +38126,22 @@ unreserved_keyword_without_key:
 			| ROLLUP
 			| ROTATION
 			| ROWTYPE_P
-			| ROUTINE
-			| ROWS
 			| RULE
-			| ROW_FORMAT
 			| SAMPLE
 			| SAVEPOINT
 			| SCHEDULE
-			| SCHEMA
-			| SCHEMAS
 			| SCROLL
 			| SEARCH
-			| SECOND_MICROSECOND_P
-			| SECOND_P
 			| SECONDARY_ENGINE_ATTRIBUTE
 			| SECURITY
-			| SEPARATOR_P
 			| SEQUENCE
 			| SEQUENCES
 			| SERIALIZABLE
 			| SERVER
 			| SESSION
-			| SET
 			| SETS
 			| SHARE
 			| SHIPPABLE
-			| SHOW
 			| SHUTDOWN
 			| SIBLINGS
 			| SIMPLE
@@ -38093,11 +38155,9 @@ unreserved_keyword_without_key:
 			| SPACE
 			| SPILL
 			| SPLIT
-			| SQL_P
 			| STABLE
 			| STANDALONE_P
 			| START
-			| STARTING
 			| STARTS
 			| STATEMENT
 			| STATEMENT_ID
@@ -38110,7 +38170,6 @@ unreserved_keyword_without_key:
 			| STDOUT
 			| STORAGE
 			| STORE_P
-			| STORED
 			| STRATIFY
 			| STREAM
 			| STRICT_P
@@ -38118,31 +38177,24 @@ unreserved_keyword_without_key:
 			| SUBPARTITION
 			| SUBPARTITIONS
 			| SUBSCRIPTION
-			| SYNONYM
 			| SYSID
+			| SYNONYM
 			| SYS_REFCURSOR					{ $$ = "refcursor"; }
-			| SYSTEM_P
 			| TABLES
-			| TABLESPACE
-			| TARGET
+			| THAN
 			| TEMP
 			| TEMPLATE
 			| TEMPORARY
 			| TEMPTABLE
 			| TERMINATED
-			| THAN
-			| TIMESTAMP_FORMAT_P
-			| TIME_FORMAT_P
 			| TRANSACTION
 			| TRANSFORM
-			| TRIGGER
 			| TRIGGERS
 			| TRUNCATE
 			| TRUSTED
 			| TSFIELD
 			| TSTAG
 			| TSTIME 
-			| TYPE_P
 			| TYPES_P
 			| UNBOUNDED
 			| UNCOMMITTED
@@ -38151,43 +38203,129 @@ unreserved_keyword_without_key:
 			| UNKNOWN
 			| UNLIMITED
 			| UNLISTEN
-			| UNLOCK
 			| UNLOGGED
 			| UNTIL
 			| UNUSABLE
-			| UPDATE
-			| USE
 			| USEEOF
 			| VACUUM
 			| VALID
 			| VALIDATE
 			| VALIDATION
 			| VALIDATOR
-			| VALUE_P
 			| VARIABLES
-			| VARYING
 			| VCGROUP
 			| VERSION_P
 			| VIEW
 			| VISIBLE
 			| VOLATILE
 			| WAIT
+			/* | WARNINGS */
 			| WEAK
 			| WEEK_P
-			| WHILE_P
 			| WHITESPACE_P
-			| WITHIN
-			| WITHOUT
 			| WORK
 			| WORKLOAD
 			| WRAPPER
-			| WRITE
 			| XML_P
+			| YES_P
+			| ZONE
+
+unreserved_keyword_without_key:
+			alias_name_unreserved_keyword_without_key
+			| ALTER
+			| NOTNULL
+			| BEFORE
+			| BLOB_P
+			| BY
+			| CALL
+			| CASCADE
+			| CHANGE
+			| CONDITION
+			| CONTINUE_P
+			| CUBE
+			| CURSOR
+			| DAY_P
+			| DOUBLE_P
+			| DROP
+			| DUMPFILE
+			| EACH
+			| ENCLOSED
+			| ESCAPED
+			| EXPLAIN
+			| FORCE
+			| FORMATTER
+			| FUNCTION
+			| GENERATED
+			| HOUR_MICROSECOND_P
+			| HOUR_MINUTE_P
+			| HOUR_P
+			| HOUR_SECOND_P
+			| INCLUDE
+			| INSENSITIVE
+			| INSERT
+			| ISNULL
+			| KEYS
+			| KILL
+			| LINES
+			| LOAD
+			| LOCK_P
+			| LOOP
+			| MATCH
+			| MINUTE_MICROSECOND_P
+			| MINUTE_P
+			| MINUTE_SECOND_P
+			| MOD
+			| MONTH_P
+			| NAME_P
+			| NO_WRITE_TO_BINLOG
+			| OF
+			| OPTIMIZE
+			| OPTION
+			| OPTIONALLY
+			| OVER
+			| OUTFILE
+			| PARTITION
+			| PURGE
+			| RANGE
+			| READ
+			| READS
+			| RELEASE
+			| RENAME
+			| REPEAT
+			| REPLACE
+			| RETURN
+			| ROUTINE
+			| ROWS
+			| ROW_FORMAT
+			| SCHEMA
+			| SCHEMAS
+			| SECOND_MICROSECOND_P
+			| SECOND_P
+			| SEPARATOR_P
+			| SET
+			| SHOW
+			| SQL_P
+			| STARTING
+			| STORED
+			| SYSTEM_P
+			| TABLESPACE
+			| TARGET
+			| TIMESTAMP_FORMAT_P
+			| TIME_FORMAT_P
+			| TRIGGER
+			| TYPE_P
+			| UNLOCK
+			| UPDATE
+			| USE
+			| VALUE_P
+			| VARYING
+			| WHILE_P
+			| WITHIN
+			| WITHOUT
+			| WRITE
 			| YEAR_MONTH_P
 			| YEAR_P %prec IDENT
-			| YES_P
 			| ZEROFILL
-			| ZONE
 		;
 
 /* Column identifier --- keywords that can be column, table, etc names.
@@ -38206,48 +38344,52 @@ unreserved_keyword_without_key:
  * We make INTERVAL's priority lower than '+' or '-' here to enbale INTERVAL to receive 
  * negtive number.
  */
+
+alias_name_col_name_keyword:
+	COALESCE
+	| CAST
+	| DATE_P %prec IDENT
+	| EXTRACT
+	| SYSDATE
+	| XMLCONCAT
+	| XMLELEMENT
+	| XMLEXISTS
+	| XMLFOREST
+	| XMLPARSE
+	| XMLPI
+	| XMLROOT
+	| XMLSERIALIZE
+	| TREAT
+	| TRIM
+	| TEXT_P
+	| TIME %prec IDENT
+	| TIMESTAMP %prec IDENT
+	| TIMESTAMPADD
+	| TIMESTAMPDIFF
+	| OVERLAY
+	| POSITION
+	| SUBSTR
+	| SUBSTRING
+	| LAST_DAY_FUNC
+	| LEAST
+	| LOCATE
+	| MID
+	| NULLIF
+	| NVARCHAR %prec IDENT
+	| NVL
+	| GET_FORMAT
+	| DB_B_FORMAT
+	| DB_B_JSOBJ
+	| GREATEST
+	| IFNULL
+	| ONLY
+
 col_name_keyword:
-			  col_name_keyword_nonambiguous { $$ = $1; }
-			| CAST
+		    col_name_keyword_nonambiguous { $$ = $1; }
+			| alias_name_col_name_keyword
 			| CHAR_P %prec IDENT
-			| COALESCE
-			| ONLY
 			| CONVERT
-			| DATE_P %prec IDENT
-			| DB_B_FORMAT
-			| SYSDATE
-			| DB_B_JSOBJ
-			| EXTRACT
-			| GET_FORMAT
-			| GREATEST
-			| IFNULL
 			| INTERVAL	%prec UNBOUNDED
-			| LAST_DAY_FUNC
-			| LEAST
-			| LOCATE
-			| MID
-			| NULLIF
-			| NVARCHAR %prec IDENT
-			| NVL
-			| OVERLAY
-			| POSITION
-			| SUBSTR
-			| SUBSTRING
-			| TEXT_P
-			| TIME %prec IDENT
-			| TIMESTAMP %prec IDENT
-			| TIMESTAMPADD
-			| TIMESTAMPDIFF
-			| TREAT
-			| TRIM
-			| XMLCONCAT
-			| XMLELEMENT
-			| XMLEXISTS
-			| XMLFOREST
-			| XMLPARSE
-			| XMLPI
-			| XMLROOT
-			| XMLSERIALIZE
 		;
 
 /* Column identifier --- keywords that can be column, table, etc names.
@@ -38255,26 +38397,38 @@ col_name_keyword:
  * These keywords will not be recognized as function names. These keywords
  * are used to distinguish index prefix keys from function keys.
  */
+alias_name_col_name_alias_nonambiguous_keyword:
+	AUTHID
+	| BINARY_DOUBLE %prec IDENT
+	| BINARY_INTEGER %prec IDENT
+	| BIT %prec IDENT
+	| BOOLEAN_P %prec IDENT
+	| BUCKETCNT
+	| BYTEAWITHOUTORDER
+	| BYTEAWITHOUTORDERWITHEQUAL
+	| DATETIME %prec IDENT
+	| DECODE
+	| FIXED_P %prec IDENT
+	| NATIONAL
+	| NCHAR %prec IDENT
+	| NONE
+	| NUMBER_P %prec IDENT
+	| NVARCHAR2 %prec IDENT
+	| SETOF
+	| SIGNED
+	| SMALLDATETIME %prec IDENT
+	| VARCHAR2 %prec IDENT
+	| XMLATTRIBUTES
 col_name_keyword_nonambiguous:
-			  AUTHID
+			alias_name_col_name_alias_nonambiguous_keyword
 			| BETWEEN
 			| BIGINT %prec IDENT
-			| BINARY
-			| BINARY_DOUBLE %prec IDENT
-			| BINARY_INTEGER %prec IDENT
-			| BIT %prec IDENT
-			| BOOLEAN_P %prec IDENT
-			| BUCKETCNT
+			/* | BINARY */
 			| ANY
-			| BYTEAWITHOUTORDER
-			| BYTEAWITHOUTORDERWITHEQUAL
 			| CHARACTER %prec IDENT
-			| DATETIME %prec IDENT
 			| DEC %prec IDENT
 			| DECIMAL_P %prec IDENT
-			| DECODE
 			| EXISTS
-			| FIXED_P %prec IDENT
 			| FLOAT_P %prec IDENT
 			| GROUPING_P
 			| IF_P
@@ -38282,45 +38436,41 @@ col_name_keyword_nonambiguous:
 			| INT_P %prec IDENT
 			| INTEGER %prec IDENT
 			| MEDIUMINT %prec IDENT
-			| NATIONAL
-			| NCHAR %prec IDENT
-			| NONE
-			| NUMBER_P %prec IDENT
 			| NUMERIC %prec IDENT
-			| NVARCHAR2 %prec IDENT
 			| OUT_P
 			| PRECISION
 			| REAL %prec IDENT
 			| ROW
-			| SETOF
-			| SIGNED
-			| SMALLDATETIME %prec IDENT
 			| SMALLINT %prec IDENT
 			| TINYINT %prec IDENT
 			| UNSIGNED
 			| VALUES
 			| VARBINARY
 			| VARCHAR %prec IDENT
-			| VARCHAR2 %prec IDENT
-			| XMLATTRIBUTES
 		;
 
 /* current_schema can't be included in the rule 'type_func_name_keyword_without_current_schema sconst',
  * because of the reduction/reduction conflict. 
  * So current_schema will be used only as alias name in the scenario like 'select current_schema 'alias_name';'
  */
-type_func_name_keyword_without_current_schema:
-			 AGAINST
+alias_name_type_func_name_keyword_without_current_schema:
+			AGAINST
 			| AUTHORIZATION
 			| CONCURRENTLY
-			| CROSS
 			| CSN
 			| DELTAMERGE
-			| DIV
 			| FULL
-			| FULLTEXT
 			| HDFSDIRECTORY
 			| ILIKE
+			| SIMILAR
+			| TABLESAMPLE
+			| TIMECAPSULE
+
+type_func_name_keyword_without_current_schema:
+			alias_name_type_func_name_keyword_without_current_schema
+			| CROSS
+			| DIV
+			| FULLTEXT
 			| INDEX
 			| INNER_P
 			| JOIN
@@ -38328,14 +38478,11 @@ type_func_name_keyword_without_current_schema:
 			| LIKE
 			| NATURAL
 			| OUTER_P
-			| OVERLAPS
+			| OVERLAPS // conflict could not use in alias_name
 			| REGEXP
 			| RIGHT
 			| RLIKE
-			| SIMILAR
 			| SOUNDS
-			| TABLESAMPLE
-			| TIMECAPSULE
 			| XOR
 		;
 
@@ -38360,8 +38507,60 @@ type_func_name_keyword:
  * type, or function names in some contexts.  Don't put things here unless
  * forced to.
  */
+
+alias_keyword_ColId: 
+			WARNINGS
+			| CSN
+			| PRIOR
+			| AGAINST
+			| AUTHORIZATION
+			| CONCURRENTLY
+			| CURRENT_SCHEMA
+			| DELTAMERGE
+			| FULL
+			| HDFSDIRECTORY
+			| ILIKE
+			| OVERLAPS
+			| SIMILAR
+			| SOUNDS
+			| CURRENT_CATALOG
+			| CURRENT_ROLE
+			| CURTIME
+			| DEFERRABLE
+			| ENUM_P
+			| GROUPPARENT
+			| INITIALLY
+			| NOCYCLE
+			| NOW_FUNC
+			| PERFORMANCE
+			| PLACING
+			| SESSION_USER
+			| SHRINK
+			| SOME
+			| VARIADIC
+			| VERIFY
+
+alias_name_reserved_keyword:
+	CURRENT_CATALOG
+	| CURRENT_ROLE
+	| CURTIME
+	| DEFERRABLE
+	| ENUM_P
+	| GROUPPARENT
+	| INITIALLY
+	| NOCYCLE
+	| NOW_FUNC
+	| PERFORMANCE
+	| PLACING
+	| SESSION_USER
+	| SHRINK
+	| SOME
+	| VARIADIC
+	| VERIFY
+
 reserved_keyword:
-			  ALL
+			alias_name_reserved_keyword
+			| ALL
 			| ANALYZE
 			| AND
 			| ARRAY
@@ -38375,22 +38574,17 @@ reserved_keyword:
 			| COLUMN
 			| CONSTRAINT
 			| CREATE
-			| CURRENT_CATALOG
 			| CURRENT_DATE
-			| CURRENT_ROLE
 			| CURRENT_TIME
 			| CURRENT_TIMESTAMP
 			| CURRENT_USER
-			| CURTIME
 			| DEFAULT
-			| DEFERRABLE
 			| DELAYED
 			| DESC
 			| DISTINCT
 			| DISTINCTROW
 			| DUAL_P
 			| ELSE
-			| ENUM_P
 			| EXCEPT
 			| FALSE_P
 			| FETCH
@@ -38399,10 +38593,8 @@ reserved_keyword:
 			| FROM
 			| GRANT
 			| GROUP_P
-			| GROUPPARENT
 			| HAVING
 			| IN_P
-			| INITIALLY
 			| INTERSECT
 			| INTO
 			| IS
@@ -38412,24 +38604,20 @@ reserved_keyword:
 			| LOCALTIMESTAMP
 			| LOW_PRIORITY
 			| MAXVALUE
-			| NOCYCLE
 			| NOT
-			| NOW_FUNC
 			| NULL_P
 			| OFFSET
 			| ON
 			| OR
 			| ORDER
-			| PERFORMANCE
-			| PLACING
 			| PRIMARY
+			| PRIOR
 			| PROCEDURE
 			| REFERENCES
 			| RETURNING
 			| SELECT
-			| SESSION_USER
-			| SHRINK
-			| SOME
+			
+			
 			| SYMMETRIC
 			| TABLE
 			| THEN
@@ -38442,8 +38630,7 @@ reserved_keyword:
 			| UTC_DATE
 			| UTC_TIME
 			| UTC_TIMESTAMP
-			| VARIADIC
-			| VERIFY
+			
 			| WHEN
 			| WHERE
 			| WINDOW
