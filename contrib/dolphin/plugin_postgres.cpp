@@ -2,6 +2,7 @@
 #include "plugin_parser/parser.h"
 #include "plugin_parser/analyze.h"
 #include "plugin_parser/parse_oper.h"
+#include "plugin_parser/parse_coerce.h"
 #include "plugin_storage/hash.h"
 #include "plugin_postgres.h"
 #include "plugin_utils/plpgsql.h"
@@ -43,6 +44,7 @@
 #include "catalog/gs_db_privilege.h"
 #include "catalog/pg_extension.h"
 #include "catalog/pg_operator.h"
+#include "catalog/pg_attribute.h"
 #include "executor/spi_priv.h"
 #include "tcop/utility.h"
 #include "gs_ledger/ledger_utils.h"
@@ -51,6 +53,13 @@
 #include "utils/lsyscache.h"
 #include "utils/acl.h"
 #include "utils/knl_catcache.h"
+#include "plugin_utils/date.h"
+#include "utils/nabstime.h"
+#include "utils/geo_decls.h"
+#include "utils/varbit.h"
+#include "utils/json.h"
+#include "utils/jsonb.h"
+#include "utils/xml.h"
 #include "pgxc/groupmgr.h"
 #include "libpq/pqformat.h"
 #include "optimizer/nodegroups.h"
@@ -76,6 +85,7 @@
 #include "plugin_protocol/startup.h"
 #ifdef DOLPHIN
 #include "plugin_utils/my_locale.h"
+#include "plugin_executor/functions.h"
 #endif
 #ifndef WIN32_ONLY_COMPILER
 #include "dynloader.h"
@@ -98,7 +108,8 @@ static const struct sql_mode_entry sql_mode_options[OPT_SQL_MODE_MAX] = {
     {"pad_char_to_full_length", OPT_SQL_MODE_PAD_CHAR_TO_FULL_LENGTH},
     {"block_return_multi_results", OPT_SQL_MODE_BLOCK_RETURN_MULTI_RESULTS},
     {"auto_recompile_function", OPT_SQL_MODE_ATUO_RECOMPILE_FUNCTION},
-    {"error_for_division_by_zero", OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO}
+    {"error_for_division_by_zero", OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO},
+    {"treat_bxconst_as_binary", OPT_SQL_MODE_TREAT_BXCONST_AS_BINARY},
 };
 
 #define DOLPHIN_TYPES_NUM 12
@@ -138,7 +149,8 @@ extern struct HTAB* b_oidHash;
 extern RegExternFunc b_plpgsql_function_table[3];
 extern int tmp_b_fmgr_nbuiltins;
 extern FmgrBuiltin tmp_b_fmgr_builtins[];
-
+extern void deparse_query(Query* query, StringInfo buf, List* parentnamespace, bool finalise_aggs, bool sortgroup_colno,
+    void* parserArg, bool qrw_phase, bool is_fqs);
 extern bool isAllTempObjects(Node* parse_tree, const char* query_string, bool sent_to_remote);
 extern void ts_check_feature_disable();
 extern void ExecAlterDatabaseSetStmt(Node* parse_tree, const char* query_string, bool sent_to_remote);
@@ -150,9 +162,27 @@ static void AssignSqlMode(const char* newval, void* extra);
 static bool check_b_db_timestamp(double* newval, void** extra, GucSource source);
 static void assign_b_db_timestamp(double newval, void* extra);
 #ifdef DOLPHIN
+static bool check_sql_mode(char** newval, void** extra, GucSource source);
+static bool check_lower_case_table_names(int* newval, void** extra, GucSource source);
 static bool check_default_week_format(int* newval, void** extra, GucSource source);
 static void assign_default_week_format(int newval, void* extra);
 static bool check_lc_time_names(char** newval, void** extra, GucSource source);
+static bool check_auto_increment_increment(int* newval, void** extra, GucSource source);
+static bool check_character_set_client(char** newval, void** extra, GucSource source);
+static bool check_character_set_results(char** newval, void** extra, GucSource source);
+static bool check_character_set_server(char** newval, void** extra, GucSource source);
+static bool check_collation_server(char** newval, void** extra, GucSource source);
+static bool check_init_connect(char** newval, void** extra, GucSource source);
+static bool check_interactive_timeout(int* newval, void** extra, GucSource source);
+static bool check_license(char** newval, void** extra, GucSource source);
+static bool check_max_allowed_packet(int* newval, void** extra, GucSource source);
+static bool check_net_buffer_length(int* newval, void** extra, GucSource source);
+static bool check_net_write_timeout(int* newval, void** extra, GucSource source);
+static bool check_query_cache_size(long int* newval, void** extra, GucSource source);
+static bool check_query_cache_type(int* newval, void** extra, GucSource source);
+static bool check_system_time_zone(char** newval, void** extra, GucSource source);
+static bool check_time_zone(char** newval, void** extra, GucSource source);
+static bool check_wait_timeout(int* newval, void** extra, GucSource source);
 #endif
 static const int LOADER_COL_BUF_CNT = 5;
 static uint32 dolphin_index;
@@ -169,8 +199,10 @@ extern "C" DLL_PUBLIC void _PG_fini(void);
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_types);
 extern "C" DLL_PUBLIC Datum dolphin_types();
+extern "C" Datum dolphin_binaryin(PG_FUNCTION_ARGS);
 static void InitDolphinTypeId(BSqlPluginContext* cxt);
 static void InitDolphinOperator(BSqlPluginContext* cxt);
+static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup);
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_invoke);
 void dolphin_invoke(void)
@@ -267,6 +299,7 @@ void init_plugin_object()
         global_hook_inited = true;
     }
 
+    u_sess->hook_cxt.deparseQueryHook = (void*)deparse_query;
     u_sess->hook_cxt.transformStmtHook = (void*)transformStmt;
     u_sess->hook_cxt.execInitExprHook = (void*)ExecInitExpr;
     u_sess->hook_cxt.computeHashHook  = (void*)compute_hash_default;
@@ -278,6 +311,9 @@ void init_plugin_object()
     u_sess->hook_cxt.pluginCCHashEqFuncs = (void*)ccHashEqFuncs;
     u_sess->hook_cxt.plpgsqlParserSetHook = (void*)b_plpgsql_parser_setup;
     u_sess->hook_cxt.coreYYlexHook = (void*)core_yylex;
+    u_sess->hook_cxt.getTypeZeroValueHook = (void*)DolphinGetTypeZeroValue;
+    u_sess->hook_cxt.checkSqlFnRetvalHook = (void*)check_sql_fn_retval;
+    u_sess->hook_cxt.typeTransfer = (void*)type_transfer;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
@@ -393,11 +429,14 @@ bool ccHashEqFuncs(Oid keytype, CCHashFN *hashfunc, RegProcedure *eqfunc, CCFast
  */
 static bool CheckSqlMode(char** newval, void** extra, GucSource source)
 {
-    char* rawstring = NULL;
-    List* elemlist = NULL;
-    ListCell* cell = NULL;
+    char *rawstring = NULL;
+    List *elemlist = NULL;
+    ListCell *cell = NULL;
     int start = 0;
 
+    if (strlen(*newval) == 0) {
+        return true;
+    }
     /* Need a modifiable copy of string */
     rawstring = pstrdup(*newval);
     /* Parse string into list of identifiers */
@@ -409,19 +448,18 @@ static bool CheckSqlMode(char** newval, void** extra, GucSource source)
 
         return false;
     }
-
+    bool sql_mode_assign[OPT_SQL_MODE_MAX] = {0};
     foreach (cell, elemlist) {
-        const char* item = (const char*)lfirst(cell);
-        bool nfound = true;
+        const char *item = (const char *)lfirst(cell);
 
         for (start = 0; start < OPT_SQL_MODE_MAX; start++) {
             if (strcmp(item, sql_mode_options[start].name) == 0) {
-                nfound = false;
+                sql_mode_assign[start] = true;
                 break;
             }
         }
 
-        if (nfound) {
+        if (start == OPT_SQL_MODE_MAX) {
             GUC_check_errdetail("invalid sql_mode option \"%s\"", item);
             pfree(rawstring);
             list_free(elemlist);
@@ -431,6 +469,23 @@ static bool CheckSqlMode(char** newval, void** extra, GucSource source)
 
     pfree(rawstring);
     list_free(elemlist);
+
+    /* rewrite dolphin sql_mode */
+    StringInfo stringInfo = makeStringInfo();
+    bool firstEnter = false;
+    for (start = 0; start < OPT_SQL_MODE_MAX; start++) {
+        if (sql_mode_assign[start]) {
+            if (firstEnter) {
+                appendStringInfoString(stringInfo, ",");
+            }
+            firstEnter = true;
+            appendStringInfoString(stringInfo, sql_mode_options[start].name);
+        }
+    }
+    /* Obviously, the length of stringInfo must be less than or equal to that of newval. */
+    int ret = strcpy_s(*newval, strlen(*newval) + 1, stringInfo->data);
+    securec_check(ret, "\0", "\0");
+    DestroyStringInfo(stringInfo);
 
     return true;
 }
@@ -481,6 +536,25 @@ static void assign_b_db_timestamp(double newval, void* extra)
 }
 
 #ifdef DOLPHIN
+static bool check_sql_mode(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING,
+            (errmsg("Variable 'sql_mode' has no actual meaning, please use variable 'dolphin.sql_mode'.")));
+    }
+    return true;
+}
+
+static bool check_lower_case_table_names(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING,
+            (errmsg("Variable 'lower_case_table_names' has no actual meaning, "
+                "please use variable 'dolphin.lower_case_table_names'.")));
+    }
+    return true;
+}
+
 static bool check_default_week_format(int* newval, void** extra, GucSource source)
 {
     int newval_interval = *newval;
@@ -507,6 +581,136 @@ static bool check_lc_time_names(char** newval, void** extra, GucSource source)
     if (locale == NULL) {
         GUC_check_errmsg("Unknown locale:\'%s\'", *newval);
         return false;
+    }
+    return true;
+}
+
+static bool check_auto_increment_increment(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'auto_increment_increment' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_character_set_client(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'character_set_client' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_character_set_results(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'character_set_results' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_character_set_server(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'character_set_server' has no actual meaning.")));
+    }
+    return true;
+}
+static bool check_collation_server(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'collation_server' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_init_connect(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'init_connect' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_interactive_timeout(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'interactive_timeout' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_license(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_DEFAULT) {
+        return true;
+    }
+    ereport(ERROR,
+        (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+            errmsg("Variable 'license' is a read only variable.")));
+    return false;
+}
+
+static bool check_max_allowed_packet(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'max_allowed_packet' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_net_buffer_length(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'net_buffer_length' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_net_write_timeout(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'net_write_timeout' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_query_cache_size(long int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'query_cache_size' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_query_cache_type(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'query_cache_type' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_system_time_zone(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'system_time_zone' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_time_zone(char** newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'time_zone' has no actual meaning.")));
+    }
+    return true;
+}
+
+static bool check_wait_timeout(int* newval, void** extra, GucSource source)
+{
+    if (source == PGC_S_SESSION) {
+        ereport(WARNING, (errmsg("Variable 'wait_timeout' has no actual meaning.")));
     }
     return true;
 }
@@ -673,6 +877,9 @@ void init_session_vars(void)
     cxt->single_line_proc_begin = 0;
     cxt->is_schema_name = false;
     cxt->group_by_error = false;
+    cxt->is_create_alter_stmt = false;
+    cxt->isDoCopy = false;
+    cxt->isInTransformSet = false;
 
     DefineCustomBoolVariable("dolphin.b_compatibility_mode",
                              "Enable mysql behavior override opengauss's when collision happens.",
@@ -722,6 +929,29 @@ void init_session_vars(void)
                             NULL,
                             NULL);
 #ifdef DOLPHIN
+    DefineCustomStringVariable("sql_mode",
+                               gettext_noop("CUSTOM_OPTIONS"),
+                               NULL,
+                               &GetSessionContext()->useless_sql_mode,
+                               "sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,"
+                               "pad_char_to_full_length",
+                               PGC_USERSET,
+                               GUC_LIST_INPUT | GUC_REPORT,
+                               check_sql_mode,
+                               NULL,
+                               NULL);
+    DefineCustomIntVariable("lower_case_table_names",
+                            gettext_noop("used to set the sensitive of identifier"),
+                            NULL,
+                            &GetSessionContext()->useless_lower_case_table_names,
+                            1,
+                            0,
+                            2,
+                            PGC_USERSET,
+                            0,
+                            check_lower_case_table_names,
+                            NULL,
+                            NULL);
     DefineCustomIntVariable("dolphin.default_week_format",
                             gettext_noop("Set the default week format for function week."),
                             gettext_noop("If the given value is less than 0, default_week_format will be set to 0. "
@@ -763,9 +993,9 @@ void init_session_vars(void)
                             DEFAULT_AUTO_INCREMENT,
                             MIN_AUTO_INCREMENT,
                             MAX_AUTO_INCREMENT,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_auto_increment_increment,
                             NULL,
                             NULL);
     DefineCustomStringVariable("character_set_client",
@@ -773,9 +1003,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->character_set_client,
                                "utf8",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_character_set_client,
                                NULL,
                                NULL);
     DefineCustomStringVariable("character_set_results",
@@ -784,9 +1014,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->character_set_results,
                                "utf8",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_character_set_results,
                                NULL,
                                NULL);
     DefineCustomStringVariable("character_set_server",
@@ -794,9 +1024,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->character_set_server,
                                "latin1",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_character_set_server,
                                NULL,
                                NULL);
     DefineCustomStringVariable("collation_server",
@@ -804,9 +1034,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->collation_server,
                                "latin1_swedish_ci",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_collation_server,
                                NULL,
                                NULL);
     DefineCustomStringVariable("init_connect",
@@ -814,9 +1044,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->init_connect,
                                "",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_init_connect,
                                NULL,
                                NULL);
     DefineCustomIntVariable("interactive_timeout",
@@ -827,9 +1057,9 @@ void init_session_vars(void)
                             DEFAULT_INTERACTIVE_TIMEOUT,
                             MIN_INTERACTIVE_TIMEOUT,
                             MAX_INTERACTIVE_TIMEOUT,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_interactive_timeout,
                             NULL,
                             NULL);
     DefineCustomStringVariable("license",
@@ -837,9 +1067,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->license,
                                "MulanPSL-2.0",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_license,
                                NULL,
                                NULL);
     DefineCustomIntVariable("max_allowed_packet",
@@ -849,9 +1079,9 @@ void init_session_vars(void)
                             DEFAULT_MAX_ALLOWED_PACKET,
                             MIN_MAX_ALLOWED_PACKET,
                             MAX_MAX_ALLOWED_PACKET,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_max_allowed_packet,
                             NULL,
                             NULL);
     DefineCustomIntVariable("net_buffer_length",
@@ -861,9 +1091,9 @@ void init_session_vars(void)
                             DEFAULT_NET_BUFFER_LENGTH,
                             MIN_NET_BUFFER_LENGTH,
                             MAX_NET_BUFFER_LENGTH,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_net_buffer_length,
                             NULL,
                             NULL);
     DefineCustomIntVariable("net_write_timeout",
@@ -874,9 +1104,9 @@ void init_session_vars(void)
                             DEFAULT_NET_WRITE_TIMEOUT,
                             MIN_NET_WRITE_TIMEOUT,
                             MAX_NET_WRITE_TIMEOUT,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_net_write_timeout,
                             NULL,
                             NULL);
     DefineCustomInt64Variable("query_cache_size",
@@ -886,9 +1116,9 @@ void init_session_vars(void)
                             DEFAULT_QUREY_CACHE_SIZE,
                             MIN_QUREY_CACHE_SIZE,
                             MAX_QUREY_CACHE_SIZE,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_query_cache_size,
                             NULL,
                             NULL);
     DefineCustomIntVariable("query_cache_type",
@@ -898,9 +1128,9 @@ void init_session_vars(void)
                             QUERY_CACHE_OFF,
                             QUERY_CACHE_OFF,
                             QUERY_CACHE_DEMAND,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_query_cache_type,
                             NULL,
                             NULL);
     DefineCustomStringVariable("system_time_zone",
@@ -908,9 +1138,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->system_time_zone,
                                "",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_system_time_zone,
                                NULL,
                                NULL);
     DefineCustomStringVariable("time_zone",
@@ -918,9 +1148,9 @@ void init_session_vars(void)
                                NULL,
                                &GetSessionContext()->time_zone,
                                "SYSTEM",
-                               PGC_INTERNAL,
+                               PGC_USERSET,
                                0,
-                               NULL,
+                               check_time_zone,
                                NULL,
                                NULL);
     DefineCustomIntVariable("wait_timeout",
@@ -931,9 +1161,9 @@ void init_session_vars(void)
                             DEFAULT_WAIT_TIMEOUT,
                             MIN_WAIT_TIMEOUT,
                             MAX_WAIT_TIMEOUT,
-                            PGC_INTERNAL,
+                            PGC_USERSET,
                             0,
-                            NULL,
+                            check_wait_timeout,
                             NULL,
                             NULL);
     DefineCustomStringVariable("dolphin.optimizer_switch",
@@ -959,6 +1189,16 @@ void init_session_vars(void)
                             NULL,
                             NULL,
                             NULL);
+    DefineCustomStringVariable("performance_schema",
+                               gettext_noop("CUSTOM_OPTIONS"),
+                               NULL,
+                               &GetSessionContext()->performance_schema,
+                               "",
+                               PGC_USERSET,
+                               GUC_LIST_INPUT | GUC_REPORT,
+                               NULL,
+                               NULL,
+                               NULL);
 #endif
 
 }
@@ -1017,11 +1257,10 @@ Datum dolphin_types()
     Datum* datums = NULL;
     ArrayType* dolphinTypesArray = NULL;
     int dimension = 2;
-    int cstringLength = -2;
     datums = (Datum*)palloc(DOLPHIN_TYPES_NUM * TYPE_ATTRIBUTES_NUM * sizeof(Datum));
     for (int row = 0; row < DOLPHIN_TYPES_NUM; row++) {
         for (int col = 0; col < TYPE_ATTRIBUTES_NUM; col++) {
-            datums[row * TYPE_ATTRIBUTES_NUM + col] = CStringGetDatum(dolphinTypes[row][col]);
+            datums[row * TYPE_ATTRIBUTES_NUM + col] = CStringGetTextDatum(dolphinTypes[row][col]);
         }
     }
     int dims[dimension];
@@ -1031,7 +1270,7 @@ Datum dolphin_types()
     lbs[0] = 1;
     lbs[1] = 1;
 
-    dolphinTypesArray = construct_md_array(datums, NULL, dimension, dims, lbs, CSTRINGOID, cstringLength, false, 'c');
+    dolphinTypesArray = construct_md_array(datums, NULL, dimension, dims, lbs, TEXTOID, -1, false, 'i');
     pfree_ext(datums);
     PG_RETURN_ARRAYTYPE_P(dolphinTypesArray);
 }
@@ -1127,3 +1366,175 @@ static void InitDolphinOperator(BSqlPluginContext* cxt)
     cxt->dolphin_oprs[AEXPR_DIV_INT8][UINT_OP] = NUMERICDIVOID;
     InitUintOprs(cxt);
 }
+
+/* copy from openGauss-server's execUtils.cpp GetTypeZeroValue */
+static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup)
+{
+    Datum result;
+    switch (att_tup->atttypid) {
+        case TIMESTAMPOID: {
+            result = (Datum)DirectFunctionCall3(timestamp_in, CStringGetDatum("now"), ObjectIdGetDatum(InvalidOid),
+                                                Int32GetDatum(-1));
+            break;
+        }
+        case TIMESTAMPTZOID: {
+            result = clock_timestamp(NULL);
+            break;
+        }
+        case TIMETZOID: {
+            result = (Datum)DirectFunctionCall3(
+                timetz_in, CStringGetDatum("00:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1));
+            break;
+        }
+        case INTERVALOID: {
+            result = (Datum)DirectFunctionCall3(
+                interval_in, CStringGetDatum("00:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1));
+            break;
+        }
+        case TINTERVALOID: {
+            Datum epoch = (Datum)DirectFunctionCall1(timestamp_abstime, (TimestampGetDatum(SetEpochTimestamp())));
+            result = (Datum)DirectFunctionCall2(mktinterval, epoch, epoch);
+            break;
+        }
+        case SMALLDATETIMEOID: {
+            result = (Datum)DirectFunctionCall3(
+                smalldatetime_in, CStringGetDatum("1970-01-01 00:00:00"), ObjectIdGetDatum(0), Int32GetDatum(-1));
+            break;
+        }
+        case DATEOID: {
+            result = timestamp2date(SetEpochTimestamp());
+            break;
+        }
+        case UUIDOID: {
+            result = (Datum)DirectFunctionCall3(uuid_in, CStringGetDatum("00000000-0000-0000-0000-000000000000"),
+                                                ObjectIdGetDatum(0), Int32GetDatum(-1));
+            break;
+        }
+        case NAMEOID: {
+            result = (Datum)DirectFunctionCall1(namein, CStringGetDatum(""));
+            break;
+        }
+        case POINTOID: {
+            result = (Datum)DirectFunctionCall1(point_in, CStringGetDatum("(0,0)"));
+            break;
+        }
+        case PATHOID: {
+            result = (Datum)DirectFunctionCall1(path_in, CStringGetDatum("0,0"));
+            break;
+        }
+        case POLYGONOID: {
+            result = (Datum)DirectFunctionCall1(poly_in, CStringGetDatum("(0,0)"));
+            break;
+        }
+        case CIRCLEOID: {
+            result = (Datum)DirectFunctionCall1(circle_in, CStringGetDatum("0,0,0"));
+            break;
+        }
+        case LSEGOID:
+        case BOXOID: {
+            result = (Datum)DirectFunctionCall1(box_in, CStringGetDatum("0,0,0,0"));
+            break;
+        }
+        case JSONOID: {
+            result = (Datum)DirectFunctionCall1(json_in, CStringGetDatum("null"));
+            break;
+        }
+        case JSONBOID: {
+            result = (Datum)DirectFunctionCall1(jsonb_in, CStringGetDatum("null"));
+            break;
+        }
+        case XMLOID: {
+            result = (Datum)DirectFunctionCall1(xml_in, CStringGetDatum("null"));
+            break;
+        }
+        case BITOID: {
+            result = (Datum)DirectFunctionCall3(bit_in, CStringGetDatum(""), ObjectIdGetDatum(0), Int32GetDatum(-1));
+            /* for dolphin, use att_tup's typmod, to do extra padding */
+            result = (Datum)DirectFunctionCall2(bit, result, Int32GetDatum(att_tup->atttypmod));
+            break;
+        }
+        case VARBITOID: {
+            result = (Datum)DirectFunctionCall3(varbit_in, CStringGetDatum(""), ObjectIdGetDatum(0), Int32GetDatum(-1));
+            break;
+        }
+        case NUMERICOID: {
+            result =
+                (Datum)DirectFunctionCall3(numeric_in, CStringGetDatum("0"), ObjectIdGetDatum(0), Int32GetDatum(0));
+            break;
+        }
+        case CIDROID: {
+            result = DirectFunctionCall1(cidr_in, CStringGetDatum("0.0.0.0"));
+            break;
+        }
+        case INETOID: {
+            result = DirectFunctionCall1(inet_in, CStringGetDatum("0.0.0.0"));
+            break;
+        }
+        case MACADDROID: {
+            result = (Datum)DirectFunctionCall1(macaddr_in, CStringGetDatum("00:00:00:00:00:00"));
+            break;
+        }
+        case NUMRANGEOID:
+        case INT8RANGEOID:
+        case INT4RANGEOID: {
+            Type targetType = typeidType(att_tup->atttypid);
+            result = stringTypeDatum(targetType, "(0,0)", att_tup->atttypmod, true);
+            ReleaseSysCache(targetType);
+            break;
+        }
+        case TSRANGEOID:
+        case TSTZRANGEOID: {
+            Type targetType = typeidType(att_tup->atttypid);
+            result = stringTypeDatum(targetType, "(1970-01-01 00:00:00,1970-01-01 00:00:00)", att_tup->atttypmod, true);
+            ReleaseSysCache(targetType);
+            break;
+        }
+        case DATERANGEOID: {
+            Type targetType = typeidType(att_tup->atttypid);
+            result = stringTypeDatum(targetType, "(1970-01-01,1970-01-01)", att_tup->atttypmod, true);
+            ReleaseSysCache(targetType);
+            break;
+        }
+        case HASH16OID: {
+            Type targetType = typeidType(att_tup->atttypid);
+            result = stringTypeDatum(targetType, "0", att_tup->atttypmod, true);
+            ReleaseSysCache(targetType);
+            break;
+        }
+        case HASH32OID: {
+            Type targetType = typeidType(att_tup->atttypid);
+            result = stringTypeDatum(targetType, "00000000000000000000000000000000", att_tup->atttypmod, true);
+            ReleaseSysCache(targetType);
+            break;
+        }
+        case TSVECTOROID: {
+            Type targetType = typeidType(att_tup->atttypid);
+            result = stringTypeDatum(targetType, "", att_tup->atttypmod, true);
+            ReleaseSysCache(targetType);
+            break;
+        }
+        case BPCHAROID: {
+            /* for dolphin, bpchar should use att_tup's typmod, to do extea padding */
+            result = (Datum)DirectFunctionCall3(bpcharin, CStringGetDatum(""),
+                ObjectIdGetDatum(0), Int32GetDatum(att_tup->atttypmod));
+            break;
+        }
+        default: {
+            if (att_tup->atttypid == BINARYOID) {
+                /* binary should use att_tup's typmod, to do extra padding */
+                result = (Datum)DirectFunctionCall3(dolphin_binaryin, CStringGetDatum(""),
+                    ObjectIdGetDatum(0), Int32GetDatum(att_tup->atttypmod));
+                break;
+            }
+            bool typeIsVarlena = (!att_tup->attbyval) && (att_tup->attlen == -1);
+            if (typeIsVarlena) {
+                result = CStringGetTextDatum("");
+            } else {
+                result = (Datum)0;
+            }
+            break;
+        }
+    }
+    return result;
+}
+

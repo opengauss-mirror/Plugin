@@ -2601,38 +2601,9 @@ BEGIN
 END
 $$
 LANGUAGE plpgsql;
-DROP FUNCTION IF EXISTS pg_catalog.oct(bit);
-CREATE OR REPLACE FUNCTION pg_catalog.oct(bit) RETURNS text AS
-$$
-BEGIN
-    RETURN 0;
-END;
-$$
-LANGUAGE plpgsql;
 
 DROP FUNCTION IF EXISTS pg_catalog.update_castcontext(varchar, varchar) CASCADE;
 
-DROP FUNCTION IF EXISTS pg_catalog.ord(varbit);
-CREATE FUNCTION pg_catalog.ord (varbit) RETURNS int16 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'ord_bit';
-
-DROP FUNCTION IF EXISTS pg_catalog.substring_index (text, text, numeric) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.substring_index (boolean, text, numeric) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.substring_index (text, boolean, numeric) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.substring_index (boolean, boolean, numeric) CASCADE;
-
-DROP FUNCTION IF EXISTS pg_catalog.substring_index ("any", "any", text) CASCADE;
-CREATE FUNCTION pg_catalog.substring_index (
-"any",
-"any",
-text
-) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_text';
-
-DROP FUNCTION IF EXISTS pg_catalog.substring_index ("any", "any", numeric) CASCADE;
-CREATE FUNCTION pg_catalog.substring_index (
-"any",
-"any",
-numeric
-) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_numeric';
 DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text, text, numeric) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text, text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text) CASCADE;
@@ -3855,86 +3826,6 @@ create function pg_catalog.datetime_mi_int4(
     int4
 ) RETURNS float8 LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.datetime_mi_float($1, $2::float8) $$;
 create operator pg_catalog.-(leftarg = timestamp without time zone, rightarg = int4, procedure = pg_catalog.datetime_mi_int4);
-
-DROP FUNCTION IF EXISTS pg_catalog.bit_cast_int8(bit) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.bit_cast_int8 (
-bit
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bit_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.float4_cast_int8(float4) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.float4_cast_int8 (
-float4
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'float4_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.float8_cast_int8(float8) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.float8_cast_int8 (
-float8
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'float8_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.numeric_cast_int8(numeric) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.numeric_cast_int8 (
-numeric
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'numeric_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.date_cast_int8(date) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.date_cast_int8 (
-date
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'date_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.timestamp_cast_int8(timestamp without time zone) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.timestamp_cast_int8 (
-timestamp without time zone
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'timestamp_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.timestamptz_cast_int8(timestamptz) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.timestamptz_cast_int8 (
-timestamptz
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'timestamptz_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.time_cast_int8(time) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.time_cast_int8 (
-time
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'time_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.timetz_cast_int8(timetz) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.timetz_cast_int8 (
-timetz
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'timetz_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.set_cast_int8(anyset) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.set_cast_int8 (
-anyset
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'set_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.uint8_cast_int8(uint8) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.uint8_cast_int8 (
-uint8
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'uint8_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.year_cast_int8(year) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.year_cast_int8 (
-year
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'year_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.bpchar_cast_int8(char) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.bpchar_cast_int8 (
-char
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bpchar_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.varchar_cast_int8(varchar) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.varchar_cast_int8 (
-varchar
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varchar_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.text_cast_int8(text) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.text_cast_int8 (
-text
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'text_cast_int8';
-
-DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_int8(anyelement) CASCADE;
-CREATE OR REPLACE FUNCTION pg_catalog.varlena_cast_int8 (
-anyelement
-) RETURNS int8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'varlena_cast_int8';
 
 -- left operator
 DROP FUNCTION IF EXISTS pg_catalog.json_uplus(json);

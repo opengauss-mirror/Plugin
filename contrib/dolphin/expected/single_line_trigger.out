@@ -411,11 +411,108 @@ select id, foodtype  from food;
    2 | pad
 (9 rows)
 
+--bugfix for trigger gram 
+drop table if exists t1;
+drop table if exists t4;
+NOTICE:  table "t4" does not exist, skipping
+create table t1 (i int primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+create table t4 (l int primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t4_pkey" for table "t4"
+insert into t1 values(1);
+delimiter |
+create trigger t4_bi before insert on t4 for each row
+begin
+declare k int;
+select i from t1 where i=1 into k;
+set new.l= k+1;
+end|
+delimiter ;
+insert into t4 values(222);
+select * from t4;
+ l 
+---
+ 2
+(1 row)
+
+drop table if exists t1 cascade;
+drop table if exists t4 cascade;
+--open b_compatibility_mode 
+create table t_create_trigger_001(a int);
+create table t_create_trigger_002(a int);
+set dolphin.b_compatibility_mode = 1;
+create trigger trigger004
+after insert on t_create_trigger_001
+for each row
+begin
+        insert into t_create_trigger_002 values(3);
+end;
+/
+show create trigger trigger004;
+--? SQL Original Statement .*
+--?.*
+--? DECLARE begin.*
+--?.*
+--?.*
+(1 row)
+
+delimiter //
+create trigger trigger005
+after insert on t_create_trigger_001
+for each row
+begin
+        insert into t_create_trigger_002 values(3);
+end;
+//
+delimiter ;
+show create trigger trigger005;
+--? SQL Original Statement .*
+--?.*
+--?  BEGIN      insert into t_create_trigger_002.*
+--?.*
+(1 row)
+
+drop trigger trigger005;
+drop trigger trigger004;
+--close b_compatibility_mode
+set dolphin.b_compatibility_mode = 0;
+create trigger trigger004
+after insert on t_create_trigger_001
+for each row
+begin
+        insert into t_create_trigger_002 values(3);
+end;
+/
+show create trigger trigger004;
+--? SQL Original Statement .*
+--?.*
+--? DECLARE begin.*
+--?.*
+--?.*
+(1 row)
+
+delimiter //
+create trigger trigger005
+after insert on t_create_trigger_001
+for each row
+begin
+        insert into t_create_trigger_002 values(3);
+end;
+//
+delimiter ;
+show create trigger trigger005;
+--? SQL Original Statement .*
+--?.*
+--?   BEGIN      insert into t_create_trigger_002.*
+--?.*
+(1 row)
+
+drop table t_create_trigger_001;
+drop table t_create_trigger_002;
 reset enable_set_variable_b_format;
 drop schema db_mysql cascade;
-NOTICE:  drop cascades to 4 other objects
+NOTICE:  drop cascades to 3 other objects
 DETAIL:  drop cascades to table t
-drop cascades to table t1
 drop cascades to table animals
 drop cascades to table food
 reset current_schema;

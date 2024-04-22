@@ -1607,9 +1607,9 @@ select 18446744073709551615::uint8::float4;
 (1 row)
 
 select 18446744073709551615::uint8::float8;
-        float8        
-----------------------
- 1.84467440737096e+19
+        float8         
+-----------------------
+ 1.844674407370955e+19
 (1 row)
 
 select 18446744073709551615::uint8::numeric(30);
@@ -1664,6 +1664,84 @@ select (1)::uint8::bool;
  bool 
 ------
  t
+(1 row)
+
+select cast('-1' as uint1);
+WARNING:  Cast to tinyint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
+select cast('-1' as uint2);
+WARNING:  Cast to smallint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
+select cast('-1' as uint4);
+WARNING:  Cast to int unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
+select cast('-1' as uint8);
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select cast('-1' as unsigned);
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select '-1'::uint8;
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+select cast('-128' as uint1);
+WARNING:  Cast to tinyint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 128
+(1 row)
+
+select cast('-129' as uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 128
+(1 row)
+
+select cast('255' as uint1);
+ uint1 
+-------
+ 255
+(1 row)
+
+select cast('256' as uint1);
+WARNING:  tinyint unsigned out of range
+CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
 (1 row)
 
 -- 严格模式

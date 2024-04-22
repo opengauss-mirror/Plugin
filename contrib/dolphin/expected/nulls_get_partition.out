@@ -1,0 +1,143 @@
+SET DOLPHIN.B_COMPATIBILITY_MODE TO ON;
+CREATE SCHEMA NULLS_GET_PARTITION;
+SET SEARCH_PATH TO NULLS_GET_PARTITION;
+CREATE TABLE T_CREATE_TABLE_PARTITION_002
+(
+    COL1 INT,
+    COL2 INT
+)
+    PARTITION BY RANGE (COL1) SUBPARTITION BY RANGE(COL2)
+(
+        PARTITION P0 VALUES LESS THAN (18)
+        (
+                SUBPARTITION P0_0 VALUES LESS THAN (1000),
+                SUBPARTITION P0_1 VALUES LESS THAN (2000),
+                SUBPARTITION P0_2 VALUES LESS THAN (4000)
+        ),
+        PARTITION P1 VALUES LESS THAN (35)
+        (
+                SUBPARTITION P1_0 VALUES LESS THAN (5000),
+                SUBPARTITION P1_1 VALUES LESS THAN (6000),
+                SUBPARTITION P1_2 VALUES LESS THAN (8000)
+        ),
+        PARTITION P2 VALUES LESS THAN MAXVALUE
+        (
+                SUBPARTITION P2_0 VALUES LESS THAN (10000),
+                SUBPARTITION P2_1 VALUES LESS THAN (20000),
+                SUBPARTITION P2_2 VALUES LESS THAN MAXVALUE
+        )
+);
+CREATE TABLE TABLE_LIST1
+(
+    ID  INT,
+    ID2 INT
+)
+    PARTITION BY LIST (ID) SUBPARTITION BY LIST(ID2)
+(
+    PARTITION TABLE_LIST1_P1 VALUES (1, 2, 3, 4)
+    (
+        SUBPARTITION TABLE_LIST1_P1_0 VALUES(1,2,3,4),
+        SUBPARTITION TABLE_LIST1_P1_4 VALUES(DEFAULT)
+    ),
+    PARTITION TABLE_LIST1_P2 VALUES (5, 6, 7, 8)
+    (
+        SUBPARTITION TABLE_LIST1_P2_0 VALUES(1,2,3,4),
+        SUBPARTITION TABLE_LIST1_P2_4 VALUES(DEFAULT)
+    ),
+    PARTITION TABLE_LIST1_P3 VALUES (9, 10, 11, 12)
+        (
+        SUBPARTITION TABLE_LIST1_P3_0 VALUES(1,2,3,4),
+        SUBPARTITION TABLE_LIST1_P3_4 VALUES(DEFAULT)
+    ),
+    PARTITION TABLE_LIST1_P4 VALUES (DEFAULT)
+        (
+        SUBPARTITION TABLE_LIST1_P4_0 VALUES(1,2,3,4),
+        SUBPARTITION TABLE_LIST1_P4_4 VALUES(DEFAULT)
+    )
+);
+CREATE TABLE MULTI_KEYS_LIST
+(
+    F1 INT,
+    F2 INT,
+    F3 INT
+)
+    PARTITION BY LIST (F1, F2)
+( PARTITION MULTI_KEYS_LIST_P0 VALUES ((0, NULL)),
+    PARTITION MULTI_KEYS_LIST_P1 VALUES ((15, 0)),
+    PARTITION MULTI_KEYS_LIST_P2 VALUES (DEFAULT));
+SHOW CREATE TABLE T_CREATE_TABLE_PARTITION_002;
+            Table             |                                Create Table                                 
+------------------------------+-----------------------------------------------------------------------------
+ t_create_table_partition_002 | SET search_path = nulls_get_partition;                                     +
+                              | CREATE TABLE t_create_table_partition_002 (                                +
+                              |     "COL1" integer,                                                        +
+                              |     "COL2" integer                                                         +
+                              | )                                                                          +
+                              | WITH (orientation=row, compression=no)                                     +
+                              | PARTITION BY RANGE ("COL1") SUBPARTITION BY RANGE ("COL2")                 +
+                              | (                                                                          +
+                              |     PARTITION p0 VALUES LESS THAN (18) TABLESPACE pg_default               +
+                              |     (                                                                      +
+                              |         SUBPARTITION p0_0 VALUES LESS THAN (1000) TABLESPACE pg_default,   +
+                              |         SUBPARTITION p0_1 VALUES LESS THAN (2000) TABLESPACE pg_default,   +
+                              |         SUBPARTITION p0_2 VALUES LESS THAN (4000) TABLESPACE pg_default    +
+                              |     ),                                                                     +
+                              |     PARTITION p1 VALUES LESS THAN (35) TABLESPACE pg_default               +
+                              |     (                                                                      +
+                              |         SUBPARTITION p1_0 VALUES LESS THAN (5000) TABLESPACE pg_default,   +
+                              |         SUBPARTITION p1_1 VALUES LESS THAN (6000) TABLESPACE pg_default,   +
+                              |         SUBPARTITION p1_2 VALUES LESS THAN (8000) TABLESPACE pg_default    +
+                              |     ),                                                                     +
+                              |     PARTITION p2 VALUES LESS THAN (MAXVALUE) TABLESPACE pg_default         +
+                              |     (                                                                      +
+                              |         SUBPARTITION p2_0 VALUES LESS THAN (10000) TABLESPACE pg_default,  +
+                              |         SUBPARTITION p2_1 VALUES LESS THAN (20000) TABLESPACE pg_default,  +
+                              |         SUBPARTITION p2_2 VALUES LESS THAN (MAXVALUE) TABLESPACE pg_default+
+                              |     )                                                                      +
+                              | )                                                                          +
+                              | ENABLE ROW MOVEMENT;
+(1 row)
+
+SHOW CREATE TABLE TABLE_LIST1;
+    Table    |                                 Create Table                                  
+-------------+-------------------------------------------------------------------------------
+ table_list1 | SET search_path = nulls_get_partition;                                       +
+             | CREATE TABLE table_list1 (                                                   +
+             |     "ID" integer,                                                            +
+             |     "ID2" integer                                                            +
+             | )                                                                            +
+             | WITH (orientation=row, compression=no)                                       +
+             | PARTITION BY LIST ("ID") SUBPARTITION BY LIST ("ID2")                        +
+             | (                                                                            +
+             |     PARTITION table_list1_p1 VALUES (1,2,3,4) TABLESPACE pg_default          +
+             |     (                                                                        +
+             |         SUBPARTITION table_list1_p1_0 VALUES (1,2,3,4) TABLESPACE pg_default,+
+             |         SUBPARTITION table_list1_p1_4 VALUES (DEFAULT) TABLESPACE pg_default +
+             |     ),                                                                       +
+             |     PARTITION table_list1_p2 VALUES (5,6,7,8) TABLESPACE pg_default          +
+             |     (                                                                        +
+             |         SUBPARTITION table_list1_p2_0 VALUES (1,2,3,4) TABLESPACE pg_default,+
+             |         SUBPARTITION table_list1_p2_4 VALUES (DEFAULT) TABLESPACE pg_default +
+             |     ),                                                                       +
+             |     PARTITION table_list1_p3 VALUES (9,10,11,12) TABLESPACE pg_default       +
+             |     (                                                                        +
+             |         SUBPARTITION table_list1_p3_0 VALUES (1,2,3,4) TABLESPACE pg_default,+
+             |         SUBPARTITION table_list1_p3_4 VALUES (DEFAULT) TABLESPACE pg_default +
+             |     ),                                                                       +
+             |     PARTITION table_list1_p4 VALUES (DEFAULT) TABLESPACE pg_default          +
+             |     (                                                                        +
+             |         SUBPARTITION table_list1_p4_0 VALUES (1,2,3,4) TABLESPACE pg_default,+
+             |         SUBPARTITION table_list1_p4_4 VALUES (DEFAULT) TABLESPACE pg_default +
+             |     )                                                                        +
+             | )                                                                            +
+             | ENABLE ROW MOVEMENT;
+(1 row)
+
+SHOW CREATE TABLE MULTI_KEYS_LIST;
+ERROR:  function pg_catalog.generate_subscripts(text[], bigint) does not exist
+LINE 1: ...ace, pg_catalog.unnest(boundaries) AS key_bounds, pg_catalog...
+                                                             ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+--?.*
+CONTEXT:  referenced column: bound_id
+referenced column: Create Table

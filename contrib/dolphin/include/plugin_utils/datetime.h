@@ -92,6 +92,8 @@ enum b_units
 #define LLDIV_MAX  1000000000000000000LL
 
 /* Limits for the TIME data type */
+#define TIME_MAX_INT 8385959
+#define TIME_MIN_INT -8385959
 #define TIME_MAX_VALUE (TIME_MAX_HOUR*10000 + TIME_MAX_MINUTE*100 + \
                         TIME_MAX_SECOND)
 #define TIME_MAX_VALUE_SECONDS (TIME_MAX_HOUR * 3600L + \
@@ -119,8 +121,19 @@ static const time_flags TIME_INVALID_DATES = 64; /* Allow 2000-02-31 */
 
 extern bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type, pg_tm *tm, fsec_t &fsec, int &nano,
                                 bool &warnings, bool *null_func_result, int* tzp = NULL, int* invalid_tz = NULL);
+#ifdef DOLPHIN
+extern void DateTimeParseErrorWithFlag(int dterr, const char* str, const char* datatype, int time_cast_type,
+    bool can_ignore = false, bool is_error = false);
+extern void DateTimeParseErrorInternal(int dterr, const char* str, const char* datatype, int level);
+
+bool CheckDateRange(const pg_tm *tm, bool not_zero_date, time_flags flags);
+bool CheckDatetimeRange(const pg_tm *tm, const fsec_t fsec, const int tm_type);
+
+#endif
 extern bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano);
 extern bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec, int* tzp = NULL, int* invalid_tz = NULL);
+
+extern bool IsResetUnavailableDataTime(int dterr, pg_tm tm, bool is_support_reset_unavailable_datatime = false);
 
 #define tmfsec2float(tm, fsec) ((tm)->tm_hour * 10000 + (tm)->tm_min * 100 + (tm)->tm_sec + (fsec) / 1000000.0)
 
@@ -129,7 +142,9 @@ extern bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec, int* tzp = 
 #define timestamp2int(tm) ((tm)->tm_year * 10000000000 + (tm)->tm_mon * 100000000 + (tm)->tm_mday * 1000000 + \
                            (tm)->tm_hour * 10000 + (tm)->tm_min * 100 + (tm)->tm_sec)
 
-#define DTERR_ZERO_DATE (-6)
+#define BC_STR_LEN (2)
+#define SHORT_YEAR_LEN (2)
+
 #endif
 
 #endif // !FRONTEND_PARSER

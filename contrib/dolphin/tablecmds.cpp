@@ -630,7 +630,11 @@ static void ATPrepAddColumn(List** wqueue, AlteredTableInfo* tab, Relation rel, 
     bool recursing, AlterTableCmd* cmd, LOCKMODE lockmode);
 static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relation rel, ColumnDef* colDef, bool isOid,
     bool recurse, bool recursing, bool is_first, char *after_name, LOCKMODE lockmode);
-static void check_for_column_name_collision(Relation rel, const char* colname);
+static void check_for_column_name_collision(Relation rel, const char* colname,
+#ifdef DOLPHIN
+    int2 old_att_num = InvalidAttrNumber
+#endif
+    );
 static void add_column_datatype_dependency(Oid relid, int32 attnum, Oid typid);
 static void add_column_collation_dependency(Oid relid, int32 attnum, Oid collid);
 static void ATPrepAddOids(List** wqueue, Relation rel, bool recurse, AlterTableCmd* cmd, LOCKMODE lockmode);
@@ -6016,7 +6020,11 @@ static AttrNumber  renameatt_internal(Oid myrelid, const char* oldattname, const
     }
 
     /* new name should not already exist */
-    check_for_column_name_collision(targetrelation, newattname);
+    check_for_column_name_collision(targetrelation, newattname,
+#ifdef DOLPHIN
+        attnum
+#endif
+    );
 
     /* new name should not conflict with system columns */
     if (RelationIsColStore(targetrelation) && CHCHK_PSORT_RESERVE_COLUMN(newattname)) {
@@ -12986,7 +12994,11 @@ static ObjectAddress ATExecAddColumn(List** wqueue, AlteredTableInfo* tab, Relat
  * If a new or renamed column will collide with the name of an existing
  * column, error out.
  */
-static void check_for_column_name_collision(Relation rel, const char* colname)
+static void check_for_column_name_collision(Relation rel, const char* colname,
+#ifdef DOLPHIN
+    int2 old_att_num
+#endif
+)
 {
     HeapTuple attTuple;
     int attnum;
@@ -13006,6 +13018,12 @@ static void check_for_column_name_collision(Relation rel, const char* colname)
 
     attnum = ((Form_pg_attribute)GETSTRUCT(attTuple))->attnum;
     ReleaseSysCache(attTuple);
+#ifdef DOLPHIN
+    /* allow rename current column name with a same name */
+    if (old_att_num != InvalidAttrNumber && old_att_num == attnum) {
+        return;
+    }
+#endif
 
     /*
      * We throw a different error message for conflicts with system column
@@ -33575,7 +33593,8 @@ void ExecRemovePartition(Oid relid, char* tableName)
         REINDEX_REL_PROCESS_TOAST | REINDEX_REL_SUPPRESS_INDEX_USE | REINDEX_REL_CHECK_CONSTRAINTS,
         REINDEX_ALL_INDEX, NULL, NULL))
         ereport(NOTICE, (errmsg("The table has no indexes")));
-    relation_close(rel, AccessExclusiveLock);
+    /* hold lock until transaction commit, cause we still need lock before doing RelationForgetRelation */
+    relation_close(rel, NoLock);
     RelationForgetRelation(relid);
     list_free_ext(tempTableOidList);
     list_free_ext(indexOidList);

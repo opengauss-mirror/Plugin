@@ -1,0 +1,13 @@
+create schema select_from_parens;
+set current_schema = select_from_parens;
+create table t1(a int);
+create table t2(b int);
+insert into t1 values(1);
+insert into t2 values(2);
+select * from (t1);
+select * from (t1,t2);
+select * from ((t1),(t2));
+drop table t1;
+drop table t2;
+reset current_schema;
+drop schema select_from_parens;

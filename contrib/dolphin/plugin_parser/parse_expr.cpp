@@ -59,6 +59,9 @@
 #include "utils/varbit.h"
 
 #include "plugin_parser/parse_utilcmd.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 extern Node* build_column_default(Relation rel, int attrno, bool isInsertCmd = false, bool needOnUpdate = false);
 extern Node* makeAConst(Value* v, int location);
@@ -1459,12 +1462,31 @@ static Node* transformAExprOp(ParseState* pstate, A_Expr* a)
     return result;
 }
 
+#ifdef DOLPHIN
+static void CheckUnknownConstNode(Node* node, bool can_ignore)
+{
+    if (!ENABLE_B_CMPT_MODE || node->type != T_Const || ((Const*)node)->constisnull) {
+        return;
+    }
+    Const* cons = (Const*)node;
+    double resval = 0.0;
+    char* newval = DatumGetCString(cons->constvalue);
+    char* stopstring = NULL;
+    resval = strtod(newval, &stopstring);
+    if (stopstring && !IsBlankStr(stopstring)) {
+        ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+                (errmsg("Truncated incorrect DOUBLE value: %s", newval)));
+    }
+}
+#endif
+
 static Node* transformAExprAnd(ParseState* pstate, A_Expr* a)
 {
     Node* lexpr = transformExprRecurse(pstate, a->lexpr);
     Node* rexpr = transformExprRecurse(pstate, a->rexpr);
 #ifdef DOLPHIN
     if (exprType(lexpr) == UNKNOWNOID) {
+        CheckUnknownConstNode(lexpr, pstate->p_has_ignore);
         lexpr = coerce_to_target_type(
             pstate, lexpr, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
         lexpr = coerce_to_boolean(pstate, lexpr, "AND");
@@ -1474,6 +1496,7 @@ static Node* transformAExprAnd(ParseState* pstate, A_Expr* a)
         lexpr = coerce_to_boolean(pstate, lexpr, "AND");
 #ifdef DOLPHIN
     if (exprType(rexpr) == UNKNOWNOID) {
+        CheckUnknownConstNode(rexpr, pstate->p_has_ignore);
         rexpr = coerce_to_target_type(
             pstate, rexpr, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
         rexpr = coerce_to_boolean(pstate, rexpr, "AND");
@@ -1491,6 +1514,7 @@ static Node* transformAExprOr(ParseState* pstate, A_Expr* a)
     Node* rexpr = transformExprRecurse(pstate, a->rexpr);
 #ifdef DOLPHIN
     if (exprType(lexpr) == UNKNOWNOID) {
+        CheckUnknownConstNode(lexpr, pstate->p_has_ignore);
         lexpr = coerce_to_target_type(
             pstate, lexpr, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
         lexpr = coerce_to_boolean(pstate, lexpr, "OR");
@@ -1500,6 +1524,7 @@ static Node* transformAExprOr(ParseState* pstate, A_Expr* a)
         lexpr = coerce_to_boolean(pstate, lexpr, "OR");
 #ifdef DOLPHIN
     if (exprType(rexpr) == UNKNOWNOID) {
+        CheckUnknownConstNode(rexpr, pstate->p_has_ignore);
         rexpr = coerce_to_target_type(
             pstate, rexpr, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
         rexpr = coerce_to_boolean(pstate, rexpr, "OR");
@@ -1970,7 +1995,7 @@ static Node* HandleDefaultFunction(ParseState* pstate, FuncCall* fn)
                 tempFuncName = TextDatumGetCString(adsrcVal);
                 char* firstLocation = strchr(tempFuncName, '(');
                 bool temp_result = false;
-                if (firstLocation != NULL) {
+                if (firstLocation != NULL && firstLocation - tempFuncName > 0) {
                     int funcNameLength = firstLocation - tempFuncName;
                     char* funcName = (char*)palloc0(funcNameLength + 1);
                     errno_t rc = memcpy_s(funcName, funcNameLength, tempFuncName, funcNameLength);
@@ -2053,14 +2078,13 @@ static inline bool IsSameCategory(Oid type1, Oid type2)
  *      make aexpr and do transform, return the result.
  * 2. otherwise, all arg's type is common, use logical in between_and function, just like MySQL. return NULL in this case
  */
-static Node* HandleBetweenAnd(ParseState* pstate, FuncCall* fn, List* targs)
+static Node* HandleBetweenAnd(ParseState* pstate, FuncCall* fn, List* targs, const char* funcname)
 {
     /* sanity check, between args muse be 3 */
-    if (list_length(fn->funcname) > 2 || list_length(targs) != 3) {
+    if (list_length(fn->funcname) > 3 || list_length(targs) != 3) {
         return NULL;
     }
 
-    const char* funcname = list_length(fn->funcname) == 1 ? strVal(linitial(fn->funcname)) : strVal(lsecond(fn->funcname));
     bool b_a = strcmp(funcname, "b_between_and") == 0;
     bool b_n_a = strcmp(funcname, "b_not_between_and") == 0;
     bool b_s_a = strcmp(funcname, "b_sym_between_and") == 0;
@@ -2134,6 +2158,31 @@ static Node* HandleBetweenAnd(ParseState* pstate, FuncCall* fn, List* targs)
 
     return transformExprRecurse(pstate, node);
 }
+
+void ReplaceBCmptFuncName(List* names, char* objname, char* defaultname, char* replacename)
+{
+    int length = list_length(names);
+    Assert(length <= 3);
+
+    if (strcmp(objname, defaultname) == 0) {
+        /*
+         * 1. obj
+         * 2. pkg.obj/schema.pkg/schema.obj
+         * 3. schema.pkg.obj/catalog.schema.obj
+         * 4. catalog.schema.pkg.obj
+         * Package only allowed create in A compatibility
+         */
+        if (length == 1) {
+            strVal(linitial(names)) = replacename;
+        } else if (length == 2) {
+            strVal(lsecond(names)) = replacename;
+        } else if (length == 3) {
+            strVal(lthird(names)) = replacename;
+        } else {
+            /* should not happen */
+        }
+    }
+}
 #endif
 
 static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
@@ -2143,8 +2192,12 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
     ListCell* args = NULL;
     Node* result = NULL;
 #ifdef DOLPHIN
+    char* schemaname = NULL;
+    char* objname = NULL;
+    char* pkgname = NULL;
+    DeconstructQualifiedName(fn->funcname, &schemaname, &objname, &pkgname);
     /* For DEFAULT function, while transform, replace it to the default expr for col*/
-    if (strcmp(strVal(linitial(fn->funcname)), "mode_b_default") == 0) {
+    if (strcmp(objname, "mode_b_default") == 0 && SYSTEM_SCHEMA_NAME(schemaname)) {
         return HandleDefaultFunction(pstate, fn);
     }
 #endif
@@ -2164,9 +2217,14 @@ static Node* transformFuncCall(ParseState* pstate, FuncCall* fn)
     }
 
 #ifdef DOLPHIN
-    result = HandleBetweenAnd(pstate, fn, targs);
-    if (PointerIsValid(result)) {
-        return result;
+    if (SYSTEM_SCHEMA_NAME(schemaname)) {
+        result = HandleBetweenAnd(pstate, fn, targs, objname);
+        if (PointerIsValid(result)) {
+            return result;
+        }
+        ReplaceBCmptFuncName(fn->funcname, objname, "std", "stddev_pop");
+        ReplaceBCmptFuncName(fn->funcname, objname, "stddev", "stddev_pop");
+        ReplaceBCmptFuncName(fn->funcname, objname, "variance", "var_pop");
     }
 #endif
 
@@ -4008,32 +4066,27 @@ static Node* transformCoalesceExpr(ParseState* pstate, CoalesceExpr* c)
         newe = transformExprRecurse(pstate, e);
         newargs = lappend(newargs, newe);
     }
-
+#ifdef DOLPHIN
+    newc->coalescetype = agg_result_type(newargs);
+    if (!OidIsValid(newc->coalescetype)) {
+        /* if the agg_result_type is invalid, goto original routine */
+        newc->coalescetype = select_common_type(pstate, newargs, c->isnvl ? "NVL" : "COALESCE", NULL);
+    }
+#else
     // supports implicit convert
     if (c->isnvl) {
-#ifdef DOLPHIN
-        newc->coalescetype = agg_result_type(newargs);
-        if (!OidIsValid(newc->coalescetype)) {
-            /* if the agg_result_type is invalid, goto original routine */
-            newc->coalescetype = select_common_type(pstate, newargs, "NVL", NULL);
-        }
-#else
         newc->coalescetype = select_common_type(pstate, newargs, "NVL", NULL);
-#endif
     } else {
         newc->coalescetype = select_common_type(pstate, newargs, "COALESCE", NULL);
     }
+#endif
     /* coalescecollid will be set by parse_collate.c */
 
     /* Convert arguments if necessary */
     foreach (args, newargs) {
         Node* e = (Node*)lfirst(args);
         Node* newe = NULL;
-#ifdef DOLPHIN
-        newe = coerce_to_common_type(pstate, e, newc->coalescetype, c->isnvl ? "NVL" : "COALESCE");
-#else
         newe = coerce_to_common_type(pstate, e, newc->coalescetype, "COALESCE");
-#endif
         newcoercedargs = lappend(newcoercedargs, newe);
     }
     if (pstate->p_is_flt_frame) {
@@ -4277,6 +4330,15 @@ static Node* transformBooleanTest(ParseState* pstate, BooleanTest* b)
 
     b->arg = (Expr*)transformExprRecurse(pstate, (Node*)b->arg);
 
+#ifdef DOLPHIN
+    if (exprType((Node*)b->arg) == UNKNOWNOID) {
+        CheckUnknownConstNode((Node*)b->arg, pstate->p_has_ignore);
+        b->arg = (Expr*)coerce_to_target_type(
+            pstate, (Node*)b->arg, UNKNOWNOID, TEXTOID, -1, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1);
+        b->arg = (Expr*)coerce_to_boolean(pstate, (Node*)b->arg, clausename);
+    }
+    else
+#endif
     b->arg = (Expr*)coerce_to_boolean(pstate, (Node*)b->arg, clausename);
 
     return (Node*)b;

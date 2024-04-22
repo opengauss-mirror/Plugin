@@ -228,6 +228,29 @@ Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, Node* l
         &refSynOid,
         &rettype_orig);
     name_string = NameListToString(funcname);
+
+#ifdef DOLPHIN
+    if (funcid == CONCATFUNCOID || funcid == CONCATWSFUNCOID) {
+        for (int i = 0; i < nargs; i++) {
+            /**
+             * if concat param has
+             * (
+             * bit、binary、varbinary、tinyblob、blob、mediumblob、longblob
+             * )
+             * type, changes return type to blob
+             */
+            Oid valtype = actual_arg_types[i];
+            if (valtype == BINARYOID || valtype == VARBINARYOID || valtype == BLOBOID ||
+                valtype == TINYBLOBOID || valtype == MEDIUMBLOBOID || valtype == LONGBLOBOID ||
+                valtype == BITOID) {
+                rettype = BLOBOID;
+                break;
+            }
+        }
+    } else if (funcid == ANYCOUNTOID) {
+        goto special_func;
+    }
+#endif
     if (fdresult == FUNCDETAIL_COERCION) {
         /*
          * We interpreted it as a type coercion. coerce_type can handle these
@@ -486,7 +509,9 @@ Node* ParseFuncOrColumn(ParseState* pstate, List* funcname, List* fargs, Node* l
     if (retset && pstate && pstate->p_is_flt_frame) {
         check_srf_call_placement(pstate, last_srf, location);
     }
-
+#ifdef DOLPHIN
+    special_func:
+#endif
     /* build the appropriate output structure */
     if (fdresult == FUNCDETAIL_NORMAL) {
         FuncExpr* funcexpr = makeNode(FuncExpr);
@@ -1594,6 +1619,19 @@ FuncDetailCode func_get_detail(List* funcname, List* fargs, List* fargnames, int
     if (refSynOid != NULL) {
         *refSynOid = InvalidOid;
     }
+
+#ifdef DOLPHIN
+    char* schemaname = NULL;
+    char* objname = NULL;
+    char* pkgname = NULL;
+    DeconstructQualifiedName(funcname, &schemaname, &objname, &pkgname);
+    if (nargs > 1 && SYSTEM_SCHEMA_NAME(schemaname) && strcmp(objname, "count") == 0) {
+        *funcid = ANYCOUNTOID;
+        *rettype = INT8OID;
+        *retset = false;
+        return FUNCDETAIL_AGGREGATE;
+    }
+#endif
 
 #ifndef ENABLE_MULTIPLE_NODES
     if (enable_out_param_override()) {

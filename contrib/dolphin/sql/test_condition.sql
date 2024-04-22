@@ -52,6 +52,7 @@ insert into test_bccf values(8,null,'b','asdf');
 insert into test_bccf values(7,42.3,'b','sdf');
 
 ----------------Coalesce function----------------------
+set dolphin.b_compatibility_mode to on;
 select coalesce(null, null);
 select coalesce(null, 'other');
 select coalesce('something','other');
@@ -91,8 +92,34 @@ SELECT coalesce(null,t4, 'hello') from test_bccf;
 SELECT coalesce(null,t1,t2) from test_bccf;
 SELECT coalesce(null,t2,t1) from test_bccf;
 
+select pg_typeof(coalesce(null, null));
+select pg_typeof(coalesce(null, 'other'));
+select pg_typeof(coalesce('something','other'));
+select pg_typeof(coalesce(null,321));
+select pg_typeof(coalesce(null, null,123,'321'));
+select pg_typeof(coalesce(null, null,123::int2,321::int2));
+select pg_typeof(coalesce(null, null,123::int4,321::int4));
+select pg_typeof(coalesce(null, null,123::int8,321::int8));
+select pg_typeof(coalesce(null, null,123::float4,321::float4));
+select pg_typeof(coalesce(null, null,null,123::float8,321::float8));
+select pg_typeof(coalesce(null, null,null,''::text,'hello!'::text));
+select pg_typeof(coalesce(null, null,null,'100.001'::numeric,134));
+select pg_typeof(coalesce(null, null,null,'2001-01-01 01:01:01.3654'::date,'2012-08-02 15:57:54.6365'::date));
+select pg_typeof(coalesce(null, null,null,'2001-01-01 01:01:01.3654'::timestamp,'2012-08-02 15:57:54.6365'::timestamp));
+SELECT pg_typeof(coalesce(null,1, 'k'));
+SELECT pg_typeof(coalesce(null,1, '6'));
+SELECT pg_typeof(coalesce(null,'j', ''));
+SELECT pg_typeof(coalesce(null,'j', null));
+SELECT pg_typeof(coalesce(null,'', 'k'));
+SELECT pg_typeof(coalesce(null, 'k'));
+SELECT pg_typeof(coalesce(null,t1, 12)) from test_bccf;
+SELECT pg_typeof(coalesce(null,t2, 213.4)) from test_bccf;
+SELECT pg_typeof(coalesce(null,t3, 'c')) from test_bccf;
+SELECT pg_typeof(coalesce(null,t4, 'hello')) from test_bccf;
+SELECT pg_typeof(coalesce(null,t1,t2)) from test_bccf;
+SELECT pg_typeof(coalesce(null,t2,t1)) from test_bccf;
+
 ----------------IfNULL function------------------------
-set dolphin.b_compatibility_mode to on;
 select ifnull(null, null);
 select ifnull(null, 'other');
 select ifnull('something','other');
@@ -659,6 +686,7 @@ drop table test_bccf;
 
 
 --Type Conversion Test--
+set dolphin.b_compatibility_mode to on;
 drop table if exists typeset;
 create table typeset (
 	tyint TINYINT not null,
@@ -677,21 +705,17 @@ create table typeset (
 	blb   BLOB not null,
 	txt   TEXT not null,
 	bin   binary,
-	vbin  varbinary(50)
+	vbin  varbinary(50),
+	bit   bit(64),
+	cset   set('123','124','125')
 );
 
-insert into typeset (
-tyint,smint,anint,bgint,dcmal,nmric,flt,
-bt,dt,tmstp,tm,
-ch,vch,blb,
-txt,bin,vbin
-) values (
+insert into typeset values (
 127, 127, 127, 127, 127.234, 127.32, 127.213,
 b'01111111', '2001-04-19','2001-04-19', '22:23:44',
 '2001-04-19 22:23:44', '2001-04-19 22:23:44', '1233454212',
-'2001-04-19 22:23:44', '1', '2001-04-19 22:23:44'
+'2001-04-19 22:23:44', '1', '2001-04-19 22:23:44',b'111111111','124'
 );
-
 
 select coalesce(tyint, smint) from typeset;
 select coalesce(tyint, anint) from typeset;
@@ -799,7 +823,112 @@ select coalesce(vch, blb) from typeset;
 select coalesce(vch, txt) from typeset;
 select coalesce(blb, txt) from typeset;
 
-set dolphin.b_compatibility_mode to on;
+select pg_typeof(coalesce(tyint, smint)) from typeset;
+select pg_typeof(coalesce(tyint, anint)) from typeset;
+select pg_typeof(coalesce(tyint, bgint)) from typeset;
+select pg_typeof(coalesce(tyint, dcmal)) from typeset;
+select pg_typeof(coalesce(tyint, nmric)) from typeset;
+select pg_typeof(coalesce(tyint, flt)) from typeset;
+select pg_typeof(coalesce(tyint, bt)) from typeset;
+select pg_typeof(coalesce(tyint, dt)) from typeset;
+select pg_typeof(coalesce(tyint, tmstp)) from typeset;
+select pg_typeof(coalesce(tyint, tm)) from typeset;
+select pg_typeof(coalesce(tyint, ch)) from typeset;
+select pg_typeof(coalesce(tyint, vch)) from typeset;
+select pg_typeof(coalesce(tyint, blb)) from typeset;
+select pg_typeof(coalesce(tyint, txt)) from typeset;
+select pg_typeof(coalesce(smint, anint)) from typeset;
+select pg_typeof(coalesce(smint, bgint)) from typeset;
+select pg_typeof(coalesce(smint, dcmal)) from typeset;
+select pg_typeof(coalesce(smint, nmric)) from typeset;
+select pg_typeof(coalesce(smint, flt)) from typeset;
+select pg_typeof(coalesce(smint, bt)) from typeset;
+select pg_typeof(coalesce(smint, dt)) from typeset;
+select pg_typeof(coalesce(smint, tmstp)) from typeset;
+select pg_typeof(coalesce(smint, tm)) from typeset;
+select pg_typeof(coalesce(smint, ch)) from typeset;
+select pg_typeof(coalesce(smint, vch)) from typeset;
+select pg_typeof(coalesce(smint, blb)) from typeset;
+select pg_typeof(coalesce(smint, txt)) from typeset;
+select pg_typeof(coalesce(anint, bgint)) from typeset;
+select pg_typeof(coalesce(anint, dcmal)) from typeset;
+select pg_typeof(coalesce(anint, nmric)) from typeset;
+select pg_typeof(coalesce(anint, flt)) from typeset;
+select pg_typeof(coalesce(anint, bt)) from typeset;
+select pg_typeof(coalesce(anint, dt)) from typeset;
+select pg_typeof(coalesce(anint, tmstp)) from typeset;
+select pg_typeof(coalesce(anint, tm)) from typeset;
+select pg_typeof(coalesce(anint, ch)) from typeset;
+select pg_typeof(coalesce(anint, vch)) from typeset;
+select pg_typeof(coalesce(anint, blb)) from typeset;
+select pg_typeof(coalesce(anint, txt)) from typeset;
+select pg_typeof(coalesce(bgint, dcmal)) from typeset;
+select pg_typeof(coalesce(bgint, nmric)) from typeset;
+select pg_typeof(coalesce(bgint, flt)) from typeset;
+select pg_typeof(coalesce(bgint, bt)) from typeset;
+select pg_typeof(coalesce(bgint, dt)) from typeset;
+select pg_typeof(coalesce(bgint, tmstp)) from typeset;
+select pg_typeof(coalesce(bgint, tm)) from typeset;
+select pg_typeof(coalesce(bgint, ch)) from typeset;
+select pg_typeof(coalesce(bgint, vch)) from typeset;
+select pg_typeof(coalesce(bgint, blb)) from typeset;
+select pg_typeof(coalesce(bgint, txt)) from typeset;
+select pg_typeof(coalesce(dcmal, nmric)) from typeset;
+select pg_typeof(coalesce(dcmal, flt)) from typeset;
+select pg_typeof(coalesce(dcmal, bt)) from typeset;
+select pg_typeof(coalesce(dcmal, dt)) from typeset;
+select pg_typeof(coalesce(dcmal, tmstp)) from typeset;
+select pg_typeof(coalesce(dcmal, tm)) from typeset;
+select pg_typeof(coalesce(dcmal, ch)) from typeset;
+select pg_typeof(coalesce(dcmal, vch)) from typeset;
+select pg_typeof(coalesce(dcmal, blb)) from typeset;
+select pg_typeof(coalesce(dcmal, txt)) from typeset;
+select pg_typeof(coalesce(nmric, flt)) from typeset;
+select pg_typeof(coalesce(nmric, bt)) from typeset;
+select pg_typeof(coalesce(nmric, dt)) from typeset;
+select pg_typeof(coalesce(nmric, tmstp)) from typeset;
+select pg_typeof(coalesce(nmric, tm)) from typeset;
+select pg_typeof(coalesce(nmric, ch)) from typeset;
+select pg_typeof(coalesce(nmric, vch)) from typeset;
+select pg_typeof(coalesce(nmric, blb)) from typeset;
+select pg_typeof(coalesce(nmric, txt)) from typeset;
+select pg_typeof(coalesce(flt, bt)) from typeset;
+select pg_typeof(coalesce(flt, dt)) from typeset;
+select pg_typeof(coalesce(flt, tmstp)) from typeset;
+select pg_typeof(coalesce(flt, tm)) from typeset;
+select pg_typeof(coalesce(flt, ch)) from typeset;
+select pg_typeof(coalesce(flt, vch)) from typeset;
+select pg_typeof(coalesce(flt, blb)) from typeset;
+select pg_typeof(coalesce(flt, txt)) from typeset;
+select pg_typeof(coalesce(bt, dt)) from typeset;
+select pg_typeof(coalesce(bt, tmstp)) from typeset;
+select pg_typeof(coalesce(bt, tm)) from typeset;
+select pg_typeof(coalesce(bt, ch)) from typeset;
+select pg_typeof(coalesce(bt, vch)) from typeset;
+select pg_typeof(coalesce(bt, blb)) from typeset;
+select pg_typeof(coalesce(bt, txt)) from typeset;
+select pg_typeof(coalesce(dt, tmstp)) from typeset;
+select pg_typeof(coalesce(dt, tm)) from typeset;
+select pg_typeof(coalesce(dt, ch)) from typeset;
+select pg_typeof(coalesce(dt, vch)) from typeset;
+select pg_typeof(coalesce(dt, blb)) from typeset;
+select pg_typeof(coalesce(dt, txt)) from typeset;
+select pg_typeof(coalesce(tmstp, tm)) from typeset;
+select pg_typeof(coalesce(tmstp, ch)) from typeset;
+select pg_typeof(coalesce(tmstp, vch)) from typeset;
+select pg_typeof(coalesce(tmstp, blb)) from typeset;
+select pg_typeof(coalesce(tmstp, txt)) from typeset;
+select pg_typeof(coalesce(tm, ch)) from typeset;
+select pg_typeof(coalesce(tm, vch)) from typeset;
+select pg_typeof(coalesce(tm, blb)) from typeset;
+select pg_typeof(coalesce(tm, txt)) from typeset;
+select pg_typeof(coalesce(ch, vch)) from typeset;
+select pg_typeof(coalesce(ch, blb)) from typeset;
+select pg_typeof(coalesce(ch, txt)) from typeset;
+select pg_typeof(coalesce(vch, blb)) from typeset;
+select pg_typeof(coalesce(vch, txt)) from typeset;
+select pg_typeof(coalesce(blb, txt)) from typeset;
+
 select ifnull(tyint, smint) from typeset;
 select ifnull(tyint, anint) from typeset;
 select ifnull(tyint, bgint) from typeset;
@@ -1178,7 +1307,7 @@ select interval(vch, txt) from typeset;
 select interval(blb, txt) from typeset;
 
 
-
+set dolphin.b_compatibility_mode to on; 
 select strcmp(tyint, smint) from typeset;
 select strcmp(tyint, anint) from typeset;
 select strcmp(tyint, bgint) from typeset;
@@ -1284,6 +1413,9 @@ select strcmp(ch, txt) from typeset;
 select strcmp(vch, blb) from typeset;
 select strcmp(vch, txt) from typeset;
 select strcmp(blb, txt) from typeset;
+select strcmp(tyint, cset) from typeset;
+select strcmp(tyint, bit) from typeset;
+select strcmp('123   ','123');
 
 create table t1 (a int, b bigint unsigned);
 create table t2 (c int);

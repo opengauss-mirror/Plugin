@@ -32,7 +32,10 @@
 static VarBit* bit_catenate(VarBit* arg1, VarBit* arg2);
 static VarBit* bitsubstring(VarBit* arg, int32 s, int32 l, bool length_not_specified);
 static VarBit* bit_overlay(VarBit* t1, VarBit* t2, int sp, int sl);
+#ifdef DOLPHIN
+extern int GetLeadingZeroLen(VarBit* arg);
 static int32 bit_cmp(VarBit* arg1, VarBit* arg2, int leadingZeroLen1 = -1, int leadingZeroLen2 = -1);
+#endif
 extern Datum mp_bit_length_bit(PG_FUNCTION_ARGS); 
 extern Datum mp_bit_length_text(PG_FUNCTION_ARGS);
 extern Datum mp_bit_length_bytea(PG_FUNCTION_ARGS);
@@ -747,7 +750,7 @@ Datum varbittypmodout(PG_FUNCTION_ARGS)
  */
 #ifdef DOLPHIN
 /* Get leading zero length of a varbit */
-static inline int GetLeadingZeroLen(VarBit* arg)
+int GetLeadingZeroLen(VarBit* arg)
 {
     int leadingZeroLen = 0;
     int i;
@@ -2048,11 +2051,139 @@ Datum bool_bit(PG_FUNCTION_ARGS)
     }
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_bitnot);
+extern "C" DLL_PUBLIC Datum dolphin_bitnot(PG_FUNCTION_ARGS);
+Datum dolphin_bitnot(PG_FUNCTION_ARGS)
+{
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+    PG_RETURN_UINT64(~bittobigint(arg, true));
+}
+
 PG_FUNCTION_INFO_V1_PUBLIC(mp_bit_length_binary);
 extern "C" DLL_PUBLIC Datum mp_bit_length_binary(PG_FUNCTION_ARGS);
 Datum mp_bit_length_binary(PG_FUNCTION_ARGS)
 {
     Datum input = PG_GETARG_DATUM(0);
     PG_RETURN_INT32((toast_raw_datum_size(input) - VARHDRSZ) * BITS_PER_BYTE);
+}
+
+static void cp_and_pad_left_zero(char *origin, int originLen, char *target, int targetLen)
+{
+    char *op = origin, *tp =target;
+    int offset = targetLen - originLen;
+
+    int ret = memset_s(tp, targetLen, '0', offset);
+    securec_check_c(ret, "\0", "\0");
+    tp += offset;
+    for (int i = 0; i < originLen; i++) {
+        *tp++ = *op++;
+    }
+}
+
+static void binary_str_to_char(char *str, char *result, int len)
+{
+    char *rp = result, *sp = str;
+    int zero = '0', s = 0, i, k;
+
+    for (i = 0; i < len; i++) {
+        s = 0;
+        for (k = BITS_PER_BYTE; k > 0; k--) {
+            int n = (int)(*sp++) - zero;
+            s = n == 0 ? s : s + (n << (k - 1));
+        }
+        *rp++ = (char) s;
+    }
+}
+
+/**
+ * cast bit value to charater.
+ * - if the length of bit value is not a multiple of 8, pad left 0.
+ * - do not ignore '\0'
+ */
+char* bit_to_str(VarBit *bits)
+{
+    char *result = NULL, *bitStr = NULL, *bitChars = NULL, *r = NULL;
+    bits8* sp = NULL;
+    bits8 x;
+    int i, k, len = VARBITLEN(bits), byteLen = VARBITBYTES(bits);
+
+    result = (char*)palloc0(byteLen + 1);
+    bitStr = (char*)palloc0(byteLen * BITS_PER_BYTE + 1);
+    bitChars = (char*)palloc0(len + 1);
+
+    sp = VARBITS(bits);
+
+
+    r = bitChars;
+    for (i = 0; i <= len - BITS_PER_BYTE; i += BITS_PER_BYTE, sp++) {
+        x = *sp;
+        for (k = 0; k < BITS_PER_BYTE; k++) {
+            *r++ = IS_HIGHBIT_SET(x) ? '1' : '0';
+            x <<= 1;
+        }
+    }
+    if (i < len) {
+        x = *sp;
+        for (k = i; k < len; k++) {
+            *r++ = IS_HIGHBIT_SET(x) ? '1' : '0';
+            x <<= 1;
+        }
+    }
+
+    cp_and_pad_left_zero(bitChars, len, bitStr, byteLen * BITS_PER_BYTE);
+    binary_str_to_char(bitStr, result, byteLen);
+
+    pfree(bitChars);
+    pfree(bitStr);
+
+    return result;
+}
+
+/**
+ * cast bit as char and substr.
+ * - first pad left 0 if bit length is not multi 8,
+ * - then substr like char, and don't ignore '\0'
+ * - start index from 1
+ * - length can't be negative
+ */
+VarBit* bit_substr_with_byte_align(VarBit *bits, int start, int length, bool length_not_specified)
+{
+    VarBit *result = NULL;
+    char *bitostr = NULL, *sp = NULL;
+    int i, len = length, bitlen = VARBITLEN(bits), bytelen = VARBITBYTES(bits);
+
+    if (length < 0)
+        ereport(ERROR, (errcode(ERRCODE_SUBSTRING_ERROR), errmsg("negative substring length not allowed")));
+
+    if (start > bytelen || start > VARBITMAXLEN) {
+        /* Need to return a zero-length bitstring */
+        len = VARBITTOTALLEN(0);
+        result = (VarBit*)palloc(len);
+        SET_VARSIZE(result, len);
+        VARBITLEN(result) = 0;
+        return result;
+    }
+
+    bitostr = bit_to_str(bits);
+    sp = bitostr + start - 1;
+
+    if (length_not_specified || start + length > bytelen ||
+        start + length < start  // integer overflow, substr to end
+        ) {
+        len = bytelen - start + 1;
+    }
+
+    int resultlen = len + VARHDRSZ + VARBITHDRSZ;
+    result = (VarBit*)palloc0(resultlen);
+
+
+    SET_VARSIZE(result, resultlen);
+    VARBITLEN(result) = len * BITS_PER_BYTE;
+    int ret = memcpy_s(VARBITS(result), len, sp, len);
+    securec_check(ret, "\0", "\0");
+
+    pfree_ext(bitostr);
+
+    return result;
 }
 #endif

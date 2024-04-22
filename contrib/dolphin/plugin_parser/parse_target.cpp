@@ -520,7 +520,11 @@ Expr* transformAssignedExpr(ParseState* pstate, Expr* expr, ParseExprKind exprKi
             (attrtype == BPCHAROID || attrtype == VARCHAROID) &&
             ((type_mod > 0 && attrtypmod < type_mod) || type_mod < 0);
 
+#ifdef DOLPHIN
+        if (type_is_set(attrtype) || type_is_enum(attrtype)) {
+#else
         if (type_is_set(attrtype)) {
+#endif
             Node* orig_expr = (Node*)expr;
             expr = (Expr*)coerce_to_settype(
                     pstate, orig_expr, type_id, attrtype, attrtypmod, COERCION_ASSIGNMENT, COERCE_IMPLICIT_CAST, -1, attrcollation);
@@ -1603,6 +1607,9 @@ char* FigureIndexColname(Node* node)
 static int FigureColnameInternal(Node* node, char** name)
 {
     int strength = 0;
+#ifdef DOLPHIN
+    char* funcname;
+#endif
 
     if (node == NULL) {
         return strength;
@@ -1630,6 +1637,16 @@ static int FigureColnameInternal(Node* node, char** name)
             } else {
                 *name = strVal(llast(((FuncCall*)node)->funcname));
             }
+#ifdef DOLPHIN
+            /* to make the last displayed column name as the type name instead of the function name. */
+            funcname = strVal(llast(((FuncCall*)node)->funcname));
+            if (strcmp(funcname, "time_cast") == 0 ||
+                strcmp(funcname, "date_cast") == 0 ||
+                strcmp(funcname, "timestamp_cast") == 0 ||
+                strcmp(funcname, "timestamptz_cast") == 0) {
+                return 1;
+            }
+#endif
             return 2;
         case T_A_Expr:
             /* make nullif() act like a regular function */

@@ -1,0 +1,1070 @@
+create schema test_enum_collation;
+set current_schema = 'test_enum_collation';
+-- test check duplicate enum scenes
+-- 1. column charset/collate
+drop table if exists test_enum_key1;
+NOTICE:  table "test_enum_key1" does not exist, skipping
+create table test_enum_key1(a enum('', '  '));
+ERROR:  duplicate key value violates unique constraint "pg_enum_typid_label_index"
+--?.*
+create table test_enum_key1(a enum('', '  ') collate utf8_bin);
+ERROR:  enum has duplicate key value "" = "  "
+create table test_enum_key1(a enum('a', 'a  '));
+ERROR:  duplicate key value violates unique constraint "pg_enum_typid_label_index"
+--?.*
+create table test_enum_key1(a enum('a', 'a  ') collate utf8_bin);
+ERROR:  enum has duplicate key value "a" = "a  "
+create table test_enum_key1(a enum('aaa', 'AAA  ') collate utf8_general_ci);
+ERROR:  enum has duplicate key value "aaa" = "AAA  "
+create table test_enum_key1(a enum('高斯sS', '高斯ŠŠ  ') collate utf8_general_ci);
+ERROR:  enum has duplicate key value "高斯sS" = "高斯ŠŠ  "
+create table test_enum_key1(a enum('aaa', 'aaA   ') charset 'utf8');
+create table test_enum_key1(a enum('aaa', 'aaA   ') charset 'gbk');
+ERROR:  difference between the charset and the database encoding has not supported
+create table test_enum_key1(a enum('aaa', 'aaA   ') charset 'gb18030');
+ERROR:  difference between the charset and the database encoding has not supported
+--succeed scenes
+create table t_column_collation1(a enum('a', 'b', 'A','B') collate utf8_bin);
+create table t_column_collation2(a enum('a', 'b', 'A','B') collate utf8_bin);
+create table t_column_collation3(a enum('aaa', 'bbb') charset 'utf8');
+create table t_column_collation4(a enum('a', 'b', 'A','B') collate utf8_bin);
+drop table t_column_collation1;
+drop table t_column_collation2;
+drop table t_column_collation3;
+drop table t_column_collation4;
+-- 2. table charset/collate
+create table test_enum_key1(a enum('aaa', 'aaA   ')) charset 'utf8';
+ERROR:  relation "test_enum_key1" already exists in schema "test_enum_collation"
+DETAIL:  creating new table with existing name in the same schema
+create table test_enum_key1(a enum('aaa', 'aaA   ')) collate 'utf8_general_ci';
+ERROR:  relation "test_enum_key1" already exists in schema "test_enum_collation"
+DETAIL:  creating new table with existing name in the same schema
+create table test_enum_key1(a enum('aaa', 'aaA   ')) charset 'gbk';
+ERROR:  difference between the charset and the database encoding has not supported
+create table test_enum_key1(a enum('aaa', 'aaa   ')) charset 'gbk' collate gbk_bin;
+ERROR:  difference between the charset and the database encoding has not supported
+create table test_enum_key1(a enum('aaa', 'aaA   ')) charset 'gb18030';
+ERROR:  difference between the charset and the database encoding has not supported
+create table test_enum_key1(a enum('aaa', 'aaa   ')) charset 'gb18030' collate gb18030_bin;
+ERROR:  difference between the charset and the database encoding has not supported
+--succeed scenes
+create table t_table_collation1(a enum('aaa', 'bbb')) charset 'utf8';
+create table t_table_collation2(a enum('aaa', 'aaA   ') collate 'utf8_bin')charset 'utf8';
+drop table t_table_collation1;
+drop table t_table_collation2;
+-- 3. schema charset/collate
+create schema enum_test_schema1 charset = utf8;
+set current_schema='enum_test_schema1';
+create table t(a enum('a', 'A'));  --fail
+create table t(a enum('a', 'b'));  -- succeed
+ERROR:  relation "t" already exists in schema "enum_test_schema1"
+DETAIL:  creating new table with existing name in the same schema
+alter table t add column b enum('a', 'A', 'b'); -- fail
+alter table t add column b enum('a', 'A', 'b') collate utf8_bin; --succeed
+ERROR:  column "b" of relation "t" already exists
+insert into t values('a  ', 'a  ');
+insert into t values('a  ', 'A  ');
+insert into t values('B  ', 'A  ');
+--?.*
+LINE 1: insert into t values('B  ', 'A  ');
+                             ^
+CONTEXT:  referenced column: a
+insert into t values('a  ', 'B  ');  --fail
+drop table t;
+create schema enum_test_schema2  charset = utf8mb4 collate = utf8mb4_bin;
+set current_schema='enum_test_schema2';
+create table t(a enum('a', 'A'));  -- succeed
+alter table t add column b enum('a', 'A', 'b') collate utf8_general_ci; --fail
+ERROR:  enum has duplicate key value "a" = "A"
+alter table t add column b enum('a', 'A', 'b'); -- succeed
+insert into t values ('a  ', 'b  ');
+insert into t values ('a  ', 'B  '); -- fail
+--?.*
+LINE 1: insert into t values ('a  ', 'B  ');
+                                     ^
+CONTEXT:  referenced column: b
+drop table t;
+set current_schema = 'test_enum_collation';
+drop schema enum_test_schema1;
+drop schema enum_test_schema2;
+set b_format_behavior_compat_options = 'enable_multi_charset';
+-- 1. insert value while collate like _bin
+create table test_collation1(a enum('aaa', 'AAA','高斯SS', '高斯ss') collate utf8_bin);
+insert into test_collation1 values('aaa  ');
+insert into test_collation1 values('aaa');
+insert into test_collation1 values('AAA');
+insert into test_collation1 values('AAA  ');
+insert into test_collation1 values('高斯ss   ');
+insert into test_collation1 values('高斯SS   ');
+insert into test_collation1 values('高斯sS   '); --failed
+--?.*
+LINE 1: insert into test_collation1 values('高斯sS   ');
+                                           ^
+CONTEXT:  referenced column: a
+insert into test_collation1 values('高斯ss,高斯ss   '); --failed
+--?.*
+LINE 1: insert into test_collation1 values('高斯ss,高斯ss   ');
+                                           ^
+CONTEXT:  referenced column: a
+-- 4. insert value while collate like _ci
+create table test_collation2(a enum('高斯sS', '汉字sS', 'aaa', 'bbb')) charset utf8;
+select pg_get_tabledef('test_collation2');
+                                       pg_get_tabledef                                        
+----------------------------------------------------------------------------------------------
+ SET search_path = test_enum_collation;                                                      +
+ CREATE TABLE test_collation2 (                                                              +
+     a enum('高斯sS', '汉字sS', 'aaa', 'bbb') CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci+
+ )                                                                                           +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                                       +
+ WITH (orientation=row, compression=no);
+(1 row)
+
+insert into test_collation2 values('高斯sS   ');
+insert into test_collation2 values('高斯ss,高斯ss   ');
+--?.*
+LINE 1: insert into test_collation2 values('高斯ss,高斯ss   ');
+                                           ^
+CONTEXT:  referenced column: a
+insert into test_collation2 values('高斯ŠŠ');
+insert into test_collation2 values('汉字sS   ');
+insert into test_collation2 values('汉字ss,汉字ss   ');
+--?.*
+LINE 1: insert into test_collation2 values('汉字ss,汉字ss   ');
+                                           ^
+CONTEXT:  referenced column: a
+insert into test_collation2 values('汉字ŠŠ');
+insert into test_collation2 values('aaa  ');
+insert into test_collation2 values('aaa');
+insert into test_collation2 values('AAA  ');
+-- test update with colalte
+create table test_update(a enum('a', 'A', 'b'))collate utf8_bin;
+insert into test_update values('a'),('A');
+update test_update enum a = 'b' where a = 'a';
+ERROR:  syntax error at or near "enum"
+LINE 1: update test_update enum a = 'b' where a = 'a';
+                           ^
+update test_update enum a = 'b' where a = 'a' collate utf8_general_ci;
+ERROR:  syntax error at or near "enum"
+LINE 1: update test_update enum a = 'b' where a = 'a' collate utf8_g...
+                           ^
+select * from test_update;
+ a 
+---
+ a
+ A
+(2 rows)
+
+update test_update enum a = 'a' where a = 'B' collate utf8_general_ci;
+ERROR:  syntax error at or near "enum"
+LINE 1: update test_update enum a = 'a' where a = 'B' collate utf8_g...
+                           ^
+select * from test_update;
+ a 
+---
+ a
+ A
+(2 rows)
+
+drop table test_update;
+-- test operator
+create table test_collation_op(a enum('a', 'A', 'b', 'B'), b enum('a', 'A', 'b', 'B')) collate utf8_bin;
+insert into test_collation_op values('a', 'A'),('A','a'),('b','B'),('B','b');
+-- test '='
+select a from test_collation1 where a = 'aaa';
+  a  
+-----
+ aaa
+ aaa
+(2 rows)
+
+select a from test_collation1 where a = '高斯ss' collate utf8_bin;
+   a    
+--------
+ 高斯ss
+(1 row)
+
+select a from test_collation1 where a = 'aaa' collate "utf8_general_ci"; -- enum = text
+  a  
+-----
+ aaa
+ aaa
+ AAA
+ AAA
+(4 rows)
+
+select a from test_collation1 where a = '高斯ss' collate utf8_general_ci;
+   a    
+--------
+ 高斯ss
+ 高斯SS
+(2 rows)
+
+select a from test_collation2 where a = '高斯ss';
+   a    
+--------
+ 高斯sS
+ 高斯sS
+(2 rows)
+
+select a from test_collation2 where a = '高斯ss' collate utf8_bin;
+ a 
+---
+(0 rows)
+
+select a from test_collation2 where a = 'aaa' collate "utf8_general_ci";
+  a  
+-----
+ aaa
+ aaa
+ aaa
+(3 rows)
+
+select a from test_collation1 where 'aaa' = a collate "utf8_general_ci"; -- text = enum
+  a  
+-----
+ aaa
+ aaa
+ AAA
+ AAA
+(4 rows)
+
+select
+  distinct t1.a
+from
+  test_collation_op as t1
+where t1.a = t1.b  collate "utf8_general_ci"; -- enum = enum
+ a 
+---
+(0 rows)
+
+select
+  distinct t1.a
+from
+  test_collation_op as t1
+where t1.a = t1.b;
+ a 
+---
+(0 rows)
+
+-- '<>'
+select a, b from test_collation_op where a <> b; -- enum <> other enum
+ a | b 
+---+---
+ a | A
+ A | a
+ b | B
+ B | b
+(4 rows)
+
+select a, b from test_collation_op where a <> b collate 'utf8_general_ci';
+ a | b 
+---+---
+ a | A
+ A | a
+ b | B
+ B | b
+(4 rows)
+
+select a, b from test_collation_op where a <> 'a'; -- enum <> text
+ a | b 
+---+---
+ A | a
+ b | B
+ B | b
+(3 rows)
+
+select a, b from test_collation_op where a <> 'a' collate 'utf8_general_ci';
+ a | b 
+---+---
+ b | B
+ B | b
+(2 rows)
+
+select a, b from test_collation_op where 'a' <> a;
+ a | b 
+---+---
+ A | a
+ b | B
+ B | b
+(3 rows)
+
+select a, b from test_collation_op where 'a' <> a collate 'utf8_general_ci'; -- text <> enum
+ a | b 
+---+---
+ b | B
+ B | b
+(2 rows)
+
+-- '<'
+select a, b from test_collation_op where a < b; -- enum < other enum
+ a | b 
+---+---
+ a | A
+ b | B
+(2 rows)
+
+select a from test_collation_op where a < b collate 'utf8_general_ci';
+ a 
+---
+ a
+ b
+(2 rows)
+
+select a from test_collation_op where a < 'C'; -- enum < text
+ a 
+---
+ A
+ B
+(2 rows)
+
+select a from test_collation_op where a < 'C' collate 'utf8_general_ci';
+ a 
+---
+ a
+ A
+ b
+ B
+(4 rows)
+
+select a from test_collation_op where 'B' < a;
+ a 
+---
+ a
+ b
+(2 rows)
+
+select a from test_collation_op where 'B' < a collate 'utf8_general_ci';
+ a 
+---
+(0 rows)
+
+-- '<='
+select a, b from test_collation_op where a <= b; -- enum <= other enum
+ a | b 
+---+---
+ a | A
+ b | B
+(2 rows)
+
+select a from test_collation_op where a <= b collate 'utf8_general_ci';
+ a 
+---
+ a
+ b
+(2 rows)
+
+select a from test_collation_op where a <= 'A'; -- enum <= text
+ a 
+---
+ A
+(1 row)
+
+select a from test_collation_op where a <= 'A' collate 'utf8_general_ci';
+ a 
+---
+ a
+ A
+(2 rows)
+
+select a from test_collation_op where 'B' <= a; -- text <= enum
+ a 
+---
+ a
+ b
+ B
+(3 rows)
+
+select a from test_collation_op where 'B' <= a collate 'utf8_general_ci';
+ a 
+---
+ b
+ B
+(2 rows)
+
+-- '>'
+select a, b from test_collation_op where a > b; -- enum > other enum
+ a | b 
+---+---
+ A | a
+ B | b
+(2 rows)
+
+select a from test_collation_op where a > b collate 'utf8_general_ci';
+ a 
+---
+ A
+ B
+(2 rows)
+
+select a from test_collation_op where a > 'B'; -- enum > text
+ a 
+---
+ a
+ b
+(2 rows)
+
+select a from test_collation_op where a > 'B' collate 'utf8_general_ci';
+ a 
+---
+(0 rows)
+
+select a from test_collation_op where 'C' > a;
+ a 
+---
+ A
+ B
+(2 rows)
+
+select a from test_collation_op where 'C' > a collate 'utf8_general_ci';
+ a 
+---
+ a
+ A
+ b
+ B
+(4 rows)
+
+-- '>='
+select a, b from test_collation_op where a >= b; -- enum >= other enum
+ a | b 
+---+---
+ A | a
+ B | b
+(2 rows)
+
+select a from test_collation_op where a >= b collate 'utf8_general_ci';
+ a 
+---
+ A
+ B
+(2 rows)
+
+select a from test_collation_op where a >= 'B'; -- enum >= text
+ a 
+---
+ a
+ b
+ B
+(3 rows)
+
+select a from test_collation_op where a >= 'B' collate 'utf8_general_ci';
+ a 
+---
+ b
+ B
+(2 rows)
+
+select a from test_collation_op where 'C' >= a;
+ a 
+---
+ A
+ B
+(2 rows)
+
+select a from test_collation_op where 'C' >= a collate 'utf8_general_ci';
+ a 
+---
+ a
+ A
+ b
+ B
+(4 rows)
+
+-- test order by
+select a from test_collation1 order by a;
+   a    
+--------
+ AAA
+ AAA
+ aaa
+ aaa
+ 高斯SS
+ 高斯ss
+(6 rows)
+
+select a from test_collation1 order by a collate 'utf8_general_ci';
+   a    
+--------
+ aaa
+ aaa
+ AAA
+ AAA
+ 高斯ss
+ 高斯SS
+(6 rows)
+
+select a from test_collation1 order by a collate 'utf8_bin';
+   a    
+--------
+ AAA
+ AAA
+ aaa
+ aaa
+ 高斯SS
+ 高斯ss
+(6 rows)
+
+select a from test_collation2 order by a;
+   a    
+--------
+ aaa
+ aaa
+ aaa
+ 汉字sS
+ 汉字sS
+ 高斯sS
+ 高斯sS
+(7 rows)
+
+select a from test_collation2 order by a collate 'utf8_general_ci';
+   a    
+--------
+ aaa
+ aaa
+ aaa
+ 汉字sS
+ 汉字sS
+ 高斯sS
+ 高斯sS
+(7 rows)
+
+select a from test_collation2 order by a collate 'utf8_bin';
+   a    
+--------
+ aaa
+ aaa
+ aaa
+ 汉字sS
+ 汉字sS
+ 高斯sS
+ 高斯sS
+(7 rows)
+
+-- test distinct
+select distinct a from test_collation1;
+   a    
+--------
+ 高斯SS
+ 高斯ss
+ aaa
+ AAA
+(4 rows)
+
+select distinct a collate 'utf8_bin' from test_collation1;
+   a    
+--------
+ 高斯SS
+ 高斯ss
+ aaa
+ AAA
+(4 rows)
+
+select distinct a collate 'utf8_general_ci' from test_collation1;
+   a    
+--------
+ aaa
+ 高斯ss
+(2 rows)
+
+select distinct a from test_collation2;
+   a    
+--------
+ 汉字sS
+ aaa
+ 高斯sS
+(3 rows)
+
+select distinct a collate 'utf8_bin' from test_collation2;
+   a    
+--------
+ 高斯sS
+ aaa
+ 汉字sS
+(3 rows)
+
+select distinct a collate 'utf8_general_ci' from test_collation2;
+   a    
+--------
+ 汉字sS
+ aaa
+ 高斯sS
+(3 rows)
+
+-- test alter table modify/add
+alter table test_collation2 modify a char(10) collate utf8_bin;
+select a from test_collation2 where a = '高斯ss';
+ a 
+---
+(0 rows)
+
+select a from test_collation2 where a = '高斯sS' collate utf8_bin;
+      a       
+--------------
+ 高斯sS      
+ 高斯sS      
+(2 rows)
+
+alter table test_collation2 modify a enum('高斯sS', '汉字sS', 'aaa', 'bbb');
+ERROR:  type "enum" does not exist
+select pg_get_tabledef('test_collation2');
+                      pg_get_tabledef                      
+-----------------------------------------------------------
+ SET search_path = test_enum_collation;                   +
+ CREATE TABLE test_collation2 (                           +
+     a character(10) CHARACTER SET "UTF8" COLLATE utf8_bin+
+ )                                                        +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"    +
+ WITH (orientation=row, compression=no);
+(1 row)
+
+insert into test_collation2 values('高斯ŠŠ  ');
+alter table test_collation2 add b enum('a','b', 'c');
+insert into test_collation2(b) values('A'), ('b  '), (3);
+--?ERROR:  failed to find conversion function from integer.*
+CONTEXT:  referenced column: b
+-- test unique/primary key
+create table t_collation_enum5(a enum('aaa', 'bbb') collate utf8_general_ci unique);
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t_collation_enum5_a_key" for table "t_collation_enum5"
+insert into t_collation_enum5 values('aaa');
+insert into t_collation_enum5 values('aaa  ');
+ERROR:  duplicate key value violates unique constraint "t_collation_enum5_a_key"
+DETAIL:  Key (a)=(aaa) already exists.
+insert into t_collation_enum5 values('AAA  ');
+ERROR:  duplicate key value violates unique constraint "t_collation_enum5_a_key"
+DETAIL:  Key (a)=(aaa) already exists.
+create table t_collation_enum6(a enum('aaa', 'bbb') collate utf8_general_ci primary key);
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_collation_enum6_pkey" for table "t_collation_enum6"
+insert into t_collation_enum6 values('aaa  ');
+insert into t_collation_enum6 values('aaa');
+ERROR:  duplicate key value violates unique constraint "t_collation_enum6_pkey"
+DETAIL:  Key (a)=(aaa) already exists.
+insert into t_collation_enum6 values('AAA  ');
+ERROR:  duplicate key value violates unique constraint "t_collation_enum6_pkey"
+DETAIL:  Key (a)=(aaa) already exists.
+drop table t_collation_enum5;
+drop table t_collation_enum6;
+-- test join
+create table test_join1(
+  c_char char(10),
+  c_varchar varchar(10),
+  c_nvarchar2 nvarchar2(10),
+  c_text text,
+  c_enum enum('a')
+) collate utf8_bin;
+create table test_join2(
+  c_enum enum('A')
+) collate utf8_bin;
+insert into test_join1 values('a  ', 'a  ', 'a  ', 'a  ','a  ');
+insert into test_join2 values('A');
+select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <> t1.c_char;
+   c_char   | c_enum 
+------------+--------
+ a          | A
+(1 row)
+
+select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <> t1.c_char collate 'utf8_general_ci';
+ c_char | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t1.c_char > t2.c_enum;
+   c_char   | c_enum 
+------------+--------
+ a          | A
+(1 row)
+
+select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t1.c_char > t2.c_enum collate 'utf8_general_ci';
+ c_char | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum >= t1.c_char;
+ c_char | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum >= t1.c_char collate 'utf8_general_ci';
+   c_char   | c_enum 
+------------+--------
+ a          | A
+(1 row)
+
+select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum < t1.c_char;
+   c_char   | c_enum 
+------------+--------
+ a          | A
+(1 row)
+
+select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum < t1.c_char collate 'utf8_general_ci';
+ c_char | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <= t1.c_char;
+   c_char   | c_enum 
+------------+--------
+ a          | A
+(1 row)
+
+select t1.c_char, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <= t1.c_char collate 'utf8_general_ci';
+   c_char   | c_enum 
+------------+--------
+ a          | A
+(1 row)
+
+select t1.c_varchar, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <> t1.c_varchar;
+ c_varchar | c_enum 
+-----------+--------
+ a         | A
+(1 row)
+
+select t1.c_varchar, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <> t1.c_varchar collate 'utf8_general_ci';
+ c_varchar | c_enum 
+-----------+--------
+(0 rows)
+
+select t1.c_varchar, t2.c_enum from test_join1 t1 join test_join2 t2 on t1.c_varchar > t2.c_enum;
+ c_varchar | c_enum 
+-----------+--------
+ a         | A
+(1 row)
+
+select t1.c_varchar, t2.c_enum from test_join1 t1 join test_join2 t2 on t1.c_varchar > t2.c_enum collate 'utf8_general_ci';
+ c_varchar | c_enum 
+-----------+--------
+(0 rows)
+
+select t1.c_varchar, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum >= t1.c_varchar;
+ c_varchar | c_enum 
+-----------+--------
+(0 rows)
+
+select t1.c_varchar, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum >= t1.c_varchar collate 'utf8_general_ci';
+ c_varchar | c_enum 
+-----------+--------
+ a         | A
+(1 row)
+
+select t1.c_varchar, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum < t1.c_varchar;
+ c_varchar | c_enum 
+-----------+--------
+ a         | A
+(1 row)
+
+select t1.c_varchar, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum < t1.c_varchar collate 'utf8_general_ci';
+ c_varchar | c_enum 
+-----------+--------
+(0 rows)
+
+select t1.c_varchar, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <= t1.c_varchar;
+ c_varchar | c_enum 
+-----------+--------
+ a         | A
+(1 row)
+
+select t1.c_varchar, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <= t1.c_varchar collate 'utf8_general_ci';
+ c_varchar | c_enum 
+-----------+--------
+ a         | A
+(1 row)
+
+select t1.c_nvarchar2, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <> t1.c_nvarchar2;
+ c_nvarchar2 | c_enum 
+-------------+--------
+ a           | A
+(1 row)
+
+select t1.c_nvarchar2, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <> t1.c_nvarchar2 collate 'utf8_general_ci';
+ c_nvarchar2 | c_enum 
+-------------+--------
+(0 rows)
+
+select t1.c_nvarchar2, t2.c_enum from test_join1 t1 join test_join2 t2 on t1.c_nvarchar2 > t2.c_enum;
+ c_nvarchar2 | c_enum 
+-------------+--------
+ a           | A
+(1 row)
+
+select t1.c_nvarchar2, t2.c_enum from test_join1 t1 join test_join2 t2 on t1.c_nvarchar2 > t2.c_enum collate 'utf8_general_ci';
+ c_nvarchar2 | c_enum 
+-------------+--------
+(0 rows)
+
+select t1.c_nvarchar2, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum >= t1.c_nvarchar2;
+ c_nvarchar2 | c_enum 
+-------------+--------
+(0 rows)
+
+select t1.c_nvarchar2, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum >= t1.c_nvarchar2 collate 'utf8_general_ci';
+ c_nvarchar2 | c_enum 
+-------------+--------
+ a           | A
+(1 row)
+
+select t1.c_nvarchar2, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum < t1.c_nvarchar2;
+ c_nvarchar2 | c_enum 
+-------------+--------
+ a           | A
+(1 row)
+
+select t1.c_nvarchar2, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum < t1.c_nvarchar2 collate 'utf8_general_ci';
+ c_nvarchar2 | c_enum 
+-------------+--------
+(0 rows)
+
+select t1.c_nvarchar2, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <= t1.c_nvarchar2;
+ c_nvarchar2 | c_enum 
+-------------+--------
+ a           | A
+(1 row)
+
+select t1.c_nvarchar2, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <= t1.c_nvarchar2 collate 'utf8_general_ci';
+ c_nvarchar2 | c_enum 
+-------------+--------
+ a           | A
+(1 row)
+
+select t1.c_text, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <> t1.c_text;
+ c_text | c_enum 
+--------+--------
+ a      | A
+(1 row)
+
+select t1.c_text, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <> t1.c_text collate 'utf8_general_ci';
+ c_text | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_text, t2.c_enum from test_join1 t1 join test_join2 t2 on t1.c_text > t2.c_enum;
+ c_text | c_enum 
+--------+--------
+ a      | A
+(1 row)
+
+select t1.c_text, t2.c_enum from test_join1 t1 join test_join2 t2 on t1.c_text > t2.c_enum collate 'utf8_general_ci';
+ c_text | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_text, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum >= t1.c_text;
+ c_text | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_text, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum >= t1.c_text collate 'utf8_general_ci';
+ c_text | c_enum 
+--------+--------
+ a      | A
+(1 row)
+
+select t1.c_text, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum < t1.c_text;
+ c_text | c_enum 
+--------+--------
+ a      | A
+(1 row)
+
+select t1.c_text, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum < t1.c_text collate 'utf8_general_ci';
+ c_text | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_text, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <= t1.c_text;
+ c_text | c_enum 
+--------+--------
+ a      | A
+(1 row)
+
+select t1.c_text, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <= t1.c_text collate 'utf8_general_ci';
+ c_text | c_enum 
+--------+--------
+ a      | A
+(1 row)
+
+select t1.c_enum, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum = t1.c_enum;
+ c_enum | c_enum 
+--------+--------
+ a      | A
+(1 row)
+
+select t1.c_enum, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum = t1.c_enum collate 'utf8_general_ci';
+ c_enum | c_enum 
+--------+--------
+ a      | A
+(1 row)
+
+select t1.c_enum, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <> t1.c_enum;
+ c_enum | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_enum, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <> t1.c_enum collate 'utf8_general_ci';
+ c_enum | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_enum, t2.c_enum from test_join1 t1 join test_join2 t2 on t1.c_enum > t2.c_enum;
+ c_enum | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_enum, t2.c_enum from test_join1 t1 join test_join2 t2 on t1.c_enum > t2.c_enum collate 'utf8_general_ci';
+ c_enum | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_enum, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum >= t1.c_enum;
+ c_enum | c_enum 
+--------+--------
+ a      | A
+(1 row)
+
+select t1.c_enum, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum >= t1.c_enum collate 'utf8_general_ci';
+ c_enum | c_enum 
+--------+--------
+ a      | A
+(1 row)
+
+select t1.c_enum, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum < t1.c_enum;
+ c_enum | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_enum, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum < t1.c_enum collate 'utf8_general_ci';
+ c_enum | c_enum 
+--------+--------
+(0 rows)
+
+select t1.c_enum, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <= t1.c_enum;
+ c_enum | c_enum 
+--------+--------
+ a      | A
+(1 row)
+
+select t1.c_enum, t2.c_enum from test_join1 t1 join test_join2 t2 on t2.c_enum <= t1.c_enum collate 'utf8_general_ci';
+ c_enum | c_enum 
+--------+--------
+ a      | A
+(1 row)
+
+drop table test_join1;
+drop table test_join2;
+-- test partition table with collate
+create table test_part_tab1(c1 int, c2 enum('a', 'b', 'A', 'B'))charset utf8 partition by range(c1)  --fail
+(
+    partition test_enum_tab_p1 values less than (5),
+    partition test_enum_tab_p2 values less than (10)
+);
+create table test_part_tab1(c1 int, c2 enum('a', 'b', 'A', 'B'))charset utf8 collate utf8_bin partition by range(c1)  -- success
+(
+    partition test_enum_tab_p1 values less than (5),
+    partition test_enum_tab_p2 values less than (10)
+);
+ERROR:  relation "test_part_tab1" already exists in schema "test_enum_collation"
+DETAIL:  creating new table with existing name in the same schema
+select pg_get_tabledef('test_part_tab1');
+                                 pg_get_tabledef                                 
+---------------------------------------------------------------------------------
+ SET search_path = test_enum_collation;                                         +
+ CREATE TABLE test_part_tab1 (                                                  +
+     c1 integer,                                                                +
+     c2 enum('a', 'b', 'A', 'B') CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci+
+ )                                                                              +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                          +
+ WITH (orientation=row, compression=no)                                         +
+ PARTITION BY RANGE (c1)                                                        +
+ (                                                                              +
+     PARTITION test_enum_tab_p1 VALUES LESS THAN (5) TABLESPACE pg_default,     +
+     PARTITION test_enum_tab_p2 VALUES LESS THAN (10) TABLESPACE pg_default     +
+ )                                                                              +
+ ENABLE ROW MOVEMENT;
+(1 row)
+
+insert into test_part_tab1 values(1, 'a  ');
+insert into test_part_tab1 values(6, 'A  ');
+insert into test_part_tab1 values(2, 'b  ');
+insert into test_part_tab1 values(7, 'B  ');
+create table test_part_tab2(c1 int, c2 enum('a', 'b', 'c', 'd'))charset utf8 partition by range(c1) -- success
+(
+    partition test_enum_tab_p1 values less than (5),
+    partition test_enum_tab_p2 values less than (10)
+);
+insert into test_part_tab2 values(1, 'a  ');
+insert into test_part_tab2 values(6, 'A  ');
+insert into test_part_tab2 values(2, 'b  ');
+insert into test_part_tab2 values(7, 'B  ');
+drop table test_part_tab1;
+drop table test_part_tab2;
+-- test local/global temp table with collate
+create local temp table test_temp_tab1 (c1 enum('a', 'b')) charset utf8;
+insert into test_temp_tab1 values('a  ');
+insert into test_temp_tab1 values('A  ');
+create global temp table test_temp_tab2 (c1 enum('a', 'b')) charset utf8 collate utf8_bin;
+insert into test_temp_tab2 values('a  ');
+insert into test_temp_tab2 values('A  '); --fail
+--?.*
+LINE 1: insert into test_temp_tab2 values('A  ');
+                                          ^
+CONTEXT:  referenced column: c1
+drop table test_temp_tab1;
+drop table test_temp_tab2;
+-- test ustore
+create table test_ustore1(
+  c1 enum('a', 'b', 'c', 'd'),
+  c2 enum('a', 'b','A', 'B') collate 'gbk_bin'
+) charset utf8 with (STORAGE_TYPE = ustore);
+select pg_get_tabledef('test_ustore1');
+                                 pg_get_tabledef                                  
+----------------------------------------------------------------------------------
+ SET search_path = test_enum_collation;                                          +
+ CREATE TABLE test_ustore1 (                                                     +
+     c1 enum('a', 'b', 'c', 'd') CHARACTER SET "UTF8" COLLATE utf8mb4_general_ci,+
+     c2 enum('a', 'b', 'A', 'B') CHARACTER SET "GBK" COLLATE gbk_bin             +
+ )                                                                               +
+ CHARACTER SET = "UTF8" COLLATE = "utf8mb4_general_ci"                           +
+ WITH (orientation=row, storage_type=ustore, compression=no);
+(1 row)
+
+insert into test_ustore1 values('a  ', 'a  ');
+--?.*
+--?.*
+insert into test_ustore1 values('A  ', 'A  ');
+--?.*
+--?.*
+select c2 from test_ustore1 where c2 = 'a';
+ c2 
+----
+(0 rows)
+
+select c2 from test_ustore1 where c2 = 'a' collate 'utf8_general_ci';
+--?.*
+select c2 from test_ustore1 where c2 = c1;
+ c2 
+----
+(0 rows)
+
+drop table test_ustore1;
+-- test cstore(not supported)
+create table test_cstore1(c1 enum('a', 'b', 'c', 'd') collate 'utf8_bin') with (ORIENTATION = column);
+--?.*
+-- test check constraint with collate
+create table test_check1(a enum('a', 'b', 'c') check(a >= 'b'))charset utf8;
+insert into test_check1 values('a');
+ERROR:  new row for relation "test_check1" violates check constraint "test_check1_a_check"
+DETAIL:  N/A
+insert into test_check1 values('B  ');
+insert into test_check1 values('C');
+insert into test_check1 values('c');
+drop table test_check1;
+drop schema test_enum_collation cascade;
+NOTICE:  drop cascades to 10 other objects
+--?.*
+drop cascades to table test_enum_key1
+--?.*
+drop cascades to table test_collation1
+drop cascades to table test_collation2
+--?.*
+--?.*
+drop cascades to table test_collation_op
+--?.*
+drop cascades to table test_collation2 column b
+reset current_schema;

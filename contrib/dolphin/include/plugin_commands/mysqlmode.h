@@ -20,8 +20,14 @@
 #define OPT_SQL_MODE_BLOCK_RETURN_MULTI_RESULTS (1 << 7)
 #define OPT_SQL_MODE_ATUO_RECOMPILE_FUNCTION (1 << 8)
 #define OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO (1 << 9)
-#define OPT_SQL_MODE_MAX 10
+#define OPT_SQL_MODE_TREAT_BXCONST_AS_BINARY (1<<10)
+#define OPT_SQL_MODE_MAX 11
 #define SQL_MODE_STRICT() ((GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && !CMD_TAG_IS_SELECT())
+#define SQL_MODE_STRICT_ON_SELECT() ((GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && CMD_TAG_IS_SELECT())
+#define SQL_MODE_NOT_STRICT_ON_INSERT() \
+    (!(GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && !CMD_TAG_IS_SELECT())
+#define SQL_MODE_NOT_STRICT_ON_SELECT() \
+    (!(GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT) && CMD_TAG_IS_SELECT())
 #define SQL_MODE_FULL_GROUP() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_FULL_GROUP)
 #define SQL_MODE_PIPES_AS_CONCAT() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_PIPES_AS_CONCAT)
 #define SQL_MODE_ANSI_QUOTES() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_ANSI_QUOTES)
@@ -32,6 +38,7 @@
 #define SQL_MODE_ATUO_RECOMPILE_FUNCTION() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_ATUO_RECOMPILE_FUNCTION)
 #define SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO() (GetSessionContext()->sqlModeFlags & \
     OPT_SQL_MODE_ERROR_FOR_DIVISION_BY_ZERO)
+#define SQL_MODE_TREAT_BXCONST_AS_BINARY() (GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_TREAT_BXCONST_AS_BINARY)
 
 extern int32 PgAtoiInternal(char* s, int size, int c, bool sqlModeStrict, bool can_ignore, bool isUnsigned = false);
 extern int16 PgStrtoint16Internal(const char* s, bool sqlModeStrict, bool can_ignore);
@@ -39,7 +46,8 @@ extern int32 PgStrtoint32Internal(const char* s, bool sqlModeStrict, bool can_ig
 extern uint16 PgStrtouint16Internal(const char* s, bool sqlModeStrict, bool can_ignore);
 extern uint32 PgStrtouint32Internal(const char* s, bool sqlModeStrict, bool can_ignore);
 extern bool Scanint8Internal(const char* str, bool errorOK, int64* result, bool sqlModeStrict, bool can_ignore);
-extern void CheckSpaceAndDotInternal(bool errorOK, int c, char* digitAfterDot, const char** ptr);
+extern void CheckSpaceAndDotInternal(char& digitAfterDot, const char** ptr,
+                                     bool checkDecimal = true, int endChar = '\0');
 extern uint64 pg_getmsguint64(StringInfo msg);
 extern void pg_ctoa(int8 i, char* a);
 extern int get_step_len(unsigned char ch);
@@ -51,5 +59,26 @@ extern inline void CheckErrDivByZero(bool ignore)
     }
     ereport((!ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
         (errcode(ERRCODE_DIVISION_BY_ZERO), errmsg("division by zero")));
+}
+
+extern inline void PrintErrInvalidLogarithm(bool ignore, float8 errNum)
+{
+    ereport((!ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
+        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("Invalid argument '%f' for logarithm", errNum)));
+}
+
+extern inline void PrintErrInvalidLogarithm(bool ignore, char* errNum)
+{
+    ereport((!ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
+        (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("Invalid argument '%s' for logarithm", errNum)));
+}
+
+extern inline bool IsBlankStr(char* str)
+{
+    while (isspace((unsigned char)*str)) {
+        str++;
+    }
+
+    return *str == '\0';
 }
 #endif /* MYSQLMODE_H */

@@ -22,6 +22,9 @@
 #include "utils/builtins.h"
 #include "utils/inet.h"
 #include "plugin_postgres.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 static int32 network_cmp_internal(inet* a1, inet* a2);
 static int bitncmp(const void* l, const void* r, int n);
@@ -1776,6 +1779,13 @@ Datum inetntop(PG_FUNCTION_ARGS)
     if (PG_ARGISNULL(0))
         PG_RETURN_NULL();
 
+    Oid argtypeid = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    if (!OidIsValid(argtypeid) || argtypeid == YEAROID || argtypeid == JSONOID) {
+        ereport((!fcinfo->can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
+            (errmsg("Incorrect string value for function inet6_ntoa")));
+        PG_RETURN_NULL();
+    }
+
     bytea *in = PG_GETARG_BYTEA_PP(0);
     char *ip = VARDATA_ANY(in);
     int len = VARSIZE_ANY_EXHDR(in);
@@ -1789,6 +1799,8 @@ Datum inetntop(PG_FUNCTION_ARGS)
         ntopipv6((const in6_addr *)ip, res_address);
         PG_RETURN_TEXT_P(cstring_to_text(res_address));
     }
+    ereport((!fcinfo->can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
+        (errmsg("Incorrect string value for function inet6_ntoa")));
     PG_RETURN_NULL();
 }
 

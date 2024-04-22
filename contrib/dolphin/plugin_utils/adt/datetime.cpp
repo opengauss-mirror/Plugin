@@ -43,7 +43,7 @@ static int DecodeNumberField(
 static int DecodeTime(
     const char* str, unsigned int fmask, int range, unsigned int* tmask, struct pg_tm* tm, fsec_t* fsec
 #ifdef DOLPHIN
-    , bool timeIn24 = true
+    , bool timeIn24 = true, int cur_type = IGNORE_DTF, int* type = 0
 #endif
     );
 static int DecodeTimezone(const char* str, int* tzp);
@@ -266,6 +266,34 @@ unsigned long long pow_of_10[20]=
   1000000000000000ULL, 10000000000000000ULL, 100000000000000000ULL,
   1000000000000000000ULL, 10000000000000000000ULL
 };
+
+
+#define ZERO_DAY_PROCESS_MAP_SZIE 16
+
+ZeroDayProcessMap ZeroDayProcessMaps[ZERO_DAY_PROCESS_MAP_SZIE] = 
+{
+    {DTERR_ZERO_DATE, TIME_IN, STRICT_NO_ZERO_DAY, ERROR},
+    {DTERR_ZERO_DATE, TIME_IN, STRICT_CAN_ZERO_DAY, WARNING},
+    {DTERR_ZERO_DATE, TIME_IN, NO_STRICT_NO_ZERO_DAY, WARNING},
+    {DTERR_ZERO_DATE, TIME_IN, NO_STRICT_CAN_ZERO_DAY, WARNING},
+
+    {DTERR_ZERO_DATE, TEXT_TIME_EXPLICIT, STRICT_NO_ZERO_DAY, WARNING},
+    {DTERR_ZERO_DATE, TEXT_TIME_EXPLICIT, STRICT_CAN_ZERO_DAY, WARNING},
+    {DTERR_ZERO_DATE, TEXT_TIME_EXPLICIT, NO_STRICT_NO_ZERO_DAY, WARNING},
+    {DTERR_ZERO_DATE, TEXT_TIME_EXPLICIT, NO_STRICT_CAN_ZERO_DAY, WARNING},
+
+    {DTERR_ZERO_MD, TIME_IN, STRICT_NO_ZERO_DAY, ERROR},
+    {DTERR_ZERO_MD, TIME_IN, STRICT_CAN_ZERO_DAY, ERROR},
+    {DTERR_ZERO_MD, TIME_IN, NO_STRICT_NO_ZERO_DAY, WARNING},
+    {DTERR_ZERO_MD, TIME_IN, NO_STRICT_CAN_ZERO_DAY, WARNING},
+    
+    {DTERR_ZERO_MD, TEXT_TIME_EXPLICIT, STRICT_NO_ZERO_DAY, WARNING},
+    {DTERR_ZERO_MD, TEXT_TIME_EXPLICIT, STRICT_CAN_ZERO_DAY, WARNING},
+    {DTERR_ZERO_MD, TEXT_TIME_EXPLICIT, NO_STRICT_NO_ZERO_DAY, WARNING},
+    {DTERR_ZERO_MD, TEXT_TIME_EXPLICIT, NO_STRICT_CAN_ZERO_DAY, WARNING}
+};
+
+
 #endif
 /*
  * strtoi --- just like strtol, but returns int not long
@@ -2314,15 +2342,10 @@ int ValidateTimeForBDatabase(bool timeIn24, struct pg_tm* tm, fsec_t* fsec)
         if (tm->tm_hour >= B_FORMAT_TIME_BOUND || 
                 (tm->tm_hour == B_FORMAT_TIME_BOUND - 1 && tm->tm_min == MINS_PER_HOUR - 1 && 
                 tm->tm_sec == SECS_PER_MINUTE - 1 && *fsec)) {
-            if (SQL_MODE_STRICT()) {
-                return DTERR_FIELD_OVERFLOW;
-            } else {
-                tm->tm_hour = B_FORMAT_TIME_BOUND - 1;
-                tm->tm_min = MINS_PER_HOUR - 1;
-                tm->tm_sec = SECS_PER_MINUTE - 1;
-                *fsec = 0;
-                ereport(WARNING, (errcode(DTERR_FIELD_OVERFLOW), errmsg("Truncated incorrect time value.")));
-            }
+            // we cannot throw execetion directly for some case,
+            // for eample: function call or insert on non-restrict mode
+            // so we just need to return DTERR_FIELD_OVERFLOW and let it to be handled by caller
+            return DTERR_FIELD_OVERFLOW;
         }
     }
     return 0;
@@ -2379,10 +2402,7 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
     /* check for valid month */
     if (fmask & DTK_M(MONTH)) {
 #ifdef DOLPHIN
-        if ((date_flag & ENABLE_ZERO_MONTH) || (SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
-            if (tm->tm_mon < 1 || tm->tm_mon > MONTHS_PER_YEAR)
-                return DTERR_MD_FIELD_OVERFLOW;
-        } else if (tm->tm_mon < 0 || tm->tm_mon > MONTHS_PER_YEAR)
+        if (tm->tm_mon < 0 || tm->tm_mon > MONTHS_PER_YEAR)
 #else
         if (tm->tm_mon < 1 || tm->tm_mon > MONTHS_PER_YEAR)
 #endif
@@ -2392,10 +2412,7 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
     /* minimal check for valid day */
     if (fmask & DTK_M(DAY)) {
 #ifdef DOLPHIN
-        if ((date_flag & ENABLE_ZERO_DAY) || (SQL_MODE_NO_ZERO_DATE() && SQL_MODE_STRICT())) {
-            if (tm->tm_mday < 1 || tm->tm_mday > 31)
-                return DTERR_MD_FIELD_OVERFLOW;
-        } else if(tm->tm_mday < 0 || tm->tm_mday > 31)
+        if(tm->tm_mday < 0 || tm->tm_mday > 31)
 #else
         if(tm->tm_mday < 1 || tm->tm_mday > 31)
 #endif
@@ -2405,11 +2422,16 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
 #ifdef DOLPHIN
     if ((date_flag & (ENABLE_ZERO_DAY | ENABLE_ZERO_MONTH)) == 0 && (fmask & (DTK_M(DAY) | DTK_M(MONTH) | DTK_M(YEAR)))) {
         int zero_cnt = (tm->tm_mon == 0) + (tm->tm_mday == 0) + (tm->tm_year == 0);
-        if (zero_cnt == 3 && SQL_MODE_NO_ZERO_DATE() && !SQL_MODE_STRICT()) {
+        if (zero_cnt == 3 && !SQL_MODE_NO_ZERO_DATE()) {
+            return 0;
+        }
+        
+        if (zero_cnt == 3) {
             return DTERR_ZERO_DATE;
         }
-        if (zero_cnt > 1 && zero_cnt < 3) {
-            return DTERR_FIELD_OVERFLOW;
+        
+        if (tm->tm_mon == 0 || tm->tm_mday == 0) {
+            return DTERR_ZERO_MD;
         }
     }
 #endif
@@ -2433,6 +2455,20 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
     return 0;
 }
 
+#ifdef DOLPHIN
+static double DealIntervalMicrosec(double frac, fsec_t* fsec)
+{ 
+    while (frac >= 1) {
+        frac /= 10; 
+    }
+#ifdef HAVE_INT64_TIMESTAMP
+    *fsec += rint(frac * 1000000);
+#else
+    *fsec += frac;
+#endif 
+}
+#endif
+
 /* DecodeTime()
  * Decode time string which includes delimiters.
  * Return 0 if okay, a DTERR code if not.
@@ -2446,7 +2482,7 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
 static int DecodeTime(
     const char* str, unsigned int fmask, int range, unsigned int* tmask, struct pg_tm* tm, fsec_t* fsec
 #ifdef DOLPHIN
-    , bool timeIn24
+    , bool timeIn24, int cur_type, int* type
 #endif
     )
 {
@@ -2461,33 +2497,163 @@ static int DecodeTime(
         return DTERR_FIELD_OVERFLOW;
     if (*cp != ':')
         return DTERR_BAD_FORMAT;
+#ifdef DOLPHIN
+    if (type != NULL)
+        *type = DTK_DAY;
+    if (range == (INTERVAL_MASK(YEAR)) || range == (INTERVAL_MASK(MONTH)) || range == (INTERVAL_MASK(DAY)) ||
+        range == (INTERVAL_MASK(MINUTE)) || range == (INTERVAL_MASK(SECOND)) || range == (INTERVAL_MASK(MICROSECOND)))
+        return DTERR_BAD_FORMAT;
+#endif
     errno = 0;
+#ifdef DOLPHIN
+    int min = tm->tm_min;
+#endif
     tm->tm_min = strtoi(cp + 1, &cp, 10);
     if (errno == ERANGE)
         return DTERR_FIELD_OVERFLOW;
     if (*cp == '\0') {
+#ifndef DOLPHIN
         tm->tm_sec = 0;
         *fsec = 0;
+#endif
         /* If it's a MINUTE TO SECOND interval, take 2 fields as being mm:ss */
         if (range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND))) {
             tm->tm_sec = tm->tm_min;
             tm->tm_min = tm->tm_hour;
             tm->tm_hour = tm->tm_min / MINS_PER_HOUR;
             tm->tm_min -= tm->tm_hour * MINS_PER_HOUR;
+#ifdef DOLPHIN
+            *tmask = DTK_M(MINUTE) | DTK_M(SECOND);
+            if (type != NULL)
+                *type = DTK_HOUR;
+#endif
         }
+#ifdef DOLPHIN
+        else if (range == (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH))) {
+            tm->tm_year = tm->tm_hour;
+            tm->tm_mon = tm->tm_min;
+            *tmask = DTK_M(YEAR) | DTK_M(MONTH);
+            if (type != NULL)
+                *type = DTK_YEAR;
+        }
+
+        if (cur_type == IGNORE_DTF) {
+            if (range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR))) {
+                tm->tm_mday = tm->tm_hour;
+                tm->tm_hour = tm->tm_min;
+                tm->tm_mday += tm->tm_hour / HOURS_PER_DAY;
+                tm->tm_hour -= (tm->tm_hour / HOURS_PER_DAY) * HOURS_PER_DAY;
+                tm->tm_min = 0;
+                *tmask = DTK_M(DAY) | DTK_M(HOUR);
+            } else if (range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE)) ||
+                       range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE))) {
+                *tmask = DTK_M(HOUR) | DTK_M(MINUTE);
+            } else if (range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)) ||
+                       range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
+                                 INTERVAL_MASK(SECOND))) {
+                tm->tm_sec = tm->tm_min;
+                tm->tm_min = tm->tm_hour;
+                tm->tm_hour = tm->tm_min / MINS_PER_HOUR;
+                tm->tm_min -= tm->tm_hour * MINS_PER_HOUR;
+                *tmask = DTK_M(MINUTE) | DTK_M(SECOND);
+                if (type != NULL)
+                    *type = DTK_HOUR;
+            } else if (range == (INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)) ||
+                       range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)) ||
+                       range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                                 INTERVAL_MASK(MICROSECOND)) ||
+                       range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
+                                 INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND))) {
+                tm->tm_sec = tm->tm_hour;
+                *fsec = 0;
+                DealIntervalMicrosec((double)tm->tm_min, fsec);
+                tm->tm_hour = 0;
+                tm->tm_min = 0;
+                *tmask = DTK_ALL_SECS_M;
+                if (type != NULL)
+                    *type = DTK_MINUTE;
+            }
+        } else if (cur_type == DTK_SECOND) {
+            if (range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)) ||
+                range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                          INTERVAL_MASK(MICROSECOND)) ||
+                range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                          INTERVAL_MASK(MICROSECOND))) {
+                tm->tm_sec = tm->tm_min;
+                tm->tm_min = tm->tm_hour;
+                tm->tm_hour = tm->tm_min / MINS_PER_HOUR;
+                tm->tm_min -= tm->tm_hour * MINS_PER_HOUR;
+                *tmask = DTK_M(MINUTE) | DTK_M(SECOND);
+                if (type != NULL)
+                    *type = DTK_HOUR;
+            }
+        } else if (cur_type == DTK_MINUTE) {
+            if (range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)) ||
+                range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                          INTERVAL_MASK(MICROSECOND)) ||
+                range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
+                          INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)) ||
+                range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND))) {
+                *tmask = DTK_M(HOUR) | DTK_M(MINUTE);
+            }
+        } else if (cur_type == DTK_HOUR) {
+            if (range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE)) ||
+                range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)) ||
+                range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                          INTERVAL_MASK(MICROSECOND))) {
+                tm->tm_mday = tm->tm_hour;
+                tm->tm_hour = tm->tm_min;
+                tm->tm_mday += tm->tm_hour / HOURS_PER_DAY;
+                tm->tm_hour -= (tm->tm_hour / HOURS_PER_DAY) * HOURS_PER_DAY;
+                tm->tm_min = min;
+                *tmask = DTK_M(DAY) | DTK_M(HOUR);
+            }
+        }
+#endif
     } else if (*cp == '.') {
         /* opengauss: always assume mm:ss.sss is MINUTE TO SECOND 
          * b database : always assume hh:mm:00.sss 
          */
 #ifdef DOLPHIN
-        dterr = SpecialFractionalSecond(cp, fsec, fmask);
+        if (range == (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH)) ||
+            range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR)) ||
+            range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE)) ||
+            range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)) ||
+            range == (INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)) ||
+            range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE)) ||
+            range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)) ||
+            range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)))
+            return DTERR_BAD_FORMAT;
+
+        *fsec = 0;
+        if (range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)) ||
+            range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                      INTERVAL_MASK(MICROSECOND)) ||
+            range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                      INTERVAL_MASK(MICROSECOND))) {
+            dterr = ParseFractionalSecond(cp, fsec);
+        } else
+            dterr = SpecialFractionalSecond(cp, fsec, fmask);
 #else
         dterr = ParseFractionalSecond(cp, fsec);
 #endif
         if (dterr)
             return dterr;
 #ifdef DOLPHIN
-        tm->tm_sec = 0;
+        if (range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)) ||
+            range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                      INTERVAL_MASK(MICROSECOND)) ||
+            range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                      INTERVAL_MASK(MICROSECOND))) {
+            tm->tm_sec = tm->tm_min;
+            tm->tm_min = tm->tm_hour;
+            tm->tm_hour = tm->tm_min / MINS_PER_HOUR;
+            tm->tm_min -= tm->tm_hour * MINS_PER_HOUR;
+            *tmask = DTK_M(MINUTE) | DTK_ALL_SECS_M;
+            if (type != NULL)
+                *type = DTK_HOUR;
+        } else
+            tm->tm_sec = 0;
 #else
         tm->tm_sec = tm->tm_min;
         tm->tm_min = tm->tm_hour;
@@ -2495,20 +2661,208 @@ static int DecodeTime(
         tm->tm_min -= tm->tm_hour * MINS_PER_HOUR;
 #endif
     } else if (*cp == ':') {
+#ifdef DOLPHIN
+        if (range == (INTERVAL_MASK(YEAR) | INTERVAL_MASK(MONTH)) ||
+            range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR)) ||
+            range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE)) ||
+            range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)) ||
+            range == (INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)))
+            return DTERR_BAD_FORMAT;
+#endif
         errno = 0;
+#ifdef DOLPHIN
+        int sec = tm->tm_sec;
+#endif
         tm->tm_sec = strtoi(cp + 1, &cp, 10);
         if (errno == ERANGE)
             return DTERR_FIELD_OVERFLOW;
         if (*cp == '\0')
+#ifdef DOLPHIN
+        {
+            if (range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE))) {
+                tm->tm_mday = tm->tm_hour;
+                tm->tm_hour = tm->tm_min;
+                tm->tm_min = tm->tm_sec;
+                tm->tm_hour += tm->tm_min / MINS_PER_HOUR;
+                tm->tm_min -= (tm->tm_min / MINS_PER_HOUR) * MINS_PER_HOUR;
+                tm->tm_mday += tm->tm_hour / HOURS_PER_DAY;
+                tm->tm_hour -= (tm->tm_hour / HOURS_PER_DAY) * HOURS_PER_DAY;
+                tm->tm_sec = 0;
+                *tmask = DTK_M(DAY) | DTK_M(HOUR) | DTK_M(MINUTE);
+            } else if (range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND))) {
+                *tmask = DTK_M(HOUR) | DTK_M(MINUTE) | DTK_M(SECOND);
+            } else if (range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND))) {
+                *fsec = 0;
+                DealIntervalMicrosec((double)tm->tm_sec, fsec);
+                tm->tm_sec = tm->tm_min;
+                tm->tm_min = tm->tm_hour;
+                tm->tm_hour = tm->tm_min / MINS_PER_HOUR;
+                tm->tm_min -= tm->tm_hour * MINS_PER_HOUR;
+                *tmask = DTK_M(MINUTE) | DTK_ALL_SECS_M;
+            } else if (range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
+                                 INTERVAL_MASK(SECOND))) {
+                if (cur_type == DTK_MINUTE) {
+                    tm->tm_mday = tm->tm_hour;
+                    tm->tm_hour = tm->tm_min;
+                    tm->tm_min = tm->tm_sec;
+                    tm->tm_sec = sec;
+                    tm->tm_hour += tm->tm_min / MINS_PER_HOUR;
+                    tm->tm_min -= (tm->tm_min / MINS_PER_HOUR) * MINS_PER_HOUR;
+                    tm->tm_mday += tm->tm_hour / HOURS_PER_DAY;
+                    tm->tm_hour -= (tm->tm_hour / HOURS_PER_DAY) * HOURS_PER_DAY;
+                    *tmask = DTK_M(DAY) | DTK_M(HOUR) | DTK_M(MINUTE);
+                } else {
+                    *tmask = DTK_M(HOUR) | DTK_M(MINUTE) | DTK_M(SECOND);
+                }
+            } else if (range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                                 INTERVAL_MASK(MICROSECOND))) {
+                if (cur_type == IGNORE_DTF) {
+                    *fsec = 0;
+                    DealIntervalMicrosec((double)tm->tm_sec, fsec);
+                    tm->tm_sec = tm->tm_min;
+                    tm->tm_min = tm->tm_hour;
+                    tm->tm_hour = tm->tm_min / MINS_PER_HOUR;
+                    tm->tm_min -= tm->tm_hour * MINS_PER_HOUR;
+                    *tmask = DTK_M(MINUTE) | DTK_ALL_SECS_M;
+                    if (type != NULL)
+                        *type = DTK_HOUR;
+                } else {
+                    *tmask = DTK_M(HOUR) | DTK_M(MINUTE) | DTK_M(SECOND);
+                }
+            } else if (range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
+                                 INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND))) {
+                if (cur_type == IGNORE_DTF) {
+                    *fsec = 0;
+                    DealIntervalMicrosec((double)tm->tm_sec, fsec);
+                    tm->tm_sec = tm->tm_min;
+                    tm->tm_min = tm->tm_hour;
+                    tm->tm_hour = tm->tm_min / MINS_PER_HOUR;
+                    tm->tm_min -= tm->tm_hour * MINS_PER_HOUR;
+                    *tmask = DTK_M(MINUTE) | DTK_ALL_SECS_M;
+                    if (type != NULL)
+                        *type = DTK_HOUR;
+                } else if (cur_type == DTK_SECOND) {
+                    *tmask = DTK_M(HOUR) | DTK_M(MINUTE) | DTK_M(SECOND);
+                } else {
+                    tm->tm_mday = tm->tm_hour;
+                    tm->tm_hour = tm->tm_min;
+                    tm->tm_min = tm->tm_sec;
+                    tm->tm_sec = sec;
+                    tm->tm_hour += tm->tm_min / MINS_PER_HOUR;
+                    tm->tm_min -= (tm->tm_min / MINS_PER_HOUR) * MINS_PER_HOUR;
+                    tm->tm_mday += tm->tm_hour / HOURS_PER_DAY;
+                    tm->tm_hour -= (tm->tm_hour / HOURS_PER_DAY) * HOURS_PER_DAY;
+                    *tmask = DTK_M(DAY) | DTK_M(HOUR) | DTK_M(MINUTE);
+                }
+            }
+        }
+#else
             *fsec = 0;
+#endif
         else if (*cp == '.') {
 #ifdef DOLPHIN
-            dterr = SpecialFractionalSecond(cp, fsec, fmask);
+            if (range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE)) ||
+                range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)) ||
+                range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)) ||
+                range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)))
+                return DTERR_BAD_FORMAT;
+            
+            *fsec = 0;
+            if (range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                          INTERVAL_MASK(MICROSECOND)) ||
+                range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                          INTERVAL_MASK(MICROSECOND)))
+                dterr = ParseFractionalSecond(cp, fsec);
+            else
+                dterr = SpecialFractionalSecond(cp, fsec, fmask);
 #else
             dterr = ParseFractionalSecond(cp, fsec);
 #endif
             if (dterr)
                 return dterr;
+#ifdef DOLPHIN
+        } else if (*cp == ':') {
+            if (range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE)) ||
+                range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND)) ||
+                range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)))
+                return DTERR_BAD_FORMAT;
+
+            errno = 0;
+            int num = strtoi(cp + 1, &cp, 10);
+            if (errno == ERANGE)
+                return DTERR_FIELD_OVERFLOW;
+            if (*cp == '\0') {
+                if (range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                              INTERVAL_MASK(MICROSECOND))) {
+                    *fsec = 0;
+                    DealIntervalMicrosec(double(num), fsec);
+                } else if (range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
+                                     INTERVAL_MASK(SECOND))) {
+                    tm->tm_mday = tm->tm_hour;
+                    tm->tm_hour = tm->tm_min;
+                    tm->tm_min = tm->tm_sec;
+                    tm->tm_sec = num;
+                    tm->tm_hour += tm->tm_min / MINS_PER_HOUR;
+                    tm->tm_min -= (tm->tm_min / MINS_PER_HOUR) * MINS_PER_HOUR;
+                    tm->tm_mday += tm->tm_hour / HOURS_PER_DAY;
+                    tm->tm_hour -= (tm->tm_hour / HOURS_PER_DAY) * HOURS_PER_DAY;
+                    *tmask = DTK_M(DAY) | DTK_M(HOUR) | DTK_M(MINUTE) | DTK_M(SECOND);
+                } else if (range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
+                                     INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND))) {
+                    if (cur_type == IGNORE_DTF) {
+                        *fsec = 0;
+                        DealIntervalMicrosec(double(num), fsec);
+                    } else {
+                        tm->tm_mday = tm->tm_hour;
+                        tm->tm_hour = tm->tm_min;
+                        tm->tm_min = tm->tm_sec;
+                        tm->tm_sec = num;
+                        tm->tm_hour += tm->tm_min / MINS_PER_HOUR;
+                        tm->tm_min -= (tm->tm_min / MINS_PER_HOUR) * MINS_PER_HOUR;
+                        tm->tm_mday += tm->tm_hour / HOURS_PER_DAY;
+                        tm->tm_hour -= (tm->tm_hour / HOURS_PER_DAY) * HOURS_PER_DAY;
+                        *tmask = DTK_M(DAY) | DTK_M(HOUR) | DTK_M(MINUTE) | DTK_M(SECOND);
+                    }
+                }
+            } else if (*cp == '.') {
+                if (range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                              INTERVAL_MASK(MICROSECOND)) ||
+                    range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
+                              INTERVAL_MASK(SECOND)))
+                    return DTERR_BAD_FORMAT;
+
+                dterr = ParseFractionalSecond(cp, fsec);
+                if (dterr)
+                    return dterr;
+                *tmask = DTK_M(DAY) | DTK_TIME_M;
+            } else if (*cp == ':') {
+                if (range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                              INTERVAL_MASK(MICROSECOND)) ||
+                    range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
+                              INTERVAL_MASK(SECOND)))
+                    return DTERR_BAD_FORMAT;
+
+                errno = 0;
+                int frac = strtoi(cp + 1, &cp, 10);
+                if (errno == ERANGE)
+                    return DTERR_FIELD_OVERFLOW;
+                if (*cp == '\0') {
+                    tm->tm_mday = tm->tm_hour;
+                    tm->tm_hour = tm->tm_min;
+                    tm->tm_min = tm->tm_sec;
+                    tm->tm_sec = num;
+                    tm->tm_hour += tm->tm_min / MINS_PER_HOUR;
+                    tm->tm_min -= (tm->tm_min / MINS_PER_HOUR) * MINS_PER_HOUR;
+                    tm->tm_mday += tm->tm_hour / HOURS_PER_DAY;
+                    tm->tm_hour -= (tm->tm_hour / HOURS_PER_DAY) * HOURS_PER_DAY;
+                    *fsec = 0;
+                    DealIntervalMicrosec(double(frac), fsec);
+                    *tmask = DTK_M(DAY) | DTK_TIME_M;
+                } else
+                    return DTERR_BAD_FORMAT;
+            } else
+                return DTERR_BAD_FORMAT;
+#endif
         } else
             return DTERR_BAD_FORMAT;
     } else
@@ -2928,10 +3282,16 @@ int DecodeInterval(char** field, const int* ftype, int nf, int range, int* dtype
     for (i = nf - 1; i >= 0; i--) {
         switch (ftype[i]) {
             case DTK_TIME:
+#ifdef DOLPHIN
+                dterr = DecodeTime(field[i], fmask, range, &tmask, tm, fsec, false, type, &type);
+#else
                 dterr = DecodeTime(field[i], fmask, range, &tmask, tm, fsec);
+#endif
                 if (dterr)
                     return dterr;
+#ifndef DOLPHIN
                 type = DTK_DAY;
+#endif
                 break;
 
             case DTK_TZ:
@@ -3002,6 +3362,25 @@ int DecodeInterval(char** field, const int* ftype, int nf, int range, int* dtype
                         case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND):
                             type = DTK_SECOND;
                             break;
+#ifdef DOLPHIN
+                        case INTERVAL_MASK(MICROSECOND):
+                            type = DTK_MICROSEC;
+                            break;
+                        case INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND):
+                        case INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND):
+                        case INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                             INTERVAL_MASK(MICROSECOND):
+                        case INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
+                             INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND):
+                            if (strchr(field[i], '.'))
+                                type = DTK_SECOND;
+                            else
+                                type = DTK_MICROSEC;
+                            break;
+                        case INTERVAL_MASK(WEEK):
+                            type = DTK_WEEK;
+                            break;
+#endif
                         default:
                             type = DTK_DAY;
                             break;
@@ -3044,12 +3423,28 @@ int DecodeInterval(char** field, const int* ftype, int nf, int range, int* dtype
 
                 switch (type) {
                     case DTK_MICROSEC:
+#ifdef DOLPHIN
+                        if (range == (INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)) ||
+                            range == (INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND)) ||
+                            range == (INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) | INTERVAL_MASK(SECOND) |
+                                      INTERVAL_MASK(MICROSECOND)) ||
+                            range == (INTERVAL_MASK(DAY) | INTERVAL_MASK(HOUR) | INTERVAL_MASK(MINUTE) |
+                                      INTERVAL_MASK(SECOND) | INTERVAL_MASK(MICROSECOND))) {
+                            DealIntervalMicrosec(val + fval, fsec);
+                        } else {
+#endif
 #ifdef HAVE_INT64_TIMESTAMP
                         *fsec += rint(val + fval);
 #else
                         *fsec += (val + fval) * 1e-6;
 #endif
+#ifdef DOLPHIN
+                        }
+#endif
                         tmask = DTK_M(MICROSECOND);
+#ifdef DOLPHIN
+                        type = DTK_SECOND;
+#endif
                         break;
 
                     case DTK_MILLISEC:
@@ -3080,12 +3475,18 @@ int DecodeInterval(char** field, const int* ftype, int nf, int range, int* dtype
                             tmask = DTK_M(SECOND);
                         else
                             tmask = DTK_ALL_SECS_M;
+#ifdef DOLPHIN
+                        type = DTK_MINUTE;
+#endif
                         break;
 
                     case DTK_MINUTE:
                         tm->tm_min += val;
                         AdjustFractSeconds(fval, tm, fsec, SECS_PER_MINUTE);
                         tmask = DTK_M(MINUTE);
+#ifdef DOLPHIN
+                        type = DTK_HOUR;
+#endif
                         break;
 
                     case DTK_HOUR:
@@ -3111,6 +3512,9 @@ int DecodeInterval(char** field, const int* ftype, int nf, int range, int* dtype
                         tm->tm_mon += val;
                         AdjustFractDays(fval, tm, fsec, DAYS_PER_MONTH);
                         tmask = DTK_M(MONTH);
+#ifdef DOLPHIN
+                        type = DTK_YEAR;
+#endif
                         break;
 
                     case DTK_YEAR:
@@ -3554,6 +3958,46 @@ int DecodeUnits(int field, const char* lowtoken, int* val)
 void DateTimeParseError(int dterr, const char* str, const char* datatype, bool can_ignore)
 {
     int level = can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;
+#ifdef DOLPHIN
+    DateTimeParseErrorInternal(dterr, str, datatype, level);
+}
+
+inline ZERO_DATE_MODE get_zero_date_mode() {
+    if (SQL_MODE_STRICT() && SQL_MODE_NO_ZERO_DATE()) {
+        return STRICT_NO_ZERO_DAY;
+    } else if (SQL_MODE_STRICT() && !SQL_MODE_NO_ZERO_DATE()) {
+        return STRICT_CAN_ZERO_DAY;
+    } else if (!SQL_MODE_STRICT() && SQL_MODE_NO_ZERO_DATE()) {
+        return NO_STRICT_NO_ZERO_DAY;
+    } else {
+        return NO_STRICT_CAN_ZERO_DAY;
+    }
+}
+
+
+void DateTimeParseErrorWithFlag(int dterr, const char* str, const char* datatype, int time_cast_type, bool can_ignore,
+    bool is_error)
+{
+    int level = !is_error && (can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
+    if (!can_ignore) {
+        ZERO_DATE_MODE zero_date_mode = get_zero_date_mode();
+        for (int i = 0; i < ZERO_DAY_PROCESS_MAP_SZIE; i++) {
+            ZeroDayProcessMap zero_day_process_map = ZeroDayProcessMaps[i];
+            if (zero_day_process_map.dterr == dterr &&
+                zero_day_process_map.zero_date_mode == zero_date_mode &&
+                zero_day_process_map.time_cast_type == time_cast_type) {
+                    level = zero_day_process_map.level;
+                    break;
+                }
+        }
+    }
+    
+    DateTimeParseErrorInternal(dterr, str, datatype, level);
+}
+
+void DateTimeParseErrorInternal(int dterr, const char* str, const char* datatype, int level)
+{
+#endif
     switch (dterr) {
         case DTERR_FIELD_OVERFLOW:
             ereport(level,
@@ -3575,10 +4019,16 @@ void DateTimeParseError(int dterr, const char* str, const char* datatype, bool c
                 (errcode(ERRCODE_INVALID_TIME_ZONE_DISPLACEMENT_VALUE),
                     errmsg("time zone displacement out of range: \"%s\"", str)));
             break;
+#ifdef DOLPHIN
         case DTERR_ZERO_DATE:
-            ereport(WARNING,
+            ereport(level,
                 (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field value out of range: \"%s\"", str)));
             break;
+        case DTERR_ZERO_MD:
+            ereport(level,
+                (errcode(ERRCODE_DATETIME_FIELD_OVERFLOW), errmsg("date/time field value out of range: \"%s\"", str)));
+            break;
+#endif
         case DTERR_BAD_FORMAT:
         default:
             ereport(level,
@@ -3586,6 +4036,44 @@ void DateTimeParseError(int dterr, const char* str, const char* datatype, bool c
                     errmsg("invalid input syntax for type %s: \"%s\"", datatype, str)));
             break;
     }
+}
+
+/*
+ * check if the the time oveflow.
+ *
+ * return values: true: overflow, false : normal time
+ */
+bool IsTimeOverFlow(pg_tm tm)
+{
+    return tm.tm_min > TIME_MAX_MINUTE || tm.tm_sec > TIME_MAX_SECOND;
+}
+
+/*
+ * ignore the error on unstrict mode.
+ *
+ * return values: need to reset the time value or not
+ */
+bool IsResetUnavailableDataTime(int dterr, pg_tm tm, bool is_support_reset_unavailable_datatime)
+{
+    switch (dterr) {
+        case DTERR_FIELD_OVERFLOW:
+            return is_support_reset_unavailable_datatime;
+        case DTERR_MD_FIELD_OVERFLOW:
+            break;
+        case DTERR_INTERVAL_OVERFLOW:
+            break;
+        case DTERR_TZDISP_OVERFLOW:
+            break;
+        case DTERR_ZERO_DATE:
+            break;
+        case DTERR_BAD_FORMAT:
+            /* some case overflow will be parserd as bad format error,
+               such as insert into xx as select 32769 */
+            return is_support_reset_unavailable_datatime && IsTimeOverFlow(tm);
+        default:
+            break;
+    }
+    return false;
 }
 
 /* datebsearch()
@@ -4691,7 +5179,11 @@ Interval *char_to_interval(char *str, int32 typmod, bool can_ignore) {
     tm->tm_sec = 0;
 
     if (typmod >= 0)
+#ifdef DOLPHIN
+        range = (typmod == INTERVAL_MASK(WEEK)) ? typmod : INTERVAL_RANGE(typmod);
+#else
         range = INTERVAL_RANGE(typmod);
+#endif
 
     dterr = ParseDateTime(str, workbuf, sizeof(workbuf), field, ftype, MAXDATEFIELDS, &nf);
     if (dterr == 0)
@@ -5119,6 +5611,31 @@ bool CheckDatetimeRange(const pg_tm *tm, const fsec_t fsec, const int tm_type)
 }
 
 /**
+ *  extract if bc or ad date in datetime
+ */
+inline char* extract_datetime_bcinfo(char* str, bool* is_bc)
+{
+    while (*str && isspace(*str)) str++;
+    *is_bc = false;
+    const char* extra_info = pg_strtolower(str);
+    size_t length = strlen(extra_info);
+    if (length < BC_STR_LEN) {
+        return str;
+    }
+    if (extra_info[0] == 'b' && extra_info[1] == 'c')
+    {
+        *is_bc = true;
+        str += BC_STR_LEN;
+    }
+    else if (extra_info[0] == 'a' && extra_info[1] == 'd')
+    {
+        str += BC_STR_LEN;
+    }
+    return str;
+}
+
+
+/**
   @brief Convert a timestamp string to a PG_TIME value.
 
   @param[in] str String to parse
@@ -5304,6 +5821,9 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type, pg_tm
 
     str = last_field_pos;
 
+    bool is_bc = false;
+    str = extract_datetime_bcinfo((char*)str, &is_bc);
+
     number_of_fields = i - start_loop;
     while (i < MAX_DATE_PARTS) {
         date_len[i] = 0;
@@ -5347,8 +5867,15 @@ bool cstring_to_datetime(const char* str,  time_flags flags, int &tm_type, pg_tm
         fractional_digits = date_len[6];
     }
 
-    if (year_length == 2 && not_zero_date) {
+    if (year_length == SHORT_YEAR_LEN && not_zero_date && !is_bc) {
         tm->tm_year += (tm->tm_year < YY_PART_YEAR ? 2000 : 1900);
+    }
+
+    if (is_bc) {
+        if (tm->tm_year <= 0) {
+            goto ERROR_STRING_DATETIME;
+        }
+        tm->tm_year = -(tm->tm_year - 1);
     }
 
     /*

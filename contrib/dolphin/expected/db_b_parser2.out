@@ -176,7 +176,7 @@ select second('373839');
 (1 row)
 
 select second('2022-10-09');
-WARNING:  invalid input syntax for type time: "2022-10-09"
+WARNING:  Truncated incorrect time value: "2022-10-09"
 CONTEXT:  referenced column: second
  second 
 --------
@@ -220,7 +220,7 @@ select minute('373839');
 (1 row)
 
 select minute('2022-10-09');
-WARNING:  invalid input syntax for type time: "2022-10-09"
+WARNING:  Truncated incorrect time value: "2022-10-09"
 CONTEXT:  referenced column: minute
  minute 
 --------
@@ -264,7 +264,7 @@ select microsecond('373839');
 (1 row)
 
 select microsecond('2022-10-09');
-WARNING:  invalid input syntax for type time: "2022-10-09"
+WARNING:  Truncated incorrect time value: "2022-10-09"
 CONTEXT:  referenced column: microsecond
  microsecond 
 -------------
@@ -308,7 +308,7 @@ select hour('373839');
 (1 row)
 
 select hour('2022-10-09');
-WARNING:  invalid input syntax for type time: "2022-10-09"
+WARNING:  Truncated incorrect time value: "2022-10-09"
 CONTEXT:  referenced column: hour
  hour 
 ------
@@ -349,6 +349,50 @@ SELECT weekofyear(20221009);
  weekofyear 
 ------------
          40
+(1 row)
+
+SELECT dayofmonth('');
+WARNING:  Incorrect datetime value: ""
+CONTEXT:  referenced column: dayofmonth
+ dayofmonth 
+------------
+           
+(1 row)
+
+SELECT day('');
+WARNING:  Incorrect datetime value: ""
+CONTEXT:  referenced column: day
+ day 
+-----
+    
+(1 row)
+
+SELECT dayofmonth(true);
+WARNING:  Incorrect datetime value: "1"
+CONTEXT:  referenced column: dayofmonth
+ dayofmonth 
+------------
+           
+(1 row)
+
+SELECT day(true);
+WARNING:  Incorrect datetime value: "1"
+CONTEXT:  referenced column: day
+ day 
+-----
+    
+(1 row)
+
+SELECT dayofmonth(false);
+ dayofmonth 
+------------
+          0
+(1 row)
+
+SELECT day(false);
+ day 
+-----
+   0
 (1 row)
 
 select year('');
@@ -645,6 +689,23 @@ select length(''),length(' '),length(NULL);
       0 |      1 |       
 (1 row)
 
+set dolphin.sql_mode='treat_bxconst_as_binary';
+create table t_binary(a binary, b varbinary(10), c binary(10));
+insert into t_binary values(null,null,null);
+insert into t_binary values(b'1',b'111',b'111');
+insert into t_binary values(b'1',b'11111',b'111');
+insert into t_binary values(b'1',b'111111111',b'111');
+select *,length(a),length(b),length(c) from t_binary order by 1,2,3;
+  a   |   b    |           c            | length | length | length 
+------+--------+------------------------+--------+--------+--------
+ \x01 | \x01ff | \x07000000000000000000 |      1 |      2 |     10
+ \x01 | \x07   | \x07000000000000000000 |      1 |      1 |     10
+ \x01 | \x1f   | \x07000000000000000000 |      1 |      1 |     10
+      |        |                        |        |        |       
+(4 rows)
+
+drop table t_binary;
+reset dolphin.sql_mode;
 create table fchar_test(fchar char(10));
 insert into fchar_test values('零一二三四五六七八九');
 insert into fchar_test values('零一二三四五六七八九0');
@@ -656,7 +717,7 @@ CONTEXT:  referenced column: fchar
 select fchar,length(fchar) from fchar_test order by 1,2;
         fchar         | length 
 ----------------------+--------
- 零一二三四五六七八九 |     10
+ 零一二三四五六七八九 |     30
 (1 row)
 
 drop table fchar_test;

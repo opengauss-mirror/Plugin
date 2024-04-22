@@ -18,6 +18,7 @@
 
 #include <limits.h>
 #include <stdlib.h>
+#include <cinttypes>
 #include <cstring>
 #include <cmath>
 
@@ -31,6 +32,7 @@
 #include "libpq/pqformat.h"
 #include "miscadmin.h"
 #include "plugin_parser/scansup.h"
+#include "plugin_parser/parse_type.h"
 #include "port/pg_bswap.h"
 #include "regex/regex.h"
 #include "utils/builtins.h"
@@ -54,6 +56,12 @@
 #include "workload/cpwlm.h"
 #include "utils/varbit.h"
 #include "plugin_commands/mysqlmode.h"
+#include "utils/varbit.h"
+#include "plugin_utils/timestamp.h"
+#include "plugin_utils/date.h"
+#include "libpq/libpq-int.h"
+#include "plugin_utils/varlena.h"
+#include "catalog/pg_cast.h"
 
 #define BETWEEN_AND_ARGC 3
 #define SUBSTR_WITH_LEN_OFFSET 2
@@ -76,6 +84,11 @@
 #define MAX_CHARA_REMINDERS_LEN 10
 #define CONV_MAX_CHAR_LEN 65 //max 64bit and 1 sign bit
 #define MYSQL_SUPPORT_MINUS_MAX_LENGTH 65
+#define MAXBI64LEN 25
+#define BINARY_LEN(len) ((len - 2) / 2)
+
+static TimestampTz temporal_to_timestamptz(Oid type, int index, PG_FUNCTION_ARGS);
+static bool is_type_with_date(Oid type);
 #endif
 static int getResultPostionReverse(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
 static int getResultPostion(text* textStr, text* textStrToSearch, int32 beginIndex, int occurTimes);
@@ -177,8 +190,15 @@ static text* get_result_of_concat(text* result, FunctionCallInfo fcinfo);
 static void check_blob_size(Datum blob, int64 max_size);
 static int32 anybinary_typmodin(ArrayType* ta, const char* typname, uint32 max);
 static char* anybinary_typmodout(int32 typmod);
-static Datum copy_binary(Datum source, int typmod, bool target_is_var);
+static Datum copy_binary(Datum source, int typmod, bool target_is_var, bool can_ignore);
 static bytea* copy_blob(bytea* source, int64 max_size);
+static CmpType get_cmp_type(CmpType a, CmpType b);
+static bool is_unsigned_intType(Oid oid);
+static uint64 parse_unsigned_val(Oid typeoid, char* str_val);
+static CmpType agg_cmp_type(FunctionCallInfo fcinfo, int argc);
+static bytea* binary_type_and(PG_FUNCTION_ARGS);
+static uint64 bit_and_text_uint8(const char* s, uint64 max, int64 min, const char* typname);
+static char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError = nullptr);
 
 PG_FUNCTION_INFO_V1_PUBLIC(binary_typmodin);
 extern "C" DLL_PUBLIC Datum binary_typmodin(PG_FUNCTION_ARGS);
@@ -344,6 +364,10 @@ extern "C" DLL_PUBLIC Datum ord_text(PG_FUNCTION_ARGS);
 
 PG_FUNCTION_INFO_V1_PUBLIC(ord_numeric);
 extern "C" DLL_PUBLIC Datum ord_numeric(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(ord_bit);
+extern "C" DLL_PUBLIC Datum ord_bit(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(substring_index);
 extern "C" DLL_PUBLIC Datum substring_index(PG_FUNCTION_ARGS);
 
@@ -356,9 +380,17 @@ extern "C" DLL_PUBLIC Datum substring_index_bool_2(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(substring_index_2bool);
 extern "C" DLL_PUBLIC Datum substring_index_2bool(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(substring_index_numeric);
+extern "C" DLL_PUBLIC Datum substring_index_numeric(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(substring_index_text);
+extern "C" DLL_PUBLIC Datum substring_index_text(PG_FUNCTION_ARGS);
+
 PG_FUNCTION_INFO_V1_PUBLIC(Varlena2Float8);
 extern "C" DLL_PUBLIC Datum Varlena2Float8(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_binaryout);
+extern "C" DLL_PUBLIC Datum dolphin_binaryout(PG_FUNCTION_ARGS);
 #endif
 
 /*****************************************************************************
@@ -641,21 +673,31 @@ extern "C" DLL_PUBLIC Datum dolphin_binaryin(PG_FUNCTION_ARGS);
 Datum dolphin_binaryin(PG_FUNCTION_ARGS)
 {
     char* inputText = PG_GETARG_CSTRING(0);
+    int32 atttypmod = PG_NARGS() == 3 ? PG_GETARG_INT32(2) : -1;
     char* tp = NULL;
     char* rp = NULL;
     int bc;
     int cl;
     bytea* result = NULL;
+    int binary_length = 0;
 
     /* Recognize hex input */
     if (inputText[0] == '\\' && inputText[1] == 'x') {
         size_t len = strlen(inputText);
-
-        bc = (len - 2) / 2 + VARHDRSZ; /* maximum possible length */
-        result = (bytea*)palloc(bc);
-        bc = hex_decode(inputText + 2, len - 2, VARDATA(result));
-        SET_VARSIZE(result, bc + VARHDRSZ); /* actual length */
-
+        if (atttypmod < VARHDRSZ) {
+            binary_length = BINARY_LEN(len) + VARHDRSZ; /* maximum possible length */
+        } else {
+            if (BINARY_LEN(len) > (size_t)(atttypmod - VARHDRSZ)) {
+                ereport(ERROR, (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                            errmsg("value too long for type binary(%d)", atttypmod - VARHDRSZ)));
+            }
+            binary_length = (fcinfo->flinfo == NULL || fcinfo->flinfo->fn_rettype == BINARYOID)
+                                ? atttypmod
+                                : BINARY_LEN(len) + VARHDRSZ;
+        }
+        result = (bytea*)palloc0(binary_length);
+        (void)hex_decode(inputText + 2, len - 2, VARDATA(result));
+        SET_VARSIZE(result, binary_length);
         PG_RETURN_BYTEA_P(result);
     }
 
@@ -689,10 +731,17 @@ Datum dolphin_binaryin(PG_FUNCTION_ARGS)
         }
     }
 
-    bc += VARHDRSZ;
-
-    result = (bytea*)palloc(bc);
-    SET_VARSIZE(result, bc);
+    if (atttypmod < VARHDRSZ) {
+        binary_length = bc + VARHDRSZ; /* maximum possible length */
+    } else {
+        if (bc > atttypmod - VARHDRSZ) {
+            ereport(ERROR, (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                        errmsg("value too long for type binary(%d)", atttypmod - VARHDRSZ)));
+        }
+        binary_length = (fcinfo->flinfo == NULL || fcinfo->flinfo->fn_rettype == BINARYOID) ? atttypmod : bc + VARHDRSZ;
+    }
+    result = (bytea*)palloc0(binary_length);
+    SET_VARSIZE(result, binary_length);
 
     tp = inputText;
     rp = VARDATA(result);
@@ -855,7 +904,7 @@ Datum rawin(PG_FUNCTION_ARGS)
 
         return result;
     } else {
-        return byteain(fcinfo);
+        return dolphin_binaryin(fcinfo);
     }
 }
 
@@ -5685,7 +5734,11 @@ static text* array_to_text_internal(FunctionCallInfo fcinfo, ArrayType* v, char*
 }
 
 #define HEXBASE 16
+#ifdef DOLPHIN
+#define HEX_CHARS "0123456789ABCDEF"
+#else
 #define HEX_CHARS "0123456789abcdef"
+#endif
 /*
  * Convert a int32 to a string containing a base 16 (hex) representation of
  * the number.
@@ -5760,8 +5813,8 @@ Datum text_to_hex(PG_FUNCTION_ARGS)
 
     unsigned char* str_val = (unsigned char*) text_to_cstring(str);
     unsigned char* str_val_ptr = str_val + len - 1;
-    char buf[2 * len + 1];
-    char* result_ptr = buf + sizeof(buf) - 1;
+    char* buf = (char*)palloc(2 * len + 1);
+    char* result_ptr = buf + 2 * len;
     *result_ptr = '\0';
 
     do {
@@ -5785,8 +5838,8 @@ Datum bytea_to_hex(PG_FUNCTION_ARGS)
 
     unsigned char* str_ptr = unsigned_str + len - 1;
 
-    char buf[2 * len + 1];
-    char* result_ptr = buf + sizeof(buf) - 1;
+    char* buf = (char*)palloc(2 * len + 1);
+    char* result_ptr = buf + 2 * len;
     *result_ptr = '\0';
 
     do {
@@ -7030,8 +7083,32 @@ static text* concat_internal(const char* sepstr, int seplen, int argidx, Functio
             if (!OidIsValid(valtype))
                 ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
                         errmsg("could not determine data type of concat() input")));
+#ifdef DOLPHIN
+            if (valtype == BITOID) {
+                VarBit *bits = PG_GETARG_VARBIT_P(i);
+                char *c = bit_to_str(bits);
+                for (int i = 0; i < VARBITBYTES(bits); i++) {
+                    appendStringInfoChar(&str, c[i]);
+                }
+            } else if (valtype == BOOLOID) {
+                appendStringInfoChar(&str, PG_GETARG_BOOL(i) ? '1': '0');
+            } else if (valtype == BINARYOID || valtype == VARBINARYOID || valtype == TEXTOID || valtype == BLOBOID ||
+                valtype == TINYBLOBOID || valtype == MEDIUMBLOBOID || valtype == LONGBLOBOID) {
+                bytea* bin = PG_GETARG_BYTEA_PP(i);
+                char* data = VARDATA_ANY(bin);
+                int len = VARSIZE_ANY_EXHDR(bin);
+                /* cannot use appendStringInfoString because of the '\0' */
+                for (int i = 0; i < len; i++) {
+                    appendStringInfoChar(&str, data[i]);
+                }
+            } else {
+                getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+                appendStringInfoString(&str, OidOutputFunctionCall(typOutput, value));
+            }
+#else
             getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
             appendStringInfoString(&str, OidOutputFunctionCall(typOutput, value));
+#endif
         } else if (PG_ARGISNULL(i) && u_sess->attr.attr_sql.sql_compatibility == B_FORMAT && !is_concat_ws) {
             pfree_ext(str.data);
             PG_RETURN_NULL();
@@ -7729,8 +7806,9 @@ static char* db_b_format_get_cstring(Datum param, Oid param_oid)
             ch_value = "0";
         }
     } else {
-        if (param_oid == BOOLOID) {
-            ch_value = const_cast<char *>(param ? "1" : "0");
+        ch_value = to_cstring_type(param, param_oid);
+        if (param_oid == BOOLOID && param) {
+            ch_value = "1";
         } else {
             ch_value = "0";
         }
@@ -8330,13 +8408,15 @@ Datum text_interval(PG_FUNCTION_ARGS)
 }
 
 #ifdef DOLPHIN
-static Datum copy_binary(Datum source, int typmod, bool target_is_var)
+static Datum copy_binary(Datum source, int typmod, bool target_is_var, bool can_ignore)
 {
     int maxlen = typmod - (int32)VARHDRSZ;
     int length = VARSIZE(source) - VARHDRSZ;
 
     if (maxlen > 0 && length > maxlen) {
-        ereport(ERROR, (errmsg("The input length:%d exceeds the maximum length:%d.", length, maxlen)));
+        int elevel = (SQL_MODE_STRICT() && !can_ignore) ? ERROR : WARNING;
+        ereport(elevel, (errmsg("The input length:%d exceeds the maximum length:%d.", length, maxlen)));
+        length = maxlen;
     }
 
     char* data = NULL;
@@ -8462,14 +8542,14 @@ Datum bytea2binary(PG_FUNCTION_ARGS)
             ereport(ERROR, (errmsg("The input length:%d exceeds the maximum length:0.", length)));
     }
     
-    return copy_binary(PointerGetDatum(source), maxlen, false);
+    return copy_binary(PointerGetDatum(source), maxlen, false, fcinfo->can_ignore);
 }
 
 Datum bytea2var(PG_FUNCTION_ARGS)
 {
     bytea* source = PG_GETARG_BYTEA_P(0);
     int32 maxlen = PG_GETARG_INT32(1);
-    return copy_binary(PointerGetDatum(source), maxlen, true);
+    return copy_binary(PointerGetDatum(source), maxlen, true, fcinfo->can_ignore);
 }
 
 Datum tinyblob_rawin(PG_FUNCTION_ARGS)
@@ -8581,33 +8661,41 @@ static void truncate_numeric_cstring(char* str)
 }
 
 //Get float8 value for parameters of gs_interval
-static float8 GetValueFromArg(Oid valtype, Datum arg)
+static float8 GetValueFromArg(Oid valtype, Datum arg, bool can_ignore)
 {
-    switch (valtype) {
-        case INT4OID:
-            return DatumGetInt32(arg);
-        case FLOAT8OID:
-            return DatumGetFloat8(arg);
-        case BOOLOID:
-            return DatumGetBool(arg);
-        default:
-            bool typIsVarlena = false;
-            Oid typOutput;
-            check_huge_toast_pointer(arg, valtype);
-            if (!OidIsValid(valtype))
-                ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
-                    errmsg("could not determine data type of gs_interval() input")));
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of gs_interval() input")));
 
-            float8 temp = 0;
-            getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-            char* str0 = OidOutputFunctionCall(typOutput, arg);
-            truncate_numeric_cstring(str0);
-            if (strlen(str0) != 0) {
-                temp = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str0)));
-            }
-            pfree_ext(str0);
-            return temp;
+    Form_pg_cast castForm;
+    HeapTuple tuple = SearchSysCache2(CASTSOURCETARGET, ObjectIdGetDatum(valtype), ObjectIdGetDatum(FLOAT8OID));
+    if (!HeapTupleIsValid(tuple)) {
+        check_huge_toast_pointer(arg, valtype);
+
+        float8 temp = 0;
+        char* str0 = AnyElementGetCString(valtype, arg);
+        truncate_numeric_cstring(str0);
+        if (strlen(str0) != 0) {
+            temp = DatumGetFloat8(
+                DirectFunctionCall1Coll(float8in, InvalidOid, CStringGetDatum(str0), can_ignore));
+        }
+        pfree_ext(str0);
+        return temp;
     }
+
+    Oid cast_func_oid = ((Form_pg_cast)GETSTRUCT(tuple))->castfunc;
+    ReleaseSysCache(tuple);
+
+    FmgrInfo flinfo;
+    FunctionCallInfoData fcinfo;
+    fmgr_info(cast_func_oid, &flinfo);
+    InitFunctionCallInfoData(fcinfo, &flinfo, 1, InvalidOid, NULL, NULL);
+    fcinfo.arg[0] = arg;
+    fcinfo.argnull[0] = false;
+    fcinfo.argTypes[0] = valtype;
+    fcinfo.can_ignore = can_ignore;
+
+    return DatumGetFloat8(FunctionCallInvoke(&fcinfo));
 }
 
 Datum gs_interval(PG_FUNCTION_ARGS)
@@ -8618,7 +8706,7 @@ Datum gs_interval(PG_FUNCTION_ARGS)
         PG_RETURN_INT32(-1);
     Datum dt = PG_GETARG_DATUM(0);
     Oid valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
-    float8 first_value = GetValueFromArg(valtype, dt);
+    float8 first_value = GetValueFromArg(valtype, dt, fcinfo->can_ignore);
     int count=0;
     for (int i = 1; i < PG_NARGS(); i++) {
         if (PG_ARGISNULL(i)) {
@@ -8627,7 +8715,7 @@ Datum gs_interval(PG_FUNCTION_ARGS)
         }
         dt = PG_GETARG_DATUM(i);
         valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
-        float8 value = GetValueFromArg(valtype, dt);
+        float8 value = GetValueFromArg(valtype, dt, fcinfo->can_ignore);
         if (value > first_value) {
             break;
         }
@@ -8638,8 +8726,6 @@ Datum gs_interval(PG_FUNCTION_ARGS)
 
 Datum gs_strcmp(PG_FUNCTION_ARGS)
 {
-    bool typIsVarlena = false;
-    Oid typOutput;
     Datum dt = 0;
     Oid valtype = 0;
 
@@ -8649,8 +8735,8 @@ Datum gs_strcmp(PG_FUNCTION_ARGS)
     if (!OidIsValid(valtype))
         ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
             errmsg("could not determine data type of strcmp() input")));
-    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-    char* str0 = OidOutputFunctionCall(typOutput, dt);
+    char* str0 = AnyElementGetCString(valtype, dt);
+    trim_trailing_space(str0);
 
     dt = PG_GETARG_DATUM(1);
     valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
@@ -8658,14 +8744,14 @@ Datum gs_strcmp(PG_FUNCTION_ARGS)
     if (!OidIsValid(valtype))
         ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
             errmsg("could not determine data type of strcmp() input")));
-    getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
-    char* str1 = OidOutputFunctionCall(typOutput, dt);
+    char* str1 = AnyElementGetCString(valtype, dt);
+    trim_trailing_space(str1);
 
     int32 ret = strcmp(str0, str1);
 
-    if (ret>0) {
+    if (ret > 0) {
         ret = 1;
-    } else if (ret<0) {
+    } else if (ret < 0) {
         ret = -1;
     } else {
         ret = 0;
@@ -8862,8 +8948,11 @@ static text* _m_char(FunctionCallInfo fcinfo)
             long result_l;
             valtype = get_fn_expr_argtype(fcinfo->flinfo, i);
             switch (valtype) {
+                case INT1OID:
+                case INT2OID:
                 case INT4OID:
                 case INT8OID:
+                case OIDOID:
                     quotient = (uint32)value;
                     str = char_deal(str, quotient, remainder, remainders, times);
                     break;
@@ -8922,14 +9011,16 @@ static text* _m_char(FunctionCallInfo fcinfo)
                         str = char_deal(str, quotient, remainder, remainders, times);
                     }
                     break;
-                default:
-                    result_l = strtol((char*)value, &badp, 10);
-                    if ((char*)value == badp) {
+                default: {
+                    char *value_str = AnyElementGetCString(valtype, value);
+                    result_l = strtol((char*)value_str, &badp, 10);
+                    if (value_str == badp) {
                         result_l = 0;
                     }
+                    pfree_ext(value_str);
                     quotient = (uint32)result_l;
                     str = char_deal(str, quotient, remainder, remainders, times);
-                    break;
+                } break;
             }
         }
     }
@@ -9096,84 +9187,182 @@ static char* numeric_to_cstring(Numeric n)
     return DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(n)));
 }
 
-static double conv_typ_to_double(PG_FUNCTION_ARGS, int i)
+/**
+  Convert pg_tm value to cstring in YYYYMMDDHHmmSS/YYYYMMDD/HHmmSS format
+  @param tm  The pg_tm value to convert.
+  @param type The oid of the type of timestamp/date/time
+  @return         A cstring in format YYYYMMDDHHmmSS/YYYYMMDD/HHmmSS.
+*/
+static char* tm_to_cstring(pg_tm* tm, Oid type)
 {
-    double result;
+    char str_val[MAXBI64LEN];
+    uint64 val = 0;
+    if (type == TIMEOID || type == TIMETZOID) {
+        val = (tm->tm_hour * 10000UL + tm->tm_min * 100UL + tm->tm_sec);
+    } else if (type == DATEOID) {
+        val = (tm->tm_year * 10000UL + tm->tm_mon * 100UL + tm->tm_mday);
+    } else {
+        val = (tm->tm_year * 10000000000UL + tm->tm_mon * 100000000UL +
+                    tm->tm_mday * 1000000UL + tm->tm_hour * 10000UL +
+                    tm->tm_min * 100UL + tm->tm_sec);
+    }
+    check_sprintf_s(sprintf_s(str_val, MAXBI64LEN, "%" PRIu64, val));
+    return pstrdup(str_val);
+}
+
+static char* cmp_get_string_type(PG_FUNCTION_ARGS, int argn)
+{
+    char* res;
     Oid typeOutput;
     bool typIsVarlena;
-    bool tmp;
+    getTypeOutputInfo(fcinfo->argTypes[argn], &typeOutput, &typIsVarlena);
+    res = OidOutputFunctionCall(typeOutput, fcinfo->arg[argn]);
+    return res;
+}
 
-    switch (fcinfo->argTypes[i]) {
-        case NUMERICOID:
-            result = numeric_to_double_no_overflow(PG_GETARG_NUMERIC(i));
-            break;
-        case INT4OID:
-            result = numeric_to_double_no_overflow(int64_to_numeric(PG_GETARG_DATUM(i)));
-            break;
-        case BOOLOID:
-            tmp = PG_GETARG_BOOL(i);
-            result = tmp ? 1.0 : 0.0;
-            break;
-        default:
-           getTypeOutputInfo(fcinfo->argTypes[i], &typeOutput, &typIsVarlena);
-           result = strtod(extract_numericstr(OidOutputFunctionCall(typeOutput, fcinfo->arg[i])), NULL);
-           break;
+static int128 cmp_get_int_type(PG_FUNCTION_ARGS, int argn)
+{
+    int128 res;
+    char* str_val = NULL;
+    Oid typeoid = InvalidOid;
+    typeoid = fcinfo->argTypes[argn];
+    str_val = db_b_format_get_cstring(PG_GETARG_DATUM(argn), fcinfo->argTypes[argn]);
+    if (is_unsigned_intType(typeoid)) {
+        res = parse_unsigned_val(typeoid, str_val);
+    } else {
+        res = DatumGetInt64(DirectFunctionCall1(int8in, CStringGetDatum(str_val)));
     }
-    return result;
+    return res;
+}
+
+static Numeric cmp_get_decimal_type(PG_FUNCTION_ARGS, int argn)
+{
+    Numeric res;
+    char* str_val = NULL;
+    Oid typeoid = InvalidOid;
+    typeoid = fcinfo->argTypes[argn];
+    str_val = db_b_format_get_cstring(PG_GETARG_DATUM(argn), fcinfo->argTypes[argn]);
+    if (typeoid == NUMERICOID) {
+        res = PG_GETARG_NUMERIC(argn);
+    } else if (is_unsigned_intType(typeoid)) { //bool, bit or varbit type
+        res = DatumGetNumeric(DirectFunctionCall1(int8_numeric, 
+                                                  (int64)parse_unsigned_val(typeoid, str_val)));
+    } else {
+        res = DatumGetNumeric(DirectFunctionCall3(numeric_in, CStringGetDatum(str_val),
+                                                  ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
+    }
+    return res;
+}
+
+static float8 cmp_get_real_type(PG_FUNCTION_ARGS, int argn)
+{
+    float8 res;
+    char* str_val = NULL;
+    struct pg_tm tt;
+    struct pg_tm* tm = &tt;
+    int tz = 0;
+    fsec_t fsec = 0;
+    bool flag = true;
+    Oid typeoid = InvalidOid;
+    typeoid = fcinfo->argTypes[argn];
+    if (is_type_with_date(typeoid)) {
+        const char* tzn = NULL;
+        TimestampTz tsVal = temporal_to_timestamptz(fcinfo->argTypes[argn], argn, fcinfo);
+        timestamp2tm(tsVal, &tz, tm, &fsec, &tzn, NULL);
+        str_val = tm_to_cstring(tm, typeoid);
+    } else if (typeoid == TIMEOID) {
+        TimeADT timeVal = PG_GETARG_TIMEADT(argn);
+        time2tm(timeVal, tm, &fsec);
+        str_val = tm_to_cstring(tm, typeoid);
+    } else if (typeoid == TIMETZOID) {
+        TimeTzADT* timetzVal = PG_GETARG_TIMETZADT_P(argn);
+        timetz2tm(timetzVal, tm, &fsec, &tz);
+        str_val = tm_to_cstring(tm, typeoid);
+    } else {
+        flag = false;
+        str_val = db_b_format_get_cstring(PG_GETARG_DATUM(argn), fcinfo->argTypes[argn]);
+    }
+    if (typeoid == FLOAT8OID) {
+        res = PG_GETARG_FLOAT8(argn);
+    } else if (typeoid == FLOAT4OID) {
+        res = PG_GETARG_FLOAT4(argn);
+    } else if (is_unsigned_intType(typeoid)) { //bool, bit, year
+        res = DatumGetFloat8(DirectFunctionCall1(i8tod, (int64)parse_unsigned_val(typeoid, str_val)));
+    } else {
+        res = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str_val)));
+    }
+    if (flag) {
+        pfree_ext(str_val);
+    }
+    return res;
 }
 
 Datum field(PG_FUNCTION_ARGS)
 {
-    int64 result = 0;
-    Oid typeOutput;
-    bool typIsVarlena;
-    int number_cnt = 0;
-    double first_arg;
-    double match_arg;
-
     if (PG_NARGS() < 2) {
-        elog(ERROR, "Incorrect parameter count in the call to native function 'field'");
+        ereport(ERROR, (errcode(ERRCODE_UNDEFINED_PARAMETER),
+            errmsg("Incorrect parameter count in the call to native function 'field'")));
     }
     if (PG_ARGISNULL(0)) {
         PG_RETURN_INT64(0);
     }
 
-    for (int i = 0; i < PG_NARGS(); i++) {
-        if (INT4OID == fcinfo->argTypes[i] || NUMERICOID == fcinfo->argTypes[i] || BOOLOID == fcinfo->argTypes[i]) {
-            number_cnt++;
-        }
-    }
-    if (number_cnt <= PG_NARGS() && number_cnt > 0) {
-        first_arg = conv_typ_to_double(fcinfo, 0);
+    CmpType match_type = agg_cmp_type(fcinfo, PG_NARGS());
+    if (match_type == CMP_STRING_TYPE) {
+        char* first_arg = cmp_get_string_type(fcinfo, 0);
         for (int i = 1; i < PG_NARGS(); i++) {
             if (PG_ARGISNULL(i)) {
                 continue;
             }
-            match_arg = conv_typ_to_double(fcinfo, i);
+            char* match_arg = cmp_get_string_type(fcinfo, i);
+            if (varstr_cmp(first_arg, strlen(first_arg), match_arg, strlen(match_arg), PG_GET_COLLATION()) == 0) {
+                pfree(first_arg);
+                pfree(match_arg);
+                PG_RETURN_INT64(i);
+            }
+            pfree(match_arg);
+        }
+        pfree(first_arg);
+    } else if (match_type == CMP_INT_TYPE) {
+        int128 first_arg = cmp_get_int_type(fcinfo, 0);
+        for (int i = 1; i < PG_NARGS(); i++) {
+            if (PG_ARGISNULL(i)) {
+                continue;
+            }
+            int128 match_arg = cmp_get_int_type(fcinfo, i);
             if (first_arg == match_arg) {
-                result = i;
-                break;
+                PG_RETURN_INT64(i);
             }
         }
-    } else if (number_cnt == 0) {
-        getTypeOutputInfo(fcinfo->argTypes[0], &typeOutput, &typIsVarlena);
-        text* arg0 = cstring_to_text(OidOutputFunctionCall(typeOutput, PG_GETARG_DATUM(0)));
+    } else if (match_type == CMP_DECIMAL_TYPE) {
+        Numeric first_arg = cmp_get_decimal_type(fcinfo, 0);
         for (int i = 1; i < PG_NARGS(); i++) {
             if (PG_ARGISNULL(i)) {
                 continue;
             }
-            getTypeOutputInfo(fcinfo->argTypes[i], &typeOutput, &typIsVarlena);
-            text* argi = cstring_to_text(OidOutputFunctionCall(typeOutput, PG_GETARG_DATUM(i)));
-            if (internal_text_pattern_compare(arg0, argi) == 0) {
-                result = i;
-                pfree(argi);
-                break;
+            Numeric match_arg = cmp_get_decimal_type(fcinfo, i);
+            if (cmp_numerics(first_arg, match_arg) == 0) {
+                pfree_ext(first_arg);
+                pfree_ext(match_arg);
+                PG_RETURN_INT64(i);
             }
-            pfree(argi);
+            pfree_ext(match_arg);
         }
-        pfree(arg0);
+        pfree_ext(first_arg);
+    } else if (match_type == CMP_REAL_TYPE) {
+        float8 first_arg = cmp_get_real_type(fcinfo, 0);
+        for (int i = 1; i < PG_NARGS(); i++) {
+            if (PG_ARGISNULL(i)) {
+                continue;
+            }
+            float8 match_arg = cmp_get_real_type(fcinfo, i);
+            if (float8_cmp_internal(first_arg, match_arg) == 0) {
+                PG_RETURN_INT64(i);
+            }
+        }
     }
-    PG_RETURN_INT64(result);
+
+    PG_RETURN_INT64(0);
 }
 
 static int64 find_in_set_internal(char* target, char* full_str, Oid coll_oid)
@@ -9520,7 +9709,11 @@ static TimestampTz nontemporal_to_timestamptz(Oid type, Datum param)
     TimestampTz timestamptz;
     char* str_val = NULL;
     getTypeOutputInfo(type, &typeOutput, &typIsVarlena);
-    str_val = OidOutputFunctionCall(typeOutput, param);
+    if (typIsVarlena) {
+        str_val = DatumGetCString(DirectFunctionCall1(textout, param));
+    } else {
+        str_val = OidOutputFunctionCall(typeOutput, param);
+    }
     //Convert string to the TIMESTAMPTZ representation.
     timestamptz = DatumGetTimestampTz(DirectFunctionCall3(timestamptz_in, CStringGetDatum(str_val),
                                                           ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
@@ -9541,6 +9734,12 @@ static TimestampTz temporal_to_timestamptz(Oid type, int index, PG_FUNCTION_ARGS
             break;
         case TIMESTAMPTZOID:
             timestamptz = PG_GETARG_TIMESTAMPTZ(index);
+            break;
+        case TIMEOID:
+            timestamptz = time2timestamptz(PG_GETARG_TIMEADT(index));
+            break;
+        case TIMETZOID:
+            timestamptz = timetz2timestamptz(PG_GETARG_TIMETZADT_P(index));
             break;
         default:
             timestamptz = nontemporal_to_timestamptz(fcinfo->argTypes[index], fcinfo->arg[index]);
@@ -9723,13 +9922,10 @@ static bool handle_comparision(CmpType type, CmpMode mode, bool compare_as_ts_wi
         return_val = cmp_result_for_expr<TimestampTz>(cmp_args[ARG_0], cmp_args[ARG_1], cmp_args[ARG_2], mode);
     } else if (type == CMP_STRING_TYPE) {
         char* cmp_args[BETWEEN_AND_ARGC];
-        Oid typeOutput;
-        bool typIsVarlena;
         int res_arg1_2 = 0;
         int res_arg1_3 = 0;
         for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
-            getTypeOutputInfo(fcinfo->argTypes[i], &typeOutput, &typIsVarlena);
-            cmp_args[i] = OidOutputFunctionCall(typeOutput, fcinfo->arg[i]);
+            cmp_args[i] = cmp_get_string_type(fcinfo, i);
         }
         res_arg1_2 = varstr_cmp(cmp_args[ARG_0], strlen(cmp_args[ARG_0]), cmp_args[ARG_1], strlen(cmp_args[ARG_1]),
             PG_GET_COLLATION() == InvalidOid ? DEFAULT_COLLATION_OID : PG_GET_COLLATION());
@@ -9753,20 +9949,8 @@ static bool handle_comparision(CmpType type, CmpMode mode, bool compare_as_ts_wi
         }
     } else if (type == CMP_DECIMAL_TYPE) {
         Numeric cmp_args[BETWEEN_AND_ARGC];
-        char* str_val = NULL;
-        Oid typeoid = InvalidOid;
         for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
-            typeoid = fcinfo->argTypes[i];
-            str_val = db_b_format_get_cstring(PG_GETARG_DATUM(i), fcinfo->argTypes[i]);
-            if (typeoid == NUMERICOID) {
-                cmp_args[i] = PG_GETARG_NUMERIC(i);
-            } else if (is_unsigned_intType(typeoid)) { //bool, bit or varbit type
-                cmp_args[i] = DatumGetNumeric(DirectFunctionCall1(int8_numeric, 
-                                                                  (int64)parse_unsigned_val(typeoid, str_val)));
-            } else {
-                cmp_args[i] = DatumGetNumeric(DirectFunctionCall3(numeric_in, CStringGetDatum(str_val),
-                                                                  ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1)));
-            }
+            cmp_args[i] = cmp_get_decimal_type(fcinfo, i);
         }
         return_val = cmp_result_for_func(cmp_numerics(cmp_args[ARG_0], cmp_args[ARG_1]),
                                          cmp_numerics(cmp_args[ARG_0], cmp_args[ARG_2]), mode);
@@ -9775,20 +9959,8 @@ static bool handle_comparision(CmpType type, CmpMode mode, bool compare_as_ts_wi
         }
     } else if (type == CMP_REAL_TYPE) {
         float8 cmp_args[BETWEEN_AND_ARGC];
-        char* str_val = NULL;
-        Oid typeoid = InvalidOid;
         for (int i = 0; i < BETWEEN_AND_ARGC; i++) {
-            typeoid = fcinfo->argTypes[i];
-            str_val = db_b_format_get_cstring(PG_GETARG_DATUM(i), fcinfo->argTypes[i]);
-            if (typeoid == FLOAT8OID) {
-                cmp_args[i] = PG_GETARG_FLOAT8(i);
-            } else if (typeoid == FLOAT4OID) {
-                cmp_args[i] = PG_GETARG_FLOAT4(i);
-            } else if (is_unsigned_intType(typeoid)) { //bool, bit, year
-                cmp_args[i] = DatumGetFloat8(DirectFunctionCall1(i8tod, (int64)parse_unsigned_val(typeoid, str_val)));
-            } else {
-                cmp_args[i] = DatumGetFloat8(DirectFunctionCall1(float8in, CStringGetDatum(str_val)));
-            }
+            cmp_args[i] = cmp_get_real_type(fcinfo, i);
         }
         return_val = cmp_result_for_expr<float8>(cmp_args[ARG_0], cmp_args[ARG_1], cmp_args[ARG_2], mode);
     }
@@ -10109,8 +10281,210 @@ extern "C" DLL_PUBLIC Datum blobxor(PG_FUNCTION_ARGS);
 
 Datum blobxor(PG_FUNCTION_ARGS)
 {
-    int32 result = DatumGetInt32(textxor(fcinfo));
+    int i = 0;
+    int32 result = 0;
+    for (i = 0; i < PG_NARGS(); i++) {
+        Datum arg = PG_GETARG_DATUM(i);
+        Oid typoid = get_fn_expr_argtype(fcinfo->flinfo, i);
+        bool hasError = false;
+        char* arg_str = AnyElementGetCString(typoid, arg, &hasError);
+        result ^= atoi(arg_str);
+        pfree_ext(arg_str);
+    }
     PG_RETURN_INT32(result);
+}
+
+static bytea* binary_type_and(PG_FUNCTION_ARGS)
+{
+    bytea* arg1 = PG_GETARG_BYTEA_PP(0);
+    bytea* arg2 = PG_GETARG_BYTEA_PP(1);
+    int32 len1 = VARSIZE_ANY_EXHDR(arg1);
+    int32 len2 = VARSIZE_ANY_EXHDR(arg2);
+    if (len1 != len2)
+        ereport(ERROR,
+            (errcode(ERRCODE_STRING_DATA_LENGTH_MISMATCH), errmsg("Cannot and binary type of different sizes")));
+    char* p1 = VARDATA(arg1);
+    char* p2 = VARDATA(arg2);
+    char* ptr = p1;
+    while (*p1) {
+        *p1 &= *p2;
+        p1++;
+        p2++;
+    }
+
+    bytea* result = (bytea*)palloc(VARHDRSZ + len1);
+    SET_VARSIZE(result, VARHDRSZ + len1);
+    if (len1 > 0) {
+        errno_t ss_rc = memcpy_s(VARDATA(result), len1, ptr, len1);
+        securec_check(ss_rc, "\0", "\0");
+    }
+    return result;
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bloband);
+extern "C" DLL_PUBLIC Datum bloband(PG_FUNCTION_ARGS);
+Datum bloband(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(binaryand);
+extern "C" DLL_PUBLIC Datum binaryand(PG_FUNCTION_ARGS);
+Datum binaryand(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbinaryand);
+extern "C" DLL_PUBLIC Datum varbinaryand(PG_FUNCTION_ARGS);
+Datum varbinaryand(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbinary_and_binary);
+extern "C" DLL_PUBLIC Datum varbinary_and_binary(PG_FUNCTION_ARGS);
+Datum varbinary_and_binary(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL();
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(1));
+    }
+
+    if (PG_ARGISNULL(1)) {
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(0));
+    }
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbinary_and_tinyblob);
+extern "C" DLL_PUBLIC Datum varbinary_and_tinyblob(PG_FUNCTION_ARGS);
+Datum varbinary_and_tinyblob(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL();
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(1));
+    }
+
+    if (PG_ARGISNULL(1)) {
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(0));
+    }
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbinary_and_blob);
+extern "C" DLL_PUBLIC Datum varbinary_and_blob(PG_FUNCTION_ARGS);
+Datum varbinary_and_blob(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL();
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(1));
+    }
+
+    if (PG_ARGISNULL(1)) {
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(0));
+    }
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbinary_and_mediumblob);
+extern "C" DLL_PUBLIC Datum varbinary_and_mediumblob(PG_FUNCTION_ARGS);
+Datum varbinary_and_mediumblob(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL();
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(1));
+    }
+
+    if (PG_ARGISNULL(1)) {
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(0));
+    }
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varbinary_and_longblob);
+extern "C" DLL_PUBLIC Datum varbinary_and_longblob(PG_FUNCTION_ARGS);
+Datum varbinary_and_longblob(PG_FUNCTION_ARGS)
+{
+    if (PG_ARGISNULL(0)) {
+        if (PG_ARGISNULL(1))
+            PG_RETURN_NULL();
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(1));
+    }
+
+    if (PG_ARGISNULL(1)) {
+        PG_RETURN_BYTEA_P(PG_GETARG_BYTEA_PP(0));
+    }
+    PG_RETURN_BYTEA_P(binary_type_and(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(text_and_uint8);
+extern "C" DLL_PUBLIC Datum text_and_uint8(PG_FUNCTION_ARGS);
+Datum text_and_uint8(PG_FUNCTION_ARGS)
+{
+    uint64 arg1 = PG_GETARG_UINT64(0);
+    char* str = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(1)));
+    uint64 arg2 = bit_and_text_uint8(str, PG_UINT64_MAX, 0, "bigint unsigned");
+    PG_RETURN_UINT64(arg1 & arg2);
+}
+
+static uint64 bit_and_text_uint8(const char* s, uint64 max, int64 min, const char* typname)
+{
+    const char* ptr = s;
+    int128 tmp = 0;
+    bool neg = false;
+    char digitAfterDot = '\0';
+    const int baseDecimal = 10;
+
+    if (*s == 0) {
+        return (uint64)tmp;
+    }
+
+    while (likely(*ptr) && isspace((unsigned char)*ptr)) {
+        ptr++;
+    }
+
+    if (*ptr == '-') {
+        ptr++;
+        neg = true;
+    } else if (*ptr == '+')
+        ptr++;
+
+    if (unlikely(!isdigit((unsigned char)*ptr))) {
+        return (uint64)tmp;
+    }
+
+    while (*ptr && isdigit((unsigned char)*ptr)) {
+        int8 digit = (*ptr++ - '0');
+        tmp = tmp * baseDecimal + digit;
+        if (tmp > max) {
+            return neg ? (uint64)min : max;
+        }
+    }
+
+    CheckSpaceAndDotInternal(digitAfterDot, &ptr);
+    if (neg && tmp > min) {
+        return neg ? (uint64)min : max;
+    }
+
+    if ((isdigit(digitAfterDot)) && digitAfterDot >= '5') {
+        if (tmp == max) {
+            return neg ? (uint64)min : max;
+        }
+        if (!neg && tmp < max) {
+            tmp++;
+        }
+    }
+
+    if (unlikely(*ptr != '\0')) {
+        return (uint64)tmp;
+    }
+
+    return (uint64)tmp;
 }
 
 PG_FUNCTION_INFO_V1_PUBLIC (boolxor);
@@ -10198,28 +10572,35 @@ Datum ord_numeric(PG_FUNCTION_ARGS)
     PG_RETURN_INT128(result);
 }
 
+Datum ord_bit(PG_FUNCTION_ARGS)
+{
+    int128 result = 0;
 
-static int64 NumericToLongLongNoOverflow(Numeric num)
+    VarBit *bitData = PG_GETARG_VARBIT_P(0);
+    bits8* firstBit = VARBITS(bitData);
+    result = *firstBit;
+    result >>= VARBITPAD(bitData);
+    PG_RETURN_INT128(result);
+}
+
+static int64 StringToLongNoOverflow(char* str, bool can_ignore)
 {
     char* endptr = NULL;
-    char* tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
-    long double val = strtold(tmp, &endptr);
+    long val = strtol(str, &endptr, 10);
+    int level = (can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR;
     if (*endptr != '\0') {
-        ereport(ERROR,
+        ereport(level,
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
-                 errmsg("invalid input syntax for type long long precision: \"%s\"", tmp)));
+                 errmsg("invalid input syntax for type long precision: \"%s\"", str)));
     }
-    pfree_ext(tmp);
     return val;
 }
 
-static text* SubstringIndexReally(text* textStr, text* textStrToSearch, Numeric count)
+static text* SubstringIndexReally(text* textStr, text* textStrToSearch, int64 count64)
 {
     text* result = NULL;
     int position = 0;
 
-    int64 count64 = NumericToLongLongNoOverflow(count);
-    
     if (TEXTISORANULL(textStr) || TEXTISORANULL(textStrToSearch) || (0 == count64)) {
         result = cstring_to_text("");
         return result;
@@ -10253,51 +10634,161 @@ static text* SubstringIndexReally(text* textStr, text* textStrToSearch, Numeric 
     return result;
 }
 
+/*
+ * function for dolphin--1.0
+ */
 Datum substring_index(PG_FUNCTION_ARGS)
 {
     text* textStr = PG_GETARG_TEXT_P(0);
     text* textStrToSearch = PG_GETARG_TEXT_P(1);
-    Numeric count = PG_GETARG_NUMERIC(2);
+    Datum count_dt = PG_GETARG_DATUM(2);
     text* result = NULL;
 
-    result = SubstringIndexReally(textStr, textStrToSearch, count);
+    int64 count64 = (int64)DirectFunctionCall1(numeric_int8, count_dt);
+    result = SubstringIndexReally(textStr, textStrToSearch, count64);
     PG_RETURN_TEXT_P(result);
 }
 
+/*
+ * function for dolphin--1.0
+ */
 Datum substring_index_bool_1(PG_FUNCTION_ARGS)
 {
     bool firstArg = PG_GETARG_BOOL(0);
     text* textStr = cstring_to_text(firstArg ? "1" : "0");
     text* textStrToSearch = PG_GETARG_TEXT_P(1);
-    Numeric count = PG_GETARG_NUMERIC(2);
+    Datum count_dt = PG_GETARG_DATUM(2);
     text* result = NULL;
 
-    result = SubstringIndexReally(textStr, textStrToSearch, count);
+    int64 count64 = (int64)DirectFunctionCall1(numeric_int8, count_dt);
+    result = SubstringIndexReally(textStr, textStrToSearch, count64);
     PG_RETURN_TEXT_P(result);
 }
 
+/*
+ * function for dolphin--1.0
+ */
 Datum substring_index_bool_2(PG_FUNCTION_ARGS)
 {
     text* textStr = PG_GETARG_TEXT_P(0);
     bool secondArg = PG_GETARG_BOOL(1);
     text* textStrToSearch = cstring_to_text(secondArg ? "1" : "0");
-    Numeric count = PG_GETARG_NUMERIC(2);
+    Datum count_dt = PG_GETARG_DATUM(2);
     text* result = NULL;
 
-    result = SubstringIndexReally(textStr, textStrToSearch, count);
+    int64 count64 = (int64)DirectFunctionCall1(numeric_int8, count_dt);
+    result = SubstringIndexReally(textStr, textStrToSearch, count64);
     PG_RETURN_TEXT_P(result);
 }
 
+/*
+ * function for dolphin--1.0
+ */
 Datum substring_index_2bool(PG_FUNCTION_ARGS)
 {
     bool firstArg = PG_GETARG_BOOL(0);
     text* textStr = cstring_to_text(firstArg ? "1" : "0");
     bool secondArg = PG_GETARG_BOOL(1);
     text* textStrToSearch = cstring_to_text(secondArg ? "1" : "0");
-    Numeric count = PG_GETARG_NUMERIC(2);
+    Datum count_dt = PG_GETARG_DATUM(2);
     text* result = NULL;
 
-    result = SubstringIndexReally(textStr, textStrToSearch, count);
+    int64 count64 = (int64)DirectFunctionCall1(numeric_int8, count_dt);
+    result = SubstringIndexReally(textStr, textStrToSearch, count64);
+    PG_RETURN_TEXT_P(result);
+}
+
+/*
+ * function for dolphin--1.1
+ */
+Datum substring_index_numeric(PG_FUNCTION_ARGS)
+{
+    bool typIsVarlena = false;
+    Oid typOutput;
+    Datum dt = 0;
+    Oid valtype = 0;
+    text* textStr = NULL;
+    text* textStrToSearch = NULL;
+    int64 count64 = 0;
+    text* result = NULL;
+
+    dt = PG_GETARG_DATUM(0);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of substring_index() input")));
+    if (valtype == BOOLOID) {
+        textStr = cstring_to_text(PG_GETARG_BOOL(0) ? "1" : "0");
+    } else {
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        textStr = cstring_to_text(OidOutputFunctionCall(typOutput, dt));
+    }
+    
+    dt = PG_GETARG_DATUM(1);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of substring_index() input")));
+    if (valtype == BOOLOID) {
+        textStrToSearch = cstring_to_text(PG_GETARG_BOOL(1) ? "1" : "0");
+    } else {
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        textStrToSearch = cstring_to_text(OidOutputFunctionCall(typOutput, dt));
+    }
+
+    Datum count_dt = PG_GETARG_DATUM(2);
+    count64 = (int64)DirectFunctionCall1(numeric_int8, count_dt);
+    result = SubstringIndexReally(textStr, textStrToSearch, count64);
+
+    PG_RETURN_TEXT_P(result);
+}
+
+/*
+ * function for dolphin--1.1
+ */
+Datum substring_index_text(PG_FUNCTION_ARGS)
+{
+    bool typIsVarlena = false;
+    Oid typOutput;
+    Datum dt = 0;
+    Oid valtype = 0;
+    text* textStr = NULL;
+    text* textStrToSearch = NULL;
+    int64 count64 = 0;
+    text* result = NULL;
+
+    dt = PG_GETARG_DATUM(0);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 0);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of substring_index() input")));
+    if (valtype == BOOLOID) {
+        textStr = cstring_to_text(PG_GETARG_BOOL(0) ? "1" : "0");
+    } else {
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        textStr = cstring_to_text(OidOutputFunctionCall(typOutput, dt));
+    }
+    
+    dt = PG_GETARG_DATUM(1);
+    valtype = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    check_huge_toast_pointer(dt, valtype);
+    if (!OidIsValid(valtype))
+        ereport(ERROR, (errcode(ERRCODE_INDETERMINATE_DATATYPE),
+            errmsg("could not determine data type of substring_index() input")));
+    if (valtype == BOOLOID) {
+        textStrToSearch = cstring_to_text(PG_GETARG_BOOL(1) ? "1" : "0");
+    } else {
+        getTypeOutputInfo(valtype, &typOutput, &typIsVarlena);
+        textStrToSearch = cstring_to_text(OidOutputFunctionCall(typOutput, dt));
+    }
+
+    char* count = text_to_cstring(PG_GETARG_TEXT_P(2));
+    count64 = StringToLongNoOverflow(count, fcinfo->can_ignore);
+    result = SubstringIndexReally(textStr, textStrToSearch, count64);
+
     PG_RETURN_TEXT_P(result);
 }
 
@@ -10324,20 +10815,121 @@ Datum blob_any_value(PG_FUNCTION_ARGS)
     PG_RETURN_BYTEA_P(vlena);
 }
 
+static char* AnyElementGetCString(Oid anyOid, Datum anyDatum, bool* hasError)
+{
+    if (!OidIsValid(anyOid)) {
+        return DatumGetCString(DirectFunctionCall1(textout, anyDatum));
+    }
+    char* data = NULL;
+    Oid typeOutput = InvalidOid;
+    bool typIsVarlena = false;
+    getTypeOutputInfo(anyOid, &typeOutput, &typIsVarlena);
+    if (anyOid == BITOID || anyOid == VARBITOID) {
+        data = bit_to_str(DatumGetVarBitP(anyDatum));
+    } else if (typIsVarlena && anyOid != NUMERICOID && !type_is_set(anyOid)) {
+        data = DatumGetCString(DirectFunctionCall1(textout, anyDatum));
+        int reallen = VARSIZE_ANY_EXHDR(DatumGetByteaPP(anyDatum));
+        int datalen  = strlen(data);
+        if (hasError && datalen < reallen) {
+            *hasError = true;
+        }
+    } else {
+        data = DatumGetCString(OidOutputFunctionCall(typeOutput, anyDatum));
+    }
+    return data;
+}
+
 Datum Varlena2Float8(PG_FUNCTION_ARGS)
 {
     char* data = NULL;
-    data = DatumGetCString(DirectFunctionCall1(textout, PG_GETARG_DATUM(0)));
+    bool hasLenError = false;
+    data = AnyElementGetCString(fcinfo->argTypes[0], PG_GETARG_DATUM(0), &hasLenError);
+    
     bool hasError = false;
     char* endptr = NULL;
-
-    double result = float8in_internal(data, &endptr, &hasError);
+    double result = float8in_internal(data, &endptr, &hasError, fcinfo->ccontext);
     if (hasError || (endptr != NULL && *endptr != '\0')) {
         ereport((!fcinfo->can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
             (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                 errmsg("invalid input syntax for type double precision: \"%s\"", data)));
+    } else if (hasLenError) {
+        ereport((!fcinfo->can_ignore && SQL_MODE_STRICT()) ? ERROR : WARNING,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("Data truncated for input data: \"%s\"", data)));
     }
     pfree_ext(data);
     PG_RETURN_FLOAT8(result);
+}
+
+
+Datum bit_blob(VarBit* input)
+{
+    bytea* result = NULL;
+    int len = (VARBITLEN(input) - 1) / 8  + 1;
+    result = (bytea*)palloc0(len + VARHDRSZ);
+    Datum shift = DirectFunctionCall2(bit, VarBitPGetDatum(input), Int32GetDatum(len * 8));
+
+    errno_t ss_rc = 0;
+    ss_rc = memcpy_s(VARDATA(result), len, VARBITS((VarBit*)shift), len);
+    securec_check(ss_rc, "\0", "\0");
+    SET_VARSIZE(result, len + VARHDRSZ);
+
+    PG_RETURN_BYTEA_P(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(binary_length);
+extern "C" DLL_PUBLIC Datum binary_length(PG_FUNCTION_ARGS);
+Datum binary_length(PG_FUNCTION_ARGS)
+{
+    bytea* vlena = PG_GETARG_BYTEA_PP(0);
+    PG_RETURN_INT32(VARSIZE_ANY_EXHDR(vlena));
+}
+
+Datum dolphin_binaryout(PG_FUNCTION_ARGS)
+{
+    return byteaout(fcinfo);
+}
+
+void trim_trailing_space(char* str)
+{
+    char* p = NULL;
+
+    p = str + strlen(str);
+    for (p--; p >= str && *p == ' '; p--) {
+        *p = '\0';
+    }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bit_left);
+extern "C" DLL_PUBLIC Datum bit_left(PG_FUNCTION_ARGS);
+Datum bit_left(PG_FUNCTION_ARGS)
+{
+    VarBit *bits = PG_GETARG_VARBIT_P(0);
+    int length = PG_GETARG_INT32(1);
+
+    if (length <= 0) {
+        PG_RETURN_BYTEA_P(DirectFunctionCall1(rawin, CStringGetDatum("")));
+    }
+
+    VarBit *result = bit_substr_with_byte_align(bits, 1, length, false);
+
+    return bit_blob(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(blob_left);
+extern "C" DLL_PUBLIC Datum blob_left(PG_FUNCTION_ARGS);
+Datum blob_left(PG_FUNCTION_ARGS)
+{
+    Datum txtResult = DirectFunctionCall2Coll(text_left, PG_GET_COLLATION(),
+                                              PG_GETARG_DATUM(0), PG_GETARG_DATUM(1), fcinfo->can_ignore);
+
+    return DirectFunctionCall1Coll(texttoraw, PG_GET_COLLATION(), txtResult, fcinfo->can_ignore);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(concat_blob);
+extern "C" DLL_PUBLIC Datum concat_blob(PG_FUNCTION_ARGS);
+Datum concat_blob(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_BYTEA_P(concat_internal("", 0, 0, fcinfo, false));
 }
 #endif

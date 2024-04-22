@@ -1074,8 +1074,33 @@ partition p2 values less than(300),
 partition p3 values less than (maxvalue)
 );
 NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "b_range_mt2_pkey" for table "b_range_mt2"
+CREATE TABLE slb_monitor_drop_part (
+ monitor_time timestamp(6) without time zone
+) PARTITION BY RANGE (to_days(monitor_time))
+(PARTITION p20210801 VALUES LESS THAN (738369),
+ PARTITION p20210802 VALUES LESS THAN (738370),
+ PARTITION p20210803 VALUES LESS THAN (738371),
+ PARTITION p20210804 VALUES LESS THAN (738372),
+ PARTITION p20210805 VALUES LESS THAN (738373),
+ PARTITION p20210806 VALUES LESS THAN (738374),
+ PARTITION p20210807 VALUES LESS THAN (738375),
+ PARTITION p20210808 VALUES LESS THAN (738376),
+ PARTITION p20210809 VALUES LESS THAN (738377));
+set enable_opfusion to on;
+set enable_partition_opfusion to on;
+insert into slb_monitor_drop_part values('2021-08-05 11:50:14.000000');
+copy slb_monitor_drop_part from stdin;
+select * from slb_monitor_drop_part;
+    monitor_time     
+---------------------
+ 2021-08-05 11:50:14
+ 2021-08-05 11:50:15
+(2 rows)
+
+reset enable_opfusion;
+reset enable_partition_opfusion;
 drop schema partition_test4 cascade;
-NOTICE:  drop cascades to 19 other objects
+NOTICE:  drop cascades to 20 other objects
 DETAIL:  drop cascades to table test_range_subpart
 drop cascades to table test_range_part
 drop cascades to table test_list_part
@@ -1095,4 +1120,5 @@ drop cascades to table b_interval_t1
 drop cascades to table b_range_range_t01
 drop cascades to table b_range_mt1
 drop cascades to table b_range_mt2
+drop cascades to table slb_monitor_drop_part
 reset current_schema;

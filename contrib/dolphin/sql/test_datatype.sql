@@ -108,5 +108,25 @@ SELECT * FROM t0 WHERE t0.c1 is true order by 1,2;
 SELECT * FROM t0 WHERE t0.c1 is false order by 1,2;
 drop table t0;
 
+----
+set dolphin.b_compatibility_mode = true;
+drop table if exists t1;
+create table t1 (a char(16), b date, c datetime);
+insert into t1 SET a='test 2000-01-01', b='2000-01-01', c='2000-01-01';
+select * from t1 where c = '2000-01-01';
+select * from t1 where b = '2000-01-01';
+select * from t1 where c = '2000-01-01'::datetime;
+select * from t1 where b = '2000-01-01'::date;
+set dolphin.b_compatibility_mode = off;
+select * from t1 where c = '2000-01-01';
+select * from t1 where b = '2000-01-01';
+select * from t1 where c = '2000-01-01'::datetime;
+select * from t1 where b = '2000-01-01'::date;
+
+drop table t1;
+
+---
+select pg_catalog.delete(cast('test=>NULL' as hstore), cast(pg_catalog.dolphin_types() as _text));
+
 drop schema b_datatype_test cascade;
 reset current_schema;

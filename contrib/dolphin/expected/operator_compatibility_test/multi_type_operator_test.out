@@ -262,7 +262,7 @@ SELECT pg_typeof(`int4` * `date`) FROM test_multi_type_table;
 SELECT pg_typeof(`int4` / `date`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`int4` + `time`) FROM test_multi_type_table;
@@ -286,7 +286,7 @@ SELECT pg_typeof(`int4` * `time`) FROM test_multi_type_table;
 SELECT pg_typeof(`int4` / `time`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`int4` + `datetime`) FROM test_multi_type_table;
@@ -310,31 +310,31 @@ SELECT pg_typeof(`int4` * `datetime`) FROM test_multi_type_table;
 SELECT pg_typeof(`int4` / `datetime`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`int4` + `datetime(4)`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`int4` - `datetime(4)`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`int4` * `datetime(4)`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`int4` / `datetime(4)`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`int4` + `year`) FROM test_multi_type_table;
@@ -355,7 +355,7 @@ SELECT pg_typeof(`int4` * `year`) FROM test_multi_type_table;
 SELECT pg_typeof(`int4` / `year`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 -- float op time
@@ -483,121 +483,121 @@ SELECT pg_typeof(`float8` / `year`) FROM test_multi_type_table;
 SELECT pg_typeof(`numeric` + `date`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` - `date`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` * `date`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` / `date`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` + `time`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` - `time`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` * `time`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` / `time`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` + `datetime`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` - `datetime`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` * `datetime`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` / `datetime`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` + `datetime(4)`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` - `datetime(4)`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` * `datetime(4)`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` / `datetime(4)`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` + `year`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` - `year`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` * `year`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 SELECT pg_typeof(`numeric` / `year`) FROM test_multi_type_table;
  pg_typeof 
 -----------
- numeric
+ number
 (1 row)
 
 -- string op time

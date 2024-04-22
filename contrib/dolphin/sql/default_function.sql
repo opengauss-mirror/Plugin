@@ -41,5 +41,53 @@ insert into a set a=1, b=1;
 update a set a = default(b);
 select default(b) from a;
 
+drop table t1;
+create table t1(a int default(1+2));
+select default(a) from t1;
+insert into t1 values(default);
+select default(a) from t1;
+create table t3 as select default(a) from t1;
+select * from t3;
+
+create table t4(a int default(abs(4+1) - abs(2-1)));
+insert into t4 values (1);
+select default(a) from t4;
+
+create table t5(id int default (2 + (2 *3)), name int default (2 * (2 + 3)));
+insert into t5 values (default);
+create table t6(id int default (8 + (1 *3)), name int default (8 * (1 + 3))) as select default(id) as id, default (name) as name from t5;
+select * from t6;
+
+create table t7(c1 varchar(20) default concat('hello', ' world'), c2 varchar(20) default concat('hello', ' world'), c3 timestamp(6) default now(), c4 text default repeat('hello',2),
+c5 bytea default E'\\000'::bytea, c6 int default 1+(2*3), c7 timestamp default timeofday()::timestamp, c8 number(9,1) default 10+238/5*3, c9 date default current_date, c10 date);
+insert into t7 values (default);
+select * from t7;
+
+drop table t1;
+drop table t3;
+drop table t4;
+drop table t5;
+drop table t6;
+drop table t7;
+
+CREATE FUNCTION tt.mode_b_default(i integer) RETURNS integer AS
+$$
+BEGIN
+	RETURN i + 1;
+END;
+$$ LANGUAGE plpgsql;
+
+set current_schema = 'tt';
+
+select mode_b_default(b) from public.a;
+select tt.mode_b_default(b) from public.a;
+select pg_catalog.mode_b_default(b) from public.a;
+
+reset current_schema;
+
+select mode_b_default(b) from a;
+select tt.mode_b_default(b) from a;
+select pg_catalog.mode_b_default(b) from a;
+
 \c postgres
 drop database if exists db_default;

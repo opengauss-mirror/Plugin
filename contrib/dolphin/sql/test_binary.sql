@@ -234,5 +234,143 @@ SELECT 'ab'::varbinary(2) > 'ab'::binary;
 SELECT 'ab'::varbinary(2) >= 'ab'::binary;
 SELECT 'ab'::varbinary(2) <> 'ab'::binary;
 
+-- binary to bigint
+select (20220101)::binary(30)::bigint;
+select (-2075)::binary(30)::bigint;
+
+--binary/varbinary index test
+create table t_index_test(a binary(100), b varbinary(100));
+insert into t_index_test select i,i from generate_series(1,10000) i;
+create index i_b on t_index_test(a);
+create index i_vb on t_index_test(b);
+analyze t_index_test;
+explain (costs off) select * from t_index_test where a='1';
+explain (costs off) select * from t_index_test where a>='a1';
+explain (costs off) select * from t_index_test where a>'a1';
+explain (costs off) select * from t_index_test where a<='1';
+explain (costs off) select * from t_index_test where a<'1';
+
+explain (costs off) select * from t_index_test where b='1';
+explain (costs off) select * from t_index_test where b>='a1';
+explain (costs off) select * from t_index_test where b>'a1';
+explain (costs off) select * from t_index_test where b<='1';
+explain (costs off) select * from t_index_test where b<'1';
+
+drop index i_b;
+drop index i_vb;
+create index i_b on t_index_test(a) using hash;
+create index i_vb on t_index_test(b) using hash;
+analyze t_index_test;
+explain (costs off) select * from t_index_test where a='1';
+
+explain (costs off) select * from t_index_test where b='1';
+
+drop table t_index_test;
+
+-- binary about concat
+DROP TABLE IF EXISTS t1;
+SET dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero,treat_bxconst_as_binary';
+CREATE TABLE t1 (s1 binary(2), s2 varbinary(2));
+INSERT INTO t1 VALUES (x'4100', x'4100');
+SELECT HEX(concat('*', s1, '*', s2, '*')) FROM t1;
+SELECT HEX(concat('*', s1, '*', s2, '*')) FROM t1;
+SELECT HEX(s1), HEX(s2), HEX('*') FROM t1;
+DROP TABLE t1;
+
+-- test about set to binary
+set dolphin.b_compatibility_mode=on;
+set bytea_output=escape;
+drop table if exists t_set0004;
+create table t_set0004(
+c1 int not null auto_increment primary key,
+c2 set('2011-11-11', '2023-02-28 11:23:00', '2024-01', '2025/01/01')
+default null,
+c3 set('red', 'yellow', 'blue') not null,
+c4 set('0', '1', '1.01314'));
+insert into t_set0004(c2, c3, c4) values ('2025/01/01', 'blue', '0');
+insert into t_set0004(c2, c3, c4) values (
+'2011-11-11,2023-02-28 11:23:00', 'red,yellow', '0,1');
+insert into t_set0004(c2, c3, c4) values (
+'2024-01,2011-11-11,2025/01/01', 'red,blue', '0,1.01314');
+insert into t_set0004(c2, c3) values ('2023-02-28 11:23:00', 'red');
+insert into t_set0004(c2, c3) values (
+'2023-02-28 11:23:00,2025/01/01,2025/01/01', 'blue,blue,yellow');
+insert into t_set0004(c3) values ('yellow');
+insert into t_set0004(c3) values ('yellow,yellow,yellow,yellow');
+insert into t_set0004(c3) values ('blue,yellow,red,red');
+insert into t_set0004(c3) values ('blue,red');
+insert into t_set0004(c3, c4) values ('red', '1');
+insert into t_set0004(c3, c4) values ('red,red', '1.01314,1.01314');
+insert into t_set0004(c3, c4) values ('red,blue', '0,1,1.01314');
+select cast(c1 as binary(1)), cast(c2 as binary(1)), cast(c3 as binary(1)),
+cast(c4 as binary(1)) from t_set0004 order by 1,2,3,4;
+select convert(c1, binary(1)), convert(c2, binary(1)), convert(c3, binary(1)),
+convert(c4, binary(1)) from t_set0004 order by 1,2,3,4;
+select cast('2023-1-12' as binary(1));
+drop table t_set0004;
+drop table if exists test_ignore;
+create table test_ignore (a binary(1), b varbinary(1));
+insert into test_ignore(a) values(cast('2023-1-12' as binary(1)));
+insert into test_ignore(b) values(cast('2023-1-12' as binary(1)));
+insert ignore into test_ignore values(cast('2023-1-12' as binary(1)), cast('2023-1-12' as varbinary(1)));
+drop table test_ignore;
+
+set dolphin.b_compatibility_mode=on;
+set b_format_behavior_compat_options=enable_set_variables;
+set bytea_output=escape;
+drop table if exists t_binary0002 cascade;
+create table t_binary0002(
+c1 int not null,
+c2 binary,
+c3 binary(10),
+c4 binary(255),
+c5 varbinary(1),
+c6 varbinary(10),
+c7 varbinary(255)) charset utf8mb3;
+set @v1='abcdefghijklmnopqrstuvwxyz';
+set @v2='a熊猫竹竹爱吃竹子';
+set @v3=hex(@v2);
+set @v4=unhex(@v3);
+set @v5=bin(121314);
+set @v6=oct(999999);
+insert into t_binary0002 values (
+1, substr(@v1,1,1), substr(@v1,1,10), repeat(@v1, 9),
+substr(@v1,1,1), substr(@v1,1,10), repeat(@v1, 9));
+insert into t_binary0002 values (
+2, substr(@v2,1,1), substr(@v2,1,4), repeat(@v2, 9),
+substr(@v2,1,1), substr(@v2,1,4), repeat(@v2, 9));
+insert into t_binary0002 values (
+3, substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255),
+substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255));
+insert into t_binary0002 values (
+4, substr(@v4,1,1), substr(@v4,1,4), substr(repeat(@v4, 10),1,255),
+substr(@v4,1,1), substr(@v4,1,4), substr(repeat(@v4, 10),1,255));
+insert into t_binary0002 values (
+5, substr(@v5,1,1), substr(@v5,1,4), substr(repeat(@v5, 10),1,255),
+substr(@v5,1,1), substr(@v5,1,4), substr(repeat(@v5, 10),1,255));
+insert into t_binary0002 values (
+6, substr(@v6,1,1), substr(@v6,1,4), substr(repeat(@v6, 10),1,255),
+substr(@v6,1,1), substr(@v6,1,4), substr(repeat(@v6, 10),1,255));
+select c1, cast(c2 as char), cast(c3 as char), cast(c4 as char), cast(c5 as
+char), cast(c6 as char), cast(c7 as char) from t_binary0002 order by
+1,2,3,4,5,6,7;
+
+SELECT repeat('a'::tinyblob, 5)::binary(10);
+SELECT repeat('a'::tinyblob, 100)::binary(10);
+SELECT repeat('a'::tinyblob, 5)::varbinary(10);
+SELECT repeat('a'::tinyblob, 100)::varbinary(10);
+SELECT repeat('a'::blob, 5)::binary(10);
+SELECT repeat('a'::blob, 100)::binary(10);
+SELECT repeat('a'::blob, 5)::varbinary(10);
+SELECT repeat('a'::blob, 100)::varbinary(10);
+SELECT repeat('a'::mediumblob, 5)::binary(10);
+SELECT repeat('a'::mediumblob, 100)::binary(10);
+SELECT repeat('a'::mediumblob, 5)::varbinary(10);
+SELECT repeat('a'::mediumblob, 100)::varbinary(10);
+SELECT repeat('a'::longblob, 5)::binary(10);
+SELECT repeat('a'::longblob, 100)::binary(10);
+SELECT repeat('a'::longblob, 5)::varbinary(10);
+SELECT repeat('a'::longblob, 100)::varbinary(10);
+
 drop schema test_binary cascade;
 reset current_schema;

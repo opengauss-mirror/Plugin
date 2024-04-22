@@ -1,0 +1,189 @@
+create schema convert_truncated_warning;
+set current_schema = convert_truncated_warning;
+set dolphin.sql_mode = default;
+set dolphin.b_compatibility_mode = on;
+SELECT CONVERT(TIMESTAMP '2004-01-22 21:45:33',CHAR(4));
+WARNING:  value too long for type character varying(4)
+CONTEXT:  referenced column: varchar
+ varchar 
+---------
+ 2004
+(1 row)
+
+SELECT CONVERT('1.1', signed);
+ERROR:  invalid input syntax for type int16: "1.1"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: int8
+SELECT CONVERT('1.5', signed);
+ERROR:  invalid input syntax for type int16: "1.5"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: int8
+SELECT CONVERT('abc', signed);
+ int8 
+------
+    0
+(1 row)
+
+SELECT CONVERT('1111111111111111111111111111111111111111111', signed);
+ERROR:  value "1111111111111111111111111111111111111111111" is out of range for type int16
+DETAIL:  text exceeds the length of int16
+CONTEXT:  referenced column: int8
+SELECT CONVERT(1111111111111111111111111111111111111111111, signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+        int8         
+---------------------
+ 9223372036854775807
+(1 row)
+
+SELECT CONVERT(b'11111111111111111111111111111111111111111111111111111111111111111111111111111111111', signed);
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+WARNING:  bigint out of range
+CONTEXT:  referenced column: int8
+ int8 
+------
+   -1
+(1 row)
+
+SELECT CONVERT('1.1', unsigned);
+ERROR:  invalid input syntax for type int16: "1.1"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: uint8
+SELECT CONVERT('1.5', unsigned);
+ERROR:  invalid input syntax for type int16: "1.5"
+DETAIL:  text contain invalid character
+CONTEXT:  referenced column: uint8
+SELECT CONVERT('abc', unsigned);
+ uint8 
+-------
+ 0
+(1 row)
+
+SELECT CONVERT('1111111111111111111111111111111111111111111', unsigned);
+ERROR:  value "1111111111111111111111111111111111111111111" is out of range for type int16
+DETAIL:  text exceeds the length of int16
+CONTEXT:  referenced column: uint8
+SELECT CONVERT(1111111111111111111111111111111111111111111, unsigned);
+WARNING:  bigint unsigned out of range
+CONTEXT:  referenced column: uint8
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+SELECT CONVERT(b'11111111111111111111111111111111111111111111111111111111111111111111111111111111111', unsigned);
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+SELECT CONVERT('1111111111111111111111111111111111111111111', decimal);
+WARNING:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: numeric
+  numeric   
+------------
+ 9999999999
+(1 row)
+
+SELECT CONVERT('1111111111111111111111111111111111111111111', decimal(10, 2));
+WARNING:  numeric field overflow
+DETAIL:  A field with precision 10, scale 2 must round to an absolute value less than 10^8.
+CONTEXT:  referenced column: numeric
+   numeric   
+-------------
+ 99999999.99
+(1 row)
+
+SELECT CONVERT('-1111111111111111111111111111111111111111111', decimal);
+WARNING:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: numeric
+   numeric   
+-------------
+ -9999999999
+(1 row)
+
+SELECT CONVERT('-1111111111111111111111111111111111111111111', decimal(10, 2));
+WARNING:  numeric field overflow
+DETAIL:  A field with precision 10, scale 2 must round to an absolute value less than 10^8.
+CONTEXT:  referenced column: numeric
+   numeric    
+--------------
+ -99999999.99
+(1 row)
+
+SELECT CONVERT(b'11111111111111111111111111111111111111111111111111111111111111111111111111111111111', decimal);
+WARNING:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: numeric
+  numeric   
+------------
+ 9999999999
+(1 row)
+
+SELECT CONVERT(b'11111111111111111111111111111111111111111111111111111111111111111111111111111111111', decimal(10, 2));
+WARNING:  numeric field overflow
+DETAIL:  A field with precision 10, scale 2 must round to an absolute value less than 10^8.
+CONTEXT:  referenced column: numeric
+   numeric   
+-------------
+ 99999999.99
+(1 row)
+
+SELECT CONVERT('.1.', decimal);
+WARNING:  invalid input syntax for type numeric: ".1."
+LINE 1: SELECT CONVERT('.1.', decimal);
+                       ^
+CONTEXT:  referenced column: numeric
+ numeric 
+---------
+       0
+(1 row)
+
+SELECT CONVERT('1e', decimal);
+WARNING:  invalid input syntax for type numeric: "1e"
+LINE 1: SELECT CONVERT('1e', decimal);
+                       ^
+CONTEXT:  referenced column: numeric
+ numeric 
+---------
+       1
+(1 row)
+
+SELECT CONVERT('1e1001', decimal);
+WARNING:  invalid input syntax for type numeric: "1e1001"
+LINE 1: SELECT CONVERT('1e1001', decimal);
+                       ^
+CONTEXT:  referenced column: numeric
+WARNING:  numeric field overflow
+DETAIL:  A field with precision 10, scale 0 must round to an absolute value less than 10^10.
+CONTEXT:  referenced column: numeric
+  numeric   
+------------
+ 9999999999
+(1 row)
+
+SELECT CONVERT('1e-1001', decimal);
+WARNING:  invalid input syntax for type numeric: "1e-1001"
+LINE 1: SELECT CONVERT('1e-1001', decimal);
+                       ^
+CONTEXT:  referenced column: numeric
+ numeric 
+---------
+       0
+(1 row)
+
+SELECT CONVERT('abc', decimal);
+WARNING:  invalid input syntax for type numeric: "abc"
+LINE 1: SELECT CONVERT('abc', decimal);
+                       ^
+CONTEXT:  referenced column: numeric
+ numeric 
+---------
+       0
+(1 row)
+
+reset current_schema;
+drop schema convert_truncated_warning cascade;

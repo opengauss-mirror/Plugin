@@ -1672,7 +1672,11 @@ static void SetUpsertAttrnoState(ParseState* pstate, List *targetList)
                 if (attr[ci].attisdropped) {
                     continue;
                 }
+#ifdef DOLPHIN
+                if (pg_strcasecmp(name, attr[ci].attname.data) == 0) {
+#else
                 if (strcmp(name, attr[ci].attname.data) == 0) {
+#endif
                     rstate->usExplicitAttrNos[ni] = ci + 1;
                     break;
                 }
@@ -4038,8 +4042,22 @@ static Node* transformSetOperationTree(ParseState* pstate, SelectStmt* stmt, boo
         /*
          * Recursively transform the left child node.
          */
+#ifdef DOLPHIN
+        GetSessionContext()->isInTransformSet= true;
+        PG_TRY();
+        {
+            op->larg = transformSetOperationTree(pstate, stmt->larg, false, &ltargetlist);
+        }
+        PG_CATCH();
+        {
+            GetSessionContext()->isInTransformSet = false;
+            PG_RE_THROW();
+        }
+        PG_END_TRY();
+        GetSessionContext()->isInTransformSet = false;
+#else
         op->larg = transformSetOperationTree(pstate, stmt->larg, false, &ltargetlist);
-
+#endif
         /*
          * If we are processing a recursive union query, now is the time to
          * examine the non-recursive term's output columns and mark the
@@ -4097,6 +4115,21 @@ static Node* transformSetOperationTree(ParseState* pstate, SelectStmt* stmt, boo
                 rescoltype = lcoltype;
                 bestexpr = lcolnode;
 #ifdef DOLPHIN
+            } else if (isTopLevel && pstate->p_parent_cte && pstate->p_parent_cte->cterecursive) {
+                /*
+                 * the CTE's column types are defined by the non-recursive member
+                 * which implies that recursive member's selected expressions are cast to
+                 * the non-recursive member's type.
+                 */
+                if (lcoltype == UNKNOWNOID) {
+                    rescoltype = TEXTOID;
+                } else {
+                    rescoltype = lcoltype;
+                    rcolnode = coerce_to_common_type(pstate, rcolnode, rescoltype, context);
+                    rtle->expr = (Expr*)rcolnode;
+                    rcoltype = exprType(rcolnode);
+                    rcoltypmod = exprTypmod(rcolnode);
+                }
             } else if (lcoltype == UNKNOWNOID || rcoltype == UNKNOWNOID) {
                 rescoltype = TEXTOID;
 #endif

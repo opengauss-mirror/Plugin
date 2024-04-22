@@ -1,0 +1,488 @@
+create schema function_type_test;
+set current_schema = function_type_test;
+set dolphin.b_compatibility_mode = on;
+set timezone = PRC;
+CREATE TABLE test_type_table
+(
+    `int1` tinyint,
+    `uint1` tinyint unsigned,
+    `int2` smallint,
+    `uint2` smallint unsigned,
+    `int4` integer,
+    `uint4` integer unsigned,
+    `int8` bigint,
+    `uint8` bigint unsigned,
+    `float4` float4,
+    `float8` float8,
+    `numeric` decimal(20, 6),
+    `bit1` bit(1),
+    `bit64` bit(64),
+    `boolean` boolean,
+    `date` date,
+    `time` time,
+    `time(4)` time(4),
+    `datetime` datetime,
+    `datetime(4)` datetime(4) default '2022-11-11 11:11:11',
+    `timestamp` timestamp,
+    `timestamp(4)` timestamp(4) default '2022-11-11 11:11:11',
+    `year` year,
+    `char` char(100),
+    `varchar` varchar(100),
+    `binary` binary(100),
+    `varbinary` varbinary(100),
+    `tinyblob` tinyblob,
+    `blob` blob,
+    `mediumblob` mediumblob,
+    `longblob` longblob,
+    `text` text,
+    `enum_t` enum('a', 'b', 'c'),
+    `set_t` set('a', 'b', 'c'),
+    `json` json
+);
+
+insert into test_type_table values(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,b'1', b'111', true,'2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023','1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a','a', 'a,c',json_object('a', 1, 'b', 2));
+
+select
+is_ipv4(`int1`),
+is_ipv4(`uint1`),
+is_ipv4(`int2`),
+is_ipv4(`uint2`),
+is_ipv4(`int4`),
+is_ipv4(`uint4`),
+is_ipv4(`int8`),
+is_ipv4(`uint8`),
+is_ipv4(`float4`),
+is_ipv4(`float8`),
+is_ipv4(`numeric`),
+is_ipv4(`bit1`),
+is_ipv4(`bit64`),
+is_ipv4(`boolean`),
+is_ipv4(`date`),
+is_ipv4(`time`),
+is_ipv4(`time(4)`),
+is_ipv4(`datetime`),
+is_ipv4(`datetime(4)`),
+is_ipv4(`timestamp`),
+is_ipv4(`timestamp(4)`),
+is_ipv4(`year`),
+is_ipv4(`char`),
+is_ipv4(`varchar`),
+--is_ipv4(`binary`),
+--is_ipv4(`varbinary`),
+is_ipv4(`tinyblob`),
+is_ipv4(`blob`),
+is_ipv4(`mediumblob`),
+is_ipv4(`longblob`),
+is_ipv4(`text`),
+is_ipv4(`enum_t`),
+is_ipv4(`set_t`),
+is_ipv4(`json`)
+from test_type_table;
+
+create table test_is_ipv4(c int4);
+insert into test_is_ipv4 select is_ipv4(`int1`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`uint1`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`int2`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`uint2`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`int4`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`uint4`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`int8`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`uint8`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`float4`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`float8`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`numeric`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`bit1`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`bit64`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`boolean`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`date`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`time`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`time(4)`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`datetime`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`datetime(4)`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`timestamp`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`timestamp(4)`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`year`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`char`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`varchar`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`binary`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`varbinary`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`tinyblob`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`blob`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`mediumblob`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`longblob`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`text`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`enum_t`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`set_t`) from test_type_table;
+insert into test_is_ipv4 select is_ipv4(`json`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`int1`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`uint1`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`int2`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`uint2`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`int4`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`uint4`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`int8`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`uint8`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`float4`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`float8`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`numeric`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`bit1`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`bit64`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`boolean`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`date`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`time`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`time(4)`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`datetime`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`datetime(4)`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`timestamp`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`timestamp(4)`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`year`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`char`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`varchar`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`binary`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`varbinary`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`tinyblob`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`blob`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`mediumblob`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`longblob`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`text`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`enum_t`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`set_t`) from test_type_table;
+insert ignore into test_is_ipv4 select is_ipv4(`json`) from test_type_table;
+
+select
+bit_and(`int1`),
+bit_and(`uint1`),
+bit_and(`int2`),
+bit_and(`uint2`),
+bit_and(`int4`),
+bit_and(`uint4`),
+bit_and(`int8`),
+bit_and(`uint8`),
+bit_and(`float4`),
+bit_and(`float8`),
+bit_and(`numeric`),
+bit_and(`bit1`),
+bit_and(`bit64`),
+bit_and(`boolean`),
+bit_and(`date`),
+bit_and(`time`),
+bit_and(`time(4)`),
+bit_and(`datetime`),
+bit_and(`datetime(4)`),
+bit_and(`timestamp`),
+bit_and(`timestamp(4)`),
+bit_and(`year`),
+bit_and(`char`),
+bit_and(`varchar`),
+bit_and(`binary`),
+bit_and(`varbinary`),
+bit_and(`tinyblob`),
+bit_and(`blob`),
+bit_and(`mediumblob`),
+bit_and(`longblob`),
+bit_and(`text`),
+--bit_and(`enum_t`),
+bit_and(`set_t`)
+--bit_and(`json`)
+from test_type_table;
+
+create table test_bit_and_1(c uint8);
+create table test_bit_and_2(c varbinary(100));
+insert into test_bit_and_1 select bit_and(`int1`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`uint1`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`int2`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`uint2`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`int4`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`uint4`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`int8`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`uint8`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`float4`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`float8`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`numeric`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`bit1`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`bit64`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`boolean`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`date`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`time`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`time(4)`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`datetime`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`datetime(4)`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`timestamp`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`timestamp(4)`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`year`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`char`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`varchar`) from test_type_table;
+insert into test_bit_and_2 select bit_and(`binary`) from test_type_table;
+insert into test_bit_and_2 select bit_and(`varbinary`) from test_type_table;
+insert into test_bit_and_2 select bit_and(`tinyblob`) from test_type_table;
+insert into test_bit_and_2 select bit_and(`blob`) from test_type_table;
+insert into test_bit_and_2 select bit_and(`mediumblob`) from test_type_table;
+insert into test_bit_and_2 select bit_and(`longblob`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`text`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`enum_t`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`set_t`) from test_type_table;
+insert into test_bit_and_1 select bit_and(`json`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`int1`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`uint1`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`int2`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`uint2`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`int4`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`uint4`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`int8`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`uint8`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`float4`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`float8`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`numeric`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`bit1`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`bit64`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`boolean`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`date`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`time`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`time(4)`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`datetime`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`datetime(4)`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`timestamp`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`timestamp(4)`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`year`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`char`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`varchar`) from test_type_table;
+insert ignore into test_bit_and_2 select bit_and(`binary`) from test_type_table;
+insert ignore into test_bit_and_2 select bit_and(`varbinary`) from test_type_table;
+insert ignore into test_bit_and_2 select bit_and(`tinyblob`) from test_type_table;
+insert ignore into test_bit_and_2 select bit_and(`blob`) from test_type_table;
+insert ignore into test_bit_and_2 select bit_and(`mediumblob`) from test_type_table;
+insert ignore into test_bit_and_2 select bit_and(`longblob`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`text`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`enum_t`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`set_t`) from test_type_table;
+insert ignore into test_bit_and_1 select bit_and(`json`) from test_type_table;
+
+select
+inet6_ntoa(`int1`),
+inet6_ntoa(`uint1`),
+inet6_ntoa(`int2`),
+inet6_ntoa(`uint2`),
+inet6_ntoa(`int4`),
+inet6_ntoa(`uint4`),
+inet6_ntoa(`int8`),
+inet6_ntoa(`uint8`),
+inet6_ntoa(`float4`),
+inet6_ntoa(`float8`),
+inet6_ntoa(`numeric`),
+inet6_ntoa(`bit1`),
+inet6_ntoa(`bit64`),
+inet6_ntoa(`boolean`),
+inet6_ntoa(`date`),
+inet6_ntoa(`time`),
+inet6_ntoa(`time(4)`),
+inet6_ntoa(`datetime`),
+inet6_ntoa(`datetime(4)`),
+inet6_ntoa(`timestamp`),
+inet6_ntoa(`timestamp(4)`),
+inet6_ntoa(`year`),
+inet6_ntoa(`char`),
+inet6_ntoa(`varchar`),
+inet6_ntoa(`binary`),
+inet6_ntoa(`varbinary`),
+inet6_ntoa(`tinyblob`),
+inet6_ntoa(`blob`),
+inet6_ntoa(`mediumblob`),
+inet6_ntoa(`longblob`),
+inet6_ntoa(`text`),
+inet6_ntoa(`enum_t`),
+inet6_ntoa(`set_t`),
+inet6_ntoa(`json`)
+from test_type_table;
+
+create table test_inet6_ntoa(c varchar(100));
+insert into test_inet6_ntoa select inet6_ntoa(`int1`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`uint1`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`int2`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`uint2`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`int4`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`uint4`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`int8`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`uint8`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`float4`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`float8`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`numeric`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`bit1`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`bit64`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`boolean`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`date`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`time`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`time(4)`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`datetime`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`datetime(4)`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`timestamp`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`timestamp(4)`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`year`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`char`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`varchar`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`binary`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`varbinary`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`tinyblob`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`blob`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`mediumblob`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`longblob`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`text`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`enum_t`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`set_t`) from test_type_table;
+insert into test_inet6_ntoa select inet6_ntoa(`json`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`int1`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`uint1`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`int2`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`uint2`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`int4`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`uint4`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`int8`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`uint8`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`float4`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`float8`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`numeric`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`bit1`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`bit64`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`boolean`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`date`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`time`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`time(4)`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`datetime`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`datetime(4)`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`timestamp`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`timestamp(4)`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`year`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`char`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`varchar`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`binary`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`varbinary`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`tinyblob`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`blob`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`mediumblob`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`longblob`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`text`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`enum_t`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`set_t`) from test_type_table;
+insert ignore into test_inet6_ntoa select inet6_ntoa(`json`) from test_type_table;
+
+select
+md5(`int1`),
+md5(`uint1`),
+md5(`int2`),
+md5(`uint2`),
+md5(`int4`),
+md5(`uint4`),
+md5(`int8`),
+md5(`uint8`),
+md5(`float4`),
+md5(`float8`),
+md5(`numeric`),
+md5(`bit1`),
+md5(`bit64`),
+md5(`boolean`),
+md5(`date`),
+md5(`time`),
+md5(`time(4)`),
+md5(`datetime`),
+md5(`datetime(4)`),
+md5(`timestamp`),
+md5(`timestamp(4)`),
+md5(`year`),
+md5(`char`),
+md5(`varchar`),
+md5(`binary`),
+md5(`varbinary`),
+md5(`tinyblob`),
+md5(`blob`),
+md5(`mediumblob`),
+md5(`longblob`),
+md5(`text`),
+md5(`enum_t`),
+md5(`set_t`),
+md5(`json`)
+from test_type_table;
+
+create table test_md5(c varchar(100));
+insert into test_md5 select md5(`int1`) from test_type_table;
+insert into test_md5 select md5(`uint1`) from test_type_table;
+insert into test_md5 select md5(`int2`) from test_type_table;
+insert into test_md5 select md5(`uint2`) from test_type_table;
+insert into test_md5 select md5(`int4`) from test_type_table;
+insert into test_md5 select md5(`uint4`) from test_type_table;
+insert into test_md5 select md5(`int8`) from test_type_table;
+insert into test_md5 select md5(`uint8`) from test_type_table;
+insert into test_md5 select md5(`float4`) from test_type_table;
+insert into test_md5 select md5(`float8`) from test_type_table;
+insert into test_md5 select md5(`numeric`) from test_type_table;
+insert into test_md5 select md5(`bit1`) from test_type_table;
+insert into test_md5 select md5(`bit64`) from test_type_table;
+insert into test_md5 select md5(`boolean`) from test_type_table;
+insert into test_md5 select md5(`date`) from test_type_table;
+insert into test_md5 select md5(`time`) from test_type_table;
+insert into test_md5 select md5(`time(4)`) from test_type_table;
+insert into test_md5 select md5(`datetime`) from test_type_table;
+insert into test_md5 select md5(`datetime(4)`) from test_type_table;
+insert into test_md5 select md5(`timestamp`) from test_type_table;
+insert into test_md5 select md5(`timestamp(4)`) from test_type_table;
+insert into test_md5 select md5(`year`) from test_type_table;
+insert into test_md5 select md5(`char`) from test_type_table;
+insert into test_md5 select md5(`varchar`) from test_type_table;
+insert into test_md5 select md5(`binary`) from test_type_table;
+insert into test_md5 select md5(`varbinary`) from test_type_table;
+insert into test_md5 select md5(`tinyblob`) from test_type_table;
+insert into test_md5 select md5(`blob`) from test_type_table;
+insert into test_md5 select md5(`mediumblob`) from test_type_table;
+insert into test_md5 select md5(`longblob`) from test_type_table;
+insert into test_md5 select md5(`text`) from test_type_table;
+insert into test_md5 select md5(`enum_t`) from test_type_table;
+insert into test_md5 select md5(`set_t`) from test_type_table;
+insert into test_md5 select md5(`json`) from test_type_table;
+insert ignore into test_md5 select md5(`int1`) from test_type_table;
+insert ignore into test_md5 select md5(`uint1`) from test_type_table;
+insert ignore into test_md5 select md5(`int2`) from test_type_table;
+insert ignore into test_md5 select md5(`uint2`) from test_type_table;
+insert ignore into test_md5 select md5(`int4`) from test_type_table;
+insert ignore into test_md5 select md5(`uint4`) from test_type_table;
+insert ignore into test_md5 select md5(`int8`) from test_type_table;
+insert ignore into test_md5 select md5(`uint8`) from test_type_table;
+insert ignore into test_md5 select md5(`float4`) from test_type_table;
+insert ignore into test_md5 select md5(`float8`) from test_type_table;
+insert ignore into test_md5 select md5(`numeric`) from test_type_table;
+insert ignore into test_md5 select md5(`bit1`) from test_type_table;
+insert ignore into test_md5 select md5(`bit64`) from test_type_table;
+insert ignore into test_md5 select md5(`boolean`) from test_type_table;
+insert ignore into test_md5 select md5(`date`) from test_type_table;
+insert ignore into test_md5 select md5(`time`) from test_type_table;
+insert ignore into test_md5 select md5(`time(4)`) from test_type_table;
+insert ignore into test_md5 select md5(`datetime`) from test_type_table;
+insert ignore into test_md5 select md5(`datetime(4)`) from test_type_table;
+insert ignore into test_md5 select md5(`timestamp`) from test_type_table;
+insert ignore into test_md5 select md5(`timestamp(4)`) from test_type_table;
+insert ignore into test_md5 select md5(`year`) from test_type_table;
+insert ignore into test_md5 select md5(`char`) from test_type_table;
+insert ignore into test_md5 select md5(`varchar`) from test_type_table;
+insert ignore into test_md5 select md5(`binary`) from test_type_table;
+insert ignore into test_md5 select md5(`varbinary`) from test_type_table;
+insert ignore into test_md5 select md5(`tinyblob`) from test_type_table;
+insert ignore into test_md5 select md5(`blob`) from test_type_table;
+insert ignore into test_md5 select md5(`mediumblob`) from test_type_table;
+insert ignore into test_md5 select md5(`longblob`) from test_type_table;
+insert ignore into test_md5 select md5(`text`) from test_type_table;
+insert ignore into test_md5 select md5(`enum_t`) from test_type_table;
+insert ignore into test_md5 select md5(`set_t`) from test_type_table;
+insert ignore into test_md5 select md5(`json`) from test_type_table;
+
+select convert(1, binary) & convert(1, binary);
+select convert(1, binary) & convert(2, binary);
+select convert(1.1, binary) & convert(1.2, binary);
+select convert(1, blob) & convert(1, blob);
+select convert(1, blob) & convert(2, blob);
+select convert(1.1, blob) & convert(1.2, blob);
+
+drop table test_is_ipv4;
+drop table test_bit_and_1;
+drop table test_bit_and_2;
+drop table test_inet6_ntoa;
+drop table test_md5;
+drop table test_type_table;
+reset current_schema;
+drop schema function_type_test;

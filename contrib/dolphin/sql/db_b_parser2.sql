@@ -75,6 +75,13 @@ SELECT quarter(20221009);
 SELECT weekday(20221009);
 SELECT weekofyear(20221009);
 
+SELECT dayofmonth('');
+SELECT day('');
+SELECT dayofmonth(true);
+SELECT day(true);
+SELECT dayofmonth(false);
+SELECT day(false);
+
 select year('');
 select year('2022');
 select year('2022-06');
@@ -150,6 +157,16 @@ select length('1'), length('101'), length('1011111111');
 select length(E'哈1哈\n'),length(E'\n'),length(E'\\n');
 --返回0、1、空
 select length(''),length(' '),length(NULL);
+
+set dolphin.sql_mode='treat_bxconst_as_binary';
+create table t_binary(a binary, b varbinary(10), c binary(10));
+insert into t_binary values(null,null,null);
+insert into t_binary values(b'1',b'111',b'111');
+insert into t_binary values(b'1',b'11111',b'111');
+insert into t_binary values(b'1',b'111111111',b'111');
+select *,length(a),length(b),length(c) from t_binary order by 1,2,3;
+drop table t_binary;
+reset dolphin.sql_mode;
 
 create table fchar_test(fchar char(10));
 insert into fchar_test values('零一二三四五六七八九');

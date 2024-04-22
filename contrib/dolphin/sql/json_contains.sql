@@ -90,5 +90,30 @@ insert into json_contains_test values('[1,2,3,4]','[2,4]','$');
 select *, json_contains(target, candidate, path) from json_contains_test;
 drop table json_contains_test;
 
+set dolphin.b_compatibility_mode = on;
+
+set dolphin.b_compatibility_mode = on;
+create table test_json_table
+(
+   `char` char(100),
+   `varchar` varchar(100),
+   `json` json,
+   `int1` tinyint,
+   `binary` binary(100)
+);
+
+insert into test_json_table values ('[1,2,3,4,5]', '[1,2,3,4,5]', json_object('a', 1, 'b', 2), 1, '[1,2,3,4,5]');
+
+select json_contains(`char`, `json`), json_contains(`varchar`, `json`), json_contains(`json`, `json`), pg_typeof(json_contains(`char`, `json`)), pg_typeof(json_contains(`varchar`, `json`)), pg_typeof(json_contains(`json`, `json`)) from test_json_table;
+
+create table test1 as select json_contains(`char`, `json`) as c1, json_contains(`varchar`, `json`) as c2, json_contains(`json`, `json`) as c3 from test_json_table;
+
+-- expect error
+select json_contains(`int1`, `json`) from test_json_table;
+select json_contains(`binary`, `json`) from test_json_table;
+
+drop table test1;
+drop table test_json_table;
+
 drop schema test_json_contains cascade;
 reset current_schema;

@@ -28,19 +28,19 @@ select inet_aton(true),inet_aton(false),inet_ntoa(true),inet_ntoa(false);
 select hex(inet_aton('127'));
  hex 
 -----
- 7f
+ 7F
 (1 row)
 
 select hex(inet_aton('127.1'));
    hex    
 ----------
- 7f000001
+ 7F000001
 (1 row)
 
 select hex(inet_aton('127.1.1'));
    hex    
 ----------
- 7f010001
+ 7F010001
 (1 row)
 
 select inet_aton('');
@@ -238,7 +238,7 @@ SELECT INET6_ATON('::1.2.3.4:abcd') IS NULL;
 SELECT HEX(INET6_ATON('::abcd:1.2.3.4'));
                hex                
 ----------------------------------
- 00000000000000000000abcd01020304
+ 00000000000000000000ABCD01020304
 (1 row)
 
 SELECT HEX(INET6_ATON('0.0.0.0'));
@@ -280,7 +280,7 @@ SELECT HEX(INET6_ATON('001.002.003.004'));
 SELECT HEX(INET6_ATON('255.255.255.255'));
    hex    
 ----------
- ffffffff
+ FFFFFFFF
 (1 row)
 
 SELECT HEX(INET6_ATON('::'));
@@ -388,7 +388,7 @@ SELECT HEX(INET6_ATON('0000:0000::0000:0001'));
 SELECT HEX(INET6_ATON('1234:5678:9abc:def0:4321:8765:cba9:0fed'));
                hex                
 ----------------------------------
- 123456789abcdef043218765cba90fed
+ 123456789ABCDEF043218765CBA90FED
 (1 row)
 
 SELECT HEX(INET6_ATON('0000:0000:0000:0000:0000:0000:0000:0001'));
@@ -400,25 +400,25 @@ SELECT HEX(INET6_ATON('0000:0000:0000:0000:0000:0000:0000:0001'));
 SELECT HEX(INET6_ATON('::c0a8:0102'));
                hex                
 ----------------------------------
- 000000000000000000000000c0a80102
+ 000000000000000000000000C0A80102
 (1 row)
 
 SELECT HEX(INET6_ATON('::192.168.1.2'));
                hex                
 ----------------------------------
- 000000000000000000000000c0a80102
+ 000000000000000000000000C0A80102
 (1 row)
 
 SELECT HEX(INET6_ATON('::ffff:c0a8:0102'));
                hex                
 ----------------------------------
- 00000000000000000000ffffc0a80102
+ 00000000000000000000FFFFC0A80102
 (1 row)
 
 SELECT HEX(INET6_ATON('::ffff:192.168.1.2'));
                hex                
 ----------------------------------
- 00000000000000000000ffffc0a80102
+ 00000000000000000000FFFFC0A80102
 (1 row)
 
 SELECT HEX(INET6_ATON('::01.2.3.4'));
@@ -454,31 +454,31 @@ SELECT HEX(INET6_ATON('::1.2.3.00'));
 SELECT HEX(INET6_ATON('::ffff:01.2.3.4'));
                hex                
 ----------------------------------
- 00000000000000000000ffff01020304
+ 00000000000000000000FFFF01020304
 (1 row)
 
 SELECT HEX(INET6_ATON('::ffff:1.02.3.4'));
                hex                
 ----------------------------------
- 00000000000000000000ffff01020304
+ 00000000000000000000FFFF01020304
 (1 row)
 
 SELECT HEX(INET6_ATON('::ffff:1.2.03.4'));
                hex                
 ----------------------------------
- 00000000000000000000ffff01020304
+ 00000000000000000000FFFF01020304
 (1 row)
 
 SELECT HEX(INET6_ATON('::ffff:1.2.3.04'));
                hex                
 ----------------------------------
- 00000000000000000000ffff01020304
+ 00000000000000000000FFFF01020304
 (1 row)
 
 SELECT HEX(INET6_ATON('::ffff:1.2.3.00'));
                hex                
 ----------------------------------
- 00000000000000000000ffff01020300
+ 00000000000000000000FFFF01020300
 (1 row)
 
 SELECT INET6_NTOA(NULL);
@@ -488,12 +488,16 @@ SELECT INET6_NTOA(NULL);
 (1 row)
 
 SELECT INET6_NTOA(123);
+WARNING:  Incorrect string value for function inet6_ntoa
+CONTEXT:  referenced column: inet6_ntoa
  inet6_ntoa 
 ------------
  
 (1 row)
 
 SELECT INET6_NTOA(123.456);
+WARNING:  Incorrect string value for function inet6_ntoa
+CONTEXT:  referenced column: inet6_ntoa
  inet6_ntoa 
 ------------
  
@@ -706,37 +710,37 @@ SELECT INET6_NTOA(INET6_ATON('192.168.1.2'));
 SELECT HEX(INET_ATON('192.168.1.2'));
    hex    
 ----------
- c0a80102
+ C0A80102
 (1 row)
 
 SELECT HEX(INET6_ATON('192.168.1.2'));
    hex    
 ----------
- c0a80102
+ C0A80102
 (1 row)
 
 SELECT HEX(INET_ATON('255.255.255.255'));
    hex    
 ----------
- ffffffff
+ FFFFFFFF
 (1 row)
 
 SELECT HEX(INET6_ATON('255.255.255.255'));
    hex    
 ----------
- ffffffff
+ FFFFFFFF
 (1 row)
 
 SELECT HEX(INET_ATON('192.168.08.2'));
    hex    
 ----------
- c0a80802
+ C0A80802
 (1 row)
 
 SELECT HEX(INET6_ATON('192.168.08.2'));
    hex    
 ----------
- c0a80802
+ C0A80802
 (1 row)
 
 SELECT HEX(INET_ATON('192.168.0x8.2'));
@@ -754,7 +758,7 @@ SELECT HEX(INET6_ATON('192.168.0x8.2'));
 SELECT HEX(INET_ATON('1.2.255'));
    hex   
 ---------
- 10200ff
+ 10200FF
 (1 row)
 
 SELECT HEX(INET6_ATON('1.2.255'));

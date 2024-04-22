@@ -33,10 +33,10 @@ explain (costs off) select * from test_utf8mb4_bin_char where c1 like '谢%';
 (4 rows)
 
 select * from test_utf8mb4_bin_char where c1 like '谢%';
-    c1    
-----------
- 谢谢你呀
- 谢￿    
+       c1       
+----------------
+ 谢谢你呀      
+ 谢￿        
 (2 rows)
 
 --varchar with length without prefix key
@@ -285,10 +285,10 @@ explain (costs off) select * from test_utf8mb4_general_ci_char where c1 like '�
 (4 rows)
 
 select * from test_utf8mb4_general_ci_char where c1 like '谢%';
-    c1    
-----------
- 谢谢你呀
- 谢￿    
+       c1       
+----------------
+ 谢谢你呀      
+ 谢￿        
 (2 rows)
 
 --varchar with length without prefix key
@@ -537,10 +537,10 @@ explain (costs off) select * from test_utf8mb4_unicode_ci_char where c1 like '�
 (4 rows)
 
 select * from test_utf8mb4_unicode_ci_char where c1 like '谢%';
-    c1    
-----------
- 谢谢你呀
- 谢￿    
+       c1       
+----------------
+ 谢谢你呀      
+ 谢￿        
 (2 rows)
 
 --varchar with length without prefix key

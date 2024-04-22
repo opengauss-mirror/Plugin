@@ -116,3 +116,21 @@ select pg_get_tabledef('test_binary2');
 
 drop schema test_charset cascade;
 reset current_schema;
+
+
+create schema test_b1 charset='utf8' collate='utf8_general_ci';
+set current_schema to 'test_b1';
+
+set b_format_behavior_compat_options = 'default_collation,enable_multi_charset';
+create table test1(id int, pic longblob) charset=utf8mb4 collate=utf8mb4_0900_ai_ci;
+
+reset b_format_behavior_compat_options;
+create table test2(id int, pic longblob) charset=utf8mb4 collate=utf8mb4_0900_ai_ci;
+
+show create table test1;
+show create table test2;
+
+drop table test1;
+drop table test2;
+drop schema test_b1 cascade;
+reset current_schema;

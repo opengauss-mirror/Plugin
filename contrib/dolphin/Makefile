@@ -71,7 +71,7 @@ OBJS += $(commands)/functioncmds.o $(commands)/foreigncmds.o $(commands)/copy.o 
 
 OBJS += $(pl)/pl_gram.o $(pl)/pl_scanner.o $(pl)/pl_comp.o $(pl)/pl_handler.o
 
-OBJS += $(catalog)/heap.o
+OBJS += $(catalog)/heap.o $(catalog)/pg_enum.o
 
 all $(OBJS): write_git_commit protocol parser utils executor vector plan prep optimizer_util commands storage pl catalog;
 

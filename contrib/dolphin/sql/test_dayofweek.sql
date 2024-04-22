@@ -40,5 +40,22 @@ insert ignore into t_datetime values('14:14:14');
 select * from t_timestamp;
 select * from t_datetime;
 
+set dolphin.b_compatibility_mode = true;
+select dayofmonth('20:38:40');
+select dayofmonth(time'20:38:40');
+select dayofmonth(203840);
+select dayofmonth(time'203840');
+select dayofyear('20:38:40');
+select dayofyear(time'20:38:40');
+select dayofyear(203840);
+select dayofyear(time'203840');
+select quarter('20:38:40');
+select quarter(time'20:38:40');
+select quarter(203840);
+select quarter(time'203840');
+select day('10:10:10');
+select day('2002-01-01 11:12:12'::time);
+select dayofmonth('2002-01-01 11:12:12'::time);
+
 reset current_schema;
 drop schema if exists test_dayofweek cascade;

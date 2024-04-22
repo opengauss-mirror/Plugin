@@ -199,7 +199,7 @@ LINE 1: select true sounds like 3;
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: soundex_difference
 select 2.2 sounds like false;
-ERROR:  function pg_catalog.soundex_difference(numeric, boolean) does not exist
+ERROR:  function pg_catalog.soundex_difference(number, boolean) does not exist
 LINE 1: select 2.2 sounds like false;
                    ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.

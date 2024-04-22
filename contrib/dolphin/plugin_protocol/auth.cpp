@@ -46,6 +46,12 @@ static bool exec_native_password_auth(Port *port);
 
 int dophin_conn_handshake(Port* port)
 {
+    if (t_thrd.postmaster_cxt.HaShmData->current_mode == STANDBY_MODE &&
+        (!g_instance.attr.attr_network.dolphin_hot_standby || !g_instance.attr.attr_storage.EnableHotStandby)) {
+        ereport(ERROR, (errcode(ERRCODE_CANNOT_CONNECT_NOW),
+                errmsg("can not accept connection if dolphin hot standby off")));
+    }
+
     network_mysqld_auth_challenge *challenge = (network_mysqld_auth_challenge*) palloc0(sizeof(network_mysqld_auth_challenge));
     challenge->capabilities = DOPHIN_DEFAULT_FLAGS;
     challenge->auth_plugin_name = pstrdup("mysql_native_password");

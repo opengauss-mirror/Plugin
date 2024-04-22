@@ -29,6 +29,10 @@
 #include "utils/int8.h"
 #include "utils/lsyscache.h"
 #include "utils/syscache.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/varlena.h"
+#endif
 #include "utils/varbit.h"
 
 static void pcb_error_callback(void* arg);
@@ -466,6 +470,16 @@ Const* make_const(ParseState* pstate, Value* value, int location)
 
     switch (nodeTag(value)) {
         case T_Integer:
+#ifdef DOLPHIN
+            if (GetSessionContext()->isInTransformSet) {
+                val = Int64GetDatum(intVal(value));
+
+                typid = INT8OID;
+                typelen = sizeof(int64);
+                typebyval = true;
+                break;
+            }
+#endif
             val = Int32GetDatum(intVal(value));
 
             typid = INT4OID;
@@ -522,6 +536,11 @@ Const* make_const(ParseState* pstate, Value* value, int location)
             if (OidIsValid(GetCollationConnection())) {
                 collid = GetCollationConnection();
             }
+#ifdef DOLPHIN
+            else {
+                collid = DEFAULT_COLLATION_OID;
+            }
+#endif
             break;
 
         case T_BitString:
@@ -529,8 +548,17 @@ Const* make_const(ParseState* pstate, Value* value, int location)
             setup_parser_errposition_callback(&pcbstate, pstate, location);
             val = DirectFunctionCall3(
                 bit_in, CStringGetDatum(strVal(value)), ObjectIdGetDatum(InvalidOid), Int32GetDatum(-1));
-            cancel_parser_errposition_callback(&pcbstate);
+#ifdef DOLPHIN
+            if (SQL_MODE_TREAT_BXCONST_AS_BINARY()) {
+                val = bit_blob(DatumGetVarBitP(val));
+                typid = BINARYOID;
+            } else {
+                typid = BITOID;
+            }
+#else
             typid = BITOID;
+#endif
+            cancel_parser_errposition_callback(&pcbstate);
             typelen = -1;
             typebyval = false;
             break;

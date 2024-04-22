@@ -43,6 +43,9 @@
 #include "utils/sortsupport.h"
 #include "fmgr.h"
 #include "catalog/gs_collation.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 #define KEY_NUM (2)
 
@@ -221,7 +224,7 @@ static int64 settoint64(VarBit *bitmap)
     return result;
 }
 
-static Datum int64toset(int64 val, Oid typid)
+static Datum int64toset(int64 val, Oid typid, bool canIgnore = false)
 {
     int bitlen = 0;
     Relation pg_set = NULL;
@@ -253,7 +256,7 @@ static Datum int64toset(int64 val, Oid typid)
 
         uint64 mask = (bitlen < SETLABELNUM) ? ((1UL << bitlen) - 1) : PG_UINT64_MAX;
         if (val & (~mask)) {
-            ereport(ERROR,
+            ereport(!canIgnore && SQL_MODE_STRICT() ? ERROR : WARNING,
                 (errcode(ERRCODE_INVALID_BINARY_REPRESENTATION),
                 errmsg("invalid input value for set %s: %ld", format_type_be(typid), val)));
         }
@@ -940,7 +943,7 @@ Datum settonvarchar2(PG_FUNCTION_ARGS)
 
 Datum i8toset(PG_FUNCTION_ARGS)
 {
-    return int64toset(PG_GETARG_INT64(0), PG_GETARG_OID(1));
+    return int64toset(PG_GETARG_INT64(0), PG_GETARG_OID(1), fcinfo->can_ignore);
 }
 
 Datum i4toset(PG_FUNCTION_ARGS)

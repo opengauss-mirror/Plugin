@@ -13,9 +13,9 @@ drop database db_b_log_test;
 create schema db_b_log_test;
 set current_schema to 'db_b_log_test';
 SELECT LOG(10);
-       log        
-------------------
- 2.30258509299405
+        log        
+-------------------
+ 2.302585092994046
 (1 row)
 
 SELECT LOG10(100);
@@ -49,6 +49,7 @@ SELECT LOG2(64::numeric);
 (1 row)
 
 SELECT LOG(0) IS NULL;
+WARNING:  Invalid argument '0.000000' for logarithm
  ?column? 
 ----------
  t
@@ -67,6 +68,7 @@ SELECT LOG2(0) IS NULL;
 (1 row)
 
 SELECT LOG(-1) IS NULL;
+WARNING:  Invalid argument '-1.000000' for logarithm
  ?column? 
 ----------
  t
@@ -85,6 +87,7 @@ SELECT LOG2(-1) IS NULL;
 (1 row)
 
 SELECT LOG(0::numeric) IS NULL;
+WARNING:  Invalid argument '0' for logarithm
  ?column? 
 ----------
  t
@@ -103,6 +106,7 @@ SELECT LOG2(0::numeric) IS NULL;
 (1 row)
 
 SELECT LOG(-1::numeric) IS NULL;
+WARNING:  Invalid argument '-1' for logarithm
  ?column? 
 ----------
  t
@@ -127,51 +131,55 @@ SELECT LOG(2, 64) IS NULL;
 (1 row)
 
 SELECT LOG(-2, 64) IS NULL;
+WARNING:  Invalid argument '-2' for logarithm
  ?column? 
 ----------
  t
 (1 row)
 
 SELECT LOG(2, -64) IS NULL;
+WARNING:  Invalid argument '-64' for logarithm
  ?column? 
 ----------
  t
 (1 row)
 
 SELECT LOG(0, 64) IS NULL;
+WARNING:  Invalid argument '0' for logarithm
  ?column? 
 ----------
  t
 (1 row)
 
 SELECT LOG(2, 0) IS NULL;
+WARNING:  Invalid argument '0' for logarithm
  ?column? 
 ----------
  t
 (1 row)
 
 select log(111);
-       log        
-------------------
- 4.70953020131233
+        log        
+-------------------
+ 4.709530201312334
 (1 row)
 
 select log(b'111');
-        log         
---------------------
- 1.9459101490553133
+        log        
+-------------------
+ 1.945910149055313
 (1 row)
 
 select log(7);
-       log        
-------------------
- 1.94591014905531
+        log        
+-------------------
+ 1.945910149055313
 (1 row)
 
 select log2(111);
-       log2       
-------------------
- 6.79441586635011
+       log2        
+-------------------
+ 6.794415866350106
 (1 row)
 
 select log2(b'111');
@@ -181,15 +189,15 @@ select log2(b'111');
 (1 row)
 
 select log2(7);
-      log2       
------------------
- 2.8073549220576
+       log2        
+-------------------
+ 2.807354922057604
 (1 row)
 
 select log10(111);
-      log10       
-------------------
- 2.04532297878666
+       log10       
+-------------------
+ 2.045322978786658
 (1 row)
 
 select log10(b'111');
@@ -199,27 +207,27 @@ select log10(b'111');
 (1 row)
 
 select log10(7);
-       log10       
--------------------
- 0.845098040014257
+       log10        
+--------------------
+ 0.8450980400142568
 (1 row)
 
 select log(b'111'::int);
-       log        
-------------------
- 1.94591014905531
+        log        
+-------------------
+ 1.945910149055313
 (1 row)
 
 select log2(b'111'::int);
-      log2       
------------------
- 2.8073549220576
+       log2        
+-------------------
+ 2.807354922057604
 (1 row)
 
 select log10(b'111'::int);
-       log10       
--------------------
- 0.845098040014257
+       log10        
+--------------------
+ 0.8450980400142568
 (1 row)
 
 drop schema db_b_log_test cascade;

@@ -177,5 +177,17 @@ from pg_description pd
          join pg_class pc
               on pd.objoid = pc.oid
 where pc.relname = 'uq_0034';
+
+drop table if exists t1;
+drop table if exists t2;
+create table t1(id bigint not null comment 'pk' primary key);
+create table t2(id bigint not null primary key comment 'pk' );
+create table t3(id int comment 'user id' comment 'user_id' comment 'author id');
+create table t4(id int comment 'user id' comment 'user_id');
+\d+ t1
+\d+ t2
+\d+ t3
+\d+ t4
+
 drop schema b_comments cascade;
 reset search_path;

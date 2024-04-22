@@ -44,6 +44,8 @@ do {                                                                            
 #define FRAC_PRECISION 6
 #define TIMESTAMP_MAX_PRECISION 6
 
+#define TIMESTAMP_WITH_FORMAT_ARG_LEN 4
+
 #ifdef DOLPHIN
 #define B_MAX_NUMBER_DATETIME INT64CONST(99991231235959)    /* 9999-12-31 23:59:59 */
 #define B_NORMAL_NUMBER_DATETIME INT64CONST(10000101000000) /* 1000-01-01 00:00:00 */
@@ -62,6 +64,8 @@ do {                                                                            
 #define ENABLE_ZERO_MONTH 2
 #define ENABLE_ZERO_DATE 0  /* enable date like 0000-00-00, work in cstring_to_datetime */
 #define NO_ZERO_DATE_SET() (SQL_MODE_NO_ZERO_DATE() ? TIME_NO_ZERO_DATE : ENABLE_ZERO_DATE)
+#define EANBLE_ERROR_ON_DATE_LESS_THAN_MIN 128  /* not allow value less than 101 when enable */
+#define ENABLE_ZERO_DATE_BYPASSED 256  /* bypass the zero date check directly if set */
 
 
 #define DTK_DATE_TIME 5
@@ -115,12 +119,13 @@ extern int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec, unsigned int date
 #else
 extern int NumberTimestamp(char *str, pg_tm *tm, fsec_t *fsec);
 #endif
-extern bool datetime_in_no_ereport(const char *str, Timestamp *datetime);
 extern bool datetime_sub_days(Timestamp datetime, int days, Timestamp *result, bool is_add_func = false);
 extern bool datetime_sub_interval(Timestamp datetime, Interval *span, Timestamp *result, bool is_add_func = false);
 
 #ifdef DOLPHIN
-Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time);
+extern bool datetime_in_no_ereport(const char *str, Timestamp *datetime, bool can_ignore = false);
+Oid convert_to_datetime_time(Datum value, Oid valuetypid, Timestamp *datetime, TimeADT *time,
+    bool can_ignore = false, bool* result_isnull = NULL);
 extern void check_b_format_datetime_range_with_ereport(Timestamp &datetime);
 extern void datetime_in_with_flag_internal(const char *str, struct pg_tm *tm, fsec_t* fsec, unsigned int date_flag);
 extern bool MaybeRound(struct pg_tm *tm, fsec_t *fsec);
@@ -128,17 +133,80 @@ extern bool datetime_add_interval(Timestamp datetime, Interval *span, Timestamp 
 extern void convert_to_datetime(Datum value, Oid valuetypid, Timestamp *datetime);
 extern int64 b_db_weekmode(int64 mode);
 extern int b_db_cal_week(struct pg_tm* tm, int64 mode, uint* year);
-extern bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag);
+extern bool datetime_in_with_sql_mode(char *str, struct pg_tm *tm, fsec_t *fsec, unsigned int date_flag,
+                                      bool can_ignore = false);
 extern void add_currentdate_to_time(TimeADT time, Timestamp *result);
 extern bool datetime_in_with_sql_mode_internal(char *str, struct pg_tm *tm, fsec_t *fsec, int &tm_type,
-    unsigned int date_flag);
+                                               unsigned int date_flag, bool can_ignore = false);
 extern bool datetime_in_range(Timestamp datetime);
+extern int128 timestamp_int128(Timestamp timestamp);
+extern int128 timestamptz_int128(TimestampTz timestampTz);
+extern TimestampTz time2timestamptz(TimeADT timeVal);
+extern TimestampTz timetz2timestamptz(TimeTzADT* timetzVal);
+typedef enum {
+    TIME_CORRECT = 0,
+    TIME_IGNORED_INCORRECT,
+    TIME_INCORRECT
+} TimeErrorType;
+
+#define DTERR_ZERO_DATE (-6)
+#define DTERR_ZERO_MD (-7)
+
+typedef enum {
+    STRICT_NO_ZERO_DAY = 0,
+    STRICT_CAN_ZERO_DAY,
+    NO_STRICT_NO_ZERO_DAY,
+    NO_STRICT_CAN_ZERO_DAY
+} ZERO_DATE_MODE;
+
+typedef enum
+{
+    TIME_IN = 0,
+    TIME_CAST,
+    TIME_CAST_IMPLICIT,
+    TEXT_TIME_EXPLICIT
+}TimeCastType;
+
+typedef struct ZeroDayProcessMap {
+    int dterr;
+    int time_cast_type;
+    ZERO_DATE_MODE zero_date_mode;
+    int level;
+    bool only_set_result_zero;
+} ZeroDayProcessMap;
+
+extern Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type);
+extern Datum timestamptz_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorType* time_error_type);
 
 extern "C" DLL_PUBLIC Datum int64_b_format_datetime(PG_FUNCTION_ARGS);
+
+static inline bool non_zero_date(const pg_tm *ltime)
+{
+    return ltime->tm_year || ltime->tm_mon || ltime->tm_mday;
+}
+
+extern TimeADT adjust_time_range_with_warn(TimeADT time, bool can_ignore);
+extern "C" DLL_PUBLIC Datum time_cast_implicit(PG_FUNCTION_ARGS);
+
+extern void check_zero_month_day(const char* str, int dterr, bool can_ignore);
+
+
+#define CHECK_TM_TO_TIMESTAMP_RESULT(tm_to_timestamp_result)                       \
+do {                                                                               \
+    if (tm_to_timestamp_result != 0) {                                             \
+        int level = fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR;     \
+        ereport(level, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE),               \
+            errmsg("timestamp out of range: \"%s\"", str)));                        \
+        *time_error_type = TIME_INCORRECT;                                          \
+        PG_RETURN_TIMESTAMP(TIMESTAMP_ZERO);                                        \
+    }                                                                              \
+} while (0)
+
 #endif
 
 extern Datum datetime_text(PG_FUNCTION_ARGS);
 extern Datum time_text(PG_FUNCTION_ARGS);
+
 
 #endif // !FRONTEND_PARSER
 #endif /* TIMESTAMP_H */

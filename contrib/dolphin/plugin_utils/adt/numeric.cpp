@@ -47,8 +47,10 @@
 #include "vecexecutor/vechashagg.h"
 #include "vectorsonic/vsonichashagg.h"
 #ifdef DOLPHIN
+#include "nodes/makefuncs.h"
 #include "plugin_commands/mysqlmode.h"
-
+#include "plugin_parser/parse_coerce.h"
+#include "utils/varbit.h"
 #ifndef CRCMASK
 #define CRCMASK 0xEDB88320
 #define DIG_PER_DEC1 9
@@ -230,17 +232,22 @@ static void alloc_var(NumericVar* var, int ndigits);
 static void zero_var(NumericVar* var);
 
 static void init_ro_var_from_var(const NumericVar* value, NumericVar* dest);
-
+#ifdef DOLPHIN
+static const char* set_var_from_str(const char* str, const char* cp, NumericVar* dest, bool can_ignore);
+#else
 static const char* set_var_from_str(const char* str, const char* cp, NumericVar* dest);
+#endif
 static void set_var_from_num(Numeric value, NumericVar* dest);
 static void set_var_from_var(const NumericVar* value, NumericVar* dest);
 static void init_var_from_var(const NumericVar *value, NumericVar *dest);
 static char* get_str_from_var(NumericVar* var);
 static char* output_get_str_from_var(NumericVar* var);
 static char* get_str_from_var_sci(NumericVar* var, int rscale);
-
+#ifdef DOLPHIN
+static void apply_typmod(NumericVar* var, int32 typmod, bool can_ignore);
+#else
 static void apply_typmod(NumericVar* var, int32 typmod);
-
+#endif
 static int32 numericvar_to_int32(const NumericVar* var, bool can_ignore = false);
 static double numeric_to_double_no_overflow(Numeric num);
 static double numericvar_to_double_no_overflow(NumericVar* var);
@@ -302,6 +309,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(uint1_accum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint2_accum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint4_accum);
 PG_FUNCTION_INFO_V1_PUBLIC(uint8_accum);
+PG_FUNCTION_INFO_V1_PUBLIC(any_accum);
 
 PG_FUNCTION_INFO_V1_PUBLIC(uint1_numeric);
 PG_FUNCTION_INFO_V1_PUBLIC(uint2_numeric);
@@ -317,6 +325,7 @@ PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint1);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint2);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint4);
 PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_uint8);
+PG_FUNCTION_INFO_V1_PUBLIC(numeric_cast_int8);
 
 PG_FUNCTION_INFO_V1_PUBLIC(conv_str);
 PG_FUNCTION_INFO_V1_PUBLIC(conv_num);
@@ -345,11 +354,13 @@ extern "C" DLL_PUBLIC Datum uint1_accum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint2_accum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint4_accum(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum uint8_accum(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum any_accum(PG_FUNCTION_ARGS);
 
 extern "C" DLL_PUBLIC Datum numeric_cast_uint1(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint2(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint4(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum numeric_cast_uint8(PG_FUNCTION_ARGS);
+extern "C" DLL_PUBLIC Datum numeric_cast_int8(PG_FUNCTION_ARGS);
 
 extern "C" DLL_PUBLIC Datum conv_str(PG_FUNCTION_ARGS);
 extern "C" DLL_PUBLIC Datum conv_num(PG_FUNCTION_ARGS);
@@ -459,8 +470,11 @@ Datum numeric_in(PG_FUNCTION_ARGS)
         NumericVar value;
 
         init_var(&value);
-
+#ifdef DOLPHIN
+        cp = set_var_from_str(str, cp, &value, fcinfo->can_ignore);
+#else
         cp = set_var_from_str(str, cp, &value);
+#endif
 
         /*
          * We duplicate a few lines of code here because we would like to
@@ -480,8 +494,11 @@ Datum numeric_in(PG_FUNCTION_ARGS)
             }
             cp++;
         }
-
+#ifdef DOLPHIN
+        apply_typmod(&value, typmod, fcinfo->can_ignore);
+#else
         apply_typmod(&value, typmod);
+#endif
 
         res = make_result(&value);
         free_var(&value);
@@ -758,8 +775,11 @@ Datum numeric_recv(PG_FUNCTION_ARGS)
                     errmsg("invalid digit in external \"numeric\" value")));
         value.digits[i] = d;
     }
-
+#ifdef DOLPHIN
+    apply_typmod(&value, typmod, fcinfo->can_ignore);
+#else
     apply_typmod(&value, typmod);
+#endif
 
     res = make_result(&value);
     free_var(&value);
@@ -918,7 +938,11 @@ Datum numeric(PG_FUNCTION_ARGS)
     init_var(&var);
 
     set_var_from_num(num, &var);
+#ifdef DOLPHIN
+    apply_typmod(&var, typmod, fcinfo->can_ignore);
+#else
     apply_typmod(&var, typmod);
+#endif
     newm = make_result(&var);
 
     free_var(&var);
@@ -2992,6 +3016,8 @@ Datum numeric_ln(PG_FUNCTION_ARGS)
     zero = make_result(&zero_var);
 
     if (cmp_numerics(num, zero) <= 0) {
+        PrintErrInvalidLogarithm(fcinfo->can_ignore,
+                                 DatumGetCString(DirectFunctionCall1(numeric_out_with_zero, NumericGetDatum(num))));
         PG_RETURN_NULL();
     }
 #endif
@@ -3052,7 +3078,28 @@ Datum numeric_log(PG_FUNCTION_ARGS)
     int64_to_numericvar((int64)0, &zero_var);
     zero = make_result(&zero_var);
 
-    if (cmp_numerics(num1, zero) <= 0 || cmp_numerics(num2, zero) <= 0) {
+    /* create a numeric that value is one */
+    Numeric one;
+    NumericVar one_var;
+    init_var(&one_var);
+    int64_to_numericvar((int64)1, &one_var);
+    one = make_result(&one_var);
+
+    if (cmp_numerics(num1, zero) <= 0) {
+        PrintErrInvalidLogarithm(fcinfo->can_ignore,
+                                 DatumGetCString(DirectFunctionCall1(numeric_out_with_zero, NumericGetDatum(num1))));
+        PG_RETURN_NULL();
+    }
+
+    if (cmp_numerics(num2, zero) <= 0) {
+        PrintErrInvalidLogarithm(fcinfo->can_ignore,
+                                 DatumGetCString(DirectFunctionCall1(numeric_out_with_zero, NumericGetDatum(num2))));
+        PG_RETURN_NULL();
+    }
+
+    if (cmp_numerics(num1, one) == 0) {
+        PrintErrInvalidLogarithm(fcinfo->can_ignore,
+                                 DatumGetCString(DirectFunctionCall1(numeric_out_with_zero, NumericGetDatum(num1))));
         PG_RETURN_NULL();
     }
 #endif
@@ -3527,7 +3574,11 @@ Datum float8_numeric(PG_FUNCTION_ARGS)
     init_var(&result);
 
     /* Assume we need not worry about leading/trailing spaces */
+#ifdef DOLPHIN
+    (void)set_var_from_str(buf, buf, &result, fcinfo->can_ignore);
+#else
     (void)set_var_from_str(buf, buf, &result);
+#endif
 
     res = make_result(&result);
 
@@ -3604,7 +3655,11 @@ Datum float4_numeric(PG_FUNCTION_ARGS)
     init_var(&result);
 
     /* Assume we need not worry about leading/trailing spaces */
+#ifdef DOLPHIN
+    (void)set_var_from_str(buf, buf, &result, fcinfo->can_ignore);
+#else
     (void)set_var_from_str(buf, buf, &result);
+#endif
 
     res = make_result(&result);
 
@@ -4740,7 +4795,11 @@ static void zero_var(NumericVar* var)
  * cp is the place to actually start parsing; str is what to use in error
  * reports.  (Typically cp would be the same except advanced over spaces.)
  */
+#ifdef DOLPHIN
+static const char* set_var_from_str(const char* str, const char* cp, NumericVar* dest, bool can_ignore)
+#else
 static const char* set_var_from_str(const char* str, const char* cp, NumericVar* dest)
+#endif
 {
     bool have_dp = FALSE;
     int i;
@@ -4778,6 +4837,11 @@ static const char* set_var_from_str(const char* str, const char* cp, NumericVar*
     }
 
     if (!isdigit((unsigned char)*cp) && u_sess->attr.attr_sql.sql_compatibility == B_FORMAT) {
+#ifdef DOLPHIN
+        ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+            (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
+                errmsg("invalid input syntax for type numeric: \"%s\"", str)));
+#endif
         char* cp = (char*)palloc0(sizeof(char));
         return cp;
     }
@@ -4803,7 +4867,11 @@ static const char* set_var_from_str(const char* str, const char* cp, NumericVar*
                 dscale++;
         } else if (*cp == '.') {
             if (have_dp)
+#ifdef DOLPHIN
+                ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+#else
                 ereport(ERROR,
+#endif
                     (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                         errmsg("invalid input syntax for type numeric: \"%s\"", str)));
             have_dp = TRUE;
@@ -4825,12 +4893,20 @@ static const char* set_var_from_str(const char* str, const char* cp, NumericVar*
         cp++;
         exponent = strtol(cp, &endptr, 10);
         if (endptr == cp)
+#ifdef DOLPHIN
+            ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+#else
             ereport(ERROR,
+#endif
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type numeric: \"%s\"", str)));
         cp = endptr;
         if (exponent > NUMERIC_MAX_PRECISION || exponent < -NUMERIC_MAX_PRECISION)
+#ifdef DOLPHIN
+            ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+#else
             ereport(ERROR,
+#endif
                 (errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
                     errmsg("invalid input syntax for type numeric: \"%s\"", str)));
         dweight += (int)exponent;
@@ -5494,7 +5570,11 @@ Numeric makeNumeric(NumericVar* var)
  *	Do bounds checking and rounding according to the attributes
  *	typmod field.
  */
+#ifdef DOLPHIN
+static void apply_typmod(NumericVar* var, int32 typmod, bool can_ignore)
+#else
 static void apply_typmod(NumericVar* var, int32 typmod)
+#endif
 {
     int precision;
     int scale;
@@ -5544,8 +5624,13 @@ static void apply_typmod(NumericVar* var, int32 typmod)
 #else
 #error unsupported NBASE
 #endif
+#ifdef DOLPHIN
+                if (ddigits > maxdigits) {
+                    ereport((can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+#else
                 if (ddigits > maxdigits)
                     ereport(ERROR,
+#endif
                         (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
                             errmsg("numeric field overflow"),
                             errdetail(
@@ -5555,6 +5640,29 @@ static void apply_typmod(NumericVar* var, int32 typmod)
                                 /* Display 10^0 as 1 */
                                 maxdigits ? "10^" : "",
                                 maxdigits ? maxdigits : 1)));
+#ifdef DOLPHIN
+                    errno_t rc;
+                    size_t maxlen = precision + 3;
+                    char str[maxlen] = {};
+                    if (var->sign == NUMERIC_NEG) {
+                        rc = strcat_s(str, maxlen, "-");
+                        securec_check(rc, "\0", "\0");
+                    }
+                    while (maxdigits-- > 0) {
+                        rc = strcat_s(str, maxlen, "9");
+                        securec_check(rc, "\0", "\0");
+                    }
+                    if (scale > 0) {
+                        rc = strcat_s(str, maxlen, ".");
+                        securec_check(rc, "\0", "\0");
+                        while (scale-- > 0) {
+                            rc = strcat_s(str, maxlen, "9");
+                            securec_check(rc, "\0", "\0");
+                        }
+                    }
+                    (void)set_var_from_str(str, str, var, can_ignore);
+                }
+#endif
                 break;
             }
             ddigits -= DEC_DIGITS;
@@ -8829,8 +8937,9 @@ Datum numeric_text(PG_FUNCTION_ARGS)
     if (NUMERIC_IS_BI(num)) {
         num = makeNumericNormal(num);
     }
-    tmp = DatumGetCString(DirectFunctionCall1(numeric_out, NumericGetDatum(num)));
-    result = DirectFunctionCall1(textin, CStringGetDatum(tmp));
+
+    tmp = DatumGetCString(DirectFunctionCall1Coll(numeric_out, InvalidOid, NumericGetDatum(num), fcinfo->can_ignore));
+    result = DirectFunctionCall1Coll(textin, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -8841,9 +8950,11 @@ Datum bpchar_numeric(PG_FUNCTION_ARGS)
     Datum bpcharValue = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, bpcharValue));
 
-    result = DirectFunctionCall3(numeric_in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(bpcharout, InvalidOid, bpcharValue, fcinfo->can_ignore));
+
+    result = DirectFunctionCall3Coll(numeric_in, InvalidOid, CStringGetDatum(tmp), ObjectIdGetDatum(0),
+        Int32GetDatum(-1), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -8854,9 +8965,11 @@ Datum varchar_numeric(PG_FUNCTION_ARGS)
     Datum txt = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(varcharout, txt));
 
-    result = DirectFunctionCall3(numeric_in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(varcharout, InvalidOid, txt, fcinfo->can_ignore));
+
+    result = DirectFunctionCall3Coll(numeric_in, InvalidOid, CStringGetDatum(tmp), ObjectIdGetDatum(0),
+        Int32GetDatum(-1), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -8909,9 +9022,10 @@ Datum text_float4(PG_FUNCTION_ARGS)
     Datum txt = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
 
-    result = DirectFunctionCall1(float4in, CStringGetDatum(tmp));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(textout, InvalidOid, txt, fcinfo->can_ignore));
+
+    result = DirectFunctionCall1Coll(float4in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -8922,9 +9036,10 @@ Datum text_float8(PG_FUNCTION_ARGS)
     Datum txt = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
 
-    result = DirectFunctionCall1(float8in, CStringGetDatum(tmp));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(textout, InvalidOid, txt, fcinfo->can_ignore));
+
+    result = DirectFunctionCall1Coll(float8in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -8935,9 +9050,11 @@ Datum text_numeric(PG_FUNCTION_ARGS)
     Datum txt = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
 
-    result = DirectFunctionCall3(numeric_in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(textout, InvalidOid, txt, fcinfo->can_ignore));
+
+    result = DirectFunctionCall3Coll(numeric_in, InvalidOid, CStringGetDatum(tmp), ObjectIdGetDatum(0),
+        Int32GetDatum(-1), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -8948,9 +9065,9 @@ Datum bpchar_float4(PG_FUNCTION_ARGS)
     Datum bpcharValue = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, bpcharValue));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(bpcharout, InvalidOid, bpcharValue, fcinfo->can_ignore));
 
-    result = DirectFunctionCall1(float4in, CStringGetDatum(tmp));
+    result = DirectFunctionCall1Coll(float4in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -8961,9 +9078,10 @@ Datum bpchar_float8(PG_FUNCTION_ARGS)
     Datum bpcharValue = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(bpcharout, bpcharValue));
 
-    result = DirectFunctionCall1(float8in, CStringGetDatum(tmp));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(bpcharout, InvalidOid, bpcharValue, fcinfo->can_ignore));
+
+    result = DirectFunctionCall1Coll(float8in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -8974,9 +9092,10 @@ Datum varchar_float4(PG_FUNCTION_ARGS)
     Datum varcharValue = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(varcharout, varcharValue));
 
-    result = DirectFunctionCall1(float4in, CStringGetDatum(tmp));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(varcharout, InvalidOid, varcharValue, fcinfo->can_ignore));
+
+    result = DirectFunctionCall1Coll(float4in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -8987,9 +9106,10 @@ Datum varchar_float8(PG_FUNCTION_ARGS)
     Datum varcharValue = PG_GETARG_DATUM(0);
     char* tmp = NULL;
     Datum result;
-    tmp = DatumGetCString(DirectFunctionCall1(varcharout, varcharValue));
 
-    result = DirectFunctionCall1(float8in, CStringGetDatum(tmp));
+    tmp = DatumGetCString(DirectFunctionCall1Coll(varcharout, InvalidOid, varcharValue, fcinfo->can_ignore));
+
+    result = DirectFunctionCall1Coll(float8in, InvalidOid, CStringGetDatum(tmp), fcinfo->can_ignore);
     pfree_ext(tmp);
 
     PG_RETURN_DATUM(result);
@@ -20864,7 +20984,7 @@ static int str_to_int64(char *str, int len, int128 *result, int *from_base_s)
         } else {
             break;  /*illegal character*/
         }
-        if ((num > 9) && (from_base <= num)) {
+        if (from_base <= num) {
             break;   /*param error*/
         }
         sum_128 = sum_128 * from_base + num;
@@ -20985,7 +21105,25 @@ Datum conv_num(PG_FUNCTION_ARGS)
 
 Datum bin_bit(PG_FUNCTION_ARGS)
 {
-    PG_RETURN_TEXT_P(cstring_to_text("0"));
+    VarBit* arg = PG_GETARG_VARBIT_P(0);
+    int len = VARBITLEN(arg);
+    char* result = (char*)palloc(len + 9);
+    int cnt = 0;
+    for (bits8* r = VARBITS(arg); r < VARBITEND(arg); r++) {
+        bits8 tmp = *r;
+        for (int i = BITS_PER_BYTE - 1; i >= 0; --i) {
+            result[cnt++] = ((tmp & (1 << i)) != 0) ? '1' : '0';
+        }
+    }
+    int cntzero = 0;
+    while (result[cntzero] == '0') {
+        cntzero++;
+    }
+    if (cntzero >= len) cntzero = len - 1;
+    result[len] = '\0';
+    text* ret = cstring_to_text(result+cntzero);
+    pfree_ext(result);
+    PG_RETURN_TEXT_P(ret);
 }
 
 Datum bin_integer(PG_FUNCTION_ARGS)
@@ -21287,6 +21425,53 @@ Datum uint8_accum(PG_FUNCTION_ARGS)
 
     newval = DatumGetNumeric(DirectFunctionCall1(uint8_numeric, newval8));
 
+    PG_RETURN_ARRAYTYPE_P(do_numeric_accum(transarray, newval));
+}
+
+static Node* evel_const_node(Node* node, bool can_ignore)
+{
+    PlannerInfo* pi = makeNode(PlannerInfo);
+    PlannerGlobal* pg = makeNode(PlannerGlobal);
+    Query* q = makeNode(Query);
+    q->hasIgnore = can_ignore;
+    pi->parse = q;
+    pi->glob = pg;
+
+    Node* constNode = eval_const_expressions(pi, node);
+
+    pfree(q);
+    pfree(pg);
+    pfree(pi);
+    return constNode;
+}
+
+Datum any_accum(PG_FUNCTION_ARGS)
+{
+    ArrayType *transarray = PG_GETARG_ARRAYTYPE_P(0);
+    Datum val = PG_GETARG_DATUM(1);
+    Oid typeOid = get_fn_expr_argtype(fcinfo->flinfo, 1);
+    
+    Node* node = (Node*)makeConst(typeOid, -1, -1, -1, val, false, false, NULL);
+    Node* newNode = coerce_type(NULL, node, typeOid, NUMERICOID, -1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
+    
+    Node* constNode = evel_const_node(newNode, fcinfo->can_ignore);
+    
+    Datum datumVal = NULL;
+    if (IsA(constNode, Const)) {
+        datumVal = ((Const *)constNode)->constvalue;
+    } else if (IsA(constNode, FuncExpr)) {
+        datumVal = OidFunctionCall1Coll(((FuncExpr *)constNode)->funcid, InvalidOid, val);
+    } else {
+        ereport(ERROR,
+                (errcode(ERRCODE_DATATYPE_MISMATCH),
+                    errmsg("cannot convert type %s to numeric in any_accum", format_type_be(typeOid))));
+    }
+
+    Numeric newval = DatumGetNumeric(datumVal);
+
+    pfree(constNode);
+    pfree(newNode);
+    pfree(node);
     PG_RETURN_ARRAYTYPE_P(do_numeric_accum(transarray, newval));
 }
 
@@ -22618,5 +22803,44 @@ Datum dolphin_uint8div(PG_FUNCTION_ARGS)
     } else {
         PG_RETURN_NULL();
     }
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_numericnot);
+extern "C" DLL_PUBLIC Datum dolphin_numericnot(PG_FUNCTION_ARGS);
+Datum dolphin_numericnot(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_UINT64(~numeric_cast_uint8(fcinfo));
+}
+
+Datum numeric_cast_int8(PG_FUNCTION_ARGS)
+{
+    Numeric num = PG_GETARG_NUMERIC(0);
+    NumericVar x;
+    int128 result;
+    uint16 numFlags = NUMERIC_NB_FLAGBITS(num);
+    if (NUMERIC_FLAG_IS_NANORBI(numFlags)) {
+        /* Handle Big Integer */
+        if (NUMERIC_FLAG_IS_BI(numFlags))
+            num = makeNumericNormal(num);
+        /* XXX would it be better to return NULL? */
+        else
+            ereport(ERROR, (errcode(ERRCODE_FEATURE_NOT_SUPPORTED), errmsg("cannot convert NaN to bigint")));
+    }
+    /* Convert to variable format and thence to int8 */
+    init_var_from_num(num, &x);
+    if (!numericvar_to_int128(&x, &result)) {
+        result = (NUMERIC_POS == x.sign) ? INT64_MAX : INT64_MIN;
+        ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("bigint out of range")));
+    }
+    //To keep consistency with MySQL
+    if (result > (int128)INT64_MAX || result < (int128)INT64_MIN) {
+        result = (NUMERIC_POS == x.sign) ? INT64_MAX : INT64_MIN;
+        ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+            (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE),
+                errmsg("bigint out of range")));
+    }
+    PG_RETURN_INT64((int64)result);
 }
 #endif

@@ -13,7 +13,7 @@ Table "db_b_parser4.tb_db_b_parser_0002"
  Column |     Type      | Modifiers 
 --------+---------------+-----------
  a      | numeric(10,0) | 
- b      | numeric       | 
+ b      | number        | 
  c      | numeric(10,0) | 
  d      | numeric(10,0) | 
  e      | numeric(10,0) | 
@@ -52,6 +52,59 @@ drop table if exists tb_db_b_parser_0002;
 drop table if exists tb_default_float;
 drop table if exists tb_default_double;
 drop table if exists tb_real_float;
+--syntax error message
+create table    t1(123abc   int);
+ERROR:  syntax error at or near "123". Please note that database object name should start with a letter or underscore (_).
+LINE 1: create table    t1(123abc   int);
+                           ^
+create table    t1(123   int);
+ERROR:  syntax error at or near "123"
+LINE 1: create table    t1(123   int);
+                           ^
+create table    t1(123   abc int);
+ERROR:  syntax error at or near "123"
+LINE 1: create table    t1(123   abc int);
+                           ^
+create table    123(abc   int);
+ERROR:  syntax error at or near "123"
+LINE 1: create table    123(abc   int);
+                        ^
+create table    123abc(abc   int);
+ERROR:  syntax error at or near "123". Please note that database object name should start with a letter or underscore (_).
+LINE 1: create table    123abc(abc   int);
+                        ^
+create table    123 abc(abc   int);
+ERROR:  syntax error at or near "123"
+LINE 1: create table    123 abc(abc   int);
+                        ^
+create table if  not  exists   t1(123abc   int);
+ERROR:  syntax error at or near "123". Please note that database object name should start with a letter or underscore (_).
+LINE 1: create table if  not  exists   t1(123abc   int);
+                                          ^
+create table if  not  exists   t1(123   int);
+ERROR:  syntax error at or near "123"
+LINE 1: create table if  not  exists   t1(123   int);
+                                          ^
+create table if  not  exists   t1(123   abc int);
+ERROR:  syntax error at or near "123"
+LINE 1: create table if  not  exists   t1(123   abc int);
+                                          ^
+create table if  not  exists   123(abc   int);
+ERROR:  syntax error at or near "123"
+LINE 1: create table if  not  exists   123(abc   int);
+                                       ^
+create table if  not  exists   123abc(abc   int);
+ERROR:  syntax error at or near "123". Please note that database object name should start with a letter or underscore (_).
+LINE 1: create table if  not  exists   123abc(abc   int);
+                                       ^
+create table if  not  exists   123 abc(abc   int);
+ERROR:  syntax error at or near "123"
+LINE 1: create table if  not  exists   123 abc(abc   int);
+                                       ^
+123abc;
+ERROR:  syntax error at or near "123". Please note that database object name should start with a letter or underscore (_).
+LINE 1: 123abc;
+        ^
 drop schema db_b_parser4 cascade;
 NOTICE:  drop cascades to table tb_db_b_parser_0001
 reset current_schema;

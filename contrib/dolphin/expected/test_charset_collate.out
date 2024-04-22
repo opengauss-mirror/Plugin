@@ -180,6 +180,7 @@ insert into test_binary1 (f2) values('ppp'),('PpP'),('PPP'),('AAA'),('Aaa'),('aa
 select distinct f2 from test_binary1 order by f2;
     f2    
 ----------
+ 
  AAA
  Aaa
  PPP
@@ -188,7 +189,6 @@ select distinct f2 from test_binary1 order by f2;
  aaa
  ppp
  \305\240
- 
 (9 rows)
 
 select f2 from test_binary1 where f2 = 'ppp'::blob collate 'binary';
@@ -244,4 +244,40 @@ drop cascades to table test_charset.test_collate2
 drop cascades to table test_charset.test_collate3
 drop cascades to table test_charset.test_collate4
 drop cascades to table test_charset.test_collate5
+reset current_schema;
+create schema test_b1 charset='utf8' collate='utf8_general_ci';
+set current_schema to 'test_b1';
+set b_format_behavior_compat_options = 'default_collation,enable_multi_charset';
+create table test1(id int, pic longblob) charset=utf8mb4 collate=utf8mb4_0900_ai_ci;
+WARNING:  Invalid collation detected. default value set
+reset b_format_behavior_compat_options;
+create table test2(id int, pic longblob) charset=utf8mb4 collate=utf8mb4_0900_ai_ci;
+WARNING:  Invalid collation detected. default value set
+show create table test1;
+ Table |                        Create Table                         
+-------+-------------------------------------------------------------
+ test1 | SET search_path = test_b1;                                 +
+       | CREATE TABLE test1 (                                       +
+       |     id integer,                                            +
+       |     pic longblob CHARACTER SET "SQL_ASCII" COLLATE "binary"+
+       | )                                                          +
+       | CHARACTER SET = "UTF8" COLLATE = "utf8_general_ci"         +
+       | WITH (orientation=row, compression=no);
+(1 row)
+
+show create table test2;
+ Table |              Create Table               
+-------+-----------------------------------------
+ test2 | SET search_path = test_b1;             +
+       | CREATE TABLE test2 (                   +
+       |     id integer,                        +
+       |     pic longblob                       +
+       | )                                      +
+       | CHARACTER SET = "" COLLATE = "default" +
+       | WITH (orientation=row, compression=no);
+(1 row)
+
+drop table test1;
+drop table test2;
+drop schema test_b1 cascade;
 reset current_schema;

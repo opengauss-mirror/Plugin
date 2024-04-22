@@ -124,6 +124,17 @@ insert into test values('timestampdiff(microsecond, 101, 99991231235959.999999)'
 insert into test values('timestampdiff(week, null, ''9999-12-31'')', timestampdiff(week, null, '9999-12-31'));
 insert into test values('timestampdiff(week, ''9999-12-31'', null)', timestampdiff(week, '9999-12-31', null));
 insert into test values('timestampdiff(week, null, null)', timestampdiff(week, null, null));
+--严格模式下，针对unit的非法报error
+insert into test values('timestampdiff(abc, ''2020-11-11'', ''2020-11-12'')', timestampdiff(abc, '2020-11-11', '2020-11-12'));
+ERROR:  timestamp with time zone units "abc" not recognized
+CONTEXT:  referenced column: result
+insert into test values('timestampdiff(decades, ''2020-11-11'', ''2020-11-12'')', timestampdiff(decades, '2020-11-11', '2020-11-12'));
+ERROR:  timestamp units "decades" not supported
+CONTEXT:  referenced column: result
+--严格模式下，针对value的非法报warning
+insert into test values('timestampdiff(day, ''2020-11-11'', ''abc'')', timestampdiff(day, '2020-11-11', 'abc'));
+ERROR:  Incorrect datetime value: "abc"
+CONTEXT:  referenced column: result
 -- 非严格模式，参数不合法，报warning，返回NULL或者对应值
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('timestampdiff(microsecond, ''abc'', ''2021-11-12'')', timestampdiff(microsecond, 'abc', '2021-11-12'));
@@ -135,6 +146,13 @@ CONTEXT:  referenced column: result
 insert into test values('timestampdiff(microsecond, ''10000-1-1'', ''2021-11-12'')', timestampdiff(microsecond, '10000-1-1', '2021-11-12'));
 WARNING:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
+--非严格模式下，unit不合法，仍然报error
+insert into test values('timestampdiff(abc, ''2020-11-11'', ''2020-11-12'')', timestampdiff(abc, '2020-11-11', '2020-11-12'));
+ERROR:  timestamp with time zone units "abc" not recognized
+CONTEXT:  referenced column: result
+insert into test values('timestampdiff(decades, ''2020-11-11'', ''2020-11-12'')', timestampdiff(decades, '2020-11-11', '2020-11-12'));
+ERROR:  timestamp units "decades" not supported
+CONTEXT:  referenced column: result
 -- 严格模式，参数不合法，抛出错误
 set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
 insert into test values('timestampdiff(microsecond, ''abc'', ''2021-11-12'')', timestampdiff(microsecond, 'abc', '2021-11-12'));
@@ -145,6 +163,15 @@ ERROR:  Incorrect datetime value: "10000-1-1"
 CONTEXT:  referenced column: result
 insert into test values('timestampdiff(microsecond, ''10000-1-1'', ''2021-11-12'')', timestampdiff(microsecond, '10000-1-1', '2021-11-12'));
 ERROR:  Incorrect datetime value: "10000-1-1"
+CONTEXT:  referenced column: result
+insert into test values('timestampdiff(abc, ''2020-11-11'', ''2020-11-12'')', timestampdiff(abc, '2020-11-11', '2020-11-12'));
+ERROR:  timestamp with time zone units "abc" not recognized
+CONTEXT:  referenced column: result
+insert into test values('timestampdiff(decades, ''2020-11-11'', ''2020-11-12'')', timestampdiff(decades, '2020-11-11', '2020-11-12'));
+ERROR:  timestamp units "decades" not supported
+CONTEXT:  referenced column: result
+insert into test values('timestampdiff(day, ''2020-11-11'', ''abc'')', timestampdiff(day, '2020-11-11', 'abc'));
+ERROR:  Incorrect datetime value: "abc"
 CONTEXT:  referenced column: result
 set dolphin.b_compatibility_mode = false;
 -- test convert_tz
@@ -1015,5 +1042,954 @@ select timediff('2022-01-01',date'2022-01-02');
  -24:00:00
 (1 row)
 
+-- 测试time_to_sec异常边界
+select time_to_sec(8385960);
+WARNING:  Truncated incorrect time value: "8385960"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(8385959);
+ time_to_sec 
+-------------
+     3020399
+(1 row)
+
+select time_to_sec(-8385960);
+WARNING:  Truncated incorrect time value: "-8385960"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(-8385959);
+ time_to_sec 
+-------------
+    -3020399
+(1 row)
+
+select time_to_sec(10000101000000);
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(10000100000000);
+WARNING:  Truncated incorrect time value: "10000100000000"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(100000101000000);
+WARNING:  Truncated incorrect time value: "100000101000000"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(99999999999999);
+WARNING:  Truncated incorrect time value: "99999999999999"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(99990100000000);
+WARNING:  Truncated incorrect time value: "99990100000000"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(20220101010101);
+ time_to_sec 
+-------------
+        3661
+(1 row)
+
+select time_to_sec(99991231235959);
+ time_to_sec 
+-------------
+       86399
+(1 row)
+
+select time_to_sec(99991231240000);
+WARNING:  Truncated incorrect time value: "99991231240000"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(10000101000001);
+ time_to_sec 
+-------------
+           1
+(1 row)
+
+select time_to_sec(10000101000059);
+ time_to_sec 
+-------------
+          59
+(1 row)
+
+select time_to_sec(10000101000060);
+WARNING:  Truncated incorrect time value: "10000101000060"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(0);
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(100000000000000);
+WARNING:  Truncated incorrect time value: "100000000000000"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec('8385960');
+WARNING:  Truncated incorrect time value: "8385960"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec('8385959');
+ time_to_sec 
+-------------
+     3020399
+(1 row)
+
+select time_to_sec('-8385960');
+WARNING:  Truncated incorrect time value: "-8385960"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec('-8385959');
+ time_to_sec 
+-------------
+    -3020399
+(1 row)
+
+select time_to_sec('10000101000000');
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec('10000100000000');
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec('100000101000000');
+WARNING:  Truncated incorrect time value: "100000101000000"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+       36000
+(1 row)
+
+select time_to_sec('99999999999999');
+WARNING:  Truncated incorrect time value: "99999999999999"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec('99990100000000');
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec('20220101010101');
+ time_to_sec 
+-------------
+        3661
+(1 row)
+
+select time_to_sec('99991231235959');
+ time_to_sec 
+-------------
+       86399
+(1 row)
+
+select time_to_sec('99991231240000');
+WARNING:  Truncated incorrect time value: "99991231240000"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec('10000101000001');
+ time_to_sec 
+-------------
+           1
+(1 row)
+
+select time_to_sec('10000101000059');
+ time_to_sec 
+-------------
+          59
+(1 row)
+
+select time_to_sec('10000101000060');
+WARNING:  Truncated incorrect time value: "10000101000060"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec('0');
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec('100000000000000');
+WARNING:  Truncated incorrect time value: "100000000000000"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(8385960.11);
+WARNING:  Truncated incorrect time value: "8385960"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(8385959.11);
+ time_to_sec 
+-------------
+     3020399
+(1 row)
+
+select time_to_sec(-8385960.11);
+WARNING:  Truncated incorrect time value: "-8385960.11"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(-8385959.11);
+ time_to_sec 
+-------------
+    -3020399
+(1 row)
+
+select time_to_sec(10000101000000.11);
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(10000100000000.11);
+WARNING:  Truncated incorrect time value: "10000100000000"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(100000101000000.11);
+WARNING:  Truncated incorrect time value: "100000101000000"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(99999999999999.11);
+WARNING:  Truncated incorrect time value: "99999999999999"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(99990100000000.11);
+WARNING:  Truncated incorrect time value: "99990100000000"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(20220101010101.11);
+ time_to_sec 
+-------------
+        3661
+(1 row)
+
+select time_to_sec(99991231235959.11);
+ time_to_sec 
+-------------
+       86399
+(1 row)
+
+select time_to_sec(99991231240000.11);
+WARNING:  Truncated incorrect time value: "99991231240000"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(10000101000001.11);
+ time_to_sec 
+-------------
+           1
+(1 row)
+
+select time_to_sec(10000101000059.11);
+ time_to_sec 
+-------------
+          59
+(1 row)
+
+select time_to_sec(10000101000060.11);
+WARNING:  Truncated incorrect time value: "10000101000060"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(0.11);
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(100000000000000.11);
+WARNING:  Truncated incorrect time value: "100000000000000"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(10000101000001.99999);
+ time_to_sec 
+-------------
+           1
+(1 row)
+
+select time_to_sec(10000101000001.999999);
+ time_to_sec 
+-------------
+           1
+(1 row)
+
+select time_to_sec(10000101000001.9999994);
+ time_to_sec 
+-------------
+           1
+(1 row)
+
+select time_to_sec(10000101000001.9999995);
+ time_to_sec 
+-------------
+           2
+(1 row)
+
+select time_to_sec(10000101000001.999999999);
+ time_to_sec 
+-------------
+           2
+(1 row)
+
+select time_to_sec(8385959.99999);
+ time_to_sec 
+-------------
+     3020399
+(1 row)
+
+select time_to_sec(8385959.999999);
+ time_to_sec 
+-------------
+     3020399
+(1 row)
+
+select time_to_sec(8385959.9999994);
+ time_to_sec 
+-------------
+     3020399
+(1 row)
+
+select time_to_sec(8385959.9999995);
+WARNING:  Truncated incorrect time value: "8385959.9999995"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+     3020399
+(1 row)
+
+select time_to_sec(8385959.999999999);
+WARNING:  Truncated incorrect time value: "8385959.999999999"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+     3020399
+(1 row)
+
+select time_to_sec(-10000101000001.99999);
+WARNING:  Truncated incorrect time value: "-10000101000001.99999"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(-10000101000001.999999);
+WARNING:  Truncated incorrect time value: "-10000101000001.999999"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(-10000101000001.999994);
+WARNING:  Truncated incorrect time value: "-10000101000001.999994"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(-10000101000001.999995);
+WARNING:  Truncated incorrect time value: "-10000101000001.999995"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(-10000101000001.999999999);
+WARNING:  Truncated incorrect time value: "-10000101000001.999999999"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(-8385959.99999);
+ time_to_sec 
+-------------
+    -3020399
+(1 row)
+
+select time_to_sec(-8385959.999999);
+ time_to_sec 
+-------------
+    -3020399
+(1 row)
+
+select time_to_sec(-8385959.9999994);
+ time_to_sec 
+-------------
+    -3020399
+(1 row)
+
+select time_to_sec(-8385959.9999995);
+WARNING:  Truncated incorrect time value: "-8385959.9999995"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+    -3020399
+(1 row)
+
+select time_to_sec(-8385959.999999999);
+WARNING:  Truncated incorrect time value: "-8385959.999999999"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+    -3020399
+(1 row)
+
+select time_to_sec(-10000101000001);
+WARNING:  Truncated incorrect time value: "-10000101000001"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+-- 严格模式 insert
+create table test2(funcname text, result text);
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+insert into test2 values ('time_to_sec(100000000000000)', time_to_sec(100000000000000));
+ERROR:  Truncated incorrect time value: "100000000000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(10000100000000)', time_to_sec(10000100000000));
+ERROR:  Truncated incorrect time value: "10000100000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(99990100000000)', time_to_sec(99990100000000));
+ERROR:  Truncated incorrect time value: "99990100000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''100000000000000'')', time_to_sec('100000000000000'));
+ERROR:  Truncated incorrect time value: "100000000000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''10000100000000'')', time_to_sec('10000100000000'));
+insert into test2 values ('time_to_sec(''99990100000000'')', time_to_sec('99990100000000'));
+insert into test2 values ('time_to_sec(''8385960'')', time_to_sec('8385960'));
+ERROR:  Truncated incorrect time value: "8385960"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''8385959'')', time_to_sec('8385959'));
+insert into test2 values ('time_to_sec(''-8385960'')', time_to_sec('-8385960'));
+ERROR:  Truncated incorrect time value: "-8385960"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''-8385959'')', time_to_sec('-8385959'));
+insert into test2 values ('time_to_sec(''10000101000000'')', time_to_sec('10000101000000'));
+insert into test2 values ('time_to_sec(''10000100000000'')', time_to_sec('10000100000000'));
+insert into test2 values ('time_to_sec(''100000101000000'')', time_to_sec('100000101000000'));
+ERROR:  Truncated incorrect time value: "100000101000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''99999999999999'')', time_to_sec('99999999999999'));
+ERROR:  Truncated incorrect time value: "99999999999999"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''99990100000000'')', time_to_sec('99990100000000'));
+insert into test2 values ('time_to_sec(''20220101010101'')', time_to_sec('20220101010101'));
+insert into test2 values ('time_to_sec(''99991231235959'')', time_to_sec('99991231235959'));
+insert into test2 values ('time_to_sec(''99991231240000'')', time_to_sec('99991231240000'));
+ERROR:  Truncated incorrect time value: "99991231240000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''10000101000001'')', time_to_sec('10000101000001'));
+insert into test2 values ('time_to_sec(''10000101000059'')', time_to_sec('10000101000059'));
+insert into test2 values ('time_to_sec(''10000101000060'')', time_to_sec('10000101000060'));
+ERROR:  Truncated incorrect time value: "10000101000060"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''0'')', time_to_sec('0'));
+insert into test2 values ('time_to_sec(''100000000000000'')', time_to_sec('100000000000000'));
+ERROR:  Truncated incorrect time value: "100000000000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(8385960)', time_to_sec(8385960));
+ERROR:  Truncated incorrect time value: "8385960"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(8385959)', time_to_sec(8385959));
+insert into test2 values ('time_to_sec(-8385960)', time_to_sec(-8385960));
+ERROR:  Truncated incorrect time value: "-8385960"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(-8385959)', time_to_sec(-8385959));
+insert into test2 values ('time_to_sec(10000101000000)', time_to_sec(10000101000000));
+insert into test2 values ('time_to_sec(10000100000000)', time_to_sec(10000100000000));
+ERROR:  Truncated incorrect time value: "10000100000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(100000101000000)', time_to_sec(100000101000000));
+ERROR:  Truncated incorrect time value: "100000101000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(99999999999999)', time_to_sec(99999999999999));
+ERROR:  Truncated incorrect time value: "99999999999999"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(99990100000000)', time_to_sec(99990100000000));
+ERROR:  Truncated incorrect time value: "99990100000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(20220101010101)', time_to_sec(20220101010101));
+insert into test2 values ('time_to_sec(99991231235959)', time_to_sec(99991231235959));
+insert into test2 values ('time_to_sec(99991231240000)', time_to_sec(99991231240000));
+ERROR:  Truncated incorrect time value: "99991231240000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(10000101000001)', time_to_sec(10000101000001));
+insert into test2 values ('time_to_sec(10000101000059)', time_to_sec(10000101000059));
+insert into test2 values ('time_to_sec(10000101000060)', time_to_sec(10000101000060));
+ERROR:  Truncated incorrect time value: "10000101000060"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(0)', time_to_sec(0));
+insert into test2 values ('time_to_sec(100000000000000)', time_to_sec(100000000000000));
+ERROR:  Truncated incorrect time value: "100000000000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(8385960.11)', time_to_sec(8385960.11));
+ERROR:  Truncated incorrect time value: "8385960"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(8385959.11)', time_to_sec(8385959.11));
+insert into test2 values ('time_to_sec(-8385960.11)', time_to_sec(-8385960.11));
+ERROR:  Truncated incorrect time value: "-8385960.11"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(-8385959.11)', time_to_sec(-8385959.11));
+insert into test2 values ('time_to_sec(10000101000000.11)', time_to_sec(10000101000000.11));
+insert into test2 values ('time_to_sec(10000100000000.11)', time_to_sec(10000100000000.11));
+ERROR:  Truncated incorrect time value: "10000100000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(100000101000000.11)', time_to_sec(100000101000000.11));
+ERROR:  Truncated incorrect time value: "100000101000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(99999999999999.11)', time_to_sec(99999999999999.11));
+ERROR:  Truncated incorrect time value: "99999999999999"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(99990100000000.11)', time_to_sec(99990100000000.11));
+ERROR:  Truncated incorrect time value: "99990100000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(20220101010101.11)', time_to_sec(20220101010101.11));
+insert into test2 values ('time_to_sec(99991231235959.11)', time_to_sec(99991231235959.11));
+insert into test2 values ('time_to_sec(99991231240000.11)', time_to_sec(99991231240000.11));
+ERROR:  Truncated incorrect time value: "99991231240000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(10000101000001.11)', time_to_sec(10000101000001.11));
+insert into test2 values ('time_to_sec(10000101000059.11)', time_to_sec(10000101000059.11));
+insert into test2 values ('time_to_sec(10000101000060.11)', time_to_sec(10000101000060.11));
+ERROR:  Truncated incorrect time value: "10000101000060"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(0.11)', time_to_sec(0.11));
+insert into test2 values ('time_to_sec(100000000000000.11)', time_to_sec(100000000000000.11));
+ERROR:  Truncated incorrect time value: "100000000000000"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(10000101000001.99999)', time_to_sec(10000101000001.99999));
+insert into test2 values('time_to_sec(10000101000001.999999)', time_to_sec(10000101000001.999999));
+insert into test2 values('time_to_sec(10000101000001.9999994)', time_to_sec(10000101000001.9999994));
+insert into test2 values('time_to_sec(10000101000001.9999995)', time_to_sec(10000101000001.9999995));
+insert into test2 values('time_to_sec(10000101000001.999999999)', time_to_sec(10000101000001.999999999));
+insert into test2 values('time_to_sec(8385959.99999)', time_to_sec(8385959.99999));
+insert into test2 values('time_to_sec(8385959.999999)', time_to_sec(8385959.999999));
+insert into test2 values('time_to_sec(8385959.9999994)', time_to_sec(8385959.9999994));
+insert into test2 values('time_to_sec(8385959.9999995)', time_to_sec(8385959.9999995));
+ERROR:  Truncated incorrect time value: "8385959.9999995"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(8385959.999999999)', time_to_sec(8385959.999999999));
+ERROR:  Truncated incorrect time value: "8385959.999999999"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-10000101000001.99999)', time_to_sec(-10000101000001.99999));
+ERROR:  Truncated incorrect time value: "-10000101000001.99999"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-10000101000001.999999)', time_to_sec(-10000101000001.999999));
+ERROR:  Truncated incorrect time value: "-10000101000001.999999"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-10000101000001.999994)', time_to_sec(-10000101000001.999994));
+ERROR:  Truncated incorrect time value: "-10000101000001.999994"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-10000101000001.999995)', time_to_sec(-10000101000001.999995));
+ERROR:  Truncated incorrect time value: "-10000101000001.999995"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-10000101000001.999999999)', time_to_sec(-10000101000001.999999999));
+ERROR:  Truncated incorrect time value: "-10000101000001.999999999"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-8385959.99999)', time_to_sec(-8385959.99999));
+insert into test2 values('time_to_sec(-8385959.999999)', time_to_sec(-8385959.999999));
+insert into test2 values('time_to_sec(-8385959.9999994)', time_to_sec(-8385959.9999994));
+insert into test2 values('time_to_sec(-8385959.9999995)', time_to_sec(-8385959.9999995));
+ERROR:  Truncated incorrect time value: "-8385959.9999995"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-8385959.999999999)', time_to_sec(-8385959.999999999));
+ERROR:  Truncated incorrect time value: "-8385959.999999999"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-10000101000001)', time_to_sec(-10000101000001));
+ERROR:  Truncated incorrect time value: "-10000101000001"
+CONTEXT:  referenced column: result
+select * from test2 order by funcname;
+               funcname                |  result  
+---------------------------------------+----------
+ time_to_sec('-8385959')               | -3020399
+ time_to_sec('0')                      | 0
+ time_to_sec('10000100000000')         | 0
+ time_to_sec('10000100000000')         | 0
+ time_to_sec('10000101000000')         | 0
+ time_to_sec('10000101000001')         | 1
+ time_to_sec('10000101000059')         | 59
+ time_to_sec('20220101010101')         | 3661
+ time_to_sec('8385959')                | 3020399
+ time_to_sec('99990100000000')         | 0
+ time_to_sec('99990100000000')         | 0
+ time_to_sec('99991231235959')         | 86399
+ time_to_sec(-8385959)                 | -3020399
+ time_to_sec(-8385959.11)              | -3020399
+ time_to_sec(-8385959.99999)           | -3020399
+ time_to_sec(-8385959.999999)          | -3020399
+ time_to_sec(-8385959.9999994)         | -3020399
+ time_to_sec(0)                        | 0
+ time_to_sec(0.11)                     | 0
+ time_to_sec(10000101000000)           | 0
+ time_to_sec(10000101000000.11)        | 0
+ time_to_sec(10000101000001)           | 1
+ time_to_sec(10000101000001.11)        | 1
+ time_to_sec(10000101000001.99999)     | 1
+ time_to_sec(10000101000001.999999)    | 1
+ time_to_sec(10000101000001.9999994)   | 1
+ time_to_sec(10000101000001.9999995)   | 2
+ time_to_sec(10000101000001.999999999) | 2
+ time_to_sec(10000101000059)           | 59
+ time_to_sec(10000101000059.11)        | 59
+ time_to_sec(20220101010101)           | 3661
+ time_to_sec(20220101010101.11)        | 3661
+ time_to_sec(8385959)                  | 3020399
+ time_to_sec(8385959.11)               | 3020399
+ time_to_sec(8385959.99999)            | 3020399
+ time_to_sec(8385959.999999)           | 3020399
+ time_to_sec(8385959.9999994)          | 3020399
+ time_to_sec(99991231235959)           | 86399
+ time_to_sec(99991231235959.11)        | 86399
+(39 rows)
+
+-- 非严格模式 insert
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date';
+delete from test2 where 1=1;
+insert into test2 values ('time_to_sec(100000000000000)', time_to_sec(100000000000000));
+WARNING:  Truncated incorrect time value: "100000000000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(10000100000000)', time_to_sec(10000100000000));
+WARNING:  Truncated incorrect time value: "10000100000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(99990100000000)', time_to_sec(99990100000000));
+WARNING:  Truncated incorrect time value: "99990100000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''100000000000000'')', time_to_sec('100000000000000'));
+WARNING:  Truncated incorrect time value: "100000000000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''10000100000000'')', time_to_sec('10000100000000'));
+insert into test2 values ('time_to_sec(''99990100000000'')', time_to_sec('99990100000000'));
+insert into test2 values ('time_to_sec(''8385960'')', time_to_sec('8385960'));
+WARNING:  Truncated incorrect time value: "8385960"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''8385959'')', time_to_sec('8385959'));
+insert into test2 values ('time_to_sec(''-8385960'')', time_to_sec('-8385960'));
+WARNING:  Truncated incorrect time value: "-8385960"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''-8385959'')', time_to_sec('-8385959'));
+insert into test2 values ('time_to_sec(''10000101000000'')', time_to_sec('10000101000000'));
+insert into test2 values ('time_to_sec(''10000100000000'')', time_to_sec('10000100000000'));
+insert into test2 values ('time_to_sec(''100000101000000'')', time_to_sec('100000101000000'));
+WARNING:  Truncated incorrect time value: "100000101000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''99999999999999'')', time_to_sec('99999999999999'));
+WARNING:  Truncated incorrect time value: "99999999999999"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''99990100000000'')', time_to_sec('99990100000000'));
+insert into test2 values ('time_to_sec(''20220101010101'')', time_to_sec('20220101010101'));
+insert into test2 values ('time_to_sec(''99991231235959'')', time_to_sec('99991231235959'));
+insert into test2 values ('time_to_sec(''99991231240000'')', time_to_sec('99991231240000'));
+WARNING:  Truncated incorrect time value: "99991231240000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''10000101000001'')', time_to_sec('10000101000001'));
+insert into test2 values ('time_to_sec(''10000101000059'')', time_to_sec('10000101000059'));
+insert into test2 values ('time_to_sec(''10000101000060'')', time_to_sec('10000101000060'));
+WARNING:  Truncated incorrect time value: "10000101000060"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(''0'')', time_to_sec('0'));
+insert into test2 values ('time_to_sec(''100000000000000'')', time_to_sec('100000000000000'));
+WARNING:  Truncated incorrect time value: "100000000000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(8385960)', time_to_sec(8385960));
+WARNING:  Truncated incorrect time value: "8385960"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(8385959)', time_to_sec(8385959));
+insert into test2 values ('time_to_sec(-8385960)', time_to_sec(-8385960));
+WARNING:  Truncated incorrect time value: "-8385960"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(-8385959)', time_to_sec(-8385959));
+insert into test2 values ('time_to_sec(10000101000000)', time_to_sec(10000101000000));
+insert into test2 values ('time_to_sec(10000100000000)', time_to_sec(10000100000000));
+WARNING:  Truncated incorrect time value: "10000100000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(100000101000000)', time_to_sec(100000101000000));
+WARNING:  Truncated incorrect time value: "100000101000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(99999999999999)', time_to_sec(99999999999999));
+WARNING:  Truncated incorrect time value: "99999999999999"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(99990100000000)', time_to_sec(99990100000000));
+WARNING:  Truncated incorrect time value: "99990100000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(20220101010101)', time_to_sec(20220101010101));
+insert into test2 values ('time_to_sec(99991231235959)', time_to_sec(99991231235959));
+insert into test2 values ('time_to_sec(99991231240000)', time_to_sec(99991231240000));
+WARNING:  Truncated incorrect time value: "99991231240000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(10000101000001)', time_to_sec(10000101000001));
+insert into test2 values ('time_to_sec(10000101000059)', time_to_sec(10000101000059));
+insert into test2 values ('time_to_sec(10000101000060)', time_to_sec(10000101000060));
+WARNING:  Truncated incorrect time value: "10000101000060"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(0)', time_to_sec(0));
+insert into test2 values ('time_to_sec(100000000000000)', time_to_sec(100000000000000));
+WARNING:  Truncated incorrect time value: "100000000000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(8385960.11)', time_to_sec(8385960.11));
+WARNING:  Truncated incorrect time value: "8385960"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(8385959.11)', time_to_sec(8385959.11));
+insert into test2 values ('time_to_sec(-8385960.11)', time_to_sec(-8385960.11));
+WARNING:  Truncated incorrect time value: "-8385960.11"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(-8385959.11)', time_to_sec(-8385959.11));
+insert into test2 values ('time_to_sec(10000101000000.11)', time_to_sec(10000101000000.11));
+insert into test2 values ('time_to_sec(10000100000000.11)', time_to_sec(10000100000000.11));
+WARNING:  Truncated incorrect time value: "10000100000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(100000101000000.11)', time_to_sec(100000101000000.11));
+WARNING:  Truncated incorrect time value: "100000101000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(99999999999999.11)', time_to_sec(99999999999999.11));
+WARNING:  Truncated incorrect time value: "99999999999999"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(99990100000000.11)', time_to_sec(99990100000000.11));
+WARNING:  Truncated incorrect time value: "99990100000000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(20220101010101.11)', time_to_sec(20220101010101.11));
+insert into test2 values ('time_to_sec(99991231235959.11)', time_to_sec(99991231235959.11));
+insert into test2 values ('time_to_sec(99991231240000.11)', time_to_sec(99991231240000.11));
+WARNING:  Truncated incorrect time value: "99991231240000"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(10000101000001.11)', time_to_sec(10000101000001.11));
+insert into test2 values ('time_to_sec(10000101000059.11)', time_to_sec(10000101000059.11));
+insert into test2 values ('time_to_sec(10000101000060.11)', time_to_sec(10000101000060.11));
+WARNING:  Truncated incorrect time value: "10000101000060"
+CONTEXT:  referenced column: result
+insert into test2 values ('time_to_sec(0.11)', time_to_sec(0.11));
+insert into test2 values ('time_to_sec(100000000000000.11)', time_to_sec(100000000000000.11));
+WARNING:  Truncated incorrect time value: "100000000000000"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(10000101000001.99999)', time_to_sec(10000101000001.99999));
+insert into test2 values('time_to_sec(10000101000001.999999)', time_to_sec(10000101000001.999999));
+insert into test2 values('time_to_sec(10000101000001.9999994)', time_to_sec(10000101000001.9999994));
+insert into test2 values('time_to_sec(10000101000001.9999995)', time_to_sec(10000101000001.9999995));
+insert into test2 values('time_to_sec(10000101000001.999999999)', time_to_sec(10000101000001.999999999));
+insert into test2 values('time_to_sec(8385959.99999)', time_to_sec(8385959.99999));
+insert into test2 values('time_to_sec(8385959.999999)', time_to_sec(8385959.999999));
+insert into test2 values('time_to_sec(8385959.9999994)', time_to_sec(8385959.9999994));
+insert into test2 values('time_to_sec(8385959.9999995)', time_to_sec(8385959.9999995));
+WARNING:  Truncated incorrect time value: "8385959.9999995"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(8385959.999999999)', time_to_sec(8385959.999999999));
+WARNING:  Truncated incorrect time value: "8385959.999999999"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-10000101000001.99999)', time_to_sec(-10000101000001.99999));
+WARNING:  Truncated incorrect time value: "-10000101000001.99999"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-10000101000001.999999)', time_to_sec(-10000101000001.999999));
+WARNING:  Truncated incorrect time value: "-10000101000001.999999"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-10000101000001.999994)', time_to_sec(-10000101000001.999994));
+WARNING:  Truncated incorrect time value: "-10000101000001.999994"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-10000101000001.999995)', time_to_sec(-10000101000001.999995));
+WARNING:  Truncated incorrect time value: "-10000101000001.999995"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-10000101000001.999999999)', time_to_sec(-10000101000001.999999999));
+WARNING:  Truncated incorrect time value: "-10000101000001.999999999"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-8385959.99999)', time_to_sec(-8385959.99999));
+insert into test2 values('time_to_sec(-8385959.999999)', time_to_sec(-8385959.999999));
+insert into test2 values('time_to_sec(-8385959.9999994)', time_to_sec(-8385959.9999994));
+insert into test2 values('time_to_sec(-8385959.9999995)', time_to_sec(-8385959.9999995));
+WARNING:  Truncated incorrect time value: "-8385959.9999995"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-8385959.999999999)', time_to_sec(-8385959.999999999));
+WARNING:  Truncated incorrect time value: "-8385959.999999999"
+CONTEXT:  referenced column: result
+insert into test2 values('time_to_sec(-10000101000001)', time_to_sec(-10000101000001));
+WARNING:  Truncated incorrect time value: "-10000101000001"
+CONTEXT:  referenced column: result
+select * from test2 order by funcname;
+                funcname                |  result  
+----------------------------------------+----------
+ time_to_sec('-8385959')                | -3020399
+ time_to_sec('-8385960')                | 
+ time_to_sec('0')                       | 0
+ time_to_sec('100000000000000')         | 0
+ time_to_sec('100000000000000')         | 0
+ time_to_sec('100000101000000')         | 36000
+ time_to_sec('10000100000000')          | 0
+ time_to_sec('10000100000000')          | 0
+ time_to_sec('10000101000000')          | 0
+ time_to_sec('10000101000001')          | 1
+ time_to_sec('10000101000059')          | 59
+ time_to_sec('10000101000060')          | 
+ time_to_sec('20220101010101')          | 3661
+ time_to_sec('8385959')                 | 3020399
+ time_to_sec('8385960')                 | 
+ time_to_sec('99990100000000')          | 0
+ time_to_sec('99990100000000')          | 0
+ time_to_sec('99991231235959')          | 86399
+ time_to_sec('99991231240000')          | 
+ time_to_sec('99999999999999')          | 
+ time_to_sec(-10000101000001)           | 
+ time_to_sec(-10000101000001.99999)     | 
+ time_to_sec(-10000101000001.999994)    | 
+ time_to_sec(-10000101000001.999995)    | 
+ time_to_sec(-10000101000001.999999)    | 
+ time_to_sec(-10000101000001.999999999) | 
+ time_to_sec(-8385959)                  | -3020399
+ time_to_sec(-8385959.11)               | -3020399
+ time_to_sec(-8385959.99999)            | -3020399
+ time_to_sec(-8385959.999999)           | -3020399
+ time_to_sec(-8385959.9999994)          | -3020399
+ time_to_sec(-8385959.9999995)          | -3020399
+ time_to_sec(-8385959.999999999)        | -3020399
+ time_to_sec(-8385960)                  | 
+ time_to_sec(-8385960.11)               | 
+ time_to_sec(0)                         | 0
+ time_to_sec(0.11)                      | 0
+ time_to_sec(100000000000000)           | 
+ time_to_sec(100000000000000)           | 
+ time_to_sec(100000000000000.11)        | 
+ time_to_sec(100000101000000)           | 
+ time_to_sec(100000101000000.11)        | 
+ time_to_sec(10000100000000)            | 
+ time_to_sec(10000100000000)            | 
+ time_to_sec(10000100000000.11)         | 
+ time_to_sec(10000101000000)            | 0
+ time_to_sec(10000101000000.11)         | 0
+ time_to_sec(10000101000001)            | 1
+ time_to_sec(10000101000001.11)         | 1
+ time_to_sec(10000101000001.99999)      | 1
+ time_to_sec(10000101000001.999999)     | 1
+ time_to_sec(10000101000001.9999994)    | 1
+ time_to_sec(10000101000001.9999995)    | 2
+ time_to_sec(10000101000001.999999999)  | 2
+ time_to_sec(10000101000059)            | 59
+ time_to_sec(10000101000059.11)         | 59
+ time_to_sec(10000101000060)            | 
+ time_to_sec(10000101000060.11)         | 
+ time_to_sec(20220101010101)            | 3661
+ time_to_sec(20220101010101.11)         | 3661
+ time_to_sec(8385959)                   | 3020399
+ time_to_sec(8385959.11)                | 3020399
+ time_to_sec(8385959.99999)             | 3020399
+ time_to_sec(8385959.999999)            | 3020399
+ time_to_sec(8385959.9999994)           | 3020399
+ time_to_sec(8385959.9999995)           | 3020399
+ time_to_sec(8385959.999999999)         | 3020399
+ time_to_sec(8385960)                   | 
+ time_to_sec(8385960.11)                | 
+ time_to_sec(99990100000000)            | 
+ time_to_sec(99990100000000)            | 
+ time_to_sec(99990100000000.11)         | 
+ time_to_sec(99991231235959)            | 86399
+ time_to_sec(99991231235959.11)         | 86399
+ time_to_sec(99991231240000)            | 
+ time_to_sec(99991231240000.11)         | 
+ time_to_sec(99999999999999)            | 
+ time_to_sec(99999999999999.11)         | 
+(78 rows)
+
+drop table test2;
 \c contrib_regression
 DROP DATABASE b_datetime_func_test3;

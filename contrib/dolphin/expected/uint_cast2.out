@@ -521,6 +521,55 @@ select convert(1 , unsigned);
  1
 (1 row)
 
+--test for db core
+select varlena_cast_ui1(1);
+ERROR:  function varlena_cast_ui1(integer) does not exist
+LINE 1: select varlena_cast_ui1(1);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: varlena_cast_ui1
+select varlena_cast_ui2(1);
+ERROR:  function varlena_cast_ui2(integer) does not exist
+LINE 1: select varlena_cast_ui2(1);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: varlena_cast_ui2
+select varlena_cast_ui4(1);
+ERROR:  function varlena_cast_ui4(integer) does not exist
+LINE 1: select varlena_cast_ui4(1);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: varlena_cast_ui4
+select varlena_cast_ui8(1);
+ERROR:  function varlena_cast_ui8(integer) does not exist
+LINE 1: select varlena_cast_ui8(1);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: varlena_cast_ui8
+select varlena_cast_int8(1);
+ varlena_cast_int8 
+-------------------
+                 1
+(1 row)
+
+select varlena2float8(1);
+ varlena2float8 
+----------------
+              1
+(1 row)
+
+create OR REPLACE procedure t_p(out ret varchar) as
+begin
+select '{"a":"b"}'::json into ret;
+end;
+/
+select t_p();
+    t_p    
+-----------
+ {"a":"b"}
+(1 row)
+
+drop procedure t_p;
 drop schema uint_cast2 cascade;
 NOTICE:  drop cascades to table t1
 reset current_schema;

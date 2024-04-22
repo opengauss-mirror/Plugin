@@ -220,6 +220,60 @@ select target, json_valid(target) from json_valid_test;
 
 drop table json_valid_test;
 
+
+set dolphin.b_compatibility_mode = on;
+
+create table test_type_table
+(
+   `int1` tinyint,
+   `uint1` tinyint unsigned,
+   `int2` smallint,
+   `uint2` smallint unsigned,
+   `int4` integer,
+   `uint4` integer unsigned,
+   `int8` bigint,
+   `uint8` bigint unsigned,
+   `float4` float4,
+   `float8` float8,
+   `numeric` decimal(20, 6),
+   `bit1` bit(1),
+   `bit64` bit(64),
+   `boolean` boolean,
+   `date` date,
+   `time` time,
+   `time(4)` time(4),
+   `datetime` datetime,
+   `datetime(4)` datetime(4) default '2022-11-11 11:11:11',
+   `timestamp` timestamp,
+   `timestamp(4)` timestamp(4) default '2022-11-11 11:11:11',
+   `year` year,
+   `char` char(100),
+   `varchar` varchar(100),
+   `binary` binary(100),
+   `varbinary` varbinary(100),
+   `tinyblob` tinyblob,
+   `blob` blob,
+   `mediumblob` mediumblob,
+   `longblob` longblob,
+   `text` text,
+   `enum_t` enum('a', 'b', 'c'),
+   `set_t` set('a', 'b', 'c'),
+   `json` json
+);
+
+insert into test_type_table values (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, b'1', b'111', true, '2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456',
+'2023', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', 'a', 'a,c', json_object('a', 1, 'b', 2));
+
+
+select json_valid(`int1`), json_valid(`uint1`), json_valid(`int2`), json_valid(`uint2`), json_valid(`int4`), json_valid(`uint4`), json_valid(`int8`), json_valid(`uint8`), json_valid(`float4`), json_valid(`float8`), json_valid(`numeric`), json_valid(`bit1`), json_valid(`bit64`), json_valid(`boolean`), json_valid(`date`), json_valid(`time`), json_valid(`time(4)`), json_valid(`datetime`), json_valid(`datetime(4)`), json_valid(`timestamp`), json_valid(`timestamp(4)`), json_valid(`year`), json_valid(`char`), json_valid(`varchar`), json_valid(`binary`), json_valid(`varbinary`), json_valid(`tinyblob`), json_valid(`blob`), json_valid(`mediumblob`), json_valid(`longblob`), json_valid(`text`), json_valid(`enum_t`), json_valid(`set_t`), json_valid(`json`),
+pg_typeof(json_valid(`int1`)), pg_typeof(json_valid(`uint1`)), pg_typeof(json_valid(`int2`)), pg_typeof(json_valid(`uint2`)), pg_typeof(json_valid(`int4`)), pg_typeof(json_valid(`uint4`)), pg_typeof(json_valid(`int8`)), pg_typeof(json_valid(`uint8`)), pg_typeof(json_valid(`float4`)), pg_typeof(json_valid(`float8`)), pg_typeof(json_valid(`numeric`)), pg_typeof(json_valid(`bit1`)), pg_typeof(json_valid(`bit64`)), pg_typeof(json_valid(`boolean`)), pg_typeof(json_valid(`date`)), pg_typeof(json_valid(`time`)), pg_typeof(json_valid(`time(4)`)), pg_typeof(json_valid(`datetime`)), pg_typeof(json_valid(`datetime(4)`)), pg_typeof(json_valid(`timestamp`)), pg_typeof(json_valid(`timestamp(4)`)), pg_typeof(json_valid(`year`)), pg_typeof(json_valid(`char`)), pg_typeof(json_valid(`varchar`)), pg_typeof(json_valid(`binary`)), pg_typeof(json_valid(`varbinary`)), pg_typeof(json_valid(`tinyblob`)), pg_typeof(json_valid(`blob`)), pg_typeof(json_valid(`mediumblob`)), pg_typeof(json_valid(`longblob`)), pg_typeof(json_valid(`text`)), pg_typeof(json_valid(`enum_t`)), pg_typeof(json_valid(`set_t`)), pg_typeof(json_valid(`json`)) from test_type_table;
+
+create table test_json_valid_cts as select json_valid(`int1`) as json_valid_1, json_valid(`uint1`) as json_valid_2, json_valid(`int2`) as json_valid_3, json_valid(`uint2`) as json_valid_4, json_valid(`int4`) as json_valid_5, json_valid(`uint4`) as json_valid_6, json_valid(`int8`) as json_valid_7, json_valid(`uint8`) as json_valid_8, json_valid(`float4`) as json_valid_9, json_valid(`float8`) as json_valid_10, json_valid(`numeric`) as json_valid_11, json_valid(`bit1`) as json_valid_12, json_valid(`bit64`) as json_valid_13, json_valid(`boolean`) as json_valid_14, json_valid(`date`) as json_valid_15, json_valid(`time`) as json_valid_16, json_valid(`time(4)`) as json_valid_17, json_valid(`datetime`) as json_valid_18, json_valid(`datetime(4)`) as json_valid_19, json_valid(`timestamp`) as json_valid_20, json_valid(`timestamp(4)`) as json_valid_21, json_valid(`char`) as json_valid_23, json_valid(`varchar`) as json_valid_24,  json_valid(`binary`) as json_valid_25, json_valid(`varbinary`) as json_valid_26, json_valid(`tinyblob`) as json_valid_27, json_valid(`blob`) as json_valid_28, json_valid(`mediumblob`) as json_valid_29, json_valid(`longblob`) as json_valid_30, json_valid(`text`) as json_valid_31, json_valid(`enum_t`) as json_valid_32, json_valid(`set_t`) as json_valid_33 from test_type_table;
+
+
+select * from test_json_valid_cts;
+drop table test_json_valid_cts;
+drop table test_type_table;
 drop schema test_json_valid cascade;
 reset current_schema;
 

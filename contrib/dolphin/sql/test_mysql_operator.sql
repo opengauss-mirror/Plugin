@@ -244,7 +244,7 @@ drop view testforboolean_v;
 
 --- test for function
 select count(tem) from (select a&&b tem from testforboolean);
-select a&&b,b from testforboolean order by b;
+select a&&b,b from testforboolean order by b nulls last;
 
 select char_length('asbjhc')&&char_length('askjdhkj');
 select left('1023jasdzlxc',5)&&left('1023jasdnzxc',5);
@@ -252,7 +252,7 @@ select substring('as1dz34lcas',3)&&substring('zxcbkj1shd',5);
 select replace('123456789','234','asd')&&replace('123456789','234','asd');
 
 select count(tem) from (select a||b tem from testforboolean);
-select a||b,b from testforboolean order by b;
+select a||b,b from testforboolean order by b nulls last;
 
 select char_length('asbjhc')||char_length('askjdhkj');
 select left('1023jasdzlxc',5)||left('1023jasdnzxc',5);
@@ -623,10 +623,11 @@ set dolphin.b_compatibility_mode = 0;
 drop schema test_op_xor cascade;
 reset current_schema;
 
-
-create schema like_test;
-set current_schema to 'like_test';
 set dolphin.b_compatibility_mode = 1;
+create schema like_test CHARACTER SET ='utf8' COLLATE ='utf8mb4_general_ci';
+set current_schema to 'like_test';
+set b_format_behavior_compat_options to 'enable_multi_charset';
+set names 'utf8mb4' collate 'utf8_bin';
 
 select 'a' like 'A';
 ---正常报错，like右边缺参数
@@ -634,7 +635,14 @@ select 'a' like;
 ---不报错，'A' 'a' 被当成'Aa'处理
 select 'a' like 'A' 'a';
 
-
+set names 'utf8mb4' collate 'utf8mb4_general_ci';
+select 'a' like 'A';
+select 'a'::char(10) like 'A';
+select 'a'::varchar(10) like 'A';
+select 'a'::VARCHAR2(10) like 'A';
+select 'a'::NVARCHAR2(10) like 'A';
+select 'a'::text like 'A';
+select 'a'::clob like 'A';
 
 select 100 like 100;
 select -100 like 100;
@@ -727,7 +735,7 @@ select * from hotel natural inner join price where name like 'b%';
 select * from hotel natural inner join price where name like binary 'b%';
 select * from hotel natural inner join price where name like 'b/%' escape '/';
 select * from hotel natural inner join price where name like binary 'b/%' escape '/';
-select * from hotel natural inner join price where name not like 'b%';
+select * from hotel natural inner join price where name not like 'b%' order by 1;
 select * from hotel natural inner join price where name not like binary 'b%';
 select * from hotel natural inner join price where name not like 'b/%' escape '/';
 select * from hotel natural inner join price where name not like binary 'b/%' escape '/';
@@ -750,7 +758,7 @@ select count(cout like '2022%') from hotel group by hotel ;
 select max(cout like '2022%') from hotel group by hotel ;
 select min(cout like '2021%') from hotel group by hotel ;
 select avg(cout like '2022%') from hotel group by hotel ;
-select sum(cout like '2022%') from hotel group by hotel ;
+select hotel, sum(cout like '2022%') from hotel group by hotel order by 1;
 select count(cout like binary '2022%') from hotel group by hotel ;
 select max(cout like binary '2022%') from hotel group by hotel ;
 select min(cout like binary '2021%') from hotel group by hotel ;
@@ -768,11 +776,11 @@ create table price(hotelname char(10),price int) with (orientation = column);
 insert into price values
 ('Vienna',500),
 ('Holiday',700);
-select * from hotel natural inner join price where name like 'b%';
+select * from hotel natural inner join price where name like 'b%' order by 1;
 select * from hotel natural inner join price where name like binary 'b%';
 select * from hotel natural inner join price where name like 'b/%' escape '/';
 select * from hotel natural inner join price where name like binary 'b/%' escape '/';
-select * from hotel natural inner join price where name not like 'b%';
+select * from hotel natural inner join price where name not like 'b%' order by 1;
 select * from hotel natural inner join price where name not like binary 'b%';
 select * from hotel natural inner join price where name not like 'b/%' escape '/';
 select * from hotel natural inner join price where name not like binary 'b/%' escape '/';
@@ -895,6 +903,86 @@ select !('2012-01-01'::date);
 select !('23:59:59'::time);
 select !b'1001';
 select 10!;
+
+-- test for '~'
+CREATE TABLE test_type_table
+(
+    `int1` tinyint,
+    `uint1` tinyint unsigned,
+    `int2` smallint,
+    `uint2` smallint unsigned,
+    `int4` integer,
+    `uint4` integer unsigned,
+    `int8` bigint,
+    `uint8` bigint unsigned,
+    `float4` float4,
+    `float8` float8,
+    `numeric` decimal(20, 6),
+    `bit1` bit(1),
+    `bit64` bit(64),
+    `boolean` boolean,
+    `date` date,
+    `time` time,
+    `time(4)` time(4),
+    `datetime` datetime,
+    `datetime(4)` datetime(4) default '2022-11-11 11:11:11',
+    `timestamp` timestamp,
+    `timestamp(4)` timestamp(4) default '2022-11-11 11:11:11',
+    `year` year,
+    `char` char(100),
+    `varchar` varchar(100),
+    `binary` binary(100),
+    `varbinary` varbinary(100),
+    `tinyblob` tinyblob,
+    `blob` blob,
+    `mediumblob` mediumblob,
+    `longblob` longblob,
+    `text` text,
+    `enum_t` enum('a', 'b', 'c'),
+    `set_t` set('a', 'b', 'c'),
+    `json` json
+);
+
+insert into test_type_table values(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,b'1', b'111', true,'2023-02-05', '19:10:50', '19:10:50.3456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023-02-05 19:10:50', '2023-02-05 19:10:50.456', '2023','1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a', '1.23a','a', 'a,c',json_object('a', 1, 'b', 2));
+
+select
+~(`int1`),
+~(`uint1`),
+~(`int2`),
+~(`uint2`),
+~(`int4`),
+~(`uint4`),
+~(`int8`),
+~(`uint8`),
+~(`float4`),
+~(`float8`),
+~(`numeric`),
+~(`bit1`),
+~(`bit64`),
+~(`boolean`),
+~(`date`),
+~(`time`),
+~(`time(4)`),
+~(`datetime`),
+~(`datetime(4)`),
+~(`timestamp`),
+~(`timestamp(4)`),
+~(`year`),
+~(`char`),
+~(`varchar`),
+~(`binary`),
+~(`varbinary`),
+~(`tinyblob`),
+~(`blob`),
+~(`mediumblob`),
+~(`longblob`),
+--~(`text`),
+~(`enum_t`),
+~(`set_t`)
+--~(`json`)
+from test_type_table;
+
+DROP TABLE test_type_table;
 
 set dolphin.b_compatibility_mode = 0;
 select !10;

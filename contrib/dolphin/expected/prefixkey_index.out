@@ -198,7 +198,7 @@ LINE 1: ...TE INDEX error_index_fchar ON test_prefix_syntax (fchar(1+1)...
                                                              ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CREATE INDEX error_index_fchar ON test_prefix_syntax (fchar(6.4));
-ERROR:  function fchar(numeric) does not exist
+ERROR:  function fchar(number) does not exist
 LINE 1: ...TE INDEX error_index_fchar ON test_prefix_syntax (fchar(6.4)...
                                                              ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
@@ -400,13 +400,13 @@ insert into test_prefix_key_len
 select length(fchar),length(ftext),length(fbytea) from test_prefix_key_len;
  length | length | length 
 --------+--------+--------
-   3000 |   9000 |   9000
+  10096 |   9000 |   9000
 (1 row)
 
 select lengthb(fchar),lengthb(ftext),octet_length(fbytea) from test_prefix_key_len;
  lengthb | lengthb | octet_length 
 ---------+---------+--------------
-    9000 |    9000 |         9000
+   10096 |    9000 |         9000
 (1 row)
 
 CREATE INDEX idx_prefix_len_test_fchar ON test_prefix_key_len (fchar(2677));
@@ -1420,9 +1420,9 @@ SELECT fchar FROM test_prefix_table where fchar ~ '^开' ORDER BY 1;
 (5 rows)
 
 SELECT fchar FROM test_prefix_table where fchar ~ '^开' ORDER BY 1;
-                            fchar                            
--------------------------------------------------------------
- 开源数据库-210                                             
+                                 fchar                                 
+-----------------------------------------------------------------------
+ 开源数据库-210                                                       
 (1 row)
 
 EXPLAIN (costs false)
@@ -1888,8 +1888,8 @@ SELECT t1.ftext,t2.fchar FROM test_prefix_table t1 join test_prefix_table t2 on 
 (7 rows)
 
 SELECT t1.ftext,t2.fchar FROM test_prefix_table t1 join test_prefix_table t2 on  t1.ftext = t2.fchar ORDER BY 1,2;
-     ftext      |                              fchar                               
-----------------+------------------------------------------------------------------
+     ftext      |                                 fchar                                 
+----------------+-----------------------------------------------------------------------
  AAAAA-000      | AAAAA-000                                                       
  AAAAA-111      | AAAAA-111                                                       
  AAAAA-210      | AAAAA-210                                                       
@@ -1907,9 +1907,9 @@ SELECT t1.ftext,t2.fchar FROM test_prefix_table t1 join test_prefix_table t2 on 
  ZZZZZ-210      | ZZZZZ-210                                                       
  ZZZZZ-211      | ZZZZZ-211                                                       
  ZZZZZ-300      | ZZZZZ-300                                                       
- 开源数据库-210 | 开源数据库-210                                             
- 高             | 高                                                             
- 高斯数据库-210 | 高斯数据库-210                                             
+ 开源数据库-210 | 开源数据库-210                                                       
+ 高             | 高                                                               
+ 高斯数据库-210 | 高斯数据库-210                                                       
 (20 rows)
 
 EXPLAIN (costs false)
@@ -2124,11 +2124,11 @@ SELECT fbpchar FROM test_prefix_tb where fbpchar > '开源' ORDER BY 1;
 (5 rows)
 
 SELECT fbpchar FROM test_prefix_tb where fbpchar > '开源' ORDER BY 1;
-                             fbpchar                             
------------------------------------------------------------------
- 开源数据库-210                                             
- 高                                                             
- 高斯数据库-210                                             
+                                fbpchar                                
+-----------------------------------------------------------------------
+ 开源数据库-210                                                       
+ 高                                                               
+ 高斯数据库-210                                                       
 (3 rows)
 
 ALTER INDEX prefix_index_fchar_fbytea UNUSABLE;
@@ -2536,9 +2536,9 @@ SELECT fchar FROM test_prefix_ustore t where fchar ~ '^开' ORDER BY 1;
 (5 rows)
 
 SELECT fchar FROM test_prefix_ustore t where fchar ~ '^开' ORDER BY 1;
-                            fchar                            
--------------------------------------------------------------
- 开源数据库-210                                             
+                                 fchar                                 
+-----------------------------------------------------------------------
+ 开源数据库-210                                                       
 (1 row)
 
 EXPLAIN (costs false)
@@ -2997,8 +2997,8 @@ SELECT t1.ftext,t2.fchar FROM test_prefix_ustore t1 join test_prefix_ustore t2 o
 (7 rows)
 
 SELECT t1.ftext,t2.fchar FROM test_prefix_ustore t1 join test_prefix_ustore t2 on  t1.ftext = t2.fchar ORDER BY 1,2;
-     ftext      |                              fchar                               
-----------------+------------------------------------------------------------------
+     ftext      |                                 fchar                                 
+----------------+-----------------------------------------------------------------------
  AAAAA-000      | AAAAA-000                                                       
  AAAAA-111      | AAAAA-111                                                       
  AAAAA-210      | AAAAA-210                                                       
@@ -3016,9 +3016,9 @@ SELECT t1.ftext,t2.fchar FROM test_prefix_ustore t1 join test_prefix_ustore t2 o
  ZZZZZ-210      | ZZZZZ-210                                                       
  ZZZZZ-211      | ZZZZZ-211                                                       
  ZZZZZ-300      | ZZZZZ-300                                                       
- 开源数据库-210 | 开源数据库-210                                             
- 高             | 高                                                             
- 高斯数据库-210 | 高斯数据库-210                                             
+ 开源数据库-210 | 开源数据库-210                                                       
+ 高             | 高                                                               
+ 高斯数据库-210 | 高斯数据库-210                                                       
 (20 rows)
 
 EXPLAIN (costs false)
@@ -3223,11 +3223,11 @@ SELECT fbpchar FROM test_prefix_utb where fbpchar > '开源' ORDER BY 1;
 (5 rows)
 
 SELECT fbpchar FROM test_prefix_utb where fbpchar > '开源' ORDER BY 1;
-                             fbpchar                             
------------------------------------------------------------------
- 开源数据库-210                                             
- 高                                                             
- 高斯数据库-210                                             
+                                fbpchar                                
+-----------------------------------------------------------------------
+ 开源数据库-210                                                       
+ 高                                                               
+ 高斯数据库-210                                                       
 (3 rows)
 
 ALTER INDEX prefix_index_fchar_fbytea UNUSABLE;

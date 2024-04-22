@@ -1,7 +1,5 @@
-drop database if exists uint_cast3;
-NOTICE:  database "uint_cast3" does not exist, skipping
-create database uint_cast3 dbcompatibility 'b';
-\c uint_cast3
+create schema uint_cast3;
+set current_schema to 'uint_cast3';
 select 1::uint1::int16;
  int16 
 -------
@@ -99,9 +97,9 @@ select 1::clob::uint8;
 (1 row)
 
 select 1::uint4::abstime;
-           abstime            
-------------------------------
- Wed Dec 31 16:00:01 1969 PST
+        abstime         
+------------------------
+ 1969-12-31 16:00:01-08
 (1 row)
 
 select 1::abstime::uint4;
@@ -341,45 +339,85 @@ select 151503::uint4::time;
 select 19990101::uint4::date;
     date    
 ------------
- 01-01-1999
+ 1999-01-01
 (1 row)
 
 select 19990101::uint4::timestamp;
-         timestamptz          
-------------------------------
- Fri Jan 01 00:00:00 1999 PST
+      timestamptz       
+------------------------
+ 1999-01-01 00:00:00-08
 (1 row)
 
 select 19990101::uint4::timestamptz;
-         timestamptz          
-------------------------------
- Fri Jan 01 00:00:00 1999 PST
+      timestamptz       
+------------------------
+ 1999-01-01 00:00:00-08
 (1 row)
 
 select 19990101::uint4::datetime;
-        timestamp         
---------------------------
- Fri Jan 01 00:00:00 1999
+      timestamp      
+---------------------
+ 1999-01-01 00:00:00
 (1 row)
 
 select 19990101222222::uint8::timestamp;
-         timestamptz          
-------------------------------
- Fri Jan 01 22:22:22 1999 PST
+      timestamptz       
+------------------------
+ 1999-01-01 22:22:22-08
 (1 row)
 
 select 19990101222222::uint8::timestamptz;
-         timestamptz          
-------------------------------
- Fri Jan 01 22:22:22 1999 PST
+      timestamptz       
+------------------------
+ 1999-01-01 22:22:22-08
 (1 row)
 
 select 19990101222222::uint8::datetime;
-        timestamp         
---------------------------
- Fri Jan 01 22:22:22 1999
+      timestamp      
+---------------------
+ 1999-01-01 22:22:22
 (1 row)
 
+select '-1'::uint1::date;
+ERROR:  cannot cast type uint1 to date
+LINE 1: select '-1'::uint1::date;
+                          ^
+CONTEXT:  referenced column: date
+select '256'::uint1::date;
+ERROR:  cannot cast type uint1 to date
+LINE 1: select '256'::uint1::date;
+                           ^
+CONTEXT:  referenced column: date
+select 2004::uint2::date;
+ERROR:  cannot cast type uint2 to date
+LINE 1: select 2004::uint2::date;
+                          ^
+CONTEXT:  referenced column: date
+select '65536'::uint2::date;
+ERROR:  cannot cast type uint2 to date
+LINE 1: select '65536'::uint2::date;
+                             ^
+CONTEXT:  referenced column: date
+select '65535'::uint2::date;
+ERROR:  cannot cast type uint2 to date
+LINE 1: select '65535'::uint2::date;
+                             ^
+CONTEXT:  referenced column: date
+select 2067::uint8::date;
+ERROR:  cannot cast type uint8 to date
+LINE 1: select 2067::uint8::date;
+                          ^
+CONTEXT:  referenced column: date
+select '-1'::uint8::date;
+ERROR:  cannot cast type uint8 to date
+LINE 1: select '-1'::uint8::date;
+                          ^
+CONTEXT:  referenced column: date
+select '18446744073709551615'::uint8::date;
+ERROR:  cannot cast type uint8 to date
+LINE 1: select '18446744073709551615'::uint8::date;
+                                            ^
+CONTEXT:  referenced column: date
 select 1999::uint4::year;
  year 
 ------
@@ -393,24 +431,32 @@ select 1999::year::uint4;
 (1 row)
 
 select (-1)::text::uint1;
+WARNING:  Cast to tinyint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint1
  uint1 
 -------
  255
 (1 row)
 
 select (-1)::text::uint2;
+WARNING:  Cast to smallint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint2
  uint2 
 -------
  65535
 (1 row)
 
 select (-1)::text::uint4;
+WARNING:  Cast to int unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint4
    uint4    
 ------------
  4294967295
 (1 row)
 
 select (-1)::text::uint8;
+WARNING:  Cast to bigint unsigned converted negative integer to it's positive complement
+CONTEXT:  referenced column: uint8
         uint8         
 ----------------------
  18446744073709551615
@@ -441,16 +487,649 @@ select '18446744073709551615'::text::uint8;
 (1 row)
 
 select '256'::text::uint1;
-ERROR:  tinyint unsigned out of range
+WARNING:  tinyint unsigned out of range
 CONTEXT:  referenced column: uint1
+ uint1 
+-------
+ 255
+(1 row)
+
 select '65536'::text::uint2;
-ERROR:  smallint unsigned out of range
+WARNING:  smallint unsigned out of range
 CONTEXT:  referenced column: uint2
+ uint2 
+-------
+ 65535
+(1 row)
+
 select '4294967296'::text::uint4;
-ERROR:  int unsigned out of range
+WARNING:  int unsigned out of range
 CONTEXT:  referenced column: uint4
+   uint4    
+------------
+ 4294967295
+(1 row)
+
 select '18446744073709551616'::text::uint8;
-ERROR:  bigint unsigned out of range
+WARNING:  bigint unsigned out of range
 CONTEXT:  referenced column: uint8
-\c postgres
-drop database uint_cast3;
+        uint8         
+----------------------
+ 18446744073709551615
+(1 row)
+
+-- test: binary to unsigned
+--- 配置参数
+set dolphin.b_compatibility_mode=on;
+set b_format_behavior_compat_options=enable_set_variables;
+set bytea_output=escape;
+--- 建表
+drop table if exists t_binary0001 cascade;
+NOTICE:  table "t_binary0001" does not exist, skipping
+create table t_binary0001(
+c1 int not null,
+c2 binary,
+c3 binary(10),
+c4 binary(255),
+c5 varbinary(1),
+c6 varbinary(10),
+c7 varbinary(255)) charset utf8mb3;
+WARNING:  utf8mb3 is not a valid encoding name. default value set
+--- 插入数据
+set @v1='abcdefghijklmnopqrstuvwxyz';
+set @v2='a熊猫竹竹爱吃竹子';
+set @v3=hex(@v2);
+set @v4=unhex(@v3);
+set @v5=bin(121314);
+set @v6=oct(999999);
+insert into t_binary0001 values (
+1, substr(@v1,1,1), substr(@v1,1,10), repeat(@v1, 9),
+substr(@v1,1,1), substr(@v1,1,10), repeat(@v1, 9));
+insert into t_binary0001 values (
+2, substr(@v2,1,1), substr(@v2,1,4), repeat(@v2, 9),
+substr(@v2,1,1), substr(@v2,1,4), repeat(@v2, 9));
+insert into t_binary0001 values (
+3, substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255),
+substr(@v3,1,1), substr(@v3,1,4), substr(repeat(@v3, 10),1,255));
+insert into t_binary0001 values (
+4, substr(@v4,1,1), substr(@v4,1,4), substr(repeat(@v4, 10),1,255),
+substr(@v4,1,1), substr(@v4,1,4), substr(repeat(@v4, 10),1,255));
+insert into t_binary0001 values (
+5, substr(@v5,1,1), substr(@v5,1,4), substr(repeat(@v5, 10),1,255),
+substr(@v5,1,1), substr(@v5,1,4), substr(repeat(@v5, 10),1,255));
+insert into t_binary0001 values (
+6, substr(@v6,1,1), substr(@v6,1,4), substr(repeat(@v6, 10),1,255),
+substr(@v6,1,1), substr(@v6,1,4), substr(repeat(@v6, 10),1,255));
+--- 使用cast/convert函数转换
+select c1, cast(c2 as unsigned), cast(c3 as unsigned), cast(c4 as unsigned),
+cast(c5 as unsigned) from t_binary0001 order by 1,2,3,4,5;
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghij"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c4
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c4
+ c1 | c2 |  c3  |          c4          | c5 
+----+----+------+----------------------+----
+  1 | 0  | 0    | 0                    | 0
+  2 | 0  | 0    | 0                    | 0
+  3 | 6  | 61   | 61                   | 6
+  4 | 0  | 0    | 0                    | 0
+  5 | 1  | 1110 | 18446744073709551615 | 1
+  6 | 3  | 3641 | 18446744073709551615 | 3
+(6 rows)
+
+select c1, convert(c2, unsigned), convert(c3, unsigned), convert(c4, unsigned),
+convert(c5, unsigned), convert(c6, unsigned), convert(c7, unsigned) from
+t_binary0001 order by 1,2,3,4,5,6,7;
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghij"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghij"
+CONTEXT:  referenced column: c6
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+CONTEXT:  referenced column: c7
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c6
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
+CONTEXT:  referenced column: c7
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c6
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
+CONTEXT:  referenced column: c7
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c4
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c7
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c4
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c7
+ c1 | c2 |  c3  |          c4          | c5 |  c6  |          c7          
+----+----+------+----------------------+----+------+----------------------
+  1 | 0  | 0    | 0                    | 0  | 0    | 0
+  2 | 0  | 0    | 0                    | 0  | 0    | 0
+  3 | 6  | 61   | 61                   | 6  | 61   | 61
+  4 | 0  | 0    | 0                    | 0  | 0    | 0
+  5 | 1  | 1110 | 18446744073709551615 | 1  | 1110 | 18446744073709551615
+  6 | 3  | 3641 | 18446744073709551615 | 3  | 3641 | 18446744073709551615
+(6 rows)
+
+--- 测试uint1/uint2/uint4/uint8，预期表现和unsigned一致
+select c1, cast(c2 as uint1), cast(c3 as uint1), cast(c4 as uint1),
+cast(c5 as uint1) from t_binary0001 order by 1,2,3,4,5;
+WARNING:  value "1110\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
+CONTEXT:  referenced column: c3
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
+CONTEXT:  referenced column: c4
+WARNING:  value "3641\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
+CONTEXT:  referenced column: c3
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
+CONTEXT:  referenced column: c4
+ c1 | c2 | c3  | c4  | c5 
+----+----+-----+-----+----
+  1 | 0  | 0   | 0   | 0
+  2 | 0  | 0   | 0   | 0
+  3 | 6  | 61  | 61  | 6
+  4 | 0  | 0   | 0   | 0
+  5 | 1  | 255 | 255 | 1
+  6 | 3  | 255 | 255 | 3
+(6 rows)
+
+select c1, convert(c2, uint1), convert(c3, uint1), convert(c4, uint1),
+convert(c5, uint1), convert(c6, uint1), convert(c7, uint1) from
+t_binary0001 order by 1,2,3,4,5,6,7;
+WARNING:  value "1110\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
+CONTEXT:  referenced column: c3
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
+CONTEXT:  referenced column: c4
+WARNING:  value "1110" is out of range for type tinyint unsigned. truncated automatically
+CONTEXT:  referenced column: c6
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010" is out of range for type tinyint unsigned. truncated automatically
+CONTEXT:  referenced column: c7
+WARNING:  value "3641\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
+CONTEXT:  referenced column: c3
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type tinyint unsigned. truncated automatically
+CONTEXT:  referenced column: c4
+WARNING:  value "3641" is out of range for type tinyint unsigned. truncated automatically
+CONTEXT:  referenced column: c6
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077" is out of range for type tinyint unsigned. truncated automatically
+CONTEXT:  referenced column: c7
+ c1 | c2 | c3  | c4  | c5 | c6  | c7  
+----+----+-----+-----+----+-----+-----
+  1 | 0  | 0   | 0   | 0  | 0   | 0
+  2 | 0  | 0   | 0   | 0  | 0   | 0
+  3 | 6  | 61  | 61  | 6  | 61  | 61
+  4 | 0  | 0   | 0   | 0  | 0   | 0
+  5 | 1  | 255 | 255 | 1  | 255 | 255
+  6 | 3  | 255 | 255 | 3  | 255 | 255
+(6 rows)
+
+select c1, cast(c2 as uint2), cast(c3 as uint2), cast(c4 as uint2),
+cast(c5 as uint2) from t_binary0001 order by 1,2,3,4,5;
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for smallint unsigned: "abcdefghij"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for smallint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c5
+ c1 | c2 |  c3  |  c4   | c5 
+----+----+------+-------+----
+  1 | 0  | 0    | 0     | 0
+  2 | 0  | 0    | 0     | 0
+  3 | 6  | 61   | 61    | 6
+  4 | 0  | 0    | 0     | 0
+  5 | 1  | 1110 | 65535 | 1
+  6 | 3  | 3641 | 65535 | 3
+(6 rows)
+
+select c1, convert(c2, uint2), convert(c3, uint2), convert(c4, uint2),
+convert(c5, uint2), convert(c6, uint2), convert(c7, uint2) from
+t_binary0001 order by 1,2,3,4,5,6,7;
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for smallint unsigned: "abcdefghij"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for smallint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for smallint unsigned: "abcdefghij"
+CONTEXT:  referenced column: c6
+WARNING:  invalid input syntax for smallint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+CONTEXT:  referenced column: c7
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c6
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
+CONTEXT:  referenced column: c7
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for smallint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c6
+WARNING:  invalid input syntax for smallint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
+CONTEXT:  referenced column: c7
+ c1 | c2 |  c3  |  c4   | c5 |  c6  |  c7   
+----+----+------+-------+----+------+-------
+  1 | 0  | 0    | 0     | 0  | 0    | 0
+  2 | 0  | 0    | 0     | 0  | 0    | 0
+  3 | 6  | 61   | 61    | 6  | 61   | 61
+  4 | 0  | 0    | 0     | 0  | 0    | 0
+  5 | 1  | 1110 | 65535 | 1  | 1110 | 65535
+  6 | 3  | 3641 | 65535 | 3  | 3641 | 65535
+(6 rows)
+
+select c1, cast(c2 as uint4), cast(c3 as uint4), cast(c4 as uint4),
+cast(c5 as uint4) from t_binary0001 order by 1,2,3,4,5;
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for int unsigned: "abcdefghij"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for int unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c5
+ c1 | c2 |  c3  |     c4     | c5 
+----+----+------+------------+----
+  1 | 0  | 0    | 0          | 0
+  2 | 0  | 0    | 0          | 0
+  3 | 6  | 61   | 61         | 6
+  4 | 0  | 0    | 0          | 0
+  5 | 1  | 1110 | 4294967295 | 1
+  6 | 3  | 3641 | 4294967295 | 3
+(6 rows)
+
+select c1, convert(c2, uint4), convert(c3, uint4), convert(c4, uint4),
+convert(c5, uint4), convert(c6, uint4), convert(c7, uint4) from
+t_binary0001 order by 1,2,3,4,5,6,7;
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for int unsigned: "abcdefghij"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for int unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for int unsigned: "abcdefghij"
+CONTEXT:  referenced column: c6
+WARNING:  invalid input syntax for int unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+CONTEXT:  referenced column: c7
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c6
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
+CONTEXT:  referenced column: c7
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for int unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c6
+WARNING:  invalid input syntax for int unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
+CONTEXT:  referenced column: c7
+ c1 | c2 |  c3  |     c4     | c5 |  c6  |     c7     
+----+----+------+------------+----+------+------------
+  1 | 0  | 0    | 0          | 0  | 0    | 0
+  2 | 0  | 0    | 0          | 0  | 0    | 0
+  3 | 6  | 61   | 61         | 6  | 61   | 61
+  4 | 0  | 0    | 0          | 0  | 0    | 0
+  5 | 1  | 1110 | 4294967295 | 1  | 1110 | 4294967295
+  6 | 3  | 3641 | 4294967295 | 3  | 3641 | 4294967295
+(6 rows)
+
+select c1, cast(c2 as uint8), cast(c3 as uint8), cast(c4 as uint8),
+cast(c5 as uint8) from t_binary0001 order by 1,2,3,4,5;
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghij"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c4
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c4
+ c1 | c2 |  c3  |          c4          | c5 
+----+----+------+----------------------+----
+  1 | 0  | 0    | 0                    | 0
+  2 | 0  | 0    | 0                    | 0
+  3 | 6  | 61   | 61                   | 6
+  4 | 0  | 0    | 0                    | 0
+  5 | 1  | 1110 | 18446744073709551615 | 1
+  6 | 3  | 3641 | 18446744073709551615 | 3
+(6 rows)
+
+select c1, convert(c2, uint8), convert(c3, uint8), convert(c4, uint8),
+convert(c5, uint8), convert(c6, uint8), convert(c7, uint8) from
+t_binary0001 order by 1,2,3,4,5,6,7;
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghij"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghij"
+CONTEXT:  referenced column: c6
+WARNING:  invalid input syntax for type bigint unsigned: "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+CONTEXT:  referenced column: c7
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c6
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
+CONTEXT:  referenced column: c7
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c2
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c3
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220\000\000\000\000\000"
+CONTEXT:  referenced column: c4
+WARNING:  invalid input syntax for type bigint unsigned: "a"
+CONTEXT:  referenced column: c5
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271"
+CONTEXT:  referenced column: c6
+WARNING:  invalid input syntax for type bigint unsigned: "a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220a\347\206\212\347\214\253\347\253\271\347\253\271\347\210\261\345\220\203\347\253\271\345\255\220"
+CONTEXT:  referenced column: c7
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c4
+WARNING:  value "11101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010111011001111000101110110011110001011101100111100010" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c7
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c4
+WARNING:  value "3641077364107736410773641077364107736410773641077364107736410773641077" is out of range for type bigint unsigned
+CONTEXT:  referenced column: c7
+ c1 | c2 |  c3  |          c4          | c5 |  c6  |          c7          
+----+----+------+----------------------+----+------+----------------------
+  1 | 0  | 0    | 0                    | 0  | 0    | 0
+  2 | 0  | 0    | 0                    | 0  | 0    | 0
+  3 | 6  | 61   | 61                   | 6  | 61   | 61
+  4 | 0  | 0    | 0                    | 0  | 0    | 0
+  5 | 1  | 1110 | 18446744073709551615 | 1  | 1110 | 18446744073709551615
+  6 | 3  | 3641 | 18446744073709551615 | 3  | 3641 | 18446744073709551615
+(6 rows)
+
+--- 建表并插入数据
+create table t_binary(a binary(255));
+create table t_unsigned(a int8 unsigned);
+insert into t_binary values('2e1');
+insert into t_binary values('1ab');
+insert into t_binary values('0x1ab');
+insert into t_binary values('123');
+--- 测试转换结果
+select cast(a as unsigned) from t_binary;
+  a  
+-----
+ 2
+ 1
+ 0
+ 123
+(4 rows)
+
+insert ignore into t_unsigned select a from t_binary;
+WARNING:  column "a" is of type uint8 but expression is of type "binary". Data truncated automatically.
+CONTEXT:  referenced column: a
+select * from t_unsigned;
+ a 
+---
+ 0
+ 0
+ 0
+ 0
+(4 rows)
+
+--- 清理
+drop table t_unsigned cascade;
+drop table t_binary cascade;
+drop table t_binary0001 cascade;
+--- 建表并插入数据
+drop table if exists t_bigint0007;
+NOTICE:  table "t_bigint0007" does not exist, skipping
+create table t_bigint0007(
+c1 int,
+c2 bigint unsigned,
+c3 bigint(1) unsigned,
+c4 bigint(255) unsigned,
+c5 bigint unsigned default '10',
+c6 bigint unsigned auto_increment primary key,
+c7 bigint(1) unsigned default 0,
+c8 bigint(10) unsigned not null default 99,
+c9 bigint unsigned unique);
+NOTICE:  CREATE TABLE will create implicit sequence "t_bigint0007_c6_seq" for serial column "t_bigint0007.c6"
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t_bigint0007_pkey" for table "t_bigint0007"
+NOTICE:  CREATE TABLE / UNIQUE will create implicit index "t_bigint0007_c9_key" for table "t_bigint0007"
+set @val = 18446744073709551615;
+insert t_bigint0007 values(1, @val, @val, @val, @val, @val, @val, @val, @val);
+--- 测试转换结果
+select * from t_bigint0007;
+ c1 |          c2          |          c3          |          c4          |          c5          |          c6          |          c7          |          c8          |          c9          
+----+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------+----------------------
+  1 | 18446744073709551615 | 18446744073709551615 | 18446744073709551615 | 18446744073709551615 | 18446744073709551615 | 18446744073709551615 | 18446744073709551615 | 18446744073709551615
+(1 row)
+
+--- 清理
+drop table t_bigint0007 cascade;
+select cast(1 as signed int);
+ int8 
+------
+    1
+(1 row)
+
+select cast(1 as unsigned int);
+ uint8 
+-------
+ 1
+(1 row)
+
+select convert(1 , signed int);
+ int8 
+------
+    1
+(1 row)
+
+select convert(1 , unsigned int);
+ uint8 
+-------
+ 1
+(1 row)
+
+select cast(1 as signed integer);
+ int8 
+------
+    1
+(1 row)
+
+select cast(1 as unsigned integer);
+ uint8 
+-------
+ 1
+(1 row)
+
+select convert(1 , signed integer);
+ int8 
+------
+    1
+(1 row)
+
+select convert(1 , unsigned integer);
+ uint8 
+-------
+ 1
+(1 row)
+
+select cast(1 as integer signed);
+ int8 
+------
+    1
+(1 row)
+
+select cast(1 as integer unsigned);
+ uint8 
+-------
+ 1
+(1 row)
+
+select convert(1 , integer signed);
+ int8 
+------
+    1
+(1 row)
+
+select convert(1 , integer unsigned);
+ uint8 
+-------
+ 1
+(1 row)
+
+select cast(1 as  signed);
+ int8 
+------
+    1
+(1 row)
+
+select cast(1 as unsigned);
+ uint8 
+-------
+ 1
+(1 row)
+
+select convert(1 , signed);
+ int8 
+------
+    1
+(1 row)
+
+select convert(1 , unsigned);
+ uint8 
+-------
+ 1
+(1 row)
+
+drop schema uint_cast3 cascade;
+reset current_schema;

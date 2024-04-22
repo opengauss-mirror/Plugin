@@ -48,10 +48,16 @@ extern Oid typeTypeRelid(Type typ);
 extern Oid typeTypeCollation(Type typ);
 extern Datum stringTypeDatum(Type tp, char* string, int32 atttypmod, bool can_ignore = false);
 #ifdef DOLPHIN
+extern Datum stringTypeDatumCompatibleNullResult(Type tp, char* string, int32 atttypmod, bool can_ignore,
+    CoercionContext ccontext, bool* result_isnull);
 char* makeEnumTypeName(const char* relname, const char *colname, const char* schemaname);
-void DefineAnonymousEnum(TypeName * typname);
+void DefineAnonymousEnum(TypeName * typname, Oid collations);
 extern Datum GetEnumDefineStr(Oid enumOid);
 extern bool IsAnonymousEnum(Oid enumOid);
+extern Datum InputFunctionCallCompatibleNullResult(FmgrInfo* flinfo, char* str, Oid typioparam, int32 typmod,
+    bool can_ignore, Oid collation, CoercionContext ccontext, bool* result_isnull);
+extern Datum OidInputFunctionCallCompatibleNullResult(Oid functionId, char* str, Oid typioparam, int32 typmod,
+    bool can_ignore, CoercionContext ccontext, bool* result_isnull);
 #endif
 
 extern Oid typeidTypeRelid(Oid type_id);

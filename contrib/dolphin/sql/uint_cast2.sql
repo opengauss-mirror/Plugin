@@ -327,5 +327,21 @@ select cast(1 as unsigned);
 select convert(1 , signed);
 select convert(1 , unsigned);
 
+--test for db core
+select varlena_cast_ui1(1);
+select varlena_cast_ui2(1);
+select varlena_cast_ui4(1);
+select varlena_cast_ui8(1);
+select varlena_cast_int8(1);
+select varlena2float8(1);
+
+create OR REPLACE procedure t_p(out ret varchar) as
+begin
+select '{"a":"b"}'::json into ret;
+end;
+/
+select t_p();
+drop procedure t_p;
+
 drop schema uint_cast2 cascade;
 reset current_schema;

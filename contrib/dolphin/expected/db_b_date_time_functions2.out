@@ -256,6 +256,10 @@ insert into test values('time_to_sec(''34 22:59:59'')', time_to_sec('34 22:59:59
 insert into test values('time_to_sec(''-34 22:59:59'')', time_to_sec('-34 22:59:59'));
 -- 类型
 insert into test values('time_to_sec(date''2021-11-12'')', time_to_sec(date'2021-11-12'));
+ERROR:  return type mismatch in function declared to return integer
+DETAIL:  Actual return type is bigint.
+CONTEXT:  SQL function "time_to_sec" during inlining
+referenced column: result
 insert into test values('time_to_sec(cast(''9999-12-31 12:12:12'' as datetime))', time_to_sec(cast('9999-12-31 12:12:12' as datetime)));
 insert into test values('time_to_sec(-1)', time_to_sec(-1));
 insert into test values('time_to_sec(0)', time_to_sec(0));
@@ -1322,7 +1326,6 @@ select * from test order by funcname;
  time_to_sec(1)                                       | 1
  time_to_sec(8385959)                                 | 3020399
  time_to_sec(cast('9999-12-31 12:12:12' as datetime)) | 43932
- time_to_sec(date'2021-11-12')                        | 0
  time_to_sec(null)                                    | 
  week('0000-1-1 00:00:00')                            | 1
  week('0000-1-1 23:59:59.9999995')                    | 1
@@ -1340,8 +1343,8 @@ select * from test order by funcname;
  week('10000-1-1', 0)                                 | 
  week('2000-1-1')                                     | 52
  week('2000-1-1')                                     | 0
- week('2000-1-1')                                     | 0
  week('2000-1-1')                                     | 52
+ week('2000-1-1')                                     | 0
  week('2000-1-1')                                     | 0
  week('2000-1-1')                                     | 52
  week('2000-1-1')                                     | 52
@@ -1427,8 +1430,257 @@ select * from test order by funcname;
  yearweek(null)                                       | 
  yearweek(null, 0)                                    | 
  yearweek(null, null)                                 | 
-(326 rows)
+(325 rows)
 
 drop table test;
+-- cast date as datetime and timestamptz
+set dolphin.b_compatibility_mode = true;
+select cast(cast('294277-01-1' as date) as datetime);
+       timestamp       
+-----------------------
+ 294277-01-01 00:00:00
+(1 row)
+
+select cast(cast('294277-01-1' as date) as timestamp);
+       timestamptz        
+--------------------------
+ 294277-01-01 00:00:00+08
+(1 row)
+
+select cast(cast('294278-01-1' as date) as datetime);
+WARNING:  date out of range for timestamp
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast(cast('294278-01-1' as date) as timestamp);
+WARNING:  date out of range for timestamp
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+select cast(cast('5874897-01-1' as date) as datetime);
+WARNING:  date out of range for timestamp
+CONTEXT:  referenced column: timestamp
+ timestamp 
+-----------
+ 
+(1 row)
+
+select cast(cast('5874897-01-1' as date) as timestamp);
+WARNING:  date out of range for timestamp
+CONTEXT:  referenced column: timestamptz
+ timestamptz 
+-------------
+ 
+(1 row)
+
+-- time_to_sec
+select time_to_sec(cast('999-01-01' as date));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('10120-01-01' as date));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('2001-2-29' as date));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('2100-2-29' as date));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('0000-1-1' as date));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('01-01' as date));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('1000-01-1' as date));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('294277-01-1' as date));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('294278-01-1' as date));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('2001-13-29' as date));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('999-01-01' as datetime));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('10120-01-01' as datetime));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('2001-2-29' as datetime));
+WARNING:  date/time field value out of range: "2001-2-29"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(cast('2100-2-29' as datetime));
+WARNING:  date/time field value out of range: "2100-2-29"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(cast('0000-1-1' as datetime));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('01-01' as datetime));
+WARNING:  invalid input syntax for type timestamp: "01-01"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(cast('1000-01-1' as datetime));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('294277-01-1' as datetime));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('294278-01-1' as datetime));
+WARNING:  timestamp out of range: "294278-01-1"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(cast('2001-13-29' as datetime));
+WARNING:  date/time field value out of range: "2001-13-29"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(cast('999-01-01' as timestamp));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('10120-01-01' as timestamp));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('2001-2-29' as timestamp));
+WARNING:  date/time field value out of range: "2001-2-29"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(cast('2100-2-29' as timestamp));
+WARNING:  date/time field value out of range: "2100-2-29"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(cast('0000-1-1' as timestamp));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('01-01' as timestamp));
+WARNING:  invalid input syntax for type timestamp: "01-01"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(cast('1000-01-1' as timestamp));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('294277-01-1' as timestamp));
+ time_to_sec 
+-------------
+           0
+(1 row)
+
+select time_to_sec(cast('294278-01-1' as timestamp));
+WARNING:  timestamp out of range: "294278-01-1"
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
+select time_to_sec(cast('2001-13-29' as timestamp));
+WARNING:  date/time field value out of range: "2001-13-29"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: time_to_sec
+ time_to_sec 
+-------------
+            
+(1 row)
+
 \c contrib_regression
 DROP DATABASE b_datetime_func_test2;

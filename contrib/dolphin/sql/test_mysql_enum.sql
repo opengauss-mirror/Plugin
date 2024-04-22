@@ -260,5 +260,86 @@ create table t_drop_view(c1 int, c2 enum('a'));
 create view my_view as select * from t_drop_view;
 drop view my_view;
 drop table t_drop_view;
+set dolphin.sql_mode to 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+drop table if exists test;
+create table test(color enum('red', 'green', 'blue', 'purple', 'yellow'));
+insert into test values('red');
+insert into test values('green');
+insert into test values('orange');
+insert into test values(0);
+insert into test values('0');
+insert into test values(1);
+insert into test values('1');
+insert into test values(1.2);
+insert into test values('1.2');
+insert into test values(1.4);
+insert into test values('1.4');
+insert into test values(1.5);
+insert into test values('1.5');
+insert into test values(1.6);
+insert into test values('1.6');
+insert into test values('a1');
+insert into test values('1a');
+insert into test values('a123');
+insert into test values('123a');
+select * from test;
+delete from test;
+insert ignore into test values('red');
+insert ignore into test values('green');
+insert ignore into test values('orange');
+insert ignore into test values(0);
+insert ignore into test values('0');
+insert ignore into test values(1);
+insert ignore into test values('1');
+insert ignore into test values(1.2);
+insert ignore into test values('1.2');
+insert ignore into test values(1.4);
+insert ignore into test values('1.4');
+insert ignore into test values(1.5);
+insert ignore into test values('1.5');
+insert ignore into test values(1.6);
+insert ignore into test values('1.6');
+insert ignore into test values('a1');
+insert ignore into test values('1a');
+insert ignore into test values('a123');
+insert ignore into test values('123a');
+select * from test;
+delete from test;
+set dolphin.sql_mode to 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero';
+insert into test values('red');
+insert into test values('green');
+insert into test values('orange');
+insert into test values(0);
+insert into test values('0');
+insert into test values(1);
+insert into test values('1');
+insert into test values(1.2);
+insert into test values('1.2');
+insert into test values(1.4);
+insert into test values('1.4');
+insert into test values(1.5);
+insert into test values('1.5');
+insert into test values(1.6);
+insert into test values('1.6');
+insert into test values('a1');
+insert into test values('1a');
+insert into test values('a123');
+insert into test values('123a');
+select * from test;
+drop table test cascade;
 drop schema db_b_new_gram_test3 cascade;
 reset current_schema;
+
+--
+--test tailing blank for enum value
+--
+--expect failure with with duplicate values
+create table tabenum(a enum ('a','a ') );
+--expect success
+create table tabenum(a enum ('a ',' a'));
+drop table tabenum;
+--expect failure
+CREATE TYPE typenum AS ENUM ( 'a', 'a ');
+--expect success
+CREATE TYPE typenum AS ENUM ( 'a', ' a');
+DROP TYPE typenum;

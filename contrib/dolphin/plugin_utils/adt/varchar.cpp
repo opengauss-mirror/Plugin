@@ -30,6 +30,10 @@
 
 #include "miscadmin.h"
 
+#ifdef DOLPHIN
+#include "plugin_utils/varlena.h"
+#endif
+
 #define NOT_NULL_ARG(n)                                         \
     do {                                                        \
         if (PG_GETARG_POINTER(n) == NULL) {                     \
@@ -39,6 +43,9 @@
                     errhint("%dth argument is NULL.", n + 1))); \
         }                                                       \
     } while (0)
+
+#define CHAR_LENGTH_FUNC_OID 1372
+#define CHARACTER_LENGTH_FUNC_OID 1367
 
 int bpcharcase(PG_FUNCTION_ARGS);
 
@@ -212,15 +219,29 @@ Datum bpcharin(PG_FUNCTION_ARGS)
 }
 
 #ifdef DOLPHIN
-void trim_trailing_space(char* str)
+inline char* run_func_without_extra_float_digits(PGFunction func, Datum arg1)
 {
-    char* p = NULL;
-
-    p = str + strlen(str);
-    for (p--; p >= str && *p == ' '; p--) {
-        *p = '\0';
+    char* tmp;
+    if (u_sess->attr.attr_common.extra_float_digits > 0) {
+        int extra_float_digits_backup = u_sess->attr.attr_common.extra_float_digits;
+        PG_TRY();
+        {
+            u_sess->attr.attr_common.extra_float_digits = 0;
+            tmp = DatumGetCString(DirectFunctionCall1(func, arg1));
+            u_sess->attr.attr_common.extra_float_digits = extra_float_digits_backup;
+        }
+        PG_CATCH();
+        {
+            u_sess->attr.attr_common.extra_float_digits = extra_float_digits_backup;
+            PG_RE_THROW();
+        }
+        PG_END_TRY();
+    } else {
+        tmp = DatumGetCString(DirectFunctionCall1(func, arg1));
     }
+    return tmp;
 }
+
 #endif
 
 /*
@@ -305,7 +326,9 @@ Datum bpchar(PG_FUNCTION_ARGS)
         PG_RETURN_BPCHAR_P(source);
 
     maxlen -= VARHDRSZ;
-
+#ifdef DOLPHIN
+    int maxCharLen = maxlen;
+#endif
     len = VARSIZE_ANY_EXHDR(source);
     s = VARDATA_ANY(source);
 
@@ -348,6 +371,10 @@ Datum bpchar(PG_FUNCTION_ARGS)
                     }
                 }
             }
+         } else {
+            ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+                (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
+                    errmsg("value too long for type character(%d)", maxlen)));
         }
 
         len = maxmblen;
@@ -363,7 +390,12 @@ Datum bpchar(PG_FUNCTION_ARGS)
     }
 
     Assert(maxlen >= len);
-
+#ifdef DOLPHIN
+    int padLen = maxCharLen - pg_mbstrlen_with_len(VARDATA_ANY(source), len);
+    if (padLen > 0) {
+        maxlen = len + padLen;
+    }
+#endif
     result = (BpChar*)palloc(maxlen + VARHDRSZ);
     SET_VARSIZE(result, maxlen + VARHDRSZ);
     r = VARDATA(result);
@@ -642,11 +674,12 @@ Datum varchar(PG_FUNCTION_ARGS)
         ereport(ERROR,
             (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
                 errmsg("value too long for type character varying(%d)", maxlen)));
-
     /* truncate multibyte string preserving multibyte boundary */
     maxmblen = pg_mbcharcliplen(s_data, len, maxlen);
 
+#ifndef DOLPHIN
     if (!isExplicit) {
+#endif
         for (i = maxmblen; i < len; i++) {
             if (s_data[i] != ' ') {
                 /*
@@ -655,21 +688,16 @@ Datum varchar(PG_FUNCTION_ARGS)
                  * 2. With can_ignore == false && SQL_MODE_STRICT() == false, do nothing but break in order to keep functionality integrity of SQL MODE
                  * 3. With can_ignore == false && SQL_MODE_STRICT() == true, we raise ERROR.
                  */
-                if (fcinfo->can_ignore) {
-                    ereport(WARNING,
+                
+                ereport(fcinfo->can_ignore || !SQL_MODE_STRICT() ? WARNING : ERROR,
                         (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
                             errmsg("value too long for type character varying(%d)", maxlen)));
-                    break;
-                } else if (!SQL_MODE_STRICT()) {
-                    break;
-                } else {
-                    ereport(ERROR,
-                        (errcode(ERRCODE_STRING_DATA_RIGHT_TRUNCATION),
-                            errmsg("value too long for type character varying(%d)", maxlen)));
-                }
+                break;
             }
         }
+#ifndef DOLPHIN
     }
+#endif
 
     PG_RETURN_VARCHAR_P((VarChar*)cstring_to_text_with_len(s_data, maxmblen));
 }
@@ -726,7 +754,7 @@ int bpchartruelen(const char* s, int len)
     return i + 1;
 }
 
-// return number of char in a char(n) type string.
+// return number of char or byte in a char(n) type string.
 // when calculating the length,we do not ignoring the trailing
 // spaces, which is different with pg9.2
 Datum bpcharlen(PG_FUNCTION_ARGS)
@@ -743,11 +771,13 @@ Datum bpcharlen(PG_FUNCTION_ARGS)
         len = bcTruelen(arg);
 
     /* in multibyte encoding, convert to number of characters */
-    if (pg_database_encoding_max_length() != 1)
+    if (pg_database_encoding_max_length() != 1 && (fcinfo->flinfo->fn_oid == CHAR_LENGTH_FUNC_OID ||
+        fcinfo->flinfo->fn_oid == CHARACTER_LENGTH_FUNC_OID))
         len = pg_mbstrlen_with_len(VARDATA_ANY(arg), len);
 
     PG_RETURN_INT32(len);
 }
+
 
 // return number of byte in a char(n) type string.
 // when calculating the length,we do not ignoring the trailing spaces.
@@ -997,9 +1027,11 @@ Datum float4_bpchar(PG_FUNCTION_ARGS)
     float4 arg1 = PG_GETARG_FLOAT4(0);
     char* tmp = NULL;
     Datum result;
-
+#ifdef DOLPHIN
+    tmp = run_func_without_extra_float_digits(float4out, Float4GetDatum(arg1));
+#else
     tmp = DatumGetCString(DirectFunctionCall1(float4out, Float4GetDatum(arg1)));
-
+#endif
     result = DirectFunctionCall3(bpcharin, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
     pfree_ext(tmp);
 
@@ -1017,8 +1049,11 @@ Datum float8_bpchar(PG_FUNCTION_ARGS)
     char* tmp = NULL;
     Datum result;
 
+#ifdef DOLPHIN
+    tmp = run_func_without_extra_float_digits(float8out, Float8GetDatum(arg1));
+#else
     tmp = DatumGetCString(DirectFunctionCall1(float8out, Float8GetDatum(arg1)));
-
+#endif
     result = DirectFunctionCall3(bpcharin, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
     pfree_ext(tmp);
 
@@ -1884,6 +1919,33 @@ Datum varchar_timestamp(PG_FUNCTION_ARGS)
     PG_RETURN_DATUM(result);
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(float8_nvarchar2);
+extern "C" DLL_PUBLIC Datum float8_nvarchar2(PG_FUNCTION_ARGS);
+Datum float8_nvarchar2(PG_FUNCTION_ARGS)
+{
+    float8 num = PG_GETARG_FLOAT8(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = run_func_without_extra_float_digits(float8out, Float8GetDatum(num));
+    result = DirectFunctionCall3(nvarchar2in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(tmp);
+    PG_RETURN_DATUM(result);
+}
+
+
+PG_FUNCTION_INFO_V1_PUBLIC(float4_nvarchar2);
+extern "C" DLL_PUBLIC Datum float4_nvarchar2(PG_FUNCTION_ARGS);
+Datum float4_nvarchar2(PG_FUNCTION_ARGS)
+{
+    float4 num = PG_GETARG_FLOAT4(0);
+    char* tmp = NULL;
+    Datum result;
+    tmp = run_func_without_extra_float_digits(float4out, Float4GetDatum(num));
+    result = DirectFunctionCall3(nvarchar2in, CStringGetDatum(tmp), ObjectIdGetDatum(0), Int32GetDatum(-1));
+    pfree_ext(tmp);
+    PG_RETURN_DATUM(result);
+}
+
 /*
  * @Description: int1 convert to nvarchar2
  * @in arg1 -  tinyint type numeric.
@@ -1976,6 +2038,25 @@ ScalarVector* vbpcharlen(PG_FUNCTION_ARGS)
 
 #ifdef DOLPHIN
 
+static double ProcessStrval(char* str, int len, PG_FUNCTION_ARGS)
+{
+    if (!ENABLE_B_CMPT_MODE) {
+        return atof(str);
+    }
+    double resval = 0.0;
+    char* newstr = (char*)palloc0(len + 1);
+    errno_t rc = memcpy_s(newstr, len + 1, str, len);
+    securec_check(rc, "\0", "\0");
+    newstr[len] = '\0';
+    char* stopstring = NULL;
+    resval = strtod(newstr, &stopstring);
+    if (stopstring) {
+        ereport((fcinfo->can_ignore || !SQL_MODE_STRICT()) ? WARNING : ERROR,
+                (errmsg("Truncated incorrect DOUBLE value: %s", newstr)));
+    }
+    pfree_ext(newstr);
+    return resval;
+}
 
 PG_FUNCTION_INFO_V1_PUBLIC(text_bool);
 extern "C" DLL_PUBLIC Datum text_bool(PG_FUNCTION_ARGS);
@@ -1988,9 +2069,11 @@ Datum text_bool(PG_FUNCTION_ARGS)
 
     a1p = VARDATA_ANY(input);
     tmp = atof(a1p);
-    bool result = false;
-    if (parse_bool_with_len(a1p, len, &result)) {
-        PG_RETURN_BOOL((tmp ? true : false) || result);
+    if (!ENABLE_B_CMPT_MODE) {
+        bool result = false;
+        if (parse_bool_with_len(a1p, len, &result)) {
+            PG_RETURN_BOOL((tmp ? true : false) || result);
+        }
     }
     PG_RETURN_BOOL(tmp ? true : false);
 }
@@ -2005,7 +2088,7 @@ Datum varchar_bool(PG_FUNCTION_ARGS)
     double tmp;
 
     a1p = VARDATA_ANY(input);
-    tmp = atof(a1p);
+    tmp = ProcessStrval(a1p, VARSIZE_ANY_EXHDR(input), fcinfo);
 
     PG_RETURN_BOOL(tmp ? true : false);
 }
@@ -2020,7 +2103,7 @@ Datum char_bool(PG_FUNCTION_ARGS)
     double tmp;
 
     a1p = VARDATA_ANY(input);
-    tmp = atof(a1p);
+    tmp = ProcessStrval(a1p, VARSIZE_ANY_EXHDR(input), fcinfo);
 
     PG_RETURN_BOOL(tmp ? true : false);
 }

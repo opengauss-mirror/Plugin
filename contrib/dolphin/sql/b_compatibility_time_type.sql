@@ -380,6 +380,11 @@ select year ' 1997  89';
 select year ' 1997  #@#';
 select year '&%2122';
 select year '中文2122';
+select year '98.3';
+select year '98.5';
+select year '00001';
+select year '-0.2';
+select year '-000';
 
 -- test partition key
 CREATE TABLESPACE b_time_type_example RELATIVE LOCATION 'tablespace1/tablespace_1';
@@ -651,6 +656,184 @@ SELECT * FROM test_timestamp;
 drop table if exists t_date;
 drop table if exists t_datetime;
 drop table if exists test_timestamp;
+
+set dolphin.b_compatibility_mode = true;
+select cast(true as date) as result;
+select cast(false as date) as result;
+select cast(100::int1 as date) as result;
+select cast(100::uint1 as date) as result;
+select cast(100::int2 as date) as result;
+select cast(100::uint2 as date) as result;
+select cast(100::int4 as date) as result;
+select cast(100::uint4 as date) as result;
+select cast(100::int4 as date) as result;
+select cast(100::uint8 as date) as result;
+select cast(100::float4 as date) as result;
+select cast(100::float8 as date) as result;
+select cast(100::numeric as date) as result;
+
+
+select cast(100::int1 as datetime) as result;
+select cast(100::uint1 as datetime) as result;
+select cast(100::int2 as datetime) as result;
+select cast(100::uint2 as datetime) as result;
+select cast(100::int4 as datetime) as result;
+select cast(100::uint4 as datetime) as result;
+select cast(100::int8 as datetime) as result;
+select cast(100::uint8 as datetime) as result;
+select cast(100::float4 as datetime) as result;
+select cast(100::float8 as datetime) as result;
+select cast(100::numeric as datetime) as result;
+
+select cast(100::int1 as timestamp with time zone) as result;
+select cast(100::uint1 as timestamp with time zone) as result;
+select cast(100::int2 as timestamp with time zone) as result;
+select cast(100::uint2 as timestamp with time zone) as result;
+select cast(100::int4 as timestamp with time zone) as result;
+select cast(100::uint4 as timestamp with time zone) as result;
+select cast(100::int8 as timestamp with time zone) as result;
+select cast(100::uint8 as timestamp with time zone) as result;
+select cast(100::float4 as timestamp with time zone) as result;
+select cast(100::float8 as timestamp with time zone) as result;
+select cast(100::numeric as timestamp with time zone) as result;
+
+select unix_timestamp(1.5);
+
+select cast('4714-11-24 10:10:10 BC' as date);
+select cast('4714-11-24 10:10:10 BC' as timestamp with time zone);
+select cast('4714-11-24 10:10:10 BC' as datetime);
+select cast('-100-11-24 BC' as date);
+select cast('4715-11-24 10:10:10 BC' as date);
+select cast('4715-11-24 10:10:10 BC' as timestamp with time zone);
+select cast('4715-11-24 10:10:10 BC' as datetime);
+
+create table t1(c1 date, c2 datetime, c3 timestamp with time zone);
+insert into t1 values ('4714-11-24 BC', '4714-11-24 10:10:10 BC', '4714-11-24 10:10:10 BC');
+insert ignore into t1 values ('4715-11-24 BC', '4715-11-24 10:10:10 BC', '4715-11-24 10:10:10 BC');
+select * from t1 order by 1;
+
+drop table t1;
+select cast(0::boolean as time);
+select cast(0::boolean as date);
+select cast(0::boolean as datetime);
+select cast(0::boolean as timestamp);
+
+select cast(1::boolean as time);
+select cast(1::boolean as date);
+select cast(1::boolean as datetime);
+select cast(1::boolean as timestamp);
+
+create table boolean_test_time(a time);
+create table boolean_test_date(a date);
+create table boolean_test_datetime(a datetime);
+create table boolean_test_timestamp(a timestamp);
+
+insert into boolean_test_time values(0::boolean);
+insert into boolean_test_date values(0::boolean);
+insert into boolean_test_datetime values(0::boolean);
+insert into boolean_test_timestamp values(0::boolean);
+
+insert into boolean_test_time values(1::boolean);
+insert into boolean_test_date values(1::boolean);
+insert into boolean_test_datetime values(1::boolean);
+insert into boolean_test_timestamp values(1::boolean);
+
+set dolphin.sql_mode = '';
+
+insert into boolean_test_time values(0::boolean);
+insert into boolean_test_date values(0::boolean);
+insert into boolean_test_datetime values(0::boolean);
+insert into boolean_test_timestamp values(0::boolean);
+
+insert into boolean_test_time values(1::boolean);
+insert into boolean_test_date values(1::boolean);
+insert into boolean_test_datetime values(1::boolean);
+insert into boolean_test_timestamp values(1::boolean);
+
+select * from boolean_test_time;
+select * from boolean_test_date;
+select * from boolean_test_datetime;
+select * from boolean_test_timestamp;
+
+reset dolphin.sql_mode;
+
+set dolphin.b_compatibility_mode=on;
+set b_format_behavior_compat_options=enable_set_variables;
+create table t_bigint0005(
+    c1 bigint,
+    c2 bigint,
+    c3 bigint(1),
+    c4 bigint(255),
+    c5 bigint default '10',
+    c6 bigint auto_increment primary key,
+    c7 bigint(1) default 0,
+    c8 bigint(10) not null default 99,
+    c9 bigint unique);
+
+set @val = '-9223372036854775808';
+insert t_bigint0005 values(1, @val, @val, @val, @val, @val, @val, @val, @val);
+set @val = '121314' + 1;
+insert t_bigint0005 values(2, @val, @val, @val, @val, @val, @val, @val, @val);
+set @val = cast(1234 as unsigned);
+insert t_bigint0005 values(3, @val, @val, @val, @val, @val, @val, @val, @val);
+set @val = cast(-123456789 as signed);
+insert t_bigint0005 values(4, @val, @val, @val, @val, @val, @val, @val, @val);
+set @val = cast(123456789101112 as char);
+insert t_bigint0005 values(5, @val, @val, @val, @val, @val, @val, @val, @val);
+set @val = 255 * 255 * 255;
+insert t_bigint0005 values(6, @val, @val, @val, @val, @val, @val, @val, @val);
+set @val = 9223372036854775807;
+insert t_bigint0005 values(7, @val, @val, @val, @val, @val, @val, @val, @val);
+
+select c1, cast(c2 as date), cast(c3 as date), cast(c4 as date), cast(c5 as date), cast(c6 as date), cast(c7 as date), cast(c8 as date), cast(c9 as date)
+from t_bigint0005 order by 1,2,3,4,5,6,7,8,9;
+
+select c1, cast(c2 as time), cast(c3 as time), cast(c4 as time), cast(c5 as time), cast(c6 as time), cast(c7 as time), cast(c8 as time), cast(c9 as time)
+from t_bigint0005 order by 1,2,3,4,5,6,7,8,9;
+
+
+select c1, cast(c2 as datetime), cast(c3 as datetime), cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime), cast(c8 as datetime), cast(c9 as datetime)
+from t_bigint0005 order by 1,2,3,4,5,6,7,8,9;
+
+select c1, cast(c2 as timestamp with time zone), cast(c3 as timestamp with time zone), cast(c4 as timestamp with time zone), cast(c5 as timestamp with time zone), cast(c6 as timestamp with time zone), cast(c7 as timestamp with time zone), cast(c8 as timestamp with time zone), cast(c9 as timestamp with time zone)
+from t_bigint0005 order by 1,2,3,4,5,6,7,8,9;
+
+create table t_fixed0005(
+    c1 int,
+    c2 fixed,
+    c3 fixed(10, 0),
+    c4 fixed(7, 2),
+    c5 fixed(30, 10),
+    c6 fixed(65, 8),
+    c7 fixed(65, 30),
+    c8 fixed(10, 3),
+    c9 fixed(5),
+    c10 fixed(12, 6));
+
+set @val = 12.1314;
+insert into t_fixed0005 values (1, @val, @val, @val, @val, @val, @val, @val, @val, @val);
+
+select c1, cast(c2 as date), cast(c3 as date), cast(c4 as date), cast(c5 as date), cast(c6 as date), cast(c7 as date), cast(c8 as date), cast(c9 as date)
+from t_fixed0005 order by 1,2,3,4,5,6,7,8,9;
+
+select c1, cast(c2 as time), cast(c3 as time), cast(c4 as time), cast(c5 as time), cast(c6 as time), cast(c7 as time), cast(c8 as time), cast(c9 as time)
+from t_fixed0005 order by 1,2,3,4,5,6,7,8,9;
+
+select c1, cast(c2 as datetime), cast(c3 as datetime), cast(c4 as datetime), cast(c5 as datetime), cast(c6 as datetime), cast(c7 as datetime), cast(c8 as datetime), cast(c9 as datetime)
+from t_fixed0005 order by 1,2,3,4,5,6,7,8,9;
+
+select c1, cast(c2 as timestamp with time zone), cast(c3 as timestamp with time zone), cast(c4 as timestamp with time zone), cast(c5 as timestamp with time zone), cast(c6 as timestamp with time zone), cast(c7 as timestamp with time zone), cast(c8 as timestamp with time zone), cast(c9 as timestamp with time zone)
+from t_fixed0005 order by 1,2,3,4,5,6,7,8,9;
+
+drop table t_bigint0005;
+drop table t_fixed0005;
+
+create table t_year_0001(c1 int not null, c2 year default '0000', c3 year default null, c4 year default '1999', c5 year);
+insert into t_year_0001 values (1, now(), now(), now(), now());
+insert into t_year_0001 values (2, curdate(), curdate(), curdate(), curdate());
+insert into t_year_0001 values (3, current_timestamp(), current_timestamp(), current_timestamp(), current_timestamp());
+select * from t_year_0001;
+drop table t_year_0001;
 
 \c postgres
 DROP DATABASE b_time_type;

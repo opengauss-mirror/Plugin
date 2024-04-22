@@ -61,5 +61,32 @@ insert into json_table values (json_object('name', 'Jim', 'age', 20, 'name', 'Ti
 insert into json_table values ('{"Number": 123, "Bool": false}', null);
 select json_objectagg(a, b) from json_table;
 
+-- special type, type typcategory is N(numeric), but out result is string actually
+select pg_catalog.json_objectagg(1, cast(1247 as regclass));
+select pg_catalog.json_objectagg(1, cast(598 as regproc));
+select pg_catalog.json_objectagg(1, cast(15 as regoperator));
+select pg_catalog.json_objectagg(1, cast(15 as regoper));
+select pg_catalog.json_objectagg(1, cast(598 as regprocedure));
+select pg_catalog.json_objectagg(1, cast(23 as regtype));
+select pg_catalog.json_objectagg(1, cast(3748 as regconfig));
+select pg_catalog.json_objectagg(1, cast(3765 as regdictionary));
+
+drop table if exists t_json0030;
+create table t_json0030(col01 int, col02 json not null);
+insert ignore into t_json0030 values(1,'{"id": "3", "name": "Barney"}'),
+(2,'{"id": "4", "name": "Betty"}'),(3,'{"id": "2", "name": "Wilma"}'),
+(10,'[3.65,10,"true","x","44"]'),(10,'[3.65,10,"true",17,[22,"y",66]]'),(10,'[3.65,10,"true",7,{"x":"y"}]'),
+(20,'"qwi<>23，。"'),(20,'"123”“！#￥"'),(20,'"按时间JIwqe22"'),
+(30,cast('true' as json)),(30,null),(30,cast('656964' as json)),(30,cast('56848.695' as json));
+select * from t_json0030 where col02 is null;
+select json_objectagg(col01, col02) from t_json0030 group by col01;
+
+create table t1 (a int, b int);
+insert into t1 values (1,1), (2,2), (1,2);
+select json_objectagg(a, b) from t1;
+select json_objectagg(a, b) from t1 group by a;
+
+select distinct (pg_catalog.json_objectagg(0, ref_0.aggfnoid) over (partition by ref_0.aggtranstype order by ref_0.aggfinalfn))::text from pg_catalog.pg_aggregate as ref_0 where aggfnoid::text like '%bit_xor%';
+
 drop schema json_objectagg_test cascade;
 reset current_schema;

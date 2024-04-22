@@ -25,6 +25,7 @@
 #include "access/tuptoaster.h"
 #include "catalog/pg_collation.h"
 #include "catalog/pg_type.h"
+#include "catalog/pg_enum.h"
 #include "common/int.h"
 #include "lib/hyperloglog.h"
 #include "libpq/md5.h"
@@ -51,7 +52,11 @@
 #include "workload/cpwlm.h"
 #include "utils/varbit.h"
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/date.h"
 #include "plugin_utils/unsigned_int.h"
+
+extern Datum bpchar_float8(PG_FUNCTION_ARGS);
+extern Datum varchar_float8(PG_FUNCTION_ARGS);
 
 #define INTEGER_DIV_INTEGER(arg1, arg2)   \
     float8 result;                        \
@@ -2279,7 +2284,7 @@ bool scanuint8(const char *str, bool errorOK, uint64 *result, bool can_ignore)
 
     /* allow trailing whitespace and dot, but not other trailing chars */
     char digitAfterDot = '\0';
-    CheckSpaceAndDotInternal(errorOK, '\0', &digitAfterDot, &ptr);
+    CheckSpaceAndDotInternal(digitAfterDot, &ptr, !errorOK);
 
     if (unlikely(*ptr != '\0')) {
         if (errorOK)
@@ -4111,6 +4116,14 @@ Datum uint2_int8_eq(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(arg1 == arg2);
 }
 
+Datum int8_uint2_eq(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT64(0);
+    uint32 arg2 = PG_GETARG_UINT16(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
 Datum uint2_int8_lt(PG_FUNCTION_ARGS)
 {
     uint16 arg1 = PG_GETARG_UINT16(0);
@@ -4147,6 +4160,14 @@ Datum uint4_int8_eq(PG_FUNCTION_ARGS)
 {
     uint32 arg1 = PG_GETARG_UINT32(0);
     int64 arg2 = PG_GETARG_INT64(1);
+
+    PG_RETURN_BOOL(arg1 == arg2);
+}
+
+Datum int8_uint4_eq(PG_FUNCTION_ARGS)
+{
+    int64 arg1 = PG_GETARG_INT64(0);
+    uint32 arg2 = PG_GETARG_UINT32(1);
 
     PG_RETURN_BOOL(arg1 == arg2);
 }
@@ -4279,7 +4300,7 @@ int128 text_uintInternal(Datum txt, int128 min, int128 max, char* intType, bool 
     int128 result;
     tmp = DatumGetCString(DirectFunctionCall1(textout, txt));
 
-    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
+    result = DatumGetInt128(DirectFunctionCall1Coll(int16in, InvalidOid, CStringGetDatum(tmp), canIgnore));
     pfree_ext(tmp);
 
      /* keyword IGNORE has higher priority than sql mode */
@@ -4303,7 +4324,7 @@ static int128 UnknownUintInternal(Datum txt, int128 min, int128 max, char* intTy
     bool typIsVarlena;
     getTypeOutputInfo(oid, &typeOutput, &typIsVarlena);
     tmp = DatumGetCString(OidOutputFunctionCall(typeOutput, txt));
-    result = DatumGetInt128(DirectFunctionCall1(int16in, CStringGetDatum(tmp)));
+    result = DatumGetInt128(DirectFunctionCall1Coll(int16in, InvalidOid, CStringGetDatum(tmp), canIgnore));
     pfree_ext(tmp);
     if (result < 0 && result >= min) {
         ereport(WARNING,
@@ -4826,5 +4847,139 @@ Datum dolphin_uint4_mul_int4(PG_FUNCTION_ARGS)
         ereport(ERROR, (errcode(ERRCODE_NUMERIC_VALUE_OUT_OF_RANGE), errmsg("bigint unsigned out of range")));
     }
     PG_RETURN_UINT64(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_float4not);
+extern "C" DLL_PUBLIC Datum dolphin_float4not(PG_FUNCTION_ARGS);
+Datum dolphin_float4not(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_UINT64(~f4_cast_ui8(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_float8not);
+extern "C" DLL_PUBLIC Datum dolphin_float8not(PG_FUNCTION_ARGS);
+Datum dolphin_float8not(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_UINT64(~f8_cast_ui8(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_boolnot);
+extern "C" DLL_PUBLIC Datum dolphin_boolnot(PG_FUNCTION_ARGS);
+Datum dolphin_boolnot(PG_FUNCTION_ARGS)
+{
+    bool arg = PG_GETARG_BOOL(0);
+    uint64 argval = arg ? 1 : 0;
+    PG_RETURN_UINT64(~argval);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(time_cast_ui8);
+extern "C" DLL_PUBLIC Datum time_cast_ui8(PG_FUNCTION_ARGS);
+Datum time_cast_ui8(PG_FUNCTION_ARGS)
+{
+    Datum val = time_float(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui8, val);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_timenot);
+extern "C" DLL_PUBLIC Datum dolphin_timenot(PG_FUNCTION_ARGS);
+Datum dolphin_timenot(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_UINT64(~time_cast_ui8(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(char_cast_ui8);
+extern "C" DLL_PUBLIC Datum char_cast_ui8(PG_FUNCTION_ARGS);
+Datum char_cast_ui8(PG_FUNCTION_ARGS)
+{
+    Datum val = bpchar_float8(fcinfo);
+    return DirectFunctionCall1Coll(f8_cast_ui8, InvalidOid, val, fcinfo->can_ignore);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_charnot);
+extern "C" DLL_PUBLIC Datum dolphin_charnot(PG_FUNCTION_ARGS);
+Datum dolphin_charnot(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_UINT64(~char_cast_ui8(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(varchar_cast_ui8);
+extern "C" DLL_PUBLIC Datum varchar_cast_ui8(PG_FUNCTION_ARGS);
+Datum varchar_cast_ui8(PG_FUNCTION_ARGS)
+{
+    Datum val = varchar_float8(fcinfo);
+    return DirectFunctionCall1Coll(f8_cast_ui8, InvalidOid, val, fcinfo->can_ignore);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_varcharnot);
+extern "C" DLL_PUBLIC Datum dolphin_varcharnot(PG_FUNCTION_ARGS);
+Datum dolphin_varcharnot(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_UINT64(~varchar_cast_ui8(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_textnot);
+extern "C" DLL_PUBLIC Datum dolphin_textnot(PG_FUNCTION_ARGS);
+Datum dolphin_textnot(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_UINT64(~text_cast_uint8(fcinfo));
+}
+
+extern "C" Datum Varlena2Float8(PG_FUNCTION_ARGS);
+PG_FUNCTION_INFO_V1_PUBLIC(varlena_cast_ui8);
+extern "C" DLL_PUBLIC Datum varlena_cast_ui8(PG_FUNCTION_ARGS);
+Datum varlena_cast_ui8(PG_FUNCTION_ARGS)
+{
+    fcinfo->ccontext = COERCION_EXPLICIT;
+    Datum val = Varlena2Float8(fcinfo);
+    return DirectFunctionCall1(f8_cast_ui8, val);
+    return DirectFunctionCall1Coll(f8_cast_ui8, InvalidOid, val, fcinfo->can_ignore);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_varlenanot);
+extern "C" DLL_PUBLIC Datum dolphin_varlenanot(PG_FUNCTION_ARGS);
+Datum dolphin_varlenanot(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_UINT64(~varlena_cast_ui8(fcinfo));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_setnot);
+extern "C" DLL_PUBLIC Datum dolphin_setnot(PG_FUNCTION_ARGS);
+Datum dolphin_setnot(PG_FUNCTION_ARGS)
+{
+    VarBit *bitmap = PG_GETARG_VARBIT_P(0);
+    int128 result = 0;
+    int typmod = VARBITLEN(bitmap);
+    bits8 *base = (bits8*)VARBITS(bitmap) + sizeof(Oid);
+    int1 bitlen = typmod - sizeof(Oid) * BITS_PER_BYTE;
+    /* bitlen can up to max 64 */
+    for (int1 order = 0; order < bitlen; order++) {
+        bits8 *r = base + order / BITS_PER_BYTE;
+        bool bitset = (*r) & (1 << (order % BITS_PER_BYTE));
+        if (bitset) {
+            result |= (1UL << order);
+        }
+    }
+    PG_RETURN_UINT64(~((uint64)result));
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_enumnot);
+extern "C" DLL_PUBLIC Datum dolphin_enumnot(PG_FUNCTION_ARGS);
+Datum dolphin_enumnot(PG_FUNCTION_ARGS)
+{
+    Oid enumval = PG_GETARG_OID(0);
+    float8 result = 0.0;
+    HeapTuple tup;
+    Form_pg_enum en;
+    if (enumval == 0) {
+        PG_RETURN_FLOAT8(result);
+    }
+    tup = SearchSysCache1(ENUMOID, ObjectIdGetDatum(enumval));
+    if (!HeapTupleIsValid(tup))
+        ereport(ERROR,
+            (errcode(ERRCODE_INVALID_BINARY_REPRESENTATION), errmsg("invalid internal value for enum: %u", enumval)));
+    en = (Form_pg_enum)GETSTRUCT(tup);
+    result = en->enumsortorder;
+    ReleaseSysCache(tup);
+    PG_RETURN_UINT64(~DatumGetUInt64(DirectFunctionCall1(f8_cast_ui8, Float8GetDatum(result))));
 }
 #endif

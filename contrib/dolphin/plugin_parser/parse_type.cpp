@@ -684,7 +684,11 @@ Oid get_column_def_collation_b_format(ColumnDef* coldef, Oid typeOid, Oid typcol
     }
 
     Oid result = InvalidOid;
+#ifdef DOLPHIN
+    if (!OidIsValid(typcollation) && !is_bin_type && !type_is_set(typeOid) && !type_is_enum(typeOid)) {
+#else
     if (!OidIsValid(typcollation) && !is_bin_type && !type_is_set(typeOid)) {
+#endif
         return InvalidOid;
     } else if (OidIsValid(coldef->collOid)) {
         /* Precooked collation spec, use that */
@@ -750,7 +754,12 @@ Oid GetColumnDefCollation(ParseState* pstate, ColumnDef* coldef, Oid typeOid, Oi
         check_binary_collation(result, typeOid);
     }
     /* Complain if COLLATE is applied to an uncollatable type */
+#ifdef DOLPHIN
+    if (OidIsValid(result) && !OidIsValid(typcollation) && !is_bin_type &&
+        !type_is_set(typeOid) && !type_is_enum(typeOid)) {
+#else
     if (OidIsValid(result) && !OidIsValid(typcollation) && !is_bin_type && !type_is_set(typeOid)) {
+#endif
         ereport(ERROR,
             (errcode(ERRCODE_DATATYPE_MISMATCH),
                 errmsg("collations are not supported by type %s", format_type_be(typeOid)),
@@ -869,6 +878,44 @@ Datum stringTypeDatum(Type tp, char* string, int32 atttypmod, bool can_ignore)
 
     return result;
 }
+
+
+
+#ifdef DOLPHIN
+Datum stringTypeDatumCompatibleNullResult(Type tp, char* string, int32 atttypmod, bool can_ignore,
+    CoercionContext ccontext, bool* result_isnull)
+{
+    Form_pg_type typform = (Form_pg_type)GETSTRUCT(tp);
+    Oid typinput = typform->typinput;
+    Oid typioparam = getTypeIOParam(tp);
+    Datum result;
+    result = OidInputFunctionCallCompatibleNullResult(typinput, string, typioparam, atttypmod, can_ignore,
+        ccontext, result_isnull);
+#ifdef RANDOMIZE_ALLOCATED_MEMORY
+
+    /*
+     * For pass-by-reference data types, repeat the conversion to see if the
+     * input function leaves any uninitialized bytes in the result.  We can
+     * only detect that reliably if RANDOMIZE_ALLOCATED_MEMORY is enabled, so
+     * we don't bother testing otherwise.  The reason we don't want any
+     * instability in the input function is that comparison of Const nodes
+     * relies on bytewise comparison of the datums, so if the input function
+     * leaves garbage then subexpressions that should be identical may not get
+     * recognized as such.	See pgsql-hackers discussion of 2008-04-04.
+     */
+    if (string && !typform->typbyval) {
+        Datum result2;
+
+        result2 = OidInputFunctionCallCompatibleNullResult(typinput, string, typioparam, atttypmod,
+            ccontext, result_isnull);
+        if (!datumIsEqual(result, result2, typform->typbyval, typform->typlen)) {
+            elog(WARNING, "type %s has unstable input conversion for \"%s\"", NameStr(typform->typname), string);
+        }
+    }
+#endif
+    return result;
+}
+#endif
 
 /* given a typeid, return the type's typrelid (associated relation, if any) */
 Oid typeidTypeRelid(Oid type_id)
@@ -1657,7 +1704,7 @@ void check_type_supports_multi_charset(Oid typid, bool allow_array)
  * DefineAnonymousEnum
  *		Registers a new anoymous enum without an array type, using the given name.
  */
-void DefineAnonymousEnum(TypeName * typname)
+void DefineAnonymousEnum(TypeName * typname, Oid collations)
 {
     char* enumName = NULL;
     Oid enumNamespace;
@@ -1737,10 +1784,10 @@ void DefineAnonymousEnum(TypeName * typname)
         -1,                              /* typMod (Domains only) */
         0,                               /* Array dimensions of typbasetype */
         false,                           /* Type NOT NULL */
-        InvalidOid);                     /* type's collation */
+        DEFAULT_COLLATION_OID);          /* type's collation */
 
     /* Enter the enum's values into pg_enum */
-    EnumValuesCreate(enumTypeAddr.objectId, typname->typmods);
+    EnumValuesCreate(enumTypeAddr.objectId, typname->typmods, collations);
     list_free_ext(typname->typmods);
     typname->typmods = NULL;
     /* CommandCounterIncrement here to ensure that preceding changes are all

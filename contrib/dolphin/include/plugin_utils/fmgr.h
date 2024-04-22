@@ -582,7 +582,11 @@ extern Datum ReceiveFunctionCall(FmgrInfo* flinfo, fmStringInfo buf, Oid typiopa
 extern Datum OidReceiveFunctionCall(Oid functionId, fmStringInfo buf, Oid typioparam, int32 typmod);
 extern bytea* SendFunctionCall(FmgrInfo* flinfo, Datum val);
 extern bytea* OidSendFunctionCall(Oid functionId, Datum val);
-extern Datum OidInputFunctionCallColl(Oid functionId, char* str, Oid typioparam, int32 typmod, Oid collation);
+extern Datum OidInputFunctionCallColl(Oid functionId, char *str, Oid typioparam, int32 typmod, Oid collation
+#ifdef DOLPHIN
+    , bool ignore
+#endif
+);
 
 /*
  * Routines in fmgr.c
@@ -669,5 +673,14 @@ inline bool eval_simple_op(Datatype dataVal1, Datatype dataVal2)
 #endif /* !FRONTEND_PARSER */
 
 extern void CopyCursorInfoData(Cursor_Data* target_data, Cursor_Data* source_data);
+
+#ifdef DOLPHIN
+extern bool is_allow_null_result(CoercionContext ccontext);
+extern void CheckNullResultCompatibleNullResult(Oid oid, bool isnull, char* str, CoercionContext ccontext);
+extern Datum InputFunctionCallCompatibleNullResult(FmgrInfo* flinfo, char* str, Oid typioparam, int32 typmod,
+    bool can_ignore, Oid collation, CoercionContext ccontext, bool* result_isnull);
+extern Datum OidInputFunctionCallCompatibleNullResult(Oid functionId, char* str, Oid typioparam, int32 typmod,
+    bool can_ignore, CoercionContext ccontext, bool* result_isnull);
+#endif
 
 #endif /* FMGR_H */

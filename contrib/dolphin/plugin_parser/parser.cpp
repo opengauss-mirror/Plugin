@@ -682,6 +682,34 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
                     break;
             }
             break;
+        
+            case FULL:
+            /*
+             * FULL OUTER must be reduced to one token
+             */
+            GET_NEXT_TOKEN();
+
+            switch (next_token) {
+                case OUTER_P:
+                    cur_token = FULL_OUTER;
+                    break;
+                case JOIN:
+                    cur_token = FULL_OUTER;
+                    /* save the lookahead token for next time */
+                    SET_LOOKAHEAD_TOKEN();
+                    /* and back up the output info to cur_token */
+                    lvalp->core_yystype = cur_yylval;
+                    *llocp = cur_yylloc;
+                    break;
+                default:
+                    /* save the lookahead token for next time */
+                    SET_LOOKAHEAD_TOKEN();
+                    /* and back up the output info to cur_token */
+                    lvalp->core_yystype = cur_yylval;
+                    *llocp = cur_yylloc;
+                    break;
+            }
+            break;
 #endif
         case USE:
         /*
@@ -771,6 +799,9 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
             }
             break;
         case DEFAULT:
+            if (GetSessionContext()->is_create_alter_stmt) {
+                break;
+            }
             /*
              * DEFAULT must be reduced to one token, to allow START as table / column alias.
              */
@@ -870,6 +901,38 @@ int base_yylex(YYSTYPE* lvalp, YYLTYPE* llocp, core_yyscan_t yyscanner)
             switch (next_token) {
                 case '(':
                     cur_token = MATCH_FUNC;
+                    break;
+                default:
+                    /* save the lookahead token for next time */
+                    SET_LOOKAHEAD_TOKEN();
+                    /* and back up the output info to cur_token */
+                    lvalp->core_yystype = cur_yylval;
+                    *llocp = cur_yylloc;
+                    break;
+            }
+            break;
+        case CREATE:
+        case ALTER:
+            if (pg_strncasecmp(yyextra->core_yy_extra.scanbuf, "alter", strlen("alter")) == 0 ||
+                pg_strncasecmp(yyextra->core_yy_extra.scanbuf, "create", strlen("create")) == 0) {
+                GetSessionContext()->is_create_alter_stmt = true;
+            }
+            break;
+        case SELECT:
+            GetSessionContext()->is_create_alter_stmt = false;
+            break;
+        case STORAGE:
+            /*
+             * STORAGE DISK/MEMORY must be reduced to one token, to allow STORAGE(...).
+             */
+            GET_NEXT_TOKEN();
+
+            switch (next_token) {
+                case DISK:
+                    cur_token = STORAGE_DISK;
+                    break;
+                case MEMORY:
+                    cur_token = STORAGE_MEMORY;
                     break;
                 default:
                     /* save the lookahead token for next time */

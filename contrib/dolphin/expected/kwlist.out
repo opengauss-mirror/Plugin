@@ -365,6 +365,15 @@ ERROR:  syntax error at or near "foreign"
 LINE 1: analyze verbose foreign tables;
                         ^
 create index verbose_index on verbose(verbose);
+-- unreserved keyword: ast, PARTITIONING, REPAIR, ROWTYPE_P, 
+create table ast(ast int);
+create table PARTITIONING(PARTITIONING int);
+create table REPAIR(REPAIR int);
+create table ROWTYPE(ROWTYPE int);
+-- col_name_keyword
+create table ttt_test(TIMESTAMPADD int);
+--type func keyword
+create FUNCTION sounds() RETURNS int as 'select 1' language sql;
 /* excluded */
 create table excluded(excluded int);
 insert into excluded values(1);
@@ -392,7 +401,7 @@ ERROR:  user cannot be trigger name
        
 reset search_path;
 drop schema keyword_test cascade;
-NOTICE:  drop cascades to 23 other objects
+NOTICE:  drop cascades to 29 other objects
 DETAIL:  drop cascades to table keyword_test."cast"
 drop cascades to table keyword_test.last_day
 drop cascades to table keyword_test."less"
@@ -413,6 +422,12 @@ drop cascades to table keyword_test."do"
 drop cascades to table keyword_test."end"
 drop cascades to table keyword_test."only"
 drop cascades to table keyword_test."verbose"
+drop cascades to table keyword_test.ast
+drop cascades to table keyword_test.partitioning
+drop cascades to table keyword_test.repair
+drop cascades to table keyword_test.rowtype
+drop cascades to table keyword_test.ttt_test
+drop cascades to function keyword_test.sounds()
 drop cascades to table keyword_test."excluded"
 drop cascades to table keyword_test.x
 drop cascades to function keyword_test.fn_x_before()

@@ -279,6 +279,9 @@ Oid transform_default_collation(const char* collate, int charset, Oid def_coll_o
     
     if (collate != NULL && charset != PG_INVALID_ENCODING) {
         coll_oid = check_collation_by_charset(collate, charset, ignore_check);
+        if (USE_DEFAULT_COLLATION && coll_oid == DEFAULT_COLLATION_OID) {
+            coll_oid = def_coll_oid;
+        }
     } else if (collate != NULL) {
         CatCList* list = NULL;
         list = SearchSysCacheList1(COLLNAMEENCNSP, PointerGetDatum(collate));
@@ -5761,6 +5764,15 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
      * including any collation spec that might be present.
      */
 #ifdef DOLPHIN
+    if (column->collClause) {
+            column->collOid = LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);
+            if (!OidIsValid(column->collOid)) {
+                column->collOid = DEFAULT_COLLATION_OID;
+                column->collClause->collname = list_make1(makeString("default"));
+                ereport(WARNING, (errmsg("Invalid collation for column %s detected. default value set",
+                    column->colname)));
+            }
+    }
     if (column->typname->names != NULL) {
         if (strstr(strVal(llast(column->typname->names)), "anonymous_enum") != NULL) {
             ereport(ERROR, (errcode(ERRCODE_DUPLICATE_OBJECT), errmsg("anonymous enum type can't be used elsewhere.")));
@@ -5780,10 +5792,11 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
             column->typname->names = lcons(makeString(schemaname), column->typname->names);
             strVal(llast(column->typname->names)) = enumTypeName;
 
-            DefineAnonymousEnum(column->typname);
+            DefineAnonymousEnum(column->typname, column->collOid);
         }
     }
 #endif
+
     Type ctype = typenameType(cxt->pstate, column->typname, NULL);
     Form_pg_type typtup = (Form_pg_type)GETSTRUCT(ctype);
 
@@ -5795,13 +5808,7 @@ static void transformColumnType(CreateStmtContext* cxt, ColumnDef* column)
     }
 #ifdef DOLPHIN
     if (column->collClause) {
-        column->collOid = LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);
-        if (!OidIsValid(column->collOid)) {
-            column->collOid = DEFAULT_COLLATION_OID;
-            column->collClause->collname = list_make1(makeString("default"));
-            ereport(WARNING, (errmsg("Invalid collation for column %s detected. default value set", column->colname)));
-        }
-        if (!IsBinaryType(typeTypeId(ctype)) && !OidIsValid(typtup->typcollation))
+        if (!IsBinaryType(typeTypeId(ctype)) && !OidIsValid(typtup->typcollation) && !type_is_enum(typeTypeId(ctype)))
 #else
     if (!DB_IS_CMPT(B_FORMAT) && column->collClause) {
         LookupCollation(cxt->pstate, column->collClause->collname, column->collClause->location);
@@ -9004,7 +9011,16 @@ static void TransformModifyColumndef(CreateStmtContext* cxt, AlterTableCmd* cmd)
     // drop old auto_increment
     DropModifyColumnAutoIncrement(cxt, cxt->rel, cmd->name);
     /* for CHANGE column */
-    if (strcmp(cmd->name, def->colname) != 0) {
+#ifndef DOLPHIN
+    /*
+     * we need to do rename even though the name is same, cause we don't care about column's case now.
+     * it may do some change even though the name is same.
+     * create table t1(ABC int);
+     * alter table t1 change abc abc int; -- should lead to rename
+     */
+    if (strcmp(cmd->name, def->colname) != 0)
+#endif
+    {
         RenameStmt *rename = makeNode(RenameStmt);
         rename->renameType = OBJECT_COLUMN;
         rename->relationType = OBJECT_TABLE;

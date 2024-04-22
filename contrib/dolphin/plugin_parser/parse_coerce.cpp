@@ -14,6 +14,9 @@
  * -------------------------------------------------------------------------
  */
 #include "postgres.h"
+#ifdef DOLPHIN
+#include "plugin_utils/fmgr.h"
+#endif
 #include "knl/knl_variable.h"
 
 #include "catalog/pg_cast.h"
@@ -82,8 +85,12 @@ static bool Numeric2Others(Oid* ptype, Oid* ntype, TYPCATEGORY* pcategory, TYPCA
 
 static const doConvert convertFunctions[convertFunctionsCount] = {&String2Others, &Date2Others, &Numeric2Others};
 
+#define INVALID_IDX -1
 #define CAST_FUNCTION_ROW 8
 #define CAST_FUNCTION_COLUMN 4
+#define CAST_SIGNED_IDX 16
+#define NUM_CAST_TIME_IDX 14
+#define MAX_FLOAT8_PRECISION 15
 
 static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1_cast_ui1", "i1_cast_ui2", "i1_cast_ui4", "i1_cast_ui8"},
                                                                             {"i2_cast_ui1", "i2_cast_ui2", "i2_cast_ui4", "i2_cast_ui8"},
@@ -93,6 +100,41 @@ static const char* castFunction[CAST_FUNCTION_ROW][CAST_FUNCTION_COLUMN] = {{"i1
                                                                             {"f8_cast_ui1", "f8_cast_ui2", "f8_cast_ui4", "f8_cast_ui8"},
                                                                             {"numeric_cast_uint1", "numeric_cast_uint2", "numeric_cast_uint4", "numeric_cast_uint8"},
                                                                             {"text_cast_uint1", "text_cast_uint2", "text_cast_uint4", "text_cast_uint8"}};
+
+static const char* castSignedFunction[CAST_SIGNED_IDX] = {"bit_cast_int8", "float4_cast_int8", "float8_cast_int8", "numeric_cast_int8",
+                                                          "date_cast_int8", "timestamp_cast_int8", "timestamptz_cast_int8", "time_cast_int8",
+                                                          "timetz_cast_int8","set_cast_int8", "uint8_cast_int8", "year_cast_int8",
+                                                          "bpchar_cast_int8","varchar_cast_int8", "text_cast_int8", "varlena_cast_int8"};
+
+static const char* numCastTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_time", "int16_cast_time", "int32_cast_time",
+                                                             "int64_cast_time", "uint8_cast_time", "uint16_cast_time",
+                                                             "uint32_cast_time", "uint64_cast_time", "float4_cast_time",
+                                                             "float8_cast_time", "numeric_cast_time",
+                                                             "text_time_explicit", "bool_cast_time"};
+
+static const char* numCastDateFunction[NUM_CAST_TIME_IDX] = {"int8_cast_date", "int16_cast_date", "int32_cast_date",
+                                                             "int64_cast_date", "uint8_cast_date", "uint16_cast_date",
+                                                             "uint32_cast_date", "uint64_cast_date",
+                                                             "float4_cast_date", "float8_cast_date",
+                                                             "numeric_cast_date", "text_date_explicit",
+                                                             "bool_cast_date", NULL};
+
+static const char* numCastDateTimeFunction[NUM_CAST_TIME_IDX] = {"int8_cast_datetime", "int16_cast_datetime",
+                                                                 "int32_cast_datetime", "int64_cast_datetime",
+                                                                 "uint8_cast_datetime", "uint16_cast_datetime",
+                                                                 "uint32_cast_datetime", "uint64_cast_datetime",
+                                                                 "float4_cast_datetime", "float8_cast_datetime",
+                                                                 "numeric_cast_datetime", "timestamp_explicit",
+                                                                 "bool_cast_datetime", "date_cast_datetime"};
+
+static const char* numCastTimeStampFunction[NUM_CAST_TIME_IDX] = {"int8_cast_timestamptz", "int16_cast_timestamptz",
+                                                                  "int32_cast_timestamptz", "int64_cast_timestamptz",
+                                                                  "uint8_cast_timestamptz", "uint16_cast_timestamptz",
+                                                                  "uint32_cast_timestamptz", "uint64_cast_timestamptz",
+                                                                  "float4_cast_timestamptz", "float8_cast_timestamptz",
+                                                                  "numeric_cast_timestamptz", "timestamptz_explicit",
+                                                                  "bool_cast_timestamptz", "date_cast_timestamptz"};
+
 
 typedef enum {
     INVALID_COLUMN = -1,
@@ -111,8 +153,52 @@ typedef enum {
     FLOAT4,
     FLOAT8,
     NUMERIC,
-    TEXT
+    TEXT,
+    TIME,
+    BPCHAR,
+    VARCHAR,
+    NVARCHAR2,
+    VARLENA
 } CastRow;
+
+typedef enum {
+    S_INVALID_IDX = -1,
+    S_BIT,
+    S_FLOAT4,
+    S_FLOAT8,
+    S_NUMERIC,
+    S_DATE,
+    S_TIMESTAMP,
+    S_TIMESTAMPTZ,
+    S_TIME,
+    S_TIMETZ,
+    S_SET,
+    S_UINT8,
+    S_YEAR,
+    S_BPCHAR,
+    S_VARCHAR,
+    S_NVARCHAR2,
+    S_TEXT,
+    S_VARLENA
+} CastSignedIdx;
+
+typedef enum {
+    N_INVALID_IDX = -1,
+    N_INT1,
+    N_INT2,
+    N_INT4,
+    N_INT8,
+    N_UINT1,
+    N_UINT2,
+    N_UINT4,
+    N_UINT8,
+    N_FLOAT4,
+    N_FLOAT8,
+    N_NUMERIC,
+    N_TEXT,
+    N_BOOL,
+    N_DATE
+} NumCastIdx;
 #endif
 /*
  * @Description: same as get_element_type() except this reports error
@@ -325,7 +411,9 @@ Node *type_transfer(Node *node, Oid atttypid, bool isSelect)
             break;
         case FLOAT4OID:
         case FLOAT8OID:
+#ifndef DOLPHIN
         case NUMERICOID:
+#endif
             result = coerce_type(NULL, node, con->consttype,
                 FLOAT8OID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
             break;
@@ -337,7 +425,39 @@ Node *type_transfer(Node *node, Oid atttypid, bool isSelect)
             result = coerce_type(NULL, node, con->consttype,
                 VARBITOID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
             break;
+#ifdef DOLPHIN
+        case NUMERICOID: {
+            A_Const* valNode = nullptr;
+            long sigDigits = 0;
+            valNode = (A_Const*)transferConstToAconst(node);
+            if (valNode->type == T_Integer) {
+                long longval = valNode->val.val.ival;
+                do {
+                    sigDigits++;
+                    longval = longval >> 1;
+                } while (longval != 0);
+            } else {
+                char* strVal = valNode->val.val.str;
+                char* dotLoc = strchr(strVal, '.');
+                sigDigits = dotLoc ? strlen(strVal) - 1 : strlen(strVal);
+            }
+            /* If sigDigits exceeds the precision of float8, enter the default branch */
+            if (sigDigits <= MAX_FLOAT8_PRECISION) {
+                result = coerce_type(NULL, node, con->consttype,
+                    FLOAT8OID, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+                break;
+            }
+        }
+        /* fall-through */
+#endif
         default:
+#ifdef DOLPHIN
+            if (atttypid == LONGBLOBOID) {
+                result =
+                    coerce_type(NULL, node, con->consttype, atttypid, -1, COERCION_IMPLICIT, COERCE_IMPLICIT_CAST, -1);
+                break;
+            }
+#endif
             if (isSelect) {
                 result = node;
             } else {
@@ -389,10 +509,31 @@ static Datum stringTypeDatum_with_collation(Type tp, char* string, int32 atttypm
 }
 
 #ifdef DOLPHIN
+static Datum stringTypeDatumCompatibleNullResult_with_collation(Type tp, char* string, int32 atttypmod,
+    bool can_ignore, Oid collation, CoercionContext ccontext, bool* result_isnull)
+{
+    Datum result;
+    int tmp_encoding = get_valid_charset_by_collation(collation);
+    int db_encoding = GetDatabaseEncoding();
+
+    if (tmp_encoding == db_encoding) {
+        return stringTypeDatumCompatibleNullResult(tp, string, atttypmod, can_ignore, ccontext, result_isnull);
+    }
+
+    DB_ENCODING_SWITCH_TO(tmp_encoding);
+    result = stringTypeDatumCompatibleNullResult(tp, string, atttypmod, can_ignore, ccontext, result_isnull);
+    DB_ENCODING_SWITCH_BACK(db_encoding);
+    return result;
+}
+#endif
+
+#ifdef DOLPHIN
 static bool hasTextCoercePath(Oid* srcoid, Oid destoid, CoercionContext ccontext, bool* changed)
 {
     if (ccontext == COERCION_EXPLICIT &&
-        (destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
+        ((ENABLE_B_CMPT_MODE && (destoid == INT8OID || destoid == TIMEOID || destoid == TIMESTAMPOID ||
+        destoid == TIMESTAMPTZOID || destoid == DATEOID)) ||
+        destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint1") ||
         destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint2") ||
         destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint4") ||
         destoid == get_typeoid(PG_CATALOG_NAMESPACE, "uint8"))) {
@@ -572,14 +713,28 @@ Node* coerce_type(ParseState* pstate, Node* node, Oid inputTypeId, Oid targetTyp
         * We assume here that UNKNOWN's internal representation is the same
         * as CSTRING.
         */
-        if (!con->constisnull) {
-            newcon->constvalue = stringTypeDatum_with_collation(targetType, DatumGetCString(con->constvalue),
-                inputTypeMod, pstate != NULL && pstate->p_has_ignore, con->constcollid);
+#ifdef DOLPHIN
+        if (ENABLE_B_CMPT_MODE) {
+            if (!con->constisnull) {
+                newcon->constvalue = stringTypeDatumCompatibleNullResult_with_collation(targetType,
+                    DatumGetCString(con->constvalue), inputTypeMod, pstate != NULL && pstate->p_has_ignore,
+                    con->constcollid, ccontext, &newcon->constisnull);
+            } else {
+                newcon->constvalue = stringTypeDatumCompatibleNullResult(targetType, NULL,
+                    inputTypeMod, pstate != NULL && pstate->p_has_ignore, ccontext, &newcon->constisnull);
+            }
         } else {
-            newcon->constvalue =
-                stringTypeDatum(targetType, NULL, inputTypeMod, pstate != NULL && pstate->p_has_ignore);
+#endif
+            if (!con->constisnull) {
+                newcon->constvalue = stringTypeDatum_with_collation(targetType, DatumGetCString(con->constvalue),
+                    inputTypeMod, pstate != NULL && pstate->p_has_ignore, con->constcollid);
+            } else {
+                newcon->constvalue =
+                    stringTypeDatum(targetType, NULL, inputTypeMod, pstate != NULL && pstate->p_has_ignore);
+            }
+#ifdef DOLPHIN
         }
-
+#endif
         cancel_parser_errposition_callback(&pcbstate);
 
         result = (Node*)newcon;
@@ -1480,7 +1635,12 @@ CoercionContext ccontext, CoercionForm cformat, int location, Oid collation)
         Form_pg_type typform = (Form_pg_type)GETSTRUCT(target);
         Oid typinput = typform->typinput;
         Oid typioparam = getTypeIOParam(target);
-        newcon->constvalue = OidInputFunctionCallColl(typinput, DatumGetCString(con->constvalue), typioparam, inputTypeMod, collation);
+        newcon->constvalue =
+            OidInputFunctionCallColl(typinput, DatumGetCString(con->constvalue), typioparam, inputTypeMod, collation
+#ifdef DOLPHIN
+            , pstate != NULL && pstate->p_has_ignore
+#endif
+            );
 
         cancel_parser_errposition_callback(&pcbstate);
         result = (Node*)newcon;
@@ -1993,6 +2153,9 @@ static Oid choose_expr_type(ParseState* pstate, List* exprs, const char* context
                     return InvalidOid;
                 } else if (strcmp(context, "UNION") == 0) {
                     return TEXTOID;
+                } else if (strcmp(context, "JOIN/USING") == 0) {
+                    /* use first expr type as result */
+                    return ptype;
                 }
 #else
                 if (context == NULL)
@@ -2278,7 +2441,8 @@ static bool meet_set_type_compatibility(List* exprs, const char* context, Oid *r
  *
  * This is used following select_common_type() to coerce the individual
  * expressions to the desired type.  'context' is a phrase to use in the
- * error message if we fail to coerce.
+ * error message if we fail to coerce. Otherwise in recursive-scene, common
+ * type is determined by non-recursive member, no need to call select_common_type()
  *
  * As with coerce_type, pstate may be NULL if no special unknown-Param
  * processing is wanted.
@@ -2295,7 +2459,8 @@ Node* coerce_to_common_type(ParseState* pstate, Node* node, Oid targetTypeId, co
 #ifdef DOLPHIN
     } else if (strcmp(context, "UNION") == 0 && can_coerce_type(1, &inputTypeId, &targetTypeId, COERCION_EXPLICIT)) {
         node = coerce_type(pstate, node, inputTypeId, targetTypeId, -1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
-    } else if (strcmp(context, "NVL") == 0 && can_coerce_type(1, &inputTypeId, &targetTypeId, COERCION_EXPLICIT)) {
+    } else if (strcmp(context, "COALESCE") == 0 &&
+        can_coerce_type(1, &inputTypeId, &targetTypeId, COERCION_EXPLICIT)) {
         node = coerce_type(pstate, node, inputTypeId, targetTypeId, -1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
 #endif
     } else {
@@ -3001,7 +3166,7 @@ bool IsBinaryCoercible(Oid srctype, Oid targettype)
     return result;
 }
 #ifdef DOLPHIN
-Oid findUnsignedImplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid funcid)
+Oid findUnsignedExplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid funcid)
 {
     int row = INVALID_ROW;
     int col = INVALID_COLUMN;
@@ -3039,11 +3204,183 @@ Oid findUnsignedImplicitCastFunction(Oid targetTypeId, Oid sourceTypeId, Oid fun
         case TEXTOID:
             row = TEXT;
             break;
+        case TIMEOID:
+            row = TIME;
+            break;
+        case BPCHAROID:
+            row = BPCHAR;
+            break;
+        case VARCHAROID:
+            row = VARCHAR;
+            break;
+        case BLOBOID:
+            row = VARLENA;
+            break;
+        case JSONOID:
+            row = VARLENA;
+            break;
+        default:
+            break;
     }
+    if (row == INVALID_ROW && (sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "binary") ||
+        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "varbinary") ||
+        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "tinyblob") ||
+        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "mediumblob") ||
+        sourceTypeId == get_typeoid(PG_CATALOG_NAMESPACE, "longblob"))) {
+        row = VARLENA;
+    }
+
     if (row != INVALID_ROW && col != INVALID_COLUMN) {
         return get_func_oid(castFunction[row][col], PG_CATALOG_NAMESPACE, NULL);
     }
     return funcid;
+}
+
+int findSignedFunctionIdx(Oid typeId)
+{
+    switch (typeId) {
+        case BITOID:
+            return S_BIT;
+        case FLOAT4OID:
+            return S_FLOAT4;
+        case FLOAT8OID:
+            return S_FLOAT8;
+        case NUMERICOID:
+            return S_NUMERIC;
+        case DATEOID:
+            return S_DATE;
+        case TIMESTAMPOID:
+            return S_TIMESTAMP;
+        case TIMESTAMPTZOID:
+           return S_TIMESTAMPTZ;
+        case TIMEOID:
+            return S_TIME;
+        case TIMETZOID:
+            return S_TIMETZ;
+        case ANYSETOID:
+            return S_SET;
+        case BPCHAROID:
+            return S_BPCHAR;
+        case VARCHAROID:
+            return S_VARCHAR;
+        case TEXTOID:
+            return S_TEXT;
+        case BYTEAOID:
+        case BLOBOID:
+        case JSONOID:
+            return S_VARLENA;
+        default:
+            break;
+    }
+    if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+        return S_UINT8;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "year")) {
+        return S_YEAR;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "binary")) {
+        return S_VARLENA;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "varbinary")) {
+        return S_VARLENA;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "tinyblob")) {
+        return S_VARLENA;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "mediumblob")) {
+        return S_VARLENA;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "longblob")) {
+        return S_VARLENA;
+    }
+    return S_INVALID_IDX;
+}
+
+Oid findSignedExplicitCastFunction(Oid sourceTypeId, Oid funcid)
+{
+    int idx = findSignedFunctionIdx(sourceTypeId);
+    return (idx == INVALID_IDX) ? funcid : get_func_oid(castSignedFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+}
+
+int findNumTimeFunctionIdx(Oid typeId)
+{
+    switch (typeId) {
+        case INT1OID:
+            return N_INT1;
+        case INT2OID:
+            return N_INT2;
+        case INT4OID:
+            return N_INT4;
+        case INT8OID:
+            return N_INT8;
+        case FLOAT4OID:
+            return N_FLOAT4;
+        case FLOAT8OID:
+            return N_FLOAT8;
+        case NUMERICOID:
+            return N_NUMERIC;
+        case TEXTOID:
+            return N_TEXT;
+        case BOOLOID:
+            return N_BOOL;
+        case DATEOID:
+            return N_DATE;
+        default:
+            break;
+    }
+    if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint1")) {
+        return N_UINT1;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint2")) {
+        return N_UINT2;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint4")) {
+        return N_UINT4;
+    } else if (typeId == get_typeoid(PG_CATALOG_NAMESPACE, "uint8")) {
+        return N_UINT8;
+    } else {
+        return N_INVALID_IDX;
+    }
+}
+
+Oid findNumTimeExplicitCastFunction(Oid sourceTypeId, Oid funcid)
+{
+    int idx = findNumTimeFunctionIdx(sourceTypeId);
+    Oid cast_oid = (idx == INVALID_IDX || idx >= NUM_CAST_TIME_IDX || numCastTimeFunction[idx] == NULL) ?
+        InvalidOid : get_func_oid(numCastTimeFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+    return (cast_oid != InvalidOid) ? cast_oid : funcid;
+}
+
+Oid findNumDateExplicitCastFunction(Oid sourceTypeId, Oid funcid)
+{
+    int idx = findNumTimeFunctionIdx(sourceTypeId);
+    Oid cast_oid = (idx == INVALID_IDX || idx >= NUM_CAST_TIME_IDX || numCastDateFunction[idx] == NULL) ?
+        InvalidOid : get_func_oid(numCastDateFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+    return (cast_oid != InvalidOid) ? cast_oid : funcid;
+}
+
+Oid findNumDateTimeExplicitCastFunction(Oid sourceTypeId, Oid funcid)
+{
+    int idx = findNumTimeFunctionIdx(sourceTypeId);
+    Oid cast_oid = (idx == INVALID_IDX || idx >= NUM_CAST_TIME_IDX || numCastDateTimeFunction[idx] == NULL) ?
+        InvalidOid : get_func_oid(numCastDateTimeFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+    return (cast_oid != InvalidOid) ? cast_oid : funcid;
+}
+
+Oid findNumTimeStamptzExplicitCastFunction(Oid sourceTypeId, Oid funcid)
+{
+    int idx = findNumTimeFunctionIdx(sourceTypeId);
+    Oid cast_oid = (idx == INVALID_IDX || idx >= NUM_CAST_TIME_IDX || numCastTimeStampFunction[idx] == NULL) ?
+        InvalidOid : get_func_oid(numCastTimeStampFunction[idx], PG_CATALOG_NAMESPACE, NULL);
+    return (cast_oid != InvalidOid) ? cast_oid : funcid;
+}
+
+Oid findBitCastTimeFunction(Oid targetTypeId, Oid funcid)
+{
+    switch (targetTypeId) {
+        case DATEOID:
+            return get_func_oid("bit_cast_date", PG_CATALOG_NAMESPACE, NULL);
+        case TIMESTAMPOID:
+            return get_func_oid("bit_cast_datetime", PG_CATALOG_NAMESPACE, NULL);
+        case TIMESTAMPTZOID:
+            return get_func_oid("bit_cast_timestamp", PG_CATALOG_NAMESPACE, NULL);
+        case TIMEOID:
+            return get_func_oid("bit_cast_time", PG_CATALOG_NAMESPACE, NULL);
+        default:
+            return funcid;
+    }
 }
 
 bool IsEquivalentEnums(Oid enumOid1, Oid enumOid2)
@@ -3103,6 +3440,27 @@ bool IsEquivalentEnums(Oid enumOid1, Oid enumOid2)
     heap_close(enumRel, AccessShareLock);
     return isEquivalent;
 }
+
+void TryFindSpecifiedCastFunction(const Oid sourceTypeId, const Oid targetTypeId, Oid defaultFuncId, Oid* funcId)
+{
+    if (ENABLE_B_CMPT_MODE && targetTypeId == INT8OID) {
+        *funcId = findSignedExplicitCastFunction(sourceTypeId, defaultFuncId);
+    } else if (sourceTypeId == BITOID) {
+        *funcId = findBitCastTimeFunction(targetTypeId, defaultFuncId);
+    } else if (targetTypeId == TIMEOID) {
+        *funcId = findNumTimeExplicitCastFunction(sourceTypeId, defaultFuncId);
+    } else if (targetTypeId == DATEOID) {
+        *funcId = findNumDateExplicitCastFunction(sourceTypeId, defaultFuncId);
+    } else if (targetTypeId == TIMESTAMPOID) {
+         *funcId = findNumDateTimeExplicitCastFunction(sourceTypeId, defaultFuncId);
+    } else if (targetTypeId == TIMESTAMPTZOID) {
+         *funcId = findNumTimeStamptzExplicitCastFunction(sourceTypeId, defaultFuncId);
+    }
+    else {
+        *funcId = findUnsignedExplicitCastFunction(targetTypeId, sourceTypeId, defaultFuncId);
+    }
+}
+
 #endif
 /*
  * find_coercion_pathway
@@ -3208,8 +3566,16 @@ CoercionPathType find_coercion_pathway(Oid targetTypeId, Oid sourceTypeId, Coerc
                 case COERCION_METHOD_FUNCTION: {
                     result = COERCION_PATH_FUNC;
 #ifdef DOLPHIN
-                    if (ccontext == COERCION_EXPLICIT) {
-                        *funcid = findUnsignedImplicitCastFunction(targetTypeId, sourceTypeId, castForm->castfunc);
+                    if (sourceTypeId == BPCHAROID &&
+                        (targetTypeId == TEXTOID || targetTypeId == VARCHAROID || targetTypeId == NVARCHAR2OID)) {
+                        /*
+                         * special handle for: bpchar -> text/varchar/nvarchar2, which already exists in pg_cast,
+                         * can't change the func id in plugin's script, so change it here.
+                         */
+                        *funcid = get_func_oid("bpchar_text", PG_CATALOG_NAMESPACE, NULL);
+                        Assert(OidIsValid(*funcid));
+                    } else if (ccontext == COERCION_EXPLICIT) {
+                        TryFindSpecifiedCastFunction(sourceTypeId, targetTypeId, castForm->castfunc, funcid);
                     } else
 #endif
                     {

@@ -28,6 +28,22 @@ drop table if exists tb_default_float;
 drop table if exists tb_default_double;
 drop table if exists tb_real_float;
 
+--syntax error message
+create table    t1(123abc   int);
+create table    t1(123   int);
+create table    t1(123   abc int);
+create table    123(abc   int);
+create table    123abc(abc   int);
+create table    123 abc(abc   int);
+
+
+create table if  not  exists   t1(123abc   int);
+create table if  not  exists   t1(123   int);
+create table if  not  exists   t1(123   abc int);
+create table if  not  exists   123(abc   int);
+create table if  not  exists   123abc(abc   int);
+create table if  not  exists   123 abc(abc   int);
+123abc;
 
 drop schema db_b_parser4 cascade;
 reset current_schema;

@@ -2381,6 +2381,80 @@ Datum OidInputFunctionCall(Oid functionId, char* str, Oid typioparam, int32 typm
     return InputFunctionCall(&flinfo, str, typioparam, typmod, can_ignore);
 }
 
+
+#ifdef DOLPHIN
+bool is_allow_null_result(CoercionContext ccontext)
+{
+    return ccontext == COERCION_IMPLICIT || ccontext == COERCION_EXPLICIT;
+}
+
+void CheckNullResultCompatibleNullResult(Oid oid, bool isnull, char* str, CoercionContext ccontext)
+{
+    if (str == NULL) {
+        if (!isnull) {
+            ereport(ERROR, (errmodule(MOD_EXECUTOR), errcode(ERRCODE_UNEXPECTED_NULL_VALUE),
+                    errmsg("input function %u returned non-NULL", oid)));
+        }
+    } else {
+        if (isnull && !is_allow_null_result(ccontext)) {
+            ereport(ERROR, (errmodule(MOD_EXECUTOR), errcode(ERRCODE_UNEXPECTED_NULL_VALUE),
+                    errmsg("input function %u returned NULL", oid)));
+        }
+    }
+}
+
+Datum InputFunctionCallCompatibleNullResult(FmgrInfo* flinfo, char* str, Oid typioparam, int32 typmod,
+    bool can_ignore, Oid collation, CoercionContext ccontext, bool* result_isnull)
+{
+    FunctionCallInfoData fcinfo;
+    Datum result;
+    bool pushed = false;
+
+    if (str == NULL && flinfo->fn_strict) {
+        return (Datum)0; /* just return null result */
+    }
+
+    SPI_STACK_LOG("push cond", NULL, NULL);
+    pushed = SPI_push_conditional();
+
+    InitFunctionCallInfoData(fcinfo, flinfo, 3, InvalidOid, NULL, NULL);
+
+    fcinfo.arg[0] = CStringGetDatum(str);
+    fcinfo.arg[1] = ObjectIdGetDatum(typioparam);
+    fcinfo.arg[2] = Int32GetDatum(typmod);
+    fcinfo.argnull[0] = (str == NULL);
+    fcinfo.argnull[1] = false;
+    fcinfo.argnull[2] = false;
+    fcinfo.can_ignore = can_ignore;
+    fcinfo.fncollation = collation;
+    fcinfo.ccontext = ccontext;
+    result = FunctionCallInvoke(&fcinfo);
+
+    /* Should get null result if and only if str is NULL */
+    CheckNullResultCompatibleNullResult(fcinfo.flinfo->fn_oid, fcinfo.isnull, str, ccontext);
+
+    if (result_isnull != NULL) {
+        *result_isnull = fcinfo.isnull;
+    }
+
+    SPI_STACK_LOG("pop cond", NULL, NULL);
+    SPI_pop_conditional(pushed);
+
+    return result;
+}
+
+Datum OidInputFunctionCallCompatibleNullResult(Oid functionId, char* str, Oid typioparam, int32 typmod,
+    bool can_ignore, CoercionContext ccontext, bool* result_isnull)
+{
+    FmgrInfo flinfo;
+
+    fmgr_info(functionId, &flinfo);
+    return InputFunctionCallCompatibleNullResult(&flinfo, str, typioparam, typmod, can_ignore, InvalidOid,
+        ccontext, result_isnull);
+}
+#endif
+
+
 char* OidOutputFunctionCall(Oid functionId, Datum val)
 {
     FmgrInfo flinfo;
@@ -2405,12 +2479,19 @@ bytea* OidSendFunctionCall(Oid functionId, Datum val)
     return SendFunctionCall(&flinfo, val);
 }
 
-Datum OidInputFunctionCallColl(Oid functionId, char* str, Oid typioparam, int32 typmod, Oid collation)
+Datum OidInputFunctionCallColl(Oid functionId, char *str, Oid typioparam, int32 typmod, Oid collation
+#ifdef DOLPHIN
+    , bool ignore
+#endif
+)
 {
     FmgrInfo flinfo;
-
+    bool can_ignore = false;
+#ifdef DOLPHIN
+    can_ignore = ignore;
+#endif
     fmgr_info(functionId, &flinfo);
-    return InputFunctionCall(&flinfo, str, typioparam, typmod, false, collation);
+    return InputFunctionCall(&flinfo, str, typioparam, typmod, can_ignore, collation);
 }
 /*
  * !!! OLD INTERFACE !!!

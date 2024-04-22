@@ -54,9 +54,11 @@
 /* fake category for types that have a cast to json */
 #define TYPCATEGORY_JSON_CAST 'c'
 
+#define CSTRING_ELMLEN -2
+#define TEXT_ELMLEN -1
+
 TYPCATEGORY get_value_type(Oid val_type, Oid typoutput)
 {
-    TYPCATEGORY tcategory;
     Oid castfunc = InvalidOid;
 
     if (val_type == InvalidOid) {
@@ -76,18 +78,27 @@ TYPCATEGORY get_value_type(Oid val_type, Oid typoutput)
         }
     }
     if (castfunc != InvalidOid) {
-        tcategory = TYPCATEGORY_JSON_CAST;
-    } else if (val_type == RECORDARRAYOID) {
-        tcategory = TYPCATEGORY_ARRAY;
-    } else if (val_type == RECORDOID) {
-        tcategory = TYPCATEGORY_COMPOSITE;
-    } else if (val_type == JSONOID) {
-        tcategory = TYPCATEGORY_JSON;
-    } else {
-        tcategory = TypeCategory(val_type);
+        return TYPCATEGORY_JSON_CAST;
     }
-
-    return tcategory;
+    switch (val_type) {
+        case RECORDARRAYOID:
+            return TYPCATEGORY_ARRAY;
+        case RECORDOID:
+            return TYPCATEGORY_COMPOSITE;
+        case JSONOID:
+            return TYPCATEGORY_JSON;
+        case REGPROCOID:
+        case REGCLASSOID:
+        case REGOPERATOROID:
+        case REGOPEROID:
+        case REGPROCEDUREOID:
+        case REGTYPEOID:
+        case REGCONFIGOID:
+        case REGDICTIONARYOID:
+            return TYPCATEGORY_STRING;
+        default:
+            return TypeCategory(val_type);
+    }
 }
 
 typedef enum {
@@ -160,12 +171,11 @@ static void cJSON_DeleteJsonPath(cJSON_JsonPath *jp);
 static void cJSON_DeleteResultWrapper(cJSON_ResultWrapper *res);
 
 /* functions for the cJson operation*/
-static void quicksort(cJSON *item1, cJSON *item2);
+static cJSON* mergesort(cJSON *start, cJSON *end);
 static text *formatJsondoc(char *str);
 static inline cJSON_JsonPath *jp_pop(cJSON_JsonPath *jp);
 static void cJSON_SortObject(cJSON *object);
 static cJSON *cJSON_ResultWrapperToArray(cJSON_ResultWrapper *res);
-static void cJSON_SwapItemValue(cJSON *item1, cJSON *item2);
 static cJSON_bool cJSON_ArrayAppend(cJSON *root, cJSON_JsonPath *jp, cJSON *value);
 static cJSON_bool cJSON_JsonInsert(cJSON *root, cJSON_JsonPath *jp, cJSON *value);
 static cJSON *get_json_value(Oid valtype, Datum arg, bool typIsVarlena, Oid typOutput);
@@ -196,7 +206,7 @@ static text *remove_duplicate_path(search_LinkStack &stk);
 /* functions for json_merge */
 static int put_object_keys_into_set(char **keys, cJSON *json1, cJSON *json2);
 static int put_object_keys_into_set(char **keys, cJSON *json);
-static void appendObject(StringInfo result, cJSON *json, int cnt, char **keys, int *pos);
+static void appendObject(StringInfo result, cJSON *json);
 static void appendStringInfoObject(StringInfo result, cJSON *json);
 static void appendStringInfoArray(StringInfo result, cJSON *json);
 static void appendStringInfoArrayEle(StringInfo result, cJSON *json);
@@ -1071,7 +1081,20 @@ static inline Datum get_path_all(FunctionCallInfo fcinfo, bool as_text)
                 (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("cannot call function with null path elements")));
     }
 
+#ifdef DOLPHIN
+    // set the json element info as text type by default
+    Oid elmtype = TEXTOID;
+    int elmlen = TEXT_ELMLEN;
+    char elmalign = 'i';
+    if (path->elemtype == CSTRINGOID) {
+        elmtype =  CSTRINGOID;
+        elmlen = CSTRING_ELMLEN;
+        elmalign = 'c';
+    }
+    deconstruct_array(path, elmtype, elmlen, false, elmalign, &pathtext, &pathnulls, &npath);
+#else
     deconstruct_array(path, TEXTOID, -1, false, 'i', &pathtext, &pathnulls, &npath);
+#endif
     /*
      * If the array is empty, return NULL; this is dubious but it's what 9.3
      * did.
@@ -1083,7 +1106,15 @@ static inline Datum get_path_all(FunctionCallInfo fcinfo, bool as_text)
     ipath = (int *)palloc(npath * sizeof(int));
 
     for (i = 0; i < npath; i++) {
+#ifdef DOLPHIN
+        if (path->elemtype == CSTRINGOID) {
+            tpath[i] = DatumGetCString(pathtext[i]);
+        } else {
+            tpath[i] = TextDatumGetCString(pathtext[i]);
+        }
+#else
         tpath[i] = TextDatumGetCString(pathtext[i]);
+#endif
         if (*tpath[i] == '\0') {
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
                             errmsg("cannot call function with empty path elements")));
@@ -3385,24 +3416,83 @@ static void cJSON_DeleteResultWrapper(cJSON_ResultWrapper *res)
     pfree(res);
 }
 
-static void quicksort(cJSON *start, cJSON *end)
+static cJSON* mergesort(cJSON *start, cJSON *end)
 {
-    if (start == NULL || start == end)
-        return;
-    cJSON *q = end;
+    if (start == NULL || start == end) {
+        if (start != NULL) {
+            start->prev = start;
+            start->next = NULL;
+        }
+        return start;
+    }
     cJSON *p = start;
-    while (q != p) {
-        if ((strlen(start->string) > strlen(q->string) ||
-             (strcmp(start->string, q->string) > 0 && strlen(q->string) == strlen(start->string)))) {
+    cJSON *q = end;
+    bool cur = false;
+    while (p != q) {
+        if (cur) {
             p = p->next;
-            cJSON_SwapItemValue(p, q);
         } else {
             q = q->prev;
         }
+        cur = !cur;
     }
-    cJSON_SwapItemValue(p, start);
-    quicksort(start, p);
-    quicksort(p->next, end);
+    cJSON *mid = p;
+    cJSON *mid2 = p->next;
+    p = mergesort(start, mid);
+    q = mergesort(mid2, end);
+    if (p == NULL) {
+        return q;
+    }
+    if (q == NULL) {
+        return p;
+    }
+    mid = p->prev;
+    end = q->prev;
+    cJSON *head = NULL;
+    cJSON *tail = NULL;
+    while (p != NULL && q != NULL) {
+        Size p_len = strlen(p->string);
+        Size q_len = strlen(q->string);
+        if ((p_len < q_len) || (p_len == q_len && strcmp(p->string, q->string) < 0)) {
+            if (head == NULL) {
+                head = p;
+                tail = p;
+            } else {
+                tail->next = p;
+                p->prev = tail;
+                tail = p;
+            }
+            p = p->next;
+            tail->next = NULL;
+        } else {
+            if (head == NULL) {
+                head = q;
+                tail = q;
+            } else {
+                tail->next = q;
+                q->prev = tail;
+                tail = q;
+            }
+            q = q->next;
+            tail->next = NULL;
+        }
+    }
+    if (p != NULL) {
+        tail->next = p;
+        p->prev = tail;
+        tail = mid;
+    }
+    if (q != NULL) {
+        tail->next = q;
+        q->prev = tail;
+        tail = end;
+    }
+    head->prev = tail;
+    tail->next = NULL;
+
+
+
+    return head;
 }
 
 static text *formatJsondoc(char *str)
@@ -3452,13 +3542,13 @@ static void cJSON_SortObject(cJSON *object)
     cJSON *start = NULL;
     cJSON *end = NULL;
     cJSON *child = NULL;
-    if (object->type == cJSON_Object) {
+    if ((object->type & 0XFF) == cJSON_Object) {
         start = object->child;
         if (!start) {
             return;
         }
         end = object->child->prev;
-        quicksort(start, end);
+        object->child = mergesort(start, end);
     }
     cJSON_ArrayForEach(child, object)
     {
@@ -3476,37 +3566,6 @@ static cJSON *cJSON_ResultWrapperToArray(cJSON_ResultWrapper *res)
         resnode = resnode->next;
     }
     return array;
-}
-
-static void cJSON_SwapItemValue(cJSON *item1, cJSON *item2)
-{
-    if (item1 == NULL || item2 == NULL) {
-        return;
-    }
-
-    cJSON tmp;
-    errno_t rc = memset_s(&tmp, sizeof(tmp), 0, sizeof(tmp));
-    securec_check(rc, "\0", "\0");
-    tmp.child = item1->child;
-    tmp.type = item1->type;
-    tmp.valuestring = item1->valuestring;
-    tmp.valueint = item1->valueint;
-    tmp.valuedouble = item1->valuedouble;
-    tmp.string = item1->string;
-
-    item1->child = item2->child;
-    item1->type = item2->type;
-    item1->valuestring = item2->valuestring;
-    item1->valueint = item2->valueint;
-    item1->valuedouble = item2->valuedouble;
-    item1->string = item2->string;
-
-    item2->child = tmp.child;
-    item2->type = tmp.type;
-    item2->valuestring = tmp.valuestring;
-    item2->valueint = tmp.valueint;
-    item2->valuedouble = tmp.valuedouble;
-    item2->string = tmp.string;
 }
 
 static cJSON_bool cJSON_ArrayAppend(cJSON *root, cJSON_JsonPath *jp, cJSON *value)
@@ -3707,11 +3766,7 @@ static bool cJSON_JsonArrayInsert(cJSON *root, cJSON_JsonPath *jp, cJSON *value,
         return false;
     }
     cJSON *found = w->head->next->node;
-    if (last->type == cJSON_JsonPath_Index) {
-        if (cJSON_IsArray(found)) {
-            cJSON_InsertItemInArray(found, last->index, value);
-        }
-    } else {
+    if (last->type != cJSON_JsonPath_Index) {
         cJSON_DeleteResultWrapper(w);
         if (last) {
             cJSON_DeleteJsonPath(last);
@@ -3719,6 +3774,13 @@ static bool cJSON_JsonArrayInsert(cJSON *root, cJSON_JsonPath *jp, cJSON *value,
         *isArray = true;
         return false;
     }
+
+    if (cJSON_IsArray(found)) {
+        if (!cJSON_InsertItemInArray(found, last->index, value)) {
+            ereport(ERROR, (errmsg("Insert item to json array failed, index: %d", last->index)));
+        }
+    }
+
     cJSON_DeleteResultWrapper(w);
     if (last) {
         cJSON_DeleteJsonPath(last);
@@ -3924,7 +3986,7 @@ Datum json_contains(PG_FUNCTION_ARGS)
         cJSON_Delete(target_cJSON);
         cJSON_Delete(candidate_cJSON);
         if (resBool)
-            PG_RETURN_BOOL(true);
+            PG_RETURN_INT64((int64)true);
     } else {
         cJSON *result = NULL;
 
@@ -3964,10 +4026,10 @@ Datum json_contains(PG_FUNCTION_ARGS)
         cJSON_Delete(target_cJSON);
         cJSON_Delete(candidate_cJSON);
 
-        PG_RETURN_BOOL(resBool);
+        PG_RETURN_INT64((int64)resBool);
     }
 
-    PG_RETURN_BOOL(false);
+    PG_RETURN_INT64((int64)false);
 }
 
 Datum json_contains_path(PG_FUNCTION_ARGS)
@@ -4950,17 +5012,18 @@ static int put_object_keys_into_set(char **keys, cJSON *json)
     return cnt;
 }
 
-static void appendObject(StringInfo result, cJSON *json, int cnt, char **keys, int *pos)
+static void appendObject(StringInfo result, cJSON *json)
 {
+    int cnt = cJSON_GetArraySize(json);
+    cJSON *p = json->child;
     appendStringInfoChar(result, '{');
     for (int i = 0; i < cnt; i++) {
         if (i != 0)
             appendStringInfoString(result, ", ");
-        escape_json(result, keys[pos[i]]);
+        escape_json(result, p->string);
         appendStringInfoString(result, ": ");
-        // appendStringInfo(result,"\"%s\": ", keys[pos[i]]);
-        cJSON *tResult = cJSON_GetObjectItem(json, keys[pos[i]]);
-        json_regular_format(result, tResult);
+        json_regular_format(result, p);
+        p = p->next;
     }
     appendStringInfoChar(result, '}');
 }
@@ -4971,19 +5034,8 @@ static void appendStringInfoObject(StringInfo result, cJSON *json)
         appendStringInfoString(result, "{}");
         return;
     }
-
-    char **keys = (char **)palloc(cJSON_GetArraySize(json) * sizeof(char *));
-    int cnt = put_object_keys_into_set(keys, json);
-
-    int pos[cnt];
-    for (int i = 0; i < cnt; i++)
-        pos[i] = i;
-
-    get_keys_order(keys, 0, cnt - 1, pos);
-
-    appendObject(result, json, cnt, keys, pos);
-
-    pfree(keys);
+    cJSON_SortObject(json);
+    appendObject(result, json);
 }
 
 static void appendStringInfoArray(StringInfo result, cJSON *json)
@@ -4995,15 +5047,14 @@ static void appendStringInfoArray(StringInfo result, cJSON *json)
 
 static void appendStringInfoArrayEle(StringInfo result, cJSON *json)
 {
-    int arr_iter = 0;
+    cJSON *p = json->child;
     while (true) {
-        cJSON *val = cJSON_GetArrayItem(json, arr_iter);
-        if (val == NULL)
+        if (p == NULL)
             break;
-        if (arr_iter != 0)
+        if (p != json->child)
             appendStringInfoString(result, ", ");
-        json_regular_format(result, val);
-        arr_iter++;
+        json_regular_format(result, p);
+        p = p->next;
     }
 }
 
@@ -5933,7 +5984,7 @@ Datum json_length(PG_FUNCTION_ARGS)
 {
     Oid valtype;
     Oid typOutput;
-    int result;
+    int64 result;
     bool typIsVarlena = false;
     Datum arg = 0;
     text *json = NULL;
@@ -6009,7 +6060,7 @@ Datum json_length(PG_FUNCTION_ARGS)
     result = state->result_count;
     pfree(state);
     pfree(sem);
-    PG_RETURN_INT32(result);
+    PG_RETURN_INT64(result);
 }
 
 Datum json_objectagg_mysql_transfn(PG_FUNCTION_ARGS)
@@ -6078,7 +6129,18 @@ Datum json_objectagg_mysql_transfn(PG_FUNCTION_ARGS)
         arg = PG_GETARG_DATUM(2);
         value = get_json_value(val_type, arg, typIsVarlena, typOutput);
     }
-    cJSON_AddItemToObject(state->root, keyString, value);
+
+    char* pathString = (char *)palloc((strlen(keyString) + 5) * sizeof(char));
+    rc = snprintf_s(pathString, strlen(keyString) + 5, strlen(keyString) + 4, "$.\"%s\"", keyString);
+    securec_check_ss_c(rc, "\0", "\0");
+    int error_pos = -1;
+    cJSON_JsonPath *jp = jp_parse(pathString, error_pos);
+    pfree(pathString);
+    bool invalidPath = false;
+    /* If there are duplicate keys, replace value with new one */
+    if (!cJSON_JsonReplace(state->root, jp, value, invalidPath)) {
+        cJSON_AddItemToObject(state->root, keyString, value);
+    }
     pfree(keyString);
     MemoryContextSwitchTo(oldcontext);
 
@@ -6099,9 +6161,6 @@ Datum json_objectagg_finalfn(PG_FUNCTION_ARGS)
 
     result = makeStringInfo();
     json_regular_format(result, state->root);
-    if (state->root != NULL) {
-        cJSON_Delete(state->root);
-    }
 
     /*
      * Make the result.  We cannot release the ObjectState because
@@ -6121,7 +6180,7 @@ Datum json_storage_size(PG_FUNCTION_ARGS)
     arg = PG_GETARG_DATUM(0);
     doc_cJSON = input_to_cjson(valtype, "json_storage_size", 1, arg);
     int32 n = pg_column_size(fcinfo);
-    PG_RETURN_INT32(n);
+    PG_RETURN_INT64((int64)n);
 }
 
 static void newline_and_indent(StringInfo buf, int depth)

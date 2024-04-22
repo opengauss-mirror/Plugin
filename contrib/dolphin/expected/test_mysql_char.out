@@ -154,6 +154,24 @@ select a || b from testfortext;
 (18 rows)
 
 select a and b from testforchar;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc  
+WARNING:  Truncated incorrect DOUBLE value: 00100abc  
+WARNING:  Truncated incorrect DOUBLE value: 00100abc  
+WARNING:  Truncated incorrect DOUBLE value: -1abc     
+WARNING:  Truncated incorrect DOUBLE value: -1abc     
+WARNING:  Truncated incorrect DOUBLE value: -1abc     
+WARNING:  Truncated incorrect DOUBLE value: 00200     
+WARNING:  Truncated incorrect DOUBLE value: 00200     
+WARNING:  Truncated incorrect DOUBLE value: 00200     
+WARNING:  Truncated incorrect DOUBLE value: abc       
+WARNING:  Truncated incorrect DOUBLE value: abc       
+WARNING:  Truncated incorrect DOUBLE value: abc       
+WARNING:  Truncated incorrect DOUBLE value: abc1      
+WARNING:  Truncated incorrect DOUBLE value: abc1      
+WARNING:  Truncated incorrect DOUBLE value: abc1      
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc 
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc 
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc 
  ?column? 
 ----------
  t
@@ -177,6 +195,24 @@ select a and b from testforchar;
 (18 rows)
 
 select a && b from testforchar;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc  
+WARNING:  Truncated incorrect DOUBLE value: 00100abc  
+WARNING:  Truncated incorrect DOUBLE value: 00100abc  
+WARNING:  Truncated incorrect DOUBLE value: -1abc     
+WARNING:  Truncated incorrect DOUBLE value: -1abc     
+WARNING:  Truncated incorrect DOUBLE value: -1abc     
+WARNING:  Truncated incorrect DOUBLE value: 00200     
+WARNING:  Truncated incorrect DOUBLE value: 00200     
+WARNING:  Truncated incorrect DOUBLE value: 00200     
+WARNING:  Truncated incorrect DOUBLE value: abc       
+WARNING:  Truncated incorrect DOUBLE value: abc       
+WARNING:  Truncated incorrect DOUBLE value: abc       
+WARNING:  Truncated incorrect DOUBLE value: abc1      
+WARNING:  Truncated incorrect DOUBLE value: abc1      
+WARNING:  Truncated incorrect DOUBLE value: abc1      
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc 
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc 
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc 
  ?column? 
 ----------
  t
@@ -200,6 +236,24 @@ select a && b from testforchar;
 (18 rows)
 
 select a or b from testforchar;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc  
+WARNING:  Truncated incorrect DOUBLE value: 00100abc  
+WARNING:  Truncated incorrect DOUBLE value: 00100abc  
+WARNING:  Truncated incorrect DOUBLE value: -1abc     
+WARNING:  Truncated incorrect DOUBLE value: -1abc     
+WARNING:  Truncated incorrect DOUBLE value: -1abc     
+WARNING:  Truncated incorrect DOUBLE value: 00200     
+WARNING:  Truncated incorrect DOUBLE value: 00200     
+WARNING:  Truncated incorrect DOUBLE value: 00200     
+WARNING:  Truncated incorrect DOUBLE value: abc       
+WARNING:  Truncated incorrect DOUBLE value: abc       
+WARNING:  Truncated incorrect DOUBLE value: abc       
+WARNING:  Truncated incorrect DOUBLE value: abc1      
+WARNING:  Truncated incorrect DOUBLE value: abc1      
+WARNING:  Truncated incorrect DOUBLE value: abc1      
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc 
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc 
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc 
  ?column? 
 ----------
  t
@@ -223,6 +277,24 @@ select a or b from testforchar;
 (18 rows)
 
 select a || b from testforchar;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc  
+WARNING:  Truncated incorrect DOUBLE value: 00100abc  
+WARNING:  Truncated incorrect DOUBLE value: 00100abc  
+WARNING:  Truncated incorrect DOUBLE value: -1abc     
+WARNING:  Truncated incorrect DOUBLE value: -1abc     
+WARNING:  Truncated incorrect DOUBLE value: -1abc     
+WARNING:  Truncated incorrect DOUBLE value: 00200     
+WARNING:  Truncated incorrect DOUBLE value: 00200     
+WARNING:  Truncated incorrect DOUBLE value: 00200     
+WARNING:  Truncated incorrect DOUBLE value: abc       
+WARNING:  Truncated incorrect DOUBLE value: abc       
+WARNING:  Truncated incorrect DOUBLE value: abc       
+WARNING:  Truncated incorrect DOUBLE value: abc1      
+WARNING:  Truncated incorrect DOUBLE value: abc1      
+WARNING:  Truncated incorrect DOUBLE value: abc1      
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc 
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc 
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc 
  ?column? 
 ----------
  t
@@ -246,6 +318,24 @@ select a || b from testforchar;
 (18 rows)
 
 select a and b from testforvarchar;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
+WARNING:  Truncated incorrect DOUBLE value: -1abc
+WARNING:  Truncated incorrect DOUBLE value: -1abc
+WARNING:  Truncated incorrect DOUBLE value: -1abc
+WARNING:  Truncated incorrect DOUBLE value: 00200
+WARNING:  Truncated incorrect DOUBLE value: 00200
+WARNING:  Truncated incorrect DOUBLE value: 00200
+WARNING:  Truncated incorrect DOUBLE value: abc
+WARNING:  Truncated incorrect DOUBLE value: abc
+WARNING:  Truncated incorrect DOUBLE value: abc
+WARNING:  Truncated incorrect DOUBLE value: abc1
+WARNING:  Truncated incorrect DOUBLE value: abc1
+WARNING:  Truncated incorrect DOUBLE value: abc1
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
  ?column? 
 ----------
  t
@@ -269,6 +359,24 @@ select a and b from testforvarchar;
 (18 rows)
 
 select a && b from testforvarchar;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
+WARNING:  Truncated incorrect DOUBLE value: -1abc
+WARNING:  Truncated incorrect DOUBLE value: -1abc
+WARNING:  Truncated incorrect DOUBLE value: -1abc
+WARNING:  Truncated incorrect DOUBLE value: 00200
+WARNING:  Truncated incorrect DOUBLE value: 00200
+WARNING:  Truncated incorrect DOUBLE value: 00200
+WARNING:  Truncated incorrect DOUBLE value: abc
+WARNING:  Truncated incorrect DOUBLE value: abc
+WARNING:  Truncated incorrect DOUBLE value: abc
+WARNING:  Truncated incorrect DOUBLE value: abc1
+WARNING:  Truncated incorrect DOUBLE value: abc1
+WARNING:  Truncated incorrect DOUBLE value: abc1
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
  ?column? 
 ----------
  t
@@ -292,6 +400,24 @@ select a && b from testforvarchar;
 (18 rows)
 
 select a or b from testforvarchar;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
+WARNING:  Truncated incorrect DOUBLE value: -1abc
+WARNING:  Truncated incorrect DOUBLE value: -1abc
+WARNING:  Truncated incorrect DOUBLE value: -1abc
+WARNING:  Truncated incorrect DOUBLE value: 00200
+WARNING:  Truncated incorrect DOUBLE value: 00200
+WARNING:  Truncated incorrect DOUBLE value: 00200
+WARNING:  Truncated incorrect DOUBLE value: abc
+WARNING:  Truncated incorrect DOUBLE value: abc
+WARNING:  Truncated incorrect DOUBLE value: abc
+WARNING:  Truncated incorrect DOUBLE value: abc1
+WARNING:  Truncated incorrect DOUBLE value: abc1
+WARNING:  Truncated incorrect DOUBLE value: abc1
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
  ?column? 
 ----------
  t
@@ -315,6 +441,24 @@ select a or b from testforvarchar;
 (18 rows)
 
 select a || b from testforvarchar;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
+WARNING:  Truncated incorrect DOUBLE value: -1abc
+WARNING:  Truncated incorrect DOUBLE value: -1abc
+WARNING:  Truncated incorrect DOUBLE value: -1abc
+WARNING:  Truncated incorrect DOUBLE value: 00200
+WARNING:  Truncated incorrect DOUBLE value: 00200
+WARNING:  Truncated incorrect DOUBLE value: 00200
+WARNING:  Truncated incorrect DOUBLE value: abc
+WARNING:  Truncated incorrect DOUBLE value: abc
+WARNING:  Truncated incorrect DOUBLE value: abc
+WARNING:  Truncated incorrect DOUBLE value: abc1
+WARNING:  Truncated incorrect DOUBLE value: abc1
+WARNING:  Truncated incorrect DOUBLE value: abc1
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
  ?column? 
 ----------
  t
@@ -342,36 +486,42 @@ drop table testfortext;
 drop table testforchar;
 drop table testforvarchar;
 select '00100abc' && 1;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
  ?column? 
 ----------
  t
 (1 row)
 
 select '00100abc' && 0;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
  ?column? 
 ----------
  f
 (1 row)
 
 select '00100abc' && null;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
  ?column? 
 ----------
  
 (1 row)
 
 select '-1abc' && 1;
+WARNING:  Truncated incorrect DOUBLE value: -1abc
  ?column? 
 ----------
  t
 (1 row)
 
 select '-1abc' && 0;
+WARNING:  Truncated incorrect DOUBLE value: -1abc
  ?column? 
 ----------
  f
 (1 row)
 
 select '-1abc' && null;
+WARNING:  Truncated incorrect DOUBLE value: -1abc
  ?column? 
 ----------
  
@@ -396,90 +546,105 @@ select '00200' && null;
 (1 row)
 
 select 'abc' && 1;
+WARNING:  Truncated incorrect DOUBLE value: abc
  ?column? 
 ----------
  f
 (1 row)
 
 select 'abc' && 0;
+WARNING:  Truncated incorrect DOUBLE value: abc
  ?column? 
 ----------
  f
 (1 row)
 
 select 'abc' && null;
+WARNING:  Truncated incorrect DOUBLE value: abc
  ?column? 
 ----------
  f
 (1 row)
 
 select 'abc1' && 1;
+WARNING:  Truncated incorrect DOUBLE value: abc1
  ?column? 
 ----------
  f
 (1 row)
 
 select 'abc1' && 0;
+WARNING:  Truncated incorrect DOUBLE value: abc1
  ?column? 
 ----------
  f
 (1 row)
 
 select 'abc1' && null;
+WARNING:  Truncated incorrect DOUBLE value: abc1
  ?column? 
 ----------
  f
 (1 row)
 
 select '0.0100abc' && 1;
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
  ?column? 
 ----------
  t
 (1 row)
 
 select '0.0100abc' && 0;
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
  ?column? 
 ----------
  f
 (1 row)
 
 select '0.0100abc' && null;
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
  ?column? 
 ----------
  
 (1 row)
 
 select '00100abc' || 1;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
  ?column? 
 ----------
  t
 (1 row)
 
 select '00100abc' || 0;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
  ?column? 
 ----------
  t
 (1 row)
 
 select '00100abc' || null;
+WARNING:  Truncated incorrect DOUBLE value: 00100abc
  ?column? 
 ----------
  t
 (1 row)
 
 select '-1abc' || 1;
+WARNING:  Truncated incorrect DOUBLE value: -1abc
  ?column? 
 ----------
  t
 (1 row)
 
 select '-1abc' || 0;
+WARNING:  Truncated incorrect DOUBLE value: -1abc
  ?column? 
 ----------
  t
 (1 row)
 
 select '-1abc' || null;
+WARNING:  Truncated incorrect DOUBLE value: -1abc
  ?column? 
 ----------
  t
@@ -504,57 +669,152 @@ select '00200' || null;
 (1 row)
 
 select 'abc' || 1;
+WARNING:  Truncated incorrect DOUBLE value: abc
  ?column? 
 ----------
  t
 (1 row)
 
 select 'abc' || 0;
+WARNING:  Truncated incorrect DOUBLE value: abc
  ?column? 
 ----------
  f
 (1 row)
 
 select 'abc' || null;
+WARNING:  Truncated incorrect DOUBLE value: abc
  ?column? 
 ----------
  
 (1 row)
 
 select 'abc1' || 1;
+WARNING:  Truncated incorrect DOUBLE value: abc1
  ?column? 
 ----------
  t
 (1 row)
 
 select 'abc1' || 0;
+WARNING:  Truncated incorrect DOUBLE value: abc1
  ?column? 
 ----------
  f
 (1 row)
 
 select 'abc1' || null;
+WARNING:  Truncated incorrect DOUBLE value: abc1
  ?column? 
 ----------
  
 (1 row)
 
 select '0.0100abc' || 1;
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
  ?column? 
 ----------
  t
 (1 row)
 
 select '0.0100abc' || 0;
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
  ?column? 
 ----------
  t
 (1 row)
 
 select '0.0100abc' || null;
+WARNING:  Truncated incorrect DOUBLE value: 0.0100abc
  ?column? 
 ----------
  t
+(1 row)
+
+select true and 'true' AS false;
+WARNING:  Truncated incorrect DOUBLE value: true
+CONTEXT:  referenced column: false
+ false 
+-------
+ f
+(1 row)
+
+select true and 'false' AS false;
+WARNING:  Truncated incorrect DOUBLE value: false
+CONTEXT:  referenced column: false
+ false 
+-------
+ f
+(1 row)
+
+select true and '1.0 false' AS true;
+WARNING:  Truncated incorrect DOUBLE value: 1.0 false
+CONTEXT:  referenced column: true
+ true 
+------
+ t
+(1 row)
+
+select true and '0.0 true' AS false;
+WARNING:  Truncated incorrect DOUBLE value: 0.0 true
+CONTEXT:  referenced column: false
+ false 
+-------
+ f
+(1 row)
+
+select false or 'true' AS false;
+WARNING:  Truncated incorrect DOUBLE value: true
+CONTEXT:  referenced column: false
+ false 
+-------
+ f
+(1 row)
+
+select false or 'false' AS false;
+WARNING:  Truncated incorrect DOUBLE value: false
+CONTEXT:  referenced column: false
+ false 
+-------
+ f
+(1 row)
+
+select false or '1.0 false' AS true;
+WARNING:  Truncated incorrect DOUBLE value: 1.0 false
+CONTEXT:  referenced column: true
+ true 
+------
+ t
+(1 row)
+
+select false or '0.0 true' AS false;
+WARNING:  Truncated incorrect DOUBLE value: 0.0 true
+CONTEXT:  referenced column: false
+ false 
+-------
+ f
+(1 row)
+
+select true and 'true'::text AS false;
+ false 
+-------
+ f
+(1 row)
+
+select true and 'true'::char AS false;
+WARNING:  Truncated incorrect DOUBLE value: true
+CONTEXT:  referenced column: false
+ false 
+-------
+ f
+(1 row)
+
+select true and 'true'::varchar AS false;
+WARNING:  Truncated incorrect DOUBLE value: true
+CONTEXT:  referenced column: false
+ false 
+-------
+ f
 (1 row)
 
 drop schema test_char cascade;

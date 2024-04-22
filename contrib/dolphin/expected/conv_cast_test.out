@@ -174,6 +174,51 @@ select conv(1,10,8);
  1
 (1 row)
 
+-- https://gitee.com/opengauss/Plugin/pulls/815 fix it
+select time'-2 34:25:59'::float4;
+ERROR:  cannot cast type time without time zone to real
+LINE 1: select time'-2 34:25:59'::float4;
+                                ^
+CONTEXT:  referenced column: float4
+select time'-838:59:59'::float4;
+ERROR:  cannot cast type time without time zone to real
+LINE 1: select time'-838:59:59'::float4;
+                               ^
+CONTEXT:  referenced column: float4
+select time'0'::float4;
+ERROR:  cannot cast type time without time zone to real
+LINE 1: select time'0'::float4;
+                      ^
+CONTEXT:  referenced column: float4
+select time'-0'::float4;
+ERROR:  cannot cast type time without time zone to real
+LINE 1: select time'-0'::float4;
+                       ^
+CONTEXT:  referenced column: float4
+select time'-2 34:25:59'::float8;
+ float8  
+---------
+ -822559
+(1 row)
+
+select time'-838:59:59'::float8;
+  float8  
+----------
+ -8385959
+(1 row)
+
+select time'0'::float8;
+ float8 
+--------
+      0
+(1 row)
+
+select time'-0'::float8;
+ float8 
+--------
+      0
+(1 row)
+
 select conv('-211111111111111111111111111111111111111111111111111111111177777',10,8);
           conv          
 ------------------------
@@ -348,6 +393,48 @@ select conv('1',10,8);
  1
 (1 row)
 
+select conv('10', 8, 10);
+ conv 
+------
+ 8
+(1 row)
+
+select conv('180', 8, 10);
+ conv 
+------
+ 1
+(1 row)
+
+select conv('910', 8, 10);
+ conv 
+------
+ 0
+(1 row)
+
+select conv('B1', 8, 10);
+ conv 
+------
+ 0
+(1 row)
+
+select conv('B1', 16, 10);
+ conv 
+------
+ 177
+(1 row)
+
+SELECT '20220101121212'::date;
+    date    
+------------
+ 2022-01-01
+(1 row)
+
+SELECT '20220101121212.5'::date;
+    date    
+------------
+ 2022-01-01
+(1 row)
+
 select cast(b'1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111' as unsigned);
         uint8         
 ----------------------
@@ -459,8 +546,6 @@ select 'false'::bool::float8;
 create table test_date(a date);
 set dolphin.sql_mode = sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length;
 select 0::date;
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: date
     date    
 ------------
  0000-00-00
@@ -472,9 +557,9 @@ CONTEXT:  referenced column: a
 select 1::date;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 insert into test_date values(1);
@@ -491,9 +576,9 @@ insert into test_date values(0);
 select 1::date;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 insert into test_date values(1);
@@ -501,8 +586,6 @@ ERROR:  Out of range value for date
 CONTEXT:  referenced column: a
 set dolphin.sql_mode = sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length;
 select 0::date;
-WARNING:  Out of range value for date
-CONTEXT:  referenced column: date
     date    
 ------------
  0000-00-00
@@ -514,9 +597,9 @@ CONTEXT:  referenced column: a
 select 1::date;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 insert into test_date values(1);
@@ -533,9 +616,9 @@ insert into test_date values(0);
 select 1::date;
 WARNING:  Out of range value for date
 CONTEXT:  referenced column: date
-    date    
-------------
- 0000-00-00
+ date 
+------
+ 
 (1 row)
 
 insert into test_date values(1);
@@ -552,6 +635,108 @@ select * from test_date;
  0000-00-00
 (5 rows)
 
+select b'11100000111000';
+    ?column?    
+----------------
+ 11100000111000
+(1 row)
+
+select conv(b'11100000111000', 10, 8);
+ conv  
+-------
+ 34070
+(1 row)
+
+select conv(b'11100000111000', 20, 8);
+ conv  
+-------
+ 34070
+(1 row)
+
+select conv(b'11100000111000'::int8, 20, 8);
+  conv  
+--------
+ 571546
+(1 row)
+
+select x'4c';
+ ?column? 
+----------
+ 01001100
+(1 row)
+
+select conv(x'4c', 10, 8);
+ conv 
+------
+ 114
+(1 row)
+
+select conv(x'4c', 30, 8);
+ conv 
+------
+ 114
+(1 row)
+
+select conv(x'4c'::int8, 30, 8);
+ conv 
+------
+ 330
+(1 row)
+
+set dolphin.sql_mode = treat_bxconst_as_binary;
+select b'11100000111000';
+ ?column? 
+----------
+ \x3838
+(1 row)
+
+select conv(b'11100000111000', 10, 8);
+ERROR:  function conv(`binary`, integer, integer) does not exist
+LINE 1: select conv(b'11100000111000', 10, 8);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: conv
+select conv(b'11100000111000', 20, 8);
+ERROR:  function conv(`binary`, integer, integer) does not exist
+LINE 1: select conv(b'11100000111000', 20, 8);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: conv
+select conv(b'11100000111000'::int8, 20, 8);
+WARNING:  invalid input syntax for type bigint: "\x3838"
+CONTEXT:  referenced column: conv
+ conv 
+------
+ 0
+(1 row)
+
+select x'4c';
+ ?column? 
+----------
+ \x4c
+(1 row)
+
+select conv(x'4c', 10, 8);
+ERROR:  function conv(`binary`, integer, integer) does not exist
+LINE 1: select conv(x'4c', 10, 8);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: conv
+select conv(x'4c', 30, 8);
+ERROR:  function conv(`binary`, integer, integer) does not exist
+LINE 1: select conv(x'4c', 30, 8);
+               ^
+HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+CONTEXT:  referenced column: conv
+select conv(x'4c'::int8, 30, 8);
+WARNING:  invalid input syntax for type bigint: "\x4c"
+CONTEXT:  referenced column: conv
+ conv 
+------
+ 0
+(1 row)
+
+reset dolphin.sql_mode;
 drop schema conv_cast_test cascade;
 NOTICE:  drop cascades to table test_date
 reset current_schema;

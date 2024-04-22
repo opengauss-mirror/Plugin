@@ -156,5 +156,24 @@ explain (costs off) select * from t_b1 where f between 1 and 2;
 explain (costs off) select * from t_b1 where g between '1' and '2';
 explain (costs off) select * from t_b1 where h between '1' and '2';
 explain (costs off) select * from t_b1 where i between '1' and '2';
+-- test the cmp of time and date
+select date'2018-12-31' between time'23:56:59' and timestamp'2018-12-31 23:56:59';
+select date'2018-12-31' not between time'23:56:59' and timestamp'2018-12-31 23:56:59';
+select date'2018-12-31' between symmetric time'23:56:59' and timestamp'2018-12-31 23:56:59';
+select date'2018-12-31' not between symmetric time'23:56:59' and timestamp'2018-12-31 23:56:59';
+select time'23:56:59' between date'2018-12-31' and timestamp'2018-12-31 23:56:59';
+select time'23:56:59' not between date'2018-12-31' and timestamp'2018-12-31 23:56:59';
+select time'23:56:59' between datetime'2018-12-31' and timestamptz'2018-12-31 23:56:59';
+select time'23:56:59' not between datetime'2018-12-31' and timestamptz'2018-12-31 23:56:59';
+-- test the cmp of number and date/time/datetime
+select period_add(202201,2) between '2022-01-01' and date'2022-03-31';
+select sec_to_time(4396) between sec_to_time(4395) and 4396;
+select 10 between to_days('0000-01-01') and date'0000-01-04';
+select 10 between to_days('0000-01-01') and time'12:30:00';
+select 10 between to_days('0000-01-01') and datetime'0000-01-04 12:30:00';
+select 10 between to_days('0000-01-01') and timestamp'0000-01-04 12:30:00';
+select 102 between '0000-01-01' and date'0000-01-03';
+select 102 between time'00:01:01' and date'0000-01-03';
+select 102 between date'0000-01-01' and timestamp'0000-01-03 00:00:00';
 drop schema db_between cascade;
 reset current_schema;

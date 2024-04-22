@@ -1,0 +1,28 @@
+create schema test_to_days;
+set current_schema = test_to_days;
+set dolphin.sql_mode = default;
+select to_days(100);
+select to_days(-1);
+select to_days(1000000000000000000);
+select to_days(20221111);
+select to_days(20001111100000);
+select to_days(20001111250000);
+create table t1(c datetime);
+create table t2(c timestamp);
+insert into t1 values(to_days(100));
+insert into t2 values(to_days(100));
+insert ignore into t1 values(to_days(100));
+insert ignore into t2 values(to_days(100));
+set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length';
+select to_days(100);
+select to_days(-1);
+select to_days(1000000000000000000);
+select to_days(20221111);
+select to_days(20001111100000);
+select to_days(20001111250000);
+insert into t1 values(to_days(100));
+insert into t2 values(to_days(100));
+
+set dolphin.sql_mode = default;
+reset current_schema;
+drop schema test_to_days cascade;

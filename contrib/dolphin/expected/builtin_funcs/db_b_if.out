@@ -27,7 +27,8 @@ CREATE VIEW test_view as select '2022-01-30' as text_type, date '2022-01-30' as 
  text_type | text |           | extended | 
  date_type | date |           | plain    | 
 View definition:
- SELECT '2022-01-30'::text AS text_type, '2022-01-30'::date AS date_type;
+ SELECT '2022-01-30'::text AS text_type, 
+    date_cast('2022-01-30'::cstring, true) AS date_type;
 
 -- string to date
 select if (true, '2022-01-30', date '2022-01-30') as a, if (false, '2022-01-30', date '2022-01-30') as b;
@@ -104,11 +105,11 @@ select if (true, 2.2::float8, 1::int4) as a, if (false, 2.2::float8, 1::int4) as
 select if (true, 'aaa'::binary(5), date '2022-01-30') as a, if (false, 'aaa'::binary(5), date '2022-01-30') as b;
 ERROR:  CASE/ELSE could not convert type date to "binary"
 LINE 1: select if (true, 'aaa'::binary(5), date '2022-01-30') as a, ...
-                                                ^
+                                           ^
 CONTEXT:  referenced column: a
 -- binary to numeric
 select if (true, 'aaa'::binary(5), 1.1::numeric(10, 2)) as a, if (false, 'aaa'::binary(5), 1.1::numeric(10, 2)) as b;
-ERROR:  CASE/ELSE could not convert type numeric to "binary"
+ERROR:  CASE/ELSE could not convert type number to "binary"
 LINE 1: select if (true, 'aaa'::binary(5), 1.1::numeric(10, 2)) as a...
                                            ^
 CONTEXT:  referenced column: a
@@ -128,11 +129,11 @@ CONTEXT:  referenced column: a
 select if (true, 'aaa'::varbinary(5), date '2022-01-30') as a, if (false, 'aaa'::varbinary(5), date '2022-01-30') as b;
 ERROR:  CASE/ELSE could not convert type date to "varbinary"
 LINE 1: select if (true, 'aaa'::varbinary(5), date '2022-01-30') as ...
-                                                   ^
+                                              ^
 CONTEXT:  referenced column: a
 -- varbinary to numeric
 select if (true, 'aaa'::varbinary(5), 1.1::numeric(10, 2)) as a, if (false, 'aaa'::varbinary(5), 1.1::numeric(10, 2)) as b;
-ERROR:  CASE/ELSE could not convert type numeric to "varbinary"
+ERROR:  CASE/ELSE could not convert type number to "varbinary"
 LINE 1: select if (true, 'aaa'::varbinary(5), 1.1::numeric(10, 2)) a...
                                               ^
 CONTEXT:  referenced column: a
@@ -156,7 +157,7 @@ LINE 1: select if (true, 'aaa'::blob, date '2022-01-30') as a, if (f...
 CONTEXT:  referenced column: a
 -- blob to numeric
 select if (true, 'aaa'::blob, 1.1::numeric(10, 2)) as a, if (false, 'aaa'::blob, 1.1::numeric(10, 2)) as b;
-ERROR:  CASE types numeric and blob cannot be matched
+ERROR:  CASE types number and blob cannot be matched
 LINE 1: select if (true, 'aaa'::blob, 1.1::numeric(10, 2)) as a, if ...
                          ^
 CONTEXT:  referenced column: a
@@ -187,7 +188,7 @@ LINE 1: select if (true, 1.1::float8, true) as a, if (false, 1.1::fl...
 CONTEXT:  referenced column: a
 -- numeric to boolean
 select if (true, 2.2::numeric(10, 2), true) as a, if (false, 2.2::numeric(10, 2), true) as b;
-ERROR:  CASE types boolean and numeric cannot be matched
+ERROR:  CASE types boolean and number cannot be matched
 LINE 1: select if (true, 2.2::numeric(10, 2), true) as a, if (false,...
                          ^
 CONTEXT:  referenced column: a

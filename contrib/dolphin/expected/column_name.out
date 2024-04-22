@@ -423,21 +423,21 @@ select * from Inserttest;
 create table colfunctest (AaAa int,BbbB int);
 insert into colfunctest values(1,2);
 select sin(AaAA) from colfunctest;
-        sin        
--------------------
- 0.841470984807897
+        sin         
+--------------------
+ 0.8414709848078965
 (1 row)
 
 select sin(colfunctest.AaAA) from colfunctest;
-        sin        
--------------------
- 0.841470984807897
+        sin         
+--------------------
+ 0.8414709848078965
 (1 row)
 
 select sin(column_name_case_test.colfunctest.AaAA)  from colfunctest;
-        sin        
--------------------
- 0.841470984807897
+        sin         
+--------------------
+ 0.8414709848078965
 (1 row)
 
 --in keyword func
@@ -481,24 +481,24 @@ select * from kwtest ;
 (2 rows)
 
 select sin(APPeNd ) from kwtest ;
-        sin         
---------------------
-  0.841470984807897
- -0.958924274663138
+         sin         
+---------------------
+  0.8414709848078965
+ -0.9589242746631385
 (2 rows)
 
 select sin(kwtest.APPeNd) from kwtest;
-        sin         
---------------------
-  0.841470984807897
- -0.958924274663138
+         sin         
+---------------------
+  0.8414709848078965
+ -0.9589242746631385
 (2 rows)
 
 select sin(column_name_case_test.kwtest.APPeNd)  from kwtest;
-        sin         
---------------------
-  0.841470984807897
- -0.958924274663138
+         sin         
+---------------------
+  0.8414709848078965
+ -0.9589242746631385
 (2 rows)
 
 update kwtest set APPeNd = 3;
@@ -516,24 +516,24 @@ select * from kwtest ;
 (2 rows)
 
 select sin(Nullif) from kwtest ;
-        sin         
---------------------
-  0.841470984807897
- -0.958924274663138
+         sin         
+---------------------
+  0.8414709848078965
+ -0.9589242746631385
 (2 rows)
 
 select sin(kwtest.Nullif) from kwtest ;
-        sin         
---------------------
-  0.841470984807897
- -0.958924274663138
+         sin         
+---------------------
+  0.8414709848078965
+ -0.9589242746631385
 (2 rows)
 
 select sin(column_name_case_test.kwtest.Nullif)  from kwtest ;
-        sin         
---------------------
-  0.841470984807897
- -0.958924274663138
+         sin         
+---------------------
+  0.8414709848078965
+ -0.9589242746631385
 (2 rows)
 
 update kwtest set Nullif = 3;
@@ -1199,21 +1199,21 @@ select * from Inserttest;
 create table colfunctest (AaAa int,BbbB int);
 insert into colfunctest values(1,2);
 select sin(AaAA) from colfunctest;
-        sin        
--------------------
- 0.841470984807897
+        sin         
+--------------------
+ 0.8414709848078965
 (1 row)
 
 select sin(colfunctest.AaAA) from colfunctest;
-        sin        
--------------------
- 0.841470984807897
+        sin         
+--------------------
+ 0.8414709848078965
 (1 row)
 
 select sin(column_name_case_test.colfunctest.AaAA)  from colfunctest;
-        sin        
--------------------
- 0.841470984807897
+        sin         
+--------------------
+ 0.8414709848078965
 (1 row)
 
 --in keyword func
@@ -1257,24 +1257,24 @@ select * from kwtest ;
 (2 rows)
 
 select sin(APPeNd ) from kwtest ;
-        sin         
---------------------
-  0.841470984807897
- -0.958924274663138
+         sin         
+---------------------
+  0.8414709848078965
+ -0.9589242746631385
 (2 rows)
 
 select sin(kwtest.APPeNd) from kwtest;
-        sin         
---------------------
-  0.841470984807897
- -0.958924274663138
+         sin         
+---------------------
+  0.8414709848078965
+ -0.9589242746631385
 (2 rows)
 
 select sin(column_name_case_test.kwtest.APPeNd)  from kwtest;
-        sin         
---------------------
-  0.841470984807897
- -0.958924274663138
+         sin         
+---------------------
+  0.8414709848078965
+ -0.9589242746631385
 (2 rows)
 
 update kwtest set APPeNd = 3;
@@ -1292,24 +1292,24 @@ select * from kwtest ;
 (2 rows)
 
 select sin(Nullif) from kwtest ;
-        sin         
---------------------
-  0.841470984807897
- -0.958924274663138
+         sin         
+---------------------
+  0.8414709848078965
+ -0.9589242746631385
 (2 rows)
 
 select sin(kwtest.Nullif) from kwtest ;
-        sin         
---------------------
-  0.841470984807897
- -0.958924274663138
+         sin         
+---------------------
+  0.8414709848078965
+ -0.9589242746631385
 (2 rows)
 
 select sin(column_name_case_test.kwtest.Nullif)  from kwtest ;
-        sin         
---------------------
-  0.841470984807897
- -0.958924274663138
+         sin         
+---------------------
+  0.8414709848078965
+ -0.9589242746631385
 (2 rows)
 
 update kwtest set Nullif = 3;
@@ -2196,6 +2196,15 @@ drop table if exists t1 cascade;
 NOTICE:  table "t1" does not exist, skipping
 create table t2 (iDdD int);
 create table t1 (iddD int);
+create table t(i int, j int);
+insert into t values(1,1);
+SELECT i, j, STD(i+j) OVER (ROWS UNBOUNDED PRECEDING) STD FROM t ORDER BY std DESC LIMIT 3;
+ i | j | STD 
+---+---+-----
+ 1 | 1 |   0
+(1 row)
+
+drop table t;
 -- mysql has no create rule grammar not deal yet
 CREATE RULE "_RETURN" AS
   ON UPDATE TO t1

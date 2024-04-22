@@ -8,6 +8,9 @@
 #include "utils/builtins.h"
 #include "libpq/pqformat.h"
 #include "plugin_utils/year.h"
+#ifdef DOLPHIN
+#include "plugin_commands/mysqlmode.h"
+#endif
 
 /*
  * gcc's -ffast-math switch breaks routines that expect exact results from
@@ -20,7 +23,7 @@
 #define TYPMODOUT_LEN 64
 
 static int year_fastcmp(Datum x, Datum y, SortSupport ssup);
-static YearADT int32_to_YearADT(int4 year);
+static YearADT int32_to_YearADT(int4 year, bool canIgnore = false);
 
 PG_FUNCTION_INFO_V1_PUBLIC(year_in);
 extern "C" DLL_PUBLIC Datum year_in(PG_FUNCTION_ARGS);
@@ -76,6 +79,14 @@ extern "C" DLL_PUBLIC Datum period_diff(PG_FUNCTION_ARGS);
 PG_FUNCTION_INFO_V1_PUBLIC(year_xor_transfn);
 extern "C" DLL_PUBLIC Datum year_xor_transfn(PG_FUNCTION_ARGS);
 
+PG_FUNCTION_INFO_V1_PUBLIC(timestamptz_year);
+extern "C" DLL_PUBLIC Datum timestamptz_year(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(datetime_year);
+extern "C" DLL_PUBLIC Datum datetime_year(PG_FUNCTION_ARGS);
+
+PG_FUNCTION_INFO_V1_PUBLIC(date_year);
+extern "C" DLL_PUBLIC Datum date_year(PG_FUNCTION_ARGS);
 #endif
 
 /*****************************************************************************
@@ -87,62 +98,44 @@ extern "C" DLL_PUBLIC Datum year_xor_transfn(PG_FUNCTION_ARGS);
  */
 Datum year_in(PG_FUNCTION_ARGS)
 {
+    Datum number = float8in(fcinfo);
+    int32 tmp = (int32)DirectFunctionCall1(dtoi4, number);
     char *str_in = PG_GETARG_CSTRING(0);
     /*
-     * parse str_in
-     * status flag's meaning :
-     * 1: begin field  : only allow for space
-     * 2: number field : only allow for numbers
-     * 4: end field    : only allow for space
-     * for example     : ' 1997  '
+     * after float8in(), string can already convert to number
+     * we just need to know string length, without space
+     * 
+     * case1: space, first sign or number
+     * case2: number or dot
      */
     int len = strlen(str_in);
     int status = 1;
-    int32 tmp = 0;
     int year_len = 0;
     for (int i = 0; i < len; ++i) {
         switch (status)
         {
         case 1:
-            if (isdigit(str_in[i])) {
+            if (isdigit(str_in[i]) || str_in[i] == '-' || str_in[i] == '+') {
                 status <<= 1;
                 ++year_len;
-                tmp = str_in[i] - '0';
-            } else if (str_in[i] != ' ') {
-                ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Invalid integer value: \"%s\"", str_in)));
             }
             break;
         case 2:
-            if (isdigit(str_in[i])) {
+            if (isdigit(str_in[i]) || str_in[i] == '.') {
                 ++year_len;
-                if (year_len > YEAR4_LEN) {
-                    ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Incorrect integer value: \"%s\"", str_in)));
-                }
-                tmp = tmp * 10 + str_in[i] - '0';
             } else if (str_in[i] == ' ') {
                 status <<= 1;
-            } else {
-                ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Incorrect integer value: \"%s\"", str_in)));
-            }
-            break;
-        case 4:
-            if (str_in[i] != ' ') {
-                ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Incorrect integer value: \"%s\"", str_in)));
             }
             break;
         default:
             break;
         }
     }
-    /* empty str_in */
-    if (status == 1) {
-        ereport(ERROR, (errcode(ERRCODE_DATETIME_VALUE_OUT_OF_RANGE), errmsg("Incorrect integer value: \"%s\"", str_in)));
-    }
     /* 
-     * "0000" -> 0 
-     * "000"  -> 2000
-     * "00"   -> 2000
-     * "0"    -> 2000
+     * number equals 0, and string length is 4, the result is 0
+     * number equals 0, string length is NOT 4, the result is 2000
+     * '0000', '+0000', '00.1', '-0.2' -- 0
+     * '  000 ', '00000', '0.1' --2000
      */
     if (tmp == 0 && year_len != YEAR4_LEN) {
         tmp = 2000;
@@ -185,8 +178,14 @@ Datum year_out(PG_FUNCTION_ARGS)
 Datum year_recv(PG_FUNCTION_ARGS)
 {
     StringInfo buf = (StringInfo)PG_GETARG_POINTER(0);
-    int32 tmp = pq_getmsgint(buf, sizeof(YearADT));
-    PG_RETURN_YEARADT(int32_to_YearADT(tmp));
+    int32 tmp = pq_getmsgint(buf, sizeof(int32));
+
+    YearADT result = int32_to_YearADT(tmp);
+    /* year(2) */
+    if (PG_GETARG_INT32(2) == YEAR2_LEN) {
+        YEAR_CONVERT(result);
+    }
+    PG_RETURN_YEARADT(result);
 }
 
 /*
@@ -195,9 +194,17 @@ Datum year_recv(PG_FUNCTION_ARGS)
 Datum year_send(PG_FUNCTION_ARGS)
 {
     YearADT year = PG_GETARG_YEARADT(0);
+    int32 val = 0;
+    if (year >= 0) {
+        /* year(4) */
+        val = YearADT_to_Year(year);
+    } else {
+        /* year(2): displays only the last (least significant) 2 digits */
+        val = YearADT_to_Year(-year) % 100;
+    }
     StringInfoData buf;
     pq_begintypsend(&buf);
-    pq_sendint32(&buf, YearADT_to_Year(year));
+    pq_sendint32(&buf, val);
     PG_RETURN_BYTEA_P(pq_endtypsend(&buf));
 }
 
@@ -251,8 +258,12 @@ Datum yeartypmodout(PG_FUNCTION_ARGS)
     PG_RETURN_CSTRING(ret);
 }
 
-static YearADT int32_to_YearADT(int4 year)
+static YearADT int32_to_YearADT(int4 year, bool canIgnore)
 {
+#ifdef DOLPHIN
+    int errlevel = (!canIgnore && SQL_MODE_STRICT() ? ERROR : WARNING);
+#endif
+
     if (year) {
         if (YEAR_VALID(year)) {
             if (YEAR2_IN_RANGE(year))
@@ -336,7 +347,7 @@ Datum year_smaller(PG_FUNCTION_ARGS)
 Datum int32_year(PG_FUNCTION_ARGS)
 {
     int4 year = PG_GETARG_INT32(0);
-    PG_RETURN_YEARADT(int32_to_YearADT(year));
+    PG_RETURN_YEARADT(int32_to_YearADT(year, fcinfo->can_ignore));
 }
 
 Datum year_integer(PG_FUNCTION_ARGS) {
@@ -534,6 +545,47 @@ Datum year_xor_transfn(PG_FUNCTION_ARGS)
     PG_RETURN_UINT32(year ^ internal);
 }
 
+Datum timestamptz_year(PG_FUNCTION_ARGS)
+{
+    TimestampTz timestamp = PG_GETARG_TIMESTAMPTZ(0);
+    int4 year = MIN_YEAR_NUM - 1;
+    fsec_t fsec;
+    int tz;
+    const char* tzn = NULL;
+    pg_tm tt;
+    pg_tm* tm = &tt;
+    if (timestamp2tm(timestamp, &tz, tm, &fsec, &tzn, NULL) == 0) {
+        year = tm->tm_year;
+    }
+    PG_RETURN_YEARADT(int32_to_YearADT(year, fcinfo->can_ignore));
+}
+
+inline Datum datetime_to_year(Timestamp timestamp, bool can_ignore)
+{
+    int4 year = MIN_YEAR_NUM - 1;
+    fsec_t fsec;
+    pg_tm tt;
+    pg_tm *tm = &tt;
+    if (timestamp2tm(timestamp, NULL, tm, &fsec, NULL, NULL) == 0) {
+        year = tm->tm_year;
+    }
+    PG_RETURN_YEARADT(int32_to_YearADT(year, can_ignore));
+}
+
+
+Datum datetime_year(PG_FUNCTION_ARGS)
+{
+    Timestamp timestamp = PG_GETARG_TIMESTAMP(0);
+    return datetime_to_year(timestamp, fcinfo->can_ignore);
+}
+
+Datum date_year(PG_FUNCTION_ARGS)
+{
+    DateADT date = PG_GETARG_DATEADT(0);
+    Timestamp timestamp = date2timestamp(date);
+    return datetime_to_year(timestamp, fcinfo->can_ignore);
+}
+
 PG_FUNCTION_INFO_V1_PUBLIC(year_uint8);
 extern "C" DLL_PUBLIC Datum year_uint8(PG_FUNCTION_ARGS);
 Datum year_uint8(PG_FUNCTION_ARGS)
@@ -562,5 +614,12 @@ extern "C" DLL_PUBLIC Datum year_any_value(PG_FUNCTION_ARGS);
 Datum year_any_value(PG_FUNCTION_ARGS)
 {
     return PG_GETARG_DATUM(0);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(dolphin_yearnot);
+extern "C" DLL_PUBLIC Datum dolphin_yearnot(PG_FUNCTION_ARGS);
+Datum dolphin_yearnot(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_UINT64(~year_uint8(fcinfo));
 }
 #endif

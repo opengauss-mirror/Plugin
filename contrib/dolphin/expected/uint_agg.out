@@ -48,7 +48,7 @@ select min(a), min(b) from u1;
 select stddev(a), stddev(b) from u1;
       stddev      |      stddev      
 ------------------+------------------
- 147.224318643355 | 147.224318643355
+ 120.208152801713 | 120.208152801713
 (1 row)
 
 select stddev_pop(a), stddev_pop(b) from u1;
@@ -84,7 +84,7 @@ select var_samp(a), var_samp(b) from u1;
 select variance(a), variance(b) from u1;
       variance      |      variance      
 --------------------+--------------------
- 21675.000000000000 | 21675.000000000000
+ 14450.000000000000 | 14450.000000000000
 (1 row)
 
 select listagg(a) within group(order by a) from u1;
@@ -147,7 +147,7 @@ select min(a), min(b) from u2;
 select stddev(a), stddev(b) from u2;
      stddev     |     stddev     
 ----------------+----------------
- 37836.64989134 | 37836.64989134
+ 30893.49527004 | 30893.49527004
 (1 row)
 
 select stddev_pop(a), stddev_pop(b) from u2;
@@ -181,9 +181,9 @@ select var_samp(a), var_samp(b) from u2;
 (1 row)
 
 select variance(a), variance(b) from u2;
-      variance       |      variance       
----------------------+---------------------
- 1431612075.00000000 | 1431612075.00000000
+      variance      |      variance      
+--------------------+--------------------
+ 954408050.00000000 | 954408050.00000000
 (1 row)
 
 select listagg(a) within group(order by a) from u2;
@@ -246,7 +246,7 @@ select min(a), min(b) from u4;
 select stddev(a), stddev(b) from u4;
    stddev   |   stddev   
 ------------+------------
- 2479700524 | 2479700524
+ 2024667000 | 2024667000
 (1 row)
 
 select stddev_pop(a), stddev_pop(b) from u4;
@@ -282,7 +282,7 @@ select var_samp(a), var_samp(b) from u4;
 select variance(a), variance(b) from u4;
       variance       |      variance       
 ---------------------+---------------------
- 6148914688373205675 | 6148914688373205675
+ 4099276458915470450 | 4099276458915470450
 (1 row)
 
 select listagg(a) within group(order by a) from u4;
@@ -343,9 +343,9 @@ select min(a), min(b) from u8;
 (1 row)
 
 select stddev(a), stddev(b) from u8;
-        stddev        |        stddev        
-----------------------+----------------------
- 10650232656628343400 | 10650232656628343400
+       stddev        |       stddev        
+---------------------+---------------------
+ 8695878550221854808 | 8695878550221854808
 (1 row)
 
 select stddev_pop(a), stddev_pop(b) from u8;
@@ -379,9 +379,9 @@ select var_samp(a), var_samp(b) from u8;
 (1 row)
 
 select variance(a), variance(b) from u8;
-                variance                 |                variance                 
------------------------------------------+-----------------------------------------
- 113427455640312821142160373094783036075 | 113427455640312821142160373094783036075
+                variance                |                variance                
+----------------------------------------+----------------------------------------
+ 75618303760208547428106915396522024050 | 75618303760208547428106915396522024050
 (1 row)
 
 select listagg(a) within group(order by a) from u8;
@@ -488,14 +488,14 @@ explain(costs off, verbose) select min(a), min(b) from smp_test;
 (8 rows)
 
 explain(costs off, verbose) select stddev(a), stddev(b) from smp_test;
-                                QUERY PLAN                                
---------------------------------------------------------------------------
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
  Aggregate
-   Output: pg_catalog.stddev((stddev(a))), pg_catalog.stddev((stddev(b)))
+   Output: pg_catalog.stddev_pop((stddev_pop(a))), pg_catalog.stddev_pop((stddev_pop(b)))
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: (stddev(a)), (stddev(b))
+         Output: (stddev_pop(a)), (stddev_pop(b))
          ->  Aggregate
-               Output: stddev(a), stddev(b)
+               Output: stddev_pop(a), stddev_pop(b)
                ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
@@ -566,14 +566,14 @@ explain(costs off, verbose) select var_samp(a), var_samp(b) from smp_test;
 (8 rows)
 
 explain(costs off, verbose) select variance(a), variance(b) from smp_test;
-                                    QUERY PLAN                                    
-----------------------------------------------------------------------------------
+                                  QUERY PLAN                                  
+------------------------------------------------------------------------------
  Aggregate
-   Output: pg_catalog.variance((variance(a))), pg_catalog.variance((variance(b)))
+   Output: pg_catalog.var_pop((var_pop(a))), pg_catalog.var_pop((var_pop(b)))
    ->  Streaming(type: LOCAL GATHER dop: 1/2)
-         Output: (variance(a)), (variance(b))
+         Output: (var_pop(a)), (var_pop(b))
          ->  Aggregate
-               Output: variance(a), variance(b)
+               Output: var_pop(a), var_pop(b)
                ->  Seq Scan on uint_agg.smp_test
                      Output: a, b
 (8 rows)
