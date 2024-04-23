@@ -670,6 +670,7 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
     rc = memset_s(tm, sizeof(pg_tm), 0, sizeof(pg_tm));
     securec_check(rc, "\0", "\0");
     int errlevel = (SQL_MODE_STRICT() && !fcinfo->can_ignore) ? ERROR : WARNING;
+    int tm_type = DTK_NONE;
 #endif
     int tz;
     int dtype;
@@ -703,9 +704,13 @@ Datum timestamp_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeEr
 #else
     } else {
         bool flag = false;
-        bool res = cstring_to_tm(str, tm, fsec);
+        bool res = cstring_to_tm(str, tm, fsec, tm_type);
         flag |= res;
         if (flag) {
+            if (time_cast_type == TIME_CAST && tm_type == DTK_DATE) {
+                DateTimeParseErrorWithFlag(DTERR_FIELD_OVERFLOW, str, "timestamp", time_cast_type,
+                    fcinfo->can_ignore, true);
+            }
             int tm_to_timestamp_result = tm2timestamp(tm, fsec, NULL, &result);
             CHECK_TM_TO_TIMESTAMP_RESULT(tm_to_timestamp_result);
         } else {
@@ -1831,6 +1836,7 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Time
     error_t rc = EOK;
     rc = memset_s(tm, sizeof(pg_tm), 0, sizeof(pg_tm));
     securec_check(rc, "\0", "\0");
+    int tm_type = DTK_NONE;
 #endif
     int tz;
     int invalid_tz;
@@ -1843,8 +1849,12 @@ Datum timestamptz_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, Time
 
     bool flag = false;
 #ifdef DOLPHIN
-    bool res = cstring_to_tm(str, tm, fsec, &tz, &invalid_tz);
+    bool res = cstring_to_tm(str, tm, fsec, tm_type, &tz, &invalid_tz);
     flag |= res;
+    if (time_cast_type == TIME_CAST && tm_type == DTK_DATE) {
+        DateTimeParseErrorWithFlag(DTERR_FIELD_OVERFLOW, str, "timestamp", time_cast_type,
+            fcinfo->can_ignore, true);
+    }
 #endif
 
     if (flag) {

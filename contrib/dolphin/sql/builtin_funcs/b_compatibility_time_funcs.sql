@@ -405,5 +405,33 @@ drop table t2;
 
 reset dolphin.sql_mode;
 
+select timestamp '2022-7-21';
+select timestamptz '2022-7-21';
+select datetime '2022-7-21';
+
+select timestamp '2022721';
+select timestamptz '2022721';
+select datetime '2022721';
+
+select timestamp'2028-12-31 1';
+select timestamptz'2028-12-31 1';
+select datetime'2028-12-31 1';
+
+select timestamp '20220721111111';
+select timestamptz '20220721111111';
+select datetime '20220721111111';
+
+select timestamp '2022-7-21 a';
+select timestamp '2022-7-21 12';
+select timestamp '2022-7-21 12:1';
+select timestamp '2022-7-21 60';
+select timestamp '2022-7-21 60:01:01';
+
+select timestamptz '2022-7-21 a';
+select timestamptz '2022-7-21 12';
+select timestamptz '2022-7-21 12:1';
+select timestamptz '2022-7-21 60';
+select timestamptz '2022-7-21 60:01:01';
+
 drop schema b_time_funcs cascade;
 reset current_schema;
