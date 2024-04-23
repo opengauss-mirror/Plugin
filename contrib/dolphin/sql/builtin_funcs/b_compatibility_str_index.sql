@@ -50,6 +50,118 @@ select instr(c1, '映'), instr(c2, '映'), instr(c3, '映') from t_bin;
 
 drop table t_bin;
 
+-- test function octet_length
+create table t_number
+(
+	c1 integer,
+	`int1` tinyint,
+	`uint1` tinyint unsigned,
+	`int2` smallint,
+	`uint2` smallint unsigned,
+	`int4` integer,
+	`uint4` integer unsigned,
+	`int8` bigint,
+	`uint8` bigint unsigned,
+	`float4` float4,
+	`float8` float8,
+	`numeric` decimal(20, 6),
+	`boolean` boolean
+);
+
+create table t_str
+(
+	c1 integer,
+	`char` char(100),
+	`varchar` varchar(100),
+	`text` text
+);
+
+create table t_time
+(
+	c1 integer,
+	`date` date,
+	`time` time,
+	`time4` time(4),
+	`datetime` datetime,
+	`datetime4` datetime(4) default '2023-12-30 12:00:12',
+	`timestamp` timestamp,
+	`timestamp4` timestamp(4) default '2023-12-30 12:00:12',
+	`year` year
+);
+
+create table t_blob
+(
+	c1 integer,
+	`binary` binary(100),
+	`varbinary` varbinary(100),
+	`tinyblob` tinyblob,
+	`blob` blob,
+	`mediumblob` mediumblob,
+	`longblob` longblob
+);
+
+create table t_bit (c1 integer, `bit1` bit(1), `bit8` bit(8), `bit15` bit(15), `bit64` bit(64));
+
+create table t_other
+(
+	c1 integer,
+	`enum_t` enum('Red', '1.23a', '1000'),
+	`set_t` set('Red', '1.23a', '1000'),
+    `json` json
+);
+
+insert into t_number values (1, 1, 1, 1, 1, 1, 1, 1, 1, 1.0, 1.0, 3.14259, 1);
+insert into t_number values (2, 127, 255, 32767, 65535, 0x7FFFFFFF, 0xFFFFFFFF, 0x7FFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF, 3.402823, 1.79769313486231, 3.141592, 0);
+insert into t_number values (3, -127, 0, -32768, 0, -2147483648, 0, -9223372036854775808, 0, -1234.567890, -1002345.78456892, -99999999999999.999999, 1);
+
+insert into t_str values (1, '62.345*67-89', '62.345*67-89', '62.345*67-89');
+insert into t_str values (2, 'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ');
+insert into t_str values (3, '脸映桃红桃映脸', '脸映桃红桃映脸', '脸映桃红桃映脸');
+
+insert into t_time values (1, '2024-01-11', '11:47:58', '11:47:58.7896', '2024-01-11 11:49:25', '2024-01-11 11:49:25.1234', '2024-01-11 11:49:25', '2024-01-11 11:49:25.1234', '2024');
+insert into t_time values (2, '2222-02-22', '11:59:58', '11:59:58.9999', '2222-02-22 11:59:58', '2222-02-22 11:59:58.9999', '2038-01-19 03:14:07', '2038-01-19 03:14:07.9999', '2155');
+insert into t_time values (3, '1999-09-19', '00:00:01', '00:00:01.0001', '1999-09-19 00:00:0001', '1999-09-19 00:00:01.0001', '1970-07-07 00:00:59', '1970-07-07 00:00:59.0001', '1999');
+
+insert into t_blob values (1, '62.345*67-89', '62.345*67-89', '62.345*67-89', '62.345*67-89', '62.345*67-89', '62.345*67-89');
+insert into t_blob values (2, 'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ', 'Today is a good day.  ');
+insert into t_blob values (3, '脸映桃红桃映脸', '脸映桃红桃映脸', '脸映桃红桃映脸', '脸映桃红桃映脸', '脸映桃红桃映脸', '脸映桃红桃映脸');
+
+insert into t_bit values (1, 0, 0x68, 0x4d45, 0x536f6d65006f6e65);
+insert into t_bit values (2, 1, 0x7d, 0x0057, 0x00536f6d656f6e65);
+insert into t_bit values (3, 0, 0x77, 0x5700, 0x536f6d656f6e6500);
+
+insert into t_other values(1, 'Red', 'Red', json_object('name', 'jack', 'age', 18));
+insert into t_other values(2, '1.23a', '1.23a', json_object('id', 123456, 'name', 'Blue'));
+insert into t_other values(3, '1000', '1000', json_object('x', 3.14, 'y', 12));
+
+-- test number
+select c1, octet_length(`int1`), octet_length(`uint1`), octet_length(`int2`), octet_length(`uint2`), octet_length(`int4`), octet_length(`uint4`), octet_length(`int8`), octet_length(`uint8`), octet_length(`float4`), octet_length(`float8`), octet_length(`boolean`) from t_number order by c1;
+
+-- test character
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,auto_recompile_function,error_for_division_by_zero'; -- without pad_char_to_full_length
+select c1, octet_length(`char`), octet_length(`varchar`), octet_length(`text`) from t_str order by c1;
+set dolphin.sql_mode = 'sql_mode_strict,sql_mode_full_group,pipes_as_concat,ansi_quotes,no_zero_date,pad_char_to_full_length,auto_recompile_function,error_for_division_by_zero'; -- with pad_char_to_full_length
+select c1, octet_length(`char`), octet_length(`varchar`), octet_length(`text`) from t_str order by c1;
+
+-- test time
+select c1, octet_length(`time`), octet_length(`time4`), octet_length(`datetime`), octet_length(`datetime4`), octet_length(`timestamp`), octet_length(`timestamp4`), octet_length(`year`) from t_time order by c1;
+
+-- test binary
+select c1, octet_length(`binary`), octet_length(`varbinary`), octet_length(`tinyblob`), octet_length(`blob`), octet_length(`mediumblob`), octet_length(`longblob`) from t_blob order by c1;
+
+-- test bit
+select c1, octet_length(`bit1`), octet_length(`bit8`), octet_length(`bit15`), octet_length(`bit64`) from t_bit order by c1;
+
+-- test enum、set、json
+select c1, octet_length(`enum_t`), octet_length(`set_t`), octet_length(`json`) from t_other order by c1;
+
+drop table t_number;
+drop table t_str;
+drop table t_time;
+drop table t_blob;
+drop table t_bin;
+drop table t_other;
+
 drop schema string_index_test cascade;
 reset dolphin.sql_mode;
 reset dolphin.b_compatibility_mode;
