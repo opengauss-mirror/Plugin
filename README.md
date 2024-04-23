@@ -35,6 +35,20 @@ Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN�
 2.  修改如涉及文档，需要同步在docs仓提交文档修改，插件相关文档入口： https://gitee.com/opengauss/docs/tree/master/content/zh/docs/ExtensionReference/dolphin-Extension.md 。注意添加SQL语法时，需要增加必要的示例。
 3.  新增/修改的代码需要使用宏 DOLPHIN 进行控制，方便后续回合openGauss-server仓代码时，区分哪些是插件修改的代码，哪些是内核修改的代码。修改的代码通过宏的IF/ELSE分支保留原始代码。主要控制 ```.h/.cpp``` 文件， ```.y``` 文件不太好使用宏控制，可以不处理。
 4.  代码中涉及dolphin.b_compatibility_mode判断的地方，统一使用宏ENABLE_B_CMPT_MODE控制。
+5.  涉及插件升级/回滚脚本修改的，应本地自验插件的升级/回滚流程，确保脚本正确，简单验证方式如下。 `2.0`，`3.0`是dolphin插件的版本，当前最新版本为 `3.0`，后续版本号升级的话，就分别改为 `3.0`，`4.0`，以此类推
+```
+alter system set upgrade_mode to 2;
+select pg_sleep(2);
+begin;
+set isinplaceupgrade to on;
+set dolphin.b_compatibility_mode = off;
+alter extension dolphin update to '2.0';
+alter extension dolphin update to '3.0';
+reset dolphin.b_compatibility_mode;
+abort;
+
+alter system set upgrade_mode to 0;
+```
 
 ### check用例编写规范
 1. check用例默认使用的数据库为contrib_regression数据库，B兼容类型。编写用例时无需自己手动创建B类型数据库。
