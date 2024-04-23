@@ -318,6 +318,14 @@ DROP INDEX test_b_tree_idx;
 
 DROP TABLE year_tbl;
 
+create table t1(c1 year);
+
+insert ignore into t1 values('tttt');
+insert ignore into t1 values('ttt1');
+insert ignore into t1 values('1ttt');
+
+select * from t1;
+drop table t1;
 -- test operation of YEAR and YEAR(2)
 SELECT ('2010')::YEAR(2)<(2001)::YEAR;
 SELECT ('2010')::YEAR(2)>(2001)::YEAR;
