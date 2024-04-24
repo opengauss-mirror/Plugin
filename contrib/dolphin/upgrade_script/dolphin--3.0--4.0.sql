@@ -108,6 +108,23 @@ BEGIN
 END
 $for_upgrade_only$;
 
+CREATE OR REPLACE FUNCTION pg_catalog.mod(binary,int8) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(binary,bit) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(binary,year) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(binary,binary) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(binary,varbinary) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(int8,binary) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(bit,binary) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(year,binary) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(varbinary,varbinary) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(varbinary,binary) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(varbinary,int8) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(varbinary,bit) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(varbinary,year) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(int8,varbinary) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(bit,varbinary) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+CREATE OR REPLACE FUNCTION pg_catalog.mod(year,varbinary) RETURNS number LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mod(cast($1 as number), cast($2 as number))';
+
 CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_eq(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1=$2::timestamp without time zone';
 CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_ne(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<>$2::timestamp without time zone';
 CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_lt(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<$2::timestamp without time zone';
