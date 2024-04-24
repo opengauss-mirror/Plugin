@@ -1582,6 +1582,105 @@ drop table t_char;
 drop table t1;
 drop table t2;
 reset dolphin.sql_mode;
+select timestamp '2022-7-21';
+ERROR:  date/time field value out of range: "2022-7-21"
+CONTEXT:  referenced column: timestamp
+select timestamptz '2022-7-21';
+ERROR:  date/time field value out of range: "2022-7-21"
+CONTEXT:  referenced column: timestamptz
+select datetime '2022-7-21';
+ERROR:  date/time field value out of range: "2022-7-21"
+CONTEXT:  referenced column: timestamp
+select timestamp '2022721';
+ERROR:  date/time field value out of range: "2022721"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: timestamp
+select timestamptz '2022721';
+ERROR:  date/time field value out of range: "2022721"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: timestamptz
+select datetime '2022721';
+ERROR:  date/time field value out of range: "2022721"
+HINT:  Perhaps you need a different "datestyle" setting.
+CONTEXT:  referenced column: timestamp
+select timestamp'2028-12-31 1';
+      timestamp      
+---------------------
+ 2028-12-31 01:00:00
+(1 row)
+
+select timestamptz'2028-12-31 1';
+      timestamptz       
+------------------------
+ 2028-12-31 01:00:00-08
+(1 row)
+
+select datetime'2028-12-31 1';
+      timestamp      
+---------------------
+ 2028-12-31 01:00:00
+(1 row)
+
+select timestamp '20220721111111';
+      timestamp      
+---------------------
+ 2022-07-21 11:11:11
+(1 row)
+
+select timestamptz '20220721111111';
+      timestamptz       
+------------------------
+ 2022-07-21 11:11:11-07
+(1 row)
+
+select datetime '20220721111111';
+      timestamp      
+---------------------
+ 2022-07-21 11:11:11
+(1 row)
+
+select timestamp '2022-7-21 a';
+ERROR:  date/time field value out of range: "2022-7-21 a"
+CONTEXT:  referenced column: timestamp
+select timestamp '2022-7-21 12';
+      timestamp      
+---------------------
+ 2022-07-21 12:00:00
+(1 row)
+
+select timestamp '2022-7-21 12:1';
+      timestamp      
+---------------------
+ 2022-07-21 12:01:00
+(1 row)
+
+select timestamp '2022-7-21 60';
+ERROR:  invalid input syntax for type timestamp: "2022-7-21 60"
+CONTEXT:  referenced column: timestamp
+select timestamp '2022-7-21 60:01:01';
+ERROR:  date/time field value out of range: "2022-7-21 60:01:01"
+CONTEXT:  referenced column: timestamp
+select timestamptz '2022-7-21 a';
+ERROR:  date/time field value out of range: "2022-7-21 a"
+CONTEXT:  referenced column: timestamptz
+select timestamptz '2022-7-21 12';
+      timestamptz       
+------------------------
+ 2022-07-21 12:00:00-07
+(1 row)
+
+select timestamptz '2022-7-21 12:1';
+      timestamptz       
+------------------------
+ 2022-07-21 12:01:00-07
+(1 row)
+
+select timestamptz '2022-7-21 60';
+ERROR:  invalid input syntax for type timestamp: "2022-7-21 60"
+CONTEXT:  referenced column: timestamptz
+select timestamptz '2022-7-21 60:01:01';
+ERROR:  date/time field value out of range: "2022-7-21 60:01:01"
+CONTEXT:  referenced column: timestamptz
 drop schema b_time_funcs cascade;
 NOTICE:  drop cascades to table func_test
 reset current_schema;

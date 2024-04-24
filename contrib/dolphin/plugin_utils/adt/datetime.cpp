@@ -2465,7 +2465,7 @@ static int ValidateDate(unsigned int fmask, bool isjulian, bool is2digits, bool 
 }
 
 #ifdef DOLPHIN
-static double DealIntervalMicrosec(double frac, fsec_t* fsec)
+static void DealIntervalMicrosec(double frac, fsec_t* fsec)
 { 
     while (frac >= 1) {
         frac /= 10; 
@@ -6118,9 +6118,9 @@ bool datetime_add_nanoseconds_with_round(pg_tm *tm, fsec_t &fsec, int nano)
  *  @retval true - success
  *  @retval false - error
  */
-bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec, int* tzp, int* invalid_tz)
+bool cstring_to_tm(const char *expr, pg_tm *tm, fsec_t &fsec, int &tm_type, int* tzp, int* invalid_tz)
 {
-    int nano = 0, tm_type = DTK_NONE;
+    int nano = 0;
     bool warnings = false;
     bool null_func_result = false;
     if (!cstring_to_datetime(expr, TIME_NO_ZERO_DATE, tm_type, tm, fsec, nano, 

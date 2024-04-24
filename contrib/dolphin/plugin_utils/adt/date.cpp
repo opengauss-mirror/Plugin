@@ -609,6 +609,7 @@ Datum date_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
     errno_t rc = EOK;
     rc = memset_s(&tt, sizeof(tt), 0, sizeof(tt));
     securec_check(rc, "\0", "\0");
+    int tm_type = DTK_NONE;
 #endif
     /*
      * this case is used for date format is specified.
@@ -634,7 +635,7 @@ Datum date_internal(PG_FUNCTION_ARGS, char* str, int time_cast_type, TimeErrorTy
 #else
     } else {
         int invalid_tz;
-        bool res = cstring_to_tm(str, tm, fsec, &tzp, &invalid_tz);
+        bool res = cstring_to_tm(str, tm, fsec, tm_type, &tzp, &invalid_tz);
         if (!res) {
             /*
              * default pg date formatting parsing.
