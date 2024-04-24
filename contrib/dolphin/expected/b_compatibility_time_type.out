@@ -1125,8 +1125,8 @@ INSERT INTO year_tbl VALUES ('0000', '0000', '0000');
 INSERT INTO year_tbl VALUES (1, 1, 1);
 INSERT INTO year_tbl VALUES ('1', '1', '1');
 SELECT * FROM year_tbl;
-  y   |  y4  | y2 
-------+------+----
+  y   |  y4  |  y2  
+------+------+------
  1901 | 1901 | 01
  1901 | 1901 | 01
  2155 | 2155 | 55
@@ -1135,21 +1135,21 @@ SELECT * FROM year_tbl;
  1970 | 1970 | 70
  2069 | 2069 | 69
  2069 | 2069 | 69
- 0    | 0    | 0
+ 0000 | 0000 | 0000
  2000 | 2000 | 00
  2000 | 2000 | 00
  2000 | 2000 | 00
- 0    | 0    | 0
+ 0000 | 0000 | 0000
  2001 | 2001 | 01
  2001 | 2001 | 01
 (15 rows)
 
 -- test order by
 SELECT * FROM year_tbl ORDER BY y ASC;
-  y   |  y4  | y2 
-------+------+----
- 0    | 0    | 0
- 0    | 0    | 0
+  y   |  y4  |  y2  
+------+------+------
+ 0000 | 0000 | 0000
+ 0000 | 0000 | 0000
  1901 | 1901 | 01
  1901 | 1901 | 01
  1970 | 1970 | 70
@@ -1167,15 +1167,15 @@ SELECT * FROM year_tbl ORDER BY y ASC;
 
 -- test max, min, distinct
 SELECT max(y), min(y4) FROM year_tbl;
- max  | min 
-------+-----
- 2155 | 0
+ max  | min  
+------+------
+ 2155 | 0000
 (1 row)
 
 SELECT distinct(y) FROM year_tbl;
   y   
 ------
- 0
+ 0000
  1901
  1970
  2000
@@ -1188,6 +1188,31 @@ SELECT distinct(y) FROM year_tbl;
 CREATE INDEX test_b_tree_idx ON year_tbl(y);
 DROP INDEX test_b_tree_idx;
 DROP TABLE year_tbl;
+create table t1(c1 year);
+insert ignore into t1 values('tttt');
+WARNING:  invalid input syntax for type double precision: "tttt"
+LINE 1: insert ignore into t1 values('tttt');
+                                     ^
+CONTEXT:  referenced column: c1
+insert ignore into t1 values('ttt1');
+WARNING:  invalid input syntax for type double precision: "ttt1"
+LINE 1: insert ignore into t1 values('ttt1');
+                                     ^
+CONTEXT:  referenced column: c1
+insert ignore into t1 values('1ttt');
+WARNING:  invalid input syntax for type double precision: "1ttt"
+LINE 1: insert ignore into t1 values('1ttt');
+                                     ^
+CONTEXT:  referenced column: c1
+select * from t1;
+  c1  
+------
+ 0000
+ 0000
+ 2001
+(3 rows)
+
+drop table t1;
 -- test operation of YEAR and YEAR(2)
 SELECT ('2010')::YEAR(2)<(2001)::YEAR;
  ?column? 
@@ -1445,7 +1470,7 @@ LINE 1: select year '&%2122';
 CONTEXT:  referenced column: year
  year 
 ------
- 0
+ 0000
 (1 row)
 
 select year '中文2122';
@@ -1455,7 +1480,7 @@ LINE 1: select year '中文2122';
 CONTEXT:  referenced column: year
  year 
 ------
- 0
+ 0000
 (1 row)
 
 select year '98.3';
@@ -1479,13 +1504,13 @@ select year '00001';
 select year '-0.2';
  year 
 ------
- 0
+ 0000
 (1 row)
 
 select year '-000';
  year 
 ------
- 0
+ 0000
 (1 row)
 
 select year '';
@@ -1495,7 +1520,7 @@ LINE 1: select year '';
 CONTEXT:  referenced column: year
  year 
 ------
- 0
+ 0000
 (1 row)
 
 select year ' ';
@@ -1505,7 +1530,7 @@ LINE 1: select year ' ';
 CONTEXT:  referenced column: year
  year 
 ------
- 0
+ 0000
 (1 row)
 
 select year 'abcd';
@@ -1515,7 +1540,7 @@ LINE 1: select year 'abcd';
 CONTEXT:  referenced column: year
  year 
 ------
- 0
+ 0000
 (1 row)
 
 select year '001a';
@@ -1535,7 +1560,7 @@ LINE 1: select year 'a001';
 CONTEXT:  referenced column: year
  year 
 ------
- 0
+ 0000
 (1 row)
 
 select year 'a000';
@@ -1545,7 +1570,7 @@ LINE 1: select year 'a000';
 CONTEXT:  referenced column: year
  year 
 ------
- 0
+ 0000
 (1 row)
 
 select year '000a';
@@ -1555,7 +1580,7 @@ LINE 1: select year '000a';
 CONTEXT:  referenced column: year
  year 
 ------
- 0
+ 0000
 (1 row)
 
 select ''::longblob::year;
@@ -1567,7 +1592,7 @@ SQL function "varlena2year" statement 1
 referenced column: year
  year 
 ------
- 0
+ 0000
 (1 row)
 
 -- test partition key

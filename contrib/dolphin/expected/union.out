@@ -24270,9 +24270,9 @@ select * from test39 union select * from test38;
 (2 rows)
 
 select * from test39 union select * from test39;
- num 
------
- 0
+ num  
+------
+ 0000
 (1 row)
 
 select * from test39 union select * from test40;

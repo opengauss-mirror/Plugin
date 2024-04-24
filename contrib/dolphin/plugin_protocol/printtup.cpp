@@ -882,6 +882,10 @@ void dolphin_default_printtup(TupleTableSlot *slot, DestReceiver *self)
                         break;
                     default:
                         outputstr = OutputFunctionCall(&thisState->finfo, attr);
+                        if (typeinfo->attrs[i].atttypid == YEAROID && strcmp(outputstr, "0") == 0) {
+                            pfree(outputstr);
+                            outputstr = pstrdup("0000");
+                        } 
                         need_free = false;
                         break;
                 }
