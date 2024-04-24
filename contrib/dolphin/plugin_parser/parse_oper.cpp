@@ -504,6 +504,24 @@ static bool IsDolphinUnsignedIntType(Oid typeoid)
         return IsUnsignedIntType(typeoid);
     }
 }
+
+inline bool IsCmpOp(char* opername)
+{
+    return strcmp("=", opername) == 0 || strcmp("<>", opername) == 0 || strcmp("!=", opername) == 0 || strcmp("<", opername) == 0 ||
+           strcmp("<=", opername) == 0 || strcmp(">", opername) == 0 || strcmp(">=", opername) == 0;
+}
+
+inline bool IsNumber(Oid typeoid)
+{
+    return IsFloatType(typeoid) || IsUnsignedIntType(typeoid) || IsIntType(typeoid) || IsNumericType(typeoid);
+}
+
+inline bool IsString(Oid typeoid)
+{
+    return ((typeoid == BPCHAROID) || (typeoid == VARCHAROID) || (typeoid == NVARCHAR2OID) ||
+            (typeoid == CLOBOID) || (typeoid == TEXTOID) || (typeoid == UNKNOWNOID));
+}
+
 #endif
 
 /* oper() -- search for a binary operator
@@ -601,6 +619,25 @@ Operator oper(ParseState* pstate, List* opname, Oid ltypeId, Oid rtypeId, bool n
             }
             if (rtypeId == UNKNOWNOID) {
                 rtypeId = TEXTOID;
+            }
+        }
+    }
+    if (ENABLE_B_CMPT_MODE) {
+        char* schemaname = NULL;
+        char* opername = NULL;
+        DeconstructQualifiedName(opname, &schemaname, &opername);
+        if (IsCmpOp(opername)) {
+            /*
+            compare with numeric/int/float string transform to float
+            */
+            if ((IsNumber(ltypeId) && IsString(rtypeId)) || (IsNumber(rtypeId) && IsString(ltypeId))) {
+                ltypeId = FLOAT8OID;
+                rtypeId = FLOAT8OID;
+            }
+            if (ltypeId == ANYENUMOID && rtypeId == UNKNOWNOID) {
+                rtypeId = TEXTOID;
+            } else if (ltypeId == UNKNOWNOID && rtypeId == ANYENUMOID){
+                ltypeId = TEXTOID;
             }
         }
     }

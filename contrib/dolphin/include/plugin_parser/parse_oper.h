@@ -56,6 +56,9 @@ extern bool IsFloatType(Oid typeoid);
 extern bool IsNumericType(Oid typeoid);
 extern bool IsDolphinStringType(Oid typeoid);
 extern bool IsDatetimeType(Oid typeoid);
+extern bool IsNumber(Oid typeoid);
+extern bool IsString(Oid typeoid);
+extern bool IsCmpOp(char* opername);
 #endif
 
 /* Build expression tree for an operator invocation */

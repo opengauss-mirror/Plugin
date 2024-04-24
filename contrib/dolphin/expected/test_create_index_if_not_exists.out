@@ -444,23 +444,23 @@ insert into list_list values('100', '2', '1', 1);
 insert into list_list values('100', '1', '1', 1);
 analyze list_list;
 explain (costs off) select  user_no from list_list subpartition (pa1) use index (idx_list) where user_no = 1;
-               QUERY PLAN                
------------------------------------------
+                             QUERY PLAN                              
+---------------------------------------------------------------------
  Partition Iterator
    Iterations: 1, Sub Iterations: 1
    ->  Partitioned Seq Scan on list_list
-         Filter: ((user_no)::bigint = 1)
+         Filter: ((user_no)::double precision = 1::double precision)
          Selected Partitions:  1
          Selected Subpartitions:  1:1
 (6 rows)
 
 explain (costs off)select  user_no from list_list subpartition for (100,4) use index (idx_list) where user_no = 1;
-               QUERY PLAN                
------------------------------------------
+                             QUERY PLAN                              
+---------------------------------------------------------------------
  Partition Iterator
    Iterations: 1, Sub Iterations: 1
    ->  Partitioned Seq Scan on list_list
-         Filter: ((user_no)::bigint = 1)
+         Filter: ((user_no)::double precision = 1::double precision)
          Selected Partitions:  1
          Selected Subpartitions:  1:1
 (6 rows)

@@ -12,7 +12,7 @@ static Node* makeWhereTarget(char* schemaName, char* tableName);
 static Node* makeCurrentSchemaFunc();
 
 static Node* makeNullColumn(bool smallcase = FALSE);
-static Node* makeCaseNode(char* term, char* result);
+static Node* makeCaseNode(bool state, char* result);
 static Node* makeIndexSelect();
 static Node* makeIndexColumn();
 static Node* makeConstantSelect();
@@ -122,8 +122,8 @@ static Node* makeTypeColumn(bool smallcase)
 
 static Node* makeNullColumn(bool smallcase)
 {
-    List* wl = list_make1(makeCaseNode("t", "NO"));
-    wl = lappend(wl, makeCaseNode("f", "YES"));
+    List* wl = list_make1(makeCaseNode(true, "NO"));
+    wl = lappend(wl, makeCaseNode(false, "YES"));
 
     CaseExpr* c = makeNode(CaseExpr);
     c->casetype = InvalidOid;
@@ -145,10 +145,10 @@ static Node* makeNullColumn(bool smallcase)
     return (Node*)rt;
 }
 
-static Node* makeCaseNode(char* term, char* result)
+static Node* makeCaseNode(bool state, char* result)
 {
     CaseWhen* w = makeNode(CaseWhen);
-    w->expr = (Expr*)plpsMakeStringConst(term);
+    w->expr = (Expr*)makeBoolConst(state, false);
     w->result = (Expr*)plpsMakeStringConst(result);
     w->location = -1;
     return (Node*)w;
@@ -224,10 +224,10 @@ static Node *makeIndexSelect()
     Node *lc = plpsMakeIntConst(1);
     Node *sn1 =
         plpsMakeSortByNode((Node *)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("pg_index", "indisprimary"),
-                                                    plpsMakeStringConst("t"), -1),
+                                                    makeBoolConst(true, false), -1),
                            SORTBY_DESC);
     Node *sn2 = plpsMakeSortByNode((Node *)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef("pg_index", "indisunique"),
-                                                            plpsMakeStringConst("t"), -1),
+                                                            makeBoolConst(true, false), -1),
                                    SORTBY_DESC);
     List *sl = (List *)list_make2(sn1, sn2);
 
@@ -238,12 +238,12 @@ static Node *makeIndexSelect()
 static Node* makeIndexColumn()
 {
     CaseWhen* wf = makeNode(CaseWhen);
-    wf->expr = (Expr*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef(NULL, "indisprimary"), plpsMakeStringConst("t"), -1);
+    wf->expr = (Expr*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef(NULL, "indisprimary"), makeBoolConst(true, false), -1);
     wf->result = (Expr*)plpsMakeStringConst("PRI");
     wf->location = -1;
 
     CaseWhen* ws = makeNode(CaseWhen);
-    ws->expr = (Expr*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef(NULL, "indisunique"), plpsMakeStringConst("t"), -1);
+    ws->expr = (Expr*)makeSimpleA_Expr(AEXPR_OP, "=", plpsMakeColumnRef(NULL, "indisunique"), makeBoolConst(true, false), -1);
     ws->result = (Expr*)plpsMakeStringConst("UNI");
     ws->location = -1;
 

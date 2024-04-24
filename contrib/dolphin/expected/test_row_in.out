@@ -211,14 +211,14 @@ select row(1, row((select `int1` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `int1` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `int1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int1` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `int1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89"
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -273,7 +273,7 @@ CONTEXT:  SQL function "float8_longblob_eq" statement 1
 (1 row)
 
 select row(1, row((select `int1` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `int1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "67890 - 12345 = 55545"
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -430,14 +430,14 @@ select row(1, row((select `uint1` from all_types_table limit 1),(select `year` f
 (1 row)
 
 select row(1, row((select `uint1` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `uint1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint1` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `uint1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89"
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -490,7 +490,7 @@ CONTEXT:  SQL function "uint8_longblob_eq" statement 1
 (1 row)
 
 select row(1, row((select `uint1` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `uint1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "67890 - 12345 = 55545"
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -641,14 +641,14 @@ select row(1, row((select `int2` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `int2` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `int2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int2` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `int2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89"
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -701,7 +701,7 @@ CONTEXT:  SQL function "float8_longblob_eq" statement 1
 (1 row)
 
 select row(1, row((select `int2` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `int2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "67890 - 12345 = 55545"
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -846,14 +846,14 @@ select row(1, row((select `uint2` from all_types_table limit 1),(select `year` f
 (1 row)
 
 select row(1, row((select `uint2` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `uint2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint2` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `uint2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89"
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -906,7 +906,7 @@ CONTEXT:  SQL function "uint8_longblob_eq" statement 1
 (1 row)
 
 select row(1, row((select `uint2` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `uint2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "67890 - 12345 = 55545"
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -1045,14 +1045,14 @@ select row(1, row((select `int4` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `int4` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `int4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int4` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `int4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89"
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -1105,7 +1105,7 @@ CONTEXT:  SQL function "float8_longblob_eq" statement 1
 (1 row)
 
 select row(1, row((select `int4` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `int4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "67890 - 12345 = 55545"
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -1238,14 +1238,14 @@ select row(1, row((select `uint4` from all_types_table limit 1),(select `year` f
 (1 row)
 
 select row(1, row((select `uint4` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `uint4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint4` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `uint4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89"
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -1298,7 +1298,7 @@ CONTEXT:  SQL function "uint8_longblob_eq" statement 1
 (1 row)
 
 select row(1, row((select `uint4` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `uint4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "67890 - 12345 = 55545"
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -1425,14 +1425,14 @@ select row(1, row((select `int8` from all_types_table limit 1),(select `year` fr
 (1 row)
 
 select row(1, row((select `int8` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `int8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int8` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `int8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89"
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -1485,7 +1485,7 @@ CONTEXT:  SQL function "int8_longblob_eq" statement 1
 (1 row)
 
 select row(1, row((select `int8` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `int8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "67890 - 12345 = 55545"
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -1606,14 +1606,14 @@ select row(1, row((select `uint8` from all_types_table limit 1),(select `year` f
 (1 row)
 
 select row(1, row((select `uint8` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `uint8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint8` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `uint8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "62.345*67-89"
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -1666,7 +1666,7 @@ CONTEXT:  SQL function "uint8_longblob_eq" statement 1
 (1 row)
 
 select row(1, row((select `uint8` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `uint8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type bigint: "67890 - 12345 = 55545"
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
@@ -2113,14 +2113,14 @@ select row(1, row((select `numeric` from all_types_table limit 1),(select `year`
 (1 row)
 
 select row(1, row((select `numeric` from all_types_table limit 1),(select `char` from all_types_table limit 1))) in (row(1, row((select `char` from all_types_table limit 1),(select `numeric` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type numeric: "62.345*67-89                                                                                        "
+WARNING:  invalid input syntax for type double precision: "62.345*67-89                                                                                        "
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `numeric` from all_types_table limit 1),(select `varchar` from all_types_table limit 1))) in (row(1, row((select `varchar` from all_types_table limit 1),(select `numeric` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type numeric: "62.345*67-89"
+WARNING:  invalid input syntax for type double precision: "62.345*67-89"
  ?column? 
 ----------
  f
@@ -2173,7 +2173,7 @@ CONTEXT:  SQL function "numeric_longblob_eq" statement 1
 (1 row)
 
 select row(1, row((select `numeric` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `numeric` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type numeric: "67890 - 12345 = 55545"
+WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
  ?column? 
 ----------
  f
