@@ -59,6 +59,7 @@ DROP FUNCTION IF EXISTS pg_catalog.cos(bit);
 DROP FUNCTION IF EXISTS pg_catalog.cos(boolean);
 DROP FUNCTION IF EXISTS pg_catalog.asin(bit);
 DROP FUNCTION IF EXISTS pg_catalog.asin(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.atan(bit);
 
 DROP FUNCTION IF EXISTS pg_catalog.year(integer);
 DROP FUNCTION IF EXISTS pg_catalog.year(anyset);

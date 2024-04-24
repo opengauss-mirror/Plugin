@@ -58,6 +58,9 @@ CREATE OR REPLACE FUNCTION pg_catalog.asin(bit) RETURNS double precision LANGUAG
 DROP FUNCTION IF EXISTS pg_catalog.asin(boolean);
 CREATE OR REPLACE FUNCTION pg_catalog.asin(boolean) RETURNS double precision LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.asin(cast($1 as float))';
 
+DROP FUNCTION IF EXISTS pg_catalog.atan(bit);
+CREATE OR REPLACE FUNCTION pg_catalog.atan(bit) RETURNS double precision LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'atan_bit';
+
 DROP FUNCTION IF EXISTS pg_catalog.year(integer);
 CREATE OR REPLACE FUNCTION pg_catalog.year(integer) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT year($1::timestamp(0) without time zone)';
 CREATE OR REPLACE FUNCTION pg_catalog.year(anyset) RETURNS int8 LANGUAGE SQL IMMUTABLE STRICT as 'SELECT year($1::timestamp(0) without time zone)';
