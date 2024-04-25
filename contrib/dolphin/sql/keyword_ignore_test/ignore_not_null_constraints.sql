@@ -583,6 +583,27 @@ select * from t_ignore order by 1;
 drop table if exists t_ignore;
 reset dolphin.sql_mode;
 
+set sql_ignore_strategy = 'overwrite_null';
+set dolphin.sql_mode = '';
+create table ignore_t1 (id int not null);
+create table ignore_t2 (id int);
+insert into ignore_t2 values (null);
+
+insert into ignore_t1 values (null); --error
+insert into ignore_t1 values (null), (null), (1);
+insert into ignore_t1 select * from ignore_t2;
+
+replace into ignore_t1 values (null); -- error
+replace into ignore_t1 values (null), (null), (1);
+
+select * from ignore_t1;
+
+update ignore_t1 set id = NULL where id = 1;
+
+select * from ignore_t1;
+
+drop table ignore_t1, ignore_t2;
+
 -- restore context
 drop schema sql_ignore_not_null_test cascade;
 reset current_schema;

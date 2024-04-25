@@ -1564,6 +1564,60 @@ select * from t_ignore order by 1;
 
 drop table if exists t_ignore;
 reset dolphin.sql_mode;
+set sql_ignore_strategy = 'overwrite_null';
+set dolphin.sql_mode = '';
+create table ignore_t1 (id int not null);
+create table ignore_t2 (id int);
+insert into ignore_t2 values (null);
+insert into ignore_t1 values (null); --error
+ERROR:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+insert into ignore_t1 values (null), (null), (1);
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+insert into ignore_t1 select * from ignore_t2;
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+replace into ignore_t1 values (null); -- error
+ERROR:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+replace into ignore_t1 values (null), (null), (1);
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+select * from ignore_t1;
+ id 
+----
+  0
+  0
+  1
+  0
+  0
+  0
+  1
+(7 rows)
+
+update ignore_t1 set id = NULL where id = 1;
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+WARNING:  null value in column "id" violates not-null constraint
+DETAIL:  Failing row contains (null).
+select * from ignore_t1;
+ id 
+----
+  0
+  0
+  0
+  0
+  0
+  0
+  0
+(7 rows)
+
+drop table ignore_t1, ignore_t2;
 -- restore context
 drop schema sql_ignore_not_null_test cascade;
 NOTICE:  drop cascades to 33 other objects
