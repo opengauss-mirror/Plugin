@@ -112,7 +112,6 @@ func (d *dbCreator) DBExists(dbName string) bool {
 func (d *dbCreator) RemoveOldDB(dbName string) error {
 	db := MustConnect(driver, d.connStr)
 	defer db.Close()
-	MustExec(db, "DROP DATABASE IF EXISTS "+dbName)
 	return nil
 }
 
@@ -204,6 +203,8 @@ func (d *dbCreator) getFieldAndIndexDefinitions(columns []string) ([]string, []s
 func (d *dbCreator) createTableAndIndexes(dbBench *sql.DB, tableName string, fieldDefs []string, indexDefs []string) {
 	MustExec(dbBench, fmt.Sprintf("DROP TABLE IF EXISTS %s", tableName))
 	MustExec(dbBench, fmt.Sprintf("CREATE TABLE %s (time timestamptz, tags_id integer, %s, additional_tags JSONB DEFAULT NULL)", tableName, strings.Join(fieldDefs, ",")))
+	//Printing create ordinary table
+	fmt.Println(fmt.Sprintf("CREATE TABLE %s (time timestamptz, tags_id integer, %s, additional_tags JSONB DEFAULT NULL)", tableName, strings.Join(fieldDefs, ",")))
 	if partitionIndex {
 		MustExec(dbBench, fmt.Sprintf("CREATE INDEX ON %s(tags_id, \"time\" DESC)", tableName))
 	}
@@ -222,7 +223,9 @@ func (d *dbCreator) createTableAndIndexes(dbBench *sql.DB, tableName string, fie
 	}
 
 	if useHypertable {
-		MustExec(dbBench, "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE")
+		// Priting hypertable SQL command
+		fmt.Println(fmt.Sprintf("SELECT create_hypertable('%s'::regclass, 'time'::name, partitioning_column => '%s'::name, number_partitions => %v::smallint, chunk_time_interval => %d, create_default_indexes=>FALSE)",
+			tableName, "tags_id", numberPartitions, chunkTime.Nanoseconds()/1000))
 		MustExec(dbBench,
 			fmt.Sprintf("SELECT create_hypertable('%s'::regclass, 'time'::name, partitioning_column => '%s'::name, number_partitions => %v::smallint, chunk_time_interval => %d, create_default_indexes=>FALSE)",
 				tableName, "tags_id", numberPartitions, chunkTime.Nanoseconds()/1000))

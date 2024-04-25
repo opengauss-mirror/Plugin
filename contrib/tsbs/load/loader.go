@@ -207,24 +207,16 @@ func (l *BenchmarkRunner) useDBCreator(dbc DBCreator) func() {
 			closeFn = dbcc.Close
 		}
 
-		// Check whether required DB already exists
-		exists := dbc.DBExists(l.DBName)
-		if exists && l.DoAbortOnExist {
-			panic(fmt.Sprintf(errDBExistsFmt, l.DBName))
-		}
 
 		// Create required DB if need be
 		// In case DB already exists - delete it
 		if l.DoCreateDB {
+			exists := false
 			if exists {
 				err := dbc.RemoveOldDB(l.DBName)
 				if err != nil {
 					panic(err)
 				}
-			}
-			err := dbc.CreateDB(l.DBName)
-			if err != nil {
-				panic(err)
 			}
 		}
 
