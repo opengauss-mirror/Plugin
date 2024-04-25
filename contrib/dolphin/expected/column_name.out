@@ -2190,6 +2190,7 @@ INTERVAL ('1 month')
 CREATE TABLE interval_exchange_test (logdaTE date not null);
 ALTER TABLE interval_normal_exchange EXCHANGE PARTITION (interval_normal_exchange_p1)
         WITH TABLE interval_exchange_test;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 drop table if exists t2 cascade;
 NOTICE:  table "t2" does not exist, skipping
 drop table if exists t1 cascade;

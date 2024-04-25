@@ -30983,9 +30983,14 @@ single_table:	relation_expr		%prec UMINUS
 
 					$$ = (Node *) n;
 				}
-			| relation_expr PARTITION '(' name_list ')'
+			| relation_expr PARTITION '(' name_list ',' name ')'
 				{
-					$1->partitionNameList = $4;
+					$1->partitionNameList = lappend($4, makeString($6));
+					$$ = (Node *)$1;
+				}
+			| relation_expr PARTITION '(' name ')'
+				{
+					$1->partitionNameList = list_make1(makeString($4));
 					$$ = (Node *)$1;
 				}
 			| relation_expr SUBPARTITION '(' name ')'
@@ -31006,9 +31011,15 @@ single_table:	relation_expr		%prec UMINUS
 					$1->issubpartition = true;
 					$$ = (Node *)$1;
 				}
-			| relation_expr PARTITION '(' name_list ')' index_hint_list
+			| relation_expr PARTITION '(' name_list ',' name ')' index_hint_list
 				{
-					$1->partitionNameList = $4;
+					$1->partitionNameList = lappend($4, makeString($6));
+					$1->indexhints = $8;
+					$$ = (Node *)$1;
+				}
+			| relation_expr PARTITION '(' name ')' index_hint_list
+				{
+					$1->partitionNameList = list_make1(makeString($4));
 					$1->indexhints = $6;
 					$$ = (Node *)$1;
 				}
@@ -31033,10 +31044,17 @@ single_table:	relation_expr		%prec UMINUS
 					$1->indexhints = $6;
 					$$ = (Node *)$1;
 				}
-			| relation_expr PARTITION '(' name_list ')' dolphin_alias_clause opt_index_hint_list
+			| relation_expr PARTITION '(' name_list ',' name ')' dolphin_alias_clause opt_index_hint_list
+				{
+					$1->alias = $8;
+					$1->partitionNameList = lappend($4, makeString($6));
+					$1->indexhints = $9;
+					$$ = (Node *)$1;
+				}
+			| relation_expr PARTITION '(' name ')' dolphin_alias_clause opt_index_hint_list
 				{
 					$1->alias = $6;
-					$1->partitionNameList = $4;
+					$1->partitionNameList = list_make1(makeString($4));
 					$1->indexhints = $7;
 					$$ = (Node *)$1;
 				}
@@ -31063,6 +31081,42 @@ single_table:	relation_expr		%prec UMINUS
 					$1->issubpartition = true;
 					$1->indexhints = $7;
 					$$ = (Node *)$1;
+				}
+			| relation_expr PARTITION '(' name ')' tablesample_clause
+				{
+					RangeTableSample *n = (RangeTableSample *) $6;
+					$1->partitionname = $4;
+					$1->ispartition = true;
+					/* relation_expr goes inside the RangeTableSample node */
+					n->relation = (Node *) $1;
+					$$ = (Node *) n;
+				}
+			| relation_expr SUBPARTITION '(' name ')' tablesample_clause
+				{
+					RangeTableSample *n = (RangeTableSample *) $6;
+					$1->subpartitionname = $4;
+					$1->issubpartition = true;
+					/* relation_expr goes inside the RangeTableSample node */
+					n->relation = (Node *) $1;
+					$$ = (Node *) n;
+				}
+			| relation_expr PARTITION_FOR '(' expr_list ')' tablesample_clause
+				{
+					RangeTableSample *n = (RangeTableSample *) $6;
+					$1->partitionKeyValuesList = $4;
+					$1->ispartition = true;
+					/* relation_expr goes inside the RangeTableSample node */
+					n->relation = (Node *) $1;
+					$$ = (Node *) n;
+				}
+			| relation_expr SUBPARTITION_FOR '(' expr_list ')' tablesample_clause
+				{
+					RangeTableSample *n = (RangeTableSample *) $6;
+					$1->partitionKeyValuesList = $4;
+					$1->issubpartition = true;
+					/* relation_expr goes inside the RangeTableSample node */
+					n->relation = (Node *) $1;
+					$$ = (Node *) n;
 				}
 			| '(' single_table ')'
 				{
