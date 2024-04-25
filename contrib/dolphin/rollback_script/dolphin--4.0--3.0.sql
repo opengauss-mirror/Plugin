@@ -42,6 +42,23 @@ END;
 $$
 LANGUAGE plpgsql;
 
+DROP FUNCTION IF EXISTS pg_catalog.mod(binary,int8);
+DROP FUNCTION IF EXISTS pg_catalog.mod(binary,bit);
+DROP FUNCTION IF EXISTS pg_catalog.mod(binary,year);
+DROP FUNCTION IF EXISTS pg_catalog.mod(binary,binary);
+DROP FUNCTION IF EXISTS pg_catalog.mod(binary,varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.mod(int8,binary);
+DROP FUNCTION IF EXISTS pg_catalog.mod(bit,binary);
+DROP FUNCTION IF EXISTS pg_catalog.mod(year,binary);
+DROP FUNCTION IF EXISTS pg_catalog.mod(varbinary,varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.mod(varbinary,binary);
+DROP FUNCTION IF EXISTS pg_catalog.mod(varbinary,int8);
+DROP FUNCTION IF EXISTS pg_catalog.mod(varbinary,bit);
+DROP FUNCTION IF EXISTS pg_catalog.mod(varbinary,year);
+DROP FUNCTION IF EXISTS pg_catalog.mod(int8,varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.mod(bit,varbinary);
+DROP FUNCTION IF EXISTS pg_catalog.mod(year,varbinary);
+
 DROP FUNCTION IF EXISTS pg_catalog.lower(int8);
 DROP FUNCTION IF EXISTS pg_catalog.lower(uint8);
 DROP FUNCTION IF EXISTS pg_catalog.lower(float4);
