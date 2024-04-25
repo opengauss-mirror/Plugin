@@ -4454,6 +4454,7 @@ SELECT * FROM t_multi_charset_partkey WHERE part=_gbk'高斯DB' collate gbk_chin
 
 -- -- -- partiton ddl
 ALTER TABLE t_multi_charset_partkey SPLIT PARTITION FOR(_gbk'高斯DB') AT (_gbk'高斯DB1 ') INTO (PARTITION p2_1, PARTITION p2_2);
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 INSERT INTO t_multi_charset_partkey VALUES(_gbk'高斯DB1', 1);
 SELECT * FROM t_multi_charset_partkey PARTITION(p2_1) order by 1,2;
    part   | a 

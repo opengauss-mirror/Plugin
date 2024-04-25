@@ -905,6 +905,7 @@ partition by range(col1)
         partition p3 values less than (4000)
 );
 alter table t_alter_table_partition_014 exchange partition p1 with table t_alter_table_partition_013 with validation;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 create table t_alter_table_partition_015(col1 int, col2 int)
 partition by range(col1)
 (
@@ -913,6 +914,7 @@ partition by range(col1)
         partition p3 values less than (4000)
 );
 alter table t_alter_table_partition_015 exchange partition p2 with table t_alter_table_partition_013 without validation;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 create table t_alter_table_partition_016(col1 int, col2 int)
 partition by range(col1)
 (
@@ -951,6 +953,7 @@ partition by range(col1)
         partition p4 values less than maxvalue
 );
 alter table t_alter_table_partition_019 drop partition p4;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 create table t_alter_table_partition_020(col1 int, col2 int)
 partition by range(col1)
 (
@@ -959,6 +962,7 @@ partition by range(col1)
         partition p3 values less than (4000)
 );
 alter table t_alter_table_partition_020 truncate partition p1;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 create table t_alter_table_partition_021(col1 int, col2 int)
 partition by range(col1)
 (
@@ -967,6 +971,9 @@ partition by range(col1)
         partition p3 values less than (4000)
 );
 alter table t_alter_table_partition_021 truncate partition all;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 --二级分区
 create table t_alter_table_partition_022(col1 int, col2 int)
 partition by range(col1) subpartition by hash(col2)
@@ -1256,6 +1263,7 @@ partition by list(col1) subpartition by list(col1)
         )
 );
 alter table t_alter_table_partition_032 drop subpartition p02;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 create table t_alter_table_partition_033(col1 int, col2 int)
 partition by hash(col1) subpartition by hash(col1)
 (
@@ -1279,6 +1287,7 @@ partition by hash(col1) subpartition by hash(col1)
         )
 );
 alter table t_alter_table_partition_033 truncate partition p1;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 --间隔分区表
 create table t_alter_table_partition_034(time_id date, col2 int)
 partition by range(time_id)
@@ -1289,6 +1298,9 @@ interval('1 day')
         partition p2 values less than ('2019-02-03 00:00:00')
 );
 alter table t_alter_table_partition_034 truncate partition all;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 \d t_alter_table_partition_001
 Table "public.t_alter_table_partition_001"
  Column |  Type   | Modifiers 
