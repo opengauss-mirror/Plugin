@@ -460,13 +460,7 @@ DROP FUNCTION IF EXISTS pg_catalog.year_date("year") cascade;
 DROP FUNCTION IF EXISTS pg_catalog.year_datetime("year") cascade;
 DROP FUNCTION IF EXISTS pg_catalog.year_timestamp("year") cascade;
 DROP FUNCTION IF EXISTS pg_catalog.year_time("year") cascade;
-DROP CAST IF EXISTS (timestamp(0) without time zone AS year) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.datetime_year(timestamp(0) without time zone) cascade;
-DROP CAST IF EXISTS (timestamptz AS year) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.timestamp_year(timestamptz) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.time_year(time) cascade;
-DROP CAST IF EXISTS (date AS year) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.date_year(date) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.date_time (date) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.time_date (time) cascade;
 DROP FUNCTION IF EXISTS pg_catalog.time_datetime (time) cascade;
@@ -537,17 +531,8 @@ CREATE CAST ("year" as timestamptz) with function pg_catalog.year_timestamp("yea
 CREATE OR REPLACE FUNCTION pg_catalog.year_time("year") RETURNS time LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as int4) as time)';
 CREATE CAST ("year" as time) with function pg_catalog.year_time("year") AS ASSIGNMENT;
 
-CREATE OR REPLACE FUNCTION pg_catalog.datetime_year(timestamp(0) without time zone) RETURNS year LANGUAGE SQL STABLE STRICT as 'select cast(cast($1 as int8) as year)';
-CREATE CAST (timestamp(0) without time zone AS year) with function pg_catalog.datetime_year(timestamp(0) without time zone) AS ASSIGNMENT;
-
-CREATE OR REPLACE FUNCTION pg_catalog.timestamp_year(timestamptz) RETURNS year LANGUAGE SQL STABLE STRICT as 'select cast(cast($1 as int8) as year)';
-CREATE CAST (timestamptz AS year) with function pg_catalog.timestamp_year(timestamptz) AS ASSIGNMENT;
-
 CREATE OR REPLACE FUNCTION pg_catalog.time_year(time) RETURNS year LANGUAGE SQL STABLE STRICT as 'select cast(cast($1 as int8) as year)';
 CREATE CAST (time AS year) with function pg_catalog.time_year(time) AS ASSIGNMENT;
-
-CREATE OR REPLACE FUNCTION pg_catalog.date_year(date) RETURNS year LANGUAGE SQL STABLE STRICT as 'select cast(cast($1 as int8) as year)';
-CREATE CAST (date AS year) with function pg_catalog.date_year(date) AS ASSIGNMENT;
 
 CREATE OR REPLACE FUNCTION pg_catalog.date_time (date) RETURNS time LANGUAGE SQL IMMUTABLE STRICT as 'select cast(cast($1 as timestamptz) as time)';
 CREATE CAST(date AS time) WITH FUNCTION date_time(date) AS ASSIGNMENT;
@@ -3237,8 +3222,6 @@ DROP FUNCTION IF EXISTS pg_catalog.bpcharbinarylike(char, binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.bpcharbinarynlike(char, binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.namebinarylike(name, binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.namebinarynlike(name, binary) CASCADE;
-DROP OPERATOR IF EXISTS pg_catalog.~~(binary, binary) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.binarylike(binary, binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.binarynlike(binary, binary) CASCADE;
 
 CREATE OR REPLACE FUNCTION pg_catalog.bpcharbinarylike(
@@ -3273,12 +3256,6 @@ binary
 CREATE OPERATOR pg_catalog.!~~(leftarg = name, rightarg = binary, procedure = pg_catalog.namebinarynlike);
 CREATE OPERATOR pg_catalog.!~~*(leftarg = name, rightarg = binary, procedure = pg_catalog.namebinarynlike);
 
-CREATE OR REPLACE FUNCTION pg_catalog.binarylike(
-binary,
-binary
-) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.bytealike($1::bytea, $2::bytea) $$;
-
-CREATE OPERATOR pg_catalog.~~(leftarg = binary, rightarg = binary, procedure = pg_catalog.binarylike);
 CREATE OPERATOR pg_catalog.~~*(leftarg = binary, rightarg = binary, procedure = pg_catalog.binarylike);
 
 CREATE OR REPLACE FUNCTION pg_catalog.binarynlike(
