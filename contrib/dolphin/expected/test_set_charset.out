@@ -62,5 +62,12 @@ show client_encoding;
  UTF8
 (1 row)
 
+set names binary;
+show client_encoding;
+ client_encoding 
+-----------------
+ SQL_ASCII
+(1 row)
+
 drop schema db_charset cascade;
 reset current_schema;
