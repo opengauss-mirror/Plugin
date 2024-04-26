@@ -18,5 +18,7 @@ set names 'gbk';
 show client_encoding;
 set names default;
 show client_encoding;
+set names binary;
+show client_encoding;
 drop schema db_charset cascade;
 reset current_schema;

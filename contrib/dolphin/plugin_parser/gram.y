@@ -3590,6 +3590,7 @@ zone_value:
 
 opt_encoding:
 			SCONST									{ $$ = $1; }
+			| BINARY								{ $$ = (char*)$1; }
 			| normal_ident							{ $$ = $1; }
 			| DEFAULT								{ $$ = NULL; }
 			| /*EMPTY*/								{ $$ = NULL; }
