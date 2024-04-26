@@ -221,16 +221,10 @@ select length(random_bytes(`date`)::binary) from test_type_table;
 ERROR:  length value is out of range in 'random_bytes'
 CONTEXT:  referenced column: length
 select length(random_bytes(`time`)::binary) from test_type_table;
-ERROR:  function random_bytes(time without time zone) does not exist
-LINE 1: select length(random_bytes(`time`)::binary) from test_type_t...
-                      ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ERROR:  length value is out of range in 'random_bytes'
 CONTEXT:  referenced column: length
 select length(random_bytes(`time(4)`)::binary) from test_type_table;
-ERROR:  function random_bytes(time without time zone) does not exist
-LINE 1: select length(random_bytes(`time(4)`)::binary) from test_typ...
-                      ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+ERROR:  length value is out of range in 'random_bytes'
 CONTEXT:  referenced column: length
 select length(random_bytes(`datetime`)::binary) from test_type_table;
 WARNING:  integer out of range

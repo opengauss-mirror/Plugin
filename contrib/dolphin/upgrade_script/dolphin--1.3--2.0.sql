@@ -2558,55 +2558,6 @@ create function pg_catalog.bit_xor_time(
 ) RETURNS float8 LANGUAGE SQL IMMUTABLE STRICT as $$ SELECT pg_catalog.dpow($1::float8, $2::float8) $$;
 create operator pg_catalog.^(leftarg = bit, rightarg = time, procedure = pg_catalog.bit_xor_time);
 
---update_castcontext
-DROP FUNCTION IF EXISTS pg_catalog.update_castcontext(varchar, varchar) CASCADE;
-CREATE FUNCTION pg_catalog.update_castcontext(varchar, varchar) RETURNS varchar AS
-$$
-DECLARE
-    s_type ALIAS FOR $1;
-    t_type ALIAS FOR $2;
-BEGIN
-    update pg_cast set castcontext='i', castowner=10 where castsource=(select oid from pg_type where typname=s_type) and casttarget=(select oid from pg_type where typname=t_type);
-    RETURN 'SUCCESS';
-END;
-$$
-LANGUAGE plpgsql;
-
-DO
-$$
-BEGIN
-    PERFORM pg_catalog.update_castcontext('int8', 'int1');
-    PERFORM pg_catalog.update_castcontext('int8', 'int2');
-    PERFORM pg_catalog.update_castcontext('int8', 'int4');
-
-    PERFORM pg_catalog.update_castcontext('date', 'int4');
-    PERFORM pg_catalog.update_castcontext('date', 'int8');
-    PERFORM pg_catalog.update_castcontext('date', 'uint4');
-    PERFORM pg_catalog.update_castcontext('date', 'uint8');
-    PERFORM pg_catalog.update_castcontext('date', 'float4');
-    PERFORM pg_catalog.update_castcontext('date', 'float8');
-    PERFORM pg_catalog.update_castcontext('date', 'numeric');
-    PERFORM pg_catalog.update_castcontext('timestamp', 'int8');
-    PERFORM pg_catalog.update_castcontext('timestamp', 'uint8');
-    PERFORM pg_catalog.update_castcontext('timestamp', 'float4');
-    PERFORM pg_catalog.update_castcontext('timestamp', 'numeric');
-    PERFORM pg_catalog.update_castcontext('timestamptz', 'int8');
-    PERFORM pg_catalog.update_castcontext('timestamptz', 'uint8');
-    PERFORM pg_catalog.update_castcontext('timestamptz', 'float4');
-    PERFORM pg_catalog.update_castcontext('timestamptz', 'float8');
-    PERFORM pg_catalog.update_castcontext('timestamptz', 'numeric');
-    PERFORM pg_catalog.update_castcontext('time', 'int4');
-    PERFORM pg_catalog.update_castcontext('time', 'int8');
-    PERFORM pg_catalog.update_castcontext('time', 'uint4');
-    PERFORM pg_catalog.update_castcontext('time', 'uint8');
-    PERFORM pg_catalog.update_castcontext('time', 'float4');
-    PERFORM pg_catalog.update_castcontext('time', 'numeric');
-END
-$$
-LANGUAGE plpgsql;
-
-DROP FUNCTION IF EXISTS pg_catalog.update_castcontext(varchar, varchar) CASCADE;
-
 DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text, text, numeric) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text, text) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.export_set (numeric, text, text) CASCADE;

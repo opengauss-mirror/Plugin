@@ -199,55 +199,6 @@ DROP FUNCTION IF EXISTS pg_catalog.dolphin_invoke();
 CREATE FUNCTION pg_catalog.dolphin_invoke()
     RETURNS VOID AS '$libdir/dolphin','dolphin_invoke' LANGUAGE C STRICT;
 
---rollback castcontext
-CREATE FUNCTION pg_catalog.rollback_castcontext(varchar, varchar, varchar) RETURNS varchar AS
-$$
-DECLARE
-    s_type ALIAS FOR $1;
-    t_type ALIAS FOR $2;
-    context ALIAS FOR $3;
-BEGIN
-    update pg_cast set castcontext=context, castowner=10 where castsource=(select oid from pg_type where typname=s_type) and casttarget=(select oid from pg_type where typname=t_type);
-    RETURN 'SUCCESS';
-END;
-$$
-LANGUAGE plpgsql;
-
-DO
-$$
-BEGIN
-    PERFORM pg_catalog.rollback_castcontext('int8', 'int1', 'a');
-    PERFORM pg_catalog.rollback_castcontext('int8', 'int2', 'a');
-    PERFORM pg_catalog.rollback_castcontext('int8', 'int4', 'a');
-
-    PERFORM pg_catalog.rollback_castcontext('date', 'int4', 'e');
-    PERFORM pg_catalog.rollback_castcontext('date', 'int8', 'e');
-    PERFORM pg_catalog.rollback_castcontext('date', 'uint4', 'e');
-    PERFORM pg_catalog.rollback_castcontext('date', 'uint8', 'e');
-    PERFORM pg_catalog.rollback_castcontext('date', 'float4', 'e');
-    PERFORM pg_catalog.rollback_castcontext('date', 'float8', 'e');
-    PERFORM pg_catalog.rollback_castcontext('date', 'numeric', 'e');
-    PERFORM pg_catalog.rollback_castcontext('timestamp', 'int8', 'e');
-    PERFORM pg_catalog.rollback_castcontext('timestamp', 'uint8', 'e');
-    PERFORM pg_catalog.rollback_castcontext('timestamp', 'float4', 'e');
-    PERFORM pg_catalog.rollback_castcontext('timestamp', 'numeric', 'e');
-    PERFORM pg_catalog.rollback_castcontext('timestamptz', 'int8', 'e');
-    PERFORM pg_catalog.rollback_castcontext('timestamptz', 'uint8', 'e');
-    PERFORM pg_catalog.rollback_castcontext('timestamptz', 'float4', 'e');
-    PERFORM pg_catalog.rollback_castcontext('timestamptz', 'float8', 'e');
-    PERFORM pg_catalog.rollback_castcontext('timestamptz', 'numeric', 'e');
-    PERFORM pg_catalog.rollback_castcontext('time', 'int4', 'e');
-    PERFORM pg_catalog.rollback_castcontext('time', 'int8', 'e');
-    PERFORM pg_catalog.rollback_castcontext('time', 'uint4', 'e');
-    PERFORM pg_catalog.rollback_castcontext('time', 'uint8', 'e');
-    PERFORM pg_catalog.rollback_castcontext('time', 'float4', 'e');
-    PERFORM pg_catalog.rollback_castcontext('time', 'numeric', 'e');
-END
-$$
-LANGUAGE plpgsql;
-
-DROP FUNCTION IF EXISTS pg_catalog.rollback_castcontext(varchar, varchar, varchar) CASCADE;
-
 --dolphin_binary_function.sql rollback
 DROP OPERATOR IF EXISTS pg_catalog.^(blob, date) CASCADE;
 DROP OPERATOR IF EXISTS pg_catalog.^(date, blob) CASCADE;

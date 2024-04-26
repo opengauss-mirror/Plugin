@@ -755,7 +755,7 @@ select * from test order by funcname;
  adddate(101, INTERVAL 1 year)                                                                    | 2001-01-01
  adddate(101, INTERVAL 100 second)                                                                | 2000-01-01 00:01:40
  adddate(cast('9999-12-31 12:12:12' as datetime),INTERVAL -1 second)                              | 9999-12-31 12:12:11
- adddate(date'0001-01-01',INTERVAL 1 year)                                                        | 0002-01-01
+ adddate(date'0001-01-01',INTERVAL 1 year)                                                        | 2002-01-01
  adddate(null, INTERVAL 1 day)                                                                    | 
  adddate(null, null)                                                                              | 
  adddate(time'-838:59:59', INTERVAL -1 second)                                                    | 
@@ -880,7 +880,7 @@ select * from test order by funcname;
  date_add(101, INTERVAL 1 year)                                                                   | 2001-01-01
  date_add(101, INTERVAL 100 second)                                                               | 2000-01-01 00:01:40
  date_add(cast('9999-12-31 12:12:12' as datetime),INTERVAL -1 second)                             | 9999-12-31 12:12:11
- date_add(date'0001-01-01',INTERVAL 1 year)                                                       | 0002-01-01
+ date_add(date'0001-01-01',INTERVAL 1 year)                                                       | 2002-01-01
  date_add(null, INTERVAL 1 day)                                                                   | 
  date_add(time'-838:59:59', INTERVAL -1 second)                                                   | 
  date_add(time'12:12:12', INTERVAL -1 day)                                                        | -11:47:48
@@ -934,7 +934,7 @@ select * from test order by funcname;
  date_sub(101, INTERVAL 1 year)                                                                   | 1999-01-01
  date_sub(101, INTERVAL 100 second)                                                               | 1999-12-31 23:58:20
  date_sub(cast('9999-12-31 12:12:12' as datetime),INTERVAL -1 second)                             | 9999-12-31 12:12:13
- date_sub(date'0001-01-01',INTERVAL -1 year)                                                      | 0002-01-01
+ date_sub(date'0001-01-01',INTERVAL -1 year)                                                      | 2002-01-01
  date_sub(null, INTERVAL 1 day)                                                                   | 
  date_sub(time'-838:59:59', INTERVAL 1 second)                                                    | 
  date_sub(time'12:12:12', INTERVAL -1 day)                                                        | 36:12:12
