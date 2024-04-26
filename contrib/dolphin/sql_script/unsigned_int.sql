@@ -4480,86 +4480,99 @@ text
 
 -- ^ operator
 
+CREATE FUNCTION pg_catalog.op_uint1xor(uint1, uint1) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint1xor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_uint2xor(uint2, uint2) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint2xor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_uint4xor(uint4, uint4) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint4xor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_uint8xor(uint8, uint8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint8xor($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_uint1_xor_int1(uint1, int1) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint1_xor_int1($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_int1_xor_uint1(int1, uint1) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int1_xor_uint1($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_uint2_xor_int2(uint2, int2) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint2_xor_int2($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_int2_xor_uint2(int2, uint2) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int2_xor_uint2($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_uint4_xor_int4(uint4, int4) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint4_xor_int4($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_int4_xor_uint4(int4, uint4) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int4_xor_uint4($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_uint8_xor_int8(uint8, int8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint8_xor_int8($1, $2)::uint8';
+CREATE FUNCTION pg_catalog.op_int8_xor_uint8(int8, uint8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8_xor_uint8($1, $2)::uint8';
+
 CREATE OPERATOR pg_catalog.^(
-leftarg = uint1, rightarg = uint1, procedure = uint1xor,
+leftarg = uint1, rightarg = uint1, procedure = op_uint1xor,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(uint1, uint1) IS 'uint1xor';
+COMMENT ON OPERATOR pg_catalog.^(uint1, uint1) IS 'op_uint1xor';
 
 
 CREATE OPERATOR pg_catalog.^(
-leftarg = uint2, rightarg = uint2, procedure = uint2xor,
+leftarg = uint2, rightarg = uint2, procedure = op_uint2xor,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(uint2, uint2) IS 'uint2xor';
+COMMENT ON OPERATOR pg_catalog.^(uint2, uint2) IS 'op_uint2xor';
 
 
 CREATE OPERATOR pg_catalog.^(
-leftarg = uint4, rightarg = uint4, procedure = uint4xor,
+leftarg = uint4, rightarg = uint4, procedure = op_uint4xor,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(uint4, uint4) IS 'uint4xor';
+COMMENT ON OPERATOR pg_catalog.^(uint4, uint4) IS 'op_uint4xor';
 
 
 CREATE OPERATOR pg_catalog.^(
-leftarg = uint8, rightarg = uint8, procedure = uint8xor,
+leftarg = uint8, rightarg = uint8, procedure = op_uint8xor,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(uint8, uint8) IS 'uint8xor';
+COMMENT ON OPERATOR pg_catalog.^(uint8, uint8) IS 'op_uint8xor';
 
 
 CREATE OPERATOR pg_catalog.^(
-leftarg = uint1, rightarg = int1, procedure = uint1_xor_int1
+leftarg = uint1, rightarg = int1, procedure = op_uint1_xor_int1
 );
-COMMENT ON OPERATOR pg_catalog.^(uint1, int1) IS 'uint1_xor_int1';
+COMMENT ON OPERATOR pg_catalog.^(uint1, int1) IS 'op_uint1_xor_int1';
 
 
 CREATE OPERATOR pg_catalog.^(
-leftarg = int1, rightarg = uint1, procedure = int1_xor_uint1
+leftarg = int1, rightarg = uint1, procedure = op_int1_xor_uint1
 );
-COMMENT ON OPERATOR pg_catalog.^(int1, uint1) IS 'int1_xor_uint1';
+COMMENT ON OPERATOR pg_catalog.^(int1, uint1) IS 'op_int1_xor_uint1';
 
 
 CREATE OPERATOR pg_catalog.^(
-leftarg = uint2, rightarg = int2, procedure = uint2_xor_int2,
+leftarg = uint2, rightarg = int2, procedure = op_uint2_xor_int2,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(uint2, int2) IS 'uint2_xor_int2';
+COMMENT ON OPERATOR pg_catalog.^(uint2, int2) IS 'op_uint2_xor_int2';
 
 
 CREATE OPERATOR pg_catalog.^(
-leftarg = int2, rightarg = uint2, procedure = int2_xor_uint2,
+leftarg = int2, rightarg = uint2, procedure = op_int2_xor_uint2,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(int2, uint2) IS 'int2_xor_uint2';
+COMMENT ON OPERATOR pg_catalog.^(int2, uint2) IS 'op_int2_xor_uint2';
 
 
 CREATE OPERATOR pg_catalog.^(
-leftarg = uint4, rightarg = int4, procedure = uint4_xor_int4,
+leftarg = uint4, rightarg = int4, procedure = op_uint4_xor_int4,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(uint4, int4) IS 'uint4_xor_int4';
+COMMENT ON OPERATOR pg_catalog.^(uint4, int4) IS 'op_uint4_xor_int4';
 
 
 CREATE OPERATOR pg_catalog.^(
-leftarg = int4, rightarg = uint4, procedure = int4_xor_uint4,
+leftarg = int4, rightarg = uint4, procedure = op_int4_xor_uint4,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(int4, uint4) IS 'int4_xor_uint4';
+COMMENT ON OPERATOR pg_catalog.^(int4, uint4) IS 'op_int4_xor_uint4';
 
 
 CREATE OPERATOR pg_catalog.^(
-leftarg = uint8, rightarg = int8, procedure = uint8_xor_int8,
+leftarg = uint8, rightarg = int8, procedure = op_uint8_xor_int8,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(uint8, int8) IS 'uint8_xor_int8';
+COMMENT ON OPERATOR pg_catalog.^(uint8, int8) IS 'op_uint8_xor_int8';
 
 
 CREATE OPERATOR pg_catalog.^(
-leftarg = int8, rightarg = uint8, procedure = int8_xor_uint8,
+leftarg = int8, rightarg = uint8, procedure = op_int8_xor_uint8,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(int8, uint8) IS 'int8_xor_uint8';
+COMMENT ON OPERATOR pg_catalog.^(int8, uint8) IS 'op_int8_xor_uint8';
 
 DROP FUNCTION IF EXISTS pg_catalog.uint2_xor_bool(uint2, boolean) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.uint2_xor_bool (
@@ -4601,46 +4614,54 @@ CREATE OR REPLACE FUNCTION pg_catalog.bool_xor_uint8 (
 boolean, uint8
 ) RETURNS uint8 LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin',  'bool_xor_uint8';
 
+CREATE FUNCTION pg_catalog.op_uint8_xor_bool(uint8, boolean) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint8xor($1, $2::uint8)::uint8';
 CREATE OPERATOR pg_catalog.^(
-leftarg = uint8, rightarg = boolean, procedure = uint8_xor_bool,
+leftarg = uint8, rightarg = boolean, procedure = op_uint8_xor_bool,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(uint8, boolean) IS 'uint8_xor_bool';
+COMMENT ON OPERATOR pg_catalog.^(uint8, boolean) IS 'op_uint8_xor_bool';
+CREATE FUNCTION pg_catalog.op_uint4_xor_bool(uint4, boolean) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint4xor($1, $2::uint8)::uint8';
 CREATE OPERATOR pg_catalog.^(
-leftarg = uint4, rightarg = boolean, procedure = uint4_xor_bool,
+leftarg = uint4, rightarg = boolean, procedure = op_uint4_xor_bool,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(uint4, boolean) IS 'uint4_xor_bool';
+COMMENT ON OPERATOR pg_catalog.^(uint4, boolean) IS 'op_uint4_xor_bool';
+CREATE FUNCTION pg_catalog.op_uint2_xor_bool(uint2, boolean) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint2xor($1, $2::uint8)::uint8';
 CREATE OPERATOR pg_catalog.^(
-leftarg = uint2, rightarg = boolean, procedure = uint2_xor_bool,
+leftarg = uint2, rightarg = boolean, procedure = op_uint2_xor_bool,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(uint2, boolean) IS 'uint2_xor_bool';
+COMMENT ON OPERATOR pg_catalog.^(uint2, boolean) IS 'op_uint2_xor_bool';
+CREATE FUNCTION pg_catalog.op_uint1_xor_bool(uint1, boolean) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint1xor($1, $2::uint8)::uint8';
 CREATE OPERATOR pg_catalog.^(
-leftarg = uint1, rightarg = boolean, procedure = uint1_xor_bool,
+leftarg = uint1, rightarg = boolean, procedure = op_uint1_xor_bool,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(uint1, boolean) IS 'uint1_xor_bool';
+COMMENT ON OPERATOR pg_catalog.^(uint1, boolean) IS 'op_uint1_xor_bool';
+CREATE FUNCTION pg_catalog.op_bool_xor_uint1(boolean, uint1) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint1xor($1::uint8, $2)::uint8';
 CREATE OPERATOR pg_catalog.^(
-leftarg = boolean, rightarg = uint1, procedure = bool_xor_uint1,
+leftarg = boolean, rightarg = uint1, procedure = op_bool_xor_uint1,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(boolean, uint1) IS 'bool_xor_uint1';
+COMMENT ON OPERATOR pg_catalog.^(boolean, uint1) IS 'op_bool_xor_uint1';
+CREATE FUNCTION pg_catalog.op_bool_xor_uint2(boolean, uint2) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint2xor($1::uint8, $2)::uint8';
 CREATE OPERATOR pg_catalog.^(
-leftarg = boolean, rightarg = uint2, procedure = bool_xor_uint2,
+leftarg = boolean, rightarg = uint2, procedure = op_bool_xor_uint2,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(boolean, uint2) IS 'bool_xor_uint2';
+COMMENT ON OPERATOR pg_catalog.^(boolean, uint2) IS 'op_bool_xor_uint2';
+CREATE FUNCTION pg_catalog.op_bool_xor_uint4(boolean, uint4) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint4xor($1::uint8, $2)::uint8';
 CREATE OPERATOR pg_catalog.^(
-leftarg = boolean, rightarg = uint4, procedure = bool_xor_uint4,
+leftarg = boolean, rightarg = uint4, procedure = op_bool_xor_uint4,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(boolean, uint4) IS 'bool_xor_uint4';
+COMMENT ON OPERATOR pg_catalog.^(boolean, uint4) IS 'op_bool_xor_uint4';
+CREATE FUNCTION pg_catalog.op_bool_xor_uint8(boolean, uint8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.uint8xor($1::uint8, $2)::uint8';
 CREATE OPERATOR pg_catalog.^(
-leftarg = boolean, rightarg = uint8, procedure = bool_xor_uint8,
+leftarg = boolean, rightarg = uint8, procedure = op_bool_xor_uint8,
 commutator=operator(pg_catalog.^)
 );
-COMMENT ON OPERATOR pg_catalog.^(boolean, uint8) IS 'bool_xor_uint8';
+COMMENT ON OPERATOR pg_catalog.^(boolean, uint8) IS 'op_bool_xor_uint8';
 
 DROP FUNCTION IF EXISTS pg_catalog.timestamp_uint8(timestamp(0) with time zone) CASCADE;
 CREATE OR REPLACE FUNCTION pg_catalog.timestamp_uint8(timestamp(0) with time zone)
@@ -4690,3 +4711,20 @@ CREATE AGGREGATE pg_catalog.any_value(uint8) (
         sfunc = uint_any_value,
         stype = uint8
 );
+
+CREATE OR REPLACE FUNCTION pg_catalog.op_bool_xor_int1(boolean, int1) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int1xor($1::int1, $2)::uint8';
+CREATE OR REPLACE FUNCTION pg_catalog.op_bool_xor_int2(boolean, int2) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int2xor($1::int2, $2)::uint8';
+CREATE OR REPLACE FUNCTION pg_catalog.op_bool_xor_int4(boolean, int4) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int4xor($1::int4, $2)::uint8';
+CREATE OR REPLACE FUNCTION pg_catalog.op_bool_xor_int8(boolean, int8) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8xor($1::int8, $2)::uint8';
+CREATE OR REPLACE FUNCTION pg_catalog.op_int1_xor_bool(int1, boolean) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int1xor($1, $2::int1)::uint8';
+CREATE OR REPLACE FUNCTION pg_catalog.op_int2_xor_bool(int2, boolean) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int2xor($1, $2::int2)::uint8';
+CREATE OR REPLACE FUNCTION pg_catalog.op_int4_xor_bool(int4, boolean) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int4xor($1, $2::int4)::uint8';
+CREATE OR REPLACE FUNCTION pg_catalog.op_int8_xor_bool(int8, boolean) returns uint8 LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.int8xor($1, $2::int8)::uint8';
+CREATE OPERATOR pg_catalog.^(leftarg = boolean, rightarg = int1, procedure = pg_catalog.op_bool_xor_int1, commutator=operator(pg_catalog.^));
+CREATE OPERATOR pg_catalog.^(leftarg = boolean, rightarg = int2, procedure = pg_catalog.op_bool_xor_int2, commutator=operator(pg_catalog.^));
+CREATE OPERATOR pg_catalog.^(leftarg = boolean, rightarg = int4, procedure = pg_catalog.op_bool_xor_int4, commutator=operator(pg_catalog.^));
+CREATE OPERATOR pg_catalog.^(leftarg = boolean, rightarg = int8, procedure = pg_catalog.op_bool_xor_int8, commutator=operator(pg_catalog.^));
+CREATE OPERATOR pg_catalog.^(leftarg = int8, rightarg = boolean, procedure = pg_catalog.op_int8_xor_bool, commutator=operator(pg_catalog.^));
+CREATE OPERATOR pg_catalog.^(leftarg = int4, rightarg = boolean, procedure = pg_catalog.op_int4_xor_bool, commutator=operator(pg_catalog.^));
+CREATE OPERATOR pg_catalog.^(leftarg = int2, rightarg = boolean, procedure = pg_catalog.op_int2_xor_bool, commutator=operator(pg_catalog.^));
+CREATE OPERATOR pg_catalog.^(leftarg = int1, rightarg = boolean, procedure = pg_catalog.op_int1_xor_bool, commutator=operator(pg_catalog.^));

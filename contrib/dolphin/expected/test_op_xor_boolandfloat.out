@@ -4,25 +4,25 @@ set dolphin.b_compatibility_mode = true;
 select 1::bool ^ 2::int1;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::bool ^ 2::int2;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::bool ^ 2::int4;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::bool ^ 2::int8;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::bool ^ 2::uint1;
@@ -52,49 +52,49 @@ select 1::bool ^ 2::uint8;
 select 1::bool ^ 2.0;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::bool ^ 2::float;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::bool ^ 2::float8;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::bool ^ 2::numeric;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::bool ^ 2::bool;
  ?column? 
 ----------
-        0
+ 0
 (1 row)
 
 select (-1)::bool ^ 2::int2;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select (-1)::bool ^ 2::int4;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select (-1)::bool ^ 2::int8;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select (-1)::bool ^ 2::uint1;
@@ -124,49 +124,49 @@ select (-1)::bool ^ 2::uint8;
 select (-1)::bool ^ 2.0;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select (-1)::bool ^ 2::float;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select (-1)::bool ^ 2::float8;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select (-1)::bool ^ 2::numeric;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select (-1)::bool ^ 2::bool;
  ?column? 
 ----------
-        0
+ 0
 (1 row)
 
 select (-1)::bool ^ (-2)::int2;
- ?column? 
-----------
-       -1
+       ?column?       
+----------------------
+ 18446744073709551615
 (1 row)
 
 select (-1)::bool ^ (-2)::int4;
- ?column? 
-----------
-       -1
+       ?column?       
+----------------------
+ 18446744073709551615
 (1 row)
 
 select (-1)::bool ^ (-2)::int8;
- ?column? 
-----------
-       -1
+       ?column?       
+----------------------
+ 18446744073709551615
 (1 row)
 
 select (-1)::bool ^ (-2)::uint1;
@@ -194,33 +194,33 @@ select (-1)::bool ^ (-2)::uint8;
 (1 row)
 
 select (-1)::bool ^ -2.0;
- ?column? 
-----------
-       -1
+       ?column?       
+----------------------
+ 18446744073709551615
 (1 row)
 
 select (-1)::bool ^ (-2)::float;
- ?column? 
-----------
-       -1
+       ?column?       
+----------------------
+ 18446744073709551615
 (1 row)
 
 select (-1)::bool ^ (-2)::float8;
- ?column? 
-----------
-       -1
+       ?column?       
+----------------------
+ 18446744073709551615
 (1 row)
 
 select (-1)::bool ^ (-2)::numeric;
- ?column? 
-----------
-       -1
+       ?column?       
+----------------------
+ 18446744073709551615
 (1 row)
 
 select (-1)::bool ^ (-2)::bool;
  ?column? 
 ----------
-        0
+ 0
 (1 row)
 
 select 1::float ^ 2::int1;
@@ -232,19 +232,19 @@ select 1::float ^ 2::int1;
 select 1::float ^ 2::int2;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float ^ 2::int4;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float ^ 2::int8;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float ^ 2::uint1;
@@ -274,49 +274,49 @@ select 1::float ^ 2::uint8;
 select 1::float ^ 2.0;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float ^ 2::bool;
  ?column? 
 ----------
-        0
+ 0
 (1 row)
 
 select 1::float ^ 2::float8;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float ^ 2::numeric;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float ^ 2::float;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select (-1)::float ^ 2::int2;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float ^ 2::int4;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float ^ 2::int8;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float ^ 2::uint2;
@@ -338,51 +338,51 @@ select (-1)::float ^ 2::uint8;
 (1 row)
 
 select (-1)::float ^ 2.0;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float ^ 2::bool;
- ?column? 
-----------
-       -2
+       ?column?       
+----------------------
+ 18446744073709551614
 (1 row)
 
 select (-1)::float ^ 2::float8;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float ^ 2::numeric;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float ^ 2::float;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float ^ (-2)::int2;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::float ^ (-2)::int4;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::float ^ (-2)::int8;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::float ^ (-2)::uint2;
@@ -406,457 +406,457 @@ select (-1)::float ^ (-2)::uint8;
 select (-1)::float ^ -2.0;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::float ^ (-2)::bool;
- ?column? 
-----------
-       -2
+       ?column?       
+----------------------
+ 18446744073709551614
 (1 row)
 
 select (-1)::float ^ (-2)::float8;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::float ^ (-2)::numeric;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::float ^ (-2)::float;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select 1::float8 ^ 2::int1;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float8 ^ 2::int2;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float8 ^ 2::int4;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float8 ^ 2::int8;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float8 ^ 2::uint1;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float8 ^ 2::uint2;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float8 ^ 2::uint4;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float8 ^ 2::uint8;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float8 ^ 2.0;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float8 ^ 2::float;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float8 ^ 2::float8;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float8 ^ 2::numeric;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::float8 ^ 2::float8;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select (-1)::float8 ^ 2::int2;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float8 ^ 2::int4;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float8 ^ 2::int8;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float8 ^ 2::uint1;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float8 ^ 2::uint2;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float8 ^ 2::uint4;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float8 ^ 2::uint8;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float8 ^ 2.0;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float8 ^ 2::float;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float8 ^ 2::float8;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float8 ^ 2::numeric;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float8 ^ 2::float8;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::float8 ^ (-2)::int2;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::float8 ^ (-2)::int4;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::float8 ^ (-2)::int8;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::float8 ^ (-2)::uint1;
- ?column? 
-----------
-     -255
+       ?column?       
+----------------------
+ 18446744073709551361
 (1 row)
 
 select (-1)::float8 ^ (-2)::uint2;
- ?column? 
-----------
-   -65535
+       ?column?       
+----------------------
+ 18446744073709486081
 (1 row)
 
 select (-1)::float8 ^ -2.0;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::float8 ^ (-2)::float;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::float8 ^ (-2)::float8;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::float8 ^ (-2)::numeric;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::float8 ^ (-2)::float8;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select 1::numeric ^ 2::int1;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::numeric ^ 2::int2;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::numeric ^ 2::int4;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::numeric ^ 2::int8;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::numeric ^ 2::uint1;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::numeric ^ 2::uint2;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::numeric ^ 2::uint4;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::numeric ^ 2::uint8;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::numeric ^ 2.0;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::numeric ^ 2::bool;
  ?column? 
 ----------
-        0
+ 0
 (1 row)
 
 select 1::numeric ^ 2::float;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::numeric ^ 2::float8;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select 1::numeric ^ 2::numeric;
  ?column? 
 ----------
-        3
+ 3
 (1 row)
 
 select (-1)::numeric ^ 2::int2;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::numeric ^ 2::int4;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::numeric ^ 2::int8;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::numeric ^ 2::uint1;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::numeric ^ 2::uint2;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::numeric ^ 2::uint4;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::numeric ^ 2::uint8;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::numeric ^ 2.0;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::numeric ^ 2::bool;
- ?column? 
-----------
-       -2
+       ?column?       
+----------------------
+ 18446744073709551614
 (1 row)
 
 select (-1)::numeric ^ 2::float;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::numeric ^ 2::float8;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::numeric ^ 2::numeric;
- ?column? 
-----------
-       -3
+       ?column?       
+----------------------
+ 18446744073709551613
 (1 row)
 
 select (-1)::numeric ^ (-2)::int2;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::numeric ^ (-2)::int4;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::numeric ^ (-2)::int8;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::numeric ^ (-2)::uint1;
- ?column? 
-----------
-     -255
+       ?column?       
+----------------------
+ 18446744073709551361
 (1 row)
 
 select (-1)::numeric ^ (-2)::uint2;
- ?column? 
-----------
-   -65535
+       ?column?       
+----------------------
+ 18446744073709486081
 (1 row)
 
 select (-1)::numeric ^ (-2)::uint4;
-  ?column?   
--------------
- -4294967295
+       ?column?       
+----------------------
+ 18446744069414584321
 (1 row)
 
 select (-1)::numeric ^ -2.0;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::numeric ^ (-2)::bool;
- ?column? 
-----------
-       -2
+       ?column?       
+----------------------
+ 18446744073709551614
 (1 row)
 
 select (-1)::numeric ^ (-2)::float;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::numeric ^ (-2)::float8;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 select (-1)::numeric ^ (-2)::numeric;
  ?column? 
 ----------
-        1
+ 1
 (1 row)
 
 set dolphin.b_compatibility_mode = false;

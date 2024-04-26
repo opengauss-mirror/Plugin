@@ -4,80 +4,80 @@ set dolphin.b_compatibility_mode to on;
 select '1'::blob ^ '1'::blob;
  ?column? 
 ----------
-        0
+ \x00
 (1 row)
 
 select '1'::blob ^ '1'::char;
  ?column? 
 ----------
-        0
+ 0
 (1 row)
 
 -- error: different length
 select '1'::blob ^ '11'::varchar;
  ?column? 
 ----------
-       10
+ 10
 (1 row)
 
 select '1'::blob ^ 11::int1;
  ?column? 
 ----------
-       10
+ 10
 (1 row)
 
 select '1'::blob ^ 11::int2;
  ?column? 
 ----------
-       10
+ 10
 (1 row)
 
 select '1'::blob ^ 11::int4;
  ?column? 
 ----------
-       10
+ 10
 (1 row)
 
 select '1'::blob ^ 11::uint1;
  ?column? 
 ----------
-       10
+ 10
 (1 row)
 
 select '1'::blob ^ 11::uint2;
  ?column? 
 ----------
-       10
+ 10
 (1 row)
 
 select '1'::blob ^ 11::uint4;
  ?column? 
 ----------
-       10
+ 10
 (1 row)
 
 select '1'::blob ^ 11.0;
  ?column? 
 ----------
-       10
+ 10
 (1 row)
 
 select '1'::blob ^ 11::float;
  ?column? 
 ----------
-       10
+ 10
 (1 row)
 
 select '1'::blob ^ 11::float8;
  ?column? 
 ----------
-       10
+ 10
 (1 row)
 
 select '1'::blob ^ 11::numeric;
  ?column? 
 ----------
-       10
+ 10
 (1 row)
 
 -- test blob op numeric

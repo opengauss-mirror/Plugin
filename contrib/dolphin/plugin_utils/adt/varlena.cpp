@@ -10430,6 +10430,30 @@ Datum blobxor(PG_FUNCTION_ARGS)
     PG_RETURN_INT32(result);
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(blob_xor_blob);
+extern "C" DLL_PUBLIC Datum blob_xor_blob(PG_FUNCTION_ARGS);
+
+Datum blob_xor_blob(PG_FUNCTION_ARGS)
+{
+    bytea *arg1 = PG_GETARG_BYTEA_PP(0);
+    bytea *arg2 = PG_GETARG_BYTEA_PP(1);
+    int32 len1 = VARSIZE_ANY_EXHDR(arg1);
+    int32 len2 = VARSIZE_ANY_EXHDR(arg2);
+    if (len1 != len2) {
+        ereport(ERROR,
+                (errcode(ERRCODE_STRING_DATA_LENGTH_MISMATCH), errmsg("Cannot and binary type of different sizes")));
+    }
+    char *p1 = VARDATA_ANY(arg1);
+    char *p2 = VARDATA_ANY(arg2);
+    bytea *result = (bytea *)palloc(VARHDRSZ + len1);
+    SET_VARSIZE(result, VARHDRSZ + len1);
+    char *xorres = VARDATA_ANY(result);
+    for (int i = 0; i < len1; i++) {
+        *(xorres + i) = (*(p1 + i) ^ *(p2 + i));
+    }
+    PG_RETURN_BYTEA_P(result);
+}
+
 static bytea* binary_type_and(PG_FUNCTION_ARGS)
 {
     bytea* arg1 = PG_GETARG_BYTEA_PP(0);
@@ -10439,8 +10463,8 @@ static bytea* binary_type_and(PG_FUNCTION_ARGS)
     if (len1 != len2)
         ereport(ERROR,
             (errcode(ERRCODE_STRING_DATA_LENGTH_MISMATCH), errmsg("Cannot and binary type of different sizes")));
-    char* p1 = VARDATA(arg1);
-    char* p2 = VARDATA(arg2);
+    char* p1 = VARDATA_ANY(arg1);
+    char* p2 = VARDATA_ANY(arg2);
     char* ptr = p1;
     while (*p1) {
         *p1 &= *p2;
@@ -10451,7 +10475,7 @@ static bytea* binary_type_and(PG_FUNCTION_ARGS)
     bytea* result = (bytea*)palloc(VARHDRSZ + len1);
     SET_VARSIZE(result, VARHDRSZ + len1);
     if (len1 > 0) {
-        errno_t ss_rc = memcpy_s(VARDATA(result), len1, ptr, len1);
+        errno_t ss_rc = memcpy_s(VARDATA_ANY(result), len1, ptr, len1);
         securec_check(ss_rc, "\0", "\0");
     }
     return result;
