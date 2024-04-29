@@ -134,10 +134,21 @@ SHOW CREATE TABLE TABLE_LIST1;
 (1 row)
 
 SHOW CREATE TABLE MULTI_KEYS_LIST;
-ERROR:  function pg_catalog.generate_subscripts(text[], bigint) does not exist
-LINE 1: ...ace, pg_catalog.unnest(boundaries) AS key_bounds, pg_catalog...
-                                                             ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
---?.*
-CONTEXT:  referenced column: bound_id
-referenced column: Create Table
+      Table      |                               Create Table                                
+-----------------+---------------------------------------------------------------------------
+ multi_keys_list | SET search_path = nulls_get_partition;                                   +
+                 | CREATE TABLE multi_keys_list (                                           +
+                 |     "F1" integer,                                                        +
+                 |     "F2" integer,                                                        +
+                 |     "F3" integer                                                         +
+                 | )                                                                        +
+                 | WITH (orientation=row, compression=no)                                   +
+                 | PARTITION BY LIST ("F1", "F2")                                           +
+                 | (                                                                        +
+                 |     PARTITION multi_keys_list_p0 VALUES ((0,NULL)) TABLESPACE pg_default,+
+                 |     PARTITION multi_keys_list_p1 VALUES ((15,0)) TABLESPACE pg_default,  +
+                 |     PARTITION multi_keys_list_p2 VALUES (DEFAULT) TABLESPACE pg_default  +
+                 | )                                                                        +
+                 | ENABLE ROW MOVEMENT;
+(1 row)
+

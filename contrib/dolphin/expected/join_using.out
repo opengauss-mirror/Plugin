@@ -566,19 +566,16 @@ select * from t_v4 natural join t_v13;
 (1 row)
 
 select * from t_v4 natural join t_v14;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v4 natural join t_v15;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v4 natural join t_v16;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
@@ -882,43 +879,36 @@ select * from t_v6 natural join t_v13;
 (1 row)
 
 select * from t_v6 natural join t_v14;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v6 natural join t_v15;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v6 natural join t_v16;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v6 natural join t_v17;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v6 natural join t_v18;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v6 natural join t_v19;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v6 natural join t_v20;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
@@ -1069,13 +1059,11 @@ select * from t_v7 natural join t_v17;
 select * from t_v7 natural join t_v18;
 --?.*
 select * from t_v7 natural join t_v19;
-WARNING:  invalid input syntax for type timestamp: "1"
  col1 
 ------
 (0 rows)
 
 select * from t_v7 natural join t_v20;
-WARNING:  invalid input syntax for type timestamp: "1"
  col1 
 ------
 (0 rows)
@@ -1368,7 +1356,6 @@ select * from t_v9 natural join t_v13;
 (1 row)
 
 select * from t_v9 natural join t_v14;
-WARNING:  invalid input syntax for type timestamp: "1"
  col1 
 ------
 (0 rows)
@@ -1394,13 +1381,11 @@ select * from t_v9 natural join t_v18;
 (0 rows)
 
 select * from t_v9 natural join t_v19;
-WARNING:  invalid input syntax for type timestamp: "1"
  col1 
 ------
 (0 rows)
 
 select * from t_v9 natural join t_v20;
-WARNING:  invalid input syntax for type timestamp: "1"
  col1 
 ------
 (0 rows)
@@ -1553,43 +1538,36 @@ select * from t_v10 natural join t_v13;
 (1 row)
 
 select * from t_v10 natural join t_v14;
-WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v10 natural join t_v15;
-WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v10 natural join t_v16;
-WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v10 natural join t_v17;
-WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v10 natural join t_v18;
-WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v10 natural join t_v19;
-WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
 
 select * from t_v10 natural join t_v20;
-WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
@@ -1979,17 +1957,25 @@ select * from t_v13 natural join t_v16;
 (1 row)
 
 select * from t_v13 natural join t_v17;
-ERROR:  operator does not exist: boolean = timestamp without time zone
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_v13 natural join t_v18;
-ERROR:  operator does not exist: boolean = timestamp without time zone
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_v13 natural join t_v19;
-ERROR:  operator does not exist: boolean = timestamp with time zone
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_v13 natural join t_v20;
-ERROR:  operator does not exist: boolean = timestamp with time zone
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_v13 natural join t_v21;
  col1 
 ------
@@ -2061,14 +2047,11 @@ select * from t_v14 natural join t_v2;
 select * from t_v14 natural join t_v3;
 --?.*
 select * from t_v14 natural join t_v4;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
 
 select * from t_v14 natural join t_v5;
-WARNING:  timestamp out of range
-CONTEXT:  SQL function "timestamp_uint8_eq" statement 1
  col1 
 ------
 (0 rows)
@@ -2182,7 +2165,6 @@ select * from t_v15 natural join t_v2;
 select * from t_v15 natural join t_v3;
 --?.*
 select * from t_v15 natural join t_v4;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
@@ -2193,7 +2175,6 @@ select * from t_v15 natural join t_v5;
 (0 rows)
 
 select * from t_v15 natural join t_v6;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
@@ -2205,7 +2186,6 @@ select * from t_v15 natural join t_v8;
 select * from t_v15 natural join t_v9;
 --?.*
 select * from t_v15 natural join t_v10;
-WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
@@ -2312,7 +2292,6 @@ select * from t_v16 natural join t_v2;
 select * from t_v16 natural join t_v3;
 --?.*
 select * from t_v16 natural join t_v4;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
@@ -2323,7 +2302,6 @@ select * from t_v16 natural join t_v5;
 (0 rows)
 
 select * from t_v16 natural join t_v6;
-WARNING:  timestamp out of range
  col1 
 ------
 (0 rows)
@@ -2335,7 +2313,6 @@ select * from t_v16 natural join t_v8;
 select * from t_v16 natural join t_v9;
 --?.*
 select * from t_v16 natural join t_v10;
-WARNING:  date/time field value out of range: "000001.000000"
  col1 
 ------
 (0 rows)
@@ -3098,25 +3075,32 @@ select * from t_v21 natural join t_v13;
 select * from t_v21 natural join t_v14;
  col1 
 ------
- 2023
-(1 row)
+(0 rows)
 
 select * from t_v21 natural join t_v15;
 --?.*
 select * from t_v21 natural join t_v16;
 --?.*
 select * from t_v21 natural join t_v17;
-ERROR:  operator does not exist: year = timestamp without time zone
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_v21 natural join t_v18;
-ERROR:  operator does not exist: year = timestamp without time zone
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_v21 natural join t_v19;
-ERROR:  operator does not exist: year = timestamp with time zone
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_v21 natural join t_v20;
-ERROR:  operator does not exist: year = timestamp with time zone
-HINT:  No operator matches the given name and argument type(s). You might need to add explicit type casts.
+ col1 
+------
+(0 rows)
+
 select * from t_v21 natural join t_v21;
 ERROR:  table name "t_v21" specified more than once
 select * from t_v21 natural join t_v22;

@@ -390,8 +390,8 @@ inet_ntoa(`enum_t`),
 inet_ntoa(`set_t`),
 inet_ntoa(`json`)
 from test_type_table;
-ERROR:  function inet_ntoa(date) does not exist
-LINE 16: inet_ntoa(`date`),
+ERROR:  function inet_ntoa(year) does not exist
+LINE 23: inet_ntoa(`year`),
          ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: inet_ntoa

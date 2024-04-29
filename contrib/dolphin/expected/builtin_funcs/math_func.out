@@ -65,7 +65,7 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: degrees
       degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |     degrees      |     degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      |      degrees      | degrees 
 -------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+------------------+------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+---------
- 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 401.0704565915763 | 57.29577951308232 | 57.29577951308232 | 10946358.67597438 | 10946378.47739578 | 1159105376130814 | 1159105376130840 | 115909.3619549655 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 57.29577951308232 | 286.4788975654116 |       0
+ 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 401.0704565915763 | 57.29577951308232 | 1159105365.184456 | 10946358.67597438 | 10946378.47739578 | 1159105376130814 | 1159105376130840 | 115909.3619549655 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 57.29577951308232 | 286.4788975654116 |       0
 (1 row)
 
 create table test_double_degrees(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double,  d20 double,  d21 double,  d22 double,  d23 double,  d24 double,  d25 double,  d26 double,  d27 double,  d28 double,  d29 double,  d30 double,  d31 double,  d32 double,  d33 double,  d34 double);
@@ -115,15 +115,15 @@ CONTEXT:  referenced column: degrees
 select * from test_double_degrees order by 1;
         d1         |        d2         |        d3         |        d4         |        d5         |        d6         |        d7         |        d8         |        d9         |        d10        |        d11        |        d12        |        d13        |        d14        |        d15        |        d16        |        d17        |       d18        |       d19        |        d20        |        d21        |        d22        |        d23        |        d24        |        d25        |        d26        |        d27        |        d28        |        d29        |        d30        |        d31        | d32 | d33 | d34 
 -------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+------------------+------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-----+-----+-----
- 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 401.0704565915763 | 57.29577951308232 | 57.29577951308232 | 10946358.67597438 | 10946378.47739578 | 1159105376130814 | 1159105376130840 | 115909.3619549655 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 57.29577951308232 | 286.4788975654116 |   0 |     |    
- 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 401.0704565915763 | 57.29577951308232 | 57.29577951308232 | 10946358.67597438 | 10946378.47739578 | 1159105376130814 | 1159105376130840 | 115909.3619549655 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 57.29577951308232 | 286.4788975654116 |   0 |     |    
+ 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 401.0704565915763 | 57.29577951308232 | 1159105365.184456 | 10946358.67597438 | 10946378.47739578 | 1159105376130814 | 1159105376130840 | 115909.3619549655 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 57.29577951308232 | 286.4788975654116 |   0 |     |    
+ 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 57.29577951308232 | 401.0704565915763 | 57.29577951308232 | 1159105365.184456 | 10946358.67597438 | 10946378.47739578 | 1159105376130814 | 1159105376130840 | 115909.3619549655 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 70.47380880109125 | 57.29577951308232 | 286.4788975654116 |   0 |     |    
 (2 rows)
 
 -- exp math function
 reset dolphin.sql_mode;
 select exp(`int1`), exp(`uint1`), exp(`int2`), exp(`uint2`), exp(`int4`), exp(`uint4`), exp(`int8`), exp(`uint8`), exp(`float4`), exp(`float8`), exp(`numeric`),exp(`bit1`), exp(`bit64`), exp(`boolean`), exp(`date`), exp(`time`), exp(`time(4)`), exp(`datetime`),exp(`datetime(4)`), exp(`timestamp`), exp(`timestamp(4)`), exp(`year`), exp(`char`), exp(`varchar`), exp(`binary`), exp(`varbinary`), exp(`tinyblob`), exp(`blob`), exp(`mediumblob`), exp(`longblob`), exp(`text`), exp(`enum_t`), exp(`set_t`), exp(`json`) from test_type_table;
-ERROR:  function exp(date) does not exist
-LINE 1: ...eric`),exp(`bit1`), exp(`bit64`), exp(`boolean`), exp(`date`...
+ERROR:  function exp(year) does not exist
+LINE 1: ...time(4)`), exp(`timestamp`), exp(`timestamp(4)`), exp(`year`...
                                                              ^
 HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
 CONTEXT:  referenced column: exp
@@ -223,7 +223,7 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: acos
  acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos | acos |       acos        
 ------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+-------------------
-    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |      |    0 |    0 |      |      |      |      |      |      |      |      |      |      |      |      |      |      |    0 |      | 1.570796326794897
+    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |      |    0 |      |      |      |      |      |      |      |      |      |      |      |      |      |      |      |    0 |      | 1.570796326794897
 (1 row)
 
 create table test_double_acos(d1 double,  d2 double,  d3 double,  d4 double,  d5 double,  d6 double,  d7 double,  d8 double,  d9 double,  d10 double,  d11 double,  d12 double,  d13 double,  d14 double,  d15 double,  d16 double,  d17 double,  d18 double,  d19 double,  d20 double,  d21 double,  d22 double,  d23 double,  d24 double,  d25 double,  d26 double,  d27 double,  d28 double,  d29 double,  d30 double,  d31 double,  d32 double,  d33 double,  d34 double);
@@ -273,19 +273,13 @@ CONTEXT:  referenced column: acos
 select * from test_double_acos order by 1;
  d1 | d2 | d3 | d4 | d5 | d6 | d7 | d8 | d9 | d10 | d11 | d12 | d13 | d14 | d15 | d16 | d17 | d18 | d19 | d20 | d21 | d22 | d23 | d24 | d25 | d26 | d27 | d28 | d29 | d30 | d31 |        d32        | d33 | d34 
 ----+----+----+----+----+----+----+----+----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------------------+-----+-----
-  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |   0 |   0 |   0 |     |   0 |   0 |     |     |     |     |     |     |     |     |     |     |     |     |     |     |   0 |     | 1.570796326794897 |     |    
-  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |   0 |   0 |   0 |     |   0 |   0 |     |     |     |     |     |     |     |     |     |     |     |     |     |     |   0 |     | 1.570796326794897 |     |    
+  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |   0 |   0 |   0 |     |   0 |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |   0 |     | 1.570796326794897 |     |    
+  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |   0 |   0 |   0 |     |   0 |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |   0 |     | 1.570796326794897 |     |    
 (2 rows)
 
 -- log math function
 reset dolphin.sql_mode;
 select log(`int1`), log(`uint1`), log(`int2`), log(`uint2`), log(`int4`), log(`uint4`), log(`int8`), log(`uint8`), log(`float4`), log(`float8`), log(`numeric`), log(`bit1`), log(`bit64`), log(`boolean`), log(`date`), log(`time`), log(`time(4)`), log(`datetime`), log(`datetime(4)`), log(`timestamp`), log(`timestamp(4)`), log(`year`), log(`char`), log(`varchar`), log(`binary`), log(`varbinary`), log(`tinyblob`), log(`blob`), log(`mediumblob`), log(`longblob`), log(`text`), log(`enum_t`), log(`set_t`), log(`json`) from test_type_table;
-WARNING:  invalid input syntax for type double precision: "2023-02-05"
-CONTEXT:  referenced column: log
-WARNING:  invalid input syntax for type double precision: "2023-02-05 19:10:50-08"
-CONTEXT:  referenced column: log
-WARNING:  invalid input syntax for type double precision: "2023-02-05 19:10:50.456-08"
-CONTEXT:  referenced column: log
 WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
 CONTEXT:  referenced column: log
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -308,19 +302,13 @@ WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: log
 WARNING:  Invalid argument '0.000000' for logarithm
 CONTEXT:  referenced column: log
- log | log | log | log | log | log | log | log | log | log |        log         | log |        log        | log |        log        |        log        |        log        |        log        |        log        |        log        |        log        |        log        |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         | log |        log         | log 
------+-----+-----+-----+-----+-----+-----+-----+-----+-----+--------------------+-----+-------------------+-----+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-----+--------------------+-----
-   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 | 0.0000000000000000 |   0 | 1.945910149055313 |   0 | 7.612336837167746 | 12.16029045287505 | 12.16029226182395 | 30.63819790996581 | 30.63819790996583 | 7.612336837167746 | 7.612336837167746 | 7.612336837167746 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 |   0 | 1.6094379124341004 |    
+ log | log | log | log | log | log | log | log | log | log |        log         | log |        log        | log |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log        |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         |        log         | log |        log         | log 
+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+--------------------+-----+-------------------+-----+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-----+--------------------+-----
+   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 |   0 | 0.0000000000000000 |   0 | 1.945910149055313 |   0 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 7.612336837167746 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 |   0 | 1.6094379124341004 |    
 (1 row)
 
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 create table test_log as select  log(`int1`) as log1, log(`uint1`) as log2, log(`int2`) as log3,  log(`uint2`) as log4,  log(`int4`) as log5, log(`uint4`) as log6,  log(`int8`) as log7,  log(`uint8`) as log8, log(`float4`) as log9, log(`float8`) as log10,  log(`numeric`) as log11, log(`bit1`) as log12,  log(`bit64`) as log13,  log(`boolean`) as log14, log(`date`) as log15, log(`time`) as log16, log(`time(4)`) as log17, log(`datetime`) as log18, log(`datetime(4)`) as log19, log(`timestamp`) as log20, log(`timestamp(4)`) as log21, log(`year`) as log22, log(`char`) as log23,  log(`varchar`) as log24,  log(`binary`) as log25, log(`varbinary`) as log26, log(`tinyblob`) as log27, log(`blob`) as log28, log(`mediumblob`) as log29, log(`longblob`) as log30, log(`text`) as log31, log(`enum_t`) as log32, log(`set_t`) as log33, log(`json`) as log34 from test_type_table;
-WARNING:  invalid input syntax for type double precision: "2023-02-05"
-CONTEXT:  referenced column: log15
-WARNING:  invalid input syntax for type double precision: "2023-02-05 19:10:50-08"
-CONTEXT:  referenced column: log20
-WARNING:  invalid input syntax for type double precision: "2023-02-05 19:10:50.456-08"
-CONTEXT:  referenced column: log21
 WARNING:  invalid input syntax for type double precision: "1.23a"
 CONTEXT:  referenced column: log23
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -345,15 +333,9 @@ WARNING:  Invalid argument '0.000000' for logarithm
 CONTEXT:  referenced column: log34
 reset dolphin.sql_mode;
 insert into test_log select  log(`int1`) as log1, log(`uint1`) as log2, log(`int2`) as log3,  log(`uint2`) as log4,  log(`int4`) as log5, log(`uint4`) as log6,  log(`int8`) as log7,  log(`uint8`) as log8, log(`float4`) as log9, log(`float8`) as log10,  log(`numeric`) as log11, log(`bit1`) as log12,  log(`bit64`) as log13,  log(`boolean`) as log14, log(`date`) as log15, log(`time`) as log16, log(`time(4)`) as log17, log(`datetime`) as log18, log(`datetime(4)`) as log19, log(`timestamp`) as log20, log(`timestamp(4)`) as log21, log(`year`) as log22, log(`char`) as log23,  log(`varchar`) as log24,  log(`binary`) as log25, log(`varbinary`) as log26, log(`tinyblob`) as log27, log(`blob`) as log28, log(`mediumblob`) as log29, log(`longblob`) as log30, log(`text`) as log31, log(`enum_t`) as log32, log(`set_t`) as log33, log(`json`) as log34 from test_type_table;
-ERROR:  invalid input syntax for type double precision: "2023-02-05"
-CONTEXT:  referenced column: log15
+ERROR:  invalid input syntax for type double precision: "1.23a                                                                                               "
+CONTEXT:  referenced column: log23
 insert ignore into test_log select  log(`int1`) as log1, log(`uint1`) as log2, log(`int2`) as log3,  log(`uint2`) as log4,  log(`int4`) as log5, log(`uint4`) as log6,  log(`int8`) as log7,  log(`uint8`) as log8, log(`float4`) as log9, log(`float8`) as log10,  log(`numeric`) as log11, log(`bit1`) as log12,  log(`bit64`) as log13,  log(`boolean`) as log14, log(`date`) as log15, log(`time`) as log16, log(`time(4)`) as log17, log(`datetime`) as log18, log(`datetime(4)`) as log19, log(`timestamp`) as log20, log(`timestamp(4)`) as log21, log(`year`) as log22, log(`char`) as log23,  log(`varchar`) as log24,  log(`binary`) as log25, log(`varbinary`) as log26, log(`tinyblob`) as log27, log(`blob`) as log28, log(`mediumblob`) as log29, log(`longblob`) as log30, log(`text`) as log31, log(`enum_t`) as log32, log(`set_t`) as log33, log(`json`) as log34 from test_type_table;
-WARNING:  invalid input syntax for type double precision: "2023-02-05"
-CONTEXT:  referenced column: log15
-WARNING:  invalid input syntax for type double precision: "2023-02-05 19:10:50-08"
-CONTEXT:  referenced column: log20
-WARNING:  invalid input syntax for type double precision: "2023-02-05 19:10:50.456-08"
-CONTEXT:  referenced column: log21
 WARNING:  invalid input syntax for type double precision: "1.23a                                                                                               "
 CONTEXT:  referenced column: log23
 WARNING:  invalid input syntax for type double precision: "1.23a"
@@ -377,10 +359,10 @@ CONTEXT:  referenced column: log34
 WARNING:  Invalid argument '0.000000' for logarithm
 CONTEXT:  referenced column: log34
 select * from test_log order by 1,10;
- log1 | log2 | log3 | log4 | log5 | log6 | log7 | log8 | log9 | log10 |       log11        | log12 |       log13       | log14 |       log15       |       log16       |       log17       |       log18       |       log19       |       log20       |       log21       |       log22       |       log23        |       log24        |       log25        |       log26        |       log27        |       log28        |       log29        |       log30        |       log31        | log32 |       log33        | log34 
-------+------+------+------+------+------+------+------+------+-------+--------------------+-------+-------------------+-------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+-------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------+--------------------+-------
-    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |     0 | 0.0000000000000000 |     0 | 1.945910149055313 |     0 | 7.612336837167746 | 12.16029045287505 | 12.16029226182395 | 30.63819790996581 | 30.63819790996583 | 7.612336837167746 | 7.612336837167746 | 7.612336837167746 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 |     0 | 1.6094379124341004 |      
-    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |     0 | 0.0000000000000000 |     0 | 1.945910149055313 |     0 | 7.612336837167746 | 12.16029045287505 | 12.16029226182395 | 30.63819790996581 | 30.63819790996583 | 7.612336837167746 | 7.612336837167746 | 7.612336837167746 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 |     0 | 1.6094379124341004 |      
+ log1 | log2 | log3 | log4 | log5 | log6 | log7 | log8 | log9 | log10 |       log11        | log12 |       log13       | log14 |       log15        |       log16        |       log17        |       log18        |       log19        |       log20        |       log21        |       log22       |       log23        |       log24        |       log25        |       log26        |       log27        |       log28        |       log29        |       log30        |       log31        | log32 |       log33        | log34 
+------+------+------+------+------+------+------+------+------+-------+--------------------+-------+-------------------+-------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------+--------------------+-------
+    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |     0 | 0.0000000000000000 |     0 | 1.945910149055313 |     0 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 7.612336837167746 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 |     0 | 1.6094379124341004 |      
+    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |    0 |     0 | 0.0000000000000000 |     0 | 1.945910149055313 |     0 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 7.612336837167746 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 |     0 | 1.6094379124341004 |      
 (2 rows)
 
 drop table if exists test_log;
@@ -861,11 +843,33 @@ ln(`enum_t`),
 ln(`set_t`),
 ln(`json`)
 from test_type_table;
-ERROR:  function ln(date) does not exist
-LINE 16: ln(`date`),
-         ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
 CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ln
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: ln
+WARNING:  Invalid argument '0.000000' for logarithm
+CONTEXT:  referenced column: ln
+ ln |         ln         | ln |         ln         | ln |         ln         | ln |         ln         | ln | ln |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |        ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         |         ln         | ln |         ln         | ln 
+----+--------------------+----+--------------------+----+--------------------+----+--------------------+----+----+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+----+--------------------+----
+  0 | 0.0000000000000000 |  0 | 0.0000000000000000 |  0 | 0.0000000000000000 |  0 | 0.0000000000000000 |  0 |  0 | 0.0000000000000000 | 0.0000000000000000 | 1.9459101490553133 | 0.0000000000000000 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 7.612336837167746 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 |  0 | 1.6094379124341004 |   
+(1 row)
+
 -- floor math function
 select
 floor(`int1`),
@@ -903,11 +907,31 @@ floor(`enum_t`),
 floor(`set_t`),
 floor(`json`)
 from test_type_table;
-ERROR:  function floor(date) does not exist
-LINE 16: floor(`date`),
-         ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
+WARNING:  invalid input syntax for type numeric: "1.23a                                                                                               "
 CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor
+WARNING:  invalid input syntax for type double precision: "{"a": 1, "b": 2}"
+CONTEXT:  referenced column: floor
+ floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor |  floor   | floor  | floor  |     floor      |     floor      |     floor      |     floor      | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor | floor 
+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+----------+--------+--------+----------------+----------------+----------------+----------------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------+-------
+     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     7 |     1 | 20230205 | 191050 | 191050 | 20230205191050 | 20230205191050 | 20230205191050 | 20230205191050 |  2023 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     1 |     5 |     0
+(1 row)
+
 set dolphin.sql_mode = 'sql_mode_full_group,pipes_as_concat,ansi_quotes';
 create table test_floor_cts select  floor(`int1`) as floor_1, floor(`uint1`) as floor_2,
    floor(`int2`) as floor_3, floor(`uint2`) as floor_4, floor(`int4`) as floor_5, floor(`uint4`) as floor_6,
@@ -918,11 +942,24 @@ create table test_floor_cts select  floor(`int1`) as floor_1, floor(`uint1`) as 
    floor(`char`) as floor_22, floor(`varchar`) as floor_23,  floor(`binary`) as floor_24,
    floor(`varbinary`) as floor_25, floor(`tinyblob`) as floor_26, floor(`blob`) as floor_27, floor(`mediumblob`) as floor_28, floor(`longblob`) as floor_29,
    floor(`text`) as floor_30, floor(`enum_t`) as floor_31, floor(`set_t`) as floor_32 from test_type_table;   
-ERROR:  function floor(date) does not exist
-LINE 5:    floor(`date`) as floor_15, floor(`time`) as floor_16, flo...
-           ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: floor_15
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor_22
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor_23
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor_24
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor_25
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor_26
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor_27
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor_28
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: floor_29
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: floor_30
 create table test_ln_cts as select 
    ln(`int1`) as ln_1, ln(`uint1`) as ln_2, ln(`int2`) as ln_3, ln(`uint2`) as ln_4,
    ln(`int4`) as ln_5, ln(`uint4`) as ln_6, ln(`int8`) as ln_7, ln(`uint8`) as ln_8,
@@ -932,19 +969,36 @@ create table test_ln_cts as select
    ln(`timestamp(4)`) as ln_21, ln(`char`) as ln_23, ln(`varchar`) as ln_24,  ln(`binary`) as ln_25,
    ln(`varbinary`) as ln_26, ln(`tinyblob`) as ln_27, ln(`blob`) as ln_28, ln(`mediumblob`) as ln_29, ln(`longblob`) as ln_30,
    ln(`text`) as ln_31, ln(`enum_t`) as ln_32, ln(`set_t`) as ln_33 from test_type_table;   
-ERROR:  function ln(date) does not exist
-LINE 5:    ln(`bit64`) as ln_13, ln(`boolean`) as ln_14, ln(`date`) ...
-                                                         ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: ln_15
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ln_23
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ln_24
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln_25
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln_26
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln_27
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln_28
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln_29
+WARNING:  invalid input syntax for type double precision: "1.23a"
+CONTEXT:  referenced column: ln_30
+WARNING:  invalid input syntax for type numeric: "1.23a"
+CONTEXT:  referenced column: ln_31
 select * from test_floor_cts;
-ERROR:  relation "test_floor_cts" does not exist on datanode1
-LINE 1: select * from test_floor_cts;
-                      ^
+ floor_1 | floor_2 | floor_3 | floor_4 | floor_5 | floor_6 | floor_7 | floor_8 | floor_9 | floor_10 | floor_11 | floor_12 | floor_13 | floor_14 | floor_15 | floor_16 | floor_17 |    floor_18    |    floor_19    |    floor_20    |    floor_21    | floor_22 | floor_23 | floor_24 | floor_25 | floor_26 | floor_27 | floor_28 | floor_29 | floor_30 | floor_31 | floor_32 
+---------+---------+---------+---------+---------+---------+---------+---------+---------+----------+----------+----------+----------+----------+----------+----------+----------+----------------+----------------+----------------+----------------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------+----------
+       1 |       1 |       1 |       1 |       1 |       1 |       1 |       1 |       1 |        1 |        1 |        1 |        7 |        1 | 20230205 |   191050 |   191050 | 20230205191050 | 20230205191050 | 20230205191050 | 20230205191050 |        1 |        1 |        1 |        1 |        1 |        1 |        1 |        1 |        1 |        1 |        5
+(1 row)
+
 select * from test_ln_cts;
-ERROR:  relation "test_ln_cts" does not exist on datanode1
-LINE 1: select * from test_ln_cts;
-                      ^
+ ln_1 |        ln_2        | ln_3 |        ln_4        | ln_5 |        ln_6        | ln_7 |        ln_8        | ln_9 | ln_10 |       ln_11        |       ln_12        |       ln_13        |       ln_14        |       ln_15        |       ln_16        |       ln_17        |       ln_18        |       ln_19        |       ln_20        |       ln_21        |       ln_23        |       ln_24        |       ln_25        |       ln_26        |       ln_27        |       ln_28        |       ln_29        |       ln_30        |       ln_31        | ln_32 |       ln_33        
+------+--------------------+------+--------------------+------+--------------------+------+--------------------+------+-------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+--------------------+-------+--------------------
+    0 | 0.0000000000000000 |    0 | 0.0000000000000000 |    0 | 0.0000000000000000 |    0 | 0.0000000000000000 |    0 |     0 | 0.0000000000000000 | 0.0000000000000000 | 1.9459101490553133 | 0.0000000000000000 | 16.822687342557736 | 12.160290452875046 | 12.160292261823946 | 30.638197909965809 | 30.638197909965832 | 30.638197909965809 | 30.638197909965832 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 | 0.2070141693843261 |     0 | 1.6094379124341004
+(1 row)
+
 select exp(709);
           exp           
 ------------------------
@@ -974,7 +1028,7 @@ WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: year
 WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: year
-WARNING:  timestamp out of range
+WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: year
 WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: year
@@ -990,9 +1044,11 @@ WARNING:  date/time field value out of range: "000000000000000000000000000000000
 CONTEXT:  referenced column: year
 WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: year
-WARNING:  invalid input syntax for type timestamp: "19:10:50"
+WARNING:  date/time field value out of range: "191050"
+HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: year
-WARNING:  invalid input syntax for type timestamp: "19:10:50.3456"
+WARNING:  date/time field value out of range: "191050"
+HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: year
 WARNING:  invalid input syntax for type timestamp: "2023"
 CONTEXT:  referenced column: year
@@ -1032,7 +1088,7 @@ WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: pg_typeof
 WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: pg_typeof
-WARNING:  timestamp out of range
+WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: pg_typeof
 WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: pg_typeof
@@ -1048,9 +1104,11 @@ WARNING:  date/time field value out of range: "000000000000000000000000000000000
 CONTEXT:  referenced column: pg_typeof
 WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: pg_typeof
-WARNING:  invalid input syntax for type timestamp: "19:10:50"
+WARNING:  date/time field value out of range: "191050"
+HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: pg_typeof
-WARNING:  invalid input syntax for type timestamp: "19:10:50.3456"
+WARNING:  date/time field value out of range: "191050"
+HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: pg_typeof
 WARNING:  invalid input syntax for type timestamp: "2023"
 CONTEXT:  referenced column: pg_typeof
@@ -1080,7 +1138,7 @@ WARNING:  invalid input syntax for type timestamp: "{"a": 1, "b": 2}"
 CONTEXT:  referenced column: pg_typeof
  year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | year | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof | pg_typeof 
 ------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+-----------
-      |      |      |      |      |      |    0 |      |      |      |      |      |      |      | 2023 |      |      | 2023 | 2023 | 2023 | 2023 |      |      |      | 2000 | 2000 |      |      |      |      |      |      |      |      | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | year      | year      | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint
+      |      |      |      |      |      |      |      |      |      |      |      |      |      | 2023 |      |      | 2023 | 2023 | 2023 | 2023 |      |      |      | 2000 | 2000 |      |      |      |      |      |      |      |      | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | year      | year      | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint    | bigint
 (1 row)
 
 -- should failed
@@ -1097,7 +1155,7 @@ WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: year5
 WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: year6
-WARNING:  timestamp out of range
+WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: year7
 WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: year8
@@ -1113,9 +1171,11 @@ WARNING:  date/time field value out of range: "000000000000000000000000000000000
 CONTEXT:  referenced column: year13
 WARNING:  invalid input syntax for type timestamp: "1"
 CONTEXT:  referenced column: year14
-WARNING:  invalid input syntax for type timestamp: "19:10:50"
+WARNING:  date/time field value out of range: "191050"
+HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: year16
-WARNING:  invalid input syntax for type timestamp: "19:10:50.3456"
+WARNING:  date/time field value out of range: "191050"
+HINT:  Perhaps you need a different "datestyle" setting.
 CONTEXT:  referenced column: year17
 WARNING:  invalid input syntax for type timestamp: "2023"
 CONTEXT:  referenced column: year22
@@ -1149,8 +1209,6 @@ ERROR:  relation "test_year" already exists in schema "test_math_func"
 DETAIL:  creating new table with existing name in the same schema
 reset dolphin.sql_mode;
 insert ignore into test_year select year(`int1`) as year1, year(`uint1`) as year2, year(`int2`) as year3, year(`uint2`) as year4, year(`int4`) as year5, year(`uint4`) as year6, year(`int8`) as year7, year(`uint8`) as year8, year(`float4`) as year9, year(`float8`) as year10, year(`numeric`) as year11, year(`bit1`) as year12, year(`bit64`) as year13, year(`boolean`) as year14, year(`date`) as year15, year(`time`) as year16, year(`time(4)`) as year17, year(`datetime`) as year18, year(`datetime(4)`) as year19, year(`timestamp`) as year20, year(`timestamp(4)`) as year21, year(`year`) as year22, year(`char`) as year23, year(`varchar`) as year24, year(`binary`) as year25, year(`varbinary`) as year26, year(`tinyblob`) as year27, year(`blob`) as year28, year(`mediumblob`) as year29, year(`longblob`) as year30, year(`text`) as year31, year(`enum_t`) as year32, year(`set_t`) as year33, year(`json`) as year34 from test_type_table;
-WARNING:  timestamp out of range
-CONTEXT:  referenced column: year7
 ERROR:  invalid input syntax for type double precision: "\x312e3233610000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 CONTEXT:  referenced column: year25
 select * from test_year;
@@ -1191,8 +1249,6 @@ drop table if exists test_double_exp;
 drop table if exists test_double_degrees;
 drop table if exists test_type_table;
 drop table if exists test_floor_cts;
-NOTICE:  table "test_floor_cts" does not exist, skipping
 drop table if exists test_ln_cts;
-NOTICE:  table "test_ln_cts" does not exist, skipping
 drop schema test_math_func cascade;
 reset current_schema;

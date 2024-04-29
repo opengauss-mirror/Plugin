@@ -2469,7 +2469,7 @@ select curdate() + 10.5;
 select pg_typeof(curdate() + 10.5);
  pg_typeof 
 -----------
- date
+ number
 (1 row)
 
 select curdate() + 10.3;
@@ -2481,7 +2481,7 @@ select curdate() + 10.3;
 select pg_typeof(curdate() + 10.3);
  pg_typeof 
 -----------
- date
+ number
 (1 row)
 
 select curdate() - 10;
@@ -2505,7 +2505,7 @@ select curdate() - 10.5;
 select pg_typeof(curdate() - 10.5);
  pg_typeof 
 -----------
- date
+ number
 (1 row)
 
 select curdate() - 10.3;
@@ -2517,7 +2517,7 @@ select curdate() - 10.3;
 select pg_typeof(curdate() - 10.3);
  pg_typeof 
 -----------
- date
+ number
 (1 row)
 
 select pg_typeof(curtime() + 10);
@@ -2593,9 +2593,9 @@ select curtime() * 2;
 (1 row)
 
 select pg_typeof(curtime() * 10.3);
-    pg_typeof     
-------------------
- double precision
+ pg_typeof 
+-----------
+ number
 (1 row)
 
 select curtime() / 10.3;
@@ -2605,9 +2605,9 @@ select curtime() / 10.3;
 (1 row)
 
 select pg_typeof(curtime() / 10.3);
-    pg_typeof     
-------------------
- double precision
+ pg_typeof 
+-----------
+ number
 (1 row)
 
 select pg_typeof(current_timestamp + 10);
@@ -2683,9 +2683,9 @@ select current_timestamp * 2;
 (1 row)
 
 select pg_typeof(current_timestamp * 10.3);
-    pg_typeof     
-------------------
- double precision
+ pg_typeof 
+-----------
+ number
 (1 row)
 
 select current_timestamp / 10.3;
@@ -2695,9 +2695,9 @@ select current_timestamp / 10.3;
 (1 row)
 
 select pg_typeof(current_timestamp / 10.3);
-    pg_typeof     
-------------------
- double precision
+ pg_typeof 
+-----------
+ number
 (1 row)
 
 select current_timestamp(0);
@@ -2848,9 +2848,9 @@ select localtimestamp * 2;
 (1 row)
 
 select pg_typeof(localtimestamp * 10.3);
-    pg_typeof     
-------------------
- double precision
+ pg_typeof 
+-----------
+ number
 (1 row)
 
 select localtimestamp / 10.3;
@@ -2860,9 +2860,9 @@ select localtimestamp / 10.3;
 (1 row)
 
 select pg_typeof(localtimestamp / 10.3);
-    pg_typeof     
-------------------
- double precision
+ pg_typeof 
+-----------
+ number
 (1 row)
 
 select localtimestamp(0);
@@ -3013,9 +3013,9 @@ select localtimestamp() * 2;
 (1 row)
 
 select pg_typeof(localtimestamp() * 2);
-    pg_typeof     
-------------------
- double precision
+ pg_typeof 
+-----------
+ bigint
 (1 row)
 
 select localtimestamp() / 10.3;
@@ -3025,9 +3025,9 @@ select localtimestamp() / 10.3;
 (1 row)
 
 select pg_typeof(localtimestamp() / 10.3);
-    pg_typeof     
-------------------
- double precision
+ pg_typeof 
+-----------
+ number
 (1 row)
 
 select pg_typeof(localtimestamp(3) + 10);
@@ -3103,9 +3103,9 @@ select localtimestamp(3) * 2;
 (1 row)
 
 select pg_typeof(localtimestamp(3) * 10.3);
-    pg_typeof     
-------------------
- double precision
+ pg_typeof 
+-----------
+ number
 (1 row)
 
 select localtimestamp(3) / 10.3;
@@ -3115,9 +3115,9 @@ select localtimestamp(3) / 10.3;
 (1 row)
 
 select pg_typeof(localtimestamp(3) / 10.3);
-    pg_typeof     
-------------------
- double precision
+ pg_typeof 
+-----------
+ number
 (1 row)
 
 select now(0);
@@ -3268,9 +3268,9 @@ select now(3) * 2;
 (1 row)
 
 select pg_typeof(now(3) * 2);
-    pg_typeof     
-------------------
- double precision
+ pg_typeof 
+-----------
+ bigint
 (1 row)
 
 select now(3) / 2;
@@ -3433,9 +3433,9 @@ select sysdate(3) * 2;
 (1 row)
 
 select pg_typeof(sysdate(3) * 2);
-    pg_typeof     
-------------------
- double precision
+ pg_typeof 
+-----------
+ bigint
 (1 row)
 
 select sysdate(3) / 2;

@@ -291,19 +291,19 @@ CONTEXT:  referenced column: atan
 -- ERROR
 -- without date->float8 implicit
 SELECT ATAN('2022-05-12'::date, 1);
-        atan        
---------------------
- 0.7853981633974483
+       atan        
+-------------------
+ 1.570796277340165
 (1 row)
 
 -- 1.57079627734016
 -- https://gitee.com/opengauss/Plugin/pulls/815 fix it
 SELECT ATAN('2023-06-01 00:23:59'::timestamp, 1);
-ERROR:  function atan(timestamp with time zone, integer) does not exist
-LINE 1: SELECT ATAN('2023-06-01 00:23:59'::timestamp, 1);
-               ^
-HINT:  No function matches the given name and argument types. You might need to add explicit type casts.
-CONTEXT:  referenced column: atan
+       atan        
+-------------------
+ 1.570796326794847
+(1 row)
+
 -- 1.57079632679485
 SELECT ATAN('2'::bytea, 1);
        atan       

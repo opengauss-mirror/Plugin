@@ -248,17 +248,15 @@ select '2022-10-01'::date ^ 1::uint2;
 (1 row)
 
 select '2022-10-01'::date ^ 1::uint4;
- ?column? 
-----------
- 20221000
-(1 row)
-
+ERROR:  operator is not unique: date ^ uint4
+LINE 1: select '2022-10-01'::date ^ 1::uint4;
+                                  ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select '2022-10-01'::date ^ 1::uint8;
- ?column? 
-----------
- 20221000
-(1 row)
-
+ERROR:  operator is not unique: date ^ uint8
+LINE 1: select '2022-10-01'::date ^ 1::uint8;
+                                  ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select '2022-10-01'::date ^ 2022.0;
  ?column? 
 ----------
@@ -326,17 +324,15 @@ select 1::uint2 ^ '2022-10-01'::date;
 (1 row)
 
 select 1::uint4 ^ '2022-10-01'::date;
- ?column? 
-----------
- 20221000
-(1 row)
-
+ERROR:  operator is not unique: uint4 ^ date
+LINE 1: select 1::uint4 ^ '2022-10-01'::date;
+                        ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select 1::uint8 ^ '2022-10-01'::date;
- ?column? 
-----------
- 20221000
-(1 row)
-
+ERROR:  operator is not unique: uint8 ^ date
+LINE 1: select 1::uint8 ^ '2022-10-01'::date;
+                        ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select 2022.0 ^ '2022-10-01'::date;
  ?column? 
 ----------
@@ -404,17 +400,15 @@ select '11:11:11'::time ^ 1::uint2;
 (1 row)
 
 select '11:11:11'::time ^ 1::uint4;
- ?column? 
-----------
-   111110
-(1 row)
-
+ERROR:  operator is not unique: time without time zone ^ uint4
+LINE 1: select '11:11:11'::time ^ 1::uint4;
+                                ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select '11:11:11'::time ^ 1::uint8;
- ?column? 
-----------
-   111110
-(1 row)
-
+ERROR:  operator is not unique: time without time zone ^ uint8
+LINE 1: select '11:11:11'::time ^ 1::uint8;
+                                ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select '11:11:11'::time ^ 2022.0;
  ?column? 
 ----------
@@ -482,17 +476,15 @@ select 1::uint2 ^ '11:11:11'::time;
 (1 row)
 
 select 1::uint4 ^ '11:11:11'::time;
- ?column? 
-----------
-   111110
-(1 row)
-
+ERROR:  operator is not unique: uint4 ^ time without time zone
+LINE 1: select 1::uint4 ^ '11:11:11'::time;
+                        ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select 1::uint8 ^ '11:11:11'::time;
- ?column? 
-----------
-   111110
-(1 row)
-
+ERROR:  operator is not unique: uint8 ^ time without time zone
+LINE 1: select 1::uint8 ^ '11:11:11'::time;
+                        ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select 2022.0 ^ '11:11:11'::time;
  ?column? 
 ----------
@@ -692,11 +684,10 @@ select '2022-10-01 11:11:11'::datetime ^ 1::uint4;
 (1 row)
 
 select '2022-10-01 11:11:11'::datetime ^ 1::uint8;
-    ?column?    
-----------------
- 20221001111110
-(1 row)
-
+ERROR:  operator is not unique: timestamp without time zone ^ uint8
+LINE 1: select '2022-10-01 11:11:11'::datetime ^ 1::uint8;
+                                               ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select '2022-10-01 11:11:11'::datetime ^ 2022.0;
     ?column?    
 ----------------
@@ -770,11 +761,10 @@ select 1::uint4 ^ '2022-10-01 11:11:11'::datetime;
 (1 row)
 
 select 1::uint8 ^ '2022-10-01 11:11:11'::datetime;
-    ?column?    
-----------------
- 20221001111110
-(1 row)
-
+ERROR:  operator is not unique: uint8 ^ timestamp without time zone
+LINE 1: select 1::uint8 ^ '2022-10-01 11:11:11'::datetime;
+                        ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select 2022.0 ^ '2022-10-01 11:11:11'::datetime;
     ?column?    
 ----------------
@@ -848,11 +838,10 @@ select '2022-10-01 11:11:11'::timestamp ^ 1::uint4;
 (1 row)
 
 select '2022-10-01 11:11:11'::timestamp ^ 1::uint8;
-    ?column?    
-----------------
- 20221001111110
-(1 row)
-
+ERROR:  operator is not unique: timestamp with time zone ^ uint8
+LINE 1: select '2022-10-01 11:11:11'::timestamp ^ 1::uint8;
+                                                ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select '2022-10-01 11:11:11'::timestamp ^ 2022.0;
     ?column?    
 ----------------
@@ -926,11 +915,10 @@ select 1::uint4 ^ '2022-10-01 11:11:11'::timestamp;
 (1 row)
 
 select 1::uint8 ^ '2022-10-01 11:11:11'::timestamp;
-    ?column?    
-----------------
- 20221001111110
-(1 row)
-
+ERROR:  operator is not unique: uint8 ^ timestamp with time zone
+LINE 1: select 1::uint8 ^ '2022-10-01 11:11:11'::timestamp;
+                        ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select 2022.0 ^ '2022-10-01 11:11:11'::timestamp;
     ?column?    
 ----------------
@@ -968,17 +956,15 @@ select '2022-10-01 11:11:11'::timestamp ^ '2022-10-01'::date;
 (1 row)
 
 select '2022-10-01 11:11:11'::datetime ^ '11:11:11'::time;
-    ?column?    
-----------------
- 20221001147456
-(1 row)
-
+ERROR:  operator is not unique: timestamp without time zone ^ time without time zone
+LINE 1: select '2022-10-01 11:11:11'::datetime ^ '11:11:11'::time;
+                                               ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select '2022-10-01 11:11:11'::timestamp ^ '11:11:11'::time;
-    ?column?    
-----------------
- 20221001147456
-(1 row)
-
+ERROR:  operator is not unique: timestamp with time zone ^ time without time zone
+LINE 1: select '2022-10-01 11:11:11'::timestamp ^ '11:11:11'::time;
+                                                ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select '2022-10-01'::datetime ^ '2022-10-02 11:11:11';
  ?column? 
 ----------
@@ -1016,17 +1002,15 @@ select '2022-10-01'::date ^ '2022-10-01 11:11:11'::timestamp;
 (1 row)
 
 select '11:11:11'::time ^ '2022-10-01 11:11:11'::datetime;
-    ?column?    
-----------------
- 20221001147456
-(1 row)
-
+ERROR:  operator is not unique: time without time zone ^ timestamp without time zone
+LINE 1: select '11:11:11'::time ^ '2022-10-01 11:11:11'::datetime;
+                                ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select '11:11:11'::time ^ '2022-10-01 11:11:11'::timestamp;
-    ?column?    
-----------------
- 20221001147456
-(1 row)
-
+ERROR:  operator is not unique: time without time zone ^ timestamp with time zone
+LINE 1: select '11:11:11'::time ^ '2022-10-01 11:11:11'::timestamp;
+                                ^
+HINT:  Could not choose a best candidate operator. You might need to add explicit type casts.
 select '2022-10-01 11:11:11'^ '2022-10-01 11:11:11'::datetime;
  ?column? 
 ----------

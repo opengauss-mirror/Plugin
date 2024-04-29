@@ -74,6 +74,55 @@ CREATE FUNCTION pg_catalog.substring_index (
 numeric
 ) RETURNS text LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'substring_index_numeric';
 
+--update_castcontext
+DROP FUNCTION IF EXISTS pg_catalog.update_castcontext(varchar, varchar) CASCADE;
+CREATE FUNCTION pg_catalog.update_castcontext(varchar, varchar) RETURNS varchar AS
+$$
+DECLARE
+    s_type ALIAS FOR $1;
+    t_type ALIAS FOR $2;
+BEGIN
+    update pg_cast set castcontext='i', castowner=10 where castsource=(select oid from pg_type where typname=s_type) and casttarget=(select oid from pg_type where typname=t_type);
+    RETURN 'SUCCESS';
+END;
+$$
+LANGUAGE plpgsql;
+
+DO
+$$
+BEGIN
+    PERFORM pg_catalog.update_castcontext('int8', 'int1');
+    PERFORM pg_catalog.update_castcontext('int8', 'int2');
+    PERFORM pg_catalog.update_castcontext('int8', 'int4');
+
+    PERFORM pg_catalog.update_castcontext('date', 'int4');
+    PERFORM pg_catalog.update_castcontext('date', 'int8');
+    PERFORM pg_catalog.update_castcontext('date', 'uint4');
+    PERFORM pg_catalog.update_castcontext('date', 'uint8');
+    PERFORM pg_catalog.update_castcontext('date', 'float4');
+    PERFORM pg_catalog.update_castcontext('date', 'float8');
+    PERFORM pg_catalog.update_castcontext('date', 'numeric');
+    PERFORM pg_catalog.update_castcontext('timestamp', 'int8');
+    PERFORM pg_catalog.update_castcontext('timestamp', 'uint8');
+    PERFORM pg_catalog.update_castcontext('timestamp', 'float4');
+    PERFORM pg_catalog.update_castcontext('timestamp', 'numeric');
+    PERFORM pg_catalog.update_castcontext('timestamptz', 'int8');
+    PERFORM pg_catalog.update_castcontext('timestamptz', 'uint8');
+    PERFORM pg_catalog.update_castcontext('timestamptz', 'float4');
+    PERFORM pg_catalog.update_castcontext('timestamptz', 'float8');
+    PERFORM pg_catalog.update_castcontext('timestamptz', 'numeric');
+    PERFORM pg_catalog.update_castcontext('time', 'int4');
+    PERFORM pg_catalog.update_castcontext('time', 'int8');
+    PERFORM pg_catalog.update_castcontext('time', 'uint4');
+    PERFORM pg_catalog.update_castcontext('time', 'uint8');
+    PERFORM pg_catalog.update_castcontext('time', 'float4');
+    PERFORM pg_catalog.update_castcontext('time', 'numeric');
+END
+$$
+LANGUAGE plpgsql;
+
+DROP FUNCTION IF EXISTS pg_catalog.update_castcontext(varchar, varchar) CASCADE;
+
 -- below from 3.0
 DROP FUNCTION IF EXISTS pg_catalog.date_cast(cstring, boolean);
 CREATE OR REPLACE FUNCTION pg_catalog.date_cast(cstring, boolean) RETURNS date LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'date_cast';
