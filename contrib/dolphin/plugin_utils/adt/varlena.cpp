@@ -11477,5 +11477,38 @@ Datum varlena_smaller(PG_FUNCTION_ARGS)
     return GetPeakVarlena(fcinfo, false);
 }
 
+PG_FUNCTION_INFO_V1_PUBLIC(bit_substr);
+extern "C" DLL_PUBLIC Datum bit_substr(PG_FUNCTION_ARGS);
+Datum bit_substr(PG_FUNCTION_ARGS)
+{
+    VarBit *bits = PG_GETARG_VARBIT_P(0);
+    int32 start = PG_GETARG_INT32(1);
+    int32 length = PG_GETARG_INT32(2);
 
+    if (length <= 0) {
+        PG_RETURN_BYTEA_P(DirectFunctionCall1(rawin, CStringGetDatum("")));
+    }
+
+    VarBit *result = bit_substr_with_byte_align(bits, start, length, false);
+
+    if (VARBITLEN(result) == 0) {
+        PG_RETURN_BYTEA_P(DirectFunctionCall1(rawin, CStringGetDatum("")));
+    }
+    return bit_blob(result);
+}
+
+PG_FUNCTION_INFO_V1_PUBLIC(bit_substr_no_len);
+extern "C" DLL_PUBLIC Datum bit_substr_no_len(PG_FUNCTION_ARGS);
+Datum bit_substr_no_len(PG_FUNCTION_ARGS)
+{
+    VarBit *bits = PG_GETARG_VARBIT_P(0);
+    int32 start = PG_GETARG_INT32(1);
+
+    VarBit *result = bit_substr_with_byte_align(bits, start, 0, true);
+
+    if (VARBITLEN(result) == 0) {
+        PG_RETURN_BYTEA_P(DirectFunctionCall1(rawin, CStringGetDatum("")));
+    }
+    return bit_blob(result);
+}
 #endif

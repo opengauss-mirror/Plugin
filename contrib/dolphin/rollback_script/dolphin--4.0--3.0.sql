@@ -34,6 +34,15 @@ DROP FUNCTION IF EXISTS pg_catalog.locate(bytea, bytea, integer);
 DROP FUNCTION IF EXISTS pg_catalog.locate(binary, text, integer);
 DROP FUNCTION IF EXISTS pg_catalog.locate(varbinary, text, integer);
 
+DROP FUNCTION IF EXISTS pg_catalog.mid(boolean, int);
+DROP FUNCTION IF EXISTS pg_catalog.mid(boolean, int, int);
+DROP FUNCTION IF EXISTS pg_catalog.mid(binary, int);
+DROP FUNCTION IF EXISTS pg_catalog.mid(binary, int, int);
+DROP FUNCTION IF EXISTS pg_catalog.mid(varbinary, int);
+DROP FUNCTION IF EXISTS pg_catalog.mid(varbinary, int, int);
+DROP FUNCTION IF EXISTS pg_catalog.mid(bit, int);
+DROP FUNCTION IF EXISTS pg_catalog.mid(bit, int, int);
+
 DROP FUNCTION IF EXISTS pg_catalog.log10(float8);
 CREATE OR REPLACE FUNCTION pg_catalog.log10(float8)
 RETURNS float8

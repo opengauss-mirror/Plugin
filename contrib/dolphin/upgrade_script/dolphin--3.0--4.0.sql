@@ -34,6 +34,15 @@ CREATE OR REPLACE FUNCTION pg_catalog.locate(bytea, bytea, integer) RETURNS inte
 CREATE OR REPLACE FUNCTION pg_catalog.locate(binary, text, integer) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.instr($1, $2, $3)';
 CREATE OR REPLACE FUNCTION pg_catalog.locate(varbinary, text, integer) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.instr($1, $2, $3)';
 
+CREATE OR REPLACE FUNCTION pg_catalog.mid(boolean, int) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mid($1::text, $2)::varchar';
+CREATE OR REPLACE FUNCTION pg_catalog.mid(boolean, int, int) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mid($1::text, $2, $3)::varchar';
+CREATE OR REPLACE FUNCTION pg_catalog.mid(binary, int) RETURNS varbinary LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mid($1::bytea, $2)::varbinary(65535)';
+CREATE OR REPLACE FUNCTION pg_catalog.mid(binary, int, int) RETURNS varbinary LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mid($1::bytea, $2, $3)::varbinary(65535)';
+CREATE OR REPLACE FUNCTION pg_catalog.mid(varbinary, int) RETURNS varbinary LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mid($1::bytea, $2)::varbinary(65535)';
+CREATE OR REPLACE FUNCTION pg_catalog.mid(varbinary, int, int) RETURNS varbinary LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.mid($1::bytea, $2, $3)::varbinary(65535)';
+CREATE OR REPLACE FUNCTION pg_catalog.mid(bit, int) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bit_substr_no_len';
+CREATE OR REPLACE FUNCTION pg_catalog.mid(bit, int, int) RETURNS varbinary LANGUAGE C IMMUTABLE STRICT as '$libdir/dolphin', 'bit_substr';
+
 CREATE OR REPLACE FUNCTION pg_catalog.log10(float8) RETURNS double precision LANGUAGE INTERNAL IMMUTABLE STRICT as 'dlog10';
 
 CREATE OR REPLACE FUNCTION pg_catalog.lower(int8) RETURNS varchar LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.lower(cast($1 as TEXT))::varchar';
