@@ -471,3 +471,24 @@ ALTER TABLE `FKTABLE` ADD FOREIGN KEY(`ftest2`, `ftest1`)
 ERROR:  foreign key constraint "FKTABLE_ftest2_fkey" cannot be implemented
 DETAIL:  Key columns "ftest2" and "ptest1" are of incompatible types: inet and integer.
 -- temp tables should go away by themselves, need not drop them.
+-- test MODIFY after ADD COLUMN DEFAULT
+CREATE TABLE test_modify_after_add (
+ c1 INT,
+ value_column INT
+);
+insert into test_modify_after_add values (1,2);
+ALTER TABLE test_modify_after_add ADD COLUMN c2 TIMESTAMP(5) default '2025-11-11 11:11:11';
+select * from test_modify_after_add;
+ c1 | value_column |           c2           
+----+--------------+------------------------
+  1 |            2 | 2025-11-11 11:11:11-08
+(1 row)
+
+ALTER TABLE test_modify_after_add MODIFY column c2 TIMESTAMP(5);
+select * from test_modify_after_add;
+ c1 | value_column |           c2           
+----+--------------+------------------------
+  1 |            2 | 2025-11-11 11:11:11-08
+(1 row)
+
+DROP TABLE test_modify_after_add;
