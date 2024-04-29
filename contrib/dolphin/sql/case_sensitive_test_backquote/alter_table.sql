@@ -416,3 +416,15 @@ ALTER TABLE `FKTABLE` ADD FOREIGN KEY(`ftest2`, `ftest1`)
      references `PKTABLE`(`ptest1`, `ptest2`);
 
 -- temp tables should go away by themselves, need not drop them.
+
+-- test MODIFY after ADD COLUMN DEFAULT
+CREATE TABLE test_modify_after_add (
+ c1 INT,
+ value_column INT
+);
+insert into test_modify_after_add values (1,2);
+ALTER TABLE test_modify_after_add ADD COLUMN c2 TIMESTAMP(5) default '2025-11-11 11:11:11';
+select * from test_modify_after_add;
+ALTER TABLE test_modify_after_add MODIFY column c2 TIMESTAMP(5);
+select * from test_modify_after_add;
+DROP TABLE test_modify_after_add;
