@@ -210,6 +210,7 @@ extern "C" Datum dolphin_binaryin(PG_FUNCTION_ARGS);
 static void InitDolphinTypeId(BSqlPluginContext* cxt);
 static void InitDolphinOperator(BSqlPluginContext* cxt);
 static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup);
+static bool ReplaceNullOrNot();
 
 PG_FUNCTION_INFO_V1_PUBLIC(dolphin_invoke);
 void dolphin_invoke(void)
@@ -330,6 +331,7 @@ void init_plugin_object()
     if (u_sess->proc_cxt.MyProcPort->protocol_config == &default_protocol_config) {
         u_sess->proc_cxt.MyProcPort->protocol_config->fn_printtup_create_DR = dophin_default_printtup_create_DR;
     }
+    u_sess->hook_cxt.replaceNullOrNotHook = (void*)ReplaceNullOrNot;
     set_default_guc();
 
     if (g_instance.attr.attr_network.enable_dolphin_proto && u_sess->proc_cxt.MyProcPort &&
@@ -1656,3 +1658,7 @@ static Datum DolphinGetTypeZeroValue(Form_pg_attribute att_tup)
     return result;
 }
 
+static bool ReplaceNullOrNot()
+{
+    return !(GetSessionContext()->sqlModeFlags & OPT_SQL_MODE_STRICT);
+}

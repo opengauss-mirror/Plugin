@@ -216,8 +216,8 @@ select * from json_to_record(json_object('name','Adam','age',23,'address','Cheng
 select ref_0.idx_blks_hit as c0, ref_0.toast_blks_hit as c1, ref_0.toast_blks_read as c2, cast(coalesce(ref_0.heap_blks_hit, ref_0.toast_blks_hit) as int8) as c3, ref_0.idx_blks_hit as c4, ref_0.tidx_blks_hit as c5, ref_0.idx_blks_read as c6, ref_0.heap_blks_read as c7, pg_catalog.json_ge( cast(case when (select amopstrategy from pg_catalog.pg_amop limit 1 offset 5) >= ref_0.heap_blks_hit then (select inherited from pg_catalog.pg_gtt_stats limit 1 offset 5) else (select inherited from pg_catalog.pg_gtt_stats limit 1 offset 5) end as bool), cast(pg_catalog.json_object_field( cast( pg_catalog.json_object_agg( cast(ref_0.relname as name), cast(ref_0.heap_blks_read as int8)) over (partition by ref_0.toast_blks_read order by ref_0.relid) as json), cast(pg_catalog.create_wdr_snapshot() as "text")) as json)) as c8 from pg_catalog.pg_statio_user_tables as ref_0 where (true) or (cast(coalesce((select pg_catalog.every(is_instead) from pg_catalog.pg_rewrite) , case when cast(null as uint1) = cast(null as int2) then pg_catalog.pgxc_disaster_read_init() else pg_catalog.pgxc_disaster_read_init() end ) as bool) > pg_catalog.repeat( cast(pg_catalog.substr( cast(case when cast(null as "text") <= cast(null as mediumblob) then cast(null as longblob) else cast(null as longblob) end as longblob), cast((select xc_node_id from pg_catalog.gs_auditing_policy_privileges limit 1 offset 2) as int4)) as longblob), cast(cast(nullif((select xc_node_id from pg_catalog.pg_pltemplate limit 1 offset 6) , (select pg_catalog.bit_and(pid) from pg_catalog.pg_stat_subscription) ) as int4) as int4))) limit 1;
 WARNING:  GUC parameter 'enable_wdr_snapshot' is off
 CONTEXT:  referenced column: c8
-  c0  | c1 | c2 | c3  |  c4  | c5 | c6 | c7 | c8 
-------+----+----+-----+------+----+----+----+----
+--?.*
+--?.*
 --?.*
 (1 row)
 
