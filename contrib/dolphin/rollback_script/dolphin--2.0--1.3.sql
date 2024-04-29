@@ -114,7 +114,6 @@ DROP FUNCTION IF EXISTS pg_catalog.uint8_binary_lt(uint8, binary) CASCADE;
 
 DROP OPERATOR IF EXISTS pg_catalog.!~~(binary, binary) CASCADE;
 DROP OPERATOR IF EXISTS pg_catalog.!~~*(binary, binary) CASCADE;
-DROP OPERATOR IF EXISTS pg_catalog.~~(binary, binary) CASCADE;
 DROP OPERATOR IF EXISTS pg_catalog.~~*(binary, binary) CASCADE;
 DROP OPERATOR IF EXISTS pg_catalog.!~~(name, binary) CASCADE;
 DROP OPERATOR IF EXISTS pg_catalog.!~~*(name, binary) CASCADE;
@@ -129,7 +128,6 @@ DROP FUNCTION IF EXISTS pg_catalog.bpcharbinarylike(char, binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.bpcharbinarynlike(char, binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.namebinarylike(name, binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.namebinarynlike(name, binary) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.binarylike(binary, binary) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.binarynlike(binary, binary) CASCADE;
 
 DROP FUNCTION IF EXISTS pg_catalog.varlena_cast_ui8(anyelement) CASCADE;
@@ -1235,17 +1233,8 @@ DROP FUNCTION IF EXISTS pg_catalog.time_date (time) cascade;
 DROP CAST IF EXISTS (date AS time) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.date_time (date) cascade;
 
-DROP CAST IF EXISTS (date AS year) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.date_year(date) cascade;
-
 DROP CAST IF EXISTS (time AS year) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.time_year(time) cascade;
-
-DROP CAST IF EXISTS (timestamptz AS year) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.timestamp_year(timestamptz) cascade;
-
-DROP CAST IF EXISTS (timestamp(0) without time zone AS year) CASCADE;
-DROP FUNCTION IF EXISTS pg_catalog.datetime_year(timestamp(0) without time zone) cascade;
 
 DROP CAST IF EXISTS (year AS time) CASCADE;
 DROP FUNCTION IF EXISTS pg_catalog.year_time("year") cascade;
