@@ -6,6 +6,12 @@ CREATE OR REPLACE FUNCTION pg_catalog.length(longblob) RETURNS integer LANGUAGE 
 CREATE OR REPLACE FUNCTION pg_catalog.length(anyenum) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.length($1::text)';
 CREATE OR REPLACE FUNCTION pg_catalog.length(json) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.length($1::text)';
 
+CREATE OR REPLACE FUNCTION pg_catalog.octet_length(boolean) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.octet_length($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.octet_length(year) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.octet_length($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.octet_length(blob) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.octet_length($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.octet_length(anyenum) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.octet_length($1::text)';
+CREATE OR REPLACE FUNCTION pg_catalog.octet_length(json) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.octet_length($1::text)';
+
 CREATE OR REPLACE FUNCTION pg_catalog.position(boolean, text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.position($1::text, $2)';
 CREATE OR REPLACE FUNCTION pg_catalog.position(binary, text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.position($1::bytea, $2::bytea)';
 CREATE OR REPLACE FUNCTION pg_catalog.position(varbinary, text) RETURNS integer LANGUAGE SQL IMMUTABLE STRICT as 'select pg_catalog.position($1::bytea, $2::bytea)';

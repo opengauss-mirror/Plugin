@@ -6,6 +6,12 @@ DROP FUNCTION IF EXISTS pg_catalog.length(longblob);
 DROP FUNCTION IF EXISTS pg_catalog.length(anyenum);
 DROP FUNCTION IF EXISTS pg_catalog.length(json);
 
+DROP FUNCTION IF EXISTS pg_catalog.octet_length(boolean);
+DROP FUNCTION IF EXISTS pg_catalog.octet_length(year);
+DROP FUNCTION IF EXISTS pg_catalog.octet_length(blob);
+DROP FUNCTION IF EXISTS pg_catalog.octet_length(anyenum);
+DROP FUNCTION IF EXISTS pg_catalog.octet_length(json);
+
 DROP FUNCTION IF EXISTS pg_catalog.position(boolean, text);
 DROP FUNCTION IF EXISTS pg_catalog.position(binary, text);
 DROP FUNCTION IF EXISTS pg_catalog.position(varbinary, text);
