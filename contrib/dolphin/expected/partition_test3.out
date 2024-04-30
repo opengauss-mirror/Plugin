@@ -57,6 +57,7 @@ select relname, boundaries from pg_partition where parentid in (select parentid 
 (5 rows)
 
 ALTER TABLE test_part2 DROP PARTITION p3;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
   relname   | boundaries 
 ------------+------------
@@ -81,6 +82,9 @@ select relname, boundaries from pg_partition where parentid in (select parentid 
 
 ALTER TABLE test_part2 add PARTITION (PARTITION p6 VALUES LESS THAN (700),PARTITION p7 VALUES LESS THAN (800));
 ALTER TABLE test_part2 DROP PARTITION p4,p5,p6;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
   relname   | boundaries 
 ------------+------------
@@ -112,7 +116,11 @@ select relname, boundaries from pg_partition where parentid in (select oid from 
 (12 rows)
 
 ALTER TABLE test_subpart2 DROP SUBPARTITION p0_0;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 ALTER TABLE test_subpart2 DROP SUBPARTITION p0_2, p1_0, p1_2;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2')) order by 1,2;
  relname | boundaries 
 ---------+------------
@@ -130,6 +138,8 @@ select relname, boundaries from pg_partition where parentid in (select oid from 
 ALTER TABLE test_part2 add PARTITION (PARTITION p5 VALUES LESS THAN (600));
 ERROR:  upper boundary of adding partition MUST overtop last existing partition
 ALTER TABLE test_part2 DROP PARTITION p5, DROP PARTITION p0, DROP PARTITION p7;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 ERROR:  partition "p5" does not exist
 select relname, boundaries from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_part2') order by 1,2;
   relname   | boundaries 
@@ -158,6 +168,9 @@ select relname, boundaries from pg_partition where parentid in (select parentid 
 (6 rows)
 
 ALTER TABLE test_subpart2 DROP SUBPARTITION p2_0, DROP SUBPARTITION p2_2, DROP SUBPARTITION p3_0;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select relname, boundaries from pg_partition where parentid in (select oid from pg_partition where parentid in (select parentid from pg_partition where relname = 'test_subpart2')) order by 1,2;
  relname | boundaries 
 ---------+------------
