@@ -58,6 +58,8 @@ select * from test_subpart;
 
 --test b database truncate partition syntax
 ALTER TABLE test_part1 truncate PARTITION p0, p1;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part1;
   a  | b 
 -----+---
@@ -93,12 +95,19 @@ select * from test_part1;
 (22 rows)
 
 ALTER TABLE test_part1 truncate PARTITION all;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part1;
  a | b 
 ---+---
 (0 rows)
 
 ALTER TABLE test_subpart truncate PARTITION p0, p1, p2_2, p2_1;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_subpart;
  a | b 
 ---+---
@@ -132,6 +141,9 @@ select * from test_subpart;
 (21 rows)
 
 ALTER TABLE test_subpart truncate PARTITION all;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_subpart;
  a | b 
 ---+---
@@ -147,6 +159,8 @@ select * from test_part1;
 (2 rows)
 
 ALTER TABLE test_part1 truncate PARTITION p0, truncate PARTITION p1;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part1;
  a | b 
 ---+---
@@ -161,6 +175,8 @@ select * from test_subpart;
 (2 rows)
 
 ALTER TABLE test_subpart truncate PARTITION p0, truncate PARTITION p1;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_subpart;
  a | b 
 ---+---
@@ -169,6 +185,7 @@ select * from test_subpart;
 --test b database exchange partition syntax
 insert into test_part1 values(99,1),(199,1),(299,1);
 alter table test_part1 exchange partition p2 with table test_no_part1 without validation;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part1;
   a  | b 
 -----+---
@@ -183,6 +200,7 @@ select * from test_no_part1;
 (1 row)
 
 alter table test_part1 exchange partition p2 with table test_no_part1 without validation;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part1;
   a  | b 
 -----+---
@@ -197,6 +215,7 @@ select * from test_no_part1;
 (0 rows)
 
 alter table test_part1 exchange partition p2 with table test_no_part1 with validation;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part1;
   a  | b 
 -----+---
@@ -211,6 +230,7 @@ select * from test_no_part1;
 (1 row)
 
 alter table test_part1 exchange partition p2 with table test_no_part1 with validation;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part1;
   a  | b 
 -----+---
@@ -226,6 +246,7 @@ select * from test_no_part1;
 
 --test opengauss exchange partition syntax
 alter table test_part1 exchange partition (p2) with table test_no_part1 without validation;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part1;
   a  | b 
 -----+---
@@ -240,6 +261,7 @@ select * from test_no_part1;
 (1 row)
 
 alter table test_part1 exchange partition (p2) with table test_no_part1 without validation;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part1;
   a  | b 
 -----+---
@@ -254,6 +276,7 @@ select * from test_no_part1;
 (0 rows)
 
 alter table test_part1 exchange partition (p2) with table test_no_part1 with validation;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part1;
   a  | b 
 -----+---
@@ -268,6 +291,7 @@ select * from test_no_part1;
 (1 row)
 
 alter table test_part1 exchange partition (p2) with table test_no_part1 with validation;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part1;
   a  | b 
 -----+---
@@ -352,6 +376,9 @@ select * from test_part_ustore;
 (21 rows)
 
 ALTER TABLE test_part_ustore truncate PARTITION all;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part_ustore;
  a | b 
 ---+---
@@ -359,6 +386,7 @@ select * from test_part_ustore;
 
 insert into test_part_ustore values(99,1),(199,1),(299,1);
 alter table test_part_ustore exchange partition p2 with table test_no_part2 without validation;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part_ustore;
   a  | b 
 -----+---
@@ -419,6 +447,9 @@ select * from test_part_segment;
 (21 rows)
 
 ALTER TABLE test_part_segment truncate PARTITION all;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part_segment;
  a | b 
 ---+---
@@ -467,6 +498,10 @@ select * from test_part_list order by 1,2;
 (4 rows)
 
 ALTER TABLE test_part_list truncate PARTITION all;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part_list order by 1,2;
  a | b 
 ---+---
@@ -474,6 +509,7 @@ select * from test_part_list order by 1,2;
 
 insert into test_part_list values(2000,1),(3000,2),(4000,3),(5000,4);
 alter table test_part_list exchange partition p2 with table test_no_part1 without validation;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part_list order by 1,2;
   a   | b 
 ------+---
@@ -535,6 +571,9 @@ select * from test_part_hash order by 1,2;
 (21 rows)
 
 ALTER TABLE test_part_hash truncate PARTITION all;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part_hash order by 1,2;
  a | b 
 ---+---
@@ -542,6 +581,7 @@ select * from test_part_hash order by 1,2;
 
 insert into test_part_hash values(99,1),(199,1),(299,1);
 alter table test_part_hash exchange partition p2 with table test_no_part1 without validation;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select * from test_part_hash order by 1,2;
   a   | b 
 ------+---

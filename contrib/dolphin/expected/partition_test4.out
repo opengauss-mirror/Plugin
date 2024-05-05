@@ -651,6 +651,7 @@ select pg_get_tabledef('part_key_range_t1');
 (1 row)
 
 alter table part_key_range_t1 split partition p1 into (partition m1 values less than(1000), partition m2 values less than(2000));
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select pg_get_tabledef('part_key_range_t1');
                          pg_get_tabledef                         
 -----------------------------------------------------------------
@@ -671,6 +672,7 @@ select pg_get_tabledef('part_key_range_t1');
 (1 row)
 
 alter table part_key_range_t1 merge partitions m1,m2 into partition p1;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select pg_get_tabledef('part_key_range_t1');
                          pg_get_tabledef                         
 -----------------------------------------------------------------
@@ -750,6 +752,7 @@ select pg_get_tabledef('part_key_range_t2');
 (1 row)
 
 alter table part_key_range_t2 split partition p1 into (partition m1 values less than(50000), partition m2 values less than(60000));
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select pg_get_tabledef('part_key_range_t2');
                           pg_get_tabledef                          
 -------------------------------------------------------------------
@@ -770,6 +773,7 @@ select pg_get_tabledef('part_key_range_t2');
 (1 row)
 
 alter table part_key_range_t2 merge partitions m1,m2 into partition p1;
+NOTICE:  Command without UPDATE GLOBAL INDEX will disable global index
 select pg_get_tabledef('part_key_range_t2');
                           pg_get_tabledef                          
 -------------------------------------------------------------------
