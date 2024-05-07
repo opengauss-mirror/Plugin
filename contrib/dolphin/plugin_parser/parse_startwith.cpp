@@ -62,6 +62,8 @@
  */
 typedef struct StartWithTransformContext {
     ParseState* pstate;
+    ParseState* origin_pstate;
+    SelectStmt *origin_stmt;
     List *relInfoList;
     List *where_infos;
     List *connectby_prior_name;
@@ -95,6 +97,8 @@ typedef struct StartWithTransformContext {
     Node *connectByLevelExpr;
     Node *connectByOtherExpr;
     bool nocycle;
+    /* used to track the varnos of given expr */
+    Bitmapset *expr_varno_set;
 } StartWithTransformContext;
 
 typedef enum StartWithRewrite {
@@ -133,11 +137,11 @@ static void AddWithClauseToBranch(ParseState *pstate, SelectStmt *stmt, List *re
 static void transformSingleRTE(ParseState* pstate,
                                  Query* qry,
                                  StartWithTransformContext *context,
-                                 Node *start_clause);
-static void transformFromList(ParseState* pstate,
-                                Query* qry,
-                                StartWithTransformContext *context,
-                                Node *n);
+                                 Node *sw_clause);
+static void transformFromList(ParseState* pstate, Query* qry,
+                                StartWithTransformContext *context, Node *sw_clause,
+                                List *tlist,
+                                bool is_first_node, bool is_creat_view);
 static RangeTblEntry *transformStartWithCTE(ParseState* pstate, List *prior_names);
 static bool preSkipPLSQLParams(ParseState *pstate, ColumnRef *cref);
 
@@ -162,6 +166,7 @@ static void CreateStartWithCTE(ParseState *pstate,
 static Node *makeBoolAConst(bool state, int location);
 static StartWithRewrite ChooseSWCBStrategy(StartWithTransformContext context);
 static Node *tryReplaceFakeValue(Node *node);
+static RangeSubselect *makeSWCBPseudoTable();
 
 static Node *makeBoolAConst(bool state, int location)
 {
@@ -232,7 +237,8 @@ static Node *makeBoolAConst(bool state, int location)
  *
  ****************************************************************************************
  */
-void transformStartWith(ParseState *pstate, SelectStmt *stmt, Query *qry)
+void transformStartWith(ParseState *pstate, ParseState *origin_pstate, SelectStmt *stmt,
+                        SelectStmt *origin_stmt, Query *qry, bool is_first_node, bool is_creat_view)
 {
     ListCell *lc = NULL;
     StartWithTransformContext context;
@@ -249,6 +255,8 @@ void transformStartWith(ParseState *pstate, SelectStmt *stmt, Query *qry)
     securec_check(rc, "\0", "\0");
 
     context.pstate = pstate;
+    context.origin_pstate = origin_pstate;
+    context.origin_stmt = origin_stmt;
     context.relInfoList = NULL;
     context.connectby_prior_name = NULL;
 
@@ -272,7 +280,9 @@ void transformStartWith(ParseState *pstate, SelectStmt *stmt, Query *qry)
     if (op == SW_SINGLE) {
         transformSingleRTE(pstate, qry, &context, (Node *)stmt->startWithClause);
     } else {
-        transformFromList(pstate, qry, &context, (Node *)stmt->startWithClause);
+        transformFromList(pstate, qry, &context, (Node *)stmt->startWithClause, stmt->targetList,
+                            is_first_node, is_creat_view);
+        stmt->whereClause = context.whereClause;
     }
 
     return;
@@ -1513,55 +1523,161 @@ static void AddWithClauseToBranch(ParseState *pstate, SelectStmt *stmt, List *re
     return;
 }
 
-static bool count_columnref_walker(Node *node, int *columnref_count)
+static void make_full_varnamespace(StartWithTransformContext *context, RangeSubselect *pseudo_rte,
+                                         bool is_first_node, bool is_create_view)
+{
+    SelectStmt *stmt = makeNode(SelectStmt);
+    stmt->withClause = context->origin_stmt->withClause;
+    stmt->fromClause = lappend(context->origin_stmt->fromClause, pseudo_rte);
+    stmt->targetList = context->origin_stmt->targetList;
+    stmt->lockingClause = context->origin_stmt->lockingClause;
+    stmt->windowClause = context->origin_stmt->windowClause;
+    stmt->intoClause = context->origin_stmt->intoClause;
+ 
+    (void)transformStmt(context->origin_pstate, (Node *)stmt, is_first_node, is_create_view);
+}
+ 
+static bool is_swcb_pseudo_var(Var *var, StartWithTransformContext *context)
+{
+    bool is_pseudo_tbl = false;
+    if (var != NULL && var->varlevelsup == 0) {
+        RangeTblEntry *rte = rt_fetch(var->varno, context->origin_pstate->p_rtable);
+        if (rte->rtekind == RTE_SUBQUERY) {
+            Alias *alias = rte->alias;
+            is_pseudo_tbl = alias != NULL && alias->aliasname != NULL &&
+                            pg_strcasecmp(alias->aliasname, "__sw_pseudo_col_table__") == 0;
+        }
+    }
+    return is_pseudo_tbl;
+}
+
+static bool find_varno_in_node(Node *node, StartWithTransformContext *context)
 {
     if (node == NULL) {
         return false;
     }
-
-    if (!IsA(node, ColumnRef)) {
-        return raw_expression_tree_walker(node, (bool (*)()) count_columnref_walker, (void*)columnref_count);
+ 
+    check_stack_depth();
+ 
+    if (IsA(node, Var)) {
+        /* if var is passed from upper query, we don't push it down into start with */
+        Var *var = (Var *)node;
+        if (((Var *)node)->varlevelsup == 0) {
+            context->expr_varno_set = bms_add_member(context->expr_varno_set, var->varno);
+        } else {
+            bms_free_ext(context->expr_varno_set);
+            return true;
+        }
+    } else {
+        return expression_tree_walker(node, (bool (*)())find_varno_in_node, (void *)context);
     }
-
-    *columnref_count = *columnref_count + 1;
-
+ 
     return false;
 }
 
-static bool walker_to_exclude_non_join_quals(Node *node, Node *context_node)
+static bool count_table_ref_walker(Node *node, StartWithTransformContext *context)
 {
     if (node == NULL) {
         return false;
     }
 
-    if (!IsA(node, A_Expr)) {
-        return raw_expression_tree_walker(node, (bool (*)()) walker_to_exclude_non_join_quals, (void*)NULL);
+    check_stack_depth();
+
+    /* we don't push down sublink */
+    if (IsA(node, SubLink)) {
+        bms_free_ext(context->expr_varno_set);
+        return true;
     }
 
-    A_Expr* expr = (A_Expr*) node;
-    if (expr->kind != AEXPR_OP) {
-        return raw_expression_tree_walker(node, (bool (*)()) walker_to_exclude_non_join_quals, (void*)NULL);
+    if (!IsA(node, ColumnRef)) {
+        return raw_expression_tree_walker(node, (bool (*)()) count_table_ref_walker, (void*)context);
     }
 
-    /*
-     * this is to achieve consistent result sets with those produced by the original
-     * start with .. connect by syntax, which does not push filter quals down to connect quals.
-     * if no more than one column item appears inside an AEXPR_OP, we guess that it is
-     * not a join qual so should not be filtered in sw op, and force it to be true.
-     * this rule is not always correct but should work fine most of the time.
-     * could be improved later on, e.g. find better ways to extract non-join quals
-     * from the where clause.
-     */
-    int columnref_count = 0;
-    (void) raw_expression_tree_walker(node, (bool (*)()) count_columnref_walker, (void*)&columnref_count);
+    Node *ret_node = (Node *)transformColumnRef(context->origin_pstate, (ColumnRef *)node);
 
-    if (columnref_count <= 1) {
-        expr->lexpr = makeBoolAConst(true, -1);
-        expr->rexpr = makeBoolAConst(true, -1);
-        expr->kind = AEXPR_OR;
+    if ((IsA(ret_node, Var) && is_swcb_pseudo_var(((Var *)ret_node), context)) ||
+        (IsA(ret_node, FuncExpr) && IsStartWithFunction((FuncExpr *)ret_node))) {
+        return false;
     }
 
-    return false;
+    return find_varno_in_node(ret_node, context);
+}
+
+/*
+ * split_where_expr_by_join
+ *
+ * According to the logic of Hierarchical Queries processing, start with operation will be as follows
+ * 1. Evaluating JOIN expr in where clause if there any(should only be muti-table join).
+ * 2. Evaluating START WITH/CONNECT BY condition.
+ * 3. Evaluating remaining where clause a.k.a NON-JOIN quals if there any.
+ *
+ * Based on that, we have to push down the join-qual for start-with/connect-by quals, but non-join quals save for later
+ * filtering right after start with operation is done.
+ * Note that, for OR expr, if we have to replace the sub_expr, we have to set it as FALSE, other case will be TRUE.
+ *
+ * For expr = (A AND (B OR C)) OR (D AND E) AND (F OR G) OR (H OR I), and we assume C, E, F, I is non_join qual,
+ *
+ * so the remaining JOIN expr will be
+ *             (A AND B) OR (D) AND (G) OR H
+ * NON-JOIN expr will be
+ *             (C) OR (E) AND (F) OR (I)
+ */
+static void split_where_expr_by_join(Node **p_expr_join, Node **p_expr_non_join,
+                                     StartWithTransformContext *context)
+{
+    if (p_expr_join == NULL || (p_expr_join != NULL && *p_expr_join == NULL)) {
+        return;
+    }
+ 
+    Node *expr_join = *p_expr_join;
+    Node *expr_non_join = *p_expr_non_join;
+ 
+    if (IsA(expr_join, A_Expr)) {
+        A_Expr *a_expr_join = (A_Expr *)expr_join;
+        A_Expr *a_expr_non_join = (A_Expr *)expr_non_join;
+ 
+        if (a_expr_join->kind == AEXPR_AND || a_expr_join->kind == AEXPR_OR) {
+            if (a_expr_join->lexpr != NULL) {
+                split_where_expr_by_join(&(a_expr_join->lexpr), &(a_expr_non_join->lexpr), context);
+            }
+            if (a_expr_join->rexpr != NULL) {
+                split_where_expr_by_join(&(a_expr_join->rexpr), &(a_expr_non_join->rexpr), context);
+            }
+            if (a_expr_join->lexpr == NULL) {
+                *p_expr_join = a_expr_join->rexpr;
+            } else if (a_expr_join->rexpr == NULL) {
+                *p_expr_join = a_expr_join->lexpr;
+            }
+ 
+            if (a_expr_non_join->lexpr == NULL) {
+                *p_expr_non_join = a_expr_non_join->rexpr;
+            } else if (a_expr_non_join->rexpr == NULL) {
+                *p_expr_non_join = a_expr_non_join->lexpr;
+            }
+        } else {
+            bms_free_ext(context->expr_varno_set);
+            count_table_ref_walker((Node *)a_expr_join, context);
+            /* if there're more than one tableref in this expr, then must be a join */
+            if (bms_membership(context->expr_varno_set) == BMS_MULTIPLE) {
+                pfree_ext(expr_non_join);
+                *p_expr_non_join = NULL;
+            } else {
+                pfree_ext(expr_join);
+                *p_expr_join = NULL;
+            }
+        }
+    } else {
+        /* must not be a join qual for non-a_expr type */
+        bms_free_ext(context->expr_varno_set);
+        count_table_ref_walker(expr_join, context);
+        if (bms_membership(context->expr_varno_set) == BMS_MULTIPLE) {
+            pfree_ext(expr_non_join);
+            *p_expr_non_join = NULL;
+        } else {
+            pfree_ext(expr_join);
+            *p_expr_join = NULL;
+        }
+    }
 }
 
 /*
@@ -1617,22 +1733,6 @@ static SelectStmt *CreateStartWithCTEInnerBranch(ParseState* pstate,
 
             origin_table = (Node *)joiniter;
         }
-
-        if (whereClause != NULL) {
-            JoinExpr *final_join = (JoinExpr *)origin_table;
-            /* pushdown requires deep copying of the quals */
-            Node *whereCopy = (Node *)copyObject(whereClause);
-            /* only join quals can be pushed down */
-            raw_expression_tree_walker((Node *)whereCopy,
-                (bool (*)())walker_to_exclude_non_join_quals, (void*)NULL);
-
-            if (final_join->quals == NULL) {
-                final_join->quals = whereCopy;
-            } else {
-                final_join->quals =
-                    (Node *)makeA_Expr(AEXPR_AND, NULL, whereCopy, final_join->quals, -1);
-            }
-        }
     }
 
     /* process regular/level */
@@ -1646,7 +1746,15 @@ static SelectStmt *CreateStartWithCTEInnerBranch(ParseState* pstate,
             join->larg = (Node *)work_table;
             join->rarg = origin_table;
             join->usingClause = NIL;
-            join->quals = (Node *)copyObject(connectByExpr);
+            Node *where_quals = NULL;
+            if (whereClause != NULL && connectByExpr != NULL) {
+                where_quals = (Node *)makeA_Expr(AEXPR_AND, NULL, whereClause, connectByExpr, -1);
+            } else if (whereClause != NULL) {
+                where_quals = (Node *)copyObject(whereClause);
+            } else {
+                where_quals = (Node *)copyObject(connectByExpr);
+            }
+            join->quals = where_quals;
             result->targetList = expandAllTargetList(relInfoList);
             result->fromClause = list_make1(join);
 
@@ -1704,17 +1812,11 @@ static SelectStmt *CreateStartWithCTEOuterBranch(ParseState *pstate,
 
     /* push whereClause down to init part, taking care to avoid NULL in expr. */
     quals = (Node *)startWithExpr;
-    Node* whereClauseCopy = (Node *)copyObject(whereClause);
-    if (whereClause != NULL) {
-        /* only join quals can be pushed down */
-        raw_expression_tree_walker((Node*)whereClauseCopy,
-            (bool (*)())walker_to_exclude_non_join_quals, (void*)NULL);
-    }
 
     if (quals == NULL) {
-        quals = whereClauseCopy;
+        quals = whereClause;
     } else if (whereClause != NULL) {
-        quals = (Node *)makeA_Expr(AEXPR_AND, NULL, whereClauseCopy,
+        quals = (Node *)makeA_Expr(AEXPR_AND, NULL, whereClause,
             (Node*)startWithExpr, -1);
     }
 
@@ -1875,22 +1977,32 @@ static RangeTblEntry *transformStartWithCTE(ParseState* pstate, List *prior_name
  * @Return: detail to be added
  * --------------------------------------------------------------------------------------
  */
-static void transformFromList(ParseState* pstate, Query* qry,
-                        StartWithTransformContext *context, Node *n)
+static void transformFromList(ParseState* pstate, Query* qry, StartWithTransformContext *context,
+                                Node *sw_clause, List *tlist, bool is_first_node, bool is_creat_view)
 {
     ListCell *lc = NULL;
     A_Expr *startWithExpr = (A_Expr *)context->startWithExpr;
     A_Expr *connectByExpr = (A_Expr *)context->connectByExpr;
     List *relInfoList = context->relInfoList;
-    Node *whereClause = context->whereClause;
+    Node *whereClauseOnlyJoin = (Node *)copyObject(context->whereClause);
+
+    if (context->whereClause != NULL) {
+        RangeSubselect *sw_pseudo_table = makeSWCBPseudoTable();
+        context->origin_pstate->p_split_where_for_swcb = true;
+ 
+        /* add pseudo var namespace and alias var namespace into where_pstate */
+        make_full_varnamespace(context, sw_pseudo_table, is_first_node, is_creat_view);
+        split_where_expr_by_join(&whereClauseOnlyJoin, &(context->whereClause), context);
+        free_parsestate(context->origin_pstate);
+    }
 
     /* make union-all branch for none-recursive part */
     SelectStmt *outerBranch = CreateStartWithCTEOuterBranch(pstate, context,
-                        relInfoList, (Node *)startWithExpr, whereClause);
+                        relInfoList, (Node *)startWithExpr, whereClauseOnlyJoin);
 
     /* make joinExpr for recursive part */
     SelectStmt *innerBranch = CreateStartWithCTEInnerBranch(pstate, context,
-                        relInfoList, (Node *)connectByExpr, whereClause);
+                        relInfoList, (Node *)connectByExpr, (Node *)copyObject(whereClauseOnlyJoin));
 
     CreateStartWithCTE(pstate, qry, outerBranch, innerBranch, context);
 
@@ -1943,7 +2055,7 @@ static void transformFromList(ParseState* pstate, Query* qry,
  * --------------------------------------------------------------------------------------
  */
 static void transformSingleRTE(ParseState* pstate, Query* qry,
-           StartWithTransformContext *context, Node *start_clause)
+           StartWithTransformContext *context, Node *sw_clause)
 {
     ListCell *lc = NULL;
 
@@ -2052,4 +2164,45 @@ static List *expandAllTargetList(List *targetRelInfoList)
     }
 
     return targetlist;
+}
+
+/*
+ * semtc_make_swcb_pseudo_table
+ *  make a rte contains all of the start with pseudo cols, used for transform
+ */
+static RangeSubselect *makeSWCBPseudoTable()
+{
+    /* make a stmt for subquery */
+    List *pseudo_tlist = NULL;
+    ResTarget *res_target = NULL;
+    A_Const *a_const = NULL;
+    StartWithCTEPseudoReturnAtts *att = NULL;
+    for (uint i = 0; i < STARTWITH_PSEUDO_RETURN_ATTNUMS; i++) {
+        /* if allow keyword rownum as ident, we don't treat "rownum" as pseudo column */
+        if (i == SWCOL_ROWNUM) {
+            continue;
+        }
+        att = &g_StartWithCTEPseudoReturnAtts[i];
+ 
+        /* make var for pseudo return column */
+        a_const = makeNode(A_Const);
+        a_const->val.type = T_Integer;
+        a_const->val.val.ival = 1;
+        a_const->location = -1;
+        res_target = makeNode(ResTarget);
+        res_target->name = att->colname;
+        res_target->indirection = NIL;
+        res_target->val = (Node *)a_const;
+        res_target->location = -1;
+        pseudo_tlist = lappend(pseudo_tlist, res_target);
+    }
+ 
+    SelectStmt *stmt = makeNode(SelectStmt);
+    stmt->targetList = pseudo_tlist;
+ 
+    RangeSubselect* subselect = makeNode(RangeSubselect);
+    subselect->subquery = (Node*)stmt;
+    Alias* alias = makeAlias("__sw_pseudo_col_table__", NIL);
+    subselect->alias = alias;
+    return subselect;
 }

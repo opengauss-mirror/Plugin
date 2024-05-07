@@ -1963,9 +1963,18 @@ Plan* subquery_planner(PlannerGlobal* glob, Query* parse, PlannerInfo* parent_ro
             List* rowMarks = NIL;
             Relation mainRel = NULL;
             Oid taleOid = rt_fetch(linitial_int(parse->resultRelations), parse->rtable)->relid;
-            bool partKeyUpdated = targetListHasPartitionKey(parse->targetList, taleOid);
+            bool partKeyUpdated;
+            bool isPartitioned;
+
             mainRel = RelationIdGetRelation(taleOid);
+            isPartitioned = RELATION_IS_PARTITIONED(mainRel);
             RelationClose(mainRel);
+
+            if (isPartitioned) {
+                partKeyUpdated = targetListHasPartitionKey(parse->targetList, taleOid);
+            } else {
+                partKeyUpdated = false;
+            }
 
             /*
              * Set up the WITH CHECK OPTION and RETURNING lists-of-lists, if
@@ -3679,15 +3688,8 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                     wflists,
                     &needSecondLevelAgg,
                     collectiveGroupExpr);
-#ifdef ENABLE_MULTIPLE_NODES
-                /*
-                 * grouping_tlist was modified by build_groupingsets_plan,
-                 * we have to change tlist at the same time.
-                 */
-                tlist = grouping_tlist;
-#endif
                 /* Delete eq class expr after grouping */
-                delete_eq_member(root, tlist, collectiveGroupExpr);
+                delete_eq_member(root, grouping_tlist, collectiveGroupExpr);
 
                 numGroupCols = list_length(parse->groupClause);
                 /*
@@ -3715,9 +3717,9 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
 
                 if (parse->is_flt_frame) {
                     if (!parse->hasTargetSRFs && IS_STREAM_PLAN && (is_hashed_plan(result_plan) || is_rangelist_plan(result_plan))) {
-                        Assert(!expression_returns_set((Node*)tlist));
+                        Assert(!expression_returns_set((Node*)grouping_tlist));
 
-                        if (check_subplan_in_qual(tlist, result_plan->qual)) {
+                        if (check_subplan_in_qual(grouping_tlist, result_plan->qual)) {
                             errno_t sprintf_rc = sprintf_s(u_sess->opt_cxt.not_shipping_info->not_shipping_reason,
                                 NOTPLANSHIPPING_LENGTH,
                                 "var in quals doesn't exist in targetlist");
@@ -3727,7 +3729,7 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                     }
                 } else {
                     if (IS_STREAM_PLAN && (is_hashed_plan(result_plan) || is_rangelist_plan(result_plan))) {
-                        if (expression_returns_set((Node*)tlist)) {
+                        if (expression_returns_set((Node*)grouping_tlist)) {
                             errno_t sprintf_rc = sprintf_s(u_sess->opt_cxt.not_shipping_info->not_shipping_reason,
                                 NOTPLANSHIPPING_LENGTH,
                                 "set-valued function + groupingsets");
@@ -3735,7 +3737,7 @@ extern Plan* grouping_planner(PlannerInfo* root, double tuple_fraction)
                             mark_stream_unsupport();
                         }
 
-                        if (check_subplan_in_qual(tlist, result_plan->qual)) {
+                        if (check_subplan_in_qual(grouping_tlist, result_plan->qual)) {
                             errno_t sprintf_rc = sprintf_s(u_sess->opt_cxt.not_shipping_info->not_shipping_reason,
                                 NOTPLANSHIPPING_LENGTH,
                                 "var in quals doesn't exist in targetlist");
