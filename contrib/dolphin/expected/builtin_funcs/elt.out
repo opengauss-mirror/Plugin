@@ -31,24 +31,32 @@ select elt(1,'1.2');
 (1 row)
 
 select elt('1a','1.2a');
+WARNING:  Truncated incorrect INTEGER value: '1a'
+CONTEXT:  referenced column: elt
  elt  
 ------
  1.2a
 (1 row)
 
 select elt('1.6a','1.2a',23);
+WARNING:  Truncated incorrect INTEGER value: '1.6a'
+CONTEXT:  referenced column: elt
  elt  
 ------
  1.2a
 (1 row)
 
 select elt('1.6测','1.2a',23);
+WARNING:  Truncated incorrect INTEGER value: '1.6测'
+CONTEXT:  referenced column: elt
  elt  
 ------
  1.2a
 (1 row)
 
 select elt('1.6测','1.2a测试',23);
+WARNING:  Truncated incorrect INTEGER value: '1.6测'
+CONTEXT:  referenced column: elt
    elt    
 ----------
  1.2a测试
@@ -108,5 +116,33 @@ select elt(1,'a',2);
  a
 (1 row)
 
+select elt('1.0', 0);
+WARNING:  Truncated incorrect INTEGER value: '1.0'
+CONTEXT:  referenced column: elt
+ elt 
+-----
+ 0
+(1 row)
+
+select elt('1.0', 2);
+WARNING:  Truncated incorrect INTEGER value: '1.0'
+CONTEXT:  referenced column: elt
+ elt 
+-----
+ 2
+(1 row)
+
+create table t_elt(a int);
+insert into t_elt select elt('1.0', 0); -- error
+ERROR:  Truncated incorrect INTEGER value: '1.0'
+CONTEXT:  referenced column: elt
+insert ignore into t_elt select elt('1.0', 0); -- warning
+WARNING:  Truncated incorrect INTEGER value: '1.0'
+CONTEXT:  referenced column: elt
+set dolphin.sql_mode='';
+insert into t_elt select elt('1.0', 0); -- warning
+WARNING:  Truncated incorrect INTEGER value: '1.0'
+CONTEXT:  referenced column: elt
+drop table t_elt;
 drop schema db_elt cascade;
 reset current_schema;

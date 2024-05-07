@@ -9196,33 +9196,32 @@ text* _elt(int idx, PG_FUNCTION_ARGS)
     uint32 times = 0;
     char result_chr[CONV_MAX_CHAR_LEN + 1] = "";
     int ret;
-    if (!fcinfo->arg[idx]) {
-        return NULL;
-    } else {
-        getTypeOutputInfo(fcinfo->argTypes[idx], &typeOutput, &typIsVarlena);
-        char* str_value = OidOutputFunctionCall(typeOutput, fcinfo->arg[idx]);
-        result = cstring_to_text(str_value);
-        if (BITOID == valtype) {
-            int from_base = 2;
-            int to_base = 10;
-            char* badp = NULL;
-            long result_l;
-            result_l = strtol(str_value, &badp, 10);
-            if (str_value == badp) {
-                result_l = 0;
-            }
-            ret = conv_n(result_chr, (int128)result_l, from_base, to_base);
-            StringInfoData str;
-            initStringInfo(&str);
-            badp = NULL;
-            result_l = strtol(result_chr, &badp, 10);
-            if (result_chr == badp) {
-                result_l = 0;
-            }
-            str = char_deal(str, (uint32)result_l, remainder, remainders, times);
-            result = cstring_to_text(str.data);
-            pfree_ext(str.data);
+    if (valtype == BOOLOID) {
+        return cstring_to_text(DatumGetBool(PG_GETARG_DATUM(idx)) ? "1" : "0");
+    }
+    getTypeOutputInfo(fcinfo->argTypes[idx], &typeOutput, &typIsVarlena);
+    char* str_value = OidOutputFunctionCall(typeOutput, fcinfo->arg[idx]);
+    result = cstring_to_text(str_value);
+    if (BITOID == valtype) {
+        int from_base = 2;
+        int to_base = 10;
+        char* badp = NULL;
+        long result_l;
+        result_l = strtol(str_value, &badp, 10);
+        if (str_value == badp) {
+            result_l = 0;
         }
+        ret = conv_n(result_chr, (int128)result_l, from_base, to_base);
+        StringInfoData str;
+        initStringInfo(&str);
+        badp = NULL;
+        result_l = strtol(result_chr, &badp, 10);
+        if (result_chr == badp) {
+            result_l = 0;
+        }
+        str = char_deal(str, (uint32)result_l, remainder, remainders, times);
+        result = cstring_to_text(str.data);
+        pfree_ext(str.data);
     } 
     return result;
 }
@@ -9256,7 +9255,7 @@ Datum elt_bit(PG_FUNCTION_ARGS)
 {
     long num = convert_bit_to_int(fcinfo, 0);
     text* result = NULL;
-    if (num <= 0 || num >= PG_NARGS()) {
+    if (num <= 0 || num >= PG_NARGS() || PG_ARGISNULL(num)) {
         PG_RETURN_NULL();
     }
 
@@ -9271,7 +9270,7 @@ Datum elt_integer(PG_FUNCTION_ARGS)
 {
     int64 num = PG_GETARG_INT64(0);
     text* result = NULL;
-    if (num <= 0 || num >= PG_NARGS()) {
+    if (num <= 0 || num >= PG_NARGS() || PG_ARGISNULL(num)) {
         PG_RETURN_NULL();
     }
 
@@ -9288,11 +9287,16 @@ Datum elt_string(PG_FUNCTION_ARGS)
     char* value = text_to_cstring(PG_GETARG_TEXT_PP(0));
     char* badp = NULL;
     num = (int64)strtol(value, &badp, 10);
+    if ((badp != NULL && *badp != '\0') || errno == ERANGE) {
+        ereport((!SQL_MODE_STRICT() || fcinfo->can_ignore) ? WARNING : ERROR,
+            (errmsg("Truncated incorrect INTEGER value: '%s'", value)));
+    }
     if (value == badp) {
         num = 0;
     }
+    pfree(value);
 
-    if (num <= 0 || num >= PG_NARGS()) {
+    if (num <= 0 || num >= PG_NARGS() || PG_ARGISNULL(num)) {
         PG_RETURN_NULL();
     }
 
@@ -10179,14 +10183,7 @@ Datum make_set(PG_FUNCTION_ARGS)
             }
             if (flag % 2 == 1 || (flag % 2 == 0 && num < 0)) {
                 temp_char = _elt(i, fcinfo);
-                /* handle bool value */
-                if (temp_char == NULL && fcinfo->arg[i] == 0) {
-                    appendStringInfoString(&buf, "0");
-                } else if (fcinfo->arg[i] == 1) {
-                    appendStringInfoString(&buf, "1");
-                } else {
-                    appendStringInfoString(&buf, text_to_cstring(temp_char));
-                }
+                appendStringInfoString(&buf, text_to_cstring(temp_char));
                 output_flag = true;
             }
         }
