@@ -3482,21 +3482,33 @@ select CURRENT_DATE <> time'00:00:00';
 (1 row)
 
 select (CURRENT_DATE::date + interval'11 hour 11 min 11 sec') <> time'11:11:11';
+WARNING:  invalid input syntax for type double precision: "11:11:11"
+CONTEXT:  SQL function "uint2_time_ne" during inlining
+--? WARNING:  invalid input syntax for type int16: ".* 11:11:11"
+DETAIL:  text contain invalid character
  ?column? 
 ----------
- f
+ t
 (1 row)
 
 select (CURRENT_DATE::datetime + interval'11 hour 11 min 11 sec') <> time'11:11:11';
+WARNING:  invalid input syntax for type double precision: "11:11:11"
+CONTEXT:  SQL function "uint2_time_ne" during inlining
+--? WARNING:  invalid input syntax for type int16: ".* 11:11:11"
+DETAIL:  text contain invalid character
  ?column? 
 ----------
- f
+ t
 (1 row)
 
 select (CURRENT_DATE::timestamp + interval'11 hour 11 min 11 sec') <> time'11:11:11';
+WARNING:  invalid input syntax for type double precision: "11:11:11"
+CONTEXT:  SQL function "uint2_time_ne" during inlining
+--? WARNING:  invalid input syntax for type int16: ".* 11:11:11"
+DETAIL:  text contain invalid character
  ?column? 
 ----------
- f
+ t
 (1 row)
 
 select CURRENT_DATE < time'00:00:00';

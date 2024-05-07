@@ -34,7 +34,7 @@ test: test_binary test_binary2 test_blob test_datatype test_fixed test_mysql_enu
 
 test: like_index_test_utf8 like_index_test_utf8mb4 like_index_test_gbk like_index_test_gb18030 like_index_test_binary_and_varbinary create_function_core
 
-test: test_enum_collation multi_delete join_using function_type_test join_commas_connect define_primary_key interval_units
+test: test_enum_collation multi_delete join_using function_type_test join_commas_connect define_primary_key interval_units interval_expr_unit
  
 test: test_char_tail_blank test_char_tail_blank_2 test_char_tail_blank_3
 

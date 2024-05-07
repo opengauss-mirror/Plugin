@@ -670,11 +670,26 @@ SELECT time '830:12:34' - interval '3 hours';
 (1 row)
 
 SELECT time '837:00:00' + interval '2 hours';
-ERROR:  time out of range
+WARNING:  time field value out of range
+ ?column? 
+----------
+ 
+(1 row)
+
 SELECT time '838:59:59' + interval '1 second';
-ERROR:  time out of range
+WARNING:  time field value out of range
+ ?column? 
+----------
+ 
+(1 row)
+
 SELECT time '-837:00:00' - interval '3 hours';
-ERROR:  time out of range
+WARNING:  time field value out of range
+ ?column? 
+----------
+ 
+(1 row)
+
 SELECT time '1:00:00' - interval '3 hours';
  ?column?  
 -----------

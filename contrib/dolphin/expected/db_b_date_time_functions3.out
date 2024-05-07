@@ -933,11 +933,11 @@ select * from test order by funcname;
  date_add(date'0001-01-01',INTERVAL 1 year)                                                       | 0002-01-01
  date_add(null, INTERVAL 1 day)                                                                   | 
  date_add(time'-838:59:59', INTERVAL -1 second)                                                   | 
- date_add(time'12:12:12', INTERVAL -1 day)                                                        | -11:47:48
+--? date_add(time'12:12:12', INTERVAL -1 day)                                                        | .* 12:12:12
  date_add(time'12:12:12', INTERVAL -1 hour)                                                       | 11:12:12
  date_add(time'12:12:12', INTERVAL -1 minute)                                                     | 12:11:12
  date_add(time'12:12:12', INTERVAL -1 second)                                                     | 12:12:11
- date_add(time'12:12:12', INTERVAL 1 day)                                                         | 36:12:12
+--? date_add(time'12:12:12', INTERVAL 1 day)                                                         | .* 12:12:12
  date_add(time'12:12:12', INTERVAL 1 hour)                                                        | 13:12:12
  date_add(time'12:12:12', INTERVAL 1 minute)                                                      | 12:13:12
  date_add(time'12:12:12', INTERVAL 1 second)                                                      | 12:12:13
@@ -987,11 +987,11 @@ select * from test order by funcname;
  date_sub(date'0001-01-01',INTERVAL -1 year)                                                      | 0002-01-01
  date_sub(null, INTERVAL 1 day)                                                                   | 
  date_sub(time'-838:59:59', INTERVAL 1 second)                                                    | 
- date_sub(time'12:12:12', INTERVAL -1 day)                                                        | 36:12:12
+--? date_sub(time'12:12:12', INTERVAL -1 day)                                                        | .* 12:12:12
  date_sub(time'12:12:12', INTERVAL -1 hour)                                                       | 13:12:12
  date_sub(time'12:12:12', INTERVAL -1 minute)                                                     | 12:13:12
  date_sub(time'12:12:12', INTERVAL -1 second)                                                     | 12:12:13
- date_sub(time'12:12:12', INTERVAL 1 day)                                                         | -11:47:48
+--? date_sub(time'12:12:12', INTERVAL 1 day)                                                         | .* 12:12:12
  date_sub(time'12:12:12', INTERVAL 1 hour)                                                        | 11:12:12
  date_sub(time'12:12:12', INTERVAL 1 minute)                                                      | 12:11:12
  date_sub(time'12:12:12', INTERVAL 1 second)                                                      | 12:12:11

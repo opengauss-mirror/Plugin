@@ -295,3 +295,63 @@ DROP aggregate pg_catalog.max(varbit);
 DROP aggregate pg_catalog.min(varbit);
 DROP FUNCTION pg_catalog.varbit_larger(varbit, varbit);
 DROP FUNCTION pg_catalog.varbit_smaller(varbit, varbit);
+
+-- date +/- interval expr unit
+DROP OPERATOR IF EXISTS pg_catalog.+(text, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+(interval, text);
+DROP OPERATOR IF EXISTS pg_catalog.+(number, interval);
+DROP OPERATOR IF EXISTS pg_catalog.+(interval, number);
+DROP OPERATOR IF EXISTS pg_catalog.-(text, interval);
+DROP OPERATOR IF EXISTS pg_catalog.-(number, interval);
+do $$
+begin
+        update pg_catalog.pg_operator set oprresult = 'timestamp'::regtype, oprcode = 'date_pl_interval'::regproc
+            where oprname = '+' and oprleft = 'date'::regtype and oprright = 'interval'::regtype;
+        update pg_catalog.pg_operator set oprresult = 'timestamp'::regtype, oprcode = 'timestamp_pl_interval'::regproc
+            where oprname = '+' and oprleft = 'timestamp without time zone'::regtype and oprright = 'interval'::regtype;
+        update pg_catalog.pg_operator set oprresult = 'timestamptz'::regtype, oprcode = 'timestamptz_pl_interval'::regproc
+            where oprname = '+' and oprleft = 'timestamptz'::regtype and oprright = 'interval'::regtype;
+        update pg_catalog.pg_operator set oprresult = 'time'::regtype, oprcode = 'time_pl_interval'::regproc
+            where oprname = '+' and oprleft = 'time'::regtype and oprright = 'interval'::regtype;
+    
+        update pg_catalog.pg_operator set oprresult = 'timestamp'::regtype, oprcode = 'interval_pl_date'::regproc
+            where oprname = '+' and oprleft = 'interval'::regtype and oprright = 'date'::regtype;
+        update pg_catalog.pg_operator set oprresult = 'timestamp'::regtype, oprcode = 'interval_pl_timestamp'::regproc
+            where oprname = '+' and oprleft = 'interval'::regtype and oprright = 'timestamp without time zone'::regtype;
+        update pg_catalog.pg_operator set oprresult = 'timestamptz'::regtype, oprcode = 'interval_pl_timestamptz'::regproc
+            where oprname = '+' and oprleft = 'interval'::regtype and oprright = 'timestamptz'::regtype;
+        update pg_catalog.pg_operator set oprresult = 'time'::regtype, oprcode = 'interval_pl_time'::regproc
+            where oprname = '+' and oprleft = 'interval'::regtype and oprright = 'time'::regtype;
+        
+        update pg_catalog.pg_operator set oprresult = 'timestamp'::regtype, oprcode = 'date_mi_interval'::regproc
+            where oprname = '-' and oprleft = 'date'::regtype and oprright = 'interval'::regtype;
+        update pg_catalog.pg_operator set oprresult = 'timestamp'::regtype, oprcode = 'timestamp_mi_interval'::regproc
+            where oprname = '-' and oprleft = 'timestamp without time zone'::regtype and oprright = 'interval'::regtype;
+        update pg_catalog.pg_operator set oprresult = 'timestamptz'::regtype, oprcode = 'timestamptz_mi_interval'::regproc
+            where oprname = '-' and oprleft = 'timestamptz'::regtype and oprright = 'interval'::regtype;
+        update pg_catalog.pg_operator set oprresult = 'time'::regtype, oprcode = 'time_mi_interval'::regproc
+            where oprname = '-' and oprleft = 'time'::regtype and oprright = 'interval'::regtype;
+end
+$$;
+DROP FUNCTION IF EXISTS pg_catalog.op_num_add_intr (numeric, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_text_add_intr (text, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_date_add_intr (date, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_dttm_add_intr (timestamp without time zone, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_tmsp_add_intr (timestamptz, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_num (interval, numeric);
+DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_text (interval, text);
+DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_date (interval, date);
+DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_dttm (interval, timestamp without time zone);
+DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_tmsp (interval, timestamptz);
+DROP FUNCTION IF EXISTS pg_catalog.op_num_sub_intr (numeric, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_text_sub_intr (text, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_date_sub_intr (date, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_dttm_sub_intr (timestamp without time zone, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_tmsp_sub_intr (timestamptz, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_intr_add_time (interval, time);
+DROP FUNCTION IF EXISTS pg_catalog.op_time_add_intr (time, interval);
+DROP FUNCTION IF EXISTS pg_catalog.op_time_sub_intr (time, interval);
+DROP FUNCTION IF EXISTS pg_catalog.date_sub (time, interval);
+DROP FUNCTION IF EXISTS pg_catalog.date_add (time, interval);
+CREATE OR REPLACE FUNCTION pg_catalog.date_add (time, interval) RETURNS time AS $$ SELECT pg_catalog.adddate($1, $2)  $$ LANGUAGE SQL;
+CREATE OR REPLACE FUNCTION pg_catalog.date_sub (time, interval) RETURNS time AS $$ SELECT pg_catalog.adddate($1, -$2)  $$ LANGUAGE SQL;
