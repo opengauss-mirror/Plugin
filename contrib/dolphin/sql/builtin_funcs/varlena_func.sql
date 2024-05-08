@@ -323,6 +323,53 @@ select concat(`bit1`, 'openGauss'), concat(`bit6`, 'openGauss'), concat(`bit8`, 
 select concat_ws('-', `bit1`, 'openGauss'), concat_ws('-', `bit6`, 'openGauss'), concat_ws('-', `bit8`, 'openGauss'), concat_ws('-', `bit15`, 'openGauss'), concat_ws('-', `bit16`, 'openGauss') from bit_test;
 drop table bit_test;
 
+create table t1(a text);
+explain(costs off) select * from t1 where a like concat('%', '1', '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::bool, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::"char", '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::name, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::int1, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::int2, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::int4, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::int8, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::int16, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::text, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::oid, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::clob, '%');
+explain(costs off) select * from t1 where a like concat('%', '{"a":1}'::json, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::xml, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::varchar, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::varbit, '%')::text;
+explain(costs off) select * from t1 where a like concat('%', '1'::cstring, '%');
+explain(costs off) select * from t1 where a like concat('%', '{"a":1}'::jsonb, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::nvarchar2, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::year, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::uint1, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::uint2, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::uint4, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::uint8, '%');
+
+
+-- some can't do simply func
+explain(costs off) select * from t1 where a like concat('%', '1'::money, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::raw, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::bytea, '%');
+explain(costs off) select * from t1 where a like concat('%', '2022-11-11'::date, '%');
+explain(costs off) select * from t1 where a like concat('%', '2022-11-11 11:11:11'::timestamp, '%');
+explain(costs off) select * from t1 where a like concat('%', '11:11:11'::time, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::numeric, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::bpchar, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::float4, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::float8, '%');
+explain(costs off) select * from t1 where a like concat('%', '1'::binary, '%')::text;
+explain(costs off) select * from t1 where a like concat('%', '1'::varbinary, '%')::text;
+explain(costs off) select * from t1 where a like concat('%', '1'::blob, '%')::text;
+explain(costs off) select * from t1 where a like concat('%', '1'::tinyblob, '%')::text;
+explain(costs off) select * from t1 where a like concat('%', '1'::mediumblob, '%')::text;
+explain(costs off) select * from t1 where a like concat('%', '1'::longblob, '%')::text;
+explain(costs off) select * from t1 where a like concat('%', '1'::bit(8), '%')::text;
+drop table t1;
+
 drop schema db_test_varlena cascade;
 reset bytea_output;
 reset dolphin.sql_mode;
