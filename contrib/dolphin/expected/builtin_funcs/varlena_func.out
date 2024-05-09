@@ -791,6 +791,296 @@ select concat_ws('-', `bit1`, 'openGauss'), concat_ws('-', `bit6`, 'openGauss'),
 (2 rows)
 
 drop table bit_test;
+create table t1(a text);
+explain(costs off) select * from t1 where a like concat('%', '1', '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::bool, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::"char", '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::name, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::int1, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::int2, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::int4, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::int8, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::int16, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::text, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::oid, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::clob, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '{"a":1}'::json, '%');
+             QUERY PLAN             
+------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%{"a":1}%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::xml, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::varchar, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::varbit, '%')::text;
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::cstring, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '{"a":1}'::jsonb, '%');
+             QUERY PLAN              
+-------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%{"a": 1}%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::nvarchar2, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::year, '%');
+           QUERY PLAN            
+---------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%2001%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::uint1, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::uint2, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::uint4, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::uint8, '%');
+          QUERY PLAN          
+------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ '%1%'::text)
+(2 rows)
+
+-- some can't do simply func
+explain(costs off) select * from t1 where a like concat('%', '1'::money, '%');
+                                      QUERY PLAN                                       
+---------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ concat('%' COLLATE "default", '$1.00'::money, '%' COLLATE "default"))
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::raw, '%');
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ concat('%' COLLATE "default", '\x31'::raw, '%' COLLATE "default"))
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::bytea, '%');
+                                      QUERY PLAN                                      
+--------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ concat('%' COLLATE "default", '\x31'::bytea, '%' COLLATE "default"))
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '2022-11-11'::date, '%');
+                                                  QUERY PLAN                                                   
+---------------------------------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ concat('%' COLLATE "default", ('2022-11-11' COLLATE "default")::date, '%' COLLATE "default"))
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '2022-11-11 11:11:11'::timestamp, '%');
+                                                          QUERY PLAN                                                          
+------------------------------------------------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ concat('%' COLLATE "default", '2022-11-11 11:11:11-08'::timestamp(0) with time zone, '%' COLLATE "default"))
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '11:11:11'::time, '%');
+                                                  QUERY PLAN                                                  
+--------------------------------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ concat('%' COLLATE "default", '11:11:11'::time(0) without time zone, '%' COLLATE "default"))
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::numeric, '%');
+                                       QUERY PLAN                                        
+-----------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ concat('%' COLLATE "default", 1::numeric(10,0), '%' COLLATE "default"))
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::bpchar, '%');
+                                     QUERY PLAN                                     
+------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ concat('%' COLLATE "default", '1'::bpchar, '%' COLLATE "default"))
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::float4, '%');
+                                   QUERY PLAN                                   
+--------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ concat('%' COLLATE "default", 1::real, '%' COLLATE "default"))
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::float8, '%');
+                                         QUERY PLAN                                         
+--------------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ concat('%' COLLATE "default", 1::double precision, '%' COLLATE "default"))
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::binary, '%')::text;
+                                           QUERY PLAN                                            
+-------------------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ (concat('%' COLLATE "default", '\x31'::"binary", '%' COLLATE "default"))::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::varbinary, '%')::text;
+                                             QUERY PLAN                                              
+-----------------------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ (concat('%' COLLATE "default", '\x31'::varbinary(1), '%' COLLATE "default"))::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::blob, '%')::text;
+                                         QUERY PLAN                                          
+---------------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ (concat('%' COLLATE "default", '\x31'::blob, '%' COLLATE "default"))::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::tinyblob, '%')::text;
+                                           QUERY PLAN                                            
+-------------------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ (concat('%' COLLATE "default", '\x31'::tinyblob, '%' COLLATE "default"))::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::mediumblob, '%')::text;
+                                            QUERY PLAN                                             
+---------------------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ (concat('%' COLLATE "default", '\x31'::mediumblob, '%' COLLATE "default"))::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::longblob, '%')::text;
+                                           QUERY PLAN                                            
+-------------------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ (concat('%' COLLATE "default", '\x31'::longblob, '%' COLLATE "default"))::text)
+(2 rows)
+
+explain(costs off) select * from t1 where a like concat('%', '1'::bit(8), '%')::text;
+                                             QUERY PLAN                                             
+----------------------------------------------------------------------------------------------------
+ Seq Scan on t1
+   Filter: (a ~~ (concat('%' COLLATE "default", B'00110001'::bit(8), '%' COLLATE "default"))::text)
+(2 rows)
+
+drop table t1;
 drop schema db_test_varlena cascade;
 reset bytea_output;
 reset dolphin.sql_mode;
