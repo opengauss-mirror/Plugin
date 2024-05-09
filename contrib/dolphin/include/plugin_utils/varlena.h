@@ -4,6 +4,7 @@
 #include "plugin_postgres.h"
 #include "fmgr.h"
 #include "plugin_utils/varbit.h"
+#include "plugin_parser/parser.h"
 
 #ifdef DOLPHIN
 extern Datum bit_blob(VarBit* input);
@@ -15,6 +16,7 @@ extern bool is_req_from_jdbc();
 extern int32 binary_text_position(const char *b, size_t b_length, const char *s, size_t s_length);
 bool is_type_with_date(Oid type);
 bool is_type_with_time(Oid type);
+extern CmpType agg_cmp_type(CmpType a, CmpType b);
 #endif
 
 #endif

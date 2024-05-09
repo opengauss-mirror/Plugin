@@ -62,6 +62,7 @@
 #ifdef DOLPHIN
 #include "plugin_utils/varlena.h"
 #include "plugin_commands/mysqlmode.h"
+#include "plugin_utils/varlena.h"
 #endif
 #include "tcop/tcopprot.h"
 
@@ -150,6 +151,11 @@ enum FieldType {
 };
 
 static FieldType type_to_index(Oid oid);
+static FieldType get_node_field_type(Node* node);
+static inline bool is_temporal_type_with_date(FieldType type);
+static inline bool is_temporal_type(FieldType type);
+static CmpType temporal_with_date_as_number_cmp_type(Node* node, bool* decimals);
+static Oid cmptype_map_to_oid(List *args, CmpType result_type, bool has_unsigned);
 
 typedef struct DefaultFuncType {
     Oid tableOid = InvalidOid;
@@ -4183,20 +4189,12 @@ static FieldType agg_field_type(List *args)
     Node *node = (Node*)lfirst(cell);
     FieldType res = FIELD_TYPE_INVALID;
     /* handle special case for null */
-    if (IsA(node, Const) && ((Const*)node)->constisnull) {
-        res = FIELD_TYPE_NULL;
-    } else {
-        res = type_to_index(exprType(node));
-    }
+    res = get_node_field_type(node);
 
     for (cell = lnext(cell); cell != NULL && res != FIELD_TYPE_INVALID; cell = lnext(cell)) {
         FieldType arg_field_type = FIELD_TYPE_INVALID;
         node = (Node*)lfirst(cell);
-        if (IsA(node, Const) && ((Const*)node)->constisnull) {
-            arg_field_type = FIELD_TYPE_NULL;
-        } else {
-            arg_field_type = type_to_index(exprType(node));
-        }
+        arg_field_type = get_node_field_type(node);
 
         /* this should not happen, just protected from out-of-bound read, and 'res' has alreay checked in for loop */
         if (arg_field_type == FIELD_TYPE_INVALID) {
@@ -4332,6 +4330,154 @@ static Oid agg_result_type(List *args)
         }
     }
 
+    return cmptype_map_to_oid(args, result_type, has_unsigned);
+}
+#endif
+
+static Node* transformCoalesceExpr(ParseState* pstate, CoalesceExpr* c)
+{
+    CoalesceExpr* newc = makeNode(CoalesceExpr);
+    Node* last_srf = pstate->p_last_srf;
+    List* newargs = NIL;
+    List* newcoercedargs = NIL;
+    ListCell* args = NULL;
+
+    foreach (args, c->args) {
+        Node* e = (Node*)lfirst(args);
+        Node* newe = NULL;
+
+        newe = transformExprRecurse(pstate, e);
+        newargs = lappend(newargs, newe);
+    }
+#ifdef DOLPHIN
+    newc->coalescetype = agg_result_type(newargs);
+    if (!OidIsValid(newc->coalescetype)) {
+        /* if the agg_result_type is invalid, goto original routine */
+        newc->coalescetype = select_common_type(pstate, newargs, c->isnvl ? "NVL" : "COALESCE", NULL);
+    }
+#else
+    // supports implicit convert
+    if (c->isnvl) {
+        newc->coalescetype = select_common_type(pstate, newargs, "NVL", NULL);
+    } else {
+        newc->coalescetype = select_common_type(pstate, newargs, "COALESCE", NULL);
+    }
+#endif
+    /* coalescecollid will be set by parse_collate.c */
+
+    /* Convert arguments if necessary */
+    foreach (args, newargs) {
+        Node* e = (Node*)lfirst(args);
+        Node* newe = NULL;
+        newe = coerce_to_common_type(pstate, e, newc->coalescetype, "COALESCE");
+        newcoercedargs = lappend(newcoercedargs, newe);
+    }
+    if (pstate->p_is_flt_frame) {
+        /* if any subexpression contained a SRF, complain */
+        if (pstate->p_last_srf != last_srf) {
+            pstate->p_is_flt_frame = false;
+            ereport(DEBUG1,
+                    (errmodule(MOD_SRF),
+                     errmsg("new expression framework set-returning functions are not allowed in COALESCE"),
+                     parser_errposition(pstate, exprLocation(pstate->p_last_srf))));
+        }
+    }
+
+    newc->args = newcoercedargs;
+    newc->location = c->location;
+    return (Node*)newc;
+}
+
+#ifndef DOLPHIN
+static Node* transformMinMaxExpr(ParseState* pstate, MinMaxExpr* m)
+{
+    MinMaxExpr* newm = makeNode(MinMaxExpr);
+    List* newargs = NIL;
+    List* newcoercedargs = NIL;
+    const char* funcname = (m->op == IS_GREATEST) ? "GREATEST" : "LEAST";
+    ListCell* args = NULL;
+
+    newm->op = m->op;
+    foreach (args, m->args) {
+        Node* e = (Node*)lfirst(args);
+        Node* newe = NULL;
+
+        newe = transformExprRecurse(pstate, e);
+        newargs = lappend(newargs, newe);
+    }
+
+    newm->minmaxtype = select_common_type(pstate, newargs, funcname, NULL);
+    /* minmaxcollid and inputcollid will be set by parse_collate.c */
+
+    /* Convert arguments if necessary */
+    foreach (args, newargs) {
+        Node* e = (Node*)lfirst(args);
+        Node* newe = NULL;
+
+        newe = coerce_to_common_type(pstate, e, newm->minmaxtype, funcname);
+        newcoercedargs = lappend(newcoercedargs, newe);
+    }
+
+    newm->args = newcoercedargs;
+    newm->location = m->location;
+    return (Node*)newm;
+}
+
+#else
+
+static FieldType get_node_field_type(Node* node)
+{
+    FieldType field_type = FIELD_TYPE_INVALID;
+    if (IsA(node, Const) && ((Const*)node)->constisnull) {
+        field_type = FIELD_TYPE_NULL;
+    } else {
+        field_type = type_to_index(exprType(node));
+    }
+    return field_type;
+}
+
+static inline bool is_temporal_type_with_date(FieldType type)
+{
+    switch (type) {
+        case FIELD_TYPE_DATE:
+        case FIELD_TYPE_DATETIME:
+        case FIELD_TYPE_TIMESTAMP:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static inline bool is_temporal_type(FieldType type)
+{
+    switch (type) {
+        case FIELD_TYPE_DATE:
+        case FIELD_TYPE_DATETIME:
+        case FIELD_TYPE_TIMESTAMP:
+        case FIELD_TYPE_TIME:
+        case FIELD_TYPE_YEAR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static CmpType temporal_with_date_as_number_cmp_type(Node* node, bool* decimals)
+{
+    CmpType res_type = CMP_REAL_TYPE;
+    bool unsigned_flag = false;
+    bool with_date = is_temporal_type_with_date(get_node_field_type(node));
+    if (with_date) {
+        res_type = (*decimals ? CMP_DECIMAL_TYPE : CMP_INT_TYPE);
+    } else {
+        res_type = map_oid_to_cmp_type(exprType(node), &unsigned_flag);
+        *decimals = *decimals || (res_type == CMP_REAL_TYPE || res_type == CMP_DECIMAL_TYPE);
+    }
+    return res_type;
+}
+
+static Oid cmptype_map_to_oid(List *args, CmpType result_type, bool has_unsigned)
+{
     FieldType res = agg_field_type(args);
     switch (result_type) {
         case CMP_UNKNOWN_TYPE:
@@ -4388,63 +4534,19 @@ static Oid agg_result_type(List *args)
             }
         }
     }
-    /* should not reach here */
     return InvalidOid;
 }
-#endif
 
-static Node* transformCoalesceExpr(ParseState* pstate, CoalesceExpr* c)
-{
-    CoalesceExpr* newc = makeNode(CoalesceExpr);
-    Node* last_srf = pstate->p_last_srf;
-    List* newargs = NIL;
-    List* newcoercedargs = NIL;
-    ListCell* args = NULL;
-
-    foreach (args, c->args) {
-        Node* e = (Node*)lfirst(args);
-        Node* newe = NULL;
-
-        newe = transformExprRecurse(pstate, e);
-        newargs = lappend(newargs, newe);
-    }
-#ifdef DOLPHIN
-    newc->coalescetype = agg_result_type(newargs);
-    if (!OidIsValid(newc->coalescetype)) {
-        /* if the agg_result_type is invalid, goto original routine */
-        newc->coalescetype = select_common_type(pstate, newargs, c->isnvl ? "NVL" : "COALESCE", NULL);
-    }
-#else
-    // supports implicit convert
-    if (c->isnvl) {
-        newc->coalescetype = select_common_type(pstate, newargs, "NVL", NULL);
+static void processArgs(ParseState* pstate, Node* e, List **coercedargs, Oid targetTypeId,
+                        bool compare_as_datetimes, const char* funcname) {
+    Node* newe = NULL;
+    Oid inputTypeId = exprType(e);
+    if (compare_as_datetimes && can_coerce_type(1, &inputTypeId, &targetTypeId, COERCION_EXPLICIT)) {
+        newe = coerce_type(pstate, e, inputTypeId, targetTypeId, -1, COERCION_EXPLICIT, COERCE_EXPLICIT_CAST, -1);
     } else {
-        newc->coalescetype = select_common_type(pstate, newargs, "COALESCE", NULL);
+        newe = coerce_to_common_type(pstate, e, targetTypeId, funcname);
     }
-#endif
-    /* coalescecollid will be set by parse_collate.c */
-
-    /* Convert arguments if necessary */
-    foreach (args, newargs) {
-        Node* e = (Node*)lfirst(args);
-        Node* newe = NULL;
-        newe = coerce_to_common_type(pstate, e, newc->coalescetype, "COALESCE");
-        newcoercedargs = lappend(newcoercedargs, newe);
-    }
-    if (pstate->p_is_flt_frame) {
-        /* if any subexpression contained a SRF, complain */
-        if (pstate->p_last_srf != last_srf) {
-            pstate->p_is_flt_frame = false;
-            ereport(DEBUG1,
-                    (errmodule(MOD_SRF),
-                     errmsg("new expression framework set-returning functions are not allowed in %s", "COALESCE"),
-                     parser_errposition(pstate, exprLocation(pstate->p_last_srf))));
-        }
-    }
-
-    newc->args = newcoercedargs;
-    newc->location = c->location;
-    return (Node*)newc;
+    *coercedargs = lappend(*coercedargs, newe);
 }
 
 static Node* transformMinMaxExpr(ParseState* pstate, MinMaxExpr* m)
@@ -4452,8 +4554,10 @@ static Node* transformMinMaxExpr(ParseState* pstate, MinMaxExpr* m)
     MinMaxExpr* newm = makeNode(MinMaxExpr);
     List* newargs = NIL;
     List* newcoercedargs = NIL;
+    List* cmpargs = NIL;
     const char* funcname = (m->op == IS_GREATEST) ? "GREATEST" : "LEAST";
     ListCell* args = NULL;
+    ListCell* oriargs = NULL;
 
     newm->op = m->op;
     foreach (args, m->args) {
@@ -4464,22 +4568,84 @@ static Node* transformMinMaxExpr(ParseState* pstate, MinMaxExpr* m)
         newargs = lappend(newargs, newe);
     }
 
-    newm->minmaxtype = select_common_type(pstate, newargs, funcname, NULL);
+    CmpType cmp_type;
+    bool decimals = false;
+    uint string_arg_count = 0;
+    uint temporal_arg_count = 0;
+    uint arg_count = list_length(newargs);
+    bool datetime_found= false;
+    bool compare_as_datetimes = false;
+    bool unsigned_flag = false;
+    bool has_unsigned = false;
+
+    /* get first not null arg type */
+    foreach (args, newargs) {
+        if (!IsA(args, Const) || !((Const*)args)->constisnull) {
+            cmp_type = temporal_with_date_as_number_cmp_type((Node*)lfirst(args), &decimals);
+            args = lnext(args);
+            break;
+        }
+    }
+
+    foreach (args, newargs) {
+        Node* e = (Node*)lfirst(args);
+        FieldType node_field_type = get_node_field_type(e);
+        CmpType tmp_type = map_oid_to_cmp_type(exprType(e), &unsigned_flag);
+
+        cmp_type = agg_cmp_type(cmp_type, temporal_with_date_as_number_cmp_type(e, &decimals));
+        if (tmp_type == CMP_STRING_TYPE) {
+            string_arg_count++;
+        }
+        if (is_temporal_type(node_field_type)) {
+            temporal_arg_count++;
+        }
+        if (is_temporal_type_with_date(node_field_type)) {
+            datetime_found = true;
+        }
+    }
+
+    newm->minmaxtype = cmptype_map_to_oid(newargs, cmp_type, has_unsigned);
+    if (newm->minmaxtype == InvalidOid) {
+        newm->minmaxtype = select_common_type(pstate, newargs, funcname, NULL);
+    }
+    newm->cmptype = newm->minmaxtype;
+
     /* minmaxcollid and inputcollid will be set by parse_collate.c */
+    if (string_arg_count == arg_count && datetime_found) {
+        newm->cmptype = TIMESTAMPOID;
+        newm->minmaxtype = cmptype_map_to_oid(newargs, CMP_STRING_TYPE, has_unsigned);
+        compare_as_datetimes= true;
+    } else if (cmp_type == CMP_DECIMAL_TYPE || cmp_type == CMP_INT_TYPE) {
+        newm->cmptype = NUMERICOID;
+    } else if (cmp_type == CMP_REAL_TYPE) {
+        newm->cmptype = FLOAT8OID;
+    }
+
+    if (compare_as_datetimes && temporal_arg_count == arg_count) {
+        newm->minmaxtype = TIMESTAMPOID;
+    } else if (0 < temporal_arg_count && temporal_arg_count < arg_count && string_arg_count < arg_count) {
+        newm->minmaxtype = VARCHAROID;
+    }
 
     /* Convert arguments if necessary */
     foreach (args, newargs) {
         Node* e = (Node*)lfirst(args);
-        Node* newe = NULL;
-
-        newe = coerce_to_common_type(pstate, e, newm->minmaxtype, funcname);
-        newcoercedargs = lappend(newcoercedargs, newe);
+        processArgs(pstate, e, &newcoercedargs, newm->minmaxtype, compare_as_datetimes, funcname);
     }
 
+    if (newm->cmptype != newm->minmaxtype) {
+        foreach (oriargs, newargs) {
+            Node* e = (Node*)lfirst(oriargs);
+            processArgs(pstate, e, &cmpargs, newm->cmptype, compare_as_datetimes, funcname);
+        }
+    }
+
+    newm->cmpargs = cmpargs;
     newm->args = newcoercedargs;
     newm->location = m->location;
     return (Node*)newm;
 }
+#endif
 
 static Node* transformXmlExpr(ParseState* pstate, XmlExpr* x)
 {

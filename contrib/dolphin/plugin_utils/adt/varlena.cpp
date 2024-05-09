@@ -197,7 +197,6 @@ static int32 anybinary_typmodin(ArrayType* ta, const char* typname, uint32 max);
 static char* anybinary_typmodout(int32 typmod);
 static Datum copy_binary(Datum source, int typmod, bool target_is_var, bool can_ignore);
 static bytea* copy_blob(bytea* source, int64 max_size);
-static CmpType get_cmp_type(CmpType a, CmpType b);
 static bool is_unsigned_intType(Oid oid);
 static uint64 parse_unsigned_val(Oid typeoid, char* str_val);
 static CmpType agg_cmp_type(FunctionCallInfo fcinfo, int argc);
@@ -10084,7 +10083,7 @@ static bool is_unsigned_intType(Oid oid)
     return false;
 }
 
-static CmpType get_cmp_type(CmpType a, CmpType b)
+CmpType agg_cmp_type(CmpType a, CmpType b)
 {
     if (a == CMP_STRING_TYPE && b == CMP_STRING_TYPE) {
         return CMP_STRING_TYPE;
@@ -10104,7 +10103,7 @@ static CmpType agg_cmp_type(FunctionCallInfo fcinfo, int argc)
     bool unsigned_flag = false;
     CmpType agg_type = map_oid_to_cmp_type(fcinfo->argTypes[0], &unsigned_flag);
     for (int i = 1; i < argc; i++) {
-        agg_type = get_cmp_type(agg_type, map_oid_to_cmp_type(fcinfo->argTypes[i], &unsigned_flag));
+        agg_type = agg_cmp_type(agg_type, map_oid_to_cmp_type(fcinfo->argTypes[i], &unsigned_flag));
     }
     return agg_type;
 }

@@ -79,6 +79,7 @@
 #include "parser/parse_expr.h"
 #include "auditfuncs.h"
 #include "rewrite/rewriteHandler.h"
+#include "plugin_utils/varlena.h"
 
 /* static function decls */
 static bool isAssignmentIndirectionExpr(ExprState* exprstate);
@@ -4684,63 +4685,91 @@ static Datum ExecEvalCoalesce(
    return (Datum)0;
 }
 
+static int ExecEvalMinMaxHelper(List* args, ExprContext* econtext, FunctionCallInfoData* locfcinfo,
+                                MinMaxOp op, bool* isNull)
+{
+    Datum result = (Datum)0;
+    int index = -1;
+    int resultIndex = -1;
+    ListCell* arg = NULL;
+    foreach (arg, args) {
+        ExprState* e = (ExprState*)lfirst(arg);
+        Datum value;
+        bool valueIsNull = false;
+        int32 cmpresult;
+
+        index++;
+        value = ExecEvalExpr(e, econtext, &valueIsNull, NULL);
+        if (valueIsNull) {
+#ifdef DOLPHIN
+            *isNull = true;
+            return -1; /* return NULL if inputs include NULL for B format*/
+#else
+            continue; /* ignore NULL inputs */
+#endif
+        }
+
+        if (*isNull) {
+            /* first nonnull input, adopt value */
+            result = value;
+            *isNull = false;
+            resultIndex = index;
+        } else {
+            /* apply comparison function */
+            locfcinfo->arg[0] = result;
+            locfcinfo->arg[1] = value;
+            locfcinfo->isnull = false;
+            cmpresult = DatumGetInt32(FunctionCallInvoke(locfcinfo));
+            if (locfcinfo->isnull) /* probably should not happen */
+                continue;
+            if (cmpresult > 0 && op == IS_LEAST) {
+                result = value;
+                resultIndex = index;
+            } else if (cmpresult < 0 && op == IS_GREATEST) {
+                result = value;
+                resultIndex = index;
+            }
+        }
+    }
+    return resultIndex;
+}
+
 /* ----------------------------------------------------------------
 *		ExecEvalMinMax
 * ----------------------------------------------------------------
 */
 static Datum ExecEvalMinMax(MinMaxExprState* minmaxExpr, ExprContext* econtext, bool* isNull, ExprDoneCond* isDone)
 {
-   Datum result = (Datum)0;
-   MinMaxExpr* minmax = (MinMaxExpr*)minmaxExpr->xprstate.expr;
-   Oid collation = minmax->inputcollid;
-   MinMaxOp op = minmax->op;
-   FunctionCallInfoData locfcinfo;
-   ListCell* arg = NULL;
+    Datum result = (Datum)0;
+    Datum cmp_result = (Datum)0;
+    MinMaxExpr* minmax = (MinMaxExpr*)minmaxExpr->xprstate.expr;
+    Oid collation = minmax->inputcollid;
+    MinMaxOp op = minmax->op;
+    FunctionCallInfoData locfcinfo;
+    ListCell* arg = NULL;
+    ListCell* cmp_arg = NULL;
+    int index = -1;
+    bool valueIsNull = false;
 
-   if (isDone != NULL)
-       *isDone = ExprSingleResult;
-   *isNull = true; /* until we get a result */
+    if (isDone != NULL) {
+        *isDone = ExprSingleResult;
+    }
+    *isNull = true; /* until we get a result */
+    InitFunctionCallInfoData(locfcinfo, &minmaxExpr->cfunc, 2, collation, NULL, NULL);
+    locfcinfo.argnull[0] = false;
+    locfcinfo.argnull[1] = false;
 
-   InitFunctionCallInfoData(locfcinfo, &minmaxExpr->cfunc, 2, collation, NULL, NULL);
-   locfcinfo.argnull[0] = false;
-   locfcinfo.argnull[1] = false;
-
-   foreach (arg, minmaxExpr->args) {
-       ExprState* e = (ExprState*)lfirst(arg);
-       Datum value;
-       bool valueIsNull = false;
-       int32 cmpresult;
-
-       value = ExecEvalExpr(e, econtext, &valueIsNull, NULL);
-       if (valueIsNull) {
-#ifdef DOLPHIN
-            *isNull = true;
-            return (Datum)0; /* return NULL if inputs include NULL for B format*/
-#else
-            continue; /* ignore NULL inputs */
-#endif
-       }
-
-       if (*isNull) {
-           /* first nonnull input, adopt value */
-           result = value;
-           *isNull = false;
-       } else {
-           /* apply comparison function */
-           locfcinfo.arg[0] = result;
-           locfcinfo.arg[1] = value;
-           locfcinfo.isnull = false;
-           cmpresult = DatumGetInt32(FunctionCallInvoke(&locfcinfo));
-           if (locfcinfo.isnull) /* probably should not happen */
-               continue;
-           if (cmpresult > 0 && op == IS_LEAST)
-               result = value;
-           else if (cmpresult < 0 && op == IS_GREATEST)
-               result = value;
-       }
-   }
-
-   return result;
+    if (minmaxExpr->cmpargs) {
+        index = ExecEvalMinMaxHelper(minmaxExpr->cmpargs, econtext, &locfcinfo, op, isNull);
+    } else {
+        index = ExecEvalMinMaxHelper(minmaxExpr->args, econtext, &locfcinfo, op, isNull);
+    }
+    if (index != -1) {
+        result = ExecEvalExpr((ExprState*)list_nth(minmaxExpr->args, index), econtext, &valueIsNull, NULL);
+    } else {
+        result = (Datum)0;
+    }
+    return result;
 }
 
 /* ----------------------------------------------------------------
@@ -6687,8 +6716,26 @@ ExprState* ExecInitExprByRecursion(Expr* node, PlanState* parent)
                outlist = lappend(outlist, estate);
            }
            mstate->args = outlist;
+#ifdef DOLPHIN
+            List* cmp_outlist = NIL;
+            ListCell* cmp_l = NULL;
+            foreach (cmp_l, minmaxexpr->cmpargs) {
+                Expr* e = (Expr*)lfirst(cmp_l);
+                ExprState* estate = NULL;
+
+                estate = ExecInitExprByRecursion(e, parent);
+                cmp_outlist = lappend(cmp_outlist, estate);
+            }
+            mstate->cmpargs = cmp_outlist;
+            if (mstate->cmpargs != NIL) {
+                typentry = lookup_type_cache(minmaxexpr->cmptype, TYPECACHE_CMP_PROC);
+            } else {
+                typentry = lookup_type_cache(minmaxexpr->minmaxtype, TYPECACHE_CMP_PROC);
+            }
+#else
            /* Look up the btree comparison function for the datatype */
            typentry = lookup_type_cache(minmaxexpr->minmaxtype, TYPECACHE_CMP_PROC);
+#endif
            if (!OidIsValid(typentry->cmp_proc))
                ereport(ERROR,
                        (errcode(ERRCODE_UNDEFINED_FUNCTION),
