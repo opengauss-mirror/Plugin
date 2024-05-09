@@ -3365,10 +3365,10 @@ SELECT futf8_bin FROM t_diff_charset_columns WHERE futf8_bin in (_gb18030'高斯
 
 EXPLAIN (costs off)
 SELECT futf8_bin FROM t_diff_charset_columns WHERE futf8_bin in (_gb18030'高斯DB', concat('高斯DB'));
-                                                         QUERY PLAN                                                          
------------------------------------------------------------------------------------------------------------------------------
+                            QUERY PLAN                             
+-------------------------------------------------------------------
  Seq Scan on t_diff_charset_columns
-   Filter: ((futf8_bin)::text = ANY ((ARRAY['楂樻柉DB'::character varying, (concat('高斯DB'))::character varying])::text[]))
+   Filter: ((futf8_bin)::text = ANY ('{楂樻柉DB,高斯DB}'::text[]))
 (2 rows)
 
 SELECT futf8_bin FROM t_diff_charset_columns WHERE futf8_bin in (_gb18030'高斯DB', concat('高斯DB'));
@@ -3439,10 +3439,10 @@ SELECT fgbk_bin FROM t_diff_charset_columns WHERE fgbk_bin in (_utf8mb4'高斯DB
 
 EXPLAIN (costs off)
 SELECT fgbk_bin FROM t_diff_charset_columns WHERE fgbk_bin in ('高斯DB', concat(_gbk'高斯DB' COLLATE gbk_chinese_ci));
-                                                                  QUERY PLAN                                                                   
------------------------------------------------------------------------------------------------------------------------------------------------
+                            QUERY PLAN                            
+------------------------------------------------------------------
  Seq Scan on t_diff_charset_columns
-   Filter: ((fgbk_bin)::text = ANY ((ARRAY['高斯DB'::character varying, (concat('楂樻柉DB'::character varying))::character varying])::text[]))
+   Filter: ((fgbk_bin)::text = ANY ('{高斯DB,楂樻柉DB}'::text[]))
 (2 rows)
 
 SELECT fgbk_bin FROM t_diff_charset_columns WHERE fgbk_bin in ('高斯DB', concat(_gbk'高斯DB' COLLATE gbk_chinese_ci));
