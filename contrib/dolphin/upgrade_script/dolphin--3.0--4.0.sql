@@ -202,6 +202,37 @@ BEGIN
 END
 $for_og_502$;
 
+CREATE OR REPLACE FUNCTION pg_catalog.convert_text_datetime(text) RETURNS timestamp without time zone LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'convert_text_datetime';
+CREATE OR REPLACE FUNCTION pg_catalog.convert_text_timestamptz(text) RETURNS timestamptz LANGUAGE C STABLE STRICT as '$libdir/dolphin', 'convert_text_timestamptz';
+
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_eq(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1=convert_text_datetime($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_ne(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<>convert_text_datetime($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_lt(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<convert_text_datetime($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_le(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<=convert_text_datetime($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_gt(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1>convert_text_datetime($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.datetime_text_ge(arg1 timestamp without time zone, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1>=convert_text_datetime($2)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_datetime_eq(arg1 text, arg2 timestamp without time zone) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select convert_text_datetime($1)=$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_datetime_ne(arg1 text, arg2 timestamp without time zone) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select convert_text_datetime($1)<>$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_datetime_lt(arg1 text, arg2 timestamp without time zone) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select convert_text_datetime($1)<$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_datetime_le(arg1 text, arg2 timestamp without time zone) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select convert_text_datetime($1)<=$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_datetime_gt(arg1 text, arg2 timestamp without time zone) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select convert_text_datetime($1)>$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_datetime_ge(arg1 text, arg2 timestamp without time zone) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select convert_text_datetime($1)>=$2';
+
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_text_eq(arg1 timestamptz, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1=convert_text_timestamptz($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_text_ne(arg1 timestamptz, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<>convert_text_timestamptz($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_text_lt(arg1 timestamptz, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<convert_text_timestamptz($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_text_le(arg1 timestamptz, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1<=convert_text_timestamptz($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_text_gt(arg1 timestamptz, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1>convert_text_timestamptz($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.timestamp_text_ge(arg1 timestamptz, arg2 text) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select $1>=convert_text_timestamptz($2)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.text_timestamp_eq(arg1 text, arg2 timestamptz) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select convert_text_timestamptz($1)=$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_timestamp_ne(arg1 text, arg2 timestamptz) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select convert_text_timestamptz($1)<>$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_timestamp_lt(arg1 text, arg2 timestamptz) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select convert_text_timestamptz($1)<$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_timestamp_le(arg1 text, arg2 timestamptz) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select convert_text_timestamptz($1)<=$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_timestamp_gt(arg1 text, arg2 timestamptz) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select convert_text_timestamptz($1)>$2';
+CREATE OR REPLACE FUNCTION pg_catalog.text_timestamp_ge(arg1 text, arg2 timestamptz) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'select convert_text_timestamptz($1)>=$2';
+
 CREATE FUNCTION pg_catalog.enumtext_like(anyenum, text) returns bool LANGUAGE SQL IMMUTABLE as 'select $1::text like $2';
 CREATE FUNCTION pg_catalog.textenum_like(text, anyenum) returns bool LANGUAGE SQL IMMUTABLE as 'select $1 like $2::text';
 CREATE FUNCTION pg_catalog.enumtext_nlike(anyenum, text) returns bool LANGUAGE SQL IMMUTABLE as 'select $1::text not like $2';
@@ -210,6 +241,52 @@ CREATE OPERATOR pg_catalog.~~(leftarg = anyenum, rightarg = text, procedure = pg
 CREATE OPERATOR pg_catalog.~~(leftarg = text, rightarg = anyenum, procedure = pg_catalog.textenum_like);
 CREATE OPERATOR pg_catalog.!~~(leftarg = anyenum, rightarg = text, procedure = pg_catalog.enumtext_nlike);
 CREATE OPERATOR pg_catalog.!~~(leftarg = text, rightarg = anyenum, procedure = pg_catalog.textenum_nlike);
+
+CREATE FUNCTION pg_catalog.blob_to_float8(blob) RETURNS double precision LANGUAGE C IMMUTABLE STRICT AS '$libdir/dolphin', 'blob_to_float8';
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_float8_eq(arg1 tinyblob, arg2 float8) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.float8_tinyblob_eq(arg1 float8, arg2 tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_float8_eq(arg1 mediumblob, arg2 float8) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.float8_mediumblob_eq(arg1 float8, arg2 mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_float8_eq(arg1 blob, arg2 float8) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.float8_blob_eq(arg1 float8, arg2 blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_float8_eq(arg1 longblob, arg2 float8) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.float8_longblob_eq(arg1 float8, arg2 longblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_numeric_eq(arg1 tinyblob, arg2 numeric) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_tinyblob_eq(arg1 numeric, arg2 tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_numeric_eq(arg1 mediumblob, arg2 numeric) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_mediumblob_eq(arg1 numeric, arg2 mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_numeric_eq(arg1 blob, arg2 numeric) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_blob_eq(arg1 numeric, arg2 blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_numeric_eq(arg1 longblob, arg2 numeric) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.numeric_longblob_eq(arg1 numeric, arg2 longblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_uint8_eq(arg1 tinyblob, arg2 uint8) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_tinyblob_eq(arg1 uint8, arg2 tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_uint8_eq(arg1 mediumblob, arg2 uint8) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_mediumblob_eq(arg1 uint8, arg2 mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_uint8_eq(arg1 blob, arg2 uint8) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_blob_eq(arg1 uint8, arg2 blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_uint8_eq(arg1 longblob, arg2 uint8) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.uint8_longblob_eq(arg1 uint8, arg2 longblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+
+CREATE OR REPLACE FUNCTION pg_catalog.tinyblob_int8_eq(arg1 tinyblob, arg2 int8) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.int8_tinyblob_eq(arg1 int8, arg2 tinyblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.mediumblob_int8_eq(arg1 mediumblob, arg2 int8) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.int8_mediumblob_eq(arg1 int8, arg2 mediumblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.blob_int8_eq(arg1 blob, arg2 int8) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.int8_blob_eq(arg1 int8, arg2 blob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+CREATE OR REPLACE FUNCTION pg_catalog.longblob_int8_eq(arg1 longblob, arg2 int8) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT pg_catalog.blob_to_float8($1) = $2';
+CREATE OR REPLACE FUNCTION pg_catalog.int8_longblob_eq(arg1 int8, arg2 longblob) RETURNS bool LANGUAGE SQL IMMUTABLE STRICT AS 'SELECT $1 = pg_catalog.blob_to_float8($2)';
+
+CREATE FUNCTION pg_catalog.text_to_tinyblob(text) RETURNS tinyblob LANGUAGE C IMMUTABLE STRICT AS '$libdir/dolphin', 'text_to_blob';
+CREATE FUNCTION pg_catalog.text_to_blob(text) RETURNS blob LANGUAGE C IMMUTABLE STRICT AS '$libdir/dolphin', 'text_to_blob';
+CREATE FUNCTION pg_catalog.text_to_mediumblob(text) RETURNS mediumblob LANGUAGE C IMMUTABLE STRICT AS '$libdir/dolphin', 'text_to_blob';
+CREATE FUNCTION pg_catalog.text_to_longblob(text) RETURNS longblob LANGUAGE C IMMUTABLE STRICT AS '$libdir/dolphin', 'text_to_blob';
+CREATE CAST (text AS tinyblob) WITH FUNCTION pg_catalog.text_to_tinyblob(text);
+CREATE CAST (text AS blob) WITH FUNCTION pg_catalog.text_to_blob(text);
+CREATE CAST (text AS mediumblob) WITH FUNCTION pg_catalog.text_to_mediumblob(text);
+CREATE CAST (text AS longblob) WITH FUNCTION pg_catalog.text_to_longblob(text);
 
 DROP FUNCTION IF EXISTS pg_catalog.chara(variadic arr "any") cascade;
 CREATE OR REPLACE FUNCTION pg_catalog.chara(variadic arr "any") returns varbinary LANGUAGE C IMMUTABLE as '$libdir/dolphin', 'm_char';

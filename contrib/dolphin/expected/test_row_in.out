@@ -241,32 +241,24 @@ CONTEXT:  SQL function "int1_binary_eq" statement 1
 (1 row)
 
 select row(1, row((select `int1` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `int1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int1` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `int1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int1` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `int1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int1` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `int1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -458,32 +450,24 @@ select row(1, row((select `uint1` from all_types_table limit 1),(select `varbina
 (1 row)
 
 select row(1, row((select `uint1` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `uint1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint1` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `uint1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint1` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `uint1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint1` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `uint1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -669,32 +653,24 @@ select row(1, row((select `int2` from all_types_table limit 1),(select `varbinar
 (1 row)
 
 select row(1, row((select `int2` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `int2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int2` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `int2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int2` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `int2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int2` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `int2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -874,32 +850,24 @@ select row(1, row((select `uint2` from all_types_table limit 1),(select `varbina
 (1 row)
 
 select row(1, row((select `uint2` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `uint2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint2` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `uint2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint2` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `uint2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint2` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `uint2` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -1073,32 +1041,24 @@ select row(1, row((select `int4` from all_types_table limit 1),(select `varbinar
 (1 row)
 
 select row(1, row((select `int4` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `int4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int4` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `int4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int4` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `int4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int4` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `int4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -1266,32 +1226,24 @@ select row(1, row((select `uint4` from all_types_table limit 1),(select `varbina
 (1 row)
 
 select row(1, row((select `uint4` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `uint4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint4` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `uint4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint4` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `uint4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint4` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `uint4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -1453,32 +1405,24 @@ select row(1, row((select `int8` from all_types_table limit 1),(select `varbinar
 (1 row)
 
 select row(1, row((select `int8` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `int8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int8_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int8` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `int8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int8_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int8` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `int8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int8_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `int8` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `int8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "int8_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -1634,32 +1578,24 @@ select row(1, row((select `uint8` from all_types_table limit 1),(select `varbina
 (1 row)
 
 select row(1, row((select `uint8` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `uint8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint8` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `uint8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint8` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `uint8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `uint8` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `uint8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "uint8_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -1809,32 +1745,24 @@ WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545
 (1 row)
 
 select row(1, row((select `float4` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `float4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `float4` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `float4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `float4` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `float4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `float4` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `float4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -1978,32 +1906,24 @@ WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545
 (1 row)
 
 select row(1, row((select `float8` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `float8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `float8` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `float8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `float8` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `float8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `float8` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `float8` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "float8_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -2141,32 +2061,24 @@ select row(1, row((select `numeric` from all_types_table limit 1),(select `varbi
 (1 row)
 
 select row(1, row((select `numeric` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `numeric` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `numeric` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `numeric` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `numeric` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `numeric` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `numeric` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `numeric` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -2299,32 +2211,24 @@ WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545
 (1 row)
 
 select row(1, row((select `bit1` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `bit1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `bit1` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `bit1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `bit1` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `bit1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `bit1` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `bit1` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -2451,32 +2355,24 @@ WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545
 (1 row)
 
 select row(1, row((select `bit64` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `bit64` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `bit64` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `bit64` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `bit64` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `bit64` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `bit64` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `bit64` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -2729,7 +2625,8 @@ select row(1, row((select `date` from all_types_table limit 1),(select `varbinar
 
 select row(1, row((select `date` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `date` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_tinyblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_text_eq" statement 1
+SQL function "timestamp_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -2737,7 +2634,8 @@ CONTEXT:  SQL function "timestamp_tinyblob_eq" statement 1
 
 select row(1, row((select `date` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `date` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_blob_eq" statement 1
+CONTEXT:  SQL function "timestamp_text_eq" statement 1
+SQL function "timestamp_blob_eq" statement 1
  ?column? 
 ----------
  f
@@ -2745,7 +2643,8 @@ CONTEXT:  SQL function "timestamp_blob_eq" statement 1
 
 select row(1, row((select `date` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `date` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_mediumblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_text_eq" statement 1
+SQL function "timestamp_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -2753,7 +2652,8 @@ CONTEXT:  SQL function "timestamp_mediumblob_eq" statement 1
 
 select row(1, row((select `date` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `date` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_longblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_text_eq" statement 1
+SQL function "timestamp_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -2864,32 +2764,24 @@ select row(1, row((select `time` from all_types_table limit 1),(select `varbinar
 (1 row)
 
 select row(1, row((select `time` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `time` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `time` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `time` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `time` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `time` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `time` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `time` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -2991,32 +2883,24 @@ select row(1, row((select `time4` from all_types_table limit 1),(select `varbina
 (1 row)
 
 select row(1, row((select `time4` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `time4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `time4` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `time4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_blob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `time4` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `time4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `time4` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `time4` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "numeric_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3119,7 +3003,8 @@ CONTEXT:  SQL function "datetime_text_eq" statement 1
 
 select row(1, row((select `datetime` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `datetime` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_tinyblob_eq" statement 1
+CONTEXT:  SQL function "datetime_text_eq" statement 1
+SQL function "datetime_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3127,7 +3012,8 @@ CONTEXT:  SQL function "datetime_tinyblob_eq" statement 1
 
 select row(1, row((select `datetime` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `datetime` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_blob_eq" statement 1
+CONTEXT:  SQL function "datetime_text_eq" statement 1
+SQL function "datetime_blob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3135,7 +3021,8 @@ CONTEXT:  SQL function "datetime_blob_eq" statement 1
 
 select row(1, row((select `datetime` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `datetime` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_mediumblob_eq" statement 1
+CONTEXT:  SQL function "datetime_text_eq" statement 1
+SQL function "datetime_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3143,7 +3030,8 @@ CONTEXT:  SQL function "datetime_mediumblob_eq" statement 1
 
 select row(1, row((select `datetime` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `datetime` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_longblob_eq" statement 1
+CONTEXT:  SQL function "datetime_text_eq" statement 1
+SQL function "datetime_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3243,7 +3131,8 @@ CONTEXT:  SQL function "datetime_text_eq" statement 1
 
 select row(1, row((select `datetime4` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `datetime4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_tinyblob_eq" statement 1
+CONTEXT:  SQL function "datetime_text_eq" statement 1
+SQL function "datetime_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3251,7 +3140,8 @@ CONTEXT:  SQL function "datetime_tinyblob_eq" statement 1
 
 select row(1, row((select `datetime4` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `datetime4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_blob_eq" statement 1
+CONTEXT:  SQL function "datetime_text_eq" statement 1
+SQL function "datetime_blob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3259,7 +3149,8 @@ CONTEXT:  SQL function "datetime_blob_eq" statement 1
 
 select row(1, row((select `datetime4` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `datetime4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_mediumblob_eq" statement 1
+CONTEXT:  SQL function "datetime_text_eq" statement 1
+SQL function "datetime_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3267,7 +3158,8 @@ CONTEXT:  SQL function "datetime_mediumblob_eq" statement 1
 
 select row(1, row((select `datetime4` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `datetime4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "datetime_longblob_eq" statement 1
+CONTEXT:  SQL function "datetime_text_eq" statement 1
+SQL function "datetime_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3361,7 +3253,8 @@ CONTEXT:  SQL function "timestamp_text_eq" statement 1
 
 select row(1, row((select `timestamp` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `timestamp` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_tinyblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_text_eq" statement 1
+SQL function "timestamp_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3369,7 +3262,8 @@ CONTEXT:  SQL function "timestamp_tinyblob_eq" statement 1
 
 select row(1, row((select `timestamp` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `timestamp` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_blob_eq" statement 1
+CONTEXT:  SQL function "timestamp_text_eq" statement 1
+SQL function "timestamp_blob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3377,7 +3271,8 @@ CONTEXT:  SQL function "timestamp_blob_eq" statement 1
 
 select row(1, row((select `timestamp` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `timestamp` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_mediumblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_text_eq" statement 1
+SQL function "timestamp_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3385,7 +3280,8 @@ CONTEXT:  SQL function "timestamp_mediumblob_eq" statement 1
 
 select row(1, row((select `timestamp` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `timestamp` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_longblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_text_eq" statement 1
+SQL function "timestamp_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3473,7 +3369,8 @@ CONTEXT:  SQL function "timestamp_text_eq" statement 1
 
 select row(1, row((select `timestamp4` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `timestamp4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_tinyblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_text_eq" statement 1
+SQL function "timestamp_tinyblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3481,7 +3378,8 @@ CONTEXT:  SQL function "timestamp_tinyblob_eq" statement 1
 
 select row(1, row((select `timestamp4` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `timestamp4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_blob_eq" statement 1
+CONTEXT:  SQL function "timestamp_text_eq" statement 1
+SQL function "timestamp_blob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3489,7 +3387,8 @@ CONTEXT:  SQL function "timestamp_blob_eq" statement 1
 
 select row(1, row((select `timestamp4` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `timestamp4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_mediumblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_text_eq" statement 1
+SQL function "timestamp_mediumblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3497,7 +3396,8 @@ CONTEXT:  SQL function "timestamp_mediumblob_eq" statement 1
 
 select row(1, row((select `timestamp4` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `timestamp4` from all_types_table limit 1))));
 WARNING:  invalid input syntax for type timestamp: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "timestamp_longblob_eq" statement 1
+CONTEXT:  SQL function "timestamp_text_eq" statement 1
+SQL function "timestamp_longblob_eq" statement 1
  ?column? 
 ----------
  f
@@ -3795,25 +3695,25 @@ select row(1, row((select `binary` from all_types_table limit 1),(select `varbin
 select row(1, row((select `binary` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))) in (row(1, row((select `tinyblob` from all_types_table limit 1),(select `binary` from all_types_table limit 1))));
  ?column? 
 ----------
- t
+ f
 (1 row)
 
 select row(1, row((select `binary` from all_types_table limit 1),(select `blob` from all_types_table limit 1))) in (row(1, row((select `blob` from all_types_table limit 1),(select `binary` from all_types_table limit 1))));
  ?column? 
 ----------
- t
+ f
 (1 row)
 
 select row(1, row((select `binary` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))) in (row(1, row((select `mediumblob` from all_types_table limit 1),(select `binary` from all_types_table limit 1))));
  ?column? 
 ----------
- t
+ f
 (1 row)
 
 select row(1, row((select `binary` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))) in (row(1, row((select `longblob` from all_types_table limit 1),(select `binary` from all_types_table limit 1))));
  ?column? 
 ----------
- t
+ f
 (1 row)
 
 select row(1, row((select `binary` from all_types_table limit 1),(select `text` from all_types_table limit 1))) in (row(1, row((select `text` from all_types_table limit 1),(select `binary` from all_types_table limit 1))));
@@ -3937,16 +3837,12 @@ select row(1, row((select `tinyblob` from all_types_table limit 1),(select `text
 (1 row)
 
 select row(1, row((select `tinyblob` from all_types_table limit 1),(select `enum_t` from all_types_table limit 1))) in (row(1, row((select `enum_t` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "tinyblob_numeric_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `tinyblob` from all_types_table limit 1),(select `set_t` from all_types_table limit 1))) in (row(1, row((select `set_t` from all_types_table limit 1),(select `tinyblob` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "tinyblob_numeric_eq" statement 1
  ?column? 
 ----------
  f
@@ -3989,16 +3885,12 @@ select row(1, row((select `blob` from all_types_table limit 1),(select `text` fr
 (1 row)
 
 select row(1, row((select `blob` from all_types_table limit 1),(select `enum_t` from all_types_table limit 1))) in (row(1, row((select `enum_t` from all_types_table limit 1),(select `blob` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "blob_numeric_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `blob` from all_types_table limit 1),(select `set_t` from all_types_table limit 1))) in (row(1, row((select `set_t` from all_types_table limit 1),(select `blob` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "blob_numeric_eq" statement 1
  ?column? 
 ----------
  f
@@ -4035,16 +3927,12 @@ select row(1, row((select `mediumblob` from all_types_table limit 1),(select `te
 (1 row)
 
 select row(1, row((select `mediumblob` from all_types_table limit 1),(select `enum_t` from all_types_table limit 1))) in (row(1, row((select `enum_t` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "mediumblob_numeric_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `mediumblob` from all_types_table limit 1),(select `set_t` from all_types_table limit 1))) in (row(1, row((select `set_t` from all_types_table limit 1),(select `mediumblob` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "mediumblob_numeric_eq" statement 1
  ?column? 
 ----------
  f
@@ -4075,16 +3963,12 @@ select row(1, row((select `longblob` from all_types_table limit 1),(select `text
 (1 row)
 
 select row(1, row((select `longblob` from all_types_table limit 1),(select `enum_t` from all_types_table limit 1))) in (row(1, row((select `enum_t` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "longblob_numeric_eq" statement 1
  ?column? 
 ----------
  f
 (1 row)
 
 select row(1, row((select `longblob` from all_types_table limit 1),(select `set_t` from all_types_table limit 1))) in (row(1, row((select `set_t` from all_types_table limit 1),(select `longblob` from all_types_table limit 1))));
-WARNING:  invalid input syntax for type double precision: "67890 - 12345 = 55545"
-CONTEXT:  SQL function "longblob_numeric_eq" statement 1
  ?column? 
 ----------
  f

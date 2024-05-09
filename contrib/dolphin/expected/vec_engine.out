@@ -101,8 +101,8 @@ explain (costs off) select
                 n_name
         order by
                 revenue desc;
-                                                                                                                   QUERY PLAN                                                                                                                   
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                     QUERY PLAN                                                                                                     
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  Row Adapter
    ->  Vector Sort
          Sort Key: (sum((lineitem.l_extendedprice OPERATOR(dolphin_catalog.*) (1::numeric - lineitem.l_discount)))) DESC NULLS LAST
@@ -111,7 +111,7 @@ explain (costs off) select
                ->  Vector Sonic Hash Join
                      Hash Cond: ((orders.o_custkey = customer.c_custkey) AND (orders.o_orderkey = lineitem.l_orderkey))
                      ->  CStore Scan on orders
-                           Filter: ((o_orderdate >= ('1994-01-01' COLLATE "default")::date) AND ((o_orderdate)::timestamp with time zone < (date_add(('1994-01-01' COLLATE "default")::date, '@ 1 year'::interval))::timestamp with time zone))
+                           Filter: ((o_orderdate >= ('1994-01-01' COLLATE "default")::date) AND ((o_orderdate)::timestamp with time zone < date_add(('1994-01-01' COLLATE "default")::date, '@ 1 year'::interval)))
                      ->  Vector Sonic Hash Join
                            Hash Cond: (lineitem.l_suppkey = supplier.s_suppkey)
                            ->  CStore Scan on lineitem
