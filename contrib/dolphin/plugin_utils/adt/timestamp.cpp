@@ -8817,7 +8817,7 @@ Datum dayofmonth_text(PG_FUNCTION_ARGS)
     fsec_t fsec;
 
     char *date_str = text_to_cstring(raw_text);
-    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NO_ZERO_DATE_SET())) {
+    if (!datetime_in_with_sql_mode(date_str, result_tm, &fsec, NO_ZERO_DATE_SET() | TIME_INVALID_DAY)) {
         PG_RETURN_NULL();
     }
     PG_RETURN_INT32(result_tm->tm_mday);

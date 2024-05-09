@@ -309,6 +309,39 @@ select dayofmonth('2002-01-01 11:12:12'::time);
 --?.*
 (1 row)
 
+select day('10:00:10');
+ day 
+-----
+  10
+(1 row)
+
+select day('2002-00-01');
+ day 
+-----
+   1
+(1 row)
+
+select day('2002-01-00');
+ day 
+-----
+   0
+(1 row)
+
+create table t_day(c text);
+insert into t_day values(day('2002-00-01'));
+insert ignore into t_day values(day('2002-00-01'));
+insert into t_day values(day('2002-01-00'));
+insert ignore into t_day values(day('2002-01-00'));
+select * from t_day;
+ c 
+---
+ 1
+ 1
+ 0
+ 0
+(4 rows)
+
+drop table t_day;
 reset current_schema;
 drop schema if exists test_dayofweek cascade;
 NOTICE:  drop cascades to 2 other objects
