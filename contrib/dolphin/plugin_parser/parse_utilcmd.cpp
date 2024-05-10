@@ -163,6 +163,7 @@ static int128 TransformAutoIncStart(CreateStmt* stmt);
 #ifdef DOLPHIN
 static void transformTableIndex(CreateStmtContext* cxt);
 static void transformIndexNode(IndexStmt* index, CreateStmtContext* cxt, bool mustGlobal);
+static void CreatePartitionKeyFromIndexConstraints(PartitionState* partTableState, List* ixconstraints);
 #endif
 
 /*
@@ -793,6 +794,20 @@ Oid *namespaceid, bool isFirstNode)
         Assert(stmt->partTableState == NULL);
         stmt->partTableState = cxt.csc_partTableState;
     }
+
+#ifdef DOLPHIN
+    // When no keys are explicitly provided as the partition key, we use the primary key
+    // by default. This is to be compatible with MySQL.
+    if (PointerIsValid(stmt->partTableState) && !PointerIsValid(stmt->partTableState->partitionKey)) {
+        if (!PointerIsValid(cxt.ixconstraints)) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_PARTITION_ERROR),
+                        errmsg("Field in list of fields for partition function not found in table")));
+        }
+        CreatePartitionKeyFromIndexConstraints(stmt->partTableState, cxt.ixconstraints);
+    }
+#endif
+
     /* check syntax for CREATE TABLE */
     checkPartitionSynax(stmt);
 
@@ -9091,3 +9106,51 @@ static void TransformModifyColumndef(CreateStmtContext* cxt, AlterTableCmd* cmd)
         cxt->blist = lappend(cxt->blist, rename);
     }
 }
+
+#ifdef DOLPHIN
+/*
+ * @@GaussDB@@
+ * Target		: data partition
+ * Brief		: Create a partition key from index constraints.
+ * Description	: This function takes a `PartitionState` object and a list of index constraints (`ixconstraints`),
+ * and creates a partition key based on the primary key constraint. If no primary keys are found or a composite
+ * primary key is found, an error is thrown.
+ * Notes		: This function is used when no partition key is explicitly provided.
+ */
+static void CreatePartitionKeyFromIndexConstraints(PartitionState* partTableState, List* ixconstraints) {
+
+    ColumnRef* c = makeNode(ColumnRef);
+
+    ListCell *ilc = NULL;
+    bool find_primary_key = false;
+    foreach (ilc, ixconstraints) {
+        Constraint* cons =  (Constraint *)lfirst(ilc);
+        if (cons->contype != CONSTR_PRIMARY) {
+            continue;
+        }
+        find_primary_key = true;
+        if (cons->keys->length > 1) {
+            ereport(ERROR,
+                    (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                        errmsg("Un-support feature"),
+                        errdetail("No partition keys are explicitly provided, by default we will use "
+                                   "the primary key as the paritition key, but we do not support "
+                                   "composite primary keys.")));
+        }
+        IndexElem *elem = (IndexElem *)lfirst(cons->keys->head);
+        if (elem->name != NULL) {
+            c->fields = list_make1(makeString(pstrdup(elem->name)));
+            break;
+        }
+    }
+    if (!find_primary_key) {
+        // No primary key constraints
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                    errmsg("Un-support feature"),
+                    errdetail("No partition keys are explicitly provided, by default we will use "
+                              "the primary key as the paritition key, but no primary keys were found.")));
+    }
+    partTableState->partitionKey = list_make1(c);
+}
+#endif

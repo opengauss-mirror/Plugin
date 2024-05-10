@@ -1,0 +1,17 @@
+create schema partition_no_key;
+set current_schema to 'partition_no_key';
+-- primary key
+create table t1 (a int, b int, primary key (b)) partition by key () partitions 2;
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t1_pkey" for table "t1"
+create table t2 (a int, b int) partition by key () partitions 2;
+ERROR:  Field in list of fields for partition function not found in table
+create table t3 (a int, b int, primary key (b)) partition by key (b) partitions 2;
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index "t3_pkey" for table "t3"
+create table t4 (a int, b int) partition by key (b) partitions 2;
+-- composite primary key
+create table t5 (a int, b int, primary key (a, b)) partition by key () partitions 2;
+ERROR:  Un-support feature
+DETAIL:  No partition keys are explicitly provided, by default we will use the primary key as the paritition key, but we do not support composite primary keys.
+create table t6 (a int, b int, primary key (a, b)) partition by key (a, b) partitions 2;
+ERROR:  Un-support feature
+DETAIL:  The partition key's length should be 0 or 1.

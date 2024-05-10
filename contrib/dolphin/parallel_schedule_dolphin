@@ -78,7 +78,7 @@ test: alter_function_test/alter_function  alter_function_test/alter_procedure al
 
 test: network2 use_dbname show_create view_definer_test insert_set show_create_database show_variables b_auto_increment nulls_get_partition
 
-test: partition_test1 partition_test2 partition_test3 partition_test4 partition_maxvalue_test
+test: partition_test1 partition_test2 partition_test3 partition_test4 partition_maxvalue_test partition_no_key
 
 test: builtin_funcs/b_compatibility_time_funcs builtin_funcs/b_compatibility_time_funcs2 builtin_funcs/b_compatibility_time_funcs3 builtin_funcs/repeat builtin_funcs/b_compatibility_time_funcs_year
 
