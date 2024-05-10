@@ -6,14 +6,14 @@ NOTICE:  table "test1" does not exist, skipping
 create table test1(data json);
 insert into test1 values('[10,20,[30,40]]');
 select data->'$[1]' from test1;
- json_object_field 
--------------------
+ ?column? 
+----------
  20
 (1 row)
 
 select data->'$[2][1]' from test1;
- json_object_field 
--------------------
+ ?column? 
+----------
  40
 (1 row)
 
@@ -24,128 +24,128 @@ insert into test2 values('{"a":"lihua"}');
 insert into test2 values('{"b":"zhanghai"}');
 insert into test2 values('{"c":"susan"}');
 select data->'$.a' from test2;
- json_object_field 
--------------------
+ ?column? 
+----------
  "lihua"
  
  
 (3 rows)
 
 select data->'$.b' from test2;
- json_object_field 
--------------------
+  ?column?  
+------------
  
  "zhanghai"
  
 (3 rows)
 
 select data->'$.c' from test2;
- json_object_field 
--------------------
+ ?column? 
+----------
  
  
  "susan"
 (3 rows)
 
 select data->'$.*' from test2;
- json_object_field 
--------------------
+   ?column?   
+--------------
  ["lihua"]
  ["zhanghai"]
  ["susan"]
 (3 rows)
 
 select data->>'$.*' from test2;
- json_object_field_text 
-------------------------
+   ?column?   
+--------------
  ["lihua"]
  ["zhanghai"]
  ["susan"]
 (3 rows)
 
 select data->>'$.d' from test2;
- json_object_field_text 
-------------------------
+ ?column? 
+----------
  
  
  
 (3 rows)
 
 select data->'$.d' from test2;
- json_object_field 
--------------------
+ ?column? 
+----------
  
  
  
 (3 rows)
 
 select data->>'$.a' from test2;
- json_object_field_text 
-------------------------
+ ?column? 
+----------
  lihua
  
  
 (3 rows)
 
 select data->>'$.b' from test2;
- json_object_field_text 
-------------------------
+ ?column? 
+----------
  
  zhanghai
  
 (3 rows)
 
 select data->>'$.c' from test2;
- json_object_field_text 
-------------------------
+ ?column? 
+----------
  
  
  susan
 (3 rows)
 
 select data->'a' from test2;
- json_object_field 
--------------------
+ ?column? 
+----------
  "lihua"
  
  
 (3 rows)
 
 select data->'b' from test2;
- json_object_field 
--------------------
+  ?column?  
+------------
  
  "zhanghai"
  
 (3 rows)
 
 select data->'c' from test2;
- json_object_field 
--------------------
+ ?column? 
+----------
  
  
  "susan"
 (3 rows)
 
 select data->>'a' from test2;
- json_object_field_text 
-------------------------
+ ?column? 
+----------
  lihua
  
  
 (3 rows)
 
 select data->>'b' from test2;
- json_object_field_text 
-------------------------
+ ?column? 
+----------
  
  zhanghai
  
 (3 rows)
 
 select data->>'c' from test2;
- json_object_field_text 
-------------------------
+ ?column? 
+----------
  
  
  susan
@@ -187,6 +187,24 @@ select * from dept where json_value->'$.deptId' is not null;
   5 | 部门5 | {"deptName": "部门5", "deptId": "5", "deptLeaderId": "5"}
 (5 rows)
 
+
+select '[{"f1":[1,2,3]},[{"f2":null}]]'::jsonb -> 1;
+    ?column?    
+----------------
+ [{"f2": null}]
+(1 row)
+
+select '{"aa":[{"f1":"q"}],"bb":[{"f2":null}]}'::jsonb -> 'aa';
+   ?column?    
+---------------
+ [{"f1": "q"}]
+(1 row)
+
+select '{"cc":{"aa":[{"f1":"q"}],"bb":[{"f2":null}]}}'::jsonb -> 'aa';
+ ?column? 
+----------
+ 
+(1 row)
 
 
 drop schema test_operator cascade;

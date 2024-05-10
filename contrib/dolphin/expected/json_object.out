@@ -92,20 +92,20 @@ select json_object('12:12:58'::time,'24:00:00'::time);
 
 --test with ->,->>
 select json_object('a','{"a":"b"}','b',234342,'c',true)->'a';
- json_object_field 
--------------------
+    ?column?     
+-----------------
  "{\"a\":\"b\"}"
 (1 row)
 
 select json_object('a','{"a":"b"}'::json,'b',234342,'c',true)->'a';
- json_object_field 
--------------------
+ ?column?  
+-----------
  {"a":"b"}
 (1 row)
 
 select json_object('a','{"a":"b"}'::json,'b',234342,'c',true)->>'b';
- json_object_field_text 
-------------------------
+ ?column? 
+----------
  234342
 (1 row)
 
