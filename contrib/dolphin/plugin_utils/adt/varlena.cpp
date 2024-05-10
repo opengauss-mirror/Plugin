@@ -5019,7 +5019,11 @@ Datum replace_text_with_two_args(PG_FUNCTION_ARGS)
     if (PG_ARGISNULL(0))
         PG_RETURN_NULL();
     if (PG_ARGISNULL(1))
+#ifdef DOLPHIN
+        PG_RETURN_NULL();
+#else
         PG_RETURN_TEXT_P(PG_GETARG_TEXT_PP(0));
+#endif
     FunctionCallInfoData locfcinfo;
     Datum result;
     InitFunctionCallInfoData(locfcinfo, NULL, 3, InvalidOid, NULL, NULL);
@@ -5062,12 +5066,20 @@ Datum replace_text(PG_FUNCTION_ARGS)
     src_text = PG_GETARG_TEXT_PP(0);
 
     if (PG_ARGISNULL(1))
+#ifdef DOLPHIN
+        PG_RETURN_NULL();
+#else
         PG_RETURN_TEXT_P(src_text);
+#endif
 
     from_sub_text = PG_GETARG_TEXT_PP(1);
 
     if (!PG_ARGISNULL(2))
         to_sub_text = PG_GETARG_TEXT_PP(2);
+#ifdef DOLPHIN
+    else
+        PG_RETURN_NULL();
+#endif
 
     if (VARATT_IS_HUGE_TOAST_POINTER(src_text) || VARATT_IS_HUGE_TOAST_POINTER(from_sub_text)) {
         ereport(ERROR,

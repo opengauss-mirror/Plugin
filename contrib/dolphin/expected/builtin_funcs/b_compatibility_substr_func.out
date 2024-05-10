@@ -393,6 +393,25 @@ select c1, mid(`bit1`, 2, 2), mid(`bit8`, 2, 2), mid(`bit15`, 2, 2), mid(`bit64`
 drop table t_number;
 drop table t_bit;
 drop table t_str;
+-- test replace function with param NULL
+select replace('string', 'i', NULL); 
+ replace 
+---------
+ 
+(1 row)
+
+select replace('string', NULL, 'i');
+ replace 
+---------
+ 
+(1 row)
+
+select replace(NULL, NULL, 'a');
+ replace 
+---------
+ 
+(1 row)
+
 drop schema substr_func_test cascade;
 reset bytea_output;
 reset dolphin.sql_mode;
